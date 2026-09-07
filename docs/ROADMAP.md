@@ -1,0 +1,20 @@
+# ARK AI roadmap
+
+The project baseline is V1 through V10. Only V1 is active.
+
+| Version | Milestone | Status |
+| --- | --- | --- |
+| V1 | Local Core | Active |
+| V2 | ARK Intelligence | Locked |
+| V3 | Learning & Evaluation | Locked |
+| V4 | Long-Term Memory | Locked |
+| V5 | Tool Intelligence | Locked |
+| V6 | Planning Agent | Locked |
+| V7 | Vision & Voice | Locked |
+| V8 | Computer Action | Locked |
+| V9 | Personal & Proactive AI | Locked |
+| V10 | Controlled Self-Improvement | Locked |
+
+V1 provides a small, exchangeable local inference core. Memory, tools, autonomous
+planning, multimodal input, computer control, proactive behavior, and self-improvement
+are deliberately outside this milestone.
