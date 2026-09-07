@@ -33,6 +33,8 @@ class ArkCore:
         if not text:
             raise ValueError("message must not be empty")
         response = self.backend.generate(self.messages(text), self.generation).strip()
+        if not response:
+            raise RuntimeError("model returned an empty response")
         self.history.extend(
             [
                 {"role": "user", "content": text},
