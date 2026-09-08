@@ -1,5 +1,9 @@
 # V2 実機評価 — Windows / 既存Qwen GGUF
 
+更新：以下の手順による原本を受領・レビュー済み。
+[固定Baseline](../../evidence/v2/REVIEW.md)は2runとも11/12。
+PR #3の最終CI GREEN・mergeでV2正式PASS。以下は再実行用の元手順として保持する。
+
 V1はPR #4の原本レビューで正式PASS。固定点:
 `7e46a4529879243b4a5bd52bb6575d11c1ec0183`。
 V2は未PASS。以下の結果をレビューするまでPR #3はDraft・merge禁止。

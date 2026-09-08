@@ -1,3 +1,4 @@
 # Preserve frozen suite bytes and source fingerprints.
 * text=auto eol=lf
 evidence/v1/raw/** -text
+evidence/v2/raw/** -text

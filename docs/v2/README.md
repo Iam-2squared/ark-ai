@@ -1,7 +1,8 @@
 # V2 ARK Intelligence - 先行開発
 
-**V1: OFFICIAL PASS / V2: 実モデル接続済み・実測待ち / mainへのmerge禁止。**
-V1の原本EvidenceはPR #4で固定。V2は固定12問の実モデルBaselineレビュー待ち。
+**V1: OFFICIAL PASS / V2: 実モデルBaselineレビュー完了。最終CI GREEN後のPR #3 mergeで正式PASS。**
+[原本と最終レビュー](../../evidence/v2/REVIEW.md)：独立2runとも11/12、runtime failure 0。
+以下のDraft運用・未測定表記は先行開発時の記録。現状は上記レビューとGATES.mdを参照。
 
 mainはV1のまま使用する。V2は `research/v2-ark-intelligence` のDraft PRでレビューする。
 自動mergeは有効化しない。Draft解除・mergeは、V2の実機結果をレビューした後の別作業。

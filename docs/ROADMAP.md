@@ -1,13 +1,13 @@
 # ARK AI roadmap
 
 The project baseline is V1 through V10. [V1 reviewed evidence](../evidence/v1/REVIEW.md)
-closes the Local Core gate. V2 integration may proceed; its promotion requires
-reviewed real-model evidence and green CI. V3–V10 remain locked.
+closes the Local Core gate. [V2 baseline review](../evidence/v2/REVIEW.md) satisfies
+the real-model gate; V2 PASS takes effect with final green-CI PR #3 merge. V3–V10 remain locked.
 
 | Version | Milestone | Status |
 | --- | --- | --- |
 | V1 | Local Core | OFFICIAL PASS — evidence frozen |
-| V2 | ARK Intelligence | Real-model integration allowed; promotion pending evidence |
+| V2 | ARK Intelligence | OFFICIAL PASS on PR #3 merge — reviewed real baseline 11/12 ×2 |
 | V3 | Learning & Evaluation | Locked |
 | V4 | Long-Term Memory | Locked |
 | V5 | Tool Intelligence | Locked |

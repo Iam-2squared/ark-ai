@@ -1,6 +1,8 @@
 # V2 completion and promotion gates
 
-Current: **REAL-MODEL ADAPTER IMPLEMENTED / TARGET MEASUREMENTS PENDING**.
+Current: **REAL-MODEL BASELINE REVIEWED — PASS on final green-CI PR #3 merge**.
+See [original evidence and final review](../../evidence/v2/REVIEW.md).
+Both distinct runs score 11/12; math-02 format FAIL is retained. No critical V1 regression.
 V1: **OFFICIAL PASS**, main freeze `7e46a4529879243b4a5bd52bb6575d11c1ec0183`.
 
 ## Branch implementation checklist
@@ -22,18 +24,18 @@ V1: **OFFICIAL PASS**, main freeze `7e46a4529879243b4a5bd52bb6575d11c1ec0183`.
 - [x] V1 formally PASS after target-PC evidence review (PR #4)
 - [x] V2 branch includes V1 main evidence freeze
 - [x] Explicit local runtime adapter and result schema; simulated adapter tests
-- [ ] Real GGUF evaluation
-- [ ] Real-model conversation/context verification
-- [ ] Real-model Math measurement
-- [ ] Real-model Reasoning measurement
-- [ ] Real-model Coding measurement
-- [ ] V2 evidence recorded and reviewed
-- [ ] V2 formally PASS
+- [x] Real GGUF evaluation
+- [x] Real-model conversation/context verification
+- [x] Real-model Math measurement
+- [x] Real-model Reasoning measurement
+- [x] Real-model Coding measurement
+- [x] V2 evidence recorded and reviewed
+- [x] V2 formally PASS effective on PR #3 merge after final CI GREEN
 
 ## Merge constraint
 
-Keep the PR **Draft** with **MERGE BLOCKED: V2 real-model review pending** in title/body.
-Do not enable auto-merge. CI green does not grant merge authorization without V2 evidence.
+The evidence prerequisite is satisfied; mark ready and merge only after final-head CI GREEN.
+Do not enable auto-merge. CI alone never grants promotion without reviewed V2 evidence.
 No workflow publishes, promotes or merges this branch. Unit tests simulate the local
 adapter; their temporary fake-weight reports are not actual model measurements.
 
