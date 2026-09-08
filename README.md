@@ -1,3 +1,5 @@
+> V3 research branch: Learning Pipeline infrastructure only; real training and main merge blocked.
+> See [V3 contract and status](docs/v3/README.md). V1 and V2 remain OFFICIAL PASS.
 > V1 and V2: **OFFICIAL PASS** upon the reviewed PR #3 merge.
 > [V2 real-model baseline](evidence/v2/REVIEW.md): 11/12 in each of two runs;
 > math-02 remains FAIL. [V2 usage](docs/v2/REAL_MODEL.md). V3+ stays locked.
