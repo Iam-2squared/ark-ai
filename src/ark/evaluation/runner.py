@@ -1,4 +1,4 @@
-"""Mock-only V2 evaluation runner. Real inference requires a future reviewed gate change."""
+"""V2 evaluation entrypoint; mock and real evidence are explicitly separated."""
 
 from __future__ import annotations
 
@@ -111,10 +111,10 @@ def run_mock(output: Path) -> dict:
         ),
         "measurement_kind": "mock",
         "model_performance_status": "NOT_MEASURED",
-        "v1_gate": "PENDING_TARGET_EVIDENCE",
+        "v1_gate": "OFFICIAL_PASS",
         "v2_gate": "NOT_PASSED",
-        "real_model_evaluation": "LOCKED",
-        "main_merge": "BLOCKED_PENDING_V1_PASS",
+        "real_model_evaluation": "NOT_MEASURED_BY_MOCK",
+        "main_merge": "BLOCKED_PENDING_V2_REAL_REVIEW",
         "timestamp": datetime.now(UTC).isoformat(),
         "model_identity": {"name": backend.name, "quantization": None, "weights_sha256": None},
         "runtime": {
@@ -138,9 +138,29 @@ def run_mock(output: Path) -> dict:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="V2 mock evaluation; real-model evaluation LOCKED")
+    parser = argparse.ArgumentParser(description="V2 fixed evaluation; mock is not model evidence")
     parser.add_argument("--output", type=Path, default=Path("benchmark-results/v2-mock.json"))
+    parser.add_argument("--backend", choices=("mock", "llama-cpp"), default="mock")
+    parser.add_argument("--config")
+    parser.add_argument("--offline-attested", action="store_true")
     args = parser.parse_args(argv)
+    if args.backend == "llama-cpp" and not args.config:
+        parser.error("--config is required for llama-cpp")
+    if args.backend == "mock" and (args.config or args.offline_attested):
+        parser.error("--config / --offline-attested require --backend llama-cpp")
+    if args.backend == "llama-cpp":
+        from .real import run_real
+
+        if args.output == Path("benchmark-results/v2-mock.json"):
+            args.output = Path("benchmark-results/v2-real.json")
+        try:
+            result = run_real(args.config, args.output, offline_attested=args.offline_attested)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+        print(f"Real evidence: {args.output}; V2 PASS and merge still require review.")
+        print(f"Scoring failures: {result['model_failures']}; "
+              f"runtime failures: {result['runtime_failure_count']}")
+        return int(bool(result["runtime_failure_count"] or result["memory_error"]))
     try:
         result = run_mock(args.output)
     except (OSError, ValueError) as exc:
@@ -149,7 +169,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"MOCK ONLY: {len(result['cases'])} fixture cases; "
         f"{result['infrastructure_failure_count']} failed. Model performance: NOT_MEASURED."
     )
-    print(f"Evidence: {args.output}. Main merge BLOCKED; V1 target gate pending.")
+    print(f"Evidence: {args.output}. Main merge BLOCKED; V2 real review pending.")
     return int(result["infrastructure_failure_count"] != 0)
 
 

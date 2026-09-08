@@ -2,8 +2,11 @@
 
 V2 advance development is authorized on `research/v2-ark-intelligence` only.
 Base: V1 PR #2, main commit afd819152ec6228e0fbd8409eaf538b27589868a.
-V1 real-model/offline gate is pending. Draft PR stays draft; no auto-merge and no main
-promotion before reviewed V1 PASS. V2 real-model evaluation stays locked in this branch.
+V1 passed with original evidence frozen in main commit
+`7e46a4529879243b4a5bd52bb6575d11c1ec0183` (PR #4). That main is merged into this branch.
+The previously locked local runtime adapter is now explicitly opt-in. Draft PR stays
+draft: no auto-merge or main promotion before reviewed V2 real-model evidence.
+This gate transition does not change contract version 1, the fixed suite or scorers.
 
 ## Responsibilities
 
@@ -29,9 +32,11 @@ an exact template tokenizer or universal upper bound. Label it as an estimate; n
 context-overflow errors remain possible and must preserve state. The final real-model
 context gate must verify the runtime/template on the target PC.
 
-V1 CLI/Core remain the default and unchanged. `ark-v2` is an opt-in mock demonstration
-in this advance branch. `ark-eval` runs only the fixed scripted mock. There is no CLI
-switch to unlock real evaluation; V1 PASS evidence and a reviewed change are required.
+V1 CLI/Core remain the default and unchanged. `ark-v2` and `ark-eval` default to mock.
+`--backend llama-cpp --config config.toml` explicitly connects the local runtime
+after the V1 evidence freeze. No model-name routing, cloud API or automatic download
+is added. Real capability metadata comes from configuration and adapter support,
+not inferred model intelligence. See [target-PC steps](REAL_MODEL.md).
 
 ## Evaluation boundary
 

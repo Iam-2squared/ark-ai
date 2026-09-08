@@ -47,10 +47,35 @@ Each new task resets history. No generated answer becomes a new training example
 | infrastructure_peak_ram_mib | Python fixture process memory, not model footprint |
 | main_merge / v1_gate / v2_gate | Pending/blocked, never promoted by a fixture run |
 
-The schema reserves model identity, quantization, runtime, performance and failures,
-but this advance branch neither measures nor compares real models. Connecting an actual
-GGUF evaluation is V2-J, after V1 PASS. Schema is separate from V1 benchmark schema 2.
-There is no automatic claim of V1 or V2 completion from this report.
+Schema 1 remains mock-only. V1 official PASS is a separately reviewed historical fact,
+not a result of running a fixture. No report automatically grants V2 completion.
+
+## Real result schema 2 (after V1 evidence freeze)
+
+Explicit `--backend llama-cpp --config config.toml` uses the SAME suite and scorers.
+This V2 schema is separate from the V1 benchmark schema with the same number.
+Record GGUF basename/family/parameter size/quantization/bytes/SHA-256, complete
+configuration, runtime package versions, platform/CPU, capability provenance,
+system instructions and source fingerprints. No weight download or remote API.
+`cases` contain setup prompts, original prompt, response, frozen scoring contract,
+boolean `model_passed`, failure reason, scoring details, generation turns and latency.
+JSON behavior is the existing conversation-02 case, not an extra score-adjusted task.
+
+`model_failures` counts incorrect or failed cases; `runtime_failure_count` separately
+counts startup/generation errors. Startup failures are saved with no cases and
+NOT_MEASURED. A completed suite is MEASURED_PENDING_REVIEW, never V2 PASS.
+Exit 1 indicates runtime/memory failure; exit 0 means execution completed, NOT that
+all answers passed. Low scores remain in the baseline and must not be hidden.
+
+Per-case `model_metrics` describe the last answer; `turns` preserves all setup and
+answer timings. First-token latency is time to first visible streamed text.
+`tokens_per_second_estimate` includes prefill; `completion_tokens_estimate` is
+retokenized visible output. Exact prompt/completion token fields remain null.
+Prompt counts/context utilization use the documented UTF-8/framing heuristic,
+not exact runtime template accounting. Peak RAM is the process-lifetime native
+resident high-water mark, captured once per report. Model load and total wall time
+are separate (total includes weight hashing). Unknown values remain null.
+Physical offline state is user-attested only. Results require human review.
 
 ## Regression rules
 
@@ -58,12 +83,20 @@ Same schema/contract/suite/hash/scorer/measurement kind and complete unique task
 are required. Corrupted summaries, missing cases and mock model metrics are rejected.
 The comparator reports task regressions/improvements and metadata differences.
 A regression or any remaining candidate fixture failure returns a nonzero exit code.
-A successful comparison is only a fixture regression check. Model-quality delta is null.
+A successful mock comparison is only a fixture regression check. Model-quality delta is null.
 Changes of policy/implementation/model metadata are visible, not silently hidden.
 Changing the scorer hash requires a new compatible baseline; changing the suite is not
 an improvement over the old suite. Mixed mock/real reports are rejected.
 
-For future real measurements, preserve suite/scorer and capture exact GGUF SHA,
+Real comparisons additionally re-score stored answers against the frozen scorer and
+validate complete unique IDs, task contracts, counts and rates. Mixed mock/real
+and startup-failure baselines are rejected. Real comparisons return domain score
+deltas and task regressions; differing runtime/model/configuration is marked as an
+uncontrolled comparison, not evidence that the code change caused a difference.
+Runtime/memory failures or regressions yield nonzero exit. An unchanged low baseline
+may compare cleanly; this still does not grant PASS or authorize merge.
+
+For real measurements, preserve suite/scorer and capture exact GGUF SHA,
 quantization, settings, runtime, sampling seed, target hardware, template token counts
-and repeated measurements. Do not optimize these public development tasks and then
+where available, and repeated measurements. Do not optimize these public development tasks and then
 claim general intelligence gains. Broader held-out evaluation belongs in a later phase.

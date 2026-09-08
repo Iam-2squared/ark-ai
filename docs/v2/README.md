@@ -1,10 +1,10 @@
 # V2 ARK Intelligence - 先行開発
 
-**V1: 実機Gate待ち / V2: branch内開発 / mainへのmerge禁止。**
-ユーザーの2026-09-08指示によりV2先行開発を許可。V1完了条件の免除ではない。
+**V1: OFFICIAL PASS / V2: 実モデル接続済み・実測待ち / mainへのmerge禁止。**
+V1の原本EvidenceはPR #4で固定。V2は固定12問の実モデルBaselineレビュー待ち。
 
 mainはV1のまま使用する。V2は `research/v2-ark-intelligence` のDraft PRでレビューする。
-自動mergeは有効化しない。Draft解除・mergeは、V1の実機結果をレビューした後の別作業。
+自動mergeは有効化しない。Draft解除・mergeは、V2の実機結果をレビューした後の別作業。
 DraftはGitHubの通常mergeを止めるが、リポジトリ管理者による操作を全面的に防ぐ
 branch protectionではない。repositoryのアクセス設定は変更していない。
 
@@ -21,7 +21,7 @@ branch protectionではない。repositoryのアクセス設定は変更して�
 | Conversation | 日本語形式1問・JSON形式1問 | 自然な会話品質は実機評価待ち |
 | Context評価 | 合言葉、訂正後の情報を保持する2問 | 実モデルの保持能力は未測定 |
 | Coding | 3関数、各3テスト、制限付きAST解釈 | 一般Python実行環境ではない |
-| Regression | taskごとの退行/改善、設定差分、互換性検査 | 現在はmock schemaの比較のみ |
+| Regression | taskごとの退行/改善、設定差分、互換性検査 | mockとrealは混ぜず別々に比較 |
 
 Architecture: [CONTRACT.md](CONTRACT.md) / [評価仕様](EVALUATION.md) /
 [Completion Gate](GATES.md)。V1の `ark` / `ark-bench` と既存Coreはそのまま残す。
@@ -30,7 +30,7 @@ V2は新しい `ark-v2` / `ark-eval` / `ark-compare` で明示的に使う。
 ## 今PCが使えなくても確認できるもの
 
 Draft PRのコード、GitHub Actionsのテスト結果、Actions artifactの評価JSONを確認できる。
-この段階ではアプリ画面や実AIとの会話は追加していない。
+実モデルCLIと評価adapterを追加。実機の正答率・性能はまだ未測定。
 
 開発用環境では以下を実行する（ユーザーのV1用PCでbranch切替する必要はない）：
 
@@ -49,8 +49,8 @@ ark-compare benchmark-results/v2-baseline.json benchmark-results/v2-candidate.js
 `model_pass_rate`、モデルtokens/sec等は `null`、`NOT_MEASURED` を保持する。
 fixture/scorerの結果・時間・context予算は `infrastructure_*` に保存する。
 
-`--backend llama-cpp` や `--unlock` は存在しない。V2実モデル実行はV1 PASS後に
-証拠を確認し、専用adapterとCLIをレビューする別変更として接続する。
+実機で実モデルを使う場合のみ `--backend llama-cpp --config config.toml` を指定する。
+[Windows実機評価手順](REAL_MODEL.md)に従う。V1のモデル・runtimeをそのまま利用できる。
 
 ## Context動作
 

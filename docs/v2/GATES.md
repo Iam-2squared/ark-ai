@@ -1,7 +1,7 @@
 # V2 completion and promotion gates
 
-Current: **ADVANCE DEVELOPMENT / MOCK VALIDATION**.
-V1: **CODE COMPLETE / REAL-MODEL OFFLINE GATE PENDING**.
+Current: **REAL-MODEL ADAPTER IMPLEMENTED / TARGET MEASUREMENTS PENDING**.
+V1: **OFFICIAL PASS**, main freeze `7e46a4529879243b4a5bd52bb6575d11c1ec0183`.
 
 ## Branch implementation checklist
 
@@ -19,8 +19,9 @@ V1: **CODE COMPLETE / REAL-MODEL OFFLINE GATE PENDING**.
 
 ## Unfulfilled gates - remain pending
 
-- [ ] V1 formally PASS after target-PC evidence review
-- [ ] Reviewed V2-J real-model evaluation adapter (no advance-branch CLI unlock)
+- [x] V1 formally PASS after target-PC evidence review (PR #4)
+- [x] V2 branch includes V1 main evidence freeze
+- [x] Explicit local runtime adapter and result schema; simulated adapter tests
 - [ ] Real GGUF evaluation
 - [ ] Real-model conversation/context verification
 - [ ] Real-model Math measurement
@@ -31,14 +32,13 @@ V1: **CODE COMPLETE / REAL-MODEL OFFLINE GATE PENDING**.
 
 ## Merge constraint
 
-Keep the PR **Draft** with **MERGE BLOCKED: V1 PASS pending** in title/body.
-Do not enable auto-merge. CI green does not grant merge authorization while V1 is pending.
-No workflow publishes, promotes or merges this branch. V1 target evidence must be checked
-before changing this state. A documented green infrastructure run is not that evidence.
+Keep the PR **Draft** with **MERGE BLOCKED: V2 real-model review pending** in title/body.
+Do not enable auto-merge. CI green does not grant merge authorization without V2 evidence.
+No workflow publishes, promotes or merges this branch. Unit tests simulate the local
+adapter; their temporary fake-weight reports are not actual model measurements.
 
-When the PC becomes available: use main for the V1 offline cold-start and two benchmark
-runs first. Review the conversation, reset, errors and JSONs. If a V1 defect appears,
-fix main and integrate that fix into V2. Only after V1 PASS, review the V2 real-runtime
-connection, repeat the same frozen suite and record actual model measurements. Treat
-V2-J as unfulfilled until then. Long-term memory, tools, planning, vision/voice and
-computer actions are outside this PR.
+Next: follow [REAL_MODEL.md](REAL_MODEL.md), collect fixed-suite real results and
+V1 regression evidence, review all failures without changing questions or scorers,
+then freeze the baseline. If a V1 defect appears, fix main separately and sync again.
+V2 PASS also requires current-head green CI and no critical V1 regression.
+Long-term memory, tools, planning, vision/voice and computer actions remain out of scope.

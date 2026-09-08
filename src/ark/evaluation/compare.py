@@ -22,9 +22,9 @@ COMPATIBILITY = (
 
 
 def _validated(report: dict) -> dict:
-    # This advance branch can validate only its mock schema, not future real measurements.
+    # Mock evidence must never acquire measured model outcomes.
     if report.get("measurement_kind") != "mock" or report.get("schema_version") != 1:
-        raise ValueError("only schema-1 mock evidence is supported while real evaluation is locked")
+        raise ValueError("expected schema-1 mock evidence")
     if report.get("model_performance_status") != "NOT_MEASURED":
         raise ValueError("mock report cannot claim measured model performance")
     if any(v is not None for v in report["model_metrics"].values()):
@@ -71,6 +71,10 @@ def compare(baseline: dict, candidate: dict) -> dict:
         for key in COMPATIBILITY:
             if baseline[key] != candidate[key]:
                 raise ValueError(f"incompatible {key}")
+        if baseline["measurement_kind"] == "real":
+            from .real_compare import compare_real
+
+            return compare_real(baseline, candidate)
         old, new = _validated(baseline), _validated(candidate)
         regressions = [
             key for key in old if old[key]["fixture_passed"] and not new[key]["fixture_passed"]
@@ -99,14 +103,14 @@ def compare(baseline: dict, candidate: dict) -> dict:
             "metadata_differences": differences,
             "model_quality_delta": None,
             "v2_gate": "NOT_PASSED",
-            "main_merge": "BLOCKED_PENDING_V1_PASS",
+            "main_merge": "BLOCKED_PENDING_V2_REAL_REVIEW",
         }
     except (KeyError, TypeError) as exc:
         raise ValueError(f"invalid evidence schema: {exc}") from exc
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Compare V2 fixture evidence; not model quality")
+    parser = argparse.ArgumentParser(description="Compare compatible V2 mock or real evidence")
     parser.add_argument("baseline", type=Path)
     parser.add_argument("candidate", type=Path)
     parser.add_argument("--output", type=Path, default=Path("benchmark-results/v2-comparison.json"))
@@ -121,7 +125,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     print(json.dumps(result, indent=2))
-    return int(result["regression_detected"] or result["candidate_fixture_failures"] > 0)
+    return int(bool(result["regression_detected"] or result["candidate_fixture_failures"] > 0
+                    or result.get("candidate_runtime_failures", 0)
+                    or result.get("candidate_memory_error")))
 
 
 if __name__ == "__main__":

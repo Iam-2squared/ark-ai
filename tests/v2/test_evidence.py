@@ -19,9 +19,9 @@ def report(tmp_path):
 
 def test_mock_metrics_are_not_model_evidence(report):
     assert report["infrastructure_failure_count"] == 0
-    assert report["v1_gate"] == "PENDING_TARGET_EVIDENCE"
+    assert report["v1_gate"] == "OFFICIAL_PASS"
     assert report["v2_gate"] == "NOT_PASSED"
-    assert report["real_model_evaluation"] == "LOCKED"
+    assert report["real_model_evaluation"] == "NOT_MEASURED_BY_MOCK"
     assert all(v is None for v in report["model_metrics"].values())
     assert all(d["model_pass_rate"] is None for d in report["domains"].values())
     assert all(c["model_passed"] is None for c in report["cases"])
@@ -81,7 +81,7 @@ def test_repeat_runs_and_regression_detect_real_fixture_drop(report, tmp_path, m
     result = compare(report, degraded)
     assert result["regressions"] == ["coding-01"]
     assert result["model_quality_delta"] is None
-    assert result["main_merge"] == "BLOCKED_PENDING_V1_PASS"
+    assert result["main_merge"] == "BLOCKED_PENDING_V2_REAL_REVIEW"
     assert compare(degraded, report)["improvements"] == ["coding-01"]
 
 
@@ -115,7 +115,7 @@ def test_compare_cli_writes_evidence(tmp_path):
     assert json.loads(output.read_text())["comparison_kind"] == "fixture_regression_only"
 
 
-def test_real_model_cli_flag_is_not_available(tmp_path):
+def test_real_model_cli_requires_explicit_config(tmp_path):
     result = subprocess.run(
         [sys.executable, "-m", "ark.evaluation.runner", "--backend", "llama-cpp"],
         capture_output=True,
@@ -124,7 +124,7 @@ def test_real_model_cli_flag_is_not_available(tmp_path):
         cwd=tmp_path,
     )
     assert result.returncode == 2
-    assert "unrecognized arguments" in result.stderr
+    assert "--config is required" in result.stderr
     assert not list(tmp_path.iterdir())
 
 
