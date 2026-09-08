@@ -1,0 +1,8 @@
+{"timestamp": "2026-09-08T20:59:15.023330+00:00", "role": "user", "content": "日本語で短く自己紹介してください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T20:59:25.188580+00:00", "role": "assistant", "content": "こんにちは、私はARKと申します。あなたの近くにいて、必要な情報を提供します。どうぞお気軽にお尋ねください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T20:59:29.694535+00:00", "role": "user", "content": "この会話の合言葉は青いりんごです。覚えてください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T20:59:38.230453+00:00", "role": "assistant", "content": "はい、合言葉は「青いりんご」と覚えました。必要でしたら、いつでもお知らせください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T20:59:50.824916+00:00", "role": "user", "content": "先ほどの合言葉は何ですか？", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T20:59:56.974120+00:00", "role": "assistant", "content": "先ほどの合言葉は「青いりんご」です。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T21:00:13.654031+00:00", "role": "user", "content": "日本語で「新しい会話です」と答えてください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-08T21:00:16.365416+00:00", "role": "assistant", "content": "新しい会話です。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}

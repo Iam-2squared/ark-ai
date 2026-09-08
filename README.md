@@ -18,9 +18,9 @@ Goal: run ARK locally without an external LLM API, chat through a CLI, log sessi
 - [x] Reproducible basic benchmark infrastructure
 - [x] Unit tests and CI
 - [x] Setup and verification documentation
-- [ ] Offline verification on target PC
+- [x] Offline verification on target PC — [reviewed original evidence](evidence/v1/REVIEW.md)
 
-The final unchecked item requires a real GGUF model on the target computer. CI uses a
+V1 is **OFFICIAL PASS** based on reviewed target-PC evidence. CI uses a
 deterministic offline test backend and never downloads model weights.
 
 ## Quick start
@@ -71,4 +71,5 @@ Nonempty output success is not a semantic quality score or an offline PASS.
 See [the roadmap](docs/ROADMAP.md) and [V1 verification](docs/V1_VERIFICATION.md).
 
 For the final target-PC test use [Windows instructions](docs/WINDOWS_SETUP.md) and
-[model selection](docs/MODEL_SELECTION.md). V1 is pending target evidence; V2 is locked.
+[model selection](docs/MODEL_SELECTION.md). V1 evidence is frozen. V2 real-model
+integration is next; V2 promotion still requires its own reviewed real-model gate.
