@@ -1,11 +1,12 @@
 # ARK AI roadmap
 
-The project baseline is V1 through V10. Only V1 is active.
+The project baseline is V1 through V10. V1 final gate is pending. V2 advance development is permitted on its dedicated
+branch; V2 real-model evaluation and main promotion remain blocked until V1 PASS.
 
 | Version | Milestone | Status |
 | --- | --- | --- |
 | V1 | Local Core | Active |
-| V2 | ARK Intelligence | Locked |
+| V2 | ARK Intelligence | Advance branch only; promotion blocked |
 | V3 | Learning & Evaluation | Locked |
 | V4 | Long-Term Memory | Locked |
 | V5 | Tool Intelligence | Locked |

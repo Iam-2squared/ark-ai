@@ -1,3 +1,7 @@
+> **V2 advance-development branch:** V1 real-model/offline gate is still pending.
+> V2 implementation and mock tests are allowed here; **main merge is blocked until
+> V1 formally passes**. See [V2 development](docs/v2/README.md). V1 commands below stay unchanged.
+
 # ARK AI
 
 Local-first personal AI research project. ARK runs a local GGUF model through an
@@ -71,4 +75,5 @@ Nonempty output success is not a semantic quality score or an offline PASS.
 See [the roadmap](docs/ROADMAP.md) and [V1 verification](docs/V1_VERIFICATION.md).
 
 For the final target-PC test use [Windows instructions](docs/WINDOWS_SETUP.md) and
-[model selection](docs/MODEL_SELECTION.md). V1 is pending target evidence; V2 is locked.
+[model selection](docs/MODEL_SELECTION.md). V1 is pending target evidence. V2 real-model evaluation and main promotion are locked;
+V2 advance development is allowed only on its dedicated Draft PR branch.
