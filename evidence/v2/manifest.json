@@ -1,0 +1,35 @@
+{
+  "tested_code_sha": "21f5dbd4efed1a2ee39f47dc0653a1e978f03e29",
+  "files": [
+    {
+      "path": "raw/v2-real-1.json",
+      "uploaded_name": "798fbd9f-edc9-475d-ad8d-2d2f95e48672.json",
+      "sha256": "a507288b5cb3aece2619a3b268d9c13935054ab6dc02f644a9260ec2f9d741e8"
+    },
+    {
+      "path": "raw/v2-real-2.json",
+      "uploaded_name": "ad17cfe7-f0c6-48b4-850e-82dd996d3562.json",
+      "sha256": "15ca4d244696e41d18e314005c6fc66b378ab7dab15f42e8682dccff24d8c3bb"
+    },
+    {
+      "path": "raw/comparison.json",
+      "uploaded_name": "0585b679-862e-4113-bd50-4d4f3540f3ec.json",
+      "sha256": "0ef39c617f825ffdcf5fe82cdd97e2b1aa8fc0b74b5b9cb6f315ab7ab0e1dd7e"
+    },
+    {
+      "path": "raw/v1-regression.json",
+      "uploaded_name": "c35b2049-60de-45ee-86e2-a80f2cbba726.json",
+      "sha256": "a5a71f0fb30023fa07dbdeeeeb7b57d1215c09a84435bc8bc5eab797aa7d8607"
+    },
+    {
+      "path": "raw/v2-session.jsonl",
+      "uploaded_name": "4fead4a7-e47b-46c8-8243-4b50bd5ea7ed.jsonl",
+      "sha256": "41d756738a3cc9e56c359c5e6af48a81059839bf2512db41d3f1e66dbc0054bc"
+    },
+    {
+      "path": "raw/v1-session.jsonl",
+      "uploaded_name": "dd5c51ab-371e-47d5-b7aa-d080b1abde25.jsonl",
+      "sha256": "ed82bc910680da1ed1b4fdf381c8b341c12c2cf8429d52e1384dd40dd04d193b"
+    }
+  ]
+}

@@ -1,3 +1,7 @@
+> V1 and V2: **OFFICIAL PASS** upon the reviewed PR #3 merge.
+> [V2 real-model baseline](evidence/v2/REVIEW.md): 11/12 in each of two runs;
+> math-02 remains FAIL. [V2 usage](docs/v2/REAL_MODEL.md). V3+ stays locked.
+
 # ARK AI
 
 Local-first personal AI research project. ARK runs a local GGUF model through an
@@ -72,4 +76,4 @@ See [the roadmap](docs/ROADMAP.md) and [V1 verification](docs/V1_VERIFICATION.md
 
 For the final target-PC test use [Windows instructions](docs/WINDOWS_SETUP.md) and
 [model selection](docs/MODEL_SELECTION.md). V1 evidence is frozen. V2 real-model
-integration is next; V2 promotion still requires its own reviewed real-model gate.
+integration and real-model review are complete; see the V2 baseline linked above.

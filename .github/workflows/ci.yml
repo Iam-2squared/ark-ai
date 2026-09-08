@@ -29,8 +29,13 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: ruff check .
       - run: pytest
+      # Exercise packaged resources and entrypoints, not only editable source imports.
+      - run: python -m pip install . --no-deps --force-reinstall
       - run: ark-bench --config tests/fixtures/echo.toml --output benchmark-results/ci.json
+      - run: ark-eval --output benchmark-results/v2-baseline.json
+      - run: ark-eval --output benchmark-results/v2-candidate.json
+      - run: ark-compare benchmark-results/v2-baseline.json benchmark-results/v2-candidate.json
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-${{ matrix.os }}-${{ matrix.python-version }}
-          path: benchmark-results/ci.json
+          path: benchmark-results/*.json
