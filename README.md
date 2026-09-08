@@ -33,7 +33,13 @@ cd ark-ai
 python -m venv .venv
 ```
 
-Activate the virtual environment, then install ARK with its local runtime:
+**Windows CPU-only:** follow [the Windows guide](docs/WINDOWS_SETUP.md). It records
+the successfully built Python 3.12 / MSVC x64 / llama-cpp-python 0.3.35 path.
+If that runtime is already installed, keep it and update ARK with
+`python -m pip install -e . --no-deps`.
+
+On other platforms, activate the virtual environment, then install the local runtime
+(a C++ compiler may be required):
 
 ```bash
 python -m pip install -e '.[local]'
@@ -58,7 +64,11 @@ ark-bench --config tests/fixtures/echo.toml
 ```
 
 Benchmark JSON is written under `benchmark-results/` and includes per-prompt latency,
-first-token latency, completion speed, peak process RAM, success/error state, model
-identity, platform, and runtime metadata.
+first-visible-token latency, estimated output speed, peak resident RAM, startup
+failures, model hash/size, settings/seed, platform, and runtime metadata.
+Nonempty output success is not a semantic quality score or an offline PASS.
 
 See [the roadmap](docs/ROADMAP.md) and [V1 verification](docs/V1_VERIFICATION.md).
+
+For the final target-PC test use [Windows instructions](docs/WINDOWS_SETUP.md) and
+[model selection](docs/MODEL_SELECTION.md). V1 is pending target evidence; V2 is locked.

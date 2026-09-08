@@ -8,11 +8,16 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONUTF8: "1"
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -25,3 +30,7 @@ jobs:
       - run: ruff check .
       - run: pytest
       - run: ark-bench --config tests/fixtures/echo.toml --output benchmark-results/ci.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-${{ matrix.os }}-${{ matrix.python-version }}
+          path: benchmark-results/ci.json

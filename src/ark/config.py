@@ -14,6 +14,9 @@ from .models import GenerationConfig
 class ArkConfig:
     backend: str = "llama-cpp"
     model_path: str | None = None
+    model_family: str | None = None
+    parameter_size: str | None = None
+    quantization: str | None = None
     context_size: int = 4096
     threads: int | None = None
     log_directory: str = "logs"
@@ -37,6 +40,9 @@ def load_config(path: str | Path | None = None) -> ArkConfig:
     return ArkConfig(
         backend=str(model.get("backend", "llama-cpp")),
         model_path=model_path,
+        model_family=_optional_str(model.get("family")),
+        parameter_size=_optional_str(model.get("parameter_size")),
+        quantization=_optional_str(model.get("quantization")),
         context_size=int(model.get("context_size", 4096)),
         threads=_optional_int(model.get("threads")),
         log_directory=str(logging.get("directory", "logs")),
@@ -44,6 +50,7 @@ def load_config(path: str | Path | None = None) -> ArkConfig:
             max_tokens=int(generation.get("max_tokens", 512)),
             temperature=float(generation.get("temperature", 0.7)),
             top_p=float(generation.get("top_p", 0.95)),
+            seed=int(generation.get("seed", 42)),
         ),
     )
 

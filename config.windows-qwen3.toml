@@ -1,0 +1,18 @@
+# V1 target-PC starting point. Paths are relative to the repository working directory.
+[model]
+backend = "llama-cpp"
+path = "models/Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+family = "Qwen3-4B-Instruct-2507"
+parameter_size = "4.0B"
+quantization = "Q4_K_M"
+context_size = 4096
+threads = 4
+
+[generation]
+max_tokens = 256
+temperature = 0.2
+top_p = 0.95
+seed = 42
+
+[logging]
+directory = "logs"

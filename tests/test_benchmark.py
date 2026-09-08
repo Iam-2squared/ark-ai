@@ -11,5 +11,5 @@ def test_benchmark_is_reproducible_and_machine_readable(tmp_path: Path) -> None:
     result = run(str(config), output)
     saved = json.loads(output.read_text(encoding="utf-8"))
     assert result["success_rate"] == 1.0
-    assert saved["schema_version"] == 1
-    assert len(saved["cases"]) == 4
+    assert saved["schema_version"] == 2
+    assert len(saved["cases"]) == 6

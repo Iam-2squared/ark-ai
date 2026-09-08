@@ -13,6 +13,7 @@ class GenerationConfig:
     max_tokens: int = 512
     temperature: float = 0.7
     top_p: float = 0.95
+    seed: int = 42
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,7 @@ class LlamaCppBackend:
             "model_path": str(path),
             "n_ctx": context_size,
             "verbose": False,
+            "n_gpu_layers": 0,
         }
         if threads is not None:
             kwargs["n_threads"] = threads
@@ -78,6 +80,7 @@ class LlamaCppBackend:
         return self._last_metrics
 
     def generate(self, messages: list[dict[str, str]], config: GenerationConfig) -> str:
+        self._last_metrics = None
         started = perf_counter()
         chunks = self._llm.create_chat_completion(
             messages=messages,
@@ -85,6 +88,7 @@ class LlamaCppBackend:
             temperature=config.temperature,
             top_p=config.top_p,
             stream=True,
+            seed=config.seed,
         )
         parts: list[str] = []
         first_token_seconds: float | None = None
@@ -119,6 +123,7 @@ class EchoBackend:
 
     def generate(self, messages: list[dict[str, str]], config: GenerationConfig) -> str:
         del config
+        self._last_metrics = None
         started = perf_counter()
         user = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         response = f"ECHO: {user}"

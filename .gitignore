@@ -13,3 +13,6 @@ models/
 *.gguf
 .env
 .DS_Store
+
+.venv-*/
+config.toml
