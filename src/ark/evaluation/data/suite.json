@@ -1,0 +1,17 @@
+{
+  "suite_id": "ark-v2-foundation-1",
+  "cases": [
+    {"id":"math-01","domain":"math","mode":"concise","prompt":"Compute 17 * 6. Return only the number.","scorer":"number","expected":"102"},
+    {"id":"math-02","domain":"math","mode":"concise","prompt":"Compute 3/4 + 1/8. Return only a fraction or decimal.","scorer":"number","expected":"7/8"},
+    {"id":"math-03","domain":"math","mode":"concise","prompt":"Solve 5*x - 7 = 18. Return only x as a number.","scorer":"number","expected":"5"},
+    {"id":"reason-01","domain":"reasoning","mode":"concise","prompt":"All ravens are birds. Kuro is a raven. Is Kuro a bird? Answer only YES or NO.","scorer":"exact","expected":"YES"},
+    {"id":"reason-02","domain":"reasoning","mode":"concise","prompt":"A is before B. C is after B. Which is first? Answer only A, B, or C.","scorer":"exact","expected":"A"},
+    {"id":"conversation-01","domain":"conversation","mode":"concise","prompt":"「準備完了」とだけ日本語で答えてください。","scorer":"exact","expected":"準備完了"},
+    {"id":"conversation-02","domain":"conversation","mode":"structured","prompt":"Return a JSON object with exactly one key status whose string value is ready.","scorer":"json","expected":{"status":"ready"}},
+    {"id":"context-01","domain":"context","mode":"concise","setup":["この会話の合言葉は紫の時計です。覚えてください。"],"prompt":"先ほどの合言葉だけを答えてください。","scorer":"exact","expected":"紫の時計"},
+    {"id":"context-02","domain":"context","mode":"concise","setup":["The project name is Cedar. Remember it.","Correction: the project name is Birch. Use the corrected name."],"prompt":"What is the current project name? Return only the name.","scorer":"exact","expected":"Birch"},
+    {"id":"coding-01","domain":"coding","mode":"coding","prompt":"Write Python function square(n) returning n*n for an integer. Output only one function with a single return expression, no calls or imports.","scorer":"code","entry":"square","parameters":["n"],"tests":[{"args":[0],"expected":0},{"args":[-7],"expected":49},{"args":[12],"expected":144}]},
+    {"id":"coding-02","domain":"coding","mode":"coding","prompt":"Write Python function is_even(n) returning a boolean for whether integer n is even. Output only one function with a single return expression, no calls or imports.","scorer":"code","entry":"is_even","parameters":["n"],"tests":[{"args":[0],"expected":true},{"args":[-3],"expected":false},{"args":[14],"expected":true}]},
+    {"id":"coding-03","domain":"coding","mode":"coding","prompt":"Write Python function larger(a, b) returning the larger integer, returning that integer also when equal. Output only one function with a single return expression; conditional expressions allowed, no calls or imports.","scorer":"code","entry":"larger","parameters":["a","b"],"tests":[{"args":[-2,-9],"expected":-2},{"args":[4,4],"expected":4},{"args":[1,8],"expected":8}]}
+  ]
+}
