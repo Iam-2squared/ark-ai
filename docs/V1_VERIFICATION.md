@@ -1,9 +1,10 @@
 # V1 verification
 
-**V1 code foundation merged; final target-PC gate ACTIVE. V2 LOCKED.**
+**V1 OFFICIAL PASS — [final evidence review](../evidence/v1/REVIEW.md).**
 The target's Python 3.12.10, Windows x64 build tools, native llama-cpp-python 0.3.35
 build/import and ARK installation passed according to user-provided console results.
-They do not yet demonstrate model inference.
+Subsequent original benchmarks and test sessions demonstrate real-model inference;
+the linked review distinguishes measured facts from physical-offline user attestation.
 
 ## Automated gate
 
@@ -29,12 +30,12 @@ Reported throughput is an estimate from visible output tokens including prefill.
 Follow [Windows setup and exact offline commands](WINDOWS_SETUP.md), using
 [the selected model](MODEL_SELECTION.md) and `config.windows-qwen3.toml`.
 
-- [ ] Real GGUF load (correct SHA, test_backend false, startup_success true)
-- [ ] Coherent Japanese conversation
-- [ ] Real-model multi-turn recall (and reset works)
-- [ ] Cold restart and conversation with all network connections disconnected
-- [ ] Two real-model benchmark runs with saved settings, metrics and reviewed answers
-- [ ] Evidence recorded: both JSONs, test chat logs, manual review, commit and hardware
+- [x] Real GGUF load (correct SHA, test_backend false, startup_success true)
+- [x] Coherent Japanese conversation
+- [x] Real-model multi-turn recall (and reset works)
+- [x] Cold restart and conversation with all network connections disconnected
+- [x] Two real-model benchmark runs with saved settings, metrics and reviewed answers
+- [x] Evidence recorded: both JSONs, test chat logs, manual review, commit and hardware
 
 Only reviewed evidence from the target can change these to PASS. CLI errors and
 process crashes must be included in the manual review; a crashed process cannot

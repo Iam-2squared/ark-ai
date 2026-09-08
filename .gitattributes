@@ -1,2 +1,3 @@
-# Preserve frozen evaluation bytes and source fingerprints across Windows/Linux.
+# Preserve frozen suite bytes and source fingerprints.
 * text=auto eol=lf
+evidence/v1/raw/** -text

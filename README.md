@@ -1,6 +1,5 @@
-> **V2 advance-development branch:** V1 real-model/offline gate is still pending.
-> V2 implementation and mock tests are allowed here; **main merge is blocked until
-> V1 formally passes**. See [V2 development](docs/v2/README.md). V1 commands below stay unchanged.
+> V2 integration branch: V1 is OFFICIAL PASS. V2 real-model evidence is pending;
+> PR #3 stays Draft and unmerged. See [V2 target-PC steps](docs/v2/REAL_MODEL.md).
 
 # ARK AI
 
@@ -22,9 +21,9 @@ Goal: run ARK locally without an external LLM API, chat through a CLI, log sessi
 - [x] Reproducible basic benchmark infrastructure
 - [x] Unit tests and CI
 - [x] Setup and verification documentation
-- [ ] Offline verification on target PC
+- [x] Offline verification on target PC — [reviewed original evidence](evidence/v1/REVIEW.md)
 
-The final unchecked item requires a real GGUF model on the target computer. CI uses a
+V1 is **OFFICIAL PASS** based on reviewed target-PC evidence. CI uses a
 deterministic offline test backend and never downloads model weights.
 
 ## Quick start
@@ -75,5 +74,5 @@ Nonempty output success is not a semantic quality score or an offline PASS.
 See [the roadmap](docs/ROADMAP.md) and [V1 verification](docs/V1_VERIFICATION.md).
 
 For the final target-PC test use [Windows instructions](docs/WINDOWS_SETUP.md) and
-[model selection](docs/MODEL_SELECTION.md). V1 is pending target evidence. V2 real-model evaluation and main promotion are locked;
-V2 advance development is allowed only on its dedicated Draft PR branch.
+[model selection](docs/MODEL_SELECTION.md). V1 evidence is frozen. V2 real-model
+integration is next; V2 promotion still requires its own reviewed real-model gate.
