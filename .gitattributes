@@ -1,0 +1,2 @@
+# Preserve frozen evaluation bytes and source fingerprints across Windows/Linux.
+* text=auto eol=lf
