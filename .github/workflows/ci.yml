@@ -36,6 +36,8 @@ jobs:
       # Exercise packaged resources and entrypoints, not only editable source imports.
       - run: python -m pip install . --no-deps --force-reinstall
       - run: ark-ui --help
+      - run: ark-launch --help
+      - run: ark-gate --help
       - run: python scripts/ui_smoke.py
       - run: ark-bench --config tests/fixtures/echo.toml --output benchmark-results/ci.json
       - run: ark-eval --output benchmark-results/v2-baseline.json
