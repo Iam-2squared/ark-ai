@@ -1,4 +1,4 @@
-> V1 and V2: **OFFICIAL PASS** upon the reviewed PR #3 merge.
+> V1, V2 and Local UI v1: **OFFICIAL PASS** upon the reviewed PR #6 merge.
 > [V2 real-model baseline](evidence/v2/REVIEW.md): 11/12 in each of two runs;
 > math-02 remains FAIL. [V2 usage](docs/v2/REAL_MODEL.md). V3+ stays locked.
 
@@ -58,7 +58,7 @@ ark --config config.toml
 
 Commands inside chat: `/reset`, `/exit`.
 
-## Local UI v1 — target-PC gate pending
+## Local UI v1 — reviewed PASS
 
 Use ARK V2 from a browser with the existing GGUF and configuration:
 
@@ -73,8 +73,8 @@ there is no runtime Node.js requirement, cloud service, external font or API key
 `LOCAL MODEL` identifies the inference backend; it does not attest network disconnection.
 
 See [Local UI architecture, Windows setup and completion gate](docs/LOCAL_UI.md).
-This UI is a dedicated branch/Draft PR based on V2. Merge waits for reviewed
-target-PC real-model, browser and offline evidence. V3 PR #5 is separate.
+The target-PC real-model, browser, reset, offline and regression evidence is
+[reviewed and frozen](evidence/local-ui/REVIEW.md). V3 PR #5 remains separate.
 
 ## Development and benchmark
 

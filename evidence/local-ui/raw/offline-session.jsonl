@@ -1,0 +1,5 @@
+{"timestamp": "2026-09-09T00:35:02.585640+00:00", "role": "event", "content": "Local UI V2 session started", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T00:35:27.968332+00:00", "role": "user", "content": "日本語で短く自己紹介してください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T00:35:41.094797+00:00", "role": "assistant", "content": "こんにちは、私はARKと申します。日本語でご質問に答えることを得意としています。どうぞお気軽にお尋ねください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T00:35:47.437708+00:00", "role": "user", "content": "日本語で「オフライン動作確認」とだけ答えてください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T00:35:49.438036+00:00", "role": "assistant", "content": "オフライン動作確認", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}

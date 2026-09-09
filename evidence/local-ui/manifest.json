@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tested_code_sha": "1f4b197605fae6f9a1be8d47072122c6f3154e94",
+  "target": {
+    "browser": "Google Chrome 152.0.7977.83",
+    "platform": "Windows 11 10.0.26200",
+    "python": "3.12.10",
+    "llama_cpp_python": "0.3.35",
+    "cpu": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+    "ram_gib_user_reported": 16
+  },
+  "raw_files": [
+    {"path": "raw/online-session.jsonl", "uploaded_name": "d886d671-d797-494a-81d4-e16605abbfb8.jsonl", "sha256": "5d7876f37540ee0ca9086fd2fc1f2fa451d434d34a00c9ae43b7ee9c2a6a9176"},
+    {"path": "raw/offline-session.jsonl", "uploaded_name": "39de2682-ab37-456f-a379-a6591e295b3d.jsonl", "sha256": "db49800cc8d579813a4ff3a903665e869f9da060122d9d7f1da93a72095b7e15"},
+    {"path": "raw/browser-behavior-session.jsonl", "uploaded_name": "85f4d2b9-1fb2-462a-b622-add8e376b920.jsonl", "sha256": "f6c75557c7f3dcfc8bf421376a8c62515aaa323819bcc305c176c0c40120b63a"},
+    {"path": "raw/offline-reset-session.jsonl", "uploaded_name": "9f142f6a-a83e-4599-8104-f7a21bf06fb9.jsonl", "sha256": "0447c71224f7748a8d134cecc6032a0caec3843e22183a4e9ac0b5bda459bc1b"},
+    {"path": "raw/v1-regression.json", "uploaded_name": "31c79d6b-99d0-46f1-a560-89fa3a3af9ed.json", "sha256": "6d65e34995ff187b5a4c2da0499b0d75a1bb67bc14dc4dd4e8a5dd84c96c6074"},
+    {"path": "raw/v2-regression.json", "uploaded_name": "36e51a1b-65b6-4b23-b143-4a091f4b07e4.json", "sha256": "50057fe659ada0f46ef2890a5d4bd2045b30a614549bb63efb358913aa555dfd"},
+    {"path": "raw/v2-comparison.json", "uploaded_name": "e3eeaa2e-6db2-4c32-a7b8-8df75971931d.json", "sha256": "0ef39c617f825ffdcf5fe82cdd97e2b1aa8fc0b74b5b9cb6f315ab7ab0e1dd7e"}
+  ],
+  "reviewed_external_screenshots": [
+    {"uploaded_name": "fe4109c7-171d-443d-a0b7-0a34ba850ab9.png", "sha256": "fbe0ab5ae7038c1d7df4fb928983048c4d3533e37610f173bf239f170fee4b80", "bytes": 170215, "pixels": "1918x1078", "review": "missing-config error; Needs attention; no LOCAL MODEL claim; input and reset disabled"},
+    {"uploaded_name": "ca9b83b9-9428-4d2e-979e-e62c79fd10ae.png", "sha256": "8beef3916abc49abe090f07ca07b0448e697529e5dd9e4337cd199992ea1b4af", "bytes": 135405, "pixels": "1918x1078", "review": "Ready; LOCAL MODEL; Qwen/Q4_K_M; Japanese passphrase recall"},
+    {"uploaded_name": "c3438f1f-6b2a-4b9b-867c-4c92dc995269.png", "sha256": "c850726a679a57d710d9be2c39736d5ddc2b239ceb3daf60e1a11041034fe52b", "bytes": 121912, "pixels": "1918x1078", "review": "Ready after reset; prior transcript absent; post-reset response is 未指定"}
+  ],
+  "screenshots_stored_in_public_repo": false
+}

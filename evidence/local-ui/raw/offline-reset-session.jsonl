@@ -1,0 +1,8 @@
+{"timestamp": "2026-09-09T14:21:20.996002+00:00", "role": "event", "content": "Local UI V2 session started", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:21:24.811270+00:00", "role": "user", "content": "この会話の合言葉は青いりんごです。覚えてください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:21:45.045368+00:00", "role": "assistant", "content": "はい、合言葉「青いりんご」は覚えてあります。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:22:25.067096+00:00", "role": "user", "content": "先ほどの合言葉は何ですか？", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:22:33.729461+00:00", "role": "assistant", "content": "先ほどの合言葉は「青いりんご」です。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:23:52.674787+00:00", "role": "event", "content": "Conversation reset; history empty", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:23:54.841354+00:00", "role": "user", "content": "この新しい会話で合言葉をまだ伝えていない場合は「未指定」とだけ答えてください。", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T14:23:58.576505+00:00", "role": "assistant", "content": "未指定", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}

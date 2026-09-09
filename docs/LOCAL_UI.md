@@ -1,6 +1,6 @@
 # ARK Local UI v1
 
-Status: **IMPLEMENTED / TARGET-PC GATE PENDING / MERGE BLOCKED**.
+Status: **REVIEWED PASS / OFFICIAL UPON PR #6 MERGE**.
 Branch: `feature/local-ui`, based on main at
 `6195beec55a2f97f68c53a1fef890f1f1422d6f1` (V2 official freeze).
 V1 freeze remains `7e46a4529879243b4a5bd52bb6575d11c1ec0183`.
@@ -199,6 +199,10 @@ starts the packaged mock UI, while preserving V1 benchmark/V2 mock regression.
 The Work browser could not open 127.0.0.1 (`ERR_BLOCKED_BY_CLIENT`). Therefore visual
 layout, actual browser interaction, Windows IME and real/offline UI evidence remain
 target-PC gates. Passing tests does not set Local UI to official PASS.
+
+Those target-PC gates were subsequently completed and independently reviewed from
+the submitted originals. See [the frozen Local UI evidence](../evidence/local-ui/REVIEW.md).
+The historical procedure and limitations above remain for reproducibility.
 
 | Completion item | Evidence required |
 | --- | --- |

@@ -1,0 +1,1285 @@
+{
+  "schema_version": 2,
+  "contract_version": 1,
+  "suite_id": "ark-v2-foundation-1",
+  "suite_sha256": "bbf8556266fc473cf6be8039b0e40656cb06086958b3d6a98d4d338c11908c1b",
+  "scorer_version": "ark-scorers-1",
+  "scorer_sha256": "4b61329cb4b522f3e623c11c20f8a35044873e8dd85fa958edfca42541e1347b",
+  "policy_version": "ark-policy-1",
+  "policy_sha256": "8d2e7e4d06014e4d06e8ad7007c88137d0838a41d1e193d2e6fafff8886bc05f",
+  "implementation_sha256": "d517645ff8f097ca0db2a9a45cf779dc36ba3db03e04b2d54382085c59f107a4",
+  "timestamp": "2026-09-09T00:44:59.620045+00:00",
+  "measurement_kind": "real",
+  "model_performance_status": "MEASURED_PENDING_REVIEW",
+  "v1_gate": "OFFICIAL_PASS",
+  "v1_evidence_freeze_sha": "7e46a4529879243b4a5bd52bb6575d11c1ec0183",
+  "v2_gate": "PENDING_REVIEW",
+  "main_merge": "BLOCKED_PENDING_V2_REAL_REVIEW",
+  "startup_success": true,
+  "startup_error": null,
+  "model_load_seconds": 4.11997970000084,
+  "model_identity": {
+    "name": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "family": "Qwen3-4B-Instruct-2507",
+    "parameter_size": "4.0B",
+    "quantization": "Q4_K_M",
+    "weights_sha256": "2fde00ce69dd4899c70d020845e2638353015bba0fdf161b3eb965f2bca4464e",
+    "bytes": 2497280736
+  },
+  "configuration": {
+    "backend": "llama-cpp",
+    "model_path": "models/Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "model_family": "Qwen3-4B-Instruct-2507",
+    "parameter_size": "4.0B",
+    "quantization": "Q4_K_M",
+    "context_size": 4096,
+    "threads": 4,
+    "log_directory": "logs",
+    "generation": {
+      "max_tokens": 256,
+      "temperature": 0.2,
+      "top_p": 0.95,
+      "seed": 42
+    }
+  },
+  "runtime": {
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "cpu": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+    "ark_ai": "0.1.0",
+    "llama_cpp": "0.3.35"
+  },
+  "network_disconnected_user_attested": true,
+  "offline_verified_automatically": false,
+  "system_instructions": {
+    "concise": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format.",
+    "explanation": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nExplain the result with clear, verifiable steps and assumptions.",
+    "coding": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nReturn the requested code; respect the specified interface and constraints.",
+    "structured": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nReturn valid JSON only, following the user's requested structure."
+  },
+  "measurement_notes": {
+    "tokens": "Visible-output retokenization estimates; exact token fields remain null.",
+    "speed": "Visible output estimate / generation wall time, includes prefill.",
+    "context": "UTF-8/framing heuristic, not exact chat-template tokenization.",
+    "memory": "Process lifetime peak resident memory, including native allocations.",
+    "grading": "Frozen restricted scorers; low scores do not automatically fail V2."
+  },
+  "cases": [
+    {
+      "task_id": "math-01",
+      "domain": "math",
+      "prompt": "Compute 17 * 6. Return only the number.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "math-01",
+        "domain": "math",
+        "mode": "concise",
+        "prompt": "Compute 17 * 6. Return only the number.",
+        "scorer": "number",
+        "expected": "102"
+      },
+      "response": "102",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 6.379299299995182,
+      "turns": [
+        {
+          "request": {
+            "request_id": "215c374a-ad80-4907-b9cc-4b395dc4ac78",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "Compute 17 * 6. Return only the number."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 390,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "102",
+          "latency_seconds": 6.378148299991153,
+          "first_token_seconds": 5.641852999993716,
+          "completion_tokens_estimate": 3,
+          "tokens_per_second_estimate": 0.47045374087210445
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 5.641852999993716,
+        "tokens_per_second_estimate": 0.47045374087210445,
+        "completion_tokens_estimate": 3,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 390,
+        "context_utilization_estimate": 0.17333984375
+      }
+    },
+    {
+      "task_id": "math-02",
+      "domain": "math",
+      "prompt": "Compute 3/4 + 1/8. Return only a fraction or decimal.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "math-02",
+        "domain": "math",
+        "mode": "concise",
+        "prompt": "Compute 3/4 + 1/8. Return only a fraction or decimal.",
+        "scorer": "number",
+        "expected": "7/8"
+      },
+      "response": "3/4 + 1/8 = 7/8",
+      "model_passed": false,
+      "fixture_passed": null,
+      "failure_reason": "invalid_answer: ValueError: expected only an integer, decimal or fraction",
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 4.431081200003973,
+      "turns": [
+        {
+          "request": {
+            "request_id": "728c9b91-5d63-4766-8e9d-51f19baf49c1",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "Compute 3/4 + 1/8. Return only a fraction or decimal."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 404,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "3/4 + 1/8 = 7/8",
+          "latency_seconds": 4.430803600000218,
+          "first_token_seconds": 1.6671474000031594,
+          "completion_tokens_estimate": 13,
+          "tokens_per_second_estimate": 2.9347235314409925
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 1.6671474000031594,
+        "tokens_per_second_estimate": 2.9347235314409925,
+        "completion_tokens_estimate": 13,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 404,
+        "context_utilization_estimate": 0.1767578125
+      }
+    },
+    {
+      "task_id": "math-03",
+      "domain": "math",
+      "prompt": "Solve 5*x - 7 = 18. Return only x as a number.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "math-03",
+        "domain": "math",
+        "mode": "concise",
+        "prompt": "Solve 5*x - 7 = 18. Return only x as a number.",
+        "scorer": "number",
+        "expected": "5"
+      },
+      "response": "5",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 2.0226957999984734,
+      "turns": [
+        {
+          "request": {
+            "request_id": "e15d5124-e50a-4c3d-a08a-edacfa16c561",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "Solve 5*x - 7 = 18. Return only x as a number."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 397,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "5",
+          "latency_seconds": 2.0223668000107864,
+          "first_token_seconds": 1.7910055000102147,
+          "completion_tokens_estimate": 1,
+          "tokens_per_second_estimate": 0.4947848930079388
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 1.7910055000102147,
+        "tokens_per_second_estimate": 0.4947848930079388,
+        "completion_tokens_estimate": 1,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 397,
+        "context_utilization_estimate": 0.175048828125
+      }
+    },
+    {
+      "task_id": "reason-01",
+      "domain": "reasoning",
+      "prompt": "All ravens are birds. Kuro is a raven. Is Kuro a bird? Answer only YES or NO.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "reason-01",
+        "domain": "reasoning",
+        "mode": "concise",
+        "prompt": "All ravens are birds. Kuro is a raven. Is Kuro a bird? Answer only YES or NO.",
+        "scorer": "exact",
+        "expected": "YES"
+      },
+      "response": "YES",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 2.5218481999909272,
+      "turns": [
+        {
+          "request": {
+            "request_id": "211b2df9-029f-4ace-aae4-1fbd1b1f6424",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "All ravens are birds. Kuro is a raven. Is Kuro a bird? Answer only YES or NO."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 428,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "YES",
+          "latency_seconds": 2.5216179999988526,
+          "first_token_seconds": 2.271693900009268,
+          "completion_tokens_estimate": 1,
+          "tokens_per_second_estimate": 0.3967965503456972
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 2.271693900009268,
+        "tokens_per_second_estimate": 0.3967965503456972,
+        "completion_tokens_estimate": 1,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 428,
+        "context_utilization_estimate": 0.1826171875
+      }
+    },
+    {
+      "task_id": "reason-02",
+      "domain": "reasoning",
+      "prompt": "A is before B. C is after B. Which is first? Answer only A, B, or C.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "reason-02",
+        "domain": "reasoning",
+        "mode": "concise",
+        "prompt": "A is before B. C is after B. Which is first? Answer only A, B, or C.",
+        "scorer": "exact",
+        "expected": "A"
+      },
+      "response": "A",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 2.474212200002512,
+      "turns": [
+        {
+          "request": {
+            "request_id": "b4e3c0ea-04e5-435b-a9f3-e234246f5b27",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "A is before B. C is after B. Which is first? Answer only A, B, or C."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 419,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "A",
+          "latency_seconds": 2.4739329000003636,
+          "first_token_seconds": 2.2289893999986816,
+          "completion_tokens_estimate": 1,
+          "tokens_per_second_estimate": 0.40441977430008547
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 2.2289893999986816,
+        "tokens_per_second_estimate": 0.40441977430008547,
+        "completion_tokens_estimate": 1,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 419,
+        "context_utilization_estimate": 0.180419921875
+      }
+    },
+    {
+      "task_id": "conversation-01",
+      "domain": "conversation",
+      "prompt": "「準備完了」とだけ日本語で答えてください。",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "conversation-01",
+        "domain": "conversation",
+        "mode": "concise",
+        "prompt": "「準備完了」とだけ日本語で答えてください。",
+        "scorer": "exact",
+        "expected": "準備完了"
+      },
+      "response": "準備完了",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 2.4526359000010416,
+      "turns": [
+        {
+          "request": {
+            "request_id": "bc8eeadd-d1bc-47b9-9cc0-db78a1e04c73",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "「準備完了」とだけ日本語で答えてください。"
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 414,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "準備完了",
+          "latency_seconds": 2.4523965999978827,
+          "first_token_seconds": 1.7996885000029579,
+          "completion_tokens_estimate": 2,
+          "tokens_per_second_estimate": 0.8157673803396145
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 1.7996885000029579,
+        "tokens_per_second_estimate": 0.8157673803396145,
+        "completion_tokens_estimate": 2,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 414,
+        "context_utilization_estimate": 0.17919921875
+      }
+    },
+    {
+      "task_id": "conversation-02",
+      "domain": "conversation",
+      "prompt": "Return a JSON object with exactly one key status whose string value is ready.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "conversation-02",
+        "domain": "conversation",
+        "mode": "structured",
+        "prompt": "Return a JSON object with exactly one key status whose string value is ready.",
+        "scorer": "json",
+        "expected": {
+          "status": "ready"
+        }
+      },
+      "response": "{\"status\": \"ready\"}",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 4.985762099997373,
+      "turns": [
+        {
+          "request": {
+            "request_id": "15ebd092-fb0d-497a-82b4-0ab9b2240c40",
+            "mode": "structured",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nReturn valid JSON only, following the user's requested structure."
+                },
+                {
+                  "role": "user",
+                  "content": "Return a JSON object with exactly one key status whose string value is ready."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 436,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "{\"status\": \"ready\"}",
+          "latency_seconds": 4.985458900002413,
+          "first_token_seconds": 3.3642477999965195,
+          "completion_tokens_estimate": 6,
+          "tokens_per_second_estimate": 1.2037925001185625
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 3.3642477999965195,
+        "tokens_per_second_estimate": 1.2037925001185625,
+        "completion_tokens_estimate": 6,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 436,
+        "context_utilization_estimate": 0.1845703125
+      }
+    },
+    {
+      "task_id": "context-01",
+      "domain": "context",
+      "prompt": "先ほどの合言葉だけを答えてください。",
+      "setup_prompts": [
+        "この会話の合言葉は紫の時計です。覚えてください。"
+      ],
+      "scoring_contract": {
+        "id": "context-01",
+        "domain": "context",
+        "mode": "concise",
+        "setup": [
+          "この会話の合言葉は紫の時計です。覚えてください。"
+        ],
+        "prompt": "先ほどの合言葉だけを答えてください。",
+        "scorer": "exact",
+        "expected": "紫の時計"
+      },
+      "response": "紫の時計",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 12.1610376000026,
+      "turns": [
+        {
+          "request": {
+            "request_id": "8bf326fd-4504-4981-9b18-d4e5d96fcfd8",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "この会話の合言葉は紫の時計です。覚えてください。"
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 423,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "「紫の時計」はこの会話の合言葉として覚えてあります。",
+          "latency_seconds": 9.21917699999176,
+          "first_token_seconds": 4.045336199997109,
+          "completion_tokens_estimate": 19,
+          "tokens_per_second_estimate": 2.061089857235692
+        },
+        {
+          "request": {
+            "request_id": "914e4cda-0fd2-4c17-8e35-dc91b54dd206",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "この会話の合言葉は紫の時計です。覚えてください。"
+                },
+                {
+                  "role": "assistant",
+                  "content": "「紫の時計」はこの会話の合言葉として覚えてあります。"
+                },
+                {
+                  "role": "user",
+                  "content": "先ほどの合言葉だけを答えてください。"
+                }
+              ],
+              "retained_history": [
+                {
+                  "role": "user",
+                  "content": "この会話の合言葉は紫の時計です。覚えてください。"
+                },
+                {
+                  "role": "assistant",
+                  "content": "「紫の時計」はこの会話の合言葉として覚えてあります。"
+                }
+              ],
+              "prompt_tokens_estimate": 619,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "紫の時計",
+          "latency_seconds": 2.9416074000037042,
+          "first_token_seconds": 1.928705500002252,
+          "completion_tokens_estimate": 4,
+          "tokens_per_second_estimate": 1.3601137925603084
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 1.928705500002252,
+        "tokens_per_second_estimate": 1.3601137925603084,
+        "completion_tokens_estimate": 4,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 619,
+        "context_utilization_estimate": 0.229248046875
+      }
+    },
+    {
+      "task_id": "context-02",
+      "domain": "context",
+      "prompt": "What is the current project name? Return only the name.",
+      "setup_prompts": [
+        "The project name is Cedar. Remember it.",
+        "Correction: the project name is Birch. Use the corrected name."
+      ],
+      "scoring_contract": {
+        "id": "context-02",
+        "domain": "context",
+        "mode": "concise",
+        "setup": [
+          "The project name is Cedar. Remember it.",
+          "Correction: the project name is Birch. Use the corrected name."
+        ],
+        "prompt": "What is the current project name? Return only the name.",
+        "scorer": "exact",
+        "expected": "Birch"
+      },
+      "response": "Birch",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": null,
+      "latency_seconds": 11.94449190000887,
+      "turns": [
+        {
+          "request": {
+            "request_id": "ba3864b0-3668-4e9f-b620-0c53dc7d18bd",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "The project name is Cedar. Remember it."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 390,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "Cedar. Remembered.",
+          "latency_seconds": 2.971988399993279,
+          "first_token_seconds": 1.3651210999960313,
+          "completion_tokens_estimate": 6,
+          "tokens_per_second_estimate": 2.0194696394816476
+        },
+        {
+          "request": {
+            "request_id": "b34affe7-cd63-4e62-9e23-878d47e505da",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "The project name is Cedar. Remember it."
+                },
+                {
+                  "role": "assistant",
+                  "content": "Cedar. Remembered."
+                },
+                {
+                  "role": "user",
+                  "content": "Correction: the project name is Birch. Use the corrected name."
+                }
+              ],
+              "retained_history": [
+                {
+                  "role": "user",
+                  "content": "The project name is Cedar. Remember it."
+                },
+                {
+                  "role": "assistant",
+                  "content": "Cedar. Remembered."
+                }
+              ],
+              "prompt_tokens_estimate": 534,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "Birch. Updated and remembered.",
+          "latency_seconds": 5.358011399992392,
+          "first_token_seconds": 2.482337200010079,
+          "completion_tokens_estimate": 8,
+          "tokens_per_second_estimate": 1.4933473150434007
+        },
+        {
+          "request": {
+            "request_id": "b4bde5a5-1aa3-4b1d-a14f-d1dd25b49bad",
+            "mode": "concise",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nKeep the answer concise and respect the requested format."
+                },
+                {
+                  "role": "user",
+                  "content": "The project name is Cedar. Remember it."
+                },
+                {
+                  "role": "assistant",
+                  "content": "Cedar. Remembered."
+                },
+                {
+                  "role": "user",
+                  "content": "Correction: the project name is Birch. Use the corrected name."
+                },
+                {
+                  "role": "assistant",
+                  "content": "Birch. Updated and remembered."
+                },
+                {
+                  "role": "user",
+                  "content": "What is the current project name? Return only the name."
+                }
+              ],
+              "retained_history": [
+                {
+                  "role": "user",
+                  "content": "The project name is Cedar. Remember it."
+                },
+                {
+                  "role": "assistant",
+                  "content": "Cedar. Remembered."
+                },
+                {
+                  "role": "user",
+                  "content": "Correction: the project name is Birch. Use the corrected name."
+                },
+                {
+                  "role": "assistant",
+                  "content": "Birch. Updated and remembered."
+                }
+              ],
+              "prompt_tokens_estimate": 683,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "Birch",
+          "latency_seconds": 3.614070700001321,
+          "first_token_seconds": 2.695499599998584,
+          "completion_tokens_estimate": 3,
+          "tokens_per_second_estimate": 0.830284114923046
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 2.695499599998584,
+        "tokens_per_second_estimate": 0.830284114923046,
+        "completion_tokens_estimate": 3,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 683,
+        "context_utilization_estimate": 0.244873046875
+      }
+    },
+    {
+      "task_id": "coding-01",
+      "domain": "coding",
+      "prompt": "Write Python function square(n) returning n*n for an integer. Output only one function with a single return expression, no calls or imports.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "coding-01",
+        "domain": "coding",
+        "mode": "coding",
+        "prompt": "Write Python function square(n) returning n*n for an integer. Output only one function with a single return expression, no calls or imports.",
+        "scorer": "code",
+        "entry": "square",
+        "parameters": [
+          "n"
+        ],
+        "tests": [
+          {
+            "args": [
+              0
+            ],
+            "expected": 0
+          },
+          {
+            "args": [
+              -7
+            ],
+            "expected": 49
+          },
+          {
+            "args": [
+              12
+            ],
+            "expected": 144
+          }
+        ]
+      },
+      "response": "def square(n):\n    return n * n",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": [
+        {
+          "args": [
+            0
+          ],
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "args": [
+            -7
+          ],
+          "expected": 49,
+          "actual": 49,
+          "passed": true
+        },
+        {
+          "args": [
+            12
+          ],
+          "expected": 144,
+          "actual": 144,
+          "passed": true
+        }
+      ],
+      "latency_seconds": 6.182848500000546,
+      "turns": [
+        {
+          "request": {
+            "request_id": "c33b54a8-91a8-4788-b445-d92de60e6ee4",
+            "mode": "coding",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nReturn the requested code; respect the specified interface and constraints."
+                },
+                {
+                  "role": "user",
+                  "content": "Write Python function square(n) returning n*n for an integer. Output only one function with a single return expression, no calls or imports."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 509,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "def square(n):\n    return n * n",
+          "latency_seconds": 6.182324900000822,
+          "first_token_seconds": 4.148455500006094,
+          "completion_tokens_estimate": 9,
+          "tokens_per_second_estimate": 1.4559317839660253
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 4.148455500006094,
+        "tokens_per_second_estimate": 1.4559317839660253,
+        "completion_tokens_estimate": 9,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 509,
+        "context_utilization_estimate": 0.202392578125
+      }
+    },
+    {
+      "task_id": "coding-02",
+      "domain": "coding",
+      "prompt": "Write Python function is_even(n) returning a boolean for whether integer n is even. Output only one function with a single return expression, no calls or imports.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "coding-02",
+        "domain": "coding",
+        "mode": "coding",
+        "prompt": "Write Python function is_even(n) returning a boolean for whether integer n is even. Output only one function with a single return expression, no calls or imports.",
+        "scorer": "code",
+        "entry": "is_even",
+        "parameters": [
+          "n"
+        ],
+        "tests": [
+          {
+            "args": [
+              0
+            ],
+            "expected": true
+          },
+          {
+            "args": [
+              -3
+            ],
+            "expected": false
+          },
+          {
+            "args": [
+              14
+            ],
+            "expected": true
+          }
+        ]
+      },
+      "response": "def is_even(n):\n    return n % 2 == 0",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": [
+        {
+          "args": [
+            0
+          ],
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "args": [
+            -3
+          ],
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "args": [
+            14
+          ],
+          "expected": true,
+          "actual": true,
+          "passed": true
+        }
+      ],
+      "latency_seconds": 4.781819100011489,
+      "turns": [
+        {
+          "request": {
+            "request_id": "fae7e9ce-6946-407e-8266-dd6db1dda871",
+            "mode": "coding",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nReturn the requested code; respect the specified interface and constraints."
+                },
+                {
+                  "role": "user",
+                  "content": "Write Python function is_even(n) returning a boolean for whether integer n is even. Output only one function with a single return expression, no calls or imports."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 531,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "def is_even(n):\n    return n % 2 == 0",
+          "latency_seconds": 4.781198100012261,
+          "first_token_seconds": 2.1384529000060866,
+          "completion_tokens_estimate": 14,
+          "tokens_per_second_estimate": 2.9287948059546967
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 2.1384529000060866,
+        "tokens_per_second_estimate": 2.9287948059546967,
+        "completion_tokens_estimate": 14,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 531,
+        "context_utilization_estimate": 0.207763671875
+      }
+    },
+    {
+      "task_id": "coding-03",
+      "domain": "coding",
+      "prompt": "Write Python function larger(a, b) returning the larger integer, returning that integer also when equal. Output only one function with a single return expression; conditional expressions allowed, no calls or imports.",
+      "setup_prompts": [],
+      "scoring_contract": {
+        "id": "coding-03",
+        "domain": "coding",
+        "mode": "coding",
+        "prompt": "Write Python function larger(a, b) returning the larger integer, returning that integer also when equal. Output only one function with a single return expression; conditional expressions allowed, no calls or imports.",
+        "scorer": "code",
+        "entry": "larger",
+        "parameters": [
+          "a",
+          "b"
+        ],
+        "tests": [
+          {
+            "args": [
+              -2,
+              -9
+            ],
+            "expected": -2
+          },
+          {
+            "args": [
+              4,
+              4
+            ],
+            "expected": 4
+          },
+          {
+            "args": [
+              1,
+              8
+            ],
+            "expected": 8
+          }
+        ]
+      },
+      "response": "def larger(a, b):\n    return a if a >= b else b",
+      "model_passed": true,
+      "fixture_passed": null,
+      "failure_reason": null,
+      "runtime_error": null,
+      "scoring_details": [
+        {
+          "args": [
+            -2,
+            -9
+          ],
+          "expected": -2,
+          "actual": -2,
+          "passed": true
+        },
+        {
+          "args": [
+            4,
+            4
+          ],
+          "expected": 4,
+          "actual": 4,
+          "passed": true
+        },
+        {
+          "args": [
+            1,
+            8
+          ],
+          "expected": 8,
+          "actual": 8,
+          "passed": true
+        }
+      ],
+      "latency_seconds": 5.745793499998399,
+      "turns": [
+        {
+          "request": {
+            "request_id": "04a29f6a-d214-4f7c-bbcd-49b3b652f9ec",
+            "mode": "coding",
+            "context": {
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are ARK, a local-first AI assistant. Follow the user's requested language. Be accurate and explicit about uncertainty. Do not invent completed actions. Provide the answer and, when useful, a brief explanation.\nReturn the requested code; respect the specified interface and constraints."
+                },
+                {
+                  "role": "user",
+                  "content": "Write Python function larger(a, b) returning the larger integer, returning that integer also when equal. Output only one function with a single return expression; conditional expressions allowed, no calls or imports."
+                }
+              ],
+              "retained_history": [],
+              "prompt_tokens_estimate": 585,
+              "counting_method": "utf8_bytes_plus_framing_estimate_v1",
+              "dropped_turns": 0,
+              "context_capacity": 4096,
+              "reserved_output_tokens": 256,
+              "safety_margin": 64
+            },
+            "controls": {
+              "max_tokens": 256,
+              "temperature": 0.2,
+              "top_p": 0.95,
+              "seed": 42
+            },
+            "policy_version": "ark-policy-1"
+          },
+          "text": "def larger(a, b):\n    return a if a >= b else b",
+          "latency_seconds": 5.745460600010119,
+          "first_token_seconds": 2.5947130999993533,
+          "completion_tokens_estimate": 15,
+          "tokens_per_second_estimate": 2.610999052836027
+        }
+      ],
+      "model_metrics": {
+        "first_token_seconds": 2.5947130999993533,
+        "tokens_per_second_estimate": 2.610999052836027,
+        "completion_tokens_estimate": 15,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "prompt_tokens_estimate": 585,
+        "context_utilization_estimate": 0.220947265625
+      }
+    }
+  ],
+  "capabilities": {
+    "context_capacity": 4096,
+    "chat_template_supported": true,
+    "source": "configured context; llama-cpp chat API; template compatibility needs target review",
+    "languages": [],
+    "coding_evidence": "not_measured",
+    "generation_controls": [
+      "max_tokens",
+      "temperature",
+      "top_p",
+      "seed"
+    ]
+  },
+  "domains": {
+    "conversation": {
+      "case_count": 2,
+      "model_passed": 2,
+      "model_pass_rate": 1.0
+    },
+    "context": {
+      "case_count": 2,
+      "model_passed": 2,
+      "model_pass_rate": 1.0
+    },
+    "math": {
+      "case_count": 3,
+      "model_passed": 2,
+      "model_pass_rate": 0.6666666666666666
+    },
+    "reasoning": {
+      "case_count": 2,
+      "model_passed": 2,
+      "model_pass_rate": 1.0
+    },
+    "coding": {
+      "case_count": 3,
+      "model_passed": 3,
+      "model_pass_rate": 1.0
+    }
+  },
+  "model_failures": 1,
+  "runtime_failure_count": 0,
+  "elapsed_seconds": 76.88785949999874,
+  "peak_ram_mib": 4780.9453125,
+  "memory_error": null
+}

@@ -1,0 +1,146 @@
+{
+  "schema_version": 2,
+  "suite": "v1-final-gate-1",
+  "timestamp": "2026-09-09T00:44:17.087929+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10",
+  "cpu": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+  "ram_gib_user_reported": 16.0,
+  "runtime_versions": {
+    "ark-ai": "0.1.0",
+    "llama-cpp-python": "0.3.35"
+  },
+  "network_disconnected_user_attested": true,
+  "offline_verified_automatically": false,
+  "semantic_review": {
+    "japanese": "pending",
+    "multi_turn": "pending"
+  },
+  "v1_final_gate": "pending_human_review",
+  "startup_success": true,
+  "startup_error": null,
+  "cases": [
+    {
+      "category": "prompt",
+      "prompt": "Reply with exactly: ARK_OK",
+      "response": "ARK_OK",
+      "latency_seconds": 3.601144500004011,
+      "success": true,
+      "error": null,
+      "generation": {
+        "elapsed_seconds": 3.599738500008243,
+        "first_token_seconds": 3.1820357000106014,
+        "completion_tokens_estimate": 2,
+        "tokens_per_second_estimate": 0.5555959134241057
+      }
+    },
+    {
+      "category": "reasoning",
+      "prompt": "If all ravens are birds and Kuro is a raven, what is Kuro?",
+      "response": "Kuro is a raven. Since all ravens are birds and Kuro is a raven, Kuro is a bird.",
+      "latency_seconds": 7.027889999997569,
+      "success": true,
+      "error": null,
+      "generation": {
+        "elapsed_seconds": 7.026326599996537,
+        "first_token_seconds": 1.6993873000028543,
+        "completion_tokens_estimate": 27,
+        "tokens_per_second_estimate": 3.842690716940671
+      }
+    },
+    {
+      "category": "coding",
+      "prompt": "Write a Python function that returns the square of an integer.",
+      "response": "```python\ndef square(n):\n    return n ** 2\n```",
+      "latency_seconds": 3.9769421000091825,
+      "success": true,
+      "error": null,
+      "generation": {
+        "elapsed_seconds": 3.9754889000032563,
+        "first_token_seconds": 1.0907004000036977,
+        "completion_tokens_estimate": 15,
+        "tokens_per_second_estimate": 3.7731208355248365
+      }
+    },
+    {
+      "category": "japanese",
+      "prompt": "日本語で短く自己紹介してください。",
+      "response": "こんにちは、私はARKと申します。あなたの近くにいて、必要なときに役立つように、日本語でサポートします。",
+      "latency_seconds": 5.768424499998218,
+      "success": true,
+      "error": null,
+      "generation": {
+        "elapsed_seconds": 5.7664339000039035,
+        "first_token_seconds": 1.0396916000026977,
+        "completion_tokens_estimate": 26,
+        "tokens_per_second_estimate": 4.508852516280886
+      }
+    },
+    {
+      "category": "memory_setup",
+      "prompt": "この会話の合言葉は青いりんごです。覚えてください。",
+      "response": "はい、この会話の合言葉は「青いりんご」です。覚えてあります。",
+      "latency_seconds": 5.667901000007987,
+      "success": true,
+      "error": null,
+      "generation": {
+        "elapsed_seconds": 5.666480399988359,
+        "first_token_seconds": 1.4750663000013446,
+        "completion_tokens_estimate": 24,
+        "tokens_per_second_estimate": 4.235433338841039
+      }
+    },
+    {
+      "category": "memory_recall",
+      "prompt": "先ほどの合言葉は何ですか？",
+      "response": "先ほどの合言葉は「青いりんご」です。",
+      "latency_seconds": 3.7825108999968506,
+      "success": true,
+      "error": null,
+      "generation": {
+        "elapsed_seconds": 3.7812700999929802,
+        "first_token_seconds": 1.1229423000040697,
+        "completion_tokens_estimate": 16,
+        "tokens_per_second_estimate": 4.231382465915276
+      }
+    }
+  ],
+  "success_rate": 1.0,
+  "measurement_notes": {
+    "success_rate": "Nonempty responses only; not correctness or V1 PASS.",
+    "tokens": "Retokenized visible output estimate; excludes hidden/special tokens.",
+    "speed": "Estimated visible output tokens / generation wall time, includes prefill.",
+    "first_token": "Time to first nonempty streamed text, including prefill.",
+    "memory": "Process lifetime peak resident memory, includes native allocations.",
+    "echo": "Mock output is never evidence of model ability or real-model offline PASS."
+  },
+  "configuration": {
+    "backend": "llama-cpp",
+    "model_path": "models/Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "model_family": "Qwen3-4B-Instruct-2507",
+    "parameter_size": "4.0B",
+    "quantization": "Q4_K_M",
+    "context_size": 4096,
+    "threads": 4,
+    "log_directory": "logs",
+    "generation": {
+      "max_tokens": 256,
+      "temperature": 0.2,
+      "top_p": 0.95,
+      "seed": 42
+    }
+  },
+  "system_prompt": "You are ARK, a local-first personal AI. Be accurate, concise, and explicit when uncertain.",
+  "model_file": {
+    "filename": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+    "bytes": 2497280736,
+    "sha256": "2fde00ce69dd4899c70d020845e2638353015bba0fdf161b3eb965f2bca4464e"
+  },
+  "model_load_seconds": 4.709595799999079,
+  "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+  "test_backend": false,
+  "failure_count": 0,
+  "elapsed_seconds": 41.27178479998838,
+  "peak_ram_mib": 4760.625,
+  "memory_error": null
+}
