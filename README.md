@@ -58,6 +58,24 @@ ark --config config.toml
 
 Commands inside chat: `/reset`, `/exit`.
 
+## Local UI v1 — target-PC gate pending
+
+Use ARK V2 from a browser with the existing GGUF and configuration:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e . --no-deps
+.\.venv\Scripts\ark-ui.exe --config config.toml
+```
+
+Open **http://127.0.0.1:8765**. The model loads once, then the Japanese chat UI
+uses V2's existing context, response policy and reset. All assets are bundled;
+there is no runtime Node.js requirement, cloud service, external font or API key.
+`LOCAL MODEL` identifies the inference backend; it does not attest network disconnection.
+
+See [Local UI architecture, Windows setup and completion gate](docs/LOCAL_UI.md).
+This UI is a dedicated branch/Draft PR based on V2. Merge waits for reviewed
+target-PC real-model, browser and offline evidence. V3 PR #5 is separate.
+
 ## Development and benchmark
 
 ```bash
