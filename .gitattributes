@@ -2,3 +2,4 @@
 * text=auto eol=lf
 evidence/v1/raw/** -text
 evidence/v2/raw/** -text
+evidence/local-ui/raw/** -text

@@ -1,4 +1,4 @@
-> V1 and V2: **OFFICIAL PASS** upon the reviewed PR #3 merge.
+> V1, V2 and Local UI v1: **OFFICIAL PASS** upon the reviewed PR #6 merge.
 > [V2 real-model baseline](evidence/v2/REVIEW.md): 11/12 in each of two runs;
 > math-02 remains FAIL. [V2 usage](docs/v2/REAL_MODEL.md). V3+ stays locked.
 
@@ -57,6 +57,24 @@ ark --config config.toml
 ```
 
 Commands inside chat: `/reset`, `/exit`.
+
+## Local UI v1 — reviewed PASS
+
+Use ARK V2 from a browser with the existing GGUF and configuration:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e . --no-deps
+.\.venv\Scripts\ark-ui.exe --config config.toml
+```
+
+Open **http://127.0.0.1:8765**. The model loads once, then the Japanese chat UI
+uses V2's existing context, response policy and reset. All assets are bundled;
+there is no runtime Node.js requirement, cloud service, external font or API key.
+`LOCAL MODEL` identifies the inference backend; it does not attest network disconnection.
+
+See [Local UI architecture, Windows setup and completion gate](docs/LOCAL_UI.md).
+The target-PC real-model, browser, reset, offline and regression evidence is
+[reviewed and frozen](evidence/local-ui/REVIEW.md). V3 PR #5 remains separate.
 
 ## Development and benchmark
 
