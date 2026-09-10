@@ -15,7 +15,7 @@ from .execution import execution_core_sha256, load_snapshot, validate_experiment
 from .hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend
 from .identity import build_code_tree_identity
 from .preflight import build_preflight_report, run_authorized_preflight
-from .runtime_guard import collect_runtime_identity, verify_runtime_identity
+from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
 
 
 def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
@@ -53,7 +53,7 @@ def _verify_common_evidence(
     )
 
 
-def _verify_actual_runtime(snapshot: dict) -> None:
+def _verify_actual_runtime(snapshot: dict) -> RuntimeIdentity:
     """Bind the authorized snapshot to the actual already-provisioned GPU runtime."""
     try:
         import torch
@@ -61,6 +61,7 @@ def _verify_actual_runtime(snapshot: dict) -> None:
         raise RuntimeError("pinned V3 torch runtime is not installed") from exc
     actual = collect_runtime_identity(torch)
     verify_runtime_identity(snapshot, actual)
+    return actual
 
 
 def _verify_preflight_report(path: Path, snapshot: dict) -> None:
@@ -89,6 +90,15 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         if report.get(field) is not False:
             raise RuntimeError(f"preflight report violates hard stop: {field}")
 
+    runtime_identity = report.get("runtime_identity")
+    if not isinstance(runtime_identity, dict):
+        raise RuntimeError("preflight runtime identity evidence missing")
+    try:
+        recorded_runtime = RuntimeIdentity(**runtime_identity)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("preflight runtime identity evidence is invalid") from exc
+    verify_runtime_identity(snapshot, recorded_runtime)
+
     evidence = report.get("evidence")
     if not isinstance(evidence, dict):
         raise RuntimeError("preflight report evidence missing")
@@ -99,7 +109,10 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         or evidence.get("runtime_error") is not None
     ):
         raise RuntimeError("preflight report does not prove successful mechanics")
-    if evidence.get("tokenizer_probe_sha256") != snapshot["tokenizer"]["chat_template_probe_sha256"]:
+    if (
+        evidence.get("tokenizer_probe_sha256")
+        != snapshot["tokenizer"]["chat_template_probe_sha256"]
+    ):
         raise RuntimeError("preflight tokenizer probe does not match frozen snapshot")
     if evidence.get("device") != snapshot["hardware"]["device"]:
         raise RuntimeError("preflight GPU device does not match frozen snapshot")
@@ -123,7 +136,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
         code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
-    _verify_actual_runtime(snapshot)
+    runtime_identity = _verify_actual_runtime(snapshot)
     report_path = Path(args.report)
     if report_path.exists() or report_path.is_symlink() or not report_path.parent.is_dir():
         raise RuntimeError("preflight report path must be a new file under an existing directory")
@@ -133,7 +146,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
         chat_template_probe=args.probe,
     )
     evidence = run_authorized_preflight(snapshot, backend)
-    payload = build_preflight_report(snapshot, evidence)
+    payload = build_preflight_report(snapshot, evidence, runtime_identity)
     with report_path.open("xb") as handle:
         handle.write(payload)
     return {
