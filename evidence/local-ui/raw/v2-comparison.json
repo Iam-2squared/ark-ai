@@ -1,0 +1,21 @@
+{
+  "comparison_kind": "real_model_regression",
+  "compatible": true,
+  "regressions": [],
+  "improvements": [],
+  "regression_detected": false,
+  "candidate_fixture_failures": 0,
+  "candidate_runtime_failures": 0,
+  "candidate_memory_error": null,
+  "metadata_differences": {},
+  "controlled_comparison": true,
+  "model_quality_delta": {
+    "conversation": 0.0,
+    "context": 0.0,
+    "math": 0.0,
+    "reasoning": 0.0,
+    "coding": 0.0
+  },
+  "v2_gate": "PENDING_REVIEW",
+  "main_merge": "BLOCKED_PENDING_V2_REAL_REVIEW"
+}

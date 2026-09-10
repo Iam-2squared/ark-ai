@@ -9,6 +9,7 @@ dist/
 build/
 logs/
 benchmark-results/
+evidence-bundles/
 models/
 *.gguf
 .env

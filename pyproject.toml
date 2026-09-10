@@ -20,6 +20,9 @@ ark-bench = "ark.benchmark:main"
 ark-v2 = "ark.intelligence.cli:main"
 ark-eval = "ark.evaluation.runner:main"
 ark-compare = "ark.evaluation.compare:main"
+ark-ui = "ark.ui.server:main"
+ark-launch = "ark.launcher:main"
+ark-gate = "ark.gate:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ark"]

@@ -1,0 +1,7 @@
+{"timestamp": "2026-09-09T13:54:32.920774+00:00", "role": "event", "content": "Local UI V2 session started", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T13:56:00.445686+00:00", "role": "user", "content": "こんにちは", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T13:56:08.703615+00:00", "role": "assistant", "content": "こんにちは！何をお手伝いできますか？", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T13:56:27.615845+00:00", "role": "user", "content": "いま\nテスト中", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T13:56:38.421394+00:00", "role": "assistant", "content": "テスト中ですね！何か質問やお手伝いが必要ですか？", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T13:56:49.000785+00:00", "role": "user", "content": "とくにない", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}
+{"timestamp": "2026-09-09T13:56:54.120721+00:00", "role": "assistant", "content": "わかりました。テスト中ですね、それでは何か他に必要なことありますか？", "model": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf"}

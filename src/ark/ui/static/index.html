@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>ARK · Local conversation</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="ARK information">
+      <a class="brand" href="/" aria-label="ARK home">
+        <img src="/mark.svg" width="34" height="34" alt="">
+        <span>ARK<span class="brand-caption">LOCAL INTELLIGENCE</span></span>
+      </a>
+      <div class="workspace-label">WORKSPACE <span>01</span></div>
+      <div class="active-conversation"><span class="conversation-icon" aria-hidden="true"></span> Conversation</div>
+      <button id="reset" class="reset-button" type="button" disabled>
+        <span aria-hidden="true">↺</span> Reset conversation
+      </button>
+      <p class="reset-note">現在の会話をリセット</p>
+      <div class="runtime-card">
+        <span class="eyebrow">RUNNING ON YOUR PC</span>
+        <dl>
+          <div><dt>Intelligence</dt><dd>ARK V2</dd></div>
+          <div class="model-detail"><dt>Model</dt><dd id="model-detail">Loading…</dd></div>
+          <div><dt>Quantization</dt><dd id="quantization">—</dd></div>
+          <div><dt>Session logs</dt><dd id="logging">—</dd></div>
+        </dl>
+        <p>会話と推論は、このPCの中で。</p>
+      </div>
+      <div class="sidebar-footer"><span class="tiny-mark" aria-hidden="true"></span> LOCAL UI <span>v1</span></div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div class="page-heading"><span class="mobile-brand">ARK / </span>Conversation <span class="version-tag">V2</span></div>
+        <span id="local-badge" class="local-badge" title="ローカル実行の種別。ネットワーク切断の証明ではありません。"><span class="status-dot"></span><span id="local-label">LOCAL UI</span></span>
+      </header>
+      <div class="model-bar"><span id="model-name">モデルを読み込み中…</span><span id="state-label" role="status">Loading model</span></div>
+
+      <section id="scroll-area" class="scroll-area" aria-label="Conversation">
+        <div id="welcome" class="welcome">
+          <div class="welcome-symbol"><img src="/mark.svg" width="54" height="54" alt=""></div>
+          <span class="eyebrow">YOUR LOCAL WORKSPACE</span>
+          <h1>考えを、ここから。</h1>
+          <p>質問も、アイデアも。<br>ARKとの会話をはじめましょう。</p>
+          <div class="suggestions" aria-label="入力例">
+            <button type="button" data-prompt="日本語で短く自己紹介してください。" disabled><span>会話をはじめる</span><span aria-hidden="true">↗</span></button>
+            <button type="button" data-prompt="ローカルAIとは何ですか？日本語で短く説明してください。" disabled><span>ローカルAIについて</span><span aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+        <div id="messages" class="messages" role="log" aria-label="メッセージ" aria-live="polite" aria-relevant="additions"></div>
+      </section>
+
+      <div class="composer-area">
+        <div id="error" class="notice error-notice" role="alert" hidden></div>
+        <div id="warning" class="notice warning-notice" role="status" hidden></div>
+        <p id="context-note" class="context-note" hidden>会話が長くなったため、V2が古いターンを推論contextから外しました。</p>
+        <form id="chat-form" class="composer">
+          <label class="visually-hidden" for="message-input">Message ARK</label>
+          <textarea id="message-input" placeholder="Message ARK…" rows="2" maxlength="16000" disabled></textarea>
+          <div class="composer-bottom"><span id="composer-state">モデルを準備しています</span><button id="send" type="submit" aria-label="送信" disabled><span>Send</span><span aria-hidden="true">↑</span></button></div>
+        </form>
+        <div class="composer-hints"><span>Enterで送信 <span class="hint-separator">/</span> Shift + Enterで改行</span><span>このサーバーのタブで会話を共有</span></div>
+        <p class="accuracy-note">回答は誤りを含むことがあります。重要な内容は確認してください。</p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

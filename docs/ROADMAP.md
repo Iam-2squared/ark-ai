@@ -8,7 +8,7 @@ the real-model gate; V2 PASS takes effect with final green-CI PR #3 merge. V3–
 | --- | --- | --- |
 | V1 | Local Core | OFFICIAL PASS — evidence frozen |
 | V2 | ARK Intelligence | OFFICIAL PASS on PR #3 merge — reviewed real baseline 11/12 ×2 |
-| V3 | Learning & Evaluation | Research branch only; no real training or merge authorization |
+| V3 | Learning & Evaluation | Locked |
 | V4 | Long-Term Memory | Locked |
 | V5 | Tool Intelligence | Locked |
 | V6 | Planning Agent | Locked |
