@@ -1,16 +1,16 @@
 """Authorization-gated preflight boundary for V3 experiment 001.
 
 No cloud provisioning, model download, or training occurs in this module. The real
-GPU implementation is intentionally dependency-injected and cannot be reached with
-an unresolved or unauthorized execution snapshot.
+GPU implementation is dependency-injected and cannot be reached with an unresolved
+or unauthorized execution snapshot.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Protocol
 
-from .execution import validate_experiment_001
+from .execution import canonical_json, sha256_bytes, validate_experiment_001
 
 
 @dataclass(frozen=True)
@@ -43,6 +43,26 @@ class PreflightBackend(Protocol):
 class DisabledRealPreflightBackend:
     def run(self, snapshot: dict) -> PreflightEvidence:
         raise RuntimeError("real GPU preflight backend is not installed/authorized")
+
+
+def build_preflight_report(snapshot: dict, evidence: PreflightEvidence) -> bytes:
+    snapshot_sha = validate_experiment_001(snapshot, authorization_scope="preflight")
+    evidence.validate()
+    report = {
+        "schema_version": 1,
+        "kind": "NON_CANDIDATE_PREFLIGHT",
+        "execution_snapshot_sha256": snapshot_sha,
+        "evidence": asdict(evidence),
+        "candidate_created": False,
+        "validation_opened": False,
+        "historical_v2_opened": False,
+        "full_training_authorized": False,
+    }
+    return canonical_json(report)
+
+
+def preflight_report_sha256(snapshot: dict, evidence: PreflightEvidence) -> str:
+    return sha256_bytes(build_preflight_report(snapshot, evidence))
 
 
 def run_authorized_preflight(snapshot: dict, backend: PreflightBackend) -> PreflightEvidence:
