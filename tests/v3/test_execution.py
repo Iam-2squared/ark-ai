@@ -17,6 +17,7 @@ def snapshot():
 def resolved_snapshot(*, preflight_measured=True):
     value = copy.deepcopy(snapshot())
     value["code"]["git_sha"] = "1" * 40
+    value["code"]["manifest_sha256"] = "0" * 64
     value["base"]["revision"] = "2" * 40
     value["base"]["file_sha256_manifest"] = "a" * 64
     value["tokenizer"]["file_sha256_manifest"] = "b" * 64
