@@ -43,6 +43,11 @@
     "microbatch": 1,
     "gradient_accumulation": 8,
     "optimizer": "adamw_torch",
+    "optimizer_betas": [0.9, 0.999],
+    "optimizer_eps": 1e-8,
+    "optimizer_weight_decay": 0.01,
+    "optimizer_amsgrad": false,
+    "optimizer_maximize": false,
     "scheduler": "constant",
     "precision": "bf16",
     "gradient_checkpointing": false
