@@ -13,6 +13,7 @@ TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 def resolved_preflight_input_snapshot():
     value = json.loads(TEMPLATE.read_text(encoding="utf-8"))
     value["code"]["git_sha"] = "1" * 40
+    value["code"]["manifest_sha256"] = "0" * 64
     value["base"]["revision"] = "2" * 40
     value["base"]["file_sha256_manifest"] = "a" * 64
     value["tokenizer"]["file_sha256_manifest"] = "b" * 64
@@ -56,6 +57,8 @@ def resolved_preflight_input_snapshot():
 def test_packet_can_be_built_before_preflight_output_exists():
     packet = build_preflight_authorization_packet(resolved_preflight_input_snapshot())
     assert packet["request_scope"] == "EXTERNAL_COMPUTE_PLUS_NON_CANDIDATE_PREFLIGHT_ONLY"
+    assert packet["code_git_sha"] == "1" * 40
+    assert packet["code_manifest_sha256"] == "0" * 64
     assert packet["preflight"]["candidate_created"] is False
     assert packet["preflight"]["historical_v2_opened"] is False
     assert packet["hard_stops_after_preflight"][
