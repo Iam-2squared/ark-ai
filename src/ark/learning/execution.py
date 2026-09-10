@@ -156,9 +156,6 @@ def validate_experiment_001(
     if any(privacy.get(key) is not False for key in forbidden):
         raise ExecutionBlocked("experiment-001 privacy policy violated")
 
-    # The preflight report is an output of the paid/external-compute preflight itself,
-    # so it must remain unresolved until after that run. Every other identity is an input
-    # and must be frozen before preflight authorization.
     allowed_pending = (
         {"hardware.preflight_report_sha256"}
         if authorization_scope in {"none", "preflight"}
@@ -168,8 +165,10 @@ def validate_experiment_001(
     if pending:
         raise ExecutionBlocked("unresolved execution identities: " + ", ".join(pending))
 
-    _require_git_sha(snapshot["code"].get("git_sha"), "code.git_sha")
-    if snapshot["code"].get("clean_tree_required") is not True:
+    code = snapshot["code"]
+    _require_git_sha(code.get("git_sha"), "code.git_sha")
+    _require_sha256(code.get("manifest_sha256"), "code.manifest_sha256")
+    if code.get("clean_tree_required") is not True:
         raise ExecutionBlocked("clean repository state is required")
 
     base = snapshot["base"]
