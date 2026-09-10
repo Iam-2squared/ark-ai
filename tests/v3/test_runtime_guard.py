@@ -1,6 +1,11 @@
 import pytest
 
-from ark.learning.runtime_guard import RuntimeIdentity, RuntimeIdentityMismatch, WallTimeBudget, verify_runtime_identity
+from ark.learning.runtime_guard import (
+    RuntimeIdentity,
+    RuntimeIdentityMismatch,
+    WallTimeBudget,
+    verify_runtime_identity,
+)
 
 
 def snapshot():
