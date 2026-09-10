@@ -156,9 +156,17 @@ def validate_experiment_001(
     if any(privacy.get(key) is not False for key in forbidden):
         raise ExecutionBlocked("experiment-001 privacy policy violated")
 
-    pending = unresolved_paths(snapshot)
+    # The preflight report is an output of the paid/external-compute preflight itself,
+    # so it must remain unresolved until after that run. Every other identity is an input
+    # and must be frozen before preflight authorization.
+    allowed_pending = (
+        {"hardware.preflight_report_sha256"}
+        if authorization_scope in {"none", "preflight"}
+        else set()
+    )
+    pending = sorted(set(unresolved_paths(snapshot)) - allowed_pending)
     if pending:
-        raise ExecutionBlocked("unresolved execution identities: " + ", ".join(sorted(pending)))
+        raise ExecutionBlocked("unresolved execution identities: " + ", ".join(pending))
 
     _require_git_sha(snapshot["code"].get("git_sha"), "code.git_sha")
     if snapshot["code"].get("clean_tree_required") is not True:
@@ -204,7 +212,14 @@ def validate_experiment_001(
     _require_text(hardware.get("device"), "hardware.device")
     _require_positive_number(hardware.get("vram_gib"), "hardware.vram_gib")
     _require_text(hardware.get("driver"), "hardware.driver")
-    _require_sha256(hardware.get("preflight_report_sha256"), "hardware.preflight_report_sha256")
+    if authorization_scope == "training":
+        _require_sha256(
+            hardware.get("preflight_report_sha256"), "hardware.preflight_report_sha256"
+        )
+    elif hardware.get("preflight_report_sha256") != "UNRESOLVED":
+        _require_sha256(
+            hardware.get("preflight_report_sha256"), "hardware.preflight_report_sha256"
+        )
 
     budget = snapshot["budget"]
     _require_positive_number(budget.get("max_cost_jpy"), "budget.max_cost_jpy")
@@ -231,15 +246,25 @@ def validate_experiment_001(
         raise ExecutionBlocked("training snapshot may not pre-authorize V2 opening or promotion")
 
     if authorization_scope == "none":
-        if auth["external_compute_authorized"] or auth["preflight_authorized"] or auth["real_training_authorized"]:
+        if (
+            auth["external_compute_authorized"]
+            or auth["preflight_authorized"]
+            or auth["real_training_authorized"]
+        ):
             raise ExecutionBlocked("pre-authorization snapshot must keep compute authorizations false")
     elif authorization_scope == "preflight":
-        if auth["external_compute_authorized"] is not True or auth["preflight_authorized"] is not True:
+        if (
+            auth["external_compute_authorized"] is not True
+            or auth["preflight_authorized"] is not True
+        ):
             raise ExecutionBlocked("explicit external-compute and preflight authorization required")
         if auth["real_training_authorized"]:
             raise ExecutionBlocked("preflight authorization must not imply full training authorization")
     else:
-        if auth["external_compute_authorized"] is not True or auth["real_training_authorized"] is not True:
+        if (
+            auth["external_compute_authorized"] is not True
+            or auth["real_training_authorized"] is not True
+        ):
             raise ExecutionBlocked("explicit external-compute and real-training authorization required")
         if auth["preflight_authorized"] is not True:
             raise ExecutionBlocked("successful authorized preflight must precede full training")
