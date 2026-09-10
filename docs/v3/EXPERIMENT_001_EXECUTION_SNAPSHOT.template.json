@@ -2,8 +2,9 @@
   "schema_version": 1,
   "experiment_id": "v3-format-compliance-001",
   "authorization": {
-    "real_training_authorized": false,
     "external_compute_authorized": false,
+    "preflight_authorized": false,
+    "real_training_authorized": false,
     "v2_opening_authorized": false,
     "promotion_authorized": false
   },
@@ -40,10 +41,10 @@
     "max_sequence_length": 256,
     "microbatch": 1,
     "gradient_accumulation": 8,
-    "optimizer": "UNRESOLVED",
-    "scheduler": "UNRESOLVED",
-    "precision": "UNRESOLVED",
-    "gradient_checkpointing": "UNRESOLVED"
+    "optimizer": "adamw_torch",
+    "scheduler": "constant",
+    "precision": "bf16",
+    "gradient_checkpointing": false
   },
   "environment": {
     "os_or_image_digest": "UNRESOLVED",
@@ -53,7 +54,7 @@
     "peft": "UNRESOLVED",
     "accelerate": "UNRESOLVED",
     "cuda_runtime": "UNRESOLVED",
-    "bitsandbytes": "NOT_REQUIRED_UNLESS_APPROVED"
+    "bitsandbytes": "NOT_REQUIRED_FOR_LORA"
   },
   "hardware": {
     "device": "UNRESOLVED",
@@ -63,8 +64,8 @@
   },
   "budget": {
     "full_candidate_runs": 1,
-    "monetary_ceiling": "USER_APPROVAL_REQUIRED",
-    "wall_clock_timeout": "USER_APPROVAL_REQUIRED"
+    "max_cost_jpy": "USER_APPROVAL_REQUIRED",
+    "wall_clock_timeout_minutes": "USER_APPROVAL_REQUIRED"
   },
   "export": {
     "llama_cpp_revision": "UNRESOLVED",
