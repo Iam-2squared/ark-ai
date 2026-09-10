@@ -46,11 +46,12 @@ class DisabledRealPreflightBackend:
 
 
 def run_authorized_preflight(snapshot: dict, backend: PreflightBackend) -> PreflightEvidence:
-    """Run only after exact identities and external-compute authorization are frozen.
+    """Run only after exact identities and preflight compute authorization are frozen.
 
-    This remains a non-Candidate mechanics test and does not authorize a full training run.
+    This remains a non-Candidate mechanics test. The preflight authorization scope
+    explicitly forbids treating the same approval as permission for the full Candidate run.
     """
-    validate_experiment_001(snapshot, require_training_authorization=True)
+    validate_experiment_001(snapshot, authorization_scope="preflight")
     evidence = backend.run(snapshot)
     evidence.validate()
     return evidence
