@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from pathlib import Path
 from typing import Literal
@@ -38,7 +39,14 @@ _REQUIRED_TOP = {
 
 def canonical_json(value: object) -> bytes:
     return (
-        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+        + "\n"
     ).encode()
 
 
@@ -46,9 +54,13 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _reject_nonstandard_json_constant(token: str) -> None:
+    raise ValueError(f"non-standard JSON constant is forbidden: {token}")
+
+
 def load_snapshot(path: Path) -> dict:
     raw = Path(path).read_bytes()
-    parsed = json.loads(raw)
+    parsed = json.loads(raw, parse_constant=_reject_nonstandard_json_constant)
     if not isinstance(parsed, dict):
         raise ValueError("execution snapshot must be a JSON object")
     return parsed
@@ -106,8 +118,13 @@ def _require_text(value: object, field: str) -> None:
 
 
 def _require_positive_number(value: object, field: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
-        raise ExecutionBlocked(f"positive numeric value required: {field}")
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or value <= 0
+        or not math.isfinite(value)
+    ):
+        raise ExecutionBlocked(f"finite positive numeric value required: {field}")
 
 
 def validate_experiment_001(
