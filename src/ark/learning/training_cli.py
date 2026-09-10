@@ -11,17 +11,21 @@ import json
 from pathlib import Path
 
 from .dataset import digest
-from .execution import load_snapshot, validate_experiment_001
+from .execution import execution_core_sha256, load_snapshot, validate_experiment_001
 from .hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend
 from .identity import build_code_tree_identity
 from .preflight import build_preflight_report, run_authorized_preflight
 from .runtime_guard import collect_runtime_identity, verify_runtime_identity
 
 
-def _verify_file(path: Path, expected_sha256: str, label: str) -> None:
+def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
     path = Path(path)
-    if not path.is_file() or digest(path.read_bytes()) != expected_sha256:
+    if not path.is_file():
+        raise RuntimeError(f"{label} is not a file")
+    payload = path.read_bytes()
+    if digest(payload) != expected_sha256:
         raise RuntimeError(f"{label} bytes do not match frozen snapshot SHA-256")
+    return payload
 
 
 def _verify_common_evidence(
@@ -59,6 +63,55 @@ def _verify_actual_runtime(snapshot: dict) -> None:
     verify_runtime_identity(snapshot, actual)
 
 
+def _verify_preflight_report(path: Path, snapshot: dict) -> None:
+    payload = _verify_file(
+        path,
+        snapshot["hardware"]["preflight_report_sha256"],
+        "preflight report",
+    )
+    try:
+        report = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("preflight report is not valid canonical JSON") from exc
+    if not isinstance(report, dict):
+        raise RuntimeError("preflight report must be a JSON object")
+    expected_core = execution_core_sha256(snapshot)
+    if report.get("execution_core_sha256") != expected_core:
+        raise RuntimeError("preflight report belongs to a different execution core")
+    if report.get("kind") != "NON_CANDIDATE_PREFLIGHT" or report.get("schema_version") != 1:
+        raise RuntimeError("unexpected preflight report schema/kind")
+    for field in (
+        "candidate_created",
+        "validation_opened",
+        "historical_v2_opened",
+        "full_training_authorized",
+    ):
+        if report.get(field) is not False:
+            raise RuntimeError(f"preflight report violates hard stop: {field}")
+
+    evidence = report.get("evidence")
+    if not isinstance(evidence, dict):
+        raise RuntimeError("preflight report evidence missing")
+    if (
+        evidence.get("base_loaded") is not True
+        or evidence.get("forward_backward_ok") is not True
+        or evidence.get("optimizer_step_ok") is not True
+        or evidence.get("runtime_error") is not None
+    ):
+        raise RuntimeError("preflight report does not prove successful mechanics")
+    if evidence.get("tokenizer_probe_sha256") != snapshot["tokenizer"]["chat_template_probe_sha256"]:
+        raise RuntimeError("preflight tokenizer probe does not match frozen snapshot")
+    if evidence.get("device") != snapshot["hardware"]["device"]:
+        raise RuntimeError("preflight GPU device does not match frozen snapshot")
+    try:
+        observed_vram = float(evidence["vram_gib"])
+        expected_vram = float(snapshot["hardware"]["vram_gib"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("preflight VRAM evidence is invalid") from exc
+    if abs(observed_vram - expected_vram) > 0.05:
+        raise RuntimeError("preflight GPU VRAM does not match frozen snapshot")
+
+
 def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Authorization and every exact identity must close before importing torch/GPU runtime.
@@ -86,6 +139,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
     return {
         "kind": "NON_CANDIDATE_PREFLIGHT",
         "report_sha256": digest(payload),
+        "execution_core_sha256": execution_core_sha256(snapshot),
         "candidate_created": False,
         "historical_v2_opened": False,
     }
@@ -102,11 +156,7 @@ def run_training(args: argparse.Namespace) -> dict:
         code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
-    _verify_file(
-        args.preflight_report,
-        snapshot["hardware"]["preflight_report_sha256"],
-        "preflight report",
-    )
+    _verify_preflight_report(args.preflight_report, snapshot)
     _verify_actual_runtime(snapshot)
     runner = HfLoRAFullRun(
         base_dir=args.base_dir,
