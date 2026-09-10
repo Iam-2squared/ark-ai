@@ -13,7 +13,14 @@ def build_preflight_authorization_packet(snapshot: dict) -> dict:
     """Build a user-review packet without authorizing or starting external compute."""
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="none")
     auth = snapshot["authorization"]
-    if any(auth[key] for key in ("external_compute_authorized", "preflight_authorized", "real_training_authorized")):
+    if any(
+        auth[key]
+        for key in (
+            "external_compute_authorized",
+            "preflight_authorized",
+            "real_training_authorized",
+        )
+    ):
         raise ValueError("authorization packet must be generated from an unapproved snapshot")
 
     packet = {
@@ -22,6 +29,7 @@ def build_preflight_authorization_packet(snapshot: dict) -> dict:
         "request_scope": "EXTERNAL_COMPUTE_PLUS_NON_CANDIDATE_PREFLIGHT_ONLY",
         "execution_snapshot_sha256": snapshot_sha,
         "code_git_sha": snapshot["code"]["git_sha"],
+        "code_manifest_sha256": snapshot["code"]["manifest_sha256"],
         "base": {
             "model_id": snapshot["base"]["model_id"],
             "revision": snapshot["base"]["revision"],
