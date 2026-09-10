@@ -1,4 +1,4 @@
-"""Local byte-identity manifests for V3 base/tokenizer/export evidence.
+"""Local byte-identity manifests for V3 base/tokenizer/export/code evidence.
 
 No downloads or network access occur here. These helpers only hash already-present files.
 """
@@ -35,14 +35,16 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     path = Path(path)
     if not path.is_file():
         raise ValueError(f"identity path is not a file: {path}")
+    if path.is_symlink():
+        raise ValueError(f"symlinked files are not allowed in identity manifests: {path}")
     sha, size = _hash_file(path)
-    return FileIdentity(label or path.name, sha, size, path.is_symlink())
+    return FileIdentity(label or path.name, sha, size, False)
 
 
 def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
     root = Path(root)
-    if not root.is_dir():
-        raise ValueError("snapshot root must be an existing directory")
+    if not root.is_dir() or root.is_symlink():
+        raise ValueError("snapshot root must be an existing non-symlink directory")
     rows: list[FileIdentity] = []
     for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
         if path.is_dir():
@@ -56,6 +58,28 @@ def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
     if not rows:
         raise ValueError("snapshot directory contains no files")
     return tuple(rows)
+
+
+def build_code_tree_identity(root: Path) -> dict:
+    """Hash the runtime source tree so code provenance is not trusted from a CLI string alone."""
+    root = Path(root)
+    required = {
+        "pyproject.toml",
+        "src/ark/learning/execution.py",
+        "src/ark/learning/hf_lora.py",
+        "src/ark/learning/training_cli.py",
+    }
+    rows: list[FileIdentity] = []
+    for relative in sorted(required):
+        rows.append(file_identity(root / relative, label=relative))
+    manifest = {
+        "schema_version": 1,
+        "files": [row.__dict__ for row in rows],
+    }
+    return {
+        "manifest": manifest,
+        "manifest_sha256": sha256_bytes(canonical_json(manifest)),
+    }
 
 
 def build_hf_snapshot_identity(
