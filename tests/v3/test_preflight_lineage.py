@@ -7,6 +7,7 @@ import pytest
 from ark.learning.dataset import digest
 from ark.learning.execution import execution_core_sha256
 from ark.learning.preflight import PreflightEvidence, build_preflight_report
+from ark.learning.runtime_guard import RuntimeIdentity
 from ark.learning.training_cli import _verify_preflight_report
 
 
@@ -80,6 +81,21 @@ def evidence():
     )
 
 
+def runtime_identity():
+    return RuntimeIdentity(
+        os_or_image_digest="image@sha256:abc",
+        python="3.12.10",
+        torch="2.6.0+cu124",
+        transformers="4.51.0",
+        peft="0.15.2",
+        accelerate="1.6.0",
+        cuda_runtime="12.4",
+        device="NVIDIA GPU",
+        vram_gib=24.0,
+        driver="570.00",
+    )
+
+
 def test_authorization_and_preflight_hash_do_not_change_execution_core():
     preflight = resolved_preflight_snapshot()
     training = copy.deepcopy(preflight)
@@ -90,7 +106,7 @@ def test_authorization_and_preflight_hash_do_not_change_execution_core():
 
 def test_training_accepts_only_preflight_from_same_execution_core(tmp_path):
     preflight = resolved_preflight_snapshot()
-    payload = build_preflight_report(preflight, evidence())
+    payload = build_preflight_report(preflight, evidence(), runtime_identity())
     report = tmp_path / "preflight.json"
     report.write_bytes(payload)
 
