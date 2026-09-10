@@ -61,19 +61,25 @@ def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
 
 
 def build_code_tree_identity(root: Path) -> dict:
-    """Hash the runtime source tree so code provenance is not trusted from a CLI string alone."""
+    """Hash all V3 learning runtime Python sources plus packaging metadata.
+
+    This prevents an authorized GPU command from trusting only a user-supplied git SHA.
+    Tests/docs are intentionally excluded; every importable V3 learning module is included.
+    """
     root = Path(root)
-    required = {
-        "pyproject.toml",
-        "src/ark/learning/execution.py",
-        "src/ark/learning/hf_lora.py",
-        "src/ark/learning/training_cli.py",
-    }
-    rows: list[FileIdentity] = []
-    for relative in sorted(required):
-        rows.append(file_identity(root / relative, label=relative))
+    learning_root = root / "src" / "ark" / "learning"
+    if not learning_root.is_dir() or learning_root.is_symlink():
+        raise ValueError("runtime code root is missing src/ark/learning")
+    paths = [root / "pyproject.toml"] + sorted(
+        (p for p in learning_root.rglob("*.py") if p.is_file()),
+        key=lambda p: p.relative_to(root).as_posix(),
+    )
+    if len(paths) < 2:
+        raise ValueError("runtime code manifest requires learning Python sources")
+    rows = [file_identity(path, label=path.relative_to(root).as_posix()) for path in paths]
     manifest = {
         "schema_version": 1,
+        "scope": "pyproject.toml+src/ark/learning/**/*.py",
         "files": [row.__dict__ for row in rows],
     }
     return {
