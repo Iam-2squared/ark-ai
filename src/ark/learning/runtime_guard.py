@@ -88,7 +88,12 @@ def collect_runtime_identity(torch) -> RuntimeIdentity:
     )
 
 
-def verify_runtime_identity(snapshot: dict, actual: RuntimeIdentity, *, vram_tolerance_gib: float = 0.05) -> None:
+def verify_runtime_identity(
+    snapshot: dict,
+    actual: RuntimeIdentity,
+    *,
+    vram_tolerance_gib: float = 0.05,
+) -> None:
     """Require the measured runtime to match the user-reviewed execution snapshot."""
     expected_environment = snapshot["environment"]
     for field in (
@@ -104,7 +109,8 @@ def verify_runtime_identity(snapshot: dict, actual: RuntimeIdentity, *, vram_tol
         observed = str(getattr(actual, field))
         if observed != expected:
             raise RuntimeIdentityMismatch(
-                f"runtime identity mismatch for {field}: expected {expected!r}, observed {observed!r}"
+                f"runtime identity mismatch for {field}: "
+                f"expected {expected!r}, observed {observed!r}"
             )
 
     expected_hardware = snapshot["hardware"]
