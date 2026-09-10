@@ -7,12 +7,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
+from typing import Literal
 
 
 class ExecutionBlocked(RuntimeError):
     """Raised when a real-experiment snapshot is not fully frozen/authorized."""
 
+
+AuthorizationScope = Literal["none", "preflight", "training"]
 
 _REQUIRED_TOP = {
     "schema_version",
@@ -33,7 +37,9 @@ _REQUIRED_TOP = {
 
 
 def canonical_json(value: object) -> bytes:
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    return (
+        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+    ).encode()
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -58,18 +64,47 @@ def unresolved_paths(value: object, prefix: str = "") -> list[str]:
         for index, child in enumerate(value):
             unresolved.extend(unresolved_paths(child, f"{prefix}[{index}]"))
     elif isinstance(value, str) and (
-        value == "UNRESOLVED" or value.endswith("_REQUIRED") or value == "USER_APPROVAL_REQUIRED"
+        value == "UNRESOLVED"
+        or value.endswith("_REQUIRED")
+        or value == "USER_APPROVAL_REQUIRED"
     ):
         unresolved.append(prefix)
     return unresolved
 
 
-def validate_experiment_001(snapshot: dict, *, require_training_authorization: bool = False) -> str:
+def _require_sha256(value: object, field: str) -> None:
+    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+        raise ExecutionBlocked(f"exact SHA-256 required: {field}")
+
+
+def _require_git_sha(value: object, field: str) -> None:
+    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{40}", value) is None:
+        raise ExecutionBlocked(f"exact git commit SHA required: {field}")
+
+
+def _require_text(value: object, field: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise ExecutionBlocked(f"exact identity required: {field}")
+
+
+def _require_positive_number(value: object, field: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        raise ExecutionBlocked(f"positive numeric value required: {field}")
+
+
+def validate_experiment_001(
+    snapshot: dict, *, authorization_scope: AuthorizationScope = "none"
+) -> str:
     missing = sorted(_REQUIRED_TOP - snapshot.keys())
     if missing:
         raise ExecutionBlocked(f"snapshot missing sections: {', '.join(missing)}")
-    if snapshot.get("schema_version") != 1 or snapshot.get("experiment_id") != "v3-format-compliance-001":
+    if (
+        snapshot.get("schema_version") != 1
+        or snapshot.get("experiment_id") != "v3-format-compliance-001"
+    ):
         raise ExecutionBlocked("unexpected snapshot schema/experiment")
+    if authorization_scope not in {"none", "preflight", "training"}:
+        raise ValueError("invalid authorization scope")
 
     method = snapshot["method"]
     expected = {
@@ -84,6 +119,10 @@ def validate_experiment_001(snapshot: dict, *, require_training_authorization: b
         "max_sequence_length": 256,
         "microbatch": 1,
         "gradient_accumulation": 8,
+        "optimizer": "adamw_torch",
+        "scheduler": "constant",
+        "precision": "bf16",
+        "gradient_checkpointing": False,
     }
     for key, value in expected.items():
         if method.get(key) != value:
@@ -96,11 +135,24 @@ def validate_experiment_001(snapshot: dict, *, require_training_authorization: b
         raise ExecutionBlocked("experiment-001 allows exactly one full Candidate run")
     if snapshot["export"].get("quantization") != "Q4_K_M":
         raise ExecutionBlocked("deployment comparison quantization must be Q4_K_M")
-    if snapshot["evaluation"].get("v2_current_runs") != 2 or snapshot["evaluation"].get("v2_candidate_runs") != 2:
-        raise ExecutionBlocked("historical V2 opening budget must remain 2 Current + 2 Candidate")
+    if snapshot["export"].get("paired_baseline_required") is not True:
+        raise ExecutionBlocked("paired Q4_K_M baseline is required")
+    if (
+        snapshot["evaluation"].get("validation_count") != 30
+        or snapshot["evaluation"].get("v2_current_runs") != 2
+        or snapshot["evaluation"].get("v2_candidate_runs") != 2
+    ):
+        raise ExecutionBlocked("validation/V2 budget must remain 30 and 2 Current + 2 Candidate")
+    if snapshot["evaluation"].get("no_retuning_after_v2_opening") is not True:
+        raise ExecutionBlocked("V2 opening may not permit retuning experiment 001")
 
     privacy = snapshot["privacy"]
-    forbidden = ("private_sessions_allowed", "personal_memory_allowed", "secrets_allowed", "unattributed_text_allowed")
+    forbidden = (
+        "private_sessions_allowed",
+        "personal_memory_allowed",
+        "secrets_allowed",
+        "unattributed_text_allowed",
+    )
     if any(privacy.get(key) is not False for key in forbidden):
         raise ExecutionBlocked("experiment-001 privacy policy violated")
 
@@ -108,14 +160,88 @@ def validate_experiment_001(snapshot: dict, *, require_training_authorization: b
     if pending:
         raise ExecutionBlocked("unresolved execution identities: " + ", ".join(sorted(pending)))
 
+    _require_git_sha(snapshot["code"].get("git_sha"), "code.git_sha")
+    if snapshot["code"].get("clean_tree_required") is not True:
+        raise ExecutionBlocked("clean repository state is required")
+
+    base = snapshot["base"]
+    if base.get("model_id") != "Qwen/Qwen3-4B-Instruct-2507":
+        raise ExecutionBlocked("unexpected base model identity")
+    _require_text(base.get("revision"), "base.revision")
+    _require_sha256(base.get("file_sha256_manifest"), "base.file_sha256_manifest")
+
+    tokenizer = snapshot["tokenizer"]
+    token_revision = tokenizer.get("revision")
+    if token_revision not in {"SAME_AS_BASE", base.get("revision")}:
+        raise ExecutionBlocked("tokenizer revision must equal the frozen base revision")
+    _require_sha256(tokenizer.get("file_sha256_manifest"), "tokenizer.file_sha256_manifest")
+    _require_sha256(
+        tokenizer.get("chat_template_probe_sha256"), "tokenizer.chat_template_probe_sha256"
+    )
+
+    for field in (
+        "canonical_sha256",
+        "provenance_manifest_sha256",
+        "contamination_report_sha256",
+    ):
+        _require_sha256(dataset.get(field), f"dataset.{field}")
+
+    environment = snapshot["environment"]
+    for field in (
+        "os_or_image_digest",
+        "python",
+        "torch",
+        "transformers",
+        "peft",
+        "accelerate",
+        "cuda_runtime",
+    ):
+        _require_text(environment.get(field), f"environment.{field}")
+    if environment.get("bitsandbytes") != "NOT_REQUIRED_FOR_LORA":
+        raise ExecutionBlocked("bitsandbytes must remain unused for experiment-001 LoRA")
+
+    hardware = snapshot["hardware"]
+    _require_text(hardware.get("device"), "hardware.device")
+    _require_positive_number(hardware.get("vram_gib"), "hardware.vram_gib")
+    _require_text(hardware.get("driver"), "hardware.driver")
+    _require_sha256(hardware.get("preflight_report_sha256"), "hardware.preflight_report_sha256")
+
+    budget = snapshot["budget"]
+    _require_positive_number(budget.get("max_cost_jpy"), "budget.max_cost_jpy")
+    _require_positive_number(
+        budget.get("wall_clock_timeout_minutes"), "budget.wall_clock_timeout_minutes"
+    )
+
+    export = snapshot["export"]
+    _require_git_sha(export.get("llama_cpp_revision"), "export.llama_cpp_revision")
+    _require_sha256(export.get("converter_identity"), "export.converter_identity")
+    _require_sha256(export.get("quantizer_identity"), "export.quantizer_identity")
+
     auth = snapshot["authorization"]
-    if auth.get("v2_opening_authorized") or auth.get("promotion_authorized"):
+    required_auth = {
+        "external_compute_authorized",
+        "preflight_authorized",
+        "real_training_authorized",
+        "v2_opening_authorized",
+        "promotion_authorized",
+    }
+    if set(auth) != required_auth or any(type(auth[name]) is not bool for name in required_auth):
+        raise ExecutionBlocked("authorization record must contain exact boolean fields")
+    if auth["v2_opening_authorized"] or auth["promotion_authorized"]:
         raise ExecutionBlocked("training snapshot may not pre-authorize V2 opening or promotion")
-    if require_training_authorization:
-        if auth.get("real_training_authorized") is not True or auth.get("external_compute_authorized") is not True:
-            raise ExecutionBlocked("explicit real-training and external-compute authorization required")
+
+    if authorization_scope == "none":
+        if auth["external_compute_authorized"] or auth["preflight_authorized"] or auth["real_training_authorized"]:
+            raise ExecutionBlocked("pre-authorization snapshot must keep compute authorizations false")
+    elif authorization_scope == "preflight":
+        if auth["external_compute_authorized"] is not True or auth["preflight_authorized"] is not True:
+            raise ExecutionBlocked("explicit external-compute and preflight authorization required")
+        if auth["real_training_authorized"]:
+            raise ExecutionBlocked("preflight authorization must not imply full training authorization")
     else:
-        if auth.get("real_training_authorized") or auth.get("external_compute_authorized"):
-            raise ExecutionBlocked("pre-authorization snapshot must keep real/external authorization false")
+        if auth["external_compute_authorized"] is not True or auth["real_training_authorized"] is not True:
+            raise ExecutionBlocked("explicit external-compute and real-training authorization required")
+        if auth["preflight_authorized"] is not True:
+            raise ExecutionBlocked("successful authorized preflight must precede full training")
 
     return sha256_bytes(canonical_json(snapshot))
