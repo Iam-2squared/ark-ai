@@ -13,7 +13,7 @@ TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 def resolved_snapshot(converter, quantizer):
     value = json.loads(TEMPLATE.read_text(encoding="utf-8"))
     revision = "3" * 40
-    value["code"]["git_sha"] = "1" * 40
+    value["code"].update({"git_sha": "1" * 40, "manifest_sha256": "0" * 64})
     value["base"].update({"revision": "2" * 40, "file_sha256_manifest": "a" * 64})
     value["tokenizer"].update(
         {"file_sha256_manifest": "b" * 64, "chat_template_probe_sha256": "c" * 64}
@@ -37,17 +37,26 @@ def resolved_snapshot(converter, quantizer):
         }
     )
     value["hardware"].update(
-        {"device": "gpu", "vram_gib": 24, "driver": "driver", "preflight_report_sha256": "UNRESOLVED"}
+        {
+            "device": "gpu",
+            "vram_gib": 24,
+            "driver": "driver",
+            "preflight_report_sha256": "UNRESOLVED",
+        }
     )
     value["budget"].update({"max_cost_jpy": 1000, "wall_clock_timeout_minutes": 60})
     value["export"].update(
         {
             "llama_cpp_revision": revision,
             "converter_identity": build_tool_identity(
-                converter, git_revision=revision, role="hf_to_gguf_converter"
+                converter,
+                git_revision=revision,
+                role="hf_to_gguf_converter",
             )["identity_sha256"],
             "quantizer_identity": build_tool_identity(
-                quantizer, git_revision=revision, role="quantizer"
+                quantizer,
+                git_revision=revision,
+                role="quantizer",
             )["identity_sha256"],
         }
     )
