@@ -17,6 +17,7 @@ from .dataset import digest
 from .execution import validate_experiment_001
 from .identity import build_hf_snapshot_identity
 from .preflight import PreflightEvidence
+from .runtime_guard import WallTimeBudget
 
 
 class LoRARuntimeError(RuntimeError):
@@ -171,21 +172,27 @@ class HfLoRAPreflightBackend:
 
     def run(self, snapshot: dict) -> PreflightEvidence:
         validate_experiment_001(snapshot, authorization_scope="preflight")
+        wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
+        wall_budget.check("preflight-start")
         train_rows, _ = _verify_local_identities(
             snapshot,
             base_dir=self.base_dir,
             chat_template_probe=self.chat_template_probe,
             dataset_path=self.dataset_path,
         )
+        wall_budget.check("preflight-local-identity")
         torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        wall_budget.check("preflight-model-load")
         encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
         optimizer, _ = _optimizer(torch, model, snapshot["method"]["learning_rate"])
         torch.cuda.reset_peak_memory_stats()
         started = time.perf_counter()
         optimizer.zero_grad(set_to_none=True)
         _single_backward(torch, model, encoded, scale=1.0)
+        wall_budget.check("preflight-backward")
         optimizer.step()
         torch.cuda.synchronize()
+        wall_budget.check("preflight-optimizer-step")
         elapsed = time.perf_counter() - started
         total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         peak = torch.cuda.max_memory_allocated() / (1024**2)
@@ -220,6 +227,8 @@ class HfLoRAFullRun:
 
     def run(self, snapshot: dict) -> dict:
         snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
+        wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
+        wall_budget.check("training-start")
         if (
             self.output_dir.exists()
             or self.output_dir.is_symlink()
@@ -233,9 +242,12 @@ class HfLoRAFullRun:
             chat_template_probe=self.chat_template_probe,
             dataset_path=self.dataset_path,
         )
+        wall_budget.check("training-local-identity")
         torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        wall_budget.check("training-model-load")
         ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
         encoded_rows = _pretokenize(tokenizer, ordered)
+        wall_budget.check("training-pretokenize")
         optimizer, trainable = _optimizer(torch, model, snapshot["method"]["learning_rate"])
 
         accumulation = snapshot["method"]["gradient_accumulation"]
@@ -248,20 +260,27 @@ class HfLoRAFullRun:
         optimizer_steps = 0
         model.train()
         for index, encoded in enumerate(encoded_rows, start=1):
+            wall_budget.check(f"training-microbatch-{index}-start")
             losses.append(_single_backward(torch, model, encoded, scale=float(accumulation)))
+            wall_budget.check(f"training-microbatch-{index}-backward")
             if index % accumulation == 0:
                 optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
                 optimizer_steps += 1
+                wall_budget.check(f"training-optimizer-step-{optimizer_steps}")
         torch.cuda.synchronize()
+        wall_budget.check("training-synchronize")
         elapsed = time.perf_counter() - started
         if optimizer_steps != 15:
             raise LoRARuntimeError("experiment-001 must execute exactly 15 optimizer steps")
 
+        wall_budget.check("training-before-save")
         self.output_dir.mkdir()
         adapter_dir = self.output_dir / "adapter"
         model.save_pretrained(adapter_dir, safe_serialization=True)
+        wall_budget.check("training-adapter-save")
         tokenizer.save_pretrained(self.output_dir / "tokenizer")
+        wall_budget.check("training-tokenizer-save")
         metrics = {
             "schema_version": 1,
             "experiment_id": "v3-format-compliance-001",
@@ -287,6 +306,7 @@ class HfLoRAFullRun:
                     + "\n"
                 ).encode()
             )
+        wall_budget.check("training-evidence-save")
         return {
             **metrics,
             "training_metrics_sha256": digest(metrics_payload),
