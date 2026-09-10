@@ -76,6 +76,13 @@ See [Local UI architecture, Windows setup and completion gate](docs/LOCAL_UI.md)
 The target-PC real-model, browser, reset, offline and regression evidence is
 [reviewed and frozen](evidence/local-ui/REVIEW.md). V3 PR #5 remains separate.
 
+### One-command launcher and evidence runner (candidate)
+
+The usability branch adds `ark-launch` for normal daily startup and `ark-gate`
+for non-overwriting target-PC evidence collection. These tools reuse the existing
+Local UI, V1 benchmark and V2 evaluation; they do not alter model behavior or
+declare an official PASS. See [Usability Infrastructure](docs/USABILITY.md).
+
 ## Development and benchmark
 
 ```bash
