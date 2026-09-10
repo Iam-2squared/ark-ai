@@ -122,7 +122,7 @@ def _require_positive_number(value: object, field: str) -> None:
         isinstance(value, bool)
         or not isinstance(value, (int, float))
         or value <= 0
-        or not math.isfinite(value)
+        or (isinstance(value, float) and not math.isfinite(value))
     ):
         raise ExecutionBlocked(f"finite positive numeric value required: {field}")
 
