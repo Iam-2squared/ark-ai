@@ -57,6 +57,8 @@ def resolved_preflight_input_snapshot():
 def test_packet_can_be_built_before_preflight_output_exists():
     packet = build_preflight_authorization_packet(resolved_preflight_input_snapshot())
     assert packet["request_scope"] == "EXTERNAL_COMPUTE_PLUS_NON_CANDIDATE_PREFLIGHT_ONLY"
+    assert len(packet["execution_snapshot_sha256"]) == 64
+    assert len(packet["execution_core_sha256"]) == 64
     assert packet["code_git_sha"] == "1" * 40
     assert packet["code_manifest_sha256"] == "0" * 64
     assert packet["preflight"]["candidate_created"] is False
