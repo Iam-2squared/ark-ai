@@ -54,6 +54,24 @@ def load_snapshot(path: Path) -> dict:
     return parsed
 
 
+def execution_core(snapshot: dict) -> dict:
+    """Return the immutable experiment identity shared by preflight and full training.
+
+    Authorization flags and the preflight report hash are intentionally excluded because
+    they change between the preflight approval and the later full-training approval.
+    Every experimental, data, code, runtime, hardware, budget and export identity remains.
+    """
+    core = {key: value for key, value in snapshot.items() if key != "authorization"}
+    hardware = dict(snapshot.get("hardware", {}))
+    hardware.pop("preflight_report_sha256", None)
+    core["hardware"] = hardware
+    return core
+
+
+def execution_core_sha256(snapshot: dict) -> str:
+    return sha256_bytes(canonical_json(execution_core(snapshot)))
+
+
 def unresolved_paths(value: object, prefix: str = "") -> list[str]:
     unresolved: list[str] = []
     if isinstance(value, dict):
@@ -174,7 +192,7 @@ def validate_experiment_001(
     base = snapshot["base"]
     if base.get("model_id") != "Qwen/Qwen3-4B-Instruct-2507":
         raise ExecutionBlocked("unexpected base model identity")
-    _require_text(base.get("revision"), "base.revision")
+    _require_git_sha(base.get("revision"), "base.revision")
     _require_sha256(base.get("file_sha256_manifest"), "base.file_sha256_manifest")
 
     tokenizer = snapshot["tokenizer"]
