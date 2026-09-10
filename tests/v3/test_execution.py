@@ -14,7 +14,7 @@ def snapshot():
     return json.loads(TEMPLATE.read_text(encoding="utf-8"))
 
 
-def resolved_snapshot():
+def resolved_snapshot(*, preflight_measured=True):
     value = copy.deepcopy(snapshot())
     value["code"]["git_sha"] = "1" * 40
     value["base"]["revision"] = "2" * 40
@@ -40,7 +40,7 @@ def resolved_snapshot():
             "device": "approved-gpu",
             "vram_gib": 24,
             "driver": "pinned-driver",
-            "preflight_report_sha256": "1" * 64,
+            "preflight_report_sha256": "1" * 64 if preflight_measured else "UNRESOLVED",
         }
     )
     value["budget"].update({"max_cost_jpy": 1000, "wall_clock_timeout_minutes": 60})
@@ -99,6 +99,21 @@ def test_exact_hash_shapes_are_required():
     value["dataset"]["canonical_sha256"] = "frozen"
     with pytest.raises(ExecutionBlocked, match="dataset.canonical_sha256"):
         validate_experiment_001(value)
+
+
+def test_preflight_report_is_output_not_preflight_input():
+    value = resolved_snapshot(preflight_measured=False)
+    digest = validate_experiment_001(value)
+    assert len(digest) == 64
+
+    value["authorization"]["external_compute_authorized"] = True
+    value["authorization"]["preflight_authorized"] = True
+    digest = validate_experiment_001(value, authorization_scope="preflight")
+    assert len(digest) == 64
+
+    value["authorization"]["real_training_authorized"] = True
+    with pytest.raises(ExecutionBlocked, match="hardware.preflight_report_sha256"):
+        validate_experiment_001(value, authorization_scope="training")
 
 
 def test_identity_closure_is_separate_from_authorization():
