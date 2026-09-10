@@ -6,7 +6,13 @@ import argparse
 import json
 from pathlib import Path
 
-from .execution import canonical_json, load_snapshot, sha256_bytes, validate_experiment_001
+from .execution import (
+    canonical_json,
+    execution_core_sha256,
+    load_snapshot,
+    sha256_bytes,
+    validate_experiment_001,
+)
 
 
 def build_preflight_authorization_packet(snapshot: dict) -> dict:
@@ -28,6 +34,7 @@ def build_preflight_authorization_packet(snapshot: dict) -> dict:
         "experiment_id": snapshot["experiment_id"],
         "request_scope": "EXTERNAL_COMPUTE_PLUS_NON_CANDIDATE_PREFLIGHT_ONLY",
         "execution_snapshot_sha256": snapshot_sha,
+        "execution_core_sha256": execution_core_sha256(snapshot),
         "code_git_sha": snapshot["code"]["git_sha"],
         "code_manifest_sha256": snapshot["code"]["manifest_sha256"],
         "base": {
