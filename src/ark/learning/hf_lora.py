@@ -142,11 +142,21 @@ def _pretokenize(tokenizer, rows: list[dict]) -> list[tuple[list[int], list[int]
     return [_encoded_example(tokenizer, row, max_length=256) for row in rows]
 
 
-def _optimizer(torch, model, learning_rate: float):
+def _optimizer(torch, model, method: dict):
+    """Construct AdamW from the frozen execution recipe, not library defaults."""
     parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
     if not parameters:
         raise LoRARuntimeError("LoRA model exposes no trainable parameters")
-    return torch.optim.AdamW(parameters, lr=learning_rate), parameters
+    optimizer = torch.optim.AdamW(
+        parameters,
+        lr=method["learning_rate"],
+        betas=tuple(method["optimizer_betas"]),
+        eps=method["optimizer_eps"],
+        weight_decay=method["optimizer_weight_decay"],
+        amsgrad=method["optimizer_amsgrad"],
+        maximize=method["optimizer_maximize"],
+    )
+    return optimizer, parameters
 
 
 def _single_backward(torch, model, encoded, *, scale: float) -> float:
@@ -184,7 +194,7 @@ class HfLoRAPreflightBackend:
         torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
         wall_budget.check("preflight-model-load")
         encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
-        optimizer, _ = _optimizer(torch, model, snapshot["method"]["learning_rate"])
+        optimizer, _ = _optimizer(torch, model, snapshot["method"])
         torch.cuda.reset_peak_memory_stats()
         started = time.perf_counter()
         optimizer.zero_grad(set_to_none=True)
@@ -248,7 +258,7 @@ class HfLoRAFullRun:
         ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
         encoded_rows = _pretokenize(tokenizer, ordered)
         wall_budget.check("training-pretokenize")
-        optimizer, trainable = _optimizer(torch, model, snapshot["method"]["learning_rate"])
+        optimizer, trainable = _optimizer(torch, model, snapshot["method"])
 
         accumulation = snapshot["method"]["gradient_accumulation"]
         if len(encoded_rows) % accumulation:
