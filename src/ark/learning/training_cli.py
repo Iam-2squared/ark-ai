@@ -13,6 +13,7 @@ from pathlib import Path
 from .dataset import digest
 from .execution import load_snapshot
 from .hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend
+from .identity import build_code_tree_identity
 from .preflight import build_preflight_report, run_authorized_preflight
 
 
@@ -27,10 +28,14 @@ def _verify_common_evidence(
     *,
     provenance: Path,
     contamination: Path,
+    code_root: Path,
     running_code_sha: str,
 ) -> None:
     if running_code_sha != snapshot["code"]["git_sha"]:
         raise RuntimeError("running code SHA does not match frozen execution snapshot")
+    code_identity = build_code_tree_identity(code_root)
+    if code_identity["manifest_sha256"] != snapshot["code"]["manifest_sha256"]:
+        raise RuntimeError("runtime source bytes do not match frozen code manifest")
     _verify_file(
         provenance,
         snapshot["dataset"]["provenance_manifest_sha256"],
@@ -49,6 +54,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
         snapshot,
         provenance=args.provenance,
         contamination=args.contamination,
+        code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
     report_path = Path(args.report)
@@ -77,6 +83,7 @@ def run_training(args: argparse.Namespace) -> dict:
         snapshot,
         provenance=args.provenance,
         contamination=args.contamination,
+        code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
     _verify_file(
@@ -100,6 +107,7 @@ def _common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--contamination", type=Path, required=True)
     parser.add_argument("--probe", type=Path, required=True)
+    parser.add_argument("--code-root", type=Path, required=True)
     parser.add_argument("--code-sha", required=True)
 
 
