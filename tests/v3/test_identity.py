@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from ark.learning.identity import build_hf_snapshot_identity, build_tool_identity
+from ark.learning.identity import (
+    build_code_tree_identity,
+    build_hf_snapshot_identity,
+    build_tool_identity,
+)
 
 
 def test_hf_snapshot_identity_hashes_existing_bytes(tmp_path):
@@ -54,3 +58,21 @@ def test_tool_identity_binds_bytes_to_git_revision(tmp_path):
     assert result["git_revision"] == "2" * 40
     assert result["file"]["bytes"] == 6
     assert len(result["identity_sha256"]) == 64
+
+
+def test_code_tree_identity_detects_runtime_source_change(tmp_path):
+    required = {
+        "pyproject.toml": "project-a",
+        "src/ark/learning/execution.py": "execution-a",
+        "src/ark/learning/hf_lora.py": "lora-a",
+        "src/ark/learning/training_cli.py": "cli-a",
+    }
+    for relative, content in required.items():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    before = build_code_tree_identity(tmp_path)["manifest_sha256"]
+    (tmp_path / "src/ark/learning/hf_lora.py").write_text("lora-b", encoding="utf-8")
+    after = build_code_tree_identity(tmp_path)["manifest_sha256"]
+    assert before != after
