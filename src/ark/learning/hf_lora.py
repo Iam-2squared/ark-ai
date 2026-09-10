@@ -11,7 +11,6 @@ import hashlib
 import json
 import math
 import time
-from dataclasses import asdict
 from pathlib import Path
 
 from .dataset import digest
@@ -221,8 +220,13 @@ class HfLoRAFullRun:
 
     def run(self, snapshot: dict) -> dict:
         snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
-        if self.output_dir.exists() or self.output_dir.is_symlink() or not self.output_dir.parent.is_dir():
-            raise LoRARuntimeError("Candidate output directory must be new under an existing parent")
+        if (
+            self.output_dir.exists()
+            or self.output_dir.is_symlink()
+            or not self.output_dir.parent.is_dir()
+            or any(parent.is_symlink() for parent in (self.output_dir.parent, *self.output_dir.parents))
+        ):
+            raise LoRARuntimeError("Candidate output directory must be new under safe existing parents")
         train_rows, _ = _verify_local_identities(
             snapshot,
             base_dir=self.base_dir,
@@ -287,18 +291,5 @@ class HfLoRAFullRun:
             **metrics,
             "training_metrics_sha256": digest(metrics_payload),
             "adapter_directory": str(adapter_dir),
-            "authorization": asdict(
-                _AuthorizationEvidence(
-                    external_compute_authorized=True,
-                    preflight_authorized=True,
-                    real_training_authorized=True,
-                )
-            ),
+            "authorization_scope": "training",
         }
-
-
-class _AuthorizationEvidence:
-    def __init__(self, *, external_compute_authorized: bool, preflight_authorized: bool, real_training_authorized: bool):
-        self.external_compute_authorized = external_compute_authorized
-        self.preflight_authorized = preflight_authorized
-        self.real_training_authorized = real_training_authorized
