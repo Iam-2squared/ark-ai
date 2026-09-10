@@ -3,7 +3,7 @@ import hashlib
 import pytest
 
 from ark.learning.audit import build_human_review_queue
-from ark.learning.dataset import ContaminationGuard, LearningCandidate, build_dataset
+from ark.learning.dataset import ContaminationGuard, LearningCandidate
 from ark.learning.freeze import (
     AuditDecision,
     DatasetFreezeBlocked,
@@ -47,9 +47,7 @@ def empty_guard():
 
 
 def decisions_for(items):
-    dataset = build_dataset(items, empty_guard())
-    accepted = [item for item in items if item.candidate_id in {f"ex-{i:03d}" for i in range(150)}]
-    queue = build_human_review_queue(accepted, [])
+    queue = build_human_review_queue(items, [])
     return [
         AuditDecision(key, "human-reviewer", "independent", "reviewed")
         for key in required_review_keys(queue)
@@ -85,6 +83,8 @@ def test_missing_manual_review_blocks_freeze():
 def test_suspicious_manual_review_blocks_freeze():
     items = make_items()
     decisions = decisions_for(items)
-    decisions[0] = AuditDecision(decisions[0].review_key, "human-reviewer", "suspicious", "needs review")
+    decisions[0] = AuditDecision(
+        decisions[0].review_key, "human-reviewer", "suspicious", "needs review"
+    )
     with pytest.raises(DatasetFreezeBlocked, match="contamination suspicion"):
         freeze_experiment_001_dataset(items, empty_guard(), [], decisions)
