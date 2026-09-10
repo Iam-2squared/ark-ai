@@ -16,6 +16,7 @@ from .execution import (
     sha256_bytes,
     validate_experiment_001,
 )
+from .runtime_guard import RuntimeIdentity, verify_runtime_identity
 
 
 @dataclass(frozen=True)
@@ -50,14 +51,20 @@ class DisabledRealPreflightBackend:
         raise RuntimeError("real GPU preflight backend is not installed/authorized")
 
 
-def build_preflight_report(snapshot: dict, evidence: PreflightEvidence) -> bytes:
+def build_preflight_report(
+    snapshot: dict,
+    evidence: PreflightEvidence,
+    runtime_identity: RuntimeIdentity,
+) -> bytes:
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="preflight")
     evidence.validate()
+    verify_runtime_identity(snapshot, runtime_identity)
     report = {
         "schema_version": 1,
         "kind": "NON_CANDIDATE_PREFLIGHT",
         "execution_snapshot_sha256": snapshot_sha,
         "execution_core_sha256": execution_core_sha256(snapshot),
+        "runtime_identity": asdict(runtime_identity),
         "evidence": asdict(evidence),
         "candidate_created": False,
         "validation_opened": False,
@@ -67,8 +74,12 @@ def build_preflight_report(snapshot: dict, evidence: PreflightEvidence) -> bytes
     return canonical_json(report)
 
 
-def preflight_report_sha256(snapshot: dict, evidence: PreflightEvidence) -> str:
-    return sha256_bytes(build_preflight_report(snapshot, evidence))
+def preflight_report_sha256(
+    snapshot: dict,
+    evidence: PreflightEvidence,
+    runtime_identity: RuntimeIdentity,
+) -> str:
+    return sha256_bytes(build_preflight_report(snapshot, evidence, runtime_identity))
 
 
 def run_authorized_preflight(snapshot: dict, backend: PreflightBackend) -> PreflightEvidence:
