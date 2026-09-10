@@ -10,7 +10,12 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Protocol
 
-from .execution import canonical_json, sha256_bytes, validate_experiment_001
+from .execution import (
+    canonical_json,
+    execution_core_sha256,
+    sha256_bytes,
+    validate_experiment_001,
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +57,7 @@ def build_preflight_report(snapshot: dict, evidence: PreflightEvidence) -> bytes
         "schema_version": 1,
         "kind": "NON_CANDIDATE_PREFLIGHT",
         "execution_snapshot_sha256": snapshot_sha,
+        "execution_core_sha256": execution_core_sha256(snapshot),
         "evidence": asdict(evidence),
         "candidate_created": False,
         "validation_opened": False,
