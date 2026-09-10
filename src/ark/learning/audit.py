@@ -23,12 +23,20 @@ class ReviewPair:
             raise ValueError("similarity score must be within [0, 1]")
 
 
-def deterministic_sample_ids(items: list[LearningCandidate], *, fraction: float = 0.10, minimum: int = 15) -> list[str]:
+def deterministic_sample_ids(
+    items: list[LearningCandidate],
+    *,
+    fraction: float = 0.10,
+    minimum: int = 15,
+) -> list[str]:
     """Choose a stable SHA-ordered human-review sample from non-flagged examples."""
     if not 0 < fraction <= 1 or minimum < 1:
         raise ValueError("invalid sample policy")
     unique = {item.candidate_id: item for item in items}
-    count = min(len(unique), max(minimum, (len(unique) * int(fraction * 100) + 99) // 100))
+    count = min(
+        len(unique),
+        max(minimum, (len(unique) * int(fraction * 100) + 99) // 100),
+    )
     ordered = sorted(
         unique,
         key=lambda cid: hashlib.sha256(cid.encode("utf-8")).hexdigest(),
@@ -73,7 +81,11 @@ def build_human_review_queue(
         )
 
     non_flagged = [item for item in accepted if item.candidate_id not in flagged_ids]
-    sampled = deterministic_sample_ids(non_flagged, fraction=fraction, minimum=minimum) if non_flagged else []
+    sampled = (
+        deterministic_sample_ids(non_flagged, fraction=fraction, minimum=minimum)
+        if non_flagged
+        else []
+    )
     return {
         "policy": {
             "flagged_pair_review": "100_percent",
@@ -81,7 +93,14 @@ def build_human_review_queue(
             "non_flagged_minimum": minimum,
             "escalation": "any suspicious sampled item -> review 100% accepted examples",
         },
-        "flagged_pairs": sorted(pairs, key=lambda row: (row["candidate_id"], row["protected_id"], row["detector"])),
+        "flagged_pairs": sorted(
+            pairs,
+            key=lambda row: (
+                row["candidate_id"],
+                row["protected_id"],
+                row["detector"],
+            ),
+        ),
         "flagged_candidate_ids": sorted(flagged_ids),
         "sampled_non_flagged_candidate_ids": sampled,
         "accepted_count": len(accepted),
