@@ -11,10 +11,11 @@ import json
 from pathlib import Path
 
 from .dataset import digest
-from .execution import load_snapshot
+from .execution import load_snapshot, validate_experiment_001
 from .hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend
 from .identity import build_code_tree_identity
 from .preflight import build_preflight_report, run_authorized_preflight
+from .runtime_guard import collect_runtime_identity, verify_runtime_identity
 
 
 def _verify_file(path: Path, expected_sha256: str, label: str) -> None:
@@ -48,8 +49,20 @@ def _verify_common_evidence(
     )
 
 
+def _verify_actual_runtime(snapshot: dict) -> None:
+    """Bind the authorized snapshot to the actual already-provisioned GPU runtime."""
+    try:
+        import torch
+    except ImportError as exc:  # pragma: no cover - real stack intentionally absent in CI
+        raise RuntimeError("pinned V3 torch runtime is not installed") from exc
+    actual = collect_runtime_identity(torch)
+    verify_runtime_identity(snapshot, actual)
+
+
 def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
+    # Authorization and every exact identity must close before importing torch/GPU runtime.
+    validate_experiment_001(snapshot, authorization_scope="preflight")
     _verify_common_evidence(
         snapshot,
         provenance=args.provenance,
@@ -57,6 +70,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
         code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
+    _verify_actual_runtime(snapshot)
     report_path = Path(args.report)
     if report_path.exists() or report_path.is_symlink() or not report_path.parent.is_dir():
         raise RuntimeError("preflight report path must be a new file under an existing directory")
@@ -79,6 +93,8 @@ def run_preflight(args: argparse.Namespace) -> dict:
 
 def run_training(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
+    # Full-training authorization and prior preflight evidence must close before torch import.
+    validate_experiment_001(snapshot, authorization_scope="training")
     _verify_common_evidence(
         snapshot,
         provenance=args.provenance,
@@ -91,6 +107,7 @@ def run_training(args: argparse.Namespace) -> dict:
         snapshot["hardware"]["preflight_report_sha256"],
         "preflight report",
     )
+    _verify_actual_runtime(snapshot)
     runner = HfLoRAFullRun(
         base_dir=args.base_dir,
         dataset_path=args.dataset,
