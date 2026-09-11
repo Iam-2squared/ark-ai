@@ -39,7 +39,9 @@ def make_review_queue(candidates_path: Path, flags_path: Path) -> bytes:
     items = _candidates(candidates_path)
     dataset = build_dataset(items, ContaminationGuard.frozen_v2())
     if dataset.summary["train_examples"] != 120 or dataset.summary["validation_examples"] != 30:
-        raise RuntimeError("review queue requires exactly 120 accepted train / 30 validation examples")
+        raise RuntimeError(
+            "review queue requires exactly 120 accepted train / 30 validation examples"
+        )
     if dataset.summary["rejected"] or dataset.summary["duplicates"]:
         raise RuntimeError("resolve deterministic dataset rejections/duplicates before human audit")
     queue = build_human_review_queue(_accepted(dataset.payload), _pairs(flags_path))
@@ -84,7 +86,10 @@ def freeze_to_directory(
         "provenance_sha256": evidence.provenance_sha256,
         "contamination_sha256": evidence.contamination_sha256,
         "review_queue_sha256": evidence.review_queue_sha256,
-        "files": {name: {"sha256": digest(payload), "bytes": len(payload)} for name, payload in files.items()},
+        "files": {
+            name: {"sha256": digest(payload), "bytes": len(payload)}
+            for name, payload in files.items()
+        },
     }
     manifest_payload = canonical(manifest)
     with (output_dir / "manifest.json").open("xb") as handle:

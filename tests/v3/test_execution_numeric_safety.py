@@ -6,7 +6,6 @@ import pytest
 
 from ark.learning.execution import ExecutionBlocked, load_snapshot, validate_experiment_001
 
-
 TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 
 

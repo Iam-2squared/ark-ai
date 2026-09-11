@@ -30,7 +30,7 @@ def deterministic_training_order(rows: list[dict], seed: int = 42) -> list[dict]
     return sorted(
         rows,
         key=lambda row: hashlib.sha256(
-            f"{seed}:{row['candidate_id']}".encode("utf-8")
+            f"{seed}:{row['candidate_id']}".encode()
         ).hexdigest(),
     )
 
@@ -64,9 +64,15 @@ def _verify_local_identities(
     )
     if identity["base_file_manifest_sha256"] != snapshot["base"]["file_sha256_manifest"]:
         raise LoRARuntimeError("local base snapshot manifest mismatch")
-    if identity["tokenizer_file_manifest_sha256"] != snapshot["tokenizer"]["file_sha256_manifest"]:
+    if (
+        identity["tokenizer_file_manifest_sha256"]
+        != snapshot["tokenizer"]["file_sha256_manifest"]
+    ):
         raise LoRARuntimeError("local tokenizer snapshot manifest mismatch")
-    if identity["chat_template_probe_sha256"] != snapshot["tokenizer"]["chat_template_probe_sha256"]:
+    if (
+        identity["chat_template_probe_sha256"]
+        != snapshot["tokenizer"]["chat_template_probe_sha256"]
+    ):
         raise LoRARuntimeError("chat-template probe digest mismatch")
     return _load_dataset(dataset_path, snapshot["dataset"]["canonical_sha256"])
 
@@ -243,9 +249,14 @@ class HfLoRAFullRun:
             self.output_dir.exists()
             or self.output_dir.is_symlink()
             or not self.output_dir.parent.is_dir()
-            or any(parent.is_symlink() for parent in (self.output_dir.parent, *self.output_dir.parents))
+            or any(
+                parent.is_symlink()
+                for parent in (self.output_dir.parent, *self.output_dir.parents)
+            )
         ):
-            raise LoRARuntimeError("Candidate output directory must be new under safe existing parents")
+            raise LoRARuntimeError(
+                "Candidate output directory must be new under safe existing parents"
+            )
         train_rows, _ = _verify_local_identities(
             snapshot,
             base_dir=self.base_dir,

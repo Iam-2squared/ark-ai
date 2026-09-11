@@ -290,7 +290,9 @@ def validate_experiment_001(
             or auth["preflight_authorized"]
             or auth["real_training_authorized"]
         ):
-            raise ExecutionBlocked("pre-authorization snapshot must keep compute authorizations false")
+            raise ExecutionBlocked(
+                "pre-authorization snapshot must keep compute authorizations false"
+            )
     elif authorization_scope == "preflight":
         if (
             auth["external_compute_authorized"] is not True
@@ -298,13 +300,17 @@ def validate_experiment_001(
         ):
             raise ExecutionBlocked("explicit external-compute and preflight authorization required")
         if auth["real_training_authorized"]:
-            raise ExecutionBlocked("preflight authorization must not imply full training authorization")
+            raise ExecutionBlocked(
+                "preflight authorization must not imply full training authorization"
+            )
     else:
         if (
             auth["external_compute_authorized"] is not True
             or auth["real_training_authorized"] is not True
         ):
-            raise ExecutionBlocked("explicit external-compute and real-training authorization required")
+            raise ExecutionBlocked(
+                "explicit external-compute and real-training authorization required"
+            )
         if auth["preflight_authorized"] is not True:
             raise ExecutionBlocked("successful authorized preflight must precede full training")
 

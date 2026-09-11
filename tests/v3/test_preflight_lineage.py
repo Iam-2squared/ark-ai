@@ -10,7 +10,6 @@ from ark.learning.preflight import PreflightEvidence, build_preflight_report
 from ark.learning.runtime_guard import RuntimeIdentity
 from ark.learning.training_cli import _verify_preflight_report
 
-
 TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 
 

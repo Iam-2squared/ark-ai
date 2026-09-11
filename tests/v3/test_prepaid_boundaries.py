@@ -1,4 +1,3 @@
-import copy
 import json
 from pathlib import Path
 
@@ -7,7 +6,6 @@ import pytest
 from ark.learning.execution import ExecutionBlocked
 from ark.learning.lineage import ArtifactIdentity, CandidateLineage
 from ark.learning.preflight import DisabledRealPreflightBackend, run_authorized_preflight
-
 
 TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 

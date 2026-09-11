@@ -6,7 +6,6 @@ import pytest
 from ark.learning.authorization import build_preflight_authorization_packet
 from ark.learning.execution import ExecutionBlocked
 
-
 TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 
 

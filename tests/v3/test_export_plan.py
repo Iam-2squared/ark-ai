@@ -6,7 +6,6 @@ import pytest
 from ark.learning.export_plan import build_export_plan
 from ark.learning.identity import build_tool_identity
 
-
 TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 
 

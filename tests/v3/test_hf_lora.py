@@ -4,8 +4,11 @@ from pathlib import Path
 import pytest
 
 from ark.learning.execution import ExecutionBlocked
-from ark.learning.hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend, deterministic_training_order
-
+from ark.learning.hf_lora import (
+    HfLoRAFullRun,
+    HfLoRAPreflightBackend,
+    deterministic_training_order,
+)
 
 TEMPLATE = Path("docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json")
 
@@ -82,7 +85,11 @@ def test_wall_time_guard_aborts_full_run_before_candidate_save(monkeypatch, tmp_
         def step(self):
             return None
 
-    monkeypatch.setattr(module, "validate_experiment_001", lambda snapshot, authorization_scope: "a" * 64)
+    monkeypatch.setattr(
+        module,
+        "validate_experiment_001",
+        lambda snapshot, authorization_scope: "a" * 64,
+    )
     monkeypatch.setattr(module, "WallTimeBudget", BudgetSentinel)
     rows = [{"candidate_id": f"ex-{index}"} for index in range(120)]
     monkeypatch.setattr(module, "_verify_local_identities", lambda *args, **kwargs: (rows, []))

@@ -60,7 +60,10 @@ def _review_key_for_pair(row: dict) -> str:
 
 def required_review_keys(queue: dict) -> tuple[str, ...]:
     keys = [_review_key_for_pair(row) for row in queue["flagged_pairs"]]
-    keys.extend(f"sample:{candidate_id}" for candidate_id in queue["sampled_non_flagged_candidate_ids"])
+    keys.extend(
+        f"sample:{candidate_id}"
+        for candidate_id in queue["sampled_non_flagged_candidate_ids"]
+    )
     return tuple(sorted(keys))
 
 
@@ -76,10 +79,21 @@ def freeze_experiment_001_dataset(
     `protected_id` is an opaque detector-side identifier supplied by the audit stage.
     """
     dataset = build_dataset(items, guard)
-    if dataset.summary["train_examples"] != 120 or dataset.summary["validation_examples"] != 30:
-        raise DatasetFreezeBlocked("experiment-001 dataset must contain exactly 120 train / 30 validation")
-    if dataset.summary["rejected"] or dataset.summary["duplicates"] or dataset.summary["contamination_rejects"]:
-        raise DatasetFreezeBlocked("final dataset freeze requires zero rejected/duplicate/contaminated inputs")
+    if (
+        dataset.summary["train_examples"] != 120
+        or dataset.summary["validation_examples"] != 30
+    ):
+        raise DatasetFreezeBlocked(
+            "experiment-001 dataset must contain exactly 120 train / 30 validation"
+        )
+    if (
+        dataset.summary["rejected"]
+        or dataset.summary["duplicates"]
+        or dataset.summary["contamination_rejects"]
+    ):
+        raise DatasetFreezeBlocked(
+            "final dataset freeze requires zero rejected/duplicate/contaminated inputs"
+        )
 
     accepted = _accepted_items(dataset)
     queue = build_human_review_queue(accepted, flagged_pairs)
@@ -96,7 +110,9 @@ def freeze_experiment_001_dataset(
     if set(decision_map) != required:
         missing = sorted(required - set(decision_map))
         extra = sorted(set(decision_map) - required)
-        raise DatasetFreezeBlocked(f"audit decisions do not match queue; missing={missing}; extra={extra}")
+        raise DatasetFreezeBlocked(
+            f"audit decisions do not match queue; missing={missing}; extra={extra}"
+        )
     suspicious = sorted(
         decision.review_key for decision in decisions if decision.decision == "suspicious"
     )
@@ -130,10 +146,7 @@ def freeze_experiment_001_dataset(
         }
     )
 
-    ordered_decisions = [
-        asdict(decision_map[key])
-        for key in sorted(decision_map)
-    ]
+    ordered_decisions = [asdict(decision_map[key]) for key in sorted(decision_map)]
     decisions_payload = canonical(ordered_decisions)
     contamination_payload = canonical(
         {
@@ -147,7 +160,9 @@ def freeze_experiment_001_dataset(
             "sampled_non_flagged_count": len(queue["sampled_non_flagged_candidate_ids"]),
             "reviewers": sorted({decision.reviewer for decision in decisions}),
             "result": "CLEAR_FOR_PRETRAINING_IDENTITY_FREEZE",
-            "limitations": "heuristic detectors plus human review do not prove semantic independence",
+            "limitations": (
+                "heuristic detectors plus human review do not prove semantic independence"
+            ),
         }
     )
     return FrozenDatasetEvidence(
