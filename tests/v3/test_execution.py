@@ -59,6 +59,13 @@ def test_template_is_intentionally_blocked():
         validate_experiment_001(snapshot())
 
 
+def test_unknown_top_level_snapshot_section_is_rejected():
+    value = resolved_snapshot()
+    value["future_override"] = {"allow": True}
+    with pytest.raises(ExecutionBlocked, match="unknown sections: future_override"):
+        validate_experiment_001(value)
+
+
 def test_contract_dataset_size_cannot_drift():
     value = snapshot()
     value["dataset"]["train_count"] = 50
