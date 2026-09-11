@@ -38,9 +38,12 @@ class FrozenDatasetEvidence:
     dataset: DatasetArtifact
     provenance_payload: bytes
     provenance_sha256: str
+    review_queue_payload: bytes
+    review_queue_sha256: str
+    decisions_payload: bytes
+    decisions_sha256: str
     contamination_payload: bytes
     contamination_sha256: str
-    review_queue_sha256: str
 
 
 def _accepted_items(dataset: DatasetArtifact) -> list[LearningCandidate]:
@@ -65,6 +68,19 @@ def required_review_keys(queue: dict) -> tuple[str, ...]:
         for candidate_id in queue["sampled_non_flagged_candidate_ids"]
     )
     return tuple(sorted(keys))
+
+
+def build_review_queue_artifact(dataset_sha256: str, queue: dict) -> bytes:
+    """Canonical artifact presented to reviewers and later bound into freeze evidence."""
+    return canonical(
+        {
+            "schema_version": 1,
+            "experiment_id": "v3-format-compliance-001",
+            "dataset_sha256": dataset_sha256,
+            "queue": queue,
+            "required_review_keys": list(required_review_keys(queue)),
+        }
+    )
 
 
 def freeze_experiment_001_dataset(
@@ -97,7 +113,7 @@ def freeze_experiment_001_dataset(
 
     accepted = _accepted_items(dataset)
     queue = build_human_review_queue(accepted, flagged_pairs)
-    queue_payload = canonical(queue)
+    queue_payload = build_review_queue_artifact(dataset.sha256, queue)
     queue_sha = digest(queue_payload)
     required = set(required_review_keys(queue))
 
@@ -147,14 +163,23 @@ def freeze_experiment_001_dataset(
     )
 
     ordered_decisions = [asdict(decision_map[key]) for key in sorted(decision_map)]
-    decisions_payload = canonical(ordered_decisions)
+    decisions_payload = canonical(
+        {
+            "schema_version": 1,
+            "experiment_id": "v3-format-compliance-001",
+            "dataset_sha256": dataset.sha256,
+            "review_queue_sha256": queue_sha,
+            "decisions": ordered_decisions,
+        }
+    )
+    decisions_sha = digest(decisions_payload)
     contamination_payload = canonical(
         {
             "schema_version": 1,
             "experiment_id": "v3-format-compliance-001",
             "dataset_sha256": dataset.sha256,
             "review_queue_sha256": queue_sha,
-            "decision_set_sha256": digest(decisions_payload),
+            "decision_set_sha256": decisions_sha,
             "required_review_count": len(required),
             "flagged_pair_count": len(queue["flagged_pairs"]),
             "sampled_non_flagged_count": len(queue["sampled_non_flagged_candidate_ids"]),
@@ -169,7 +194,10 @@ def freeze_experiment_001_dataset(
         dataset=dataset,
         provenance_payload=provenance_payload,
         provenance_sha256=digest(provenance_payload),
+        review_queue_payload=queue_payload,
+        review_queue_sha256=queue_sha,
+        decisions_payload=decisions_payload,
+        decisions_sha256=decisions_sha,
         contamination_payload=contamination_payload,
         contamination_sha256=digest(contamination_payload),
-        review_queue_sha256=queue_sha,
     )
