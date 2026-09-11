@@ -47,6 +47,13 @@ def test_review_queue_rejects_conflicting_duplicate_flags():
         build_human_review_queue(items, flags)
 
 
+def test_review_pair_rejects_boolean_score_and_blank_metadata():
+    with pytest.raises(ValueError, match="finite similarity score"):
+        ReviewPair("id-00", "v2-x", True, "semantic-v1", "similar").validate()
+    with pytest.raises(ValueError, match="complete review-pair metadata"):
+        ReviewPair("id-00", "   ", 0.5, "semantic-v1", "similar").validate()
+
+
 def test_small_nonflagged_pool_samples_all_available():
     items = [candidate(f"id-{i}") for i in range(5)]
     assert len(deterministic_sample_ids(items)) == 5
