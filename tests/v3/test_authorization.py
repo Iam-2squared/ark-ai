@@ -60,6 +60,14 @@ def test_packet_can_be_built_before_preflight_output_exists():
     assert len(packet["execution_core_sha256"]) == 64
     assert packet["code_git_sha"] == "1" * 40
     assert packet["code_manifest_sha256"] == "0" * 64
+    assert packet["evaluation"]["v2_opening_requires_explicit_authorization"] is True
+    assert packet["evaluation"]["no_retuning_after_v2_opening"] is True
+    assert packet["privacy"] == {
+        "private_sessions_allowed": False,
+        "personal_memory_allowed": False,
+        "secrets_allowed": False,
+        "unattributed_text_allowed": False,
+    }
     assert packet["preflight"]["candidate_created"] is False
     assert packet["preflight"]["historical_v2_opened"] is False
     assert packet["hard_stops_after_preflight"][
