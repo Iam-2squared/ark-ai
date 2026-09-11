@@ -133,6 +133,9 @@ def validate_experiment_001(
     missing = sorted(_REQUIRED_TOP - snapshot.keys())
     if missing:
         raise ExecutionBlocked(f"snapshot missing sections: {', '.join(missing)}")
+    unexpected = sorted(snapshot.keys() - _REQUIRED_TOP)
+    if unexpected:
+        raise ExecutionBlocked(f"snapshot contains unknown sections: {', '.join(unexpected)}")
     if (
         snapshot.get("schema_version") != 1
         or snapshot.get("experiment_id") != "v3-format-compliance-001"
