@@ -41,6 +41,9 @@ def test_small_nonflagged_pool_samples_all_available():
 
 
 def report(role: str, outcomes: tuple[bool, ...], *, runtime_failure=False):
+    if len(outcomes) > 30:
+        raise ValueError("fixture outcomes may not exceed frozen validation size")
+    padded = outcomes + (True,) * (30 - len(outcomes))
     return ValidationReport(
         model_role=role,
         model_identity=role,
@@ -54,7 +57,7 @@ def report(role: str, outcomes: tuple[bool, ...], *, runtime_failure=False):
                 passed,
                 runtime_failure=runtime_failure and i == 0,
             )
-            for i, passed in enumerate(outcomes)
+            for i, passed in enumerate(padded)
         ),
     )
 
