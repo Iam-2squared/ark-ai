@@ -47,9 +47,9 @@ def report(role: str, outcomes: tuple[bool, ...], *, runtime_failure=False):
     return ValidationReport(
         model_role=role,
         model_identity=role,
-        scorer_sha256="s" * 64,
+        scorer_sha256="a" * 64,
         runtime_identity="llama.cpp-paired",
-        prompt_contract_sha256="p" * 64,
+        prompt_contract_sha256="b" * 64,
         cases=tuple(
             ValidationCase(
                 f"c{i}",
