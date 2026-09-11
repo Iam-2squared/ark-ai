@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from dataclasses import dataclass
 
 from .dataset import LearningCandidate
@@ -17,10 +18,17 @@ class ReviewPair:
     reason: str
 
     def validate(self) -> None:
-        if not self.candidate_id or not self.protected_id or not self.detector or not self.reason:
-            raise ValueError("complete review-pair metadata required")
-        if not 0.0 <= self.score <= 1.0:
-            raise ValueError("similarity score must be within [0, 1]")
+        for name in ("candidate_id", "protected_id", "detector", "reason"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError("complete review-pair metadata required")
+        if (
+            isinstance(self.score, bool)
+            or not isinstance(self.score, (int, float))
+            or not math.isfinite(self.score)
+            or not 0.0 <= self.score <= 1.0
+        ):
+            raise ValueError("finite similarity score must be within [0, 1]")
 
 
 def deterministic_sample_ids(
