@@ -8,7 +8,12 @@ from pathlib import Path
 
 from .audit import ReviewPair, build_human_review_queue
 from .dataset import ContaminationGuard, LearningCandidate, build_dataset, canonical, digest
-from .freeze import AuditDecision, freeze_experiment_001_dataset, required_review_keys
+from .freeze import (
+    AuditDecision,
+    build_review_queue_artifact,
+    freeze_experiment_001_dataset,
+    required_review_keys,
+)
 
 
 def _load_json_list(path: Path, label: str) -> list[dict]:
@@ -45,14 +50,7 @@ def make_review_queue(candidates_path: Path, flags_path: Path) -> bytes:
     if dataset.summary["rejected"] or dataset.summary["duplicates"]:
         raise RuntimeError("resolve deterministic dataset rejections/duplicates before human audit")
     queue = build_human_review_queue(_accepted(dataset.payload), _pairs(flags_path))
-    result = {
-        "schema_version": 1,
-        "experiment_id": "v3-format-compliance-001",
-        "dataset_sha256": dataset.sha256,
-        "queue": queue,
-        "required_review_keys": list(required_review_keys(queue)),
-    }
-    return canonical(result)
+    return build_review_queue_artifact(dataset.sha256, queue)
 
 
 def freeze_to_directory(
@@ -74,6 +72,8 @@ def freeze_to_directory(
     files = {
         "dataset.json": evidence.dataset.payload,
         "provenance.json": evidence.provenance_payload,
+        "review_queue.json": evidence.review_queue_payload,
+        "decisions.json": evidence.decisions_payload,
         "contamination.json": evidence.contamination_payload,
     }
     for name, payload in files.items():
@@ -84,8 +84,9 @@ def freeze_to_directory(
         "experiment_id": "v3-format-compliance-001",
         "dataset_sha256": evidence.dataset.sha256,
         "provenance_sha256": evidence.provenance_sha256,
-        "contamination_sha256": evidence.contamination_sha256,
         "review_queue_sha256": evidence.review_queue_sha256,
+        "decisions_sha256": evidence.decisions_sha256,
+        "contamination_sha256": evidence.contamination_sha256,
         "files": {
             name: {"sha256": digest(payload), "bytes": len(payload)}
             for name, payload in files.items()
@@ -134,6 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(f"dataset_sha256={manifest['dataset_sha256']}")
     print(f"provenance_sha256={manifest['provenance_sha256']}")
+    print(f"review_queue_sha256={manifest['review_queue_sha256']}")
+    print(f"decisions_sha256={manifest['decisions_sha256']}")
     print(f"contamination_sha256={manifest['contamination_sha256']}")
     print(f"manifest_sha256={manifest['manifest_sha256']}")
     return 0
