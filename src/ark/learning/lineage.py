@@ -21,7 +21,7 @@ class ArtifactIdentity:
             raise ValueError("artifact identity fields required")
         if len(self.sha256) != 64 or any(c not in "0123456789abcdef" for c in self.sha256):
             raise ValueError("artifact SHA-256 required")
-        if self.bytes <= 0:
+        if type(self.bytes) is not int or self.bytes <= 0:
             raise ValueError("artifact byte size required")
 
 
@@ -62,6 +62,8 @@ class CandidateLineage:
 
 def hash_file(path: Path) -> tuple[str, int]:
     path = Path(path)
+    if not path.is_file() or path.is_symlink():
+        raise ValueError("lineage hash path must be an existing non-symlink file")
     h = hashlib.sha256()
     size = 0
     with path.open("rb") as handle:
