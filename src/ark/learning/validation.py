@@ -34,11 +34,21 @@ class ValidationReport:
         ):
             if not isinstance(value, str) or not value.strip():
                 raise ValueError("validation identity missing")
+        if len(self.cases) != 30:
+            raise ValueError("experiment-001 validation requires exactly 30 cases")
         ids = [case.case_id for case in self.cases]
-        if not ids or len(set(ids)) != len(ids):
-            raise ValueError("validation cases must be complete and unique")
-        if any(not case.category for case in self.cases):
-            raise ValueError("validation category required")
+        if len(set(ids)) != len(ids):
+            raise ValueError("validation cases must be unique")
+        for case in self.cases:
+            if not isinstance(case.case_id, str) or not case.case_id.strip():
+                raise ValueError("validation case identity required")
+            if not isinstance(case.category, str) or not case.category.strip():
+                raise ValueError("validation category required")
+            if any(
+                type(value) is not bool
+                for value in (case.passed, case.runtime_failure, case.memory_failure)
+            ):
+                raise ValueError("validation outcomes must be exact booleans")
 
 
 def compare_validation(current: ValidationReport, candidate: ValidationReport) -> dict:
