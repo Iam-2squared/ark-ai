@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from ark.learning.runtime_guard import (
@@ -79,3 +81,16 @@ def test_wall_time_budget_blocks_after_limit():
 def test_wall_time_budget_rejects_nonpositive_values():
     with pytest.raises(ValueError, match="positive wall-clock"):
         WallTimeBudget(0)
+
+
+def test_wall_time_budget_rejects_nonfinite_values():
+    for value in (math.nan, math.inf, -math.inf):
+        with pytest.raises(ValueError, match="finite positive wall-clock"):
+            WallTimeBudget(value)
+
+    with pytest.raises(ValueError, match="finite wall-clock start"):
+        WallTimeBudget(1.0, started=math.nan)
+
+    budget = WallTimeBudget(1.0, started=100.0)
+    with pytest.raises(RuntimeError, match="finite wall-clock reading"):
+        budget.check("training", now=math.inf)
