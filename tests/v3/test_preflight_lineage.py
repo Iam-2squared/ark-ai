@@ -1,5 +1,6 @@
 import copy
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -118,3 +119,17 @@ def test_training_accepts_only_preflight_from_same_execution_core(tmp_path):
     changed["dataset"]["canonical_sha256"] = "8" * 64
     with pytest.raises(RuntimeError, match="different execution core"):
         _verify_preflight_report(report, changed)
+
+
+@pytest.mark.parametrize(
+    "changes,match",
+    [
+        ({"vram_gib": float("nan")}, "finite positive preflight measurements"),
+        ({"wall_seconds": True}, "finite positive preflight measurements"),
+        ({"base_loaded": 1}, "preflight mechanics did not complete"),
+        ({"tokenizer_probe_sha256": "z" * 64}, "tokenizer probe SHA-256 required"),
+    ],
+)
+def test_preflight_evidence_rejects_noncanonical_values(changes, match):
+    with pytest.raises(ValueError, match=match):
+        replace(evidence(), **changes).validate()
