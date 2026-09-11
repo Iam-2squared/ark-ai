@@ -101,11 +101,20 @@ def build_hf_snapshot_identity(
     if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("immutable 40-hex HF revision required")
     files = directory_file_identities(root)
-    names = {row.path for row in files}
-    if "config.json" not in names or "tokenizer_config.json" not in names:
-        raise ValueError("snapshot requires config.json and tokenizer_config.json")
-    if not any(name.endswith(".safetensors") for name in names):
+    by_path = {row.path: row for row in files}
+    required_files = ("config.json", "tokenizer_config.json", "tokenizer.json")
+    missing = [name for name in required_files if name not in by_path]
+    if missing:
+        raise ValueError(f"snapshot missing required identity files: {', '.join(missing)}")
+    empty_required = [name for name in required_files if by_path[name].bytes <= 0]
+    if empty_required:
+        raise ValueError(f"snapshot has empty required identity files: {', '.join(empty_required)}")
+
+    weight_rows = [row for row in files if row.path.endswith(".safetensors")]
+    if not weight_rows:
         raise ValueError("snapshot requires safetensors model weights")
+    if any(row.bytes <= 0 for row in weight_rows):
+        raise ValueError("snapshot contains empty safetensors model weights")
 
     file_rows = [row.__dict__ for row in files]
     base_manifest = {
@@ -132,6 +141,8 @@ def build_hf_snapshot_identity(
         "files": tokenizer_rows,
     }
     probe = file_identity(Path(chat_template_probe), label="chat-template-probe.txt")
+    if probe.bytes <= 0:
+        raise ValueError("chat-template probe must be non-empty")
     return {
         "model_id": model_id,
         "revision": revision,
