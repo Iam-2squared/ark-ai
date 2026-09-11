@@ -7,13 +7,17 @@ from ark.learning.identity import (
 )
 
 
-def test_hf_snapshot_identity_hashes_existing_bytes(tmp_path):
-    root = tmp_path / "model"
+def _write_complete_hf_snapshot(root):
     root.mkdir()
     (root / "config.json").write_text("{}", encoding="utf-8")
     (root / "tokenizer_config.json").write_text("{}", encoding="utf-8")
     (root / "tokenizer.json").write_text("{}", encoding="utf-8")
     (root / "model-00001-of-00001.safetensors").write_bytes(b"weights")
+
+
+def test_hf_snapshot_identity_hashes_existing_bytes(tmp_path):
+    root = tmp_path / "model"
+    _write_complete_hf_snapshot(root)
     probe = tmp_path / "probe.txt"
     probe.write_text("rendered chat template probe", encoding="utf-8")
 
@@ -45,6 +49,55 @@ def test_hf_snapshot_requires_immutable_revision(tmp_path):
             root,
             model_id="Qwen/Qwen3-4B-Instruct-2507",
             revision="main",
+            chat_template_probe=probe,
+        )
+
+
+def test_hf_snapshot_requires_tokenizer_json(tmp_path):
+    root = tmp_path / "model"
+    root.mkdir()
+    (root / "config.json").write_text("{}", encoding="utf-8")
+    (root / "tokenizer_config.json").write_text("{}", encoding="utf-8")
+    (root / "model.safetensors").write_bytes(b"weights")
+    probe = tmp_path / "probe.txt"
+    probe.write_text("probe", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="tokenizer.json"):
+        build_hf_snapshot_identity(
+            root,
+            model_id="Qwen/Qwen3-4B-Instruct-2507",
+            revision="2" * 40,
+            chat_template_probe=probe,
+        )
+
+
+def test_hf_snapshot_rejects_empty_weight_file(tmp_path):
+    root = tmp_path / "model"
+    _write_complete_hf_snapshot(root)
+    (root / "model-00001-of-00001.safetensors").write_bytes(b"")
+    probe = tmp_path / "probe.txt"
+    probe.write_text("probe", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="empty safetensors"):
+        build_hf_snapshot_identity(
+            root,
+            model_id="Qwen/Qwen3-4B-Instruct-2507",
+            revision="3" * 40,
+            chat_template_probe=probe,
+        )
+
+
+def test_hf_snapshot_rejects_empty_chat_template_probe(tmp_path):
+    root = tmp_path / "model"
+    _write_complete_hf_snapshot(root)
+    probe = tmp_path / "probe.txt"
+    probe.write_bytes(b"")
+
+    with pytest.raises(ValueError, match="chat-template probe"):
+        build_hf_snapshot_identity(
+            root,
+            model_id="Qwen/Qwen3-4B-Instruct-2507",
+            revision="4" * 40,
             chat_template_probe=probe,
         )
 
