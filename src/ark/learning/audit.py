@@ -60,15 +60,18 @@ def build_human_review_queue(
     ids = {item.candidate_id for item in accepted}
     flagged_ids: set[str] = set()
     pairs: list[dict] = []
-    seen_pairs: set[tuple[str, str, str]] = set()
+    seen_pairs: dict[tuple[str, str, str], tuple[float, str]] = {}
     for pair in flagged_pairs:
         pair.validate()
         if pair.candidate_id not in ids:
             raise ValueError("flag references a non-accepted candidate")
         key = (pair.candidate_id, pair.protected_id, pair.detector)
+        evidence = (pair.score, pair.reason)
         if key in seen_pairs:
+            if seen_pairs[key] != evidence:
+                raise ValueError("conflicting duplicate review pair")
             continue
-        seen_pairs.add(key)
+        seen_pairs[key] = evidence
         flagged_ids.add(pair.candidate_id)
         pairs.append(
             {
