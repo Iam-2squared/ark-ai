@@ -36,6 +36,84 @@ _REQUIRED_TOP = {
     "privacy",
 }
 
+_REQUIRED_SECTION_KEYS = {
+    "authorization": {
+        "external_compute_authorized",
+        "preflight_authorized",
+        "real_training_authorized",
+        "v2_opening_authorized",
+        "promotion_authorized",
+    },
+    "code": {"git_sha", "manifest_sha256", "clean_tree_required"},
+    "base": {"model_id", "revision", "file_sha256_manifest"},
+    "tokenizer": {
+        "revision",
+        "file_sha256_manifest",
+        "chat_template_probe_sha256",
+    },
+    "dataset": {
+        "train_count",
+        "validation_count",
+        "canonical_sha256",
+        "provenance_manifest_sha256",
+        "contamination_report_sha256",
+    },
+    "method": {
+        "name",
+        "rank",
+        "alpha",
+        "dropout",
+        "target_modules",
+        "epochs",
+        "learning_rate",
+        "seed",
+        "max_sequence_length",
+        "microbatch",
+        "gradient_accumulation",
+        "optimizer",
+        "optimizer_betas",
+        "optimizer_eps",
+        "optimizer_weight_decay",
+        "optimizer_amsgrad",
+        "optimizer_maximize",
+        "scheduler",
+        "precision",
+        "gradient_checkpointing",
+    },
+    "environment": {
+        "os_or_image_digest",
+        "python",
+        "torch",
+        "transformers",
+        "peft",
+        "accelerate",
+        "cuda_runtime",
+        "bitsandbytes",
+    },
+    "hardware": {"device", "vram_gib", "driver", "preflight_report_sha256"},
+    "budget": {"full_candidate_runs", "max_cost_jpy", "wall_clock_timeout_minutes"},
+    "export": {
+        "llama_cpp_revision",
+        "converter_identity",
+        "quantizer_identity",
+        "quantization",
+        "paired_baseline_required",
+    },
+    "evaluation": {
+        "validation_count",
+        "v2_current_runs",
+        "v2_candidate_runs",
+        "v2_opening_requires_explicit_authorization",
+        "no_retuning_after_v2_opening",
+    },
+    "privacy": {
+        "private_sessions_allowed",
+        "personal_memory_allowed",
+        "secrets_allowed",
+        "unattributed_text_allowed",
+    },
+}
+
 
 def canonical_json(value: object) -> bytes:
     return (
@@ -127,6 +205,22 @@ def _require_positive_number(value: object, field: str) -> None:
         raise ExecutionBlocked(f"finite positive numeric value required: {field}")
 
 
+def _require_exact_section_shape(snapshot: dict, section: str) -> None:
+    value = snapshot.get(section)
+    if not isinstance(value, dict):
+        raise ExecutionBlocked(f"snapshot section must be an object: {section}")
+    expected = _REQUIRED_SECTION_KEYS[section]
+    missing = sorted(expected - value.keys())
+    unexpected = sorted(value.keys() - expected)
+    if missing or unexpected:
+        details: list[str] = []
+        if missing:
+            details.append("missing=" + ",".join(missing))
+        if unexpected:
+            details.append("unexpected=" + ",".join(unexpected))
+        raise ExecutionBlocked(f"snapshot section shape mismatch: {section} ({'; '.join(details)})")
+
+
 def validate_experiment_001(
     snapshot: dict, *, authorization_scope: AuthorizationScope = "none"
 ) -> str:
@@ -136,6 +230,8 @@ def validate_experiment_001(
     unexpected = sorted(snapshot.keys() - _REQUIRED_TOP)
     if unexpected:
         raise ExecutionBlocked(f"snapshot contains unknown sections: {', '.join(unexpected)}")
+    for section in _REQUIRED_SECTION_KEYS:
+        _require_exact_section_shape(snapshot, section)
     if (
         snapshot.get("schema_version") != 1
         or snapshot.get("experiment_id") != "v3-format-compliance-001"
