@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 
@@ -26,14 +27,12 @@ class ValidationReport:
     def validate(self) -> None:
         if self.model_role not in {"paired_current", "candidate"}:
             raise ValueError("invalid validation model role")
-        for value in (
-            self.model_identity,
-            self.scorer_sha256,
-            self.runtime_identity,
-            self.prompt_contract_sha256,
-        ):
+        for value in (self.model_identity, self.runtime_identity):
             if not isinstance(value, str) or not value.strip():
                 raise ValueError("validation identity missing")
+        for value in (self.scorer_sha256, self.prompt_contract_sha256):
+            if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("validation SHA-256 identity required")
         if len(self.cases) != 30:
             raise ValueError("experiment-001 validation requires exactly 30 cases")
         ids = [case.case_id for case in self.cases]
