@@ -183,6 +183,8 @@ def validate_experiment_001(
         or snapshot["evaluation"].get("v2_candidate_runs") != 2
     ):
         raise ExecutionBlocked("validation/V2 budget must remain 30 and 2 Current + 2 Candidate")
+    if snapshot["evaluation"].get("v2_opening_requires_explicit_authorization") is not True:
+        raise ExecutionBlocked("V2 opening must remain behind explicit authorization")
     if snapshot["evaluation"].get("no_retuning_after_v2_opening") is not True:
         raise ExecutionBlocked("V2 opening may not permit retuning experiment 001")
 
