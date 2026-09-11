@@ -7,6 +7,8 @@ or unauthorized execution snapshot.
 
 from __future__ import annotations
 
+import math
+import re
 from dataclasses import asdict, dataclass
 from typing import Protocol
 
@@ -32,13 +34,28 @@ class PreflightEvidence:
     runtime_error: str | None = None
 
     def validate(self) -> None:
-        if not self.device.strip() or self.vram_gib <= 0 or self.peak_vram_mib <= 0:
-            raise ValueError("valid accelerator measurements required")
-        if not self.base_loaded or not self.forward_backward_ok or not self.optimizer_step_ok:
+        if not isinstance(self.device, str) or not self.device.strip():
+            raise ValueError("valid accelerator identity required")
+        for name in ("vram_gib", "peak_vram_mib", "wall_seconds"):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValueError("finite positive preflight measurements required")
+        if any(
+            value is not True
+            for value in (self.base_loaded, self.forward_backward_ok, self.optimizer_step_ok)
+        ):
             raise ValueError("preflight mechanics did not complete")
-        if len(self.tokenizer_probe_sha256) != 64:
+        if (
+            not isinstance(self.tokenizer_probe_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", self.tokenizer_probe_sha256) is None
+        ):
             raise ValueError("tokenizer probe SHA-256 required")
-        if self.wall_seconds <= 0 or self.runtime_error is not None:
+        if self.runtime_error is not None:
             raise ValueError("preflight runtime failure")
 
 
