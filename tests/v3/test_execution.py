@@ -80,6 +80,13 @@ def test_v2_opening_budget_cannot_drift():
         validate_experiment_001(value)
 
 
+def test_v2_opening_must_remain_explicitly_authorized():
+    value = resolved_snapshot()
+    value["evaluation"]["v2_opening_requires_explicit_authorization"] = False
+    with pytest.raises(ExecutionBlocked, match="explicit authorization"):
+        validate_experiment_001(value)
+
+
 def test_privacy_cannot_be_relaxed():
     value = snapshot()
     value["privacy"]["personal_memory_allowed"] = True
