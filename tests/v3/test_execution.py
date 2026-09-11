@@ -66,6 +66,20 @@ def test_unknown_top_level_snapshot_section_is_rejected():
         validate_experiment_001(value)
 
 
+def test_unknown_nested_snapshot_field_is_rejected():
+    value = resolved_snapshot()
+    value["method"]["future_override"] = True
+    with pytest.raises(ExecutionBlocked, match="section shape mismatch: method"):
+        validate_experiment_001(value)
+
+
+def test_missing_nested_snapshot_field_is_rejected():
+    value = resolved_snapshot()
+    del value["export"]["paired_baseline_required"]
+    with pytest.raises(ExecutionBlocked, match="section shape mismatch: export"):
+        validate_experiment_001(value)
+
+
 def test_contract_dataset_size_cannot_drift():
     value = snapshot()
     value["dataset"]["train_count"] = 50
