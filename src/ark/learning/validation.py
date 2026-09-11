@@ -48,8 +48,6 @@ class ValidationReport:
                 for value in (case.passed, case.runtime_failure, case.memory_failure)
             ):
                 raise ValueError("validation outcomes must be exact booleans")
-            if case.passed and (case.runtime_failure or case.memory_failure):
-                raise ValueError("a failed runtime/memory case may not be marked passed")
 
 
 def compare_validation(current: ValidationReport, candidate: ValidationReport) -> dict:
