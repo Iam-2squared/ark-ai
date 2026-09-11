@@ -65,6 +65,8 @@ def build_preflight_authorization_packet(snapshot: dict) -> dict:
             "wall_clock_timeout_minutes": snapshot["budget"]["wall_clock_timeout_minutes"],
         },
         "export": dict(snapshot["export"]),
+        "evaluation": dict(snapshot["evaluation"]),
+        "privacy": dict(snapshot["privacy"]),
         "preflight": {
             "candidate_created": False,
             "validation_opened": False,
