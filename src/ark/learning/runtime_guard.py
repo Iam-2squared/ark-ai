@@ -7,6 +7,7 @@ No provider API, cloud provisioning, model download, or billing action is perfor
 from __future__ import annotations
 
 import importlib.metadata
+import math
 import os
 import platform
 import subprocess
@@ -130,13 +131,23 @@ class WallTimeBudget:
     """Soft fail-closed wall-time guard checked at every controlled runtime boundary."""
 
     def __init__(self, timeout_minutes: float, *, started: float | None = None):
-        if isinstance(timeout_minutes, bool) or timeout_minutes <= 0:
-            raise ValueError("positive wall-clock timeout required")
+        if (
+            isinstance(timeout_minutes, bool)
+            or not isinstance(timeout_minutes, (int, float))
+            or not math.isfinite(float(timeout_minutes))
+            or timeout_minutes <= 0
+        ):
+            raise ValueError("finite positive wall-clock timeout required")
         self.timeout_seconds = float(timeout_minutes) * 60.0
-        self.started = time.monotonic() if started is None else float(started)
+        measured_start = time.monotonic() if started is None else float(started)
+        if not math.isfinite(measured_start):
+            raise ValueError("finite wall-clock start required")
+        self.started = measured_start
 
     def check(self, phase: str, *, now: float | None = None) -> None:
         current = time.monotonic() if now is None else float(now)
+        if not math.isfinite(current):
+            raise RuntimeError("finite wall-clock reading required")
         elapsed = current - self.started
         if elapsed < 0:
             raise RuntimeError("monotonic clock moved backwards")
