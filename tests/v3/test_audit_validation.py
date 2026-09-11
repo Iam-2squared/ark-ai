@@ -1,3 +1,5 @@
+import pytest
+
 from ark.learning.audit import ReviewPair, build_human_review_queue, deterministic_sample_ids
 from ark.learning.dataset import LearningCandidate
 from ark.learning.validation import ValidationCase, ValidationReport, compare_validation
@@ -33,6 +35,16 @@ def test_review_queue_is_deterministic_and_reviews_all_flags():
     assert a == b
     assert a["flagged_candidate_ids"] == ["id-00"]
     assert len(a["sampled_non_flagged_candidate_ids"]) >= 15
+
+
+def test_review_queue_rejects_conflicting_duplicate_flags():
+    items = [candidate("id-00")]
+    flags = [
+        ReviewPair("id-00", "v2-x", 0.91, "semantic-v1", "similar"),
+        ReviewPair("id-00", "v2-x", 0.72, "semantic-v1", "different evidence"),
+    ]
+    with pytest.raises(ValueError, match="conflicting duplicate review pair"):
+        build_human_review_queue(items, flags)
 
 
 def test_small_nonflagged_pool_samples_all_available():
