@@ -1,77 +1,77 @@
 # ARK AI Project Status
 
-**LATEST — STAGED**
+**LATEST**
 
-Saved at: **2026-09-26 13:00:38 JST (+09:00)**
+Saved at: **2026-09-26 15:09:00 JST (+09:00)**
 
 ## Checkpoint identity
 
-- Branch: `automation/v3-git-state-hardening-20260926-1300`
-- Target branch: `research/v3-learning-evaluation`
-- Target PR: #5 (Draft / unmerged)
-- Target PR HEAD at save time: `ceae0919caf0b6a3b6cca4a5b4862e9235026663`
-- Exact latest code HEAD described by this checkpoint: `5576a270349fba0494b8950ed1fa8a216bc8d2f2`
-- Primary implementation commit: `cac3bd1ef011cf2e6b2edf1fb0d5bd7c345dca1c` — `feat(v3): bind runtime to clean frozen git checkout`
-- Follow-up lint/test-format commit: `5576a270349fba0494b8950ed1fa8a216bc8d2f2`
-- Previous staged checkpoint: `e566662c2d2ecb132143f62320d89d06cc0f47cf` — superseded by this staged checkpoint.
-- Checkpoint commit HEAD: this status-only commit contains this file, so its resulting SHA cannot be embedded in itself; record that resulting SHA in the next checkpoint.
-- Roadmap position: **V3 Learning & Evaluation — Draft / NOT_PASSED / Pre-Paid-Compute boundary**
+- Branch: `research/v3-learning-evaluation`
+- Target PR: #5 (**Draft / unmerged**)
+- Exact work basis HEAD described by this checkpoint: `7569c210bbcabdba1a5077ba4c9bee4d9f1ac223`
+- Primary new work commit: `7569c210bbcabdba1a5077ba4c9bee4d9f1ac223` — `feat(v3): close Candidate run evidence manifest`
+- Previous checkpoint HEAD: `767b17957ea4eb7561b5b0caa9e5ad6acc3aefd1` — superseded by this checkpoint.
+- Checkpoint commit HEAD: this status file is part of the checkpoint commit, so its resulting SHA cannot truthfully be embedded in itself; record that resulting SHA as the prior checkpoint HEAD in the next update.
+- Roadmap position: **V3 Learning & Evaluation — Draft / NOT_PASSED / Pre-Paid-Compute closure**
 - Canonical status path: `docs/PROJECT_STATUS.md`
 
 ## Current state / 現在の状況
 
-V1 Local Core and V2 ARK Intelligence remain **OFFICIAL PASS** with frozen evidence unchanged. Local UI v1 and Launcher/Gate Runner evidence remains unchanged. V3 Contract 1 remains frozen and PR #5 remains Draft/unmerged.
+V1 Local Core and V2 ARK Intelligence remain **OFFICIAL PASS** with frozen evidence unchanged. Local UI v1 and Launcher/Gate Runner evidence remain unchanged. V3 Contract 1 remains byte-for-byte frozen and PR #5 remains Draft/unmerged.
 
-The target V3 branch remains at `ceae0919caf0b6a3b6cca4a5b4862e9235026663`, whose CI #142 / run ID `36214712712` is GREEN. Existing-branch mutation is still unavailable from this automation runtime, so the new work is preserved on an isolated staging branch rather than overwriting PR #5.
+The previously staged V3 snapshot/git-state hardening is integrated on the actual PR branch. Its CI #143 / run ID `36220017532` completed **SUCCESS** across all six Windows/Linux Python 3.11/3.12/3.13 jobs.
 
-No paid/external compute, real Candidate/adapter weights, frozen V2 Candidate evaluation, promotion, Contract change, or main merge occurred.
+This batch adds create-only Candidate-run evidence closure after an explicitly authorized full training run. It does **not** authorize or execute external compute, Candidate generation, Validation/V2 opening, promotion, Contract changes, or main merge.
 
 ## Work completed in this batch
 
 ### New work
 
-- Re-read PR #5, the target/staged checkpoint, and branch ancestry before each GitHub write; no force-push or target overwrite was attempted.
-- Closed an execution-identity gap in the authorized runtime: `ark-v3-run` now verifies the **actual local Git checkout** instead of trusting only the operator-supplied `--code-sha`.
-- Before any GPU/runtime import path, the runtime requires:
-  - an existing non-symlink code root,
-  - an exact lowercase 40-hex frozen `code.git_sha`,
-  - `git rev-parse --verify HEAD` equal to the frozen SHA,
-  - an empty `git status --porcelain=v1 --untracked-files=all`.
-- Dirty tracked files and untracked files now fail closed before V3 compute.
-- Retained the existing runtime source-manifest check, so Git commit identity and byte-level `code.manifest_sha256` evidence are both required.
-- Added tests for clean/exact HEAD acceptance, HEAD mismatch rejection, and dirty/untracked checkout rejection.
-- Updated `docs/v3/PRE_PAID_COMPUTE_GATE.md` to document the new repository-state evidence.
-- Detected and corrected a top-level test-spacing/lint issue before publishing the staging branch.
+- Added `src/ark/learning/run_manifest.py` to close a completed Candidate run with a deterministic, create-only `run-manifest.json`.
+- The manifest inventories every already-created adapter/tokenizer/metrics/execution-snapshot file by SHA-256, byte length, relative path and symlink state.
+- Manifest creation revalidates the full-training execution snapshot, requires saved `execution-snapshot.json` bytes to equal the authorized canonical snapshot, and requires `training-metrics.json` to bind to the same execution-snapshot and dataset identities.
+- The run manifest explicitly records that this training run did not open Validation, historical V2, or promotion.
+- Integrated final manifest generation into `HfLoRAFullRun.run()`; the runtime returns manifest path and SHA-256 only after create-only evidence closure.
+- Added three focused tests covering deterministic inventory/hashability, saved-snapshot tamper rejection, and metrics/dataset cross-binding rejection.
+- Updated `docs/v3/PRE_PAID_COMPUTE_GATE.md` to document Candidate-run evidence closure.
 
 ### Previously existing work
 
-The prior staged batch remains intact: experiment-001 frozen integer/boolean recipe fields reject Python/JSON type-coercion edge cases; dataset/provenance/contamination tooling, preflight evidence, runtime identity checks, authorization packets, local identity hashing, LoRA runtime plumbing, Candidate/export lineage, paired Q4_K_M planning, and Validation-only comparison were already present.
+Dataset/provenance/contamination freeze tooling; human-review queue binding; strict execution-snapshot validation; separate preflight/full-training authorization scopes; local HF/tool/code identity hashing; authorization packets; runtime environment identity checks; clean exact-Git-checkout enforcement; non-Candidate preflight evidence; LoRA runtime plumbing; Validation-only comparison; Candidate/export lineage contracts; and paired Q4_K_M export planning were already present before this batch.
 
 ## Tests / CI / evidence
 
-- Target PR #5 HEAD `ceae0919caf0b6a3b6cca4a5b4862e9235026663`: CI #142 / run ID `36214712712`: **GREEN**.
-- New git-checkout hardening: three focused tests added. No GitHub Actions run exists for this new staging head yet, so **no GREEN claim is made for the new work**.
+- Integrated hardening HEAD `767b17957ea4eb7561b5b0caa9e5ad6acc3aefd1`: CI #143 / run ID `36220017532`: **GREEN / 6 of 6 jobs SUCCESS**.
+- New Candidate-run-manifest work HEAD `7569c210bbcabdba1a5077ba4c9bee4d9f1ac223`: CI #144 / run ID `36222828905`: **QUEUED at checkpoint time**. No GREEN claim is made yet for the new batch.
+- New focused tests added: 3.
 - V1/V2/Local UI/Launcher frozen evidence: unchanged.
 - V3 Contract 1 semantics/hash: unchanged.
 - Historical/frozen V2 final evaluation: unopened.
-- No Candidate artifacts were generated.
+- No Candidate/adapters/weights were generated.
+
+## Frozen contracts / evidence unchanged
+
+- V1 Local Core freeze and evidence.
+- V2 ARK Intelligence freeze, fixed 12-question suite/scorer/policy, and known `math-02` format-only failure.
+- Local UI v1 and Launcher/Gate Runner reviewed evidence.
+- V3 Contract 1 and its recorded hash.
+- Frozen/protected V2 final evaluation contents and opening budget.
 
 ## Unresolved blockers / authorization boundaries
 
-1. The connector cannot fast-forward or directly mutate `research/v3-learning-evaluation` in this runtime, so staged work still requires a later safe integration path.
-2. Immutable Hugging Face revision for `Qwen/Qwen3-4B-Instruct-2507`, materialized base/tokenizer hashes, and chat-template probe hash remain unresolved.
-3. The real 120-train / 30-validation dataset still requires human-approved provenance and contamination-review decisions.
-4. Exact Linux/container + Python/torch/transformers/PEFT/accelerate/CUDA identities remain unresolved.
-5. Exact llama.cpp revision plus converter/quantizer byte identities remain unresolved.
-6. Concrete GPU/device/VRAM/driver proposal plus user-approved JPY ceiling, wall-clock ceiling, and provider billing/cost-cap evidence remain required before external compute.
-7. Final preflight-authorizable head must have GREEN CI.
-8. Hard stops remain: no paid/external compute, no real Candidate generation, no frozen V2 opening, no Candidate promotion, no frozen-Contract change, and no main merge without explicit authorization.
-9. Frozen Contract 1 continues to block automatic V4–V10 scope unless that contract boundary is explicitly changed.
+1. Immutable 40-hex Hugging Face revision for `Qwen/Qwen3-4B-Instruct-2507`, materialized base/tokenizer byte manifests, and chat-template probe hash remain unresolved.
+2. The real experiment-001 120-train / 30-validation dataset still requires traceable provenance/rights, human approvals, contamination-review decisions and final frozen hashes.
+3. Exact Linux/container plus Python/torch/transformers/PEFT/accelerate/CUDA identities remain unresolved.
+4. Exact llama.cpp revision plus converter/quantizer byte identities remain unresolved.
+5. Concrete GPU/device/VRAM/driver plus user-approved JPY ceiling, wall-clock ceiling, and provider-side billing/cost-cap evidence remain required before any external compute.
+6. CI #144 must become GREEN before this new head can be treated as preflight-ready.
+7. Hard stops remain: no paid/external compute; no real Candidate generation; no frozen V2 opening; no Candidate promotion; no frozen-Contract change; no main merge without explicit authorization.
+8. V3 Contract 1 continues to exclude V4–V10 implementation scope from this V3 workstream unless that frozen boundary is explicitly changed.
 
 ## Next plan / 今後の方針
 
-1. Publish this isolated staging checkpoint without changing PR #5.
-2. Obtain a CI-bearing path for the staged work if the connector permits it; otherwise continue semantics-preserving V3 inspection and test/tooling preparation.
-3. Diagnose and fix any ordinary CI/software failures without weakening frozen gates.
-4. Continue free fail-closed V3 readiness work around execution identity, provenance, reproducibility, preflight/export evidence, and human-review preparation.
-5. Re-check the latest PR #5 HEAD and canonical status before every later write; reconcile concurrent work and never force-push.
+1. Follow CI #144 to completion; diagnose/fix ordinary code or lint failures without weakening any frozen gate.
+2. Continue free V3 readiness hardening around Candidate evidence/reload/export closure, provenance/reproducibility and authorization evidence.
+3. Prepare provider-neutral cost/billing evidence interfaces only where they can remain offline, reversible and non-authorizing; do not provision or purchase compute.
+4. Continue closing remaining runtime/export identity gaps that require no fabricated external identities.
+5. Re-read PR #5, latest HEAD and this canonical checkpoint before every later branch write; reconcile concurrent work and never force-push.
