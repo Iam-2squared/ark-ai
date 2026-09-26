@@ -7,6 +7,7 @@ It only inventories bytes that already exist in a newly-created Candidate run di
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -48,6 +49,74 @@ def _load_canonical_json(path: Path, label: str) -> tuple[dict, bytes]:
     return parsed, payload
 
 
+def _require_exact_int(metrics: dict, field: str, expected: int | None = None) -> int:
+    value = metrics.get(field)
+    if type(value) is not int or value <= 0:
+        raise CandidateRunManifestError(f"training metrics {field} must be a positive integer")
+    if expected is not None and value != expected:
+        raise CandidateRunManifestError(
+            f"training metrics {field} must equal frozen value {expected}"
+        )
+    return value
+
+
+def _require_finite_number(
+    metrics: dict,
+    field: str,
+    *,
+    allow_zero: bool = False,
+) -> float:
+    value = metrics.get(field)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise CandidateRunManifestError(f"training metrics {field} must be numeric")
+    measured = float(value)
+    if not math.isfinite(measured) or measured < 0 or (not allow_zero and measured == 0):
+        qualifier = "finite non-negative" if allow_zero else "finite positive"
+        raise CandidateRunManifestError(f"training metrics {field} must be {qualifier}")
+    return measured
+
+
+def _validate_training_metrics(snapshot: dict, metrics: dict, snapshot_sha: str) -> None:
+    expected_fields = {
+        "schema_version",
+        "experiment_id",
+        "execution_snapshot_sha256",
+        "dataset_sha256",
+        "optimizer_steps",
+        "microbatches",
+        "mean_training_loss",
+        "peak_vram_mib",
+        "peak_reserved_vram_mib",
+        "wall_seconds",
+        "trainable_parameters",
+        "method",
+    }
+    if set(metrics) != expected_fields:
+        raise CandidateRunManifestError("training metrics schema mismatch")
+    if type(metrics["schema_version"]) is not int or metrics["schema_version"] != 1:
+        raise CandidateRunManifestError("training metrics schema_version must equal 1")
+    if metrics["experiment_id"] != snapshot["experiment_id"]:
+        raise CandidateRunManifestError("training metrics experiment identity mismatch")
+    if metrics["execution_snapshot_sha256"] != snapshot_sha:
+        raise CandidateRunManifestError(
+            "training metrics do not match the authorized execution snapshot"
+        )
+    if metrics["dataset_sha256"] != snapshot["dataset"]["canonical_sha256"]:
+        raise CandidateRunManifestError("training metrics dataset identity mismatch")
+
+    _require_exact_int(metrics, "optimizer_steps", 15)
+    _require_exact_int(metrics, "microbatches", 120)
+    _require_finite_number(metrics, "mean_training_loss", allow_zero=True)
+    _require_finite_number(metrics, "peak_vram_mib")
+    _require_finite_number(metrics, "peak_reserved_vram_mib")
+    _require_finite_number(metrics, "wall_seconds")
+    _require_exact_int(metrics, "trainable_parameters")
+
+    method = metrics.get("method")
+    if not isinstance(method, dict) or canonical_json(method) != canonical_json(snapshot["method"]):
+        raise CandidateRunManifestError("training metrics method does not match frozen recipe")
+
+
 def _validate_candidate_evidence(snapshot: dict, root: Path) -> str:
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
     if not root.is_dir() or root.is_symlink():
@@ -74,12 +143,7 @@ def _validate_candidate_evidence(snapshot: dict, root: Path) -> str:
         )
 
     metrics, _ = _load_canonical_json(metrics_path, "training metrics")
-    if metrics.get("execution_snapshot_sha256") != snapshot_sha:
-        raise CandidateRunManifestError(
-            "training metrics do not match the authorized execution snapshot"
-        )
-    if metrics.get("dataset_sha256") != snapshot["dataset"]["canonical_sha256"]:
-        raise CandidateRunManifestError("training metrics dataset identity mismatch")
+    _validate_training_metrics(snapshot, metrics, snapshot_sha)
     return snapshot_sha
 
 

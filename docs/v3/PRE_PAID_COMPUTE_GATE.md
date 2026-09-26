@@ -27,6 +27,7 @@ This gate defines the furthest point the project may reach without purchasing or
 - Full-run implementation is fixed to 120 deterministic microbatches / 15 optimizer steps and writes only to a new Candidate directory after full-training authorization. CI cannot reach it.
 - A completed full run now closes with a create-only `run-manifest.json` that inventories every adapter/tokenizer/metrics/snapshot file by SHA-256 + byte size, rebinds the saved snapshot and metrics to the authorized execution/dataset identities, and explicitly records that Validation/V2/promotion were not opened by the training run.
 - The frozen Candidate run can be re-verified before later export/evaluation: the verifier requires canonical manifest/metrics JSON, an optional exact manifest digest, unchanged execution/dataset bindings, and a byte-for-byte inventory match; any post-freeze file change fails closed.
+- Training metrics are also schema-closed during freeze/re-verification: exact 15 optimizer steps / 120 microbatches, frozen method bytes, finite loss/VRAM/wall-time measurements, positive trainable-parameter count, and no unknown metric fields are accepted.
 - Candidate/export lineage manifests and Validation-only paired Current/Candidate comparison are implemented without changing historical V2 scorer/policy.
 - PR #5 remains Draft; no merge/promotion path is enabled.
 

@@ -70,18 +70,31 @@ def resolved_training_snapshot():
     return value
 
 
+def training_metrics(snapshot: dict) -> dict:
+    snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
+    return {
+        "schema_version": 1,
+        "experiment_id": snapshot["experiment_id"],
+        "execution_snapshot_sha256": snapshot_sha,
+        "dataset_sha256": snapshot["dataset"]["canonical_sha256"],
+        "optimizer_steps": 15,
+        "microbatches": 120,
+        "mean_training_loss": 1.25,
+        "peak_vram_mib": 12000.0,
+        "peak_reserved_vram_mib": 13000.0,
+        "wall_seconds": 120.0,
+        "trainable_parameters": 1024,
+        "method": dict(snapshot["method"]),
+    }
+
+
 def write_completed_run(root: Path, snapshot: dict) -> None:
     (root / "adapter").mkdir(parents=True)
     (root / "adapter" / "adapter_config.json").write_text("{}", encoding="utf-8")
     (root / "adapter" / "adapter_model.safetensors").write_bytes(b"adapter")
     (root / "tokenizer").mkdir()
     (root / "tokenizer" / "tokenizer.json").write_text("{}", encoding="utf-8")
-    snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
-    metrics = {
-        "execution_snapshot_sha256": snapshot_sha,
-        "dataset_sha256": snapshot["dataset"]["canonical_sha256"],
-    }
-    (root / "training-metrics.json").write_bytes(canonical_json(metrics))
+    (root / "training-metrics.json").write_bytes(canonical_json(training_metrics(snapshot)))
     (root / "execution-snapshot.json").write_bytes(canonical_json(snapshot))
 
 
@@ -126,7 +139,7 @@ def test_candidate_run_manifest_rejects_metrics_from_other_dataset(tmp_path):
     snapshot = resolved_training_snapshot()
     root = tmp_path / "candidate"
     write_completed_run(root, snapshot)
-    metrics = json.loads((root / "training-metrics.json").read_text(encoding="utf-8"))
+    metrics = training_metrics(snapshot)
     metrics["dataset_sha256"] = "8" * 64
     (root / "training-metrics.json").write_bytes(canonical_json(metrics))
 
@@ -169,3 +182,53 @@ def test_candidate_run_verifier_requires_exact_manifest_digest(tmp_path):
             root,
             expected_manifest_sha256="0" * 64,
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("optimizer_steps", True, "positive integer"),
+        ("microbatches", 119, "frozen value 120"),
+        ("wall_seconds", 0.0, "finite positive"),
+        ("trainable_parameters", 0, "positive integer"),
+    ],
+)
+def test_candidate_run_manifest_rejects_invalid_training_metric_types(
+    tmp_path,
+    field,
+    value,
+    match,
+):
+    snapshot = resolved_training_snapshot()
+    root = tmp_path / "candidate"
+    write_completed_run(root, snapshot)
+    metrics = training_metrics(snapshot)
+    metrics[field] = value
+    (root / "training-metrics.json").write_bytes(canonical_json(metrics))
+
+    with pytest.raises(CandidateRunManifestError, match=match):
+        build_candidate_run_manifest(snapshot, root)
+
+
+def test_candidate_run_manifest_rejects_training_method_drift(tmp_path):
+    snapshot = resolved_training_snapshot()
+    root = tmp_path / "candidate"
+    write_completed_run(root, snapshot)
+    metrics = training_metrics(snapshot)
+    metrics["method"]["rank"] = 16
+    (root / "training-metrics.json").write_bytes(canonical_json(metrics))
+
+    with pytest.raises(CandidateRunManifestError, match="frozen recipe"):
+        build_candidate_run_manifest(snapshot, root)
+
+
+def test_candidate_run_manifest_rejects_extra_training_metric_fields(tmp_path):
+    snapshot = resolved_training_snapshot()
+    root = tmp_path / "candidate"
+    write_completed_run(root, snapshot)
+    metrics = training_metrics(snapshot)
+    metrics["posthoc_note"] = "unexpected"
+    (root / "training-metrics.json").write_bytes(canonical_json(metrics))
+
+    with pytest.raises(CandidateRunManifestError, match="schema mismatch"):
+        build_candidate_run_manifest(snapshot, root)
