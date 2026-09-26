@@ -2,64 +2,110 @@
 
 **LATEST**
 
-Saved at: **2026-09-26 15:24:00 JST (+09:00)**
+Saved at: **2026-09-26 19:49:03 JST (+09:00)**
 
 ## Checkpoint identity
 
-- Branch: `research/v3-learning-evaluation`
+- Canonical checkpoint branch: `research/v3-learning-evaluation`
 - PR #5: **Draft / unmerged**
-- Work basis HEAD: `f5b8f3c68fa2693df793d5fe4cb44b135f1f951b`
-- New work: `f5b8f3c68fa2693df793d5fe4cb44b135f1f951b` — frozen training-metrics validation.
-- Prior verifier work: `a684755de8f761ce2df5d9abed9839ef6a123dd9`
-- Previous checkpoint: `01b29ddb15dfe12058e8ba306242e8458ec7c6fa` — superseded.
-- The resulting checkpoint commit cannot be embedded in this file; record it at the next update.
-- Roadmap: **V3 Learning & Evaluation — Draft / NOT_PASSED / Pre-Paid-Compute closure**
+- Exact checkpoint work-basis HEAD: `d6d4c1954a85fc716b1c593ac55c85417912418f`
+- Previous checkpoint result HEAD: `d6d4c1954a85fc716b1c593ac55c85417912418f` — superseded by this status update.
+- Long-term-memory foundation branch HEAD: `1cfcd7adaedcb495b0ac799247d911f2af57dad8`
+- Tool/planning/action-safety foundation branch HEAD: `c268bfb73bcca720528e8bbf1851287f42510b4c`
+- The resulting checkpoint commit cannot be embedded in this file; record it in the next checkpoint.
+- Overall state: **V1/V2/Local UI/Launcher PASS/frozen; V3 Draft/NOT_PASSED; later foundations isolated/not PASS**
 
 ## Current state / 現在の状況
 
-V1/V2 remain OFFICIAL PASS. Local UI v1 and Launcher/Gate Runner evidence remain frozen. V3 Contract 1 remains frozen. PR #5 remains Draft. Candidate-run evidence now has create-only freeze, later byte re-verification, and strict training-metrics validation. No external compute, Candidate generation, protected V2 opening, promotion, Contract change, or main merge occurred.
+ARK remains on the frozen V1/V2/Local UI/Launcher baseline for released behavior. V3 Contract 1
+and all protected evaluation boundaries remain unchanged. PR #5 is still Draft and latest code
+HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f` has GREEN CI #151.
 
-## Work completed in this batch
+Independent reversible groundwork now exists outside the V3 workstream for local long-term
+memory and for tool/planning/action safety. These branches do not assume Candidate results and
+are not integrated into main or declared roadmap PASS.
 
-### New work
+## Work completed in this session
 
-- Closed the training-metrics evidence schema in `run_manifest.py`.
-- Requires exact fields, schema v1, matching experiment/snapshot/dataset identities, exactly 15 optimizer steps and 120 microbatches, a positive integer trainable-parameter count, finite loss/VRAM/wall-time measurements, and the exact frozen method bytes.
-- Rejects boolean-as-integer coercion, invalid measurements, recipe drift, and unknown post-hoc fields.
-- Added regression tests for metric type/value drift, recipe drift and extra fields.
-- Updated the Pre-Paid-Compute Gate documentation.
+### NEW — local-first memory foundation
 
-### Previously completed this run
+On `research/long-term-memory-foundation`:
 
-Create-only Candidate `run-manifest.json`, frozen-run re-verification, post-freeze byte-tamper detection, canonical JSON enforcement, exact optional manifest digest verification, and the Ruff import-order fix.
+- Completed the previously incomplete memory package with explicit scope isolation and
+  deterministic SHA-256 memory identities.
+- Added SQLite schema versioning, compare-and-swap revisions, expiration visibility,
+  physical expiry purge and revision-guarded physical deletion.
+- Added content-free lifecycle audit records so content/metadata are not copied into the audit log.
+- Added deterministic lexical retrieval with NFKC normalization and CJK/Japanese bigram support.
+- Added 9 focused tests for identity, scope isolation, CAS conflicts, expiration/purge,
+  deterministic ranking, Japanese retrieval, deletion and future-schema fail-closed behavior.
+- New work commit: `1cfcd7adaedcb495b0ac799247d911f2af57dad8`.
+
+### NEW — tool/planning/action-safety foundation
+
+On `research/tool-planning-action-foundation`:
+
+- Added stable tool-call/capability/scope contracts with canonical argument digests and
+  deterministic action request IDs.
+- Added fail-closed exact-scope capability grants and expiring, exact-request one-shot
+  authorization for write-effect operations.
+- Added deterministic DAG planning state with dependency validation, optimistic revision
+  guards and transitive blocking after failed prerequisites.
+- Added SQLite action-audit storage that records argument hashes rather than raw arguments
+  and fails closed on unsupported future schema versions.
+- Added 10 committed focused tests covering permission, one-shot, DAG, revision and audit
+  safety boundaries.
+- New work commit: `c268bfb73bcca720528e8bbf1851287f42510b4c`.
+
+### Existing V3 work retained
+
+Candidate-run create-only evidence, byte re-verification, strict training-metrics schema,
+runtime/source identity gates and Pre-Paid-Compute boundaries remain unchanged in this session.
 
 ## Tests / CI / evidence
 
-- CI #146 / run `36222944733`: **GREEN 6/6**.
-- CI #148 / run `36223351050` on verifier HEAD `a684755de8f761ce2df5d9abed9839ef6a123dd9`: **GREEN**.
-- Latest metrics-hardening HEAD `f5b8f3c68fa2693df793d5fe4cb44b135f1f951b`: CI #150 / run `36223574582` is **IN PROGRESS** at save time. No GREEN claim is made.
-- Earlier CI #144/#145 failures were Ruff-only and are superseded.
-- Frozen V1/V2/Local UI/Launcher evidence unchanged; V3 Contract unchanged; protected V2 final evaluation unopened; no Candidate artifacts generated.
+- PR #5 HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`:
+  CI #151 / run `36223644908` — **GREEN / completed successfully**.
+- Memory foundation: focused offline prototype-equivalent test set was exercised before commit
+  with **9 passed**; the isolated branch does not yet have a GitHub PR/CI result.
+- Agency foundation: a local prototype superset was exercised with **11 passed** before the
+  executable registry portion was intentionally omitted from the committed safety-only scope.
+  The committed 10-test branch does not yet have a GitHub PR/CI result.
+- No foundation branch is represented as CI-validated or integration-ready until GitHub CI
+  actually runs on its exact committed HEAD.
 
 ## Frozen contracts / evidence unchanged
 
-V1 freeze; V2 fixed suite/scorer/policy and known `math-02` format-only failure; Local UI/Launcher evidence; V3 Contract 1/hash; protected V2 evaluation/opening budget.
+- V1 reviewed freeze and OFFICIAL PASS evidence.
+- V2 fixed suite/scorer/policy, reviewed 11/12 baseline and known `math-02` format-only failure.
+- Local UI v1 and Launcher/Gate Runner reviewed/frozen evidence.
+- V3 Contract 1/hash and Experiment-001 semantics.
+- Protected V2 final evaluation and its opening budget.
+- No external paid compute, Candidate generation, Validation/V2 opening, promotion,
+  Contract mutation or main merge occurred.
 
 ## Unresolved blockers / authorization boundaries
 
-1. Immutable HF revision, materialized base/tokenizer hashes and chat-template probe.
-2. Human-approved/provenance-complete 120/30 dataset and contamination decisions.
-3. Exact Linux/container plus Python/torch/transformers/PEFT/accelerate/CUDA identities.
-4. Exact llama.cpp revision and converter/quantizer identities.
-5. GPU/device/VRAM/driver proposal plus approved JPY/time ceilings and billing-cap evidence before external compute.
-6. CI #150 must become GREEN before the latest head is treated as preflight-ready.
-7. No external compute, Candidate generation, protected V2 opening, promotion, frozen-Contract change, or main merge without required explicit authorization.
-8. Frozen V3 Contract excludes V4–V10 implementation scope from this V3 workstream.
+1. V3 still requires immutable/materialized model and tokenizer identity evidence,
+   provenance-complete human-approved 120/30 data, exact runtime/tool identities and
+   authorized hardware/budget evidence before any external-compute preflight.
+2. External/paid compute, real Candidate generation, protected evaluation opening,
+   Candidate promotion, frozen-contract changes and main merge remain explicit hard stops.
+3. The memory and agency foundations are isolated research branches; PR creation/CI wiring
+   remains pending and no integration/PASS claim is made.
+4. Automatic personal-data ingestion, semantic/vector memory, real tool execution and
+   computer-control backends are deliberately not connected until their permission,
+   privacy and compatibility boundaries are proven.
 
 ## Next plan / 今後の方針
 
-1. Follow CI #150 and fix ordinary software/plumbing failures without weakening gates.
-2. Continue free Candidate reload/export and reproducibility closure.
-3. Close identity/export gaps requiring no fabricated external facts.
-4. Keep provider/cost preparation offline and non-authorizing.
-5. Re-read PR/head/status before every write; reconcile concurrent work and never force-push.
+1. Keep PR #5 Draft; continue free V3 reproducibility/export/identity closure without
+   weakening frozen gates.
+2. Run exact-HEAD CI for the memory and agency foundation branches when a safe PR/CI path is
+   available; fix ordinary lint/test issues minimally.
+3. Extend isolated foundations with privacy/retention migration tests, durable plan state,
+   typed tool-result/audit correlation and mock-only orchestration before any real action backend.
+4. Prepare reversible voice/vision input and computer-action interfaces that reuse the same
+   capability/audit boundary without granting device control.
+5. Re-read every target branch HEAD immediately before writes; reconcile concurrent changes
+   and never force-push.
