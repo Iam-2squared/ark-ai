@@ -59,6 +59,7 @@ def test_candidate_lineage_is_hashable_when_matched():
     )
     assert len(lineage.sha256) == 64
 
+
 def test_runtime_git_checkout_binds_actual_head_and_clean_tree(tmp_path, monkeypatch):
     outputs = iter(["a" * 40 + "\n", ""])
 
