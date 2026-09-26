@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
 from enum import Enum
+from types import MappingProxyType
 from typing import Mapping, Protocol, runtime_checkable
 
 
@@ -44,7 +46,7 @@ class ToolSpec:
     def __post_init__(self) -> None:
         _text("tool name", self.name)
         _text("capability", self.capability)
-        if not isinstance(self.effect, Effect):
+        if type(self.effect) is not Effect:
             raise TypeError("effect must be an Effect")
 
 
@@ -59,14 +61,18 @@ class ToolCall:
         _text("tool", self.tool)
         _text("capability", self.capability)
         _text("scope", self.scope)
+        if not isinstance(self.arguments, Mapping):
+            raise TypeError("arguments must be a mapping")
         try:
-            _canonical_json(dict(self.arguments))
+            frozen = _freeze_json(self.arguments)
+            _canonical_json(frozen)
         except (TypeError, ValueError) as exc:
             raise ValueError("arguments must be canonical JSON-compatible values") from exc
+        object.__setattr__(self, "arguments", frozen)
 
     @property
     def arguments_sha256(self) -> str:
-        return hashlib.sha256(_canonical_json(dict(self.arguments))).hexdigest()
+        return hashlib.sha256(_canonical_json(self.arguments)).hexdigest()
 
     @property
     def request_id(self) -> str:
@@ -102,8 +108,10 @@ class OneShotAuthorization:
 
     def __post_init__(self) -> None:
         _text("token_id", self.token_id)
-        if not self.request_id.startswith("act_"):
-            raise ValueError("request_id must identify one exact action request")
+        if not isinstance(self.request_id, str) or re.fullmatch(
+            r"act_[0-9a-f]{64}", self.request_id
+        ) is None:
+            raise ValueError("request_id must identify one canonical action request")
         if type(self.expires_at_ms) is not int or self.expires_at_ms < 0:
             raise ValueError("expires_at_ms must be a non-negative integer")
 
@@ -122,8 +130,19 @@ class PlanStep:
 
     def __post_init__(self) -> None:
         _text("step_id", self.step_id)
-        if len(set(self.depends_on)) != len(self.depends_on):
+        if not isinstance(self.call, ToolCall):
+            raise TypeError("call must be a ToolCall")
+        if isinstance(self.depends_on, str):
+            raise TypeError("depends_on must be a sequence of step IDs")
+        try:
+            dependencies = tuple(self.depends_on)
+        except TypeError as exc:
+            raise TypeError("depends_on must be a sequence of step IDs") from exc
+        for dependency in dependencies:
+            _text("dependency step_id", dependency)
+        if len(set(dependencies)) != len(dependencies):
             raise ValueError("depends_on may not contain duplicates")
+        object.__setattr__(self, "depends_on", dependencies)
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +152,9 @@ class PlanStepStatus:
     revision: int = 0
 
     def __post_init__(self) -> None:
+        _text("step_id", self.step_id)
+        if type(self.state) is not StepState:
+            raise TypeError("state must be a StepState")
         if type(self.revision) is not int or self.revision < 0:
             raise ValueError("revision must be a non-negative integer")
 
@@ -154,10 +176,36 @@ class ToolBackend(Protocol):
     def execute(self, call: ToolCall) -> object: ...
 
 
+def _freeze_json(value: object) -> object:
+    if value is None or type(value) in {bool, int, str}:
+        return value
+    if type(value) is float:
+        _canonical_json(value)
+        return value
+    if isinstance(value, Mapping):
+        snapshot: dict[str, object] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError("JSON object keys must be strings")
+            snapshot[key] = _freeze_json(item)
+        return MappingProxyType(snapshot)
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_json(item) for item in value)
+    raise TypeError(f"unsupported JSON value type: {type(value).__name__}")
+
+
+def _jsonable(value: object) -> object:
+    if isinstance(value, Mapping):
+        return {key: _jsonable(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_jsonable(item) for item in value]
+    return value
+
+
 def _canonical_json(value: object) -> bytes:
     return (
         json.dumps(
-            value,
+            _jsonable(value),
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
