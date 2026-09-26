@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Mapping, Protocol, runtime_checkable
 
 
@@ -11,7 +12,7 @@ class MemoryConflictError(RuntimeError):
 
 
 class MemorySchemaError(RuntimeError):
-    """Raised when a database schema cannot be safely opened."""
+    """Raised when persisted memory cannot be safely interpreted."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,14 +36,19 @@ class MemoryWrite:
     def __post_init__(self) -> None:
         _text("source_id", self.source_id, 512)
         _text("content", self.content, 1_000_000)
+        if not isinstance(self.metadata, Mapping):
+            raise TypeError("metadata must be a mapping")
         if len(self.metadata) > 64:
             raise ValueError("metadata exceeds 64 entries")
+        snapshot: dict[str, str] = {}
         for key, value in self.metadata.items():
             _text("metadata key", key, 4096)
             if not isinstance(value, str):
                 raise TypeError("metadata values must be strings")
             if len(value) > 4096:
                 raise ValueError("metadata value exceeds maximum length")
+            snapshot[key] = value
+        object.__setattr__(self, "metadata", MappingProxyType(snapshot))
         if self.expires_at_ms is not None and (
             type(self.expires_at_ms) is not int or self.expires_at_ms < 0
         ):
@@ -61,6 +67,11 @@ class MemoryRecord:
     expires_at_ms: int | None
     revision: int
     content_sha256: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.metadata, Mapping):
+            raise TypeError("metadata must be a mapping")
+        object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
 
 @dataclass(frozen=True, slots=True)
