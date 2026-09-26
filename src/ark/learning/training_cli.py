@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import subprocess
 from pathlib import Path
 
 from .dataset import digest
@@ -32,6 +34,37 @@ def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
     return payload
 
 
+def _verify_git_checkout(code_root: Path, expected_sha: str) -> None:
+    """Verify the actual local checkout instead of trusting only a CLI-supplied SHA."""
+    root = Path(code_root)
+    if not root.is_dir() or root.is_symlink():
+        raise RuntimeError("runtime code root must be an existing non-symlink directory")
+    if re.fullmatch(r"[0-9a-f]{40}", expected_sha) is None:
+        raise RuntimeError("exact frozen code git SHA required")
+
+    def git_output(*args: str) -> str:
+        try:
+            completed = subprocess.run(
+                ["git", "-C", str(root), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError("unable to verify local git repository state") from exc
+        return completed.stdout.strip()
+
+    observed_head = git_output("rev-parse", "--verify", "HEAD")
+    if observed_head != expected_sha:
+        raise RuntimeError(
+            "runtime git HEAD does not match frozen code SHA: "
+            f"expected {expected_sha}, observed {observed_head or '<empty>'}"
+        )
+    if git_output("status", "--porcelain=v1", "--untracked-files=all"):
+        raise RuntimeError("clean repository state required before V3 compute")
+
+
 def _verify_common_evidence(
     snapshot: dict,
     *,
@@ -40,6 +73,7 @@ def _verify_common_evidence(
     code_root: Path,
     running_code_sha: str,
 ) -> None:
+    _verify_git_checkout(code_root, snapshot["code"]["git_sha"])
     if running_code_sha != snapshot["code"]["git_sha"]:
         raise RuntimeError("running code SHA does not match frozen execution snapshot")
     code_identity = build_code_tree_identity(code_root)
