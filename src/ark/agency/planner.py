@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
-from typing import Mapping
 
 from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState
 
@@ -65,7 +65,7 @@ class PlanGraph:
                 f"revision mismatch: expected {expected_revision}, actual {current.revision}"
             )
         if to_state not in _ALLOWED[current.state]:
-            raise PlanConflictError(f"invalid transition: {current.state.value} -> {to_state.value}")
+            raise PlanConflictError(\n                f"invalid transition: {current.state.value} -> {to_state.value}"\n            )
         if to_state is StepState.RUNNING:
             dependency_states = [
                 self._status[item].state for item in self.steps[step_id].depends_on
