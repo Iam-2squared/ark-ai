@@ -17,8 +17,8 @@ from .dataset import digest
 from .execution import validate_experiment_001
 from .identity import build_hf_snapshot_identity
 from .preflight import PreflightEvidence
-from .runtime_guard import WallTimeBudget
 from .run_manifest import write_candidate_run_manifest
+from .runtime_guard import WallTimeBudget
 
 
 class LoRARuntimeError(RuntimeError):
