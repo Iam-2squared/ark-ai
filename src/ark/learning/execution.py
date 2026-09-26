@@ -233,7 +233,8 @@ def validate_experiment_001(
     for section in _REQUIRED_SECTION_KEYS:
         _require_exact_section_shape(snapshot, section)
     if (
-        snapshot.get("schema_version") != 1
+        type(snapshot.get("schema_version")) is not int
+        or snapshot.get("schema_version") != 1
         or snapshot.get("experiment_id") != "v3-format-compliance-001"
     ):
         raise ExecutionBlocked("unexpected snapshot schema/experiment")
@@ -241,6 +242,33 @@ def validate_experiment_001(
         raise ValueError("invalid authorization scope")
 
     method = snapshot["method"]
+    integer_method_fields = (
+        "rank",
+        "alpha",
+        "epochs",
+        "seed",
+        "max_sequence_length",
+        "microbatch",
+        "gradient_accumulation",
+    )
+    if any(type(method.get(key)) is not int for key in integer_method_fields):
+        raise ExecutionBlocked("experiment-001 integer method fields require exact integers")
+    numeric_method_fields = (
+        "dropout",
+        "learning_rate",
+        "optimizer_eps",
+        "optimizer_weight_decay",
+    )
+    if any(isinstance(method.get(key), bool) for key in numeric_method_fields):
+        raise ExecutionBlocked("experiment-001 numeric method fields may not be booleans")
+    boolean_method_fields = (
+        "optimizer_amsgrad",
+        "optimizer_maximize",
+        "gradient_checkpointing",
+    )
+    if any(type(method.get(key)) is not bool for key in boolean_method_fields):
+        raise ExecutionBlocked("experiment-001 boolean method fields require exact booleans")
+
     expected = {
         "name": "lora",
         "rank": 8,
@@ -268,18 +296,31 @@ def validate_experiment_001(
             raise ExecutionBlocked(f"experiment-001 precommit mismatch: method.{key}")
 
     dataset = snapshot["dataset"]
-    if dataset.get("train_count") != 120 or dataset.get("validation_count") != 30:
+    train_count = dataset.get("train_count")
+    validation_count = dataset.get("validation_count")
+    if (
+        type(train_count) is not int
+        or type(validation_count) is not int
+        or train_count != 120
+        or validation_count != 30
+    ):
         raise ExecutionBlocked("experiment-001 requires exactly 120 train / 30 validation")
-    if snapshot["budget"].get("full_candidate_runs") != 1:
+    full_candidate_runs = snapshot["budget"].get("full_candidate_runs")
+    if type(full_candidate_runs) is not int or full_candidate_runs != 1:
         raise ExecutionBlocked("experiment-001 allows exactly one full Candidate run")
     if snapshot["export"].get("quantization") != "Q4_K_M":
         raise ExecutionBlocked("deployment comparison quantization must be Q4_K_M")
     if snapshot["export"].get("paired_baseline_required") is not True:
         raise ExecutionBlocked("paired Q4_K_M baseline is required")
+    evaluation = snapshot["evaluation"]
+    evaluation_counts = (
+        evaluation.get("validation_count"),
+        evaluation.get("v2_current_runs"),
+        evaluation.get("v2_candidate_runs"),
+    )
     if (
-        snapshot["evaluation"].get("validation_count") != 30
-        or snapshot["evaluation"].get("v2_current_runs") != 2
-        or snapshot["evaluation"].get("v2_candidate_runs") != 2
+        any(type(value) is not int for value in evaluation_counts)
+        or evaluation_counts != (30, 2, 2)
     ):
         raise ExecutionBlocked("validation/V2 budget must remain 30 and 2 Current + 2 Candidate")
     if snapshot["evaluation"].get("v2_opening_requires_explicit_authorization") is not True:

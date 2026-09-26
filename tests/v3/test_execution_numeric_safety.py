@@ -79,3 +79,32 @@ def test_nonstandard_json_constants_are_rejected_at_load_boundary(tmp_path):
     path.write_text('{"x":NaN}', encoding="utf-8")
     with pytest.raises(ValueError, match="non-standard JSON constant"):
         load_snapshot(path)
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "bad", "match"),
+    [
+        ("dataset", "train_count", 120.0, "120 train / 30 validation"),
+        ("dataset", "validation_count", 30.0, "120 train / 30 validation"),
+        ("budget", "full_candidate_runs", True, "exactly one full Candidate run"),
+        ("evaluation", "v2_current_runs", 2.0, "validation/V2 budget"),
+        ("method", "epochs", True, "integer method fields"),
+        ("method", "microbatch", 1.0, "integer method fields"),
+        ("method", "dropout", False, "numeric method fields"),
+        ("method", "optimizer_amsgrad", 0, "boolean method fields"),
+    ],
+)
+def test_frozen_numeric_fields_reject_bool_or_wrong_json_number_types(
+    section, field, bad, match
+):
+    value = copy.deepcopy(resolved_snapshot())
+    value[section][field] = bad
+    with pytest.raises(ExecutionBlocked, match=match):
+        validate_experiment_001(value)
+
+
+def test_schema_version_requires_exact_integer_type():
+    value = copy.deepcopy(resolved_snapshot())
+    value["schema_version"] = True
+    with pytest.raises(ExecutionBlocked, match="unexpected snapshot schema"):
+        validate_experiment_001(value)
