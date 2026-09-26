@@ -2,25 +2,24 @@
 
 **LATEST**
 
-Saved at: **2026-09-26 12:19:41 JST (+09:00)**
+Saved at: **2026-09-26 12:23:56 JST (+09:00)**
 
 ## Checkpoint identity
 
 - Branch: `research/v3-learning-evaluation`
-- Exact latest HEAD described before this checkpoint update: `141e30a1fc96ad9b248c3c8243a1ed3aa81af506`
-- Latest code work commit: `ffdaec70920cb0c1d35fe626841597474118ca62` — `harden(v3): revalidate preflight runtime evidence`
-- Prior checkpoint commit: `141e30a1fc96ad9b248c3c8243a1ed3aa81af506`
-- Checkpoint commit HEAD: this status-only update is the commit containing this file; its resulting SHA will be recorded by the next checkpoint update.
+- Exact work basis HEAD: `51419e17bd4e9608fa65bca5fd6ea92a47b38f55`
+- Latest code work commit: `51419e17bd4e9608fa65bca5fd6ea92a47b38f55` — `feat(v3): bind reserved VRAM preflight evidence`
+- Prior checkpoint commit: `039f0ee4c8bfd3dfbd8f1fc493167ecacf5385b8` — superseded by this checkpoint.
+- Checkpoint commit HEAD: this status-only update is the commit containing this file; its resulting SHA is recorded by the next checkpoint update.
 - Draft PR: #5
 - Roadmap position: **V3 Learning & Evaluation — Draft / NOT_PASSED / Pre-Paid-Compute boundary**
 - Canonical checkpoint: `docs/PROJECT_STATUS.md`
-- Prior canonical checkpoint: `141e30a1fc96ad9b248c3c8243a1ed3aa81af506` (superseded by this status-only update). Historical evidence remains append-only/frozen and is not superseded.
 
 ## Current state / 現在の状況
 
 V1 Local Core and V2 ARK Intelligence remain **OFFICIAL PASS** with frozen evidence unchanged. Local UI v1 and Launcher/Gate Runner remain frozen on main. V3 Contract 1 remains frozen; PR #5 remains Draft/unmerged.
 
-V3 already contains deterministic dataset/provenance/contamination tooling, human-review queue + decision binding, execution-snapshot validation, separate non-Candidate preflight/full-training authorization, local byte-identity tooling, a hash-addressed authorization packet, local-files-only HF/PEFT LoRA runtime plumbing, execution-core binding, candidate/export lineage, paired Q4_K_M export planning, and validation-only comparison.
+V3 has deterministic dataset/provenance/contamination freeze tooling, human-review queue and decision binding, execution-snapshot validation, separate non-Candidate preflight/full-training authorization, local artifact identity hashing, a hash-addressed authorization packet, local-files-only HF/PEFT LoRA runtime plumbing, execution-core binding, candidate/export lineage, paired Q4_K_M export planning, and validation-only comparison.
 
 No real Candidate/adapter weights, frozen V2 Candidate evaluation, promotion, paid/external compute, or main merge has occurred.
 
@@ -28,31 +27,26 @@ No real Candidate/adapter weights, frozen V2 Candidate evaluation, promotion, pa
 
 ### New work
 
-- CI state materially closed after the prior checkpoint: run #139 on `141e30a1fc96ad9b248c3c8243a1ed3aa81af506` completed **GREEN**. This update records final latest-head CI; no additional code is claimed.
-
-- CI state materially closed after the prior checkpoint: run #138 on `953ca21d2b96f53a7e9f660419986517628eb052` completed **GREEN**. This checkpoint records that state change; it does not claim additional code changes.
-
-- Re-read the actual PR #5/branch state before writing; no stored SHA was reused as authority.
-- Hardened `RuntimeIdentity` validation so measured runtime identity text cannot be silently coerced and measured/frozen GPU VRAM must be finite and positive.
-- Hardened VRAM-tolerance validation to reject booleans, non-finite values, and negative tolerances.
-- Hardened full-training replay of preflight evidence: non-standard JSON constants such as NaN/Infinity are rejected; the stored `PreflightEvidence` object is reconstructed and revalidated before it can authorize the Candidate run.
-- Added regression tests covering malformed authorized preflight reports, non-finite/boolean numeric evidence, unexpected evidence fields, runtime identity coercion, and invalid VRAM values/tolerances.
-- Updated the Pre-Paid-Compute Gate documentation to record the stricter replay boundary.
+- Re-read actual PR #5 HEAD, canonical status, and CI before each branch write.
+- Closed a preflight-evidence gap between the execution supplement and runtime: `PreflightEvidence` now requires **peak reserved VRAM** in addition to peak allocated VRAM.
+- Non-Candidate preflight now records both `torch.cuda.max_memory_allocated()` and `torch.cuda.max_memory_reserved()`.
+- Full-training metrics now retain both peak allocated and peak reserved CUDA memory.
+- Added fail-closed tests for missing/non-finite/zero reserved-VRAM evidence and explicit report serialization coverage.
+- Updated the Pre-Paid-Compute Gate to state the exact memory evidence recorded.
+- Previous status head `039f0ee4c8bfd3dfbd8f1fc493167ecacf5385b8` completed CI run #140 successfully before this code batch.
 
 ### Previously existing work
 
-All dataset, authorization, identity, preflight, training, export-lineage, validation, registry, and frozen-policy simulation capabilities listed above existed before this batch and are not claimed as new.
+The runtime-identity/preflight replay hardening from `ffdaec70920cb0c1d35fe626841597474118ca62` remains in place: non-standard JSON numeric constants are rejected, stored preflight evidence is reconstructed and revalidated, runtime identity strings are not silently coerced, and measured/frozen VRAM identities must be finite positive values.
 
 ## Tests / CI / evidence
 
-- Previous head `8345710fbb47f2583f06995611d153207e938ca7`: CI run #136, run ID `34582010056`, **GREEN**.
-- Code work head `ffdaec70920cb0c1d35fe626841597474118ca62`: CI run #137, run ID `36214072901`, superseded by the checkpoint-head CI.
-- Prior checkpoint head `953ca21d2b96f53a7e9f660419986517628eb052`: CI run #138, run ID `36214130735`, **GREEN**.
-- Latest checkpoint head `141e30a1fc96ad9b248c3c8243a1ed3aa81af506`: CI run #139, run ID `36214386705`, **GREEN**.
-- PR #5 remains Draft.
+- Prior latest checkpoint `039f0ee4c8bfd3dfbd8f1fc493167ecacf5385b8`: CI run #140, run ID `36214496459`, **GREEN**.
+- New work head `51419e17bd4e9608fa65bca5fd6ea92a47b38f55`: CI run #141, run ID `36214677390`, **IN PROGRESS** at checkpoint time; no GREEN claim is made yet.
+- PR #5 remains Draft/unmerged.
 - V1/V2/Local UI/Launcher frozen evidence: unchanged.
 - V3 Contract 1 semantics/hash: unchanged.
-- Historical V2 suite/scorer/policy and the final V2 opening budget: unchanged and unopened by this batch.
+- Historical V2 suite/scorer/policy and the final V2 opening budget: unchanged and unopened.
 
 ## Unresolved blockers / authorization boundaries
 
@@ -70,8 +64,8 @@ Hard stops remain: no paid/external compute, no real adapter/Candidate generatio
 
 ## Next plan / 今後の方針
 
-1. Confirm CI on the latest checkpoint head; if ordinary plumbing fails, diagnose/fix without weakening gates.
-2. Continue free V3 fail-closed readiness/evidence tooling, especially deterministic blocker reporting and human-review/artifact-identity preparation.
-3. Close all non-human/non-payment execution-snapshot gaps that can be closed without fabricating identities.
-4. When V3 is limited only by user/payment/hardware decisions, advance reversible V4–V10 foundations (interfaces, schemas, migrations/versioning, safety boundaries, tests) without declaring later milestones complete.
-5. Before every future GitHub write, re-read this canonical checkpoint and latest branch HEAD; reconcile concurrent work and never force-push.
+1. Confirm CI on the latest checkpoint head; diagnose/fix ordinary plumbing failures without weakening gates.
+2. Continue free V3 fail-closed readiness and evidence tooling around the remaining external/human inputs.
+3. Close any remaining deterministic execution/preflight/export evidence gaps that require no fabricated identity, payment, hardware action, or Contract change.
+4. When V3 is limited only by user/payment/hardware decisions, advance reversible V4–V10 foundations without declaring later milestones complete.
+5. Before every future GitHub write, re-read latest HEAD and this canonical checkpoint; reconcile concurrent work and never force-push.
