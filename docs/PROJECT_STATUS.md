@@ -2,19 +2,19 @@
 
 **LATEST**
 
-Saved at: **2026-09-26 12:17:23 JST (+09:00)**
+Saved at: **2026-09-26 12:19:41 JST (+09:00)**
 
 ## Checkpoint identity
 
 - Branch: `research/v3-learning-evaluation`
-- Exact latest HEAD described before this checkpoint update: `953ca21d2b96f53a7e9f660419986517628eb052`
+- Exact latest HEAD described before this checkpoint update: `141e30a1fc96ad9b248c3c8243a1ed3aa81af506`
 - Latest code work commit: `ffdaec70920cb0c1d35fe626841597474118ca62` — `harden(v3): revalidate preflight runtime evidence`
-- Prior checkpoint commit: `953ca21d2b96f53a7e9f660419986517628eb052`
+- Prior checkpoint commit: `141e30a1fc96ad9b248c3c8243a1ed3aa81af506`
 - Checkpoint commit HEAD: this status-only update is the commit containing this file; its resulting SHA will be recorded by the next checkpoint update.
 - Draft PR: #5
 - Roadmap position: **V3 Learning & Evaluation — Draft / NOT_PASSED / Pre-Paid-Compute boundary**
 - Canonical checkpoint: `docs/PROJECT_STATUS.md`
-- Prior canonical checkpoint: none. This is the first rolling LATEST checkpoint. Historical evidence remains append-only/frozen and is not superseded.
+- Prior canonical checkpoint: `141e30a1fc96ad9b248c3c8243a1ed3aa81af506` (superseded by this status-only update). Historical evidence remains append-only/frozen and is not superseded.
 
 ## Current state / 現在の状況
 
@@ -27,6 +27,8 @@ No real Candidate/adapter weights, frozen V2 Candidate evaluation, promotion, pa
 ## Work completed in this batch
 
 ### New work
+
+- CI state materially closed after the prior checkpoint: run #139 on `141e30a1fc96ad9b248c3c8243a1ed3aa81af506` completed **GREEN**. This update records final latest-head CI; no additional code is claimed.
 
 - CI state materially closed after the prior checkpoint: run #138 on `953ca21d2b96f53a7e9f660419986517628eb052` completed **GREEN**. This checkpoint records that state change; it does not claim additional code changes.
 
@@ -46,6 +48,7 @@ All dataset, authorization, identity, preflight, training, export-lineage, valid
 - Previous head `8345710fbb47f2583f06995611d153207e938ca7`: CI run #136, run ID `34582010056`, **GREEN**.
 - Code work head `ffdaec70920cb0c1d35fe626841597474118ca62`: CI run #137, run ID `36214072901`, superseded by the checkpoint-head CI.
 - Prior checkpoint head `953ca21d2b96f53a7e9f660419986517628eb052`: CI run #138, run ID `36214130735`, **GREEN**.
+- Latest checkpoint head `141e30a1fc96ad9b248c3c8243a1ed3aa81af506`: CI run #139, run ID `36214386705`, **GREEN**.
 - PR #5 remains Draft.
 - V1/V2/Local UI/Launcher frozen evidence: unchanged.
 - V3 Contract 1 semantics/hash: unchanged.
