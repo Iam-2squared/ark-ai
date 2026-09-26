@@ -25,6 +25,7 @@ This gate defines the furthest point the project may reach without purchasing or
 - Execution-snapshot recipe/count fields reject JSON booleans and wrong number types where the frozen experiment requires exact integers/booleans, preventing values such as `true == 1` or `120.0 == 120` from silently satisfying a frozen identity.
 - Non-Candidate preflight implementation performs one forward/backward optimizer step and records device, total VRAM, peak allocated VRAM, peak reserved VRAM, and wall-time mechanics without saving Candidate weights.
 - Full-run implementation is fixed to 120 deterministic microbatches / 15 optimizer steps and writes only to a new Candidate directory after full-training authorization. CI cannot reach it.
+- A completed full run now closes with a create-only `run-manifest.json` that inventories every adapter/tokenizer/metrics/snapshot file by SHA-256 + byte size, rebinds the saved snapshot and metrics to the authorized execution/dataset identities, and explicitly records that Validation/V2/promotion were not opened by the training run.
 - Candidate/export lineage manifests and Validation-only paired Current/Candidate comparison are implemented without changing historical V2 scorer/policy.
 - PR #5 remains Draft; no merge/promotion path is enabled.
 

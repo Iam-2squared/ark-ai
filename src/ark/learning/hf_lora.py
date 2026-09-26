@@ -18,6 +18,7 @@ from .execution import validate_experiment_001
 from .identity import build_hf_snapshot_identity
 from .preflight import PreflightEvidence
 from .runtime_guard import WallTimeBudget
+from .run_manifest import write_candidate_run_manifest
 
 
 class LoRARuntimeError(RuntimeError):
@@ -333,9 +334,16 @@ class HfLoRAFullRun:
                 ).encode()
             )
         wall_budget.check("training-evidence-save")
+        run_manifest_path, run_manifest_sha256 = write_candidate_run_manifest(
+            snapshot,
+            self.output_dir,
+        )
+        wall_budget.check("training-run-manifest-save")
         return {
             **metrics,
             "training_metrics_sha256": digest(metrics_payload),
+            "run_manifest_sha256": run_manifest_sha256,
+            "run_manifest": str(run_manifest_path),
             "adapter_directory": str(adapter_dir),
             "authorization_scope": "training",
         }
