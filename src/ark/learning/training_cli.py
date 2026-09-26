@@ -14,8 +14,12 @@ from .dataset import digest
 from .execution import execution_core_sha256, load_snapshot, validate_experiment_001
 from .hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend
 from .identity import build_code_tree_identity
-from .preflight import build_preflight_report, run_authorized_preflight
+from .preflight import PreflightEvidence, build_preflight_report, run_authorized_preflight
 from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
+
+
+def _reject_nonstandard_json_constant(token: str) -> None:
+    raise ValueError(f"non-standard JSON constant is forbidden: {token}")
 
 
 def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
@@ -71,8 +75,8 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         "preflight report",
     )
     try:
-        report = json.loads(payload)
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        report = json.loads(payload, parse_constant=_reject_nonstandard_json_constant)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise RuntimeError("preflight report is not valid canonical JSON") from exc
     if not isinstance(report, dict):
         raise RuntimeError("preflight report must be a JSON object")
@@ -102,26 +106,20 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
     evidence = report.get("evidence")
     if not isinstance(evidence, dict):
         raise RuntimeError("preflight report evidence missing")
+    try:
+        recorded_evidence = PreflightEvidence(**evidence)
+        recorded_evidence.validate()
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("preflight report evidence is invalid") from exc
     if (
-        evidence.get("base_loaded") is not True
-        or evidence.get("forward_backward_ok") is not True
-        or evidence.get("optimizer_step_ok") is not True
-        or evidence.get("runtime_error") is not None
-    ):
-        raise RuntimeError("preflight report does not prove successful mechanics")
-    if (
-        evidence.get("tokenizer_probe_sha256")
+        recorded_evidence.tokenizer_probe_sha256
         != snapshot["tokenizer"]["chat_template_probe_sha256"]
     ):
         raise RuntimeError("preflight tokenizer probe does not match frozen snapshot")
-    if evidence.get("device") != snapshot["hardware"]["device"]:
+    if recorded_evidence.device != snapshot["hardware"]["device"]:
         raise RuntimeError("preflight GPU device does not match frozen snapshot")
-    try:
-        observed_vram = float(evidence["vram_gib"])
-        expected_vram = float(snapshot["hardware"]["vram_gib"])
-    except (KeyError, TypeError, ValueError) as exc:
-        raise RuntimeError("preflight VRAM evidence is invalid") from exc
-    if abs(observed_vram - expected_vram) > 0.05:
+    expected_vram = float(snapshot["hardware"]["vram_gib"])
+    if abs(float(recorded_evidence.vram_gib) - expected_vram) > 0.05:
         raise RuntimeError("preflight GPU VRAM does not match frozen snapshot")
 
 

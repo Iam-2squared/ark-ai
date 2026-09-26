@@ -94,3 +94,28 @@ def test_wall_time_budget_rejects_nonfinite_values():
     budget = WallTimeBudget(1.0, started=100.0)
     with pytest.raises(RuntimeError, match="finite wall-clock reading"):
         budget.check("training", now=math.inf)
+
+
+
+@pytest.mark.parametrize("bad_vram", [float("nan"), float("inf"), float("-inf"), True, 0])
+def test_measured_runtime_vram_must_be_finite_positive(bad_vram):
+    with pytest.raises(RuntimeIdentityMismatch, match="measured GPU VRAM"):
+        verify_runtime_identity(snapshot(), actual(vram_gib=bad_vram))
+
+
+def test_frozen_runtime_vram_must_be_finite_positive():
+    frozen = snapshot()
+    frozen["hardware"]["vram_gib"] = float("nan")
+    with pytest.raises(RuntimeIdentityMismatch, match="frozen GPU VRAM"):
+        verify_runtime_identity(frozen, actual())
+
+
+def test_runtime_text_identity_must_not_coerce_non_strings():
+    with pytest.raises(RuntimeIdentityMismatch, match="python"):
+        verify_runtime_identity(snapshot(), actual(python=312))
+
+
+@pytest.mark.parametrize("bad_tolerance", [float("nan"), float("inf"), -0.1, True])
+def test_vram_tolerance_must_be_finite_non_negative(bad_tolerance):
+    with pytest.raises(ValueError, match="finite non-negative VRAM tolerance"):
+        verify_runtime_identity(snapshot(), actual(), vram_tolerance_gib=bad_tolerance)

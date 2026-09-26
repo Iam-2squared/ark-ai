@@ -133,3 +133,48 @@ def test_training_accepts_only_preflight_from_same_execution_core(tmp_path):
 def test_preflight_evidence_rejects_noncanonical_values(changes, match):
     with pytest.raises(ValueError, match=match):
         replace(evidence(), **changes).validate()
+
+
+
+def _training_snapshot_for_payload(preflight_snapshot, payload):
+    training = copy.deepcopy(preflight_snapshot)
+    training["authorization"]["real_training_authorized"] = True
+    training["hardware"]["preflight_report_sha256"] = digest(payload)
+    return training
+
+
+def test_training_rejects_nonstandard_json_numbers_in_authorized_preflight(tmp_path):
+    preflight = resolved_preflight_snapshot()
+    report = json.loads(build_preflight_report(preflight, evidence(), runtime_identity()))
+    report["evidence"]["wall_seconds"] = float("nan")
+    payload = (
+        json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=True) + "\n"
+    ).encode()
+    path = tmp_path / "preflight-nan.json"
+    path.write_bytes(payload)
+
+    with pytest.raises(RuntimeError, match="not valid canonical JSON"):
+        _verify_preflight_report(path, _training_snapshot_for_payload(preflight, payload))
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"wall_seconds": True},
+        {"forward_backward_ok": 1},
+        {"peak_vram_mib": 0},
+        {"unexpected_field": "not-allowed"},
+    ],
+)
+def test_training_revalidates_typed_preflight_evidence(tmp_path, mutation):
+    preflight = resolved_preflight_snapshot()
+    report = json.loads(build_preflight_report(preflight, evidence(), runtime_identity()))
+    report["evidence"].update(mutation)
+    payload = (
+        json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+    ).encode()
+    path = tmp_path / "preflight-invalid-evidence.json"
+    path.write_bytes(payload)
+
+    with pytest.raises(RuntimeError, match="preflight report evidence is invalid"):
+        _verify_preflight_report(path, _training_snapshot_for_payload(preflight, payload))

@@ -32,6 +32,32 @@ class RuntimeIdentity:
     vram_gib: float
     driver: str
 
+    def validate(self) -> None:
+        text_fields = (
+            "os_or_image_digest",
+            "python",
+            "torch",
+            "transformers",
+            "peft",
+            "accelerate",
+            "cuda_runtime",
+            "device",
+            "driver",
+        )
+        for field in text_fields:
+            value = getattr(self, field)
+            if not isinstance(value, str) or not value.strip():
+                raise RuntimeIdentityMismatch(
+                    f"invalid measured runtime identity for {field}"
+                )
+        if (
+            isinstance(self.vram_gib, bool)
+            or not isinstance(self.vram_gib, (int, float))
+            or not math.isfinite(float(self.vram_gib))
+            or self.vram_gib <= 0
+        ):
+            raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity")
+
 
 def _package_version(name: str) -> str:
     try:
@@ -96,6 +122,15 @@ def verify_runtime_identity(
     vram_tolerance_gib: float = 0.05,
 ) -> None:
     """Require the measured runtime to match the user-reviewed execution snapshot."""
+    actual.validate()
+    if (
+        isinstance(vram_tolerance_gib, bool)
+        or not isinstance(vram_tolerance_gib, (int, float))
+        or not math.isfinite(float(vram_tolerance_gib))
+        or vram_tolerance_gib < 0
+    ):
+        raise ValueError("finite non-negative VRAM tolerance required")
+
     expected_environment = snapshot["environment"]
     for field in (
         "os_or_image_digest",
@@ -106,8 +141,10 @@ def verify_runtime_identity(
         "accelerate",
         "cuda_runtime",
     ):
-        expected = str(expected_environment[field])
-        observed = str(getattr(actual, field))
+        expected = expected_environment[field]
+        if not isinstance(expected, str) or not expected.strip():
+            raise RuntimeIdentityMismatch(f"invalid frozen runtime identity for {field}")
+        observed = getattr(actual, field)
         if observed != expected:
             raise RuntimeIdentityMismatch(
                 f"runtime identity mismatch for {field}: "
@@ -115,15 +152,31 @@ def verify_runtime_identity(
             )
 
     expected_hardware = snapshot["hardware"]
-    if actual.device != str(expected_hardware["device"]):
+    expected_device = expected_hardware["device"]
+    expected_driver = expected_hardware["driver"]
+    if not isinstance(expected_device, str) or not expected_device.strip():
+        raise RuntimeIdentityMismatch("invalid frozen GPU device identity")
+    if not isinstance(expected_driver, str) or not expected_driver.strip():
+        raise RuntimeIdentityMismatch("invalid frozen GPU driver identity")
+    if actual.device != expected_device:
         raise RuntimeIdentityMismatch("GPU device identity does not match frozen snapshot")
-    if actual.driver != str(expected_hardware["driver"]):
+    if actual.driver != expected_driver:
         raise RuntimeIdentityMismatch("GPU driver identity does not match frozen snapshot")
-    expected_vram = float(expected_hardware["vram_gib"])
-    if abs(actual.vram_gib - expected_vram) > vram_tolerance_gib:
+
+    expected_vram = expected_hardware["vram_gib"]
+    if (
+        isinstance(expected_vram, bool)
+        or not isinstance(expected_vram, (int, float))
+        or not math.isfinite(float(expected_vram))
+        or expected_vram <= 0
+    ):
+        raise RuntimeIdentityMismatch("invalid frozen GPU VRAM identity")
+    expected_vram_float = float(expected_vram)
+    actual_vram = float(actual.vram_gib)
+    if abs(actual_vram - expected_vram_float) > vram_tolerance_gib:
         raise RuntimeIdentityMismatch(
-            f"GPU VRAM identity mismatch: expected {expected_vram:.3f} GiB, "
-            f"observed {actual.vram_gib:.3f} GiB"
+            f"GPU VRAM identity mismatch: expected {expected_vram_float:.3f} GiB, "
+            f"observed {actual_vram:.3f} GiB"
         )
 
 
