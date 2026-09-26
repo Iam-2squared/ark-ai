@@ -212,6 +212,7 @@ class HfLoRAPreflightBackend:
         elapsed = time.perf_counter() - started
         total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         peak = torch.cuda.max_memory_allocated() / (1024**2)
+        peak_reserved = torch.cuda.max_memory_reserved() / (1024**2)
         return PreflightEvidence(
             device=torch.cuda.get_device_name(0),
             vram_gib=float(total_vram),
@@ -220,6 +221,7 @@ class HfLoRAPreflightBackend:
             forward_backward_ok=True,
             optimizer_step_ok=True,
             peak_vram_mib=float(peak),
+            peak_reserved_vram_mib=float(peak_reserved),
             wall_seconds=float(elapsed),
             runtime_error=None,
         )
@@ -311,6 +313,9 @@ class HfLoRAFullRun:
             "microbatches": len(encoded_rows),
             "mean_training_loss": math.fsum(losses) / len(losses),
             "peak_vram_mib": float(torch.cuda.max_memory_allocated() / (1024**2)),
+            "peak_reserved_vram_mib": float(
+                torch.cuda.max_memory_reserved() / (1024**2)
+            ),
             "wall_seconds": float(elapsed),
             "trainable_parameters": int(sum(parameter.numel() for parameter in trainable)),
             "method": dict(snapshot["method"]),

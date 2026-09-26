@@ -30,13 +30,14 @@ class PreflightEvidence:
     forward_backward_ok: bool
     optimizer_step_ok: bool
     peak_vram_mib: float
+    peak_reserved_vram_mib: float
     wall_seconds: float
     runtime_error: str | None = None
 
     def validate(self) -> None:
         if not isinstance(self.device, str) or not self.device.strip():
             raise ValueError("valid accelerator identity required")
-        for name in ("vram_gib", "peak_vram_mib", "wall_seconds"):
+        for name in ("vram_gib", "peak_vram_mib", "peak_reserved_vram_mib", "wall_seconds"):
             value = getattr(self, name)
             if (
                 isinstance(value, bool)

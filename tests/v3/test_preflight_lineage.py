@@ -76,6 +76,7 @@ def evidence():
         forward_backward_ok=True,
         optimizer_step_ok=True,
         peak_vram_mib=12000.0,
+        peak_reserved_vram_mib=13000.0,
         wall_seconds=12.5,
         runtime_error=None,
     )
@@ -94,6 +95,17 @@ def runtime_identity():
         vram_gib=24.0,
         driver="570.00",
     )
+
+
+def test_preflight_report_records_allocated_and_reserved_vram():
+    payload = build_preflight_report(
+        resolved_preflight_snapshot(),
+        evidence(),
+        runtime_identity(),
+    )
+    report = json.loads(payload)
+    assert report["evidence"]["peak_vram_mib"] == 12000.0
+    assert report["evidence"]["peak_reserved_vram_mib"] == 13000.0
 
 
 def test_authorization_and_preflight_hash_do_not_change_execution_core():
@@ -125,6 +137,7 @@ def test_training_accepts_only_preflight_from_same_execution_core(tmp_path):
     "changes,match",
     [
         ({"vram_gib": float("nan")}, "finite positive preflight measurements"),
+        ({"peak_reserved_vram_mib": float("nan")}, "finite positive preflight measurements"),
         ({"wall_seconds": True}, "finite positive preflight measurements"),
         ({"base_loaded": 1}, "preflight mechanics did not complete"),
         ({"tokenizer_probe_sha256": "z" * 64}, "tokenizer probe SHA-256 required"),
@@ -133,7 +146,6 @@ def test_training_accepts_only_preflight_from_same_execution_core(tmp_path):
 def test_preflight_evidence_rejects_noncanonical_values(changes, match):
     with pytest.raises(ValueError, match=match):
         replace(evidence(), **changes).validate()
-
 
 
 def _training_snapshot_for_payload(preflight_snapshot, payload):
@@ -163,6 +175,7 @@ def test_training_rejects_nonstandard_json_numbers_in_authorized_preflight(tmp_p
         {"wall_seconds": True},
         {"forward_backward_ok": 1},
         {"peak_vram_mib": 0},
+        {"peak_reserved_vram_mib": 0},
         {"unexpected_field": "not-allowed"},
     ],
 )
