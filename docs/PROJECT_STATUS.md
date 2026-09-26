@@ -2,14 +2,15 @@
 
 **LATEST**
 
-Saved at: **2026-09-26 12:12:30 JST (+09:00)**
+Saved at: **2026-09-26 12:17:23 JST (+09:00)**
 
 ## Checkpoint identity
 
 - Branch: `research/v3-learning-evaluation`
-- Exact work basis HEAD: `ffdaec70920cb0c1d35fe626841597474118ca62`
-- Work commit: `ffdaec70920cb0c1d35fe626841597474118ca62` — `harden(v3): revalidate preflight runtime evidence`
-- Checkpoint commit HEAD: this metadata-only checkpoint is the commit containing this file. Its resulting SHA is intentionally recorded by the next checkpoint update, because a commit cannot truthfully embed its own SHA before creation.
+- Exact latest HEAD described before this checkpoint update: `953ca21d2b96f53a7e9f660419986517628eb052`
+- Latest code work commit: `ffdaec70920cb0c1d35fe626841597474118ca62` — `harden(v3): revalidate preflight runtime evidence`
+- Prior checkpoint commit: `953ca21d2b96f53a7e9f660419986517628eb052`
+- Checkpoint commit HEAD: this status-only update is the commit containing this file; its resulting SHA will be recorded by the next checkpoint update.
 - Draft PR: #5
 - Roadmap position: **V3 Learning & Evaluation — Draft / NOT_PASSED / Pre-Paid-Compute boundary**
 - Canonical checkpoint: `docs/PROJECT_STATUS.md`
@@ -27,6 +28,8 @@ No real Candidate/adapter weights, frozen V2 Candidate evaluation, promotion, pa
 
 ### New work
 
+- CI state materially closed after the prior checkpoint: run #138 on `953ca21d2b96f53a7e9f660419986517628eb052` completed **GREEN**. This checkpoint records that state change; it does not claim additional code changes.
+
 - Re-read the actual PR #5/branch state before writing; no stored SHA was reused as authority.
 - Hardened `RuntimeIdentity` validation so measured runtime identity text cannot be silently coerced and measured/frozen GPU VRAM must be finite and positive.
 - Hardened VRAM-tolerance validation to reject booleans, non-finite values, and negative tolerances.
@@ -41,7 +44,8 @@ All dataset, authorization, identity, preflight, training, export-lineage, valid
 ## Tests / CI / evidence
 
 - Previous head `8345710fbb47f2583f06995611d153207e938ca7`: CI run #136, run ID `34582010056`, **GREEN**.
-- New work head `ffdaec70920cb0c1d35fe626841597474118ca62`: CI run #137, run ID `36214072901`, **QUEUED** at checkpoint time; no GREEN claim is made yet.
+- Code work head `ffdaec70920cb0c1d35fe626841597474118ca62`: CI run #137, run ID `36214072901`, superseded by the checkpoint-head CI.
+- Prior checkpoint head `953ca21d2b96f53a7e9f660419986517628eb052`: CI run #138, run ID `36214130735`, **GREEN**.
 - PR #5 remains Draft.
 - V1/V2/Local UI/Launcher frozen evidence: unchanged.
 - V3 Contract 1 semantics/hash: unchanged.
