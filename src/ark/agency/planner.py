@@ -65,7 +65,9 @@ class PlanGraph:
                 f"revision mismatch: expected {expected_revision}, actual {current.revision}"
             )
         if to_state not in _ALLOWED[current.state]:
-            raise PlanConflictError(\n                f"invalid transition: {current.state.value} -> {to_state.value}"\n            )
+            raise PlanConflictError(
+                f"invalid transition: {current.state.value} -> {to_state.value}"
+            )
         if to_state is StepState.RUNNING:
             dependency_states = [
                 self._status[item].state for item in self.steps[step_id].depends_on
