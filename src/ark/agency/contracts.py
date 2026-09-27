@@ -5,10 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from types import MappingProxyType
-from typing import Mapping, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 class PermissionDenied(RuntimeError):
@@ -23,12 +24,12 @@ class ActionAuditSchemaError(RuntimeError):
     pass
 
 
-class Effect(str, Enum):
+class Effect(StrEnum):
     READ = "read"
     WRITE = "write"
 
 
-class StepState(str, Enum):
+class StepState(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     SUCCEEDED = "succeeded"
