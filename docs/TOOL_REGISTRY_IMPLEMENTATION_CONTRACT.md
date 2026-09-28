@@ -56,6 +56,28 @@ content while preventing old authorization from surviving a tool-semantics or ba
 - stale durable authorization/recovery state from an older revision -> fail closed;
 - two separately authorized executions of one request retain distinct execution-occurrence IDs.
 
+## Deterministic reference vectors
+
+These values are derived only from canonical JSON and are safe, offline implementation fixtures.
+
+For the existing two-tool registry fixture, the registry revision is:
+
+`tools_e3fec8092546d8f7a67eee140d90ca4fcb076965953031ec176d5be4a605f146`
+
+For request `files.write / files.write / workspace:a / {"path":"x"}`:
+
+- request ID: `act_2d08b6d18b9952951d04d23cfb91e3ea5d2a23f8985e97bf8a7e07d5c64d0481`;
+- base bound ID: `bound_e1ede52438411a87e0287186be607d5b501e4aeda0e7522d821ca61f8b7af8b5`;
+- changing only effect from `write` to `read` produces registry revision
+  `tools_9744ae49950aa0b1fb4352d8c793e4e44073ed53793eefbc182f47b5728e7440` and bound ID
+  `bound_2e1475a7c01966dca009cd1e011f1131afcf9b158e5c48349283646a81b8cd9c`;
+- changing only backend ID from `mock.files.write:v1` to `mock.files.write:v2` produces registry
+  revision `tools_21aef4d413d7866c560d1d50a32dceead3e8c4d2698f4eba1082230b55fb4a04`
+  and bound ID
+  `bound_4699d5177e68fcfcf4811f7731167a0eadd7352a2d92b0689a250a36a835d5ad`.
+
+Implementations must reproduce these values before durable authorization/recovery integration.
+
 ## Resolution
 
 Lookup is exact by tool name. Unknown names fail closed. There is no fuzzy matching or dynamic fallback.
