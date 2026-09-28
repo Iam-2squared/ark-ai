@@ -63,6 +63,22 @@ The existing schema-v1 DDL uses `memory_id TEXT PRIMARY KEY`. SQLite reports tha
 
 Therefore a same-version hardening patch must preserve the existing schema-v1 shape during validation. If stronger DDL constraints are required, they must be introduced through an explicit schema version/migration rather than silently changing version 1.
 
+## SQLite storage-class integrity finding
+
+A new direct-schema check confirmed that SQLite type affinity is not a substitute for persisted-row type validation. The current Memory schema accepts REAL values in INTEGER-affinity columns, including `created_at_ms`, `updated_at_ms`, and `revision`; the existing reader then calls `int(...)`, which can silently truncate values such as `1.5 -> 1`. The v1 `memory_id TEXT PRIMARY KEY` shape also permits NULL values on a rowid table, including more than one NULL row.
+
+Same-version hardening must therefore validate exact values after read rather than relying on DDL affinity:
+
+- persisted integer fields use exact non-bool integer values before conversion;
+- timestamps are non-negative and `updated_at_ms >= created_at_ms`;
+- revision is an exact integer >= 1;
+- optional expiry is NULL or an exact non-negative integer;
+- persisted `memory_id` is canonical and recomputes from owner/namespace/source;
+- content digest is syntactically valid and matches content;
+- metadata is both contract-valid and encoded in canonical JSON form.
+
+An isolated validator rejected 13/13 malformed boundary fixtures covering NULL/incorrect identity, REAL/bool numeric fields, timestamp inversion, bad content digest, non-canonical/oversized metadata, blank owner, and malformed expiry. This remains prototype evidence until repository source/tests land.
+
 ## Planner journal integrity finding
 
 A normal per-event SHA-256 hash chain detects modification and interior deletion only when recovery knows the expected tail. Deleting the final event and presenting the previous valid hash as the new tail can otherwise appear valid.
