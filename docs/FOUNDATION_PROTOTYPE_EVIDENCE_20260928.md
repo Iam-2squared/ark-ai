@@ -82,6 +82,32 @@ Results:
 - 9/9 negative validation cases PASS;
 - derived lineage/content minimization PASS.
 
+
+## Planner input reproducibility follow-up
+
+A process-level hash-randomization check confirmed that allowing an unordered dependency container makes dependency order non-reproducible across interpreter processes. The same four dependency names produced 9 distinct tuple orders across 12 fixed `PYTHONHASHSEED` values.
+
+A source-ready hardening prototype therefore requires an ordered sequence for `PlanStep.depends_on` and rejects sets/frozensets. It also revalidated immutable topology/status views, exact typed `StepState` input, exact non-bool non-negative revisions, and transitive blocking.
+
+Prototype result: immutable views 2/2 PASS; invalid raw states 3/3 rejected; invalid revisions 3/3 rejected; unordered dependency input rejected; transitive blocking PASS.
+
+## Local observability occurrence envelope
+
+A fixture-only local event prototype now binds action telemetry to both canonical request identity and execution-occurrence identity. This avoids collapsing two separately authorized identical actions into one telemetry identity.
+
+Validated properties:
+
+- same canonical request + same execution occurrence -> deterministic event identity;
+- same canonical request + different execution occurrence -> different event identity;
+- provenance digest order canonicalized across 100 randomized permutations -> identical event identity;
+- bool timestamp/schema values rejected;
+- raw-string outcome rejected when a typed outcome enum is required;
+- execution identity without request identity rejected;
+- malformed provenance digest rejected;
+- no raw action arguments or bearer-token plaintext are required in the envelope.
+
+Prototype result: 100/100 provenance-order permutations deterministic; 5/5 negative validation cases rejected; distinct execution-occurrence identity separation PASS.
+
 ## Repository and boundary status
 
 No model training, Candidate generation, external GPU work, protected evaluation opening, promotion, main merge, or frozen-contract change occurred.
