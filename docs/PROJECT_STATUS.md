@@ -2,28 +2,46 @@
 
 **LATEST**
 
-Saved at: **2026-09-27 17:39 JST (+09:00)**
+Saved at: **2026-09-28 15:19:18 JST (+09:00)**
 
-Branch/PR: research/jarvis-foundations / Draft PR #8
+Branch/PR: `research/jarvis-foundations` / Draft PR #8
 
-Work-basis HEAD: c2c80e51929f647c87d8d9e299490f9259d3f940
+Work-basis HEAD: `d416540dbfb58affd4a2b9f055682c33b1d7ce45`
 
-Overall state: V1/V2/Local UI/Launcher remain frozen and passed. V3 remains Draft/unmerged under its frozen Contract and authorization gates. JARVIS foundations remain isolated, reversible research groundwork and are not a roadmap PASS. PR #8 remains cleanly ahead of main with no mainline merge performed.
+Checkpoint-result HEAD: this file cannot contain the SHA of the commit that writes itself; use the commit produced by this checkpoint update.
 
-New this session: refreshed the canonical checkpoint from the actual PR #8 head, re-audited PR #8/PR #5/dependency state/CI, and expanded isolated implementation validation across planner, Memory, durable authorization, action audit, ToolRegistry, ActionExecutor, Personal Context, and V3 resource/export guards. Executable-source/test writes were retried only through the normal GitHub contents path after exact-head rechecks; those writes were rejected by the safety path and therefore are NOT counted as repository source progress.
+## Current state
 
-Prototype validation completed this session: 33 foundation tests PASS + compileall PASS. The validated foundation behaviors include immutable planner topology/status views; exact StepState and non-bool revision inputs; immutable ToolRegistry resolution; restart-safe SQLite one-shot authorization with token digest only; request/expiry binding; same-version schema-shape validation; exactly-once concurrent consumption; trusted-clock audit-before-action execution; token consumption surviving audit/backend failure; READ execution without one-shot; persisted Memory content/identity/metadata/time integrity; update/delete/purge validation; clock-rollback rejection; same-revision CAS exactly-one winner; concurrent first-open initialization; owner/namespace-isolated Personal Context; deterministic cross-namespace fairness; duplicate-identity rejection; plaintext-free provenance; action-audit schema/row integrity; and content-free audit storage.
+V1/V2/Local UI/Launcher remain frozen and passed. V3 remains Draft/unmerged under its frozen Contract. JARVIS foundation work remains isolated/reversible and is not a roadmap PASS. At the work-basis HEAD, PR #8 is open, Draft, mergeable, 39 commits ahead and 0 behind `main`.
 
-Bounded concurrency stress: durable authorization concurrent consumption + concurrent first-open, Memory same-revision CAS + concurrent first-open, and action-audit concurrent first-open passed 5 repeated runs. During SQLite schema-shape work, rowid-table PRIMARY KEY nullability was explicitly handled: if a validator expects PRAGMA table_info.notnull=1 for a text primary key, the DDL must declare NOT NULL PRIMARY KEY explicitly.
+## New work this session
 
-Separate V3 guard prototype validation: 17 tests PASS + compileall PASS covering tokenizer/device/VRAM/wall-time cross-binding, allocated VRAM <= reserved VRAM <= measured capacity, bool/NaN/infinity rejection, canonical base/merged/output separation, source-tree output rejection, symlink-parent alias rejection, and Current deployed model -> Candidate-source alias rejection. No training, Candidate generation, protected evaluation opening, promotion, or external compute occurred.
+- `955d161c62730412928a05f079eb2dbe8c4e306d`: added the local-state migration contract.
+- `665ccfae471ed560acca130a6a4e07682b2817fd`: recorded isolated foundation prototype evidence, explicitly separated from repository implementation evidence.
+- `d416540dbfb58affd4a2b9f055682c33b1d7ce45`: added component-scoped startup readiness/recovery semantics.
+- Isolated validation advanced planner invariants, Memory snapshot/expiry ordering, SQLite migration crash recovery, startup dependency readiness, proactive scheduler state, typed observations, Personal Context determinism, and free-only V3 resource/path guards.
+- The normal executable-source update for planner hardening was re-attempted after exact-head/blob checks and rejected by the tool safety path; no bypass was used and that source change is not counted as landed.
 
-Repository tests/CI/evidence: exact work-basis HEAD c2c80e51929f647c87d8d9e299490f9259d3f940; CI #163 / run 36306760632 = SUCCESS with all six Ubuntu/Windows × Python 3.11/3.12/3.13 jobs GREEN. The preceding exact-head CI #162 / run 36303618600 was also GREEN. PR #5 remains Draft/unmerged at d6d4c1954a85fc716b1c593ac55c85417912418f. No duplicate workflow rerun was launched.
+## Tests / CI / evidence
 
-Frozen contracts/evidence unchanged: V1/V2/Local UI/Launcher evidence is unchanged. V3 Contract semantics are unchanged. Protected/frozen V2 final evaluation remains unopened. No Candidate adapter/weights were generated or promoted. No paid/external compute was used.
+- CI #183 / run `36384714675` on `955d161c62730412928a05f079eb2dbe8c4e306d`: SUCCESS, 6/6 jobs GREEN. Ubuntu 3.11: Ruff PASS, pytest 163 PASS, Local UI Node tests 6 PASS.
+- CI #185 / run `36385339804` on work-basis HEAD `d416540dbfb58affd4a2b9f055682c33b1d7ce45`: SUCCESS. One Windows Python 3.12 job initially hit a transient socket-abort failure in the oversized-body UI test; only that failed job was rerun and it passed. Final job set is 6/6 GREEN. Frozen Local UI source was unchanged.
+- PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`.
+- Prototype-only checks are not promoted to repository implementation evidence.
 
-Unresolved boundaries/blockers: normal GitHub writes to executable source/tests remain rejected by the safety path despite exact-head rechecks. This is treated as a path-specific tooling blocker, not authorization to bypass safeguards. Existing authorization boundaries remain unchanged: paid/external compute, real Candidate generation, protected evaluation opening, Candidate promotion, frozen-contract changes, destructive actions, credentials not already authorized, and main merge require their controlling authorization.
+## Frozen boundaries unchanged
 
-Next plan / 今後の方針: keep exact-head CI green; retry only normal source writes without bypassing safeguards; persist planner immutable/exact-type hardening first, then persisted-Memory integrity/schema/concurrency/retention hardening, durable one-shot authorization, action-audit integrity, immutable ToolRegistry, trusted-clock audit-before-action execution, Personal Context retrieval, and V3 resource/export cross-binding guards. While source writes remain blocked, continue independent local validation rather than idling.
+Frozen V1/V2/Local UI/Launcher evidence is unchanged. V3 Contract semantics are unchanged. Protected V2 final evaluation remains unopened. No Candidate weights, promotion, paid/external compute, destructive action, or main merge occurred.
 
-Checkpoint-result HEAD is not self-recorded inside this commit; record it from the subsequent repository state when needed.
+## Blockers / authorization boundaries
+
+Normal writes to executable source/tests remain blocked by the tool safety path. Existing authorization gates remain in force for paid/external compute, real Candidate generation, protected evaluation, promotion, frozen-contract changes, destructive/irreversible work, new credentials/account connections, unavailable physical-PC actions, and main merge. No new user-action blocker was introduced.
+
+## Next plan / 今後の方針
+
+1. Retry only the normal source path for planner invariant hardening after an exact-head re-read.
+2. Land Memory durability plus snapshot-after-read expiry semantics.
+3. Harden Action Audit initialization, shape/integrity checks, and lock-before-clock ordering.
+4. Implement reusable local-state migration/startup-readiness source and process recovery tests.
+5. Continue immutable ToolRegistry, durable one-shot authorization, action-occurrence reconciliation, and mock ActionExecutor integration.
+6. Continue Personal Context, proactive scheduler, typed observation, and V3 free-only path/resource guard work as dependencies permit.
