@@ -59,13 +59,37 @@ The runtime resets peak CUDA memory statistics after model/adapter/optimizer set
 
 This is not necessarily wrong if the metric is explicitly named as training-phase evidence, but it must not be interpreted as whole-attempt cost/resource evidence. Before a paid run, either rename/scope these metrics or add separately measured whole-attempt values.
 
+## Gap 7 — generated preflight authorization packet is not runtime-consumed
+
+PR #5 can generate a deterministic preflight authorization packet with its own SHA-256, but the
+official `preflight` CLI accepts the execution snapshot and evidence paths directly. It does not
+require the reviewed packet as an input or verify that the packet digest presented at execution
+matches the exact packet the user approved.
+
+Before any real preflight, the runtime boundary should consume an explicit user-provided approval
+artifact that binds the packet digest and exact execution core. A snapshot boolean alone must not
+stand in for the reviewed artifact.
+
+## Gap 8 — full training lacks a distinct runtime-consumed second approval artifact
+
+The official `train` CLI validates training authorization in the snapshot and verifies the frozen
+preflight report, but it does not require a separate post-preflight approval artifact that binds the
+accepted preflight report SHA-256, final execution snapshot/core, budget, and the one allowed full
+Candidate attempt.
+
+Before real full training, require a distinct second approval artifact and durably consume its
+one-shot attempt identity before model/training side effects. The preflight approval must never be
+reused as full-training authorization.
+
 ## Required closure before real Candidate compute
 
-1. durable attempt consumption keyed by exact snapshot + authorization artifact;
-2. one guard boundary that all concrete compute backends must receive/verify;
-3. canonical output/input/code path disjointness;
-4. stable verify-to-use model/tokenizer identity;
-5. explicit deterministic RNG seeding before trainable initialization;
-6. unambiguous whole-attempt versus training-phase resource metrics.
+1. runtime consumption of the exact user-approved preflight packet/artifact;
+2. separate post-preflight full-training approval bound to snapshot/core + accepted preflight report + budget;
+3. durable exactly-once attempt consumption keyed by the full-training approval artifact;
+4. one guard boundary that all concrete compute backends must receive/verify;
+5. canonical output/input/code path disjointness;
+6. stable verify-to-use model/tokenizer identity;
+7. explicit deterministic RNG seeding before trainable initialization;
+8. unambiguous whole-attempt versus training-phase resource metrics.
 
 These are free pre-compute hardening items only. They do not authorize GPU use, spending, Candidate generation, protected V2 opening, promotion, Contract changes, or main merge.
