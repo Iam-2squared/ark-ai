@@ -23,11 +23,11 @@ This matrix records the current repository implementation against the already-de
 | Permission policy | exact capability/scope and in-memory one-shot checks exist | one-shot consumption is process-local and restart-replayable | local SQLite durable one-shot ledger storing token digest only |
 | Action time | policy receives caller-supplied `now_ms` | execution boundary does not yet own trusted time | trusted-clock ActionExecutor owns authorization/audit time |
 | Audit-before-action | audit and policy exist independently | no executor forces durable authorization consumption -> pre-action audit -> backend ordering | mock/disconnected ActionExecutor with fail-closed audit sequencing |
-| Action replay | request IDs are deterministic | backend failure/unknown outcome recovery contract is documented but not implemented | durable outcome correlation and no blind retry for ambiguous writes |
+| Action replay | request IDs are deterministic and bound-action vectors are frozen | the older occurrence contract derives execution identity from request + token only, while the newer registry contract requires exact registry/effect/backend binding | derive occurrence identity from bound_action_id + one-shot digest; retain request_id only as grouping identity; no blind retry for ambiguous writes |
 | Planner recovery | recovery contract is documented | no repository planner journal implementation yet | append-only local journal bound to canonical topology and revision replay |
 | Personal Context | Memory store provides scope-isolated retrieval | no coherent multi-namespace snapshot API or context-bundle/fairness/provenance layer exists in repository source | one-transaction multi-namespace snapshot, then deterministic retrieval with content-free provenance |
 | Proactive scheduler | proactive contract exists | no scheduler state implementation exists | local SQLite trigger state with deterministic identity, CAS, cooldown, deduplication |
-| Voice/Vision | multimodal contract exists | no typed observation envelope/adapters exist | fixture/mock observation contracts first; no hardware/cloud dependency |
+| Voice/Vision | typed content-minimized ObservationEnvelope source and deterministic fixture now exist | matching repository tests and fixture adapters are not yet landed; live capture remains intentionally disconnected | land envelope tests, then fixture-only text/transcript/image/screen adapters; no hardware/cloud dependency |
 | Computer actions | safety contract exists | real adapters correctly remain disconnected | keep disconnected until registry + durable auth + audit + executor are integrated GREEN |
 | V3 independent guards | PR #5 contains extensive pre-paid-compute tooling | real training/evaluation gates remain intentionally unresolved | continue free identity/path/resource/reproducibility validation only |
 
@@ -44,7 +44,7 @@ The highest-leverage source order remains:
 7. planner persistence/recovery;
 8. Personal Context retrieval;
 9. proactive scheduler;
-10. typed multimodal observations and local UI integration.
+10. fixture-only multimodal adapters and local UI integration.
 
 Items 1-3 can proceed independently. Items 4-6 form one execution-safety chain. Personal Context depends on hardened Memory. Real computer actions depend on the entire execution-safety chain and remain disconnected.
 
