@@ -26,7 +26,7 @@ The validator should bind:
 - `table_xinfo` column order/name/type/not-null/default/PK/hidden state;
 - required indexes and their indexed columns/order/partial definition;
 - absence of unrecognized indexes on managed objects when they can alter persistence semantics;
-- normalized managed-table SQL needed to preserve required CHECK/UNIQUE constraints;
+- normalized managed-table SQL needed to preserve required CHECK/UNIQUE constraints, non-index column collations, and `AUTOINCREMENT` semantics;
 - absence of triggers on managed Memory tables unless explicitly defined by that schema version.
 
 Unexpected generated/hidden columns or triggers fail closed. This prevents a same-version database from silently changing how private Memory data is stored or copied.
@@ -53,7 +53,7 @@ Mutation order is:
 
 `write lock -> validate stored row -> trusted clock sample -> clock monotonicity check -> CAS mutation -> event -> commit`.
 
-Expected create/update/delete races are normalized to Memory domain conflicts.
+Expected create/update/delete races are normalized to Memory domain conflicts. Before classifying a same-ID create as ordinary contention, the locked writer must validate both deterministic `memory_id` identity and the unique `(owner_id, namespace, source_id)` key; a persisted row that disagrees with either identity relation is integrity failure, not a normal create conflict.
 
 ## Expiry cleanup
 
@@ -83,10 +83,10 @@ Repository tests should cover:
 
 1. negative/newer schema version rejection;
 2. partial version-zero database rejection;
-3. generated column, unexpected trigger, missing/extra managed index, and altered constraint rejection;
+3. generated column, unexpected trigger, missing/extra managed index, altered constraint, non-index `COLLATE`, and `AUTOINCREMENT` tamper rejection;
 4. REAL-in-integer-column rejection without truncation;
 5. NULL/malformed identity rejection;
-6. content and metadata tamper rejection;
+6. content, metadata, deterministic-ID, and owner/namespace/source identity tamper rejection;
 7. trusted-clock rollback rejection;
 8. concurrent same-ID create and same-revision update yielding one winner;
 9. refresh racing expiry cleanup without stale deletion;
