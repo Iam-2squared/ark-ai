@@ -4,227 +4,73 @@
   "tables": {
     "memories": {
       "columns": [
-        {
-          "name": "memory_id",
-          "type": "TEXT",
-          "notnull": 0,
-          "pk": 1,
-          "hidden": 0
-        },
-        {
-          "name": "owner_id",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "namespace",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "source_id",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "content",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "metadata_json",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "content_sha256",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "created_at_ms",
-          "type": "INTEGER",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "updated_at_ms",
-          "type": "INTEGER",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "expires_at_ms",
-          "type": "INTEGER",
-          "notnull": 0,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "revision",
-          "type": "INTEGER",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        }
+        {"name":"memory_id","type":"TEXT","notnull":0,"default":null,"pk":1,"hidden":0},
+        {"name":"owner_id","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"namespace","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"source_id","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"content","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"metadata_json","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"content_sha256","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"created_at_ms","type":"INTEGER","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"updated_at_ms","type":"INTEGER","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"expires_at_ms","type":"INTEGER","notnull":0,"default":null,"pk":0,"hidden":0},
+        {"name":"revision","type":"INTEGER","notnull":1,"default":null,"pk":0,"hidden":0}
       ],
-      "checks": [
-        "revision>=1"
-      ],
-      "uniques": [
-        [
-          "owner_id",
-          "namespace",
-          "source_id"
-        ]
-      ]
+      "without_rowid": 0,
+      "strict": 0,
+      "checks": ["revision>=1"],
+      "uniques": [["owner_id","namespace","source_id"]]
     },
     "memory_events": {
       "columns": [
-        {
-          "name": "event_id",
-          "type": "INTEGER",
-          "notnull": 0,
-          "pk": 1,
-          "hidden": 0
-        },
-        {
-          "name": "memory_id",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "owner_id",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "namespace",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "operation",
-          "type": "TEXT",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "revision",
-          "type": "INTEGER",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        },
-        {
-          "name": "occurred_at_ms",
-          "type": "INTEGER",
-          "notnull": 1,
-          "pk": 0,
-          "hidden": 0
-        }
+        {"name":"event_id","type":"INTEGER","notnull":0,"default":null,"pk":1,"hidden":0},
+        {"name":"memory_id","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"owner_id","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"namespace","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"operation","type":"TEXT","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"revision","type":"INTEGER","notnull":1,"default":null,"pk":0,"hidden":0},
+        {"name":"occurred_at_ms","type":"INTEGER","notnull":1,"default":null,"pk":0,"hidden":0}
       ],
-      "checks": [
-        "operation IN('create','update','delete','expire')"
-      ],
+      "without_rowid": 0,
+      "strict": 0,
+      "checks": ["operation IN('create','update','delete','expire')"],
       "uniques": []
     }
   },
   "indexes": {
     "idx_mem_scope": {
-      "table": "memories",
-      "unique": 0,
-      "partial": 0,
-      "keys": [
-        {
-          "name": "owner_id",
-          "desc": 0
-        },
-        {
-          "name": "namespace",
-          "desc": 0
-        },
-        {
-          "name": "updated_at_ms",
-          "desc": 1
-        },
-        {
-          "name": "memory_id",
-          "desc": 0
-        }
+      "table":"memories","unique":0,"partial":0,
+      "keys":[
+        {"name":"owner_id","desc":0,"collation":"BINARY"},
+        {"name":"namespace","desc":0,"collation":"BINARY"},
+        {"name":"updated_at_ms","desc":1,"collation":"BINARY"},
+        {"name":"memory_id","desc":0,"collation":"BINARY"}
       ]
     },
     "idx_mem_expiry": {
-      "table": "memories",
-      "unique": 0,
-      "partial": 1,
-      "keys": [
-        {
-          "name": "expires_at_ms",
-          "desc": 0
-        }
-      ],
-      "where": "expires_at_ms IS NOT NULL"
+      "table":"memories","unique":0,"partial":1,
+      "keys":[{"name":"expires_at_ms","desc":0,"collation":"BINARY"}],
+      "where":"expires_at_ms IS NOT NULL"
     },
     "idx_mem_event_scope": {
-      "table": "memory_events",
-      "unique": 0,
-      "partial": 0,
-      "keys": [
-        {
-          "name": "owner_id",
-          "desc": 0
-        },
-        {
-          "name": "namespace",
-          "desc": 0
-        },
-        {
-          "name": "event_id",
-          "desc": 0
-        }
+      "table":"memory_events","unique":0,"partial":0,
+      "keys":[
+        {"name":"owner_id","desc":0,"collation":"BINARY"},
+        {"name":"namespace","desc":0,"collation":"BINARY"},
+        {"name":"event_id","desc":0,"collation":"BINARY"}
       ]
     }
   },
   "autoindexes": [
     {
-      "table": "memories",
-      "origin": "pk",
-      "unique": 1,
-      "columns": [
-        "memory_id"
-      ]
+      "table":"memories","origin":"pk","unique":1,
+      "columns":["memory_id"],
+      "collations":["BINARY"]
     },
     {
-      "table": "memories",
-      "origin": "u",
-      "unique": 1,
-      "columns": [
-        "owner_id",
-        "namespace",
-        "source_id"
-      ]
+      "table":"memories","origin":"u","unique":1,
+      "columns":["owner_id","namespace","source_id"],
+      "collations":["BINARY","BINARY","BINARY"]
     }
   ],
   "triggers": []
