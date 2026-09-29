@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
@@ -133,12 +133,11 @@ class PlanStep:
         _text("step_id", self.step_id)
         if not isinstance(self.call, ToolCall):
             raise TypeError("call must be a ToolCall")
-        if isinstance(self.depends_on, str):
-            raise TypeError("depends_on must be a sequence of step IDs")
-        try:
-            dependencies = tuple(self.depends_on)
-        except TypeError as exc:
-            raise TypeError("depends_on must be a sequence of step IDs") from exc
+        if isinstance(self.depends_on, (str, bytes)) or not isinstance(
+            self.depends_on, Sequence
+        ):
+            raise TypeError("depends_on must be an ordered sequence of step IDs")
+        dependencies = tuple(self.depends_on)
         for dependency in dependencies:
             _text("dependency step_id", dependency)
         if len(set(dependencies)) != len(dependencies):
