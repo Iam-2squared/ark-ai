@@ -4,26 +4,34 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
+from types import MappingProxyType
 
 from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState
 
-_ALLOWED: dict[StepState, set[StepState]] = {
-    StepState.PENDING: {StepState.RUNNING, StepState.BLOCKED, StepState.CANCELLED},
-    StepState.RUNNING: {StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED},
-    StepState.SUCCEEDED: set(),
-    StepState.FAILED: set(),
-    StepState.BLOCKED: set(),
-    StepState.CANCELLED: set(),
-}
+_ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
+    {
+        StepState.PENDING: frozenset(
+            {StepState.RUNNING, StepState.BLOCKED, StepState.CANCELLED}
+        ),
+        StepState.RUNNING: frozenset(
+            {StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED}
+        ),
+        StepState.SUCCEEDED: frozenset(),
+        StepState.FAILED: frozenset(),
+        StepState.BLOCKED: frozenset(),
+        StepState.CANCELLED: frozenset(),
+    }
+)
 
 
 class PlanGraph:
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
         if not steps:
             raise ValueError("plan requires at least one step")
-        self.steps = {step.step_id: step for step in steps}
-        if len(self.steps) != len(steps):
+        step_map = {step.step_id: step for step in steps}
+        if len(step_map) != len(steps):
             raise ValueError("plan step IDs must be unique")
+        self.steps: Mapping[str, PlanStep] = MappingProxyType(step_map)
         for step in steps:
             unknown = set(step.depends_on) - self.steps.keys()
             if unknown:
@@ -37,7 +45,7 @@ class PlanGraph:
         }
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
-        return dict(self._status)
+        return MappingProxyType(dict(self._status))
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
         ready: list[PlanStep] = []
@@ -59,6 +67,10 @@ class PlanGraph:
     ) -> PlanStepStatus:
         if step_id not in self._status:
             raise KeyError(step_id)
+        if type(to_state) is not StepState:
+            raise TypeError("to_state must be a StepState")
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError("expected_revision must be a non-negative integer")
         current = self._status[step_id]
         if expected_revision != current.revision:
             raise PlanConflictError(
@@ -85,7 +97,8 @@ class PlanGraph:
         blocked = {failed_step_id}
         while changed:
             changed = False
-            for step_id, step in self.steps.items():
+            for step_id in sorted(self.steps):
+                step = self.steps[step_id]
                 status = self._status[step_id]
                 if status.state is StepState.PENDING and any(
                     dependency in blocked for dependency in step.depends_on
@@ -113,5 +126,5 @@ class PlanGraph:
             visiting.remove(step_id)
             visited.add(step_id)
 
-        for step_id in self.steps:
+        for step_id in sorted(self.steps):
             visit(step_id)
