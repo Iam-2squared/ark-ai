@@ -51,10 +51,23 @@ content while preventing old authorization from surviving a tool-semantics or ba
 - same request + same registry/spec -> same bound identity;
 - same request + READ/WRITE effect change -> different bound identity;
 - same request + backend-ID change -> different bound identity;
-- same request + capability change -> different bound identity;
+- stale same-request capability mismatch after registry capability change -> fail closed;
+- new request with the new capability -> different request and bound identities;
 - unchanged request under a different registry revision -> different bound identity;
 - stale durable authorization/recovery state from an older revision -> fail closed;
 - two separately authorized executions of one request retain distinct execution-occurrence IDs.
+
+## Capability-change semantics
+
+A registry registration may only bind a call whose declared capability exactly matches the
+registration capability. If a registry revision changes a tool capability while the call bytes
+remain unchanged, binding that stale call must fail closed; it is not valid to reinterpret the
+old request under the new capability.
+
+To exercise capability changes deterministically, construct a new `ToolCall` using the new
+capability. Because capability is part of `request_id`, this produces both a new request identity
+and, after successful exact-capability resolution, a new registry-bound action identity. Durable
+authorization from the prior capability therefore cannot cross the registry change.
 
 ## Deterministic reference vectors
 
