@@ -2,51 +2,53 @@
 
 **LATEST**
 
-Saved at: **2026-09-30 02:10:49 JST (+09:00)**
+Saved at: **2026-10-01 08:18:31 JST (+09:00)**
 
 Branch/PR: `research/jarvis-foundations` / Draft PR #8
 
-Work-basis HEAD: `c417ac9ca05e49798b0e499e433f94115fa941e9`
+Work-basis HEAD: `5651ef2588d3e52cbed3c90feaf94c72a9ce8ca1`
 
 Checkpoint-result HEAD: this file cannot contain the SHA of the commit that writes itself; use the commit produced by this checkpoint update.
 
-Supersedes the prior canonical checkpoint saved at 2026-09-29 23:15:39 JST.
+Supersedes the prior canonical checkpoint saved at 2026-09-30 02:10:49 JST.
 
 ## Current state
 
-V1/V2/Local UI/Launcher evidence remains frozen and unchanged. V3 remains Draft/unmerged under its frozen Contract. JARVIS foundation work remains isolated/reversible and is not a roadmap PASS. PR #8 is open, Draft, mergeable, **84 commits ahead / 0 behind** `main` at the work-basis HEAD.
+V1/V2/Local UI/Launcher evidence remains frozen and unchanged. PR #5 remains Draft/unmerged under its frozen V3 Contract. JARVIS foundation work remains isolated/reversible and is not a roadmap PASS. At the work-basis HEAD, PR #8 is open, Draft, mergeable, **86 commits ahead / 0 behind** `main`.
 
 ## New work this session
 
-- Foundation Gap Matrix was reconciled with the actual hardened Planner source at `c417ac9ca05e49798b0e499e433f94115fa941e9`: immutable topology/status snapshots, exact `StepState`, exact non-bool revision validation, immutable transition rules, ordered dependency input, and sorted traversal are now recorded as implemented rather than open source gaps.
-- The same matrix now records newly verified Memory gaps: exact persisted storage-class validation, Memory lifecycle-event validation, identity-aware writer lookup, negative schema-version rejection, lock-before-clock ordering, and revision/expiry-bound purge.
-- Action Audit gap tracking now explicitly requires serialized bootstrap, exact row/schema validation, negative schema-version rejection, and write-lock acquisition before trusted clock sampling.
-- Planner focused regression tests were prepared for unordered dependency input, raw-string state, bool/negative revision, immutable snapshots, and deterministic ready ordering, but the normal test-file write was rejected; no executable/test patch from that attempt was saved.
-- PR #5 was re-read at exact head `d6d4c1954a85fc716b1c593ac55c85417912418f`. The preflight authorization packet generator is still not consumed by the runtime entry point, and training authorization remains represented by snapshot booleans plus preflight-report binding rather than a distinct reviewed post-preflight approval artifact with durable one-attempt consumption.
+- Saved commit `5651ef2588d3e52cbed3c90feaf94c72a9ce8ca1` updates the Foundation Gap Matrix from exact prior HEAD `6e0539078a6dd0005003a6733050e3faf0c8e6c0`.
+- Planner tracking now records two source gaps verified from current code: `PlanGraph` accepts non-`PlanStep` duck-typed inputs whose dependency topology can later mutate, and explicit `CANCELLED`/`BLOCKED` terminal states do not propagate blocking to pending descendants. The safe package is exact `PlanStep` ingress plus non-success-terminal descendant propagation and focused regressions.
+- Permission tracking now records that the public gate does not exact-type-check `ToolSpec`/`ToolCall`/grant/token inputs before effect branching. An isolated source-equivalent check reproduced a type-confused WRITE spec with string `"write"` bypassing the in-memory one-shot branch; an exact-type/non-consuming-grant prototype rejected it while preserving normal one-shot replay denial.
+- Action Audit tracking now records that arbitrary caller-provided `outcome` text can persist sensitive plaintext even though raw ToolCall arguments are excluded. New writes need a bounded content-free outcome domain while any necessary legacy reader compatibility remains explicit.
+- PR #5 was re-read at exact head `d6d4c1954a85fc716b1c593ac55c85417912418f`. Free-only review confirms the preflight authorization packet is not runtime-consumed; its `packet_sha256` hashes packet content before that field is inserted, nested sections are shallow-copied, `load_snapshot()` accepts duplicate JSON keys, and authorization/preflight output checks do not reject symlinked parent directories. A follow-up documentation write for these findings was rejected and therefore is not repository evidence.
+- The Planner source patch attempt and a Memory hardening-plan follow-up were also rejected by the normal Contents safety path. No alternate write path was used.
 
 ## Tests / CI / evidence
 
-- Exact work-basis CI #230 / run `36603394483`: **SUCCESS, 6/6 GREEN** across Windows/Ubuntu and Python 3.11-3.13.
-- Job IDs: Ubuntu 3.13 `109526169761`; Windows 3.12 `109526169899`; Windows 3.11 `109526169915`; Ubuntu 3.11 `109526169960`; Windows 3.13 `109526170029`; Ubuntu 3.12 `109526170193`.
-- No Planner focused regression tests were added because the executable/test write path rejected the prepared patch.
-- Prototype/source-ready findings are not repository implementation evidence until source/tests are saved and exact-head CI is GREEN.
+- Exact work-basis CI run `36790110870`: **SUCCESS, 6/6 GREEN** across Windows/Ubuntu and Python 3.11-3.13.
+- Job IDs: Ubuntu 3.12 `110140753467`; Windows 3.11 `110140753653`; Ubuntu 3.13 `110140753663`; Windows 3.13 `110140753682`; Ubuntu 3.11 `110140753706`; Windows 3.12 `110140753745`.
+- `main...research/jarvis-foundations` at the work-basis HEAD: **86 ahead / 0 behind**.
+- Isolated checks reproduced mutable duck-typed Planner topology (`ready=["read"]` becoming `["read","write"]` after external dependency mutation), cancelled-root descendants remaining PENDING with no ready path, the PermissionGate type-confusion bypass, and strict JSON duplicate-key rejection semantics.
+- Prototype/source-ready findings remain non-repository implementation evidence until source/tests are saved and exact-head CI is GREEN.
 
 ## Frozen boundaries unchanged
 
-Frozen V1/V2/Local UI/Launcher evidence, V3 Contract semantics, protected evaluation state, Candidate state, PR #5 Draft/unmerged state, and `main` remain unchanged. No external compute, Candidate generation, promotion, protected-evaluation opening, new credentials, destructive action, or main merge occurred.
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract semantics, protected evaluation state, Candidate state, PR #5 Draft/unmerged state, and `main` remain unchanged. No paid/external compute, real training, Candidate generation, promotion, protected-evaluation opening, new credentials, destructive action, physical-PC action, or main merge occurred.
 
 ## Blockers / authorization boundaries
 
-Normal executable-source/test writes remain intermittently blocked by the tool safety path. A Gap Matrix documentation update was saved normally; the prepared Planner tests and later documentation hardening attempts were rejected. No safeguard-circumvention path was used.
+Normal executable-source/test writes are currently rejected by the GitHub safety path. During this session a documentation-only Gap Matrix update was accepted normally, while the Planner source patch and later documentation updates were rejected. No raw Git object/ref, force-push, alternate hidden route, or other safeguard-circumvention path was used.
 
-PR #5 still requires explicit authorization before external compute or real Candidate work. Its free guard closure still requires runtime consumption of the exact reviewed preflight authorization artifact plus a separate post-preflight/full-training approval bound to the exact snapshot/core/preflight evidence and consumed durably once.
+PR #5 still requires explicit authorization before external compute or real Candidate work. Free guard closure remains limited to local validation/approval-binding/path/integrity work.
 
 ## Next plan / 今後の方針
 
-1. Retry the prepared Planner focused tests only through the normal Contents path on a later invocation.
-2. Implement Memory row/event storage-class validation, deterministic identity/content integrity, serialized writer ordering, trusted-clock rollback checks, and revision/expiry-bound purge.
-3. Harden Action Audit v1 with serialized bootstrap, negative-version/schema validation, persisted request identity validation, and lock-before-clock monotonic append.
-4. Land immutable ToolRegistry source/tests reproducing the frozen registry and bound-action vectors.
-5. Add registry-bound durable one-shot authorization and execution occurrence, then mock-only audit-before-action execution.
+1. On a later invocation, retry Planner exact-`PlanStep` ingress + non-success terminal propagation + focused regressions only through the normal Contents path.
+2. Implement Memory exact-scope/API validation, semantic schema and persisted row/event integrity, serialized writer ordering, trusted-clock rollback protection, coherent read snapshot ordering, and revision/expiry-bound purge.
+3. Harden Action Audit v1 bootstrap/schema/row/timestamp handling and constrain new-write outcomes to a bounded content-free domain.
+4. Land immutable ToolRegistry source/tests, then exact-type PermissionGate/non-consuming grant validation.
+5. Add registry-bound durable one-shot authorization + execution occurrence, occurrence-bound Audit v2, and mock-only audit-before-action executor.
 6. Continue planner recovery, startup readiness, Personal Context, proactive scheduler, and fixture-only multimodal foundations.
-7. Continue free-only PR #5 approval-binding guard closure without external compute or protected evaluation.
+7. Continue PR #5 strict JSON, reviewed approval artifact binding, output-parent/symlink safety, local identity verification, and durable one-attempt consumption without external compute or protected evaluation.
