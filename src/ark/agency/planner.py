@@ -26,6 +26,8 @@ _ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
 
 class PlanGraph:
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
+        if type(steps) is not tuple or any(type(step) is not PlanStep for step in steps):
+            raise TypeError("steps must be a tuple of exact PlanStep values")
         if not steps:
             raise ValueError("plan requires at least one step")
         step_map = {step.step_id: step for step in steps}
