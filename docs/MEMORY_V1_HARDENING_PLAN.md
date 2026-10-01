@@ -31,6 +31,16 @@ The validator should bind:
 
 Unexpected generated/hidden columns or triggers fail closed. This prevents a same-version database from silently changing how private Memory data is stored or copied.
 
+## Exact contract ingress
+
+All public Memory constructors and store entry points must reject type-confused scope values before identity, SQL, or clock work. In particular:
+
+- `MemoryWrite.scope`, `MemoryQuery.scope`, `MemoryRecord.scope`, and `MemoryEvent.scope` require an exact `MemoryScope` value;
+- `deterministic_memory_id()`, `get()`, `delete()`, `events()`, and non-null `purge_expired(scope=...)` require the same exact scope type;
+- persisted owner/namespace bytes are reconstructed into a validated exact `MemoryScope`; malformed stored scope is an integrity failure, never duck-typed or coerced input.
+
+This keeps owner/namespace isolation and deterministic identity bound to one runtime contract instead of attribute-compatible substitutes.
+
 ## Persisted row validation
 
 SQLite affinity is not trusted as a type validator.
@@ -72,6 +82,14 @@ An expire event and purge counter advance only when exactly one row was deleted.
 A zero-row conditional delete is a stale candidate and produces no event/count. More than one affected row is integrity failure.
 
 This rule also prevents malformed legacy NULL-primary-key rows from producing a false expire event/count when no row was deleted.
+
+## Coherent single-record and search reads
+
+Expiry-sensitive `get()` and `search()` must bind one SQLite snapshot to one trusted time sample. The required order is:
+
+`BEGIN read transaction -> execute a snapshot-establishing read -> sample trusted time exactly once while the transaction remains open -> fully validate/materialize rows from that snapshot -> apply expiry filtering -> close`.
+
+The API does not promise the newest concurrent commit. It promises that a single result never combines an older clock sample with a newer database state, or an older database state with a newer clock sample. `include_expired=True` still uses the same snapshot discipline; it only skips the expiry filter.
 
 ## Coherent multi-namespace read
 
