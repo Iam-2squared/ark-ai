@@ -2,11 +2,11 @@
 
 **LATEST**
 
-Saved at: **2026-10-01 08:18:31 JST (+09:00)**
+Saved at: **2026-10-01 15:20:00 JST (+09:00)**
 
 Branch/PR: `research/jarvis-foundations` / Draft PR #8
 
-Work-basis HEAD: `5651ef2588d3e52cbed3c90feaf94c72a9ce8ca1`
+Work-basis HEAD: `26451d0782d905ce0c4bfa52e742670f2799352d`
 
 Checkpoint-result HEAD: this file cannot contain the SHA of the commit that writes itself; use the commit produced by this checkpoint update.
 
@@ -17,6 +17,9 @@ Supersedes the prior canonical checkpoint saved at 2026-09-30 02:10:49 JST.
 V1/V2/Local UI/Launcher evidence remains frozen and unchanged. PR #5 remains Draft/unmerged under its frozen V3 Contract. JARVIS foundation work remains isolated/reversible and is not a roadmap PASS. At the work-basis HEAD, PR #8 is open, Draft, mergeable, **86 commits ahead / 0 behind** `main`.
 
 ## New work this session
+
+- Direct GitHub connector verification succeeded through the normal Contents path: commit `26451d0782d905ce0c4bfa52e742670f2799352d` hardened `PlanGraph` ingress to require a tuple of exact `PlanStep` values, closing the previously documented duck-typed mutable-topology entry point. No bypass path was used.
+- CI #236 / run `36824969232` started for that exact source-write commit and is **IN PROGRESS** at this checkpoint; no GREEN claim is made yet.
 
 - Saved commit `5651ef2588d3e52cbed3c90feaf94c72a9ce8ca1` updates the Foundation Gap Matrix from exact prior HEAD `6e0539078a6dd0005003a6733050e3faf0c8e6c0`.
 - Planner tracking now records two source gaps verified from current code: `PlanGraph` accepts non-`PlanStep` duck-typed inputs whose dependency topology can later mutate, and explicit `CANCELLED`/`BLOCKED` terminal states do not propagate blocking to pending descendants. The safe package is exact `PlanStep` ingress plus non-success-terminal descendant propagation and focused regressions.
@@ -39,13 +42,13 @@ Frozen V1/V2/Local UI/Launcher evidence, V3 Contract semantics, protected evalua
 
 ## Blockers / authorization boundaries
 
-Normal executable-source/test writes are currently rejected by the GitHub safety path. During this session a documentation-only Gap Matrix update was accepted normally, while the Planner source patch and later documentation updates were rejected. No raw Git object/ref, force-push, alternate hidden route, or other safeguard-circumvention path was used.
+Normal executable-source/test writes have been intermittently rejected by the GitHub safety path; however, the direct source-write verification at `26451d0782d905ce0c4bfa52e742670f2799352d` succeeded normally in this session. During this session a documentation-only Gap Matrix update was accepted normally, while the Planner source patch and later documentation updates were rejected. No raw Git object/ref, force-push, alternate hidden route, or other safeguard-circumvention path was used.
 
 PR #5 still requires explicit authorization before external compute or real Candidate work. Free guard closure remains limited to local validation/approval-binding/path/integrity work.
 
 ## Next plan / 今後の方針
 
-1. On a later invocation, retry Planner exact-`PlanStep` ingress + non-success terminal propagation + focused regressions only through the normal Contents path.
+1. Add focused Planner regression coverage for exact `PlanStep` ingress, then continue non-success terminal descendant propagation only through the normal Contents path.
 2. Implement Memory exact-scope/API validation, semantic schema and persisted row/event integrity, serialized writer ordering, trusted-clock rollback protection, coherent read snapshot ordering, and revision/expiry-bound purge.
 3. Harden Action Audit v1 bootstrap/schema/row/timestamp handling and constrain new-write outcomes to a bounded content-free domain.
 4. Land immutable ToolRegistry source/tests, then exact-type PermissionGate/non-consuming grant validation.
