@@ -32,9 +32,9 @@ The identifier is provenance only. It is never a capability grant or authorizati
 Implementations fail closed on:
 
 - unknown or raw-string observation kinds when a typed enum is required;
-- blank source/adapter/privacy identifiers;
+- non-exact or blank source/adapter/privacy identifiers; provenance-bearing text must be an exact built-in string, not a subclass with altered equality/hash behavior;
 - bool, negative, or non-integer timestamps;
-- malformed content or parent digests;
+- non-exact or malformed content/parent digest strings;
 - unsupported schema versions;
 - derived observations whose declared parent digest is malformed.
 
