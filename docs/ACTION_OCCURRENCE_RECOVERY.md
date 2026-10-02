@@ -17,22 +17,24 @@ The same requested operation may legitimately be authorized and executed more th
 
 Each WRITE occurrence receives a separate durable `execution_id` bound to:
 
-- request identity;
+- the registry-bound action identity (`bound_action_id`), which already binds request bytes, registry revision, effect classification, capability, and backend identity;
 - the cryptographic digest of the consumed one-shot authorization;
 - an execution schema/domain separator.
 
 A safe form is a deterministic digest such as:
 
-`execution_id = H(domain || request_id || authorization_token_digest)`
+`execution_id = H(domain || bound_action_id || authorization_token_digest)`
 
-The plaintext bearer token is never persisted. Two distinct one-shot authorizations for the same canonical request produce distinct execution identities.
+`request_id` remains a grouping identity for equivalent proposed request content, but it is not sufficient execution authority because it does not bind registry/backend semantics. The plaintext bearer token is never persisted. Two distinct one-shot authorizations for the same bound action produce distinct execution identities.
 
 ## Durable execution row
 
 Before a WRITE backend can run, ARK must durably create or advance one execution row containing at least:
 
 - `execution_id`;
-- `request_id`;
+- `bound_action_id`;
+- `request_id` for grouping/correlation;
+- exact registry revision and backend/effect binding, or an integrity-bound record that reproduces the bound action identity;
 - tool/capability/scope binding or their integrity-bound digest;
 - argument digest;
 - authorization token digest;
@@ -101,7 +103,7 @@ Backend-specific idempotency keys, when available, are bound to the durable exec
 
 ## Audit correlation
 
-Pre-action, backend-result, verification, and reconciliation events must correlate to the same `execution_id` and `request_id`.
+Pre-action, backend-result, verification, and reconciliation events must correlate to the same `execution_id`, `bound_action_id`, and `request_id`. Restart recovery must reject an occurrence if its recorded registry revision or bound action identity no longer matches the active immutable registry.
 
 Audit storage should retain the minimum fields needed to explain:
 
@@ -127,7 +129,8 @@ Deduplicating solely on `request_id` would incorrectly suppress the second legit
 
 Before a real WRITE adapter is connected, repository tests must cover at least:
 
-- same canonical request + different one-shots -> distinct execution IDs;
+- same canonical request + same registry binding + different one-shots -> distinct execution IDs;
+- same request under a changed registry/effect/backend binding -> different `bound_action_id` and no reuse of old durable authorization;
 - same one-shot consumed concurrently -> exactly one execution occurrence;
 - execution-row first-open/restart validation;
 - same-revision terminal transition contention -> exactly one winner;
