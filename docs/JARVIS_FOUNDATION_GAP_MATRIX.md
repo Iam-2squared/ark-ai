@@ -34,6 +34,18 @@ This matrix records the current repository implementation against the already-de
 | Computer actions | safety contract exists | real adapters correctly remain disconnected | keep disconnected until registry + durable auth + audit + executor are integrated GREEN |
 | V3 independent guards | PR #5 contains extensive pre-paid-compute tooling; free review identified runtime/preflight approval binding gaps | reviewed preflight artifact is not yet runtime-consumed and full training lacks a distinct durable post-preflight approval artifact; runtime-consumed JSON loaders including snapshot/preflight parsing do not uniformly reject duplicate keys; authorization packet sections are shallow-copied and its displayed `packet_sha256` hashes the packet before that field is added rather than the actual reviewed file bytes; the learning code manifest enumerates `*.py` without first rejecting symlink directories across the whole tree; local path/byte identities are not all closed before runtime import; the wall-time budget starts after runtime identity verification, leaving torch/CUDA probing outside the approved timer; dataset evidence publication can strand a partial output directory after crash; preflight report path checks do not reject symlink ancestors; no durable one-attempt ledger records a crashed preflight/full run before durable outcome evidence exists | close only free guard plumbing: shared strict JSON loader, explicit actual-artifact digest semantics, all-local validation before runtime, one trusted wall-time origin before runtime verification, crash-consistent staged evidence publication, uniform ancestor-symlink rejection, deep-detached approval artifacts, all-entry code-tree symlink rejection, reviewed full-training approval consumption, and atomic pre-runtime one-attempt ledger; do not start external compute or protected evaluation |
 
+
+## V3 free-only read-only audit additions
+
+The current PR #5 runtime/evidence path also has three concrete provenance gaps that should be closed before any billable compute is authorized:
+
+- **hash-then-use TOCTOU:** the base/tokenizer tree is hashed by `build_hf_snapshot_identity()`, then model/tokenizer loaders reopen the same paths later; there is no immutable staged copy, open-handle binding, or post-load byte proof, so concurrent local mutation between verification and load can make training consume bytes different from the bytes that were reviewed;
+- **chat-template probe is not runtime-measured:** `chat_template_probe_sha256` proves only the supplied probe file bytes; the loaded tokenizer does not render a fixed repository-owned probe and compare that actual `apply_chat_template()` output digest with the frozen identity;
+- **Candidate run manifest is artifact inventory, not an execution receipt:** the manifest can be constructed from a correctly-shaped completed directory without proving that the artifacts were produced by the authorized preflight/full-training occurrence; runtime identity, preflight-report digest, and durable attempt identity are not bound into one finalized execution receipt.
+
+Safe free-only closure is immutable/local input staging or equivalent byte binding before load, a runtime-rendered tokenizer probe, and a durable pre-runtime attempt/finalization receipt that links reviewed authorization -> measured runtime -> preflight -> full run -> final artifact manifest. These changes must not open protected V2 data or start training.
+
+
 ## Dependency queue
 
 The highest-leverage source order remains:
