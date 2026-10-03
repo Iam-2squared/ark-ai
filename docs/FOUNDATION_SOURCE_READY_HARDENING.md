@@ -50,3 +50,37 @@ After the persistence primitives are GREEN:
 6. planner recovery journal and startup component readiness integration.
 
 No item here authorizes paid/external compute, real Candidate generation, protected evaluation opening, promotion, frozen-contract changes, destructive work, new credentials, or main merge.
+
+
+## Dependency-gated source-ready packages
+
+The following packages have source-equivalent local validation but are intentionally not
+integrated ahead of their lower-level prerequisites. They remain prototype/source-ready
+evidence only until saved on an exact repository HEAD and CI is GREEN.
+
+- **Observation fixture adapters:** exact immutable fixture-byte ingress, adapter-owned
+  SHA-256, TEXT/TRANSCRIPT/IMAGE/SCREEN envelopes, transcript parent lineage, and no raw
+  bytes retained in the envelope. Local focused suite: **9/9 PASS**. Integrate only after
+  the ObservationEnvelope exact-type contract/source mismatch is closed.
+- **Startup readiness:** immutable acyclic component graph, deterministic canonical
+  readiness identity, lane-scoped dependency blocking, and registration-order independence.
+  Local focused suite: **10/10 PASS**, including 256 randomized registration orders.
+  Integrate only after component open/validate/recovery results are reliable.
+- **Personal Context selector:** exact owner/namespace request scope, deterministic
+  round-robin fairness, total/per-namespace budgets, content-free provenance, duplicate
+  identity rejection, and plaintext-as-data behavior. Local focused suite: **14/14 PASS**.
+  Integrate only after coherent multi-namespace Memory snapshots are GREEN.
+- **Proactive scheduler state:** deterministic trigger identity, rolling notification
+  budget, cooldown/minimum-interval semantics, restart-safe prepare deduplication,
+  serialized SQLite writers, trusted-clock rollback rejection, and content-minimized
+  persistence. Local focused suite: **9/9 PASS**. Integrate only after hardened durable
+  state and action-safety prerequisites are GREEN.
+
+The scheduler boundary sequence reproduced by the source-ready implementation is:
+`notify @0 -> too_soon @50 -> cooldown @100 -> notify @200 -> window_budget @400
+-> notify @1000`. A rejected too-soon evaluation does not advance the eligibility clock;
+cooldown/window decisions do persist the new observation digest so unchanged observations
+remain suppressible after the suppression boundary ends.
+
+These packages add no live microphone/camera capture, no external service, no autonomous
+write-effect authority, no paid compute, and no protected-evaluation access.
