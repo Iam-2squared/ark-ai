@@ -109,7 +109,7 @@ class OneShotAuthorization:
 
     def __post_init__(self) -> None:
         _text("token_id", self.token_id)
-        if not isinstance(self.request_id, str) or re.fullmatch(
+        if type(self.request_id) is not str or re.fullmatch(
             r"act_[0-9a-f]{64}", self.request_id
         ) is None:
             raise ValueError("request_id must identify one canonical action request")
@@ -131,8 +131,8 @@ class PlanStep:
 
     def __post_init__(self) -> None:
         _text("step_id", self.step_id)
-        if not isinstance(self.call, ToolCall):
-            raise TypeError("call must be a ToolCall")
+        if type(self.call) is not ToolCall:
+            raise TypeError("call must be an exact ToolCall")
         if isinstance(self.depends_on, (str, bytes)) or not isinstance(
             self.depends_on, Sequence
         ):
@@ -185,8 +185,8 @@ def _freeze_json(value: object) -> object:
     if isinstance(value, Mapping):
         snapshot: dict[str, object] = {}
         for key, item in value.items():
-            if not isinstance(key, str):
-                raise TypeError("JSON object keys must be strings")
+            if type(key) is not str:
+                raise TypeError("JSON object keys must be exact strings")
             snapshot[key] = _freeze_json(item)
         return MappingProxyType(snapshot)
     if isinstance(value, (list, tuple)):
@@ -216,5 +216,5 @@ def _canonical_json(value: object) -> bytes:
 
 
 def _text(name: str, value: object) -> None:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{name} must be a non-empty string")
+    if type(value) is not str or not value.strip():
+        raise ValueError(f"{name} must be a non-empty exact string")
