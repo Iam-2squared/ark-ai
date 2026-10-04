@@ -67,12 +67,16 @@ class PlanGraph:
         *,
         expected_revision: int,
     ) -> PlanStepStatus:
+        if type(step_id) is not str or not step_id.strip():
+            raise TypeError("step_id must be a non-empty exact string")
         if step_id not in self._status:
             raise KeyError(step_id)
         if type(to_state) is not StepState:
-            raise TypeError("to_state must be a StepState")
+            raise TypeError("to_state must be an exact StepState")
         if type(expected_revision) is not int or expected_revision < 0:
-            raise ValueError("expected_revision must be a non-negative integer")
+            raise ValueError(
+                "expected_revision must be a non-negative exact integer"
+            )
         current = self._status[step_id]
         if expected_revision != current.revision:
             raise PlanConflictError(
@@ -90,7 +94,11 @@ class PlanGraph:
                 raise PlanConflictError("step dependencies are not satisfied")
         updated = replace(current, state=to_state, revision=current.revision + 1)
         self._status[step_id] = updated
-        if to_state is StepState.FAILED:
+        if to_state in {
+            StepState.FAILED,
+            StepState.CANCELLED,
+            StepState.BLOCKED,
+        }:
             self._block_descendants(step_id)
         return updated
 
