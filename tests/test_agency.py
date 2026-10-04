@@ -121,6 +121,38 @@ def test_failed_step_blocks_transitive_descendants() -> None:
     assert statuses["verify"].state is StepState.BLOCKED
 
 
+class _StepIdAlias(str):
+    pass
+
+
+def test_plan_transition_requires_exact_step_id_string() -> None:
+    plan = _plan()
+    with pytest.raises(TypeError, match="exact string"):
+        plan.transition(_StepIdAlias("read"), StepState.RUNNING, expected_revision=0)
+
+
+def test_plan_transition_rejects_bool_revision() -> None:
+    plan = _plan()
+    with pytest.raises(ValueError, match="exact integer"):
+        plan.transition("read", StepState.RUNNING, expected_revision=True)
+
+
+def test_cancelled_step_blocks_transitive_descendants() -> None:
+    plan = _plan()
+    plan.transition("read", StepState.CANCELLED, expected_revision=0)
+    statuses = plan.statuses()
+    assert statuses["write"].state is StepState.BLOCKED
+    assert statuses["verify"].state is StepState.BLOCKED
+
+
+def test_explicitly_blocked_step_blocks_transitive_descendants() -> None:
+    plan = _plan()
+    plan.transition("read", StepState.BLOCKED, expected_revision=0)
+    statuses = plan.statuses()
+    assert statuses["write"].state is StepState.BLOCKED
+    assert statuses["verify"].state is StepState.BLOCKED
+
+
 def test_action_audit_stores_hash_not_raw_arguments(tmp_path) -> None:
     audit = SQLiteActionAudit(tmp_path / "audit.sqlite3", clock_ms=lambda: 1000)
     call = ToolCall(
