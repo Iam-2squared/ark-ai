@@ -1,5 +1,4 @@
 import pytest
-
 from ark.observations import ObservationEnvelope, ObservationKind
 
 
