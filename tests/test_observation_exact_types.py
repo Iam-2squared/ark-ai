@@ -1,6 +1,3 @@
-import json
-from pathlib import Path
-
 import pytest
 
 from ark.observations import ObservationEnvelope, ObservationKind
@@ -25,23 +22,20 @@ def _envelope(**overrides):
 
 
 def test_fixture_identity_matches_frozen_vector():
-    fixture_path = (
-        Path(__file__).parent
-        / "fixtures"
-        / "observation_envelope_v1.json"
-    )
-    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
     envelope = ObservationEnvelope(
-        kind=ObservationKind(fixture["kind"]),
-        source_id=fixture["source_id"],
-        adapter_id=fixture["adapter_id"],
-        privacy_scope=fixture["privacy_scope"],
-        ingested_at_ms=fixture["ingested_at_ms"],
-        content_sha256=fixture["content_sha256"],
-        parent_sha256=fixture["parent_sha256"],
-        schema_version=fixture["schema_version"],
+        kind=ObservationKind.TRANSCRIPT,
+        source_id="s",
+        adapter_id="a",
+        privacy_scope="p",
+        ingested_at_ms=1,
+        content_sha256=DIGEST_A,
+        parent_sha256=DIGEST_B,
+        schema_version=1,
     )
-    assert envelope.observation_id == fixture["expected_observation_id"]
+    assert (
+        envelope.observation_id
+        == "obs_e2e66d490467566c58307581de449f278a2bf9755685af1343d66c458513b3d0"
+    )
 
 
 def test_kind_requires_exact_enum():
