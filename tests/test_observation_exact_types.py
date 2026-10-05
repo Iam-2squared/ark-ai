@@ -1,6 +1,6 @@
 import pytest
-from ark.observations import ObservationEnvelope, ObservationKind
 
+from ark.observations import ObservationEnvelope, ObservationKind
 
 DIGEST_A = "a" * 64
 DIGEST_B = "b" * 64
