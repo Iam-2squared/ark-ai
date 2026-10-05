@@ -29,18 +29,18 @@ class ObservationEnvelope:
 
     def __post_init__(self) -> None:
         if type(self.kind) is not ObservationKind:
-            raise TypeError("kind must be an ObservationKind")
+            raise TypeError("kind must be an exact ObservationKind")
         for name in ("source_id", "adapter_id", "privacy_scope"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{name} must be a non-empty string")
         if type(self.ingested_at_ms) is not int or self.ingested_at_ms < 0:
-            raise ValueError("ingested_at_ms must be a non-negative integer")
+            raise ValueError("ingested_at_ms must be a non-negative exact integer")
         _digest(self.content_sha256, "content_sha256")
         if self.parent_sha256 is not None:
             _digest(self.parent_sha256, "parent_sha256")
         if type(self.schema_version) is not int or self.schema_version != 1:
-            raise ValueError("schema_version must be exactly 1")
+            raise ValueError("schema_version must be exact integer 1")
 
     @property
     def observation_id(self) -> str:
@@ -55,7 +55,7 @@ class ObservationEnvelope:
             "source_id": self.source_id,
         }
         encoded = (
-            json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
             + "\n"
         ).encode("utf-8")
         return "obs_" + hashlib.sha256(encoded).hexdigest()
