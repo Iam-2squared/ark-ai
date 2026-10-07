@@ -8,8 +8,8 @@ This matrix records the current repository implementation against the already-de
 | --- | --- | --- | --- |
 | Planner topology | `PlanGraph` now requires a tuple of exact `PlanStep` values; DAG validation, revision-guarded transitions, immutable `steps` mapping, immutable status snapshots, and sorted traversal exist | `PlanStep` still accepts `ToolCall` subclasses through `isinstance`; identity-bearing text fields and JSON object keys accept `str` subclasses through `isinstance`, so policy equality/hash behavior can diverge from canonical JSON bytes; focused immutability coverage is also not yet saved | require exact identity text/JSON-key primitives and exact nested `ToolCall`, then land topology/status immutability regressions |
 | Planner transition types | exact `StepState` and exact non-bool non-negative integer revision checks exist | `transition(step_id)` does not require an exact non-empty `str`, so a custom hash/equality object can alias a canonical dict key; focused regression coverage for raw-string state, bool revision, and negative revision is not yet saved | require exact non-empty `str` step IDs before lookup, then land focused tests |
-| Planner transition table | transition rules use immutable mapping + `frozenset`; FAILED blocks pending descendants | explicit CANCELLED/BLOCKED terminal transitions do not propagate dependency blocking, leaving descendants permanently PENDING with no ready path | propagate all non-success terminal dependency states to pending descendants and add regressions |
-| Plan input determinism | `PlanStep.depends_on` requires an ordered `Sequence` and normalizes it to tuple; ready/descendant traversal is sorted | focused unordered-container and input-order regression coverage is not yet saved | land focused tests |
+| Planner transition table | transition rules use immutable mapping + `frozenset`; FAILED/CANCELLED/BLOCKED all propagate blocking through pending descendants | repository source and focused regressions now cover non-success terminal descendant propagation | preserve this behavior while adding recovery-journal replay evidence |
+| Plan input determinism | `PlanStep.depends_on` requires an ordered `Sequence`, normalizes it to tuple, requires an exact nested `ToolCall`, and ready/descendant traversal is sorted | core exact-ingress behavior is now repository source; recovery still lacks durable topology/status digest evidence | bind the existing exact planner semantics into the recovery journal without creating a second state machine |
 | Memory identity | deterministic scope/source identity exists | public store entry points do not exact-type-check `MemoryWrite`/`MemoryQuery`/`MemoryScope`; a mutable duck-typed write can return different scope/source values across repeated attribute reads so ID construction, persisted identity, and returned record can diverge within one logical put; persisted identity is also not recomputed on every read/mutation | exact request/scope ingress, snapshot validated request fields once, and validate stored owner/namespace/source -> memory_id before surfacing or mutating |
 | Memory content integrity | content SHA-256 is persisted | persisted content digest is not recomputed on read/update/delete | fail closed on digest mismatch before read or mutation |
 | Memory metadata | write metadata is constrained/canonicalized | persisted JSON storage class and canonical byte representation are not verified before parsing | require TEXT storage, canonical JSON representation, and contract limits before surfacing |
@@ -30,7 +30,7 @@ This matrix records the current repository implementation against the already-de
 | Planner recovery | recovery contract is documented | no repository planner journal implementation yet | append-only local journal bound to canonical topology and revision replay |
 | Personal Context | Memory store provides scope-isolated retrieval | no coherent multi-namespace snapshot API or context-bundle/fairness/provenance layer exists in repository source | one-transaction multi-namespace snapshot, then deterministic retrieval with content-free provenance |
 | Proactive scheduler | proactive contract exists | no scheduler state implementation exists | local SQLite trigger state with deterministic identity, CAS, cooldown, deduplication |
-| Voice/Vision | typed content-minimized ObservationEnvelope source and deterministic fixture exist; the envelope contract now requires exact built-in provenance strings/digests | source still accepts `str` subclasses for `source_id`, `adapter_id`, `privacy_scope`, and digests, so the contract is ahead of implementation; matching repository tests and fixture adapters are not yet landed; live capture remains intentionally disconnected | align source with the exact-type contract and land focused regressions, then fixture-only text/transcript/image/screen adapters; no hardware/cloud dependency |
+| Voice/Vision | typed content-minimized `ObservationEnvelope` source now enforces exact provenance/digest types and repository regressions cover those ingress rules | deterministic fixture helper tests exist, but reusable production fixture adapters are not yet landed; live capture remains intentionally disconnected | land fixture-only text/transcript/image/screen production adapters; no hardware/cloud dependency |
 | Computer actions | safety contract exists | real adapters correctly remain disconnected | keep disconnected until registry + durable auth + audit + executor are integrated GREEN |
 | V3 independent guards | PR #5 contains extensive pre-paid-compute tooling; free review identified runtime/preflight approval binding gaps | reviewed preflight artifact is not yet runtime-consumed and full training lacks a distinct durable post-preflight approval artifact; runtime-consumed JSON loaders including snapshot/preflight parsing do not uniformly reject duplicate keys; authorization packet sections are shallow-copied and its displayed `packet_sha256` hashes the packet before that field is added rather than the actual reviewed file bytes; the learning code manifest enumerates `*.py` without first rejecting symlink directories across the whole tree; local path/byte identities are not all closed before runtime import; the wall-time budget starts after runtime identity verification, leaving torch/CUDA probing outside the approved timer; dataset evidence publication can strand a partial output directory after crash; preflight report path checks do not reject symlink ancestors; no durable one-attempt ledger records a crashed preflight/full run before durable outcome evidence exists | close only free guard plumbing: shared strict JSON loader, explicit actual-artifact digest semantics, all-local validation before runtime, one trusted wall-time origin before runtime verification, crash-consistent staged evidence publication, uniform ancestor-symlink rejection, deep-detached approval artifacts, all-entry code-tree symlink rejection, reviewed full-training approval consumption, and atomic pre-runtime one-attempt ledger; do not start external compute or protected evaluation |
 
@@ -50,17 +50,17 @@ Safe free-only closure is immutable/local input staging or equivalent byte bindi
 
 The highest-leverage source order remains:
 
-1. harden exact agency identity text/JSON-key primitives, Planner exact nested `ToolCall`, exact transition step IDs, and non-success terminal descendant propagation, then land focused invariant tests;
-2. Memory initialization/schema/row/event integrity, CAS, trusted clock, and expiry hardening;
-3. Action Audit initialization/schema/row/timestamp hardening;
-4. immutable ToolRegistry;
-5. exact-type PermissionGate ingress + non-consuming grant validation split;
-6. durable registry-bound one-shot authorization ledger and execution occurrence;
-7. trusted-clock audit-before-action ActionExecutor over mocks;
-8. planner persistence/recovery;
+1. Memory initialization/schema/row/event integrity, CAS, trusted clock, expiry hardening, and coherent snapshots;
+2. Action Audit initialization/schema/row/timestamp hardening;
+3. immutable ToolRegistry and registry-bound action identity;
+4. exact-type PermissionGate ingress + non-consuming grant validation split;
+5. durable registry-bound one-shot authorization ledger and execution occurrence;
+6. trusted-clock audit-before-action ActionExecutor over mocks;
+7. planner persistence/recovery bound to the already-landed exact planner semantics;
+8. fixture-only multimodal production adapters;
 9. Personal Context retrieval;
 10. proactive scheduler;
-11. fixture-only multimodal adapters and local UI integration.
+11. local UI integration only after the relevant lower-level invariants are exact-head GREEN.
 
 Items 1-3 can proceed independently. Items 4-6 form one execution-safety chain. Personal Context depends on hardened Memory. Real computer actions depend on the entire execution-safety chain and remain disconnected.
 
