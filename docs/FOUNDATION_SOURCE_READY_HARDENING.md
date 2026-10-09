@@ -84,3 +84,48 @@ remain suppressible after the suppression boundary ends.
 
 These packages add no live microphone/camera capture, no external service, no autonomous
 write-effect authority, no paid compute, and no protected-evaluation access.
+
+
+## Exact-PR8 staged integration preparation (2026-10-10 JST)
+
+Work basis: PR #8 `27ef8a4b992a0a1bc5aae0f82c5b2179b3f53b8f` (Draft).
+This is an **offline staged patch queue, not a saved source change, CI PASS,
+approval artifact, or authorization to run any tool**.
+
+Git blob SHA values were recomputed locally and matched the fetched branch tree
+for the six agency source files (`__init__`, `registry`, `planner`, `contracts`,
+`policy`, `audit`) and the two committed ToolRegistry reference fixtures.
+The five local patches were applied in order with `git apply --check`, each
+checked against its expected output bytes, and tested after application:
+
+| Stage | Paths touched | Cumulative local tests | Status |
+| --- | --- | ---: | --- |
+| 00 registry frozen-vector tests | one new test file | 7/7 | local PASS only |
+| 01 immutable Registry + public exports | two agency source files + six test files | 34/34 | local PASS only |
+| 02 iterative/revision-guarded Planner | one agency source file + three test files | 53/53 | local PASS only |
+| 03 exact-type Permission / JSON contracts | two agency source files + seven test files | 88/88 | local PASS only |
+| 04 Action Audit v1 validation | one agency source file + six test files | 134/134 | local PASS only |
+
+An independent V3 strict-JSON helper still has **16/16 local PASS**. It was not
+included in the PR #8 patch queue and does not authorize PR #5 training,
+Candidate generation, protected V2 evaluation, or contract modification.
+The local assembled total is 150/150, using Linux Python 3.13.5;
+**Ruff, a full live-repository suite, Windows matrix, and real Python 3.11
+runtime are not proven for these patches.** Simple long-line/import formatting
+was cleaned in the local candidate and tests rerun; this is not a substitute
+for Ruff.
+
+The normal GitHub Contents API again refused creation of the isolated Registry
+vector regression test with an OpenAI safety-check rejection. Do not
+repackage that rejected executable write through raw Git objects, ref movement,
+or another hidden route. **No new GitHub source/test commit or CI run was
+created.** Continue useful independent read-only audit, mock-only testing,
+and preparation while the executable write path remains blocked.
+
+Gate order: persist stage 00 through the normal allowed path; require exact-head
+CI GREEN before stage 01; then require successive exact-head CI GREEN as each
+stage is landed. Do not treat the compatibility `PermissionGate` as a
+registry-authoritative durable WRITE authorization. Issuer provenance,
+restart-safe occurrence/replay prevention, external audit anchors, and
+mock-only audit-before-action require their own later review and evidence.
+No frozen V1/V2/Local UI/Launcher evidence, main, or Draft PR #5 is changed.
