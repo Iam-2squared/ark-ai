@@ -16,11 +16,13 @@ from .contracts import (
     ToolSpec,
 )
 from .planner import PlanGraph
+from .registry import BoundAction, ToolRegistration, ToolRegistry
 from .policy import PermissionGate
 
 __all__ = [
     "ActionAuditEvent",
     "ActionAuditSchemaError",
+    "BoundAction",
     "CapabilityGrant",
     "Effect",
     "OneShotAuthorization",
@@ -33,5 +35,7 @@ __all__ = [
     "SQLiteActionAudit",
     "StepState",
     "ToolCall",
+    "ToolRegistration",
+    "ToolRegistry",
     "ToolSpec",
 ]
