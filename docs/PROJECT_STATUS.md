@@ -2,6 +2,103 @@
 
 **LATEST**
 
+Saved at: **2026-10-13, 00:37:52 JST (+09:00)**
+
+Branch/PR: `research/jarvis-foundations` / Draft, unmerged PR #8
+
+Work-basis HEAD: `1ebeafe6d7ba8ffd58a32cd0d83d0567a66d256c`.
+
+Checkpoint-result HEAD: this self-updating file cannot contain the SHA of the commit that
+writes it. The GitHub Contents update result for this checkpoint commit is authoritative;
+CI #267 below applies to the **work-basis source HEAD**, not automatically to this
+subsequent documentation-only checkpoint commit.
+
+## Overall current ARK state
+
+V1/V2/Local UI/Launcher contracts and evidence remain frozen and unchanged.
+`main` is `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+PR #5 V3 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`;
+no protected evaluation was opened or later PASS declared. PR #8 remains Draft,
+reversible, and unmerged, not a JARVIS completion or official roadmap PASS.
+
+## NEW work this invocation
+
+- Restored PR #8 source CI after public registry exports commit
+  `3ea77091a9725341f3e3e79d77ff0257f577b26b` caused Ruff I001.
+  The **only source change** was a reorder of the `.policy` and `.registry`
+  imports in `src/ark/agency/__init__.py`. Normally permitted GitHub Contents
+  update succeeded at `1ebeafe6d7ba8ffd58a32cd0d83d0567a66d256c`.
+- The exact source HEAD above passed CI #267 / run `38270375604`:
+  **SUCCESS 6/6 GREEN**, Windows and Ubuntu, Python 3.11/3.12/3.13.
+  Previous #266 / run `38244247324` was FAIL 6/6 for I001 on an older HEAD.
+- Prepared reference-vector/non-dispatch ToolRegistry repository tests for the
+  already-committed fixture files. A normal GitHub Contents `create_file` write
+  for `tests/test_tool_registry_committed_vectors.py` was blocked by safety
+  checks, so no such test was saved and **its CI evidence does not exist**.
+- Advanced two **detached, reversible, offline-only** modules in Run 121:
+  paged Memory event-chain continuity (21 new tests) and per-source Observation
+  liveness (23 new tests). Neither source/test module is in PR #8.
+  Run121 detached Linux/Python 3.13.5 Agency **2555/2555 PASS**,
+  independent V3 guards **186/186 PASS**, total **2741/2741 PASS**;
+  source ZIP SHA-256 `f49aff22ec9fc0c5204719b305b658a81b3316f9108f6c941c2be432275f601d`.
+  All 311 prior Run120 source bytes are unchanged; 4 new files; 315 source
+  hashes match the ZIP manifest. Clean patch replay new tests **44/44 PASS**.
+  No Windows/actual Python 3.11/3.12/Ruff run was performed for the detached candidate.
+
+## Tests / CI / evidence
+
+CI #267 / `38270375604`, source HEAD `1ebeafe6d7ba8ffd58a32cd0d83d0567a66d256c`:
+
+- Ubuntu 3.11 job `114882867967`: SUCCESS
+- Ubuntu 3.12 job `114882868485`: SUCCESS
+- Ubuntu 3.13 job `114882868378`: SUCCESS
+- Windows 3.11 job `114882868301`: SUCCESS
+- Windows 3.12 job `114882868373`: SUCCESS
+- Windows 3.13 job `114882868279`: SUCCESS
+
+Run121 offline test evidence is **not** exact-head GitHub CI evidence.
+The Run121 ZIP is not safe to overwrite onto PR #8: its lower-level module
+dependencies and implementation differ from the GitHub branch.
+
+## Frozen boundaries unchanged
+
+No paid/external GPU compute, paid APIs/services, model training, real Candidate
+adapter/weight generation, protected V2 final-evaluation opening, promotion,
+frozen-contract change, credentials/account connection, physical-PC device
+capture, actual tool dispatch, destructive action, or main merge.
+
+## Blockers / authorization boundaries
+
+Normal GitHub source/test write safety layer rejected the focused ToolRegistry
+repository-test addition. No bypass, raw Git object, alternate ref-write, force
+push, or duplicate CI workflow was used. Keep all detached Memory/Observation/
+Planner/Scheduler/Personal Context work isolated until prerequisites are
+reviewed and integrated with exact-head GREEN evidence.
+
+PR #5 remains subject to frozen Contract and explicit approval for any real
+training, provider/billing, Candidate generation, protected evaluation or promotion.
+Preserve populated historical audit/Memory migration boundaries until reviewed.
+
+## Next plan / 今後の方針
+
+1. Add focused ToolRegistry committed-fixture identity/immutability/non-dispatch
+   tests through the normal path when permitted; require exact-head CI GREEN.
+2. Then integrate Registry-bound PermissionGate, durable one-shot authorization,
+   execution occurrence/replay protection and trusted-clock audit-before-action
+   only after their prerequisite invariants are GREEN.
+3. Advance independently tested Memory CAS/event/expiry and coherent snapshots;
+   integrate detached chain review only once its underlying interfaces match.
+4. Continue Planner ambiguous-RUNNING recovery without automatic WRITE replay.
+5. Stage fixture-only Observation session/liveness adapters and privacy-safe
+   Personal Context/Scheduler without live capture, action authority or user
+   consent assumptions. Keep free-only V3 guards isolated.
+
+---
+
+## Historical checkpoint — 2026-10-07 (preserved)
+
+**HISTORICAL — superseded by LATEST above**
+
 Saved at: **2026-10-07 18:50:20 JST (+09:00)**
 
 Branch/PR: `research/jarvis-foundations` / Draft PR #8
