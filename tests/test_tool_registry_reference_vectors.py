@@ -2,11 +2,13 @@
 No backend execution, permission grant, or real action is permitted.
 """
 from __future__ import annotations
+
 import json
 import random
 from pathlib import Path
 
 import pytest
+
 from ark.agency.contracts import Effect, ToolCall
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
@@ -40,11 +42,15 @@ def test_registry_frozen_revision_and_order_independence() -> None:
 
 @pytest.mark.parametrize("case_index", [0, 1, 2])
 def test_registry_frozen_bound_action_vectors(case_index: int) -> None:
-    fixture = json.loads((FIXTURES / "tool_registry_bound_action_v1.json").read_text(encoding="utf-8"))
+    fixture = json.loads(
+        (FIXTURES / "tool_registry_bound_action_v1.json").read_text(encoding="utf-8")
+    )
     case, request = fixture["cases"][case_index], fixture["request"]
     call = ToolCall(request["tool"], request["capability"], request["scope"], request["arguments"])
     assert call.request_id == request["expected_request_id"]
-    registry, reader, writer = _registry(effect=Effect(case["effect"]), backend_id=case["backend_id"])
+    registry, reader, writer = _registry(
+        effect=Effect(case["effect"]), backend_id=case["backend_id"]
+    )
     bound = registry.bind(call)
     assert registry.revision == case["registry_revision"]
     assert bound.registry_revision == case["registry_revision"]
