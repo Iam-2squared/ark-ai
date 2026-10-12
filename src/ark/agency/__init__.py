@@ -16,8 +16,8 @@ from .contracts import (
     ToolSpec,
 )
 from .planner import PlanGraph
-from .registry import BoundAction, ToolRegistration, ToolRegistry
 from .policy import PermissionGate
+from .registry import BoundAction, ToolRegistration, ToolRegistry
 
 __all__ = [
     "ActionAuditEvent",
