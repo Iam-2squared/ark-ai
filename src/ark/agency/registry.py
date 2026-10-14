@@ -78,17 +78,47 @@ class ToolRegistry:
         mapping = {registration.name: registration for registration in ordered}
         self._registrations: Mapping[str, ToolRegistration] = MappingProxyType(mapping)
         self._revision = self._compute_revision(ordered)
+        self._registration_epoch = tuple(
+            (entry, entry.name, entry.capability, entry.effect, entry.backend_id, entry.backend)
+            for entry in ordered
+        )
+
+    def _assert_registration_epoch(self) -> None:
+        """Detect reflected drift of registered identity without executing tools.
+
+        This is only a local drift check; it is NOT backend attestation against
+        malicious in-process rewriting of every private reference.
+        """
+        entries = self._registration_epoch
+        if type(entries) is not tuple or len(entries) != len(self._registrations):
+            raise ValueError("registry epoch structure was changed")
+        for entry, name, capability, effect, backend_id, backend in entries:
+            if (
+                type(entry) is not ToolRegistration
+                or type(name) is not str or type(capability) is not str
+                or type(effect) is not Effect or type(backend_id) is not str
+                or entry.name != name or entry.capability != capability
+                or entry.effect is not effect or entry.backend_id != backend_id
+                or entry.backend is not backend
+                or self._registrations.get(name) is not entry
+            ):
+                raise ValueError("registered tool identity drifted after construction")
+        if self._compute_revision([item[0] for item in entries]) != self._revision:
+            raise ValueError("registry revision drifted after construction")
 
     @property
     def revision(self) -> str:
+        self._assert_registration_epoch()
         return self._revision
 
     @property
     def registrations(self) -> Mapping[str, ToolRegistration]:
+        self._assert_registration_epoch()
         return self._registrations
 
     def get(self, name: str) -> ToolRegistration:
         _text("tool name", name)
+        self._assert_registration_epoch()
         try:
             return self._registrations[name]
         except KeyError as exc:
