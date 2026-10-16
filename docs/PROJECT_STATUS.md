@@ -2,6 +2,45 @@
 
 **LATEST**
 
+Saved at: **2026-10-16 17:59:25 JST (+09:00)**
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+
+Work-basis HEAD: `2baeb7824df9460235e876336fac942ae64dbbee` (source).
+Checkpoint-result HEAD: this file cannot embed the SHA of its own future commit; use the GitHub Contents update result SHA. CI #271 applies to work-basis HEAD **only**, not automatically to the subsequent documentation checkpoint commit.
+
+## Overall current ARK state
+
+V1/V2/Local UI/Launcher contracts and evidence remain frozen and unchanged.
+`main` remains `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, NOT PASSED.
+JARVIS PR #8 remains reversible Draft/unmerged, not a production dispatch gate or JARVIS completion.
+
+## NEW work this invocation — Run 204
+
+- Saved a narrowly scoped **source** hardening in `src/ark/agency/registry.py`: reject equal-valued reflected `str` subclasses for registry revision and registered name/capability/backend identity. Normal GitHub Contents write succeeded at source HEAD `2baeb7824df9460235e876336fac942ae64dbbee`, based on `3804b77de13570bf8cc6b59aa67a3f0f6c4bec84`.
+- Exact source HEAD CI **#271**, run `38876767855`: **SUCCESS 6/6 GREEN** on Ubuntu/Windows × Python 3.11/3.12/3.13; jobs `116893574699`, `116893574968`, `116893575063`, `116893575068`, `116893575095`, `116893575174`. These jobs validate committed source and existing tests, **not** the blocked new test file.
+- Attempted the normal Contents `create_file` path for `tests/test_registry_epoch_exact_types_run204.py`, but the safety path **BLOCKED** it. No focused GitHub test commit/CI is claimed and no bypass was attempted.
+- Continued independent, reversible **offline-only** code: an exact-carrier ToolRegistry regression suite; duplicate synthetic pre-action audit receipt detection across distinct WRITE occurrences; and purpose-bound synthetic observation/privacy review. **29 new tests**, detached Linux/Python 3.13.5 **1,601/1,601 PASS with warnings-as-errors**. Clean Run203 patch replay has 166/166 Python SHA-256 matches and **29/29 focused PASS**; a full clean replay was interrupted, so it is not claimed GREEN. Offline ZIP SHA-256: `634064ace63338365a2f7804b18de8a94bdb370f70aa756ef2de3f83f02eb7c5`.
+- Detached source and PR #8 source are **not byte-identical**; never replace PR source wholesale with the offline ZIP.
+
+## Frozen boundaries and blockers
+
+No paid/external compute, new credentials, training, Candidate generation, protected V2 evaluation opening, promotion, real tool/backend execution, destructive migrations, frozen contract changes, or main merge. PR #5 stays under its separate authorization gate. No live observation/consent proof is asserted.
+The new ToolRegistry regression file remains GitHub-write blocked; only the source change has exact-head CI. Synthetic hash/digest results are not external attestation. Multi-database atomicity, trusted time, issuer provenance, restart-safe authorizing one-shot and unknown WRITE recovery remain unproven.
+
+## Next plan / 今後の方針
+
+1. Save the focused Registry exact-epoch test file via the **normal** GitHub path when permitted; establish fresh exact-head CI GREEN before downstream PermissionGate authority wiring.
+2. In separate safe lanes, advance Registry-bound exact-type PermissionGate, durable one-shot/occurrence integrity, trusted-clock pre-action audit and disconnected no-replay recovery; preserve no real dispatch.
+3. Independently advance Memory CAS/event/expiry and coherent snapshots; address existing GitHub Memory v1 schema/row integrity and lock-before-clock gaps before integration.
+4. Continue Planner ambiguous WRITE recovery, privacy-scoped synthetic Observation/Personal Context and Scheduler fixtures; require actual provenance/consent design before live capture.
+5. Keep V3 free-only JSON/identity/provenance guards reversible, with no paid/training/validation/final opening or promotion.
+
+---
+
+**HISTORICAL — superseded by Run 204**
+
 Saved at: **2026-10-13, 00:37:52 JST (+09:00)**
 
 Branch/PR: `research/jarvis-foundations` / Draft, unmerged PR #8
