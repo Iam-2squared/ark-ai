@@ -89,6 +89,8 @@ class ToolRegistry:
         This is only a local drift check; it is NOT backend attestation against
         malicious in-process rewriting of every private reference.
         """
+        if type(self._revision) is not str:
+            raise ValueError("registry revision carrier changed")
         entries = self._registration_epoch
         if type(entries) is not tuple or len(entries) != len(self._registrations):
             raise ValueError("registry epoch structure was changed")
@@ -97,6 +99,8 @@ class ToolRegistry:
                 type(entry) is not ToolRegistration
                 or type(name) is not str or type(capability) is not str
                 or type(effect) is not Effect or type(backend_id) is not str
+                or type(entry.name) is not str or type(entry.capability) is not str
+                or type(entry.backend_id) is not str
                 or entry.name != name or entry.capability != capability
                 or entry.effect is not effect or entry.backend_id != backend_id
                 or entry.backend is not backend
