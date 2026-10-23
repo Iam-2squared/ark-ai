@@ -29,18 +29,27 @@ class PermissionGate:
         now_ms: int,
         one_shot: OneShotAuthorization | None = None,
     ) -> None:
+        if type(spec) is not ToolSpec or type(call) is not ToolCall:
+            raise PermissionDenied("authorization requires exact ToolSpec and ToolCall")
+        if one_shot is not None and type(one_shot) is not OneShotAuthorization:
+            raise PermissionDenied("one-shot authorization must be an exact value")
         if spec.name != call.tool or spec.capability != call.capability:
             raise PermissionDenied("tool call does not match registered tool specification")
         if type(now_ms) is not int or now_ms < 0:
             raise ValueError("now_ms must be a non-negative integer")
 
-        matching = [
-            grant
-            for grant in grants
-            if grant.capability == call.capability
-            and grant.scope == call.scope
-            and (grant.expires_at_ms is None or grant.expires_at_ms > now_ms)
-        ]
+        # Evaluate the entire grant stream before deciding; never authorize from
+        # a matching record while ignoring an invalid later record.
+        matching = []
+        for grant in grants:
+            if type(grant) is not CapabilityGrant:
+                raise PermissionDenied("capability grant must be an exact value")
+            if (
+                grant.capability == call.capability
+                and grant.scope == call.scope
+                and (grant.expires_at_ms is None or grant.expires_at_ms > now_ms)
+            ):
+                matching.append(grant)
         if not matching:
             raise PermissionDenied("no active exact-scope capability grant")
 
