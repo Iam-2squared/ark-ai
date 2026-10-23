@@ -108,6 +108,7 @@ def review_synthetic_retention_inventory(
             if len(rows) > max_records:
                 raise SyntheticRetentionRejected("retention inventory budget exceeded")
             selected: list[SyntheticRetentionItem] = []
+            bound_rows: list[tuple[object, ...]] = []
             for row in rows:
                 record = _record(row)
                 if record.scope != pinned or record.updated_at_ms > now_ms:
@@ -123,6 +124,19 @@ def review_synthetic_retention_inventory(
                 selected.append(SyntheticRetentionItem(
                     record.memory_id, record.revision, state,
                 ))
+                # Bind hidden row identity without exposing the content or metadata.
+                # A coherent byte edit with an unchanged revision/state must change
+                # the offline receipt, even if this local row still passes _record.
+                metadata_json = json.dumps(
+                    dict(record.metadata), ensure_ascii=False,
+                    sort_keys=True, separators=(",", ":"),
+                ).encode("utf-8")
+                bound_rows.append((
+                    record.memory_id, record.revision, record.content_sha256,
+                    hashlib.sha256(metadata_json).hexdigest(),
+                    record.created_at_ms, record.updated_at_ms,
+                    record.expires_at_ms, state.value,
+                ))
             conn.commit()
         except BaseException:
             conn.rollback()
@@ -136,8 +150,8 @@ def review_synthetic_retention_inventory(
     items = tuple(selected)
     payload = json.dumps(
         (
-            "ARK-offline-retention-inventory-v1", scope_hash, now_ms, revoked,
-            [(item.memory_id, item.revision, item.state.value) for item in items],
+            "ARK-offline-retention-inventory-v2", scope_hash, now_ms, revoked,
+            bound_rows,
             second.witness_id,
         ),
         ensure_ascii=True, separators=(",", ":"), allow_nan=False,
