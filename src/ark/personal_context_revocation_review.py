@@ -80,8 +80,8 @@ class SyntheticContextRevocationLedger:
     """Irreversible-within-fixture scope veto; no grant/reenrollment API."""
 
     def __init__(self, path: Path) -> None:
-        if type(path) is not Path:
-            raise TypeError("revocation path must be an exact Path")
+        if not isinstance(path, Path):
+            raise TypeError("revocation path must be a pathlib.Path")
         self.path = path
         with closing(sqlite3.connect(path, timeout=10, isolation_level=None)) as conn:
             conn.execute("BEGIN IMMEDIATE")
