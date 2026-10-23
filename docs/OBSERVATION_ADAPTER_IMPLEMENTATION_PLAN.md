@@ -37,6 +37,23 @@ The adapter owns no long-term media retention policy. Fixture bytes may exist in
 
 A later persistent media store requires its own retention/deletion contract before live capture is connected.
 
+## Disconnected observation window freshness review
+
+Current fixture-only `ObservationWindowReview.assert_fresh_at(now_ms)` rechecks
+a cached observation against its original scope, metadata/identity epoch, and
+maximum age. The caller-supplied clock is **not** trusted time or permission to
+capture. The opt-in `review_observation_rollover(..., now_ms=...)` invokes
+the same freshness check before forming a rollover witness and again before
+returning (including the same-time idempotent branch). An expired or modified
+window must fail rather than receiving another valid-looking local chain step.
+Calls omitting `now_ms` preserve the earlier synthetic interface but cannot
+claim that cached observations are still fresh.
+
+These reviews store only content digests/identifiers, not image/screen/audio
+payloads. A scope-matching and temporally fresh observation is not evidence
+of human consent, authentic provenance, trusted clock, media retention policy
+compliance, device capture authority or a production-ready integration.
+
 ## Tests required
 
 Repository tests should cover:
