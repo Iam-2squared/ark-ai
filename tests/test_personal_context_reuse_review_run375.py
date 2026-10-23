@@ -9,11 +9,11 @@ import pytest
 from ark.memory.coherent_snapshot_review import CoherentSnapshotRequest
 from ark.memory.contracts import MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
-from ark.personal_context_review import ContextSelectionPolicy
 from ark.personal_context_reuse_review import (
     SyntheticContextReuseRejected,
     review_synthetic_context_reuse,
 )
+from ark.personal_context_review import ContextSelectionPolicy
 from ark.personal_context_revocation_continuity_review import (
     review_revocation_continuity,
 )
