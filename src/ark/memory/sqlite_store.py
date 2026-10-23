@@ -24,6 +24,90 @@ from .contracts import (
 SCHEMA_VERSION = 1
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
+_SCHEMA_V1_SQL = """CREATE TABLE memories(
+                        memory_id TEXT PRIMARY KEY,
+                        owner_id TEXT NOT NULL,
+                        namespace TEXT NOT NULL,
+                        source_id TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        metadata_json TEXT NOT NULL,
+                        content_sha256 TEXT NOT NULL,
+                        created_at_ms INTEGER NOT NULL,
+                        updated_at_ms INTEGER NOT NULL,
+                        expires_at_ms INTEGER,
+                        revision INTEGER NOT NULL CHECK(revision>=1),
+                        UNIQUE(owner_id, namespace, source_id)
+                    );
+                    CREATE INDEX idx_mem_scope
+                    ON memories(owner_id, namespace, updated_at_ms DESC, memory_id);
+                    CREATE INDEX idx_mem_expiry ON memories(expires_at_ms)
+                    WHERE expires_at_ms IS NOT NULL;
+                    CREATE TABLE memory_events(
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        memory_id TEXT NOT NULL,
+                        owner_id TEXT NOT NULL,
+                        namespace TEXT NOT NULL,
+                        operation TEXT NOT NULL CHECK(
+                            operation IN('create','update','delete','expire')
+                        ),
+                        revision INTEGER NOT NULL,
+                        occurred_at_ms INTEGER NOT NULL
+                    );
+                    CREATE INDEX idx_mem_event_scope
+                    ON memory_events(owner_id, namespace, event_id);
+                    PRAGMA user_version=1;"""
+
+
+def _normalized_ddl(sql: str | None) -> str | None:
+    """Normalize only unquoted SQL trivia; preserve quoted CHECK literals exactly."""
+    if sql is None:
+        return None
+    output: list[str] = []
+    quote: str | None = None
+    index = 0
+    while index < len(sql):
+        char = sql[index]
+        if quote is not None:
+            output.append(char)
+            if char == quote:
+                if index + 1 < len(sql) and sql[index + 1] == quote:
+                    index += 1
+                    output.append(sql[index])
+                else:
+                    quote = None
+        elif char in ("'", '"', "`"):
+            quote = char
+            output.append(char)
+        elif not char.isspace():
+            output.append(char.lower())
+        index += 1
+    if quote is not None:
+        raise MemorySchemaError("unterminated SQLite schema quotation")
+    return "".join(output)
+
+
+def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    rows = conn.execute(
+        "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+    ).fetchall()
+    return tuple((row[0], row[1], row[2], _normalized_ddl(row[3])) for row in rows)
+
+
+def _validate_v1_schema(conn: sqlite3.Connection) -> None:
+    """Fail closed on unexpected version-1 DDL, indexes, triggers or corruption.
+
+    This is startup verification only: it does not repair existing databases,
+    attest historical writers or replace independently retained evidence.
+    """
+    quick = conn.execute("PRAGMA quick_check").fetchall()
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
+        raise MemorySchemaError("memory SQLite quick_check failed")
+    with sqlite3.connect(":memory:") as expected:
+        expected.executescript(_SCHEMA_V1_SQL)
+        if _schema_objects(conn) != _schema_objects(expected):
+            raise MemorySchemaError("memory v1 schema objects differ from frozen DDL")
+
+
 
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
@@ -317,40 +401,8 @@ class SQLiteMemoryStore:
                     f"memory database schema {version} is newer than supported {SCHEMA_VERSION}"
                 )
             if version == 0:
-                conn.executescript(
-                    """CREATE TABLE memories(
-                        memory_id TEXT PRIMARY KEY,
-                        owner_id TEXT NOT NULL,
-                        namespace TEXT NOT NULL,
-                        source_id TEXT NOT NULL,
-                        content TEXT NOT NULL,
-                        metadata_json TEXT NOT NULL,
-                        content_sha256 TEXT NOT NULL,
-                        created_at_ms INTEGER NOT NULL,
-                        updated_at_ms INTEGER NOT NULL,
-                        expires_at_ms INTEGER,
-                        revision INTEGER NOT NULL CHECK(revision>=1),
-                        UNIQUE(owner_id, namespace, source_id)
-                    );
-                    CREATE INDEX idx_mem_scope
-                    ON memories(owner_id, namespace, updated_at_ms DESC, memory_id);
-                    CREATE INDEX idx_mem_expiry ON memories(expires_at_ms)
-                    WHERE expires_at_ms IS NOT NULL;
-                    CREATE TABLE memory_events(
-                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        memory_id TEXT NOT NULL,
-                        owner_id TEXT NOT NULL,
-                        namespace TEXT NOT NULL,
-                        operation TEXT NOT NULL CHECK(
-                            operation IN('create','update','delete','expire')
-                        ),
-                        revision INTEGER NOT NULL,
-                        occurred_at_ms INTEGER NOT NULL
-                    );
-                    CREATE INDEX idx_mem_event_scope
-                    ON memory_events(owner_id, namespace, event_id);
-                    PRAGMA user_version=1;"""
-                )
+                conn.executescript(_SCHEMA_V1_SQL)
+            _validate_v1_schema(conn)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
