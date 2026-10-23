@@ -398,3 +398,17 @@ Regression coverage: `tests/test_synthetic_recovery_drift_fence_run377.py`.
 No production backend is called by these modules/tests. There is no
 paid/GPU action, real Candidate, notification, destructive Memory erasure,
 protected evaluation opening, frozen contract edit, or main merge.
+
+
+**Proactive freshness input epoch fence.**
+`proactive_synthetic_freshness_review.py` pins the earlier prepared
+receipt identity/time, local SQLite path object and optional independent
+retained trigger witness before its snapshot transaction, then checks
+for reflected drift before returning. A status-preserving edit to any of
+those carriers during this local read is rejected. Existing policy revision,
+observation expiry, trigger binding and persisted history checks remain
+mandatory. The mechanism does **not** attest the path on disk against an
+adversary, authenticate the clock/observation/policy or prevent a race
+after the final check. No notification, ToolBackend or replay permission
+is produced. Regression coverage:
+`tests/test_proactive_freshness_epoch_run377.py`.
