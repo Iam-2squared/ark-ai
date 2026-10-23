@@ -71,6 +71,7 @@ def review_observation_rollover(
     current: ObservationWindowReview,
     *,
     retained: ObservationRolloverWitness | None = None,
+    now_ms: int | None = None,
 ) -> ObservationRolloverWitness:
     """Validate one replay-safe local window transition without media access."""
     if type(current) is not ObservationWindowReview:
@@ -79,6 +80,8 @@ def review_observation_rollover(
         raise TypeError("retained must be an exact ObservationRolloverWitness")
 
     current.assert_consistent()
+    if now_ms is not None:
+        current.assert_fresh_at(now_ms)
     pinned_window = (
         current.privacy_scope, current.observed_at_ms, current.witness
     )
@@ -119,6 +122,8 @@ def review_observation_rollover(
                 retained.window_witness, retained.generation, retained.chain_sha256,
             ) != pinned_previous:
                 raise ValueError("retained observation witness changed")
+            if now_ms is not None:
+                current.assert_fresh_at(now_ms)
             return result
         if previous_gen >= _MAX_GENERATION:
             raise ValueError("observation rollover generation exhausted")
@@ -140,4 +145,6 @@ def review_observation_rollover(
         retained.window_witness, retained.generation, retained.chain_sha256,
     ) != pinned_previous:
         raise ValueError("retained observation witness changed")
+    if now_ms is not None:
+        current.assert_fresh_at(now_ms)
     return ObservationRolloverWitness(scope, timestamp, window_witness, generation, new_sha)
