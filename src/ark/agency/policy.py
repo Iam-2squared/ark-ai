@@ -77,18 +77,61 @@ class PermissionGate:
         if type(now_ms) is not int or now_ms < 0:
             raise ValueError("now_ms must be a non-negative integer")
 
-        # Evaluate the entire grant stream before deciding; never authorize from
-        # a matching record while ignoring an invalid later record.
+        # A user-supplied grant iterable can execute reentrant Python code.
+        # Pin the identity before iteration; no WRITE token may be spent if a
+        # reflected frozen value changes during evaluation.
+        try:
+            spec_epoch = (spec.name, spec.capability, spec.effect)
+            call_epoch = (
+                call.tool, call.capability, call.scope, call.arguments,
+                call.request_id,
+            )
+            token_epoch = (
+                (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
+                if one_shot is not None else None
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise PermissionDenied("authorization input identity is invalid") from exc
+
         matching = []
+        grant_epochs = []
         for grant in grants:
             if type(grant) is not CapabilityGrant:
                 raise PermissionDenied("capability grant must be an exact value")
+            epoch = (grant.capability, grant.scope, grant.expires_at_ms)
+            try:
+                CapabilityGrant(*epoch)
+            except (TypeError, ValueError) as exc:
+                raise PermissionDenied("capability grant identity is invalid") from exc
+            grant_epochs.append((grant, epoch))
             if (
                 grant.capability == call.capability
                 and grant.scope == call.scope
                 and (grant.expires_at_ms is None or grant.expires_at_ms > now_ms)
             ):
                 matching.append(grant)
+        try:
+            stable = (
+                (spec.name, spec.capability, spec.effect) == spec_epoch
+                and (
+                    call.tool, call.capability, call.scope,
+                    call.arguments, call.request_id,
+                ) == call_epoch
+                and call.arguments is call_epoch[3]
+                and (
+                    (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
+                    if one_shot is not None else None
+                ) == token_epoch
+                and all(
+                    type(grant) is CapabilityGrant
+                    and (grant.capability, grant.scope, grant.expires_at_ms) == epoch
+                    for grant, epoch in grant_epochs
+                )
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise PermissionDenied("authorization input changed during grants") from exc
+        if not stable:
+            raise PermissionDenied("authorization input changed during grants")
         if not matching:
             raise PermissionDenied("no active exact-scope capability grant")
 
