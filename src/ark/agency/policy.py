@@ -144,11 +144,34 @@ class PermissionGate:
             # Recheck the token/call epoch after waiting for the lock: a
             # reflected mutation during contention must not spend a token.
             with self._token_lock:
-                if (
-                    (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
-                    != token_epoch
-                    or call.request_id != call_epoch[4]
-                ):
+                # The lock may be contended after grant enumeration and the
+                # earlier epoch check. Revalidate every policy input before
+                # irreversibly spending a process-local token, not just the
+                # token itself. A reflected grant/spec mutation must fail shut.
+                try:
+                    stable_at_spend = (
+                        (spec.name, spec.capability, spec.effect) == spec_epoch
+                        and (
+                            call.tool, call.capability, call.scope,
+                            call.arguments, call.request_id,
+                        ) == call_epoch
+                        and call.arguments is call_epoch[3]
+                        and (
+                            one_shot.token_id,
+                            one_shot.request_id,
+                            one_shot.expires_at_ms,
+                        ) == token_epoch
+                        and all(
+                            type(grant) is CapabilityGrant
+                            and (grant.capability, grant.scope, grant.expires_at_ms) == epoch
+                            for grant, epoch in grant_epochs
+                        )
+                    )
+                except (AttributeError, TypeError, ValueError) as exc:
+                    raise PermissionDenied(
+                        "authorization input changed during token spend"
+                    ) from exc
+                if not stable_at_spend:
                     raise PermissionDenied("authorization input changed during token spend")
                 if one_shot.token_id in self._consumed_tokens:
                     raise PermissionDenied("one-shot authorization was already consumed")
