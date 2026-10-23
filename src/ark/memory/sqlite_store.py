@@ -266,17 +266,48 @@ class SQLiteMemoryStore:
                 ORDER BY event_id LIMIT ?""",
                 (scope.owner_id, scope.namespace, after_event_id, limit),
             ).fetchall()
-        return [
-            MemoryEvent(
-                int(row["event_id"]),
-                row["memory_id"],
-                MemoryScope(row["owner_id"], row["namespace"]),
-                row["operation"],
-                int(row["revision"]),
-                int(row["occurred_at_ms"]),
+        # Event rows have no associated source_id after deletion, so validate
+        # canonical shape and scope, not an unverifiable source-id preimage.
+        # V1 permits clocks to move backwards between independent memories:
+        # ordering is by event_id only, never by occurred_at_ms.
+        result: list[MemoryEvent] = []
+        previous_id = after_event_id
+        for row in rows:
+            def stored_int(column: str, *, minimum: int) -> int:
+                value = row[column]
+                if type(value) is not int or value < minimum:
+                    raise MemorySchemaError(f"stored event {column} is not a valid INTEGER")
+                return value
+
+            def stored_text(column: str) -> str:
+                value = row[column]
+                if type(value) is not str:
+                    raise MemorySchemaError(f"stored event {column} must be TEXT")
+                return value
+
+            event_id = stored_int("event_id", minimum=1)
+            revision = stored_int("revision", minimum=1)
+            occurred = stored_int("occurred_at_ms", minimum=0)
+            memory_id = stored_text("memory_id")
+            owner_id = stored_text("owner_id")
+            namespace = stored_text("namespace")
+            operation = stored_text("operation")
+            if event_id <= previous_id:
+                raise MemorySchemaError("stored event IDs are not strictly increasing")
+            previous_id = event_id
+            try:
+                _memory_id(memory_id)
+                recorded_scope = MemoryScope(owner_id, namespace)
+            except (ValueError, TypeError) as exc:
+                raise MemorySchemaError("stored event identity or scope is invalid") from exc
+            if recorded_scope != scope:
+                raise MemorySchemaError("stored event scope does not match query")
+            if operation not in {"create", "update", "delete", "expire"}:
+                raise MemorySchemaError("stored event operation is invalid")
+            result.append(
+                MemoryEvent(event_id, memory_id, recorded_scope, operation, revision, occurred)
             )
-            for row in rows
-        ]
+        return result
 
     def _initialize(self) -> None:
         with self._connect() as conn:
