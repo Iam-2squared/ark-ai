@@ -86,7 +86,7 @@ def review_synthetic_write_recovery(
     """
     if (
         type(journal) is not SyntheticPlanJournal
-        or type(ledger_path) is not Path
+        or not isinstance(ledger_path, Path)
         or type(audit) is not SQLiteActionAudit
         or type(registry) is not ToolRegistry
         or type(call) is not ToolCall
