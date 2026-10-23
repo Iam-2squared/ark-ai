@@ -96,7 +96,8 @@ class CapabilityGrant:
         _text("capability", self.capability)
         _text("scope", self.scope)
         if self.expires_at_ms is not None and (
-            type(self.expires_at_ms) is not int or self.expires_at_ms < 0
+            type(self.expires_at_ms) is not int
+            or not 0 <= self.expires_at_ms <= (1 << 63) - 1
         ):
             raise ValueError("expires_at_ms must be a non-negative integer")
 
@@ -113,7 +114,10 @@ class OneShotAuthorization:
             r"act_[0-9a-f]{64}", self.request_id
         ) is None:
             raise ValueError("request_id must identify one canonical action request")
-        if type(self.expires_at_ms) is not int or self.expires_at_ms < 0:
+        if (
+            type(self.expires_at_ms) is not int
+            or not 0 <= self.expires_at_ms <= (1 << 63) - 1
+        ):
             raise ValueError("expires_at_ms must be a non-negative integer")
 
 
