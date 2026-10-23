@@ -193,7 +193,7 @@ def test_missing_sidecar_does_not_get_recreated(tmp_path: Path):
     state = _fixture(tmp_path)
     missing = tmp_path / "sidecar-missing.sqlite"
     state[6]._path = missing
-    with pytest.raises(sqlite3.OperationalError):
+    with pytest.raises(SyntheticRecoveryRejected, match="incomplete"):
         _review(state)
     assert not missing.exists()
 
