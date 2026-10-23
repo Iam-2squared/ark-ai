@@ -90,4 +90,6 @@ def test_two_initializers_converge_on_one_valid_v1_schema(tmp_path):
         assert list(pool.map(open_store, range(2))) == [True, True]
     with sqlite3.connect(path) as conn:
         assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
-        assert conn.execute("SELECT count(*) FROM sqlite_master WHERE name='memories'").fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT count(*) FROM sqlite_master WHERE name='memories'"
+        ).fetchone()[0] == 1
