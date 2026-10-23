@@ -98,6 +98,59 @@ class StartupSnapshot:
             names.append(item.component_id)
         if names != sorted(set(names)):
             raise ValueError("startup snapshot component order changed")
+
+        # A digest is not sufficient: it can be recomputed over a logically
+        # contradictory snapshot. Re-derive graph semantics before returning a
+        # cached READY/BLOCKED diagnosis. This is still local, not attestation.
+        by_name = {item.component_id: item for item in self.components}
+        following: dict[str, list[str]] = {name: [] for name in by_name}
+        indegree = {name: len(item.dependencies) for name, item in by_name.items()}
+        for item in self.components:
+            try:
+                _identifier(item.component_id, "component_id")
+                for parent in item.dependencies:
+                    _identifier(parent, "dependency")
+                if item.failure_code is not None:
+                    _identifier(item.failure_code, "failure_code")
+                if item.schema_revision is not None:
+                    _identifier(item.schema_revision, "schema_revision")
+            except ValueError as exc:
+                raise ValueError("startup snapshot identifier changed") from exc
+            if item.local_state is ReadinessState.DEPENDENCY_BLOCKED:
+                raise ValueError("startup snapshot local state changed")
+            for parent in item.dependencies:
+                if parent == item.component_id or parent not in by_name:
+                    raise ValueError("startup snapshot dependency changed")
+                following[parent].append(item.component_id)
+
+        pending: list[str] = []
+        for name, degree in indegree.items():
+            if degree == 0:
+                heappush(pending, name)
+        resolved: dict[str, ReadinessState] = {}
+        while pending:
+            name = heappop(pending)
+            item = by_name[name]
+            if item.local_state is ReadinessState.BLOCKED:
+                derived = ReadinessState.BLOCKED
+            elif any(
+                resolved[parent] in (
+                    ReadinessState.BLOCKED, ReadinessState.DEPENDENCY_BLOCKED
+                )
+                for parent in item.dependencies
+            ):
+                derived = ReadinessState.DEPENDENCY_BLOCKED
+            else:
+                derived = item.local_state
+            if derived is not item.effective_state:
+                raise ValueError("startup snapshot effective state changed")
+            resolved[name] = derived
+            for child in following[name]:
+                indegree[child] -= 1
+                if indegree[child] == 0:
+                    heappush(pending, child)
+        if len(resolved) != len(by_name):
+            raise ValueError("startup snapshot dependency cycle")
         payload = {
             "schema_version": 1,
             "components": [
