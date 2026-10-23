@@ -359,22 +359,63 @@ class SQLiteMemoryStore:
 
 
 def _record(row: sqlite3.Row) -> MemoryRecord:
-    metadata = json.loads(row["metadata_json"])
+    """Reject tampered on-disk identity, digests and storage classes on reads.
+
+    This does not attest the writer or verify an independent history root.
+    It preserves the existing v1 schema and the current public record contract.
+    """
+    def stored_text(column: str) -> str:
+        value = row[column]
+        if type(value) is not str:
+            raise MemorySchemaError(f"stored {column} must be SQLite TEXT")
+        return value
+
+    def stored_int(column: str, *, nullable: bool = False) -> int | None:
+        value = row[column]
+        if value is None and nullable:
+            return None
+        if type(value) is not int or value < 0:
+            raise MemorySchemaError(f"stored {column} must be non-negative SQLite INTEGER")
+        return value
+
+    owner_id = stored_text("owner_id")
+    namespace = stored_text("namespace")
+    source_id = stored_text("source_id")
+    memory_id = stored_text("memory_id")
+    content = stored_text("content")
+    content_sha = stored_text("content_sha256")
+    metadata_json = stored_text("metadata_json")
+    created = stored_int("created_at_ms")
+    updated = stored_int("updated_at_ms")
+    expires = stored_int("expires_at_ms", nullable=True)
+    revision = stored_int("revision")
+    if revision is None or revision < 1:
+        raise MemorySchemaError("stored revision must be a positive integer")
+    try:
+        scope = MemoryScope(owner_id, namespace)
+        expected_id = deterministic_memory_id(scope, source_id)
+    except (TypeError, ValueError) as exc:
+        raise MemorySchemaError("stored memory scope or source is invalid") from exc
+    if memory_id != expected_id:
+        raise MemorySchemaError("stored memory identity digest does not match")
+    if content_sha != hashlib.sha256(content.encode()).hexdigest():
+        raise MemorySchemaError("stored memory content digest does not match")
+    try:
+        metadata = json.loads(metadata_json)
+    except (TypeError, ValueError) as exc:
+        raise MemorySchemaError("stored metadata JSON is invalid") from exc
     if not isinstance(metadata, dict) or not all(
-        isinstance(k, str) and isinstance(v, str) for k, v in metadata.items()
+        type(k) is str and type(v) is str for k, v in metadata.items()
     ):
-        raise MemorySchemaError("stored metadata is not a string mapping")
+        raise MemorySchemaError("stored metadata is not an exact string mapping")
+    canonical = json.dumps(
+        metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    if canonical != metadata_json:
+        raise MemorySchemaError("stored metadata is not canonical JSON")
     return MemoryRecord(
-        row["memory_id"],
-        MemoryScope(row["owner_id"], row["namespace"]),
-        row["source_id"],
-        row["content"],
-        metadata,
-        int(row["created_at_ms"]),
-        int(row["updated_at_ms"]),
-        None if row["expires_at_ms"] is None else int(row["expires_at_ms"]),
-        int(row["revision"]),
-        row["content_sha256"],
+        memory_id, scope, source_id, content, metadata, created, updated,
+        expires, revision, content_sha,
     )
 
 
