@@ -13,7 +13,7 @@ import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 
-from .contracts import MemoryRecord, MemoryScope, MemorySchemaError
+from .contracts import MemoryRecord, MemorySchemaError, MemoryScope
 from .sqlite_store import SQLiteMemoryStore, _expired, _record, _tokens
 
 
