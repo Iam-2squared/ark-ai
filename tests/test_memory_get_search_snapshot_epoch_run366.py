@@ -55,7 +55,7 @@ def test_search_rejects_reflected_query_retargeting(tmp_path, field, replacement
         return 102
 
     reader._clock_ms = clock
-    with pytest.raises(MemorySchemaError, match="query changed during clock"):
+    with pytest.raises(MemorySchemaError, match="(scope|query) changed during clock"):
         reader.search(query)
 
 
