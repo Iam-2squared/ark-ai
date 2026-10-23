@@ -502,7 +502,23 @@ class SQLiteMemoryStore:
         # Ordinary reads/writes must never renegotiate persistent WAL mode.
         # Serialize same-process first-open setup before SQLite BEGIN IMMEDIATE.
         with _BOOTSTRAP_LOCK, self._connect() as conn:
-            conn.execute("PRAGMA journal_mode=WAL")
+            # Separate processes may race on the first WAL negotiation.
+            # SQLite busy_timeout is not a guarantee that journal_mode itself
+            # waits; retry only SQLite lock/busy, then fail closed.
+            for attempt in range(5):
+                try:
+                    journal_mode = conn.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+                except sqlite3.OperationalError as exc:
+                    error_code = getattr(exc, "sqlite_errorcode", 0) & 0xFF
+                    if error_code not in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                        raise
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.05 * (2 ** attempt))
+                else:
+                    if journal_mode.lower() != "wal":
+                        raise MemorySchemaError("memory SQLite WAL negotiation failed")
+                    break
             # executescript() issues an implicit COMMIT and can preserve a
             # partially created v1 database after a verification failure.
             # Reserve the writer slot before checking version/emptiness.
