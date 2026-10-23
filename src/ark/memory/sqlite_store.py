@@ -318,7 +318,10 @@ class SQLiteMemoryStore:
                 or type(query.scope) is not MemoryScope
                 or (query.scope.owner_id, query.scope.namespace)
                 != (pinned_scope.owner_id, pinned_scope.namespace)
-                or query.text != pinned_text
+            ):
+                raise MemorySchemaError("memory search scope changed during clock")
+            if (
+                query.text != pinned_text
                 or query.limit != pinned_limit
                 or query.include_expired != pinned_include_expired
             ):
