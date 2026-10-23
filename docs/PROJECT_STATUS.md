@@ -1,5 +1,60 @@
 # ARK AI Project Status
 
+**LATEST — Run 372**
+
+Saved at: **2026-10-24T04:04:37.798+09:00 Asia/Tokyo/JST** (UTC-derived clock sampled immediately before the normal GitHub Contents API write).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact invocation work-basis HEAD: `4225a45acb65dc855abc164d969c370eaaacbe36` (Run 371 checkpoint; **CI #451 / run `40002748249` SUCCESS 6/6**, independently checked).
+Exact final **source/test** HEAD: `8ec2b8ef3ffe659b80e7e2dd78bf0a087f5ec2cc` (**CI #465 / run `40008169191` at success as observed before checkpoint**; Ubuntu Python 3.13 Ruff PASS and **785 pytest passed**).
+Exact work-basis HEAD for this checkpoint, including engineering documentation: `aa9ac3a3f56d25b319563201a489a84e843ba6f3` (**CI #466 / run `40008214015`: success as last inspected**).
+**The checkpoint-result SHA is not knowable within this self-referential file.** Record the Contents API result externally and separately verify CI for that exact resulting SHA. No earlier CI is attributed to that later checkpoint.
+
+## Overall ARK state
+
+ARK is still **isolated, synthetic/disconnected, local-first and reversible**. No issuer-authenticated consent, trusted clock, signed external witness, production backend, physical-PC actuation, real side effects, cross-store atomic transaction, production Exactly-Once or complete JARVIS. Main remains observed at `7a843f17eb96ed13d66f23b58b06406b3002e405`; V3 PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` is **Draft/unmerged, NOT_PASSED**. Frozen V1/V2/Local UI/Launcher contracts, historical evidence and protected evaluation gates unchanged.
+
+## NEW — Run 372 (four free-only coherent packages)
+
+**15 sequential ordinary GitHub Contents commits before this checkpoint**, covering four implementation packages, four focused new regression files, narrow CI-driven fixes and one maintained engineering document. **67 new pytest cases**, baseline 718 to **785** on final source/test HEAD. No raw Git-object write, forced ref, main merge, protected evaluation or real backend.
+
+1. **P0 disconnected cross-store recovery triage:** new `agency/synthetic_recovery_triage.py` reads the synthetic Planner journal, registry-bound occurrence fixture and ActionAudit as separate read-only snapshots. It binds the exact PlanStep request identity to ToolRegistry and rejects conflicting stored registry/action identity; retained plan/ledger/audit witness checks are optional and must be genuinely independent. Exposes ambiguous RUNNING and matching synthetic occurrences, but always returns `dispatch_authorized=False`, `automatic_replay_authorized=False`, `external_outcome_known=False`. **No atomic snapshot across three stores; no real occurrence-to-audit proof; never retry UNKNOWN WRITE.**
+2. **P1 content-minimized synthetic proactive SQLite fixture:** new `proactive_synthetic_review.py` performs exact-type, scope/policy/observation digest binding with `BEGIN IMMEDIATE`, restart-safe dedup, bounded minimum preparation interval and half-open rolling-window preparation budget. It stores no raw observation or personal content, never sends notifications or issues action permission. Caller-provided clock, policy and scope are untrusted; no consent, erasure or production scheduler authority.
+3. **P1 ephemeral Personal Context projection:** new `personal_context_review.py` consumes a coherent Memory v1 snapshot, rejects cross-owner/namespace leakage, invalid digests, duplicate identities and expired-at-snapshot rows; applies deterministic round-robin selection with exact budgets and content-free provenance. Untrusted text remains informational data. A cached snapshot does not update on later revocation; obtain a new coherent snapshot for each fresh use. No tool grants or action authority.
+4. **P1 ActionAudit SQLite handle lifetime:** existing `agency/audit.py` bootstrap and append now explicitly close their SQLite file handles after commit/rollback. Focused tests exercise Windows-capable file relocation and failed-clock/schema cleanup; fixed v1 audit schema is unchanged. This is handle hygiene, **not** issuer provenance, a cross-store transaction, or execution authorization.
+
+Research boundary and tests are documented in `docs/SYNTHETIC_RECOVERY_AND_PROACTIVE_REVIEW.md`. Frozen source and evidence untouched.
+
+## Exact-head CI / evidence
+
+- **Run 371 checkpoint CI #451 / `40002748249`: SUCCESS 6/6** on exact invocation basis.
+- Early partial Run 372 CI #452–#455: **FAIL** (new recovery module Ruff import ordering/unused import; corrected through ordinary Contents writes). Further partial CI #456–#458: **FAIL on Windows** when a test attempted to unlink an open audit SQLite file (`WinError 32`); test changed to a safe missing-path simulation without touching frozen Local UI. These failures are retained; none are misreported GREEN.
+- **CI #459 / `40007129892`: SUCCESS 6/6** after the recovery test fix.
+- **CI #460 / `40007272460`: SUCCESS 6/6** at the initial recovery/proactive research doc HEAD.
+- **CI #461 / `40007581303`: SUCCESS 6/6** on first Personal Context source HEAD.
+- **CI #462 / `40007711684`: SUCCESS 6/6** on the three-package source/test HEAD, and **CI #463 / `40007776229`: SUCCESS 6/6** after corresponding engineering documentation; #463 Ubuntu Python 3.13 Ruff PASS and **780 passed**.
+- **CI #464 / `40008118577`: SUCCESS** at ActionAudit explicit-handle source HEAD.
+- **CI #465 / `40008169191`: success**, exact final source/test HEAD `8ec2b8ef3ffe659b80e7e2dd78bf0a087f5ec2cc`; Ubuntu 3.13 Ruff PASS and **785 pytest passed**; the remaining matrix jobs must be independently checked if still running.
+- **CI #466 / `40008214015`: success** at pre-checkpoint engineering-document HEAD.
+- The checkpoint-result SHA and subsequent CI must be verified separately.
+
+## Frozen, privacy and financial boundaries
+
+No paid or potentially billable services, external GPU, real training/Candidate weights/adapters, protected V2 final evaluation, Candidate promotion, frozen V1/V2/Local UI/Launcher mutation, real Tool/backend dispatch, notification, live media capture, secrets/new accounts, destructive migration, protected main merge or external effect. Local hashes, retained local witnesses and synthetic receipts never attest authenticated consent, clock, backend completion or real-world Exactly-Once.
+
+## Next plan / 今後の方針
+
+1. **P0 CI:** verify this checkpoint-result HEAD and exact six-job matrix; if any failures, diagnose without modifying frozen components.
+2. **P0 authorization and replay:** integrate trusted issuer/subject/purpose/recipient provenance and durable registry-bound occurrence plus audit-before-mock-action; UNKNOWN WRITE must never auto-retry. Cross-store snapshots and audit events currently lack a common authenticated occurrence identity.
+3. **P1 Memory + privacy:** retained CAS/event witness, coherent freshness on each Personal Context request, explicit consent/revocation/erasure, bounded provenance without plaintext.
+4. **P1 Scheduler and startup:** fixture lifecycle, rate/attention budgets, persistent clock/cooldown integrity, stale-policy refusal, component readiness with denied-by-default WRITE paths.
+5. **P1/P2 observation and V3 free guards:** retention and consent on synthetic observations; only fixture-based V3 path/identity/reproducibility guards, with PR #5's training/paid/protected evaluation gates closed.
+
+---
+
+**HISTORICAL — Run 371 and earlier**
+
+
 **LATEST — Run 371**
 
 Saved at: **2026-10-24T03:22:17.410+09:00 Asia/Tokyo/JST** (UTC-derived clock immediately before normal GitHub Contents API checkpoint write).
