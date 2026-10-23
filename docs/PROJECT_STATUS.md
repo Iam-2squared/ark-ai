@@ -2,6 +2,54 @@
 
 **LATEST**
 
+Saved at: **2026-10-23 14:59:25.379 JST (+09:00)**
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD (before Run357): `ed13c53c815eeacaec22b9e7d8e97e410c63d932`.
+Exact new source/test HEAD (before this checkpoint): `112c6f4951210a1b1159fb0c7df560e65e5739f5`.
+Checkpoint-result HEAD: cannot be embedded into its own committed file; **the GitHub Contents update result commit SHA is authoritative**. CI #278 applies to `112c6f4951210a1b1159fb0c7df560e65e5739f5` only, and not automatically to the documentation-only checkpoint commit.
+
+## Overall current ARK state
+
+ARK JARVIS foundations remain reversible Draft research, **not** production dispatch, authenticated consent, real exactly-once actions, or JARVIS completion. Frozen V1/V2/Local UI/Launcher evidence/contracts unchanged. `main` remains `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+V3 PR #5 stays Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**, no protected evaluation opening.
+
+## NEW work this invocation — Run 357
+
+- **Registry mapping epoch:** normal GitHub Contents source update `adb173e14a36a71285ddbaec594960af44c65265` pins the exact read-only ToolRegistry mapping object and rejects reflected equal-valued replacement; separate repository regression file at `fa6a6bc270ef6dd9e05cad2da853d97aa275e009` (11 parametrized tests). No backend is invoked.
+- **Memory expiry CAS:** source update `b24cecf2bde72ffd6b8a62dc62564a82d7ec1a56` acquires SQLite writer lock **before** sampling time or selecting expired rows, and conditionally deletes by exact memory ID, scope, revision and expiry. Only successful deletions emit expiry audit events. Repository tests committed at `5446d3a69a6eaed8aaab59f77120a23a8377247d` (3 tests: writer-lock clock probe, scoped expiry, rollback on failed audit).
+- **CI recovery:** commit `5446d3a69a6eaed8aaab59f77120a23a8377247d` produced CI **#277 FAIL** across 6 jobs due solely to Ruff I001 import ordering in the new Memory test. A minimal import-order correction at `112c6f4951210a1b1159fb0c7df560e65e5739f5` restored **CI #278 SUCCESS 6/6**.
+- **Independent Planner durability (offline only):** disconnected synthetic SQLite Planner journal now transactionally updates and verifies a second local tail-anchor table. Missing/replaced anchor, inconsistent count/hash or truncated journal are refused. 9 new synthetic tests; Linux/Python 3.13.5 local warnings-as-errors: Memory **390**, Agency/Observation **659**, Personal Context **193** = **1,242/1,242 PASS**. Clean Run356 patch replay matches **162/162 file SHA-256**; syntax parsed as Python 3.11/3.12/3.13 grammars (not actual alternate runtime tests).
+  Detached source ZIP SHA-256 `039a1fb9e34147f9220045ac098e25454531878d2380ffd37bf426b376c97652`; detached evidence ZIP SHA-256 `c8f30521db7d6fbd4ed0ddccd84bb51774fa26499ff983b1b0d873f54726a2f0`. **Not committed or covered by GitHub CI.**
+- Produced read-only exact-source follow-up audit prioritizing Memory put/delete lock-before-clock, persisted-row integrity and same-version schema checks. No frozen-contract changes or operational data reads.
+
+## Tests / CI / evidence
+
+- PR #8 CI #274 / run `39907742262`: **SUCCESS**, registry source HEAD `adb173e14a36a71285ddbaec594960af44c65265`.
+- CI #275 / run `39907979841`: **SUCCESS**, registry regression HEAD `fa6a6bc270ef6dd9e05cad2da853d97aa275e009`.
+- CI #276 / run `39908163598`: **SUCCESS**, Memory source HEAD `b24cecf2bde72ffd6b8a62dc62564a82d7ec1a56`.
+- CI #277 / run `39908372539`: **FAIL 6/6**, Ruff I001 new test import only, test body not reached.
+- CI #278 / run `39908587091`: **SUCCESS 6/6 GREEN**, exact source-and-test HEAD `112c6f4951210a1b1159fb0c7df560e65e5739f5`; Ubuntu/Windows × CPython 3.11/3.12/3.13; job IDs `120266096541`, `120266096437`, `120266096428`, `120266096146`, `120266096559`, `120266096293` respectively.
+- The detached Planner fixture is not part of PR #8. Its synthetic local hashes are **not** independent security attestation.
+- No run of new CI on this documentation checkpoint commit is asserted here.
+
+## Frozen boundaries, blockers and authorizations
+
+No paid/external compute, paid services, training, real Candidate adapter/weight generation, protected V2 final evaluation, promotion, frozen-contract edits, credentials, physical-PC action, real backend execution, personal-data ingestion, notification delivery, destructive migration, or main merge. No bypass or raw Git Object writes. PR #5 remains separately gated. SQLite local tail anchor is mutable with its database; it is not a trusted external history root. Memory v1 still needs schema/content-row integrity and more lock-before-clock work; trusted clock, issuer authenticity and real restart-safe exactly-once remain open.
+
+## Next plan / 今後の方針
+
+1. Verify the documentation-only checkpoint result HEAD/CI separately; maintain exact-head GREEN evidence without duplicate reruns.
+2. Continue **Memory v1**: move put/delete clock behind writer locks, validate persisted IDs, content digests, types/canonical metadata and same-version schema integrity. Add conflict, corruption, cross-process SQLite tests.
+3. After official lower-level GREEN, integrate registry-authoritative PermissionGate, durable one-shot, trusted-clock pre-action audit and mock no-replay recovery. **No live tool dispatch**.
+4. Advance Planner state persistence and UNKNOWN WRITE reconciliation; keep offline anchor fixture isolated pending API/schema compatibility and independent history-witness design.
+5. Progress privacy-safe Personal Context, Scheduler/Observation and V3 free-only provenance/path/reproducibility guards without training, live inputs, Candidate, protected evaluation or main merge.
+
+---
+
+**HISTORICAL — earlier status preserved below; superseded by Run357**
+
+
 Saved at: **2026-10-16 17:59:25 JST (+09:00)**
 
 Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
