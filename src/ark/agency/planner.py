@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Mapping
 from dataclasses import replace
 from types import MappingProxyType
 
 from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState
+
+def _plan_digest(prefix: str, payload: object) -> str:
+    encoded = (
+        json.dumps(
+            payload, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False,
+        ) + "\n"
+    ).encode("utf-8")
+    return prefix + hashlib.sha256(encoded).hexdigest()
+
 
 _ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
     {
@@ -80,6 +92,54 @@ class PlanGraph:
                 raise PlanConflictError("plan action input is invalid") from exc
             if current_request_id != request_id:
                 raise PlanConflictError("plan action identity changed after construction")
+
+    def topology_digest(self) -> str:
+        """Canonical input identity for future *disconnected* journal replay.
+
+        Bind exact step IDs, action request digests, and dependency tuple order.
+        This digest is local integrity evidence, never authority for execution.
+        """
+        self._assert_plan_epoch()
+        payload = {
+            "schema_version": 1,
+            "steps": [
+                {
+                    "step_id": step_id,
+                    "request_id": self.steps[step_id].call.request_id,
+                    "depends_on": self.steps[step_id].depends_on,
+                }
+                for step_id in sorted(self.steps)
+            ],
+        }
+        return _plan_digest("plan_", payload)
+
+    def status_digest(self) -> str:
+        """Canonical full status witness including derived BLOCKED revisions.
+
+        No raw ToolCall arguments or backend outcomes are serialized.
+        This is an in-process snapshot, NOT a durable concurrency transaction.
+        """
+        statuses = self.statuses()
+        entries = []
+        for step_id in sorted(self.steps):
+            status = statuses[step_id]
+            if status.step_id != step_id:
+                raise PlanConflictError("plan status identity changed")
+            entries.append(
+                {
+                    "step_id": step_id,
+                    "state": status.state.value,
+                    "revision": status.revision,
+                }
+            )
+        return _plan_digest(
+            "pstate_",
+            {
+                "schema_version": 1,
+                "topology_digest": self.topology_digest(),
+                "statuses": entries,
+            },
+        )
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
         self._assert_plan_epoch()
