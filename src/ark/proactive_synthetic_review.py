@@ -169,6 +169,7 @@ class SyntheticProactiveLedger:
         self, policy: SyntheticTriggerPolicy, *,
         source_digest: str, observation_digest: str,
         observed_at_ms: int, now_ms: int,
+        retained: object | None = None,
     ) -> SyntheticTriggerReceipt:
         """Persist a content-free preparation marker, never an action."""
         if type(policy) is not SyntheticTriggerPolicy:
@@ -183,6 +184,22 @@ class SyntheticProactiveLedger:
         _int("now_ms", now_ms)
         if observed_at_ms > now_ms:
             raise SyntheticTriggerRejected("future observation cannot prepare")
+        # Retain the caller's earlier witness in an independent location.
+        # A witness reconstructed from this same potentially altered SQLite
+        # file offers no rollback protection.
+        from .proactive_synthetic_continuity_review import (
+            SyntheticTriggerWitness,
+            _ROWS,
+            _digest,
+            assert_proactive_history_continues,
+        )
+
+        retained_epoch = None
+        if retained is not None:
+            if type(retained) is not SyntheticTriggerWitness:
+                raise SyntheticTriggerRejected("exact retained proactive witness required")
+            retained.assert_integrity()
+            retained_epoch = (retained.row_hashes, retained.digest)
         pinned = policy.identity()
         scope = _hash("ARK-trigger-scope-v1", pinned[:4])
         policy_hash = _hash("ARK-trigger-policy-v1", pinned)
@@ -197,6 +214,21 @@ class SyntheticProactiveLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 _validate(conn)
+                if retained_epoch is not None:
+                    if (retained.row_hashes, retained.digest) != retained_epoch:
+                        raise SyntheticTriggerRejected("retained proactive witness changed")
+                    # Evaluate the historical fence INSIDE the same write
+                    # transaction that admits a new synthetic trigger.
+                    hashes = tuple(sorted(
+                        _digest("ARK-trigger-row-v1", row)
+                        for row in conn.execute(_ROWS)
+                    ))
+                    current = SyntheticTriggerWitness(
+                        hashes, "synthetic_triggers_" + _digest(
+                            "ARK-trigger-witness-v1", hashes,
+                        ),
+                    )
+                    assert_proactive_history_continues(retained, current)
                 if policy.identity() != pinned:
                     raise SyntheticTriggerRejected("policy changed before preparation")
                 recent = conn.execute(
@@ -229,6 +261,10 @@ class SyntheticProactiveLedger:
                     ) from exc
                 if policy.identity() != pinned:
                     raise SyntheticTriggerRejected("policy changed during preparation")
+                if retained_epoch is not None and (
+                    retained.row_hashes, retained.digest
+                ) != retained_epoch:
+                    raise SyntheticTriggerRejected("retained proactive witness changed")
                 conn.commit()
                 return SyntheticTriggerReceipt(trigger, now_ms)
             except BaseException:
