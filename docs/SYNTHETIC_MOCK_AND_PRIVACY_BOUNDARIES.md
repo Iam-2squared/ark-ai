@@ -84,6 +84,26 @@ filesystem, automatic key management, verified erasure or authenticated
 consent. `tests/test_personal_context_revocation_continuity_run373.py`
 checks append, deletion, rewrite, forged witness and missing-file paths.
 
+## Opt-in retained-history fence on fresh projection
+
+The fresh, veto-bracketed Personal Context wrapper now also reads an
+independent revocation-history witness at the beginning and rechecks that
+prefix after the Memory snapshot and projection. An optional
+`retained_revocations` argument may be an **earlier, separately retained**
+`SyntheticRevocationWitness`; a false type or corrupted witness is rejected.
+This detects coordinated deletion of any previously witnessed veto, including
+one for an unrelated namespace, when it happens during a context review.
+
+When the caller supplies no earlier witness, the initial local witness is
+still useful for detecting changes **during that one call**, but it cannot
+recover revocations already removed before the call. A later edit, deletion
+or external data use can race after the final read. Tests in
+`tests/test_personal_context_retained_fence_run373.py` cover retained veto
+deletion before a review, deletion during the Memory clock hook, unrelated new
+veto markers, and malformed retained carriers. There is still no externally
+authenticated subject/issuer, real consent, cross-store transaction, or
+permission to provide the resulting content to a live model or recipient.
+
 ## Release and integration gates
 
 These fixtures must remain disconnected until exact-head CI is GREEN and
