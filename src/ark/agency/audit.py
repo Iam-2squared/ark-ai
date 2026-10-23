@@ -7,11 +7,13 @@ import time
 from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
+from threading import Lock
 
 from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall
 
 SCHEMA_VERSION = 1
 _SQLITE_INT_MAX = 2**63 - 1
+_AUDIT_BOOTSTRAP_LOCK = Lock()  # process-local; SQLite owns cross-process locking
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,7 +186,23 @@ class SQLiteActionAudit:
         return result
 
     def _initialize(self) -> None:
-        with self._connect() as conn:
+        with _AUDIT_BOOTSTRAP_LOCK, self._connect() as conn:
+            # WAL negotiation is bootstrap-only. Under concurrent first opens,
+            # retry transient SQLite lock/busy before taking the writer slot.
+            for attempt in range(5):
+                try:
+                    journal_mode = conn.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+                except sqlite3.OperationalError as exc:
+                    error_code = getattr(exc, "sqlite_errorcode", 0) & 0xFF
+                    if error_code not in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                        raise
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.05 * (2 ** attempt))
+                else:
+                    if journal_mode.lower() != "wal":
+                        raise ActionAuditSchemaError("action audit SQLite WAL negotiation failed")
+                    break
             # Bootstrap must be atomic: executescript() implicitly commits and
             # could leave a partially initialized audit if verification fails.
             conn.execute("BEGIN IMMEDIATE")
@@ -213,7 +231,6 @@ class SQLiteActionAudit:
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
