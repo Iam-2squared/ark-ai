@@ -66,19 +66,35 @@ class SQLiteActionAudit:
                 ORDER BY event_id LIMIT ?""",
                 (after_event_id, limit),
             ).fetchall()
-        return [
-            ActionAuditEvent(
-                int(row["event_id"]),
-                row["request_id"],
-                row["tool"],
-                row["capability"],
-                row["scope"],
-                row["arguments_sha256"],
-                row["outcome"],
-                int(row["occurred_at_ms"]),
-            )
-            for row in rows
-        ]
+        # Read persisted rows without SQLite's permissive Python coercions.
+        # A digest is only a shape check here; it does not attest the issuer
+        # or bind back to plaintext arguments that are deliberately not stored.
+        result: list[ActionAuditEvent] = []
+        previous_id = after_event_id
+        for row in rows:
+            event_id = row["event_id"]
+            occurred = row["occurred_at_ms"]
+            if type(event_id) is not int or event_id <= previous_id:
+                raise ActionAuditSchemaError("audit event_id must increase as INTEGER")
+            previous_id = event_id
+            if type(occurred) is not int or occurred < 0:
+                raise ActionAuditSchemaError("audit clock must be a non-negative INTEGER")
+            fields = ("request_id", "tool", "capability", "scope", "arguments_sha256", "outcome")
+            values = [row[column] for column in fields]
+            if any(type(value) is not str or not value.strip() for value in values):
+                raise ActionAuditSchemaError("audit identity fields must be non-empty TEXT")
+            request_id, tool, capability, scope, arguments_sha256, outcome = values
+            if (
+                len(request_id) != 68 or not request_id.startswith("act_")
+                or any(char not in "0123456789abcdef" for char in request_id[4:])
+                or len(arguments_sha256) != 64
+                or any(char not in "0123456789abcdef" for char in arguments_sha256)
+            ):
+                raise ActionAuditSchemaError("audit stored digest identity is invalid")
+            result.append(ActionAuditEvent(
+                event_id, request_id, tool, capability, scope, arguments_sha256, outcome, occurred
+            ))
+        return result
 
     def _initialize(self) -> None:
         with self._connect() as conn:
