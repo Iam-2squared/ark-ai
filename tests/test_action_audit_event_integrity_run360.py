@@ -13,7 +13,7 @@ from ark.agency import ActionAuditSchemaError, SQLiteActionAudit, ToolCall
         ("request_id", "act_" + "z" * 64),
         ("arguments_sha256", "a" * 63),
         ("arguments_sha256", "A" * 64),
-        ("tool", 42),
+        ("tool", sqlite3.Binary(b"tampered")),
         ("scope", ""),
         ("outcome", ""),
         ("occurred_at_ms", -1),
