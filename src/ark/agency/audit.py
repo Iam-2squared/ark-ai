@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 import time
 from collections.abc import Callable
+from contextlib import closing
 from pathlib import Path
 
 from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall
@@ -144,7 +145,9 @@ class SQLiteActionAudit:
             raise ValueError("after_event_id must fit a non-negative SQLite INTEGER")
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
-        with self._connect() as conn:
+        # The audit object may outlive the SQLite file. Never create an empty
+        # replacement database while reading evidence from a stale path.
+        with closing(self._connect_readonly()) as conn:
             rows = conn.execute(
                 """SELECT * FROM action_events WHERE event_id>?
                 ORDER BY event_id LIMIT ?""",
@@ -211,6 +214,15 @@ class SQLiteActionAudit:
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
+    def _connect_readonly(self) -> sqlite3.Connection:
+        try:
+            conn = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True)
+        except sqlite3.DatabaseError as exc:
+            raise ActionAuditSchemaError("action audit read-only file is unavailable") from exc
+        conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
