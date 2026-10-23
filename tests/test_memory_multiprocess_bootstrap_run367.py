@@ -8,7 +8,6 @@ import pytest
 
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
 
-
 _CHILD = (
     "import sys; "
     "from ark.memory import SQLiteMemoryStore; "
