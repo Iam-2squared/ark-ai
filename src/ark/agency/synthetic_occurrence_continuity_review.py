@@ -54,8 +54,8 @@ def read_synthetic_ledger_witness(path: Path) -> SyntheticLedgerWitness:
     This never creates a missing database or retains plaintext token IDs.
     The resulting digest is local and cannot establish external authenticity.
     """
-    if type(path) is not Path:
-        raise TypeError("synthetic witness path must be an exact pathlib.Path")
+    if not isinstance(path, Path):
+        raise TypeError("synthetic witness path must be a pathlib.Path")
     uri = path.resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
         conn.execute("BEGIN")
