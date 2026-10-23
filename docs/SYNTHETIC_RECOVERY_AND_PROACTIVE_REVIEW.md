@@ -79,6 +79,31 @@ multi-process service lifecycle, notification budget, user consent,
 reconciliation, observation capture, or external WRITE is implemented.
 There is no assertion that synthetic admission equals a live proactive agent.
 
+## P1 — ephemeral Personal Context projection
+
+`src/ark/personal_context_review.py` accepts a previously produced
+`CoherentSnapshotReview`, whose Memory rows came from one local SQLite read
+snapshot and clock sample. It validates exact owner/namespace scope, canonical
+Memory identities, revisions, timestamps, expiration at the snapshot clock,
+and content SHA-256 before selecting anything. It refuses duplicates across
+namespaces or conflicting records instead of silently widening a scope.
+
+A bounded, immutable `ContextSelectionPolicy` sets total and per-namespace
+caps. Already-ranked candidates are selected by deterministic round-robin
+across caller-ordered namespaces, preserving each namespace's source order.
+Content remains **ephemeral information**; only record identities, revisions,
+content digests, policy revision and selection ordinal enter content-free
+provenance identifiers and the bundle identifier. Instruction-like text is
+returned as untrusted data rather than executed. The result's
+`dispatch_authorized` and `action_authorized` flags are always false.
+
+**Privacy limitation:** the projection is fresh only at the **original**
+coherent snapshot timestamp. It does not re-open Memory when a later
+revocation, deletion, consent withdrawal or expiry occurs. Callers must obtain
+a fresh coherent snapshot before reusing data in a later request. Local
+SHA-256 IDs are not issuer authentication or externally trusted provenance.
+There is no direct UI, model, scheduler or tool integration.
+
 ## Readiness and integration order
 
 Both packages remain separated from actual tool execution. Before any real
