@@ -217,6 +217,8 @@ def test_path_requires_pathlib_instance(tmp_path: Path, bad):
 
 
 def test_special_characters_in_ledger_filename_are_safe(tmp_path: Path):
-    state = _setup(tmp_path / "dir #100")
+    special = tmp_path / "dir #100"
+    special.mkdir()
+    state = _setup(special)
     result = _review(state)
     assert result.matching_occurrences == ()
