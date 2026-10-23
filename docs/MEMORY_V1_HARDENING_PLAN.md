@@ -91,6 +91,18 @@ Expiry-sensitive `get()` and `search()` must bind one SQLite snapshot to one tru
 
 The API does not promise the newest concurrent commit. It promises that a single result never combines an older clock sample with a newer database state, or an older database state with a newer clock sample. `include_expired=True` still uses the same snapshot discipline; it only skips the expiry filter.
 
+## Read-only evidence access (Run 370)
+
+An initialized Memory store's `get()`, `search()`, and `events()` use
+read-only SQLite URI connections, never the creation-capable writer
+connection. A deleted or moved main database file must not be recreated by
+these evidence reads. Exact-scope filtering, expiry checks, and the
+`BEGIN`-pinned coherent snapshot remain unchanged; connections close
+without mutating SQLite journal mode or repairing missing state. Paths with
+URI-reserved characters must still refer to the literal intended file.
+This protects accidental empty-database replacement, **not** historical
+authenticity or external filesystem tampering.
+
 ## Coherent multi-namespace read
 
 Personal Context uses the separate coherent-snapshot contract: one owner, ordered namespaces, one SQLite read transaction, one trusted expiry time, and fully materialized rows before transaction close.
