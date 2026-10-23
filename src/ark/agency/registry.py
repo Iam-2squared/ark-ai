@@ -145,18 +145,44 @@ class ToolRegistry:
         return registration
 
     def bind(self, call: ToolCall) -> BoundAction:
+        # Call objects are frozen, but reflected mutation is still possible
+        # during a registry lookup. Refuse a bound ID based on mixed snapshots.
+        # This check is not an authorization grant or a concurrency primitive.
+        if type(call) is not ToolCall:
+            raise TypeError("call must be an exact ToolCall")
+        stable = ToolCall(call.tool, call.capability, call.scope, call.arguments)
+        original_request_id = stable.request_id
+
+        def assert_call_unchanged() -> None:
+            if (
+                type(call.tool) is not str
+                or type(call.capability) is not str
+                or type(call.scope) is not str
+                or (call.tool, call.capability, call.scope)
+                != (stable.tool, stable.capability, stable.scope)
+                or call.request_id != original_request_id
+            ):
+                raise ValueError("ToolCall identity changed during registry binding")
+
+        assert_call_unchanged()
         registration = self.resolve(call)
+        assert_call_unchanged()
+        revision = self.revision
+        assert_call_unchanged()
         payload = {
             "backend_id": registration.backend_id,
             "capability": registration.capability,
             "effect": registration.effect.value,
-            "registry_revision": self.revision,
-            "request_id": call.request_id,
+            "registry_revision": revision,
+            "request_id": original_request_id,
             "tool": registration.name,
         }
         bound_action_id = "bound_" + hashlib.sha256(_canonical_json(payload)).hexdigest()
+        assert_call_unchanged()
+        self._assert_registration_epoch()
+        assert_call_unchanged()
         return BoundAction(
-            registry_revision=self.revision,
+            registry_revision=revision,
             call=call,
             registration=registration,
             bound_action_id=bound_action_id,
