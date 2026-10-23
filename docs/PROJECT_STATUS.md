@@ -1,5 +1,62 @@
 # ARK AI Project Status
 
+**LATEST — Run 373**
+
+Saved at: **2026-10-24T04:58:09.608+09:00 Asia/Tokyo/JST** (runtime UTC clock transformed to JST immediately before the ordinary GitHub Contents API write).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact invocation work-basis HEAD: `f7a176612580a6b689b31252fe9bd3db2c57f3be` (**CI #467 / run `40008536491`: SUCCESS 6/6**, checked before new changes).
+Exact final **source/test HEAD**: `998f192fd5fd190ee970e1e0c90f0d9a4d4ac1e7` (**CI #481 / run `40015089972`: 6/6 SUCCESS, 0 remaining IN PROGRESS at checkpoint write**; Ubuntu Python 3.13 Ruff PASS and **826 pytest passed**).
+Exact work-basis HEAD for this checkpoint, including engineering documentation: `bdeb3d31d188e74e298d93197d8241bb1d2c6f2f` (**CI #482 / run `40015180045`: 5/6 SUCCESS, 1 IN PROGRESS at checkpoint write**).
+**This checkpoint-result SHA is not knowable inside its own self-referential contents; use the GitHub Contents API result, and verify its exact CI separately.** No earlier workflow is attributed to the checkpoint HEAD.
+
+## Overall ARK state
+
+ARK remains **local-first, isolated, synthetic/disconnected, reversible and without real actuation**. No human/issuer-authenticated consent, externally trusted clock, real ToolBackend dispatch, durable production approval, cross-store atomic transaction, actual hardware access, external side effects, externally attested receipt, production Exactly-Once or complete JARVIS. Main observed at `7a843f17eb96ed13d66f23b58b06406b3002e405`; V3 PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` remains **Draft, unmerged, NOT_PASSED**. Frozen V1/V2/Local UI/Launcher files, contracts, evidence and protected evaluation boundaries were not modified.
+
+## NEW — Run 373 (five coherent FREE-only foundation packages)
+
+**15 sequential ordinary GitHub Contents commits before this checkpoint** across 5 implementation packages, 5 new focused regression suites, targeted CI-driven fixes and maintained engineering documentation. Test suite increased from **785 to 826 (+41 pytest cases)** on final source/test HEAD. Only Draft PR #8 was written, with a fresh PR-HEAD check before every write; no raw Git-object workaround, force push, workflow rerun, privileged merge, production backend or new service.
+
+1. **P0 proactive fixture primary-key binding (+6 cases):** `proactive_synthetic_review.py` now recomputes every stored `trigger_id` from the persisted exact scope, policy, source and observation digests. Well-formed single-field rewrites are rejected on restart/count/preparation. This is a local consistency check, NOT an external witness against coordinated rewriting or policy authenticity.
+2. **P0 disconnected audit-before-mock-action fault injection (+11 cases):** new `agency/synthetic_mock_action_cycle_review.py` exercises plan RUNNING, durable occurrence reservation, pre-action audit append, pure in-memory mock marker and synthetic SUCCEEDED. Fault points leave RUNNING/UNKNOWN that the fixture will not retry; it **never invokes any ToolBackend**. An audit entry cannot prove a real effect; result flags remain denied.
+3. **P1 content-minimized persistent context revocation veto (+13 cases):** new `personal_context_revocation_review.py` stores only owner/namespace scope digests and caller-supplied timestamps in a separate SQLite v1 research fixture. Revocation is append-only within this fixture. Fresh Personal Context selection brackets a newly obtained coherent Memory snapshot with veto checks; this does **not** authenticate consent or erase data.
+4. **P1 independent retained revocation continuity (+7 cases):** new `personal_context_revocation_continuity_review.py` compares canonical read-only SQLite veto rows with a separately retained earlier witness and detects row deletion/time rewrites. Without an authentic independently held earlier witness, past coordinated tampering remains undetectable.
+5. **P1 cross-component retained fence (+4 cases):** the fresh Personal Context wrapper now additionally protects the interval surrounding a Memory projection by retaining the first read-only veto history, and optionally checks a caller-supplied older witness. Even unrelated veto-row deletion mid-read fails closed. Memory and veto databases remain **non-atomic**; revocation after the last check can race with use and the wrapper authorizes no model/tool/export/notification.
+
+Grounded fault matrix and limits: `docs/SYNTHETIC_MOCK_AND_PRIVACY_BOUNDARIES.md`. The absence of a veto is **not** affirmative consent. Scope digests may be vulnerable to dictionary guessing on low-entropy identifiers. There is no privacy erasure, human-grant issuer, authenticated user identity, real approval, durable backend idempotency or real-world Exactly-Once.
+
+## Exact-head CI and retained failures
+
+- Invocation basis **#467 / `40008536491`: SUCCESS 6/6**.
+- New proactive source **#468 / `40013352255`: SUCCESS**. Intermediate **#469–#474: FAILED**, principally because the new duplicate fixture was tested *before* its intentional cooldown and because a new revocation constructor erroneously required `type(path) is Path` rather than a concrete `pathlib` subclass; both were corrected via normal Contents writes.
+- After the narrow repairs, **#475 / `40014365892`: SUCCESS** at the initial three-package source/test HEAD.
+- Intermediate **#476–#477: FAILED** on Ruff unused `sqlite3` import in the new history reviewer. Corrected via a normal Contents update, without source-contract weakening.
+- **#478 / `40014642104`: SUCCESS 6/6** on retained reviewer source/test HEAD `b320c143fb7cf483e2d41da39729c9574e0c67ed`; Ubuntu Python 3.13 Ruff PASS, **822 passed**.
+- **#479 / `40014763763`: SUCCESS 6/6** on the corresponding safety/fault-matrix document HEAD `4b70745942b23b5c1fddada6849873c4db2048e8`.
+- **#480 / `40015023002`: SUCCESS 6/6** on the retained-history context integration source HEAD `51557c7eb729e075353b9d43a2a2e3972574f25d`.
+- **#481 / `40015089972`: 6/6 SUCCESS, 0 IN PROGRESS** at the final **source/test** HEAD `998f192fd5fd190ee970e1e0c90f0d9a4d4ac1e7`; Ubuntu 3.13 Ruff PASS, **826 passed**. Do not call full-matrix GREEN before all six complete.
+- **#482 / `40015180045`: 5/6 SUCCESS, 1 IN PROGRESS** on the pre-checkpoint engineering-doc HEAD. The checkpoint-result SHA and its CI must be recorded and verified separately.
+
+## Frozen, legal, privacy, paid and hardware boundaries
+
+No paid/potentially billable service, external GPU, real training/Candidate adapters or weights, frozen/protected V2 final evaluation, Candidate promotion, frozen contracts or historical evaluation opening, physical-PC actions, real ToolBackend, live observation, notification, credentials/new account, destructive SQLite migration or protected main merge. All tests use mock-only/synthetic inputs. No production consent/revocation, data export, real action success or human review decision is claimed.
+
+## Next plan / 今後の方針
+
+1. **P0 CI:** verify #481/#482 six-job conclusion and the eventual checkpoint-result HEAD/CI; diagnose any observed failure without touching frozen components. Do not re-run equivalent workflows.
+2. **P0 agency:** bind a distinct, immutable, registry-aware occurrence to a **new isolated audit sidecar** and synthetic executor fault matrix; preserve frozen ActionAudit v1; distinguish before-effect, effect-unknown and confirmed mock-only checkpoints. No UNKNOWN WRITE auto-replay.
+3. **P0 authorization:** issuer/subject/purpose/recipient/approval evidence, permission revocation, trusted-clock and replay fences require authenticated sources or explicit user approval before production integration.
+4. **P1 privacy:** scope revocation expiry/erasure and independently retained historical witnesses; reject stale Personal Context and prevent consent drift across reuse. Retained veto hashes are not consent; integrate only with exact-head GREEN and no cross-store atomicity assumptions.
+5. **P1 scheduler/observation/startup:** independently witnessed trigger history, privacy retention, preparation budgets and denied-by-default startup readiness, synthetic fixtures only.
+6. **P2 V3 free guards:** use mock/fixture approval, identity, path and reproducibility checks only; PR #5 stays Draft/NOT_PASSED. No paid compute, protected validation/final opening or Candidate promotion.
+
+---
+
+**HISTORICAL — Run 372 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 372**
 
 Saved at: **2026-10-24T04:04:37.798+09:00 Asia/Tokyo/JST** (UTC-derived clock sampled immediately before the normal GitHub Contents API write).
