@@ -144,7 +144,7 @@ class SyntheticPlanJournal:
     """Bounded fixture journal: atomic event+tail, replay-only recovery."""
 
     def __init__(self, path: Path, steps: tuple[PlanStep, ...]) -> None:
-        if type(path) is not Path:
+        if not isinstance(path, Path):
             raise TypeError("synthetic plan path must be an exact pathlib.Path")
         self._path = path
         self._steps = steps
