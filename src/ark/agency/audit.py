@@ -201,5 +201,7 @@ class SQLiteActionAudit:
     def _now(self) -> int:
         value = self._clock_ms()
         if type(value) is not int or not 0 <= value <= _SQLITE_INT_MAX:
-            raise ValueError("clock_ms must return a non-negative SQLite INTEGER")
+            raise ValueError(
+                "clock_ms must return a non-negative integer within SQLite INTEGER range"
+            )
         return value
