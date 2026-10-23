@@ -349,3 +349,52 @@ a forged self-consistent lineage with fabricated source names/times.
 There is no webcam, screen capture, speech input, external observation
 provider, human consent, trusted timestamp, disclosure, backend invocation
 or automatically authorized action.
+
+
+## Run 377 — disconnected approval, privacy and recovery integrity
+
+**Read-only claim + persisted cancellation fence.**
+`agency/synthetic_approval_cancellation_fence_review.py` brackets
+`review_synthetic_approval_claim` with two actual SQLite cancellation
+journal reads. An optional independently retained historical cancellation
+witness is verified before the claim check. A cancellation present at the
+first read, a claim cancellation or even an unrelated new cancellation
+appearing between the two reads, a reverted retained prefix, registry or
+claim drift, expired claim, or a regressing caller clock prevents a diagnostic
+receipt. The reviewer returns only hashed identities and denial-only flags.
+An absent marker is **not** consent, authenticated issuer/subject approval,
+non-revocation proof, or dispatch/replay permission. The second read cannot
+make cancellation after that read impossible, and neither storage, witness,
+nor caller clock is externally trusted. Regression coverage:
+`tests/test_synthetic_approval_cancellation_fence_run377.py`.
+
+**Retention inventory receipt bound to validated row bytes.**
+`personal_context_retention_review.py` now uses a domain-separated
+`ARK-offline-retention-inventory-v2` digest: each scoped row contributes
+its pseudonymous memory ID, revision, content digest, separately hashed
+canonical metadata, creation/update/expiry timestamps and computed expiry
+state. This prevents equal inventory receipts for status-preserving local
+row edits whose revised content/metadata remain internally coherent.
+The public `SyntheticRetentionItem` remains minimized to ID, revision
+and expiry classification; the inventory exposes neither content nor
+metadata. The changed digest domain is **not** interchangeable with
+earlier v1 diagnostic receipt hashes. This remains a read-only, locally
+forgeable inventory, not independent tamper evidence, legal retention
+compliance or permission to delete/disclose data. Regression coverage:
+`tests/test_personal_context_retention_row_binding_run377.py`.
+
+**Cross-store recovery late-drift rejection.**
+`agency/synthetic_recovery_triage.py` retains the original internally
+coherent local snapshots for Planner, occurrence reservations, ActionAudit,
+and optional audit sidecar. It now re-observes each store near return and
+refuses a changed plan recovery, reservation witness, audit witness, or
+sidecar witness, including mutations injected between initial reads.
+The extra reads **narrow only the observable race window**. They do
+**not** create an atomic transaction spanning SQLite files, prevent
+changes after final recheck, authenticate historical witnesses, prove
+any external effect or make an ambiguous WRITE safe to retry.
+Regression coverage: `tests/test_synthetic_recovery_drift_fence_run377.py`.
+
+No production backend is called by these modules/tests. There is no
+paid/GPU action, real Candidate, notification, destructive Memory erasure,
+protected evaluation opening, frozen contract edit, or main merge.
