@@ -83,7 +83,9 @@ class PlanGraph:
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
         self._assert_plan_epoch()
-        return MappingProxyType(dict(self._status))
+        # Return detached value snapshots: frozen dataclass fields can still be
+        # changed by object.__setattr__ on a caller-held reference.
+        return MappingProxyType({key: replace(value) for key, value in self._status.items()})
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
         self._assert_plan_epoch()
@@ -139,7 +141,8 @@ class PlanGraph:
             StepState.BLOCKED,
         }:
             self._block_descendants(step_id)
-        return updated
+        # Never expose the in-map status value to callers.
+        return replace(updated)
 
     def _block_descendants(self, failed_step_id: str) -> None:
         changed = True
