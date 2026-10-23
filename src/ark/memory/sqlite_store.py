@@ -273,25 +273,25 @@ class SQLiteMemoryStore:
         result: list[MemoryEvent] = []
         previous_id = after_event_id
         for row in rows:
-            def stored_int(column: str, *, minimum: int) -> int:
-                value = row[column]
+            def stored_int(event_row: sqlite3.Row, column: str, *, minimum: int) -> int:
+                value = event_row[column]
                 if type(value) is not int or value < minimum:
                     raise MemorySchemaError(f"stored event {column} is not a valid INTEGER")
                 return value
 
-            def stored_text(column: str) -> str:
-                value = row[column]
+            def stored_text(event_row: sqlite3.Row, column: str) -> str:
+                value = event_row[column]
                 if type(value) is not str:
                     raise MemorySchemaError(f"stored event {column} must be TEXT")
                 return value
 
-            event_id = stored_int("event_id", minimum=1)
-            revision = stored_int("revision", minimum=1)
-            occurred = stored_int("occurred_at_ms", minimum=0)
-            memory_id = stored_text("memory_id")
-            owner_id = stored_text("owner_id")
-            namespace = stored_text("namespace")
-            operation = stored_text("operation")
+            event_id = stored_int(row, "event_id", minimum=1)
+            revision = stored_int(row, "revision", minimum=1)
+            occurred = stored_int(row, "occurred_at_ms", minimum=0)
+            memory_id = stored_text(row, "memory_id")
+            owner_id = stored_text(row, "owner_id")
+            namespace = stored_text(row, "namespace")
+            operation = stored_text(row, "operation")
             if event_id <= previous_id:
                 raise MemorySchemaError("stored event IDs are not strictly increasing")
             previous_id = event_id
