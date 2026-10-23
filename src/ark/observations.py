@@ -36,9 +36,13 @@ class ObservationEnvelope:
                 raise ValueError(
                     f"{name} must be a non-empty exact string"
                 )
-        if type(self.ingested_at_ms) is not int or self.ingested_at_ms < 0:
+        if (
+            type(self.ingested_at_ms) is not int
+            or not 0 <= self.ingested_at_ms <= 2**63 - 1
+        ):
             raise ValueError(
-                "ingested_at_ms must be a non-negative exact integer"
+                "ingested_at_ms must be a non-negative exact integer "
+                "within the SQLite range"
             )
         _digest(self.content_sha256, "content_sha256")
         if self.parent_sha256 is not None:
