@@ -1,7 +1,7 @@
 """Expiry purge retains a writer lock and atomic content-free event receipt."""
 
-from contextlib import closing
 import sqlite3
+from contextlib import closing
 
 import pytest
 
