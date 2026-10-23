@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run 369**
+
+Saved at: **2026-10-24T02:03:07.518+09:00 Asia/Tokyo/JST** (clock captured immediately before the normal GitHub Contents API checkpoint write).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `09d5397cbc6d8b1776c09ae5d9362da6af298d35` (Run 368 checkpoint; CI #411 / run `39982454067`, SUCCESS).
+Exact final **source/test/fix** HEAD: `2f7d3b2412ce674922be6fa5c7388edaa1fb8600` (CI #423 / run `39991275039`, **SUCCESS 6/6**).
+Work-basis HEAD for this checkpoint write (including reviewed engineering documentation): `8d661e89f8d75b17bb403f3ab54f23a130acb144` (CI #424 / run `39991332239`, **SUCCESS (aggregate; job matrix not separately rechecked)** at timestamp above).
+**Checkpoint-result HEAD can only be read from the resulting GitHub Contents API response.** This self-referential document must never assert its own unborn commit SHA or claim prior CI validates that later commit.
+
+## Overall ARK state
+
+Research remains **local-first, synthetic/disconnected, Draft and reversible**. PR #8 is not a production tool authority; no real backend execution, human-approved permission, credential access, external attestation, trusted-clock proof, cross-store atomic transaction or real-world Exactly-Once guarantee. Main at latest observed `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**. Frozen V1/V2/Local UI/Launcher contracts, final-evaluation boundaries, and prior evidence unchanged.
+
+## NEW work — Run 369 (four packages plus documentation)
+
+Four source/test packages, **33 new parametrized pytest cases** and an additional disconnected review module. Thirteen sequential normal GitHub Contents commits before this checkpoint, including narrow CI-driven fixes; two grounded engineering documentation updates. No raw Git objects, force push or concurrent overwrite. Each write re-read the latest branch HEAD.
+
+1. **Persisted synthetic occurrence integrity (10 cases):** `agency/durable_occurrence_review.py` validates stored token/occurrence/registry/bound-action/request canonical identities and exact SQLite INTEGER reservation/expiry ordering; refuses malformed stored rows before open/read/new reserve, with bounded 10,000-row fixture review. Existing fixture v1 schema remains unchanged. Valid-looking malicious rewrites remain possible without independent evidence.
+2. **Synthetic readiness graph recomputation (8 cases):** `startup_readiness_review.py` reconstructs effective dependency states and validates references, cycles and identifiers before serving a cached snapshot; tests demonstrate that even a recomputed matching local digest does not excuse contradictory dependency states. This is internal consistency, not trusted device or backend readiness.
+3. **Canonical Planner review digests (7 cases):** `PlanGraph.topology_digest()` binds step IDs, request identities and dependency tuples; `status_digest()` also binds all explicit and derived status/revision values. Deterministic across step registration order, not a durable journal, synchronized snapshot or execution authority.
+4. **Independently retained synthetic ledger witnesses (8 cases):** new `agency/synthetic_occurrence_continuity_review.py` reads SQLite read-only and compares canonical row hashes against a prior externally retained local witness. Append/reopen succeeds; row truncation/rewrite and missing DB fail closed. A witness recomputed after storage tampering is **not** independent evidence. No bearer-token plaintext, real dispatch or side effects.
+5. **Research docs:** `docs/JARVIS_SYNTHETIC_AUTHORIZATION_AND_READINESS.md` and `docs/PLANNER_RECOVERY.md` document implemented boundaries and the still-open journal/issuer/clock/authorization gates.
+
+## Exact-head CI / evidence
+
+- Intermediate CI #412 / run `39989852639`: FAIL on its partial implementation head. #413 / `39989984038`, #414 / `39990077167`, #415 / `39990150908`: SUCCESS at their respective earlier heads.
+- Intermediate CI #416 / `39990404221` and #417 / `39990502590`: FAIL (Planner Ruff I001 helper spacing), fixed normally at `5b43e1deabeee29c939b10ef3c7466be2a54a3ae`; CI #418 / `39990606202`: SUCCESS.
+- CI #419 / `39990821422` and #420 / `39990872429`: SUCCESS at earlier review-module heads.
+- CI #421 / `39990958955` and #422 / `39991118800`: FAIL on Windows-only fixture filename with a forbidden `?` character; test switched to cross-platform legal `%` at `2f7d3b2412ce674922be6fa5c7388edaa1fb8600`. These failed runs remain historical failures.
+- **Final source/test/fix CI #423 / run `39991275039`: SUCCESS GREEN 6/6** on Ubuntu and Windows, Python 3.11/3.12/3.13. All six job conclusions explicitly checked. Ubuntu Python 3.13 job `120543351947`: **Ruff all checks passed; pytest 657 passed in 3.88s**. Node, V2 and model evaluations remain mock/fixture-only.
+- Post-source documentation CI #424 / run `39991332239`: **SUCCESS (aggregate; job matrix not separately rechecked)** at snapshot time. Its result does not attest the subsequent checkpoint commit. This checkpoint commit CI is unknown until checked independently.
+
+## Frozen / free-only / permission boundaries
+
+No paid or potentially billable external compute, new paid API, GPU, subscription, Candidate adapter/weight, training, protected V2 final evaluation, promotion, human-review fabrication, secret/account connection, destructive migration, real Tool Backend invocation, user notification, or main merge. PR #5 stays Draft/NOT_PASSED. Synthetic token hashes are **not** credential storage; review digests are **not** signatures; internal reservation at-most-once is **not** external exactly-once execution.
+
+## Next plan / 今後の方針
+
+1. **P0 verify exact checkpoint-result HEAD and subsequent CI** separately. Repair only observed failures through normal writes and preserve failing-run evidence.
+2. **P0 durable authorization & execution occurrence:** issuer/subject/purpose/capability/scope/recipient and trusted-clock attestation, registry-bound token identity, audit-before-mock-action, crashed/UNKNOWN WRITE recovery without replay. No real WRITE backend.
+3. **P0 durable Planner recovery:** transition journal with deterministic topology/post-state digests, atomic tail anchor and an **independently retained witness**, CAS, interruption classification, multi-process crash tests; keep external effects disconnected.
+4. **P1 SQLite/Memory/ActionAudit:** provenance and event-row integrity, cross-process sustained lock faults, coherent CAS snapshots; leave frozen schema/contracts intact.
+5. **P1/P2 Personal Context/Scheduler/Observation/Startup:** scoped consent/revocation, occurrence replay budgets, privacy retention, safe startup gates, mock fixture adapters. V3 remains free-only guard reviews; protected and billable paths closed.
+
+---
+
+**HISTORICAL — Run 368 and earlier**
+
 **LATEST — Run 368**
 
 Saved at: **2026-10-24T00:55:34.338+09:00 Asia/Tokyo/JST** (captured immediately before this normal GitHub Contents API write).
