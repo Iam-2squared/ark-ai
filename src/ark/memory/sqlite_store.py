@@ -8,6 +8,7 @@ import re
 import sqlite3
 import time
 import unicodedata
+from threading import Lock
 from collections.abc import Callable
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from .contracts import (
 
 SCHEMA_VERSION = 1
 SQLITE_INT_MAX = (1 << 63) - 1
+_BOOTSTRAP_LOCK = Lock()  # process-local WAL setup; SQLite remains cross-process authority
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
 _SCHEMA_V1_SQL = """CREATE TABLE memories(
@@ -494,7 +496,10 @@ class SQLiteMemoryStore:
         return result
 
     def _initialize(self) -> None:
-        with self._connect() as conn:
+        # Ordinary reads/writes must never renegotiate persistent WAL mode.
+        # Serialize same-process first-open setup before SQLite BEGIN IMMEDIATE.
+        with _BOOTSTRAP_LOCK, self._connect() as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             # executescript() issues an implicit COMMIT and can preserve a
             # partially created v1 database after a verification failure.
             # Reserve the writer slot before checking version/emptiness.
@@ -522,7 +527,6 @@ class SQLiteMemoryStore:
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
