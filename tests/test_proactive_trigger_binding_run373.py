@@ -12,13 +12,13 @@ from ark.proactive_synthetic_review import (
 )
 
 
-def _prepare(store):
+def _prepare(store, *, now=10):
     return store.prepare(
         SyntheticTriggerPolicy("owner", "notes", "observe", 1, "v1", 1, 100, 2),
         source_digest="a" * 64,
         observation_digest="b" * 64,
         observed_at_ms=9,
-        now_ms=10,
+        now_ms=now,
     )
 
 
@@ -55,5 +55,5 @@ def test_valid_persisted_binding_remains_usable_across_restarts(tmp_path: Path):
     assert reopened.count() == 1
     assert receipt.trigger_id.startswith("trigger_")
     with pytest.raises(SyntheticTriggerRejected, match="duplicate"):
-        _prepare(reopened)
+        _prepare(reopened, now=200)
     assert reopened.count() == 1
