@@ -110,7 +110,7 @@ class SQLiteActionAudit:
         except (TypeError, ValueError) as exc:
             raise ActionAuditSchemaError("audit call identity is invalid") from exc
         original_arguments = call.arguments
-        with self._connect() as conn:
+        with closing(self._connect()) as conn, conn:
             # Commit an event with a clock sampled only after acquiring the
             # writer slot; no external backend dispatch is performed here.
             conn.execute("BEGIN IMMEDIATE")
@@ -198,7 +198,7 @@ class SQLiteActionAudit:
         return result
 
     def _initialize(self) -> None:
-        with _AUDIT_BOOTSTRAP_LOCK, self._connect() as conn:
+        with _AUDIT_BOOTSTRAP_LOCK, closing(self._connect()) as conn, conn:
             # WAL negotiation is bootstrap-only. Under concurrent first opens,
             # retry transient SQLite lock/busy before taking the writer slot.
             for attempt in range(5):
