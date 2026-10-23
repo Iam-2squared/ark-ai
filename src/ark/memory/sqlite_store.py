@@ -55,12 +55,13 @@ class SQLiteMemoryStore:
     def put(self, write: MemoryWrite, *, expected_revision: int = 0) -> MemoryRecord:
         _revision(expected_revision, allow_zero=True)
         memory_id = deterministic_memory_id(write.scope, write.source_id)
-        now = self._now()
         metadata_json = json.dumps(
             dict(write.metadata), ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )
         content_hash = hashlib.sha256(write.content.encode()).hexdigest()
         with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
             current = conn.execute(
                 "SELECT revision, created_at_ms FROM memories WHERE memory_id = ?",
                 (memory_id,),
@@ -181,8 +182,9 @@ class SQLiteMemoryStore:
     def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
         _memory_id(memory_id)
         _revision(expected_revision, allow_zero=False)
-        now = self._now()
         with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
             row = conn.execute(
                 """SELECT revision FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
