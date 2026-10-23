@@ -27,11 +27,16 @@ class SubclassScope(MemoryScope):
     (
         lambda scope: MemoryWrite(scope, "source", "fixture"),
         lambda scope: MemoryQuery(scope),
-        lambda scope: MemoryRecord("mem_" + "0" * 64, scope, "source", "fixture", {}, 1, 1, None, 1, "0" * 64),
+        lambda scope: MemoryRecord(
+            "mem_" + "0" * 64, scope, "source", "fixture",
+            {}, 1, 1, None, 1, "0" * 64,
+        ),
         lambda scope: MemoryEvent(1, "mem_" + "0" * 64, scope, "create", 1, 1),
     ),
 )
-@pytest.mark.parametrize("scope", (ImitationScope(), SubclassScope("fixture-owner", "fixture-space")))
+@pytest.mark.parametrize(
+    "scope", (ImitationScope(), SubclassScope("fixture-owner", "fixture-space"))
+)
 def test_public_values_require_exact_scope_type(constructor, scope):
     with pytest.raises(TypeError, match="exact MemoryScope"):
         constructor(scope)
