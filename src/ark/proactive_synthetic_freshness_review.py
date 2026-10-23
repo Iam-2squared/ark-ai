@@ -18,8 +18,8 @@ from .proactive_synthetic_continuity_review import (
     assert_proactive_history_continues,
 )
 from .proactive_synthetic_review import (
-    _MAX,
     _HEX,
+    _MAX,
     SyntheticProactiveLedger,
     SyntheticTriggerPolicy,
     SyntheticTriggerReceipt,
