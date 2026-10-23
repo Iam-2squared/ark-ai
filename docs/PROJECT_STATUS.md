@@ -1,5 +1,58 @@
 # ARK AI Project Status
 
+**LATEST — Run 370**
+
+Saved at: **2026-10-24T03:05:16.573+09:00 Asia/Tokyo/JST** (clock captured immediately before the normal GitHub Contents API write).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `7513d125af2fcc2fd8ec9c9d594f19d7165f1317` (Run 369 checkpoint; **CI #425 / run `39991891348`, SUCCESS**).
+Exact final **source/test/fix and engineering-doc** HEAD before checkpoint: `7c5da278e31dee2726efba3a70d7b4b6588487e2` (**CI #441 / run `39999944763`, SUCCESS 6/6**; Ubuntu 3.13 Ruff PASS and pytest **696 passed**).
+Exact work-basis HEAD for this checkpoint write: `7c5da278e31dee2726efba3a70d7b4b6588487e2`.
+**The checkpoint-result commit SHA cannot be embedded into this self-referential document.** Read it from the GitHub Contents API response; CI #441 validates the immediately preceding work-basis HEAD, not the later checkpoint commit.
+
+## Overall ARK state
+
+Isolated, local-first, **synthetic/disconnected**, reversible JARVIS foundations research. No authenticated human consent, actual issuer signature, trusted clock, production executor/backend, actual external audit attestation, production Exactly-Once or real computer action. Main base observed `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**. Frozen V1/V2/Local UI/Launcher contract/evaluation sources and evidence unchanged.
+
+## NEW — Run 370 (five coherent packages)
+
+**16 sequential normal GitHub Contents commits before this checkpoint** (implementation, regression tests, CI-driven fixes and three grounded docs); **39 added pytest cases** compared with Run 369's 657 baseline, yielding **696/696 PASS** on the final source/test HEAD. No raw Git-object writes, force push, protected main merge or deliberate overwrite of a newer branch.
+
+1. **Replay-only SQLite Planner journal (20 cases):** new `agency/planner_journal_review.py` and contract-driven tests. Binds exact topology, replays explicit CAS transitions through `PlanGraph`, checks post-state digests and derived BLOCKED descendants, validates strict v1 schema/row/hash chain, and commits event plus internal tail atomically. A caller may independently retain a prior `SyntheticPlanTail` for prefix comparison. Recovered RUNNING is ambiguous; **no automatic WRITE retry or dispatch**. Internal same-DB tail cannot attest coordinated external tampering.
+2. **Synthetic reservation clock lower bound (5 cases):** `durable_occurrence_review.py` rejects caller time earlier than the maximum committed reservation time, inside `BEGIN IMMEDIATE`; equality allowed. A lower bound from editable storage is **not** a trusted clock.
+3. **Opt-in read-only audit chronology (6 cases):** `review_audit_continuity(require_monotonic_time=True)` detects event-time regression without changing legacy defaults or claiming trusted clock provenance.
+4. **Independent-process Planner crash/CAS evidence (2 cases):** isolated child Python processes race first-open and identical revision; only one synthetic transition commits. Abrupt exit after commit reopens as ambiguous RUNNING, never authorization for replay.
+5. **Memory evidence access and handle lifecycle (6 cases):** Memory `get/search/events` open read-only SQLite URIs, never replace a deleted/moved database. Writer/bootstrap connections are explicitly closed after their transaction commits/rolls back; this resolves Windows file-handle lock failures while preserving existing Memory v1 DDL, expiry/CAS and transactional boundaries. URI-reserved path characters and scope isolation are tested. This is not evidence of filesystem authenticity.
+
+Docs updated: `docs/PLANNER_RECOVERY.md`, `docs/JARVIS_SYNTHETIC_AUTHORIZATION_AND_READINESS.md`, `docs/MEMORY_V1_HARDENING_PLAN.md`. Their claims remain limited to implemented disconnected guarantees.
+
+## Exact-head CI / evidence
+
+- **Run 369 checkpoint CI #425 / `39991891348`: SUCCESS** (independently checked at invocation start).
+- Early Run 370 CI #426–#432: **FAIL** on one new Planner module Ruff E501 line; fixed by ordinary commit `55a153c23c7f95bcb5b34bfac6b57467dde68a7c`.
+- **CI #433 / `39998783989`: SUCCESS 6/6**, Ubuntu 3.13 Ruff PASS / **688 passed**; #434 / `39998919316`: SUCCESS on Planner documentation HEAD.
+- CI #435 / `39999144926`: **FAIL** (unused import in newly added subprocess test); corrected by `3f7c974587f15fb6fa9d87b119d29a547253bf1e`; **CI #436 / `39999250432`: SUCCESS 6/6** at the 690-test source/test head.
+- CI #437 / `39999361255`: **FAIL on one Windows 3.13 Local UI socket ConnectionAbortedError (WinError 10053), 689 passed and one failed**; other five jobs SUCCESS. Unrelated frozen Local UI source was not changed. #438 / `39999589246`: SUCCESS at the initial Memory read-only source head.
+- CI #439 / `39999649480` and #440 / `39999825600`: **FAIL on Windows Memory new test rename (WinError 32)** while write-side SQLite handles remained open. Normal source fix `7c5da278e31dee2726efba3a70d7b4b6588487e2` closes writer/bootstrap connections after commit/rollback.
+- **Final CI #441 / run `39999944763`: SUCCESS GREEN 6/6** Ubuntu and Windows × Python 3.11/3.12/3.13. All six job conclusions explicitly checked; Ubuntu Python 3.13 Ruff **All checks passed**, pytest **696 passed in 11.87s**.
+- This checkpoint commit's CI must be checked independently after its actual resulting commit SHA is obtained. No previous CI is attributed to that later SHA.
+
+## Frozen / free-only / authorization boundaries
+
+No paid or potentially billable service, external GPU, real training/Candidate weights/adapters, protected V2 final evaluation, automatic promotion, modification of frozen V1/V2/Local UI/Launcher evidence/contracts, real Tool/backend dispatch, notification, credentials or account connection, destructive migration, or main merge. PR #5 stays Draft/NOT_PASSED. Local SHA-256 chains, synthetic token digests, internal SQLite tails and caller clock values are **not** signatures, independent external proofs or real-world exactly-once guarantees.
+
+## Next plan / 今後の方針
+
+1. **P0 exact checkpoint-result HEAD CI**: verify the next workflow's actual SHA, preserve GREEN/FAIL status exactly; repair only observed failures through normal permitted GitHub writes.
+2. **P0 durable authorization integration:** bind issuer/subject/purpose/scope/recipient and registry-bound occurrence with independently retained consent evidence, trusted-clock provenance and restart-safe denial. Keep real execution disabled.
+3. **P0 Planner / ActionAudit mock integration:** audit-before-mock-action with separate crash points; recognize UNKNOWN WRITE on recovery without auto replay; do not claim transaction atomicity across stores.
+4. **P1 Memory/SQLite:** retained event integrity, multi-process sustained-lock diagnostics and privacy-safe coherent CAS snapshots; preserve schema v1/frozen contracts.
+5. **P1/P2 Privacy/Personal Context/Scheduler/Observation/Startup:** synthetic consent/revocation/expiry, occurrence budgets, data lifecycle and attested startup prerequisites. V3 is free-only identity/provenance/approval guard work, **not** Candidate or protected evaluation authorization.
+
+---
+
+**HISTORICAL — Run 369 and earlier**
+
 **LATEST — Run 369**
 
 Saved at: **2026-10-24T02:03:07.518+09:00 Asia/Tokyo/JST** (clock captured immediately before the normal GitHub Contents API checkpoint write).
