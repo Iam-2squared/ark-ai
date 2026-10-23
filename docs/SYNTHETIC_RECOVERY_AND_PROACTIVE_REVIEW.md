@@ -1,8 +1,9 @@
 # Disconnected recovery triage and proactive fixture review
 
 **Status:** Draft PR #8, reversible, offline-only engineering. This document
-describes research code in `src/ark/agency/synthetic_recovery_triage.py` and
-`src/ark/proactive_synthetic_review.py`. It does **not** modify normative or
+describes research code in `src/ark/agency/synthetic_recovery_triage.py`,
+`src/ark/proactive_synthetic_review.py`, and
+`src/ark/personal_context_review.py`. It does **not** modify normative or
 frozen contracts and does **not** authorize execution, notification or data
 export. Exact-head CI GREEN must be verified separately.
 
@@ -103,6 +104,21 @@ revocation, deletion, consent withdrawal or expiry occurs. Callers must obtain
 a fresh coherent snapshot before reusing data in a later request. Local
 SHA-256 IDs are not issuer authentication or externally trusted provenance.
 There is no direct UI, model, scheduler or tool integration.
+
+## P1 — audit SQLite connection lifecycle
+
+The existing `SQLiteActionAudit` fixture used sqlite3's connection context
+manager for bootstrap and append transactions. That context manager commits
+or rolls back but does **not** necessarily close the underlying file handle.
+Both writer and bootstrap paths now explicitly close their connections after
+transaction exit. This preserves the fixed ActionAudit v1 schema and
+append semantics, but makes local file relocation/replacement and failed
+transaction cleanup deterministic on Windows.
+
+Focused regressions cover successful bootstrap, successful append, failed
+clock callback rollback, rejection of unsupported schema versions, and
+no accidental recreation of an unavailable audit path. This is local file
+descriptor hygiene, not an external audit attestation or permission grant.
 
 ## Readiness and integration order
 
