@@ -1,5 +1,51 @@
 # ARK AI Project Status
 
+**LATEST — Run 368**
+
+Saved at: **2026-10-24T00:55:34.338+09:00 Asia/Tokyo/JST** (captured immediately before this normal GitHub Contents API write).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `f15764523c9881a6733ad1c471eb1b74b95227a6` (Run 367 checkpoint; CI #401 / run `39974425746`, SUCCESS 6/6).
+Exact final **source/test/fix** HEAD: `5203783219bac0f21a9472fa24628a92f4698de4` (CI #409 / run `39981945402`, SUCCESS 6/6).
+Work-basis HEAD for this checkpoint write (includes independent engineering safety documentation): `8e0f1226bd144f4051f307abb262873307e74bf4` (CI #410 / run `39982174567`, **IN PROGRESS at last check**).
+**Checkpoint-result HEAD is determined only by the GitHub Contents API response**, not by this self-referential file. The source/test GREEN #409 cannot be attributed to the later documentation or checkpoint commits.
+
+## Overall current ARK state
+
+ARK remains an isolated, reversible local-first JARVIS foundations research branch. It is **NOT** authenticated consent, trusted issuer/clock, credential access, trusted real-world Tool dispatch, externally attested audit, real-world Exactly-Once execution or complete JARVIS. Frozen V1/V2/Local UI/Launcher contracts, protected evaluation boundaries and evidence remain unchanged. `main` at observed base `7a843f17eb96ed13d66f23b58b06406b3002e405`; V3 PR #5 is still Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**.
+
+## NEW work this invocation — Run 368
+
+**Three source-and-regression packages plus an independent safety/integration specification.** Nine sequential commits before this checkpoint (including one implementation correction and one CI-driven Ruff fix). **33 new parametrized pytest cases**, Ubuntu Python 3.13 count **624/624 PASS** on the exact source/test/fix HEAD. Each write re-read the exact PR HEAD, with no force-push, raw Git objects, protected merge or concurrent overwrite.
+
+1. **Cached readiness witness integrity (11 new cases):** `src/ark/startup_readiness_review.py` now recomputes and validates the local content digest and structural invariants before answering `state()` or `root_blockers()`. Reflected mutation to a previously evaluated `ComponentResult`, dependency list, ordering or snapshot digest is refused rather than returning a stale READY state. Test: `tests/test_startup_snapshot_integrity_run368.py`. This is local consistency of synthetic probes, not attested startup readiness or external authenticity.
+2. **Durable synthetic occurrence reservation (17 new cases):** new disconnected `src/ark/agency/durable_occurrence_review.py` stores an artificial token digest and canonical registry-bound occurrence identity through SQLite `BEGIN IMMEDIATE`. Duplicate token and duplicate occurrence are refused across store objects and restarts, with thread contention, schema drift, missing file, invalid time, expiry and READ-effect cases. Receipts explicitly deny dispatch/replay and have unknown action outcome. No backend executed, issuer verified, external side effect attempted or real consent established. Test: `tests/test_durable_occurrence_review_run368.py`.
+3. **PermissionGate under-lock epoch revalidation (5 new cases):** `src/ark/agency/policy.py` rechecks the original spec, call, token and every grant immediately before process-local token spend, even when the token lock was contended after grant iteration. Deterministic fake-lock interleavings prove forged grant/spec changes are rejected without spending. Test: `tests/test_policy_spend_lock_epoch_run368.py`. Not restart-safe real-world authorization.
+4. **Boundary and crash-model evidence:** `docs/JARVIS_SYNTHETIC_AUTHORIZATION_AND_READINESS.md` fixes explicit negative guarantees, reservation/UNKNOWN crash semantics, local digest limitations and all promotion blockers. This document does not authorize activation.
+
+## Exact-head CI / evidence
+
+- Intermediate **CI #403 / run `39981225966`: FAIL**, and **CI #406 / run `39981596963`: FAIL**, because `tests/test_startup_snapshot_integrity_run368.py` contained an unused `dataclasses.replace` import (Ruff F401). This was removed by normal commit `5203783219bac0f21a9472fa24628a92f4698de4`. Earlier failed runs remain FAILED.
+- **Final exact source/test/fix CI #409 / run `39981945402`: SUCCESS 6/6 GREEN** on Ubuntu/Windows, Python 3.11/3.12/3.13. All six job conclusions were checked. Ubuntu Python 3.13 job `120511203205`: Ruff **All checks passed**, pytest **624 passed in 5.45s**. Node/Local UI and V2 evaluations are mock-only; real JARVIS effects remain unmeasured.
+- CI #410 / run `39982174567` for documentation HEAD `8e0f1226bd144f4051f307abb262873307e74bf4`: **IN PROGRESS** at last verification; do not declare it GREEN without new evidence.
+- This checkpoint commit's CI is unknown while this file is written; resolve its exact resulting SHA/run separately.
+
+## Frozen contracts / authorization boundaries
+
+No paid/potentially billable service, external GPU, paid API, model training, real Candidate/weight/adapter generation, protected V2 final evaluation, automatic promotion, frozen-contract edit, new secrets/accounts, physical PC action, irreversible migration, real Tool backend execution, notification send or main merge. PR #5 stays Draft/NOT_PASSED. Fixture SQLite integrity is not external attestation; SHA-256 token digest is not a secret-management system; local observation cannot certify a real issuer, clock, consent, end-to-end transaction or true exactly-once side effect.
+
+## Next plan / 今後の方針
+
+1. **P0 verify exact checkpoint HEAD and CI** when available; never infer success from earlier commit runs. Diagnose and fix only observed errors.
+2. **P0 durable authorization prerequisites:** canonical occurrence/registry/issuer evidence, trusted-clock and purpose/subject/recipient binding, synthetic-only crash injection and independent persisted continuity witness; keep all real WRITE paths disconnected.
+3. **P0 SQLite/Memory:** cross-process first-open and sustained lock fault tests, exact schema/row/event identity, coherent snapshot and CAS regression without modifying frozen v1.
+4. **P1 Planner/ActionAudit:** durable transition journal and external retained-tail evidence, unknown WRITE reconciliation without blind retry, audit-before-mock-action fault simulation. Do not claim atomicity across databases.
+5. **P1/P2 privacy and proactive foundations:** scoped consent/revocation/expiry, scheduler occurrence replay budget, observation provenance/retention, startup readiness with trusted probes only after separate approval. V3 remains free-only approval/path/identity/reproducibility guarding; all paid/protected gates closed.
+
+---
+
+**HISTORICAL — Run 367 and earlier**
+
 **LATEST — Run 367**
 
 Saved at: **2026-10-23T23:59:50.284+09:00 Asia/Tokyo/JST** (sampled immediately before this normal GitHub Contents API update).
