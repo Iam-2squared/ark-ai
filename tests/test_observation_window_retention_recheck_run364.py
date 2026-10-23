@@ -48,7 +48,7 @@ def test_retention_check_requires_exact_bounded_timestamp(invalid):
 
 def test_reflected_envelope_change_is_not_accepted_as_new_retention_epoch():
     window = _window()
-    object.__setattr__(window.envelopes[0], "ingested_at_ms", 119)
+    object.__setattr__(window.envelopes[0], "ingested_at_ms", 101)
     with pytest.raises(ValueError, match="identity changed"):
         window.assert_fresh_at(120)
 
