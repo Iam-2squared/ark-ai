@@ -35,6 +35,8 @@ class MemoryWrite:
     expires_at_ms: int | None = None
 
     def __post_init__(self) -> None:
+        if type(self.scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
         _text("source_id", self.source_id, 512)
         _text("content", self.content, 1_000_000)
         if not isinstance(self.metadata, Mapping):
@@ -70,6 +72,8 @@ class MemoryRecord:
     content_sha256: str
 
     def __post_init__(self) -> None:
+        if type(self.scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
         if not isinstance(self.metadata, Mapping):
             raise TypeError("metadata must be a mapping")
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
@@ -83,6 +87,8 @@ class MemoryQuery:
     include_expired: bool = False
 
     def __post_init__(self) -> None:
+        if type(self.scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
         if not isinstance(self.text, str):
             raise TypeError("text must be a string")
         if type(self.limit) is not int or not 1 <= self.limit <= 100:
@@ -99,6 +105,10 @@ class MemoryEvent:
     operation: str
     revision: int
     occurred_at_ms: int
+
+    def __post_init__(self) -> None:
+        if type(self.scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
 
 
 @runtime_checkable
