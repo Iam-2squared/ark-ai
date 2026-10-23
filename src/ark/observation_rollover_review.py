@@ -30,8 +30,11 @@ class ObservationRolloverWitness:
     def __post_init__(self) -> None:
         if type(self.privacy_scope) is not str or not self.privacy_scope.strip():
             raise ValueError("rollover privacy scope must be nonempty exact text")
-        if type(self.observed_at_ms) is not int or self.observed_at_ms < 0:
-            raise ValueError("rollover observation time must be nonnegative")
+        if (
+            type(self.observed_at_ms) is not int
+            or not 0 <= self.observed_at_ms <= _MAX_GENERATION
+        ):
+            raise ValueError("rollover observation time must be nonnegative SQLite-range")
         if type(self.window_witness) is not str or not _WINDOW.fullmatch(
             self.window_witness
         ):
