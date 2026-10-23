@@ -130,6 +130,15 @@ def _validate(conn: sqlite3.Connection) -> None:
             or not 0 <= observed <= prepared <= _MAX
         ):
             raise SyntheticTriggerRejected("persisted trigger row integrity failed")
+        # The primary key is a binding over all four persisted digests,
+        # not merely a syntactically valid arbitrary trigger identifier.
+        if identity != "trigger_" + _hash(
+            "ARK-trigger-occurrence-v1",
+            (scope, policy, source, observation),
+        ):
+            raise SyntheticTriggerRejected(
+                "persisted trigger identity does not match bound digests"
+            )
 
 
 class SyntheticProactiveLedger:
