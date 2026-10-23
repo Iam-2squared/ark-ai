@@ -29,8 +29,8 @@ def test_repeated_two_initializer_races_leave_one_valid_v1_schema(tmp_path):
     for i in range(4):
         path = tmp_path / f"initializers-{i}.db"
 
-        def open_store(_index):
-            return SQLiteMemoryStore(path, clock_ms=lambda: 100)
+        def open_store(_index, db_path=path):
+            return SQLiteMemoryStore(db_path, clock_ms=lambda: 100)
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             opened = list(pool.map(open_store, range(2)))
