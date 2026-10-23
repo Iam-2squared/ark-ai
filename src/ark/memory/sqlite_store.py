@@ -22,6 +22,7 @@ from .contracts import (
 )
 
 SCHEMA_VERSION = 1
+SQLITE_INT_MAX = (1 << 63) - 1
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
 _SCHEMA_V1_SQL = """CREATE TABLE memories(
@@ -218,6 +219,8 @@ class SQLiteMemoryStore:
                     raise MemoryConflictError(
                         f"revision mismatch: expected {expected_revision}, actual {actual}"
                     )
+                if actual == SQLITE_INT_MAX:
+                    raise MemoryConflictError("memory revision exhausted SQLite INTEGER range")
                 revision, created = actual + 1, stored.created_at_ms
                 result = conn.execute(
                     """UPDATE memories SET
@@ -413,7 +416,7 @@ class SQLiteMemoryStore:
     ) -> list[MemoryEvent]:
         if type(scope) is not MemoryScope:
             raise TypeError("scope must be an exact MemoryScope")
-        if type(after_event_id) is not int or after_event_id < 0:
+        if type(after_event_id) is not int or not 0 <= after_event_id <= SQLITE_INT_MAX:
             raise ValueError("after_event_id must be a non-negative integer")
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
@@ -502,7 +505,7 @@ class SQLiteMemoryStore:
 
     def _now(self) -> int:
         value = self._clock_ms()
-        if type(value) is not int or value < 0:
+        if type(value) is not int or not 0 <= value <= SQLITE_INT_MAX:
             raise ValueError("clock_ms must return a non-negative integer")
         return value
 
@@ -602,7 +605,7 @@ def _memory_id(value: object) -> None:
 
 def _revision(value: object, *, allow_zero: bool) -> None:
     minimum = 0 if allow_zero else 1
-    if type(value) is not int or value < minimum:
+    if type(value) is not int or not minimum <= value <= SQLITE_INT_MAX:
         raise ValueError(f"expected_revision must be an integer >= {minimum}")
 
 
