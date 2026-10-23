@@ -139,22 +139,38 @@ class PlanGraph:
                 raise PlanConflictError("step dependencies are not satisfied")
         if current.revision == 2**63 - 1:
             raise PlanConflictError("plan revision exhausted SQLite INTEGER range")
-        updated = replace(current, state=to_state, revision=current.revision + 1)
-        self._status[step_id] = updated
+        # A cascading BLOCKED revision can overflow independently of the
+        # explicitly transitioned step. Check *all* affected descendants
+        # before publishing any state change; never leave half a cascade.
+        descendants: tuple[str, ...] = ()
         if to_state in {
             StepState.FAILED,
             StepState.CANCELLED,
             StepState.BLOCKED,
         }:
-            self._block_descendants(step_id)
+            descendants = self._pending_descendants(step_id)
+            if any(
+                type(self._status[item].revision) is not int
+                or not 0 <= self._status[item].revision < 2**63 - 1
+                for item in descendants
+            ):
+                raise PlanConflictError("dependent revision exhausted SQLite INTEGER range")
+
+        updated = replace(current, state=to_state, revision=current.revision + 1)
+        self._status[step_id] = updated
+        for item in descendants:
+            status = self._status[item]
+            self._status[item] = replace(
+                status, state=StepState.BLOCKED, revision=status.revision + 1
+            )
         # Never expose the in-map status value to callers.
         return replace(updated)
 
-    def _block_descendants(self, failed_step_id: str) -> None:
-        """Propagate terminal failure in O(steps + edges), even for deep DAGs.
+    def _pending_descendants(self, failed_step_id: str) -> tuple[str, ...]:
+        """Preflight pending descendants in O(steps + edges), without mutation.
 
-        Only PENDING descendants are changed. A terminal/nonpending barrier
-        cannot be traversed, preserving the existing state-machine semantics.
+        A non-PENDING barrier cannot be traversed. Collection before mutation
+        ensures an overflowing downstream revision cannot partially block a DAG.
         """
         dependents: dict[str, list[str]] = {step_id: [] for step_id in self.steps}
         for step_id, step in self.steps.items():
@@ -163,19 +179,18 @@ class PlanGraph:
 
         pending = [failed_step_id]
         seen = {failed_step_id}
+        descendants: list[str] = []
         while pending:
             parent = pending.pop()
             for child in dependents[parent]:
                 if child in seen:
                     continue
                 seen.add(child)
-                status = self._status[child]
-                if status.state is not StepState.PENDING:
+                if self._status[child].state is not StepState.PENDING:
                     continue
-                self._status[child] = replace(
-                    status, state=StepState.BLOCKED, revision=status.revision + 1
-                )
+                descendants.append(child)
                 pending.append(child)
+        return tuple(descendants)
 
     def _assert_acyclic(self) -> None:
         """Validate arbitrarily deep DAGs without Python recursion exhaustion."""
