@@ -25,6 +25,23 @@ Raw `ToolCall.arguments` are not stored in the planner journal. The request ID a
 
 A plan identity must be deterministic for identical canonical topology and must not depend on Python hash/random iteration order.
 
+## Implemented disconnected digest helpers (Run 369)
+
+`PlanGraph.topology_digest()` canonically hashes the sorted set of step IDs,
+each step's exact `ToolCall.request_id`, and its dependency tuple. The
+dependency tuple order is intentionally part of the review identity; arbitrary
+registration order of the same steps is not. Raw call arguments are excluded.
+`PlanGraph.status_digest()` binds that topology digest and every step's
+current exact state/revision, including descendant `BLOCKED` changes derived
+from failed or cancelled steps. Both helpers recheck the in-process
+`PlanGraph` input epoch before producing a digest.
+
+These are **pre-journal review primitives**, not a committed event log or
+durable recovery implementation. They neither open SQLite nor provide a
+trusted timestamp, an append-only event chain, a retained independent tail,
+cross-thread transactional snapshots, outcome reconciliation or WRITE replay
+authority. All those requirements below remain separate open gates.
+
 ## Explicit transition journal
 
 The journal records externally requested planner transitions, not a separate event for every internal descendant state change.
