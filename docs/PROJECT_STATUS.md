@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — Run 371**
+
+Saved at: **2026-10-24T03:22:17.410+09:00 Asia/Tokyo/JST** (UTC-derived clock immediately before normal GitHub Contents API checkpoint write).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `fd50e164352697b87ab1fe22099813c1c262dbaa` (Run 370 checkpoint; **CI #442 / run `40000432596` SUCCESS 6/6**, matrix jobs independently checked).
+Exact final **source/test** HEAD: `72834e9d40d7d40e756716e3080122b13a889b19` (**CI #449 / run `40002294116` SUCCESS 6/6**; Ubuntu Python 3.13 Ruff PASS, pytest **718 passed**).
+Exact work-basis HEAD for this checkpoint write, including grounded engineering docs: `586972ca2150ae6fb4910d91f81ef505a8e37c54` (**CI #450 / run `40002410853` SUCCESS** as last checked before this checkpoint).
+**The checkpoint-result SHA is not knowable within its own self-referential file.** Record the resulting Contents API commit SHA separately. Neither #449 nor #450 can certify that later checkpoint commit.
+
+## Overall ARK state
+
+Isolated, local-first **synthetic/disconnected** JARVIS foundations. No trusted human approval/issuer, trusted clock, real tool backend execution, externally attested evidence, production Exactly-Once, or completed JARVIS. Main base observed `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 is still Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**, with explicit spend/training/evaluation gates closed. Frozen V1/V2/Local UI/Launcher contracts, historical evaluation gates and evidence unchanged.
+
+## NEW — Run 371 (four coherent free-only packages)
+
+**Eight sequential normal GitHub Contents commits before this checkpoint** (four implementation changes, two focused new regression files and two contract-grounded documentation changes). **22 new pytest cases**, from 696 to **718** on final source/test head. No real backend or external compute. Writes were performed only on Draft PR #8, each after re-reading the actual PR HEAD. No force-push, raw Git objects or merge.
+
+1. **Planner retained-history fencing (3 cases):** `SyntheticPlanJournal.append(..., retained=earlier_tail)` optionally validates an independently preserved historical prefix **inside the same `BEGIN IMMEDIATE` write transaction** that will append the synthetic state transition. Genuine earlier retained evidence detects a coordinated SQLite event/header truncation before further append; malformed or reflectively changed witness rejects. Unwitnessed histories retain their original limitations. No authorization/dispatch/replay is issued.
+2. **ActionAudit post-startup schema recheck (5 cases):** `SQLiteActionAudit.append()` and `events()` verify exact v1 schema version, DDL and local quick-check within each write/read transaction. Modified post-startup schema fails closed, instead of treating successful initial bootstrap as permanent proof. No real issuer authenticity, signing, or cross-store transaction.
+3. **Synthetic durable reservation missing-file fence (3 cases):** reservations now connect to an existing SQLite ledger via URI `mode=rw`. The fixture initializer remains the only route that may create the store; stale instances cannot accidentally recreate a moved/deleted DB when attempting a reservation. Literal reserved path characters and normal offline reservation are regression-tested. This does not prove filesystem provenance.
+4. **Opt-in observation rollover freshness (11 cases):** `review_observation_rollover(..., now_ms=...)` rechecks a previously validated ObservationWindow against its original scope/metadata/age budget immediately before and after local rollover, including same-time idempotent path. Stale, rolled-back clock, invalid timestamp and reflected identity mutation fail closed. Legacy omitted-time review remains compatible and does not claim freshness. The clock is caller-supplied; no media capture, human consent or notification.
+
+Docs: `docs/JARVIS_SYNTHETIC_AUTHORIZATION_AND_READINESS.md`, `docs/OBSERVATION_ADAPTER_IMPLEMENTATION_PLAN.md`. All references describe disconnected local safety and explicitly avoid granting production authority.
+
+## Exact-head CI / evidence
+
+- Run 370 checkpoint CI **#442 / `40000432596`: SUCCESS 6/6** at the exact work-basis HEAD.
+- Early Run 371 CI **#443 / `40001778654`: FAIL on Windows Python 3.11 only** from `tests/ui/test_server.py::test_cross_origin_reads_and_writes_rejected[headers2]` with `ConnectionAbortedError [WinError 10053]`; five other matrix jobs SUCCESS. The frozen Local UI code was not changed. No claim that this failure was fixed.
+- CI **#446 / `40002014155`: SUCCESS GREEN 6/6**, Ubuntu Python 3.13 Ruff PASS / **707 pytest passed**, covering Planner, Audit and synthetic reservation changes and their 11 regression cases.
+- **Final source/test CI #449 / `40002294116`: SUCCESS GREEN 6/6** Ubuntu and Windows × Python 3.11/3.12/3.13, all six conclusions inspected; Ubuntu 3.13 Ruff PASS / **718 pytest passed in 7.33s**.
+- Subsequent documentation CI **#450 / `40002410853`: SUCCESS** as of checkpoint drafting; no earlier GREEN is attributed to the docs HEAD.
+- This checkpoint commit's own CI/run must be independently checked on its exact resulting SHA.
+
+## Frozen / free-only / authorization boundaries
+
+No paid or potentially billable services, external GPU, paid APIs, subscriptions, real model training/adapter/Candidate generation, protected V2 final-evaluation opening, Candidate promotion, changes to frozen V1/V2/Local UI/Launcher contracts/evidence, real tool/backend execution, live capture, notification, new credentials/accounts, destructive schema migration, or protected main merge. PR #5 remains Draft/NOT_PASSED. Local SHA chains, SQLite fixture files, earlier witnesses and caller clocks are not signed independent attestation or real-world exactly-once authority.
+
+## Next plan / 今後の方針
+
+1. **P0 exact checkpoint CI:** verify the checkpoint-result SHA and run conclusion without attributing earlier CI to it; diagnose only observed failures and never edit frozen Local UI without authorization.
+2. **P0 retained evidence integration:** ensure reservation, journal and audit share an explicitly bound action/occurrence identity via a disconnected multi-store fault-injection review. A crash may leave UNKNOWN; never auto-retry a real WRITE.
+3. **P0 registry-bound durable authorization:** exact issuer/subject/purpose/scope/recipient provenance, independent retained evidence, trusted-clock contract and denied-by-default recovery, without claiming actual permission or dispatch.
+4. **P1 SQLite/Memory:** coherent retained event/cursor witnesses, CAS/expiry concurrency, cross-process first-open and sustained-lock paths, schema v1 unchanged.
+5. **P1/P2 Planner mock executor / privacy foundations:** audit-before-mock-action crash points, Personal Context consent/revocation, scheduler occurrence budgets, observation retention, startup readiness. V3 remains free-only reproducibility/identity/approval guard work; no protected training/evaluation.
+
+---
+
+**HISTORICAL — Run 370 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 370**
 
 Saved at: **2026-10-24T03:05:16.573+09:00 Asia/Tokyo/JST** (clock captured immediately before the normal GitHub Contents API write).
