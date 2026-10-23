@@ -236,7 +236,9 @@ class SyntheticPlanJournal:
                     step_id, StepState(after), expected_revision=expected_revision,
                 )
             except (PlanConflictError, TypeError, ValueError) as exc:
-                raise SyntheticPlanJournalRejected("synthetic plan transition not replayable") from exc
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan transition not replayable"
+                ) from exc
             if updated.revision != resulting_revision or graph.status_digest() != after_digest:
                 raise SyntheticPlanJournalRejected("synthetic plan poststate digest mismatch")
             payload = (
