@@ -67,9 +67,10 @@ def _link(state, receipt):
 
 def _review(state, **kw):
     journal, path, _ledger, audit, registry, call, sidecar = state
+    options = {"step_id": "root", "link_store": sidecar}
+    options.update(kw)
     return review_synthetic_write_recovery(
-        journal, path, audit, registry, call,
-        step_id="root", link_store=sidecar, **kw,
+        journal, path, audit, registry, call, **options,
     )
 
 
