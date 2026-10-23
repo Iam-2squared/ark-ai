@@ -294,16 +294,43 @@ class SyntheticPlanJournal:
     def append(
         self, step_id: str, to_state: StepState, *,
         expected_revision: int, at_ms: int,
+        retained: SyntheticPlanTail | None = None,
     ) -> SyntheticPlanRecovery:
         """CAS and journal append in one local transaction, without effects."""
         if type(at_ms) is not int or not 0 <= at_ms <= _MAX_INT:
             raise SyntheticPlanJournalRejected("invalid synthetic plan timestamp")
         if type(to_state) is not StepState:
             raise SyntheticPlanJournalRejected("invalid synthetic plan target state")
+        # An earlier, independently retained tail must match inside the same
+        # write transaction as the new transition. Never use a separate
+        # preflight read as an authority for this append.
+        pinned = None
+        if retained is not None:
+            if type(retained) is not SyntheticPlanTail:
+                raise SyntheticPlanJournalRejected("retained tail has wrong type")
+            retained.assert_shape()
+            pinned = (
+                retained.topology_digest, retained.event_count, retained.event_hash,
+                retained.status_digest, retained.last_at_ms,
+            )
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 graph, prefixes = self._replay(conn)
+                if pinned is not None:
+                    retained.assert_shape()
+                    current_retained = (
+                        retained.topology_digest, retained.event_count, retained.event_hash,
+                        retained.status_digest, retained.last_at_ms,
+                    )
+                    if (
+                        current_retained != pinned
+                        or retained.event_count >= len(prefixes)
+                        or prefixes[retained.event_count] != retained
+                    ):
+                        raise SyntheticPlanJournalRejected(
+                            "retained synthetic plan history changed before append"
+                        )
                 prev = prefixes[-1]
                 if prev.event_count >= _MAX_EVENTS or at_ms < prev.last_at_ms:
                     raise SyntheticPlanJournalRejected(
