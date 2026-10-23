@@ -172,6 +172,16 @@ class SyntheticOccurrenceStore:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 _validate(conn)
+                # A committed fixture reservation is a lower bound on later
+                # caller-supplied times. This is not a trusted clock: an
+                # attacker replacing the whole DB can also reset this bound.
+                latest = conn.execute(
+                    "SELECT MAX(reserved_at_ms) FROM synthetic_occurrence_reservations"
+                ).fetchone()[0]
+                if latest is not None and now_ms < latest:
+                    raise SyntheticReplayRejected(
+                        "synthetic reservation clock regressed"
+                    )
                 again = registry.bind(call)
                 if (
                     again.bound_action_id != first.bound_action_id
