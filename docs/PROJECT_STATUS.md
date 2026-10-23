@@ -1,6 +1,60 @@
 # ARK AI Project Status
 
-**LATEST**
+**LATEST — Run 360**
+
+Saved at: **2026-10-23 17:59:30.521 JST (+09:00)**
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD before Run360: `e65ca8e32f9f3c9f64985bb9417f630ae1502f83`.
+Exact new source/test HEAD before this checkpoint: `7335126999787c8f1369b2c2173c4231028836d6`.
+Checkpoint-result HEAD: **this file cannot contain its own future commit SHA**; the normal GitHub Contents API result is authoritative. CI #302 refers to the source/test HEAD above, **not automatically to this later status-only commit**.
+
+## Overall current ARK state
+
+ARK is a reversible local-first JARVIS foundations research branch, not production dispatch, certified user consent, trusted exactly-once external actions, or JARVIS completion. Frozen V1/V2/Local UI/Launcher contracts and evidence are unchanged. `main` remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**, with no Candidate, protected V2 evaluation, promotion or paid compute.
+
+## NEW work this invocation — Run 360
+
+Five coherent packages committed on PR #8 through the **normal GitHub Contents API**; **12 sequential source/test/fix commits before this checkpoint**, latest HEAD re-read before every write. Three existing source modules changed, four focused test files created, **33 new test cases** added. All tests use local synthetic SQLite and mock-only inputs; no ToolBackend executes.
+
+1. **Memory v1 event read integrity**: source `d95da824a70777f016093f8d5d728ca37c912f92`, Ruff B023-only correction `a378d58edbe7e623b5a4bebf2a557864bdefd07a`, tests `42f7345dc01249db558c5081e536d58a4dcd37db` (8 cases). Fail closed on malformed SQLite storage, event ordering, scope, canonical event ID and operation; preserve legitimate nonmonotone clocks across unrelated memories. Canonical-looking forged histories cannot be authenticated without external evidence.
+2. **ActionAudit persisted event integrity**: source `a98191efc100d28de32c454051b00a43fcf39f70`, tests `2d1d799a9479fd50577cfc7ccd4ad24401083ee3`, SQLite-TEXT-affinity fixture correction `f5481310c501150d69a62d392323395854538401` (9 cases). Read nonempty exact TEXT fields, canonical digest shapes, positive event IDs and nonnegative clock. Argument bodies remain excluded; this is not pre-action audit authenticity.
+3. **Planner immutable-input epoch**: source `c3852c4cdb2f0d91f610abac37415290c9339d65`, tests `40709618b47afc6f60b941231ad99a71cc46d453` (7 cases). Detect reflected PlanStep/ToolCall/Mapping replacement before ready-step observation or transition; no durable Planner journal or backend dispatch.
+4. **Memory same-version schema startup gate**: source `7c28004e1458d610781c29768afa215135b63e79`, tests `fcd8d2eddf60ef43d3f2ebdef3cbc7af1de6c86f` (6 cases). At startup compare version-1 SQLite DDL/index/trigger objects with original frozen DDL after quote-preserving normalization and run `PRAGMA quick_check`; fail closed without migration/auto-repair. Startup-only checks are not continuously attested.
+5. **Planner status output isolation**: source `15b39dceabc589e6bdeec4564bbb19f904a7a3dc`, tests at `7335126999787c8f1369b2c2173c4231028836d6` (3 appended cases). Return detached status values to prevent caller reflection from silently changing internal dependency authority. This is not restart-safe, thread-safe or malicious-process isolation.
+
+## Exact-head CI / evidence
+
+- CI #291 / `39926445872`: **FAIL** on `d95da824...`, Ruff B023 inner event helper capture. CI #292 / `39926497537`: **FAIL**, inherited same issue on audit source HEAD.
+- CI #293 / `39926717179`: **SUCCESS**, explicit row helper binding corrected.
+- CI #294 / `39926824014`: **SUCCESS**, Planner input epoch source.
+- CI #295 / `39927008358`: **SUCCESS**, Memory event tests.
+- CI #296 / `39927055711`: **FAIL**, audit test fixture put INTEGER into SQLite TEXT affinity (coerced to valid string). CI #297 / `39927154291`: **FAIL**, inherited same fixture case on Planner test HEAD.
+- CI #298 / `39927234123`: **SUCCESS**, fixture corrected to BLOB, semantics unchanged.
+- CI #299 / `39927698054`: **SUCCESS**, Memory startup schema source.
+- CI #300 / `39927807166`: **SUCCESS**, detached Planner status source.
+- CI #301 / `39927971672`: **SUCCESS**, Memory schema tests.
+- **CI #302 / run `39928130150`: SUCCESS 6/6 GREEN** on exact final source/test HEAD `7335126999787c8f1369b2c2173c4231028836d6`, Ubuntu/Windows × Python 3.11/3.12/3.13; job IDs `120329452334` (Ubuntu 3.12), `120329452584` (Windows 3.13), `120329452596` (Windows 3.11), `120329452599` (Windows 3.12), `120329452651` (Ubuntu 3.13), `120329452673` (Ubuntu 3.11).
+- Local read-only next-dependency audit (not in PR #8): `RUN360_NEXT_DEPENDENCIES.md`, SHA-256 `37368de00546e78c222772e510717781b4fc51896a1fcf8e10ac6ea3a63c5e1a`. This is design review, **not** independent attestation of the formal HEAD.
+- This checkpoint commit has **no CI result at the time of writing**. Do not misattribute #302 to it.
+
+## Frozen boundaries / blockers / authorization
+
+No paid/potentially billable service, external GPU, training, real Candidate generation, protected V2 final evaluation, Candidate promotion, frozen-contract edit, credential/account connection, real user data, PC action, real ToolBackend, notification, destructive migration, force-push, alternate write path or main merge. PR #5 remains under its separate human/gate authorization. The Memory and Audit event reader checks do not prove provenance/authenticity; Planner is in-memory only; permission is not registry-authoritative or durable; no trusted clock, cross-database atomicity or exactly-once external WRITE guarantee is proven.
+
+## Next plan / 今後の方針
+
+1. Confirm the **checkpoint-result SHA and its own CI** separately. Never conflate documentation-only GREEN with the earlier exact source/test HEAD.
+2. **P0 Memory**: use exact-type v1 row reads in mutators rather than permissive SQLite `int(...)` coercion; strengthen CAS, expiry and coherent snapshot semantics under concurrent writes; preserve schema v1 and valid nonmonotone event times. Test reopening legacy fixture databases and startup schema false positives.
+3. **P0 Registry/PermissionGate**: design opt-in registry-authoritative diagnostic authorization before durable one-shot claims. Require immutable bound identity, exact-grant validation and non-dispatch mock evidence; no production authority yet.
+4. **P1 Planner and One-Shot**: integrate independent externally retained history-witness, SQLite checkpoint/recovery, audit-first trusted time and UNKNOWN WRITE no-replay classification. Never auto-replay ambiguous writes.
+5. **P1/P2 free lanes**: privacy-scoped synthetic Personal Context consent/expiry, Scheduler budgets and recurrence, Observation provenance/retention, Startup Readiness, V3 identity/path/reproducibility guards; no live personal capture, real backend, paid GPU, Candidate, protected evaluation, promotion or main merge.
+
+---
+
+**HISTORICAL — Run 359 and earlier (superseded by Run 360)**
+
+**HISTORICAL Run359 checkpoint**
 
 Saved at: **2026-10-23 16:56:11.871 JST (+09:00)**
 
