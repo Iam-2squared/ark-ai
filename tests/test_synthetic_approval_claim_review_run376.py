@@ -66,10 +66,12 @@ def test_valid_local_claim_is_content_minimized_and_never_authorizes():
     claim = _claim(registry, call)
     assert claim.approval_id.startswith("approval_")
     assert claim.bound_action_id.startswith("bound_")
-    assert not any(
-        text in repr(claim)
-        for text in ("issuer", "subject", "purpose", "recipient", "test-only")
-    )
+    # Field labels are intentionally human-readable; values are only digests.
+    assert claim.issuer_digest == _digest("issuer")
+    assert claim.subject_digest == _digest("subject")
+    assert claim.purpose_digest == _digest("purpose")
+    assert claim.recipient_digest == _digest("recipient")
+    assert "test-only" not in repr(claim)
     result = _review(claim, registry, call)
     assert result.approval_id == claim.approval_id
     assert result.dispatch_authorized is False
