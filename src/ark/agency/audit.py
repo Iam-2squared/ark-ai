@@ -89,36 +89,51 @@ class SQLiteActionAudit:
             raise TypeError("audit call must be an exact ToolCall")
         if type(outcome) is not str or not outcome.strip():
             raise ValueError("outcome must be a non-empty exact string")
+        # Freeze the action identity before a reentrant clock callback. Frozen
+        # dataclasses can still be modified by reflection; never mix fields
+        # from before/after callback in a persisted audit event.
+        try:
+            checked = ToolCall(call.tool, call.capability, call.scope, call.arguments)
+            identity = (
+                checked.request_id, checked.tool, checked.capability,
+                checked.scope, checked.arguments_sha256,
+            )
+            if identity != (
+                call.request_id, call.tool, call.capability, call.scope,
+                call.arguments_sha256,
+            ):
+                raise ActionAuditSchemaError("audit call identity is inconsistent")
+        except (TypeError, ValueError) as exc:
+            raise ActionAuditSchemaError("audit call identity is invalid") from exc
+        original_arguments = call.arguments
         with self._connect() as conn:
             # Commit an event with a clock sampled only after acquiring the
             # writer slot; no external backend dispatch is performed here.
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
+            try:
+                current = (
+                    call.request_id, call.tool, call.capability, call.scope,
+                    call.arguments_sha256,
+                )
+            except (TypeError, ValueError, AttributeError) as exc:
+                raise ActionAuditSchemaError(
+                    "audit call identity became invalid during clock"
+                ) from exc
+            if call.arguments is not original_arguments or current != identity:
+                raise ActionAuditSchemaError("audit call changed during clock")
             cursor = conn.execute(
                 """INSERT INTO action_events(
                     request_id,tool,capability,scope,arguments_sha256,outcome,occurred_at_ms
                 ) VALUES(?,?,?,?,?,?,?)""",
                 (
-                    call.request_id,
-                    call.tool,
-                    call.capability,
-                    call.scope,
-                    call.arguments_sha256,
+                    *identity,
                     outcome,
                     now,
                 ),
             )
             event_id = int(cursor.lastrowid)
-        return ActionAuditEvent(
-            event_id,
-            call.request_id,
-            call.tool,
-            call.capability,
-            call.scope,
-            call.arguments_sha256,
-            outcome,
-            now,
-        )
+        return ActionAuditEvent(event_id, *identity, outcome, now)
 
     def events(self, *, after_event_id: int = 0, limit: int = 100) -> list[ActionAuditEvent]:
         if type(after_event_id) is not int or after_event_id < 0:
