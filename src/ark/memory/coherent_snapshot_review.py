@@ -121,6 +121,7 @@ def review_coherent_snapshot(
     # Only digest identity and revision metadata, never raw Memory content.
     payload = {
         "schema_version": 1,
+        "witness_format_version": 2,
         "owner_id": owner_id,
         "namespaces": namespaces,
         "read_at_ms": now,
@@ -135,7 +136,15 @@ def review_coherent_snapshot(
                     "memory_id": row.memory_id,
                     "revision": row.revision,
                     "content_sha256": row.content_sha256,
+                    "metadata_sha256": hashlib.sha256(
+                        json.dumps(
+                            dict(row.metadata), ensure_ascii=False, sort_keys=True,
+                            separators=(",", ":"),
+                        ).encode("utf-8")
+                    ).hexdigest(),
+                    "created_at_ms": row.created_at_ms,
                     "updated_at_ms": row.updated_at_ms,
+                    "expires_at_ms": row.expires_at_ms,
                 }
                 for row in namespace_rows
             ]
