@@ -206,8 +206,12 @@ class SQLiteMemoryStore:
         return True
 
     def purge_expired(self, *, scope: MemoryScope | None = None) -> int:
-        now = self._now()
+        # Claim the SQLite writer slot before taking either the clock reading
+        # or the expiry snapshot. A read-before-write transaction permits a
+        # concurrent refresh to resurrect a selected row before deletion.
         with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
             if scope is None:
                 rows = conn.execute(
                     """SELECT memory_id,owner_id,namespace,revision FROM memories
@@ -222,15 +226,23 @@ class SQLiteMemoryStore:
                     (scope.owner_id, scope.namespace, now),
                 ).fetchall()
             for row in rows:
+                # Bind deletion to the exact row/scope/revision/expiry predicate
+                # observed under the lock. Only actual deletions emit events.
+                deleted = conn.execute(
+                    """DELETE FROM memories
+                    WHERE memory_id=? AND owner_id=? AND namespace=?
+                    AND revision=? AND expires_at_ms IS NOT NULL AND expires_at_ms<=?""",
+                    (
+                        row["memory_id"], row["owner_id"], row["namespace"],
+                        row["revision"], now,
+                    ),
+                )
+                if deleted.rowcount != 1:
+                    raise MemoryConflictError("expired memory changed before delete")
                 record_scope = MemoryScope(row["owner_id"], row["namespace"])
-                conn.execute("DELETE FROM memories WHERE memory_id=?", (row["memory_id"],))
                 self._event(
-                    conn,
-                    row["memory_id"],
-                    record_scope,
-                    "expire",
-                    int(row["revision"]),
-                    now,
+                    conn, row["memory_id"], record_scope, "expire",
+                    int(row["revision"]), now,
                 )
         return len(rows)
 
