@@ -109,7 +109,7 @@ def test_missing_database_read_does_not_create_empty_file(tmp_path: Path):
 
 
 def test_uri_special_characters_remain_readonly(tmp_path: Path):
-    path = tmp_path / "fixture #1 ?.sqlite"
+    path = tmp_path / "fixture #1 %.sqlite"
     SyntheticOccurrenceStore(path)
     assert read_synthetic_ledger_witness(path).row_hashes == ()
 
