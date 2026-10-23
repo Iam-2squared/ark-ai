@@ -145,23 +145,31 @@ class PlanGraph:
         return replace(updated)
 
     def _block_descendants(self, failed_step_id: str) -> None:
-        changed = True
-        blocked = {failed_step_id}
-        while changed:
-            changed = False
-            for step_id in sorted(self.steps):
-                step = self.steps[step_id]
-                status = self._status[step_id]
-                if status.state is StepState.PENDING and any(
-                    dependency in blocked for dependency in step.depends_on
-                ):
-                    self._status[step_id] = replace(
-                        status,
-                        state=StepState.BLOCKED,
-                        revision=status.revision + 1,
-                    )
-                    blocked.add(step_id)
-                    changed = True
+        """Propagate terminal failure in O(steps + edges), even for deep DAGs.
+
+        Only PENDING descendants are changed. A terminal/nonpending barrier
+        cannot be traversed, preserving the existing state-machine semantics.
+        """
+        dependents: dict[str, list[str]] = {step_id: [] for step_id in self.steps}
+        for step_id, step in self.steps.items():
+            for dependency in step.depends_on:
+                dependents[dependency].append(step_id)
+
+        pending = [failed_step_id]
+        seen = {failed_step_id}
+        while pending:
+            parent = pending.pop()
+            for child in dependents[parent]:
+                if child in seen:
+                    continue
+                seen.add(child)
+                status = self._status[child]
+                if status.state is not StepState.PENDING:
+                    continue
+                self._status[child] = replace(
+                    status, state=StepState.BLOCKED, revision=status.revision + 1
+                )
+                pending.append(child)
 
     def _assert_acyclic(self) -> None:
         """Validate arbitrarily deep DAGs without Python recursion exhaustion."""
