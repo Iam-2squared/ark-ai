@@ -53,9 +53,10 @@ class MemoryWrite:
             snapshot[key] = value
         object.__setattr__(self, "metadata", MappingProxyType(snapshot))
         if self.expires_at_ms is not None and (
-            type(self.expires_at_ms) is not int or self.expires_at_ms < 0
+            type(self.expires_at_ms) is not int
+            or not 0 <= self.expires_at_ms <= (1 << 63) - 1
         ):
-            raise ValueError("expires_at_ms must be a non-negative integer")
+            raise ValueError("expires_at_ms must be a SQLite-range non-negative integer")
 
 
 @dataclass(frozen=True, slots=True)
