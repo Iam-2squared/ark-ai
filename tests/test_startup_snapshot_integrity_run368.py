@@ -4,8 +4,6 @@ This is a disconnected synthetic diagnostic, not external attestation or
 authorization of real tools, accounts, clocks or devices.
 """
 
-from dataclasses import replace
-
 import pytest
 
 from ark.startup_readiness_review import (
