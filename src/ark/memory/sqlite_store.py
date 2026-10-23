@@ -111,6 +111,8 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
 
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
+    if type(scope) is not MemoryScope:
+        raise TypeError("scope must be an exact MemoryScope")
     if not isinstance(source_id, str) or not source_id.strip():
         raise ValueError("source_id must not be blank")
     payload = json.dumps(
@@ -137,6 +139,8 @@ class SQLiteMemoryStore:
         self._initialize()
 
     def put(self, write: MemoryWrite, *, expected_revision: int = 0) -> MemoryRecord:
+        if type(write) is not MemoryWrite or type(write.scope) is not MemoryScope:
+            raise TypeError("write requires exact MemoryWrite and MemoryScope")
         _revision(expected_revision, allow_zero=True)
         # Pin user-controlled MemoryWrite fields before the reentrant clock.
         # Frozen dataclasses can still be modified via reflection.
@@ -258,6 +262,8 @@ class SQLiteMemoryStore:
         include_expired: bool = False,
     ) -> MemoryRecord | None:
         _memory_id(memory_id)
+        if type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
         if type(include_expired) is not bool:
             raise TypeError("include_expired must be a bool")
         with self._connect() as conn:
@@ -274,11 +280,20 @@ class SQLiteMemoryStore:
         return record
 
     def search(self, query: MemoryQuery) -> list[MemoryRecord]:
+        if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
+            raise TypeError("query requires exact MemoryQuery and MemoryScope")
+        pinned_scope = MemoryScope(query.scope.owner_id, query.scope.namespace)
         now = self._now()
+        if (
+            type(query.scope) is not MemoryScope
+            or (query.scope.owner_id, query.scope.namespace)
+            != (pinned_scope.owner_id, pinned_scope.namespace)
+        ):
+            raise MemorySchemaError("memory search scope changed during clock")
         with self._connect() as conn:
             rows = conn.execute(
                 "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
-                (query.scope.owner_id, query.scope.namespace),
+                (pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchall()
         records = [_record(row) for row in rows]
         if not query.include_expired:
@@ -396,6 +411,8 @@ class SQLiteMemoryStore:
         after_event_id: int = 0,
         limit: int = 100,
     ) -> list[MemoryEvent]:
+        if type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
         if type(after_event_id) is not int or after_event_id < 0:
             raise ValueError("after_event_id must be a non-negative integer")
         if type(limit) is not int or not 1 <= limit <= 1000:
