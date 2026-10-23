@@ -8,9 +8,9 @@ import re
 import sqlite3
 import time
 import unicodedata
-from threading import Lock
 from collections.abc import Callable
 from pathlib import Path
+from threading import Lock
 
 from .contracts import (
     MemoryConflictError,
