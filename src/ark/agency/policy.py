@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from threading import Lock
 
 from .contracts import (
     CapabilityGrant,
@@ -20,6 +21,7 @@ class PermissionGate:
 
     def __init__(self) -> None:
         self._consumed_tokens: set[str] = set()
+        self._token_lock = Lock()  # process-local; never durable approval
 
     def authorize_registered(
         self,
@@ -138,10 +140,20 @@ class PermissionGate:
         if spec.effect is Effect.WRITE:
             if one_shot is None:
                 raise PermissionDenied("write-effect call requires exact one-shot authorization")
-            if one_shot.token_id in self._consumed_tokens:
-                raise PermissionDenied("one-shot authorization was already consumed")
-            if one_shot.request_id != call.request_id:
-                raise PermissionDenied("one-shot authorization does not match this request")
-            if one_shot.expires_at_ms <= now_ms:
-                raise PermissionDenied("one-shot authorization expired")
-            self._consumed_tokens.add(one_shot.token_id)
+            # The membership check and spend must be one critical section.
+            # Recheck the token/call epoch after waiting for the lock: a
+            # reflected mutation during contention must not spend a token.
+            with self._token_lock:
+                if (
+                    (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
+                    != token_epoch
+                    or call.request_id != call_epoch[4]
+                ):
+                    raise PermissionDenied("authorization input changed during token spend")
+                if one_shot.token_id in self._consumed_tokens:
+                    raise PermissionDenied("one-shot authorization was already consumed")
+                if one_shot.request_id != call.request_id:
+                    raise PermissionDenied("one-shot authorization does not match this request")
+                if one_shot.expires_at_ms <= now_ms:
+                    raise PermissionDenied("one-shot authorization expired")
+                self._consumed_tokens.add(one_shot.token_id)
