@@ -20,10 +20,15 @@ class SQLiteActionAudit:
         self._initialize()
 
     def append(self, call: ToolCall, *, outcome: str) -> ActionAuditEvent:
-        if not isinstance(outcome, str) or not outcome.strip():
-            raise ValueError("outcome must be a non-empty string")
-        now = self._now()
+        if type(call) is not ToolCall:
+            raise TypeError("audit call must be an exact ToolCall")
+        if type(outcome) is not str or not outcome.strip():
+            raise ValueError("outcome must be a non-empty exact string")
         with self._connect() as conn:
+            # Commit an event with a clock sampled only after acquiring the
+            # writer slot; no external backend dispatch is performed here.
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
             cursor = conn.execute(
                 """INSERT INTO action_events(
                     request_id,tool,capability,scope,arguments_sha256,outcome,occurred_at_ms
