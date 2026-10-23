@@ -147,7 +147,7 @@ class SQLiteMemoryStore:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
             current = conn.execute(
-                "SELECT revision, created_at_ms FROM memories WHERE memory_id = ?",
+                "SELECT * FROM memories WHERE memory_id = ?",
                 (memory_id,),
             ).fetchone()
             if current is None:
@@ -175,12 +175,19 @@ class SQLiteMemoryStore:
                 )
                 operation = "create"
             else:
-                actual = int(current["revision"])
+                # Fail closed on any malformed persisted row before CAS mutation.
+                # Legacy v1 valid rows remain supported without schema changes.
+                stored = _record(current)
+                if (stored.memory_id, stored.scope, stored.source_id) != (
+                    memory_id, write.scope, write.source_id
+                ):
+                    raise MemorySchemaError("stored memory identity differs from write")
+                actual = stored.revision
                 if expected_revision != actual:
                     raise MemoryConflictError(
                         f"revision mismatch: expected {expected_revision}, actual {actual}"
                     )
-                revision, created = actual + 1, int(current["created_at_ms"])
+                revision, created = actual + 1, stored.created_at_ms
                 result = conn.execute(
                     """UPDATE memories SET
                         content=?, metadata_json=?, content_sha256=?, updated_at_ms=?,
@@ -270,13 +277,16 @@ class SQLiteMemoryStore:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
             row = conn.execute(
-                """SELECT revision FROM memories
+                """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
                 (memory_id, scope.owner_id, scope.namespace),
             ).fetchone()
             if row is None:
                 return False
-            actual = int(row["revision"])
+            stored = _record(row)
+            if stored.memory_id != memory_id or stored.scope != scope:
+                raise MemorySchemaError("stored memory identity differs from delete")
+            actual = stored.revision
             if actual != expected_revision:
                 raise MemoryConflictError(
                     f"revision mismatch: expected {expected_revision}, actual {actual}"
@@ -300,18 +310,21 @@ class SQLiteMemoryStore:
             now = self._now()
             if scope is None:
                 rows = conn.execute(
-                    """SELECT memory_id,owner_id,namespace,revision FROM memories
+                    """SELECT * FROM memories
                     WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=? ORDER BY memory_id""",
                     (now,),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    """SELECT memory_id,owner_id,namespace,revision FROM memories
+                    """SELECT * FROM memories
                     WHERE owner_id=? AND namespace=? AND expires_at_ms IS NOT NULL
                     AND expires_at_ms<=? ORDER BY memory_id""",
                     (scope.owner_id, scope.namespace, now),
                 ).fetchall()
             for row in rows:
+                stored = _record(row)
+                if scope is not None and stored.scope != scope:
+                    raise MemorySchemaError("stored memory scope differs from expiry query")
                 # Bind deletion to the exact row/scope/revision/expiry predicate
                 # observed under the lock. Only actual deletions emit events.
                 deleted = conn.execute(
@@ -319,16 +332,15 @@ class SQLiteMemoryStore:
                     WHERE memory_id=? AND owner_id=? AND namespace=?
                     AND revision=? AND expires_at_ms IS NOT NULL AND expires_at_ms<=?""",
                     (
-                        row["memory_id"], row["owner_id"], row["namespace"],
-                        row["revision"], now,
+                        stored.memory_id, stored.scope.owner_id, stored.scope.namespace,
+                        stored.revision, now,
                     ),
                 )
                 if deleted.rowcount != 1:
                     raise MemoryConflictError("expired memory changed before delete")
-                record_scope = MemoryScope(row["owner_id"], row["namespace"])
                 self._event(
-                    conn, row["memory_id"], record_scope, "expire",
-                    int(row["revision"]), now,
+                    conn, stored.memory_id, stored.scope, "expire",
+                    stored.revision, now,
                 )
         return len(rows)
 
