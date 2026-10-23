@@ -19,7 +19,7 @@ def _approval(value: str) -> str:
 
 
 def _store(tmp_path: Path):
-    path = tmp_path / "claims #1 ?.sqlite"
+    path = tmp_path / "claims #1 %.sqlite"
     return SyntheticCancellationLedger(path), path
 
 
