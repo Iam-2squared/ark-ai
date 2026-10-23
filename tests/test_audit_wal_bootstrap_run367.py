@@ -9,7 +9,6 @@ import pytest
 
 from ark.agency import SQLiteActionAudit
 
-
 _CHILD = (
     "import sys; "
     "from ark.agency import SQLiteActionAudit; "
