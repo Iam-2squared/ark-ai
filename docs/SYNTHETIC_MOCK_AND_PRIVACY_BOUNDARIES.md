@@ -246,3 +246,25 @@ notification. Its synthetic freshness receipt always denies notification,
 ToolBackend dispatch and replay. Caller-provided policy, observation digests,
 clock and retained witness are not authenticated. No physical clock,
 user-consent source, external notification provider or paid compute is used.
+
+
+## Offline observation parent lineage (Run 375)
+
+`observation_lineage_review.py` examines already supplied,
+metadata-only `ObservationEnvelope` values via a bounded,
+privacy-scoped `ObservationWindowReview`. It requires each claimed
+`parent_sha256` to resolve to **exactly one** envelope in the same
+reviewed window, from the same source and with a timestamp not later than
+the child. It rejects unresolved or ambiguous parents, cross-source
+lineage, cycles, reflected identity changes, inappropriate privacy scope
+and stale observations at caller-provided review time. The witness
+contains no raw media or textual payload; canonical parent edges are
+hashed deterministically, independent of tuple ordering. Tests are in
+`tests/test_observation_lineage_review_run375.py`.
+
+These identifiers establish **internal fixture consistency only**.
+Identical content hashes are not signed origins; an actor can construct
+a forged self-consistent lineage with fabricated source names/times.
+There is no webcam, screen capture, speech input, external observation
+provider, human consent, trusted timestamp, disclosure, backend invocation
+or automatically authorized action.
