@@ -186,9 +186,13 @@ class SQLiteActionAudit:
             # could leave a partially initialized audit if verification fails.
             conn.execute("BEGIN IMMEDIATE")
             version = int(conn.execute("PRAGMA user_version").fetchone()[0])
-            if version < 0 or version > SCHEMA_VERSION:
+            if version < 0:
                 raise ActionAuditSchemaError(
-                    f"unsupported action audit schema version {version}"
+                    f"unsupported negative action audit schema version {version}"
+                )
+            if version > SCHEMA_VERSION:
+                raise ActionAuditSchemaError(
+                    f"action audit schema {version} is newer than supported {SCHEMA_VERSION}"
                 )
             if version == 0:
                 # Never treat another or a partially initialized database as
