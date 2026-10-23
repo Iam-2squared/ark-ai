@@ -168,6 +168,7 @@ def review_fresh_nonrevoked_context(
     request: CoherentSnapshotRequest,
     policy: ContextSelectionPolicy,
     ledger: SyntheticContextRevocationLedger,
+    *, retained_revocations: object | None = None,
 ) -> SyntheticContextBundle:
     """Always reacquire Memory, bracket with veto checks, never grant usage.
 
@@ -189,11 +190,22 @@ def review_fresh_nonrevoked_context(
     CoherentSnapshotRequest(*original)
     if request.include_expired:
         raise SyntheticContextRevocationRejected("expired records may not enter context")
+    # Local import keeps the optional independent history reviewer separate
+    # from this fixture's core SQLite schema and avoids an import cycle.
+    from .personal_context_revocation_continuity_review import (
+        review_revocation_continuity,
+    )
+
     scopes = tuple(MemoryScope(request.owner_id, name) for name in request.namespaces)
+    before = review_revocation_continuity(ledger, retained=retained_revocations)
     ledger.assert_not_revoked(scopes)
     snapshot = review_coherent_snapshot(store, request)
     bundle = review_personal_context(snapshot, policy)
     ledger.assert_not_revoked(scopes)
+    # Detect disappearance or alteration of any veto that was present before
+    # this read, even when a different namespace's row was changed mid-read.
+    # A genuinely earlier independent witness also fences pre-existing edits.
+    review_revocation_continuity(ledger, retained=before)
     if (
         request.owner_id, request.namespaces, request.text,
         request.per_namespace_limit, request.include_expired,
