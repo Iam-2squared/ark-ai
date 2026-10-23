@@ -188,8 +188,8 @@ class SyntheticProactiveLedger:
         # A witness reconstructed from this same potentially altered SQLite
         # file offers no rollback protection.
         from .proactive_synthetic_continuity_review import (
-            SyntheticTriggerWitness,
             _ROWS,
+            SyntheticTriggerWitness,
             _digest,
             assert_proactive_history_continues,
         )
