@@ -63,7 +63,7 @@ def test_write_token_mutation_during_grants_cannot_consume_token():
         object.__setattr__(token, "expires_at_ms", 999)
 
     with pytest.raises(PermissionDenied, match="changed during grants"):
-        gate.authorize(spec, call, grants(), now_ms=10)
+        gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
     object.__setattr__(token, "expires_at_ms", 100)
     gate.authorize(spec, call, [grant], now_ms=10, one_shot=token)
     with pytest.raises(PermissionDenied, match="already consumed"):
