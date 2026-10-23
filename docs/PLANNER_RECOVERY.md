@@ -42,6 +42,32 @@ trusted timestamp, an append-only event chain, a retained independent tail,
 cross-thread transactional snapshots, outcome reconciliation or WRITE replay
 authority. All those requirements below remain separate open gates.
 
+## Implemented disconnected SQLite replay fixture (Run 370)
+
+`src/ark/agency/planner_journal_review.py` now supplies a **synthetic,
+no-dispatch** `SyntheticPlanJournal` with a fixed v1 SQLite schema. It binds
+the supplied exact `PlanStep` topology and initial plan-status digest,
+serializes explicit transitions under `BEGIN IMMEDIATE`, and atomically
+commits a canonical event hash with an internal last-event/count/status/time
+header. Recovery reads the same SQLite snapshot **read-only**, replays each
+explicit transition through `PlanGraph.transition()`, and rechecks the full
+post-state digest, including derived BLOCKED descendants. The fixture has a
+10,000-event validation budget; malformed schema/rows, clock rollback,
+incorrect revision, reordered/missing events, and internal tail mismatch
+fail closed. An interrupted RUNNING step is exposed as ambiguous, with
+`dispatch_authorized=False` and `automatic_replay_authorized=False`.
+
+`SyntheticPlanTail` may be retained **outside** the mutable SQLite file and
+passed to `recover(retained=...)`, which compares that exact historical
+prefix against the presently replayed journal. The internal header is
+**not** independently retained, and it can be rewritten together with the
+event suffix by an attacker with full database access. Callers retaining
+only a newly regenerated witness have no historical tamper evidence.
+The supplied timestamps are not from a trusted clock. The fixture does not
+record real backend results, verify a token issuer, establish human consent,
+provide cross-store atomicity, resolve UNKNOWN WRITE, or authorize any
+computer action. It has not been wired to production Planner/Tool execution.
+
 ## Explicit transition journal
 
 The journal records externally requested planner transitions, not a separate event for every internal descendant state change.
