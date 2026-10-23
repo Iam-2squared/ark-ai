@@ -182,13 +182,25 @@ class SQLiteActionAudit:
 
     def _initialize(self) -> None:
         with self._connect() as conn:
+            # Bootstrap must be atomic: executescript() implicitly commits and
+            # could leave a partially initialized audit if verification fails.
+            conn.execute("BEGIN IMMEDIATE")
             version = int(conn.execute("PRAGMA user_version").fetchone()[0])
-            if version > SCHEMA_VERSION:
+            if version < 0 or version > SCHEMA_VERSION:
                 raise ActionAuditSchemaError(
-                    f"action audit schema {version} is newer than supported {SCHEMA_VERSION}"
+                    f"unsupported action audit schema version {version}"
                 )
             if version == 0:
-                conn.executescript(_AUDIT_SCHEMA_V1_SQL)
+                # Never treat another or a partially initialized database as
+                # an empty audit. There is no implicit repair or migration.
+                existing = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' LIMIT 1"
+                ).fetchone()
+                if existing is not None:
+                    raise ActionAuditSchemaError("unversioned action audit database is not empty")
+                for statement in _AUDIT_SCHEMA_V1_SQL.split(";"):
+                    if statement.strip():
+                        conn.execute(statement)
             _validate_v1_schema(conn)
 
     def _connect(self) -> sqlite3.Connection:
