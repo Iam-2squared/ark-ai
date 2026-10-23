@@ -300,18 +300,27 @@ class SQLiteMemoryStore:
     def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
         _memory_id(memory_id)
         _revision(expected_revision, allow_zero=False)
+        if type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
+        # A clock callback may reflectively modify a frozen scope object.
+        # Bind both SQL and audit events to one pre-clock identity epoch.
+        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
         with self._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
+            if (
+                scope.owner_id, scope.namespace
+            ) != (pinned_scope.owner_id, pinned_scope.namespace):
+                raise MemorySchemaError("memory delete scope changed during clock")
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
-                (memory_id, scope.owner_id, scope.namespace),
+                (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchone()
             if row is None:
                 return False
             stored = _record(row)
-            if stored.memory_id != memory_id or stored.scope != scope:
+            if stored.memory_id != memory_id or stored.scope != pinned_scope:
                 raise MemorySchemaError("stored memory identity differs from delete")
             actual = stored.revision
             if actual != expected_revision:
@@ -321,21 +330,30 @@ class SQLiteMemoryStore:
             result = conn.execute(
                 """DELETE FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=? AND revision=?""",
-                (memory_id, scope.owner_id, scope.namespace, expected_revision),
+                (memory_id, pinned_scope.owner_id, pinned_scope.namespace, expected_revision),
             )
             if result.rowcount != 1:
                 raise MemoryConflictError("memory changed during delete")
-            self._event(conn, memory_id, scope, "delete", actual, now)
+            self._event(conn, memory_id, pinned_scope, "delete", actual, now)
         return True
 
     def purge_expired(self, *, scope: MemoryScope | None = None) -> int:
+        if scope is not None and type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
+        pinned_scope = (
+            MemoryScope(scope.owner_id, scope.namespace) if scope is not None else None
+        )
         # Claim the SQLite writer slot before taking either the clock reading
         # or the expiry snapshot. A read-before-write transaction permits a
         # concurrent refresh to resurrect a selected row before deletion.
         with self._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
-            if scope is None:
+            if scope is not None and (
+                scope.owner_id, scope.namespace
+            ) != (pinned_scope.owner_id, pinned_scope.namespace):
+                raise MemorySchemaError("memory purge scope changed during clock")
+            if pinned_scope is None:
                 rows = conn.execute(
                     """SELECT * FROM memories
                     WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=? ORDER BY memory_id""",
@@ -346,11 +364,11 @@ class SQLiteMemoryStore:
                     """SELECT * FROM memories
                     WHERE owner_id=? AND namespace=? AND expires_at_ms IS NOT NULL
                     AND expires_at_ms<=? ORDER BY memory_id""",
-                    (scope.owner_id, scope.namespace, now),
+                    (pinned_scope.owner_id, pinned_scope.namespace, now),
                 ).fetchall()
             for row in rows:
                 stored = _record(row)
-                if scope is not None and stored.scope != scope:
+                if pinned_scope is not None and stored.scope != pinned_scope:
                     raise MemorySchemaError("stored memory scope differs from expiry query")
                 # Bind deletion to the exact row/scope/revision/expiry predicate
                 # observed under the lock. Only actual deletions emit events.
