@@ -26,6 +26,14 @@ from .planner_journal_review import (
     SyntheticPlanTail,
 )
 from .registry import ToolRegistry
+from .synthetic_occurrence_audit_link_review import (
+    SyntheticAuditLinkWitness,
+    SyntheticOccurrenceAuditLinkStore,
+    _SELECT as _LINK_ROWS,
+    _audit_identity,
+    _hash as _link_hash,
+    _replay as _replay_links,
+)
 from .synthetic_occurrence_continuity_review import (
     _COLUMNS,
     SyntheticLedgerWitness,
@@ -52,6 +60,8 @@ class SyntheticRecoveryReview:
     ledger_witness: SyntheticLedgerWitness
     audit_witness: AuditContinuityWitness
     matching_occurrences: tuple[str, ...]
+    link_witness: SyntheticAuditLinkWitness | None = None
+    matching_audit_links: tuple[tuple[str, int], ...] = ()
 
     @property
     def dispatch_authorized(self) -> bool:
@@ -77,6 +87,8 @@ def review_synthetic_write_recovery(
     retained_plan: SyntheticPlanTail | None = None,
     retained_ledger: SyntheticLedgerWitness | None = None,
     retained_audit: AuditContinuityWitness | None = None,
+    link_store: SyntheticOccurrenceAuditLinkStore | None = None,
+    retained_link: SyntheticAuditLinkWitness | None = None,
 ) -> SyntheticRecoveryReview:
     """Compare synthetic identities without side effects or retry authority.
 
@@ -100,8 +112,16 @@ def review_synthetic_write_recovery(
         and type(retained_ledger) is not SyntheticLedgerWitness
         or retained_audit is not None
         and type(retained_audit) is not AuditContinuityWitness
+        or link_store is not None
+        and type(link_store) is not SyntheticOccurrenceAuditLinkStore
+        or retained_link is not None
+        and type(retained_link) is not SyntheticAuditLinkWitness
+        or retained_link is not None and link_store is None
     ):
         raise SyntheticRecoveryRejected("retained witnesses must use exact types")
+
+    if retained_link is not None:
+        retained_link.assert_shape()
 
     try:
         first = registry.bind(call)
@@ -146,6 +166,7 @@ def review_synthetic_write_recovery(
                         "stored request has a conflicting registry binding"
                     )
                 occurrences = tuple(sorted(row[1] for row in relevant))
+                stored_reservations = {row[1]: row for row in rows}
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -153,6 +174,83 @@ def review_synthetic_write_recovery(
         audit_witness = review_audit_continuity(
             audit, retained=retained_audit, require_monotonic_time=True,
         )
+        link_witness = None
+        matching_links: tuple[tuple[str, int], ...] = ()
+        if link_store is not None:
+            # A sidecar witness and its rows MUST share one sidecar snapshot.
+            # Reservation and audit snapshots remain separately committed.
+            with closing(link_store._connect(readonly=True)) as link_conn:
+                link_conn.execute("BEGIN")
+                try:
+                    prefixes = _replay_links(link_conn)
+                    if retained_link is not None and (
+                        retained_link.event_count >= len(prefixes)
+                        or prefixes[retained_link.event_count] != retained_link
+                    ):
+                        raise SyntheticRecoveryRejected(
+                            "retained occurrence-audit link history changed"
+                        )
+                    link_rows = tuple(link_conn.execute(_LINK_ROWS))
+                    pairs: list[tuple[str, int]] = []
+                    for row in link_rows:
+                        (_seq, occurrence, revision, bound, request,
+                         event_id, event_digest, linked_at, _previous, _hash) = row
+                        reservation = stored_reservations.get(occurrence)
+                        if (
+                            reservation is None
+                            or (revision, bound, request) != reservation[2:5]
+                            or reservation[5] > linked_at
+                        ):
+                            raise SyntheticRecoveryRejected(
+                                "sidecar link has no matching stored reservation"
+                            )
+                        events = audit.events(after_event_id=event_id - 1, limit=1)
+                        if len(events) != 1 or events[0].event_id != event_id:
+                            raise SyntheticRecoveryRejected(
+                                "sidecar link has no matching audit event"
+                            )
+                        event = events[0]
+                        if (
+                            event.request_id != request
+                            or event.outcome != "synthetic_audit_before_mock"
+                            or not reservation[5] <= event.occurred_at_ms <= linked_at
+                            or _link_hash(
+                                "ARK-synthetic-preaction-audit-v1",
+                                _audit_identity(event),
+                            ) != event_digest
+                        ):
+                            raise SyntheticRecoveryRejected(
+                                "sidecar link audit identity differs"
+                            )
+                        if request == first.call.request_id:
+                            if (
+                                (revision, bound)
+                                != (first.registry_revision, first.bound_action_id)
+                                or (
+                                    event.tool, event.capability, event.scope,
+                                    event.arguments_sha256,
+                                ) != (
+                                    call.tool, call.capability, call.scope,
+                                    call.arguments_sha256,
+                                )
+                            ):
+                                raise SyntheticRecoveryRejected(
+                                    "sidecar link conflicts with registry/action"
+                                )
+                            pairs.append((occurrence, event_id))
+                    link_witness = prefixes[-1]
+                    matching_links = tuple(sorted(pairs))
+                    link_conn.commit()
+                except BaseException:
+                    link_conn.rollback()
+                    raise
+            # Detect observed audit drift across our independent read phases.
+            if review_audit_continuity(
+                audit, retained=retained_audit, require_monotonic_time=True,
+            ) != audit_witness:
+                raise SyntheticRecoveryRejected(
+                    "audit history changed during sidecar diagnosis"
+                )
         again = registry.bind(call)
         if (
             again.registry_revision != first.registry_revision
@@ -168,6 +266,7 @@ def review_synthetic_write_recovery(
             first.bound_action_id, state[step_id],
             step_id in plan.ambiguous_running_steps,
             plan.tail, ledger, audit_witness, occurrences,
+            link_witness, matching_links,
         )
     except (sqlite3.Error, KeyError, TypeError, ValueError, AttributeError) as exc:
         raise SyntheticRecoveryRejected(
