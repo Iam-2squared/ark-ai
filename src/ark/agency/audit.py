@@ -10,6 +10,7 @@ from pathlib import Path
 from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall
 
 SCHEMA_VERSION = 1
+_SQLITE_INT_MAX = 2**63 - 1
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -136,8 +137,11 @@ class SQLiteActionAudit:
         return ActionAuditEvent(event_id, *identity, outcome, now)
 
     def events(self, *, after_event_id: int = 0, limit: int = 100) -> list[ActionAuditEvent]:
-        if type(after_event_id) is not int or after_event_id < 0:
-            raise ValueError("after_event_id must be a non-negative integer")
+        if (
+            type(after_event_id) is not int
+            or not 0 <= after_event_id <= _SQLITE_INT_MAX
+        ):
+            raise ValueError("after_event_id must fit a non-negative SQLite INTEGER")
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
         with self._connect() as conn:
@@ -196,6 +200,6 @@ class SQLiteActionAudit:
 
     def _now(self) -> int:
         value = self._clock_ms()
-        if type(value) is not int or value < 0:
-            raise ValueError("clock_ms must return a non-negative integer")
+        if type(value) is not int or not 0 <= value <= _SQLITE_INT_MAX:
+            raise ValueError("clock_ms must return a non-negative SQLite INTEGER")
         return value
