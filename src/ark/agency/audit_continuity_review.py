@@ -87,7 +87,11 @@ def review_audit_continuity(
     # A short read transaction pins all event rows to the same SQLite snapshot.
     # Do not issue PRAGMA journal_mode on ordinary read-only diagnostics.
     try:
-        with closing(sqlite3.connect(audit.path)) as conn:
+        # The reviewer must never create a new empty database when the
+        # configured audit file is missing, even on a stale audit object.
+        with closing(
+            sqlite3.connect(audit.path.resolve().as_uri() + "?mode=ro", uri=True)
+        ) as conn:
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA busy_timeout=5000")
             conn.execute("BEGIN")
