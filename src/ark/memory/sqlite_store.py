@@ -161,7 +161,7 @@ class SQLiteMemoryStore:
             metadata_copy, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )
         content_hash = hashlib.sha256(pinned_content.encode()).hexdigest()
-        with self._connect() as conn:
+        with closing(self._connect()) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
             try:
@@ -352,7 +352,7 @@ class SQLiteMemoryStore:
         # A clock callback may reflectively modify a frozen scope object.
         # Bind both SQL and audit events to one pre-clock identity epoch.
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
-        with self._connect() as conn:
+        with closing(self._connect()) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
             if (
@@ -393,7 +393,7 @@ class SQLiteMemoryStore:
         # Claim the SQLite writer slot before taking either the clock reading
         # or the expiry snapshot. A read-before-write transaction permits a
         # concurrent refresh to resurrect a selected row before deletion.
-        with self._connect() as conn:
+        with closing(self._connect()) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
             if scope is not None and (
@@ -502,7 +502,7 @@ class SQLiteMemoryStore:
     def _initialize(self) -> None:
         # Ordinary reads/writes must never renegotiate persistent WAL mode.
         # Serialize same-process first-open setup before SQLite BEGIN IMMEDIATE.
-        with _BOOTSTRAP_LOCK, self._connect() as conn:
+        with _BOOTSTRAP_LOCK, closing(self._connect()) as conn, conn:
             # Separate processes may race on the first WAL negotiation.
             # SQLite busy_timeout is not a guarantee that journal_mode itself
             # waits; retry only SQLite lock/busy, then fail closed.
