@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — Run 374**
+
+Saved at: **2026-10-24T05:54:49.245+09:00 Asia/Tokyo/JST**, sampled immediately before this ordinary GitHub Contents API checkpoint write.
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact invocation work-basis HEAD: `89131b29b8de4e76e16c3bc3921c84f9ab53a75d` (**CI #483 / run `40015566182`: SUCCESS 6/6**).
+Exact final **source/test HEAD**: `f5612fe73c3b1b50bda6dce4a2810f3a88428c31` (**CI #495 / run `40022486939`: SUCCESS 6/6**; Ubuntu 3.13 Ruff PASS and **885 pytest passed**).
+Exact checkpoint work-basis HEAD including engineering documentation: `48e35c1a5dc34e281e702e4d912ac2621287fceb` (**CI #496 / run `40022511619`: SUCCESS 6/6 at checkpoint preflight**).
+**Checkpoint-result SHA is not knowable inside its own self-referential content. Read the resulting commit SHA from the GitHub Contents API response and check the CI for that exact resulting SHA separately; no previous CI is attributed to this later checkpoint.**
+
+## Overall ARK state
+
+ARK remains **local-first, isolated, synthetic/disconnected, reversible, with no real ToolBackend dispatch**. No human/issuer-authenticated consent, externally trusted clock, signed independent witness, durable production authorization, real side effects, cross-store atomic transaction, externally attested receipt, production Exactly-Once, real notification or complete JARVIS. Main remains last observed at `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` remains **Draft, unmerged, NOT_PASSED**. Frozen V1/V2/Local UI/Launcher contracts, code, evidence and protected evaluations were not changed.
+
+## NEW — Run 374 (four coherent FREE-only foundation packages)
+
+**13 sequential normal GitHub Contents commits before this checkpoint**, across four compatible implementation/test packages, narrow CI-driven Ruff corrections and one maintained engineering document. The test suite increased from **826 to 885 (+59 pytest cases)** on the final source/test HEAD; 9 paths changed: three existing source/doc files, two new modules and four new regression files. Only Draft PR #8 was updated, after re-reading latest HEAD before every write. No raw Git-object bypass, force push, real backend, secret, external GPU or paid service.
+
+1. **P0 immutable synthetic occurrence-to-audit sidecar (+21 cases):** new `agency/synthetic_occurrence_audit_link_review.py` implements a bounded, append-only SQLite link between an existing exact registry-bound WRITE reservation and a persisted ActionAudit v1 pre-action row. The link stores only canonical identifiers and the action-audit event digest, with sequential local hashes, unique occurrence/audit IDs, strict version/schema/row/time validation and optional independently retained prefix witness. Reads/reservations are reviewed in their *own* SQLite snapshots before writing the link; **there is NO atomic cross-store transaction, external witness or outcome proof**, and it authorizes no dispatch.
+2. **P1 proactive retained-history diagnostics (+14 cases):** new `proactive_synthetic_continuity_review.py` computes read-only, content-minimized trigger-row hashes and a separately retainable witness. Prior row deletion or coordinated replacement can be detected only when a genuinely earlier independently preserved witness is supplied; local hashes are not authenticated consent or proof of source.
+3. **P0 synthetic mock cycle opt-in sidecar (+13 cases):** `agency/synthetic_mock_action_cycle_review.py` optionally links a committed occurrence with a pre-action audit before constructing an inert mock marker; adds an `after_audit_link` fault point. A failure before or after link leaves the journal RUNNING / an **UNKNOWN WRITE with no automatic replay**. Default synthetic behavior stays compatible; no registered backend is invoked or external success claimed.
+4. **P1 proactive admission-time rollback fence (+11 cases):** `SyntheticProactiveLedger.prepare(..., retained=...)` optionally checks an independently retained historical trigger witness *inside the same local BEGIN IMMEDIATE write transaction* that admits the new synthetic trigger. Deleted or rewritten earlier rows fail closed before new preparation; existing cooldown, rolling-budget, duplicate and restart constraints remain. A missing witness still gives no rollback protection and no physical clock/authenticated issuer exists.
+
+Research fault matrix, revised opt-in boundaries and privacy caveats: `docs/SYNTHETIC_MOCK_AND_PRIVACY_BOUNDARIES.md`. No private content, live observation, external action or notification is added to these fixtures.
+
+## Exact-head CI, failures and evidence
+
+- **Invocation basis CI #483 / `40015566182`: SUCCESS 6/6**.
+- New sidecar heads **#484 / `40021703291`: FAILED 6/6 Ruff**, and **#485 / `40021786140`: FAILED 6/6 Ruff** on sidecar import grouping/line length. Both were repaired with a normal Contents update; **#486 / `40021857526`: SUCCESS 6/6** on corrected source.
+- **#487 / `40021953935`: SUCCESS 6/6** with sidecar regressions; **#488 / `40022009277`: SUCCESS 6/6** with proactive continuity regressions; **#489 / `40022189652`: SUCCESS 6/6** on the corresponding trust-boundary documentation.
+- **#490 / `40022247932`: SUCCESS 6/6** on optional mock coordinator source, and **#491 / `40022305904`: SUCCESS 6/6** with sidecar fault-injection regressions; Ubuntu Python 3.13 Ruff PASS and **874 pytest passed**.
+- **#493 / `40022391266` and #494 / `40022437500`: FAILED** on a narrow Ruff I001 local-import ordering issue introduced by the proactive retained-admission package; the import was corrected normally. These failures remain retained, not reported GREEN.
+- **#495 / `40022486939`: SUCCESS 6/6** on final source/test HEAD `f5612fe73c3b1b50bda6dce4a2810f3a88428c31`; Ubuntu Python 3.13 Ruff PASS and **885 passed**.
+- **#496 / `40022511619`: SUCCESS 6/6** as checked on documentation HEAD `48e35c1a5dc34e281e702e4d912ac2621287fceb`. Do not attribute its success to the checkpoint result HEAD.
+
+## Frozen/paid/legal/privacy/actuation boundaries
+
+No paid/potentially billable provider action, external GPU, real Candidate/adapter/weight generation, protected V2 FINAL opening, Candidate promotion, frozen-contract rewrite, secret/credential/account creation, physical PC operation, destructive migration, real model/tool activation, notification, personal data export, user-confirmed human review or main merge. No new third-party permissions. Mock records and snapshots remain research-only and privacy-minimized. Existing PR #5 gate remains Draft/NOT_PASSED.
+
+## Next plan / 今後の方針
+
+1. **P0 CI:** finish #496 and separately verify the checkpoint-result HEAD's own six-job matrix; diagnose observed failures without reopening frozen code or launching duplicate equivalent workflows.
+2. **P0 cross-store recovery:** extend the *read-only* triage to validate retained sidecar witness against ledger/audit/journal identities. Reject invalid or missing links without declaring any external outcome; continue prohibiting UNKNOWN WRITE auto-replay.
+3. **P0 authorization:** keep registry identity immutable and develop mock issuer/subject/purpose/recipient/revocation evidence; real authenticated subject/issuer, trusted clock, durable backend idempotency and permission to dispatch remain blocked on explicit trusted integration.
+4. **P1 proactive privacy:** independently held trigger witness and admission fence now exist. Extend expiry/retention/erasure semantics with scoped veto authority, monotonic physical clock proofs and fail-closed readiness; never infer consent from absence of a marker.
+5. **P1 Planner/Memory/Observation:** enhance CAS, coherent evidence and crash after-effect UNKNOWN without a real executor; preserve frozen historical receipts/evaluation budgets.
+6. **P2 V3 free path:** mock approval/path/identity and reproducibility guard review only, PR #5 remains Draft/NOT_PASSED. No paid training or protected final evaluation.
+
+---
+
+**HISTORICAL — Run 373 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 373**
 
 Saved at: **2026-10-24T04:58:09.608+09:00 Asia/Tokyo/JST** (runtime UTC clock transformed to JST immediately before the ordinary GitHub Contents API write).
