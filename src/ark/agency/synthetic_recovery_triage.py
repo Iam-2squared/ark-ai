@@ -44,6 +44,7 @@ from .synthetic_occurrence_continuity_review import (
     _COLUMNS,
     SyntheticLedgerWitness,
     _digest,
+    read_synthetic_ledger_witness,
     assert_synthetic_history_continues,
 )
 
@@ -257,6 +258,30 @@ def review_synthetic_write_recovery(
                 raise SyntheticRecoveryRejected(
                     "audit history changed during sidecar diagnosis"
                 )
+        # Independent stores have no shared transaction. Re-observe each
+        # local witness after the other reads and reject visible drift.
+        # This narrows but cannot eliminate between-read or post-check races.
+        if journal.recover(retained=plan.tail) != plan:
+            raise SyntheticRecoveryRejected(
+                "plan changed during cross-store recovery diagnosis"
+            )
+        if read_synthetic_ledger_witness(ledger_path) != ledger:
+            raise SyntheticRecoveryRejected(
+                "reservation history changed during cross-store recovery diagnosis"
+            )
+        if review_audit_continuity(
+            audit, retained=audit_witness, require_monotonic_time=True,
+        ) != audit_witness:
+            raise SyntheticRecoveryRejected(
+                "audit history changed during cross-store recovery diagnosis"
+            )
+        if link_store is not None and (
+            link_witness is None
+            or link_store.read_witness(retained=link_witness) != link_witness
+        ):
+            raise SyntheticRecoveryRejected(
+                "link history changed during cross-store recovery diagnosis"
+            )
         again = registry.bind(call)
         if (
             again.registry_revision != first.registry_revision
