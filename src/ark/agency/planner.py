@@ -164,19 +164,29 @@ class PlanGraph:
                     changed = True
 
     def _assert_acyclic(self) -> None:
-        visiting: set[str] = set()
-        visited: set[str] = set()
-
-        def visit(step_id: str) -> None:
-            if step_id in visiting:
-                raise ValueError("plan dependency graph contains a cycle")
-            if step_id in visited:
-                return
-            visiting.add(step_id)
-            for dependency in self.steps[step_id].depends_on:
-                visit(dependency)
-            visiting.remove(step_id)
-            visited.add(step_id)
-
-        for step_id in sorted(self.steps):
-            visit(step_id)
+        """Validate arbitrarily deep DAGs without Python recursion exhaustion."""
+        active: set[str] = set()
+        complete: set[str] = set()
+        for root in sorted(self.steps):
+            if root in complete:
+                continue
+            # Exit markers faithfully model recursive DFS while keeping memory
+            # usage bounded by the graph depth rather than the call-stack limit.
+            stack: list[tuple[str, bool]] = [(root, False)]
+            while stack:
+                step_id, finish = stack.pop()
+                if finish:
+                    active.remove(step_id)
+                    complete.add(step_id)
+                    continue
+                if step_id in complete:
+                    continue
+                if step_id in active:
+                    raise ValueError("plan dependency graph contains a cycle")
+                active.add(step_id)
+                stack.append((step_id, True))
+                stack.extend(
+                    (dependency, False)
+                    for dependency in reversed(self.steps[step_id].depends_on)
+                    if dependency not in complete
+                )
