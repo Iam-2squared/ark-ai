@@ -73,7 +73,54 @@ class StartupSnapshot:
     components: tuple[ComponentResult, ...]
     digest: str
 
+    def _assert_integrity(self) -> None:
+        """Refuse reflected mutation of a previously evaluated snapshot.
+
+        A local checksum detects stale or altered cached diagnostics; it is
+        neither external attestation nor permission to activate a capability.
+        """
+        if type(self.components) is not tuple or not self.components:
+            raise ValueError("startup snapshot structure changed")
+        names: list[str] = []
+        for item in self.components:
+            if (
+                type(item) is not ComponentResult
+                or type(item.local_state) is not ReadinessState
+                or type(item.effective_state) is not ReadinessState
+                or type(item.dependencies) is not tuple
+                or any(type(parent) is not str for parent in item.dependencies)
+                or item.dependencies != tuple(sorted(set(item.dependencies)))
+                or type(item.component_id) is not str
+                or (item.failure_code is not None and type(item.failure_code) is not str)
+                or (item.schema_revision is not None and type(item.schema_revision) is not str)
+            ):
+                raise ValueError("startup snapshot component changed")
+            names.append(item.component_id)
+        if names != sorted(set(names)):
+            raise ValueError("startup snapshot component order changed")
+        payload = {
+            "schema_version": 1,
+            "components": [
+                {
+                    "id": item.component_id,
+                    "dependencies": item.dependencies,
+                    "local": item.local_state.value,
+                    "effective": item.effective_state.value,
+                    "failure_code": item.failure_code,
+                    "schema_revision": item.schema_revision,
+                }
+                for item in self.components
+            ],
+        }
+        encoded = json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        expected = "startup_" + hashlib.sha256(encoded).hexdigest()
+        if type(self.digest) is not str or self.digest != expected:
+            raise ValueError("startup snapshot witness changed")
+
     def state(self, component_id: str) -> ReadinessState:
+        self._assert_integrity()
         _identifier(component_id, "component_id")
         for item in self.components:
             if item.component_id == component_id:
@@ -82,6 +129,7 @@ class StartupSnapshot:
 
     def root_blockers(self, component_id: str) -> tuple[str, ...]:
         """Return local BLOCKED ancestors, not a new readiness decision."""
+        self._assert_integrity()
         _identifier(component_id, "component_id")
         by_name = {item.component_id: item for item in self.components}
         if component_id not in by_name:
