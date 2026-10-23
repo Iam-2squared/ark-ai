@@ -19,7 +19,7 @@ from .audit_continuity_review import (
     review_audit_continuity,
 )
 from .contracts import Effect, ToolCall
-from .durable_occurrence_review import SyntheticReplayRejected, _validate
+from .durable_occurrence_review import _validate
 from .planner import PlanGraph
 from .planner_journal_review import (
     SyntheticPlanJournal,
@@ -27,8 +27,8 @@ from .planner_journal_review import (
 )
 from .registry import ToolRegistry
 from .synthetic_occurrence_continuity_review import (
-    SyntheticLedgerWitness,
     _COLUMNS,
+    SyntheticLedgerWitness,
     _digest,
     assert_synthetic_history_continues,
 )
