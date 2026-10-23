@@ -116,6 +116,11 @@ def review_coherent_snapshot(
         "owner_id": owner_id,
         "namespaces": namespaces,
         "read_at_ms": now,
+        # Bind selection intent, not only the returned records. The raw query
+        # is deliberately absent from the content-free witness payload.
+        "query_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "per_namespace_limit": limit,
+        "include_expired": include_expired,
         "records": [
             [
                 {
