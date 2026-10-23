@@ -44,8 +44,8 @@ from .synthetic_occurrence_continuity_review import (
     _COLUMNS,
     SyntheticLedgerWitness,
     _digest,
-    read_synthetic_ledger_witness,
     assert_synthetic_history_continues,
+    read_synthetic_ledger_witness,
 )
 
 
