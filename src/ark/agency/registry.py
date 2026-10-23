@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -30,6 +31,17 @@ def _canonical_json(value: object) -> bytes:
     ).encode("utf-8")
 
 
+def _backend_execute_descriptor(backend: object) -> object:
+    """Inspect execution interface without invoking a property or backend."""
+    try:
+        descriptor = inspect.getattr_static(backend, "execute")
+    except AttributeError as exc:
+        raise TypeError("backend must expose a callable execute method") from exc
+    if not callable(descriptor):
+        raise TypeError("backend execute must be statically callable")
+    return descriptor
+
+
 @dataclass(frozen=True, slots=True)
 class ToolRegistration:
     """One immutable registry entry."""
@@ -46,6 +58,7 @@ class ToolRegistration:
         if type(self.effect) is not Effect:
             raise TypeError("effect must be an Effect")
         _text("backend_id", self.backend_id)
+        _backend_execute_descriptor(self.backend)
         if not isinstance(self.backend, ToolBackend):
             raise TypeError("backend must implement ToolBackend")
 
@@ -82,7 +95,10 @@ class ToolRegistry:
         self._registry_mapping_epoch = self._registrations
         self._revision = self._compute_revision(ordered)
         self._registration_epoch = tuple(
-            (entry, entry.name, entry.capability, entry.effect, entry.backend_id, entry.backend)
+            (
+                entry, entry.name, entry.capability, entry.effect,
+                entry.backend_id, entry.backend, _backend_execute_descriptor(entry.backend),
+            )
             for entry in ordered
         )
 
@@ -102,7 +118,11 @@ class ToolRegistry:
         entries = self._registration_epoch
         if type(entries) is not tuple or len(entries) != len(self._registrations):
             raise ValueError("registry epoch structure was changed")
-        for entry, name, capability, effect, backend_id, backend in entries:
+        for entry, name, capability, effect, backend_id, backend, execute in entries:
+            try:
+                current_execute = _backend_execute_descriptor(backend)
+            except TypeError as exc:
+                raise ValueError("backend execute interface changed") from exc
             if (
                 type(entry) is not ToolRegistration
                 or type(name) is not str or type(capability) is not str
@@ -112,6 +132,7 @@ class ToolRegistry:
                 or entry.name != name or entry.capability != capability
                 or entry.effect is not effect or entry.backend_id != backend_id
                 or entry.backend is not backend
+                or current_execute is not execute
                 or self._registrations.get(name) is not entry
             ):
                 raise ValueError("registered tool identity drifted after construction")
