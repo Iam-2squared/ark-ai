@@ -77,6 +77,9 @@ class ToolRegistry:
 
         mapping = {registration.name: registration for registration in ordered}
         self._registrations: Mapping[str, ToolRegistration] = MappingProxyType(mapping)
+        # Pin the exact mapping object to detect reflected replacement, including
+        # a value-equal replacement proxy. Never dispatch a backend here.
+        self._registry_mapping_epoch = self._registrations
         self._revision = self._compute_revision(ordered)
         self._registration_epoch = tuple(
             (entry, entry.name, entry.capability, entry.effect, entry.backend_id, entry.backend)
@@ -91,6 +94,11 @@ class ToolRegistry:
         """
         if type(self._revision) is not str:
             raise ValueError("registry revision carrier changed")
+        if (
+            type(self._registrations) is not MappingProxyType
+            or self._registrations is not self._registry_mapping_epoch
+        ):
+            raise ValueError("registry identity map changed after construction")
         entries = self._registration_epoch
         if type(entries) is not tuple or len(entries) != len(self._registrations):
             raise ValueError("registry epoch structure was changed")
