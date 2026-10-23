@@ -14,7 +14,7 @@ import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 
-from .audit import SQLiteActionAudit
+from .audit import SQLiteActionAudit, _validate_v1_schema
 from .contracts import ActionAuditSchemaError
 
 _GENESIS = hashlib.sha256(b"ark-synthetic-action-audit-v1").digest()
@@ -95,6 +95,12 @@ def review_audit_continuity(
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA busy_timeout=5000")
             conn.execute("BEGIN")
+            # An audit object may outlive an on-disk schema replacement.
+            # Validate the exact v1 structure inside the same read snapshot.
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            if type(version) is not int or version != 1:
+                raise ActionAuditSchemaError("audit review requires exact schema version 1")
+            _validate_v1_schema(conn)
             rows = conn.execute(
                 """SELECT event_id,request_id,tool,capability,scope,arguments_sha256,
                           outcome,occurred_at_ms
