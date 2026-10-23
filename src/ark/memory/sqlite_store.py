@@ -9,6 +9,7 @@ import sqlite3
 import time
 import unicodedata
 from collections.abc import Callable
+from contextlib import closing
 from pathlib import Path
 from threading import Lock
 
@@ -274,7 +275,7 @@ class SQLiteMemoryStore:
         # Bind both the database read and its expiry clock to the same read
         # transaction; reject scope retargeting by a reentrant clock callback.
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
-        with self._connect() as conn:
+        with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
             row = conn.execute(
                 """SELECT * FROM memories
@@ -304,7 +305,7 @@ class SQLiteMemoryStore:
         pinned_limit = query.limit
         pinned_include_expired = query.include_expired
         MemoryQuery(pinned_scope, pinned_text, pinned_limit, pinned_include_expired)
-        with self._connect() as conn:
+        with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
             # The SELECT anchors the SQLite snapshot before the clock. A
             # concurrent writer in the clock callback cannot mix epochs.
@@ -448,7 +449,7 @@ class SQLiteMemoryStore:
             raise ValueError("after_event_id must be a non-negative integer")
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
-        with self._connect() as conn:
+        with closing(self._connect_readonly()) as conn:
             rows = conn.execute(
                 """SELECT * FROM memory_events
                 WHERE owner_id=? AND namespace=? AND event_id>?
@@ -545,6 +546,15 @@ class SQLiteMemoryStore:
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
+    def _connect_readonly(self) -> sqlite3.Connection:
+        # Reading evidence must never recreate a missing initialized SQLite file.
+        # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
+        uri = self.path.resolve().as_uri() + "?mode=ro"
+        conn = sqlite3.connect(uri, uri=True)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
