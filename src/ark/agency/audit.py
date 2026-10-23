@@ -11,6 +11,71 @@ from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall
 
 SCHEMA_VERSION = 1
 
+_AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        request_id TEXT NOT NULL,
+                        tool TEXT NOT NULL,
+                        capability TEXT NOT NULL,
+                        scope TEXT NOT NULL,
+                        arguments_sha256 TEXT NOT NULL,
+                        outcome TEXT NOT NULL,
+                        occurred_at_ms INTEGER NOT NULL
+                    );
+                    CREATE INDEX idx_action_request ON action_events(request_id,event_id);
+                    PRAGMA user_version=1;"""
+
+
+def _normalized_ddl(sql: str | None) -> str | None:
+    """Ignore unquoted formatting only; quoted SQL and CHECK values stay exact."""
+    if sql is None:
+        return None
+    output: list[str] = []
+    quote: str | None = None
+    index = 0
+    while index < len(sql):
+        char = sql[index]
+        if quote is not None:
+            output.append(char)
+            if char == quote:
+                if index + 1 < len(sql) and sql[index + 1] == quote:
+                    index += 1
+                    output.append(sql[index])
+                else:
+                    quote = None
+        elif char in ("'", '"', "`"):
+            quote = char
+            output.append(char)
+        elif not char.isspace():
+            output.append(char.lower())
+        index += 1
+    if quote is not None:
+        raise ActionAuditSchemaError("unterminated SQLite audit schema quotation")
+    return "".join(output)
+
+
+def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    rows = conn.execute(
+        "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+    ).fetchall()
+    return tuple((row[0], row[1], row[2], _normalized_ddl(row[3])) for row in rows)
+
+
+def _validate_v1_schema(conn: sqlite3.Connection) -> None:
+    """Startup-only v1 audit DDL and quick_check gate; never auto-repair."""
+    try:
+        quick = conn.execute("PRAGMA quick_check").fetchall()
+        if len(quick) != 1 or tuple(quick[0]) != ("ok",):
+            raise ActionAuditSchemaError("action audit SQLite quick_check failed")
+        with sqlite3.connect(":memory:") as expected:
+            expected.executescript(_AUDIT_SCHEMA_V1_SQL)
+            if _schema_objects(conn) != _schema_objects(expected):
+                raise ActionAuditSchemaError(
+                    "action audit v1 schema differs from original DDL"
+                )
+    except sqlite3.DatabaseError as exc:
+        raise ActionAuditSchemaError("action audit schema cannot be verified") from exc
+
+
 
 class SQLiteActionAudit:
     def __init__(self, path: str | Path, *, clock_ms: Callable[[], int] | None = None) -> None:
@@ -104,20 +169,8 @@ class SQLiteActionAudit:
                     f"action audit schema {version} is newer than supported {SCHEMA_VERSION}"
                 )
             if version == 0:
-                conn.executescript(
-                    """CREATE TABLE action_events(
-                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        request_id TEXT NOT NULL,
-                        tool TEXT NOT NULL,
-                        capability TEXT NOT NULL,
-                        scope TEXT NOT NULL,
-                        arguments_sha256 TEXT NOT NULL,
-                        outcome TEXT NOT NULL,
-                        occurred_at_ms INTEGER NOT NULL
-                    );
-                    CREATE INDEX idx_action_request ON action_events(request_id,event_id);
-                    PRAGMA user_version=1;"""
-                )
+                conn.executescript(_AUDIT_SCHEMA_V1_SQL)
+            _validate_v1_schema(conn)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
