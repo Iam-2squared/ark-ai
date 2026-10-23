@@ -469,13 +469,28 @@ class SQLiteMemoryStore:
 
     def _initialize(self) -> None:
         with self._connect() as conn:
+            # executescript() issues an implicit COMMIT and can preserve a
+            # partially created v1 database after a verification failure.
+            # Reserve the writer slot before checking version/emptiness.
+            conn.execute("BEGIN IMMEDIATE")
             version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+            if version < 0:
+                raise MemorySchemaError(f"unsupported negative memory schema version {version}")
             if version > SCHEMA_VERSION:
                 raise MemorySchemaError(
                     f"memory database schema {version} is newer than supported {SCHEMA_VERSION}"
                 )
             if version == 0:
-                conn.executescript(_SCHEMA_V1_SQL)
+                existing = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' LIMIT 1"
+                ).fetchone()
+                if existing is not None:
+                    raise MemorySchemaError("unversioned memory database is not empty")
+                # V1's frozen DDL consists of semicolon-separated statements;
+                # execute one at a time *inside* the existing transaction.
+                for statement in _SCHEMA_V1_SQL.split(";"):
+                    if statement.strip():
+                        conn.execute(statement)
             _validate_v1_schema(conn)
 
     def _connect(self) -> sqlite3.Connection:
