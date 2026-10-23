@@ -74,7 +74,7 @@ class PermissionGate:
             raise PermissionDenied("one-shot authorization must be an exact value")
         if spec.name != call.tool or spec.capability != call.capability:
             raise PermissionDenied("tool call does not match registered tool specification")
-        if type(now_ms) is not int or now_ms < 0:
+        if type(now_ms) is not int or not 0 <= now_ms <= (1 << 63) - 1:
             raise ValueError("now_ms must be a non-negative integer")
 
         # A user-supplied grant iterable can execute reentrant Python code.
