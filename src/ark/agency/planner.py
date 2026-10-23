@@ -114,9 +114,13 @@ class PlanGraph:
             raise KeyError(step_id)
         if type(to_state) is not StepState:
             raise TypeError("to_state must be an exact StepState")
-        if type(expected_revision) is not int or expected_revision < 0:
+        if (
+            type(expected_revision) is not int
+            or not 0 <= expected_revision <= 2**63 - 1
+        ):
             raise ValueError(
-                "expected_revision must be a non-negative exact integer"
+                "expected_revision must be a non-negative exact integer "
+                "within SQLite range"
             )
         current = self._status[step_id]
         if expected_revision != current.revision:
@@ -133,6 +137,8 @@ class PlanGraph:
             ]
             if not all(state is StepState.SUCCEEDED for state in dependency_states):
                 raise PlanConflictError("step dependencies are not satisfied")
+        if current.revision == 2**63 - 1:
+            raise PlanConflictError("plan revision exhausted SQLite INTEGER range")
         updated = replace(current, state=to_state, revision=current.revision + 1)
         self._status[step_id] = updated
         if to_state in {
