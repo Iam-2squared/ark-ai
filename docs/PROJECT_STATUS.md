@@ -1,6 +1,54 @@
 # ARK AI Project Status
 
-**LATEST — Run 360**
+**LATEST — Run 362**
+
+Saved at: **2026-10-23 18:50:13.230 JST (+09:00)**.
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD before this invocation: `38a1aa4c64acfe540bf75871227a19d6b44372f0` (CI #317 / run `39932364336`, SUCCESS).
+Exact final **source/test** HEAD before this checkpoint: `aede3216524ea3af5a4d3b2175c07735e931d4b9`.
+Checkpoint-result HEAD: **this file cannot contain its own future commit SHA**. The GitHub Contents API update result is authoritative. **CI #327 validates the source/test HEAD above, not this subsequent documentation checkpoint**.
+
+## Overall current ARK state
+
+ARK remains a reversible, local-first JARVIS foundations Draft research branch. It is not production dispatch, authenticated personal consent, trusted exactly-once external actions or JARVIS completion. Frozen V1/V2/Local UI/Launcher contracts and evidence remain unchanged. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**, without Candidate weights, protected V2 evaluation, promotion or paid/external compute.
+
+The work-basis HEAD already contained intervening **Run361** Memory/Registry-authoritative diagnostics, Audit continuity, Observation window and synthetic snapshot groundwork; those commits were **not** made during Run362 and are not included in its new-test count. Prior Run360 checkpoint history is preserved verbatim below.
+
+## NEW work this invocation — Run 362
+
+**Five coherent work packages, ten sequential normal GitHub Contents commits, 35 new parametrized pytest cases**; latest PR HEAD checked immediately before each write. No raw Git Object / force / alternate write path, no real backend dispatch.
+
+1. **ActionAudit same-version SQLite schema integrity**: source `7d138121bdbd9bac3c263ccc0ca8598c42c3d9a0`, regression file `55f8fbc68e52c855fd066e1fefc7d09f4122611a` (7 cases). Startup compares original v1 DDL, indexes and extra objects while preserving quoted SQL literals; runs `PRAGMA quick_check`, rejects schema drift without migrations/auto-repair. This does not authenticate audit writers.
+2. **Planner deep-DAG validation**: source `6daca3ba54c7b9bf72000a501477a260e3aa5b10`, tests `1ceb13fc4846fa4fb76d0f09fb8ba3d81f0da60a` (3 cases). Iterative DFS validates 1,500-deep plans/cycles without Python recursion exhaustion; immutable-input epoch and all existing transition rules remain in place. No persistent Planner journal or backend.
+3. **ToolRegistry static backend execution-interface pinning**: source `33b1a3f36703067947d9b733a506d8b0da76a3a8`, tests `1032a7a0a8a8c33f5dd9612340615a1b86037e72` (8 cases). Reject non-callable/property descriptors without invoking them and detect reflected replacement after registration. This is not attestation or an isolation sandbox.
+4. **ActionAudit clock-reentrant identity fence**: source `5038d4a160f2e42661d912115307e6f9da350a27`, tests `5890efbda556fd430bbcda1885231d52a69b71f3` (7 cases). Freeze ToolCall identity before clock callback, reject mutations with transaction rollback, return the pinned persisted identity. Still not a trusted clock or audit-before-real-action proof.
+5. **Observation continuity**: isolated source `177e3c30a28deeff59653413a3b169ac53e97da1`, tests `aede3216524ea3af5a4d3b2175c07735e931d4b9` (10 cases). Privacy-scoped, monotonic synthetic window rollover, equal-time idempotency, local hash chain and reflected-input checks. No camera, microphone, screen capture, live notification or consent authority.
+
+## Exact-head CI / evidence
+
+- **#318** `39933573083`, **#319** `39933657908`, **#320** `39933769196`, **#321** `39933834484`, **#322** `39934039534`, **#323** `39934102298`, **#324** `39934241170`, **#325** `39934315270`, **#326** `39934396839`: all **SUCCESS** on their respective exact source/test HEADs.
+- **#327 / run `39934441974`: SUCCESS, all 6/6 GREEN** on exact Run362 final source/test HEAD `aede3216524ea3af5a4d3b2175c07735e931d4b9`: Ubuntu Python 3.11 job `120350412085`; Ubuntu 3.12 `120350411732`; Ubuntu 3.13 `120350412036`; Windows 3.11 `120350412000`; Windows 3.12 `120350412148`; Windows 3.13 `120350411951`.
+- No separate detached local Run362 pytest count is claimed. Run362's formal evidence is GitHub PR-head CI. Local evidence summary is `RUN362_EVIDENCE_SUMMARY.md` and is not a repository contract or external attestation.
+- This **checkpoint commit's own CI is not yet known at the time this text is written**. Never attribute #327 to the future checkpoint-result HEAD.
+
+## Frozen boundaries / blockers / authorization
+
+No paid/potentially billable service, subscriptions, external GPU, credential/account changes, actual user data, real ToolBackend, notification, real training, Candidate weights, protected V2 final evaluation, promotion, frozen contract change, destructive migration or main merge. PR #5 stays Draft/NOT_PASSED under separate explicit authorization. Startup DDL and local witness checks are not externally trusted history; in-process reflection defenses do not prove sandbox integrity. Registry-bound production permission, durable one-shot occurrence, trusted audit-before-action, cross-database atomicity and UNKNOWN WRITE reconciliation are unproven.
+
+## Next plan / 今後の方針
+
+1. Confirm **this checkpoint's resulting SHA and its own exact-head CI** separately; do not confuse the checkpoint with #327.
+2. P0 **Memory**: strengthen coherent snapshot/CAS/expiry with strict persisted row/event evidence, bounded error and restart tests while preserving legitimate V1 nonmonotone clocks.
+3. P0 **Permission and ToolRegistry**: safely integrate exact registry-derived READ/WRITE effect into durable one-shot diagnostic permission, with immutable bound IDs and non-dispatch mock evidence; require GREEN lower-layer dependencies.
+4. P1 **Planner / Audit / One-Shot**: combine externally retained history witness, crash-safe checkpoint, audit-before-action with an explicitly trusted clock model, and fail-closed UNKNOWN WRITE no-replay status. Do not claim exactly-once real-world actions.
+5. P1/P2 **privacy and V3 free-only**: scoped synthetic Personal Context consent/withdrawal, proactive scheduler claim/notification budgets, Observation provenance/retention; V3 identity/path/reproducibility reviews only, no paid GPU, protected evaluation, Candidate or promotion.
+
+---
+
+**HISTORICAL — Run 360 and earlier (retained unchanged below)**
+
+**HISTORICAL — Run 360**
 
 Saved at: **2026-10-23 17:59:30.521 JST (+09:00)**
 
