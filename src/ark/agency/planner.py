@@ -45,11 +45,48 @@ class PlanGraph:
             step.step_id: PlanStepStatus(step.step_id, StepState.PENDING, 0)
             for step in steps
         }
+        # A MappingProxyType protects the mapping, not its frozen dataclass
+        # values against object.__setattr__ reflection. Pin exact plan inputs.
+        self._step_mapping_epoch = self.steps
+        self._step_epoch = tuple(
+            (step_id, step, step.call, step.depends_on, step.call.arguments, step.call.request_id)
+            for step_id, step in sorted(self.steps.items())
+        )
+
+    def _assert_plan_epoch(self) -> None:
+        if (
+            type(self.steps) is not MappingProxyType
+            or self.steps is not self._step_mapping_epoch
+            or type(self._step_epoch) is not tuple
+            or len(self._step_epoch) != len(self.steps)
+        ):
+            raise PlanConflictError("plan mapping changed after construction")
+        for step_id, step, call, depends_on, arguments, request_id in self._step_epoch:
+            if (
+                type(step) is not PlanStep
+                or type(step.step_id) is not str
+                or step.step_id != step_id
+                or self.steps.get(step_id) is not step
+                or step.call is not call
+                or type(call) is not type(step.call)
+                or type(depends_on) is not tuple
+                or step.depends_on is not depends_on
+                or call.arguments is not arguments
+            ):
+                raise PlanConflictError("plan step input changed after construction")
+            try:
+                current_request_id = call.request_id
+            except (TypeError, ValueError, AttributeError) as exc:
+                raise PlanConflictError("plan action input is invalid") from exc
+            if current_request_id != request_id:
+                raise PlanConflictError("plan action identity changed after construction")
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
+        self._assert_plan_epoch()
         return MappingProxyType(dict(self._status))
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
+        self._assert_plan_epoch()
         ready: list[PlanStep] = []
         for step_id in sorted(self.steps):
             status = self._status[step_id]
@@ -58,6 +95,7 @@ class PlanGraph:
             dependencies = [self._status[item].state for item in self.steps[step_id].depends_on]
             if all(state is StepState.SUCCEEDED for state in dependencies):
                 ready.append(self.steps[step_id])
+        self._assert_plan_epoch()
         return tuple(ready)
 
     def transition(
@@ -67,6 +105,7 @@ class PlanGraph:
         *,
         expected_revision: int,
     ) -> PlanStepStatus:
+        self._assert_plan_epoch()
         if type(step_id) is not str or not step_id.strip():
             raise TypeError("step_id must be a non-empty exact string")
         if step_id not in self._status:
