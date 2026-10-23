@@ -155,8 +155,11 @@ class PlanStepStatus:
         _text("step_id", self.step_id)
         if type(self.state) is not StepState:
             raise TypeError("state must be a StepState")
-        if type(self.revision) is not int or self.revision < 0:
-            raise ValueError("revision must be a non-negative integer")
+        if (
+            type(self.revision) is not int
+            or not 0 <= self.revision <= 2**63 - 1
+        ):
+            raise ValueError("revision must be a non-negative integer within SQLite range")
 
 
 @dataclass(frozen=True, slots=True)
