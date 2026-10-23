@@ -20,6 +20,11 @@ from .registry import ToolRegistry
 
 _MAX = 2**63 - 1
 _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
+_TOKEN_DIGEST = re.compile(r"[0-9a-f]{64}\Z")
+_REGISTRY_ID = re.compile(r"tools_[0-9a-f]{64}\Z")
+_BOUND_ID = re.compile(r"bound_[0-9a-f]{64}\Z")
+_REQUEST_ID = re.compile(r"act_[0-9a-f]{64}\Z")
+_MAX_FIXTURE_ROWS = 10_000
 _TABLE = """CREATE TABLE synthetic_occurrence_reservations(
     token_digest TEXT PRIMARY KEY NOT NULL,
     occurrence_id TEXT NOT NULL UNIQUE,
@@ -74,6 +79,29 @@ def _validate(conn: sqlite3.Connection) -> None:
             raise SyntheticReplayRejected("synthetic reservation schema changed")
     if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
         raise SyntheticReplayRejected("synthetic reservation storage failed quick_check")
+
+    # SQLite's quick_check verifies storage and CHECK constraints, but it
+    # cannot certify the canonical identity and time relationships in rows.
+    # Review a bounded fixture ledger on every open, read and reservation.
+    rows = conn.execute(
+        """SELECT token_digest, occurrence_id, registry_revision,
+                  bound_action_id, request_id, reserved_at_ms, expires_at_ms
+           FROM synthetic_occurrence_reservations"""
+    )
+    for index, row in enumerate(rows):
+        if index >= _MAX_FIXTURE_ROWS:
+            raise SyntheticReplayRejected("synthetic reservation review budget exceeded")
+        token, occurrence, revision, bound, request, reserved, expires = row
+        if (
+            type(token) is not str or not _TOKEN_DIGEST.fullmatch(token)
+            or type(occurrence) is not str or not _OCCURRENCE.fullmatch(occurrence)
+            or type(revision) is not str or not _REGISTRY_ID.fullmatch(revision)
+            or type(bound) is not str or not _BOUND_ID.fullmatch(bound)
+            or type(request) is not str or not _REQUEST_ID.fullmatch(request)
+            or type(reserved) is not int or type(expires) is not int
+            or not 0 <= reserved < expires <= _MAX
+        ):
+            raise SyntheticReplayRejected("synthetic reservation row integrity failed")
 
 
 class SyntheticOccurrenceStore:
