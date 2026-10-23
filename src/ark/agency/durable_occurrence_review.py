@@ -80,8 +80,8 @@ class SyntheticOccurrenceStore:
     """No-execution fixture ledger; not a real PermissionGate or token issuer."""
 
     def __init__(self, path: Path) -> None:
-        if type(path) is not Path:
-            raise TypeError("synthetic ledger path must be an exact pathlib.Path")
+        if not isinstance(path, Path):
+            raise TypeError("synthetic ledger path must be a pathlib.Path")
         self._path = path
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
