@@ -27,11 +27,17 @@ from .planner_journal_review import (
 )
 from .registry import ToolRegistry
 from .synthetic_occurrence_audit_link_review import (
+    _SELECT as _LINK_ROWS,
+)
+from .synthetic_occurrence_audit_link_review import (
     SyntheticAuditLinkWitness,
     SyntheticOccurrenceAuditLinkStore,
-    _SELECT as _LINK_ROWS,
     _audit_identity,
+)
+from .synthetic_occurrence_audit_link_review import (
     _hash as _link_hash,
+)
+from .synthetic_occurrence_audit_link_review import (
     _replay as _replay_links,
 )
 from .synthetic_occurrence_continuity_review import (
