@@ -104,6 +104,54 @@ veto markers, and malformed retained carriers. There is still no externally
 authenticated subject/issuer, real consent, cross-store transaction, or
 permission to provide the resulting content to a live model or recipient.
 
+## Synthetic occurrence-to-audit link sidecar (research only)
+
+`agency/synthetic_occurrence_audit_link_review.py` creates a **separate**
+append-only SQLite fixture: one canonical occurrence ID, registry revision,
+bound action ID and request ID, paired with one existing ActionAudit v1
+pre-action event ID and its complete canonical event digest. It does not
+change the preexisting ActionAudit v1 schema. Its write preflight checks the
+registry-bound WRITE identity, verifies the occurrence against a read-only
+snapshot of the durable reservation ledger and the pre-action event against
+the actual ActionAudit row, and then commits a local hash-chained link.
+
+Only `synthetic_audit_before_mock` events qualify. Duplicate occurrence
+links and duplicate event IDs are rejected by SQLite uniqueness constraints.
+Schema drift, invalid row identities, non-monotonic locally supplied link
+times, direct row rewriting and malformed historical chains fail closed.
+An *independently retained* prior `SyntheticAuditLinkWitness` detects
+deletion of a known prefix; a re-created local witness cannot certify a
+missing history. The sidecar refuses to regenerate missing DB files when
+reading or appending. Corresponding synthetic regression tests are in
+`tests/test_synthetic_occurrence_audit_link_run374.py`.
+
+**Critical:** the three source/read/write SQLite transactions are not
+atomic together. A link is a point-in-time local consistency diagnosis, NOT
+an authenticated issuer approval, signed external witness, source-ledger
+tamper protection, proof of effect, production Exactly-Once or permission to
+execute. There is no backend call. Subsequent mutation of an external
+ledger must be separately re-reviewed with a trusted independent witness.
+The mock cycle must not use a link to auto-replay UNKNOWN WRITE.
+
+## Independently retained proactive trigger history
+
+`proactive_synthetic_continuity_review.py` gives a read-only,
+content-minimized witness over all canonical persisted trigger rows, including
+bound digests and observed/prepared timestamps. A later snapshot can append
+new preparations without invalidating a genuinely earlier witness, while
+deletion or a coordinated internally valid rewrite of an earlier trigger
+requires rejection. Invalid witness carriers and changed SQLite schemas
+are refused; a missing fixture file is never recreated during review.
+
+`tests/test_proactive_synthetic_continuity_run374.py` exercises normal
+append, persisted-row removal, coordinated recomputation of a trigger
+primary key, witness tampering, missing-file refusal and schema drift.
+
+Hashes of low-entropy scope/policy identifiers can still be guessed.
+An attacker controlling the SQLite file and all witness copies can forge a
+new consistent history. No policy authentication, real observation,
+notification authorization, external clock, consent or user identity exists.
+
 ## Release and integration gates
 
 These fixtures must remain disconnected until exact-head CI is GREEN and
