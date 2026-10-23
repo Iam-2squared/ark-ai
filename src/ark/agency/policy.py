@@ -12,6 +12,7 @@ from .contracts import (
     ToolCall,
     ToolSpec,
 )
+from .registry import BoundAction, ToolRegistry
 
 
 class PermissionGate:
@@ -19,6 +20,44 @@ class PermissionGate:
 
     def __init__(self) -> None:
         self._consumed_tokens: set[str] = set()
+
+    def authorize_registered(
+        self,
+        registry: ToolRegistry,
+        call: ToolCall,
+        grants: Iterable[CapabilityGrant],
+        *,
+        now_ms: int,
+        one_shot: OneShotAuthorization | None = None,
+    ) -> BoundAction:
+        """Opt-in registry-authoritative policy check with NO backend dispatch.
+
+        An untrusted caller cannot downgrade the registry's WRITE effect by
+        supplying its own READ ToolSpec. This is a diagnostic authorization
+        boundary, not durable one-shot approval or external execution authority.
+        """
+        if type(registry) is not ToolRegistry or type(call) is not ToolCall:
+            raise PermissionDenied("registered authorization requires exact registry and call")
+        try:
+            bound = registry.bind(call)
+            # Materialize external grant iterables before any WRITE token is
+            # spent; they may mutate a reflected ToolCall/registry as they run.
+            grant_snapshot = tuple(grants)
+            verified = registry.bind(call)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise PermissionDenied("registry binding failed before authorization") from exc
+        if (
+            bound.registry_revision != verified.registry_revision
+            or bound.bound_action_id != verified.bound_action_id
+            or bound.registration is not verified.registration
+            or bound.call is not verified.call
+        ):
+            raise PermissionDenied("registry identity changed while reading grants")
+
+        registration = verified.registration
+        spec = ToolSpec(registration.name, registration.capability, registration.effect)
+        self.authorize(spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot)
+        return verified
 
     def authorize(
         self,
