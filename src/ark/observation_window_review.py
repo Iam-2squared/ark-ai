@@ -23,6 +23,9 @@ class ObservationWindowReview:
     _epoch: tuple[tuple[ObservationEnvelope, str], ...] = field(
         init=False, repr=False, compare=False
     )
+    _header_epoch: tuple[str, int, int] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         self._validate_header()
@@ -37,6 +40,10 @@ class ObservationWindowReview:
             identities.add(identity)
             epoch.append((envelope, identity))
         object.__setattr__(self, "_epoch", tuple(epoch))
+        object.__setattr__(
+            self, "_header_epoch",
+            (self.privacy_scope, self.observed_at_ms, self.max_age_ms),
+        )
 
     def _validate_header(self) -> None:
         if type(self.privacy_scope) is not str or not self.privacy_scope.strip():
@@ -72,6 +79,10 @@ class ObservationWindowReview:
     def assert_consistent(self) -> None:
         """Reject stale or reflected input changes before reuse after review."""
         self._validate_header()
+        if (
+            self.privacy_scope, self.observed_at_ms, self.max_age_ms
+        ) != self._header_epoch:
+            raise ValueError("observation window header changed after construction")
         if type(self.envelopes) is not tuple or len(self.envelopes) != len(self._epoch):
             raise ValueError("observation window tuple changed after construction")
         for supplied, (original, identity) in zip(
