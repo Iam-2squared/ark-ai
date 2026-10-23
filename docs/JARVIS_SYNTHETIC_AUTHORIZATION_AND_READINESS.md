@@ -24,6 +24,39 @@ The fixture stores a SHA-256 token digest rather than plaintext token. This
 is **not** a password-hashing or secret-management scheme. Use only artificial,
 nonsecret, high-entropy test identifiers. Do not store real access credentials.
 
+## Additional disconnected integrity reviews (Run 369)
+
+The synthetic reservation fixture also validates every persisted row on open,
+observation and new reservation. It requires canonical token/occurrence/
+registry/action/request identifiers, exact signed-64-bit times with
+`0 <= reserved_at_ms < expires_at_ms`, and a bounded 10,000-row review budget.
+This rejects many same-schema malformed rows that a SQLite `quick_check`
+alone cannot classify. It **cannot** establish that a well-formed historical
+row belongs to a trusted issuer or that an attacker did not replace it with
+another valid-looking row.
+
+`agency/synthetic_occurrence_continuity_review.py` is a separate **read-only**
+witness reader. It hashes each canonical persisted reservation row, records a
+sorted local row-digest set, and compares an independently retained prior
+witness with the current snapshot. Append-only growth passes; deletion or
+rewrite of a retained row fails. This is meaningful **only if the earlier
+witness was preserved outside the mutable SQLite database**. Neither a local
+checksum nor a witness recomputed after corruption is an attestation. Raw
+bearer tokens and ToolCall argument payloads are not emitted.
+
+The startup readiness snapshot now checks structural consistency and
+re-derives every effective dependency state before returning a cached
+diagnosis, even if a changed local digest has been recomputed. A fully
+rewritten, internally consistent fake snapshot can still pass; no real
+hardware, registry, user or backend readiness is authenticated.
+
+`PlanGraph.topology_digest()` and `PlanGraph.status_digest()` provide
+canonical local planner identities for later **replay-only** engineering:
+ordered step IDs, canonical request IDs and dependency tuples bind topology;
+the full status witness includes derived terminal-blocked revisions.
+They do not persist journal events, certify a trusted clock, guard concurrent
+`PlanGraph` mutation or give authority to restart an interrupted WRITE.
+
 ## Fail-closed crash and replay reasoning
 
 1. A caller supplies an artificial registry, ToolCall, OneShotAuthorization,
