@@ -80,6 +80,35 @@ witness to detect a coordinated valid-looking tail rewrite. Recovery reports
 interrupted RUNNING steps as ambiguous and never authorizes replay, dispatch
 or real-world action. All three safeguards remain synthetic/disconnected.
 
+## Post-startup SQLite and retained-prefix fences (subsequent research)
+
+Three independent disconnected safety paths now revalidate evidence at the point
+of use, rather than assuming that a successful initializer establishes an
+unchangeable disk or history:
+
+- `SyntheticPlanJournal.append(..., retained=earlier_tail)` optionally checks
+  an independently retained earlier journal prefix **inside the same SQLite
+  `BEGIN IMMEDIATE` transaction** as the next local state transition. A
+  coordinated same-database event/header truncation cannot be extended when
+  a genuinely earlier witness is supplied. This option does not mint an
+  external anchor or authenticate the witness. With no witness the old local
+  hash-chain limitation remains.
+- `SQLiteActionAudit.append()` and `events()` now revalidate v1 schema
+  version and exact DDL/quick-check inside their respective write/read
+  transactions, refusing post-startup schema replacement. They do not bind
+  audited events to an externally trusted issuer or produce a signed log.
+- `SyntheticOccurrenceStore.reserve_synthetic()` opens an **existing**
+  database in SQLite URI `mode=rw`. Only explicit fixture initialization
+  may create the file. A store whose file was moved/deleted does not
+  silently recreate a blank fixture during a reservation attempt. This is
+  not a defense against valid-looking coordinated whole-file replacement.
+
+All three paths are local-only; no backend, permission issuer, human approval,
+external side effect or notification is invoked. These improvements do not
+make the three SQLite stores mutually transactional or certify exactly-once
+execution. Normal exact-head CI is required before treating these additions
+as fully validated repository evidence.
+
 ## Fail-closed crash and replay reasoning
 
 1. A caller supplies an artificial registry, ToolCall, OneShotAuthorization,
