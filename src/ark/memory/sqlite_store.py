@@ -138,14 +138,41 @@ class SQLiteMemoryStore:
 
     def put(self, write: MemoryWrite, *, expected_revision: int = 0) -> MemoryRecord:
         _revision(expected_revision, allow_zero=True)
-        memory_id = deterministic_memory_id(write.scope, write.source_id)
+        # Pin user-controlled MemoryWrite fields before the reentrant clock.
+        # Frozen dataclasses can still be modified via reflection.
+        pinned_scope = write.scope
+        pinned_metadata = write.metadata
+        pinned_source_id = write.source_id
+        pinned_content = write.content
+        pinned_expiry = write.expires_at_ms
+        pinned_owner = pinned_scope.owner_id
+        pinned_namespace = pinned_scope.namespace
+        metadata_copy = dict(pinned_metadata)
+        memory_id = deterministic_memory_id(pinned_scope, pinned_source_id)
         metadata_json = json.dumps(
-            dict(write.metadata), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            metadata_copy, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )
-        content_hash = hashlib.sha256(write.content.encode()).hexdigest()
+        content_hash = hashlib.sha256(pinned_content.encode()).hexdigest()
         with self._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
+            try:
+                stable = (
+                    write.scope is pinned_scope
+                    and write.metadata is pinned_metadata
+                    and (
+                        pinned_scope.owner_id, pinned_scope.namespace,
+                        write.source_id, write.content, write.expires_at_ms,
+                        dict(write.metadata),
+                    ) == (
+                        pinned_owner, pinned_namespace, pinned_source_id,
+                        pinned_content, pinned_expiry, metadata_copy,
+                    )
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise MemorySchemaError("memory write changed during clock") from exc
+            if not stable:
+                raise MemorySchemaError("memory write changed during clock")
             current = conn.execute(
                 "SELECT * FROM memories WHERE memory_id = ?",
                 (memory_id,),
@@ -161,15 +188,15 @@ class SQLiteMemoryStore:
                     ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                     (
                         memory_id,
-                        write.scope.owner_id,
-                        write.scope.namespace,
-                        write.source_id,
-                        write.content,
+                        pinned_owner,
+                        pinned_namespace,
+                        pinned_source_id,
+                        pinned_content,
                         metadata_json,
                         content_hash,
                         created,
                         now,
-                        write.expires_at_ms,
+                        pinned_expiry,
                         revision,
                     ),
                 )
@@ -179,7 +206,7 @@ class SQLiteMemoryStore:
                 # Legacy v1 valid rows remain supported without schema changes.
                 stored = _record(current)
                 if (stored.memory_id, stored.scope, stored.source_id) != (
-                    memory_id, write.scope, write.source_id
+                    memory_id, pinned_scope, pinned_source_id
                 ):
                     raise MemorySchemaError("stored memory identity differs from write")
                 actual = stored.revision
@@ -194,31 +221,31 @@ class SQLiteMemoryStore:
                         expires_at_ms=?, revision=?
                     WHERE memory_id=? AND owner_id=? AND namespace=? AND revision=?""",
                     (
-                        write.content,
+                        pinned_content,
                         metadata_json,
                         content_hash,
                         now,
-                        write.expires_at_ms,
+                        pinned_expiry,
                         revision,
                         memory_id,
-                        write.scope.owner_id,
-                        write.scope.namespace,
+                        pinned_owner,
+                        pinned_namespace,
                         actual,
                     ),
                 )
                 if result.rowcount != 1:
                     raise MemoryConflictError("memory changed during update")
                 operation = "update"
-            self._event(conn, memory_id, write.scope, operation, revision, now)
+            self._event(conn, memory_id, pinned_scope, operation, revision, now)
         return MemoryRecord(
             memory_id,
-            write.scope,
-            write.source_id,
-            write.content,
-            dict(write.metadata),
+            pinned_scope,
+            pinned_source_id,
+            pinned_content,
+            dict(metadata_copy),
             created,
             now,
-            write.expires_at_ms,
+            pinned_expiry,
             revision,
             content_hash,
         )
