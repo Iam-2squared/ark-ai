@@ -187,3 +187,62 @@ Do not turn any of the local receipt flags into external execution authority.
 The existing protected V1/V2/Local UI/Launcher evaluations and V3 PR #5
 Draft/NOT_PASSED gates remain unchanged. No paid services or compute are
 required or invoked by these fixture reviews.
+
+
+## Read-only four-store synthetic recovery review (Run 375)
+
+`review_synthetic_write_recovery(..., link_store=..., retained_link=...)`
+optionally adds the sidecar to the original Planner / occurrence / ActionAudit
+review. The sidecar is validated under **one read-only link-store transaction**:
+its hash-chain witness and link rows are captured together; a genuinely
+earlier independently retained witness can detect deletion of known history.
+Every observed link is checked against saved reservation identities and its
+pre-action audit event. Only matching request/registry/action pairs are
+returned as `matching_audit_links`. Missing or inconsistent identities fail
+closed, whereas an unlinked reservation stays explicitly **unlinked**.
+The old three-store API remains compatible when `link_store` is absent.
+The review's three authority flags remain false even for matching links and a
+locally successful mock cycle.
+
+The sidecar, reservation, journal and audit live in **four separate SQLite
+files**; cross-store reads are NOT atomic and local witness hashes can all be
+forged together by an attacker controlling both records and witnesses. An
+audit event or matching link does not prove that a WRITE happened. A recovered
+RUNNING WRITE remains **UNKNOWN; never auto-replay**. The regression matrix
+is `tests/test_synthetic_recovery_link_review_run375.py`; no real backend,
+approval, effect detection, credential or external clock is introduced.
+
+## Cached Personal Context revalidation (Run 375)
+
+`personal_context_reuse_review.py` revalidates an earlier in-memory bundle
+by obtaining **new coherent Memory evidence with before/after privacy-veto
+checks**, and comparing the complete fresh projection to the cached bundle.
+Changed Memory, newly recorded revocation, missing older veto history,
+malformed cached structures, caller-clock rollback and caller-specified
+maximum-age violations fail closed. The diagnostic result contains identifiers
+and the recheck timestamp, **not copied personal content**; its context-use,
+external-disclosure and dispatch permission flags are always false.
+`tests/test_personal_context_reuse_review_run375.py` covers these cases.
+
+The caller supplies `captured_at_ms` and `now_ms`; they are **not trusted
+time**. A successful comparison is not consent or a production lease.
+Revocation or Memory mutation after the final read may race with later use.
+The SQLite veto and Memory are not one atomic store; there is no erasure
+mechanism, verified subject/issuer or permission to expose the projection.
+
+## Persisted proactive trigger freshness guard (Run 375)
+
+`proactive_synthetic_freshness_review.py` reopens the existing ledger
+**read-only** and rebinds an earlier prepared receipt to the exact scope,
+policy revision, source and observation digests, persisted preparation time
+and synthetic maximum observation age. An independently retained trigger
+history can veto deleted/replaced prior rows. A forged prepared time,
+changed policy, stale observation, future row timestamp, missing DB, invalid
+SQLite schema or clock regression is refused.
+`tests/test_proactive_freshness_review_run375.py` contains the fault matrix.
+
+This review does **not** resurrect a Trigger for execution or send a
+notification. Its synthetic freshness receipt always denies notification,
+ToolBackend dispatch and replay. Caller-provided policy, observation digests,
+clock and retained witness are not authenticated. No physical clock,
+user-consent source, external notification provider or paid compute is used.
