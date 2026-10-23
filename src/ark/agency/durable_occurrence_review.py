@@ -111,7 +111,7 @@ class SyntheticOccurrenceStore:
         if not isinstance(path, Path):
             raise TypeError("synthetic ledger path must be a pathlib.Path")
         self._path = path
-        with closing(self._connect()) as conn:
+        with closing(self._connect(create=True)) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
@@ -128,8 +128,14 @@ class SyntheticOccurrenceStore:
                 conn.rollback()
                 raise
 
-    def _connect(self) -> sqlite3.Connection:
-        return sqlite3.connect(self._path, timeout=10, isolation_level=None)
+    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        if create:
+            # Only explicit fixture initialization may create storage.
+            return sqlite3.connect(self._path, timeout=10, isolation_level=None)
+        # A stale store must not recreate a deleted/moved reservation ledger.
+        # URI mode=rw also preserves literal special path characters.
+        uri = self._path.resolve().as_uri() + "?mode=rw"
+        return sqlite3.connect(uri, uri=True, timeout=10, isolation_level=None)
 
     def reserve_synthetic(
         self,
