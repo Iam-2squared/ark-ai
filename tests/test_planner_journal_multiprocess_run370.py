@@ -5,7 +5,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from ark.agency.contracts import PlanStep, StepState, ToolCall
+from ark.agency.contracts import PlanStep, ToolCall
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
 
