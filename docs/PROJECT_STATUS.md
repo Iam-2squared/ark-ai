@@ -1,6 +1,52 @@
 # ARK AI Project Status
 
-**LATEST — Run 362**
+**LATEST — Run 363**
+
+Saved at: **2026-10-23 19:55:32.354 JST (+09:00)**.
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD before this invocation: `b54cd44fa121baa8f5ee6446e64f1cebf78853d8` (CI #328 / run `39934759120`, SUCCESS 6/6).
+Exact final **source/test** HEAD before this checkpoint: `752692c03fad933ca39e7b3a9bdf696b045bfd30`.
+Checkpoint-result HEAD: **this file cannot contain its own future commit SHA**; the normal GitHub Contents API update response is authoritative. **CI #341 applies to the exact source/test HEAD above, not to this later status-only commit.**
+
+## Overall current ARK state
+
+ARK remains a reversible, local-first JARVIS foundations **Draft research** branch. There is **no production dispatch, authenticated personal consent, durable exactly-once external action, trusted external audit anchor, or JARVIS completion**. Frozen V1/V2/Local UI/Launcher contracts and evaluation evidence remain unchanged. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`; separate V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**, with no Candidate weights, protected V2 evaluation, promotion or paid/external compute.
+
+## NEW work this invocation — Run 363
+
+**Five independent coherent packages; 13 sequential normal GitHub Contents commits including two semantics-preserving fixes; 37 new parametrized pytest cases.** PR head was re-read immediately before every write; no raw Git objects, force-push, main merge or real backend dispatch.
+
+1. **Memory v1 reentrant put-input epoch:** source `f1c1cf951c11c8e24b987e958adc029b98df4d66`, tests `7b16c6fd51cda4840f70f44de33e5e94cd437c92` (11 cases). Pin scope/source/content/expiry/metadata before clock callback, reject reflected mutation under writer lock, persist and return pinned values; preserve existing v1 schema, CAS and event behavior. This is not malicious in-process sandboxing.
+2. **Planner terminal propagation:** source `d188a26c157dfb83e0c983c51f2b176f0ebfb288`, tests `b7df2b82547f444582e236d76aefb4e3141cd6a8` (3 cases). Replace repeat full-graph scans with dependent-index traversal O(vertices + edges), preserving PENDING-only blocking and revisions. Exercise a 1,500-step chain, shared descendant, and independent unaffected lane. No persistent journal or real executor.
+3. **ActionAudit SQLite integer bounds:** source `30b31e41dc27e9475e0a73def824be463c5d9cf7`, tests `5163617603c395c5456bbc045a8f7b85176296f1` (13 cases), compatible clock-error message fix `34021fa130e2499f32582aa3f0c920c2226c6c23`. Reject out-of-range/invalid clock and event cursors before SQLite binding; preserve prior error contract and allow the maximum signed 64-bit time. No trusted clock or audit-before-real-action proof.
+4. **PermissionGate grant-iteration epoch:** source `2f069940ce29ad0d85673efce7f56bed9df65fc8`, tests `fb0309f547958da7852fb5e822dee2a2228e604f` (6 cases), corrected missing-token test setup `752692c03fad933ca39e7b3a9bdf696b045bfd30`. Detect reflected ToolSpec/ToolCall/grant/one-shot changes during external grant iteration before token consumption. Still process-local one-shot only, not durable approval or production execution.
+5. **Read-only history-review opening:** Memory source `081098d995785206af7b9abfab017b62f434c819`, ActionAudit source `80c4b0e558a09dd14275ed90d7516becf64f5a30`, tests `2052ad91999112ead5a1a534adac4ec1324b3ad9` (4 cases). SQLite `mode=ro` URIs prevent read-only continuity/snapshot reviews from creating a replacement DB after a file vanished; test percent-encoded local paths. No schema mutation/migration/connector.
+
+## Exact-head CI / evidence
+
+- CI #329 `39941363242`, #330 `39941419967`, #331 `39941494457`, #332 `39941533483`: **SUCCESS** at their respective source/test HEADs.
+- Intermediate #333–#340: **FAIL** at their exact intermediate heads, first due to pre-existing clock error-message assertion and later an incomplete synthetic test invocation. Both addressed with minimal semantics-preserving updates noted above; these failures are not retroactively GREEN.
+- **CI #341 / run `39942139581`: SUCCESS, all 6/6 GREEN** at exact final source/test HEAD `752692c03fad933ca39e7b3a9bdf696b045bfd30`: Ubuntu Python 3.11/3.12/3.13 and Windows Python 3.11/3.12/3.13. Job IDs: `120375906221` (test (windows-latest, 3.12)); `120375906555` (test (windows-latest, 3.11)); `120375906569` (test (ubuntu-latest, 3.12)); `120375906587` (test (ubuntu-latest, 3.11)); `120375906706` (test (windows-latest, 3.13)); `120375906810` (test (ubuntu-latest, 3.13)).
+- The **checkpoint commit's own CI remains unverified at the moment this text is written**; never attribute #341 to this later documentation commit.
+
+## Frozen boundaries / blockers / authorization
+
+No paid/potentially billable external service or GPU, credentials/secrets/new accounts, real-user personal data, real ToolBackend, notification send, real training, Candidate weights, protected V2 evaluation, promotion, frozen-contract change, destructive migration, or main merge. V3 PR #5 stays Draft/NOT_PASSED under explicit approval gate. A local SHA-256 witness does not authenticate its issuer; a frozen dataclass/registry cannot stop malicious in-process code; process-local one-shot does not survive restart; unknown WRITE completion remains non-replayable without explicit reconciliation.
+
+## Next plan / 今後の方針
+
+1. Check **this checkpoint's own exact-result HEAD and CI** separately; #341 validates only the preceding source/test commit.
+2. P0 Memory: extend reflected-input epoch to `delete` and scoped `purge_expired`, bound persisted SQLite integer fields and clock, preserve v1 nonmonotone independent clocks; then integrate coherent read snapshot into a reviewed public contract without altering frozen evidence.
+3. P0 Permission/Registry: keep registry as sole tool-effect authority, design restart-safe durable one-shot occurrence/expiry and audit-first transaction boundaries; test disconnected mocks only, never claim external exactly-once.
+4. P1 Planner: integrate an append-only explicit-transition journal, independent retained tail evidence, crash/recovery tests and fail-closed UNKNOWN WRITE; retain terminal propagation and plan identity invariants.
+5. P1/P2 privacy/proactive/observations and V3: implement synthetic scoped consent and revocation, startup dependency readiness, scheduler dedup/cooldown, observation retention/provenance; V3 remains free-only identity/path/reproducibility guards with NO paid compute or protected evaluation.
+
+---
+
+**HISTORICAL — Run 362 and earlier (preserved below)**
+
+**HISTORICAL — Run 362**
 
 Saved at: **2026-10-23 18:50:13.230 JST (+09:00)**.
 
