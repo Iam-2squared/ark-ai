@@ -72,12 +72,18 @@ def review_audit_continuity(
     *,
     retained: AuditContinuityWitness | None = None,
     max_events: int = 10_000,
+    require_monotonic_time: bool = False,
 ) -> AuditContinuityWitness:
-    """Read a coherent local prefix, rejecting truncation or prefix substitution."""
+    """Read a coherent prefix with optional caller-clock rollback diagnosis.
+
+    Ordering supplied timestamps does not authenticate the clock or event.
+    """
     if type(audit) is not SQLiteActionAudit:
         raise TypeError("audit must be an exact SQLiteActionAudit")
     if type(max_events) is not int or not 1 <= max_events <= 10_000:
         raise ValueError("max_events must be an exact integer from 1 to 10000")
+    if type(require_monotonic_time) is not bool:
+        raise TypeError("require_monotonic_time must be an exact boolean")
     if retained is not None and type(retained) is not AuditContinuityWitness:
         raise TypeError("retained witness must be an exact AuditContinuityWitness")
     pinned = None
@@ -116,11 +122,16 @@ def review_audit_continuity(
     chain = _GENESIS
     count = 0
     tail = 0
+    previous_at = -1
     if pinned is not None and pinned[0] == 0:
         if pinned[1:] != (0, _GENESIS.hex()):
             raise ActionAuditSchemaError("retained empty audit witness differs")
     for row in rows:
         tail, payload = _row_payload(row, previous_id=tail)
+        at_ms = row["occurred_at_ms"]
+        if require_monotonic_time and at_ms < previous_at:
+            raise ActionAuditSchemaError("audit event clock regressed")
+        previous_at = at_ms
         chain = hashlib.sha256(chain + b"\n" + payload).digest()
         count += 1
         if pinned is not None and count == pinned[0]:
