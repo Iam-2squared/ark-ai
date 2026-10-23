@@ -91,6 +91,24 @@ class ObservationWindowReview:
             if supplied is not original or self._check_envelope(supplied) != identity:
                 raise ValueError("observation identity changed after construction")
 
+    def assert_fresh_at(self, now_ms: int) -> None:
+        """Re-check cached synthetic observations against an explicit later time.
+
+        Caller-provided time is not trusted-clock evidence, consent or capture
+        authority. This opt-in check never updates the original window witness.
+        """
+        if type(now_ms) is not int or not 0 <= now_ms <= 2**63 - 1:
+            raise ValueError("retention check time must be an exact SQLite-range integer")
+        self.assert_consistent()
+        if now_ms < self.observed_at_ms:
+            raise ValueError("observation retention clock moved backwards")
+        if any(
+            now_ms - envelope.ingested_at_ms > self.max_age_ms
+            for envelope in self.envelopes
+        ):
+            raise ValueError("observation window no longer meets age budget")
+        self.assert_consistent()
+
     @property
     def witness(self) -> str:
         self.assert_consistent()
