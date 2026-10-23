@@ -21,6 +21,8 @@ from .contracts import ActionAuditEvent, Effect, ToolCall
 from .durable_occurrence_review import (
     SyntheticOccurrenceStore,
     SyntheticReservationReceipt,
+)
+from .durable_occurrence_review import (
     _validate as _validate_reservations,
 )
 from .registry import ToolRegistry
@@ -318,7 +320,9 @@ class SyntheticOccurrenceAuditLinkStore:
                         (*fields, link),
                     )
                 except sqlite3.IntegrityError as exc:
-                    raise SyntheticAuditLinkRejected("synthetic occurrence or audit already linked") from exc
+                    raise SyntheticAuditLinkRejected(
+                        "synthetic occurrence or audit already linked"
+                    ) from exc
                 conn.commit()
                 return SyntheticAuditLinkReceipt(reservation.occurrence_id, event.event_id, link)
             except BaseException:
