@@ -269,51 +269,74 @@ class SQLiteMemoryStore:
             raise TypeError("scope must be an exact MemoryScope")
         if type(include_expired) is not bool:
             raise TypeError("include_expired must be a bool")
+        # Bind both the database read and its expiry clock to the same read
+        # transaction; reject scope retargeting by a reentrant clock callback.
+        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
         with self._connect() as conn:
+            conn.execute("BEGIN")
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
-                (memory_id, scope.owner_id, scope.namespace),
+                (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchone()
-        if row is None:
-            return None
-        record = _record(row)
-        if not include_expired and _expired(record, self._now()):
-            return None
-        return record
+            if row is None:
+                return None
+            record = _record(row)
+            now = self._now() if not include_expired else None
+            if (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ):
+                raise MemorySchemaError("memory get scope changed during clock")
+            if now is not None and _expired(record, now):
+                return None
+            return record
 
     def search(self, query: MemoryQuery) -> list[MemoryRecord]:
         if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
             raise TypeError("query requires exact MemoryQuery and MemoryScope")
-        pinned_scope = MemoryScope(query.scope.owner_id, query.scope.namespace)
-        now = self._now()
-        if (
-            type(query.scope) is not MemoryScope
-            or (query.scope.owner_id, query.scope.namespace)
-            != (pinned_scope.owner_id, pinned_scope.namespace)
-        ):
-            raise MemorySchemaError("memory search scope changed during clock")
+        # Pin the full query, not only its scope. Frozen query fields can be
+        # changed by a reflected mutation while the injected clock executes.
+        original_scope = query.scope
+        pinned_scope = MemoryScope(original_scope.owner_id, original_scope.namespace)
+        pinned_text = query.text
+        pinned_limit = query.limit
+        pinned_include_expired = query.include_expired
+        MemoryQuery(pinned_scope, pinned_text, pinned_limit, pinned_include_expired)
         with self._connect() as conn:
+            conn.execute("BEGIN")
+            # The SELECT anchors the SQLite snapshot before the clock. A
+            # concurrent writer in the clock callback cannot mix epochs.
             rows = conn.execute(
                 "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
                 (pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchall()
-        records = [_record(row) for row in rows]
-        if not query.include_expired:
-            records = [item for item in records if not _expired(item, now)]
-        wanted = _tokens(query.text)
-        ranked: list[tuple[float, int, str, MemoryRecord]] = []
-        for item in records:
-            if wanted:
-                matched = len(wanted & _tokens(item.content))
-                if matched == 0:
-                    continue
-                score = matched / len(wanted)
-            else:
-                score = 0.0
-            ranked.append((-score, -item.updated_at_ms, item.memory_id, item))
-        ranked.sort(key=lambda value: value[:3])
-        return [value[3] for value in ranked[: query.limit]]
+            now = self._now()
+            if (
+                query.scope is not original_scope
+                or type(query.scope) is not MemoryScope
+                or (query.scope.owner_id, query.scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+                or query.text != pinned_text
+                or query.limit != pinned_limit
+                or query.include_expired != pinned_include_expired
+            ):
+                raise MemorySchemaError("memory search query changed during clock")
+            records = [_record(row) for row in rows]
+            if not pinned_include_expired:
+                records = [item for item in records if not _expired(item, now)]
+            wanted = _tokens(pinned_text)
+            ranked: list[tuple[float, int, str, MemoryRecord]] = []
+            for item in records:
+                if wanted:
+                    matched = len(wanted & _tokens(item.content))
+                    if matched == 0:
+                        continue
+                    score = matched / len(wanted)
+                else:
+                    score = 0.0
+                ranked.append((-score, -item.updated_at_ms, item.memory_id, item))
+            ranked.sort(key=lambda value: value[:3])
+            return [value[3] for value in ranked[:pinned_limit]]
 
     def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
         _memory_id(memory_id)
