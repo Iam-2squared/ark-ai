@@ -111,3 +111,20 @@ def test_envelopes_have_no_execution_or_consent_authority():
     for field in ("grant", "authorization", "token", "tool_call", "backend"):
         assert not hasattr(window, field)
     window.assert_consistent()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("privacy_scope", "other:scope"),
+        ("observed_at_ms", 120),
+        ("max_age_ms", 100),
+    ],
+)
+def test_reflected_header_widening_is_rejected_on_reuse(field, value):
+    window = _window(_envelope())
+    original_witness = window.witness
+    object.__setattr__(window, field, value)
+    with pytest.raises(ValueError, match="header changed"):
+        window.assert_consistent()
+    assert original_witness.startswith("window_")
