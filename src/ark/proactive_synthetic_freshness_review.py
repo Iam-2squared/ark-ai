@@ -10,6 +10,7 @@ from __future__ import annotations
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from pathlib import Path
 
 from .proactive_synthetic_continuity_review import (
     _ROWS,
@@ -84,6 +85,15 @@ def review_prepared_trigger_freshness(
         if type(retained) is not SyntheticTriggerWitness:
             raise SyntheticTriggerRejected("exact retained proactive witness required")
         retained.assert_integrity()
+    # Frozen carriers remain reflectively mutable: pin the exact inputs
+    # before the read transaction and fail closed on an observed edit.
+    receipt_epoch = (receipt.trigger_id, receipt.prepared_at_ms)
+    ledger_path = ledger.path
+    if not isinstance(ledger_path, Path):
+        raise SyntheticTriggerRejected("proactive ledger path changed")
+    retained_epoch = (
+        (retained.row_hashes, retained.digest) if retained is not None else None
+    )
     pinned = policy.identity()
     scope = _hash("ARK-trigger-scope-v1", pinned[:4])
     policy_hash = _hash("ARK-trigger-policy-v1", pinned)
@@ -94,7 +104,7 @@ def review_prepared_trigger_freshness(
     if receipt.trigger_id != expected:
         raise SyntheticTriggerRejected("stale or mismatched prepared trigger policy")
 
-    uri = ledger.path.resolve().as_uri() + "?mode=ro"
+    uri = ledger_path.resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
         conn.execute("BEGIN")
         try:
@@ -131,6 +141,16 @@ def review_prepared_trigger_freshness(
                 raise SyntheticTriggerRejected("prepared observation stale or clock regressed")
             if policy.identity() != pinned:
                 raise SyntheticTriggerRejected("policy changed during freshness review")
+            if (
+                (receipt.trigger_id, receipt.prepared_at_ms) != receipt_epoch
+                or ledger.path is not ledger_path
+                or retained is not None and (
+                    retained.row_hashes, retained.digest
+                ) != retained_epoch
+            ):
+                raise SyntheticTriggerRejected(
+                    "freshness evidence changed during read-only review"
+                )
             conn.commit()
             return SyntheticProactiveFreshnessReview(
                 expected, prepared, now_ms, current,
