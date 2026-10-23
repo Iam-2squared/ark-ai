@@ -17,11 +17,12 @@ from .durable_occurrence_review import SyntheticOccurrenceStore
 from .planner import PlanGraph
 from .planner_journal_review import SyntheticPlanJournal
 from .registry import ToolRegistry
+from .synthetic_occurrence_audit_link_review import SyntheticOccurrenceAuditLinkStore
 
 _MAX = 2**63 - 1
 _FAULTS = frozenset((
     "after_running", "after_reservation", "after_pre_action_audit",
-    "after_mock_marker",
+    "after_mock_marker", "after_audit_link",
 ))
 
 
@@ -65,6 +66,7 @@ def run_synthetic_mock_cycle(
     occurrence_id: str,
     now_ms: int,
     fault_at: str | None = None,
+    link_store: SyntheticOccurrenceAuditLinkStore | None = None,
 ) -> SyntheticMockCycleReceipt:
     """Drive durable fixture steps in order, with no backend access.
 
@@ -86,8 +88,11 @@ def run_synthetic_mock_cycle(
         or fault_at is not None and (
             type(fault_at) is not str or fault_at not in _FAULTS
         )
+        or link_store is not None and type(link_store) is not SyntheticOccurrenceAuditLinkStore
     ):
         raise SyntheticMockCycleRejected("exact synthetic mock inputs required")
+    if fault_at == "after_audit_link" and link_store is None:
+        raise SyntheticMockCycleRejected("audit-link stop requires a synthetic sidecar")
     bound = registry.bind(call)
     if bound.registration.effect is not Effect.WRITE:
         raise SyntheticMockCycleRejected("only synthetic WRITE may enter a mock cycle")
@@ -113,6 +118,15 @@ def run_synthetic_mock_cycle(
     audit_event = audit.append(call, outcome="synthetic_audit_before_mock")
     if fault_at == "after_pre_action_audit":
         raise SyntheticMockCrashInjected("synthetic stop after pre-action audit")
+    # This is a separately committed local link, never external proof. A
+    # failure before or after it leaves RUNNING/UNKNOWN and forbids replay.
+    if link_store is not None:
+        link_store.link_synthetic(
+            registry, call, ledger, reservation, audit, audit_event,
+            at_ms=max(now_ms, audit_event.occurred_at_ms),
+        )
+        if fault_at == "after_audit_link":
+            raise SyntheticMockCrashInjected("synthetic stop after audit link")
     # Synthetic marker construction is pure and local: NOT a backend call.
     marker = "mock_" + hashlib.sha256(
         ("ARK-no-action-mock-v1\0" + reservation.occurrence_id
