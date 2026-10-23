@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — Run 375**
+
+Saved at: **2026-10-24T06:49:25.446+09:00 Asia/Tokyo/JST**, UTC runtime clock sampled immediately before the ordinary GitHub Contents API checkpoint write.
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact invocation work-basis HEAD: `8be837a55c7ebbb83f4e0e14d9a48e88c50a7e4b` (**CI #497 / run `40022869736`: SUCCESS 6/6**, jobs verified).
+Exact final **source/test HEAD**: `f32cacad7bc5c803dd541b37bfdc10358e767424` (**CI #510 / run `40029202865`: 5/6 GREEN; 1 IN PROGRESS (observed at checkpoint write); Ubuntu Python 3.13 Ruff PASS, **945 pytest passed**).
+Exact **checkpoint work-basis HEAD** including revised engineering documentation: `2635e22fd70d01af9242d68ab3218d5b60d9d522` (**CI #511 / run `40029362772`: 3/6 GREEN; 3 IN PROGRESS (observed at checkpoint write)).
+**The final checkpoint-result SHA cannot appear in its own self-referential file. Record the actual returned GitHub Contents API commit SHA separately, and verify its exact own CI without borrowing a prior HEAD's GREEN status.**
+
+## Overall ARK state
+
+ARK remains **local-first, isolated, disconnected/mock-only, reversible, and without real ToolBackend dispatch or real human-consent authority**. No production Exactly-Once, authenticated issuer/subject, trusted physical clock, independently signed evidence, real Candidate/model training, cross-store atomic snapshot, hardware actuation, automatic UNKNOWN WRITE replay or complete JARVIS. Main and its frozen V1/V2/Local UI/Launcher evidence/contracts were not changed; V3 PR #5 remains **Draft, unmerged, NOT_PASSED** with protected evaluations closed.
+
+## NEW — Run 375 (four FREE-only compatible foundation packages)
+
+**14 sequential ordinary GitHub Contents commits before this single checkpoint**, spanning four implementation/research packages, four new regression files, CI-driven narrow correctness/import fixes and maintained engineering documentation. The exact source/test HEAD increases the complete Python regression suite from **885 to 945 (+60 pytest cases)** in the verified Ubuntu Python 3.13 job. No code execution outside synthetic fixtures, raw Git-object writes, force pushes, protected evaluation, paid services, account/credential creation or main merge.
+
+1. **P0 four-store synthetic read-only recovery triage (+16 cases):** Extended `agency/synthetic_recovery_triage.py` with optional sidecar and independently retained link witness. The immutable sidecar chain witness and all link rows are observed in **one local link-store read transaction**, each linked occurrence is checked against stored reservation binding and canonical `synthetic_audit_before_mock` ActionAudit ID/content/time, while conflicting registry/action identity is rejected. A missing link is never guessed from a reservation, a missing SQLite database is never silently created, and `matching_audit_links` is **diagnostic only**. The Planner, reservation, audit and sidecar databases are not cross-store atomic; all three authorization/replay/outcome flags remain false.
+2. **P1 cached Personal Context freshness veto (+14 cases):** New `personal_context_reuse_review.py` rejects invalid/expired caller-clock leases, stale Memory revision/content, revoked scopes, invalid retained privacy-veto history and changed cached bundle content by obtaining a fresh coherent Memory snapshot bracketed by persistent veto reads. Its result contains only IDs and supplied review time; **context use, disclosure and dispatch remain denied**, even when the local check succeeds. Caller clocks and veto issuers are unauthenticated; the final check can race with later revocation.
+3. **P1 prepared proactive Trigger freshness (+16 cases):** New `proactive_synthetic_freshness_review.py` reopens the existing synthetic SQLite trigger ledger **read-only** to bind an earlier preparation to exact policy identity, source/observation digest, local age and persisted preparation time. Optional independently retained history detects deletion or replacement. Stale policies/observations, forged receipt times, schema drift, missing ledgers and clock rollback fail closed. All notification/dispatch/replay flags remain false; no live scheduler or notification is connected.
+4. **P1 isolated Observation parent lineage (+14 cases):** New `observation_lineage_review.py` validates bounded metadata-only observation windows, same privacy scope, uniquely resolved parent content hashes, same-source lineage, nonfuture parent times and no cycles. Returns deterministic order-insensitive, content-free synthetic lineage evidence with capture/disclosure/dispatch authority denied. The user-provided sources, timestamps and digests are not authenticated; no camera, microphone, screen or media connector is used.
+
+Fault matrices and explicit non-authority/privacy limits in `docs/SYNTHETIC_MOCK_AND_PRIVACY_BOUNDARIES.md`. No frozen source or evidence changed.
+
+## Exact-head CI, failures and evidence
+
+- **Run 374 basis CI #497 / `40022869736`: SUCCESS 6/6**, Ubuntu/Windows × Python 3.11/3.12/3.13 all independently verified.
+- Early intermediate **#498–#505: FAILED** on Ruff I001 import grouping/sorting while initially landing triage/privacy/scheduler fixtures; narrowly corrected via ordinary Contents API updates. Failures remain recorded rather than hidden or misreported GREEN.
+- **#506–#507: FAILED** on the new missing-sidecar regression asserting the wrong exception class; changed to correctly expect `SyntheticRecoveryRejected` from the recovery wrapper. This preserved the fail-closed behavior.
+- **#509 / `40029153557`: SUCCESS 6/6** on Observation lineage source HEAD `07377703cacc465ea00dbe66ee4d0e7aca258123`.
+- **#510 / `40029202865`: 5/6 GREEN; 1 IN PROGRESS (observed at checkpoint write)** on exact final source/test HEAD `f32cacad7bc5c803dd541b37bfdc10358e767424`; Ubuntu Python 3.13 recorded `All checks passed!` for Ruff and `945 passed` for pytest.
+- **#511 / `40029362772`: 3/6 GREEN; 3 IN PROGRESS (observed at checkpoint write)** on exact technical-documentation checkpoint work-basis HEAD `2635e22fd70d01af9242d68ab3218d5b60d9d522`.
+- **No earlier CI status is attributed to the subsequent checkpoint-result SHA.** That SHA and its CI must be verified separately.
+
+## Frozen, financial, legal, privacy and real-world authority boundaries
+
+No new paid or potentially billable action, external GPU, real Candidate/adapter/weight generation, protected V2 FINAL opening, V3 promotion, frozen-contract rewrite, real ToolBackend execution, live notification/media capture, user-secret/account connection, physical PC operation, destructive migration, real approval or protected main merge. All snapshots and hashes are local untrusted evidence; no authenticated consent, externally trusted clock, backend effect proof, external Exactly-Once or cross-database atomicity. PR #5 remains Draft/NOT_PASSED.
+
+## Next plan / 今後の方針
+
+1. **P0 exact-head CI:** Finish verifying remaining six-job matrix of #510, #511 and the distinct checkpoint-result CI; diagnose any failures against their specific HEAD without duplicate equivalent workflow reruns.
+2. **P0 authorization/recovery:** Strengthen immutable Registry-bound identity, mock issuer/subject/purpose/recipient and cancellation evidence, trusted-clock boundary specification, and UNKNOWN WRITE without automatic replay. Production issuer/clock/backend integration requires explicit trusted authorization.
+3. **P0 planner/occurrence/audit:** Expand synthetic crash-injection reconciliation and retained cross-store evidence under independently held witnesses. Never infer side effects from matching local audit events or the sidecar.
+4. **P1 Personal Context:** Build explicit privacy erasure/retention lifecycle and consent proof gate in isolated fixtures; recognize post-review revocation races and lack of cross-store atomicity. Do not disclose projection content to a live model or service.
+5. **P1 proactive / Observation / readiness:** Add retention, privacy scope, stale-policy and startup veto tests; preserve disconnected notification and capture interfaces.
+6. **P2 V3 FREE-only:** Research approval/path/identity/reproducibility guards using fixtures only; PR #5 remains Draft NOT_PASSED and no real candidate creation, paid compute or protected final evaluation.
+
+---
+
+**HISTORICAL — Run 374 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 374**
 
 Saved at: **2026-10-24T05:54:49.245+09:00 Asia/Tokyo/JST**, sampled immediately before this ordinary GitHub Contents API checkpoint write.
