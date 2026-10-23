@@ -6,6 +6,66 @@ modules and tests exercise disconnected local SQLite fixtures only. They do
 human issuer, open frozen evaluations, or alter existing v1/v2 contracts.
 All hashes and clocks are local/caller-supplied unless explicitly stated.
 
+## Run 376 offline claim, startup and retention contracts
+
+These are three **isolated, opt-in, disconnected fixture** additions; no
+execution path, historical frozen contract, V3 Candidate, live service, account,
+device or protected evaluation is activated.
+
+**Registry-bound synthetic approval claim**
+(`agency/synthetic_approval_claim_review.py`): a proposed approval is
+identified by immutable ToolRegistry revision, exact WRITE binding and request
+ID, digest-only issuer/subject/purpose/recipient/nonce fields, and a bounded
+caller-provided validity interval. Changing any field changes the deterministic
+`approval_<sha256>` identity; review rejects mismatched actor/purpose/recipient,
+registry changes, reflected claim edits, early/expired claims, and an
+explicitly provided cancellation-set membership. A READ registration cannot
+be modeled as WRITE. Neither an untrusted nonce nor an unsourced SHA digest
+authenticates a person, genuine consent, a verified purpose, the intended
+recipient, or non-revocation. The caller-supplied `frozenset` is **not** a
+durable or authenticated cancellation authority. Claim and review receipts
+always report **human_consent_verified=False**,
+**dispatch_authorized=False**, and **automatic_replay_authorized=False**.
+This module does not mint a production permission token.
+
+**Exact-schema startup freshness lease**
+(`startup_readiness_lease_review.py`): independently declared required
+component/schema pairs must all be present and **READY** in a semantically
+revalidated `StartupSnapshot`. DEGRADED, BLOCKED, dependency-blocked, missing,
+stale-schema, duplicate requirements and stale or regressing local timestamps
+fail closed. A blocked independent component does not poison unrelated READY
+dependencies. Snapshot/requirements are rechecked against reflected drift.
+The lease is diagnostic only: caller assertions, timestamps and schema strings
+are unauthenticated, a later failure can race after the review, and there is no
+real-PC proof, backend dispatch or live capability activation.
+
+**Read-only synthetic Memory retention inventory**
+(`personal_context_retention_review.py`): inspects exact local Memory v1
+schema and row digests in a scoped SQLite read snapshot without executing
+`DELETE`, `purge_expired`, migration or export. It emits only pseudonymous
+memory IDs, revisions, caller-time-relative `expired`, `not_expired`, or
+`no_expiry` classifications; inclusive expiration is
+`expires_at_ms <= now_ms`. Separate revocation-ledger read witnesses bracket
+the Memory review, with optional independently retained earlier veto evidence
+detecting deleted or rewritten prefixes. New revocations are recognized, but
+the two SQLite stores are **not** atomically snapshotted. The reviewer
+internally validates local Memory row content digests but does not return
+content, modify source rows, erase audit history, purge backups, authenticate a
+data subject or establish lawful retention. `NO_EXPIRY` means **policy review
+needed**, never consent. All inventories return
+**erasure_completed=False**, **deletion_authorized=False**, and
+**context_use_authorized=False**. Local hashed IDs may still be linkable;
+they must not be exported as a guarantee of anonymity or erasure.
+
+Regression fixtures: `tests/test_synthetic_approval_claim_review_run376.py`,
+`tests/test_startup_readiness_lease_review_run376.py`, and
+`tests/test_personal_context_retention_review_run376.py`. Assertions
+cover identity boundaries, reflection tamper, cancellation membership,
+read-only missing-DB refusal, integrity failure, scope isolation, TTL,
+dependency readiness and zero dispatch/erasure authority. These tests exercise
+only local synthetic fixtures and caller clocks. They do not constitute
+real-world consent, independent attestation or Exactly-Once proof.
+
 ## Durable proactive trigger identity
 
 `proactive_synthetic_review.py` verifies that every stored
