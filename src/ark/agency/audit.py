@@ -114,6 +114,12 @@ class SQLiteActionAudit:
             # Commit an event with a clock sampled only after acquiring the
             # writer slot; no external backend dispatch is performed here.
             conn.execute("BEGIN IMMEDIATE")
+            # The file may be replaced or its schema altered after startup.
+            # Revalidate under the same transaction that will append the event.
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            if type(version) is not int or version != SCHEMA_VERSION:
+                raise ActionAuditSchemaError("action audit schema version changed before append")
+            _validate_v1_schema(conn)
             now = self._now()
             try:
                 current = (
@@ -150,6 +156,12 @@ class SQLiteActionAudit:
         # The audit object may outlive the SQLite file. Never create an empty
         # replacement database while reading evidence from a stale path.
         with closing(self._connect_readonly()) as conn:
+            # Pin a single read snapshot and refuse post-startup DDL drift.
+            conn.execute("BEGIN")
+            version = conn.execute("PRAGMA user_version").fetchone()[0]
+            if type(version) is not int or version != SCHEMA_VERSION:
+                raise ActionAuditSchemaError("action audit schema version changed before read")
+            _validate_v1_schema(conn)
             rows = conn.execute(
                 """SELECT * FROM action_events WHERE event_id>?
                 ORDER BY event_id LIMIT ?""",
