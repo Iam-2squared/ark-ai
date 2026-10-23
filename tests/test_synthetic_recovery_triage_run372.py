@@ -179,10 +179,13 @@ def test_missing_ledger_fails_and_is_never_recreated(tmp_path: Path):
 
 def test_missing_audit_fails_and_is_never_recreated(tmp_path: Path):
     state = _setup(tmp_path)
-    state[3].path.unlink()
+    # Point a stale audit handle to an absent path. On Windows, SQLite
+    # initializers can retain an OS file handle and prohibit unlink().
+    missing = tmp_path / "missing-audit.sqlite"
+    state[3].path = missing
     with pytest.raises(ActionAuditSchemaError, match="cannot read audit"):
         _review(state)
-    assert not state[3].path.exists()
+    assert not missing.exists()
 
 
 def test_step_request_mismatch_is_rejected(tmp_path: Path):
