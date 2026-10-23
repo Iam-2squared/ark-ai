@@ -1,6 +1,52 @@
 # ARK AI Project Status
 
-**LATEST — Run 365**
+**LATEST — Run 366**
+
+Saved at: **2026-10-23T23:00:55.330 JST (+09:00)** (sampled immediately before this normal GitHub Contents API update).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `aa6e3cda3d1bd839c713e5e6c405a8b58b6821f5` (CI #371 / run `39957436229`, SUCCESS 6/6).
+Exact final **source/test/fix** HEAD before this checkpoint: `c21d82a9d49c43b0185f87944cdd2fc333b777a5`.
+Checkpoint-result HEAD: this file cannot predict its own committing SHA; the **GitHub Contents API response is authoritative**. CI #389 validates the preceding source/test/fix HEAD, **not** this checkpoint commit.
+
+## Overall current ARK state
+
+ARK's JARVIS foundations remain isolated/reversible, local-first Draft research, **not** authenticated real-user consent, live Tool dispatch, durable real-world Exactly-Once execution, externally attested audit, trusted wall-clock authority or complete JARVIS. Frozen V1/V2/Local UI/Launcher and protected evaluation contracts/evidence remain unchanged. `main` remains `7a843f17eb96ed13d66f23b58b06406b3002e405`; V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**. No Candidate, protected V2 evaluation opening, promotion or paid/external GPU compute.
+
+## NEW work this invocation — Run 366
+
+**Five coherent implementation/test packages, plus CI-driven semantics-preserving fixes: 18 sequential normal GitHub Contents commits before this checkpoint; 55 new parametrized pytest cases; six modified source files and six new regression-test files.** Re-read latest PR HEAD before each write; did not use raw Git objects, force-push, paid services or main merge.
+
+1. **Memory signed-64-bit boundaries (18 tests):** `MemoryWrite.expires_at_ms`, injected clock values, CAS expected revisions, event cursor and revision increment exhaustion are fail-closed at SQLite INTEGER limits. Maximum valid timestamp remains allowed; overflow does not change rows or event journal. Tests: `test_memory_sqlite_integer_boundaries_run366.py`. Existing schema v1 unchanged.
+2. **Planner atomic terminal cascade (8 tests):** collect pending descendants and preflight every revision before publishing any explicit or derived BLOCKED state. Exhausted descendants reject the entire transition without partially changing unrelated or earlier steps, preserving linear graph traversal. Tests: `test_planner_atomic_terminal_cascade_run366.py`. No persistent planner journal or backend execution.
+3. **PermissionGate time bounds (13 tests):** synthetic `CapabilityGrant`, `OneShotAuthorization` and policy `now_ms` reject invalid/out-of-range times before any process-local write token is consumed; maximum-range normal decisions preserved. Tests: `test_policy_sqlite_time_bounds_run366.py`. **Not** durable authorization or trusted-clock verification.
+4. **Content-free Memory coherent snapshot witness v2 (4 tests):** review digest now also binds canonical metadata SHA-256, creation time and expiry as well as existing revision/content/update fields. SQLite Memory v1 schema stays version 1; only the reversible review witness format increments to 2. Synthetic metadata/expiry edits cannot reuse an identical witness. Tests: `test_memory_snapshot_witness_lifecycle_run366.py`. A local digest is not external attestation.
+5. **Memory get/search coherent clock epoch (10 tests):** scope/query inputs pinned, SQLite read snapshot anchored before reentrant clock callback, and reflected retargeting rejected. Concurrent synthetic writer does not produce a mixed epoch or partially disclosed search context. Preserves legacy scope-specific exception wording. Tests: `test_memory_get_search_snapshot_epoch_run366.py`.
+6. **CI-driven Memory WAL connection remediation (2 tests):** actual CI #373 and #381 intermittently reported `sqlite3.OperationalError: database is locked` during two-initializer fixture. Ordinary `_connect()` no longer renegotiates persistent journal mode on each read/write; WAL setup is serialized for same-process bootstrap and initial schema creation still uses SQLite `BEGIN IMMEDIATE` for writer ownership. Tests: `test_memory_wal_first_open_run366.py`. The extra bootstrap mutex is **process-local**: cross-process first-open robustness is not yet proven.
+
+## Exact-head CI / evidence
+
+- Intermediate **CI #373 / run `39963871840`** and **#381 / run `39964600885`**: FAIL in intermittent Memory two-initializer SQLite lock regression. These failures are not treated as GREEN.
+- **CI #383 / run `39964926053`**: FAIL for existing Memory search-scope exception-text compatibility; corrected by `97b9c8717335feec18e989ec28cc2f760ef3217d` and focused test follow-up `492e22475dfb1ffc3b4a8c77dfe85da013500866`.
+- **CI #385 / run `39965299967`**: FAIL Ruff I001/B023 in WAL fix and new thread fixture; corrected with source `c4dd69f46a858780992630e4bc882a25db67145a` and test `c21d82a9d49c43b0185f87944cdd2fc333b777a5`.
+- **Final source/test CI #389 / run `39965575640`: SUCCESS 6/6 GREEN** at exact HEAD `c21d82a9d49c43b0185f87944cdd2fc333b777a5` for Ubuntu/Windows Python 3.11, 3.12 and 3.13. Ubuntu Python 3.13 logs: **Ruff PASS, pytest 572/572 PASS**; Local UI/Node and evaluation remain mock-only. Six job statuses were checked explicitly. CI #389 is not evidence for the later checkpoint commit.
+- **This checkpoint commit's own CI cannot be known until GitHub writes/starts that run**; verify result HEAD/run independently.
+
+## Frozen contracts / authorization boundaries
+
+No potentially billable services, paid APIs, external GPU, secrets/account connections, physical-PC actions, irreversible migrations, frozen-contract edits, real Candidate/weights, protected V2 evaluation, promotion, real Tool Backend execution, notification sends, or main merge. PR #5 stays Draft/NOT_PASSED. Snapshot witnesses are locally derived; the process-local WAL mutex cannot claim multi-process attestation; untrusted application code remains outside a sandbox; real-world Exactly-Once and consent provenance are unproven.
+
+## Next plan / 今後の方針
+
+1. Verify this checkpoint's **own result SHA and CI** independently; #389 validates only the pre-checkpoint source/test HEAD.
+2. P0 Memory: follow up cross-process WAL first-open race and same-version schema/read-time integrity; complete trusted-clock ownership and CAS/coherent snapshot interaction tests without changing frozen v1 semantics.
+3. P0 Registry/Permission: durable registry-bound occurrence/token ledger with exact issuer provenance and restart/crash/concurrent replay tests, disconnected-only; no real WRITE dispatch.
+4. P1 Planner/ActionAudit: SQLite transition journal, independently retained tail witness, UNKNOWN WRITE reconciliation (no blind retry), audit-before-mock-action and crash injection.
+5. P1/P2 Personal Context/Scheduler/Observation/Startup: scoped consent/revocation/expiry, deterministic scheduler attention and retention, privacy lifecycle, readiness dependency gates. V3 remains approval/path/identity/reproducibility guards only; all paid/protected gates shut.
+
+---
+
+**HISTORICAL — Run 365**
 
 Saved at: **2026-10-23 21:58:31.668 JST (+09:00)** (sampled immediately before this normal GitHub Contents API checkpoint update).
 
