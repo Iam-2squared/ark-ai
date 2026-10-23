@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run 364**
+
+Saved at: **2026-10-23 21:01:00.372 JST (+09:00)** (sampled immediately before the normal GitHub Contents update).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `90677077a13d52397fffe1c133ef3b0228afbd94` (CI #342 / run `39942509779`, SUCCESS 6/6).
+Exact final **source/test/fix** HEAD before this checkpoint: `6d39597ab73ec56784f693b7bbfc5d5d746af5d5`.
+Checkpoint-result HEAD: this file cannot contain its own future commit SHA; the **normal GitHub Contents API update response is authoritative**. CI #356 below validates the preceding source/test HEAD, **not this later status-only checkpoint commit**.
+
+## Overall current ARK state
+
+ARK remains a local-first, isolated/reversible JARVIS foundations **Draft research** branch, not production dispatch or complete JARVIS. No authenticated real-user consent, production-capable durable authorization, external trusted audit anchor, cross-database atomic execution, or real-world exactly-once assurance. Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. `main` remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. V3 PR #5 remains Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**. No Candidate weights, protected V2 evaluation, promotion, or external/paid training.
+
+## NEW work this invocation — Run 364
+
+**Five coherent free/local-only work packages; 14 sequential normal GitHub Contents commits (including three focused corrective commits); 45 new pytest cases.** The current PR HEAD was verified immediately before each write. Comparison from the exact work-basis HEAD reports 14 commits, 5 modified source files and 5 new test files, with no frozen or main branch file changes.
+
+1. **Memory delete/expiry scope epoch**: source `6b3d8084ee63812156d8961b9036c9c0c2d25bd2`, focused tests `37c724b3392fee282bf89edea9f5ecb3c0aec97c` (9 cases). Pin exact scope identity before injected clock, reject reflected owner/namespace mutation inside DELETE/scoped purge, bind SQL and event to original scope, rollback on drift; keep unscoped purge behavior and CAS/expiry predicates.
+2. **ActionAudit atomic v1 bootstrap**: source `1b0320920c1a99fc9ae8c6902262c562c2d733c7`, tests `6c179a3daa3f0a16643661e4d577109b1d4903c4` (5 cases), compatible newer-version error-message correction `4746cbcfb2f990e79fb3b9c6b0cad7bb32bcdeeb`. Use explicit BEGIN IMMEDIATE and statement-by-statement bootstrap; reject nonempty version-zero or negative-version databases; rollback fully if validation fails. No migration or auto-repair.
+3. **ActionAudit continuity stale-schema review**: source `1a5e36829f0f764c383da8f1b6902464dcf72d12`, tests `dc2c514c2a5e5fc3a057e8362f5e72c76e3856a4` (6 cases). Reverify version and semantic v1 schema inside the read transaction, detecting post-startup table/index/trigger/version drift; witness remains locally derived, not authenticated external provenance.
+4. **Observation cached-window retention recheck**: source `d7b1f423e0c21222590230970cae12bb1772f0d4`, tests `51db20504dca4327505e24c14a99efe711a3e151` (9 cases), timestamp-fixture correction `275bdfe6ee10b6286da469b511a872ac52687fd4`. New opt-in exact integer `assert_fresh_at(now_ms)`: reject stale/clock-rollback/reflected windows without changing witness or accessing media. Its supplied clock is not trusted-time or consent authority.
+5. **Memory exact scope ingress**: contract source `65dbb91435cebfe76384769fa1bc30cd2bf1b973`, store source `04eda2fb41e93bc2c26db85089eca49185608c72`, tests `49fce08ecc4e0ce6062c77cf70471ac25a417f1c` (16 cases), lint-only correction `6d39597ab73ec56784f693b7bbfc5d5d746af5d5`. Public Memory value constructors and store ingress reject duck-typed or subclass scopes; search pins scope against reentrant clock retargeting.
+
+## Exact-head tests / CI / evidence
+
+- **CI #343 / run `39948389011`, #344 / run `39948451196`: SUCCESS, 6/6 each** for initial Memory scope-epoch source/tests.
+- **CI #345–#351: FAIL on intermediate exact HEADs.** Root causes were one pre-existing newer-schema error-message compatibility assertion and one new observation mutation fixture using an inadmissible future timestamp; both corrected without changing the intended boundary. Failed runs are not retroactively GREEN.
+- **CI #352 / run `39949282818`, #353 / run `39949433397`, #354 / run `39949512830`: SUCCESS, 6/6 each** on their respective intermediate HEADs.
+- **CI #355 / run `39949587090`: FAIL** (Ruff E501: two overly long lines in new exact-scope regression tests); corrected in `6d39597ab73ec56784f693b7bbfc5d5d746af5d5`.
+- **CI #356 / run `39949779488`: SUCCESS, all 6/6 GREEN** on exact source/test HEAD `6d39597ab73ec56784f693b7bbfc5d5d746af5d5`. Job IDs: Windows 3.11 `120401137466`, Windows 3.12 `120401137837`, Windows 3.13 `120401137935`, Ubuntu 3.11 `120401137845`, Ubuntu 3.12 `120401137872`, Ubuntu 3.13 `120401137710`. Ubuntu 3.13 logs show **Ruff PASS and 473/473 pytest PASS**. No live tool backend, camera, microphone, notification, personal-data connector, or training was invoked by foundation source.
+- **Checkpoint commit CI not yet known at the time this text is written.** Verify the result HEAD and its CI separately; never attribute #356 to it.
+
+## Frozen contracts / blockers / authorization boundaries
+
+No spending or potentially billable API/compute, subscriptions, external GPU, new credentials/secrets/accounts, physical-PC action, irreversible migration, frozen-contract change, Candidate/weights, protected final V2 evaluation, promotion, real backend execution, notification sending, or main merge. PR #5 stays Draft/NOT_PASSED. A local hash witness cannot prove trustworthy authorship or historical completeness without an independently retained trustworthy anchor; in-process frozen inputs cannot sandbox malicious code; local process-only one-shot tokens cannot guarantee exactly-once real-world execution.
+
+## Next plan / 今後の方針
+
+1. Check this checkpoint's **own returned HEAD** and CI separately; report #356 only for the preceding source/test HEAD.
+2. P0 Memory: bound all SQLite-backed integers and expiry/revision overflow, improve atomic bootstrap/CAS and clock-coherent `get/search` read snapshots while preserving legal V1 independent-clock nonmonotonicity.
+3. P0 Permission/Registry: bind exact registry authority to a restart-safe, durable occurrence/token ledger with synthetic concurrent consumers and no real dispatch. Require explicit trusted approval provenance before live integration.
+4. P1 Planner/Audit: append explicit transitions with retained tail proof, fail-closed recovery for UNKNOWN WRITE, and locally mocked audit-before-action crash-injection; no cross-file atomicity claims.
+5. P1/P2 Personal Context / Scheduler / Observation / Startup: minimum-necessary consent and revocation, retention and anti-replay, dependency-scoped readiness. V3 remains free-only approval/path/identity/reproducibility guard work, with all protected and paid gates shut.
+
+---
+
+**HISTORICAL — Run 363 and earlier (preserved below)**
+
 **LATEST — Run 363**
 
 Saved at: **2026-10-23 19:55:32.354 JST (+09:00)**.
