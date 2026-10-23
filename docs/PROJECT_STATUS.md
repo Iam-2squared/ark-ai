@@ -1,5 +1,51 @@
 # ARK AI Project Status
 
+**LATEST — Run 367**
+
+Saved at: **2026-10-23T23:59:50.284+09:00 Asia/Tokyo/JST** (sampled immediately before this normal GitHub Contents API update).
+
+Branch/PR: `research/jarvis-foundations` / **Draft, unmerged PR #8**.
+Exact work-basis HEAD: `3e32d772e96aad741dd6eeb849b90e877864d842` (CI #390 / run `39966036952`, SUCCESS 6/6).
+Exact final **source/test/fix** HEAD before this checkpoint: `ba6626838e65b6ff8ddad46fae03b7b9d425ac3e`.
+Checkpoint-result HEAD: this text cannot know the SHA that will commit it; the **GitHub Contents API response is authoritative**. CI #400 validates the source/test/fix HEAD above, **not** this later checkpoint commit.
+
+## Overall current ARK state
+
+ARK remains an isolated/reversible local-first JARVIS foundations **Draft research** branch, NOT trusted real-world Tool dispatch, authenticated consent, durable real-world Exactly-Once, external audit attestation, validated human approval or complete JARVIS. Frozen V1/V2/Local UI/Launcher contracts, evidence and protected evaluation gates remain unchanged. `main` remains `7a843f17eb96ed13d66f23b58b06406b3002e405`; V3 PR #5 stays Draft/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, **NOT_PASSED**.
+
+## NEW work this invocation — Run 367
+
+**Four coherent free/local-only packages, ten sequential normal GitHub Contents commits (including two Ruff import-style fixes), three modified existing sources, one new isolated review module and four new regression-test files. New cases: 19; Ubuntu 3.13 pytest: 591/591 PASS.** No raw Git objects, force-push or main merge. Each GitHub write re-read the exact branch HEAD; no concurrent changes were overwritten.
+
+1. **Memory cross-process WAL bootstrap (2 new cases):** `src/ark/memory/sqlite_store.py` uses bounded, SQLite-error-code-specific BUSY/LOCKED retries for PRAGMA journal-mode negotiation during initialization, requires actual `wal` result, then preserves the existing `BEGIN IMMEDIATE` atomic v1 schema gate. Multi-process independent first-open regression spawns four local child Python processes in two iterations. No WAL renegotiation on ordinary read/write.
+2. **Process-local PermissionGate atomic token consumption (3 new cases):** `src/ark/agency/policy.py` protects one-shot membership-check+spend with a lock, rechecks request/token identity after lock acquisition, and refuses replay. Deterministic forced interleaving verifies exactly one allowed concurrent decision; distinct tokens remain independent. **This is process-local diagnostic safety, NOT durable, issuer-attested authorization or real WRITE permission.**
+3. **ActionAudit WAL bootstrap hardening (4 new cases):** `src/ark/agency/audit.py` moves persistent WAL negotiation from routine `_connect()` to serialized startup, uses bounded SQLite lock retries, validates actual WAL mode and retains transactionally validated schema v1. Tests cover routine connection during another writer's transaction, same-process initializers, and cross-process first opens. No real Tool backend was invoked.
+4. **Disconnected deterministic startup readiness (10 new cases):** new `src/ark/startup_readiness_review.py` accepts exact synthetic component probes, rejects duplicate/unknown/self/cyclic edges and invalid local states, deterministically propagates dependency-blocked states, and returns an immutable content-minimized startup witness with root-blocker diagnostics. 250 randomized order permutations, isolated lane failures and a 1,500-dependency graph are tested. **No store/credential probing, capability activation, true readiness certification or actual startup wiring.**
+
+## Exact-head CI / evidence
+
+- Initial source-only heads #391–#393 (runs `39972756818`, `39972885474`, `39972973188`): SUCCESS. These do not validate later new test files.
+- CI #394–#397: FAIL at intermediate heads due to Ruff I001 import formatting of two new module-level fixture constants; fixed via sequential normal commits `0522a8cd489c4cfccc28b14234341efdc0b0af9f` and `d785eba149f9022e78163c3c8138e687735015c7`. These failures remain explicitly failed, never retroactively green.
+- CI #398 / run `39973640168` and #399 / run `39973848558`: SUCCESS 6/6 at their respective intermediate HEADs.
+- **Final source/test CI #400 / run `39973947231`: SUCCESS 6/6 GREEN** at exact HEAD `ba6626838e65b6ff8ddad46fae03b7b9d425ac3e` on Ubuntu/Windows Python 3.11/3.12/3.13; all six job conclusions explicitly checked. Ubuntu Python 3.13 job `120483557335`: **Ruff PASS, pytest 591/591 PASS**. Tests remain synthetic/disconnected; this is not real action authority.
+- The **checkpoint commit's own CI is not known while this file is being written**. Verify the resulting HEAD/run separately; never attribute #400 to the checkpoint.
+
+## Frozen contracts / authorization boundaries
+
+No paid/potentially billable service, external GPU, paid API, training, real Candidate weights/adapters, protected V2 final evaluation, V3 promotion, frozen contract edit, new credentials/accounts, physical-PC operations, irreversible migration, real Tool Backend execution, notification send, or main merge. PR #5 stays Draft/NOT_PASSED. SQLite WAL retry is bounded and does not guarantee survival of arbitrary sustained contention. Startup readiness is synthetic and cannot authenticate a probe; the Policy lock is process-local and is not restart-safe exactly-once or human consent.
+
+## Next plan / 今後の方針
+
+1. Independently verify **this checkpoint's exact result HEAD and CI**, preserving attribution of #400 exclusively to the pre-checkpoint source/test head.
+2. **P0 durable authorization:** registry-bound occurrence+token ledger with verified issuer identity, trusted clock and restart/crash/concurrent replay tests; prototype synthetic-only until explicit user authorization gates. Keep every real WRITE backend disconnected.
+3. **P0 SQLite reliability:** verify bounded cross-process WAL bootstrap under injected busy faults and persistent lock contention; examine exact same-version schema/row/event integrity and external witness limitations without changing frozen schema v1.
+4. **P1 Planner recovery and ActionAudit:** durable transition journal and independent tail witness, UNKNOWN WRITE reconciliation without blind retry, audit-before-mock-action and fault injection; no cross-database atomicity claims.
+5. **P1/P2 startup/Personal Context/Scheduler/Observation:** connect reviewed readiness model only to independently validated probe results, keeping effects disabled; privacy-safe consent/revocation/expiry, proactive occurrence guards, observation provenance/retention. V3 remains free-only approval/path/identity/reproducibility guards; protected/paid gates closed.
+
+---
+
+**HISTORICAL — Run 366 and earlier**
+
 **LATEST — Run 366**
 
 Saved at: **2026-10-23T23:00:55.330 JST (+09:00)** (sampled immediately before this normal GitHub Contents API update).
