@@ -157,6 +157,18 @@ are refused; a missing fixture file is never recreated during review.
 append, persisted-row removal, coordinated recomputation of a trigger
 primary key, witness tampering, missing-file refusal and schema drift.
 
+The proactive fixture's `prepare(..., retained=...)` now optionally
+validates an independently retained prior `SyntheticTriggerWitness` **inside
+its SQLite BEGIN IMMEDIATE admission transaction**, before any new trigger
+is inserted. This closes the separate-read/admission race for the *local
+proactive database*, but not the absence of external witness authenticity.
+A missing/rewritten historical row rejects the attempted new preparation;
+valid append-only history leaves the existing cooldown, rolling budget and
+duplicate fences unchanged. Existing callers without a retained witness
+remain supported but cannot detect a previously removed trigger.
+`tests/test_proactive_retained_admission_run374.py` tests valid append,
+deletion, timestamp rewrite, bad witnesses and preserved budgets.
+
 Hashes of low-entropy scope/policy identifiers can still be guessed.
 An attacker controlling the SQLite file and all witness copies can forge a
 new consistent history. No policy authentication, real observation,
