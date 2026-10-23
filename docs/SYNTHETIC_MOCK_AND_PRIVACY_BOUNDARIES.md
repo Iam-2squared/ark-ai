@@ -28,6 +28,27 @@ always report **human_consent_verified=False**,
 **dispatch_authorized=False**, and **automatic_replay_authorized=False**.
 This module does not mint a production permission token.
 
+**Independent persistent cancellation journal**
+(`agency/synthetic_approval_cancellation_review.py`): a separate local
+SQLite v1 fixture appends canonical `approval_<sha256>` cancellation IDs
+with nondecreasing caller timestamps, strict exact-schema/row checks,
+a sequential hash chain and optional earlier externally **retained** local
+prefix witness. Duplicate cancellation, row rewriting, truncation against an
+independently preserved witness, disappeared database files and concurrent
+duplicate cancellation fail closed. Read-only cancellation state returns
+**human_consent_verified=False**, **dispatch_authorized=False** and
+**automatic_replay_authorized=False** even when `cancelled=False`.
+
+The journal does **not** authenticate who cancelled the claim; SHA hashes
+are not signatures, and a complete local rollback can go undetected without
+a genuinely independent earlier witness. It is not yet automatically wired
+into `review_synthetic_approval_claim` or any live PermissionGate. A review
+success therefore must never rely on an absent caller-supplied cancellation
+marker for authority. The cancellation state can change after a review and
+neither an append nor a local receipt is external effect/consent proof.
+Regression coverage is isolated in
+`tests/test_synthetic_approval_cancellation_review_run376.py`.
+
 **Exact-schema startup freshness lease**
 (`startup_readiness_lease_review.py`): independently declared required
 component/schema pairs must all be present and **READY** in a semantically
