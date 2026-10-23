@@ -10,6 +10,7 @@ from types import MappingProxyType
 
 from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState
 
+
 def _plan_digest(prefix: str, payload: object) -> str:
     encoded = (
         json.dumps(
