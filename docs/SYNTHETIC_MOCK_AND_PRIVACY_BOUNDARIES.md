@@ -32,6 +32,7 @@ not an executor. No registered backend is ever invoked.
 | After journal `RUNNING` | Plan RUNNING; no new occurrence | UNKNOWN, no replay |
 | After SQLite occurrence reservation | Plan RUNNING; occurrence persisted | UNKNOWN, no replay |
 | After pre-action audit append | Plan RUNNING; occurrence plus audit | UNKNOWN, no replay |
+| After optional audit-sidecar link | Plan RUNNING; occurrence, audit and a local link | UNKNOWN, no replay |
 | After pure in-memory mock marker | Same durable state as above | UNKNOWN, no replay |
 | After synthetic `SUCCEEDED` journal | All three stores updated separately | Synthetic success only; real outcome unknown |
 
@@ -42,6 +43,15 @@ cannot make an ambiguous WRITE safe to repeat. The test backend throws if its
 covers the above crash points, invalid input, token expiry and registry
 WRITE/READ downgrade. **There is no cross-store atomic transaction** and no
 audited authenticated occurrence field in frozen ActionAudit v1.
+
+The optional new `link_store` argument allows the mock cycle to commit a
+**fourth, independent** SQLite audit-link event *after* the pre-action audit
+and *before* the pure mock marker. Injected `after_audit_link` stops leave
+RUNNING and cannot be retried. Passing an invalid sidecar or requesting this
+fault without a sidecar fails before journal mutation. A missing or malformed
+sidecar discovered after the audit must leave UNKNOWN, not mock success.
+This optional link does not supply proof of the underlying external action.
+`tests/test_synthetic_mock_sidecar_cycle_run374.py` covers these paths.
 
 ## Privacy-safe revocation veto (not consent)
 
