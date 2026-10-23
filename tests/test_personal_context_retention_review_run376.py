@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from ark.memory.contracts import MemoryScope, MemoryWrite
+from ark.memory.contracts import MemorySchemaError, MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
 from ark.personal_context_retention_review import (
     RetentionState,
@@ -128,7 +128,7 @@ def test_stored_content_tamper_is_rejected_not_exposed(tmp_path: Path):
         conn.execute(
             "UPDATE memories SET content='tampered' WHERE source_id='future'"
         )
-    with pytest.raises(ValueError, match="digest"):
+    with pytest.raises(MemorySchemaError, match="digest"):
         _review(state)
 
 
