@@ -48,10 +48,16 @@ class ObservationWindowReview:
     def _validate_header(self) -> None:
         if type(self.privacy_scope) is not str or not self.privacy_scope.strip():
             raise ValueError("privacy_scope must be a nonempty exact string")
-        if type(self.observed_at_ms) is not int or self.observed_at_ms < 0:
-            raise ValueError("observed_at_ms must be a nonnegative exact integer")
-        if type(self.max_age_ms) is not int or self.max_age_ms < 0:
-            raise ValueError("max_age_ms must be a nonnegative exact integer")
+        if (
+            type(self.observed_at_ms) is not int
+            or not 0 <= self.observed_at_ms <= 2**63 - 1
+        ):
+            raise ValueError("observed_at_ms must be a nonnegative exact integer in SQLite range")
+        if (
+            type(self.max_age_ms) is not int
+            or not 0 <= self.max_age_ms <= 2**63 - 1
+        ):
+            raise ValueError("max_age_ms must be a nonnegative exact integer in SQLite range")
 
     def _check_envelope(self, envelope: ObservationEnvelope) -> str:
         if type(envelope) is not ObservationEnvelope:
