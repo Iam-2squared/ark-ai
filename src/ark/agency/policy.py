@@ -16,9 +16,7 @@ from .contracts import (
 from .registry import BoundAction, ToolRegistry
 
 
-# External grant iterables are caller-controlled. Bound their materialization
-# before any WRITE token spend so an endless generator cannot hang admission.
-_MAX_GRANTS = 1024
+_MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
 
 
 class PermissionGate:
