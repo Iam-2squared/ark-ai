@@ -85,7 +85,10 @@ def test_added_memory_after_capture_invalidates_inventory(tmp_path: Path):
 
 def test_existing_row_content_revision_change_is_denied(tmp_path: Path):
     state = _fixture(tmp_path)
-    state[0].put(MemoryWrite(state[1], "future", "changed-private", expires_at_ms=101))
+    state[0].put(
+        MemoryWrite(state[1], "future", "changed-private", expires_at_ms=101),
+        expected_revision=1,
+    )
     with pytest.raises(SyntheticRetentionRecheckRejected, match="changed"):
         _review(state)
 
