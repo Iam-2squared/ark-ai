@@ -100,7 +100,7 @@ def review_coherent_snapshot(
         # A store that was healthy during __init__ can be modified later.
         # Neither a matching row hash nor successful SELECT * proves that its
         # SQL schema, indexes, triggers and declared version are unchanged.
-        if conn.execute("PRAGMA user_version").fetchone() != (1,):
+        if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
             raise MemorySchemaError("memory snapshot schema version changed")
         try:
             _validate_v1_schema(conn)
