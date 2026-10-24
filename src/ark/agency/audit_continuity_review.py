@@ -112,12 +112,20 @@ def review_audit_continuity(
     try:
         # The reviewer must never create a new empty database when the
         # configured audit file is missing, even on a stale audit object.
-        with closing(
-            sqlite3.connect(path_epoch.resolve().as_uri() + "?mode=ro", uri=True)
-        ) as conn:
+        # Path resolution, URI building and SQLite handle acquisition are
+        # separate reentrant boundaries. Check the original Path and retained
+        # witness after EACH one, before a later callback can restore drift.
+        resolved = path_epoch.resolve()
+        assert_epoch()
+        uri = resolved.as_uri() + "?mode=ro"
+        assert_epoch()
+        with closing(sqlite3.connect(uri, uri=True)) as conn:
+            assert_epoch()
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA busy_timeout=5000")
+            assert_epoch()
             conn.execute("BEGIN")
+            assert_epoch()
             # An audit object may outlive an on-disk schema replacement.
             # Validate the exact v1 structure inside the same read snapshot.
             version = conn.execute("PRAGMA user_version").fetchone()[0]
