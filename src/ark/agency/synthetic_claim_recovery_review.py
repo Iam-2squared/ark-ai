@@ -104,6 +104,45 @@ def review_synthetic_claim_write_recovery(
     if type(envelope) is not SyntheticApprovalEnvelope:
         raise SyntheticClaimRecoveryRejected("exact synthetic approval envelope required")
     initial = _claim_epoch(envelope)
+    # Each inner review pins its own sources, but a reflective callback may
+    # replace an otherwise equal Path *between* cancellation/recovery passes.
+    # The direct entrypoint must bind the whole local review epoch as well.
+    source_epoch = (
+        cancellation.path, journal._path, audit.path,
+        None if link_store is None else link_store.path,
+    )
+    if any(path is not None and not isinstance(path, Path) for path in source_epoch):
+        raise SyntheticClaimRecoveryRejected("exact claim recovery sources required")
+    if type(call) is not ToolCall:
+        raise SyntheticClaimRecoveryRejected("exact recovery ToolCall required")
+    arguments = call.arguments
+    call_epoch = (
+        call.tool, call.capability, call.scope,
+        call.request_id, call.arguments_sha256,
+    )
+    registry_epoch = registry.revision
+
+    def assert_epoch() -> None:
+        sources = (
+            cancellation.path, journal._path, audit.path,
+            None if link_store is None else link_store.path,
+        )
+        if (
+            any(current is not prior for current, prior in zip(
+                sources, source_epoch, strict=True,
+            ))
+            or call.arguments is not arguments
+            or (
+                call.tool, call.capability, call.scope,
+                call.request_id, call.arguments_sha256,
+            ) != call_epoch
+            or registry.revision != registry_epoch
+            or _claim_epoch(envelope) != initial
+        ):
+            raise SyntheticClaimRecoveryRejected(
+                "claim recovery source, action or binding changed during review"
+            )
+
     claim_args = {
         "issuer_digest": issuer_digest,
         "subject_digest": subject_digest,
@@ -115,16 +154,19 @@ def review_synthetic_claim_write_recovery(
         envelope, registry, call, cancellation,
         retained=retained_cancellation, **claim_args,
     )
+    assert_epoch()
     recovery = review_synthetic_write_recovery(
         journal, ledger_path, audit, registry, call,
         step_id=step_id, retained_plan=retained_plan,
         retained_ledger=retained_ledger, retained_audit=retained_audit,
         link_store=link_store, retained_link=retained_link,
     )
+    assert_epoch()
     second = review_synthetic_approval_cancellation_fence(
         envelope, registry, call, cancellation,
         retained=retained_cancellation, **claim_args,
     )
+    assert_epoch()
     if (
         first != second
         or _claim_epoch(envelope) != initial
