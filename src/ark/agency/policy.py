@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from threading import Lock
 
 from .contracts import (
@@ -58,7 +58,27 @@ class PermissionGate:
 
         registration = verified.registration
         spec = ToolSpec(registration.name, registration.capability, registration.effect)
-        self.authorize(spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot)
+
+        def ensure_registered_binding() -> None:
+            # WRITE token admission must rebind under the token-spend lock,
+            # not merely before potentially contended grant evaluation.
+            try:
+                current = registry.bind(call)
+            except (KeyError, TypeError, ValueError) as exc:
+                raise PermissionDenied("registered identity changed before spend") from exc
+            if (
+                current.registry_revision != verified.registry_revision
+                or current.bound_action_id != verified.bound_action_id
+                or current.registration is not verified.registration
+                or current.call is not verified.call
+            ):
+                raise PermissionDenied("registered identity changed before spend")
+
+        self.authorize(
+            spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
+            _registered_recheck=ensure_registered_binding,
+        )
+        ensure_registered_binding()
         return verified
 
     def authorize(
@@ -69,7 +89,10 @@ class PermissionGate:
         *,
         now_ms: int,
         one_shot: OneShotAuthorization | None = None,
+        _registered_recheck: Callable[[], None] | None = None,
     ) -> None:
+        if _registered_recheck is not None and not callable(_registered_recheck):
+            raise PermissionDenied("registered recheck must be callable")
         if type(spec) is not ToolSpec or type(call) is not ToolCall:
             raise PermissionDenied("authorization requires exact ToolSpec and ToolCall")
         if one_shot is not None and type(one_shot) is not OneShotAuthorization:
@@ -173,6 +196,8 @@ class PermissionGate:
                     ) from exc
                 if not stable_at_spend:
                     raise PermissionDenied("authorization input changed during token spend")
+                if _registered_recheck is not None:
+                    _registered_recheck()
                 if one_shot.token_id in self._consumed_tokens:
                     raise PermissionDenied("one-shot authorization was already consumed")
                 if one_shot.request_id != call.request_id:
