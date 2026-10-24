@@ -209,12 +209,17 @@ class SyntheticProactiveLedger:
         if self.path is not ledger_path:
             raise SyntheticTriggerRejected("proactive ledger path changed")
         retained_epoch = None
+        retained_rows_carrier = None
         if retained is not None:
             if type(retained) is not SyntheticTriggerWitness:
                 raise SyntheticTriggerRejected("exact retained proactive witness required")
+            retained_rows_carrier = retained.row_hashes
             retained_epoch = (retained.row_hashes, retained.digest)
             retained.assert_integrity()
-            if (retained.row_hashes, retained.digest) != retained_epoch:
+            if (
+                retained.row_hashes is not retained_rows_carrier
+                or (retained.row_hashes, retained.digest) != retained_epoch
+            ):
                 raise SyntheticTriggerRejected("retained proactive witness changed")
         if self.path is not ledger_path or policy.identity() != pinned:
             raise SyntheticTriggerRejected(
@@ -236,7 +241,10 @@ class SyntheticProactiveLedger:
                     raise SyntheticTriggerRejected("proactive ledger path changed")
                 _validate(conn)
                 if retained_epoch is not None:
-                    if (retained.row_hashes, retained.digest) != retained_epoch:
+                    if (
+                        retained.row_hashes is not retained_rows_carrier
+                        or (retained.row_hashes, retained.digest) != retained_epoch
+                    ):
                         raise SyntheticTriggerRejected("retained proactive witness changed")
                     # Evaluate the historical fence INSIDE the same write
                     # transaction that admits a new synthetic trigger.
@@ -250,6 +258,11 @@ class SyntheticProactiveLedger:
                         ),
                     )
                     assert_proactive_history_continues(retained, current)
+                    if (
+                        retained.row_hashes is not retained_rows_carrier
+                        or (retained.row_hashes, retained.digest) != retained_epoch
+                    ):
+                        raise SyntheticTriggerRejected("retained proactive witness changed")
                 if policy.identity() != pinned or self.path is not ledger_path:
                     raise SyntheticTriggerRejected(
                         "policy or ledger path changed before preparation"
@@ -287,8 +300,9 @@ class SyntheticProactiveLedger:
                         "policy or ledger path changed during preparation"
                     )
                 if retained_epoch is not None and (
-                    retained.row_hashes, retained.digest
-                ) != retained_epoch:
+                    retained.row_hashes is not retained_rows_carrier
+                    or (retained.row_hashes, retained.digest) != retained_epoch
+                ):
                     raise SyntheticTriggerRejected("retained proactive witness changed")
                 if self.path is not ledger_path:
                     raise SyntheticTriggerRejected("proactive ledger path changed before commit")
