@@ -99,6 +99,38 @@ class StartupSnapshot:
         if names != sorted(set(names)):
             raise ValueError("startup snapshot component order changed")
 
+        # Internal validators and hash functions can be replaced by local
+        # fixture callbacks. Hold each original carrier through those calls:
+        # a mutation restored by the next callback must not go unnoticed.
+        components_epoch = self.components
+        carrier_epoch = tuple(
+            (
+                item, item.component_id, item.dependencies, item.local_state,
+                item.effective_state, item.failure_code, item.schema_revision,
+            )
+            for item in components_epoch
+        )
+
+        def assert_component_epoch() -> None:
+            if (
+                self.components is not components_epoch
+                or len(components_epoch) != len(carrier_epoch)
+                or any(
+                    item is not original
+                    or item.component_id != old_id
+                    or item.dependencies is not old_dependencies
+                    or item.local_state is not old_local
+                    or item.effective_state is not old_effective
+                    or item.failure_code != old_failure
+                    or item.schema_revision != old_schema
+                    for item, (
+                        original, old_id, old_dependencies, old_local,
+                        old_effective, old_failure, old_schema,
+                    ) in zip(components_epoch, carrier_epoch, strict=True)
+                )
+            ):
+                raise ValueError("startup snapshot changed during integrity review")
+
         # A digest is not sufficient: it can be recomputed over a logically
         # contradictory snapshot. Re-derive graph semantics before returning a
         # cached READY/BLOCKED diagnosis. This is still local, not attestation.
@@ -108,12 +140,16 @@ class StartupSnapshot:
         for item in self.components:
             try:
                 _identifier(item.component_id, "component_id")
+                assert_component_epoch()
                 for parent in item.dependencies:
                     _identifier(parent, "dependency")
+                    assert_component_epoch()
                 if item.failure_code is not None:
                     _identifier(item.failure_code, "failure_code")
+                    assert_component_epoch()
                 if item.schema_revision is not None:
                     _identifier(item.schema_revision, "schema_revision")
+                    assert_component_epoch()
             except ValueError as exc:
                 raise ValueError("startup snapshot identifier changed") from exc
             if item.local_state is ReadinessState.DEPENDENCY_BLOCKED:
@@ -165,10 +201,13 @@ class StartupSnapshot:
                 for item in self.components
             ],
         }
+        assert_component_epoch()
         encoded = json.dumps(
             payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         ).encode("utf-8")
+        assert_component_epoch()
         expected = "startup_" + hashlib.sha256(encoded).hexdigest()
+        assert_component_epoch()
         if type(self.digest) is not str or self.digest != expected:
             raise ValueError("startup snapshot witness changed")
 
