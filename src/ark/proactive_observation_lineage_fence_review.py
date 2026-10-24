@@ -109,11 +109,23 @@ def review_synthetic_observation_trigger(
         policy.identity(),
     )
     retained_epoch = None
+    retained_rows_carrier = None
     if retained is not None:
         if type(retained) is not SyntheticTriggerWitness:
             raise SyntheticObservationTriggerRejected("exact retained trigger witness required")
+        # The first integrity callback is already reentrant. Bind the caller's
+        # original historical evidence before invoking it, including tuple
+        # identity so an equal-valued clone cannot rebase the baseline.
+        retained_rows_carrier = retained.row_hashes
+        retained_epoch = (retained_rows_carrier, retained.digest)
         retained.assert_integrity()
-        retained_epoch = (retained.row_hashes, retained.digest)
+        if (
+            retained.row_hashes is not retained_rows_carrier
+            or (retained.row_hashes, retained.digest) != retained_epoch
+        ):
+            raise SyntheticObservationTriggerRejected(
+                "observation, policy or retained witness changed during review"
+            )
     source_digest = synthetic_observation_source_digest(selected.source_id)
     observation_digest = selected.content_sha256
 
@@ -150,13 +162,19 @@ def review_synthetic_observation_trigger(
                 policy.identity(),
             ) != initial
             or retained is not None
-            and (retained.row_hashes, retained.digest) != retained_epoch
+            and (
+                retained.row_hashes is not retained_rows_carrier
+                or (retained.row_hashes, retained.digest) != retained_epoch
+            )
         ):
             raise SyntheticObservationTriggerRejected(
                 "observation, policy or retained witness changed during review"
             )
         ensure_source_epoch()
 
+    # Source-digest hashing and policy identity construction are also
+    # reentrant boundaries; reject changes before the first lineage reviewer.
+    ensure_input_epoch()
     first_lineage = lineage()
     ensure_input_epoch()
     first_trigger = freshness()
