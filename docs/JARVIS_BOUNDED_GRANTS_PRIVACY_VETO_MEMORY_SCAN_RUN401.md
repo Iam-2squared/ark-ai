@@ -73,6 +73,29 @@ semantics. Tests reduce the cap in fixtures to check overflow,
 read-only failure, exact-bound success and independent namespace
 budgets. No Memory row, event, schema or expiry mutation is authorized.
 
+### Package D — Planner journal nested topology epoch
+
+File: `src/ark/agency/planner_journal_review.py`.
+Regression: `tests/test_planner_journal_nested_carrier_run401.py`
+(4 focused cases).
+
+**Threat:** a canonical topology digest binds request and dependency *values*,
+not the original Python carriers. A reflected-mutable PlanStep can replace its
+ToolCall or dependency tuple with a value-equal new object after the journal's
+first hash or during a later replay/snapshot callback; a second digest alone
+would not reveal that mid-operation provenance change.
+
+**Intended invariant:** retain each original PlanStep, ToolCall, argument and
+dependency carrier before the first PlanGraph/hash callback, recheck nested
+identity and request digest before and after subsequent graph construction,
+during read-only recovery and before an append's SQLite COMMIT. A detected
+value-equal dependency substitution after event/header writes must roll back
+the local append. Regression fixtures cover a post-digest first-phase swap,
+post-replay action replacement, post-snapshot dependency replacement with
+rollback, and unchanged RUNNING/UNKNOWN non-replay. This is an in-process
+integrity fence, **not** external proof of who supplied the plan or whether an
+action ran.
+
 ## CI and evidence interpretation
 
 The exact source/test/document SHA and six-job Ubuntu/Windows
