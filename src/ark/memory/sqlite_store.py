@@ -508,7 +508,7 @@ class SQLiteMemoryStore:
     def _initialize(self) -> None:
         # Ordinary reads/writes must never renegotiate persistent WAL mode.
         # Serialize same-process first-open setup before SQLite BEGIN IMMEDIATE.
-        with _BOOTSTRAP_LOCK, closing(self._connect()) as conn, conn:
+        with _BOOTSTRAP_LOCK, closing(self._connect(create=True)) as conn, conn:
             # Separate processes may race on the first WAL negotiation.
             # SQLite busy_timeout is not a guarantee that journal_mode itself
             # waits; retry only SQLite lock/busy, then fail closed.
@@ -550,8 +550,16 @@ class SQLiteMemoryStore:
                         conn.execute(statement)
             _validate_v1_schema(conn)
 
-    def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.path)
+    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        # Only explicit initialization can create a SQLite file. Normal
+        # mutators must not create a plausible empty replacement database if
+        # the original Memory store has been moved or removed after startup.
+        if create:
+            conn = sqlite3.connect(self.path)
+        else:
+            conn = sqlite3.connect(
+                self.path.resolve().as_uri() + "?mode=rw", uri=True
+            )
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
