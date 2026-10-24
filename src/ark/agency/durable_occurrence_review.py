@@ -128,13 +128,16 @@ class SyntheticOccurrenceStore:
                 conn.rollback()
                 raise
 
-    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+    def _connect(
+        self, *, create: bool = False, pinned_path: Path | None = None,
+    ) -> sqlite3.Connection:
+        source = self._path if pinned_path is None else pinned_path
         if create:
             # Only explicit fixture initialization may create storage.
-            return sqlite3.connect(self._path, timeout=10, isolation_level=None)
+            return sqlite3.connect(source, timeout=10, isolation_level=None)
         # A stale store must not recreate a deleted/moved reservation ledger.
         # URI mode=rw also preserves literal special path characters.
-        uri = self._path.resolve().as_uri() + "?mode=rw"
+        uri = source.resolve().as_uri() + "?mode=rw"
         return sqlite3.connect(uri, uri=True, timeout=10, isolation_level=None)
 
     def reserve_synthetic(
@@ -161,6 +164,11 @@ class SyntheticOccurrenceStore:
             raise SyntheticReplayRejected("invalid synthetic reservation timestamp")
         if type(occurrence_id) is not str or not _OCCURRENCE.fullmatch(occurrence_id):
             raise SyntheticReplayRejected("invalid synthetic occurrence identity")
+        # Pin the initialized source before any caller-supplied registry work.
+        # A reflected equal-value Path replacement is a different review epoch.
+        path_epoch = self._path
+        if not isinstance(path_epoch, Path):
+            raise SyntheticReplayRejected("synthetic occurrence source must be a Path")
         try:
             first = registry.bind(call)
             token_epoch = (token.token_id, token.request_id, token.expires_at_ms)
@@ -174,10 +182,16 @@ class SyntheticOccurrenceStore:
         except (TypeError, ValueError, AttributeError, KeyError) as exc:
             raise SyntheticReplayRejected("synthetic registry binding failed") from exc
 
-        with closing(self._connect()) as conn:
+        if self._path is not path_epoch:
+            raise SyntheticReplayRejected("synthetic occurrence source changed before reserve")
+        with closing(self._connect(pinned_path=path_epoch)) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 _validate(conn)
+                if self._path is not path_epoch:
+                    raise SyntheticReplayRejected(
+                        "synthetic occurrence source changed during reserve"
+                    )
                 # A committed fixture reservation is a lower bound on later
                 # caller-supplied times. This is not a trusted clock: an
                 # attacker replacing the whole DB can also reset this bound.
@@ -217,6 +231,10 @@ class SyntheticOccurrenceStore:
                     raise SyntheticReplayRejected(
                         "synthetic token or occurrence was already reserved"
                     ) from exc
+                if self._path is not path_epoch:
+                    raise SyntheticReplayRejected(
+                        "synthetic occurrence source changed during reserve"
+                    )
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -228,7 +246,10 @@ class SyntheticOccurrenceStore:
 
     def count_synthetic(self) -> int:
         """Read-only count; missing DB is never created as a side effect."""
-        uri = self._path.resolve().as_uri() + "?mode=ro"
+        path_epoch = self._path
+        if not isinstance(path_epoch, Path):
+            raise SyntheticReplayRejected("synthetic occurrence source must be a Path")
+        uri = path_epoch.resolve().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
             conn.execute("BEGIN")
             try:
@@ -236,6 +257,10 @@ class SyntheticOccurrenceStore:
                 count = conn.execute(
                     "SELECT COUNT(*) FROM synthetic_occurrence_reservations"
                 ).fetchone()[0]
+                if self._path is not path_epoch:
+                    raise SyntheticReplayRejected(
+                        "synthetic occurrence source changed during count"
+                    )
                 conn.commit()
                 return count
             except BaseException:
