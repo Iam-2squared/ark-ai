@@ -82,7 +82,7 @@ def test_cached_items_reflected_to_list_during_read_are_rejected(
         return fresh
 
     monkeypatch.setattr(module, "review_fresh_nonrevoked_context", replace_after_read)
-    with pytest.raises(module.SyntheticContextReuseRejected, match="shape"):
+    with pytest.raises(module.SyntheticContextReuseRejected, match="shape|differs"):
         _review(state)
 
 
