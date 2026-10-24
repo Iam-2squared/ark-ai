@@ -78,11 +78,60 @@ def review_coherent_snapshot(
     CoherentSnapshotRequest(*original)
     owner_id, namespaces, text, limit, include_expired = original
     scopes = tuple(MemoryScope(owner_id, name) for name in namespaces)
-    wanted = _tokens(text)
     results: list[tuple[MemoryRecord, ...]] = []
     path_epoch = store.path
     if not isinstance(path_epoch, Path):
         raise MemorySchemaError("memory snapshot requires a stable Path source")
+
+    # The request and per-namespace scopes are independent mutable carriers
+    # under Python reflection even though their dataclasses are frozen.
+    # Check BETWEEN phases, not just at return: a later callback could undo
+    # an earlier drift and make an end-only comparison appear unchanged.
+    request_epoch = tuple((type(value), value) for value in original)
+    scope_epoch = tuple(
+        (scope, type(scope), scope.owner_id, scope.namespace) for scope in scopes
+    )
+    record_epochs: list[tuple[MemoryRecord, tuple[object, ...]]] = []
+
+    def assert_epoch() -> None:
+        if store.path is not path_epoch:
+            raise MemorySchemaError("memory snapshot source path changed during review")
+        current = (
+            request.owner_id, request.namespaces, request.text,
+            request.per_namespace_limit, request.include_expired,
+        )
+        if tuple((type(value), value) for value in current) != request_epoch:
+            raise MemorySchemaError("snapshot request changed during review")
+        if any(
+            type(scope) is not scope_type
+            or type(scope.owner_id) is not str
+            or type(scope.namespace) is not str
+            or (scope.owner_id, scope.namespace) != (owner, namespace)
+            for scope, scope_type, owner, namespace in scope_epoch
+        ):
+            raise MemorySchemaError("memory snapshot scope changed during review")
+
+    def record_epoch(record: MemoryRecord) -> tuple[object, ...]:
+        fields = (
+            record.memory_id, record.source_id, record.content,
+            record.created_at_ms, record.updated_at_ms, record.expires_at_ms,
+            record.revision, record.content_sha256,
+            record.scope.owner_id, record.scope.namespace,
+        )
+        return (
+            id(record.scope),
+            tuple((type(value), value) for value in fields),
+            (type(record.metadata), tuple(sorted(dict(record.metadata).items()))),
+        )
+
+    def assert_record_epochs() -> None:
+        for record, epoch in record_epochs:
+            if type(record) is not MemoryRecord or record_epoch(record) != epoch:
+                raise MemorySchemaError("memory snapshot record changed during review")
+
+    assert_epoch()
+    wanted = _tokens(text)
+    assert_epoch()
 
     # SQLite transaction is anchored by its FIRST read before the clock is
     # sampled. Even if a writer commits in a clock callback or between SELECTs,
@@ -110,15 +159,22 @@ def review_coherent_snapshot(
             _validate_v1_schema(conn)
         except sqlite3.DatabaseError as exc:
             raise MemorySchemaError("memory snapshot schema cannot be verified") from exc
+        assert_epoch()
         now = store._now()
-        if store.path is not path_epoch:
-            raise MemorySchemaError("memory snapshot source path changed during clock")
+        assert_epoch()
         for scope in scopes:
+            assert_epoch()
             rows = conn.execute(
                 "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
                 (scope.owner_id, scope.namespace),
             ).fetchall()
-            records = [_record(row) for row in rows]
+            assert_epoch()
+            records = []
+            for row in rows:
+                record = _record(row)
+                assert_epoch()
+                record_epochs.append((record, record_epoch(record)))
+                records.append(record)
             if not include_expired:
                 records = [item for item in records if not _expired(item, now)]
             ranked: list[tuple[float, int, str, MemoryRecord]] = []
@@ -131,16 +187,15 @@ def review_coherent_snapshot(
                 else:
                     score = 0.0
                 ranked.append((-score, -item.updated_at_ms, item.memory_id, item))
+            assert_epoch()
+            assert_record_epochs()
             ranked.sort(key=lambda row: row[:3])
             results.append(tuple(entry[3] for entry in ranked[:limit]))
+            assert_epoch()
+            assert_record_epochs()
         conn.rollback()
-    if store.path is not path_epoch:
-        raise MemorySchemaError("memory snapshot source path changed during review")
-    if (
-        request.owner_id, request.namespaces, request.text,
-        request.per_namespace_limit, request.include_expired,
-    ) != original:
-        raise MemorySchemaError("snapshot request changed during review")
+    assert_epoch()
+    assert_record_epochs()
 
     # Only digest identity and revision metadata, never raw Memory content.
     payload = {
@@ -178,6 +233,8 @@ def review_coherent_snapshot(
     canonical = json.dumps(
         payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
+    assert_epoch()
+    assert_record_epochs()
     return CoherentSnapshotReview(
         now, scopes, tuple(results), hashlib.sha256(canonical).hexdigest()
     )
