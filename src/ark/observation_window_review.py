@@ -148,4 +148,10 @@ class ObservationWindowReview:
         canonical = json.dumps(
             payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
         ).encode("utf-8")
-        return "window_" + hashlib.sha256(canonical).hexdigest()
+        # Serialization and hashing are reentrant callback boundaries in
+        # isolated fault fixtures. Never return an old observation witness if
+        # an input was rewritten after the initial consistency check.
+        self.assert_consistent()
+        digest = "window_" + hashlib.sha256(canonical).hexdigest()
+        self.assert_consistent()
+        return digest
