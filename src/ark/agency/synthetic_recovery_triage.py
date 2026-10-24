@@ -216,8 +216,16 @@ def review_synthetic_write_recovery(
             raise SyntheticRecoveryRejected("step is missing from recovery")
         # Ledger identities and their witness MUST be collected from the SAME
         # read transaction. A separate earlier/later witness would be racy.
-        uri = ledger_path.resolve().as_uri() + "?mode=ro"
+        # An overridable Path resolver, URI builder or connection opener
+        # may change an earlier input before the first ledger SELECT. Check
+        # every boundary here, not only after a complete ledger review:
+        # a later audit callback could otherwise restore temporary drift.
+        resolved_ledger = ledger_path.resolve()
+        assert_epoch()
+        uri = resolved_ledger.as_uri() + "?mode=ro"
+        assert_epoch()
         with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
+            assert_epoch()
             conn.execute("BEGIN")
             try:
                 _validate(conn)
