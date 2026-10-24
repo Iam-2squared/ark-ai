@@ -139,6 +139,15 @@ def review_synthetic_write_recovery(
     if any(path is not None and not isinstance(path, Path) for path in source_epoch):
         raise SyntheticRecoveryRejected("recovery requires stable Path sources")
     topology_epoch = journal._steps
+    # The outer tuple alone does not freeze its reflected-mutable PlanSteps.
+    # Pin each step's original action and dependency carriers before bind().
+    topology_items = tuple(
+        (
+            step, step.step_id, step.call, step.depends_on,
+            step.call.arguments, step.call.request_id,
+        )
+        for step in topology_epoch
+    )
     arguments_epoch = call.arguments
     call_epoch = (
         call.tool, call.capability, call.scope,
@@ -161,6 +170,17 @@ def review_synthetic_write_recovery(
                 current_sources, source_epoch, strict=True,
             ))
             or journal._steps is not topology_epoch
+            or any(
+                step.step_id != step_id_before
+                or step.call is not original_call
+                or step.depends_on is not original_dependencies
+                or step.call.arguments is not original_arguments
+                or step.call.request_id != original_request
+                for (
+                    step, step_id_before, original_call,
+                    original_dependencies, original_arguments, original_request,
+                ) in topology_items
+            )
             or call.arguments is not arguments_epoch
             or (
                 call.tool, call.capability, call.scope,
@@ -184,6 +204,7 @@ def review_synthetic_write_recovery(
         # The journal's persisted topology is checked by recover(). Do not
         # infer an identity match from a step name alone.
         topology = PlanGraph(journal._steps)
+        assert_epoch()
         if step_id not in topology.steps:
             raise SyntheticRecoveryRejected("step is not in the plan topology")
         if topology.steps[step_id].call.request_id != first.call.request_id:
