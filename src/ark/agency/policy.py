@@ -40,12 +40,48 @@ class PermissionGate:
         """
         if type(registry) is not ToolRegistry or type(call) is not ToolCall:
             raise PermissionDenied("registered authorization requires exact registry and call")
+        # The first registry.bind() itself is a caller-controlled callback:
+        # pin the original action and token BEFORE entering it. Rebinding
+        # twice only establishes consistency with a substituted first input.
+        if one_shot is not None and type(one_shot) is not OneShotAuthorization:
+            raise PermissionDenied("one-shot authorization must be an exact value")
+        try:
+            call_epoch = (
+                call.tool, call.capability, call.scope,
+                call.request_id, call.arguments,
+            )
+            token_epoch = (
+                (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
+                if one_shot is not None else None
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise PermissionDenied("registered input identity is invalid") from exc
+
+        def ensure_entry_epoch() -> None:
+            try:
+                stable = (
+                    (call.tool, call.capability, call.scope,
+                     call.request_id) == call_epoch[:4]
+                    and call.arguments is call_epoch[4]
+                    and (
+                        (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
+                        if one_shot is not None else None
+                    ) == token_epoch
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise PermissionDenied("registered input identity changed") from exc
+            if not stable:
+                raise PermissionDenied("registered input identity changed")
+
         try:
             bound = registry.bind(call)
+            ensure_entry_epoch()
             # Materialize external grant iterables before any WRITE token is
             # spent; they may mutate a reflected ToolCall/registry as they run.
             grant_snapshot = tuple(grants)
+            ensure_entry_epoch()
             verified = registry.bind(call)
+            ensure_entry_epoch()
         except (KeyError, TypeError, ValueError) as exc:
             raise PermissionDenied("registry binding failed before authorization") from exc
         if (
@@ -62,8 +98,10 @@ class PermissionGate:
         def ensure_registered_binding() -> None:
             # WRITE token admission must rebind under the token-spend lock,
             # not merely before potentially contended grant evaluation.
+            ensure_entry_epoch()
             try:
                 current = registry.bind(call)
+                ensure_entry_epoch()
             except (KeyError, TypeError, ValueError) as exc:
                 raise PermissionDenied("registered identity changed before spend") from exc
             if (
@@ -78,6 +116,7 @@ class PermissionGate:
             spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
             _registered_recheck=ensure_registered_binding,
         )
+        ensure_entry_epoch()
         ensure_registered_binding()
         return verified
 
