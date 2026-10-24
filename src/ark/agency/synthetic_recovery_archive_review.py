@@ -164,7 +164,7 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
         )
     except SyntheticRecoveryArchiveRejected:
         raise
-    except (KeyError, TypeError, ValueError, AttributeError, OverflowError) as exc:
+    except (KeyError, TypeError, ValueError, AttributeError, OverflowError, RuntimeError) as exc:
         raise SyntheticRecoveryArchiveRejected("invalid recovery archive") from exc
 
 
