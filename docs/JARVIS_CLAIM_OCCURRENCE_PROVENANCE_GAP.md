@@ -84,3 +84,27 @@ physical-PC actions or actual network/backend dispatch.
 Until the actual authorities and evidence exist, any prospective implementation
 must permanently return false for human consent, dispatch, replay and known
 external outcome. The work may move forward offline without declaring PASS.
+
+## Disconnected prototype added on the JARVIS research branch
+
+`agency/synthetic_claim_occurrence_link_review.py` is now an **isolated,
+reversible synthetic reference implementation** of the local association
+record (with focused regression fixtures in
+`tests/test_synthetic_claim_occurrence_link_run379.py`). It persists the
+approval ID, nonce and claimed identity digests alongside an exact
+Registry/Action/request/occurrence tuple. The local table requires unique
+approval and occurrence IDs, uses an append-only sequence and hash chain,
+checks schema/row integrity on read and append, optionally checks an
+independently retained historical witness, and refuses to recreate a missing
+initialized file. Before an append it validates the actual reservation row
+in a separate read-only SQLite snapshot and checks the local cancellation
+journal before and after that read. It **never** dispatches a backend.
+
+**Remaining gaps:** This prototype does not bind the claim to the historical
+moment at which the reservation was originally issued, prove issuer/subject
+or nonce authenticity, persist the source reservation witness/hash, attest
+an external timestamp, protect witnesses outside the local trust domain,
+create a cross-database atomic transaction, re-attest all source ledgers
+when a previously written sidecar entry is later read, or prove any
+external effect. Its receipts always deny consent, dispatch and replay.
+The acceptance matrix above remains a design/test target, not a PASS claim.
