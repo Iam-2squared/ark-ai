@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 
 import ark.agency.audit as audit_module
-from ark.agency.contracts import ActionAuditSchemaError, ToolCall
 from ark.agency.audit import SQLiteActionAudit
+from ark.agency.contracts import ActionAuditSchemaError, ToolCall
 
 
 def _audit(tmp_path):
