@@ -110,3 +110,44 @@ CAS revisions, explicit delete/recreate, interleaved scope event IDs,
 missing events or live rows, schema drift, missing-file no-recreation,
 and independently retained-prefix rollback. Exact-head CI still governs
 whether the implementation is platform-verified.
+
+## Cached context and revocation-source epochs (Run 383)
+
+The disconnected cached Personal Context reviewer,
+`personal_context_reuse_review.py`, now captures **exact scalar values** of
+every `SyntheticContextItem` (memory ID, namespace, content, revision and
+provenance ID), plus its parent bundle identity and snapshot digest, before
+reacquiring Memory. A reflected mutation of a frozen nested item from an
+initially invalid projection back to fresh values is refused: an unchanged
+outer tuple reference does not establish a stable cached projection.
+Plaintext content is compared only transiently within the process; the
+returned reuse receipt still contains **no Memory text and no permission**
+to use, transmit, disclose or dispatch it. The original SQL Memory and
+privacy-veto reads remain non-atomic with each other.
+
+The isolated synthetic approval cancellation journal now pins the
+**scalar values** of an optional independently retained prefix witness
+before SQLite reads and confirms that the witness has not been
+reflectively rewritten to another locally valid prefix. Read, cancellation
+append and claim-status review also pin the journal's initialized path.
+A copied or rewritten local witness is still **not** an authenticated
+issuer signature, trusted clock, human approval or real effect proof.
+Cancellation updates remain disconnected from live PermissionGate dispatch.
+
+The Personal Context revocation veto ledger and its independent history
+reviewer now verify the initialized `Path` object at operation entry and
+again before committing a read or write. Retargeting the ledger's
+`path` during reentrant schema validation rejects the operation; a
+partially inserted marker is rolled back. This guards accidental/reflected
+Python-level source retargeting only. It does not prevent an OS-level
+file swap, authenticate custody, establish global atomicity across SQLite
+files, authorize an irreversible deletion, or prove absence of revocation.
+
+Focused tests:
+`tests/test_personal_context_reuse_nested_epoch_run383.py`,
+`tests/test_synthetic_cancellation_input_epoch_run383.py`, and
+`tests/test_personal_context_revocation_source_epoch_run383.py`.
+Their exact code HEAD must pass Ubuntu/Windows Python 3.11–3.13 CI before
+being called cross-platform GREEN. Any earlier failed test assertion or
+successful earlier commit is separate evidence and does not certify this
+HEAD. All three reviews are local, synthetic and deny-only.
