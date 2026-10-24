@@ -104,12 +104,15 @@ def review_synthetic_retention_inventory(
     if not isinstance(memory_source, Path) or not isinstance(veto_source, Path):
         raise SyntheticRetentionRejected("retention source path is invalid")
     retained_epoch = None
+    retained_rows_carrier = None
     if retained_revocations is not None:
         if type(retained_revocations) is not SyntheticRevocationWitness:
             raise SyntheticRetentionRejected("exact retained revocation witness required")
-        retained_revocations.assert_integrity()
+        # Retain the exact historical source before the FIRST potentially
+        # reentrant integrity callback. Its result cannot reset our baseline.
+        retained_rows_carrier = retained_revocations.rows
         retained_epoch = (
-            retained_revocations.rows, retained_revocations.witness_id,
+            retained_rows_carrier, retained_revocations.witness_id,
         )
 
     def assert_sources() -> None:
@@ -120,12 +123,18 @@ def review_synthetic_retention_inventory(
         if (scope.owner_id, scope.namespace) != epoch:
             raise SyntheticRetentionRejected("retention scope changed during inventory")
         if retained_revocations is not None and (
-            retained_revocations.rows, retained_revocations.witness_id,
-        ) != retained_epoch:
+            retained_revocations.rows is not retained_rows_carrier
+            or (retained_revocations.rows, retained_revocations.witness_id)
+            != retained_epoch
+        ):
             raise SyntheticRetentionRejected(
                 "retained revocation witness changed during inventory"
             )
 
+    assert_sources()
+    if retained_revocations is not None:
+        retained_revocations.assert_integrity()
+        assert_sources()
     first = review_revocation_continuity(ledger, retained=retained_revocations)
     assert_sources()
     with closing(memory._connect_readonly()) as conn:
