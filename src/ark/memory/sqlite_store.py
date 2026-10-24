@@ -533,8 +533,21 @@ class SQLiteMemoryStore:
                     AND expires_at_ms<=? ORDER BY memory_id""",
                     (pinned_scope.owner_id, pinned_scope.namespace, now),
                 ).fetchall()
+            def assert_purge_row_epoch() -> None:
+                # Each decoded row and event write can be a synthetic
+                # reentrant boundary. A reflected scope/source swap that is
+                # undone on the *next* row must not pass the final-only check.
+                if self.path is not path_epoch:
+                    raise MemorySchemaError("memory purge source changed before commit")
+                if scope is not None and (scope.owner_id, scope.namespace) != (
+                    pinned_scope.owner_id, pinned_scope.namespace
+                ):
+                    raise MemorySchemaError("memory purge scope changed before commit")
+
             for row in rows:
+                assert_purge_row_epoch()
                 stored = _record(row)
+                assert_purge_row_epoch()
                 if pinned_scope is not None and stored.scope != pinned_scope:
                     raise MemorySchemaError("stored memory scope differs from expiry query")
                 # Bind deletion to the exact row/scope/revision/expiry predicate
@@ -554,6 +567,9 @@ class SQLiteMemoryStore:
                     conn, stored.memory_id, stored.scope, "expire",
                     stored.revision, now,
                 )
+                # Fail before the next row's callback can restore a temporary
+                # owner/scope/path retargeting; SQLite rolls back row and event.
+                assert_purge_row_epoch()
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory purge source changed before commit")
             if scope is not None and (scope.owner_id, scope.namespace) != (
