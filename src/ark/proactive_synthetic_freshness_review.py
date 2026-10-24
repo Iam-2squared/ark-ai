@@ -94,7 +94,37 @@ def review_prepared_trigger_freshness(
     retained_epoch = (
         (retained.row_hashes, retained.digest) if retained is not None else None
     )
+    policy_fields = (
+        "owner", "namespace", "definition_id", "revision", "policy_revision",
+        "minimum_interval_ms", "rolling_window_ms",
+        "max_preparations_per_window",
+    )
+    policy_epoch = tuple(
+        (type(getattr(policy, name)), getattr(policy, name))
+        for name in policy_fields
+    )
+
+    def assert_epoch() -> None:
+        current_policy = tuple(
+            (type(getattr(policy, name)), getattr(policy, name))
+            for name in policy_fields
+        )
+        if (
+            ledger.path is not ledger_path
+            or type(receipt.trigger_id) is not str
+            or type(receipt.prepared_at_ms) is not int
+            or (receipt.trigger_id, receipt.prepared_at_ms) != receipt_epoch
+            or current_policy != policy_epoch
+            or retained is not None and (
+                retained.row_hashes, retained.digest
+            ) != retained_epoch
+        ):
+            raise SyntheticTriggerRejected(
+                "freshness evidence changed during read-only review"
+            )
+
     pinned = policy.identity()
+    assert_epoch()
     scope = _hash("ARK-trigger-scope-v1", pinned[:4])
     policy_hash = _hash("ARK-trigger-policy-v1", pinned)
     expected = "trigger_" + _hash(
@@ -103,16 +133,20 @@ def review_prepared_trigger_freshness(
     )
     if receipt.trigger_id != expected:
         raise SyntheticTriggerRejected("stale or mismatched prepared trigger policy")
+    assert_epoch()
 
     uri = ledger_path.resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
         conn.execute("BEGIN")
         try:
             _validate(conn)
+            assert_epoch()
             rows = tuple(conn.execute(_ROWS))
+            assert_epoch()
             row_hashes = tuple(sorted(
                 _digest("ARK-trigger-row-v1", row) for row in rows
             ))
+            assert_epoch()
             current = SyntheticTriggerWitness(
                 row_hashes,
                 "synthetic_triggers_" + _digest(
@@ -120,9 +154,12 @@ def review_prepared_trigger_freshness(
                 ),
             )
             current.assert_integrity()
+            assert_epoch()
             if retained is not None:
                 assert_proactive_history_continues(retained, current)
+                assert_epoch()
             matching = tuple(row for row in rows if row[0] == expected)
+            assert_epoch()
             if len(matching) != 1:
                 raise SyntheticTriggerRejected("prepared trigger receipt no longer exists")
             (_trigger, row_scope, row_policy, row_source, row_observation,
@@ -141,17 +178,9 @@ def review_prepared_trigger_freshness(
                 raise SyntheticTriggerRejected("prepared observation stale or clock regressed")
             if policy.identity() != pinned:
                 raise SyntheticTriggerRejected("policy changed during freshness review")
-            if (
-                (receipt.trigger_id, receipt.prepared_at_ms) != receipt_epoch
-                or ledger.path is not ledger_path
-                or retained is not None and (
-                    retained.row_hashes, retained.digest
-                ) != retained_epoch
-            ):
-                raise SyntheticTriggerRejected(
-                    "freshness evidence changed during read-only review"
-                )
+            assert_epoch()
             conn.commit()
+            assert_epoch()
             return SyntheticProactiveFreshnessReview(
                 expected, prepared, now_ms, current,
             )
