@@ -96,6 +96,76 @@ operating-system permissions, notifications, camera/microphone access,
 personal data deletion, protected V2 evaluation, paid V3 training or
 Candidate promotion. UNKNOWN WRITE remains UNKNOWN and non-replayable.
 
+
+## Package D — directly callable proactive continuity witness
+
+Files:
+- `src/ark/proactive_synthetic_continuity_review.py`
+- `tests/test_proactive_direct_continuity_epoch_run399.py`
+
+**Previous gap:** `assert_proactive_history_continues` validated retained
+and current hash witnesses in sequence without an independent pre-callback
+epoch check. A direct caller, unlike a caller wrapped in a prepared-trigger
+transaction, did not retain the exact two historical carriers at entry.
+
+**Fence:** pin both witnesses' row tuple carriers and digests before
+either integrity validation, checking after each validation and after the
+subset comparison. Four tests vary which integrity method reflects a
+value-equal tuple replacement and which witness is rewritten. Neither a
+digest nor a subset relation confers scheduler/notification authority.
+
+## Package E — Observation-to-Trigger ingress before first lineage callback
+
+Files:
+- `src/ark/proactive_observation_lineage_fence_review.py`
+- `tests/test_observation_ingress_witness_epoch_run399.py`
+
+**Previous gap:** the retained Trigger witness was pinned *after* its first
+integrity callback, and input validation began only after the first
+lineage review. Earlier reentrant hash computations could mutate a
+captured envelope or retained witness before the observed baseline.
+
+**Fence:** retain the exact row tuple carrier/digest before the first
+witness validator, validate it immediately after, and explicitly check
+the full observation/policy/source epoch immediately after the input
+source-digest callback and before the first lineage review. Four
+regressions cover equal-valued rows, altered hash/Policy and a reflected
+observation source retarget. A matched hash is not media authenticity.
+
+## Package F — privacy retention inventory independent-veto ingress
+
+Files:
+- `src/ark/personal_context_retention_review.py`
+- `tests/test_retention_inventory_early_veto_epoch_run399.py`
+
+**Previous gap:** the content-minimized retention inventory called the
+external retained-veto integrity method before recording its first
+historical values. A reflected mutation could silently establish a
+different baseline; value-only row comparisons also missed equal-valued
+tuple clones.
+
+**Fence:** capture the exact original revocation row tuple and witness
+identifier before first validation; check source, scope and historical
+carrier before and after integrity, and at the existing Memory/veto phase
+boundaries. Four regressions cover the first retained integrity callback
+and first veto observation, including equal rows, scope and Path swaps.
+The returned inventory is *diagnostic only*, NEVER consent or erasure.
+
+## Exact-head CI discipline
+
+The implementation and each regression path were written through normal
+GitHub Contents on the isolated Draft branch. Historical source/test
+GREEN status must not be inherited by newer commits: validate each
+actual HEAD with its own six OS/Python jobs. The final canonical
+`docs/PROJECT_STATUS.md` checkpoint separately reports precise CI run
+IDs, SHA and any still-running jobs. No workflow was manually duplicated.
+
+**Further boundaries:** all six packages run on mock/disconnected local
+data with explicit denial of external WRITE, automatic replay, personal
+data deletion, sensor capture or notifications. Frozen experiment and
+evaluation contracts remain unchanged; paid GPUs or APIs are outside
+authorization.
+
 ## Validation protocol / next independent work
 
 1. Link each source/test package and any intermediate failure to its
