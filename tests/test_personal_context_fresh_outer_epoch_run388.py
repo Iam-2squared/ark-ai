@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import ark.personal_context_revocation_continuity_review as continuity_module
 import ark.personal_context_revocation_review as module
 from ark.memory.coherent_snapshot_review import CoherentSnapshotRequest
 from ark.memory.contracts import MemoryScope, MemoryWrite
@@ -57,7 +58,7 @@ def test_veto_source_redirected_across_read_passes_is_denied(
     tmp_path: Path, monkeypatch, after_continuity: int,
 ):
     state = _fixture(tmp_path)
-    original = module.review_revocation_continuity
+    original = continuity_module.review_revocation_continuity
     calls = 0
 
     def redirected(*args, **kwargs):
@@ -68,7 +69,7 @@ def test_veto_source_redirected_across_read_passes_is_denied(
             state[1].path = Path(str(state[1].path))
         return result
 
-    monkeypatch.setattr(module, "review_revocation_continuity", redirected)
+    monkeypatch.setattr(continuity_module, "review_revocation_continuity", redirected)
     with pytest.raises(SyntheticContextRevocationRejected, match="source"):
         _review(state)
     assert calls == after_continuity
