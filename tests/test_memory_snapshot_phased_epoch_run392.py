@@ -94,7 +94,7 @@ def test_scope_carrier_retargeting_mid_hydration_is_refused(
 
     def retarget(row):
         record = original_record(row)
-        object.__setattr__(scopes[1], "namespace", "one")
+        object.__setattr__(scopes[3], "namespace", "one")
         return record
 
     monkeypatch.setattr(MemoryScope, "__post_init__", remember)
