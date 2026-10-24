@@ -239,7 +239,9 @@ class SyntheticProactiveLedger:
                     )
                     assert_proactive_history_continues(retained, current)
                 if policy.identity() != pinned or self.path is not ledger_path:
-                    raise SyntheticTriggerRejected("policy or ledger path changed before preparation")
+                    raise SyntheticTriggerRejected(
+                        "policy or ledger path changed before preparation"
+                    )
                 recent = conn.execute(
                     """SELECT prepared_at_ms FROM synthetic_prepared_triggers
                        WHERE scope_digest=? AND policy_digest=?
@@ -269,7 +271,9 @@ class SyntheticProactiveLedger:
                         "duplicate synthetic trigger occurrence"
                     ) from exc
                 if policy.identity() != pinned or self.path is not ledger_path:
-                    raise SyntheticTriggerRejected("policy or ledger path changed during preparation")
+                    raise SyntheticTriggerRejected(
+                        "policy or ledger path changed during preparation"
+                    )
                 if retained_epoch is not None and (
                     retained.row_hashes, retained.digest
                 ) != retained_epoch:
