@@ -344,16 +344,26 @@ class SyntheticPlanJournal:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
-        steps_epoch, topology_epoch, carriers = self._pin_topology()
+        # Pin an independent witness before the first reentrant topology
+        # hash or witness-shape callback; never silently accept a new prefix.
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
                 raise SyntheticPlanJournalRejected("retained tail has wrong type")
-            retained.assert_shape()
             pinned = (
                 retained.topology_digest, retained.event_count,
                 retained.event_hash, retained.status_digest, retained.last_at_ms,
             )
+        steps_epoch, topology_epoch, carriers = self._pin_topology()
+        if retained is not None:
+            retained.assert_shape()
+            if (
+                retained.topology_digest, retained.event_count,
+                retained.event_hash, retained.status_digest, retained.last_at_ms,
+            ) != pinned:
+                raise SyntheticPlanJournalRejected(
+                    "retained synthetic plan witness changed before recovery"
+                )
         uri = path_epoch.resolve().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
             conn.execute("BEGIN")
@@ -405,16 +415,26 @@ class SyntheticPlanJournal:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
-        steps_epoch, topology_epoch, carriers = self._pin_topology()
+        # Capture original retained evidence before any topology/shape
+        # callback or tentative SQLite event append.
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
                 raise SyntheticPlanJournalRejected("retained tail has wrong type")
-            retained.assert_shape()
             pinned = (
                 retained.topology_digest, retained.event_count, retained.event_hash,
                 retained.status_digest, retained.last_at_ms,
             )
+        steps_epoch, topology_epoch, carriers = self._pin_topology()
+        if retained is not None:
+            retained.assert_shape()
+            if (
+                retained.topology_digest, retained.event_count,
+                retained.event_hash, retained.status_digest, retained.last_at_ms,
+            ) != pinned:
+                raise SyntheticPlanJournalRejected(
+                    "retained synthetic plan witness changed before append"
+                )
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
