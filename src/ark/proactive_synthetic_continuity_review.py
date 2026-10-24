@@ -92,12 +92,16 @@ def read_proactive_witness(
     retained_epoch = (
         None if retained is None else (retained.row_hashes, retained.digest)
     )
+    retained_rows_carrier = None if retained is None else retained.row_hashes
 
     def assert_epoch() -> None:
         if (
             ledger.path is not path_epoch
             or retained is not None
-            and (retained.row_hashes, retained.digest) != retained_epoch
+            and (
+                retained.row_hashes is not retained_rows_carrier
+                or (retained.row_hashes, retained.digest) != retained_epoch
+            )
         ):
             raise SyntheticTriggerRejected(
                 "proactive witness source or retained history changed during review"
