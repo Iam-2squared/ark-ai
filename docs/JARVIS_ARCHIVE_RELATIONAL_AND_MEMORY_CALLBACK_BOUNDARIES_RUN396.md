@@ -26,7 +26,13 @@ Focused regressions: `tests/test_memory_snapshot_callback_boundaries_run396.py`.
 
 The reader now pins each exact `MemoryScope` instance and original fields before any digest work. It rechecks original scopes and journal Path custody after each scope digest, immediately after SQLite schema checks and before/after each individual veto SELECT. Existing revoked-scope rejection and transaction rollback remain fail-closed. Focused regressions: `tests/test_privacy_veto_lookup_epoch_run396.py` (including successful stable absence, which is **not** a consent grant). The v1 local veto table is unchanged.
 
-## 4. Threat ceilings / integration decision
+## 4. Proactive Scheduler: retained witness and per-row epoch boundaries
+
+`src/ark/proactive_synthetic_continuity_review.py` reviews content-free hashes of persisted synthetic trigger rows under one SQLite read transaction. The earlier loop checked source and retained witness only after hashing *all* rows. A reentrant hashing callback on row one could briefly retarget the ledger Path or a separately held earlier witness and restore the original value on row two. The new row loop checks both boundaries around **each** row hash, and checks the exact original `row_hashes` tuple carrier as well as its values and digest. This is local witness consistency only, not trusted execution or external provenance.
+
+Regression fixtures `tests/test_proactive_witness_row_phase_run396.py` cover a stable two-row history and three transient mutation variants: same-value replacement Path, changed retained digest, and value-equal replacement of the retained tuple. No notification, schedule dispatch, external effect or protected evaluation is invoked.
+
+## 5. Threat ceilings / integration decision
 
 Neither Python object identity nor a self-checksummed local archive proves independent provenance. Reflected in-process changes between checks, OS path/inode substitution, malicious recomputation, untrusted clocks, and independently committed cross-SQLite writes remain outside the proof boundary. No action/token is issued and no external effect is attempted. UNKNOWN WRITE remains UNKNOWN without automatic retry.
 
