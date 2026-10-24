@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run 390**
+
+Saved at: **2026-10-24T20:56:58.222+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled just before the ordinary GitHub Contents checkpoint write; **not** the GitHub server receipt time).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `cc667b1a2f878cda64f9aedfa7530f5eef09f7f6` (Run389 checkpoint; CI **#694 / run `40088217018` GREEN 6/6**, independently observed).
+Exact **final source+tests HEAD**: `075797503c9b6ecb3d611630dec2f99c253e3516` (retained-input shape/Ruff repair).
+Exact **final source+tests+engineering document / checkpoint write-basis HEAD**: `c279e26978826650e87f4fe7f1cf455934d2308c`.
+**Checkpoint-result-HEAD:** not known at checkpoint-text authorship. The ordinary GitHub Contents `update_file` return's `commit_sha` is authoritative and must be independently verified on PR #8. No predecessor's GREEN is assigned to an untested checkpoint HEAD.
+
+Overall ARK state: **isolated, local-first, disconnected synthetic/mock JARVIS foundations**. No authenticated user/issuer/recipient consent, trusted clock, OS-level source custody, global atomic cross-SQLite read, real ToolBackend effects, external exactly-once proof, autonomous WRITE, or complete JARVIS PASS. Main base `7a843f17eb96ed13d66f23b58b06406b3002e405` remains unchanged. Exact compare before checkpoint: **247 added paths, ZERO changed/deleted existing main files**. Frozen V1/V2/Local UI/Launcher contracts/evidence and Memory v1 DDL remain unchanged. V3 **PR #5 Draft/open/unmerged/NOT_PASSED**, HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`; protected V2 FINAL remains closed.
+
+### NEW in Run 390 — four FREE-only safety packages (+24 focused regression cases)
+
+1. **Memory SQLite source epoch (+9):** `src/ark/memory/sqlite_store.py` binds original SQLite Path object through `put`, `search`, `delete` and `purge_expired` and rejects reentrant same-string source changes, even for absent search/delete or zero expired rows. Writes changed during clock or after event insert roll back their local transaction. `tests/test_memory_transaction_source_epoch_run390.py`. Existing CAS and event order remain; no DDL changes.
+2. **Synthetic Claim/Occurrence/Planner provenance per-phase epoch (+6):** `src/ark/agency/synthetic_claim_recovery_provenance_review.py` checks Path objects, original Registry-bound ToolCall/arguments, claim envelope, Planner topology carrier and independently retained witness fields **after every** disconnected recovery/sidecar review, not only after the final comparison. Explicit exact-type validation rejects malformed retained witnesses. `tests/test_claim_provenance_cross_phase_epoch_run390.py`. No authenticated approval, real execution or automatic UNKNOWN replay.
+3. **Observation/Trigger per-phase input guard (+5):** `src/ark/proactive_observation_lineage_fence_review.py` checks original envelopes, policy, receipt, Path and retained trigger witness after each lineage/freshness callback, detecting transient reflected changes before a later callback could restore them. `tests/test_observation_cross_phase_input_epoch_run390.py`. No camera/microphone capture or notifications.
+4. **Personal Context retention scope/witness epoch (+4):** `src/ark/personal_context_retention_review.py` binds owner/namespace and prior independently retained revocation witness fields across veto and Memory reads, rejecting even substituted valid historical witnesses. `tests/test_retention_retained_and_scope_epoch_run390.py`. No erasure, disclosure or consent grant.
+
+Engineering evidence/threat model: `docs/JARVIS_LOCAL_SOURCE_AND_CALLBACK_EPOCH_RUN390.md`. **14 normal GitHub Contents commits before this checkpoint** (four source changes, four new focused test files, one test-phase correctness correction, three semantics-preserving CI repairs, a technical document and its privacy extension). Every write used the ordinary Contents path after re-reading latest PR HEAD; no raw Git-object/ref bypass, force push, manual duplicate CI dispatch, merge, training, paid services, real ToolBackend or protected evaluation.
+
+### Exact-head CI, intermediate failures, and remaining validation
+
+- Starting checkpoint `cc667b1...`: **#694 / run `40088217018` GREEN 6/6**. First Memory source-only `3f93afa480bacd0168c9818b09d7864164912c6f`: **#695 / `40090893063` GREEN 6/6**.
+- Intermediate **#696–#699 FAILED** at their exact heads because of a long line in the new Memory test file (Ruff E501); repaired without changing assertions at `7364a595e63e330547b1e074aea6041f986edbce`.
+- Intermediate **#700–#703 FAILED**: one existing provenance negative regression correctly required a `RuntimeError` for invalid retained-witness types, but the new `dataclasses.fields` snapshot had raised `TypeError` first (Ubuntu Python3.13 at #700: **1557 passed, 1 failed**, Ruff PASS). Fixed by explicit exact-type denial at `def73b3e6da388cac9c89faa3c45db12e8ebb487`, not by weakening tests.
+- Intermediate **#704–#706 FAILED** Ruff E501 in that exact-type validation; repaired by line wrapping at `075797503c9b6ecb3d611630dec2f99c253e3516`, with no semantic change. Failed runs remain recorded rather than relabeled.
+- Final source+tests HEAD `0757975...`: **#707 / run `40091698803` 5/6 GREEN, 0 FAIL, 1 IN PROGRESS** at checkpoint job read. Full 6/6 cannot be claimed until observed.
+- Final source+tests+document HEAD `c279e26978826650e87f4fe7f1cf455934d2308c`: **#708 / run `40091720272` 5/6 GREEN, 0 FAIL, 1 IN PROGRESS** at checkpoint job read. Ubuntu Python3.13 job `120865590234` independently logged **Ruff PASS, pytest 1567 passed** (Run389 baseline 1543 + 24 new tests). Other environments and the future checkpoint commit's CI must be checked separately.
+- Existing pull-request CI only, on free public repository runners; no duplicate workflow dispatch. The mock/evaluation smoke checks are NOT protected V2 FINAL and do not measure real model performance.
+
+### Hard stops, remaining proof obligations, Next plan / 今後の方針
+
+**No new paid/potentially billable service, external GPU, real adapter/weight generation, full training, candidate evaluation/promotion, protected V2 FINAL opening, secrets/account connections, physical PC action, irreversible operation, real media capture, live notification, external ToolBackend WRITE, personal-information deletion/export, frozen contract change or main merge.** Frozen PR #5 approval/cost/path/revision/identity gates remain intact.
+
+Path-object identity is a local reflected-mutation fence, **not inode/file-descriptor custody, signed independent provenance or OS-level attestation**. Separate SQLite snapshots are not a global atomic transaction; a post-check callback or restored ABA may still race. Caller time and local hash witnesses are untrusted. Registry/Claim/Occurrence/Audit consistency does **not** establish authenticated human consent, external effects or exactly-once delivery. **UNKNOWN WRITE must never be automatically retried.**
+
+1. Resolve exact-head #707 and #708 on all six environments and separately verify the checkpoint commit's own GitHub CI; diagnose any actual failure from job logs through ordinary Contents writes only.
+2. Advance durable Planner/ToolRegistry/PermissionGate/Claim/Occurrence/ActionAudit recovery and state persistence with mock executors only; require trusted time, authenticated issuer/recipient approval and external durable idempotency before any live action.
+3. Extend Memory CAS/TTL/multi-namespace coherence and schema/row/event integrity, including failure injection during multi-row expiry; preserve v1 DDL and independently retained history boundaries.
+4. Continue private Personal Context consent/veto/retention diagnostics without deletion/export or human-consent assumptions.
+5. Continue mocked Scheduler/Observation/Startup and V3 free-only identity/path/approval reviews. Keep PR #8 Draft/unmerged, PR #5 Draft/NOT_PASSED, main and all frozen V1/V2/UI/Launcher evidence untouched.
+
+---
+
+**HISTORICAL — Run389 and earlier (previous canonical text follows unchanged)**
+
+# ARK AI Project Status
+
 **LATEST — Run 389**
 
 Saved at: **2026-10-24T20:01:08.601+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before ordinary GitHub Contents checkpoint write; not GitHub server receipt time).
