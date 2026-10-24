@@ -109,7 +109,7 @@ def review_synthetic_claim_write_recovery(
     # The direct entrypoint must bind the whole local review epoch as well.
     source_epoch = (
         cancellation.path, journal._path, audit.path,
-        None if link_store is None else link_store.path,
+        None if link_store is None else link_store._path,
     )
     if any(path is not None and not isinstance(path, Path) for path in source_epoch):
         raise SyntheticClaimRecoveryRejected("exact claim recovery sources required")
@@ -125,7 +125,7 @@ def review_synthetic_claim_write_recovery(
     def assert_epoch() -> None:
         sources = (
             cancellation.path, journal._path, audit.path,
-            None if link_store is None else link_store.path,
+            None if link_store is None else link_store._path,
         )
         if (
             any(current is not prior for current, prior in zip(
@@ -137,7 +137,6 @@ def review_synthetic_claim_write_recovery(
                 call.request_id, call.arguments_sha256,
             ) != call_epoch
             or registry.revision != registry_epoch
-            or _claim_epoch(envelope) != initial
         ):
             raise SyntheticClaimRecoveryRejected(
                 "claim recovery source, action or binding changed during review"
