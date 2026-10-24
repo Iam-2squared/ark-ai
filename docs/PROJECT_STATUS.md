@@ -1,5 +1,61 @@
 # ARK AI Project Status
 
+**LATEST — Run 378**
+
+Saved at: **2026-10-24T09:57:13.498817398+09:00 Asia/Tokyo/JST** (runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint write preflight).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+Exact invocation **work-basis HEAD**: `74e91fad63a865b06fe550865847a9680c00f955` (**CI #538 / run `40041986099`: SUCCESS, 6/6**).
+Exact final **source/test HEAD**: `04739e22bc0b2ee2251d11e5c239d50a4901ef02` (**CI #550 / run `40047325066`: 5/6 GREEN, 0 FAIL, 1 IN PROGRESS, 0 QUEUED at status preflight**). Ubuntu Python 3.13 explicitly logged **Ruff PASS + 1151 pytest passed**.
+Exact engineering docs / **checkpoint write-basis HEAD**: `d90d855a86bd77b0b47bde90e3f2cdaf9af7ac41` (**CI #551 / run `40047359113`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED at status preflight**).
+**The actual checkpoint-result Git SHA is not mathematically self-referencable in its own content**: capture the returned Contents commit externally and check its distinct CI. Do not attribute #550/#551 success to this later HEAD.
+
+## Overall ARK state and safety boundaries
+
+ARK remains **local-first, research-isolated, reversible, synthetic/mock-only, and entirely disconnected from real backend effects**. No authenticated human/issuer consent, trusted hardware/wall clock, signed externally retained witness, atomic multi-SQLite snapshot, real PC operation, real external WRITE effect proof, production Exactly-Once, live notification, camera/mic/screen media collection, destructive erasure, protected evaluation, real Candidate training, paid compute, or complete JARVIS is established.
+
+**main remains** `7a843f17eb96ed13d66f23b58b06406b3002e405`. All **182 PR #8 changed paths remain added-only versus main**; no frozen V1/V2/Local UI/Launcher code or evidence path was edited in place. V3 **PR #5** remains **Draft, open, unmerged, NOT_PASSED**, HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`; all protected V2 FINAL and V3 Candidate gates remain CLOSED.
+
+## NEW — Run 378: four FREE-only safety work packages
+
+**13 sequential ordinary GitHub Contents commits before this single checkpoint**; eight new isolated files (four source modules and four corresponding pytest suites) plus source-grounded changes to the research-only engineering boundary document. Ubuntu Python 3.13 completed **1151 pytest passed, Ruff PASS**, versus 1078 in prior Run 377 (**+73 regression cases**). All outputs remain identity-only, deny-only or pseudonymized. No raw Git object writes, safeguard bypass, force push, CI duplication, new paid resource, credential, user account connection, physical-PC action, model training, real ToolBackend dispatch, data deletion, notification or main merge.
+
+1. **P0 synthetic claim + cancellation + Planner recovery correlation (+20 cases):** new `agency/synthetic_claim_recovery_review.py` brackets the existing 3-/4-store Planner/occurrence/ActionAudit/sidecar read-only recovery diagnosis with two durable synthetic approval-cancellation fence reviews. Claim request, Registry revision, bound Action ID and persisted recovery identity must agree; observed veto append or claim drift fails closed. A returned RUNNING WRITE stays UNKNOWN, never auto-retryable. **No authenticated issuer/subject/recipient, actual consent, externally trusted clock, atomic cross-store transaction, effect verification or post-check race closure**. All human-consent, dispatch, replay and outcome flags remain false. Tests: `tests/test_synthetic_claim_recovery_review_run378.py`.
+2. **P1 cached retention/possible-erasure dry-run (+18 cases):** new `personal_context_retention_recheck_review.py` re-reads exact privacy-scoped Memory retention inventory at its original caller-clock time and a bounded later time, rejecting stale content/revision, newly recorded veto and observed cross-store drift. Returns **only pseudonymous expired/unbounded memory IDs for manual policy review**. It never calls delete/purge, proves erasure, authorizes use or exposes Memory text; its clock, scope and revocation sources are local and unauthenticated. Tests: `tests/test_personal_context_retention_recheck_run378.py`.
+3. **P1 prepared proactive Trigger + startup readiness fence (+16 cases):** new `proactive_startup_fence_review.py` validates exact-schema READY dependency requirements and persisted Trigger policy/source/observation freshness, then rechecks the pair. Unrelated blocked lanes remain isolated. This does NOT prove physical startup, consent, trusted time or real notification/ToolBackend readiness; all startup/notification/dispatch/replay flags are false. Tests: `tests/test_proactive_startup_fence_run378.py`.
+4. **P1 observation parent lineage + persisted Trigger binding (+19 cases):** new `proactive_observation_lineage_fence_review.py` binds one uniquely selected, already provided, scope-matched ObservationEnvelope to the persisted Trigger via untrusted domain-separated source hash and exact observation digest. Parent lineage, privacy scope, expiry and trigger history are checked twice. This is not signed provenance or media authentication; no camera, microphone, screen, disclosure, notification, real action or replay. Tests: `tests/test_proactive_observation_lineage_fence_run378.py`.
+
+**Engineering documentation:** `docs/SYNTHETIC_MOCK_AND_PRIVACY_BOUNDARIES.md` now states all four cross-component diagnostic limits, non-atomicity, consent/legal and externally trusted identity blockers, and permanently false authority surfaces.
+
+## Exact-head CI / failures / provenance
+
+- Run 377 checkpoint **#538 / `40041986099`: 6/6 GREEN**, independently verified at Run 378 start; PR #8 is still Draft.
+- Early new-test CIs **#540–#545: FAILED** on Ruff E501 line length in new parametrized tests, not model safety logic; corrected via ordinary GitHub Contents test-only updates.
+- **#546–#547: FAILED** after lint correction due to a NEW retention-regression fixture updating an existing Memory row with `expected_revision=0`. Existing CAS rightly rejected it (`MemoryConflictError: expected 0, actual 1`). Changed only fixture to `expected_revision=1`; no security predicate relaxed.
+- **#548 / `40047146741`: six jobs SUCCESS** after the CAS regression fixture fix, verified independently.
+- **#550 / `40047325066`: 5/6 GREEN, 0 FAIL, 1 IN PROGRESS, 0 QUEUED** at exact final source/test HEAD `04739e22bc0b2ee2251d11e5c239d50a4901ef02`. Ubuntu 3.13: **Ruff PASS, 1151 passed**; other jobs retain their own states until verified.
+- **#551 / `40047359113`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED** at exact engineering-docs checkpoint write-basis HEAD `d90d855a86bd77b0b47bde90e3f2cdaf9af7ac41`.
+- **Do not transfer earlier CI GREEN to the subsequent checkpoint-result commit.** No equivalent manual workflow run was launched.
+
+## Blockers / approval boundaries
+
+No paid/potentially billable services, subscriptions, external GPU/compute, production Candidate/weights/adapter generation, secret/account connection, frozen-contract edits, protected FINAL opening, promotion, irreversible data purge or protected main merge. Nothing authenticates the caller's issuer/subject, the user consent, true time, policy/legal basis, observation source or external backend outcome. Hash-linked local ledgers and witnesses are **not signatures**. The system has **no global SQLite atomicity or guarantee against changes after the final review**, so dispatch/notification, disclosure, deletion and UNKNOWN WRITE replay remain **DENIED**.
+
+## Next plan / 今後の方針
+
+1. **P0 exact-head CI:** Complete #550 and #551 six-job checks, then independently inspect the checkpoint-result HEAD CI. On failure inspect exact logs and use only a minimal normal Contents-path test/source fix; no force or raw object bypass. If CI is running, work a different independent lane.
+2. **P0 durable authorization / recovery:** Keep claim-veto-recovery deny-only; advance issuer/subject/recipient evidence contract and independently retained cancellation history without pretending missing veto equals consent. UNKNOWN WRITE is permanently no-replay without trusted external effect reconciliation.
+3. **P0 Planner/Memory/ActionAudit:** Advance coherent CAS/snapshot/journal boundaries, crash-point fault injection, witness integrity and schema/time safety. Audit/occurrence agreement never certifies a real external WRITE.
+4. **P1 privacy:** Research consent provenance, retention/legal basis and human-review-only erasure candidates. Actual irreversible purge/export needs explicit verified authorization and backup/log lifecycle review.
+5. **P1 proactive/observation/readiness:** Continue offline-only source provenance, clock/expiry, dependency schema, policy revision and post-read race diagnostics. No notification, physical PC, webcam, mic, screen capture or live ToolBackend.
+6. **P2 V3 free-only:** Approval/path/identity/reproducibility guard fixtures only. V3 PR #5 stays Draft/NOT_PASSED and Candidate/frozen evaluation remain closed until separate explicit gates.
+
+---
+
+**HISTORICAL — Run 377 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 377**
 
 Saved at: **2026-10-24T08:51:31.364+09:00 Asia/Tokyo/JST**, sampled from the runtime UTC clock immediately before this ordinary GitHub Contents checkpoint write.
