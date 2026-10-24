@@ -13,6 +13,7 @@ import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from pathlib import Path
 
 from .audit import SQLiteActionAudit, _validate_v1_schema
 from .contracts import ActionAuditSchemaError
@@ -90,13 +91,29 @@ def review_audit_continuity(
     if retained is not None:
         pinned = (retained.event_count, retained.tail_event_id, retained.chain_sha256)
 
+    # Pin the opened SQLite source before any reentrant validation or row
+    # processing. Equality of two Path strings is not an identity epoch.
+    path_epoch = audit.path
+    if not isinstance(path_epoch, Path):
+        raise ActionAuditSchemaError("audit continuity requires a Path source")
+
+    def assert_epoch() -> None:
+        if audit.path is not path_epoch:
+            raise ActionAuditSchemaError(
+                "audit SQLite source changed during continuity review"
+            )
+        if retained is not None and (
+            retained.event_count, retained.tail_event_id, retained.chain_sha256
+        ) != pinned:
+            raise ActionAuditSchemaError("retained audit witness changed during review")
+
     # A short read transaction pins all event rows to the same SQLite snapshot.
     # Do not issue PRAGMA journal_mode on ordinary read-only diagnostics.
     try:
         # The reviewer must never create a new empty database when the
         # configured audit file is missing, even on a stale audit object.
         with closing(
-            sqlite3.connect(audit.path.resolve().as_uri() + "?mode=ro", uri=True)
+            sqlite3.connect(path_epoch.resolve().as_uri() + "?mode=ro", uri=True)
         ) as conn:
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA busy_timeout=5000")
@@ -107,15 +124,18 @@ def review_audit_continuity(
             if type(version) is not int or version != 1:
                 raise ActionAuditSchemaError("audit review requires exact schema version 1")
             _validate_v1_schema(conn)
+            assert_epoch()
             rows = conn.execute(
                 """SELECT event_id,request_id,tool,capability,scope,arguments_sha256,
                           outcome,occurred_at_ms
                 FROM action_events ORDER BY event_id LIMIT ?""",
                 (max_events + 1,),
             ).fetchall()
+            assert_epoch()
             conn.rollback()
     except sqlite3.DatabaseError as exc:
         raise ActionAuditSchemaError("cannot read audit snapshot") from exc
+    assert_epoch()
     if len(rows) > max_events:
         raise ActionAuditSchemaError("audit review budget exceeded")
 
@@ -128,19 +148,18 @@ def review_audit_continuity(
             raise ActionAuditSchemaError("retained empty audit witness differs")
     for row in rows:
         tail, payload = _row_payload(row, previous_id=tail)
+        assert_epoch()
         at_ms = row["occurred_at_ms"]
         if require_monotonic_time and at_ms < previous_at:
             raise ActionAuditSchemaError("audit event clock regressed")
         previous_at = at_ms
         chain = hashlib.sha256(chain + b"\n" + payload).digest()
+        assert_epoch()
         count += 1
         if pinned is not None and count == pinned[0]:
             if (tail, chain.hex()) != pinned[1:]:
                 raise ActionAuditSchemaError("retained audit prefix differs")
     if pinned is not None and count < pinned[0]:
         raise ActionAuditSchemaError("audit history is shorter than retained witness")
-    if retained is not None and (
-        retained.event_count, retained.tail_event_id, retained.chain_sha256
-    ) != pinned:
-        raise ActionAuditSchemaError("retained audit witness changed during review")
+    assert_epoch()
     return AuditContinuityWitness(count, tail, chain.hex())
