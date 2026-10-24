@@ -185,6 +185,11 @@ class ToolRegistry:
         assert_call_epoch()
         self._assert_registration_epoch()
         assert_call_epoch()
+        # A replaced get() may return an unregistered backend or a cloned
+        # entry while leaving the immutable registry map itself untouched.
+        # Registry revision identity only attests entries in that pinned map.
+        if self._registrations.get(stable.tool) is not registration:
+            raise ValueError("registry lookup returned unregistered identity")
         if registration.capability != stable.capability:
             raise ValueError("tool call capability does not match registry")
         return registration
