@@ -1,5 +1,40 @@
 # ARK AI Project Status
 
+**LATEST — Run 398**
+
+Saved at: **2026-10-25T02:02:17.145+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the normal GitHub Contents checkpoint write; NOT GitHub server receipt time and NOT a trusted action clock).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. Exact **work-basis HEAD**: `382807ed9b51b3f23093f53297a3929a7082c46c` (**CI #805 / run `40111896721` GREEN 6/6** independently observed this invocation). Exact **final source+test+engineering-doc / checkpoint write-basis HEAD**: `dc9bcb7560a6a6d45fce718aaaf704fc194fe68a`, **CI #816 / run `40113998680` 5/6 GREEN, 0 FAIL, 1 IN PROGRESS** on the latest job read (Ubuntu Python 3.13 Ruff PASS, **1812 passed**, other CI environments retain their own job conclusions). The **checkpoint-result HEAD cannot be known during document authorship**; the normal GitHub Contents `update_file` response's `commit_sha` is authoritative and its **own** CI must be inspected separately. GREEN is never inherited from the previous commit.
+
+**Overall ARK state:** isolated, local-first, disconnected **synthetic/mock JARVIS safety foundations**; complete JARVIS **NOT_PASSED**. No trusted human issuer/consent, signed external tool receipt, reliable execution clock, file-descriptor custody, atomic cross-SQLite snapshot, real ToolBackend external action, live OS authority, or end-to-end exactly-once proof. **UNKNOWN WRITE is never auto-replayed**. The source/test fixtures do not establish real model/training/performance improvements. Main is still `7a843f17eb96ed13d66f23b58b06406b3002e405`; exact pre-checkpoint comparison at this invocation: **672 commits ahead, 0 behind; 290 paths ADDED ONLY, ZERO existing-main-path changes/deletions**. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** remains at `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher evidence and contracts, Memory v1 SQL DDL, protected V2 FINAL and V3 Contract 1 are unchanged.
+
+### NEW in Run398 — four FREE-only coherent packages (+28 synthetic regressions)
+
+1. **Registry-grant rebind custody (+16):** `src/ark/agency/policy.py`, `tests/test_registered_rebind_grant_epoch_run398.py`. Preserve pre-materialization CapabilityGrant values across the second registry bind and before/after the spend-time rebind, including temporary malformed/retargeted scope/capability/expiry mutations. Keep existing registered registry-drift diagnostic priority via separate grant-only check. Denied mock WRITE tokens remain unspent; no actual backend invocation or human approval.
+2. **Memory purge per-row epoch (+7):** `src/ark/memory/sqlite_store.py`, `tests/test_memory_purge_row_epoch_run398.py`. Detect exact Path or caller owner/namespace drift after individual row hydration and event callbacks rather than only at final commit. Roll back selected expirations AND event history together, including a drift that could otherwise be restored on the next row. No DDL change, erasure authorization or personal data disclosure.
+3. **Planner retained tail precommit (+3):** `src/ark/agency/planner_journal_review.py`, `tests/test_planner_append_retained_snapshot_epoch_run398.py`. Repeat original retained historical tail shape/value checks after result snapshot construction and before SQLite event/header COMMIT. A reflected witness change fails shut and rolls back both. RUNNING remains ambiguous and non-replayable.
+4. **Proactive exact witness carrier (+2):** `src/ark/proactive_synthetic_review.py`, `tests/test_proactive_retained_tuple_epoch_run398.py`. Preserve exact retained row-hash tuple identity and values through history/integrity callbacks, the synthetic writer transaction and commit. Equal-value replacement is rejected; no notification or autonomous action.
+
+Threat models, regression setup and honest non-proofs: `docs/JARVIS_REGISTERED_MEMORY_PLANNER_PROACTIVE_EPOCH_RUN398.md`. **11 normal GitHub Contents commits BEFORE this checkpoint** (four source changes, four regression test files, one substantive engineering document, two CI-driven semantics-preserving repairs). No raw Git object/ref changes, forced update, hidden write, duplicate CI dispatch or main merge.
+
+### Exact-head CI / failures and repair
+
+- Starting checkpoint HEAD `382807ed9b51b3f23093f53297a3929a7082c46c`: **#805 / `40111896721` GREEN 6/6** observed at invocation entry.
+- New intermediate heads **#806–#815** include **real FAIL** results. #807 / `40113336396` exposed an existing registered-policy diagnostic mismatch while the new grant fence prevented registry drift; `src/ark/agency/policy.py` was repaired to preserve the established `registered identity changed` failure class without weakening deny logic. Later heads **#813 / `40113777736` and #815 / `40113983722`** failed Ruff E731 on two regression fixture `restore = lambda` assignments; both were replaced with ordinary function definitions. These failures are not GREEN and must not be silently excluded from the audit.
+- Final source/test/docs HEAD `dc9bcb7560a6a6d45fce718aaaf704fc194fe68a`: **#816 / `40113998680` 5/6 GREEN, 0 FAIL, 1 IN PROGRESS** at latest read; Ubuntu Python3.13 **Ruff PASS / pytest 1812 passed**. Observe the remaining exact-head Windows jobs, and separately the checkpoint-result HEAD's CI when created. If any fail, diagnose and repair only actual regressions via normal Contents writes and a subsequent invocation's checkpoint; do not invent a passing status.
+
+### Blockers / authorization boundaries / Next plan / 今後の方針
+
+**Hard NO** without explicit future user approval: paid or potentially billable action, external GPU/API, Candidate/adapter/weight generation, protected V2 FINAL opening, Candidate promotion, frozen-contract change, destructive/irreversible operation, new credentials/secrets/account linking, physical-PC intervention, real camera/mic/screen acquisition, actual notification/ToolBackend WRITE, or approval-gated main merge. Both PR #5 and PR #8 remain Draft/unmerged. A synthetic trusted-clock input, local hash, in-process object carrier and SQLite transaction are **not** authenticated issuer/consent, independent durable provenance, atomic multi-file snapshot or externally confirmed exactly-once action.
+
+**Prioritized Next plan / 今後の方針:** (1) Confirm #816 Windows results and checkpoint-result six-job CI by exact SHAs; fix semantics-preserving regressions if found, without duplicate workflow dispatch. (2) Advance Planner/Claim/Occurrence/ActionAudit restart reconciliation with strict UNKNOWN/non-replay and independently retained historical epochs. (3) Deepen Memory CAS/expiry/coherent snapshot, owner/privacy veto and cross-callback row integrity without modifying frozen DDL. (4) Add trusted-clock and durable approval-lifecycle failure fixtures while keeping all backend dispatch disconnected. (5) Continue independent Scheduler/Observation/Startup and V3 FREE-only path/identity/reproducibility guard audits, preserving all protected evaluation and paid boundaries.
+
+---
+
+**HISTORICAL — Run397 canonical checkpoint and prior frozen/evidence history preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 397**
 
 Saved at: **2026-10-25T01:30:38.186+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint write; not the GitHub server receipt time and NOT a trusted action clock).
