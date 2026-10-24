@@ -159,12 +159,19 @@ def review_coherent_snapshot(
     # Read-only diagnostics must not create an empty replacement database
     # if the configured store file vanished after initialization.
     try:
-        snapshot_connection = sqlite3.connect(
-            path_epoch.resolve().as_uri() + "?mode=ro", uri=True
-        )
+        # Path resolution and URI construction are separate input boundaries:
+        # reject reflected request/source changes BEFORE opening any handle.
+        resolved_path = path_epoch.resolve()
+        assert_epoch()
+        readonly_uri = resolved_path.as_uri() + "?mode=ro"
+        assert_epoch()
+        snapshot_connection = sqlite3.connect(readonly_uri, uri=True)
     except sqlite3.DatabaseError as exc:
         raise MemorySchemaError("cannot open memory snapshot read-only") from exc
     with closing(snapshot_connection) as conn:
+        # Connection creation may be substituted in synthetic fault fixtures.
+        # Refuse drift before the FIRST SELECT, not after schema callbacks.
+        assert_epoch()
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         conn.execute("BEGIN")
