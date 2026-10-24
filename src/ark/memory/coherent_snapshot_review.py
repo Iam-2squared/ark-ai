@@ -23,7 +23,6 @@ from .sqlite_store import (
     _validate_v1_schema,
 )
 
-
 _MAX_NAMESPACE_SCAN_ROWS = 10_000
 
 
