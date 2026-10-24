@@ -147,3 +147,24 @@ Therefore recovery must never automatically:
 8. integrate with durable one-shot authorization and action audit using mock/disconnected backends only.
 
 This foundation is not a roadmap PASS and does not authorize real computer control, paid/external compute, Candidate work, protected evaluation opening, promotion, or main merge.
+
+## Missing initialized journal during append (Run 380, synthetic only)
+
+The disconnected `SyntheticPlanJournal` now separates explicit first-open
+creation (`_connect(create=True)` in the constructor) from ordinary append
+(`_connect()` via SQLite URI `mode=rw`). After an initialized journal is
+moved or deleted, `append()` refuses to materialize a replacement empty
+SQLite file. Paths containing URI-reserved-but-filesystem-valid `#` and
+`%` characters remain literal paths via `Path.as_uri()`.
+
+The offline test `tests/test_planner_no_recreate_append_run380.py` covers
+missing/moved stores, first-open initialization, URI-literal paths, CAS and
+recovery from a manually restored journal. A restored `RUNNING` step remains
+ambiguous and unrepeatable. No backend, credential, real action, or
+irreversible cleanup is performed.
+
+This is a narrowly scoped reliability correction, **not** a migration,
+authenticated journal, externally trusted clock, production WRITE effect
+proof, new execution permission, or global transaction. Frozen V1/V2/Local
+UI/Launcher/V3 evidence is not touched. Only exact-head CI may establish
+platform verification; documentation alone is not PASS.
