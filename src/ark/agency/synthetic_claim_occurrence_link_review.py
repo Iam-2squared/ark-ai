@@ -19,6 +19,8 @@ from .contracts import Effect, ToolCall
 from .durable_occurrence_review import (
     SyntheticOccurrenceStore,
     SyntheticReservationReceipt,
+)
+from .durable_occurrence_review import (
     _validate as _validate_reservations,
 )
 from .registry import ToolRegistry
