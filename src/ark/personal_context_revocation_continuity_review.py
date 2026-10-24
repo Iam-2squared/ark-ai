@@ -76,17 +76,37 @@ def review_revocation_continuity(
         raise SyntheticContextRevocationRejected("exact retained witness required")
     source_path = ledger.path
     ledger._assert_source_path(source_path)
+    # Capture the caller's exact retained evidence BEFORE its first integrity
+    # callback. A frozen dataclass can be reflectively mutated from inside
+    # assert_integrity(), including replacement with value-equal tuple clones.
     pinned = None
+    retained_rows = None
+    retained_row_carriers = ()
     if retained is not None:
-        retained.assert_integrity()
-        pinned = (retained.rows, retained.witness_id)
+        retained_rows = retained.rows
+        if type(retained_rows) is not tuple or len(retained_rows) > 10_000:
+            raise SyntheticContextRevocationRejected("retained revocation shape invalid")
+        retained_row_carriers = tuple(retained_rows)
+        pinned = (retained_rows, retained.witness_id)
 
     def assert_epoch() -> None:
         ledger._assert_source_path(source_path)
-        if retained is not None and (retained.rows, retained.witness_id) != pinned:
+        if retained is not None and (
+            retained.rows is not retained_rows
+            or (retained.rows, retained.witness_id) != pinned
+            or any(
+                row is not original for row, original in zip(
+                    retained.rows, retained_row_carriers, strict=True,
+                )
+            )
+        ):
             raise SyntheticContextRevocationRejected(
                 "retained revocation evidence changed during review"
             )
+
+    if retained is not None:
+        retained.assert_integrity()
+        assert_epoch()
 
     with closing(ledger._connect(readonly=True)) as conn:
         conn.execute("BEGIN")
