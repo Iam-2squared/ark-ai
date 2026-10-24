@@ -115,10 +115,24 @@ class SyntheticContextRevocationLedger:
     def _connect(self, *, readonly: bool) -> sqlite3.Connection:
         self._assert_source_path(self._source_path)
         mode = "ro" if readonly else "rw"
-        return sqlite3.connect(
-            self.path.resolve().as_uri() + "?mode=" + mode,
-            uri=True, timeout=10, isolation_level=None,
+        # Even a Path.resolve()/as_uri() implementation substituted by a
+        # synthetic callback must not change the original source before
+        # the SQLite handle is opened. The connection may also be a
+        # reentrant boundary; close a handle returned under source drift.
+        original_path = self._source_path
+        resolved = self.path.resolve()
+        self._assert_source_path(original_path)
+        uri = resolved.as_uri() + "?mode=" + mode
+        self._assert_source_path(original_path)
+        connection = sqlite3.connect(
+            uri, uri=True, timeout=10, isolation_level=None,
         )
+        try:
+            self._assert_source_path(original_path)
+        except BaseException:
+            connection.close()
+            raise
+        return connection
 
     def revoke(self, scope: MemoryScope, *, at_ms: int) -> str:
         """Persist a veto marker; no implicit regrant or personal data deletion."""
