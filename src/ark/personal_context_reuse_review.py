@@ -121,13 +121,39 @@ def review_synthetic_context_reuse(
     # Record the original immutable content structure before callbacks that
     # may attempt reflection-based mutation of a frozen dataclass.
     identity = _cached_bundle_epoch(cached)
+    # Snapshot the request/selection intent and database source identities.
+    # Frozen dataclasses can still be reflectively mutated by a callback.
+    # A matching cached bundle alone does not pin the policy that selected it.
+    request_epoch = (
+        request.owner_id, request.namespaces, request.text,
+        request.per_namespace_limit, request.include_expired,
+    )
+    policy_epoch = (
+        policy.total_limit, policy.per_namespace_limit, policy.policy_revision,
+    )
+    CoherentSnapshotRequest(*request_epoch)
+    ContextSelectionPolicy(*policy_epoch)
+    source_epoch = (store.path, ledger.path)
     fresh = review_fresh_nonrevoked_context(
         store, request, policy, ledger,
         retained_revocations=retained_revocations,
     )
-    if cached != fresh or _cached_bundle_epoch(cached) != identity:
+    if (
+        cached != fresh
+        or _cached_bundle_epoch(cached) != identity
+        or request_epoch != (
+            request.owner_id, request.namespaces, request.text,
+            request.per_namespace_limit, request.include_expired,
+        )
+        or policy_epoch != (
+            policy.total_limit, policy.per_namespace_limit,
+            policy.policy_revision,
+        )
+        or store.path is not source_epoch[0]
+        or ledger.path is not source_epoch[1]
+    ):
         raise SyntheticContextReuseRejected(
-            "cached context differs from fresh verified projection"
+            "cached context, policy, request or source changed during recheck"
         )
     return SyntheticContextReuseReview(
         fresh.bundle_id, fresh.snapshot_digest, now_ms,
