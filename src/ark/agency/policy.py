@@ -81,23 +81,10 @@ class PermissionGate:
             materialized = []
             original_grants = []
 
-            def ensure_materialization_epoch() -> None:
-                # Each iterator advance may run arbitrary caller code, then
-                # restore the identity before exhaustion. Preserve all
-                # previously observed grants and the bound registry revision
-                # after *every* yielded item, not just at the final bind.
-                ensure_entry_epoch()
-                try:
-                    stable_registry = registry.revision == bound.registry_revision
-                except (TypeError, ValueError) as exc:
-                    raise PermissionDenied(
-                        "registry binding changed during grants"
-                    ) from exc
-                ensure_entry_epoch()
-                if not stable_registry:
-                    raise PermissionDenied(
-                        "registry binding changed during grants"
-                    )
+            def ensure_grant_epoch() -> None:
+                # Separate grant custody from registry rebinding so a
+                # registry-drift error keeps its established diagnostic at
+                # the under-lock admission boundary.
                 try:
                     stable_grants = all(
                         type(previous) is CapabilityGrant
@@ -116,6 +103,25 @@ class PermissionGate:
                         "registered grant identity changed during materialization"
                     )
 
+            def ensure_materialization_epoch() -> None:
+                # Each iterator advance may run arbitrary caller code, then
+                # restore the identity before exhaustion. Preserve all
+                # previously observed grants and the bound registry revision
+                # after every yielded item.
+                ensure_entry_epoch()
+                try:
+                    stable_registry = registry.revision == bound.registry_revision
+                except (TypeError, ValueError) as exc:
+                    raise PermissionDenied(
+                        "registry binding changed during grants"
+                    ) from exc
+                ensure_entry_epoch()
+                if not stable_registry:
+                    raise PermissionDenied(
+                        "registry binding changed during grants"
+                    )
+                ensure_grant_epoch()
+
             for grant in grants:
                 ensure_materialization_epoch()
                 if type(grant) is not CapabilityGrant:
@@ -132,9 +138,10 @@ class PermissionGate:
             grant_snapshot = tuple(materialized)
             verified = registry.bind(call)
             ensure_entry_epoch()
-            # The second bind is another reentrant boundary. Do not admit
-            # newly retargeted grants as the original materialized policy.
-            ensure_materialization_epoch()
+            # The second bind is another reentrant boundary. Retain the
+            # original grants; registry mismatches keep the existing
+            # bound-vs-verified identity diagnostic immediately below.
+            ensure_grant_epoch()
         except (KeyError, TypeError, ValueError) as exc:
             raise PermissionDenied("registry binding failed before authorization") from exc
         if (
@@ -153,12 +160,11 @@ class PermissionGate:
             # not merely before potentially contended grant evaluation.
             # Retain the pre-materialization grant epochs at each rebind,
             # including a reflected mutation within the under-lock bind.
-            ensure_materialization_epoch()
             ensure_entry_epoch()
+            ensure_grant_epoch()
             try:
                 current = registry.bind(call)
                 ensure_entry_epoch()
-                ensure_materialization_epoch()
             except (KeyError, TypeError, ValueError) as exc:
                 raise PermissionDenied("registered identity changed before spend") from exc
             if (
@@ -168,6 +174,9 @@ class PermissionGate:
                 or current.call is not verified.call
             ):
                 raise PermissionDenied("registered identity changed before spend")
+            # Keep the original (pre-materialization) grant witnesses through
+            # the reentrant registry callback, before token admission.
+            ensure_grant_epoch()
 
         self.authorize(
             spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
