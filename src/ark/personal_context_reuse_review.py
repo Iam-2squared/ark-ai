@@ -15,6 +15,7 @@ from .memory.sqlite_store import SQLiteMemoryStore
 from .personal_context_review import (
     ContextSelectionPolicy,
     SyntheticContextBundle,
+    SyntheticContextItem,
 )
 from .personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
@@ -47,6 +48,37 @@ class SyntheticContextReuseReview:
     @property
     def dispatch_authorized(self) -> bool:
         return False
+
+
+def _cached_bundle_epoch(cached: SyntheticContextBundle) -> tuple[object, ...]:
+    """Pin nested scalar values, not just frozen dataclass/container references.
+
+    Reflection can change an item's fields during a later Memory callback and
+    restore a previously invalid cached projection just before equality. This
+    is a local tamper fence, not authentication of historic Memory content.
+    """
+    if (
+        type(cached.items) is not tuple or len(cached.items) > 100
+        or type(cached.bundle_id) is not str
+        or type(cached.snapshot_digest) is not str
+    ):
+        raise SyntheticContextReuseRejected("cached context shape changed")
+    items = []
+    for item in cached.items:
+        if (
+            type(item) is not SyntheticContextItem
+            or type(item.memory_id) is not str
+            or type(item.namespace) is not str
+            or type(item.content) is not str
+            or type(item.revision) is not int or item.revision < 1
+            or type(item.provenance_id) is not str
+        ):
+            raise SyntheticContextReuseRejected("cached context item shape changed")
+        items.append((
+            item, item.memory_id, item.namespace, item.content,
+            item.revision, item.provenance_id,
+        ))
+    return (cached.bundle_id, cached.snapshot_digest, cached.items, tuple(items))
 
 
 def review_synthetic_context_reuse(
@@ -88,15 +120,12 @@ def review_synthetic_context_reuse(
 
     # Record the original immutable content structure before callbacks that
     # may attempt reflection-based mutation of a frozen dataclass.
-    identity = (cached.bundle_id, cached.snapshot_digest, cached.items)
+    identity = _cached_bundle_epoch(cached)
     fresh = review_fresh_nonrevoked_context(
         store, request, policy, ledger,
         retained_revocations=retained_revocations,
     )
-    if (
-        cached != fresh
-        or (cached.bundle_id, cached.snapshot_digest, cached.items) != identity
-    ):
+    if cached != fresh or _cached_bundle_epoch(cached) != identity:
         raise SyntheticContextReuseRejected(
             "cached context differs from fresh verified projection"
         )
