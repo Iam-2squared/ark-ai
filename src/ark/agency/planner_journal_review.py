@@ -321,6 +321,9 @@ class SyntheticPlanJournal:
             conn.execute("BEGIN")
             try:
                 graph, prefixes = self._replay(conn)
+                # Check topology before using the replayed graph: a callback
+                # may mutate its original frozen step during _replay itself.
+                self._assert_topology_epoch(steps_epoch, topology_epoch)
                 if retained is not None and (
                     retained.event_count >= len(prefixes)
                     or prefixes[retained.event_count] != retained
@@ -378,6 +381,9 @@ class SyntheticPlanJournal:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 graph, prefixes = self._replay(conn)
+                # Check topology before using the replayed graph: a callback
+                # may mutate its original frozen step during _replay itself.
+                self._assert_topology_epoch(steps_epoch, topology_epoch)
                 if pinned is not None:
                     retained.assert_shape()
                     current_retained = (
