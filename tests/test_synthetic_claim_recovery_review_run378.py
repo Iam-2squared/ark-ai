@@ -167,7 +167,9 @@ def test_retained_cancellation_history_rollback_is_denied(tmp_path: Path):
         _review(state, retained_cancellation=retained)
 
 
-@pytest.mark.parametrize("field", ["issuer_digest", "subject_digest", "purpose_digest", "recipient_digest"])
+@pytest.mark.parametrize(
+    "field", ["issuer_digest", "subject_digest", "purpose_digest", "recipient_digest"],
+)
 def test_actor_purpose_recipient_mismatch_stays_denied(tmp_path: Path, field: str):
     state = _fixture(tmp_path)
     with pytest.raises(SyntheticApprovalRejected, match="differs"):
