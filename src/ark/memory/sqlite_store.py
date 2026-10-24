@@ -163,9 +163,14 @@ class SQLiteMemoryStore:
             metadata_copy, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )
         content_hash = hashlib.sha256(pinned_content.encode()).hexdigest()
+        path_epoch = self.path
         with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed before transaction")
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed during clock")
             try:
                 stable = (
                     write.scope is pinned_scope
@@ -249,6 +254,8 @@ class SQLiteMemoryStore:
                     raise MemoryConflictError("memory changed during update")
                 operation = "update"
             self._event(conn, memory_id, pinned_scope, operation, revision, now)
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed before commit")
         return MemoryRecord(
             memory_id,
             pinned_scope,
@@ -317,7 +324,10 @@ class SQLiteMemoryStore:
         pinned_limit = query.limit
         pinned_include_expired = query.include_expired
         MemoryQuery(pinned_scope, pinned_text, pinned_limit, pinned_include_expired)
+        path_epoch = self.path
         with closing(self._connect_readonly()) as conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory search source changed before read")
             conn.execute("BEGIN")
             _validate_v1_schema(conn)
             # The SELECT anchors the SQLite snapshot before the clock. A
@@ -327,6 +337,8 @@ class SQLiteMemoryStore:
                 (pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchall()
             now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory search source changed during read")
             if (
                 query.scope is not original_scope
                 or type(query.scope) is not MemoryScope
@@ -355,6 +367,8 @@ class SQLiteMemoryStore:
                     score = 0.0
                 ranked.append((-score, -item.updated_at_ms, item.memory_id, item))
             ranked.sort(key=lambda value: value[:3])
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory search source changed during ranking")
             return [value[3] for value in ranked[:pinned_limit]]
 
     def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
@@ -365,9 +379,14 @@ class SQLiteMemoryStore:
         # A clock callback may reflectively modify a frozen scope object.
         # Bind both SQL and audit events to one pre-clock identity epoch.
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        path_epoch = self.path
         with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed before transaction")
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed during clock")
             if (
                 scope.owner_id, scope.namespace
             ) != (pinned_scope.owner_id, pinned_scope.namespace):
@@ -378,6 +397,8 @@ class SQLiteMemoryStore:
                 (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchone()
             if row is None:
+                if self.path is not path_epoch:
+                    raise MemorySchemaError("memory delete source changed during read")
                 return False
             stored = _record(row)
             if stored.memory_id != memory_id or stored.scope != pinned_scope:
@@ -395,6 +416,8 @@ class SQLiteMemoryStore:
             if result.rowcount != 1:
                 raise MemoryConflictError("memory changed during delete")
             self._event(conn, memory_id, pinned_scope, "delete", actual, now)
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed before commit")
         return True
 
     def purge_expired(self, *, scope: MemoryScope | None = None) -> int:
@@ -406,9 +429,14 @@ class SQLiteMemoryStore:
         # Claim the SQLite writer slot before taking either the clock reading
         # or the expiry snapshot. A read-before-write transaction permits a
         # concurrent refresh to resurrect a selected row before deletion.
+        path_epoch = self.path
         with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory purge source changed before transaction")
             conn.execute("BEGIN IMMEDIATE")
             now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory purge source changed during clock")
             if scope is not None and (
                 scope.owner_id, scope.namespace
             ) != (pinned_scope.owner_id, pinned_scope.namespace):
@@ -447,6 +475,8 @@ class SQLiteMemoryStore:
                     conn, stored.memory_id, stored.scope, "expire",
                     stored.revision, now,
                 )
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory purge source changed before commit")
         return len(rows)
 
     def events(
