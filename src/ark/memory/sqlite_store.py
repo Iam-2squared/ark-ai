@@ -103,6 +103,8 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
     This is startup verification only: it does not repair existing databases,
     attest historical writers or replace independently retained evidence.
     """
+    if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+        raise MemorySchemaError("memory v1 schema version changed")
     quick = conn.execute("PRAGMA quick_check").fetchall()
     if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise MemorySchemaError("memory SQLite quick_check failed")
