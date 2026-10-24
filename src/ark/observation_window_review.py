@@ -26,14 +26,21 @@ class ObservationWindowReview:
     _header_epoch: tuple[str, int, int] = field(
         init=False, repr=False, compare=False
     )
+    _carrier_epoch: tuple[ObservationEnvelope, ...] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         self._validate_header()
         if type(self.envelopes) is not tuple or not 1 <= len(self.envelopes) <= 256:
             raise ValueError("envelopes must be an exact nonempty tuple (max 256)")
+        # Keep the original input tuple, not merely its member objects. A
+        # value-equal replacement during hydration is a different local
+        # observation epoch even if the same envelopes are reused.
+        carrier = self.envelopes
         epoch: list[tuple[ObservationEnvelope, str]] = []
         identities: set[str] = set()
-        for envelope in self.envelopes:
+        for envelope in carrier:
             identity = self._check_envelope(envelope)
             if identity in identities:
                 raise ValueError("duplicate observation identity in window")
@@ -44,6 +51,8 @@ class ObservationWindowReview:
             self, "_header_epoch",
             (self.privacy_scope, self.observed_at_ms, self.max_age_ms),
         )
+        object.__setattr__(self, "_carrier_epoch", carrier)
+        self.assert_consistent()
 
     def _validate_header(self) -> None:
         if type(self.privacy_scope) is not str or not self.privacy_scope.strip():
@@ -89,7 +98,11 @@ class ObservationWindowReview:
             self.privacy_scope, self.observed_at_ms, self.max_age_ms
         ) != self._header_epoch:
             raise ValueError("observation window header changed after construction")
-        if type(self.envelopes) is not tuple or len(self.envelopes) != len(self._epoch):
+        if (
+            type(self.envelopes) is not tuple
+            or self.envelopes is not self._carrier_epoch
+            or len(self.envelopes) != len(self._epoch)
+        ):
             raise ValueError("observation window tuple changed after construction")
         for supplied, (original, identity) in zip(
             self.envelopes, self._epoch, strict=True
