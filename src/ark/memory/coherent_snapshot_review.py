@@ -129,6 +129,21 @@ def review_coherent_snapshot(
             if type(record) is not MemoryRecord or record_epoch(record) != epoch:
                 raise MemorySchemaError("memory snapshot record changed during review")
 
+    def metadata_digest(record: MemoryRecord) -> str:
+        # Metadata hashing is a callback boundary too. Do not allow a later
+        # record's hash to conceal temporary mutation of an earlier record.
+        assert_epoch()
+        assert_record_epochs()
+        digest = hashlib.sha256(
+            json.dumps(
+                dict(record.metadata), ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        assert_epoch()
+        assert_record_epochs()
+        return digest
+
     assert_epoch()
     wanted = _tokens(text)
     assert_epoch()
@@ -175,12 +190,17 @@ def review_coherent_snapshot(
                 assert_epoch()
                 record_epochs.append((record, record_epoch(record)))
                 records.append(record)
+                assert_record_epochs()
             if not include_expired:
                 records = [item for item in records if not _expired(item, now)]
             ranked: list[tuple[float, int, str, MemoryRecord]] = []
             for item in records:
+                assert_epoch()
+                assert_record_epochs()
                 if wanted:
                     matched = len(wanted & _tokens(item.content))
+                    assert_epoch()
+                    assert_record_epochs()
                     if not matched:
                         continue
                     score = matched / len(wanted)
@@ -215,12 +235,7 @@ def review_coherent_snapshot(
                     "memory_id": row.memory_id,
                     "revision": row.revision,
                     "content_sha256": row.content_sha256,
-                    "metadata_sha256": hashlib.sha256(
-                        json.dumps(
-                            dict(row.metadata), ensure_ascii=False, sort_keys=True,
-                            separators=(",", ":"),
-                        ).encode("utf-8")
-                    ).hexdigest(),
+                    "metadata_sha256": metadata_digest(row),
                     "created_at_ms": row.created_at_ms,
                     "updated_at_ms": row.updated_at_ms,
                     "expires_at_ms": row.expires_at_ms,
