@@ -138,10 +138,14 @@ def review_synthetic_context_reuse(
         store, request, policy, ledger,
         retained_revocations=retained_revocations,
     )
+    # Preserve the established cached-projection diagnostic for callers and
+    # prior regression fixtures; policy/source drift is a separate veto.
+    if cached != fresh or _cached_bundle_epoch(cached) != identity:
+        raise SyntheticContextReuseRejected(
+            "cached context differs from fresh verified projection"
+        )
     if (
-        cached != fresh
-        or _cached_bundle_epoch(cached) != identity
-        or request_epoch != (
+        request_epoch != (
             request.owner_id, request.namespaces, request.text,
             request.per_namespace_limit, request.include_expired,
         )
@@ -153,7 +157,7 @@ def review_synthetic_context_reuse(
         or ledger.path is not source_epoch[1]
     ):
         raise SyntheticContextReuseRejected(
-            "cached context, policy, request or source changed during recheck"
+            "context policy, request or source changed during recheck"
         )
     return SyntheticContextReuseReview(
         fresh.bundle_id, fresh.snapshot_digest, now_ms,
