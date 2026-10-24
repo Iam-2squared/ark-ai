@@ -113,10 +113,21 @@ def review_synthetic_clock_sequence(
     if retained is not None and type(retained) is not SyntheticClockWitness:
         raise SyntheticClockRejected("retained clock witness requires exact type")
     retained_epoch = _fields(retained) if retained is not None else None
+    retained_carriers = (
+        (retained.source_digest, retained.chain_hash)
+        if retained is not None else None
+    )
     if retained is not None:
         _check_witness(retained)
-        if _fields(retained) != retained_epoch:
+        if (
+            _fields(retained) != retained_epoch
+            or (retained.source_digest, retained.chain_hash) != retained_carriers
+            or retained.source_digest is not retained_carriers[0]
+            or retained.chain_hash is not retained_carriers[1]
+        ):
             raise SyntheticClockRejected("retained clock witness changed")
+        if retained.event_count > max_samples:
+            raise SyntheticClockRejected("retained clock history exceeds sample budget")
 
     observed: list[
         tuple[SyntheticClockSample, int, str, int, int]
@@ -124,11 +135,16 @@ def review_synthetic_clock_sequence(
     result = EMPTY_CLOCK_WITNESS
 
     def assert_epoch() -> None:
-        if retained is not None and _fields(retained) != retained_epoch:
+        if retained is not None and (
+            _fields(retained) != retained_epoch
+            or retained.source_digest is not retained_carriers[0]
+            or retained.chain_hash is not retained_carriers[1]
+        ):
             raise SyntheticClockRejected("retained clock witness changed")
         for sample, seq, source, wall, mono in observed:
             if (
                 type(sample) is not SyntheticClockSample
+                or sample.source_digest is not source
                 or (sample.seq, sample.source_digest, sample.wall_ms,
                     sample.monotonic_ns) != (seq, source, wall, mono)
             ):
