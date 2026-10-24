@@ -79,6 +79,10 @@ def test_recovery_callback_drift_denied_before_any_write(
     if target in carrier:
         holder, key = carrier[target]
         setattr(holder, key, original)
+    elif target == "call":
+        # Restore the reflected test mutation before inspecting journal
+        # topology. The rejected cycle itself must never have written.
+        object.__setattr__(call, "scope", "offline")
     assert journal.recover().step_statuses == (("root", "pending", 0),)
     assert ledger.count_synthetic() == 0
     assert audit.events() == []
