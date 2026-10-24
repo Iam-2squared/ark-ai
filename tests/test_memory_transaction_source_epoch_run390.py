@@ -9,7 +9,8 @@ from ark.memory.sqlite_store import SQLiteMemoryStore
 
 
 def _store(tmp_path: Path) -> tuple[SQLiteMemoryStore, MemoryScope]:
-    return SQLiteMemoryStore(tmp_path / "memory.sqlite", clock_ms=lambda: 10), MemoryScope("local-owner")
+    store = SQLiteMemoryStore(tmp_path / "memory.sqlite", clock_ms=lambda: 10)
+    return store, MemoryScope("local-owner")
 
 
 def _retarget(store: SQLiteMemoryStore) -> int:
