@@ -8,6 +8,13 @@ from ark.agency.contracts import PlanStepStatus
 MAX = (1 << 63) - 1
 
 
+def _synthetic_high_revision(graph, step_id, revision):
+    # Explicitly seed a trusted OFFLINE boundary fixture for overflow tests.
+    # This is not a runtime transition or permission to forge planner state.
+    graph._status[step_id] = PlanStepStatus(step_id, StepState.PENDING, revision)
+    graph._status_epoch = graph._capture_status_epoch()
+
+
 def plan_with_two_levels():
     return PlanGraph((
         PlanStep("root", ToolCall("fixture.read", "fixture.read", "local:scope")),
@@ -34,7 +41,7 @@ def test_exhausted_descendant_leaves_entire_graph_unchanged(terminal, exhausted)
     graph = plan_with_two_levels()
     if terminal is not StepState.BLOCKED:
         graph.transition("root", StepState.RUNNING, expected_revision=0)
-    graph._status[exhausted] = PlanStepStatus(exhausted, StepState.PENDING, MAX)
+    _synthetic_high_revision(graph, exhausted, MAX)
     before = dict(graph.statuses())
 
     revision = before["root"].revision
@@ -45,7 +52,7 @@ def test_exhausted_descendant_leaves_entire_graph_unchanged(terminal, exhausted)
 
 def test_high_but_valid_descendant_revision_commits_whole_cascade():
     graph = plan_with_two_levels()
-    graph._status["child"] = PlanStepStatus("child", StepState.PENDING, MAX - 1)
+    _synthetic_high_revision(graph, "child", MAX - 1)
     result = graph.transition("root", StepState.BLOCKED, expected_revision=0)
     statuses = graph.statuses()
     assert result.state is StepState.BLOCKED
@@ -60,7 +67,7 @@ def test_high_but_valid_descendant_revision_commits_whole_cascade():
 def test_nonterminal_success_does_not_trigger_descendant_revision_preflight():
     graph = plan_with_two_levels()
     graph.transition("root", StepState.RUNNING, expected_revision=0)
-    graph._status["child"] = PlanStepStatus("child", StepState.PENDING, MAX)
+    _synthetic_high_revision(graph, "child", MAX)
     result = graph.transition("root", StepState.SUCCEEDED, expected_revision=1)
     assert result.state is StepState.SUCCEEDED
     assert graph.statuses()["child"].revision == MAX
