@@ -28,8 +28,8 @@ from .synthetic_occurrence_continuity_review import (
     read_synthetic_ledger_witness,
 )
 
-_APPROVAL = re.compile(r"approval_[0-9a-f]{64}\\Z")
-_OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\\Z")
+_APPROVAL = re.compile(r"approval_[0-9a-f]{64}\Z")
+_OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _ROWS = """SELECT approval_id,occurrence_id,registry_revision,
                   bound_action_id,request_id,linked_at_ms
            FROM synthetic_claim_occurrence_links ORDER BY seq"""
@@ -91,7 +91,7 @@ def review_synthetic_claim_occurrence_sources(
     """
     if (
         type(links) is not SyntheticClaimOccurrenceLinkStore
-        or type(reservation_path) is not Path
+        or not isinstance(reservation_path, Path)
         or expected_pair is not None
         and (
             type(expected_pair) is not tuple
