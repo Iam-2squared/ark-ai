@@ -142,9 +142,32 @@ def review_synthetic_retention_inventory(
             if len(rows) > max_records:
                 raise SyntheticRetentionRejected("retention inventory budget exceeded")
             selected: list[SyntheticRetentionItem] = []
+            item_epoch: list[tuple[SyntheticRetentionItem, str, int, RetentionState]] = []
+
+            def assert_item_epoch() -> None:
+                # A retained diagnostic item is mutable through reflective
+                # operations even when the dataclass is frozen. Its values
+                # must continue to match the bytes used for the inventory
+                # digest across later row and veto callbacks.
+                if len(selected) != len(item_epoch) or any(
+                    type(item) is not SyntheticRetentionItem
+                    or item is not original
+                    or (item.memory_id, item.revision, item.state) != (
+                        identity, revision, state,
+                    )
+                    for item, (original, identity, revision, state) in zip(
+                        selected, item_epoch, strict=True,
+                    )
+                ):
+                    raise SyntheticRetentionRejected(
+                        "retention inventory items changed during review"
+                    )
+
             bound_rows: list[tuple[object, ...]] = []
             for row in rows:
+                assert_item_epoch()
                 record = _record(row)
+                assert_item_epoch()
                 if record.scope != pinned or record.updated_at_ms > now_ms:
                     raise SyntheticRetentionRejected(
                         "retention scope or caller clock is inconsistent"
@@ -155,9 +178,11 @@ def review_synthetic_retention_inventory(
                     state = RetentionState.EXPIRED
                 else:
                     state = RetentionState.NOT_EXPIRED
-                selected.append(SyntheticRetentionItem(
+                item = SyntheticRetentionItem(
                     record.memory_id, record.revision, state,
-                ))
+                )
+                selected.append(item)
+                item_epoch.append((item, item.memory_id, item.revision, item.state))
                 # Bind hidden row identity without exposing the content or metadata.
                 # A coherent byte edit with an unchanged revision/state must change
                 # the offline receipt, even if this local row still passes _record.
@@ -165,12 +190,14 @@ def review_synthetic_retention_inventory(
                     dict(record.metadata), ensure_ascii=False,
                     sort_keys=True, separators=(",", ":"),
                 ).encode("utf-8")
+                assert_item_epoch()
                 bound_rows.append((
                     record.memory_id, record.revision, record.content_sha256,
                     hashlib.sha256(metadata_json).hexdigest(),
                     record.created_at_ms, record.updated_at_ms,
                     record.expires_at_ms, state.value,
                 ))
+            assert_item_epoch()
             assert_sources()
             conn.commit()
         except BaseException:
@@ -180,6 +207,7 @@ def review_synthetic_retention_inventory(
     # Newly appended revocations are allowed but must be reflected in output.
     second = review_revocation_continuity(ledger, retained=first)
     assert_sources()
+    assert_item_epoch()
     if (scope.owner_id, scope.namespace) != epoch:
         raise SyntheticRetentionRejected("retention scope changed during inventory")
     revoked = scope_hash in {row[0] for row in second.rows}
@@ -193,6 +221,7 @@ def review_synthetic_retention_inventory(
         ensure_ascii=True, separators=(",", ":"), allow_nan=False,
     ).encode("utf-8")
     assert_sources()
+    assert_item_epoch()
     return SyntheticRetentionInventory(
         scope_hash, "retention_" + hashlib.sha256(payload).hexdigest(),
         now_ms, revoked, items,
