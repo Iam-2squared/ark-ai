@@ -458,7 +458,21 @@ policy, observation digest and clocks are synthetic caller inputs; the
 second check cannot exclude subsequent changes or make data authoritative.
 Tests: `tests/test_proactive_startup_fence_run378.py`.
 
-**All three integrations remain isolated and reversible.** No live
+**Observation lineage / prepared Trigger source binding.**
+`proactive_observation_lineage_fence_review.py` requires the selected
+already-supplied `ObservationEnvelope` to be uniquely present in a bounded,
+single-privacy-scope parent-chain window. A domain-separated, **untrusted**
+source-ID hash and the selected exact observation-content digest must match
+the persisted proactive Trigger identity; both lineage and Trigger freshness
+are checked twice to catch observed drift. It does not establish original
+media authenticity, lawful collection, consent, an externally trusted
+timestamp or actual environmental observation. The review returns only
+pseudonymous IDs and digest metadata and **permanently denies** capture,
+disclosure, notification, ToolBackend dispatch and replay. Its two passes
+remain non-atomic, leaving post-review races. Regression coverage:
+`tests/test_proactive_observation_lineage_fence_run378.py`.
+
+**All four integrations remain isolated and reversible.** No live
 ToolBackend, personal-data disclosure, camera/microphone/screen collection,
 real notification, destructive cleanup, paid compute, Credential connection,
 Candidate, protected evaluation opening or main merge is permitted.
