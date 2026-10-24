@@ -1,5 +1,49 @@
 # ARK AI Project Status
 
+**LATEST — Run 389**
+
+Saved at: **2026-10-24T20:01:08.601+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before ordinary GitHub Contents checkpoint write; not GitHub server receipt time).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `097f69849c2955bc076d83be270c3fb83ea6e0d4` (Run388 checkpoint, CI **#683 / run `40084348145` GREEN 6/6**, observed).
+Exact **last source+tests HEAD**: `2f154f8ef173643876ff014e4b5cd1d03ef71da4` (final security regression repair).
+Exact **engineering-threat-model HEAD before repair**: `6dcac71d62fd79d558170d284cb1fe5e5c9cf678`.
+Exact **checkpoint write-basis HEAD**: `2f154f8ef173643876ff014e4b5cd1d03ef71da4`.
+**Checkpoint-result-HEAD:** unknown at document authorship. The authoritative value is the ordinary GitHub Contents `update_file` response's `commit_sha`; verify PR HEAD and that exact commit's own CI. Never assign a predecessor's GREEN status to an untested checkpoint commit.
+
+Overall state: **isolated, disconnected, reversible local-first mock/synthetic JARVIS safety foundations**. No verified authenticated user/issuer/recipient consent, trusted wall clock, OS-level custody, globally atomic cross-SQLite snapshot, real external ToolBackend WRITE effect, external exactly-once confirmation, or complete JARVIS PASS. Main baseline is `7a843f17eb96ed13d66f23b58b06406b3002e405`; exact compare to current PR #8: **242 added paths only, zero modified/deleted pre-existing main files**. Frozen V1/V2/Local UI/Launcher evidence/contracts and Memory v1 DDL unchanged. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`; protected V2 FINAL remains closed.
+
+### NEW in Run 389 — four FREE-only independent hardening packages (+28 regression tests)
+
+1. **Direct synthetic recovery input epoch (+9)**: `src/ark/agency/synthetic_recovery_triage.py` now binds original Planner/Audit/optional link Path objects, Planner topology carrier, exact ToolCall/Registry revision and all supplied retained witness fields around disconnected read phases. `tests/test_direct_synthetic_recovery_epoch_run389.py` verifies reentrant same-string Path swaps, topology, arguments and historical witness replacement. Still no authority to retry UNKNOWN WRITE.
+2. **Proactive historical witness read epoch (+5)**: `src/ark/proactive_synthetic_continuity_review.py` pins ledger SQLite Path and independently retained trigger witness across validation, row reads and continuity callbacks. `tests/test_proactive_witness_source_epoch_run389.py` covers valid-but-substituted histories and source changes. No real notification/dispatch.
+3. **Personal Context snapshot/provenance guard (+9)**: `src/ark/personal_context_review.py` retains snapshot clock/digest, scope owner/namespace, full relevant MemoryRecord source/TTL/metadata/revision fields and original record-scope owner fields through bundle hashing. `tests/test_personal_context_provenance_epoch_run389.py` detects reflected identity changes during projection. One real negative test initially found the separate `MemoryRecord.scope.owner_id` omission; patched the **implementation** at `2f154f8ef173643876ff014e4b5cd1d03ef71da4` rather than weakening the test.
+4. **Direct approval cancellation fence epoch (+5)**: `src/ark/agency/synthetic_approval_cancellation_fence_review.py` pins cancellation Path, Registry/ToolCall, approval envelope and independently retained historical witness before first veto read and rechecks between phases. `tests/test_direct_cancellation_fence_epoch_run389.py` verifies original source/arguments/identity/retained history cannot silently change. No actual consent issuer or action authorization.
+
+Engineering threat model: `docs/JARVIS_DIRECT_REVIEW_AND_PROVENANCE_EPOCH_RUN389.md`. **10 normal GitHub Contents commits before this checkpoint** (four source edits, four test additions, one independent engineering document and one semantics-preserving security repair). No raw-Git/ref bypass, force push, duplicate manually triggered CI or main merge.
+
+### Exact-head test / CI evidence and intermediate failure
+
+- Starting checkpoint `097f698...`: CI **#683 / run `40084348145` completed SUCCESS 6/6**.
+- Recovery source+tests: CI **#684 / `40087297109` and #685 / `40087364846` SUCCESS**. Proactive source+tests: **#686 / `40087405477` and #687 / `40087465953` SUCCESS**. Personal Context source-only: **#688 / `40087630634` SUCCESS**. These results prove only their exact commits.
+- Intermediate **#689 / run `40087696288` FAILED** on all environments: `test_reflected_mutation_after_provenance_hash_is_rejected[record_scope_owner]` found the separate MemoryRecord scope's reflected owner edit did not yet raise (Ubuntu Python 3.13: **1 failed, 1537 passed**, Ruff PASS). Later intervening **#690 and #692** had failing Ubuntu jobs on the same uncorrected test; #691 likewise had failing jobs. Preserve these failures; no tests were deleted or safety conditions relaxed.
+- **Final source+tests HEAD `2f154f8...`**: CI **#693 / run `40087948038` IN PROGRESS at latest exact-head check**. Ubuntu Python 3.11/3.12/3.13 **GREEN 3/6**, Windows three environments running. Ubuntu Python 3.13 job `120854607771` shows **Ruff PASS / pytest 1543 passed** (previous baseline 1515 + 28 new regression tests). Do not claim Windows/final-head 6/6 until observed.
+- The next checkpoint commit's exact CI is not started/checked at authorship; predecessor CI is not transferable. Existing public PR-triggered CI only; no manual duplicate dispatch and no protected V2 FINAL opening.
+
+### Hard stops, limitations, Next plan / 今後の方針
+
+**ZERO new paid/potentially billable service, paid/external GPU, Candidate adapter/weight generation, training, protected evaluation opening, secrets/account connection, physical PC action, real notification/media capture, real ToolBackend WRITE, deletion/export of personal information, irreversible action, Candidate promotion, frozen contract/schema change or main merge.** No fake external identity, provenance or human decision.
+
+Path-object identity is a local reflected-mutation fence, **not** OS/inode attestation or protection against all ABA/after-return changes. Hashes are not signatures, caller clocks are not trusted, and separate SQLite files have no global atomic transaction. Matching synthetic approval, reservation, audit or Planner evidence cannot demonstrate a real external effect. **UNKNOWN WRITE never automatically retries.**
+
+Priorities: (1) Check final #693 exact-head Windows CI and separately the checkpoint commit's own CI, repair any failure through normal Contents only. (2) Advance durable Registry/Claim/Occurrence/ActionAudit/Planner recovery without activating live backend. (3) Validate Memory CAS/event/TTL/coherent snapshots and Personal Context revocation/consent/retention safety, no deletion/export. (4) Continue disconnected observation/scheduler/startup fixture adapters. (5) Preserve PR #8 Draft, PR #5 Draft/NOT_PASSED, frozen V1/V2/Local UI/Launcher evidence, protected FINAL closed, no spend or promotion without explicit approval.
+
+---
+
+**HISTORICAL — Run 388 and earlier, preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 388**
 
 Saved at: **2026-10-24T19:02:32.302+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint write; not a GitHub server receipt timestamp).
