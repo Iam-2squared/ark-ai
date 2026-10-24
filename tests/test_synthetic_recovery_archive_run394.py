@@ -65,7 +65,7 @@ def _reopened(state, anchor):
 def _retag(raw):
     return module.SyntheticRecoveryArchive(
         raw, "srecovery_" + hashlib.sha256(
-            b"ARK-synthetic-recovery-archive-v1\\0" + raw,
+            b"ARK-synthetic-recovery-archive-v1\0" + raw,
         ).hexdigest(),
     )
 
@@ -142,8 +142,40 @@ def test_corrupt_or_noncanonical_detached_archives_are_rejected(tmp_path, change
                 separators=(",", ":"),
             ).encode("utf-8")
         bad = _retag(raw)
-    with pytest.raises(module.SyntheticRecoveryArchiveRejected):
+    expected = {
+        "bytes": "archive bytes or digest changed",
+        "digest": "archive bytes or digest changed",
+        "noncanonical": "noncanonical recovery archive",
+        "version": "unsupported archive version",
+        "extra": "archive shape changed",
+    }
+    with pytest.raises(module.SyntheticRecoveryArchiveRejected, match=expected[change]):
         _reopened(state, bad)
+
+
+@pytest.mark.parametrize("malformed", ("plan", "ledger", "audit", "link"))
+def test_structurally_valid_digest_cannot_certify_bad_retained_witness(
+    tmp_path, malformed,
+):
+    state = _fixture(tmp_path)
+    payload = json.loads(_capture(state).canonical_json)
+    if malformed == "plan":
+        payload["plan"]["event_count"] = "forged"
+    elif malformed == "ledger":
+        payload["ledger"]["row_hashes"] = ["invalid-hash"]
+    elif malformed == "audit":
+        payload["audit"]["chain_sha256"] = "invalid-hash"
+    else:
+        payload["link"] = {
+            "event_count": 0, "tail_hash": "invalid-hash",
+            "last_link_at_ms": -1,
+        }
+    raw = json.dumps(
+        payload, ensure_ascii=True, sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    with pytest.raises(module.SyntheticRecoveryArchiveRejected, match="invalid recovery archive"):
+        _reopened(state, _retag(raw))
 
 
 def test_reopen_rejects_action_with_different_request_identity(tmp_path):
