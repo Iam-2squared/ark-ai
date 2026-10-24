@@ -9,6 +9,7 @@ import pytest
 from ark.memory.contracts import MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
 from ark.memory.synthetic_event_continuity_review import (
+    SyntheticMemoryEventRejected,
     review_synthetic_memory_event_continuity,
 )
 from ark.memory.synthetic_multiscope_integrity_review import (
@@ -22,7 +23,7 @@ def _fixture(tmp_path: Path, *, clock=None):
         tmp_path / "Memory # %.sqlite",
         clock_ms=clock or (lambda: 100),
     )
-    scopes = (MemoryScope("owner", "alpha"), MemoryScope("owner", "beta"))
+    scopes = (MemoryScope("PRIVATE-OWNER-IDENTITY", "alpha"), MemoryScope("PRIVATE-OWNER-IDENTITY", "beta"))
     return store, scopes
 
 
@@ -45,7 +46,7 @@ def test_empty_multi_scope_snapshot_is_inert_and_metadata_only(tmp_path: Path):
     assert result.context_use_authorized is False
     assert result.deletion_authorized is False
     assert result.external_disclosure_authorized is False
-    assert "owner" not in repr(result)
+    assert "PRIVATE-OWNER-IDENTITY" not in repr(result)
     assert "alpha" not in repr(result)
 
 
@@ -159,7 +160,7 @@ def test_changed_retained_epoch_is_rejected(tmp_path: Path):
     first = _review(state)
     witness = first.scopes[0].events
     object.__setattr__(witness, "event_count", True)
-    with pytest.raises(SyntheticMemorySnapshotRejected, match="invalid"):
+    with pytest.raises(SyntheticMemoryEventRejected, match="invalid"):
         _review(state, retained_events=(witness, first.scopes[1].events))
 
 
