@@ -13,16 +13,19 @@ real WRITE authorization, model training result, or gate PASS.
 | ToolRegistry construction identity | An earlier reflected-frozen `ToolRegistration` or backend `execute` static descriptor can change while a later iterator yield or StopIteration callback is running | Retain original field/backend/static-descriptor witnesses at FIRST observation, recheck after **each** yield, on exhaustion, during sorting/map building, and after revision serialization | Registration field, backend descriptor, StopIteration, and revision-serialization fixture cases |
 | Memory snapshot read-only SQLite opening | `Path.resolve()`, `Path.as_uri()` or connection opening can run a substituted callback before the first SQLite read | Pin request and original Path object; reject drift after each boundary and immediately after handle acquisition, before first SELECT | `test_memory_snapshot_open_epoch_run403.py` |
 | Synthetic Personal Context veto SQLite opening | Path resolution and URI conversion are callbacks; an opened connection under changed reflected source can precede veto validation | Recheck the original ledger source immediately after resolution, URI creation and SQLite opening; explicitly close any returned connection on drift | `test_privacy_veto_connect_epoch_run403.py` |
+| Proactive Scheduler prepare/count opening | A reflected source-path replacement after URI preparation or connection acquisition can reach SQLite transaction setup before the original path is checked | Recheck the exact source Path after `resolve()`, `as_uri()` and after handle creation, before `BEGIN`/`BEGIN IMMEDIATE`; close any returned handle on refusal | `test_proactive_sqlite_open_epoch_run403.py` |
 
 The unchanged core boundaries remain: immutable registry identity vectors,
 Memory v1 frozen schema, isolated read-only Memory snapshots, append-only
-synthetic revocation veto, no offline context disclosure authority, no live
+synthetic revocation veto, deduplicated inert Proactive Trigger markers,
+no offline context disclosure authority, no live
 backend dispatch, no human issuer, and UNKNOWN WRITE **never replayed**.
 
 ## Test and evidence interpretation
 
-The three packages add **24 regression cases** to existing suites:
-registry +10, Memory SQLite opening +7, privacy veto opening +7. These cases
+The four packages add **31 regression cases** to existing suites:
+registry +10, Memory SQLite opening +7, privacy veto opening +7,
+Proactive Scheduler SQLite opening +7. These cases
 use only disposable local fixtures and callbacks. The exact-number total
 requires CI collection and successful execution on the **same HEAD**; this
 document does **not** claim GREEN merely because code was saved.
