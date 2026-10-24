@@ -108,3 +108,34 @@ create a cross-database atomic transaction, re-attest all source ledgers
 when a previously written sidecar entry is later read, or prove any
 external effect. Its receipts always deny consent, dispatch and replay.
 The acceptance matrix above remains a design/test target, not a PASS claim.
+
+## Offline source re-attestation (Run 380 research follow-up)
+
+`agency/synthetic_claim_occurrence_recheck_review.py` supplies a separate,
+**read-only and non-authorizing** diagnostic for already committed local
+sidecar rows. It opens the claim-link and occurrence SQLite files with
+`mode=ro`, replays the bounded hash-linked link history, validates the source
+schema/rows and checks **every saved association** against an actual current
+reservation's occurrence, Registry revision, bound Action ID, request ID, and
+relative reservation/association timestamps. An optional explicit claim /
+occurrence pair must be found exactly; missing or renamed SQLite databases
+must not be recreated. Optional independently retained link and reservation
+witnesses can detect local-history deletion or rewriting. The reviewer
+compares new before/after witness snapshots to detect observed concurrent
+source/sidecar changes, including legitimate appends during diagnosis.
+
+This approach intentionally **does not** backfill a missing association,
+dispatch a backend, accept a hash as an authentic issuer signature, or turn
+an absent revocation marker into consent. It cannot attest a reservation's
+original historical approval instant, distinguish a coherent rewrite without
+an earlier independent witness, create an atomic snapshot spanning SQLite
+files, or close the race immediately after the last check. Equalities of
+untrusted local digests prove neither human approval nor an external effect.
+`human_consent_verified`, `dispatch_authorized`, `automatic_replay_authorized`
+and `external_outcome_known` remain **false**, including on successful
+re-attestation. UNKNOWN WRITE remains UNKNOWN and never auto-replayable.
+
+The associated offline regression suite is
+`tests/test_synthetic_claim_occurrence_recheck_run380.py`. Exact-head CI
+results, rather than the existence of this prose, govern any engineering
+claim. No frozen contract or live execution permission changes here.
