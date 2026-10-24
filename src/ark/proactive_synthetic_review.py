@@ -231,10 +231,19 @@ class SyntheticProactiveLedger:
             "ARK-trigger-occurrence-v1",
             (scope, policy_hash, source_digest, observation_digest),
         )
-        uri = ledger_path.resolve().as_uri() + "?mode=rw"
+        resolved = ledger_path.resolve()
+        if self.path is not ledger_path:
+            raise SyntheticTriggerRejected("proactive ledger path changed before opening")
+        uri = resolved.as_uri() + "?mode=rw"
+        if self.path is not ledger_path:
+            raise SyntheticTriggerRejected("proactive ledger path changed before opening")
         with closing(sqlite3.connect(
             uri, uri=True, timeout=10, isolation_level=None,
         )) as conn:
+            # Reject drift introduced during handle creation before taking a
+            # writer slot or making the first persistent schema read.
+            if self.path is not ledger_path:
+                raise SyntheticTriggerRejected("proactive ledger path changed before opening")
             conn.execute("BEGIN IMMEDIATE")
             try:
                 if self.path is not ledger_path:
@@ -317,10 +326,17 @@ class SyntheticProactiveLedger:
         path_epoch = self.path
         if not isinstance(path_epoch, Path):
             raise SyntheticTriggerRejected("proactive ledger path changed")
-        uri = path_epoch.resolve().as_uri() + "?mode=ro"
+        resolved = path_epoch.resolve()
+        if self.path is not path_epoch:
+            raise SyntheticTriggerRejected("proactive ledger path changed before opening")
+        uri = resolved.as_uri() + "?mode=ro"
+        if self.path is not path_epoch:
+            raise SyntheticTriggerRejected("proactive ledger path changed before opening")
         with closing(sqlite3.connect(
             uri, uri=True, isolation_level=None,
         )) as conn:
+            if self.path is not path_epoch:
+                raise SyntheticTriggerRejected("proactive ledger path changed before opening")
             conn.execute("BEGIN")
             try:
                 _validate(conn)
