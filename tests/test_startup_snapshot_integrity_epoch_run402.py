@@ -57,7 +57,9 @@ def test_transient_component_drift_is_rejected_during_first_identifier(
         return result
 
     monkeypatch.setattr(startup, "_identifier", identifying)
-    with pytest.raises(ValueError, match="startup snapshot changed"):
+    # The existing identifier-validation wrapper preserves its established
+    # diagnostic while propagating this fail-closed epoch rejection.
+    with pytest.raises(ValueError, match="startup snapshot identifier changed"):
         snapshot.state("child")
     assert len(seen) == 1
 
