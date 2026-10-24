@@ -1,5 +1,60 @@
 # ARK AI Project Status
 
+**LATEST — Run 379**
+
+Saved at: **2026-10-24T10:55:23+09:00 Asia/Tokyo/JST** (runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint preflight/write).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+Exact invocation **work-basis HEAD**: `18e3e39b8b1c56df08c328e53b40087d305752d2` (Run378 checkpoint, **CI #552 / run `40047548159` SUCCESS 6/6**).
+Exact final **source/test HEAD**: `5ef37da6c525f8f9834b746052bbec461601cb5b` (**CI #561 / run `40051767482`: 5/6 GREEN, 0 FAIL, 1 IN PROGRESS, 0 QUEUED** at checkpoint preflight).
+Engineering/specification documentation / exact **checkpoint write-basis HEAD**: `34a904b57838dda2930e982fd6afb918642c52d8` (**CI #562 / run `40051825719`: 4/6 GREEN, 0 FAIL, 2 IN PROGRESS, 0 QUEUED** at checkpoint preflight).
+The checkpoint-result commit SHA cannot be embedded accurately in its own content; capture the returned Contents commit externally. **CI GREEN on earlier commits must not be attributed to the later checkpoint-result HEAD.**
+
+## Overall current ARK state and preserved gates
+
+ARK is **local-first, research-isolated, reversible, offline/synthetic-only**. No authenticated user/issuer/recipient consent, trusted external clock, production exactly-once effect proof, atomic multi-SQLite transaction, authenticated/externally signed witness, live ToolBackend, physical-PC operation, camera/microphone/screen capture, real notification, personal-data erasure, real Candidate training, protected FINAL evaluation, paid/external GPU, automatic promotion or complete JARVIS is established. PermissionGate's process-local one-shot token spend is **not** a durable real-world authorization.
+
+Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. **All 187 PR #8 changed paths remain added-only versus main** at checkpoint preflight (verified by `compare_commits`); frozen V1/V2/Local UI/Launcher code/contracts/evidence remain untouched. V3 **PR #5** remains **Draft/open/unmerged/NOT_PASSED**, HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`; no V2 final opening, V3 Candidate, freeze modification or main merge.
+
+## NEW — Run 379: four FREE-only coherent packages
+
+Ten sequential **ordinary GitHub Contents** engineering commits before this single checkpoint, across seven research-only paths: four source/test implementation paths plus new disconnected provenance spec and a spec follow-up. Three focused new test suites contain **31 parameterized cases** (+8 Memory, +6 Policy, +17 Claim/Occurrence). Ubuntu Python 3.13 on exact final source/test **CI #561 logged Ruff PASS and 1182 pytest passed** (previous Run378 baseline 1151). This exact single-environment result is **not** a six-platform GREEN assertion before #561 jobs complete.
+
+1. **P0 Memory coherent snapshot schema fence (+8 cases):** `memory/coherent_snapshot_review.py` now rechecks declared frozen SQLite Memory v1 version, DDL/index/trigger set, and quick_check within the same pinned read transaction as multi-namespace projection. The healthy-at-bootstrap database is no longer trusted after independent post-initialization schema modification. Malformed, unexpectedly extended or dropped schema is denied; missing file cannot be recreated by read-only snapshot. Existing CAS/frozen DB schema unchanged. Tests: `tests/test_memory_snapshot_schema_epoch_run379.py`.
+2. **P0 Registry-bound WRITE token-spend recheck (+6 cases):** `agency/policy.py` now rebinding-checks the exact ToolRegistry and action beneath the process-local one-shot spend lock. A reflected registered backend/effect/tool/capability change during contention cannot consume the token; a second check before returning the BoundAction catches local drift after authorization. This is **still only an in-process PermissionGate**, not production grant, external consent, durable exactly-once or a dispatch. Tests: `tests/test_registered_policy_spend_rebind_run379.py`.
+3. **P0 disconnected claimed approval→occurrence sidecar (+17 cases):** new `agency/synthetic_claim_occurrence_link_review.py` stores one-to-one locally claimed approval and committed reservation identities, including nonce/issuer/subject/purpose/recipient digests, Registry revision, bound Action ID, request ID, occurrence ID, append time and hash-chain prior/next. Read/append replay rejects malformed schema, local row/timestamp edits, duplicate claim/occurrence and independently retained-prefix rollback. Append verifies actual stored reservation via separate read-only SQLite transaction and brackets it with local cancellation reviews. A missing initialized source or sidecar DB is never recreated by review. **The link is NOT proof of historical issuer approval, source authenticity, production user consent or backend effects**; every receipt forever denies human-consent, dispatch, replay and externally known outcome. Cross-database writes are not atomic; previously written links are not yet source-ledger reattested on later read. Tests: `tests/test_synthetic_claim_occurrence_link_run379.py`.
+4. **P0 authority gap contract (new and followed-up doc):** `docs/JARVIS_CLAIM_OCCURRENCE_PROVENANCE_GAP.md` identifies why cross-ledger Registry/request equality cannot prove that an authentic approval produced a historic reservation, specifies a reversible mock-only association acceptance matrix, and documents the implemented sidecar's remaining deficits. It explicitly preserves both missing-consent hard denial and UNKNOWN WRITE never-auto-replay.
+
+## Exact-head CI, remediation and evidence
+
+- Run378 checkpoint `18e3e39b8b1c56df08c328e53b40087d305752d2`: **#552 / `40047548159` SUCCESS 6/6**.
+- Initial Memory snapshot source/test **#553–#554 FAILED**: an SQLite `sqlite3.Row` holding `PRAGMA user_version` was incorrectly compared to a Python tuple; 31 unrelated tests then failed. Corrected the scalar comparison to `.fetchone()[0] != 1` without weakening schema enforcement. In-progress #555–#556 likewise reflect **earlier HEADs** and cannot be treated as final proof.
+- Fixed source/test HEAD `7d5285a090466f004394a53c8855273b3e47fa36`: **#557 / `40051484491` SUCCESS 6/6**.
+- New docs-only gap spec HEAD `ea6c7f83b4e13271df34788b72689afde99a2de7`: **#558 / `40051591907` SUCCESS 6/6**.
+- New sidecar source/test **#559–#560 FAILED** at earlier HEADs due exclusively to Ruff I001 for private validation import grouping. Corrected normal Contents-path import grouping; no semantic or security gate weakened.
+- Exact final source/test HEAD `5ef37da6c525f8f9834b746052bbec461601cb5b`: **#561 / `40051767482` 5/6 GREEN, 0 FAIL, 1 IN PROGRESS, 0 QUEUED** at checkpoint preflight. Linux Python 3.13 logs: **Ruff PASS, 1182 pytest passed**.
+- Engineering-docs/checkpoint write-basis HEAD `34a904b57838dda2930e982fd6afb918642c52d8`: **#562 / `40051825719` 4/6 GREEN, 0 FAIL, 2 IN PROGRESS, 0 QUEUED** at checkpoint preflight.
+- The checkpoint-result HEAD needs **its own** CI assessment; no duplicate equivalent manual workflow runs launched.
+
+## Blockers / user authorization boundaries
+
+No paid or potentially billable new service, external GPU, credentials/secrets, new account linking, local hardware actions, backend call, real Candidate/model training, protected evaluation, irreversible Memory deletion, live notification, force push/raw Git-object write, frozen contract edit, automatic promotion or protected main merge was performed. Neither local hashes nor SQLite witnesses are signatures. User/issuer/subject/recipient approval and recipient/purpose identity are unauthenticated; the clock is caller-supplied; post-final-check races remain; multi-store snapshots are non-atomic and external WRITE effects cannot be reconciled. **Ambiguous/UNKNOWN WRITE must never be automatically retried.** The exact legal/retention/erasure basis and real integration approval remain unresolved.
+
+## Next plan / 今後の方針
+
+1. **P0 exact-head evidence:** verify all six Ubuntu/Windows Python 3.11–3.13 jobs of #561/#562, then separately assess the actual checkpoint-result HEAD CI. On any failure read exact logs, fix minimally through normal Contents API, and switch to independent work while in flight.
+2. **P0 claimed provenance hardening:** extend the isolated sidecar with read-only claim→reservation source re-attestation and retained independent witnesses. Do NOT mistake a claim association for authenticated approval. Require an independently authenticated issuer/subject/recipient/clock/consent mechanism before contemplating production rights.
+3. **P0 Planner/Recovery/Memory:** deepen CAS, event-history integrity, crash/fault injection, unknown WRITE reconciliation and registry/permitted-tool type stability. No global SQLite transaction or automatic unknown replay.
+4. **P1 privacy:** retained witness and ownership safeguards, legal basis, consent revocation, deletion/backup lifecycle **read-only** diagnosis, human-review-only possible erasure plans. Destructive purge requires explicit approval.
+5. **P1 proactive/observation/readiness:** offline provenance, privacy scope, expiry and dependency integration only, no actual notification, screen/mic/camera or PC backend.
+6. **P2 free-only V3:** path/approval/byte-identity/reproducibility guard fixture reviews only. PR #5 stays Draft/NOT_PASSED, Candidate and protected V2 evaluation remain blocked pending explicit gates.
+
+---
+
+**HISTORICAL — Run 378 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 378**
 
 Saved at: **2026-10-24T09:57:13.498817398+09:00 Asia/Tokyo/JST** (runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint write preflight).
