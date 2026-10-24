@@ -1,5 +1,52 @@
 # ARK AI Project Status
 
+**LATEST — Run 400**
+
+Saved at: **2026-10-25T03:59:23+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this ordinary GitHub Contents checkpoint write, NOT GitHub server receipt time, authenticated user consent, or a trusted Tool clock).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `d1fcc162192cf2473c35aff9ade9fed89aa83727` (**CI #833 / run `40118475332` GREEN all six jobs**, confirmed before development).
+Exact **last source+test HEAD**: `e83d808619a8be0c179064cc0f8a2bc696038f29` (**CI #844 / run `40122928204` 4/6 GREEN, 0 FAIL, Windows Python3.12/3.13 IN PROGRESS** at the last independent job read; Ubuntu Python3.13 **Ruff PASS / 1862 tests passed**).
+Exact **source+test+engineering-doc / checkpoint write-basis HEAD**: `c373129853444485be92a6fd53792dc76c5b989d` (**CI #845 / run `40122970803` 3/6 GREEN, 0 FAIL, three Windows jobs IN PROGRESS** at the last independent read).
+The **checkpoint-result HEAD is not knowable while writing this document**. The authoritative resulting SHA is returned by the normal GitHub Contents `update_file` write, and its own CI requires separate exact-head observation; no earlier GREEN may be inherited.
+
+**Overall ARK state:** offline, local-first, **synthetic/mock JARVIS foundations only; complete JARVIS NOT_PASSED**. No authenticated human consent/issuer, externally trusted clock, atomic cross-SQLite snapshot, OS file-descriptor/inode custody, signed real ToolBackend receipt, actual hardware/sensors, live tool authority, external exactly-once proof or trained Candidate. **UNKNOWN WRITE remains UNKNOWN and never authorizes automatic replay**. Regression fixture PASS is not model capability, human authorization, confirmed erasure or real-world action success.
+
+### NEW Run400 — five FREE-only coherent source/test packages (+22 synthetic cases)
+
+1. **Memory coherent snapshot namespace custody (+4):** `src/ark/memory/coherent_snapshot_review.py` and `tests/test_memory_snapshot_namespace_carrier_run400.py`. Preserve exact namespace tuple carrier, reject value-equal replacement in query tokenization, row hydration and metadata callbacks.
+2. **Planner nested topology epochs (+6):** `src/ark/agency/synthetic_recovery_triage.py` and `tests/test_recovery_nested_topology_epoch_run400.py`. Pin each original PlanStep identity, action, request digest, argument and dependency carriers before registry callbacks; recheck after PlanGraph construction and independent reads. No WRITE replay.
+3. **StartupSnapshot post-identifier integrity (+3):** `src/ark/startup_readiness_review.py` and `tests/test_startup_snapshot_getter_recheck_run400.py`. Revalidate cached snapshot after caller-ID validator to reject reflected READY promotion and removed BLOCKED ancestors. READY remains only synthetic diagnosis.
+4. **Personal Context per-item provenance boundary (+4):** `src/ark/personal_context_review.py` and `tests/test_personal_context_selection_callback_epoch_run400.py`. Enforce complete source/owner/record/policy epoch before and after *each* context provenance hash and constructed selection item, not just the final bundle digest. No data export or consent.
+5. **Mock audit-before-action receipt custody (+5):** `src/ark/agency/synthetic_mock_action_cycle_review.py` and `tests/test_mock_cycle_audit_receipt_epoch_run400.py`. Bind original committed synthetic pre-action audit receipt through sidecar and marker callbacks. Reject reflected event-ID/outcome/request changes rather than returning a mismatched marker. Failed post-RUNNING cycle remains UNKNOWN; no real backend.
+
+Engineering threat matrix, exact cases and honest non-proofs: `docs/JARVIS_SNAPSHOT_RECOVERY_READINESS_CONTEXT_EPOCH_RUN400.md`.
+**12 ordinary GitHub Contents commits BEFORE this single status checkpoint**: five source updates, five new focused regression files, one substantive engineering-document creation and one document extension. No raw Git objects/refs, force push, alternate write bypass, manually rerun/duplicate workflows, paid or external GPU/API, account connection, protected evaluation, Candidate creation, tool dispatch, notification, private-data deletion or main merge.
+
+### Exact-head CI and repository evidence
+
+- Initial `d1fcc162192cf2473c35aff9ade9fed89aa83727`: **#833 / `40118475332` GREEN 6/6**, prior 1840 pytest PASS.
+- First Memory source/test `9367c94baf9e5ae4bf4686838758b9153f337777`: **#835 / `40122148495` GREEN 6/6**.
+- Planner source/test `922b0c9f0dbe33b9121f88b3f0f06e34715d93c7`: **#837 / `40122287503` GREEN 6/6**.
+- Startup source/test `0a5fdf475f49e2ce5af82c16beb46607f57f8ee4`: **#839 / `40122449745` GREEN 6/6**.
+- Privacy Context source/test `b364c20f441ace7b93cd8f7dc46222deff9c8978`: **#841 / `40122596228` GREEN 6/6**; Ubuntu Python3.13 **Ruff PASS / 1857 tests passed**.
+- Final mock-audit-inclusive source/test `e83d808619a8be0c179064cc0f8a2bc696038f29`: **#844 / `40122928204` 4/6 GREEN; 0 FAIL; Windows 3.12/3.13 IN PROGRESS** on last read; Ubuntu Python3.13 Ruff PASS and **1862 passed in 38.49s** (job `120958183979`).
+- Final documentation / checkpoint write-basis `c373129853444485be92a6fd53792dc76c5b989d`: **#845 / `40122970803` 3/6 GREEN; 0 FAIL; Windows 3.11/3.12/3.13 IN PROGRESS** on last read. Checkpoint-result CI must be checked independently.
+
+**Frozen baseline:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; exact compare **701 commits ahead / 0 behind** at checkpoint write-basis. GitHub comparison API's file list caps at 300 entries; a separate **non-truncated recursive tree-to-tree SHA comparison** verified **303 added file paths, zero modified existing-main files and zero deletions** (397 branch blobs vs 94 main blobs). V3 **PR #5 Draft/open/unmerged/NOT_PASSED**, exact head `d6d4c1954a85fc716b1c593ac55c85417912418f`; Frozen V1/V2/Local UI/Launcher evidence and contracts, Memory v1 DDL, V3 Contract 1 semantics and protected V2 FINAL remain untouched.
+
+### Blockers / authorization boundaries / Next plan / 今後の方針
+
+**Hard NO until explicit user authorization:** any payment or potentially billable action, new paid service or external GPU/API, training/real adapter/weight or Candidate generation/export/promotion, protected V2 FINAL opening, frozen contract/DDL change, new secrets/account connections, destructive/irreversible action, live media/hardware/network ToolBackend operation or actual notification, unknown legal/licensing/privacy decision, and approval-gated main merge. Both PR #5 and PR #8 remain Draft/unmerged. Local clock/hashes, in-memory carrier checks, standard SQLite transactions and synthetic audit rows **cannot** prove authentic human approval, cross-store atomicity or a real external outcome.
+
+**Prioritized Next plan / 今後の方針:** (1) independently verify remaining Windows jobs for exact #844/#845 and the checkpoint-result SHA/CI without duplicate dispatch; fix any real regression via normal writes and fresh HEAD; (2) design/review a **reversible disconnected composition** of Planner, immutable Registry, PermissionGate, durable occurrence, ActionAudit and mock executor under restart/crash fault injection, preserving UNKNOWN non-replay; (3) Memory CAS/expiry/coherent snapshots plus Personal Context revocation lifecycle and privacy veto; (4) explicit authenticated approval and trusted-clock ports as offline contracts, without inventing issuer/consent identities; (5) Scheduler/Observation fixture adapters and V3 FREE-only provenance/identity/path/reproducibility guards, with all human/paid/protected gates closed.
+
+---
+
+**HISTORICAL — Original Run399 canonical checkpoint and all earlier history preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run 399**
 
 Saved at: **2026-10-25T02:57:20.516+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the normal GitHub Contents checkpoint write; NOT a GitHub server receipt time, authenticated consent timestamp or trusted Tool clock).
