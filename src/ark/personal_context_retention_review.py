@@ -103,11 +103,27 @@ def review_synthetic_retention_inventory(
     veto_source = ledger.path
     if not isinstance(memory_source, Path) or not isinstance(veto_source, Path):
         raise SyntheticRetentionRejected("retention source path is invalid")
+    retained_epoch = None
+    if retained_revocations is not None:
+        if type(retained_revocations) is not SyntheticRevocationWitness:
+            raise SyntheticRetentionRejected("exact retained revocation witness required")
+        retained_revocations.assert_integrity()
+        retained_epoch = (
+            retained_revocations.rows, retained_revocations.witness_id,
+        )
 
     def assert_sources() -> None:
         if memory.path is not memory_source or ledger.path is not veto_source:
             raise SyntheticRetentionRejected(
                 "retention evidence source changed during inventory"
+            )
+        if (scope.owner_id, scope.namespace) != epoch:
+            raise SyntheticRetentionRejected("retention scope changed during inventory")
+        if retained_revocations is not None and (
+            retained_revocations.rows, retained_revocations.witness_id,
+        ) != retained_epoch:
+            raise SyntheticRetentionRejected(
+                "retained revocation witness changed during inventory"
             )
 
     first = review_revocation_continuity(ledger, retained=retained_revocations)
