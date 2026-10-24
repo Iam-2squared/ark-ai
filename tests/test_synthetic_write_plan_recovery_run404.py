@@ -20,6 +20,7 @@ from ark.agency.contracts import (
 from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
+from ark.agency.synthetic_recovery_triage import SyntheticRecoveryRejected
 from ark.agency.synthetic_occurrence_audit_link_review import (
     SyntheticOccurrenceAuditLinkStore,
 )
@@ -40,7 +41,7 @@ def _setup(root: Path, *, names=("alpha", "beta"), read_step=False):
         ToolCall("writer", "mock.write", "local", {"step": name})
         for name in names
     )
-    steps = tuple(PlanStep(name, call) for name, call in zip(names, calls))
+    steps = tuple(PlanStep(name, call) for name, call in zip(names, calls, strict=True))
     if read_step:
         steps += (PlanStep(
             "reader", ToolCall("viewer", "mock.read", "local"),
@@ -158,7 +159,7 @@ def test_all_read_plan_is_not_mistaken_for_write_recovery(tmp_path):
 def test_missing_reservation_ledger_is_not_recreated(tmp_path):
     state = _setup(tmp_path)
     state[1].unlink()
-    with pytest.raises(Exception):
+    with pytest.raises(SyntheticRecoveryRejected, match="incomplete"):
         _review(state)
     assert not state[1].exists()
     assert state[6].calls == 0
