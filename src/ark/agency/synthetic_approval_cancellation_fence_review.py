@@ -10,6 +10,7 @@ separately to detect a coherently rewritten historical cancellation journal.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 from .contracts import ToolCall
 from .registry import ToolRegistry
@@ -82,7 +83,40 @@ def review_synthetic_approval_cancellation_fence(
     ):
         raise SyntheticApprovalFenceRejected("exact disconnected approval fence inputs required")
     original = _epoch(envelope)
+    source_epoch = ledger.path
+    if not isinstance(source_epoch, Path):
+        raise SyntheticApprovalFenceRejected("exact claim cancellation source required")
+    arguments_epoch = call.arguments
+    call_epoch = (
+        call.tool, call.capability, call.scope,
+        call.request_id, call.arguments_sha256,
+    )
+    registry_epoch = registry.revision
+    retained_epoch = (
+        None if retained is None
+        else tuple(getattr(retained, field.name) for field in fields(retained))
+    )
+
+    def assert_epoch() -> None:
+        if (
+            ledger.path is not source_epoch
+            or _epoch(envelope) != original
+            or call.arguments is not arguments_epoch
+            or (
+                call.tool, call.capability, call.scope,
+                call.request_id, call.arguments_sha256,
+            ) != call_epoch
+            or registry.revision != registry_epoch
+            or retained is not None
+            and tuple(getattr(retained, field.name) for field in fields(retained))
+            != retained_epoch
+        ):
+            raise SyntheticApprovalFenceRejected(
+                "claim fence input, source or retained history changed during review"
+            )
+
     first = ledger.review_state(envelope.approval_id, retained=retained)
+    assert_epoch()
     if (
         first.approval_id != original[0]
         or first.cancelled
@@ -98,7 +132,9 @@ def review_synthetic_approval_cancellation_fence(
         now_ms=now_ms,
         cancelled_ids=frozenset(),
     )
+    assert_epoch()
     second = ledger.review_state(original[0], retained=first.witness)
+    assert_epoch()
     if (
         second.approval_id != original[0]
         or second.cancelled
@@ -111,6 +147,7 @@ def review_synthetic_approval_cancellation_fence(
         raise SyntheticApprovalFenceRejected(
             "cancellation/claim state changed during disconnected review"
         )
+    assert_epoch()
     return SyntheticApprovalFenceReview(
         result.approval_id, result.bound_action_id,
         second.witness.tail_hash, second.witness.event_count, now_ms,
