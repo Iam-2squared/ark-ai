@@ -58,5 +58,17 @@ def test_failed_expiry_audit_rolls_back_physical_deletion(tmp_path) -> None:
             BEGIN SELECT RAISE(ABORT, 'synthetic audit storage unavailable'); END""")
     with pytest.raises(sqlite3.DatabaseError, match="synthetic audit storage unavailable"):
         store.purge_expired(scope=scope)
+    # Verify rollback directly while the injected trigger is present, then
+    # restore the canonical DDL before checking normal read-only API behavior.
+    with sqlite3.connect(path) as conn:
+        saved = conn.execute(
+            "SELECT memory_id FROM memories WHERE memory_id=?", (old.memory_id,),
+        ).fetchone()
+        event_ops = conn.execute(
+            "SELECT operation FROM memory_events ORDER BY event_id"
+        ).fetchall()
+        assert saved == (old.memory_id,)
+        assert event_ops == [("create",)]
+        conn.execute("DROP TRIGGER synthetic_expire_audit_failure")
     assert store.get(old.memory_id, scope, include_expired=True) is not None
     assert [event.operation for event in store.events(scope)] == ["create"]
