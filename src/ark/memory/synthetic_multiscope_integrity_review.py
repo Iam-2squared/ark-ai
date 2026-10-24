@@ -17,6 +17,7 @@ from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
 from .synthetic_event_continuity_review import (
     SyntheticMemoryEventRejected,
     SyntheticMemoryEventWitness,
+    _DIGEST,
     _genesis,
     _hash,
     _scope_digest,
@@ -141,6 +142,39 @@ def review_synthetic_memory_scopes(
         or type(require_same_snapshot.scopes) is not tuple
     ):
         raise SyntheticMemorySnapshotRejected("exact retained snapshot required")
+    if require_same_snapshot is not None:
+        # Dataclass equality alone is NOT an exact-type shape check: in
+        # Python, bool(True) compares equal to integer 1. A reflectively
+        # corrupted cached row count could otherwise pass equality checks.
+        if (
+            type(require_same_snapshot.owner_digest) is not str
+            or require_same_snapshot.owner_digest
+            != _hash("ARK-synthetic-memory-owner-v1", values[0][0])
+            or type(require_same_snapshot.snapshot_digest) is not str
+            or not _DIGEST.fullmatch(require_same_snapshot.snapshot_digest)
+            or len(require_same_snapshot.scopes) != len(hashes)
+        ):
+            raise SyntheticMemorySnapshotRejected("malformed cached Memory snapshot")
+        for scope_hash, item in zip(
+            hashes, require_same_snapshot.scopes, strict=True,
+        ):
+            if (
+                type(item) is not SyntheticMemoryScopeDigest
+                or type(item.scope_digest) is not str
+                or item.scope_digest != scope_hash
+                or type(item.events) is not SyntheticMemoryEventWitness
+                or type(item.live_row_count) is not int
+                or not 0 <= item.live_row_count <= _MAX_ROWS
+                or type(item.live_rows_digest) is not str
+                or not _DIGEST.fullmatch(item.live_rows_digest)
+            ):
+                raise SyntheticMemorySnapshotRejected("malformed cached Memory scope")
+            try:
+                item.events.assert_shape(scope_hash)
+            except SyntheticMemoryEventRejected as exc:
+                raise SyntheticMemorySnapshotRejected(
+                    "malformed cached Memory event witness"
+                ) from exc
     # A copy prevents reflected mutations of a frozen nested receipt from
     # silently turning a comparison of references into a false equality.
     same_epoch = None
