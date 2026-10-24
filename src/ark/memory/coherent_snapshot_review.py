@@ -100,7 +100,10 @@ def review_coherent_snapshot(
             request.owner_id, request.namespaces, request.text,
             request.per_namespace_limit, request.include_expired,
         )
-        if tuple((type(value), value) for value in current) != request_epoch:
+        if (
+            request.namespaces is not namespaces
+            or tuple((type(value), value) for value in current) != request_epoch
+        ):
             raise MemorySchemaError("snapshot request changed during review")
         if any(
             type(scope) is not scope_type
