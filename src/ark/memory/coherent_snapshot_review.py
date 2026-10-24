@@ -24,6 +24,9 @@ from .sqlite_store import (
 )
 
 
+_MAX_NAMESPACE_SCAN_ROWS = 10_000
+
+
 @dataclass(frozen=True, slots=True)
 class CoherentSnapshotRequest:
     owner_id: str
@@ -182,11 +185,16 @@ def review_coherent_snapshot(
         assert_epoch()
         for scope in scopes:
             assert_epoch()
-            rows = conn.execute(
+            cursor = conn.execute(
                 "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
                 (scope.owner_id, scope.namespace),
-            ).fetchall()
+            )
+            # The ranking must consider every candidate in a namespace, but
+            # untrusted stores must not force unbounded Python hydration.
+            rows = cursor.fetchmany(_MAX_NAMESPACE_SCAN_ROWS + 1)
             assert_epoch()
+            if len(rows) > _MAX_NAMESPACE_SCAN_ROWS:
+                raise MemorySchemaError("memory snapshot row scan budget exceeded")
             records = []
             for row in rows:
                 record = _record(row)
