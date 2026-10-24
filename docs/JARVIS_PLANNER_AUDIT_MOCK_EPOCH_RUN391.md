@@ -28,12 +28,20 @@ The Planner Journal, reservation ledger, ActionAudit and optional link sidecar r
 
 Focused regression: `tests/test_mock_cycle_durable_input_epoch_run391.py` (8 cases), including mutation before any durable write and mutation after RUNNING/reservation.
 
-## 4. Validation contract and hard boundaries
+## 4. Memory v1 row/event commit consistency
 
-The three packages add **25 regression cases**. They are intended to run under existing public-repository GitHub Actions with Ruff and pytest on Ubuntu/Windows, Python 3.11–3.13. The exact HEAD's CI result must be read from GitHub jobs and recorded in `docs/PROJECT_STATUS.md`, not inherited from a predecessor. Tests are local/synthetic; they do not use paid compute, external GPUs, paid APIs, new accounts/credentials, real capture, notifications, a physical PC, or live tool effects.
+`src/ark/memory/sqlite_store.py` now performs a second exact write-input snapshot comparison **after** its synthetic event-insertion boundary but before committing a CAS create/update. Even though a record was originally pinned before the SQLite write, an injected callback could reflectively change the caller's `MemoryScope`, `MemoryWrite`, content, source ID, expiry or metadata between storing the row and storing its event. With a final guard, the entire SQLite transaction (both row and event) rolls back on drift instead of committing a confusing mixed-identity record.
+
+Explicit scoped `delete` and `purge_expired` also recheck their original requested scope after their final event insert. The safeguards cover create/update, delete and expiry. They do not change Memory v1 DDL, CAS semantics, event format or any physical deletion/retention policy.
+
+`tests/test_memory_post_event_epoch_run391.py` adds 14 synthetic callback-injection regression cases covering safe rollback and preservation of existing rows/events. The unit fixtures are disposable synthetic data, not personal-user erasure. This is only a Python reentrancy fence; arbitrary privileged OS rewrites and independently forged SQLite evidence remain outside its scope.
+
+## 5. Validation contract and hard boundaries
+
+The four packages add **39 regression cases**. They are intended to run under existing public-repository GitHub Actions with Ruff and pytest on Ubuntu/Windows, Python 3.11–3.13. The exact HEAD's CI result must be read from GitHub jobs and recorded in `docs/PROJECT_STATUS.md`, not inherited from a predecessor. Tests are local/synthetic; they do not use paid compute, external GPUs, paid APIs, new accounts/credentials, real capture, notifications, a physical PC, or live tool effects.
 
 Additional limitations remain: private Python fields can be jointly forged by sufficiently privileged in-process code, caller time is untrusted, local hashes are not signatures, SQLite files have no cross-database atomicity, and a mock receipt cannot establish authenticated issuer approval, consent, external idempotency or exactly-once delivery. Do not promote a candidate, open protected V2 FINAL, change frozen contracts, merge PR #8 or PR #5, or activate any real WRITE based on these tests.
 
-## 5. Next safe integration
+## 6. Next safe integration
 
 After GREEN evidence at the exact source/test HEAD, audit restart recovery of a partially committed mock cycle using independently retained Planner/Occurrence/Audit witnesses. Separately advance Memory CAS/coherent snapshots and privacy lifecycle diagnostics. Keep the JARVIS foundation reversible and disconnected until genuine approval, clock, provenance and backend gates are satisfied.
