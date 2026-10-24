@@ -256,6 +256,29 @@ class SQLiteMemoryStore:
             self._event(conn, memory_id, pinned_scope, operation, revision, now)
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory put source changed before commit")
+            # The event insertion itself is a callback boundary in synthetic
+            # failure injection. Revalidate all caller-controlled fields after
+            # the final row+event write and BEFORE committing either. Never
+            # return a success for a mixed scope/metadata/value epoch.
+            try:
+                stable_after_event = (
+                    write.scope is pinned_scope
+                    and write.metadata is pinned_metadata
+                    and (
+                        pinned_scope.owner_id, pinned_scope.namespace,
+                        write.source_id, write.content, write.expires_at_ms,
+                        dict(write.metadata),
+                    ) == (
+                        pinned_owner, pinned_namespace, pinned_source_id,
+                        pinned_content, pinned_expiry, metadata_copy,
+                    )
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise MemorySchemaError(
+                    "memory write changed before event commit"
+                ) from exc
+            if not stable_after_event:
+                raise MemorySchemaError("memory write changed before event commit")
         return MemoryRecord(
             memory_id,
             pinned_scope,
@@ -418,6 +441,10 @@ class SQLiteMemoryStore:
             self._event(conn, memory_id, pinned_scope, "delete", actual, now)
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory delete source changed before commit")
+            if (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ):
+                raise MemorySchemaError("memory delete scope changed before commit")
         return True
 
     def purge_expired(self, *, scope: MemoryScope | None = None) -> int:
@@ -477,6 +504,10 @@ class SQLiteMemoryStore:
                 )
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory purge source changed before commit")
+            if scope is not None and (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ):
+                raise MemorySchemaError("memory purge scope changed before commit")
         return len(rows)
 
     def events(
