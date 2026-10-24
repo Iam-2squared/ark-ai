@@ -15,7 +15,6 @@ from .contracts import (
 )
 from .registry import BoundAction, ToolRegistry
 
-
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
 
 
