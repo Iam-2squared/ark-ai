@@ -36,7 +36,7 @@ def fixture(tmp_path):
         ToolRegistration("fixture", "write", Effect.WRITE, "offline", NeverBackend()),
     ))
     call = ToolCall("fixture", "write", "local-private", {"private": "never-log"})
-    path = tmp_path / "source #?% reservations.sqlite"
+    path = tmp_path / "source # percent %.sqlite"
     source = SyntheticOccurrenceStore(path)
     veto = SyntheticCancellationLedger(tmp_path / "veto.sqlite")
     sidecar = SyntheticClaimOccurrenceLinkStore(tmp_path / "links.sqlite")
