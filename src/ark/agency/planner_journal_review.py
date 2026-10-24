@@ -268,25 +268,63 @@ class SyntheticPlanJournal:
             raise SyntheticPlanJournalRejected("synthetic plan tail/header mismatch")
         return graph, tuple(prefixes)
 
-    def _pin_topology(self) -> tuple[tuple[PlanStep, ...], str]:
+    def _pin_topology(
+        self,
+    ) -> tuple[tuple[PlanStep, ...], str, tuple[tuple[object, ...], ...]]:
         steps_epoch = self._steps
         try:
+            # A topology digest binds request *values*, not the exact original
+            # PlanStep/ToolCall/dependency carriers used for this operation.
+            # Pin nested identity BEFORE the first graph/hash callback.
+            carriers = tuple(
+                (
+                    step, step.step_id, step.call, step.depends_on,
+                    step.call.arguments, step.call.request_id,
+                )
+                for step in steps_epoch
+            )
             digest = PlanGraph(steps_epoch).topology_digest()
+            self._assert_topology_epoch(steps_epoch, digest, carriers)
         except (PlanConflictError, TypeError, ValueError, AttributeError) as exc:
             raise SyntheticPlanJournalRejected(
                 "synthetic plan topology is invalid"
             ) from exc
-        return steps_epoch, digest
+        return steps_epoch, digest, carriers
 
     def _assert_topology_epoch(
         self, steps_epoch: tuple[PlanStep, ...], digest: str,
+        carriers: tuple[tuple[object, ...], ...],
     ) -> None:
-        if self._steps is not steps_epoch:
-            raise SyntheticPlanJournalRejected(
-                "synthetic plan topology changed during review"
+        def carrier_unchanged() -> bool:
+            return (
+                self._steps is steps_epoch
+                and len(steps_epoch) == len(carriers)
+                and all(
+                    step is original
+                    and step.step_id == old_step_id
+                    and step.call is old_call
+                    and step.depends_on is old_dependencies
+                    and step.call.arguments is old_arguments
+                    and step.call.request_id == old_request
+                    for step, (
+                        original, old_step_id, old_call, old_dependencies,
+                        old_arguments, old_request,
+                    ) in zip(steps_epoch, carriers, strict=True)
+                )
             )
+
         try:
-            if PlanGraph(steps_epoch).topology_digest() != digest:
+            before = carrier_unchanged()
+            if not before:
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan topology changed during review"
+                )
+            same_digest = PlanGraph(steps_epoch).topology_digest() == digest
+            # PlanGraph construction/hashing may be reentrant too. A callback
+            # that replaces a value-equal PlanStep call must not rebase the
+            # caller's original action within an append/recovery.
+            after = carrier_unchanged()
+            if not same_digest or not after:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan topology changed during review"
                 )
@@ -306,7 +344,7 @@ class SyntheticPlanJournal:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
-        steps_epoch, topology_epoch = self._pin_topology()
+        steps_epoch, topology_epoch, carriers = self._pin_topology()
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
@@ -323,7 +361,7 @@ class SyntheticPlanJournal:
                 graph, prefixes = self._replay(conn)
                 # Check topology before using the replayed graph: a callback
                 # may mutate its original frozen step during _replay itself.
-                self._assert_topology_epoch(steps_epoch, topology_epoch)
+                self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 if retained is not None and (
                     retained.event_count >= len(prefixes)
                     or prefixes[retained.event_count] != retained
@@ -344,7 +382,7 @@ class SyntheticPlanJournal:
                     raise SyntheticPlanJournalRejected(
                         "synthetic plan source changed during recovery"
                     )
-                self._assert_topology_epoch(steps_epoch, topology_epoch)
+                self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 conn.commit()
                 return result
             except BaseException:
@@ -367,7 +405,7 @@ class SyntheticPlanJournal:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
-        steps_epoch, topology_epoch = self._pin_topology()
+        steps_epoch, topology_epoch, carriers = self._pin_topology()
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
@@ -383,7 +421,7 @@ class SyntheticPlanJournal:
                 graph, prefixes = self._replay(conn)
                 # Check topology before using the replayed graph: a callback
                 # may mutate its original frozen step during _replay itself.
-                self._assert_topology_epoch(steps_epoch, topology_epoch)
+                self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 if pinned is not None:
                     retained.assert_shape()
                     current_retained = (
@@ -446,7 +484,7 @@ class SyntheticPlanJournal:
                     raise SyntheticPlanJournalRejected(
                         "synthetic plan source changed during append"
                     )
-                self._assert_topology_epoch(steps_epoch, topology_epoch)
+                self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 conn.commit()
                 return result
             except BaseException:
