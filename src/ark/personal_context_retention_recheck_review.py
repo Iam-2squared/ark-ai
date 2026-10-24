@@ -114,6 +114,11 @@ def review_synthetic_retention_recheck(
     ):
         raise SyntheticRetentionRecheckRejected("cached retention inventory expired")
     pinned = _epoch(cached)
+    # Equality of inventory values is insufficient when reflected mutation
+    # replaces the original tuple or a frozen item with a value-equal clone.
+    # Keep independent carrier references before any SQLite/reviewer callback.
+    cached_items = cached.items
+    cached_item_carriers = tuple(cached_items)
     original_scope = (scope.owner_id, scope.namespace)
     # Every inventory pins its own sources, but a caller can reflectively
     # retarget a Path *between* the four otherwise coherent inventory reads.
@@ -122,6 +127,9 @@ def review_synthetic_retention_recheck(
     revocation_source = revocations.path
     if not isinstance(memory_source, Path) or not isinstance(revocation_source, Path):
         raise SyntheticRetentionRecheckRejected("exact retention sources required")
+    retained_rows = (
+        None if retained_revocations is None else retained_revocations.rows
+    )
     retained_epoch = None if retained_revocations is None else (
         retained_revocations.rows, retained_revocations.witness_id,
     )
@@ -132,6 +140,16 @@ def review_synthetic_retention_recheck(
             or revocations.path is not revocation_source
             or (scope.owner_id, scope.namespace) != original_scope
             or _epoch(cached) != pinned
+            or cached.items is not cached_items
+            or any(
+                item is not original for item, original in zip(
+                    cached.items, cached_item_carriers, strict=True,
+                )
+            )
+            or (
+                retained_revocations is not None
+                and retained_revocations.rows is not retained_rows
+            )
             or retained_epoch != (
                 None if retained_revocations is None else (
                     retained_revocations.rows, retained_revocations.witness_id,
@@ -153,6 +171,9 @@ def review_synthetic_retention_recheck(
         memory, scope, revocations, now_ms=now_ms, **kwargs,
     )
     assert_epoch()
+    current_epoch = _epoch(current)
+    current_items = current.items
+    current_item_carriers = tuple(current_items)
     after = review_synthetic_retention_inventory(
         memory, scope, revocations, now_ms=captured, **kwargs,
     )
@@ -163,6 +184,13 @@ def review_synthetic_retention_recheck(
     assert_epoch()
     if (
         after != before or last != current
+        or _epoch(current) != current_epoch
+        or current.items is not current_items
+        or any(
+            item is not original for item, original in zip(
+                current.items, current_item_carriers, strict=True,
+            )
+        )
         or _epoch(cached) != pinned
         or (scope.owner_id, scope.namespace) != original_scope
         or current.scope_digest != cached.scope_digest
