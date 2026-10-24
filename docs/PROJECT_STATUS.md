@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+
+**LATEST — Run 382**
+
+Saved at: **2026-10-24T14:04:04.230+09:00 Asia/Tokyo/JST** (actual runtime clock sample immediately before normal GitHub Contents checkpoint; not claimed as GitHub server receipt time).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft, open and unmerged**.
+Exact work-basis HEAD: `f490ae3a69a96af316d13308baeadb7829eadc82` (Run381 checkpoint; its CI **#593 / run `40060042773`: SUCCESS 6/6**, verified this invocation).
+Exact final **source + test HEAD**: `4f1d5c39e6679b5040a848cb92b21f29218e154e`.
+Exact final **source + test + review-document HEAD (pre-checkpoint)**: `c941051d9b394cd57c3adeae370f5e8e948e5440`.
+**Checkpoint-result HEAD wording:** the hash of the commit produced by this Contents update is necessarily unknown while this document's bytes are being authored. Read the returned commit SHA / subsequent exact branch HEAD as the checkpoint result; do NOT present the pre-checkpoint SHA or a self-referential SHA as the result. No later validation is inherited from an earlier HEAD.
+
+Overall ARK state: local-first, isolated and reversible JARVIS foundations in Draft PR #8; synthetic/mock, disconnected, **no trusted human approval or ToolBackend permission**, no real-world exactly-once guarantees and no full JARVIS PASS. V1/V2/Local UI/Launcher frozen baselines remain intact. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. Branch-vs-main verification during this invocation: **209 added-only files, zero modified/deleted main-path files**. Controlling V3 PR #5 remains **open, Draft, NOT_PASSED and unmerged**; no protected FINAL gate opened.
+
+### NEW in Run 382 — verified saved scope
+
+1. **Coherent cross-namespace Memory evidence:** new `memory/synthetic_multiscope_integrity_review.py` checks bounded exact-owner scopes, frozen Memory v1 DDL, event create/update/delete/expire transitions and live rows **in one read-only SQLite snapshot**. Distinguishes independently retained append-only event-prefix evidence from a strict current-row snapshot witness. Source/metadata/content stay inside local store; receipt contains hashes/counters only. Added both initial and late exact-type witness-shape validation against reflected `bool == int` spoofing and CAS/concurrent-read fixtures.
+2. **Observation cached lineage reuse:** new `observation_reuse_review.py` verifies the prior offline lineage digest under its original time/age policy, then current caller-provided freshness, with source/receipt change detection. No media capture, notification, data disclosure or actual ToolBackend dispatch.
+3. **Planner crash/restart testing:** synthetic WRITE fault injection now covered across actual reopen of four SQLite stores at RUNNING/reservation/audit/audit-link/mock-marker boundaries. UNKNOWN WRITE remains never auto-replayable, even with a fresh token/occurrence. Mock SUCCEEDED is not an external effect or replay permission.
+4. **Durable source fail-closed behavior:** coherent Memory snapshot pins its source path through reentrant clock and row hydration. Ordinary `SQLiteMemoryStore.put/delete/purge_expired` and `SQLiteActionAudit.append` now open **existing** initialized SQLite files via URI `mode=rw` and cannot silently recreate missing evidence files; only explicit bootstrap creates a database. Audit append also rejects reentrant path retargeting before committing. Special `#`/`%` literal paths covered in fixtures. Frozen v1 database DDL unchanged.
+5. **Research/evidence:** added `docs/JARVIS_MEMORY_OBSERVATION_REUSE_BOUNDARIES.md`, new unit/restart tests and regressed transient failures without weakening source gates. All changes were ordinary GitHub Contents writes after exact HEAD preflight, no force-push/merge.
+
+### Exact-head testing / CI evidence at checkpoint preflight
+
+Baseline Run381: **1280 passed** on Ubuntu Python 3.13. New fixture cases in Run382: **71**, reaching **1351 passed**, Ruff PASS on Ubuntu Python 3.13 for **CI #611 / run `40064615542`**, HEAD `4f1d5c39e6679b5040a848cb92b21f29218e154e`. At last explicit six-job check for #611, Ubuntu 3.11/3.12/3.13 **3/6 GREEN**, Windows 3.11/3.12/3.13 **IN PROGRESS**; do not label #611 six-way GREEN without a later exact result.
+
+Previously exact-green in Run382: **CI #600** run `40063779895`, **#601** run `40063801511`, **#603** run `40064080218`, **#604** run `40064157587`, **#605** run `40064187138`, **#606** run `40064308409`, **#607** run `40064342744`, **#608** run `40064457390` (each verified SUCCESS 6/6 at the appropriate earlier SHA; none substitutes for #611). Source/fixture CI **#609** run `40064485353`, **#610** run `40064590098` were **IN PROGRESS** at the recent status read; latest docs-only CI **#612** run `40064642565` was **QUEUED** at the precise listing preflight. Any statuses after the preflight are distinct observations and must be labeled with their SHA.
+
+Failed intermediate exact HEADs are preserved honestly: **#597** had two test-expectation mistakes (private owner label and inherited exception shape); **#598/#599** Ruff line overflow; **#602** Ruff import ordering. These were fixed with ordinary non-bypassing Contents writes, subsequent tested HEADs verified above. No protected evaluation/model benchmark, GPU work or real tool execution was performed.
+
+### Frozen contracts, blockers and authorization boundaries
+
+V1/V2/Local UI/Launcher existing main code and frozen evidence untouched; Memory v1 and ActionAudit v1 DDL unchanged. PR #5 remains Draft/NOT_PASSED and protected V2 FINAL evaluation closed. No Candidate/adapter/weight generation, model training, external GPU, paid APIs/compute, credentials, account linking, local physical-device action, real capture, notification, irrecoverable data deletion, Candidate promotion or main merge. Synthetic hashes do not authenticate human issuer/subject/recipient/consent, trusted time or historic external effects. Isolated SQLite stores have **no cross-store atomic transaction**. Retained witnesses must be held independently to detect prior coherent local rewrites; UNKNOWN WRITE is **never automatically retried**.
+
+### Next plan / 今後の方針
+
+1. Complete exact HEAD **#611/#612** Ubuntu/Windows x Python 3.11–3.13 and this checkpoint's own CI; if any FAIL, inspect logs, make smallest safe fix through ordinary GitHub writes, and do independent non-conflicting work while CI runs. Do not launch duplicate workflows.
+2. Extend write-side Memory path epoch checks (beyond current missing-file no-recreate), immutable Registry/PermissionGate and trusted-clock audit-before-action; harden recovered UNKNOWN semantics without implementing a real backend.
+3. Reconcile Planner/Occurrence/ActionAudit/approval-claim evidence with optional independently retained witnesses and exact safe rollback classifications; no inferred WRITE success or automatic replay.
+4. Continue privacy-safe Personal Context consent/revocation/expiry/read-only deletion diagnosis, Scheduler state/readiness and Observation provenance/fixture adapters. Production erasure and new credential or physical-hardware operations require separate user authorization.
+5. Keep V3 free-only approval/path/identity/reproducibility guards isolated, frozen evaluation/PASS gate closed, V3 PR #5 Draft/unmerged. No expenditure or real Candidate generation without explicit authorization.
+
+---
+
+## Historical checkpoints — preserved verbatim below
+
 **LATEST — Run 381**
 
 Saved at: **2026-10-24T12:51:51.107+09:00 Asia/Tokyo/JST** (current runtime wall-clock sample immediately before the ordinary Contents checkpoint preflight; not a fabricated GitHub server timestamp).
