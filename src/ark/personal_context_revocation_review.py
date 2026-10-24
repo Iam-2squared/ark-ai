@@ -241,6 +241,12 @@ def review_fresh_nonrevoked_context(
     )
 
     scopes = tuple(MemoryScope(request.owner_id, name) for name in request.namespaces)
+    # The veto receives these exact reflected-mutable scope objects. A hook
+    # must not redirect the veto to another owner/namespace while projection
+    # still reads the original request's private Memory.
+    scope_epoch = tuple(
+        (scope, scope.owner_id, scope.namespace) for scope in scopes
+    )
     memory_source = store.path
     veto_source = ledger.path
     if not isinstance(memory_source, Path) or not isinstance(veto_source, Path):
@@ -253,10 +259,16 @@ def review_fresh_nonrevoked_context(
         if (
             store.path is not memory_source
             or ledger.path is not veto_source
+            or request.namespaces is not original[1]
             or (
                 request.owner_id, request.namespaces, request.text,
                 request.per_namespace_limit, request.include_expired,
             ) != original
+            or any(
+                type(scope) is not MemoryScope
+                or (scope.owner_id, scope.namespace) != (owner, namespace)
+                for scope, owner, namespace in scope_epoch
+            )
             or (
                 policy.total_limit, policy.per_namespace_limit,
                 policy.policy_revision,
