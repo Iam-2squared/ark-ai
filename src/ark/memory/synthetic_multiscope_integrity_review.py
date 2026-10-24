@@ -11,6 +11,7 @@ import hashlib
 import json
 from contextlib import closing
 from dataclasses import dataclass
+from pathlib import Path
 
 from .contracts import MemoryScope
 from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
@@ -196,6 +197,8 @@ def review_synthetic_memory_scopes(
             raise SyntheticMemorySnapshotRejected("invalid retained snapshot") from exc
 
     path_epoch = store.path
+    if not isinstance(path_epoch, Path):
+        raise SyntheticMemorySnapshotRejected("Memory source must retain a Path")
     results = []
     with closing(store._connect_readonly()) as conn:
         conn.execute("BEGIN")
@@ -301,7 +304,7 @@ def review_synthetic_memory_scopes(
             ) for row in results),
         )),
     )
-    if store.path != path_epoch or tuple(
+    if store.path is not path_epoch or tuple(
         (scope.owner_id, scope.namespace) for scope in scopes
     ) != values:
         raise SyntheticMemorySnapshotRejected("Memory scope or source changed")
