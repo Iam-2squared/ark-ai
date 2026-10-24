@@ -94,14 +94,17 @@ def review_synthetic_startup_lease(
         snapshot._assert_integrity()
         digest = snapshot.digest
         by_name = {entry.component_id: entry for entry in snapshot.components}
-        for item in requirements:
-            current = by_name.get(item.component_id)
+        # Check the copied admission contract, never a requirement object
+        # that a reentrant integrity callback can temporarily redirect to
+        # a different READY component and later restore.
+        for _carrier, component_id, schema_revision in epoch:
+            current = by_name.get(component_id)
             if current is None:
                 raise SyntheticStartupLeaseRejected("required component is not present")
             if (
                 current.effective_state is not ReadinessState.READY
                 or current.local_state is not ReadinessState.READY
-                or current.schema_revision != item.schema_revision
+                or current.schema_revision != schema_revision
             ):
                 raise SyntheticStartupLeaseRejected(
                     "required component blocked, degraded or schema-stale"
