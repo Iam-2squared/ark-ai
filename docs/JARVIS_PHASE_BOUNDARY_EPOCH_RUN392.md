@@ -6,7 +6,7 @@ media capture, notification dispatch, protected evaluation or model promotion.
 
 ## Motivation and exact changes
 
-Some reviewers previously verified frozen dataclass carriers only at the end of
+Some local reviewers previously verified frozen dataclass carriers only at the end of
 a multi-phase operation. An injected callback could change a request, source or
 witness during an earlier phase and restore its original value before final
 validation. Even if the selected data stayed unchanged in a particular
@@ -40,6 +40,16 @@ fixture, that leaves an unjustified assumption of stable inputs across work.
    Regression fixture:
    `tests/test_observation_reuse_phased_epoch_run392.py` (**6 tests**).
    No camera/microphone, raw media or external disclosure.
+
+4. `src/ark/agency/registry.py`: independent `resolve()` calls now
+   validate a snapshot of the original ToolCall and its arguments mapping
+   identity before lookup, after `get()`, and after the registry's original
+   immutable-entry epoch check. In-memory mutation during direct resolution
+   can no longer make a re-targeted ToolCall silently resolve as if it had
+   always been the original request. Regression fixture:
+   `tests/test_registry_resolve_epoch_run392.py` (**6 tests**).
+   No backend execution, authorization grant, durable token issuance or
+   permission to spend is introduced.
 
 ## Evidence discipline and limits
 
