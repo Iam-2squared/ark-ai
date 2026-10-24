@@ -42,6 +42,9 @@ def test_transition_rejects_invalid_expected_revision_before_comparison(invalid)
 def test_transition_cannot_increment_at_sqlite_integer_limit():
     plan = _plan()
     object.__setattr__(plan._status["one"], "revision", _MAX)
+    # Synthetic persisted high-revision fixture, not a runtime mutation:
+    # rebaseline the private witness explicitly to test overflow preflight.
+    plan._status_epoch = plan._capture_status_epoch()
     with pytest.raises(PlanConflictError, match="revision exhausted"):
         plan.transition("one", StepState.RUNNING, expected_revision=_MAX)
     assert plan.statuses()["one"].state is StepState.PENDING
