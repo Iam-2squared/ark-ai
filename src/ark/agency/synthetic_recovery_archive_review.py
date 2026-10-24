@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,6 +33,7 @@ from .synthetic_recovery_triage import (
 _LABEL = b"ARK-synthetic-recovery-archive-v1\0"
 _MAX_BYTES = 4_000_000
 _ALLOWED_STATES = frozenset(state.value for state in StepState)
+_OCCURRENCE_ID = re.compile(r"occ_[0-9a-f]{64}\\Z")
 
 
 class SyntheticRecoveryArchiveRejected(RuntimeError):
@@ -120,6 +122,14 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
             or type(identity["ambiguous_write"]) is not bool
         ):
             raise SyntheticRecoveryArchiveRejected("archive identity is malformed")
+        # Recovery marks precisely the RUNNING state as ambiguous. An archive
+        # may not detach its externally unknown WRITE flag from that state.
+        if identity["ambiguous_write"] != (
+            identity["step_state"] == StepState.RUNNING.value
+        ):
+            raise SyntheticRecoveryArchiveRejected(
+                "archive ambiguity contradicts planner state"
+            )
         plan = SyntheticPlanTail(**_check_keys(payload["plan"], _PLAN))
         plan.assert_shape()
         ledger_data = _check_keys(payload["ledger"], ("row_hashes", "digest"))
@@ -144,7 +154,11 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
         if (
             type(occurrences) is not list
             or len(occurrences) > 10000
-            or any(type(item) is not str or not item for item in occurrences)
+            or any(
+                type(item) is not str or _OCCURRENCE_ID.fullmatch(item) is None
+                for item in occurrences
+            )
+            or len(set(occurrences)) != len(occurrences)
             or type(links) is not list
             or len(links) > 10000
             or any(
@@ -153,6 +167,8 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
                 or type(item[1]) is not int or item[1] < 1
                 for item in links
             )
+            or len({(item[0], item[1]) for item in links}) != len(links)
+            or any(item[0] not in occurrences for item in links)
             or links and link is None
         ):
             raise SyntheticRecoveryArchiveRejected(
