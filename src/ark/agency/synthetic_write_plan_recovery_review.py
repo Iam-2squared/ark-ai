@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .audit import SQLiteActionAudit
-from .contracts import Effect
+from .contracts import Effect, ToolCall
 from .planner_journal_review import SyntheticPlanJournal
 from .registry import ToolRegistry
 from .synthetic_occurrence_audit_link_review import SyntheticOccurrenceAuditLinkStore
@@ -79,6 +79,10 @@ def review_synthetic_write_plan(
             (
                 step, step.step_id, step.call, step.depends_on,
                 step.call.arguments, step.call.request_id,
+                (
+                    step.call.tool, step.call.capability, step.call.scope,
+                    step.call.arguments_sha256,
+                ),
             )
             for step in topology
         )
@@ -112,8 +116,15 @@ def review_synthetic_write_plan(
                     and step.depends_on is dependencies
                     and step.call.arguments is arguments
                     and step.call.request_id == request
-                    for step, name, call, dependencies, arguments, request
-                    in snapshots
+                    and type(call) is ToolCall
+                    and (
+                        call.tool, call.capability, call.scope,
+                        call.arguments_sha256,
+                    ) == call_identity
+                    for (
+                        step, name, call, dependencies, arguments, request,
+                        call_identity,
+                    ) in snapshots
                 )
             )
         except (AttributeError, TypeError, ValueError) as exc:
@@ -126,9 +137,23 @@ def review_synthetic_write_plan(
     try:
         write_steps = []
         seen_requests = set()
-        for _step, name, call, _dependencies, _arguments, request in snapshots:
+        for (
+            _step, name, call, _dependencies, _arguments, request, _call_identity,
+        ) in snapshots:
             assert_epoch()
             bound = registry.bind(call)
+            assert_epoch()
+            # Reentrant binding can resolve another ToolCall then restore
+            # the caller's fields before returning. Verify its exact subject.
+            if (
+                bound.call is not call
+                or bound.call.request_id != request
+                or bound.registry_revision != registry_revision
+                or bound.registration is not registry.get(call.tool)
+            ):
+                raise SyntheticWritePlanReviewRejected(
+                    "synthetic plan registry binding changed during review"
+                )
             assert_epoch()
             if bound.registration.effect is Effect.WRITE:
                 if request in seen_requests:
