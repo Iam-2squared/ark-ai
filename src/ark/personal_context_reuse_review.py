@@ -17,6 +17,7 @@ from .personal_context_review import (
     SyntheticContextBundle,
     SyntheticContextItem,
 )
+from .personal_context_revocation_continuity_review import SyntheticRevocationWitness
 from .personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
     review_fresh_nonrevoked_context,
@@ -118,6 +119,21 @@ def review_synthetic_context_reuse(
     ):
         raise SyntheticContextReuseRejected("cached context age or clock invalid")
 
+    # The independently retained veto prefix belongs to the caller. The
+    # lower-level review validates it before the Memory projection, but a
+    # later callback could reflectively rewrite its frozen fields. Pin its
+    # exact values through the *whole* context reuse operation.
+    retained_epoch = None
+    if retained_revocations is not None:
+        if type(retained_revocations) is not SyntheticRevocationWitness:
+            raise SyntheticContextReuseRejected(
+                "exact retained revocation witness required"
+            )
+        retained_revocations.assert_integrity()
+        retained_epoch = (
+            retained_revocations.rows, retained_revocations.witness_id,
+        )
+
     # Record the original immutable content structure before callbacks that
     # may attempt reflection-based mutation of a frozen dataclass.
     identity = _cached_bundle_epoch(cached)
@@ -144,6 +160,14 @@ def review_synthetic_context_reuse(
         raise SyntheticContextReuseRejected(
             "cached context differs from fresh verified projection"
         )
+    if retained_revocations is not None:
+        retained_revocations.assert_integrity()
+        if (
+            retained_revocations.rows, retained_revocations.witness_id,
+        ) != retained_epoch:
+            raise SyntheticContextReuseRejected(
+                "retained revocation witness changed during reuse"
+            )
     if (
         request_epoch != (
             request.owner_id, request.namespaces, request.text,
