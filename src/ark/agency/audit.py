@@ -112,6 +112,8 @@ class SQLiteActionAudit:
         original_arguments = call.arguments
         path_epoch = self.path
         with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit path changed before append")
             # Commit an event with a clock sampled only after acquiring the
             # writer slot; no external backend dispatch is performed here.
             conn.execute("BEGIN IMMEDIATE")
@@ -146,6 +148,8 @@ class SQLiteActionAudit:
                 ),
             )
             event_id = int(cursor.lastrowid)
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit path changed before commit")
         return ActionAuditEvent(event_id, *identity, outcome, now)
 
     def events(self, *, after_event_id: int = 0, limit: int = 100) -> list[ActionAuditEvent]:
@@ -158,18 +162,27 @@ class SQLiteActionAudit:
             raise ValueError("limit must be an integer from 1 to 1000")
         # The audit object may outlive the SQLite file. Never create an empty
         # replacement database while reading evidence from a stale path.
+        # A reflected equal-value Path replacement is still a new evidence
+        # epoch, even when it names the same SQLite bytes.
+        path_epoch = self.path
         with closing(self._connect_readonly()) as conn:
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit source changed before read")
             # Pin a single read snapshot and refuse post-startup DDL drift.
             conn.execute("BEGIN")
             version = conn.execute("PRAGMA user_version").fetchone()[0]
             if type(version) is not int or version != SCHEMA_VERSION:
                 raise ActionAuditSchemaError("action audit schema version changed before read")
             _validate_v1_schema(conn)
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit source changed during read")
             rows = conn.execute(
                 """SELECT * FROM action_events WHERE event_id>?
                 ORDER BY event_id LIMIT ?""",
                 (after_event_id, limit),
             ).fetchall()
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit source changed during read")
         # Read persisted rows without SQLite's permissive Python coercions.
         # A digest is only a shape check here; it does not attest the issuer
         # or bind back to plaintext arguments that are deliberately not stored.
@@ -198,6 +211,8 @@ class SQLiteActionAudit:
             result.append(ActionAuditEvent(
                 event_id, request_id, tool, capability, scope, arguments_sha256, outcome, occurred
             ))
+        if self.path is not path_epoch:
+            raise ActionAuditSchemaError("action audit source changed during hydration")
         return result
 
     def _initialize(self) -> None:
