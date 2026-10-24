@@ -226,6 +226,9 @@ def review_synthetic_write_recovery(
             except BaseException:
                 conn.rollback()
                 raise
+        # A later audit callback could restore inputs mutated during the
+        # ledger replay. Do not defer the input check until that callback.
+        assert_epoch()
         audit_witness = review_audit_continuity(
             audit, retained=retained_audit, require_monotonic_time=True,
         )
@@ -239,6 +242,7 @@ def review_synthetic_write_recovery(
                 link_conn.execute("BEGIN")
                 try:
                     prefixes = _replay_links(link_conn)
+                    assert_epoch()
                     if retained_link is not None and (
                         retained_link.event_count >= len(prefixes)
                         or prefixes[retained_link.event_count] != retained_link
@@ -247,6 +251,7 @@ def review_synthetic_write_recovery(
                             "retained occurrence-audit link history changed"
                         )
                     link_rows = tuple(link_conn.execute(_LINK_ROWS))
+                    assert_epoch()
                     pairs: list[tuple[str, int]] = []
                     for row in link_rows:
                         (_seq, occurrence, revision, bound, request,
@@ -261,6 +266,7 @@ def review_synthetic_write_recovery(
                                 "sidecar link has no matching stored reservation"
                             )
                         events = audit.events(after_event_id=event_id - 1, limit=1)
+                        assert_epoch()
                         if len(events) != 1 or events[0].event_id != event_id:
                             raise SyntheticRecoveryRejected(
                                 "sidecar link has no matching audit event"
@@ -296,6 +302,7 @@ def review_synthetic_write_recovery(
                             pairs.append((occurrence, event_id))
                     link_witness = prefixes[-1]
                     matching_links = tuple(sorted(pairs))
+                    assert_epoch()
                     link_conn.commit()
                 except BaseException:
                     link_conn.rollback()
@@ -316,16 +323,19 @@ def review_synthetic_write_recovery(
             raise SyntheticRecoveryRejected(
                 "plan changed during cross-store recovery diagnosis"
             )
+        assert_epoch()
         if read_synthetic_ledger_witness(ledger_path) != ledger:
             raise SyntheticRecoveryRejected(
                 "reservation history changed during cross-store recovery diagnosis"
             )
+        assert_epoch()
         if review_audit_continuity(
             audit, retained=audit_witness, require_monotonic_time=True,
         ) != audit_witness:
             raise SyntheticRecoveryRejected(
                 "audit history changed during cross-store recovery diagnosis"
             )
+        assert_epoch()
         if link_store is not None and (
             link_witness is None
             or link_store.read_witness(retained=link_witness) != link_witness
@@ -333,6 +343,7 @@ def review_synthetic_write_recovery(
             raise SyntheticRecoveryRejected(
                 "link history changed during cross-store recovery diagnosis"
             )
+        assert_epoch()
         again = registry.bind(call)
         assert_epoch()
         if (
