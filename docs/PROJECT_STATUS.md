@@ -1,5 +1,47 @@
 # ARK AI Project Status
 
+**LATEST — Run 404**
+
+Saved at: **2026-10-25T08:04:27.126+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled before the ordinary GitHub Contents API checkpoint write; **not** an external trusted execution clock, authenticated human-review act or GitHub server receipt).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact work-basis HEAD:** `aee3cb4c7425ef022f22b43c48f95dbb1e81d6a9` (original Run403 checkpoint, **CI #888 / run `40136673870` GREEN all six Ubuntu/Windows Python 3.11–3.13 jobs**, independently checked before development).
+**Source+tests HEAD:** `554b44fd19ad898a705057afbee03366f1da7ff1` (**CI #900 / run `40140978157`: Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS, 0 observed FAIL** at last job read; Ubuntu Python3.13 job `121012465541` **Ruff PASS / 2011 pytest passed in 43.35s**. Not a six-job GREEN claim).
+**Source+tests+engineering-doc / checkpoint write-basis HEAD:** `d2379f0daa53fd1a73f99e912e927fca9bcee29e` (**CI #901 / run `40141017026`: Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS, 0 observed FAIL** at last job read). This is the fresh-read checkpoint **write-basis** SHA, not the future result SHA.
+**Checkpoint-result HEAD:** not knowable *inside* this file before that very file is committed. The ordinary `update_file` reply is authoritative; its exact-head CI must be inspected separately. No inherited GREEN from earlier SHAs.
+
+**Overall ARK state:** local-first, **disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED**. No authenticated consent or human issuer, external trusted clock, real backend receipt/side-effect confirmation, atomic cross-SQLite snapshot, OS inode custody, hardware/sensor integration, trained Candidate, or external exactly-once proof. Neither a synthetic approval claim, trusted-looking clock chain, an audit receipt, local SUCCEEDED marker nor a PENDING journal permits real execution. **UNKNOWN WRITE remains UNKNOWN and automatic replay is forbidden**.
+
+### NEW Run404 — four FREE-only coherent source/test packages (+62 synthetic regression cases)
+
+1. **All-WRITE plan recovery (+15):** new `src/ark/agency/synthetic_write_plan_recovery_review.py`, `tests/test_synthetic_write_plan_recovery_run404.py`. Bounded **128** plan steps, independently review *every* registry-declared WRITE, reject shared WRITE request identities, reconcile plan/ledger/audit/optional sidecar witness epochs and recheck first step after others. Even a **PENDING** step with an existing reservation is classified uncertain, not safe to replay. Never invokes a backend.
+2. **ActionAudit continuity SQLite-open custody (+9):** `src/ark/agency/audit_continuity_review.py`, `tests/test_audit_continuity_open_epoch_run404.py`. Pin original SQLite Path and retained audit prefix immediately after `resolve`, `as_uri`, and returned read-only connection **before the first SELECT**. Refuse transient Path/witness substitution and close rejected SQLite handles. Frozen ActionAudit v1 DDL unchanged.
+3. **Untrusted synthetic claim first-bind custody (+11):** `src/ark/agency/synthetic_approval_claim_review.py`, `tests/test_synthetic_approval_first_bind_epoch_run404.py`. Pin original ToolCall request, arguments carrier, Registry revision and approval envelope before initial bind/validation/hash callbacks; reject self-consistent reentrant substitution. Still no authenticated issuer/consent/real permission.
+4. **Disconnected caller-clock continuity rehearsal (+27):** new `src/ark/agency/synthetic_clock_sequence_review.py`, `tests/test_synthetic_clock_sequence_run404.py`. Bound caller-supplied exact sequence, source identity, wall/monotonic ordering, local hash chain, retained prefix, generator mutation and max **1024** samples. Always `trusted_clock_verified=False`, `dispatch_authorized=False`, `automatic_replay_authorized=False`; **does NOT touch OS time or attest trusted clock**.
+
+Threat matrix, explicit non-proofs and continued engineering priorities: `docs/JARVIS_PLANWIDE_AUDIT_CLAIM_EPOCH_RUN404.md`. **13 ordinary GitHub Contents source/test/document commits prior to this ONE checkpoint** (including three narrow lint fixes). No raw Git objects, force/ref bypass, workflow rerun, model/weight generation, physical-PC action, real ToolBackend dispatch, notification, privacy erasure/export, external compute, paid API, main merge, approval, or evaluation opening.
+
+### Exact-head tests/CI and frozen controls
+
+- Initial Run403 checkpoint `aee3cb4c7425ef022f22b43c48f95dbb1e81d6a9`: **CI #888 / `40136673870` GREEN 6/6** (prior **1949** passing Python fixtures).
+- Intermediate exact-head CI #889–#897 **FAIL** due to new-code Ruff B007/B905/B017 and test import I001; all repaired by ordinary fresh-HEAD Contents writes without weakening safety conditions. Do not relabel failed runs GREEN.
+- Three-package lint-corrected head `8bcf70c6048640460020d9dfb54f5610992eaf55`: **CI #898 / `40140741402` GREEN 6/6**, Ubuntu Python3.13 job `121011771553`: Ruff **All checks passed** / **1984 pytest passed**.
+- Four-package source/tests head `554b44fd19ad898a705057afbee03366f1da7ff1`: **CI #900 / `40140978157` 3/6 GREEN, 0 FAIL, Windows 3 IN PROGRESS** at last independent read; Ubuntu Python3.13 job `121012465541` Ruff PASS / **2011 passed**.
+- Final engineering doc/checkpoint write-basis `d2379f0daa53fd1a73f99e912e927fca9bcee29e`: **CI #901 / `40141017026` 3/6 GREEN, 0 FAIL, Windows 3 IN PROGRESS** at last read. Checkpoint-result HEAD/CI independent, not yet verified.
+- **Exact non-truncated recursive Git blob-tree comparison** at write-basis: main `7a843f17eb96ed13d66f23b58b06406b3002e405` **94 blobs** vs PR #8 **421 blobs**: **327 added, 0 changed existing-main blobs, 0 deleted**. PR #5 independently checked **Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher contracts/evidence, Memory V1 DDL, V3 Contract 1, protected V2 final evaluation, and Candidate gates untouched.
+
+### Blockers / authorization boundaries / Next plan / 今後の方針
+
+**HARD STOPS without explicit user authorization:** paid or potentially billable API/service/GPU/cloud; external compute, real Candidate adapter/weights/training/preflight/promotion; protected V2 final evaluation opening; frozen-contract modification; secrets/new connections; destructive/irreversible operations; real OS hardware/sensors/notification/backend execution; unreviewed legal/licensing/privacy issues; and main merge where approval required. V3 still lacks immutable materialized model/tokenizer file hashes, 120/30 actual reviewed provenance/rights/contamination decisions, pinned exact runtime/export identity and approved JPY/GPU ceiling; do not invent evidence or authorization.
+
+**Prioritized Next plan / 今後の方針:** (1) independently confirm exact-head #900/#901 Windows results and the newly saved checkpoint-result SHA's **own** CI; if FAIL fix only via fresh-HEAD normal GitHub Contents API without duplicate workflow reruns; (2) extend **multi-WRITE dependent-step crash/restart, independently retained four-store witness and UNKNOWN/no-replay** failure-injection integration, not actual side effects; (3) advance Memory CAS/coherent expiry/snapshot and Personal Context privacy revocation; (4) evolve reversible deny-by-default trusted clock/issuer interfaces while actual authority remains unavailable; (5) continue Observation/Scheduler and free-only V3 provenance, path, runtime guard review, never unlock paid/frozen/hardware gates.
+
+---
+
+**HISTORICAL — Original Run403 checkpoint and all earlier records preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 403**
 
 Saved at: **2026-10-25T07:00:15.699+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint write; **not** a trusted execution clock, authenticated human-review act or GitHub server receipt timestamp).
