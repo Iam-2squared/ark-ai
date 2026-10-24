@@ -207,23 +207,11 @@ def evaluate_startup_readiness(
     probes: Iterable[StartupComponent],
 ) -> StartupSnapshot:
     """Evaluate an isolated probe snapshot without activating any capability."""
-    snapshot = tuple(probes)
-    if not snapshot:
-        raise ValueError("readiness graph must contain at least one component")
-    if len(snapshot) > 10_000:
-        raise ValueError("readiness graph exceeds local review budget")
-    if any(type(entry) is not StartupComponent for entry in snapshot):
-        raise TypeError("startup requires exact StartupComponent entries")
-    # Snapshot the caller-owned inputs BEFORE running validation callbacks.
-    # Cloning an early component must not hide a reflected alteration made
-    # while a later component is being validated.
-    source_epoch = tuple(
-        (
-            entry, entry.component_id, entry.dependencies, entry.local_state,
-            entry.failure_code, entry.schema_revision,
-        )
-        for entry in snapshot
-    )
+    # Bounded incremental hydration is necessary: tuple(probes) consumes a
+    # caller-controlled iterable before we can pin an earlier yielded probe,
+    # and an infinite generator would bypass the review budget altogether.
+    snapshot_list: list[StartupComponent] = []
+    source_epoch: list[tuple[object, ...]] = []
 
     def assert_source_epoch() -> None:
         if any(
@@ -239,6 +227,26 @@ def evaluate_startup_readiness(
             ) in source_epoch
         ):
             raise ValueError("startup input changed during readiness evaluation")
+
+    for entry in probes:
+        # The iterator's next() may have just mutated a previously yielded
+        # object. Check before accepting this later component.
+        assert_source_epoch()
+        if len(snapshot_list) >= 10_000:
+            raise ValueError("readiness graph exceeds local review budget")
+        if type(entry) is not StartupComponent:
+            raise TypeError("startup requires exact StartupComponent entries")
+        source_epoch.append((
+            entry, entry.component_id, entry.dependencies, entry.local_state,
+            entry.failure_code, entry.schema_revision,
+        ))
+        snapshot_list.append(entry)
+        assert_source_epoch()
+    # StopIteration itself may execute caller code, too.
+    assert_source_epoch()
+    snapshot = tuple(snapshot_list)
+    if not snapshot:
+        raise ValueError("readiness graph must contain at least one component")
 
     by_name: dict[str, StartupComponent] = {}
     for entry in snapshot:
