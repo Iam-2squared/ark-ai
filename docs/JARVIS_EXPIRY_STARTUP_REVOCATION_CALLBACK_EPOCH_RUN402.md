@@ -2,7 +2,7 @@
 
 ## Scope and authorization status
 
-This engineering note documents **four independent, offline and reversible**
+This engineering note documents **five independent, offline and reversible**
 source/test packages on Draft PR #8. It is a threat model, not a PASS claim for
 JARVIS, a trustworthy issuer, a real ToolBackend, or privacy consent. This run
 does not open protected evaluations, train a Candidate, create an adapter, touch
@@ -103,9 +103,29 @@ disk corruption, external network effects, human approval, or real clock
 provenance. Its sole claim is exact-head regression coverage for disconnected,
 conservative UNKNOWN and no-replay behavior.
 
+## Package E — Planner retained tail must survive first callbacks
+
+**Files:** `src/ark/agency/planner_journal_review.py`,
+`tests/test_planner_retained_ingress_epoch_run402.py` (**5 cases**).
+
+**Prior exposure:** Both `SyntheticPlanJournal.recover(retained=...)`
+and `append(retained=...)` constructed a PlanGraph/topology digest and called
+`retained.assert_shape()` before pinning that caller-supplied retained
+evidence. A reflective callback could replace the independent retained tail
+with an *equally valid but older* prefix, causing the later history check to
+validate a different witness than the one supplied at entry.
+
+**New invariant:** Capture all five original tail fields before the first
+topology/shape callback. Refuse changes immediately after `assert_shape()`
+and preserve later checks inside transaction/recovery. Four tests attack both
+APIs from two callback positions; a fifth verifies normal retained-prefix
+recovery and CAS append. A failed append leaves the original RUNNING transition
+unchanged, and a RUNNING WRITE is never automatically retried. No real
+backend, human issuer, filesystem attestation or trusted clock is introduced.
+
 ## Integration and non-proofs
 
-These four packages are separate so a CI run for one module can proceed while
+These five packages are separate so a CI run for one module can proceed while
 another module is developed. All tests are offline, deterministic fixtures.
 Source/test CI should be evaluated on the **exact final source/test HEAD**
 across Ubuntu and Windows with Python 3.11–3.13; a later documentation
