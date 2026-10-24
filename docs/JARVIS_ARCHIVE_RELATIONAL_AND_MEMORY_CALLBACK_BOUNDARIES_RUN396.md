@@ -20,7 +20,13 @@ The new checks revalidate *all* previously hydrated records directly after each 
 
 Focused regressions: `tests/test_memory_snapshot_callback_boundaries_run396.py`. Synthetic callbacks modify a prior record and schedule a later restoration. Correct behavior is to reject at the first observable intermediate boundary; stable snapshots remain deterministic. The digest is content-minimized but the returned `MemoryRecord` objects contain plaintext as the caller requested: this reviewer is **not** permission for Personal Context reuse or disclosure.
 
-## 3. Threat ceilings / integration decision
+## 3. Privacy veto: check the original scope at each lookup boundary
+
+`src/ark/personal_context_revocation_review.py` already queried its local veto journal without granting consent or performing erasure, but the direct `assert_not_revoked()` reader checked scope digests again only after all lookups. A synthetic reentrant callback could temporarily redirect a scope, or swap the journal's Path carrier and restore it during the next lookup. End-only comparison could accept a locally coherent but mixed-epoch absence observation.
+
+The reader now pins each exact `MemoryScope` instance and original fields before any digest work. It rechecks original scopes and journal Path custody after each scope digest, immediately after SQLite schema checks and before/after each individual veto SELECT. Existing revoked-scope rejection and transaction rollback remain fail-closed. Focused regressions: `tests/test_privacy_veto_lookup_epoch_run396.py` (including successful stable absence, which is **not** a consent grant). The v1 local veto table is unchanged.
+
+## 4. Threat ceilings / integration decision
 
 Neither Python object identity nor a self-checksummed local archive proves independent provenance. Reflected in-process changes between checks, OS path/inode substitution, malicious recomputation, untrusted clocks, and independently committed cross-SQLite writes remain outside the proof boundary. No action/token is issued and no external effect is attempted. UNKNOWN WRITE remains UNKNOWN without automatic retry.
 
