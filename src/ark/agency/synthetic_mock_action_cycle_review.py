@@ -115,42 +115,59 @@ def run_synthetic_mock_cycle(
     )
     bound = registry.bind(call)
 
+    bound_epoch = (
+        bound.registry_revision, bound.bound_action_id,
+        bound.registration, bound.call,
+    )
+
     def assert_identity_epoch() -> None:
-        try:
-            current_paths = (
+        # Registry binding is a callback too. Checking local inputs only
+        # BEFORE that callback could accept a changed token or source until
+        # the next phase, possibly after a durable reservation is written.
+        def local_stable() -> bool:
+            paths = (
                 journal._path, ledger._path, audit.path,
                 link_store._path if link_store is not None else None,
             )
-            stable_steps = (
-                journal._steps is original_steps
-                and len(journal._steps) == len(original_step_fields)
+            steps = journal._steps
+            return (
+                all(new is old for new, old in zip(
+                    paths, original_paths, strict=True,
+                ))
+                and steps is original_steps
+                and len(steps) == len(original_step_fields)
                 and all(
                     entry is original and entry.step_id == step_id
                     and entry.call is old_call
                     and entry.depends_on is deps
                     and entry.call.request_id == request_id
                     for entry, (original, step_id, old_call, deps, request_id)
-                    in zip(journal._steps, original_step_fields, strict=True)
+                    in zip(steps, original_step_fields, strict=True)
                 )
-            )
-            stable = (
-                all(new is old for new, old in zip(
-                    current_paths, original_paths, strict=True,
-                ))
-                and stable_steps
-                and (call.tool, call.capability, call.scope,
-                     call.arguments, call.request_id)[:3] == original_call[:3]
+                and (
+                    call.tool, call.capability, call.scope,
+                ) == original_call[:3]
                 and call.arguments is original_call[3]
                 and call.request_id == original_call[4]
                 and (
                     token.token_id, token.request_id, token.expires_at_ms,
                 ) == original_token
+                and (
+                    bound.registry_revision, bound.bound_action_id,
+                ) == bound_epoch[:2]
+                and bound.registration is bound_epoch[2]
+                and bound.call is bound_epoch[3]
             )
+
+        try:
+            before = local_stable()
             rebound = registry.bind(call)
-            stable = stable and (
-                rebound.registry_revision == bound.registry_revision
-                and rebound.bound_action_id == bound.bound_action_id
-                and rebound.registration is bound.registration
+            after = local_stable()
+            stable = before and after and (
+                rebound.registry_revision == bound_epoch[0]
+                and rebound.bound_action_id == bound_epoch[1]
+                and rebound.registration is bound_epoch[2]
+                and rebound.call is bound_epoch[3]
             )
         except (AttributeError, TypeError, ValueError, KeyError) as exc:
             raise SyntheticMockCycleRejected(
