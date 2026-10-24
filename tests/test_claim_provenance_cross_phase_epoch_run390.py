@@ -83,31 +83,47 @@ def test_transient_swap_after_first_recovery_denied_before_next_pass(
     tmp_path: Path, monkeypatch, which: str,
 ):
     state = _fixture(tmp_path)
-    original = module.review_synthetic_claim_write_recovery
+    original_recovery = module.review_synthetic_claim_write_recovery
+    original_sources = module.review_synthetic_claim_occurrence_sources
+    original_path = state[7].path
+    original_steps = state[2]._steps
+    original_arguments = state[6].arguments
+    recovery_calls = 0
     next_calls = 0
 
-    def inject(*args, **kwargs):
-        result = original(*args, **kwargs)
-        if which == "source":
-            state[7].path = Path(str(state[7].path))
-        elif which == "topology":
-            state[2]._steps = tuple(list(state[2]._steps))
-        else:
-            object.__setattr__(
-                state[6], "arguments", MappingProxyType(dict(state[6].arguments)),
-            )
+    def inject_recovery(*args, **kwargs):
+        nonlocal recovery_calls
+        result = original_recovery(*args, **kwargs)
+        recovery_calls += 1
+        if recovery_calls == 1:
+            if which == "source":
+                state[7].path = Path(str(state[7].path))
+            elif which == "topology":
+                state[2]._steps = tuple(list(state[2]._steps))
+            else:
+                object.__setattr__(
+                    state[6], "arguments", MappingProxyType(dict(state[6].arguments)),
+                )
         return result
 
     def next_pass(*args, **kwargs):
         nonlocal next_calls
         next_calls += 1
-        # A wrapper without per-phase fences could restore the input here,
-        # hiding the earlier change from a final-only comparison.
-        return original(*args, **kwargs)
+        # The earlier final-only guard misses a transient reflected replacement
+        # when a second callback restores the original carrier before return.
+        if which == "source":
+            state[7].path = original_path
+        elif which == "topology":
+            state[2]._steps = original_steps
+        else:
+            object.__setattr__(state[6], "arguments", original_arguments)
+        return original_sources(*args, **kwargs)
 
-    monkeypatch.setattr(module, "review_synthetic_claim_write_recovery", inject)
+    monkeypatch.setattr(module, "review_synthetic_claim_write_recovery", inject_recovery)
+    monkeypatch.setattr(module, "review_synthetic_claim_occurrence_sources", next_pass)
     with pytest.raises(module.SyntheticClaimProvenanceRejected, match="changed"):
         _review(state)
+    assert recovery_calls == 1
     assert next_calls == 0
 
 
