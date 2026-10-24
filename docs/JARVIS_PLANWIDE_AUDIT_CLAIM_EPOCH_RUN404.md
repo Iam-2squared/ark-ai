@@ -92,3 +92,27 @@ guarantee. Frozen V1/V2/Local UI/Launcher contracts are untouched.
    **deny-by-default disconnected mode**, with no real authority until review.
 4. Continue Memory CAS/coherent snapshots, privacy revocation, proactive and
    Observation contracts; keep V3 provenance and all paid/frozen gates closed.
+
+## Package D — disconnected caller-clock continuity (additive)
+
+Source: `src/ark/agency/synthetic_clock_sequence_review.py`
+
+Tests: `tests/test_synthetic_clock_sequence_run404.py` (27 fixture cases).
+
+- A bounded stream (maximum 1,024 samples) carries exact integer sequence,
+  caller-provided source digest, wall timestamp and monotonic timestamp.
+  Strict sequence continuity, nondecreasing wall time and increasing monotonic
+  time reject local regression or duplicate timing evidence.
+- The local hash chain can be checked against a separately retained prefix
+  after a simulated restart. Earlier sample mutation, generator termination
+  callbacks, invalid types, truncated history and infinite streams are all
+  fail-closed. A caller may not replace historical observations mid-review.
+- The initial EMPTY witness intentionally conveys no clock readiness;
+  populated witnesses always report
+  `trusted_clock_verified=False`,
+  `dispatch_authorized=False` and
+  `automatic_replay_authorized=False`.
+- All inputs are locally supplied fixtures: there is **no** external
+  time source, signed timestamp, trusted monotonic device, attested identity,
+  OS clock sampling, human authority, or real action pathway. This is a
+  reversible interface rehearsal only, not an integration approval.
