@@ -60,7 +60,8 @@ def test_purge_refuses_drift_after_first_expiry_event_and_rolls_back(
     store, scope, records = _two_expired_memories(tmp_path)
     real_event = memory_sqlite.SQLiteMemoryStore._event
     calls = 0
-    restore = lambda: None
+    def restore():
+        pass
 
     def event_with_reflection(conn, memory_id, event_scope, operation, revision, now):
         nonlocal calls, restore
@@ -94,7 +95,8 @@ def test_purge_refuses_drift_during_first_row_hydration_without_any_delete(
     store, scope, records = _two_expired_memories(tmp_path)
     real_record = memory_sqlite._record
     calls = 0
-    restore = lambda: None
+    def restore():
+        pass
 
     def hydrated_with_reflection(row):
         nonlocal calls, restore
