@@ -110,6 +110,7 @@ class SQLiteActionAudit:
         except (TypeError, ValueError) as exc:
             raise ActionAuditSchemaError("audit call identity is invalid") from exc
         original_arguments = call.arguments
+        path_epoch = self.path
         with closing(self._connect()) as conn, conn:
             # Commit an event with a clock sampled only after acquiring the
             # writer slot; no external backend dispatch is performed here.
@@ -121,6 +122,8 @@ class SQLiteActionAudit:
                 raise ActionAuditSchemaError("action audit schema version changed before append")
             _validate_v1_schema(conn)
             now = self._now()
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit path changed during clock")
             try:
                 current = (
                     call.request_id, call.tool, call.capability, call.scope,
@@ -198,7 +201,7 @@ class SQLiteActionAudit:
         return result
 
     def _initialize(self) -> None:
-        with _AUDIT_BOOTSTRAP_LOCK, closing(self._connect()) as conn, conn:
+        with _AUDIT_BOOTSTRAP_LOCK, closing(self._connect(create=True)) as conn, conn:
             # WAL negotiation is bootstrap-only. Under concurrent first opens,
             # retry transient SQLite lock/busy before taking the writer slot.
             for attempt in range(5):
@@ -240,8 +243,15 @@ class SQLiteActionAudit:
                         conn.execute(statement)
             _validate_v1_schema(conn)
 
-    def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.path)
+    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        # Explicit bootstrap may create a new SQLite file. Ordinary audit
+        # appends MUST NOT recreate an empty replacement after a file moves.
+        if create:
+            conn = sqlite3.connect(self.path)
+        else:
+            conn = sqlite3.connect(
+                self.path.resolve().as_uri() + "?mode=rw", uri=True
+            )
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
