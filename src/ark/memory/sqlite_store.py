@@ -277,6 +277,7 @@ class SQLiteMemoryStore:
         # Bind both the database read and its expiry clock to the same read
         # transaction; reject scope retargeting by a reentrant clock callback.
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        path_epoch = self.path
         with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
             _validate_v1_schema(conn)
@@ -286,6 +287,12 @@ class SQLiteMemoryStore:
                 (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchone()
             if row is None:
+                if (scope.owner_id, scope.namespace) != (
+                    pinned_scope.owner_id, pinned_scope.namespace
+                ):
+                    raise MemorySchemaError("memory get scope changed during read")
+                if self.path is not path_epoch:
+                    raise MemorySchemaError("memory get source changed during read")
                 return None
             record = _record(row)
             now = self._now() if not include_expired else None
@@ -293,6 +300,8 @@ class SQLiteMemoryStore:
                 pinned_scope.owner_id, pinned_scope.namespace
             ):
                 raise MemorySchemaError("memory get scope changed during clock")
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory get source changed during read")
             if now is not None and _expired(record, now):
                 return None
             return record
@@ -453,6 +462,8 @@ class SQLiteMemoryStore:
             raise ValueError("after_event_id must be a non-negative integer")
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
+        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        path_epoch = self.path
         with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
             _validate_v1_schema(conn)
@@ -460,8 +471,14 @@ class SQLiteMemoryStore:
                 """SELECT * FROM memory_events
                 WHERE owner_id=? AND namespace=? AND event_id>?
                 ORDER BY event_id LIMIT ?""",
-                (scope.owner_id, scope.namespace, after_event_id, limit),
+                (pinned_scope.owner_id, pinned_scope.namespace, after_event_id, limit),
             ).fetchall()
+        if (scope.owner_id, scope.namespace) != (
+            pinned_scope.owner_id, pinned_scope.namespace
+        ):
+            raise MemorySchemaError("memory events scope changed during read")
+        if self.path is not path_epoch:
+            raise MemorySchemaError("memory events source changed during read")
         # Event rows have no associated source_id after deletion, so validate
         # canonical shape and scope, not an unverifiable source-id preimage.
         # V1 permits clocks to move backwards between independent memories:
@@ -496,13 +513,17 @@ class SQLiteMemoryStore:
                 recorded_scope = MemoryScope(owner_id, namespace)
             except (ValueError, TypeError) as exc:
                 raise MemorySchemaError("stored event identity or scope is invalid") from exc
-            if recorded_scope != scope:
+            if recorded_scope != pinned_scope:
                 raise MemorySchemaError("stored event scope does not match query")
             if operation not in {"create", "update", "delete", "expire"}:
                 raise MemorySchemaError("stored event operation is invalid")
             result.append(
                 MemoryEvent(event_id, memory_id, recorded_scope, operation, revision, occurred)
             )
+        if (scope.owner_id, scope.namespace) != (
+            pinned_scope.owner_id, pinned_scope.namespace
+        ) or self.path is not path_epoch:
+            raise MemorySchemaError("memory events source or scope changed during read")
         return result
 
     def _initialize(self) -> None:
