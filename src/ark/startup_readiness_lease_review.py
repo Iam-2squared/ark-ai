@@ -111,6 +111,12 @@ def review_synthetic_startup_lease(
             or snapshot.digest != digest
             or len(snapshot.components) != len(component_epoch)
             or any(
+                type(item) is not SyntheticReadinessRequirement
+                or item.component_id != component_id
+                or item.schema_revision != schema_revision
+                for item, component_id, schema_revision in epoch
+            )
+            or any(
                 current is not original
                 or current.dependencies is not dependencies
                 or (
