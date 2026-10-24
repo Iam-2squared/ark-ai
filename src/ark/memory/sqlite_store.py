@@ -395,14 +395,22 @@ class SQLiteMemoryStore:
                 records.append(item)
                 epochs.append(_hydrated_record_epoch(item))
 
-            def assert_records() -> None:
-                if any(
-                    _hydrated_record_epoch(item) != epoch
-                    for item, epoch in zip(records, epochs, strict=True)
-                ):
+            # A full scan at every per-record callback would make a broad
+            # namespace search quadratic. Keep one epoch per decoded carrier
+            # and check that carrier at each callback plus global phase edges.
+            epoch_by_identity = {
+                id(item): epoch for item, epoch in zip(records, epochs, strict=True)
+            }
+
+            def assert_record(item: MemoryRecord) -> None:
+                if _hydrated_record_epoch(item) != epoch_by_identity[id(item)]:
                     raise MemorySchemaError(
                         "decoded Memory search record changed during read"
                     )
+
+            def assert_records() -> None:
+                for item in records:
+                    assert_record(item)
 
             assert_records()
             if not pinned_include_expired:
@@ -412,7 +420,7 @@ class SQLiteMemoryStore:
                     if not _expired(item, now):
                         filtered.append(item)
                     assert_query_epoch()
-                    assert_records()
+                    assert_record(item)
                 eligible = filtered
             else:
                 eligible = records
@@ -422,11 +430,11 @@ class SQLiteMemoryStore:
             ranked: list[tuple[float, int, str, MemoryRecord]] = []
             for item in eligible:
                 assert_query_epoch()
-                assert_records()
+                assert_record(item)
                 if wanted:
                     matched = len(wanted & _tokens(item.content))
                     assert_query_epoch()
-                    assert_records()
+                    assert_record(item)
                     if matched == 0:
                         continue
                     score = matched / len(wanted)
