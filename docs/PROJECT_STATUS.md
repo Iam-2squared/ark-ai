@@ -1,5 +1,56 @@
 # ARK AI Project Status
 
+**LATEST — Run 388**
+
+Saved at: **2026-10-24T19:02:32.302+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint write; not a GitHub server receipt timestamp).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `33f772cee2b43ecff11cdd44978e4cbc160a78de` (Run387 checkpoint, CI **#670 / run `40080220884` GREEN 6/6**, all six job conclusions observed).
+Exact **final source+tests HEAD**: `dedd6b370710471381d76b0184e3751483f49a13`.
+Exact **final source+tests+engineering document / checkpoint write-basis HEAD**: `980a8444d2606e0e823497334d70e1aed6667576`.
+**Checkpoint-result-HEAD:** not knowable when authoring this document. The authoritative SHA is the subsequent ordinary GitHub Contents `update_file` response's `commit_sha`; verify an exact PR HEAD and its own CI before claiming the checkpoint commit GREEN. Do not inherit any earlier CI status.
+
+Overall ARK state: **isolated, disconnected, reversible local-first synthetic/mock JARVIS foundations**. There is no authenticated user approval/consent, trusted clock, OS file custody, cross-SQLite atomic transaction, external ToolBackend WRITE confirmation, exactly-once external effect, protected V2 FINAL opening, or complete JARVIS PASS. Frozen V1/V2/Local UI/Launcher contracts/evidence and Memory v1 DDL remain unchanged. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`; exact main compare immediately before checkpoint: **237 add-only paths, zero modified/deleted preexisting main paths**. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`.
+
+### NEW in Run 388 — four FREE-only independent packages (+33 regression tests)
+
+1. **Privacy retention recheck outer-epoch (+11):** `src/ark/personal_context_retention_recheck_review.py` pins Memory and revocation SQLite Path identities plus retained revocation-witness fields across four independent inventory reads, checking after every return. `tests/test_retention_cross_pass_source_epoch_run388.py` tests same-string Path replacement after each pass and reflected independent witness edits. No deletion or disclosure.
+2. **Direct claim / Planner recovery outer-epoch (+9):** `src/ark/agency/synthetic_claim_recovery_review.py` pins original cancellation/Planner/ActionAudit/optional audit-link sources, Registry revision, and ToolCall fields/arguments before the first cancellation fence, rechecking after each of three steps. `tests/test_claim_recovery_outer_epoch_run388.py` tests reentrant same-string source swaps and ToolCall scope substitution. Existing approval-claim rejection taxonomy remains intact; no authenticated consent or real Tool execution.
+3. **Fresh Personal Context read outer-epoch (+7):** `src/ark/personal_context_revocation_review.py` now pins Memory/veto source identities, exact snapshot-request fields, and ContextSelectionPolicy fields across revocation continuity, veto checks, Memory snapshot read and ephemeral context selection. `tests/test_personal_context_fresh_outer_epoch_run388.py` exercises source and policy swap detection. The local bundle **contains plaintext fixture content** but confers no external disclosure or action authority.
+4. **Proactive readiness / Trigger cross-pass source (+6):** `src/ark/proactive_startup_fence_review.py` binds original ledger Path identity and retained trigger-witness values across two startup checks and two trigger-freshness checks. `tests/test_startup_proactive_outer_source_epoch_run388.py` covers each callback boundary and late retained witness mutation. No real notifications or dispatch.
+
+New engineering evidence/threat-model document: `docs/JARVIS_CROSS_PASS_EPOCH_RUN388.md`. **12 ordinary Contents commits before this checkpoint** (four source edits, four test-file additions, two semantics-preserving CI repairs, one document creation and one document revision). No raw Git-object route, force push, manual duplicate workflow dispatch, protected FINAL access, external compute or billable service.
+
+### Exact-head CI and repaired intermediate failures
+
+- Starting Run387 checkpoint `33f772cee2b43ecff11cdd44978e4cbc160a78de`: CI **#670 / run `40080220884` GREEN 6/6**.
+- Retention source-only `120c641a5d3dbe352a66731f862ba3d32d981154`: CI **#671 / run `40083512667` SUCCESS**; retention source+tests `c53800f76bdb18681551de7f92d25fcc2a799d16`: **#672 / run `40083548542` SUCCESS**. These are only exact-head claims.
+- Intermediate CI **#673–#678 FAIL** on intervening exact HEADs. Source-only claim review #673 / run `40083595068`: (a) optional audit link uses `_path`, not `path`; (b) an early generic claim-mutation rejection displaced an expected `SyntheticApprovalRejected`. Source fix `1d40c84cf8d8655ba5a7233eb56233ad8c6ec43c` used the actual source member and left the original claim-specific second-veto rejection intact. CI #677 / run `40083810067` reached **1507 passed, 2 failed**; the new Context regression fixture attempted to patch a nonexistent module-level function which is imported locally by the code under review. Only the test's monkeypatch target was repaired at `e003a929728c8874215b5c9a9e8b3df2404c4e4a`; no safety check was relaxed.
+- Fixed first-three-package head `e003a929728c8874215b5c9a9e8b3df2404c4e4a`: CI **#679 / run `40083922554` GREEN 6/6** (six job successes independently observed).
+- Final **source+tests HEAD** `dedd6b370710471381d76b0184e3751483f49a13`: CI **#681 / run `40084053238` IN PROGRESS 5/6 GREEN, 1 running** at latest job read. Ubuntu Python 3.13 job `120843262595` independently logged **Ruff PASS, 1515 pytest passed** (Run387 1482 + 33 synthetic regression cases).
+- Final **source+tests+document HEAD** `980a8444d2606e0e823497334d70e1aed6667576`: CI **#682 / run `40084085564` IN PROGRESS 5/6 GREEN, 1 running** at latest job read; no later CI should be assumed GREEN until observed.
+- CI is the existing public PR-triggered Ubuntu/Windows Python 3.11–3.13 workflow; no manually dispatched duplicate runs. Existing baseline evaluations in CI are unchanged and do NOT open protected V2 FINAL.
+
+### Safety limits / blocked authorization boundaries
+
+**ZERO new paid/billable service, external GPU, Candidate weights/adapter generation, training, frozen evaluation opening, secret/account connection, physical-PC action, live media acquisition, real backend WRITE, real notification, personal data deletion, irreversible user action, Candidate promotion, main merge or frozen contract change.** V3 PR #5 remains Draft/NOT_PASSED and frozen V2 FINAL stays closed.
+
+Local Path object identity checks do **not** authenticate filesystem inode custody, protect against OS-level same-path replacement or restored ABA swaps, or close any post-return race. Independent local hashes do not sign a witness, prove a reviewer/issuer identity or guarantee tamper-proof persistence. Multi-SQLite snapshots are not atomic. Caller-supplied clocks are not trusted. These new wrappers can **only deny** suspicious local synthetic evidence; **UNKNOWN WRITE is not automatically retried** and no synthetic receipt authorizes an external effect.
+
+### Next plan / 今後の方針
+
+1. Resolve CI **#681/#682** and separately verify the checkpoint-result HEAD's own CI. If any exact-head CI fails, inspect the relevant job log, repair the smallest fixture/source issue through normal Contents, then work on an unrelated FREE-only lane while CI executes. Never mark an untested SHA GREEN.
+2. Extend Registry-bound claim/Occurrence/ActionAudit/Planner Recovery retained-history epochs and true UNKNOWN WRITE diagnostics while keeping identity, consent, trusted-clock, durable external idempotency and actual ToolBackend dispatch as distinct unapproved gates.
+3. Strengthen Memory event/CAS/TTL/coherent-snapshot evidence and Personal Context revocation/retention/consent diagnostics without performing erasure or data export.
+4. Advance mocked Scheduler/Observation/multimodal/startup fixtures without activating cameras, microphones, real notifications, OS effects or paid compute.
+5. Keep PR #8 Draft/unmerged and PR #5 Draft/NOT_PASSED, all frozen V1/V2/Local UI/Launcher contracts unchanged, protected V2 FINAL closed, no Candidate promotion or main merge without explicit approval.
+
+---
+
+**HISTORICAL — Run 387 and earlier (previously saved canonical status follows unchanged)**
+
+# ARK AI Project Status
+
 **LATEST — Run 387**
 
 Saved at: **2026-10-24T17:58:45.816+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled before this ordinary Contents write; **not** a GitHub server-receipt timestamp).
