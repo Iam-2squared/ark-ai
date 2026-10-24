@@ -15,6 +15,7 @@ from .memory.sqlite_store import SQLiteMemoryStore
 from .personal_context_retention_review import (
     RetentionState,
     SyntheticRetentionInventory,
+    SyntheticRetentionItem,
     review_synthetic_retention_inventory,
 )
 from .personal_context_revocation_continuity_review import SyntheticRevocationWitness
@@ -57,7 +58,24 @@ class SyntheticRetentionRecheck:
 
 
 def _epoch(value: SyntheticRetentionInventory) -> tuple[object, ...]:
-    return tuple(getattr(value, field.name) for field in fields(SyntheticRetentionInventory))
+    """Pin nested item VALUES, not only references to frozen dataclasses.
+
+    A caller with reflection access can mutate each frozen item in place during
+    a subsequent SQLite review. A shallow tuple of the original item objects
+    would follow that mutation and fail to notice it.
+    """
+    if type(value.items) is not tuple or any(
+        type(item) is not SyntheticRetentionItem for item in value.items
+    ):
+        raise SyntheticRetentionRecheckRejected("exact cached retention item types required")
+    head = tuple(
+        getattr(value, field.name) for field in fields(SyntheticRetentionInventory)
+        if field.name != "items"
+    )
+    items = tuple(
+        (item.memory_id, item.revision, item.state) for item in value.items
+    )
+    return (*head, items)
 
 
 def review_synthetic_retention_recheck(
