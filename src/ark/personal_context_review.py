@@ -112,12 +112,18 @@ def review_personal_context(
         or len({scope.owner_id for scope in scopes}) != 1
     ):
         raise PersonalContextReviewRejected("snapshot owner/namespace boundary invalid")
+    # The provenance header and owner/scope identity must remain fixed for the
+    # entire projection, including the final content-free hash calculation.
+    snapshot_epoch = (snapshot.read_at_ms, snapshot.provenance_sha256)
+    scope_epoch = tuple((scope, scope.owner_id, scope.namespace) for scope in scopes)
+    record_epoch = []
     pinned = []
     seen: set[str] = set()
     for scope, candidates in zip(scopes, rows, strict=True):
         if type(candidates) is not tuple or len(candidates) > 100:
             raise PersonalContextReviewRejected("snapshot candidate container invalid")
         entries = []
+        group_epoch = []
         for record in candidates:
             if type(record) is not MemoryRecord:
                 raise PersonalContextReviewRejected("noncanonical memory record")
@@ -152,7 +158,15 @@ def review_personal_context(
                 record.memory_id, scope.namespace, record.content,
                 record.revision, record.content_sha256,
             ))
+            group_epoch.append((
+                record, record.scope, record.metadata,
+                record.memory_id, record.source_id, record.content,
+                record.created_at_ms, record.updated_at_ms,
+                record.expires_at_ms, record.revision, record.content_sha256,
+                tuple(sorted(record.metadata.items())),
+            ))
         pinned.append(tuple(entries))
+        record_epoch.append(tuple(group_epoch))
     selected: list[SyntheticContextItem] = []
     counts = [0] * len(scopes)
     for ordinal in range(policy.total_limit):
@@ -178,28 +192,54 @@ def review_personal_context(
         selected.append(SyntheticContextItem(
             memory_id, namespace, content, revision, provenance,
         ))
-    # Reject reflective source changes during projection. This cannot
-    # authenticate a fully forged but internally self-consistent snapshot.
-    if (
-        pinned_policy != (
-            policy.total_limit, policy.per_namespace_limit,
-            policy.policy_revision,
-        )
-        or snapshot.scopes is not scopes or snapshot.records is not rows
-        or any(
-            (
-                record.memory_id, scope.namespace, record.content,
-                record.revision, record.content_sha256,
-            ) != entry
-            for scope, group, originals in zip(scopes, pinned, rows, strict=True)
-            for entry, record in zip(group, originals, strict=True)
-        )
-    ):
-        raise PersonalContextReviewRejected("context input changed during selection")
+    # A frozen record can be reflectively edited after validation. Comparing
+    # only the selected content/revision omits source and owner provenance.
+    # Pin all entry identities and the header, including metadata, across
+    # both the selection loop and the final digest callback.
+    def assert_snapshot_epoch() -> None:
+        try:
+            stable = (
+                pinned_policy == (
+                    policy.total_limit, policy.per_namespace_limit,
+                    policy.policy_revision,
+                )
+                and snapshot.scopes is scopes and snapshot.records is rows
+                and (snapshot.read_at_ms, snapshot.provenance_sha256) == snapshot_epoch
+                and all(
+                    current is original
+                    and (current.owner_id, current.namespace) == (owner, namespace)
+                    for current, (original, owner, namespace) in zip(
+                        scopes, scope_epoch, strict=True,
+                    )
+                )
+                and all(
+                    record is original
+                    and record.scope is record_scope
+                    and record.metadata is metadata
+                    and (
+                        record.memory_id, record.source_id, record.content,
+                        record.created_at_ms, record.updated_at_ms,
+                        record.expires_at_ms, record.revision, record.content_sha256,
+                    ) == original_values
+                    and tuple(sorted(record.metadata.items())) == metadata_values
+                    for group, epochs in zip(rows, record_epoch, strict=True)
+                    for record, (
+                        original, record_scope, metadata, *saved,
+                    ) in zip(group, epochs, strict=True)
+                    for original_values, metadata_values in (
+                        (tuple(saved[:-1]), saved[-1]),
+                    )
+                )
+            )
+        except (AttributeError, TypeError, ValueError):
+            stable = False
+        if not stable:
+            raise PersonalContextReviewRejected("context input changed during selection")
+
+    assert_snapshot_epoch()
     bundle = "ctx_bundle_" + _hash("ARK-context-bundle-v1", (
-        snapshot.provenance_sha256, pinned_policy,
+        snapshot_epoch[1], pinned_policy,
         tuple(item.provenance_id for item in selected),
     ))
-    return SyntheticContextBundle(
-        tuple(selected), bundle, snapshot.provenance_sha256,
-    )
+    assert_snapshot_epoch()
+    return SyntheticContextBundle(tuple(selected), bundle, snapshot_epoch[1])
