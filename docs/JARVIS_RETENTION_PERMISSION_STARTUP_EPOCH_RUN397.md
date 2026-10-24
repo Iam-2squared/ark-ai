@@ -10,7 +10,7 @@ proactive retained-witness work at the basis HEAD; those earlier commits
 are **not** relabeled as new Run397 work. Canonical PROJECT_STATUS was
 still Run395 at this run's start.
 
-## Four compatible implementation and regression packages
+## Five compatible implementation and regression packages
 
 | Domain | Production source | Focused synthetic regression | New cases |
 | --- | --- | --- | ---: |
@@ -18,6 +18,7 @@ still Run395 at this run's start.
 | Capability PermissionGate | `src/ark/agency/policy.py` | `tests/test_permission_grant_yield_epoch_run397.py` | 10 |
 | Registered PermissionGate materialization | `src/ark/agency/policy.py` | `tests/test_registered_materialization_yield_epoch_run397.py` | 7 |
 | Startup evaluation | `src/ark/startup_readiness_review.py` | `tests/test_startup_probe_input_epoch_run397.py` | 6 |
+| Bounded startup iterator | `src/ark/startup_readiness_review.py` | `tests/test_startup_probe_generator_epoch_run397.py` | 7 |
 
 ### Retention: original carrier custody and later-result custody
 
@@ -51,6 +52,22 @@ variants, three READ diagnostic variants, and two unchanged positive paths.
 A PermissionGate result does not authenticate a human issuer and never
 dispatches a real backend.
 
+### Startup streaming materialization: pin before iterator exhaustion
+
+The earlier startup evaluator used `tuple(probes)`, which consumed an
+arbitrary caller-owned iterable *before* any original probe was pinned.
+A probe generator could alter a previously yielded component and later
+restore it before exhaustion; a nonterminating iterator could also run
+without a bound, never reaching the previous 10,000-item check.
+
+The evaluator now accepts at most 10,000 yielded probes, retaining the
+original value/dependency carrier at **each yield** and rechecking earlier
+probes after each iterator advancement, including exhaustion. The same
+original epochs are used through subsequent component construction,
+dependency resolution, and final digest construction. Five reflected
+mutation/restoration fixtures, one finite oversized generator counter,
+and one unchanged graph confirm this remains a bounded inert diagnostic.
+
 ### Registered grant materialization: scope checks cannot be delayed
 
 `authorize_registered()` first binds a registry-authenticated local
@@ -83,7 +100,7 @@ diagnostics, not activation authority.
 
 ## Verification boundaries and known non-proofs
 
-The four implementation/test packages were written using GitHub's ordinary Contents
+The five implementation/test packages were written using GitHub's ordinary Contents
 API, re-reading PR #8 HEAD immediately before every write. Existing automatic
 public-repository PR CI runs test Ruff and the Ubuntu/Windows Python matrix;
 no duplicate workflow was manually dispatched. **Each CI verdict applies
