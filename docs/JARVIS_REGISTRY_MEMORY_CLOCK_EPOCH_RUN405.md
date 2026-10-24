@@ -69,6 +69,36 @@ authenticate clocks or timing provenance. Witnesses always remain
 `automatic_replay_authorized=False`. No clock device, OS clock, issuer,
 backend, secret, credential, external service or GPU is accessed.
 
+## D. All-WRITE recovery: caller-retained prefixes across four stores
+
+Files:
+
+- `src/ark/agency/synthetic_write_plan_recovery_review.py`
+- `tests/test_synthetic_write_plan_retained_prefix_run405.py`
+
+The plan-wide review now optionally accepts exact-type retained PlanTail,
+reservation LedgerWitness, audit ContinuityWitness and occurrence-audit
+LinkWitness. A retained link cannot be provided without its sidecar store.
+All prior witness object fields are pinned before validation and rechecked at
+every cross-step callback. The exact same retained prefixes are forwarded
+to **every WRITE step's** read-only recovery, the repeated first-step review,
+and the final plan replay.
+
+Restart fixtures exercise a stable four-store reopen; a replaced empty
+journal that loses a RUNNING WRITE; an empty replacement ledger that erases
+a previously witnessed orphan/PENDING reservation; an empty audit store that
+drops a witnessed local event; a missing sidecar; and a value-equal reflected
+replacement of a retained digest carrier during the first WRITE's callback.
+Without separately retained witnesses, a fresh empty store may look locally
+consistent; this extension is designed to reject *witnessed* rollback instead
+of incorrectly treating a fresh local PENDING state as evidence of safe replay.
+
+The original writes remain synthetic, the result stays inert, and independent
+SQLite reads are not an atomic cross-store snapshot. The retained witnesses
+are explicitly caller-supplied and must be kept outside mutable fixture stores
+to carry any continuity value; they are neither signed provenance nor receipts
+for an external WRITE.
+
 ## CI, limitations and authorization gates
 
 Each individual GitHub HEAD requires its own exact-head CI. Tests added here
