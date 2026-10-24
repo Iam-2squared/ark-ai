@@ -1,5 +1,52 @@
 # ARK AI Project Status
 
+**LATEST — Run 402**
+
+Saved at: **2026-10-25T05:54:12.706+09:00 Asia/Tokyo/JST** (execution-runtime wall clock just before an ordinary GitHub Contents checkpoint write; **not** an authenticated human approval, trusted Tool clock or GitHub server receipt).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `36aacf0f54ba3f954809d94fda974004a286610a` (**CI #860 / run `40128199736` GREEN all six jobs**, observed before development).
+Exact **last source+test HEAD**: `b0694d7fd7d871801403f99c78f21e98c23bf4b9` (**CI #872 / run `40131630242` 4/6 GREEN, 0 FAIL, 2 IN PROGRESS** on last independent job read; Ubuntu Python 3.13 job `120984365391`: **Ruff PASS / 1908 tests passed in 42.86s**).
+Exact **source+test+engineering-document / checkpoint write-basis HEAD**: `5e1b0012c87212c9b6a657a8f669f8d3e84db668` (**CI #873 / run `40131664848` 3/6 GREEN, 0 FAIL, 3 IN PROGRESS** at last independent read).
+**Checkpoint-result HEAD is not knowable before writing this file**: the ordinary GitHub Contents write returns its authoritative commit SHA; its own exact-head CI is independent. No finished GREEN is inherited by later HEADs.
+
+**Overall ARK state:** local-first, disconnected **synthetic/mock JARVIS foundations only; complete JARVIS NOT_PASSED**. No authenticated human issuer or consent, trusted external execution clock, OS inode/file-descriptor custody, cross-SQLite atomicity, independently authenticated backend receipt, real GPU Candidate, live sensor or tool action, or external exactly-once proof. **UNKNOWN WRITE remains UNKNOWN and MUST NOT automatically replay.** A synthetic readiness, audit, token, revocation or mock receipt grants zero external execution authority.
+
+### NEW Run402 — five FREE-only coherent packages (+25 synthetic regression cases)
+
+1. **Memory expiry predicate callback epochs (+6):** `src/ark/memory/coherent_snapshot_review.py`, `tests/test_memory_snapshot_expiry_epoch_run402.py`. Recheck original request, store Path and every decoded record immediately before/after each `_expired` callback, rejecting transient record/scope/request/path drift before another predicate can restore it. Bounded read-only SQLite scan and frozen Memory v1 DDL preserved.
+2. **Startup integrity callback custody (+5):** `src/ark/startup_readiness_review.py`, `tests/test_startup_snapshot_integrity_epoch_run402.py`. Pin the exact components tuple and structural/state carriers through individual `_identifier` callbacks and JSON/digest generation. Refuse transient drift and equal-valued carrier swaps. Startup READY remains an inert probe assertion only.
+3. **Personal Context first-digest privacy veto (+3):** `src/ark/personal_context_revocation_review.py`, `tests/test_revocation_initial_scope_epoch_run402.py`. Pin the original owner/namespace **before** first scope hash; reject reflected first-callback retarget before any wrong-scope SQLite veto row can be inserted. No deletion, export, consent or notification.
+4. **Four-store synthetic crash/restart non-replay (+6):** `tests/test_mock_cycle_restart_nonreplay_run402.py`. Reopen Planner journal, occurrence store, ActionAudit and audit-link sidecar after five injected stop boundaries; assert persisted counts remain unchanged on attempted WRITE retry, with no backend invocation. Even a completed local mock cannot be replayed. These are exception-injection fixtures, not real OS crashes or external exactly-once evidence.
+5. **Planner retained-tail ingress (+5):** `src/ark/agency/planner_journal_review.py`, `tests/test_planner_retained_ingress_epoch_run402.py`. Pin independently supplied retained journal tail **before** first topology hash and shape-check callbacks in both recover/append. Refuse covert rebasing to a different but valid older history prefix. A rejected append does not reclassify RUNNING/UNKNOWN.
+
+**Engineering threat matrix and limits:** `docs/JARVIS_EXPIRY_STARTUP_REVOCATION_CALLBACK_EPOCH_RUN402.md`.
+**13 ordinary GitHub Contents source/test/document writes before this single checkpoint:** five source/test packages plus engineering-document creation/extension and one semantics-preserving startup regression diagnostic correction. No raw Git writes, force-push, unauthorized branch update, manual workflow rerun, paid or external compute, credentials, hardware action, frozen-contract edit, protected evaluation, Candidate creation, actual notification, promotion or main merge.
+
+### Exact-head CI, failures and frozen baseline
+
+- Initial checkpoint `36aacf0f54ba3f954809d94fda974004a286610a`: **#860 / `40128199736` GREEN 6/6** before work, earlier 1883 tests.
+- Memory-focused `0ef0309618459b3a05d57feacb934c590427824e`: **#862 / `40130859776`** observed running earlier; later heads supersede its source/test scope, no inferred GREEN.
+- Startup early `43ba53a64ca482896ce8529e2795afb49cbebfee`: **#864 / `40130994126` FAIL**, and privacy-inclusive `60e1736671b303697b4bacd81f8e648e70d25338`: **#866 / `40131101332` FAIL**, caused by 3 new startup tests expecting the more specific epoch diagnostic while existing identifier wrapper deliberately raises `startup snapshot identifier changed`. This was a test-message mismatch, **not** a bypass or silent GREEN.
+- Narrow test diagnostic correction `67975830add8dc6f7a909a3aa712634cc17e5749`: **#868 / `40131235001`** observed progressing; unchanged fail-closed source behavior.
+- Four-store restart test `f3227edf926a24cb9c37e3520d045f1ce69a6fb8`: **#869 / `40131356124` GREEN 6/6** confirmed.
+- Final source/test `b0694d7fd7d871801403f99c78f21e98c23bf4b9`: **#872 / `40131630242` 4/6 GREEN, 0 FAIL, 2 IN PROGRESS**; verified Ubuntu Python3.13 job `120984365391` Ruff PASS and **1908 pytest passed**.
+- Final engineering doc / status write-basis `5e1b0012c87212c9b6a657a8f669f8d3e84db668`: **#873 / `40131664848` 3/6 GREEN, 0 FAIL, 3 IN PROGRESS**. Newly saved checkpoint-result SHA/CI requires separate observation.
+
+Baseline main at start `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #8 remains Draft/unmerged, GitHub PR reports 314 changed files, 41475 additions, 0 deletions (a PR aggregate, not an independent complete recursive blob-tree comparison). V3 **PR #5 Draft/open/unmerged/NOT_PASSED** with independently checked head `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher evidence/contracts, Memory v1 DDL, protected V2 FINAL and V3 Contract 1 unchanged by this invocation.
+
+### Blockers / authorization boundaries / Next plan / 今後の方針
+
+**Hard NO pending explicit authorization:** paid/potentially billable services, external GPU/API, real adapter/weight/Candidate preflight/training/export/promotion, protected V2 FINAL opening, frozen contract change, secrets/new account connections, destructive or irreversible action, real hardware/sensors/notifications/live ToolBackend dispatch, legal/licensing/privacy adjudication, and main merge requiring human approval. V3 still lacks verified immutable base/tokenizer bytes/hashes, complete 120/30 human-reviewed rights/contamination decisions, pinned training/export environment and approved cost ceiling. No approval, hashes or results are invented.
+
+**Prioritized Next plan / 今後の方針:** (1) confirm remaining exact-HEAD #872/#873 Windows jobs and the checkpoint-result SHA's own CI; fix genuine failures only via ordinary, fresh-HEAD GitHub source/test writes; (2) extend Planner/Registry/PermissionGate/occurrence/ActionAudit isolated restart/cross-store UNKNOWN reconciliation beyond deterministic fault-point exceptions, retaining no-backend/no-replay; (3) review Memory CAS/expiry/snapshot and Personal Context revocation lifecycle with race and limits; (4) define fail-closed disconnected trusted-clock and authenticated-issuer interface fixtures without pretending an authenticated source exists; (5) continue Scheduler/Observation and free-only V3 provenance/identity/path guards while all protected/paid/hardware gates remain closed.
+
+---
+
+**HISTORICAL — Original Run401 canonical checkpoint and all prior records preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 401**
 
 Saved at: **2026-10-25T05:05:00.254+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled just before the normal GitHub Contents write; **not** a trusted Tool clock, GitHub server receipt timestamp or authenticated human consent).
