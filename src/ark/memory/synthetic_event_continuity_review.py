@@ -104,6 +104,13 @@ def review_synthetic_memory_event_continuity(
         if type(retained) is not SyntheticMemoryEventWitness:
             raise SyntheticMemoryEventRejected("exact retained Memory witness required")
         retained.assert_shape(scope_hash)
+    # A frozen witness may be reflectively changed while the SQLite replay
+    # hydrates records. Preserve the independently supplied original values
+    # rather than trusting only its later (possibly rewritten) shape/hash.
+    retained_epoch = None if retained is None else (
+        retained.scope_digest, retained.event_count,
+        retained.last_event_id, retained.tail_hash,
+    )
     genesis = SyntheticMemoryEventWitness(scope_hash, 0, 0, _genesis(scope_hash))
     prefixes = [genesis]
     path_epoch = memory.path
@@ -180,7 +187,11 @@ def review_synthetic_memory_event_continuity(
                     "Memory event lifecycle differs from live rows"
                 )
             if retained is not None and (
-                retained.event_count >= len(prefixes)
+                retained_epoch != (
+                    retained.scope_digest, retained.event_count,
+                    retained.last_event_id, retained.tail_hash,
+                )
+                or retained.event_count >= len(prefixes)
                 or prefixes[retained.event_count] != retained
             ):
                 raise SyntheticMemoryEventRejected(
@@ -190,6 +201,11 @@ def review_synthetic_memory_event_continuity(
         except BaseException:
             conn.rollback()
             raise
-    if memory.path != path_epoch or (scope.owner_id, scope.namespace) != original:
+    if memory.path is not path_epoch or (scope.owner_id, scope.namespace) != original:
         raise SyntheticMemoryEventRejected("Memory source or scope changed during review")
+    if retained is not None and retained_epoch != (
+        retained.scope_digest, retained.event_count,
+        retained.last_event_id, retained.tail_hash,
+    ):
+        raise SyntheticMemoryEventRejected("independently retained Memory witness changed")
     return prefixes[-1]
