@@ -60,6 +60,21 @@ witness mutation after trigger freshness, and the stable diagnostic-only
 path. It grants **no** actual media capture, notification, disclosure or
 ToolBackend dispatch.
 
+## 4. Personal Context retention witness and scope epoch
+
+`personal_context_retention_review.py` now captures the caller's scope
+and exact independently retained revocation witness fields before its first
+cross-store veto read. The existing post-callback source checks also verify
+the retained witness and scope immediately. A transient mutation that could
+otherwise be restored before the final inventory is returned is rejected
+without disclosing Memory content, deleting rows or treating a local veto as
+human consent.
+
+`tests/test_retention_retained_and_scope_epoch_run390.py` covers substitution
+of an entirely different **valid** revocation witness after the first veto,
+transient scope retargeting, exact-type rejection and stable diagnostics.
+No real personal data or erasure authority is introduced.
+
 ## Invariants and continued constraints
 
 - No paid compute, external APIs/GPU, credentials, account connections,
