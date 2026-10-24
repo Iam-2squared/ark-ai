@@ -200,7 +200,12 @@ class ToolRegistry:
         # This check is not an authorization grant or a concurrency primitive.
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
-        stable = ToolCall(call.tool, call.capability, call.scope, call.arguments)
+        # Preserve the *original* argument carrier as well as its digest.
+        # A callback can replace a frozen ToolCall's arguments with a new,
+        # value-equal mapping after resolve() has finished its own checks.
+        # That is a new caller input epoch even when request_id is unchanged.
+        original_arguments = call.arguments
+        stable = ToolCall(call.tool, call.capability, call.scope, original_arguments)
         original_request_id = stable.request_id
 
         def assert_call_unchanged() -> None:
@@ -211,6 +216,7 @@ class ToolRegistry:
                 or (call.tool, call.capability, call.scope)
                 != (stable.tool, stable.capability, stable.scope)
                 or call.request_id != original_request_id
+                or call.arguments is not original_arguments
             ):
                 raise ValueError("ToolCall identity changed during registry binding")
 
