@@ -20,10 +20,10 @@ from ark.agency.contracts import (
 from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
-from ark.agency.synthetic_recovery_triage import SyntheticRecoveryRejected
 from ark.agency.synthetic_occurrence_audit_link_review import (
     SyntheticOccurrenceAuditLinkStore,
 )
+from ark.agency.synthetic_recovery_triage import SyntheticRecoveryRejected
 
 
 class NeverExecute:
