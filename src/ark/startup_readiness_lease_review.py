@@ -111,12 +111,6 @@ def review_synthetic_startup_lease(
             or snapshot.digest != digest
             or len(snapshot.components) != len(component_epoch)
             or any(
-                type(item) is not SyntheticReadinessRequirement
-                or item.component_id != component_id
-                or item.schema_revision != schema_revision
-                for item, component_id, schema_revision in epoch
-            )
-            or any(
                 current is not original
                 or current.dependencies is not dependencies
                 or (
@@ -155,6 +149,18 @@ def review_synthetic_startup_lease(
                 raise SyntheticStartupLeaseRejected(
                     "required component blocked, degraded or schema-stale"
                 )
+        # Preserve the required-component denial diagnostic for a blocked
+        # original dependency. A different but READY temporary requirement
+        # must still fail before the next callback can restore it.
+        if any(
+            type(item) is not SyntheticReadinessRequirement
+            or item.component_id != component_id
+            or item.schema_revision != schema_revision
+            for item, component_id, schema_revision in epoch
+        ):
+            raise SyntheticStartupLeaseRejected(
+                "readiness inputs changed during review"
+            )
         snapshot._assert_integrity()
         assert_epoch()
         if (
