@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+**LATEST — Run 383**
+
+Saved at: **2026-10-24T14:16:57.599+09:00 Asia/Tokyo/JST** (runtime clock sampled immediately before the ordinary GitHub Contents write; not represented as a GitHub server receipt timestamp).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+Exact invocation **work-basis HEAD**: `3d26c8dd23ab4253c3443cbf235e4aa7ad771901` (Run382 checkpoint, **CI #613 / run `40064811478` SUCCESS 6/6** confirmed at invocation start).
+Exact final **source + test HEAD**: `cf6a7528bc503e13ec140909a299084220cb5335`.
+Exact final **source + tests + technical documentation / checkpoint write-basis HEAD**: `e3894e0075c5258fe0b5d6927cde5b5a0bdb183b`.
+**Checkpoint-result-HEAD wording:** the new commit SHA is necessarily unknown while this text is being authored. Use the GitHub Contents update's returned `commit_sha` / subsequently read exact HEAD as the result. Do not transfer CI evidence from this pre-checkpoint SHA to the later checkpoint-result SHA.
+
+Overall ARK state: local-first, reversible, disconnected and **synthetic/mock-only** JARVIS foundations. No production tool execution, trusted issuer/subject/recipient consent, legal data-erasure authority, cross-SQLite atomicity, genuine external exactly-once effect, paid compute, GPU/Candidate work or complete JARVIS PASS. Frozen V1/V2/Local UI/Launcher original paths and evidence remain unchanged; main `7a843f17eb96ed13d66f23b58b06406b3002e405` remains untouched. PR #8 at pre-checkpoint comparison: **212 add-only paths vs main, zero modified/deleted original main paths**. V3 **PR #5 remains Draft, open, unmerged, NOT_PASSED**, and protected V2 FINAL is closed.
+
+### NEW in Run 383 — three coherent FREE-only safety packages (+25 focused tests)
+
+1. **Personal Context cached nested values (+8):** `personal_context_reuse_review.py` now captures exact nested `SyntheticContextItem` values, not merely outer frozen dataclass/tuple references. A stale or malformed cached value silently rewritten to match the fresh projection during an intervening callback is rejected. A receipt contains no Memory text and grants no model use, disclosure, dispatch or consent.
+2. **Synthetic approval cancellation history/source epoch (+10):** `agency/synthetic_approval_cancellation_review.py` now pins scalar fields of optional retained witness evidence and checks them before/after each SQLite read or append, preventing a reflected mutation to another locally valid history prefix. Its initialized SQLite `Path` identity is checked before use and commit. The local ledger still does not authenticate an issuer or grant one-shot execution authority.
+3. **Personal Context revocation source fencing (+7):** `personal_context_revocation_review.py` and `personal_context_revocation_continuity_review.py` pin the initialized SQLite source path across veto append, not-revoked check and retained-history review. Reentrant path retargeting fails closed; speculative inserts roll back. Does not prove external custody, legal deletion, absence of consent revocation, or filesystem-level swap resistance.
+4. **Technical safety evidence:** extended `docs/JARVIS_REVIEW_EPOCH_AND_REPLAY_BOUNDARIES.md` with explicit limits for the three new source guards. No frozen contracts, backend interfaces, model parameters or V1 schema changed.
+
+### Exact-head CI / failures and remediation
+
+- Work basis Run382 checkpoint **#613 / run `40064811478`: SUCCESS 6/6**. Earlier source-only **#614 / `40065122540`: SUCCESS 6/6** for `1dbc484daa7918dfd96ca5e9d2aa95b43153aad8` only.
+- Newly added nested-cache regression had one **test expectation error**: after a reflected tuple-to-list replacement, production correctly rejected with `cached context differs...` before raising its exact-shape diagnostic. Source remained fail-closed; the test was corrected to accept either rejection message in ordinary Contents commit `cf6a7528bc503e13ec140909a299084220cb5335`. Earlier **#615–#618** and **#620** were FAIL on that test; failures are NOT evidence of the final source HEAD.
+- Corrected **source/test HEAD** `cf6a7528bc503e13ec140909a299084220cb5335`: **CI #621 / run `40065380827`**, checkpoint preflight **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED**. Ubuntu 3.13 has **Ruff PASS / 1376 pytest passed** at this exact HEAD.
+- Final **engineering/docs HEAD** `e3894e0075c5258fe0b5d6927cde5b5a0bdb183b`: **CI #622 / run `40065407342`**, preflight **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED**. Ubuntu 3.13 also logged **Ruff PASS / 1376 pytest passed**. This is NOT yet a 6/6 claim unless all six actual jobs finish GREEN. The new checkpoint's own CI is separate and has no inherited status.
+- Previous Run382 baseline 1351 tests; **+25 new** synthetic regression cases this invocation. Earlier local or other-HEAD success does not validate a new HEAD. No manual duplicate workflow dispatch, protected evaluation, media capture, live notification or real backend occurred.
+
+### Preserved gates / blockers
+
+No paid or potentially billable new service, external GPU, model training, real Candidate/weights, protected V2 FINAL opening, authentic approval, new credentials, account connection, physical-PC action, irreversible deletion, data export, actual notifications, ToolBackend effect, main merge, frozen contract/schema change, force push or hidden Git write route. All commits used the normal GitHub Contents write path with latest-HEAD preflight; failed HEADs were not force-overwritten. Separately retained historical witnesses matter: a hash rewritten alongside a local SQLite file is not independent attestation. Local clocks remain caller-supplied/untrusted. Read-only pre/post reviews cannot create a global atomic snapshot or close post-review races. UNKNOWN WRITE remains **NEVER automatically replayed**.
+
+### Next plan / 今後の方針
+
+1. Confirm final **#621 / #622** six-way Ubuntu/Windows Python 3.11–3.13 results and then the exact **checkpoint-result HEAD CI**, without running duplicate workflows. Fix any failure via a minimal normal Contents edit; advance a non-conflicting lane while CI runs.
+2. Extend captured/reused context `ContextSelectionPolicy`, request epoch and revocation-witness continuity through final callbacks; explicitly keep all context use/disclosure authority FALSE until authenticated opt-in/legal gates.
+3. Strengthen historical approval-claim/Occurrence/Audit/Planner witness custody and source path/restart invariants. Introduce no real dispatch, inferred consent, cross-store atomicity or UNKNOWN WRITE retry.
+4. Continue durable Memory event/CAS/snapshot races, expiry/privacy read-only diagnoses, Scheduler restart/readiness and Observation fixture provenance independently. OS-level SQLite file replacement and separately retained evidence authenticity remain unresolved.
+5. Keep V3 PR #5 Draft/NOT_PASSED, protected V2 FINAL closed, and all GPU/training/Candidate/paid-evaluation boundaries unentered. No user confirmations are assumed.
+
+---
+
+**HISTORICAL — Run 382 and earlier (unaltered prior checkpoint follows)**
+
+# ARK AI Project Status
+
 
 **LATEST — Run 382**
 
