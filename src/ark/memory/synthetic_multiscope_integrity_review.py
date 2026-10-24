@@ -15,9 +15,9 @@ from dataclasses import dataclass
 from .contracts import MemoryScope
 from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
 from .synthetic_event_continuity_review import (
+    _DIGEST,
     SyntheticMemoryEventRejected,
     SyntheticMemoryEventWitness,
-    _DIGEST,
     _genesis,
     _hash,
     _scope_digest,
