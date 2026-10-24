@@ -138,6 +138,16 @@ def review_synthetic_claim_write_provenance(
     )
     registry_epoch = registry.revision
     topology_epoch = journal._steps
+    retained_inputs = (
+        (retained_cancellation, SyntheticCancellationWitness),
+        (retained_plan, SyntheticPlanTail),
+        (retained_ledger, SyntheticLedgerWitness),
+        (retained_audit, AuditContinuityWitness),
+        (retained_audit_links, SyntheticAuditLinkWitness),
+        (retained_claim_links, SyntheticClaimLinkWitness),
+    )
+    if any(value is not None and type(value) is not expected for value, expected in retained_inputs):
+        raise SyntheticClaimProvenanceRejected("retained witness requires an exact type")
     retained_epochs = tuple(
         (witness, tuple(getattr(witness, field.name) for field in fields(witness)))
         for witness in (
