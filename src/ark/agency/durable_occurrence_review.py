@@ -169,9 +169,16 @@ class SyntheticOccurrenceStore:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticReplayRejected("synthetic occurrence source must be a Path")
+        # Auth token fields must be pinned *before* the registry callback.
+        # Otherwise a reflected token swap during first bind becomes the
+        # supposed original epoch and can reserve a different token.
+        token_epoch = (token.token_id, token.request_id, token.expires_at_ms)
         try:
             first = registry.bind(call)
-            token_epoch = (token.token_id, token.request_id, token.expires_at_ms)
+            if (token.token_id, token.request_id, token.expires_at_ms) != token_epoch:
+                raise SyntheticReplayRejected(
+                    "synthetic token changed during registry binding"
+                )
             if first.registration.effect is not Effect.WRITE:
                 raise SyntheticReplayRejected("only synthetic WRITE occurrences can reserve")
             if token.request_id != first.call.request_id or token.expires_at_ms <= now_ms:
