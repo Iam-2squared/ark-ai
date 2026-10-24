@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — Run 387**
+
+Saved at: **2026-10-24T17:58:45.816+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled before this ordinary Contents write; **not** a GitHub server-receipt timestamp).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `ab129dbce951d69cee591a42a519a44be4995e40` (Run386 checkpoint; **CI #659 / run `40076457363` GREEN**).
+Exact **final source+tests HEAD**: `1a18e387c6d03ffdbb98296222b3ef81fc218b2c`.
+Exact **final source+tests+engineering documentation / checkpoint write-basis HEAD**: `d37bb1839635d76bf7531a09a4922ef2a4c309ef`.
+**Checkpoint-result-HEAD:** unknown at text-authorship time. The ordinary GitHub Contents `update_file` response's `commit_sha` is the authoritative result; a later exact PR HEAD read must confirm it. Do **not** assign prior-head CI to this checkpoint commit.
+
+Overall ARK state: **disconnected, isolated, reversible local-first synthetic/mock JARVIS foundations**. Authenticated human issuer/subject/recipient consent, trusted clock, OS-level file custody, cross-SQLite atomic snapshots, real ToolBackend execution, real external exactly-once effects, Candidate promotion, and complete JARVIS PASS are **NOT** achieved. Frozen V1/V2/Local UI/Launcher contracts/evidence are unchanged. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`; exact main comparison before this checkpoint: **232 add-only files, zero modified/deleted original main paths**. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`; protected V2 FINAL remains closed.
+
+### NEW in Run 387 — four independent FREE-only safety packages (+31 regression tests)
+
+1. **First-bind PermissionGate authority epoch (+12):** `src/ark/agency/policy.py` pins original ToolCall fields/arguments-object and optional one-shot token fields *before* the first potentially reentrant registry bind. Rechecks occur after both binds, grant materialization, and during/after the token-spend path, rejecting first-bind scope/arguments/token substitutions without spending the process-local token. `tests/test_registered_permission_first_bind_epoch_run387.py`. No authenticated human approval or real dispatch.
+2. **ActionAudit SQLite source fences (+7):** `src/ark/agency/audit.py` rejects reflected path retargeting at write-handle admission and before commit, and at read-handle admission, during schema/row checks, and after hydration, including zero-row reads. One rollback test injects source mutation just after INSERT, verifying no committed event. `tests/test_action_audit_source_epoch_run387.py`. Not OS-level file attestation.
+3. **Personal Context retention cross-store source pin (+7):** `src/ark/personal_context_retention_review.py` pins original Memory and revocation-ledger Path objects before revocation preflight; rechecks around Memory read and after the second veto review. Uses only synthetic private fixtures, no deletion or disclosure. `tests/test_retention_source_epoch_run387.py`. Separate SQLite snapshots remain non-atomic.
+4. **Observation/Trigger cross-pass source pin (+5):** `src/ark/proactive_observation_lineage_fence_review.py` preserves exact ledger Path identity *between* two independent lineage/freshness passes, including equal-string replacement (which Path equality alone misses). `tests/test_observation_trigger_source_epoch_run387.py`. No media capture, notification or actual action.
+
+Engineering evidence/threat model: `docs/JARVIS_REENTRANT_EVIDENCE_EPOCH_RUN387.md`.
+**10 ordinary GitHub Contents commits before this checkpoint** (four source updates, four new test files, one focused Ruff import fix and one threat-model document). No raw Git objects, force push/ref rewrite, manual duplicate CI dispatch, merge, protected FINAL access or paid compute.
+
+### Exact-head CI evidence, intermediate failures and repair
+
+- Run386 checkpoint `ab129db...`: **CI #659 / run `40076457363` GREEN 6/6**.
+- First registered PermissionGate source/test heads: **CI #660 / run `40079393632` GREEN 6/6** and **#661 / run `40079449251` GREEN 6/6**. Their evidence is limited to those exact HEADs.
+- Audit-only source head CI **#662 / run `40079490665`: FAIL** due to Windows Python 3.11 unrelated local UI HTTP-body test `tests/ui/test_server.py::test_malformed_and_oversized_http_body` raising WinError 10053 during socket access; the other five platform jobs passed. This does not establish a failure or bypass in the new audit path; do not conceal the test failure.
+- CI **#663–#665 FAIL** on new ActionAudit regression-test import order (Ruff I001), an exact-head lint failure. Repaired by normal Contents commit `3dd90d838bc8276392def579b2f3bd54b5d65da6`, preserving the new security tests and semantics.
+- Fixed source/test head `3dd90d...`: **CI #666 / run `40079756361` GREEN 6/6** at latest workflow status read.
+- Observation source head `b65496ffcaf5394f471290e7fb0196ceea86f88b`: **CI #667 / run `40079835848` GREEN 6/6**.
+- Final **source+tests HEAD** `1a18e387c6d03ffdbb98296222b3ef81fc218b2c`: **CI #668 / run `40079869198` completed SUCCESS** at latest workflow status read; Ubuntu Python 3.13 success is independently observable.
+- Final **source+tests+document HEAD** `d37bb1839635d76bf7531a09a4922ef2a4c309ef`: **CI #669 / run `40079944630` IN PROGRESS** at checkpoint authoring: Ubuntu Python 3.11/3.12/3.13 **GREEN**, Windows three environments still running. Ubuntu Python 3.13 job `120831216919` logged **Ruff PASS and 1482 pytest passed** (Run386 baseline 1451 + **31** tests). **Do not claim 6/6 GREEN for this head or the unwritten checkpoint-result HEAD.**
+- All workflows are existing PR-triggered public CI only; no manually dispatched duplicate action.
+
+### Frozen safety gates and honest limitations
+
+**ZERO new paid/billable service, external GPU, real Candidate adapter/weight work, protected V2 FINAL opening, automatic promotion, credentials/account connection, physical computer action, real tool execution, media capture, notifications, personal data erasure, new consent assertion, irreversible action or main merge.** No original frozen contract/evidence/Memory v1 schema changed.
+
+Path-object identity is a local reflected-mutation fence, not filesystem custody, independent signatures or protection against replacement after return. SHA digests alone do not authenticate provenance or an approval issuer. Memory/veto/Planner/Audit/Occurrence SQLite files are not one atomic transaction. Caller timestamps are not trusted wall-clock evidence. Successful synthetic receipts cannot authorize external effects; **UNKNOWN WRITE never automatically retries**.
+
+### Next plan / 今後の方針
+
+1. Confirm **CI #669** and then checkpoint-result HEAD's own CI; if any job fails, inspect its exact log and apply the smallest permitted semantics-preserving normal Contents repair, immediately working another independent lane while CI runs. Do not mark an untested SHA GREEN.
+2. Harden Registry-bound token/Occurrence/ActionAudit/Planner Recovery cross-store input and persisted-state review epochs. Preserve separate gates for real authenticated approval, clock attestation, effect acknowledgments and UNKNOWN WRITE.
+3. Advance Memory CAS, row/event/witness continuity, TTL and coherent snapshots; Personal Context veto/retention diagnostics without executing deletion or disclosure.
+4. Continue disconnected Observation/Scheduler/startup/multimodal fixtures and free-only path/reproducibility reviews, without camera/mic/notification/external Backend activation.
+5. Maintain PR #5 Draft/NOT_PASSED, protected V2 FINAL closed, no Candidate generation, promotion, main merge, external GPU or charge without explicit authorization.
+
+---
+
+**HISTORICAL — Run 386 and earlier (previously saved canonical text follows unchanged)**
+
+# ARK AI Project Status
+
 **LATEST — Run 386**
 
 Saved at: **2026-10-24T17:01:46.718+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled before the ordinary GitHub Contents checkpoint write; NOT a GitHub server receipt timestamp).
