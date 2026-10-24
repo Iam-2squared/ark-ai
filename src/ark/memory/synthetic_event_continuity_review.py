@@ -114,10 +114,28 @@ def review_synthetic_memory_event_continuity(
     genesis = SyntheticMemoryEventWitness(scope_hash, 0, 0, _genesis(scope_hash))
     prefixes = [genesis]
     path_epoch = memory.path
+
+    def assert_epoch() -> None:
+        if memory.path is not path_epoch or (
+            scope.owner_id, scope.namespace
+        ) != original:
+            raise SyntheticMemoryEventRejected(
+                "Memory source or scope changed during review"
+            )
+        if retained is not None and retained_epoch != (
+            retained.scope_digest, retained.event_count,
+            retained.last_event_id, retained.tail_hash,
+        ):
+            raise SyntheticMemoryEventRejected(
+                "independently retained Memory witness changed during review"
+            )
+
     with closing(memory._connect_readonly()) as conn:
         conn.execute("BEGIN")
         try:
+            assert_epoch()
             _validate_v1_schema(conn)
+            assert_epoch()
             events = conn.execute(
                 """SELECT event_id,memory_id,owner_id,namespace,operation,
                           revision,occurred_at_ms FROM memory_events
@@ -125,11 +143,13 @@ def review_synthetic_memory_event_continuity(
                    ORDER BY event_id LIMIT ?""",
                 (*original, _MAX + 1),
             ).fetchall()
+            assert_epoch()
             if len(events) > _MAX:
                 raise SyntheticMemoryEventRejected("Memory event review budget exceeded")
             states: dict[str, tuple[bool, int]] = {}
             last_id = 0
             for raw in events:
+                assert_epoch()
                 event_id, memory_id, owner, namespace, op, revision, at_ms = raw
                 if (
                     type(event_id) is not int
@@ -164,17 +184,21 @@ def review_synthetic_memory_event_continuity(
                 prefixes.append(SyntheticMemoryEventWitness(
                     scope_hash, prior.event_count + 1, event_id, digest,
                 ))
+                assert_epoch()
                 last_id = event_id
             stored = conn.execute(
                 """SELECT * FROM memories WHERE owner_id=? AND namespace=?
                    ORDER BY memory_id LIMIT ?""",
                 (*original, _MAX + 1),
             ).fetchall()
+            assert_epoch()
             if len(stored) > _MAX:
                 raise SyntheticMemoryEventRejected("Memory row review budget exceeded")
             live: dict[str, int] = {}
             for row in stored:
+                assert_epoch()
                 record = _record(row)
+                assert_epoch()
                 if record.scope != pinned or record.memory_id in live:
                     raise SyntheticMemoryEventRejected("Memory live row scope changed")
                 live[record.memory_id] = record.revision
@@ -186,26 +210,18 @@ def review_synthetic_memory_event_continuity(
                 raise SyntheticMemoryEventRejected(
                     "Memory event lifecycle differs from live rows"
                 )
+            assert_epoch()
             if retained is not None and (
-                retained_epoch != (
-                    retained.scope_digest, retained.event_count,
-                    retained.last_event_id, retained.tail_hash,
-                )
-                or retained.event_count >= len(prefixes)
+                retained.event_count >= len(prefixes)
                 or prefixes[retained.event_count] != retained
             ):
                 raise SyntheticMemoryEventRejected(
                     "independently retained Memory history changed"
                 )
+            assert_epoch()
             conn.commit()
         except BaseException:
             conn.rollback()
             raise
-    if memory.path is not path_epoch or (scope.owner_id, scope.namespace) != original:
-        raise SyntheticMemoryEventRejected("Memory source or scope changed during review")
-    if retained is not None and retained_epoch != (
-        retained.scope_digest, retained.event_count,
-        retained.last_event_id, retained.tail_hash,
-    ):
-        raise SyntheticMemoryEventRejected("independently retained Memory witness changed")
+    assert_epoch()
     return prefixes[-1]
