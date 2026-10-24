@@ -126,7 +126,7 @@ def review_synthetic_write_plan(
     try:
         write_steps = []
         seen_requests = set()
-        for step, name, call, _dependencies, _arguments, request in snapshots:
+        for _step, name, call, _dependencies, _arguments, request in snapshots:
             assert_epoch()
             bound = registry.bind(call)
             assert_epoch()
