@@ -109,10 +109,16 @@ def read_proactive_witness(
         try:
             _validate(conn)
             assert_epoch()
-            hashes = tuple(sorted(
-                _digest("ARK-trigger-row-v1", row)
-                for row in conn.execute(_ROWS)
-            ))
+            # Per-row hashing is observable/reentrant Python. An earlier
+            # ledger path or retained witness must not drift temporarily and
+            # then be restored by a later row's digest callback.
+            row_hashes = []
+            for row in conn.execute(_ROWS):
+                assert_epoch()
+                row_hashes.append(_digest("ARK-trigger-row-v1", row))
+                assert_epoch()
+            hashes = tuple(sorted(row_hashes))
+            assert_epoch()
             witness = SyntheticTriggerWitness(
                 hashes, "synthetic_triggers_" + _digest(
                     "ARK-trigger-witness-v1", hashes,
