@@ -277,6 +277,7 @@ class SQLiteMemoryStore:
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
         with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
+            _validate_v1_schema(conn)
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
@@ -307,6 +308,7 @@ class SQLiteMemoryStore:
         MemoryQuery(pinned_scope, pinned_text, pinned_limit, pinned_include_expired)
         with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
+            _validate_v1_schema(conn)
             # The SELECT anchors the SQLite snapshot before the clock. A
             # concurrent writer in the clock callback cannot mix epochs.
             rows = conn.execute(
@@ -450,6 +452,8 @@ class SQLiteMemoryStore:
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
         with closing(self._connect_readonly()) as conn:
+            conn.execute("BEGIN")
+            _validate_v1_schema(conn)
             rows = conn.execute(
                 """SELECT * FROM memory_events
                 WHERE owner_id=? AND namespace=? AND event_id>?
