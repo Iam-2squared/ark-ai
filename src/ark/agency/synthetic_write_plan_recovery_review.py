@@ -7,14 +7,19 @@ Each SQLite store remains independently committed, NOT an atomic snapshot.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 from .audit import SQLiteActionAudit
+from .audit_continuity_review import AuditContinuityWitness
 from .contracts import Effect, ToolCall
-from .planner_journal_review import SyntheticPlanJournal
+from .planner_journal_review import SyntheticPlanJournal, SyntheticPlanTail
 from .registry import ToolRegistry
-from .synthetic_occurrence_audit_link_review import SyntheticOccurrenceAuditLinkStore
+from .synthetic_occurrence_audit_link_review import (
+    SyntheticAuditLinkWitness,
+    SyntheticOccurrenceAuditLinkStore,
+)
+from .synthetic_occurrence_continuity_review import SyntheticLedgerWitness
 from .synthetic_recovery_triage import (
     SyntheticRecoveryReview,
     review_synthetic_write_recovery,
@@ -55,6 +60,10 @@ def review_synthetic_write_plan(
     registry: ToolRegistry,
     *,
     link_store: SyntheticOccurrenceAuditLinkStore | None = None,
+    retained_plan: SyntheticPlanTail | None = None,
+    retained_ledger: SyntheticLedgerWitness | None = None,
+    retained_audit: AuditContinuityWitness | None = None,
+    retained_link: SyntheticAuditLinkWitness | None = None,
 ) -> SyntheticWritePlanReview:
     """Check all WRITE step identities without calling any ToolBackend.
 
@@ -69,6 +78,14 @@ def review_synthetic_write_plan(
         or type(registry) is not ToolRegistry
         or link_store is not None
         and type(link_store) is not SyntheticOccurrenceAuditLinkStore
+        or retained_plan is not None and type(retained_plan) is not SyntheticPlanTail
+        or retained_ledger is not None
+        and type(retained_ledger) is not SyntheticLedgerWitness
+        or retained_audit is not None
+        and type(retained_audit) is not AuditContinuityWitness
+        or retained_link is not None
+        and type(retained_link) is not SyntheticAuditLinkWitness
+        or retained_link is not None and link_store is None
     ):
         raise SyntheticWritePlanReviewRejected("exact synthetic plan stores required")
     topology = journal._steps
@@ -91,6 +108,19 @@ def review_synthetic_write_plan(
             None if link_store is None else link_store._path,
         )
         registry_revision = registry.revision
+        # Retained evidence must remain the same caller-held epoch throughout
+        # every independent per-step replay, including its original carriers.
+        retained_epoch = tuple(
+            (
+                witness,
+                tuple((field.name, getattr(witness, field.name))
+                      for field in fields(witness)),
+            )
+            for witness in (
+                retained_plan, retained_ledger, retained_audit, retained_link,
+            )
+            if witness is not None
+        )
     except (AttributeError, TypeError, ValueError) as exc:
         raise SyntheticWritePlanReviewRejected("synthetic plan identity invalid") from exc
 
@@ -109,6 +139,11 @@ def review_synthetic_write_plan(
                     )
                 )
                 and registry.revision == registry_revision
+                and all(
+                    getattr(witness, field_name) is original
+                    for witness, originals in retained_epoch
+                    for field_name, original in originals
+                )
                 and len(journal._steps) == len(snapshots)
                 and all(
                     step.step_id == name
@@ -164,7 +199,7 @@ def review_synthetic_write_plan(
                 write_steps.append((name, call))
         if not write_steps:
             raise SyntheticWritePlanReviewRejected("no synthetic WRITE steps to review")
-        baseline = journal.recover()
+        baseline = journal.recover(retained=retained_plan)
         assert_epoch()
         reviews = []
         witness_epoch = None
@@ -173,6 +208,10 @@ def review_synthetic_write_plan(
             reviewed = review_synthetic_write_recovery(
                 journal, ledger_path, audit, registry, call,
                 step_id=name, link_store=link_store,
+                retained_plan=retained_plan,
+                retained_ledger=retained_ledger,
+                retained_audit=retained_audit,
+                retained_link=retained_link,
             )
             assert_epoch()
             witnesses = (
@@ -192,9 +231,13 @@ def review_synthetic_write_plan(
         repeated = review_synthetic_write_recovery(
             journal, ledger_path, audit, registry, first_call,
             step_id=first_name, link_store=link_store,
+            retained_plan=retained_plan,
+            retained_ledger=retained_ledger,
+            retained_audit=retained_audit,
+            retained_link=retained_link,
         )
         assert_epoch()
-        if repeated != reviews[0] or journal.recover() != baseline:
+        if repeated != reviews[0] or journal.recover(retained=retained_plan) != baseline:
             raise SyntheticWritePlanReviewRejected(
                 "synthetic plan evidence changed during final recheck"
             )
