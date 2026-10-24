@@ -79,11 +79,10 @@ def read_proactive_witness(
     """Read one snapshot without creating or changing the existing database."""
     if type(ledger) is not SyntheticProactiveLedger:
         raise SyntheticTriggerRejected("exact synthetic proactive ledger required")
-    if retained is not None:
-        if type(retained) is not SyntheticTriggerWitness:
-            raise SyntheticTriggerRejected("exact retained trigger witness required")
-        retained.assert_integrity()
-    # Bind both source identity and retained values before SQLite can invoke
+    if retained is not None and type(retained) is not SyntheticTriggerWitness:
+        raise SyntheticTriggerRejected("exact retained trigger witness required")
+    # Bind both source identity and retained values before even the FIRST
+    # reentrant retained.assert_integrity() callback, not only before SQLite.
     # any injectable validation/row-hydration callback. An equal-path object
     # replacement and a different valid retained witness are both drift.
     path_epoch = ledger.path
@@ -106,6 +105,11 @@ def read_proactive_witness(
             raise SyntheticTriggerRejected(
                 "proactive witness source or retained history changed during review"
             )
+
+    assert_epoch()
+    if retained is not None:
+        retained.assert_integrity()
+        assert_epoch()
 
     uri = path_epoch.resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
