@@ -1,5 +1,43 @@
 # ARK AI Project Status
 
+**LATEST — Run 393**
+
+Saved at: **2026-10-24T23:05:18.421+09:00 Asia/Tokyo/JST** (automation execution-runtime clock sampled immediately before the ordinary GitHub Contents checkpoint write, NOT GitHub server receipt time).
+
+Branch/PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. Exact **work-basis HEAD**: `a0453b7b9adfef3ef1746df55fd9db1d6a474dc5` (Run392 engineering-document HEAD, CI **#738 / run `40099012021` GREEN 6/6** verified before this invocation). Exact final **source+test HEAD**: `bfa44d5ee0700b62f21542e3d0d1041567e6f296`. Exact final **source+tests+engineering-document / checkpoint write-basis HEAD**: `5eb88c37c08d4c04f575258c3398ae846419b200`. The new **checkpoint-result-HEAD is not knowable at text authorship**; the normal GitHub Contents `update_file` response `commit_sha` must be independently verified and its own CI observed. GREEN from predecessor commits does not transfer automatically.
+
+Overall ARK state: **local-first disconnected, synthetic/mock JARVIS foundations; complete JARVIS NOT_PASSED**. No authenticated human issuer or consent, trusted clock, OS-backed file custody, atomic cross-SQLite snapshot, real ToolBackend dispatch, external effect receipt or real exactly-once proof. **Unknown WRITE is never automatically retried.** Main exact HEAD `7a843f17eb96ed13d66f23b58b06406b3002e405`; pre-checkpoint main-to-branch compare: **262 added paths, ZERO modifications/deletions of any existing main file**, 603 commits ahead, 0 behind. Frozen V1/V2/Local UI/Launcher evidence/contracts and Memory v1 DDL untouched. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`; protected V2 FINAL unopened. Run392 committed 30 synthetic regressions and the latest technical document but did not replace the last Run391 canonical status; that history is retained below.
+
+### NEW in Run393 — four compatible FREE-only safety packages (+28 parameterized regression cases)
+
+1. **Memory event replay phased custody (+8):** `src/ark/memory/synthetic_event_continuity_review.py` now pins scope fields, exact original SQLite Path object and retained prefix values after schema, event fetch, **each event digest**, live row query and **each row hydration**, not merely at the end; transient mutation/restoration between callbacks is rejected. `tests/test_memory_event_phased_epoch_run393.py`. Existing Memory v1 schema, CAS, event lifecycle, privacy erasure meaning and digest domain unchanged.
+2. **Disconnected cross-store recovery phased custody (+8):** `src/ark/agency/synthetic_recovery_triage.py` now rechecks source/action/retained-witness epochs immediately after the occurrence-reservation snapshot and **each** final Planner, Occurrence and ActionAudit history recheck. Optional audit-link sidecar validates epochs between replay/read phases. `tests/test_recovery_cross_store_phase_epoch_run393.py`. No global transaction; no conversion of UNKNOWN WRITE to successful external effect.
+3. **Privacy veto history phased custody (+6):** `src/ark/personal_context_revocation_continuity_review.py` now validates independently held revocation witness fields and exact Path identity after schema validation, row query, hash computation, witness replay, and read-only transaction completion. `tests/test_privacy_revocation_phase_epoch_run393.py`. No deletion, erasure, consent inference, data export, context-use grant, or notification.
+4. **Mock registry callback post-check (+6):** `src/ark/agency/synthetic_mock_action_cycle_review.py` now validates ToolCall/token, Planner topology, store paths and initially bound action identity **both before and after** each registry callback. Adverse injected token/source rewrites after RUNNING now fail **before** a new synthetic reservation is committed; the Planner remains UNKNOWN and non-retriable. `tests/test_mock_post_registry_epoch_run393.py`. No ToolBackend invocation.
+
+Engineering/threat-model evidence: `docs/JARVIS_REPLAY_AND_REVOCATION_PHASE_BOUNDARIES_RUN393.md`. **10 regular GitHub Contents commits before this one checkpoint:** four source updates, four new tests, initial technical document and follow-up extension. Every write was preceded by a fresh PR HEAD read; no force/raw-object bypass, duplicate manually launched workflow, merge, paid/external compute or physical PC action.
+
+### Exact-HEAD CI and pending observations
+
+- Starting basis `a0453b7...`: **#738 / run `40099012021` GREEN 6/6**.
+- Memory-only source+test HEAD `bf21e2103a1c42b398a6b1f32848c41182b454a9`: **#740 / run `40099839050` GREEN 6/6**.
+- Three-package source+test HEAD `78f5620ae2b2400af2da21d4e4cc3b45b8fa518e`: **#744 / run `40100181888` GREEN 6/6**. The initial engineering-document HEAD `329098f06ba833fa4c87e0853c8c2c5175c0a087`: **#745 / run `40100297330` GREEN 6/6**. Ubuntu Python3.13 at #744 recorded Ruff PASS and **1658 passed**.
+- Final source+test HEAD `bfa44d5ee0700b62f21542e3d0d1041567e6f296`: **#747 / run `40100553691` 5/6 GREEN, 0 FAIL, Windows3.13 IN PROGRESS** on latest direct job read. Ubuntu Python3.13 job `120891649683`: **Ruff PASS, pytest 1664 passed** (Run392 baseline 1636 + 28).
+- Final source+tests+document `5eb88c37c08d4c04f575258c3398ae846419b200`: **#748 / run `40100628534` 3/6 GREEN, 0 FAIL, Windows 3 jobs IN PROGRESS** on latest direct job read. These statuses are exact-commit observations only; neither newer commits nor a future checkpoint are declared 6/6 GREEN.
+- New checkpoint commit: **CI NOT YET OBSERVED** at this text authorship. No duplicate CI dispatch was requested. Actual failures, if any, must be preserved with run IDs and fixed normally; no test/frozen evaluation gate may be weakened.
+
+### Safety boundaries, blockers and Next plan / 今後の方針
+
+**STOP-GATED:** any spending/billable action, external GPU/API, real Candidate/adapter/weights, protected V2 FINAL, V3 Candidate promotion, credentials/accounts, physical PC operation, destructive privacy erasure, frozen-contract change, external ToolBackend, live camera/microphone, notification dispatch or main merge requiring approval. PR #8 and #5 remain Draft/unmerged. External approval, trusted issuer/clock, OS-backed storage/identity custody, atomic cross-store authority, backend idempotency and outcome reconciliation are unproven. Local SHA-256 chains and Python Path-object identity are not cryptographic provenance, cross-process isolation, or proof of real-world effects. Mock SUCCESS **is not** a real WRITE success.
+
+**Prioritized Next plan / 今後の方針:** (1) Observe exact #747/#748 Windows results and **new checkpoint's own CI**, correct failures via normal GitHub Contents route without weakening semantics; (2) build separately retained, restart/reopen-safe, **disconnected** Planner/Claim/Occurrence/Audit crash-boundary reconciliation fixtures, especially repeated UNKNOWN WRITE and absent/contradictory sidecars, with no replay; (3) strengthen Memory event/CAS/expiry coherent-snapshot failure injection and Personal Context retention/revocation/privacy scope, preserving independent evidence; (4) advance Observation/Scheduler/Startup Readiness and V3 FREE-only guards in independent reversible lanes; (5) keep real execution blocked until explicit human authorization and verified issuer/time, OS custody and backend reconciliation evidence establish the missing execution contract.
+
+---
+
+**HISTORICAL — prior canonical Run391 and earlier text retained verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 391**
 
 Saved at: **2026-10-24T22:10:51.886+09:00 Asia/Tokyo/JST** (automation execution-runtime clock sampled immediately before ordinary GitHub Contents checkpoint write; this is NOT the GitHub server receipt time).
