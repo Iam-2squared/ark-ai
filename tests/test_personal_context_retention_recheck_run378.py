@@ -67,7 +67,10 @@ def test_same_moment_retention_review_is_stable(tmp_path: Path):
     assert len(result.expired_memory_ids) == 1
 
 
-@pytest.mark.parametrize(("now", "age"), [(99, 10), (106, 5), (101, 0), (True, 5), (101, True), (2**63, 5)])
+@pytest.mark.parametrize(
+    ("now", "age"),
+    [(99, 10), (106, 5), (101, 0), (True, 5), (101, True), (2**63, 5)],
+)
 def test_expired_regressed_and_nonexact_clock_inputs(tmp_path: Path, now, age):
     with pytest.raises(SyntheticRetentionRecheckRejected, match="exact|expired"):
         _review(_fixture(tmp_path), now_ms=now, max_age_ms=age)
