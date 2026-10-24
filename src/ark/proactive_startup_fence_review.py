@@ -20,7 +20,7 @@ from .startup_readiness_lease_review import (
     SyntheticReadinessRequirement,
     review_synthetic_startup_lease,
 )
-from .startup_readiness_review import StartupSnapshot
+from .startup_readiness_review import ComponentResult, StartupSnapshot
 
 
 class SyntheticProactiveStartupRejected(RuntimeError):
@@ -57,6 +57,21 @@ def _epoch(value: object, carrier: type) -> tuple[object, ...]:
     return tuple(getattr(value, field.name) for field in fields(carrier))
 
 
+def _snapshot_epoch(snapshot: StartupSnapshot) -> tuple[object, ...]:
+    """Pin nested component VALUES against reflective changes during a trigger read."""
+    if type(snapshot.components) is not tuple or any(
+        type(item) is not ComponentResult for item in snapshot.components
+    ):
+        raise SyntheticProactiveStartupRejected("exact snapshot component types required")
+    return (
+        snapshot.digest,
+        tuple((
+            item.component_id, item.dependencies, item.local_state,
+            item.effective_state, item.failure_code, item.schema_revision,
+        ) for item in snapshot.components),
+    )
+
+
 def review_synthetic_proactive_startup(
     ledger: SyntheticProactiveLedger,
     receipt: SyntheticTriggerReceipt,
@@ -91,8 +106,7 @@ def review_synthetic_proactive_startup(
         _epoch(receipt, SyntheticTriggerReceipt),
         _epoch(policy, SyntheticTriggerPolicy),
         tuple((item, item.component_id, item.schema_revision) for item in requirements),
-        snapshot.digest,
-        snapshot.components,
+        _snapshot_epoch(snapshot),
         ledger.path,
         source_digest,
         observation_digest,
@@ -121,6 +135,14 @@ def review_synthetic_proactive_startup(
     last_trigger = review_prepared_trigger_freshness(
         ledger, receipt, policy, **trigger_kwargs,
     )
+    # No more callbacks below this point should precede the final integrity
+    # check. The earlier readiness lease does not cover a late trigger callback.
+    try:
+        snapshot._assert_integrity()
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise SyntheticProactiveStartupRejected(
+            "startup snapshot changed after readiness review"
+        ) from exc
     if (
         first_ready != last_ready
         or first_trigger != last_trigger
@@ -128,8 +150,7 @@ def review_synthetic_proactive_startup(
             _epoch(receipt, SyntheticTriggerReceipt),
             _epoch(policy, SyntheticTriggerPolicy),
             tuple((item, item.component_id, item.schema_revision) for item in requirements),
-            snapshot.digest,
-            snapshot.components,
+            _snapshot_epoch(snapshot),
             ledger.path,
             source_digest,
             observation_digest,
