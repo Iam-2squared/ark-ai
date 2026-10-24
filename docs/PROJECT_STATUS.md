@@ -1,5 +1,48 @@
 # ARK AI Project Status
 
+**LATEST — Run 401**
+
+Saved at: **2026-10-25T05:05:00.254+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled just before the normal GitHub Contents write; **not** a trusted Tool clock, GitHub server receipt timestamp or authenticated human consent).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `253417b96d7c6b2344a1b7e6166060db67df2de5` (**CI #846 / run `40123223659` GREEN all six jobs**, observed before development).
+Exact **last source+test HEAD**: `bf9e49811116c397ed32e8738989b10096c98bd4` (**CI #858 / run `40127770717` GREEN all six Ubuntu/Windows Python 3.11–3.13 jobs**, independently observed; Ubuntu Python 3.13 job `120972782151`: **Ruff PASS / 1883 tests passed in 38.30s**).
+Exact **source+test+engineering-document / checkpoint write-basis HEAD**: `2f7a2ea03d177053bd76092ccca75da373c53f14` (**CI #859 / run `40127831445` 4/6 GREEN, zero FAIL, Windows Python 3.12/3.13 IN PROGRESS** on last independent job read). These are distinct exact-head conclusions; do not infer GREEN for unfinished jobs.
+The **checkpoint-result HEAD cannot be known while authoring the checkpoint**; the normal GitHub Contents `update_file` response contains the authoritative result SHA, and its own exact-head CI must be checked separately.
+
+**Overall ARK state:** local-first, disconnected **synthetic/mock JARVIS foundations only; complete JARVIS NOT_PASSED**. No verified authenticated human issuer/approval, external trusted clock, real backend result receipt, OS file-descriptor/inode custody, atomic cross-SQLite snapshot, trained Candidate or provable external exactly-once behavior. A local diagnostic or mock receipt grants NO real action authority. **UNKNOWN WRITE stays UNKNOWN; automatic replay is forbidden.**
+
+### NEW Run401 — four FREE-only source/test work packages (+21 synthetic regression cases)
+
+1. **PermissionGate bounded grants (+6):** `src/ark/agency/policy.py`, `tests/test_permission_grant_budget_run401.py`. Fail closed at the 1,025th yielded CapabilityGrant (max 1,024) on both direct and registered paths; prevent unbounded caller-supplied grant iteration before token spend. Four READ/WRITE direct/registered overflow cases verify WRITE tokens remain unconsumed, and two exact-cap cases accept; no backend dispatch. This does not prove any human or durable authorization.
+2. **Personal Context revocation scope custody (+6):** `src/ark/personal_context_revocation_review.py`, `tests/test_personal_context_veto_scope_epoch_run401.py`. Capture original MemoryScope owner/namespace identities and original namespace tuple before first veto, reject owner/namespace redirection during first/second revocation checks and equal-valued namespace tuple replacement. Inert projection only; no consent, erasure, notification or export.
+3. **Memory coherent snapshot scan budget (+5):** `src/ark/memory/coherent_snapshot_review.py`, `tests/test_memory_snapshot_scan_budget_run401.py`. Replace unbounded `fetchall()` hydration by per-namespace `fetchmany(10_001)` and refuse a namespace with >10,000 physical candidates rather than silently truncating ranking. Exact-budget and multi-namespace boundaries verified; read-only and **frozen Memory v1 DDL untouched**.
+4. **Planner journal nested-carrier epoch (+4):** `src/ark/agency/planner_journal_review.py`, `tests/test_planner_journal_nested_carrier_run401.py`. Retain original PlanStep, ToolCall, argument and dependency carriers before the first topology hash; recheck across reentrant replay and snapshot callbacks and before SQLite append COMMIT. Value-equal replacement after tentative event/header writes fails shut and rolls back. RUNNING remains ambiguous/non-replayable.
+
+Engineering threat matrix, exact tests and explicit non-proofs: `docs/JARVIS_BOUNDED_GRANTS_PRIVACY_VETO_MEMORY_SCAN_RUN401.md`.
+**13 ordinary GitHub Contents commits BEFORE this single status checkpoint:** four substantive source edits, four new regression files, one engineering-document create+extension (two commits), and three semantics-preserving Ruff import-layout repairs. No force-push, raw Git-object/ref bypass, manually duplicated CI runs, paid/external GPU or APIs, account connections, protected evaluation, Candidate/weight generation, main merge or actual backend/notification/sensor action.
+
+### Exact-head CI and frozen evidence
+
+- Initial Run400 checkpoint `253417b96d7c6b2344a1b7e6166060db67df2de5`: **#846 / `40123223659` GREEN 6/6**, original 1862 pytest cases passed.
+- Intermediate #847–#854: **FAIL**, due to Ruff I001 on module-level constant placement after imports; fixed with ordinary source writes. Do not reclassify these CI runs as GREEN.
+- `ba6234eb444770c9b3576dfa175559a1a0f145d2`: **#855 / `40127402946` GREEN 6/6**; Ubuntu Python3.13 **Ruff PASS / 1879 passed** (job `120971665161`).
+- Final source/test `bf9e49811116c397ed32e8738989b10096c98bd4`: **#858 / `40127770717` GREEN 6/6**; Ubuntu Py3.13 job `120972782151`: **Ruff PASS / 1883 passed in 38.30s**.
+- Final source/test/engineering-doc checkpoint write-basis `2f7a2ea03d177053bd76092ccca75da373c53f14`: **#859 / `40127831445` 4/6 GREEN, 0 FAIL; Windows Python3.12/3.13 IN PROGRESS** on last read. No result inherited from #858.
+- Baseline main `7a843f17eb96ed13d66f23b58b06406b3002e405`; **non-truncated exact recursive tree-to-tree blob comparison** at checkpoint write-basis: **308 ADDED paths, 0 modified existing-main blobs, 0 deleted paths** (402 branch blobs versus 94 main). PR #5 head `d6d4c1954a85fc716b1c593ac55c85417912418f` remains **Draft/open/unmerged/NOT_PASSED**. Frozen V1/V2/Local UI/Launcher contracts/evidence, Memory v1 DDL, protected V2 FINAL and V3 Contract 1 remain untouched.
+
+### Blockers / authorization boundaries / Next plan / 今後の方針
+
+**Hard NO without explicit user gate:** paid or potentially billable service, external GPU/API, protected V2 final-evaluation opening, real Candidate adapter/weights or promotion, frozen-contract edits, destructive/irreversible writes, secrets/new connections, live hardware/ToolBackend/notification or main merge requiring approval. V3 still lacks independently established immutable HF model and tokenizer file bytes/hashes, complete human-reviewed 120/30 dataset/rights/contamination decisions, pinned runtime/export-tool identity and explicit preflight cost authorization. Do NOT fabricate these or start training.
+
+**Next plan / 今後の方針:** (1) independently observe remaining exact #859 Windows jobs and the **new checkpoint SHA's own CI**, repair real regressions with normal GitHub source/test writes and fresh HEAD if needed, never duplicate workflows; (2) compose Planner, Registry, PermissionGate, occurrence, ActionAudit and disconnected mock executor with explicit restart/crash fault injection and UNKNOWN non-replay, without real dispatch; (3) review Memory CAS/expiry/coherent snapshot and Personal Context revocation race/lifecycle; (4) add offline authenticated-issuer/trusted-clock *interfaces* with untrusted clocks and approval still rejected, no irreversible architecture choice; (5) continue reversible Scheduler/Observation and free-only V3 provenance/identity/path guard review with all paid/frozen gates shut.
+
+---
+
+**HISTORICAL — Original Run400 canonical checkpoint and all earlier history preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 400**
 
 Saved at: **2026-10-25T03:59:23+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this ordinary GitHub Contents checkpoint write, NOT GitHub server receipt time, authenticated user consent, or a trusted Tool clock).
