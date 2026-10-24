@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .audit import SQLiteActionAudit
-from .contracts import Effect, OneShotAuthorization, StepState, ToolCall
+from .contracts import ActionAuditEvent, Effect, OneShotAuthorization, StepState, ToolCall
 from .durable_occurrence_review import SyntheticOccurrenceStore
 from .planner import PlanGraph
 from .planner_journal_review import SyntheticPlanJournal
@@ -220,7 +220,40 @@ def run_synthetic_mock_cycle(
     if fault_at == "after_reservation":
         raise SyntheticMockCrashInjected("synthetic stop after reservation")
     audit_event = audit.append(call, outcome="synthetic_audit_before_mock")
+    if type(audit_event) is not ActionAuditEvent:
+        raise SyntheticMockCycleRejected("exact synthetic audit receipt required")
+    audit_epoch = (
+        audit_event.event_id, audit_event.request_id, audit_event.tool,
+        audit_event.capability, audit_event.scope, audit_event.arguments_sha256,
+        audit_event.outcome, audit_event.occurred_at_ms,
+    )
+
+    def assert_audit_epoch() -> None:
+        if (
+            type(audit_event) is not ActionAuditEvent
+            or (
+                audit_event.event_id, audit_event.request_id, audit_event.tool,
+                audit_event.capability, audit_event.scope,
+                audit_event.arguments_sha256, audit_event.outcome,
+                audit_event.occurred_at_ms,
+            ) != audit_epoch
+            or type(audit_event.event_id) is not int
+            or audit_event.event_id < 1
+            or (
+                audit_event.request_id, audit_event.tool,
+                audit_event.capability, audit_event.scope,
+                audit_event.arguments_sha256, audit_event.outcome,
+            ) != (
+                call.request_id, call.tool, call.capability, call.scope,
+                call.arguments_sha256, "synthetic_audit_before_mock",
+            )
+        ):
+            raise SyntheticMockCycleRejected(
+                "synthetic audit receipt changed between durable phases"
+            )
+
     assert_identity_epoch()
+    assert_audit_epoch()
     assert_reservation_epoch()
     if fault_at == "after_pre_action_audit":
         raise SyntheticMockCrashInjected("synthetic stop after pre-action audit")
@@ -233,20 +266,24 @@ def run_synthetic_mock_cycle(
         )
         assert_identity_epoch()
         assert_reservation_epoch()
+        assert_audit_epoch()
         if fault_at == "after_audit_link":
             raise SyntheticMockCrashInjected("synthetic stop after audit link")
     assert_identity_epoch()
     assert_reservation_epoch()
+    assert_audit_epoch()
     # Synthetic marker construction is pure and local: NOT a backend call.
     marker = "mock_" + hashlib.sha256(
         ("ARK-no-action-mock-v1\0" + reservation.occurrence_id
          + "\0" + str(audit_event.event_id)).encode("utf-8")
     ).hexdigest()
+    assert_audit_epoch()
     if fault_at == "after_mock_marker":
         raise SyntheticMockCrashInjected("synthetic stop after in-memory mock marker")
     journal.append(step_id, StepState.SUCCEEDED, expected_revision=1, at_ms=now_ms)
     assert_identity_epoch()
     assert_reservation_epoch()
+    assert_audit_epoch()
     return SyntheticMockCycleReceipt(
         step_id, reservation.occurrence_id, audit_event.event_id, marker,
     )
