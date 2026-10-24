@@ -137,8 +137,31 @@ def make_synthetic_approval_claim(
         or not 0 <= issued_at_ms < expires_at_ms <= _MAX
     ):
         raise SyntheticApprovalRejected("invalid synthetic claim or validity window")
+    # Pin the caller's action identity BEFORE the first registry callback.
+    # A self-consistent substituted first bind is still a different request.
+    entry_arguments = call.arguments
+    entry = (call.tool, call.capability, call.scope, call.request_id)
+    revision = registry.revision
+
+    def assert_entry() -> None:
+        try:
+            stable = (
+                call.arguments is entry_arguments
+                and (call.tool, call.capability, call.scope, call.request_id) == entry
+                and registry.revision == revision
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise SyntheticApprovalRejected(
+                "synthetic approval input changed during construction"
+            ) from exc
+        if not stable:
+            raise SyntheticApprovalRejected(
+                "synthetic approval input changed during construction"
+            )
+
     try:
         bound = registry.bind(call)
+        assert_entry()
         if bound.registration.effect is not Effect.WRITE:
             raise SyntheticApprovalRejected("only WRITE claims may be modeled")
         fields = (
@@ -147,8 +170,11 @@ def make_synthetic_approval_claim(
         )
         if registry.bind(call).bound_action_id != bound.bound_action_id:
             raise SyntheticApprovalRejected("registry changed during claim construction")
+        assert_entry()
         claim = SyntheticApprovalEnvelope(_identity(fields), *fields)
+        assert_entry()
         _validate(claim)
+        assert_entry()
         return claim
     except (KeyError, TypeError, ValueError, AttributeError) as exc:
         raise SyntheticApprovalRejected("synthetic binding was rejected") from exc
@@ -182,8 +208,30 @@ def review_synthetic_approval_claim(
     expected = (issuer_digest, subject_digest, purpose_digest, recipient_digest)
     if any(type(item) is not str or not _DIGEST.fullmatch(item) for item in expected):
         raise SyntheticApprovalRejected("synthetic reviewers must supply canonical digests")
-    _validate(envelope)
+    # _validate() and registry.bind() are separate observable callbacks.
+    # Preserve the first supplied envelope and call before either runs.
     epoch = (envelope.approval_id, _fields(envelope))
+    entry_arguments = call.arguments
+    entry = (call.tool, call.capability, call.scope, call.request_id)
+    revision = registry.revision
+
+    def assert_review_entry() -> None:
+        try:
+            stable = (
+                (envelope.approval_id, _fields(envelope)) == epoch
+                and call.arguments is entry_arguments
+                and (call.tool, call.capability, call.scope, call.request_id) == entry
+                and registry.revision == revision
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise SyntheticApprovalRejected(
+                "synthetic approval review input changed"
+            ) from exc
+        if not stable:
+            raise SyntheticApprovalRejected("synthetic approval review input changed")
+
+    _validate(envelope)
+    assert_review_entry()
     if envelope.approval_id in cancelled_ids:
         raise SyntheticApprovalRejected("synthetic approval claim was cancelled")
     if not envelope.issued_at_ms <= now_ms < envelope.expires_at_ms:
@@ -195,6 +243,7 @@ def review_synthetic_approval_claim(
         raise SyntheticApprovalRejected("synthetic claim actor, purpose or recipient differs")
     try:
         bound = registry.bind(call)
+        assert_review_entry()
         if bound.registration.effect is not Effect.WRITE or (
             bound.registry_revision, bound.bound_action_id, bound.call.request_id
         ) != (
@@ -202,9 +251,11 @@ def review_synthetic_approval_claim(
         ):
             raise SyntheticApprovalRejected("synthetic registry/action binding differs")
         _validate(envelope)
+        assert_review_entry()
         if (envelope.approval_id, _fields(envelope)) != epoch:
             raise SyntheticApprovalRejected("synthetic claim changed during review")
         again = registry.bind(call)
+        assert_review_entry()
         if (
             again.registration is not bound.registration
             or again.call is not bound.call
@@ -214,4 +265,5 @@ def review_synthetic_approval_claim(
             raise SyntheticApprovalRejected("synthetic registry or claim changed during review")
     except (KeyError, TypeError, ValueError, AttributeError) as exc:
         raise SyntheticApprovalRejected("synthetic approval binding invalid") from exc
+    assert_review_entry()
     return SyntheticApprovalReview(envelope.approval_id, envelope.bound_action_id, now_ms)
