@@ -276,11 +276,19 @@ class SyntheticPlanJournal:
         A locally regenerated earlier witness provides no tamper resistance.
         No step is dispatched, and RUNNING is ambiguous rather than retried.
         """
+        path_epoch = self._path
+        if not isinstance(path_epoch, Path):
+            raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
+        pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
                 raise SyntheticPlanJournalRejected("retained tail has wrong type")
             retained.assert_shape()
-        uri = self._path.resolve().as_uri() + "?mode=ro"
+            pinned = (
+                retained.topology_digest, retained.event_count,
+                retained.event_hash, retained.status_digest, retained.last_at_ms,
+            )
+        uri = path_epoch.resolve().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
             conn.execute("BEGIN")
             try:
@@ -291,6 +299,20 @@ class SyntheticPlanJournal:
                 ):
                     raise SyntheticPlanJournalRejected("retained synthetic plan history changed")
                 result = _snapshot(graph, prefixes[-1])
+                if retained is not None:
+                    retained.assert_shape()
+                    current = (
+                        retained.topology_digest, retained.event_count,
+                        retained.event_hash, retained.status_digest, retained.last_at_ms,
+                    )
+                    if current != pinned:
+                        raise SyntheticPlanJournalRejected(
+                            "retained synthetic plan witness changed during recovery"
+                        )
+                if self._path is not path_epoch:
+                    raise SyntheticPlanJournalRejected(
+                        "synthetic plan source changed during recovery"
+                    )
                 conn.commit()
                 return result
             except BaseException:
@@ -310,6 +332,9 @@ class SyntheticPlanJournal:
         # An earlier, independently retained tail must match inside the same
         # write transaction as the new transition. Never use a separate
         # preflight read as an authority for this append.
+        path_epoch = self._path
+        if not isinstance(path_epoch, Path):
+            raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
@@ -362,14 +387,19 @@ class SyntheticPlanJournal:
                        WHERE id=1""",
                     (prev.event_count + 1, event_hash, post, at_ms),
                 )
-                conn.commit()
-                return _snapshot(
+                result = _snapshot(
                     graph,
                     SyntheticPlanTail(
                         prev.topology_digest, prev.event_count + 1,
                         event_hash, post, at_ms,
                     ),
                 )
+                if self._path is not path_epoch:
+                    raise SyntheticPlanJournalRejected(
+                        "synthetic plan source changed during append"
+                    )
+                conn.commit()
+                return result
             except BaseException:
                 conn.rollback()
                 raise
