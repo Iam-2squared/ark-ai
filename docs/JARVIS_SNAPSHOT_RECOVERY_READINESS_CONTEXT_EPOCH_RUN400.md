@@ -1,4 +1,4 @@
-# Run400 — Snapshot, planner topology, cached readiness and context callback custody
+# Run400 — Memory, recovery, readiness, context and mock-audit custody
 
 **Scope:** local-first, disconnected, synthetic safety foundations on Draft PR #8.
 **Starting exact HEAD:** `d1fcc162192cf2473c35aff9ade9fed89aa83727` (the
@@ -21,6 +21,7 @@ at precise callback boundaries, not malicious arbitrary-code execution.
 | Planner/Claim/Occurrence recovery | The outer `SyntheticPlanJournal._steps` tuple stayed identical while a nested `PlanStep` or its ToolCall/dependency carrier changed inside Registry or graph callbacks. | Pin individual original PlanStep, step name, action object/request digest, arguments carrier and dependency tuple **before** registry bind; recheck after bind, PlanGraph construction and other existing cross-store read boundaries. |
 | Startup readiness | `StartupSnapshot.state()` and `root_blockers()` checked graph integrity, then called the reentrant caller identifier validator; reflected mutation during that validator could change returned READY/blocker data after the check. | Revalidate cached snapshot integrity **after** caller identifier validation and before computing either returned diagnosis. |
 | Personal Context | Per-item provenance `_hash` callbacks ran before a final source/selection epoch review. A temporary privacy scope, Memory field or selection-policy alteration could be restored by a later item hash. | Move the existing full source-epoch predicate ahead of the selection loop and enforce it before/after **each** provenance hash and after each constructed item. |
+| Mock audit-before-action cycle | The pre-action `ActionAuditEvent` carrier was neither retained nor rechecked after a sidecar callback or marker hash. The returned marker could refer to an altered event while the persisted audit/sidecar still contained the old one. | Pin the exact local audit receipt fields immediately after append, check correspondence to ToolCall/outcome, and recheck through sidecar, marker hash and final journal phases. Reject disagreement without converting RUNNING/UNKNOWN into retry authority. |
 
 ## Exact regression fixtures
 
@@ -39,7 +40,12 @@ at precise callback boundaries, not malicious arbitrary-code execution.
   Memory content, namespace scope or round-robin budget and must fail *before*
   the second item's hash could restore input (**4 cases**).
 
-**Total introduced: 17 focused synthetic cases** in four source/test packages.
+- `tests/test_mock_cycle_audit_receipt_epoch_run400.py`: stable inert audit
+  receipt; three sidecar callback mutations of audit event ID, outcome and
+  request ID; one marker-hashing mutation that must fail before terminal
+  success (**5 cases**).
+
+**Total introduced: 22 focused synthetic cases** in five source/test packages.
 No preexisting passing test is intentionally weakened, no Memory v1 SQL DDL or
 frozen interface contract changes, and no active ToolBackend is instantiated.
 
