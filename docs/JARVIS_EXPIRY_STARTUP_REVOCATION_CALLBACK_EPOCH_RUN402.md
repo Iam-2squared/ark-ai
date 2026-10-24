@@ -2,7 +2,7 @@
 
 ## Scope and authorization status
 
-This engineering note documents **three independent, offline and reversible**
+This engineering note documents **four independent, offline and reversible**
 source/test packages on Draft PR #8. It is a threat model, not a PASS claim for
 JARVIS, a trustworthy issuer, a real ToolBackend, or privacy consent. This run
 does not open protected evaluations, train a Candidate, create an adapter, touch
@@ -81,9 +81,31 @@ nor reenrolled.
 **Synthetic regressions:** Two first-digest retargets (owner and namespace)
 plus one normal exact-scope veto/adjacent-scope isolation: **3 tests**.
 
+## Package D — restart-safe negative mock integration evidence
+
+**File:** `tests/test_mock_cycle_restart_nonreplay_run402.py` (six cases).
+This test-only integration lane reopens **all four** independently committed
+SQLite stores—Planner journal, occurrence ledger, ActionAudit and occurrence/
+audit sidecar—after each of five injected stop boundaries: after RUNNING,
+reservation, pre-action audit, audit link and in-memory mock marker. It records
+the number of persisted reservations, audit rows and sidecar links both before
+and after the attempted restart, and asserts that none increase on retry.
+The Planner must recover RUNNING as ambiguous and refuse the second WRITE,
+regardless of which other local stores show apparently consistent evidence.
+A sixth case verifies that a completed *local mock* also cannot replay after
+reinitialization. Each fixture registration uses an executable that raises
+unconditionally on invocation; it must observe **zero backend calls**.
+
+This is not a real process-kill test or proof of atomic cross-store
+transactions. Each stop is an explicit exception at a named fault boundary,
+not an OS crash. The test does not simulate arbitrary syscall interleavings,
+disk corruption, external network effects, human approval, or real clock
+provenance. Its sole claim is exact-head regression coverage for disconnected,
+conservative UNKNOWN and no-replay behavior.
+
 ## Integration and non-proofs
 
-These three packages are separate so a CI run for one module can proceed while
+These four packages are separate so a CI run for one module can proceed while
 another module is developed. All tests are offline, deterministic fixtures.
 Source/test CI should be evaluated on the **exact final source/test HEAD**
 across Ubuntu and Windows with Python 3.11–3.13; a later documentation
