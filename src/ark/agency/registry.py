@@ -11,6 +11,8 @@ from types import MappingProxyType
 
 from .contracts import Effect, ToolBackend, ToolCall
 
+_MAX_REGISTRATIONS = 256  # Bound hostile registration generators before hashing.
+
 
 def _text(name: str, value: object) -> str:
     if type(value) is not str or not value.strip():
@@ -79,28 +81,67 @@ class ToolRegistry:
     _SCHEMA_VERSION = 1
 
     def __init__(self, registrations: Iterable[ToolRegistration]) -> None:
-        snapshot = tuple(registrations)
-        for registration in snapshot:
+        # Registrations can arrive from caller-controlled generators. Never
+        # exhaust an unbounded iterator before enforcing the construction
+        # budget, and never silently accept a reflected mutation of an
+        # earlier yielded registration while reading a later one.
+        snapshot: list[ToolRegistration] = []
+        retained: list[tuple[ToolRegistration, str, str, Effect, str, ToolBackend, object]] = []
+
+        def assert_ingress_epoch() -> None:
+            for entry, name, capability, effect, backend_id, backend, execute in retained:
+                try:
+                    stable = (
+                        type(entry) is ToolRegistration
+                        and type(entry.name) is str and entry.name == name
+                        and type(entry.capability) is str
+                        and entry.capability == capability
+                        and entry.effect is effect
+                        and type(entry.backend_id) is str
+                        and entry.backend_id == backend_id
+                        and entry.backend is backend
+                        and _backend_execute_descriptor(backend) is execute
+                    )
+                except (AttributeError, TypeError, ValueError) as exc:
+                    raise ValueError(
+                        "registered tool changed during registry construction"
+                    ) from exc
+                if not stable:
+                    raise ValueError(
+                        "registered tool changed during registry construction"
+                    )
+
+        for registration in registrations:
+            assert_ingress_epoch()
+            if len(snapshot) >= _MAX_REGISTRATIONS:
+                raise ValueError("registry construction budget exceeded")
             if type(registration) is not ToolRegistration:
                 raise TypeError("registrations must contain exact ToolRegistration values")
+            retained.append((
+                registration, registration.name, registration.capability,
+                registration.effect, registration.backend_id, registration.backend,
+                _backend_execute_descriptor(registration.backend),
+            ))
+            snapshot.append(registration)
+            assert_ingress_epoch()
+        # StopIteration itself can run user code in a generator's finally.
+        assert_ingress_epoch()
 
         ordered = sorted(snapshot, key=lambda registration: registration.name)
+        assert_ingress_epoch()
         if len({registration.name for registration in ordered}) != len(ordered):
             raise ValueError("duplicate tool name")
 
         mapping = {registration.name: registration for registration in ordered}
+        assert_ingress_epoch()
         self._registrations: Mapping[str, ToolRegistration] = MappingProxyType(mapping)
-        # Pin the exact mapping object to detect reflected replacement, including
-        # a value-equal replacement proxy. Never dispatch a backend here.
         self._registry_mapping_epoch = self._registrations
+        # Capture the FIRST-observed values rather than values recomputed
+        # after revision serialization (itself a callback boundary).
+        self._registration_epoch = tuple(sorted(retained, key=lambda row: row[1]))
         self._revision = self._compute_revision(ordered)
-        self._registration_epoch = tuple(
-            (
-                entry, entry.name, entry.capability, entry.effect,
-                entry.backend_id, entry.backend, _backend_execute_descriptor(entry.backend),
-            )
-            for entry in ordered
-        )
+        assert_ingress_epoch()
+        self._assert_registration_epoch()
 
     def _assert_registration_epoch(self) -> None:
         """Detect reflected drift of registered identity without executing tools.
