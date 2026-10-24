@@ -103,15 +103,17 @@ def review_synthetic_claim_occurrence_sources(
         )
     ):
         raise SyntheticClaimSourceRejected("exact synthetic source review inputs required")
-    _retained_shape(retained_links)
-    if retained_reservations is not None:
-        if type(retained_reservations) is not SyntheticLedgerWitness:
-            raise SyntheticClaimSourceRejected("exact retained reservation witness required")
-        retained_reservations.assert_integrity()
+    if retained_links is not None and type(retained_links) is not SyntheticClaimLinkWitness:
+        raise SyntheticClaimSourceRejected("exact retained claim link witness required")
+    if (
+        retained_reservations is not None
+        and type(retained_reservations) is not SyntheticLedgerWitness
+    ):
+        raise SyntheticClaimSourceRejected("exact retained reservation witness required")
 
-    # A reflected change to a frozen retained witness can otherwise select a
-    # different *valid* earlier history during later reads. Preserve scalar
-    # values before callbacks and pin the link-store source identity.
+    # Pin original evidence BEFORE a reentrant shape/integrity validator can
+    # replace it with another valid witness. A value-equal row tuple swap is
+    # not a valid continuation of the caller's original retained carrier.
     link_path_epoch = links.path
     retained_link_epoch = (
         None if retained_links is None else (
@@ -124,17 +126,50 @@ def review_synthetic_claim_occurrence_sources(
             retained_reservations.row_hashes, retained_reservations.digest,
         )
     )
+    retained_source_rows = (
+        None if retained_reservations is None else retained_reservations.row_hashes
+    )
+
+    def assert_retained_epoch() -> None:
+        if (
+            links.path is not link_path_epoch
+            or retained_link_epoch != (
+                None if retained_links is None else (
+                    retained_links.event_count, retained_links.tail_hash,
+                    retained_links.last_linked_at_ms,
+                )
+            )
+            or retained_source_epoch != (
+                None if retained_reservations is None else (
+                    retained_reservations.row_hashes, retained_reservations.digest,
+                )
+            )
+            or (
+                retained_reservations is not None
+                and retained_reservations.row_hashes is not retained_source_rows
+            )
+        ):
+            raise SyntheticClaimSourceRejected(
+                "retained witness or source changed during review"
+            )
+
+    _retained_shape(retained_links)
+    assert_retained_epoch()
+    if retained_reservations is not None:
+        retained_reservations.assert_integrity()
+        assert_retained_epoch()
     before_links = links.read_witness(retained=retained_links)
+    assert_retained_epoch()
     before_link_epoch = (
         before_links.event_count, before_links.tail_hash,
         before_links.last_linked_at_ms,
     )
     before_source = read_synthetic_ledger_witness(reservation_path)
+    assert_retained_epoch()
     before_source_epoch = (before_source.row_hashes, before_source.digest)
-    if links.path is not link_path_epoch:
-        raise SyntheticClaimSourceRejected("claim link source changed during review")
     if retained_reservations is not None:
         assert_synthetic_history_continues(retained_reservations, before_source)
+        assert_retained_epoch()
 
     with closing(_open_ro(link_path_epoch)) as sidecar:
         with closing(_open_ro(reservation_path)) as source:
@@ -174,7 +209,9 @@ def review_synthetic_claim_occurrence_sources(
                 raise
 
     after_source = read_synthetic_ledger_witness(reservation_path)
+    assert_retained_epoch()
     after_links = links.read_witness(retained=before_links)
+    assert_retained_epoch()
     if (
         links.path is not link_path_epoch
         or before_link_epoch != (
