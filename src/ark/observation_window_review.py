@@ -98,11 +98,18 @@ class ObservationWindowReview:
             self.privacy_scope, self.observed_at_ms, self.max_age_ms
         ) != self._header_epoch:
             raise ValueError("observation window header changed after construction")
-        if (
-            type(self.envelopes) is not tuple
-            or self.envelopes is not self._carrier_epoch
-            or len(self.envelopes) != len(self._epoch)
-        ):
+        if type(self.envelopes) is not tuple or len(self.envelopes) != len(self._epoch):
+            raise ValueError("observation window tuple changed after construction")
+        if self.envelopes is not self._carrier_epoch:
+            # A substituted member preserves the original identity diagnostic;
+            # a copied tuple holding the SAME members has its own drift code.
+            if any(
+                supplied is not original
+                for supplied, (original, _identity) in zip(
+                    self.envelopes, self._epoch, strict=True,
+                )
+            ):
+                raise ValueError("observation identity changed after construction")
             raise ValueError("observation window tuple changed after construction")
         for supplied, (original, identity) in zip(
             self.envelopes, self._epoch, strict=True
