@@ -75,7 +75,6 @@ def review_revocation_continuity(
     if retained is not None and type(retained) is not SyntheticRevocationWitness:
         raise SyntheticContextRevocationRejected("exact retained witness required")
     source_path = ledger.path
-    ledger._assert_source_path(source_path)
     # Capture the caller's exact retained evidence BEFORE its first integrity
     # callback. A frozen dataclass can be reflectively mutated from inside
     # assert_integrity(), including replacement with value-equal tuple clones.
@@ -104,6 +103,9 @@ def review_revocation_continuity(
                 "retained revocation evidence changed during review"
             )
 
+    # Check source and retained inputs together before invoking either
+    # validator; source validation itself can be a reentrant test callback.
+    assert_epoch()
     if retained is not None:
         retained.assert_integrity()
         assert_epoch()
