@@ -593,21 +593,31 @@ class SQLiteMemoryStore:
             raise ValueError("limit must be an integer from 1 to 1000")
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
         path_epoch = self.path
+
+        def assert_events_epoch() -> None:
+            # Decoding individual event rows is reentrant under synthetic
+            # failure injection. Checking only after all rows lets a scope
+            # or Path retargeting be restored by the next row's callback.
+            if (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ):
+                raise MemorySchemaError("memory events scope changed during read")
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory events source changed during read")
+
         with closing(self._connect_readonly()) as conn:
             conn.execute("BEGIN")
+            assert_events_epoch()
             _validate_v1_schema(conn)
+            assert_events_epoch()
             rows = conn.execute(
                 """SELECT * FROM memory_events
                 WHERE owner_id=? AND namespace=? AND event_id>?
                 ORDER BY event_id LIMIT ?""",
                 (pinned_scope.owner_id, pinned_scope.namespace, after_event_id, limit),
             ).fetchall()
-        if (scope.owner_id, scope.namespace) != (
-            pinned_scope.owner_id, pinned_scope.namespace
-        ):
-            raise MemorySchemaError("memory events scope changed during read")
-        if self.path is not path_epoch:
-            raise MemorySchemaError("memory events source changed during read")
+            assert_events_epoch()
+        assert_events_epoch()
         # Event rows have no associated source_id after deletion, so validate
         # canonical shape and scope, not an unverifiable source-id preimage.
         # V1 permits clocks to move backwards between independent memories:
@@ -615,6 +625,8 @@ class SQLiteMemoryStore:
         result: list[MemoryEvent] = []
         previous_id = after_event_id
         for row in rows:
+            assert_events_epoch()
+
             def stored_int(event_row: sqlite3.Row, column: str, *, minimum: int) -> int:
                 value = event_row[column]
                 if type(value) is not int or value < minimum:
@@ -639,7 +651,9 @@ class SQLiteMemoryStore:
             previous_id = event_id
             try:
                 _memory_id(memory_id)
+                assert_events_epoch()
                 recorded_scope = MemoryScope(owner_id, namespace)
+                assert_events_epoch()
             except (ValueError, TypeError) as exc:
                 raise MemorySchemaError("stored event identity or scope is invalid") from exc
             if recorded_scope != pinned_scope:
@@ -649,10 +663,8 @@ class SQLiteMemoryStore:
             result.append(
                 MemoryEvent(event_id, memory_id, recorded_scope, operation, revision, occurred)
             )
-        if (scope.owner_id, scope.namespace) != (
-            pinned_scope.owner_id, pinned_scope.namespace
-        ) or self.path is not path_epoch:
-            raise MemorySchemaError("memory events source or scope changed during read")
+            assert_events_epoch()
+        assert_events_epoch()
         return result
 
     def _initialize(self) -> None:
