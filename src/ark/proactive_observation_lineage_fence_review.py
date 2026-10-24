@@ -8,6 +8,7 @@ even matching local lineage and persistent triggers confer no such authority.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 from .observation_lineage_review import review_synthetic_observation_lineage
 from .observations import ObservationEnvelope
@@ -98,10 +99,13 @@ def review_synthetic_observation_trigger(
     if len(matching) != 1:
         raise SyntheticObservationTriggerRejected("selected observation must be unique")
     selected = matching[0]
+    source_epoch = ledger.path
+    if not isinstance(source_epoch, Path):
+        raise SyntheticObservationTriggerRejected("observation trigger source is invalid")
     initial = (
         envelopes, tuple(_epoch(x) for x in envelopes),
         selected_id, selected.observation_id,
-        ledger.path, receipt.trigger_id, receipt.prepared_at_ms,
+        receipt.trigger_id, receipt.prepared_at_ms,
         policy.identity(),
     )
     source_digest = synthetic_observation_source_digest(selected.source_id)
@@ -120,17 +124,30 @@ def review_synthetic_observation_trigger(
             retained=retained,
         )
 
+    # Freshness independently pins its path only for the duration of one
+    # read. An equal-value Path replacement BETWEEN those reads otherwise
+    # looks identical to the outer evidence comparison.
+    def ensure_source_epoch() -> None:
+        if ledger.path is not source_epoch:
+            raise SyntheticObservationTriggerRejected(
+                "observation trigger source changed during review"
+            )
+
     first_lineage = lineage()
+    ensure_source_epoch()
     first_trigger = freshness()
+    ensure_source_epoch()
     final_lineage = lineage()
+    ensure_source_epoch()
     final_trigger = freshness()
+    ensure_source_epoch()
     if (
         first_lineage != final_lineage
         or first_trigger != final_trigger
         or (
             envelopes, tuple(_epoch(x) for x in envelopes),
             selected_id, selected.observation_id,
-            ledger.path, receipt.trigger_id, receipt.prepared_at_ms,
+            receipt.trigger_id, receipt.prepared_at_ms,
             policy.identity(),
         ) != initial
         or first_lineage.checked_at_ms != first_trigger.checked_at_ms
@@ -138,6 +155,7 @@ def review_synthetic_observation_trigger(
         raise SyntheticObservationTriggerRejected(
             "observation or trigger changed during disconnected review"
         )
+    ensure_source_epoch()
     return SyntheticObservationTriggerReview(
         selected_id, first_lineage.lineage_digest,
         first_trigger.trigger_id, first_trigger.history.digest, now_ms,
