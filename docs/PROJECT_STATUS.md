@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — Run 380**
+
+Saved at: **2026-10-24T11:51:11+09:00 Asia/Tokyo/JST** (runtime wall-clock sample before the normal GitHub Contents checkpoint preflight and write; NOT a fabricated server timestamp).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+Exact invocation **work-basis HEAD**: `e3a757f3462dd1fa1797c71ef4f2b971a958ab6f` (Run379 checkpoint, **CI #563 / run `40051963896` SUCCESS 6/6**).
+Exact final **engineering/source/test/specification HEAD** and **checkpoint write-basis HEAD**: `0755c65d158e1b5a7c9d393a429f04770e6de14a` (**CI #580 / run `40055814955`: 3/6 GREEN, 0 FAIL, 3 IN PROGRESS, 0 QUEUED** at this checkpoint preflight). Linux Python 3.13 at that exact HEAD logged **Ruff PASS, 1235 pytest passed**. Six-platform GREEN is **not** claimed unless all six jobs actually finish SUCCESS.
+The **checkpoint-result SHA cannot be truthfully embedded into its own content**; use the returned GitHub Contents commit SHA and independently assess its own CI. Never attribute CI #580 or earlier GREEN to the checkpoint-result commit.
+
+## Overall current ARK state and preserved gates
+
+ARK remains **local-first, research-isolated, reversible, disconnected, synthetic/mock-only**, with every approval/dispatch/replay/outcome authority surface FALSE. No authenticated human consent or issuer, trusted clock/signature/witness, cross-SQLite atomicity, real ToolBackend effect, production exactly-once, physical-PC action, external AI model training, Candidate generation, protected evaluation, paid/external GPU, notification, camera/mic/screen capture, destructive erasure, automatic promotion, or completed JARVIS has been demonstrated. **Recovered RUNNING/UNKNOWN WRITE cannot be automatically retried.**
+
+Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #8 comparison at the exact checkpoint write-basis HEAD contained **192 changed paths, all added-only versus main**, no frozen V1/V2/Local UI/Launcher original path replaced, and branch ahead of main without main modification. V3 **PR #5** remains **Draft/open/unmerged/NOT_PASSED**, exact HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`. Protected V2 FINAL and V3 Candidate gates CLOSED.
+
+## NEW — Run 380: four coherent FREE-only work packages
+
+**17 sequential ordinary GitHub Contents engineering/documentation commits before this single canonical checkpoint**. New tests **+53** (claim/occurrence re-attestation +18, Memory ordinary reads +24, Proactive path-epoch +6, Planner missing-file append +5), taking 1182 verified Run379 tests to **1235 passed on Ubuntu Python3.13 in exact source/test CI #580**. Source/test/technical docs updates were made on the isolated PR #8 Draft only, through normal Contents API; failed earlier CI heads were corrected without relaxing original safety invariants.
+
+1. **P0 claim↔occurrence source re-attestation (+18):** new `agency/synthetic_claim_occurrence_recheck_review.py` and `tests/test_synthetic_claim_occurrence_recheck_run380.py`, with a source-grounded update to `docs/JARVIS_CLAIM_OCCURRENCE_PROVENANCE_GAP.md`. Replays bounded link history and validates every saved association against current read-only SQLite reservation rows; checks exact claim/occurrence pair, Registry/Action/request identity, timestamp order, schema, optional separately retained link and source witnesses and visible before/after drift. Missing DBs cannot be recreated by read. It does **not** prove historical issuer approval, consent, independent authenticity, atomic cross-store snapshots, real effects or backend idempotency. Four authority flags remain FALSE.
+2. **P0 Memory frozen-schema epoch on ordinary reads (+24):** strengthened newly added research-only `memory/sqlite_store.py` to validate **schema version, DDL/index/trigger shape and SQLite quick_check** inside ordinary `get`, `search`, and `events` read-only snapshots, even for an empty result. Added `tests/test_memory_ordinary_read_schema_epoch_run380.py`; adjusted the existing injected-expiry-audit-failure regression to assert rollback under the injected trigger via direct SQLite reads, remove the deliberately invalid trigger, then recheck strict public read APIs. Did not change the frozen v1 DDL, CAS semantics, or authorize erasure.
+3. **P1 proactive prepared-trigger write path epoch (+6):** `proactive_synthetic_review.py` now pins a valid `Path` before any caller-controlled policy identity callback and fails closed on a reflected ledger path redirect at first, middle or last preparation phase, without modifying dedup/rolling/minimum-interval controls. `tests/test_proactive_prepare_path_epoch_run380.py` probes callback timing, no writes to source/alternate SQLite stores, strict path ingress and restart-safe dedup. Offline only: never notify or execute tools.
+4. **P0 Planner append nonrecreation (+5):** changed `agency/planner_journal_review.py` so explicit constructor `create=True` can create initial fixture storage, while ordinary `append()` connects with SQLite URI `mode=rw` and refuses to create a deleted/moved previously initialized journal. New `tests/test_planner_no_recreate_append_run380.py` covers missing/moved files, cold open, URI-special path, CAS and manual restoration. Updated `docs/PLANNER_RECOVERY.md`. RUNNING stays UNKNOWN/not auto-replayable, and no real backend effects or frozen contracts change.
+
+## Exact-head CI evidence / failures / conservative reporting
+
+- Work-basis **#563 / `40051963896` SUCCESS 6/6**.
+- Initial sidecar tests **#565–#566 FAILED** due Python `Path`-class shape check and over-escaped canonical regex; fixed without relaxing identity checks. **#567** Linux GREEN but Windows FAILED because a research test filename contained Windows-invalid `?`; fixed to preserve literal `#` / `%` URI testing.
+- Early ordinary-memory tests **#568–#572 FAILED on earlier heads**: missing explicit post-startup `user_version` validation and an earlier rollback test that intentionally kept a schema-violating injected trigger live when calling the newly fenced normal Memory read; fixed by explicit version check and asserting rollback before removing the trigger, not by bypassing validation.
+- Fixed Memory / sidecar baseline **#573 / `40055486474`: SUCCESS 6/6**, at earlier source/test HEAD `f5f5d87c15abc930cc6fe82ab0c75a7a93b76188`.
+- New proactive source/test **#574–#575 FAILED on earlier heads** because Ruff E501 on two new diagnostic messages. Later **#576–#579 FAILED on earlier heads** because a new test expected a duplicate before the existing minimum-interval gate could allow that condition. Fixed only test time `at_ms=11` while keeping minimum-interval enforcement intact. These runs do **not** certify the corrected head.
+- Final source/test/docs work-basis HEAD `0755c65d158e1b5a7c9d393a429f04770e6de14a`: **#580 / `40055814955` 3/6 GREEN, 0 FAIL, 3 IN PROGRESS, 0 QUEUED** at preflight. Ubuntu Python 3.13 logs **Ruff PASS, 1235 pytest passed**. No manual duplicate workflow was launched.
+- The **new checkpoint-result HEAD has not yet been verified** and will have its own CI run. No prior result is transferred across different SHAs.
+
+## Blockers / authorization boundary
+
+No new paid or potentially billable external service, external GPU, credentials/secrets, account integration, model training, Candidate export, protected evaluation, live notification, backend invocation, physical-PC operation, irreversible deletion, contract overwrite, bypass of normal GitHub write guards, force push, or main merge was performed. Local hashes and SQLite histories are unauthenticated and may be rewritten if their only witness is local. A successful historical association is **not** a historical approval or proof of a WRITE effect; caller time is untrusted, independent SQLite files are not an atomic global transaction, and after-final-check races remain. Any human/legal/consent/erasure and backend-effect decisions require explicit future gates.
+
+## Next plan / 今後の方針
+
+1. **P0 exact-head CI:** verify all 6 Ubuntu/Windows Python 3.11–3.13 jobs of source/test **#580** and checkpoint-result CI separately. If FAILED, inspect exact failing logs, fix only through allowed ordinary Contents API while doing independent work. No duplicate equivalent workflow runs.
+2. **P0 provenance and recovery:** correlate re-attested persisted claim↔occurrence links with Planner/ActionAudit recovery **only after prerequisite exact-head GREEN**, and never equate identical hashes with authentic user approval or backend effect. Require independent retained witnesses, trusted issuer/subject/recipient/time and recognized consent before contemplating any production grant.
+3. **P0 Memory / Planner:** continue CAS/event-history integrity, clock/epoch consistency, coherent snapshots, crash injections and UNKNOWN WRITE never-auto-replay behavior; no frozen-schema migration without explicit approval.
+4. **P1 proactive/privacy/observation:** review persisted triggers and offline readiness, retention/revocation snapshots, metadata-only Observation provenance, no live notification, camera/mic/screen access or destructive erasure.
+5. **P2 V3 free-only:** approval/path/byte-identity/reproducibility fixture guards only; PR #5 remains Draft, NOT_PASSED, Candidate and protected V2 evaluation unopened, no real adapter/weight generation.
+
+---
+
+**HISTORICAL — Run 379 and earlier**
+
+# ARK AI Project Status
+
 **LATEST — Run 379**
 
 Saved at: **2026-10-24T10:55:23+09:00 Asia/Tokyo/JST** (runtime wall clock sampled immediately before the ordinary GitHub Contents checkpoint preflight/write).
