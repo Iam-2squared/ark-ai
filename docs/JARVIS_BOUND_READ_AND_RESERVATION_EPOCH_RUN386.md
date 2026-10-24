@@ -40,6 +40,13 @@ untrusted Python interpreter, forged timestamps or colluding SQLite stores.
    initialization also checks its source before committing schema state.
    Stable fixtures retain content-free deduplication only, with
    `notification_authorized=False` and `dispatch_authorized=False`.
+5. **Synthetic authorization token epoch**
+   (`src/ark/agency/durable_occurrence_review.py`): retain exact token ID,
+   request ID and expiry values *before* the first registry callback. A
+   reflected token substitution during that first binding now rejects rather
+   than becoming the presumed original credential. The existing second-bind
+   lock-time check still prevents an in-transaction replacement. This is
+   fixture-level replay resistance, not an authenticated grant.
 
 ## Regression coverage
 
@@ -57,10 +64,20 @@ New deterministic fixture tests:
 - `tests/test_proactive_count_source_epoch_run386.py`: 5 test cases
   covering equal/different Path substitution, malformed source and stable
   content-free proactive count.
+- `tests/test_synthetic_occurrence_token_epoch_run386.py`: 7 test cases
+  covering reflected token ID, request and expiry substitutions during both
+  early and lock-time binds, plus stable one-shot refusal of replays.
 
-**Total: 28 added regression cases**. CI verdict belongs to the exact
+**Total: 35 added regression cases**. CI verdict belongs to the exact
 source/test HEAD tested in GitHub, not to this document's HEAD or a subsequent
 checkpoint. Green checks on prior commits cannot be transferred to new code.
+
+Early CI #649–#654 failed two new Planner tests: nested ToolCall changes
+were correctly denied by PlanGraph but surfaced `PlanConflictError` before
+the journal's final topology check. The journal now checks topology directly
+after replay and **before** reading graph statuses, normalizing the safety
+refusal as `SyntheticPlanJournalRejected`. This is a semantics-preserving
+fail-closed repair; no failed HEAD is treated as GREEN.
 
 ## Explicit non-authority boundaries
 
