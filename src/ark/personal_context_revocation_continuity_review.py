@@ -80,31 +80,42 @@ def review_revocation_continuity(
     if retained is not None:
         retained.assert_integrity()
         pinned = (retained.rows, retained.witness_id)
+
+    def assert_epoch() -> None:
+        ledger._assert_source_path(source_path)
+        if retained is not None and (retained.rows, retained.witness_id) != pinned:
+            raise SyntheticContextRevocationRejected(
+                "retained revocation evidence changed during review"
+            )
+
     with closing(ledger._connect(readonly=True)) as conn:
         conn.execute("BEGIN")
         try:
+            assert_epoch()
             _validate(conn)
+            assert_epoch()
             rows = tuple(
                 (digest, time_ms) for digest, time_ms in conn.execute(
                     """SELECT scope_digest,revoked_at_ms
                        FROM synthetic_context_revocations ORDER BY scope_digest"""
                 )
             )
+            assert_epoch()
             witness = SyntheticRevocationWitness(rows, _hash(rows))
+            assert_epoch()
             witness.assert_integrity()
+            assert_epoch()
             if retained is not None:
                 retained.assert_integrity()
-                if (retained.rows, retained.witness_id) != pinned:
-                    raise SyntheticContextRevocationRejected(
-                        "retained revocation evidence changed during review"
-                    )
+                assert_epoch()
                 current = dict(witness.rows)
                 if any(current.get(digest) != at for digest, at in retained.rows):
                     raise SyntheticContextRevocationRejected(
                         "retained revocation history changed"
                     )
-            ledger._assert_source_path(source_path)
+            assert_epoch()
             conn.commit()
+            assert_epoch()
             return witness
         except BaseException:
             conn.rollback()
