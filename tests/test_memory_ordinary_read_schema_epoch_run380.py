@@ -10,7 +10,7 @@ from ark.memory.sqlite_store import SQLiteMemoryStore
 
 def _fixture(tmp_path):
     store = SQLiteMemoryStore(
-        tmp_path / "ordinary Memory #? %.sqlite", clock_ms=lambda: 100,
+        tmp_path / "ordinary Memory # percent %.sqlite", clock_ms=lambda: 100,
     )
     scope = MemoryScope("owner", "private")
     saved = store.put(MemoryWrite(scope, "test", "PRIVATE user context"))
