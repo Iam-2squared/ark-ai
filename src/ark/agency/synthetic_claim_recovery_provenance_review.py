@@ -137,6 +137,44 @@ def review_synthetic_claim_write_provenance(
         call.request_id, call.arguments_sha256,
     )
     registry_epoch = registry.revision
+    topology_epoch = journal._steps
+    retained_epochs = tuple(
+        (witness, tuple(getattr(witness, field.name) for field in fields(witness)))
+        for witness in (
+            retained_cancellation, retained_plan, retained_ledger, retained_audit,
+            retained_audit_links, retained_claim_links,
+        )
+        if witness is not None
+    )
+
+    def assert_epoch() -> None:
+        sources = (
+            cancellation.path, journal._path, audit.path, claim_links.path,
+            None if audit_links is None else audit_links.path,
+        )
+        if (
+            _epoch(envelope) != claim_epoch
+            or journal._steps is not topology_epoch
+            or any(
+                current is not original
+                for current, original in zip(sources, source_epoch, strict=True)
+            )
+            or call.arguments is not call_arguments
+            or (
+                call.tool, call.capability, call.scope,
+                call.request_id, call.arguments_sha256,
+            ) != call_epoch
+            or registry.revision != registry_epoch
+            or any(
+                tuple(getattr(witness, field.name) for field in fields(witness))
+                != original
+                for witness, original in retained_epochs
+            )
+        ):
+            raise SyntheticClaimProvenanceRejected(
+                "claim, source, retained witness or recovery input changed during review"
+            )
+
     arguments = dict(
         step_id=step_id,
         issuer_digest=issuer_digest,
@@ -160,6 +198,7 @@ def review_synthetic_claim_write_provenance(
         envelope, cancellation, journal, ledger_path, audit, registry, call,
         **arguments,
     )
+    assert_epoch()
     if first.matching_occurrences != (occurrence_id,):
         raise SyntheticClaimProvenanceRejected(
             "recovery requires exactly one matching claimed occurrence"
@@ -167,32 +206,20 @@ def review_synthetic_claim_write_provenance(
     source_first = review_synthetic_claim_occurrence_sources(
         claim_links, ledger_path, **source_arguments,
     )
+    assert_epoch()
     second = review_synthetic_claim_write_recovery(
         envelope, cancellation, journal, ledger_path, audit, registry, call,
         **arguments,
     )
+    assert_epoch()
     source_second = review_synthetic_claim_occurrence_sources(
         claim_links, ledger_path, **source_arguments,
     )
-    current_sources = (
-        cancellation.path, journal._path, audit.path, claim_links.path,
-        None if audit_links is None else audit_links.path,
-    )
+    assert_epoch()
     if (
         first != second
         or source_first != source_second
         or not source_first.expected_pair_found
-        or _epoch(envelope) != claim_epoch
-        or any(
-            current is not original
-            for current, original in zip(current_sources, source_epoch, strict=True)
-        )
-        or call.arguments is not call_arguments
-        or (
-            call.tool, call.capability, call.scope,
-            call.request_id, call.arguments_sha256,
-        ) != call_epoch
-        or registry.revision != registry_epoch
         or first.approval_id != envelope.approval_id
         or first.request_id != envelope.request_id
         or first.registry_revision != envelope.registry_revision
