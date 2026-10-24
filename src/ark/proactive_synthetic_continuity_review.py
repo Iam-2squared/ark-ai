@@ -13,6 +13,7 @@ import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from pathlib import Path
 
 from .proactive_synthetic_review import (
     SyntheticProactiveLedger,
@@ -82,11 +83,32 @@ def read_proactive_witness(
         if type(retained) is not SyntheticTriggerWitness:
             raise SyntheticTriggerRejected("exact retained trigger witness required")
         retained.assert_integrity()
-    uri = ledger.path.resolve().as_uri() + "?mode=ro"
+    # Bind both source identity and retained values before SQLite can invoke
+    # any injectable validation/row-hydration callback. An equal-path object
+    # replacement and a different valid retained witness are both drift.
+    path_epoch = ledger.path
+    if not isinstance(path_epoch, Path):
+        raise SyntheticTriggerRejected("proactive witness requires a Path source")
+    retained_epoch = (
+        None if retained is None else (retained.row_hashes, retained.digest)
+    )
+
+    def assert_epoch() -> None:
+        if (
+            ledger.path is not path_epoch
+            or retained is not None
+            and (retained.row_hashes, retained.digest) != retained_epoch
+        ):
+            raise SyntheticTriggerRejected(
+                "proactive witness source or retained history changed during review"
+            )
+
+    uri = path_epoch.resolve().as_uri() + "?mode=ro"
     with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
         conn.execute("BEGIN")
         try:
             _validate(conn)
+            assert_epoch()
             hashes = tuple(sorted(
                 _digest("ARK-trigger-row-v1", row)
                 for row in conn.execute(_ROWS)
@@ -97,10 +119,13 @@ def read_proactive_witness(
                 ),
             )
             witness.assert_integrity()
+            assert_epoch()
             if retained is not None:
                 assert_proactive_history_continues(retained, witness)
+            assert_epoch()
             conn.commit()
-            return witness
         except BaseException:
             conn.rollback()
             raise
+    assert_epoch()
+    return witness
