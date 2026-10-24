@@ -325,6 +325,7 @@ class SQLiteMemoryStore:
                     raise MemorySchemaError("memory get source changed during read")
                 return None
             record = _record(row)
+            record_epoch = _hydrated_record_epoch(record)
             now = self._now() if not include_expired else None
             if (scope.owner_id, scope.namespace) != (
                 pinned_scope.owner_id, pinned_scope.namespace
@@ -332,15 +333,20 @@ class SQLiteMemoryStore:
                 raise MemorySchemaError("memory get scope changed during clock")
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory get source changed during read")
-            if now is not None and _expired(record, now):
+            expired = now is not None and _expired(record, now)
+            if _hydrated_record_epoch(record) != record_epoch:
+                raise MemorySchemaError("decoded Memory get record changed during read")
+            if (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ) or self.path is not path_epoch:
+                raise MemorySchemaError("memory get input changed during expiry check")
+            if expired:
                 return None
             return record
 
     def search(self, query: MemoryQuery) -> list[MemoryRecord]:
         if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
             raise TypeError("query requires exact MemoryQuery and MemoryScope")
-        # Pin the full query, not only its scope. Frozen query fields can be
-        # changed by a reflected mutation while the injected clock executes.
         original_scope = query.scope
         pinned_scope = MemoryScope(original_scope.owner_id, original_scope.namespace)
         pinned_text = query.text
@@ -348,18 +354,8 @@ class SQLiteMemoryStore:
         pinned_include_expired = query.include_expired
         MemoryQuery(pinned_scope, pinned_text, pinned_limit, pinned_include_expired)
         path_epoch = self.path
-        with closing(self._connect_readonly()) as conn:
-            if self.path is not path_epoch:
-                raise MemorySchemaError("memory search source changed before read")
-            conn.execute("BEGIN")
-            _validate_v1_schema(conn)
-            # The SELECT anchors the SQLite snapshot before the clock. A
-            # concurrent writer in the clock callback cannot mix epochs.
-            rows = conn.execute(
-                "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
-                (pinned_scope.owner_id, pinned_scope.namespace),
-            ).fetchall()
-            now = self._now()
+
+        def assert_query_epoch() -> None:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory search source changed during read")
             if (
@@ -368,21 +364,69 @@ class SQLiteMemoryStore:
                 or (query.scope.owner_id, query.scope.namespace)
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
-                raise MemorySchemaError("memory search scope changed during clock")
+                raise MemorySchemaError("memory search scope changed during read")
             if (
-                query.text != pinned_text
-                or query.limit != pinned_limit
+                type(query.text) is not str or query.text != pinned_text
+                or type(query.limit) is not int or query.limit != pinned_limit
+                or type(query.include_expired) is not bool
                 or query.include_expired != pinned_include_expired
             ):
-                raise MemorySchemaError("memory search query changed during clock")
-            records = [_record(row) for row in rows]
+                raise MemorySchemaError("memory search query changed during read")
+
+        with closing(self._connect_readonly()) as conn:
+            assert_query_epoch()
+            conn.execute("BEGIN")
+            _validate_v1_schema(conn)
+            assert_query_epoch()
+            # The SELECT anchors the SQLite snapshot before the clock. A
+            # concurrent writer in the clock callback cannot mix epochs.
+            rows = conn.execute(
+                "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
+                (pinned_scope.owner_id, pinned_scope.namespace),
+            ).fetchall()
+            assert_query_epoch()
+            now = self._now()
+            assert_query_epoch()
+            records: list[MemoryRecord] = []
+            epochs: list[tuple[object, ...]] = []
+            for row in rows:
+                item = _record(row)
+                assert_query_epoch()
+                records.append(item)
+                epochs.append(_hydrated_record_epoch(item))
+
+            def assert_records() -> None:
+                if any(
+                    _hydrated_record_epoch(item) != epoch
+                    for item, epoch in zip(records, epochs, strict=True)
+                ):
+                    raise MemorySchemaError(
+                        "decoded Memory search record changed during read"
+                    )
+
+            assert_records()
             if not pinned_include_expired:
-                records = [item for item in records if not _expired(item, now)]
+                filtered = []
+                for item in records:
+                    assert_query_epoch()
+                    if not _expired(item, now):
+                        filtered.append(item)
+                    assert_query_epoch()
+                    assert_records()
+                eligible = filtered
+            else:
+                eligible = records
             wanted = _tokens(pinned_text)
+            assert_query_epoch()
+            assert_records()
             ranked: list[tuple[float, int, str, MemoryRecord]] = []
-            for item in records:
+            for item in eligible:
+                assert_query_epoch()
+                assert_records()
                 if wanted:
                     matched = len(wanted & _tokens(item.content))
+                    assert_query_epoch()
+                    assert_records()
                     if matched == 0:
                         continue
                     score = matched / len(wanted)
@@ -390,8 +434,8 @@ class SQLiteMemoryStore:
                     score = 0.0
                 ranked.append((-score, -item.updated_at_ms, item.memory_id, item))
             ranked.sort(key=lambda value: value[:3])
-            if self.path is not path_epoch:
-                raise MemorySchemaError("memory search source changed during ranking")
+            assert_query_epoch()
+            assert_records()
             return [value[3] for value in ranked[:pinned_limit]]
 
     def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
@@ -683,6 +727,32 @@ class SQLiteMemoryStore:
                 occurred_at_ms,
             ),
         )
+
+
+
+def _hydrated_record_epoch(record: MemoryRecord) -> tuple[object, ...]:
+    """Value-and-carrier witness for a decoded synthetic Memory v1 row.
+
+    Prevent reentrant callbacks from silently rewriting a decoded record
+    after SQLite's integrity checks, before a read returns it to the caller.
+    It is not OS-backed provenance or a privacy-use authorization.
+    """
+    try:
+        if (
+            type(record) is not MemoryRecord
+            or type(record.scope) is not MemoryScope
+            or not hasattr(record.metadata, "items")
+        ):
+            raise MemorySchemaError("decoded Memory record carrier changed")
+        return (
+            id(record.scope), id(record.metadata), type(record.metadata),
+            record.memory_id, record.scope.owner_id, record.scope.namespace,
+            record.source_id, record.content, record.created_at_ms,
+            record.updated_at_ms, record.expires_at_ms, record.revision,
+            record.content_sha256, tuple(sorted(record.metadata.items())),
+        )
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise MemorySchemaError("decoded Memory record carrier changed") from exc
 
 
 def _record(row: sqlite3.Row) -> MemoryRecord:
