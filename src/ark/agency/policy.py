@@ -16,6 +16,11 @@ from .contracts import (
 from .registry import BoundAction, ToolRegistry
 
 
+# External grant iterables are caller-controlled. Bound their materialization
+# before any WRITE token spend so an endless generator cannot hang admission.
+_MAX_GRANTS = 1024
+
+
 class PermissionGate:
     """Exact-scope grant checks with consumable authorization for writes."""
 
@@ -124,6 +129,8 @@ class PermissionGate:
 
             for grant in grants:
                 ensure_materialization_epoch()
+                if len(materialized) >= _MAX_GRANTS:
+                    raise PermissionDenied("capability grant budget exceeded")
                 if type(grant) is not CapabilityGrant:
                     raise PermissionDenied(
                         "capability grant must be an exact value"
@@ -264,6 +271,8 @@ class PermissionGate:
 
         for grant in grants:
             assert_iteration_epoch()
+            if len(grant_epochs) >= _MAX_GRANTS:
+                raise PermissionDenied("capability grant budget exceeded")
             if type(grant) is not CapabilityGrant:
                 raise PermissionDenied("capability grant must be an exact value")
             epoch = (grant.capability, grant.scope, grant.expires_at_ms)
