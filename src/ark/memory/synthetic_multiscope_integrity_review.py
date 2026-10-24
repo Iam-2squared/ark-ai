@@ -137,27 +137,27 @@ def review_synthetic_memory_scopes(
         )
     else:
         retained_epoch = None
-    if require_same_snapshot is not None and (
-        type(require_same_snapshot) is not SyntheticMemorySnapshotDigest
-        or type(require_same_snapshot.scopes) is not tuple
-    ):
-        raise SyntheticMemorySnapshotRejected("exact retained snapshot required")
-    if require_same_snapshot is not None:
-        # Dataclass equality alone is NOT an exact-type shape check: in
-        # Python, bool(True) compares equal to integer 1. A reflectively
-        # corrupted cached row count could otherwise pass equality checks.
+    def assert_cached_shape() -> None:
+        cached = require_same_snapshot
+        if cached is None:
+            return
         if (
-            type(require_same_snapshot.owner_digest) is not str
-            or require_same_snapshot.owner_digest
+            type(cached) is not SyntheticMemorySnapshotDigest
+            or type(cached.scopes) is not tuple
+        ):
+            raise SyntheticMemorySnapshotRejected("exact retained snapshot required")
+        # Python compares bool(True) equal to int 1; shape must be checked
+        # both BEFORE and AFTER any reentrant row-hydration callbacks.
+        if (
+            type(cached.owner_digest) is not str
+            or cached.owner_digest
             != _hash("ARK-synthetic-memory-owner-v1", values[0][0])
-            or type(require_same_snapshot.snapshot_digest) is not str
-            or not _DIGEST.fullmatch(require_same_snapshot.snapshot_digest)
-            or len(require_same_snapshot.scopes) != len(hashes)
+            or type(cached.snapshot_digest) is not str
+            or not _DIGEST.fullmatch(cached.snapshot_digest)
+            or len(cached.scopes) != len(hashes)
         ):
             raise SyntheticMemorySnapshotRejected("malformed cached Memory snapshot")
-        for scope_hash, item in zip(
-            hashes, require_same_snapshot.scopes, strict=True,
-        ):
+        for scope_hash, item in zip(hashes, cached.scopes, strict=True):
             if (
                 type(item) is not SyntheticMemoryScopeDigest
                 or type(item.scope_digest) is not str
@@ -175,6 +175,8 @@ def review_synthetic_memory_scopes(
                 raise SyntheticMemorySnapshotRejected(
                     "malformed cached Memory event witness"
                 ) from exc
+
+    assert_cached_shape()
     # A copy prevents reflected mutations of a frozen nested receipt from
     # silently turning a comparison of references into a false equality.
     same_epoch = None
@@ -303,12 +305,16 @@ def review_synthetic_memory_scopes(
         (scope.owner_id, scope.namespace) for scope in scopes
     ) != values:
         raise SyntheticMemorySnapshotRejected("Memory scope or source changed")
-    if retained_events is not None and tuple(
-        (v.scope_digest, v.event_count, v.last_event_id, v.tail_hash)
-        for v in retained_events
-    ) != retained_epoch:
-        raise SyntheticMemorySnapshotRejected("retained Memory event witness changed")
+    if retained_events is not None:
+        for value, digest in zip(retained_events, hashes, strict=True):
+            value.assert_shape(digest)
+        if tuple(
+            (v.scope_digest, v.event_count, v.last_event_id, v.tail_hash)
+            for v in retained_events
+        ) != retained_epoch:
+            raise SyntheticMemorySnapshotRejected("retained Memory event witness changed")
     if require_same_snapshot is not None:
+        assert_cached_shape()
         current_epoch = (
             require_same_snapshot.owner_digest,
             require_same_snapshot.snapshot_digest,
