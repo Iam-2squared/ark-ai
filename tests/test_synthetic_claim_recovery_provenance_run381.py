@@ -217,3 +217,64 @@ def test_bad_retained_claim_link_witness_denied(tmp_path: Path):
     state = fixture(tmp_path)
     with pytest.raises(RuntimeError, match="retained"):
         review(state, retained_claim_links=object())
+
+
+@pytest.mark.parametrize("target,field", [
+    (1, "path"),   # cancellation veto
+    (2, "_path"),  # plan journal
+    (5, "path"),   # action audit
+    (8, "path"),   # claim/occurrence association
+])
+def test_late_equal_path_retarget_of_any_claim_store_is_denied(
+    tmp_path: Path, monkeypatch, target: int, field: str,
+):
+    import ark.agency.synthetic_claim_recovery_provenance_review as module
+
+    state = fixture(tmp_path)
+    carrier = state[target]
+    old_path = getattr(carrier, field)
+    original = module.review_synthetic_claim_occurrence_sources
+    reads = 0
+
+    def change_after_final_source_review(*args, **kwargs):
+        nonlocal reads
+        result = original(*args, **kwargs)
+        reads += 1
+        if reads == 2:
+            # Equal pathname, different Path object. A source-epoch fence
+            # must not rely only on Path value equality.
+            setattr(carrier, field, Path(str(old_path)))
+        return result
+
+    monkeypatch.setattr(
+        module, "review_synthetic_claim_occurrence_sources",
+        change_after_final_source_review,
+    )
+    with pytest.raises(SyntheticClaimProvenanceRejected, match="changed"):
+        review(state)
+    assert reads == 2
+    assert old_path.exists()
+
+
+def test_late_reflected_tool_call_identity_change_is_denied(tmp_path: Path, monkeypatch):
+    import ark.agency.synthetic_claim_recovery_provenance_review as module
+
+    state = fixture(tmp_path)
+    original = module.review_synthetic_claim_occurrence_sources
+    reads = 0
+
+    def change_after_final_source_review(*args, **kwargs):
+        nonlocal reads
+        result = original(*args, **kwargs)
+        reads += 1
+        if reads == 2:
+            object.__setattr__(state[7], "scope", "different-offline-scope")
+        return result
+
+    monkeypatch.setattr(
+        module, "review_synthetic_claim_occurrence_sources",
+        change_after_final_source_review,
+    )
+    with pytest.raises(SyntheticClaimProvenanceRejected, match="changed"):
+        review(state)
+    assert reads == 2
