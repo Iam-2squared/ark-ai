@@ -108,8 +108,15 @@ def review_synthetic_observation_trigger(
         receipt.trigger_id, receipt.prepared_at_ms,
         policy.identity(),
     )
+    retained_epoch = None
+    if retained is not None:
+        if type(retained) is not SyntheticTriggerWitness:
+            raise SyntheticObservationTriggerRejected("exact retained trigger witness required")
+        retained.assert_integrity()
+        retained_epoch = (retained.row_hashes, retained.digest)
     source_digest = synthetic_observation_source_digest(selected.source_id)
     observation_digest = selected.content_sha256
+
     def lineage():
         return review_synthetic_observation_lineage(
             envelopes, privacy_scope=privacy_scope,
@@ -133,29 +140,40 @@ def review_synthetic_observation_trigger(
                 "observation trigger source changed during review"
             )
 
+    def ensure_input_epoch() -> None:
+        ensure_source_epoch()
+        if (
+            (
+                envelopes, tuple(_epoch(x) for x in envelopes),
+                selected_id, selected.observation_id,
+                receipt.trigger_id, receipt.prepared_at_ms,
+                policy.identity(),
+            ) != initial
+            or retained is not None
+            and (retained.row_hashes, retained.digest) != retained_epoch
+        ):
+            raise SyntheticObservationTriggerRejected(
+                "observation, policy or retained witness changed during review"
+            )
+        ensure_source_epoch()
+
     first_lineage = lineage()
-    ensure_source_epoch()
+    ensure_input_epoch()
     first_trigger = freshness()
-    ensure_source_epoch()
+    ensure_input_epoch()
     final_lineage = lineage()
-    ensure_source_epoch()
+    ensure_input_epoch()
     final_trigger = freshness()
-    ensure_source_epoch()
+    ensure_input_epoch()
     if (
         first_lineage != final_lineage
         or first_trigger != final_trigger
-        or (
-            envelopes, tuple(_epoch(x) for x in envelopes),
-            selected_id, selected.observation_id,
-            receipt.trigger_id, receipt.prepared_at_ms,
-            policy.identity(),
-        ) != initial
         or first_lineage.checked_at_ms != first_trigger.checked_at_ms
     ):
         raise SyntheticObservationTriggerRejected(
             "observation or trigger changed during disconnected review"
         )
-    ensure_source_epoch()
+    ensure_input_epoch()
     return SyntheticObservationTriggerReview(
         selected_id, first_lineage.lineage_digest,
         first_trigger.trigger_id, first_trigger.history.digest, now_ms,
