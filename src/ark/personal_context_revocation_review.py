@@ -160,22 +160,47 @@ class SyntheticContextRevocationLedger:
             raise SyntheticContextRevocationRejected("exact bounded scopes required")
         source_path = self.path
         self._assert_source_path(source_path)
-        digests = tuple(_scope_digest(scope) for scope in scopes)
+        # Pin each exact scope before the first potentially reentrant digest
+        # callback. End-only checks can miss drift restored by a later SELECT.
+        scope_epoch = tuple(
+            (scope, scope.owner_id, scope.namespace) for scope in scopes
+        )
+
+        def assert_epoch() -> None:
+            self._assert_source_path(source_path)
+            if any(
+                type(scope) is not MemoryScope
+                or (scope.owner_id, scope.namespace) != (owner, namespace)
+                for scope, owner, namespace in scope_epoch
+            ):
+                raise SyntheticContextRevocationRejected(
+                    "context scope changed during revocation check"
+                )
+
+        digests = []
+        for scope in scopes:
+            digests.append(_scope_digest(scope))
+            assert_epoch()
+        digests = tuple(digests)
         if len(set(digests)) != len(digests):
             raise SyntheticContextRevocationRejected("duplicate context scopes")
         with closing(self._connect(readonly=True)) as conn:
             conn.execute("BEGIN")
             try:
                 _validate(conn)
+                assert_epoch()
                 for digest in digests:
-                    if conn.execute(
+                    assert_epoch()
+                    revoked = conn.execute(
                         "SELECT 1 FROM synthetic_context_revocations WHERE scope_digest=?",
                         (digest,),
-                    ).fetchone() is not None:
+                    ).fetchone()
+                    assert_epoch()
+                    if revoked is not None:
                         raise SyntheticContextRevocationRejected("context scope revoked")
                 if tuple(_scope_digest(scope) for scope in scopes) != digests:
                     raise SyntheticContextRevocationRejected("context scope changed")
-                self._assert_source_path(source_path)
+                assert_epoch()
                 conn.commit()
             except BaseException:
                 conn.rollback()
