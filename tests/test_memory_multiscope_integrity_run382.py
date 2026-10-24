@@ -23,7 +23,10 @@ def _fixture(tmp_path: Path, *, clock=None):
         tmp_path / "Memory # %.sqlite",
         clock_ms=clock or (lambda: 100),
     )
-    scopes = (MemoryScope("PRIVATE-OWNER-IDENTITY", "alpha"), MemoryScope("PRIVATE-OWNER-IDENTITY", "beta"))
+    scopes = (
+        MemoryScope("PRIVATE-OWNER-IDENTITY", "alpha"),
+        MemoryScope("PRIVATE-OWNER-IDENTITY", "beta"),
+    )
     return store, scopes
 
 
