@@ -430,6 +430,18 @@ class SyntheticPlanJournal:
                         event_hash, post, at_ms,
                     ),
                 )
+                # Snapshot construction is another overridable/reentrant
+                # boundary. Revalidate an independently retained older tail
+                # *after* it, before committing the row and header together.
+                if retained is not None:
+                    retained.assert_shape()
+                    if (
+                        retained.topology_digest, retained.event_count,
+                        retained.event_hash, retained.status_digest, retained.last_at_ms,
+                    ) != pinned:
+                        raise SyntheticPlanJournalRejected(
+                            "retained synthetic plan witness changed during append"
+                        )
                 if self._path is not path_epoch:
                     raise SyntheticPlanJournalRejected(
                         "synthetic plan source changed during append"
