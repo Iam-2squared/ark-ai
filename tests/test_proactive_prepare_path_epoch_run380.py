@@ -18,13 +18,13 @@ def _policy():
     )
 
 
-def _prepared(store, policy):
+def _prepared(store, policy, *, at_ms=10):
     return store.prepare(
         policy,
         source_digest="a" * 64,
         observation_digest="b" * 64,
-        observed_at_ms=10,
-        now_ms=10,
+        observed_at_ms=at_ms,
+        now_ms=at_ms,
     )
 
 
@@ -71,7 +71,7 @@ def test_stable_proactive_path_keeps_inert_durable_dedup(tmp_path):
     assert receipt.automatic_replay_authorized is False
     assert _rows(path) == 1
     with pytest.raises(SyntheticTriggerRejected, match="duplicate"):
-        _prepared(SyntheticProactiveLedger(path), _policy())
+        _prepared(SyntheticProactiveLedger(path), _policy(), at_ms=11)
 
 
 @pytest.mark.parametrize("bad_path", ["not-a-path", None])
