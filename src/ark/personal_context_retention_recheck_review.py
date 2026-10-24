@@ -9,6 +9,7 @@ confirmed erasure, backup erasure, or an authenticated wall clock.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 from .memory.contracts import MemoryScope
 from .memory.sqlite_store import SQLiteMemoryStore
@@ -114,21 +115,52 @@ def review_synthetic_retention_recheck(
         raise SyntheticRetentionRecheckRejected("cached retention inventory expired")
     pinned = _epoch(cached)
     original_scope = (scope.owner_id, scope.namespace)
+    # Every inventory pins its own sources, but a caller can reflectively
+    # retarget a Path *between* the four otherwise coherent inventory reads.
+    # Bind both store identities before the first reentrant review.
+    memory_source = memory.path
+    revocation_source = revocations.path
+    if not isinstance(memory_source, Path) or not isinstance(revocation_source, Path):
+        raise SyntheticRetentionRecheckRejected("exact retention sources required")
+    retained_epoch = None if retained_revocations is None else (
+        retained_revocations.rows, retained_revocations.witness_id,
+    )
+
+    def assert_epoch() -> None:
+        if (
+            memory.path is not memory_source
+            or revocations.path is not revocation_source
+            or (scope.owner_id, scope.namespace) != original_scope
+            or _epoch(cached) != pinned
+            or retained_epoch != (
+                None if retained_revocations is None else (
+                    retained_revocations.rows, retained_revocations.witness_id,
+                )
+            )
+        ):
+            raise SyntheticRetentionRecheckRejected(
+                "retention source or evidence changed during diagnostic"
+            )
+
     kwargs = {"max_records": 1000, "retained_revocations": retained_revocations}
     before = review_synthetic_retention_inventory(
         memory, scope, revocations, now_ms=captured, **kwargs,
     )
-    if before != cached or _epoch(cached) != pinned:
+    assert_epoch()
+    if before != cached:
         raise SyntheticRetentionRecheckRejected("cached retention inventory changed")
     current = review_synthetic_retention_inventory(
         memory, scope, revocations, now_ms=now_ms, **kwargs,
     )
+    assert_epoch()
     after = review_synthetic_retention_inventory(
         memory, scope, revocations, now_ms=captured, **kwargs,
     )
+    assert_epoch()
     last = review_synthetic_retention_inventory(
         memory, scope, revocations, now_ms=now_ms, **kwargs,
     )
+    assert_epoch()
     if (
         after != before or last != current
         or _epoch(cached) != pinned
