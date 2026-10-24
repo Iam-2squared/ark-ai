@@ -12,6 +12,7 @@ import json
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from pathlib import Path
 
 from .contracts import MemoryRecord, MemorySchemaError, MemoryScope
 from .sqlite_store import (
@@ -79,6 +80,9 @@ def review_coherent_snapshot(
     scopes = tuple(MemoryScope(owner_id, name) for name in namespaces)
     wanted = _tokens(text)
     results: list[tuple[MemoryRecord, ...]] = []
+    path_epoch = store.path
+    if not isinstance(path_epoch, Path):
+        raise MemorySchemaError("memory snapshot requires a stable Path source")
 
     # SQLite transaction is anchored by its FIRST read before the clock is
     # sampled. Even if a writer commits in a clock callback or between SELECTs,
@@ -87,7 +91,7 @@ def review_coherent_snapshot(
     # if the configured store file vanished after initialization.
     try:
         snapshot_connection = sqlite3.connect(
-            store.path.resolve().as_uri() + "?mode=ro", uri=True
+            path_epoch.resolve().as_uri() + "?mode=ro", uri=True
         )
     except sqlite3.DatabaseError as exc:
         raise MemorySchemaError("cannot open memory snapshot read-only") from exc
@@ -107,6 +111,8 @@ def review_coherent_snapshot(
         except sqlite3.DatabaseError as exc:
             raise MemorySchemaError("memory snapshot schema cannot be verified") from exc
         now = store._now()
+        if store.path is not path_epoch:
+            raise MemorySchemaError("memory snapshot source path changed during clock")
         for scope in scopes:
             rows = conn.execute(
                 "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
@@ -128,6 +134,8 @@ def review_coherent_snapshot(
             ranked.sort(key=lambda row: row[:3])
             results.append(tuple(entry[3] for entry in ranked[:limit]))
         conn.rollback()
+    if store.path is not path_epoch:
+        raise MemorySchemaError("memory snapshot source path changed during review")
     if (
         request.owner_id, request.namespaces, request.text,
         request.per_namespace_limit, request.include_expired,
