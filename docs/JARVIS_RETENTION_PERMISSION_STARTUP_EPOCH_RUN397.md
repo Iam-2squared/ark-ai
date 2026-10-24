@@ -10,12 +10,13 @@ proactive retained-witness work at the basis HEAD; those earlier commits
 are **not** relabeled as new Run397 work. Canonical PROJECT_STATUS was
 still Run395 at this run's start.
 
-## Three independent implementation and regression packages
+## Four compatible implementation and regression packages
 
 | Domain | Production source | Focused synthetic regression | New cases |
 | --- | --- | --- | ---: |
 | Privacy-retention recheck | `src/ark/personal_context_retention_recheck_review.py` | `tests/test_retention_recheck_carrier_epoch_run397.py` | 4 |
 | Capability PermissionGate | `src/ark/agency/policy.py` | `tests/test_permission_grant_yield_epoch_run397.py` | 10 |
+| Registered PermissionGate materialization | `src/ark/agency/policy.py` | `tests/test_registered_materialization_yield_epoch_run397.py` | 7 |
 | Startup evaluation | `src/ark/startup_readiness_review.py` | `tests/test_startup_probe_input_epoch_run397.py` | 6 |
 
 ### Retention: original carrier custody and later-result custody
@@ -50,6 +51,19 @@ variants, three READ diagnostic variants, and two unchanged positive paths.
 A PermissionGate result does not authenticate a human issuer and never
 dispatches a real backend.
 
+### Registered grant materialization: scope checks cannot be delayed
+
+`authorize_registered()` first binds a registry-authenticated local
+`ToolCall`, then materializes a caller-supplied grant iterable before
+delegating to `authorize()`. Merely doing `tuple(grants)` and re-binding
+the registry at the end missed reflected intermediate alterations of
+previous grants, registry registration identity, the call or token that
+were restored before iteration ended. The registry-bound materialization
+now rechecks the original call/token, pinned registration revision, and
+every previously observed exact grant after **each** yield, including a
+final recheck at iterator exhaustion. No backend runs. Five negative
+WRITE fixtures and two unchanged READ/WRITE fixtures exercise the path.
+
 ### Startup: bind probe inputs before validation callbacks
 
 `evaluate_startup_readiness()` used to clone successive
@@ -69,7 +83,7 @@ diagnostics, not activation authority.
 
 ## Verification boundaries and known non-proofs
 
-The three source/test pairs were written using GitHub's ordinary Contents
+The four implementation/test packages were written using GitHub's ordinary Contents
 API, re-reading PR #8 HEAD immediately before every write. Existing automatic
 public-repository PR CI runs test Ruff and the Ubuntu/Windows Python matrix;
 no duplicate workflow was manually dispatched. **Each CI verdict applies
