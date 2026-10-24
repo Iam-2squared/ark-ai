@@ -78,8 +78,52 @@ class PermissionGate:
             ensure_entry_epoch()
             # Materialize external grant iterables before any WRITE token is
             # spent; they may mutate a reflected ToolCall/registry as they run.
-            grant_snapshot = tuple(grants)
-            ensure_entry_epoch()
+            materialized = []
+            original_grants = []
+
+            def ensure_materialization_epoch() -> None:
+                # Each iterator advance may run arbitrary caller code, then
+                # restore the identity before exhaustion. Preserve all
+                # previously observed grants and the bound registry revision
+                # after *every* yielded item, not just at the final bind.
+                ensure_entry_epoch()
+                try:
+                    stable_registry = registry.revision == bound.registry_revision
+                except (TypeError, ValueError) as exc:
+                    raise PermissionDenied(
+                        "registry binding changed during grants"
+                    ) from exc
+                ensure_entry_epoch()
+                if not stable_registry:
+                    raise PermissionDenied(
+                        "registry binding changed during grants"
+                    )
+                if any(
+                    type(previous) is not CapabilityGrant
+                    or (
+                        previous.capability, previous.scope,
+                        previous.expires_at_ms,
+                    ) != epoch
+                    for previous, epoch in original_grants
+                ):
+                    raise PermissionDenied(
+                        "registered grant identity changed during materialization"
+                    )
+
+            for grant in grants:
+                ensure_materialization_epoch()
+                if type(grant) is not CapabilityGrant:
+                    raise PermissionDenied(
+                        "capability grant must be an exact value"
+                    )
+                original_grants.append((
+                    grant, (
+                        grant.capability, grant.scope, grant.expires_at_ms,
+                    ),
+                ))
+                materialized.append(grant)
+            ensure_materialization_epoch()
+            grant_snapshot = tuple(materialized)
             verified = registry.bind(call)
             ensure_entry_epoch()
         except (KeyError, TypeError, ValueError) as exc:
