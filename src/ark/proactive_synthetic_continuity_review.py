@@ -67,10 +67,32 @@ def assert_proactive_history_continues(
         or type(current) is not SyntheticTriggerWitness
     ):
         raise SyntheticTriggerRejected("exact proactive witnesses required")
+    # A direct caller may have no enclosing ledger/witness custody fence.
+    # Capture both exact carriers *before* either reentrant integrity method.
+    retained_rows = retained.row_hashes
+    current_rows = current.row_hashes
+    retained_epoch = (retained_rows, retained.digest)
+    current_epoch = (current_rows, current.digest)
+
+    def assert_epoch() -> None:
+        if (
+            retained.row_hashes is not retained_rows
+            or current.row_hashes is not current_rows
+            or (retained.row_hashes, retained.digest) != retained_epoch
+            or (current.row_hashes, current.digest) != current_epoch
+        ):
+            raise SyntheticTriggerRejected(
+                "proactive history witness changed during continuity check"
+            )
+
+    assert_epoch()
     retained.assert_integrity()
+    assert_epoch()
     current.assert_integrity()
+    assert_epoch()
     if not set(retained.row_hashes).issubset(current.row_hashes):
         raise SyntheticTriggerRejected("retained proactive trigger history changed")
+    assert_epoch()
 
 
 def read_proactive_witness(
