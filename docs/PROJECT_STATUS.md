@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — Run 384**
+
+Saved at: **2026-10-24T14:54:10.463+09:00 Asia/Tokyo/JST** (runtime wall-clock sampled immediately before the ordinary GitHub Contents write, NOT a GitHub server receipt timestamp).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+Exact invocation **work-basis HEAD**: `97e4cdc9ae3d18396cafb8a75bd4f135a02287f1` (Run383 checkpoint; **CI #623 / run `40065645506`: verified SUCCESS 6/6**).
+Final **source + tests HEAD**: `a31bcba4b0fc4103e380fdbb8538c1a31ba1b5cf`.
+Final **source + tests + technical documentation / checkpoint write-basis HEAD**: `4b7e1e24130963f61205e9162906e2a7d3f3cff0`.
+**Checkpoint-result-HEAD:** the new commit SHA is unknown while authoring this text; use the normal Contents write response and a subsequent exact HEAD read. Do NOT assign pre-checkpoint CI to checkpoint-result HEAD.
+
+Overall state: local-first, isolated, reversible, **synthetic/mock-only** JARVIS foundation in Draft PR #8. No consent authentication, trusted clock, external WRITE outcome, cross-SQLite atomicity, real backend, full JARVIS PASS or actual exactly-once effect. At checkpoint preflight main is `7a843f17eb96ed13d66f23b58b06406b3002e405`; branch comparison shows **217 add-only files and zero modified/deleted original main files**. Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. V3 **PR #5 Draft/unmerged/NOT_PASSED** (`d6d4c1954a85fc716b1c593ac55c85417912418f` at this invocation's read), protected V2 FINAL gate closed.
+
+### NEW in Run 384 — four coherent free-only safety packages (+20 tests)
+
+1. **Personal Context selection/source epoch (+10):** `personal_context_reuse_review.py` now pins exact coherent-snapshot request fields, context selection policy and both Memory/revocation source `Path` identities across the fresh privacy check. Reentrant changes after context projection fail closed; the established cached-content rejection message was preserved after an intermediate CI regression. No context disclosure or consent is granted.
+2. **Memory event retained-prefix epoch (+4):** `memory/synthetic_event_continuity_review.py` now pins independent witness scalar fields before bounded SQLite event replay/row hydration and refuses reflected substitution with another locally valid historical prefix. It also rejects equal-path-but-new-object source rebinding. Existing Memory v1 DDL and live history are unchanged.
+3. **Claim/Occurrence provenance source epoch (+4):** `agency/synthetic_claim_occurrence_recheck_review.py` now pins the association sidecar path and optional retained link/reservation witness fields, along with first-read witness values. It rejects transient source retargeting and reflected history substitution. This is local evidence only, not an authentic approval or an external write outcome.
+4. **Startup readiness requirement pinning (+2):** `startup_readiness_lease_review.py` checks originally copied required component ID/schema fields rather than mutable requirement objects during reentrant snapshot callbacks. A transient substitute READY component cannot hide a required BLOCKED component; the returned diagnostic cannot activate anything.
+
+Evidence: `docs/JARVIS_REVIEW_EPOCH_BOUNDARIES_RUN384.md` documents tests, threat assumptions and non-authority limits. Four new `tests/*_run384.py` files add 10+4+4+2 = **20 synthetic cases**. No new credentials, live capture, notifications, backend dispatch or paid action.
+
+### CI and exact-head evidence (pre-checkpoint observation)
+
+- Run383 starting checkpoint `97e4cdc9ae3d18396cafb8a75bd4f135a02287f1`: **CI #623 / run 40065645506 SUCCESS 6/6**, verified at this invocation start.
+- Intermediate **CI #629 / run 40067508523 FAIL**: eight old cached-context tests rejected correctly but expected the prior `differs from fresh` diagnostic, whereas the new code used a different generic error. Ubuntu 3.13: **1386 passed, 8 failed**. Restored stable diagnostic without weakening the privacy check, via ordinary Contents commit `b1c0dc71e39a2ec4bbd412204b221b2b3e6f8d24`.
+- Exact **pre-startup fixed source HEAD** `b1c0dc71e39a2ec4bbd412204b221b2b3e6f8d24`: **CI #631 / run 40067665531 SUCCESS 6/6**; Ubuntu Python 3.13 **Ruff PASS / 1394 pytest passed**. This GREEN does NOT validate the later startup package.
+- Exact final **source/test HEAD** `a31bcba4b0fc4103e380fdbb8538c1a31ba1b5cf`: **CI #633 / run `40067847556`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS/QUEUED** at this preflight; Ubuntu Python 3.13 has **Ruff PASS / 1396 pytest passed** at this exact HEAD. Do NOT label six-way GREEN until all jobs complete.
+- Exact **technical-documentation HEAD** `4b7e1e24130963f61205e9162906e2a7d3f3cff0`: **CI #634 / run `40067868203`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS/QUEUED** at preflight. No newer checkpoint-result CI evidence is inherited.
+- Total meaningful successful saves before this checkpoint: **11 ordinary Contents commits** (source, tests, engineering document and one minimal semantics-preserving fix). Checkpoint expected as a separate final commit. No manual duplicate workflow reruns, raw Git object writes, force pushes, or main merge.
+
+### Frozen boundaries and remaining blockers
+
+No paid/potentially billable new services, external GPU, Candidate/adapter/weights generation, protected evaluation opening, credentials/connection, hardware or local-PC action, irreversible deletion, real notification, live ToolBackend call, Candidate promotion, frozen-contract modification or approved merge. Public GitHub repository's existing ordinary CI is the only hosted test infrastructure used, without manual duplicate dispatch.
+
+All witnesses are local hashes, not signed evidence. Python object identity checks do not stop OS-level same-path SQLite replacement, and no pre/post check prevents later post-review mutations. Source stores have no global atomic transaction. Actor legitimacy, purpose/recipient consent, trusted time, independent witness custody and external effect acknowledgment remain unresolved. **UNKNOWN WRITE is never automatically replayed**.
+
+### Next plan / 今後の方針
+
+1. Confirm exact-head **CI #633 and #634**, followed by the new checkpoint-result HEAD's own CI; if failure, inspect per-job logs, make a minimal semantics-preserving normal Contents fix, and work in a separate independent lane while CI runs. Never claim other-HEAD GREEN.
+2. Strengthen retained approval/Occurrence/Audit/Planner witness integrity and restart/source epoch checks without authorizing dispatch or inferring an external outcome.
+3. Continue Memory CAS, expiry/event continuity, coherent snapshots and Personal Context privacy revocation/reuse checks. Keep data-use permissions FALSE until authenticated opt-in and lawful processing gates.
+4. Extend Scheduler, Observation and startup readiness fixture lineage with exact-type and post-callback checks, without accessing microphones/cameras/network or changing launcher/home.
+5. Preserve PR #5 Draft/NOT_PASSED and V2 protected FINAL; keep V3 approval/identity/path guards FREE-only, no training/GPU/Candidate/paid compute without explicit user authorization.
+
+---
+
+**HISTORICAL — Run 383 and earlier (preserved original checkpoint text follows)**
+
+# ARK AI Project Status
+
 **LATEST — Run 383**
 
 Saved at: **2026-10-24T14:16:57.599+09:00 Asia/Tokyo/JST** (runtime clock sampled immediately before the ordinary GitHub Contents write; not represented as a GitHub server receipt timestamp).
