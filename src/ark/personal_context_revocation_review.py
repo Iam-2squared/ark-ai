@@ -216,18 +216,44 @@ def review_fresh_nonrevoked_context(
     )
 
     scopes = tuple(MemoryScope(request.owner_id, name) for name in request.namespaces)
+    memory_source = store.path
+    veto_source = ledger.path
+    if not isinstance(memory_source, Path) or not isinstance(veto_source, Path):
+        raise SyntheticContextRevocationRejected("exact context sources required")
+    policy_epoch = (
+        policy.total_limit, policy.per_namespace_limit, policy.policy_revision,
+    )
+
+    def assert_epoch() -> None:
+        if (
+            store.path is not memory_source
+            or ledger.path is not veto_source
+            or (
+                request.owner_id, request.namespaces, request.text,
+                request.per_namespace_limit, request.include_expired,
+            ) != original
+            or (
+                policy.total_limit, policy.per_namespace_limit,
+                policy.policy_revision,
+            ) != policy_epoch
+        ):
+            raise SyntheticContextRevocationRejected(
+                "context source, request or policy changed during review"
+            )
+
     before = review_revocation_continuity(ledger, retained=retained_revocations)
+    assert_epoch()
     ledger.assert_not_revoked(scopes)
+    assert_epoch()
     snapshot = review_coherent_snapshot(store, request)
+    assert_epoch()
     bundle = review_personal_context(snapshot, policy)
+    assert_epoch()
     ledger.assert_not_revoked(scopes)
+    assert_epoch()
     # Detect disappearance or alteration of any veto that was present before
     # this read, even when a different namespace's row was changed mid-read.
     # A genuinely earlier independent witness also fences pre-existing edits.
     review_revocation_continuity(ledger, retained=before)
-    if (
-        request.owner_id, request.namespaces, request.text,
-        request.per_namespace_limit, request.include_expired,
-    ) != original:
-        raise SyntheticContextRevocationRejected("context request changed during review")
+    assert_epoch()
     return bundle
