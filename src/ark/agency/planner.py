@@ -92,6 +92,12 @@ class PlanGraph:
             raise PlanConflictError("plan status mapping changed")
         for name, carrier, state, revision in self._status_epoch:
             current = self._status.get(name)
+            if current is not None and (
+                type(current) is not PlanStepStatus or current.step_id != name
+            ):
+                raise PlanConflictError(
+                    "plan status identity changed outside transition"
+                )
             if (
                 type(name) is not str
                 or type(carrier) is not PlanStepStatus
