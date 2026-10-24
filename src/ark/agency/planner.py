@@ -65,6 +65,45 @@ class PlanGraph:
             (step_id, step, step.call, step.depends_on, step.call.arguments, step.call.request_id)
             for step_id, step in sorted(self.steps.items())
         )
+        # A caller can reflectively mutate even a frozen PlanStepStatus or
+        # replace the private dictionary. Pin every initial state independent
+        # of the live carrier; only successful transitions advance this epoch.
+        self._status_mapping_epoch = self._status
+        self._status_epoch = self._capture_status_epoch()
+
+    def _capture_status_epoch(
+        self,
+    ) -> tuple[tuple[str, PlanStepStatus, StepState, int], ...]:
+        return tuple(
+            (name, self._status[name], self._status[name].state,
+             self._status[name].revision)
+            for name in sorted(self.steps)
+        )
+
+    def _assert_status_epoch(self) -> None:
+        if (
+            type(self._status) is not dict
+            or self._status is not self._status_mapping_epoch
+            or type(self._status_epoch) is not tuple
+            or len(self._status) != len(self.steps)
+            or len(self._status_epoch) != len(self.steps)
+            or set(self._status) != set(self.steps)
+        ):
+            raise PlanConflictError("plan status mapping changed")
+        for name, carrier, state, revision in self._status_epoch:
+            current = self._status.get(name)
+            if (
+                type(name) is not str
+                or type(carrier) is not PlanStepStatus
+                or current is not carrier
+                or current.step_id != name
+                or type(current.state) is not StepState
+                or current.state is not state
+                or type(current.revision) is not int
+                or not 0 <= current.revision <= 2**63 - 1
+                or current.revision != revision
+            ):
+                raise PlanConflictError("plan status changed outside transition")
 
     def _assert_plan_epoch(self) -> None:
         if (
@@ -144,12 +183,14 @@ class PlanGraph:
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
         self._assert_plan_epoch()
+        self._assert_status_epoch()
         # Return detached value snapshots: frozen dataclass fields can still be
         # changed by object.__setattr__ on a caller-held reference.
         return MappingProxyType({key: replace(value) for key, value in self._status.items()})
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
         self._assert_plan_epoch()
+        self._assert_status_epoch()
         ready: list[PlanStep] = []
         for step_id in sorted(self.steps):
             status = self._status[step_id]
@@ -159,6 +200,7 @@ class PlanGraph:
             if all(state is StepState.SUCCEEDED for state in dependencies):
                 ready.append(self.steps[step_id])
         self._assert_plan_epoch()
+        self._assert_status_epoch()
         return tuple(ready)
 
     def transition(
@@ -169,6 +211,7 @@ class PlanGraph:
         expected_revision: int,
     ) -> PlanStepStatus:
         self._assert_plan_epoch()
+        self._assert_status_epoch()
         if type(step_id) is not str or not step_id.strip():
             raise TypeError("step_id must be a non-empty exact string")
         if step_id not in self._status:
@@ -224,6 +267,9 @@ class PlanGraph:
             self._status[item] = replace(
                 status, state=StepState.BLOCKED, revision=status.revision + 1
             )
+        # Advance the detached state epoch only after all affected statuses
+        # have been committed in memory, including a terminal BLOCKED cascade.
+        self._status_epoch = self._capture_status_epoch()
         # Never expose the in-map status value to callers.
         return replace(updated)
 
