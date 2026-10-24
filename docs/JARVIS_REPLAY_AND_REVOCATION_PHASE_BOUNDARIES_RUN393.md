@@ -60,10 +60,26 @@ deletes personal data nor proves forensic erasure, prevents later
 revocation races, or authorizes inference, disclosure, notifications or
 model/tool use.
 
+### Package 4 — Disconnected mock registry callback integrity
+
+`src/ark/agency/synthetic_mock_action_cycle_review.py` now verifies the
+original local token, ToolCall, Planner topology, store Paths, and initial
+BoundAction epoch **both before and after each registry.bind() callback**.
+Previously, a reflected token/source substitution during the binding
+callback could persist a synthetic reservation before the next check
+noticed it. Early rejection after a RUNNING journal transition still
+preserves UNKNOWN state; it does **not** roll back previously committed
+independent journal records or justify retrying that step. Regression:
+`tests/test_mock_post_registry_epoch_run393.py` (**6** cases), including
+adverse injection at the precise pre-reservation boundary.
+
+No real backend dispatch, authenticated user approval, globally atomic
+reservation/audit journal, or trusted-clock guarantee is introduced.
+
 ## Verification and stop conditions
 
-The three work packages add **22** focused regression parameterizations
-(8 + 8 + 6). CI outcomes must be reported for their **exact GitHub
+The four implementation packages add **28** focused regression parameterizations
+(8 + 8 + 6 + 6). CI outcomes must be reported for their **exact GitHub
 commit SHAs**; earlier successful runs do not transfer to a subsequent
 source, test, document or checkpoint commit. A test in a free, synthetic
 fixture is not protected V2 FINAL and does not demonstrate production
