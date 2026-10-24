@@ -159,7 +159,8 @@ def review_personal_context(
                 record.revision, record.content_sha256,
             ))
             group_epoch.append((
-                record, record.scope, record.metadata,
+                record, record.scope,
+                (record.scope.owner_id, record.scope.namespace), record.metadata,
                 record.memory_id, record.source_id, record.content,
                 record.created_at_ms, record.updated_at_ms,
                 record.expires_at_ms, record.revision, record.content_sha256,
@@ -215,6 +216,7 @@ def review_personal_context(
                 and all(
                     record is original
                     and record.scope is record_scope
+                    and (record.scope.owner_id, record.scope.namespace) == record_scope_values
                     and record.metadata is metadata
                     and (
                         record.memory_id, record.source_id, record.content,
@@ -224,7 +226,7 @@ def review_personal_context(
                     and tuple(sorted(record.metadata.items())) == metadata_values
                     for group, epochs in zip(rows, record_epoch, strict=True)
                     for record, (
-                        original, record_scope, metadata, *saved,
+                        original, record_scope, record_scope_values, metadata, *saved,
                     ) in zip(group, epochs, strict=True)
                     for original_values, metadata_values in (
                         (tuple(saved[:-1]), saved[-1]),
