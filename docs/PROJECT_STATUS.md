@@ -1,5 +1,44 @@
 # ARK AI Project Status
 
+**LATEST — Run 391**
+
+Saved at: **2026-10-24T22:10:51.886+09:00 Asia/Tokyo/JST** (automation execution-runtime clock sampled immediately before ordinary GitHub Contents checkpoint write; this is NOT the GitHub server receipt time).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. Exact **work-basis HEAD**: `cb510ab4759ddfc4d5b6d1551a7f2858ddde034b` (Run390 checkpoint, GitHub CI **#709 / run `40091930795` GREEN 6/6**, independently observed at the beginning of this invocation). Exact final **source+test HEAD**: `d1cbcd1e15b5fcf71d9e8e25d42aac3534100696`. Exact final **source+tests+engineering-document / checkpoint write-basis HEAD**: `eefb6b6b8d5c44129a07ea0919ebec6898e93575`. **Checkpoint-result-HEAD is not known at text authorship**; the normal GitHub Contents `update_file` commit_sha is authoritative and must be separately verified. Neither an earlier GREEN commit nor this document asserts GREEN for the subsequent untested checkpoint.
+
+Overall ARK state: **isolated, FREE-only, local-first disconnected/synthetic mock JARVIS foundations**. No verified human-issuer consent, trusted time/clock, OS-backed path custody, globally atomic multi-SQLite snapshot, real ToolBackend effect or external exactly-once delivery. **UNKNOWN WRITE must never be retried automatically**. Complete JARVIS **NOT_PASSED**. Main base `7a843f17eb96ed13d66f23b58b06406b3002e405` remains unchanged; exact main-to-work-branch comparison before checkpoint: **252 added paths, zero changed/deleted pre-existing main paths**, 578 commits ahead. Frozen V1/V2/Local UI/Launcher contracts/evidence and Memory v1 schema/DDL untouched. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** remains at `d6d4c1954a85fc716b1c593ac55c85417912418f`; protected V2 FINAL unopened.
+
+### NEW in Run391 — four coherent FREE-only safety packages (+39 regression cases)
+
+1. **Planner internal state epoch (+11):** `src/ark/agency/planner.py` now binds `_status` mapping identity, `PlanStepStatus` carrier identities and exact states/revisions. `statuses()`, `ready_steps()`, `status_digest()`, and `transition()` reject reflected private status forgery, including a fake `SUCCEEDED` that could otherwise release a dependent step. A successful terminal cascade updates the epoch only after atomic in-memory state publication; failed transitions do not advance it. `tests/test_planner_internal_status_epoch_run391.py`. Existing synthetic high-revision overflow test fixtures explicitly refresh their *test-only* epoch after arranging an impossible-to-reach boundary state; the original overflow/cascade assertions are kept. No production rebaseline or execution permission.
+2. **Audit continuity source and retained epoch (+6):** `src/ark/agency/audit_continuity_review.py` binds exact original Path and independently held witness values before readonly SQLite access, verifying them after schema/read/each event replay phase. `tests/test_audit_continuity_epoch_run391.py`. No schema/hash change or authenticated audit signature.
+3. **Disconnected mock cycle phased custody (+8):** `src/ark/agency/synthetic_mock_action_cycle_review.py` pins Registry-bound ToolCall, token, Planner topology carriers and source Paths across recovery, RUNNING, synthetic reservation, audit-before-action, optional sidecar link and mock completion. It also pins the reservation receipt after allocation. `tests/test_mock_cycle_durable_input_epoch_run391.py`. All stores remain separate SQLite transactions: drift after RUNNING leaves UNKNOWN; no backend is ever executed and no replay is authorized.
+4. **Memory v1 post-event atomic identity (+14):** `src/ark/memory/sqlite_store.py` rechecks all original `MemoryWrite`/scope/metadata/expiry inputs AFTER inserted event and BEFORE committing create/update, with analogous final scope checks for explicit delete and expiry purge. Mid-event reflected drift rolls back row and event in the same local transaction. `tests/test_memory_post_event_epoch_run391.py`. Existing CAS, event history, Memory v1 DDL, personal-data erasure semantics unchanged.
+
+Engineering and threat-model contract: `docs/JARVIS_PLANNER_AUDIT_MOCK_EPOCH_RUN391.md`. **14 ordinary GitHub Contents commits before this single checkpoint**: 3 first-package source+test pairs, Planner/legacy synthetic boundary fixture repairs, mock-test fixture repair, one document creation, Memory source+test, document amendment. Every write was via the normal GitHub Contents API after PR HEAD read; no raw Git-object/ref bypass, force push, duplicate manual CI run, main merge, paid external training, credentials or live tools.
+
+### Exact-head CI evidence, real failures, and remaining checks
+
+- Starting checkpoint `cb510ab...`: **#709 / run `40091930795` completed GREEN 6/6**. Separate source+tests+initial-engineering-document `dd656c3db8e2303ae6db8c24fe5fc7aecefe6945`: **#720 / run `40096469759` completed GREEN 6/6** (exact HEAD only; before the independent Memory package).
+- Intermediate **#710–#718 FAILED at their exact SHAs**, dominated by 10 Planner regressions because the new internal epoch correctly refused old tests' manually injected hypothetical SQLite maximum revision; one older canonical-status diagnostic expected `status identity`, and one new mock test left its reflected ToolCall scope changed before post-rejection journal inspection. These were resolved with an implementation-specific status-ID error, explicit offline fixture epoch rebasing while **retaining** original overflow/cascade assertions, and restoration of only the deliberately mutated mock test fixture. Production fail-closed epoch is not weakened.
+- Source+test HEAD `d1cbcd1e15b5fcf71d9e8e25d42aac3534100696`: **#722 / run `40096792852` 3/6 GREEN, 0 FAIL, Windows 3 in progress** at checkpoint CI read. Ubuntu Python3.13 job `120880632079`: **Ruff PASS, pytest 1606 passed** (Run390 1567 + 39 new regression tests).
+- Source+tests+document HEAD `eefb6b6b8d5c44129a07ea0919ebec6898e93575`: **#723 / run `40096850216` 3/6 GREEN, 0 FAIL, Windows 3 in progress** at latest direct jobs read. An additional earlier repaired exact source/test HEAD `cbea7aed7c890ad218e3c8ed75e1dbbad958e9bf` had **#719 / run `40096398452` 5/6 GREEN, 0 FAIL, Windows3.13 in progress**; no false inheritance of status to newer heads.
+- The **new checkpoint commit** has no CI observation yet at document authorship. Check its own run and do not equate a smoke fixture with real-world safety or protected V2 FINAL. No duplicate equivalent workflows were manually launched.
+
+### Hard stops, architectural limitations and Next plan / 今後の方針
+
+**ZERO paid/potentially billable service, external GPU, actual adapter/weight generation, full training, protected V2 FINAL evaluation, promotion, new credentials/identities/accounts, physical PC actions, real media capture, notifications, ToolBackend execution, personal data export/deletion, frozen contract/schema changes, destructive operation or main merge.** PR #8 remains Draft/unmerged; PR #5 remains Draft/NOT_PASSED.
+
+Private Python status epochs and Path object identity are **local reflected-mutation fences**, not isolation from privileged in-process code, inode/file descriptor custody, cryptographic signatures, full ABA detection, true human consent or a global cross-SQLite serializable snapshot. A local historical digest is not proof of external effects; all caller clocks are untrusted. **A successful synthetic mock action is NOT a live WRITE, nor evidence of external exactly-once completion.**
+
+**Prioritized Next plan / 今後の方針:** (1) Observe final Windows jobs for exact #722/#723 and separately the new checkpoint's own CI, correcting only actual failures through ordinary Contents writes. (2) Perform independently retained cross-store Planner/Claim/Occurrence/ActionAudit restart/UNKNOWN reconciling with mock backend only; never auto-replay uncertain WRITE. (3) Deepen Memory event/CAS/expiry/coherent-snapshot failure injection and privacy-safe Personal Context revocation, retention and veto review without personal erasure/export. (4) Continue disconnected Scheduler/Observation/Startup Readiness and free-only V3 identity/path/approval guards, always isolated and reversible. (5) Require authenticated human approvals, trustworthy clock/issuer, OS custody, auditable backend idempotency and external reconciliation evidence before even considering real tool dispatch; only the user can authorize paid/irreversible/protected/main-merge gates.
+
+---
+
+**HISTORICAL — Run390 and earlier canonical text preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 390**
 
 Saved at: **2026-10-24T20:56:58.222+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled just before the ordinary GitHub Contents checkpoint write; **not** the GitHub server receipt time).
