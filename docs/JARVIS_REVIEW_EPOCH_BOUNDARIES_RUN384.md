@@ -28,6 +28,19 @@ Fixture: `test_memory_event_witness_epoch_run384.py` checks substituted valid ne
 
 Fixture: `test_synthetic_claim_recheck_epoch_run384.py` checks link-store source substitution, retained link/reservation substitution and unaffected offline review.
 
+### Startup readiness exact-requirement evaluation
+
+`startup_readiness_lease_review.py` now checks the originally copied component
+ID and schema revision for every requested READY dependency, rather than
+re-reading a reflectively mutable requirement object while evaluating the
+snapshot. A transient callback cannot switch a BLOCKED required component
+to an unrelated READY component, then restore the requested IDs before the
+final consistency check. A successful readiness receipt remains entirely
+non-authoritative: it neither proves physical-PC startup nor permits dispatch.
+
+Fixture: `test_startup_requirement_pin_run384.py` covers transient requirement
+substitution against a BLOCKED component and an unaffected READY path.
+
 ## Boundaries and remaining gaps
 
 - **Not full integrity:** changes that occur and are perfectly restored between two observations cannot be detected by these equality checks. Reflective mutation after the final read is also not prevented by a returned receipt.
