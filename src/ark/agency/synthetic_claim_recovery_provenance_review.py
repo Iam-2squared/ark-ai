@@ -146,7 +146,10 @@ def review_synthetic_claim_write_provenance(
         (retained_audit_links, SyntheticAuditLinkWitness),
         (retained_claim_links, SyntheticClaimLinkWitness),
     )
-    if any(value is not None and type(value) is not expected for value, expected in retained_inputs):
+    if any(
+        value is not None and type(value) is not expected
+        for value, expected in retained_inputs
+    ):
         raise SyntheticClaimProvenanceRejected("retained witness requires an exact type")
     retained_epochs = tuple(
         (witness, tuple(getattr(witness, field.name) for field in fields(witness)))
