@@ -77,9 +77,10 @@ def test_detached_archive_must_have_consistent_state_and_references(
         if fault == "orphan_audit_link":
             payload["audit_links"] = [[occ_b, 7]]
         elif fault == "duplicate_audit_link":
-            payload["audit_links"] = [[occ_a, 7], [occ_a, 7]]
+            payload["audit_links"] = [[occ_a, 7], [occ_a, 8]]
         else:
-            payload["audit_links"] = [[occ_a, 7], [occ_a, 7]]
+            payload["occurrences"] = [occ_a, occ_b]
+            payload["audit_links"] = [[occ_a, 7], [occ_b, 7]]
     raw = json.dumps(
         payload, ensure_ascii=True, sort_keys=True,
         separators=(",", ":"), allow_nan=False,
