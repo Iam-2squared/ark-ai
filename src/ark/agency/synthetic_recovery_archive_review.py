@@ -33,7 +33,7 @@ from .synthetic_recovery_triage import (
 _LABEL = b"ARK-synthetic-recovery-archive-v1\0"
 _MAX_BYTES = 4_000_000
 _ALLOWED_STATES = frozenset(state.value for state in StepState)
-_OCCURRENCE_ID = re.compile(r"occ_[0-9a-f]{64}\\Z")
+_OCCURRENCE_ID = re.compile(r"occ_[0-9a-f]{64}$")
 
 
 class SyntheticRecoveryArchiveRejected(RuntimeError):
