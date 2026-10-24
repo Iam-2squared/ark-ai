@@ -160,8 +160,32 @@ class ToolRegistry:
     def resolve(self, call: ToolCall) -> ToolRegistration:
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
-        registration = self.get(call.tool)
-        if registration.capability != call.capability:
+        # Direct resolution must obey the same original-input boundary as
+        # bind(). A callback in get() may reflectively retarget a frozen call
+        # or alter registered backend/effect identity after its first check.
+        stable = ToolCall(call.tool, call.capability, call.scope, call.arguments)
+        epoch = (
+            stable.tool, stable.capability, stable.scope, stable.request_id,
+            call.arguments,
+        )
+
+        def assert_call_epoch() -> None:
+            if (
+                type(call.tool) is not str
+                or type(call.capability) is not str
+                or type(call.scope) is not str
+                or (call.tool, call.capability, call.scope, call.request_id)
+                != epoch[:4]
+                or call.arguments is not epoch[4]
+            ):
+                raise ValueError("ToolCall identity changed during registry resolution")
+
+        assert_call_epoch()
+        registration = self.get(stable.tool)
+        assert_call_epoch()
+        self._assert_registration_epoch()
+        assert_call_epoch()
+        if registration.capability != stable.capability:
             raise ValueError("tool call capability does not match registry")
         return registration
 
