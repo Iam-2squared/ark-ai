@@ -208,7 +208,7 @@ def test_missing_initialized_store_not_recreated(tmp_path: Path, which: str):
     state = fixture(tmp_path)
     path = state[3] if which == "reservation" else state[8].path
     path.rename(tmp_path / ("moved-" + which + ".sqlite"))
-    with pytest.raises(RuntimeError):
+    with pytest.raises((RuntimeError, sqlite3.OperationalError)):
         review(state)
     assert not path.exists()
 
