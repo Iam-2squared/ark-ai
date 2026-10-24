@@ -16,7 +16,7 @@ def _fixture(tmp_path):
     for index in range(3):
         store.put(MemoryWrite(
             scope, f"source-{index}", f"needle item {index}",
-            metadata={"ordinal": index},
+            metadata={"ordinal": str(index)},
         ))
     request = snapshot.CoherentSnapshotRequest(
         "fixture-owner", ("fixture-space",), text="needle",
