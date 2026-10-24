@@ -14,6 +14,7 @@ real WRITE authorization, model training result, or gate PASS.
 | Memory snapshot read-only SQLite opening | `Path.resolve()`, `Path.as_uri()` or connection opening can run a substituted callback before the first SQLite read | Pin request and original Path object; reject drift after each boundary and immediately after handle acquisition, before first SELECT | `test_memory_snapshot_open_epoch_run403.py` |
 | Synthetic Personal Context veto SQLite opening | Path resolution and URI conversion are callbacks; an opened connection under changed reflected source can precede veto validation | Recheck the original ledger source immediately after resolution, URI creation and SQLite opening; explicitly close any returned connection on drift | `test_privacy_veto_connect_epoch_run403.py` |
 | Proactive Scheduler prepare/count opening | A reflected source-path replacement after URI preparation or connection acquisition can reach SQLite transaction setup before the original path is checked | Recheck the exact source Path after `resolve()`, `as_uri()` and after handle creation, before `BEGIN`/`BEGIN IMMEDIATE`; close any returned handle on refusal | `test_proactive_sqlite_open_epoch_run403.py` |
+| Cross-store synthetic WRITE recovery ledger open | A modified ToolCall/journal/audit carrier can be temporarily introduced by a reservation path or connection callback, then restored by a later audit pass | Revalidate complete retained recovery inputs after reservation `Path.resolve()`, URI construction and read-only connection acquisition, before the first ledger SELECT | `test_recovery_ledger_open_epoch_run403.py` |
 
 The unchanged core boundaries remain: immutable registry identity vectors,
 Memory v1 frozen schema, isolated read-only Memory snapshots, append-only
@@ -23,9 +24,9 @@ backend dispatch, no human issuer, and UNKNOWN WRITE **never replayed**.
 
 ## Test and evidence interpretation
 
-The four packages add **31 regression cases** to existing suites:
+The five packages add **41 regression cases** to existing suites:
 registry +10, Memory SQLite opening +7, privacy veto opening +7,
-Proactive Scheduler SQLite opening +7. These cases
+Proactive Scheduler SQLite opening +7, and disconnected WRITE-recovery ledger opening +10. These cases
 use only disposable local fixtures and callbacks. The exact-number total
 requires CI collection and successful execution on the **same HEAD**; this
 document does **not** claim GREEN merely because code was saved.
@@ -35,7 +36,8 @@ provide OS inode or open-file-descriptor custody, an authenticated trusted clock
 real external execution/consent, atomic cross-SQLite transaction, proof against
 a fully hostile in-process interpreter, backend success receipts or exactly-once
 external side effects. The Python caller's source-path check is **not** a
-filesystem TOCTOU solution. No Memory content or raw Personal Context is
+filesystem TOCTOU solution; the recovered reservation, Planner and Audit
+SQLite histories remain independent and non-atomic. No Memory content or raw Personal Context is
 transmitted.
 
 ## Integration and authorization constraints
