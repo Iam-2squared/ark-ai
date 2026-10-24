@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — Run 386**
+
+Saved at: **2026-10-24T17:01:46.718+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled before the ordinary GitHub Contents checkpoint write; NOT a GitHub server receipt timestamp).
+
+Branch / PR: `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+Exact **work-basis HEAD**: `c56adac47ae9350cdabcfb751015620ee4f6b67b` (Run385 checkpoint, **CI #645 / run `40072539672` SUCCESS**).
+Exact **final source+tests HEAD**: `1a8236d242ac0483de66eb575e0afabd2e177aca`.
+Exact **final source+tests+engineering documentation / checkpoint write-basis HEAD**: `1485347d39bb750578207a29456e0eafc44059e4`.
+**Checkpoint-result-HEAD:** not knowable at text authoring time. The actual result is the `commit_sha` returned by this ordinary GitHub Contents write, to be confirmed by an exact subsequent PR HEAD read; it must NOT inherit earlier-head CI.
+
+Overall state: **isolated, disconnected, reversible synthetic/mock-only JARVIS foundations**, without authenticated issuer/subject/recipient consent, trusted wall clock, true cross-SQLite atomicity, real ToolBackend effects, authenticated external exactly-once or full JARVIS PASS. Verified pre-checkpoint main baseline remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #8 comparison to main at write preflight: **227 added files; zero modified/deleted original main files**. Frozen V1/V2/Local UI/Launcher contracts/evidence unchanged. V3 **PR #5 Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`; protected V2 FINAL remains closed.
+
+### NEW in Run 386 — five independent FREE-only safety packages (+35 focused regression cases)
+
+1. **Occurrence source/transaction epoch (+7):** `agency/durable_occurrence_review.py` pins the local SQLite Path before registry callbacks, uses the pinned URI, and rejects a reflected Path substitution before and inside the write transaction, rolling back speculative reservations. Read-only `count_synthetic` also rejects reentrant source substitution. `tests/test_synthetic_occurrence_source_epoch_run386.py`.
+2. **Planner immutable topology epoch (+6):** `agency/planner_journal_review.py` captures tuple identity and canonical topology digest before replay/append; detects reentrant tuple and nested ToolCall drift before reading the recovered graph, and rechecks before COMMIT. `tests/test_planner_topology_epoch_run386.py`; RUNNING remains UNKNOWN and never auto-replays.
+3. **Memory ordinary read privacy/scope epoch (+10):** `memory/sqlite_store.py` binds `get()` and `events()` to the original owner/namespace and SQLite Path, **including zero-row results** and event hydration; any reentrant reflected replacement is refused. `tests/test_memory_read_epoch_run386.py`. Frozen Memory v1 schema unchanged.
+4. **Synthetic proactive ledger source epoch (+5):** `proactive_synthetic_review.py` rejects changed source identity during `count()` and bootstrap checks while retaining inert durable deduplication. `tests/test_proactive_count_source_epoch_run386.py`; no notifications.
+5. **Synthetic token identity before first registry callback (+7):** `agency/durable_occurrence_review.py` now pins original token ID/request ID/expiry **before** reentrant registry binding, refusing reflected first-bind token substitution as well as second-bind/lock-time drift. `tests/test_synthetic_occurrence_token_epoch_run386.py`; no external execution authority.
+
+Evidence/threat-model engineering document: `docs/JARVIS_BOUND_READ_AND_RESERVATION_EPOCH_RUN386.md`. **13 ordinary GitHub Contents commits before this checkpoint**: five source-package changes plus 5 regression-test additions, one small fail-closed Planner CI repair, and two document revisions. No raw Git objects, forced ref update, main merge, duplicate CI dispatch, external GPU or paid API.
+
+### Exact-head CI evidence and corrective history
+
+- Starting Run385 checkpoint `c56adac47ae9350cdabcfb751015620ee4f6b67b`: **CI #645 / run `40072539672` SUCCESS**. Does not validate newer changes.
+- Early independent source/fixture CI **#646–#648 SUCCESS**, only for their own commits.
+- CI **#649–#654 FAIL** at their exact HEADs: two newly added Planner topology regression tests observed an already-safe `PlanConflictError` from `PlanGraph.statuses()` after reflected nested ToolCall mutation, before the journal could normalize the error. This was NOT a permission or replay bypass. Ordinary Contents fix `9a58e346bcabf3627196a6595b29517b3ce4ca98` moved topology epoch check immediately after replay and before graph use; no gate was relaxed.
+- Fixed-head **CI #655 / run `40076008308`: GREEN 6/6** (Ubuntu/Windows Python 3.11–3.13).
+- Final **source+tests HEAD** `1a8236d242ac0483de66eb575e0afabd2e177aca`: **CI #657 / run `40076084806`: GREEN 6/6**. Ubuntu Python 3.13 job `120819603050`: **Ruff PASS, 1451 pytest passed** (Run385 baseline 1416 + **35** regression cases). This exact CI includes the token-epoch tests.
+- Final **source+tests+documentation HEAD** `1485347d39bb750578207a29456e0eafc44059e4`: **CI #658 / run `40076126165`: completed SUCCESS**, verified via GitHub Actions run list before checkpoint; exact per-job verification should be re-read when needed. No previous-run GREEN is assigned to this as-yet-unwritten checkpoint-result SHA.
+- Existing ordinary public GitHub PR workflows were triggered by commits only; no manual duplicate action run. No protected FINAL, real model testing/training or Candidate artifacts.
+
+### Frozen gates, budget, and unresolved blockers
+
+**No new paid/billable service or external GPU; no training, weights, real Candidate, protected V2 FINAL, new credentials, live observations, real alerts, external ToolBackend, genuine approval, physical-PC action, personal-data deletion, main merge or irreversible action.** Public GitHub PR CI and normal Contents API were the only hosted operations. No change to frozen V1/V2/Local UI/Launcher contracts, Memory v1 schema or explicit V3 gate.
+
+Path object identity checks cannot establish OS-level file custody or prevent same-path replacement and post-return races. Locally held digests are not independently signed evidence. Multi-database audit/reservation/planner snapshots remain non-atomic. No trusted clock, verified legal data-use consent or authoritative external effect acknowledgment exists. Every receipt/review is **deny-only**; **UNKNOWN WRITE never automatically retries**, and no tool dispatch follows from these synthetic reviews.
+
+### Next plan / 今後の方針
+
+1. Read the exact checkpoint-result commit SHA from the ordinary GitHub write and confirm its own CI matrix; on failure inspect logs, make the smallest semantics-preserving **normal Contents** fix, and work another independent lane while CI runs. Do not label an untested checkpoint GREEN.
+2. Strengthen Registry-bound PermissionGate, approval-claim/revocation/Occurrence/ActionAudit/Planner recovery cross-store epoch checks and UNKNOWN WRITE evidence. Maintain genuine user authorization/identity and real Tool Backend as separate blocked gates.
+3. Continue Memory CAS, event-retained-witness continuity, expiry and coherent snapshots; privacy-safe Personal Context reuse/revocation/retention without data deletion or disclosure.
+4. Advance disconnected Observation/Scheduler/startup provenance and fixture adapters without notifications, microphone/camera capture, paid services, external computer actions or GPU.
+5. Keep PR #5 Draft/NOT_PASSED and protected V2 FINAL closed; review FREE-only identity/path/reproducibility guards without real Candidate generation, promotion or main merge.
+
+---
+
+**HISTORICAL — Run 385 and earlier (the previously saved canonical status follows unchanged)**
+
+# ARK AI Project Status
+
 **LATEST — Run 385**
 
 Saved at: **2026-10-24T16:01:50.711+09:00 Asia/Tokyo/JST** (runtime clock sampled before the ordinary GitHub Contents checkpoint write; not asserted to be the GitHub server receipt time).
