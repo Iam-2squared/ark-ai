@@ -81,3 +81,32 @@ Focused synthetic regression suites:
 
 This note records review boundaries and source-level intent. It makes no
 claim that an in-progress CI run is GREEN.
+
+## Memory v1 event-history continuity (read-only fixture)
+
+`memory/synthetic_event_continuity_review.py` now evaluates one exact
+`MemoryScope` in a pinned **read-only** SQLite transaction. It verifies the
+unchanged Memory v1 schema, canonical scoped event rows and bounded
+create/update/delete/expire lifecycle transitions against the current scoped
+Memory records. Global `event_id` gaps are allowed because events from
+different scopes interleave; caller timestamps are **not** falsely treated
+as a trusted monotonic clock. Explicit deletion followed by a new
+`create` at revision 1 for the same deterministic memory ID is distinct
+from an invalid revision jump. No Memory content leaves the reviewer.
+
+The returned content-minimized witness commits to the scoped event order,
+event identities, revisions, operation types and local timestamps. An optional
+**earlier independently retained** prefix detects truncation or rewriting
+of that prior history even if the local event suffix and current Memory row
+were rewritten coherently. Without such a retained witness, a coherent
+rewrite of *all* affected local data can still pass: hashes are not external
+attestations. The reviewer never grants personal-context use, disclosure or
+deletion; it cannot guarantee backup erasure or cross-database atomicity.
+No frozen Memory v1 DDL is changed.
+
+Focused tests:
+`tests/test_memory_synthetic_event_continuity_run381.py` exercises
+CAS revisions, explicit delete/recreate, interleaved scope event IDs,
+missing events or live rows, schema drift, missing-file no-recreation,
+and independently retained-prefix rollback. Exact-head CI still governs
+whether the implementation is platform-verified.
