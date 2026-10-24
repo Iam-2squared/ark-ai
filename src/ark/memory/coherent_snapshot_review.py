@@ -14,7 +14,13 @@ from contextlib import closing
 from dataclasses import dataclass
 
 from .contracts import MemoryRecord, MemorySchemaError, MemoryScope
-from .sqlite_store import SQLiteMemoryStore, _expired, _record, _tokens
+from .sqlite_store import (
+    SQLiteMemoryStore,
+    _expired,
+    _record,
+    _tokens,
+    _validate_v1_schema,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +96,16 @@ def review_coherent_snapshot(
         conn.execute("PRAGMA busy_timeout=5000")
         conn.execute("BEGIN")
         conn.execute("SELECT name FROM sqlite_master ORDER BY name LIMIT 1").fetchone()
+        # Revalidate frozen Memory v1 DDL inside the SAME pinned read snapshot.
+        # A store that was healthy during __init__ can be modified later.
+        # Neither a matching row hash nor successful SELECT * proves that its
+        # SQL schema, indexes, triggers and declared version are unchanged.
+        if conn.execute("PRAGMA user_version").fetchone() != (1,):
+            raise MemorySchemaError("memory snapshot schema version changed")
+        try:
+            _validate_v1_schema(conn)
+        except sqlite3.DatabaseError as exc:
+            raise MemorySchemaError("memory snapshot schema cannot be verified") from exc
         now = store._now()
         for scope in scopes:
             rows = conn.execute(
