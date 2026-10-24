@@ -124,13 +124,32 @@ class SyntheticContextRevocationLedger:
         """Persist a veto marker; no implicit regrant or personal data deletion."""
         source_path = self.path
         self._assert_source_path(source_path)
+        # The initial digest computation is an overridable Python boundary.
+        # Capture original scope BEFORE hashing, not the possibly retargeted
+        # scope left by the first callback. This remains a local veto only.
+        if type(scope) is not MemoryScope:
+            raise SyntheticContextRevocationRejected("exact MemoryScope required")
+        scope_epoch = (scope.owner_id, scope.namespace)
+
+        def assert_scope_epoch() -> None:
+            if (
+                type(scope) is not MemoryScope
+                or (scope.owner_id, scope.namespace) != scope_epoch
+            ):
+                raise SyntheticContextRevocationRejected(
+                    "scope changed during revocation"
+                )
+
+        assert_scope_epoch()
         digest = _scope_digest(scope)
+        assert_scope_epoch()
         if type(at_ms) is not int or not 0 <= at_ms <= _MAX:
             raise SyntheticContextRevocationRejected("invalid revocation timestamp")
         with closing(self._connect(readonly=False)) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 _validate(conn)
+                assert_scope_epoch()
                 if conn.execute(
                     "SELECT 1 FROM synthetic_context_revocations WHERE scope_digest=?",
                     (digest,),
@@ -141,12 +160,15 @@ class SyntheticContextRevocationLedger:
                 ).fetchone()[0]
                 if latest is not None and at_ms < latest:
                     raise SyntheticContextRevocationRejected("revocation clock regressed")
+                assert_scope_epoch()
                 if _scope_digest(scope) != digest:
                     raise SyntheticContextRevocationRejected("scope changed during revocation")
+                assert_scope_epoch()
                 conn.execute(
                     "INSERT INTO synthetic_context_revocations VALUES(?,?)",
                     (digest, at_ms),
                 )
+                assert_scope_epoch()
                 self._assert_source_path(source_path)
                 conn.commit()
             except BaseException:
