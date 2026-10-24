@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 from .audit import SQLiteActionAudit
@@ -130,8 +130,55 @@ def review_synthetic_write_recovery(
     if retained_link is not None:
         retained_link.assert_shape()
 
+    # Direct callers must pin the complete input epoch themselves. Higher-level
+    # claim wrappers cannot be relied on when this diagnostic is used alone.
+    source_epoch = (
+        journal._path, audit.path,
+        None if link_store is None else link_store._path,
+    )
+    if any(path is not None and not isinstance(path, Path) for path in source_epoch):
+        raise SyntheticRecoveryRejected("recovery requires stable Path sources")
+    topology_epoch = journal._steps
+    arguments_epoch = call.arguments
+    call_epoch = (
+        call.tool, call.capability, call.scope,
+        call.request_id, call.arguments_sha256,
+    )
+    registry_epoch = registry.revision
+    retained_epochs = tuple(
+        (witness, tuple(getattr(witness, field.name) for field in fields(witness)))
+        for witness in (retained_plan, retained_ledger, retained_audit, retained_link)
+        if witness is not None
+    )
+
+    def assert_epoch() -> None:
+        current_sources = (
+            journal._path, audit.path,
+            None if link_store is None else link_store._path,
+        )
+        if (
+            any(now is not before for now, before in zip(
+                current_sources, source_epoch, strict=True,
+            ))
+            or journal._steps is not topology_epoch
+            or call.arguments is not arguments_epoch
+            or (
+                call.tool, call.capability, call.scope,
+                call.request_id, call.arguments_sha256,
+            ) != call_epoch
+            or registry.revision != registry_epoch
+            or any(
+                tuple(getattr(witness, field.name) for field in fields(witness)) != original
+                for witness, original in retained_epochs
+            )
+        ):
+            raise SyntheticRecoveryRejected(
+                "recovery input, retained witness or source changed during review"
+            )
+
     try:
         first = registry.bind(call)
+        assert_epoch()
         if first.registration.effect is not Effect.WRITE:
             raise SyntheticRecoveryRejected("only WRITE fixtures may be reviewed")
         # The journal's persisted topology is checked by recover(). Do not
@@ -142,6 +189,7 @@ def review_synthetic_write_recovery(
         if topology.steps[step_id].call.request_id != first.call.request_id:
             raise SyntheticRecoveryRejected("plan step action identity differs")
         plan = journal.recover(retained=retained_plan)
+        assert_epoch()
         state = dict((name, value) for name, value, _ in plan.step_statuses)
         if step_id not in state:
             raise SyntheticRecoveryRejected("step is missing from recovery")
@@ -181,6 +229,7 @@ def review_synthetic_write_recovery(
         audit_witness = review_audit_continuity(
             audit, retained=retained_audit, require_monotonic_time=True,
         )
+        assert_epoch()
         link_witness = None
         matching_links: tuple[tuple[str, int], ...] = ()
         if link_store is not None:
@@ -251,6 +300,7 @@ def review_synthetic_write_recovery(
                 except BaseException:
                     link_conn.rollback()
                     raise
+            assert_epoch()
             # Detect observed audit drift across our independent read phases.
             if review_audit_continuity(
                 audit, retained=retained_audit, require_monotonic_time=True,
@@ -258,6 +308,7 @@ def review_synthetic_write_recovery(
                 raise SyntheticRecoveryRejected(
                     "audit history changed during sidecar diagnosis"
                 )
+        assert_epoch()
         # Independent stores have no shared transaction. Re-observe each
         # local witness after the other reads and reject visible drift.
         # This narrows but cannot eliminate between-read or post-check races.
@@ -283,6 +334,7 @@ def review_synthetic_write_recovery(
                 "link history changed during cross-store recovery diagnosis"
             )
         again = registry.bind(call)
+        assert_epoch()
         if (
             again.registry_revision != first.registry_revision
             or again.bound_action_id != first.bound_action_id
