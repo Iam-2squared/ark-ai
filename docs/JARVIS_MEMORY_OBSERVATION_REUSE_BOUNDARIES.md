@@ -69,3 +69,35 @@ independent witness custody, privacy/legal erasure decisions and backend
 idempotency/effect reconciliation remain unresolved. UNKNOWN WRITE is never
 automatically retried. No irreversible deletion, real tool dispatch, account
 connection, physical-PC action or main merge is authorized.
+
+## After bootstrap, SQLite WRITE entry points must not recreate lost evidence
+
+The normal `SQLiteActionAudit.append` and `SQLiteMemoryStore.put/delete/purge_expired`
+connection paths now use **existing-file** `mode=rw` SQLite URIs. Only
+explicit `SQLiteActionAudit(...)` and `SQLiteMemoryStore(...)` bootstrap
+may create a fresh database. A stale object's mutation against a missing
+or moved initialized database fails before caller-clock sampling; it does
+not create a plausible empty replacement. Literal `#` and `%` path
+characters are handled via `Path.as_uri()` and the SQLite URI mode.
+
+The audit append additionally pins its source path through a reentrant
+clock hook and refuses reflected source retargeting before committing an
+audit event. The separate coherent Memory snapshot reviewer likewise
+pins its source path across clock sampling and row hydration; it will
+not mislabel old SQLite rows as a newly substituted file.
+
+These are **local filesystem safety guards**. They do not authenticate
+file ownership, prevent a trusted caller from explicitly initializing a
+new database, stop external file replacement at every possible instant,
+or offer durable cross-store atomicity. An independent retained historical
+witness is still necessary to detect coherent rollback. No personal-data
+erasure, real tool execution or irreversible operation is performed by
+these regression fixtures.
+
+Focused tests: `test_action_audit_no_recreate_run382.py`,
+`test_memory_mutator_no_recreate_run382.py`,
+`test_memory_coherent_source_epoch_run382.py` and
+`test_memory_multiscope_retained_shape_run382.py`. Exact GitHub
+CI HEADs, run IDs and failure/success status belong to the canonical
+project checkpoint; this document makes no unconditional GREEN claim.
+
