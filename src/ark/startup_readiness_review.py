@@ -212,10 +212,36 @@ def evaluate_startup_readiness(
         raise ValueError("readiness graph must contain at least one component")
     if len(snapshot) > 10_000:
         raise ValueError("readiness graph exceeds local review budget")
+    if any(type(entry) is not StartupComponent for entry in snapshot):
+        raise TypeError("startup requires exact StartupComponent entries")
+    # Snapshot the caller-owned inputs BEFORE running validation callbacks.
+    # Cloning an early component must not hide a reflected alteration made
+    # while a later component is being validated.
+    source_epoch = tuple(
+        (
+            entry, entry.component_id, entry.dependencies, entry.local_state,
+            entry.failure_code, entry.schema_revision,
+        )
+        for entry in snapshot
+    )
+
+    def assert_source_epoch() -> None:
+        if any(
+            type(entry) is not StartupComponent
+            or entry.component_id != component_id
+            or entry.dependencies is not dependencies
+            or entry.local_state is not local_state
+            or entry.failure_code != failure_code
+            or entry.schema_revision != schema_revision
+            for (
+                entry, component_id, dependencies, local_state,
+                failure_code, schema_revision,
+            ) in source_epoch
+        ):
+            raise ValueError("startup input changed during readiness evaluation")
+
     by_name: dict[str, StartupComponent] = {}
     for entry in snapshot:
-        if type(entry) is not StartupComponent:
-            raise TypeError("startup requires exact StartupComponent entries")
         checked = StartupComponent(
             entry.component_id,
             entry.dependencies,
@@ -223,6 +249,7 @@ def evaluate_startup_readiness(
             entry.failure_code,
             entry.schema_revision,
         )
+        assert_source_epoch()
         if entry.component_id in by_name:
             raise ValueError("duplicate readiness component ID")
         by_name[entry.component_id] = checked
@@ -259,6 +286,7 @@ def evaluate_startup_readiness(
     if len(effective) != len(by_name):
         raise ValueError("readiness dependency graph contains a cycle")
 
+    assert_source_epoch()
     components = tuple(
         ComponentResult(
             name,
@@ -287,4 +315,5 @@ def evaluate_startup_readiness(
     encoded = json.dumps(
         payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
+    assert_source_epoch()
     return StartupSnapshot(components, "startup_" + hashlib.sha256(encoded).hexdigest())
