@@ -159,7 +159,45 @@ class PermissionGate:
 
         matching = []
         grant_epochs = []
+
+        def assert_iteration_epoch() -> None:
+            # A generator can temporarily retarget a previously yielded
+            # grant, the action, or a WRITE token, then restore it before
+            # StopIteration. The final-only check would miss that intermediate
+            # identity and could consume a token for an inconsistent review.
+            try:
+                stable = (
+                    (spec.name, spec.capability, spec.effect) == spec_epoch
+                    and (
+                        call.tool, call.capability, call.scope,
+                        call.arguments, call.request_id,
+                    ) == call_epoch
+                    and call.arguments is call_epoch[3]
+                    and (
+                        (
+                            one_shot.token_id, one_shot.request_id,
+                            one_shot.expires_at_ms,
+                        ) if one_shot is not None else None
+                    ) == token_epoch
+                    and all(
+                        type(item) is CapabilityGrant
+                        and (
+                            item.capability, item.scope, item.expires_at_ms,
+                        ) == epoch
+                        for item, epoch in grant_epochs
+                    )
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise PermissionDenied(
+                    "authorization input changed during grants"
+                ) from exc
+            if not stable:
+                raise PermissionDenied(
+                    "authorization input changed during grants"
+                )
+
         for grant in grants:
+            assert_iteration_epoch()
             if type(grant) is not CapabilityGrant:
                 raise PermissionDenied("capability grant must be an exact value")
             epoch = (grant.capability, grant.scope, grant.expires_at_ms)
