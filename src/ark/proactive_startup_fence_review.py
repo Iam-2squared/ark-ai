@@ -8,6 +8,7 @@ Two independent reads are not a transaction and leave a post-check race.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 from .proactive_synthetic_continuity_review import SyntheticTriggerWitness
 from .proactive_synthetic_freshness_review import review_prepared_trigger_freshness
@@ -111,6 +112,24 @@ def review_synthetic_proactive_startup(
         source_digest,
         observation_digest,
     )
+    # A Path compares equal to a newly constructed Path with the same string.
+    # Value-only `pinned` therefore cannot detect an inter-pass redirection.
+    source_epoch = ledger.path
+    if not isinstance(source_epoch, Path):
+        raise SyntheticProactiveStartupRejected("exact startup trigger source required")
+    retained_epoch = None if retained is None else (retained.row_hashes, retained.digest)
+
+    def assert_source_epoch() -> None:
+        if (
+            ledger.path is not source_epoch
+            or retained_epoch != (
+                None if retained is None else (retained.row_hashes, retained.digest)
+            )
+        ):
+            raise SyntheticProactiveStartupRejected(
+                "startup trigger source or retained evidence changed during review"
+            )
+
     readiness_kwargs = {
         "captured_at_ms": captured_at_ms,
         "now_ms": now_ms,
@@ -126,15 +145,19 @@ def review_synthetic_proactive_startup(
     first_ready = review_synthetic_startup_lease(
         snapshot, requirements, **readiness_kwargs,
     )
+    assert_source_epoch()
     first_trigger = review_prepared_trigger_freshness(
         ledger, receipt, policy, **trigger_kwargs,
     )
+    assert_source_epoch()
     last_ready = review_synthetic_startup_lease(
         snapshot, requirements, **readiness_kwargs,
     )
+    assert_source_epoch()
     last_trigger = review_prepared_trigger_freshness(
         ledger, receipt, policy, **trigger_kwargs,
     )
+    assert_source_epoch()
     # No more callbacks below this point should precede the final integrity
     # check. The earlier readiness lease does not cover a late trigger callback.
     try:
@@ -160,6 +183,7 @@ def review_synthetic_proactive_startup(
         raise SyntheticProactiveStartupRejected(
             "startup or trigger evidence changed during disconnected review"
         )
+    assert_source_epoch()
     return SyntheticProactiveStartupReview(
         first_trigger.trigger_id, first_ready.snapshot_digest,
         first_trigger.history.digest, now_ms,
