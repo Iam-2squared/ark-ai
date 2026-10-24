@@ -83,6 +83,7 @@ class SyntheticContextRevocationLedger:
         if not isinstance(path, Path):
             raise TypeError("revocation path must be a pathlib.Path")
         self.path = path
+        self._source_path = path
         with closing(sqlite3.connect(path, timeout=10, isolation_level=None)) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
@@ -100,7 +101,19 @@ class SyntheticContextRevocationLedger:
                 conn.rollback()
                 raise
 
+    def _assert_source_path(self, expected: Path) -> None:
+        # A local object-path fence; not protection against filesystem swaps.
+        if (
+            self.path is not expected
+            or self._source_path is not expected
+            or not isinstance(expected, Path)
+        ):
+            raise SyntheticContextRevocationRejected(
+                "revocation source path changed"
+            )
+
     def _connect(self, *, readonly: bool) -> sqlite3.Connection:
+        self._assert_source_path(self._source_path)
         mode = "ro" if readonly else "rw"
         return sqlite3.connect(
             self.path.resolve().as_uri() + "?mode=" + mode,
@@ -109,6 +122,8 @@ class SyntheticContextRevocationLedger:
 
     def revoke(self, scope: MemoryScope, *, at_ms: int) -> str:
         """Persist a veto marker; no implicit regrant or personal data deletion."""
+        source_path = self.path
+        self._assert_source_path(source_path)
         digest = _scope_digest(scope)
         if type(at_ms) is not int or not 0 <= at_ms <= _MAX:
             raise SyntheticContextRevocationRejected("invalid revocation timestamp")
@@ -132,6 +147,7 @@ class SyntheticContextRevocationLedger:
                     "INSERT INTO synthetic_context_revocations VALUES(?,?)",
                     (digest, at_ms),
                 )
+                self._assert_source_path(source_path)
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -142,6 +158,8 @@ class SyntheticContextRevocationLedger:
         """Inspect one read-only snapshot; absence is not proof of consent."""
         if type(scopes) is not tuple or not 1 <= len(scopes) <= 16:
             raise SyntheticContextRevocationRejected("exact bounded scopes required")
+        source_path = self.path
+        self._assert_source_path(source_path)
         digests = tuple(_scope_digest(scope) for scope in scopes)
         if len(set(digests)) != len(digests):
             raise SyntheticContextRevocationRejected("duplicate context scopes")
@@ -157,6 +175,7 @@ class SyntheticContextRevocationLedger:
                         raise SyntheticContextRevocationRejected("context scope revoked")
                 if tuple(_scope_digest(scope) for scope in scopes) != digests:
                     raise SyntheticContextRevocationRejected("context scope changed")
+                self._assert_source_path(source_path)
                 conn.commit()
             except BaseException:
                 conn.rollback()
