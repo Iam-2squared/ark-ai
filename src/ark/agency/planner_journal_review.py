@@ -268,6 +268,33 @@ class SyntheticPlanJournal:
             raise SyntheticPlanJournalRejected("synthetic plan tail/header mismatch")
         return graph, tuple(prefixes)
 
+    def _pin_topology(self) -> tuple[tuple[PlanStep, ...], str]:
+        steps_epoch = self._steps
+        try:
+            digest = PlanGraph(steps_epoch).topology_digest()
+        except (PlanConflictError, TypeError, ValueError, AttributeError) as exc:
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan topology is invalid"
+            ) from exc
+        return steps_epoch, digest
+
+    def _assert_topology_epoch(
+        self, steps_epoch: tuple[PlanStep, ...], digest: str,
+    ) -> None:
+        if self._steps is not steps_epoch:
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan topology changed during review"
+            )
+        try:
+            if PlanGraph(steps_epoch).topology_digest() != digest:
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan topology changed during review"
+                )
+        except (PlanConflictError, TypeError, ValueError, AttributeError) as exc:
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan topology changed during review"
+            ) from exc
+
     def recover(
         self, *, retained: SyntheticPlanTail | None = None,
     ) -> SyntheticPlanRecovery:
@@ -279,6 +306,7 @@ class SyntheticPlanJournal:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
+        steps_epoch, topology_epoch = self._pin_topology()
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
@@ -313,6 +341,7 @@ class SyntheticPlanJournal:
                     raise SyntheticPlanJournalRejected(
                         "synthetic plan source changed during recovery"
                     )
+                self._assert_topology_epoch(steps_epoch, topology_epoch)
                 conn.commit()
                 return result
             except BaseException:
@@ -335,6 +364,7 @@ class SyntheticPlanJournal:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
+        steps_epoch, topology_epoch = self._pin_topology()
         pinned = None
         if retained is not None:
             if type(retained) is not SyntheticPlanTail:
@@ -398,6 +428,7 @@ class SyntheticPlanJournal:
                     raise SyntheticPlanJournalRejected(
                         "synthetic plan source changed during append"
                     )
+                self._assert_topology_epoch(steps_epoch, topology_epoch)
                 conn.commit()
                 return result
             except BaseException:
