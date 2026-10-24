@@ -174,7 +174,10 @@ class StartupSnapshot:
 
     def state(self, component_id: str) -> ReadinessState:
         self._assert_integrity()
+        # Caller-id validation is a reentrant boundary. Recheck the retained
+        # graph after it, before returning READY or calculating blockers.
         _identifier(component_id, "component_id")
+        self._assert_integrity()
         for item in self.components:
             if item.component_id == component_id:
                 return item.effective_state
@@ -183,7 +186,10 @@ class StartupSnapshot:
     def root_blockers(self, component_id: str) -> tuple[str, ...]:
         """Return local BLOCKED ancestors, not a new readiness decision."""
         self._assert_integrity()
+        # Caller-id validation is a reentrant boundary. Recheck the retained
+        # graph after it, before returning READY or calculating blockers.
         _identifier(component_id, "component_id")
+        self._assert_integrity()
         by_name = {item.component_id: item for item in self.components}
         if component_id not in by_name:
             raise KeyError(f"unknown readiness component: {component_id}")
