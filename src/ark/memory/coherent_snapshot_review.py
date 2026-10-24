@@ -202,7 +202,19 @@ def review_coherent_snapshot(
                 records.append(record)
                 assert_record_epochs()
             if not include_expired:
-                records = [item for item in records if not _expired(item, now)]
+                # Expiry predicates are a Python callback boundary, too.
+                # A later predicate must not be able to restore an earlier
+                # record/scope mutation before ranking and hide the drift.
+                live_records: list[MemoryRecord] = []
+                for item in records:
+                    assert_epoch()
+                    assert_record_epochs()
+                    expired = _expired(item, now)
+                    assert_epoch()
+                    assert_record_epochs()
+                    if not expired:
+                        live_records.append(item)
+                records = live_records
             ranked: list[tuple[float, int, str, MemoryRecord]] = []
             for item in records:
                 assert_epoch()
