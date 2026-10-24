@@ -412,3 +412,53 @@ adversary, authenticate the clock/observation/policy or prevent a race
 after the final check. No notification, ToolBackend or replay permission
 is produced. Regression coverage:
 `tests/test_proactive_freshness_epoch_run377.py`.
+
+
+## Run 378 — disconnected cross-boundary evidence correlation
+
+**Approval-veto / WRITE recovery diagnostic (no authorizing grant).**
+`agency/synthetic_claim_recovery_review.py` brackets the existing
+Planner / occurrence / ActionAudit / optional sidecar recovery reader with
+**two persisted cancellation-fenced approval-claim reviews**. It requires the
+same Registry revision, bound Action ID and request ID, rejects observed
+cancellation-journal append across the read, retained-history rollback and
+claim/registry changes, and carries only pseudonymous IDs and synthetic
+recovery state in the resulting receipt. The recovered RUNNING WRITE remains
+UNKNOWN and may **never** be automatically replayed; even a locally
+SUCCEEDED journal event is not proof of any real effect. There is no
+authenticated issuer, subject, recipient, trusted clock, signed external
+witness, atomic transaction across SQLite files, or post-final-check race
+elimination. `human_consent_verified`, `dispatch_authorized`,
+`automatic_replay_authorized`, and `external_outcome_known` remain
+permanently false in this research-only review.
+Tests: `tests/test_synthetic_claim_recovery_review_run378.py`.
+
+**Cached retention recheck / possible-erasure queue (no deletion).**
+`personal_context_retention_recheck_review.py` compares a prior
+content-minimized Memory retention inventory to fresh re-reads at its
+original synthetic clock and at a bounded later time. Added/changed Memory,
+revocations, stale inventory and observed drift fail closed. Only scoped,
+pseudonymous expired and unbounded Memory IDs are returned as candidates
+for **manual** review. This module never calls `delete` or
+`purge_expired` and cannot authorize any destructive operation, claim
+erasure completion, certify legal basis, expose personal content or infer
+consent from an absent revocation. The multiple Memory/veto reads are
+independent, not a global snapshot; local witnesses and wall clocks remain
+unauthenticated. Tests:
+`tests/test_personal_context_retention_recheck_run378.py`.
+
+**Prepared proactive Trigger / startup dependency diagnostics (no action).**
+`proactive_startup_fence_review.py` cross-checks a persisted synthetic
+Trigger against an exact-schema READY dependency lease, then repeats both
+reviews to reject observable drift. A separate unrelated blocked component
+need not poison a READY scheduler; its actual required dependencies must
+all be READY at the supplied time. The returned hashes grant no startup
+authority, notification, external dispatch or replay. Probe states, trigger
+policy, observation digest and clocks are synthetic caller inputs; the
+second check cannot exclude subsequent changes or make data authoritative.
+Tests: `tests/test_proactive_startup_fence_run378.py`.
+
+**All three integrations remain isolated and reversible.** No live
+ToolBackend, personal-data disclosure, camera/microphone/screen collection,
+real notification, destructive cleanup, paid compute, Credential connection,
+Candidate, protected evaluation opening or main merge is permitted.
