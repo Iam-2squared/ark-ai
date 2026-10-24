@@ -69,3 +69,27 @@ def test_get_callback_cannot_change_registry_effect_after_validation(monkeypatch
     monkeypatch.setattr(registry, "get", change_effect)
     with pytest.raises(ValueError, match="registry|registered tool"):
         registry.resolve(_call())
+
+
+@pytest.mark.parametrize("mode", ["clone", "effect", "missing"])
+@pytest.mark.parametrize("operation", ["resolve", "bind"])
+def test_get_must_return_the_original_registered_entry(
+    monkeypatch, mode, operation,
+):
+    registry, entry = _registry()
+    if mode == "clone":
+        forged = ToolRegistration(
+            entry.name, entry.capability, entry.effect,
+            entry.backend_id, entry.backend,
+        )
+    elif mode == "effect":
+        forged = ToolRegistration(
+            entry.name, entry.capability, Effect.READ,
+            "different-backend", _NeverExecute(),
+        )
+    else:
+        forged = None
+
+    monkeypatch.setattr(registry, "get", lambda _name: forged)
+    with pytest.raises(ValueError, match="unregistered identity"):
+        getattr(registry, operation)(_call())
