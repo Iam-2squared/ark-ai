@@ -96,11 +96,40 @@ def review_synthetic_observation_reuse(
         )
     except (AttributeError, TypeError, ValueError) as exc:
         raise SyntheticObservationReuseRejected("invalid observation envelope") from exc
+    def assert_epoch() -> None:
+        # A change between the historical and current lineage reviews must
+        # not be hidden by restoring the original carrier on a later callback.
+        try:
+            stable = (
+                type(cached.privacy_scope) is str
+                and type(cached.checked_at_ms) is int
+                and type(cached.observation_count) is int
+                and type(cached.lineage_digest) is str
+                and cached_epoch == (
+                    cached.privacy_scope, cached.checked_at_ms,
+                    cached.observation_count, cached.lineage_digest,
+                )
+                and len(envelopes) == len(envelope_epoch)
+                and all(
+                    supplied is original and supplied.observation_id == identity
+                    for supplied, (original, identity) in zip(
+                        envelopes, envelope_epoch, strict=True,
+                    )
+                )
+            )
+        except (AttributeError, TypeError, ValueError):
+            stable = False
+        if not stable:
+            raise SyntheticObservationReuseRejected(
+                "cached observation or source changed during review"
+            )
+
     historical = review_synthetic_observation_lineage(
         envelopes, privacy_scope=privacy_scope,
         now_ms=cached.checked_at_ms,
         max_age_ms=max_observation_age_ms,
     )
+    assert_epoch()
     if historical != cached:
         raise SyntheticObservationReuseRejected(
             "historical observation lineage differs from retained witness"
@@ -109,27 +138,9 @@ def review_synthetic_observation_reuse(
         envelopes, privacy_scope=privacy_scope,
         now_ms=now_ms, max_age_ms=max_observation_age_ms,
     )
-    # A reflected edit after the final lineage check must not be accepted.
-    try:
-        stable = (
-            cached_epoch == (
-                cached.privacy_scope, cached.checked_at_ms,
-                cached.observation_count, cached.lineage_digest,
-            )
-            and len(envelopes) == len(envelope_epoch)
-            and all(
-                supplied is original and supplied.observation_id == identity
-                for supplied, (original, identity) in zip(
-                    envelopes, envelope_epoch, strict=True,
-                )
-            )
-        )
-    except (AttributeError, TypeError, ValueError):
-        stable = False
-    if not stable:
-        raise SyntheticObservationReuseRejected(
-            "cached observation or source changed during review"
-        )
+    # Recheck after the later review as well. This is still local metadata
+    # consistency only, not evidence of an authenticated media source.
+    assert_epoch()
     return SyntheticObservationReuseReview(
         cached.lineage_digest, current.lineage_digest,
         current.observation_count, now_ms,
