@@ -168,6 +168,8 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
                 for item in links
             )
             or len({(item[0], item[1]) for item in links}) != len(links)
+            or len({item[0] for item in links}) != len(links)
+            or len({item[1] for item in links}) != len(links)
             or any(item[0] not in occurrences for item in links)
             or links and link is None
         ):
