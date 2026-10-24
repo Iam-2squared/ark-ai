@@ -46,8 +46,11 @@ fixture, that leaves an unjustified assumption of stable inputs across work.
    identity before lookup, after `get()`, and after the registry's original
    immutable-entry epoch check. In-memory mutation during direct resolution
    can no longer make a re-targeted ToolCall silently resolve as if it had
-   always been the original request. Regression fixture:
-   `tests/test_registry_resolve_epoch_run392.py` (**6 tests**).
+   always been the original request. An overridden `get()` also cannot
+   substitute a cloned, downgraded or absent registration while relying on
+   the original registry revision; the returned entry must be the exact
+   object held by the pinned registry map. Regression fixture:
+   `tests/test_registry_resolve_epoch_run392.py` (**12 tests**).
    No backend execution, authorization grant, durable token issuance or
    permission to spend is introduced.
 
