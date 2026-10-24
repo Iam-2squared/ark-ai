@@ -129,6 +129,32 @@ def _retained(value: SyntheticCancellationWitness | None) -> None:
     value.assert_shape()
 
 
+def _retained_epoch(
+    value: SyntheticCancellationWitness | None,
+) -> tuple[int, str, int] | None:
+    """Pin scalar history evidence before callbacks and SQLite reads."""
+    _retained(value)
+    if value is None:
+        return None
+    return (value.event_count, value.tail_hash, value.last_cancelled_at_ms)
+
+
+def _assert_retained_epoch(
+    value: SyntheticCancellationWitness | None,
+    pinned: tuple[int, str, int] | None,
+) -> None:
+    if value is None:
+        if pinned is not None:
+            raise SyntheticCancellationRejected("retained witness changed")
+        return
+    value.assert_shape()
+    if (
+        pinned is None
+        or (value.event_count, value.tail_hash, value.last_cancelled_at_ms) != pinned
+    ):
+        raise SyntheticCancellationRejected("retained witness changed during review")
+
+
 def _assert_prefix(
     prefixes: tuple[SyntheticCancellationWitness, ...],
     retained: SyntheticCancellationWitness | None,
@@ -147,6 +173,7 @@ class SyntheticCancellationLedger:
         if not isinstance(path, Path):
             raise TypeError("cancellation path must be a pathlib.Path")
         self.path = path
+        self._initial_path = path
         with closing(self._connect(create=True)) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
@@ -164,9 +191,18 @@ class SyntheticCancellationLedger:
                 conn.rollback()
                 raise
 
+    def _assert_path_epoch(self, expected: Path) -> None:
+        if (
+            type(self.path) is not type(expected)
+            or self.path is not expected
+            or self._initial_path is not expected
+        ):
+            raise SyntheticCancellationRejected("cancellation source path changed")
+
     def _connect(
         self, *, create: bool = False, readonly: bool = False,
     ) -> sqlite3.Connection:
+        self._assert_path_epoch(self._initial_path)
         if create:
             return sqlite3.connect(self.path, timeout=10, isolation_level=None)
         mode = "ro" if readonly else "rw"
@@ -178,13 +214,18 @@ class SyntheticCancellationLedger:
     def read_witness(
         self, *, retained: SyntheticCancellationWitness | None = None,
     ) -> SyntheticCancellationWitness:
-        _retained(retained)
+        pinned = _retained_epoch(retained)
+        path_epoch = self.path
         with closing(self._connect(readonly=True)) as conn:
             conn.execute("BEGIN")
             try:
                 prefixes = _replay(conn)
+                _assert_retained_epoch(retained, pinned)
+                self._assert_path_epoch(path_epoch)
                 _assert_prefix(prefixes, retained)
                 result = prefixes[-1]
+                _assert_retained_epoch(retained, pinned)
+                self._assert_path_epoch(path_epoch)
                 conn.commit()
                 return result
             except BaseException:
@@ -203,11 +244,14 @@ class SyntheticCancellationLedger:
             or type(at_ms) is not int or not 0 <= at_ms <= _MAX
         ):
             raise SyntheticCancellationRejected("invalid synthetic approval cancellation")
-        _retained(retained)
+        pinned = _retained_epoch(retained)
+        path_epoch = self.path
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 prefixes = _replay(conn)
+                _assert_retained_epoch(retained, pinned)
+                self._assert_path_epoch(path_epoch)
                 _assert_prefix(prefixes, retained)
                 previous = prefixes[-1]
                 if previous.event_count >= _LIMIT or at_ms < previous.last_cancelled_at_ms:
@@ -226,6 +270,8 @@ class SyntheticCancellationLedger:
                     raise SyntheticCancellationRejected(
                         "synthetic approval cancellation already persisted"
                     ) from exc
+                _assert_retained_epoch(retained, pinned)
+                self._assert_path_epoch(path_epoch)
                 conn.commit()
                 return SyntheticCancellationWitness(seq, digest, at_ms)
             except BaseException:
@@ -241,17 +287,22 @@ class SyntheticCancellationLedger:
         """Read-only exact local status; false does NOT mean genuine approval."""
         if type(approval_id) is not str or not _APPROVAL.fullmatch(approval_id):
             raise SyntheticCancellationRejected("invalid synthetic approval identity")
-        _retained(retained)
+        pinned = _retained_epoch(retained)
+        path_epoch = self.path
         with closing(self._connect(readonly=True)) as conn:
             conn.execute("BEGIN")
             try:
                 prefixes = _replay(conn)
+                _assert_retained_epoch(retained, pinned)
+                self._assert_path_epoch(path_epoch)
                 _assert_prefix(prefixes, retained)
                 row = conn.execute(
                     "SELECT 1 FROM synthetic_claim_cancellations WHERE approval_id=?",
                     (approval_id,),
                 ).fetchone()
                 current = prefixes[-1]
+                _assert_retained_epoch(retained, pinned)
+                self._assert_path_epoch(path_epoch)
                 conn.commit()
                 return SyntheticCancellationState(
                     approval_id, row is not None, current,
