@@ -74,6 +74,8 @@ def review_revocation_continuity(
         raise SyntheticContextRevocationRejected("exact revocation ledger required")
     if retained is not None and type(retained) is not SyntheticRevocationWitness:
         raise SyntheticContextRevocationRejected("exact retained witness required")
+    source_path = ledger.path
+    ledger._assert_source_path(source_path)
     pinned = None
     if retained is not None:
         retained.assert_integrity()
@@ -101,6 +103,7 @@ def review_revocation_continuity(
                     raise SyntheticContextRevocationRejected(
                         "retained revocation history changed"
                     )
+            ledger._assert_source_path(source_path)
             conn.commit()
             return witness
         except BaseException:
