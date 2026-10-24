@@ -149,7 +149,7 @@ class SyntheticPlanJournal:
         self._path = path
         self._steps = steps
         initial = PlanGraph(steps)
-        with closing(self._connect()) as conn:
+        with closing(self._connect(create=True)) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
@@ -179,8 +179,14 @@ class SyntheticPlanJournal:
                 conn.rollback()
                 raise
 
-    def _connect(self) -> sqlite3.Connection:
-        return sqlite3.connect(self._path, timeout=10, isolation_level=None)
+    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        # Only explicit journal initialization is allowed to create a file.
+        # Appending to a missing/moved initialized journal must not silently
+        # materialize a fresh empty SQLite database.
+        if create:
+            return sqlite3.connect(self._path, timeout=10, isolation_level=None)
+        uri = self._path.resolve().as_uri() + "?mode=rw"
+        return sqlite3.connect(uri, uri=True, timeout=10, isolation_level=None)
 
     def _replay(
         self, conn: sqlite3.Connection,
