@@ -12,6 +12,7 @@ import json
 from contextlib import closing
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 
 from .memory.contracts import MemoryScope
 from .memory.sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
@@ -95,11 +96,28 @@ def review_synthetic_retention_inventory(
     epoch = (scope.owner_id, scope.namespace)
     pinned = MemoryScope(*epoch)
     scope_hash = _scope_digest(pinned)
+    # The revocation check is a reentrant cross-store call. Bind BOTH local
+    # evidence sources before it, not only the Memory scope. Equal-value Path
+    # replacements during a diagnostic are different local review epochs.
+    memory_source = memory.path
+    veto_source = ledger.path
+    if not isinstance(memory_source, Path) or not isinstance(veto_source, Path):
+        raise SyntheticRetentionRejected("retention source path is invalid")
+
+    def assert_sources() -> None:
+        if memory.path is not memory_source or ledger.path is not veto_source:
+            raise SyntheticRetentionRejected(
+                "retention evidence source changed during inventory"
+            )
+
     first = review_revocation_continuity(ledger, retained=retained_revocations)
+    assert_sources()
     with closing(memory._connect_readonly()) as conn:
+        assert_sources()
         conn.execute("BEGIN")
         try:
             _validate_v1_schema(conn)
+            assert_sources()
             rows = conn.execute(
                 """SELECT * FROM memories WHERE owner_id=? AND namespace=?
                    ORDER BY memory_id LIMIT ?""",
@@ -137,6 +155,7 @@ def review_synthetic_retention_inventory(
                     record.created_at_ms, record.updated_at_ms,
                     record.expires_at_ms, state.value,
                 ))
+            assert_sources()
             conn.commit()
         except BaseException:
             conn.rollback()
@@ -144,6 +163,7 @@ def review_synthetic_retention_inventory(
     # This second review fences prior veto deletion during the Memory read.
     # Newly appended revocations are allowed but must be reflected in output.
     second = review_revocation_continuity(ledger, retained=first)
+    assert_sources()
     if (scope.owner_id, scope.namespace) != epoch:
         raise SyntheticRetentionRejected("retention scope changed during inventory")
     revoked = scope_hash in {row[0] for row in second.rows}
@@ -156,6 +176,7 @@ def review_synthetic_retention_inventory(
         ),
         ensure_ascii=True, separators=(",", ":"), allow_nan=False,
     ).encode("utf-8")
+    assert_sources()
     return SyntheticRetentionInventory(
         scope_hash, "retention_" + hashlib.sha256(payload).hexdigest(),
         now_ms, revoked, items,
