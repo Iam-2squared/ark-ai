@@ -99,6 +99,28 @@ are explicitly caller-supplied and must be kept outside mutable fixture stores
 to carry any continuity value; they are neither signed provenance nor receipts
 for an external WRITE.
 
+## E. Observation window witness: final serialization and hash epoch
+
+Files:
+
+- `src/ark/observation_window_review.py`
+- `tests/test_observation_window_witness_digest_epoch_run405.py`
+
+The read-only observation window's `witness` first validates its retained
+envelopes and privacy scope, then serializes the metadata-only payload and
+calculates its local SHA-256. It now **revalidates** the original envelope
+identities and content **after serialization and after hashing**, before
+returning a cached-looking witness. Fault fixtures replace envelope source/
+content fields while `json.dumps` executes, temporarily change them and
+attempt restoration from `hashlib.sha256`, and mutate them during the digest
+callback itself. A normal deterministic witness remains unchanged.
+
+Previously, a final serialization/digest callback could leave the carrier
+changed after the last integrity check while the function still returned an
+apparently valid witness for older fields. This closes that local race; it
+does not authenticate content provenance, camera/microphone access, user
+consent, or later use by a real scheduler.
+
 ## CI, limitations and authorization gates
 
 Each individual GitHub HEAD requires its own exact-head CI. Tests added here
