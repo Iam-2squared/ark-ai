@@ -198,20 +198,28 @@ class SyntheticProactiveLedger:
             assert_proactive_history_continues,
         )
 
-        retained_epoch = None
-        if retained is not None:
-            if type(retained) is not SyntheticTriggerWitness:
-                raise SyntheticTriggerRejected("exact retained proactive witness required")
-            retained.assert_integrity()
-            retained_epoch = (retained.row_hashes, retained.digest)
-        # Bind the target database before any caller-controlled policy method.
-        # Reflective mutation of this research object must not redirect writes.
+        # The independent retained-witness validation is a reentrant
+        # callback. Bind the original policy and database BEFORE invoking it:
+        # otherwise a mutated, equally valid policy/path becomes the baseline
+        # of a newly persisted synthetic preparation.
         ledger_path = self.path
         if not isinstance(ledger_path, Path):
             raise SyntheticTriggerRejected("proactive ledger path changed")
         pinned = policy.identity()
         if self.path is not ledger_path:
             raise SyntheticTriggerRejected("proactive ledger path changed")
+        retained_epoch = None
+        if retained is not None:
+            if type(retained) is not SyntheticTriggerWitness:
+                raise SyntheticTriggerRejected("exact retained proactive witness required")
+            retained_epoch = (retained.row_hashes, retained.digest)
+            retained.assert_integrity()
+            if (retained.row_hashes, retained.digest) != retained_epoch:
+                raise SyntheticTriggerRejected("retained proactive witness changed")
+        if self.path is not ledger_path or policy.identity() != pinned:
+            raise SyntheticTriggerRejected(
+                "policy or ledger path changed before preparation"
+            )
         scope = _hash("ARK-trigger-scope-v1", pinned[:4])
         policy_hash = _hash("ARK-trigger-policy-v1", pinned)
         trigger = "trigger_" + _hash(
