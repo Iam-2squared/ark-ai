@@ -168,31 +168,6 @@ def review_personal_context(
             ))
         pinned.append(tuple(entries))
         record_epoch.append(tuple(group_epoch))
-    selected: list[SyntheticContextItem] = []
-    counts = [0] * len(scopes)
-    for ordinal in range(policy.total_limit):
-        chosen = None
-        for offset in range(len(scopes)):
-            index = (ordinal + offset) % len(scopes)
-            if (
-                counts[index] < len(pinned[index])
-                and counts[index] < policy.per_namespace_limit
-            ):
-                chosen = index
-                break
-        if chosen is None:
-            break
-        memory_id, namespace, content, revision, content_sha = pinned[chosen][
-            counts[chosen]
-        ]
-        counts[chosen] += 1
-        provenance = "ctx_" + _hash("ARK-context-provenance-v1", (
-            memory_id, namespace, revision, content_sha,
-            pinned_policy[2], len(selected),
-        ))
-        selected.append(SyntheticContextItem(
-            memory_id, namespace, content, revision, provenance,
-        ))
     # A frozen record can be reflectively edited after validation. Comparing
     # only the selected content/revision omits source and owner provenance.
     # Pin all entry identities and the header, including metadata, across
@@ -238,6 +213,37 @@ def review_personal_context(
         if not stable:
             raise PersonalContextReviewRejected("context input changed during selection")
 
+
+    selected: list[SyntheticContextItem] = []
+    counts = [0] * len(scopes)
+    for ordinal in range(policy.total_limit):
+        chosen = None
+        for offset in range(len(scopes)):
+            index = (ordinal + offset) % len(scopes)
+            if (
+                counts[index] < len(pinned[index])
+                and counts[index] < policy.per_namespace_limit
+            ):
+                chosen = index
+                break
+        if chosen is None:
+            break
+        memory_id, namespace, content, revision, content_sha = pinned[chosen][
+            counts[chosen]
+        ]
+        counts[chosen] += 1
+        # Hashing a selected item is reentrant; a later item must not be
+        # able to restore a temporary alteration to source/privacy policy.
+        assert_snapshot_epoch()
+        provenance = "ctx_" + _hash("ARK-context-provenance-v1", (
+            memory_id, namespace, revision, content_sha,
+            pinned_policy[2], len(selected),
+        ))
+        assert_snapshot_epoch()
+        selected.append(SyntheticContextItem(
+            memory_id, namespace, content, revision, provenance,
+        ))
+        assert_snapshot_epoch()
     assert_snapshot_epoch()
     bundle = "ctx_bundle_" + _hash("ARK-context-bundle-v1", (
         snapshot_epoch[1], pinned_policy,
