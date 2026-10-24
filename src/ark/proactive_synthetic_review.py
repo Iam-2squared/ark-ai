@@ -160,6 +160,10 @@ class SyntheticProactiveLedger:
                     conn.execute(_TABLE)
                     conn.execute("PRAGMA user_version=1")
                 _validate(conn)
+                if self.path is not path:
+                    raise SyntheticTriggerRejected(
+                        "proactive ledger path changed during initialization"
+                    )
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -288,7 +292,10 @@ class SyntheticProactiveLedger:
 
     def count(self) -> int:
         """Read-only count; a missing database is never recreated."""
-        uri = self.path.resolve().as_uri() + "?mode=ro"
+        path_epoch = self.path
+        if not isinstance(path_epoch, Path):
+            raise SyntheticTriggerRejected("proactive ledger path changed")
+        uri = path_epoch.resolve().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(
             uri, uri=True, isolation_level=None,
         )) as conn:
@@ -298,6 +305,10 @@ class SyntheticProactiveLedger:
                 result = conn.execute(
                     "SELECT COUNT(*) FROM synthetic_prepared_triggers"
                 ).fetchone()[0]
+                if self.path is not path_epoch:
+                    raise SyntheticTriggerRejected(
+                        "proactive ledger path changed during count"
+                    )
                 conn.commit()
                 return result
             except BaseException:
