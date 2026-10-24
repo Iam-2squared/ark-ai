@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+**LATEST — Run 399**
+
+Saved at: **2026-10-25T02:57:20.516+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the normal GitHub Contents checkpoint write; NOT a GitHub server receipt time, authenticated consent timestamp or trusted Tool clock).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. Exact **work-basis HEAD**: `bb76718ed7ef331ad155e2371f20b3905a74ccf2` (**CI #817 / run `40114301561` GREEN all 6 jobs** verified this invocation). Exact **final source+test HEAD**: `c2675c9276269dbf1b6c76980c8c31c3555b181b` (**CI #831 / `40118121194` 5/6 GREEN, 0 FAIL, 1 Windows Python3.12 IN PROGRESS** on last independent read; Ubuntu Python3.13 Ruff PASS, **1840 pytest passed**). Exact **final source+test+engineering-doc / checkpoint write-basis HEAD**: `b5d06d9f901caaf407cf4a950fd34697b91c3a90` (**CI #832 / `40118296486` 3/6 GREEN, 0 FAIL, 3 Windows IN PROGRESS** on last read). The new **checkpoint-result HEAD is not knowable while authoring this content**; the normal GitHub Contents `update_file` response's `commit_sha` is authoritative and its *own* CI must be inspected independently. No GREEN is inherited from predecessor commits.
+
+**Overall current ARK state:** isolated, local-first, disconnected **synthetic/mock JARVIS safety foundations only; complete JARVIS NOT_PASSED**. There is still NO authenticated human issuer/consent, externally trusted execution clock, OS inode/file-descriptor custody, atomic cross-SQLite snapshot, authenticated real action receipt, live ToolBackend, reliable outside-world exactly-once proof or trained Candidate. **UNKNOWN WRITE remains UNKNOWN and is NEVER automatically replayed.** No model capability, training result, actual notification, camera/microphone capture or privacy-use authorization follows from these fixtures.
+
+### NEW Run399 — six FREE-only coherent packages (+28 synthetic regression cases)
+
+1. **Revocation witness entry custody (+8):** `src/ark/personal_context_revocation_continuity_review.py`, `tests/test_revocation_early_carrier_epoch_run399.py`. Preserve the exact original retained revocation tuple, inner rows and witness identifier *before* first source/integrity callbacks; reject value-equal carrier replacement or mid-review rebasing. No consent or erasure.
+2. **Claim-source detached witness custody (+4):** `src/ark/agency/synthetic_claim_occurrence_recheck_review.py`, `tests/test_claim_source_early_witness_epoch_run399.py`. Pin original claim-link/reservation historical evidence *before* validation, recheck after source read, history continuity and final read. A matching local association is not verified human consent or a WRITE outcome.
+3. **Memory events per-decoded-row epoch (+4):** `src/ark/memory/sqlite_store.py`, `tests/test_memory_event_row_epoch_run399.py`. Reject caller Scope/Path changes during each event row’s Python decode/constructor, before next row could restore them. Preserve frozen Memory v1 DDL, event ID ordering and content-free event output.
+4. **Direct proactive continuity custody (+4):** `src/ark/proactive_synthetic_continuity_review.py`, `tests/test_proactive_direct_continuity_epoch_run399.py`. Direct historical subset checks retain both original witnesses and exact tuple carriers before the first integrity callback. No scheduler or notification authorization.
+5. **Observation/Trigger pre-lineage ingress (+4):** `src/ark/proactive_observation_lineage_fence_review.py`, `tests/test_observation_ingress_witness_epoch_run399.py`. Pin retained Trigger evidence before integrity and validate envelope/Policy/input after reentrant source hashing *before first lineage review*. No sensor capture/notification.
+6. **Personal Context retention original-veto custody (+4):** `src/ark/personal_context_retention_review.py`, `tests/test_retention_inventory_early_veto_epoch_run399.py`. Preserve exact independent revocation history before first integrity/veto callback; reject source, scope or equal-valued retained tuple swaps. Only diagnostic inventory; no deletion.
+
+Engineering threat model, exact test matrices and explicit non-proofs: `docs/JARVIS_RETAINED_WITNESS_AND_MEMORY_EVENT_EPOCH_RUN399.md`. **15 ordinary GitHub Contents source/test/docs commits BEFORE this single checkpoint**, 15 commits ahead of Run398 work-basis. No force push, raw Git object/ref write, hidden bypass, manually duplicated CI run, credentials, external GPU, paid API, real ToolBackend, main merge or Candidate generation.
+
+### Exact-head CI evidence / observed state
+
+- Work-basis `bb76718ed7ef331ad155e2371f20b3905a74ccf2`: #817 / `40114301561` **GREEN 6/6**, prior Run398 **1812 tests passed**.
+- First privacy package `9e4011114308c36ac67761a59069dfefea767b52`: #820 / `40117193943` **GREEN 6/6**.
+- Claim-source package `e2168bf6c1d23115b0691b67a8028342d8f26038`: #822 / `40117310372` **GREEN 6/6**.
+- Memory row epoch `f9c3566c876b3a4e964d395088a915c8d22ee957`: #824 / `40117405174` **GREEN 6/6**; Ubuntu Py3.13 **1828 passed**.
+- First engineering doc `22099bb5cca344d8f7897a36fb78b8d760a2efae`: #825 / `40117499660` **GREEN 6/6**.
+- Direct proactive package `baac674203ff938306dee3edb5740425a846d54e`: #827 / `40117589898` **GREEN 6/6**.
+- Observation/Trigger package `588779ee3b1ee53d9dbd860d1a49fedbd9dcb3a7`: #829 / `40117765663` **GREEN 6/6**.
+- Final source/test `c2675c9276269dbf1b6c76980c8c31c3555b181b`: **#831 / `40118121194` 5/6 GREEN, Windows3.12 IN PROGRESS**, no FAIL at latest check. Ubuntu Py3.13 **Ruff PASS and 1840 passed in 38.03s** from job `120943615498`.
+- Final engineering doc / checkpoint write-basis `b5d06d9f901caaf407cf4a950fd34697b91c3a90`: **#832 / `40118296486` 3/6 GREEN, Windows3.11/3.12/3.13 IN PROGRESS**, no FAIL at latest read. New checkpoint-result SHA and CI require separate future observation.
+
+**Main/frozen-gate baseline:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; pre-checkpoint comparison **688 commits ahead, 0 behind, 297 added paths, ZERO existing-main-file edits/deletions**. V3 **PR #5 Draft/open/unmerged/NOT_PASSED**, head `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher evidence and all frozen contracts, Memory v1 SQL DDL, protected V2 FINAL, V3 Contract 1 semantics/hash untouched. The V3 identity review still lacks immutable 40-hex HF model revision and exact per-file weight/tokenizer bytes/hashes, and MUST not fabricate them.
+
+### Blockers / authorization boundaries / Next plan / 今後の方針
+
+**Hard NO until explicit user gate:** payment or potentially billable services, external GPU/API, real Candidate adapter/weights/export/promotion, protected V2 evaluation opening, frozen-contract edits, credentials/new linked accounts, irreversible/destructive action, actual hardware/sensors/notifications/ToolBackend WRITE, human-approval-gated main merge or unresolved legal/licensing/privacy choice. All discovered paid/physical/identity blockers remain preserved; continue unrelated FREE lanes. Local hashes, reflection-based carriers and SQLite transactions are **not** authenticated external provenance or multi-file exactly-once execution.
+
+**Prioritized Next plan / 今後の方針:** (1) independently observe exact #831/#832 remaining Windows jobs and the newly created checkpoint SHA’s own CI; fix genuine regressions via normal source/test path if needed, never duplicate workflows or reclassify IN PROGRESS as GREEN; (2) Planner+Claim+Occurrence+ActionAudit safe restart reconciliation and UNKNOWN non-replay, with exact-head GREEN prerequisites; (3) Memory CAS/concurrency/coherent snapshot and expiry/retention veto lifecycle, without frozen DDL changes; (4) trusted-clock/approval provenance fail-closed fixtures and disconnected mock ToolBackend; (5) independent Startup/Observation/Scheduler and V3 FREE-only path/identity/reproducibility guard inspection, leaving paid/protected stages blocked.
+
+---
+
+**HISTORICAL — Run398 canonical checkpoint and prior frozen/evidence history preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 398**
 
 Saved at: **2026-10-25T02:02:17.145+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before the normal GitHub Contents checkpoint write; NOT GitHub server receipt time and NOT a trusted action clock).
