@@ -87,10 +87,19 @@ def test_json_canonicalization_replacing_equal_bytes_denied(tmp_path, monkeypatc
     assert backend.executions == 0
 
 
-def test_nested_but_digest_matched_json_is_bounded_rejection(tmp_path):
+def test_nested_but_digest_matched_json_is_bounded_rejection(tmp_path, monkeypatch):
     _anchor, backend = _archive(tmp_path)
     raw = b"[" * 1500 + b"0" + b"]" * 1500
     forged = module.SyntheticRecoveryArchive(raw, module._digest(raw))
+    # JSON implementations may reject the nesting as malformed shape or
+    # raise a recursion error. Either outcome must remain fail-closed.
+    with pytest.raises(module.SyntheticRecoveryArchiveRejected):
+        module._restore(forged)
+
+    def recursive_decoder(_raw):
+        raise RecursionError("synthetic deeply nested JSON decoder")
+
+    monkeypatch.setattr(module.json, "loads", recursive_decoder)
     with pytest.raises(module.SyntheticRecoveryArchiveRejected, match="invalid recovery archive"):
         module._restore(forged)
     assert backend.executions == 0
