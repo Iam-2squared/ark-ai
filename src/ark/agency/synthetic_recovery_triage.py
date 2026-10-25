@@ -146,10 +146,16 @@ def review_synthetic_write_recovery(
         (
             step, step.step_id, step.call, step.depends_on,
             step.call.arguments, step.call.request_id,
+            step.call.tool, step.call.capability, step.call.scope,
         )
         for step in topology_epoch
     )
     arguments_epoch = call.arguments
+    # These three are caller-owned string carriers. Hash-equivalent
+    # replacements after the first registry bind are still a changed input.
+    # Derived request_id / arguments_sha256 are compared by VALUE because
+    # they are recomputed properties, not stable original string objects.
+    call_carriers = (call.tool, call.capability, call.scope)
     call_epoch = (
         call.tool, call.capability, call.scope,
         call.request_id, call.arguments_sha256,
@@ -173,23 +179,38 @@ def review_synthetic_write_recovery(
             or journal._steps is not topology_epoch
             or any(
                 step.step_id != step_id_before
+                or step.step_id is not step_id_before
                 or step.call is not original_call
                 or step.depends_on is not original_dependencies
                 or step.call.arguments is not original_arguments
                 or step.call.request_id != original_request
+                or step.call.tool is not original_tool
+                or step.call.capability is not original_capability
+                or step.call.scope is not original_scope
                 for (
                     step, step_id_before, original_call,
                     original_dependencies, original_arguments, original_request,
+                    original_tool, original_capability, original_scope,
                 ) in topology_items
             )
             or call.arguments is not arguments_epoch
+            or any(
+                current is not original
+                for current, original in zip(
+                    (call.tool, call.capability, call.scope),
+                    call_carriers, strict=True,
+                )
+            )
             or (
                 call.tool, call.capability, call.scope,
                 call.request_id, call.arguments_sha256,
             ) != call_epoch
             or registry.revision != registry_epoch
             or any(
-                tuple(getattr(witness, field.name) for field in fields(witness)) != original
+                any(
+                    getattr(witness, field.name) is not pinned
+                    for field, pinned in zip(fields(witness), original, strict=True)
+                )
                 for witness, original in retained_epochs
             )
         ):
