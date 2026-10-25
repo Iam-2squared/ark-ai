@@ -39,6 +39,9 @@ class SyntheticWritePlanReview:
     steps: tuple[SyntheticRecoveryReview, ...]
     uncertain_step_ids: tuple[str, ...]
     plan_topology_digest: str
+    # Diagnoses only: descendants are held, never authorized or replayed.
+    downstream_write_hold_step_ids: tuple[str, ...] = ()
+    terminally_blocked_write_step_ids: tuple[str, ...] = ()
 
     @property
     def dispatch_authorized(self) -> bool:
@@ -247,8 +250,40 @@ def review_synthetic_write_plan(
             or item.matching_occurrences
             or item.matching_audit_links
         ))
+        # A locally PENDING successor is not independently safe when its
+        # prerequisite WRITE is uncertain. Propagate through READ bridges too.
+        # Keep this distinct from a direct UNKNOWN outcome: descendants need
+        # a hold, not a fabricated external result or a retry instruction.
+        dependencies = {
+            name: original_dependencies
+            for (_step, name, _call, original_dependencies, *_rest) in snapshots
+        }
+        write_names = {name for name, _call in write_steps}
+
+        def downstream(roots: set[str]) -> tuple[str, ...]:
+            reached = set(roots)
+            while True:
+                additions = {
+                    name for name, upstream in dependencies.items()
+                    if name not in reached and any(
+                        dependency in reached for dependency in upstream
+                    )
+                }
+                if not additions:
+                    break
+                reached.update(additions)
+            return tuple(sorted((reached - roots) & write_names))
+
+        terminal = {
+            name for name, state, _revision in baseline.step_statuses
+            if state in {"failed", "blocked", "cancelled"}
+        }
+        downstream_hold = downstream(set(uncertain))
+        terminal_hold = downstream(terminal)
+        assert_epoch()
         return SyntheticWritePlanReview(
             tuple(reviews), uncertain, baseline.tail.topology_digest,
+            downstream_hold, terminal_hold,
         )
     except (KeyError, AttributeError, TypeError, ValueError) as exc:
         raise SyntheticWritePlanReviewRejected(
