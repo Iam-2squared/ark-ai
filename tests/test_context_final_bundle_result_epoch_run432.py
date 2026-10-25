@@ -72,7 +72,10 @@ def test_context_bundle_constructor_cannot_replace_reviewed_selection(
     monkeypatch.setattr(context, "SyntheticContextBundle", substituted_bundle)
     with pytest.raises(
         context.PersonalContextReviewRejected,
-        match="context bundle result changed|context selection result changed|context input changed",
+        match=(
+            "context bundle result changed|context selection result changed"
+            "|context input changed"
+        ),
     ):
         context.review_personal_context(snapshot, policy)
 
