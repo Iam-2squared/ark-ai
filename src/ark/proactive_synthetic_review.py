@@ -65,19 +65,50 @@ class SyntheticTriggerPolicy:
     max_preparations_per_window: int
 
     def __post_init__(self) -> None:
+        # Validation hooks can be reentrant in offline fixture reviews. Pin
+        # the entire original policy before the first hook, and check after
+        # EACH field; a later field must not hide temporary identity drift.
+        field_names = (
+            "owner", "namespace", "definition_id", "revision",
+            "policy_revision", "minimum_interval_ms", "rolling_window_ms",
+            "max_preparations_per_window",
+        )
+        original = tuple(getattr(self, name) for name in field_names)
+
+        def assert_policy_epoch() -> None:
+            if any(
+                getattr(self, name) is not carrier
+                for name, carrier in zip(field_names, original, strict=True)
+            ):
+                raise ValueError("synthetic trigger policy changed during validation")
+
         for name in ("owner", "namespace", "definition_id", "policy_revision"):
             _text(name, getattr(self, name))
+            assert_policy_epoch()
         for name in ("revision", "minimum_interval_ms", "rolling_window_ms",
                      "max_preparations_per_window"):
             _int(name, getattr(self, name), minimum=1)
+            assert_policy_epoch()
 
     def identity(self) -> tuple[object, ...]:
-        self.__post_init__()
-        return (
+        original = (
             self.owner, self.namespace, self.definition_id, self.revision,
             self.policy_revision, self.minimum_interval_ms,
             self.rolling_window_ms, self.max_preparations_per_window,
         )
+        self.__post_init__()
+        if any(
+            now is not before for now, before in zip(
+                (
+                    self.owner, self.namespace, self.definition_id, self.revision,
+                    self.policy_revision, self.minimum_interval_ms,
+                    self.rolling_window_ms, self.max_preparations_per_window,
+                ),
+                original, strict=True,
+            )
+        ):
+            raise ValueError("synthetic trigger policy changed during identity review")
+        return original
 
 
 @dataclass(frozen=True, slots=True)
