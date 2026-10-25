@@ -260,26 +260,35 @@ def review_synthetic_write_plan(
         }
         write_names = {name for name, _call in write_steps}
 
-        def downstream(roots: set[str]) -> tuple[str, ...]:
+        def downstream(
+            roots: set[str], *, exclude_direct_roots: bool,
+        ) -> tuple[str, ...]:
             reached = set(roots)
+            descendants: set[str] = set()
             while True:
                 additions = {
                     name for name, upstream in dependencies.items()
-                    if name not in reached and any(
+                    if name not in descendants and any(
                         dependency in reached for dependency in upstream
                     )
                 }
                 if not additions:
                     break
+                descendants.update(additions)
                 reached.update(additions)
-            return tuple(sorted((reached - roots) & write_names))
+            # PlanGraph may mark downstream nodes BLOCKED automatically.
+            # Those nodes are still descendants of a terminal prerequisite,
+            # even when they themselves appear in the terminal root set.
+            if exclude_direct_roots:
+                descendants.difference_update(roots)
+            return tuple(sorted(descendants & write_names))
 
         terminal = {
             name for name, state, _revision in baseline.step_statuses
             if state in {"failed", "blocked", "cancelled"}
         }
-        downstream_hold = downstream(set(uncertain))
-        terminal_hold = downstream(terminal)
+        downstream_hold = downstream(set(uncertain), exclude_direct_roots=True)
+        terminal_hold = downstream(terminal, exclude_direct_roots=False)
         assert_epoch()
         return SyntheticWritePlanReview(
             tuple(reviews), uncertain, baseline.tail.topology_digest,
