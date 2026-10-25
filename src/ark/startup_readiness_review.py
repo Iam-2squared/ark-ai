@@ -266,6 +266,10 @@ class StartupSnapshot:
         return tuple(sorted(found))
 
 
+# Preserve the canonical result type through a synthetic constructor callback.
+_STARTUP_SNAPSHOT_RESULT_TYPE = StartupSnapshot
+
+
 def evaluate_startup_readiness(
     probes: Iterable[StartupComponent],
 ) -> StartupSnapshot:
@@ -395,4 +399,33 @@ def evaluate_startup_readiness(
     # evidence if a hash callback rewrites an earlier probe carrier.
     digest = "startup_" + hashlib.sha256(encoded).hexdigest()
     assert_source_epoch()
-    return StartupSnapshot(components, digest)
+    # The result constructor itself can be an injected callback. Hold the
+    # original probe epoch AND the computed ComponentResult carrier epoch
+    # across it; a locally forged READY value must never leave this review.
+    component_epoch = tuple((
+        item, item.component_id, item.dependencies, item.local_state,
+        item.effective_state, item.failure_code, item.schema_revision,
+    ) for item in components)
+    result = StartupSnapshot(components, digest)
+    assert_source_epoch()
+    if (
+        type(result) is not _STARTUP_SNAPSHOT_RESULT_TYPE
+        or result.components is not components
+        or result.digest is not digest
+        or any(
+            type(item) is not ComponentResult
+            or item is not original
+            or item.component_id is not name
+            or item.dependencies is not dependencies
+            or item.local_state is not local_state
+            or item.effective_state is not effective_state
+            or item.failure_code is not failure_code
+            or item.schema_revision is not schema_revision
+            for item, (
+                original, name, dependencies, local_state, effective_state,
+                failure_code, schema_revision,
+            ) in zip(components, component_epoch, strict=True)
+        )
+    ):
+        raise ValueError("startup result changed during construction")
+    return result
