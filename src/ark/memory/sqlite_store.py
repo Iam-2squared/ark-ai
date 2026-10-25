@@ -178,6 +178,11 @@ class SQLiteMemoryStore:
                 stable = (
                     write.scope is pinned_scope
                     and write.metadata is pinned_metadata
+                    and pinned_scope.owner_id is pinned_owner
+                    and pinned_scope.namespace is pinned_namespace
+                    and write.source_id is pinned_source_id
+                    and write.content is pinned_content
+                    and write.expires_at_ms is pinned_expiry
                     and (
                         pinned_scope.owner_id, pinned_scope.namespace,
                         write.source_id, write.content, write.expires_at_ms,
@@ -267,6 +272,11 @@ class SQLiteMemoryStore:
                 stable_after_event = (
                     write.scope is pinned_scope
                     and write.metadata is pinned_metadata
+                    and pinned_scope.owner_id is pinned_owner
+                    and pinned_scope.namespace is pinned_namespace
+                    and write.source_id is pinned_source_id
+                    and write.content is pinned_content
+                    and write.expires_at_ms is pinned_expiry
                     and (
                         pinned_scope.owner_id, pinned_scope.namespace,
                         write.source_id, write.content, write.expires_at_ms,
