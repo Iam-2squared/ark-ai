@@ -150,7 +150,11 @@ def review_synthetic_write_plan(
                 and len(journal._steps) == len(snapshots)
                 and all(
                     step.step_id == name
+                    and step.step_id is name
                     and step.call is call
+                    and call.tool is call_identity[0]
+                    and call.capability is call_identity[1]
+                    and call.scope is call_identity[2]
                     and step.depends_on is dependencies
                     and step.call.arguments is arguments
                     and step.call.request_id == request
