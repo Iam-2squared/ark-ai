@@ -36,6 +36,14 @@ class ObservationEnvelope:
                 raise ValueError(
                     f"{name} must be a non-empty exact string"
                 )
+            # Inert fixture metadata must not carry unbounded raw media or
+            # arbitrary-sized identifiers into hashes and downstream reviewers.
+            if len(value) > 1024:
+                raise ValueError(f"{name} exceeds observation identifier budget")
+            try:
+                value.encode("utf-8")
+            except UnicodeError as exc:
+                raise ValueError(f"{name} is not valid UTF-8 text") from exc
         if (
             type(self.ingested_at_ms) is not int
             or not 0 <= self.ingested_at_ms <= 2**63 - 1
@@ -54,15 +62,38 @@ class ObservationEnvelope:
 
     @property
     def observation_id(self) -> str:
+        # A frozen dataclass is still reflectively mutable. The direct public
+        # ID getter must not hash a mixed source/privacy/timestamp epoch when
+        # serialization or hashing is intercepted by an adapter fixture.
+        original = (
+            self.kind, self.source_id, self.adapter_id, self.privacy_scope,
+            self.ingested_at_ms, self.content_sha256, self.parent_sha256,
+            self.schema_version,
+        )
+
+        def assert_epoch() -> None:
+            current = (
+                self.kind, self.source_id, self.adapter_id, self.privacy_scope,
+                self.ingested_at_ms, self.content_sha256, self.parent_sha256,
+                self.schema_version,
+            )
+            if any(now is not before for now, before in zip(
+                current, original, strict=True,
+            )):
+                raise ValueError("observation identity changed during hashing")
+
+        self.__post_init__()
+        assert_epoch()
+        (kind, source, adapter, privacy, observed, content, parent, schema) = original
         payload = {
-            "adapter_id": self.adapter_id,
-            "content_sha256": self.content_sha256,
-            "ingested_at_ms": self.ingested_at_ms,
-            "kind": self.kind.value,
-            "parent_sha256": self.parent_sha256,
-            "privacy_scope": self.privacy_scope,
-            "schema_version": self.schema_version,
-            "source_id": self.source_id,
+            "adapter_id": adapter,
+            "content_sha256": content,
+            "ingested_at_ms": observed,
+            "kind": kind.value,
+            "parent_sha256": parent,
+            "privacy_scope": privacy,
+            "schema_version": schema,
+            "source_id": source,
         }
         encoded = (
             json.dumps(
@@ -74,7 +105,10 @@ class ObservationEnvelope:
             )
             + "\n"
         ).encode("utf-8")
-        return "obs_" + hashlib.sha256(encoded).hexdigest()
+        assert_epoch()
+        digest = hashlib.sha256(encoded).hexdigest()
+        assert_epoch()
+        return "obs_" + digest
 
 
 def _digest(value: object, name: str) -> None:
