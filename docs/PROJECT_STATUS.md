@@ -1,6 +1,52 @@
 # ARK AI Project Status
 
-**LATEST — Run 404**
+**LATEST — Run 405**
+
+Saved at: **2026-10-25T09:01:47.567+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this ordinary GitHub Contents API update; **NOT** trusted external time, authenticated issuer evidence, or GitHub server receipt).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact work-basis HEAD:** `2e456aad01212a6608f7447ce86e1b15bca4ead4` (Run404 checkpoint; **CI #902 / run `40141276260` GREEN six of six**).
+**Final source+tests HEAD:** `f97c682b0d1030f0b5836bc8c77eef7d03de19b9` (**CI #914 / run `40144852374`**, Ubuntu Python 3.11–3.13 3/3 GREEN, Windows 3 **IN PROGRESS** at last inspected job read; Ubuntu Python 3.13 job `121023897217` **Ruff All checks passed / 2037 pytest passed in 39.58s**; not an all-platform GREEN claim).
+**Engineering-doc / checkpoint write-basis HEAD:** `22086a6266e0e95e635c3fbe58a576f342e2a6ed` (**CI #915 / run `40144871217` IN PROGRESS** at last workflow read). This is the freshly verified HEAD **before** the status write, NOT its resulting commit.
+**Checkpoint-result HEAD:** cannot be precommitted inside the file being written; the normal Contents API `update_file.commit_sha` response is authoritative. Its own exact-head CI must be checked separately, and no earlier HEAD's GREEN is inherited.
+
+### Overall ARK state
+
+**Local-first disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated consent/issuer, external trusted clock, external backend receipt, side-effect exactly-once guarantee, atomic cross-SQLite snapshot, OS inode custody, device capture, GPU training success, Candidate promotion, or real autonomous WRITE. A valid local journal, witness, mock SUCCEEDED marker, Observation digest, or caller clock sample **never** grants execution. **UNKNOWN WRITE remains UNKNOWN and automatic replay is forbidden**.
+
+### NEW Run405 — five coherent FREE-only source/test packages (+26 synthetic regression cases)
+
+1. **Plan-wide ToolRegistry subject binding (+5):** Pin original step and ToolCall fields. Verify returned bound call is the exact original and registration matches the immutable registry entry, rather than classifying a temporarily reentrant retargeted WRITE as a READ. `src/ark/agency/synthetic_write_plan_recovery_review.py` and `tests/test_synthetic_write_plan_binding_epoch_run405.py`.
+2. **Memory coherent SQLite setup epoch (+5):** Recheck original request/source after row_factory, PRAGMA busy_timeout, BEGIN, initial schema SELECT and user_version; reject temporary mutations between adjacent connection callbacks and close the rejected read-only handle. Memory v1 DDL unchanged. `src/ark/memory/coherent_snapshot_review.py` and `tests/test_memory_snapshot_sqlite_setup_epoch_run405.py`.
+3. **Unauthenticated clock carriers and retained-prefix budget (+5):** Keep original source/chain identity carriers; reject value-equal reflected swaps and impossible retained-prefix budgets before iterating. No trusted clock or dispatch authority. `src/ark/agency/synthetic_clock_sequence_review.py` and `tests/test_synthetic_clock_carrier_budget_run405.py`.
+4. **Plan-wide retained four-store prefixes (+6):** Accept exact-type separately retained PlanTail/ledger/audit/link witnesses; pin them across every WRITE step and repeated first-step check. Refuse truncated/replaced journal, lost prior PENDING reservation and erased audit evidence. No global transaction or replay authority. `src/ark/agency/synthetic_write_plan_recovery_review.py` and `tests/test_synthetic_write_plan_retained_prefix_run405.py`.
+5. **Observation final witness epoch (+5):** Recheck envelope identity after metadata serialization AND after SHA-256 to prevent callback-induced stale witness return, including mutating/restoring between callbacks. No sensor access. `src/ark/observation_window_review.py` and `tests/test_observation_window_witness_digest_epoch_run405.py`.
+
+**13 ordinary GitHub Contents API implementation/test/documentation commits before this ONE checkpoint**. Engineering threat/evidence boundaries: `docs/JARVIS_REGISTRY_MEMORY_CLOCK_EPOCH_RUN405.md`. No raw Git objects, ref manipulation, forced pushes, workflow reruns, main merge, paid API/GPU, actual Candidate, frozen evaluation opening, credential access, real ToolBackend, notification, or privacy data erasure/export.
+
+### Exact-head CI and frozen contracts
+
+- Original Run404 checkpoint `2e456aad01212a6608f7447ce86e1b15bca4ead4`: **CI #902 GREEN 6/6**.
+- Intermediate exact-head CI **#903–#910** was inspected; #903–#910 **GREEN 6/6** at last aggregate read; including clock+Memory+first plan binding `b952026fefee5a939ea16bd793a053512ef6c990` **CI #908 / `40144460885` GREEN 6/6**, Ubuntu 3.13 job `121022729603` Ruff GREEN / **2026 pytest passed**.
+- Retained-prefix test HEAD `5b6bc677c49173df5a6f45112d9de6b1021bac6a`: **CI #911 / run `40144703670` IN PROGRESS** at last job read (Ubuntu 3 GREEN; not all six at that time). Doc-head #912 `a10909cdd55c4ffe84478793fa8fdeb4e83d5f00`: **GREEN** at last aggregate read.
+- Final source+tests `f97c682b0d1030f0b5836bc8c77eef7d03de19b9`: **CI #914 IN PROGRESS**, Ubuntu 3/3 GREEN and Python3.13 Ruff + **2037 tests PASS**, Windows not yet confirmed. Latest doc HEAD `22086a6266e0e95e635c3fbe58a576f342e2a6ed`: **CI #915 IN PROGRESS**.
+- Fresh main-vs-branch full Git Tree comparison on `22086a6266e0e95e635c3fbe58a576f342e2a6ed`: **333 files added; 0 pre-existing main files modified; 0 deleted; neither tree was truncated**.
+- **Frozen V1/V2/Local UI/Launcher** code, contracts and evaluation evidence unchanged. **Memory v1 and ActionAudit v1 schema unchanged.** V3 PR #5 confirmed **Draft/open/unmerged**, retained **NOT_PASSED**. No frozen V2 final-evaluation opening or Candidate promotion.
+
+### Blockers / user authorization boundaries
+
+NO external paid/possibly-billable GPU/API/subscription/compute, real Candidate generation, protected V2 final eval, irreversible contract change, main merge requiring approval, credential/account connection, physical host action, destructive deletion, real tool side effect, unreviewed privacy export/erasure, or promotion. Required authenticated human approval/issuer, trusted clock, external receipt and cross-store atomicity are unresolved. Free isolated code/fixture engineering can continue.
+
+### Next plan / 今後の方針
+
+1. Verify **#914/#915 and the eventual checkpoint-result HEAD** on Ubuntu/Windows Python 3.11–3.13. Diagnose any real FAIL from logs; fix minimally in the ordinary protected write path, and keep failed SHA evidence honest.
+2. Stress all-WRITE retained continuity under concurrent independent SQLite histories and after simulated crash boundaries; add link-event nonempty retained-prefix fixtures, dependency-terminal drift and UNKNOWN WRITE non-replay invariants.
+3. Advance Memory CAS/coherent snapshots + privacy revocation races; keep frozen schemas intact and no personal data export.
+4. Define deny-by-default trusted-clock/issuer/admission contracts, then scheduler/observation fixture adapters without enabling real backends; preserve all V3 approval/path/identity/provenance, paid and evaluation gates.
+
+---
+
+**HISTORICAL — Run 404**
 
 Saved at: **2026-10-25T08:04:27.126+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled before the ordinary GitHub Contents API checkpoint write; **not** an external trusted execution clock, authenticated human-review act or GitHub server receipt).
 
