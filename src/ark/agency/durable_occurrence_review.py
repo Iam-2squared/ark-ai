@@ -173,11 +173,42 @@ class SyntheticOccurrenceStore:
         # Otherwise a reflected token swap during first bind becomes the
         # supposed original epoch and can reserve a different token.
         token_epoch = (token.token_id, token.request_id, token.expires_at_ms)
+        # Capture the original WRITE subject before the first registry callback,
+        # not after its return. Reflection can retarget an otherwise frozen
+        # ToolCall or token while the ledger is about to be reserved.
+        arguments_epoch = call.arguments
+        call_epoch = (
+            call.tool, call.capability, call.scope, call.request_id,
+            call.arguments_sha256,
+        )
+
+        def assert_input_epoch() -> None:
+            try:
+                stable = (
+                    self._path is path_epoch
+                    and call.arguments is arguments_epoch
+                    and (
+                        call.tool, call.capability, call.scope,
+                        call.request_id, call.arguments_sha256,
+                    ) == call_epoch
+                    and (token.token_id, token.request_id, token.expires_at_ms)
+                    == token_epoch
+                )
+            except (TypeError, ValueError, AttributeError) as exc:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence input changed during reserve"
+                ) from exc
+            if not stable:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence input changed during reserve"
+                )
+
         try:
             first = registry.bind(call)
-            if (token.token_id, token.request_id, token.expires_at_ms) != token_epoch:
+            assert_input_epoch()
+            if first.call is not call:
                 raise SyntheticReplayRejected(
-                    "synthetic token changed during registry binding"
+                    "synthetic registry returned a different action subject"
                 )
             if first.registration.effect is not Effect.WRITE:
                 raise SyntheticReplayRejected("only synthetic WRITE occurrences can reserve")
@@ -186,32 +217,36 @@ class SyntheticOccurrenceStore:
             token_digest = hashlib.sha256(
                 ("ARK-synthetic-v1\0" + token.token_id).encode("utf-8")
             ).hexdigest()
+            # Hashing may be substituted by a deterministic fault fixture;
+            # never reserve a digest computed across two token epochs.
+            assert_input_epoch()
         except (TypeError, ValueError, AttributeError, KeyError) as exc:
             raise SyntheticReplayRejected("synthetic registry binding failed") from exc
 
-        if self._path is not path_epoch:
-            raise SyntheticReplayRejected("synthetic occurrence source changed before reserve")
+        assert_input_epoch()
         with closing(self._connect(pinned_path=path_epoch)) as conn:
+            assert_input_epoch()
             conn.execute("BEGIN IMMEDIATE")
+            assert_input_epoch()
             try:
                 _validate(conn)
-                if self._path is not path_epoch:
-                    raise SyntheticReplayRejected(
-                        "synthetic occurrence source changed during reserve"
-                    )
+                assert_input_epoch()
                 # A committed fixture reservation is a lower bound on later
                 # caller-supplied times. This is not a trusted clock: an
                 # attacker replacing the whole DB can also reset this bound.
                 latest = conn.execute(
                     "SELECT MAX(reserved_at_ms) FROM synthetic_occurrence_reservations"
                 ).fetchone()[0]
+                assert_input_epoch()
                 if latest is not None and now_ms < latest:
                     raise SyntheticReplayRejected(
                         "synthetic reservation clock regressed"
                     )
                 again = registry.bind(call)
+                assert_input_epoch()
                 if (
-                    again.bound_action_id != first.bound_action_id
+                    again.call is not call
+                    or again.bound_action_id != first.bound_action_id
                     or again.registry_revision != first.registry_revision
                     or again.registration is not first.registration
                     or again.call is not first.call
@@ -238,17 +273,16 @@ class SyntheticOccurrenceStore:
                     raise SyntheticReplayRejected(
                         "synthetic token or occurrence was already reserved"
                     ) from exc
-                if self._path is not path_epoch:
-                    raise SyntheticReplayRejected(
-                        "synthetic occurrence source changed during reserve"
-                    )
+                assert_input_epoch()
                 conn.commit()
+                assert_input_epoch()
             except BaseException:
                 conn.rollback()
                 raise
+        assert_input_epoch()
         return SyntheticReservationReceipt(
             occurrence_id, first.registry_revision, first.bound_action_id,
-            first.call.request_id, now_ms,
+            token_epoch[1], now_ms,
         )
 
     def count_synthetic(self) -> int:
