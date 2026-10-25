@@ -65,7 +65,7 @@ def test_mutating_scope_at_each_sqlite_callback_is_rejected(
 
     with pytest.raises(
         review.SyntheticMemorySnapshotRejected,
-        match="scope, source or retained witness changed",
+        match="scope or source changed",
     ):
         review.review_synthetic_memory_scopes(store, scopes)
 
@@ -87,7 +87,7 @@ def test_equal_valued_retained_event_replacement_rejected(tmp_path, monkeypatch)
     monkeypatch.setattr(review, "_record", altered)
     with pytest.raises(
         review.SyntheticMemorySnapshotRejected,
-        match="scope, source or retained witness changed",
+        match="retained Memory event witness changed",
     ):
         review.review_synthetic_memory_scopes(store, scopes, retained_events=retained)
 
@@ -106,7 +106,7 @@ def test_equal_valued_cached_event_rebinding_rejected(tmp_path, monkeypatch):
     monkeypatch.setattr(review, "_row_hash", altered)
     with pytest.raises(
         review.SyntheticMemorySnapshotRejected,
-        match="scope, source or retained witness changed",
+        match="retained exact Memory snapshot changed",
     ):
         review.review_synthetic_memory_scopes(
             store, scopes, require_same_snapshot=cached,
@@ -126,7 +126,7 @@ def test_final_snapshot_digest_does_not_hide_path_replacement(tmp_path, monkeypa
     monkeypatch.setattr(review, "_hash", altered)
     with pytest.raises(
         review.SyntheticMemorySnapshotRejected,
-        match="scope, source or retained witness changed",
+        match="scope or source changed",
     ):
         review.review_synthetic_memory_scopes(store, scopes)
 
