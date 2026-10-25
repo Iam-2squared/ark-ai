@@ -112,6 +112,11 @@ class SyntheticAuditLinkReceipt:
         return False
 
 
+# Keep the original receipt class as an exact-type validator even if a local
+# test callback substitutes the exported constructor while a link commits.
+_RECEIPT_CLASS = SyntheticAuditLinkReceipt
+
+
 def _replay(conn: sqlite3.Connection) -> tuple[SyntheticAuditLinkWitness, ...]:
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticAuditLinkRejected("synthetic link schema version changed")
@@ -438,7 +443,24 @@ class SyntheticOccurrenceAuditLinkStore:
                 # A post-COMMIT rejection does not erase an already committed
                 # link. Keep durable evidence and deny the diagnostic receipt.
                 assert_input_epoch()
-                return SyntheticAuditLinkReceipt(reservation_epoch[0], event_epoch[0], link)
+                result = SyntheticAuditLinkReceipt(
+                    reservation_epoch[0], event_epoch[0], link,
+                )
+                # Receipt construction is another Python callback boundary.
+                # A committed link stays durable, but a retargeted/forged
+                # diagnostic receipt must never be returned to its caller.
+                assert_input_epoch()
+                if (
+                    type(result) is not _RECEIPT_CLASS
+                    or result.occurrence_id is not reservation_epoch[0]
+                    or result.audit_event_id is not event_epoch[0]
+                    or result.link_hash is not link
+                ):
+                    raise SyntheticAuditLinkRejected(
+                        "synthetic link receipt changed after commit"
+                    )
+                assert_input_epoch()
+                return result
             except BaseException:
                 conn.rollback()
                 raise
