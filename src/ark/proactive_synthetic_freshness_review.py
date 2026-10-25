@@ -99,25 +99,33 @@ def review_prepared_trigger_freshness(
         "minimum_interval_ms", "rolling_window_ms",
         "max_preparations_per_window",
     )
-    policy_epoch = tuple(
-        (type(getattr(policy, name)), getattr(policy, name))
-        for name in policy_fields
-    )
+    # Equal-valued replacements are still a different fixture-input epoch:
+    # preserve each carrier, not merely the policy's matching field values.
+    policy_carriers = tuple(getattr(policy, name) for name in policy_fields)
+    policy_epoch = tuple((type(value), value) for value in policy_carriers)
 
     def assert_epoch() -> None:
-        current_policy = tuple(
-            (type(getattr(policy, name)), getattr(policy, name))
-            for name in policy_fields
-        )
+        current_carriers = tuple(getattr(policy, name) for name in policy_fields)
+        current_policy = tuple((type(value), value) for value in current_carriers)
         if (
             ledger.path is not ledger_path
             or type(receipt.trigger_id) is not str
             or type(receipt.prepared_at_ms) is not int
             or (receipt.trigger_id, receipt.prepared_at_ms) != receipt_epoch
+            or receipt.trigger_id is not receipt_epoch[0]
+            or receipt.prepared_at_ms is not receipt_epoch[1]
             or current_policy != policy_epoch
+            or any(
+                current is not original
+                for current, original in zip(
+                    current_carriers, policy_carriers, strict=True,
+                )
+            )
             or retained is not None and (
-                retained.row_hashes, retained.digest
-            ) != retained_epoch
+                (retained.row_hashes, retained.digest) != retained_epoch
+                or retained.row_hashes is not retained_epoch[0]
+                or retained.digest is not retained_epoch[1]
+            )
         ):
             raise SyntheticTriggerRejected(
                 "freshness evidence changed during read-only review"
