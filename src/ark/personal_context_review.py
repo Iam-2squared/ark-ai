@@ -67,6 +67,10 @@ class SyntheticContextBundle:
         return False
 
 
+# A replaced fixture constructor must not substitute an altered context bundle.
+_BUNDLE_RESULT_TYPE = SyntheticContextBundle
+
+
 def _hash(label: str, payload: object) -> str:
     encoded = json.dumps(
         payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"),
@@ -245,9 +249,49 @@ def review_personal_context(
         ))
         assert_snapshot_epoch()
     assert_snapshot_epoch()
+    # Keep the original selected-item carriers across the final hash and
+    # the result constructor. A forged bundle is not privacy clearance.
+    selected_items = tuple(selected)
+    selected_epoch = tuple((
+        item, item.memory_id, item.namespace, item.content,
+        item.revision, item.provenance_id,
+    ) for item in selected_items)
+
+    def assert_selected_epoch() -> None:
+        if len(selected_items) != len(selected_epoch) or any(
+            type(item) is not SyntheticContextItem
+            or item is not original
+            or any(now is not before for now, before in zip(
+                (item.memory_id, item.namespace, item.content,
+                 item.revision, item.provenance_id),
+                (memory_id, namespace, content, revision, provenance),
+                strict=True,
+            ))
+            for item, (
+                original, memory_id, namespace, content, revision, provenance,
+            ) in zip(selected_items, selected_epoch, strict=True)
+        ):
+            raise PersonalContextReviewRejected(
+                "context selection result changed during bundle construction"
+            )
+
+    assert_selected_epoch()
     bundle = "ctx_bundle_" + _hash("ARK-context-bundle-v1", (
         snapshot_epoch[1], pinned_policy,
-        tuple(item.provenance_id for item in selected),
+        tuple(item.provenance_id for item in selected_items),
     ))
     assert_snapshot_epoch()
-    return SyntheticContextBundle(tuple(selected), bundle, snapshot_epoch[1])
+    assert_selected_epoch()
+    result = SyntheticContextBundle(selected_items, bundle, snapshot_epoch[1])
+    assert_snapshot_epoch()
+    assert_selected_epoch()
+    if (
+        type(result) is not _BUNDLE_RESULT_TYPE
+        or result.items is not selected_items
+        or result.bundle_id is not bundle
+        or result.snapshot_digest is not snapshot_epoch[1]
+    ):
+        raise PersonalContextReviewRejected(
+            "context bundle result changed during construction"
+        )
+    return result
