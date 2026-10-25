@@ -76,6 +76,25 @@ scoping correction: `10381b4a9ab70b63d3f3d18d8593d0fc4d65e536`.
   window-consistency callback would restore.
 - No media capture, user authorization, authenticated source or notification.
 
+## Package D — Independent proactive/readiness carrier fence (+7 regression cases)
+
+**Source:** `src/ark/proactive_startup_fence_review.py`, commit
+`71e9886fb015a1dab551ac0618db2f0bc1c40f8a`.
+
+**Tests:** `tests/test_proactive_startup_outer_epoch_run409.py`, commit
+`f728c3e5111d56f0b75de80950d19ab4b66f96d7`.
+
+- The startup lease and prepared-trigger freshness checks are independent
+  callbacks. Preserve the **original** Trigger receipt, trigger Policy and
+  exact required-component carriers across each callback, not only the
+  final aggregate comparison; a later callback must not conceal an earlier
+  temporary retarget.
+- Test policy revision, trigger receipt identity and required schema change,
+  including equal-valued but different string carriers. The regression also
+  verifies a clean fixture never grants startup, notification or dispatch.
+- Cached readiness graph semantics still pass through the existing
+  StartupSnapshot / lease checks; no real scheduler action or notification.
+
 ## Exact-head CI and evidence interpretation
 
 A GitHub PR workflow run validates only its own exact head SHA and must not
@@ -88,11 +107,14 @@ This is a real failed exact-head run, not proof that startup tests failed, and
 not authorization to alter frozen Local UI. No duplicate workflow rerun was
 started; separate newer commit-triggered runs are evaluated independently.
 
-**Latest Run409 source+tests head:** `10381b4a9ab70b63d3f3d18d8593d0fc4d65e536`.
-Its own exact-head workflow is **#955 / run `40156902277`** (QUEUED when
-first inspected); full-matrix GREEN is **not yet established**.
-All run IDs / job outcomes in the final checkpoint must be refreshed from
-GitHub before reporting additional PASS evidence.
+**Four-package latest source+tests head:** `f728c3e5111d56f0b75de80950d19ab4b66f96d7`.
+This head follows earlier three-package code+test head
+`10381b4a9ab70b63d3f3d18d8593d0fc4d65e536`
+(**#955 / `40156902277`: IN PROGRESS at an intermediate check**).
+The first two-package test head `6ebd7b355936b48733ae0013c2199174747b1bb4`
+**#952 / `40156698385` completed SUCCESS all six**.
+The four-package exact-head matrix is **not yet established GREEN**.
+Refresh it by SHA before claiming a final result.
 
 ## Immutable and authorization boundaries
 
