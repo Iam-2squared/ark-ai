@@ -97,40 +97,53 @@ def review_synthetic_memory_event_continuity(
     """
     if type(memory) is not SQLiteMemoryStore or type(scope) is not MemoryScope:
         raise SyntheticMemoryEventRejected("exact Memory store and scope required")
+    # Capture the original caller-owned scope/source before the first hash,
+    # including the immutable string carriers that can be swapped reflectively.
     original = (scope.owner_id, scope.namespace)
+    path_epoch = memory.path
     pinned = MemoryScope(*original)
-    scope_hash = _scope_digest(pinned)
-    if retained is not None:
-        if type(retained) is not SyntheticMemoryEventWitness:
-            raise SyntheticMemoryEventRejected("exact retained Memory witness required")
-        retained.assert_shape(scope_hash)
-    # A frozen witness may be reflectively changed while the SQLite replay
-    # hydrates records. Preserve the independently supplied original values
-    # rather than trusting only its later (possibly rewritten) shape/hash.
+    if retained is not None and type(retained) is not SyntheticMemoryEventWitness:
+        raise SyntheticMemoryEventRejected("exact retained Memory witness required")
     retained_epoch = None if retained is None else (
         retained.scope_digest, retained.event_count,
         retained.last_event_id, retained.tail_hash,
     )
-    genesis = SyntheticMemoryEventWitness(scope_hash, 0, 0, _genesis(scope_hash))
-    prefixes = [genesis]
-    path_epoch = memory.path
 
     def assert_epoch() -> None:
-        if memory.path is not path_epoch or (
-            scope.owner_id, scope.namespace
-        ) != original:
+        if (
+            memory.path is not path_epoch
+            or scope.owner_id is not original[0]
+            or scope.namespace is not original[1]
+        ):
             raise SyntheticMemoryEventRejected(
                 "Memory source or scope changed during review"
             )
-        if retained is not None and retained_epoch != (
-            retained.scope_digest, retained.event_count,
-            retained.last_event_id, retained.tail_hash,
+        if retained is not None and any(
+            current is not before
+            for current, before in zip(
+                (
+                    retained.scope_digest, retained.event_count,
+                    retained.last_event_id, retained.tail_hash,
+                ),
+                retained_epoch, strict=True,
+            )
         ):
             raise SyntheticMemoryEventRejected(
                 "independently retained Memory witness changed during review"
             )
 
+    assert_epoch()
+    scope_hash = _scope_digest(pinned)
+    assert_epoch()
+    if retained is not None:
+        retained.assert_shape(scope_hash)
+        assert_epoch()
+    genesis = SyntheticMemoryEventWitness(scope_hash, 0, 0, _genesis(scope_hash))
+    assert_epoch()
+    prefixes = [genesis]
+
     with closing(memory._connect_readonly()) as conn:
+        assert_epoch()
         conn.execute("BEGIN")
         try:
             assert_epoch()
@@ -177,10 +190,26 @@ def review_synthetic_memory_event_continuity(
                         raise SyntheticMemoryEventRejected("invalid Memory terminal history")
                     states[memory_id] = (False, revision)
                 prior = prefixes[-1]
+                prior_epoch = (
+                    prior.scope_digest, prior.event_count,
+                    prior.last_event_id, prior.tail_hash,
+                )
+                prior_hash = prior.tail_hash
                 digest = _hash(
                     "ARK-synthetic-memory-event-v1",
-                    (prior.tail_hash, tuple(raw)),
+                    (prior_hash, tuple(raw)),
                 )
+                assert_epoch()
+                if (
+                    (
+                        prior.scope_digest, prior.event_count,
+                        prior.last_event_id, prior.tail_hash,
+                    ) != prior_epoch
+                    or prior.tail_hash is not prior_hash
+                ):
+                    raise SyntheticMemoryEventRejected(
+                        "prior Memory event chain link changed"
+                    )
                 prefixes.append(SyntheticMemoryEventWitness(
                     scope_hash, prior.event_count + 1, event_id, digest,
                 ))
