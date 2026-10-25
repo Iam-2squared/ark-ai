@@ -279,7 +279,30 @@ class SQLiteMemoryStore:
                 ) from exc
             if not stable_after_event:
                 raise MemorySchemaError("memory write changed before event commit")
-        return MemoryRecord(
+        # The row and its event have already committed. A reentrant
+        # connection-exit or record-construction callback may still retarget
+        # the original write. Report the late drift as failure, never pretend
+        # the durable CAS/event was rolled back or retry the write here.
+        def assert_post_commit_epoch() -> None:
+            try:
+                stable = (
+                    self.path is path_epoch
+                    and write.scope is pinned_scope
+                    and write.metadata is pinned_metadata
+                    and pinned_scope.owner_id is pinned_owner
+                    and pinned_scope.namespace is pinned_namespace
+                    and write.source_id is pinned_source_id
+                    and write.content is pinned_content
+                    and write.expires_at_ms is pinned_expiry
+                    and dict(write.metadata) == metadata_copy
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise MemorySchemaError("memory write changed after commit") from exc
+            if not stable:
+                raise MemorySchemaError("memory write changed after commit")
+
+        assert_post_commit_epoch()
+        record = MemoryRecord(
             memory_id,
             pinned_scope,
             pinned_source_id,
@@ -291,6 +314,8 @@ class SQLiteMemoryStore:
             revision,
             content_hash,
         )
+        assert_post_commit_epoch()
+        return record
 
     def get(
         self,
