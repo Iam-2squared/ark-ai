@@ -23,6 +23,7 @@ from .durable_occurrence_review import _validate
 from .planner import PlanGraph
 from .planner_journal_review import (
     SyntheticPlanJournal,
+    SyntheticPlanRecovery,
     SyntheticPlanTail,
 )
 from .registry import BoundAction, ToolRegistry
@@ -82,6 +83,11 @@ class SyntheticRecoveryReview:
     @property
     def external_outcome_known(self) -> bool:
         return False
+
+
+# Keep the original result type as a validator if an injected fixture replaces
+# the exported constructor. A successful local review never grants authority.
+_REVIEW_CLASS = SyntheticRecoveryReview
 
 
 def review_synthetic_write_recovery(
@@ -161,6 +167,8 @@ def review_synthetic_write_recovery(
         call.request_id, call.arguments_sha256,
     )
     registry_epoch = registry.revision
+    bound_epoch: tuple[tuple[object, tuple[tuple[str, object], ...]], ...] = ()
+    plan_epoch: tuple[tuple[object, tuple[tuple[str, object], ...]], ...] = ()
     retained_epochs = tuple(
         (witness, tuple(getattr(witness, field.name) for field in fields(witness)))
         for witness in (retained_plan, retained_ledger, retained_audit, retained_link)
@@ -207,6 +215,12 @@ def review_synthetic_write_recovery(
             ) != call_epoch
             or registry.revision != registry_epoch
             or any(
+                getattr(obj, name) is not original
+                for item in (bound_epoch, plan_epoch)
+                for obj, originals in item
+                for name, original in originals
+            )
+            or any(
                 any(
                     getattr(witness, field.name) is not pinned
                     for field, pinned in zip(fields(witness), original, strict=True)
@@ -235,6 +249,10 @@ def review_synthetic_write_recovery(
                 "recovery registry binding subject changed"
             )
         assert_epoch()
+        bound_epoch = ((
+            first, tuple((field.name, getattr(first, field.name))
+                         for field in fields(first)),
+        ),)
         if first.registration.effect is not Effect.WRITE:
             raise SyntheticRecoveryRejected("only WRITE fixtures may be reviewed")
         # The journal's persisted topology is checked by recover(). Do not
@@ -246,6 +264,14 @@ def review_synthetic_write_recovery(
         if topology.steps[step_id].call.request_id != first.call.request_id:
             raise SyntheticRecoveryRejected("plan step action identity differs")
         plan = journal.recover(retained=retained_plan)
+        assert_epoch()
+        if type(plan) is not SyntheticPlanRecovery or type(plan.tail) is not SyntheticPlanTail:
+            raise SyntheticRecoveryRejected("exact synthetic plan recovery result required")
+        plan_epoch = tuple(
+            (obj, tuple((field.name, getattr(obj, field.name))
+                        for field in fields(obj)))
+            for obj in (plan, plan.tail)
+        )
         assert_epoch()
         state = dict((name, value) for name, value, _ in plan.step_statuses)
         if step_id not in state:
@@ -464,13 +490,28 @@ def review_synthetic_write_recovery(
             raise SyntheticRecoveryRejected(
                 "registry or action changed during recovery diagnosis"
             )
-        return SyntheticRecoveryReview(
+        result_fields = (
             step_id, first.call.request_id, first.registry_revision,
             first.bound_action_id, state[step_id],
             step_id in plan.ambiguous_running_steps,
             plan.tail, ledger, audit_witness, occurrences,
             link_witness, matching_links,
         )
+        result = SyntheticRecoveryReview(*result_fields)
+        # Result construction can itself run a substituted local test callback.
+        # Do not return a forged diagnosis or reflected-mutable witnesses.
+        assert_epoch()
+        if (
+            type(result) is not _REVIEW_CLASS
+            or any(getattr(result, field.name) is not original
+                   for field, original in zip(
+                       fields(_REVIEW_CLASS), result_fields, strict=True,
+                   ))
+        ):
+            raise SyntheticRecoveryRejected(
+                "synthetic recovery constructed result changed"
+            )
+        return result
     except (sqlite3.Error, KeyError, TypeError, ValueError, AttributeError) as exc:
         raise SyntheticRecoveryRejected(
             "incomplete or malformed synthetic recovery evidence"
