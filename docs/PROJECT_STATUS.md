@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — Run432**
+
+Saved at: **2026-10-26T04:02:23.000+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation runtime wall clock immediately before normal GitHub Contents checkpoint write; NOT signed trusted time, authenticated human consent, external-outcome attestation or billing approval).
+
+**Branch / PR:** `research/jarvis-foundations` / PR #8 **Draft/open/unmerged**.
+**Exact work-basis HEAD:** `dd6c3a570cb9712dcdadc4031cba664b641845e6` (Run431 checkpoint; CI **#1212 / 40219049185** independently verified all six SUCCESS at invocation start).
+**Run432 final executable source + test HEAD:** `cc47895c4b1b1a85a6eb52201337bb886f9ba09a`.
+**Run432 technical-document / exact checkpoint-write-basis HEAD:** `735aa1d9cd6c6cf6895b80319a02167d63d0d1b1`, `docs/JARVIS_OFFLINE_FIXTURE_SCOPE_CONTEXT_OCCURRENCE_RUN432.md`.
+**Checkpoint-result HEAD:** intentionally not knowable inside its own created commit. Use the actual normal GitHub Contents `commit_sha` returned by this status update and inspect its **separate** workflow; previous HEADs' GREEN do not cover it.
+
+### Overall current ARK state
+
+**Complete JARVIS NOT_PASSED.** Local-first disconnected / synthetic / mock groundwork only. No authenticated human issuer/consent, signed trusted clock, independently attested external Tool outcome, cross-file SQLite atomic commit, real-world exactly-once WRITE, live camera/microphone/display capture, real notifications or operational autonomous dispatch. **UNKNOWN/RUNNING and reserved PENDING WRITEs must never auto-replay.** PR #5 remains Draft/unmerged/NOT_PASSED; protected V2 final evaluation, real Candidate training/promotion, paid or external GPU compute remain hard gated.
+
+### NEW Run432 — four coherent free-only work packages (+40 parameter-expanded cases)
+
+1. **Disconnected Observation adapters (+18):** `src/ark/observation_fixture_adapters.py` committed `e3e325774eb87da78c4957fbb568f2adeca3aec7`; tests `0c3b0de5f18f648faf2e6efa45ee0a330a5f4f23`; Ruff-only formatting fix `f0e496cb590aa06ef52617e8b6aa58663e09bb10`. Explicit caller-supplied in-memory TEXT/TRANSCRIPT and IMAGE/SCREEN fixture adapters, exact types, 4 MiB encoded/byte budget, SHA-256 content minimization, stable fixture adapter IDs, valid parent lineage. No device capture, network, storage of raw content or Tool execution. Existing Observation schema/identity unchanged.
+2. **Memory get original-owner/scope read custody (+11):** `src/ark/memory/sqlite_store.py` commit `4483b266b6e21934c8f1a36cbee1dfa8a1138241`; tests `16baab581ba2468210a7c78a999eb8970612920d`. Capture original owner/namespace carrier identities before callbacks and check after read-only connection, transaction BEGIN, managed schema check, SELECT, row hydration, clock/expiry evaluation, missing-row and `include_expired` returns; reject equal-valued reflected scope replacement. Frozen Memory v1 SQL DDL unchanged.
+3. **Independent-process synthetic WRITE reservation race (+3):** `tests/test_occurrence_cross_process_reservation_race_run432.py` `c3e212c16aef13f70a8fd817d79a03f32bc67847`. Two isolated Python child processes race a one-time reservation in disposable local SQLite with duplicate-token, duplicate-occurrence or both cases. Exactly one durable successful inert reservation and one rejected replay are tested; store restart preserves the token digest. Mock backend never executes; this does not prove real external exactly-once effects.
+4. **Personal Context final bundle result integrity (+8):** `src/ark/personal_context_review.py` `84a509cd243067fbc4cf120f88597dcab8d11b66`; tests `b75b1a9fb44f7da8b929807d59121568d36e263c`, Ruff-only formatting fix `cc47895c4b1b1a85a6eb52201337bb886f9ba09a`. Pin selected context item objects/field carriers across final digest and bundle construction, preserve exact inert result type and original source/policy, reject forged/equal-carrier return and late scope/policy drift. No context disclosure/consent authority granted.
+
+**Technical fault matrix:** `docs/JARVIS_OFFLINE_FIXTURE_SCOPE_CONTEXT_OCCURRENCE_RUN432.md` committed as `735aa1d9cd6c6cf6895b80319a02167d63d0d1b1`; source-backed and clearly non-normative.
+
+### Exact-head tests / CI evidence at checkpoint sampling
+
+- Previous Run431 checkpoint HEAD `dd6c3a...`: **#1212 / 40219049185 6/6 SUCCESS**; independent verification at this invocation opening.
+- Initial fixture tests **#1214 / 40222915507** through **#1217 / 40223217780**: **FAILED** from two Ruff E501 overlong test-only lines, fixed by normal Contents test-formatting commit `f0e496cb590aa06ef52617e8b6aa58663e09bb10`. Historical failures remain FAIL, not relabelled GREEN.
+- Initial context-test **#1220 / 40223543142**: **FAILED** from one Ruff E501 long line, fixed by `cc47895c4b1b1a85a6eb52201337bb886f9ba09a`. No source semantics were weakened.
+- Final source+test HEAD `cc47895c4b1b1a85a6eb52201337bb886f9ba09a`: **#1221 / 40223600447 3/6 SUCCESS, 0 FAILED, 3 IN PROGRESS/QUEUED; overall in_progress/not concluded**. Its Ubuntu Python 3.13 job **121260220367** explicitly showed **Ruff PASS, 2850 passed / 1 skipped**, and 12 fixture-only mock evals; real-model performance **NOT_MEASURED**. This single Ubuntu result does NOT prove all Windows jobs.
+- Technical-doc HEAD `735aa1d9cd6c6cf6895b80319a02167d63d0d1b1`: **#1222 / 40223781720 3/6 SUCCESS, 0 FAILED, 3 IN PROGRESS/QUEUED; overall in_progress/not concluded**. Do not infer the checkpoint-result commit's CI from this.
+- No manual equivalent reruns, paid/external GPU, external compute or purchased service was started.
+
+### Frozen contracts and authorization boundaries
+
+Nontruncated Git Trees at the technical-document HEAD: main `7a843f17eb96ed13d66f23b58b06406b3002e405` **94 blobs**, PR #8 `735aa1d9cd6c6cf6895b80319a02167d63d0d1b1` **567 blobs**: **473 added**, **zero existing main blobs modified or removed**. PR #8 Draft/open/unmerged; PR #5 Draft/open/unmerged/NOT_PASSED at `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher artifacts, Memory v1/ActionAudit v1 schema, V3 Contract 1, contamination/provenance/reproducibility/regression gates and protected V2 final opening are untouched. No real human review decision, model/file hash, physical PC action, personal-data erasure, new credential, material irreversible change or main merge fabricated/performed. PR5 still lacks user/human-approved 120/30 rights & contamination provenance, immutable materialized model/tokenizer hashes, exact runtime/tool/hardware identities and express JPY/time/cost limits.
+
+### Next plan / 今後の方針
+
+1. Check Windows Python 3.11–3.13 and Ubuntu exact-HEAD status on **#1221 and #1222**, and this newly created checkpoint-result CI separately. If any actual FAILED, inspect logs, preserve evidence and repair only via normal Contents API; immediately move to non-conflicting work while CI runs.
+2. Advance Planner–PermissionGate–Occurrence–ActionAudit–AuditLink independent-process crash, partial-history and non-replay proofs; keep RUNNING/UNKNOWN/reserved PENDING WRITE on hold, never infer cross-file atomicity.
+3. Expand Memory multi-process CAS + expiry races and coherent owner/namespace event-snapshot integrity, without DDL changes.
+4. Strengthen privacy revocation/retention freshness and deny-only issuer/trusted-clock interfaces, plus disconnected Observation/Proactive fixtures; do not enable sensing, notifications or dispatch.
+5. V3 free-only path, authorization and identity audits can advance separately, but no real Candidate, adapter, protected evaluation, promotion, paid GPU or main merge without their independent explicit approval gates.
+
+---
+
+**HISTORICAL — Run431 and earlier checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run431**
 
 Saved at: **2026-10-26T02:58:50.910+09:00 Asia/Tokyo/JST** (ordinary, unauthenticated automation runtime wall clock sampled immediately before the normal GitHub Contents checkpoint write; not a signed trusted clock, verified human issuer, billing approval or external-outcome attestation).
