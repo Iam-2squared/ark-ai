@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .audit import SQLiteActionAudit
 from .contracts import ActionAuditEvent, Effect, OneShotAuthorization, StepState, ToolCall
-from .durable_occurrence_review import SyntheticOccurrenceStore
+from .durable_occurrence_review import SyntheticOccurrenceStore, SyntheticReservationReceipt
 from .planner import PlanGraph
 from .planner_journal_review import SyntheticPlanJournal
 from .registry import ToolRegistry
@@ -200,6 +200,23 @@ def run_synthetic_mock_cycle(
     reservation = ledger.reserve_synthetic(
         registry, call, token, occurrence_id=occurrence_id, now_ms=now_ms,
     )
+    # The occurrence fixture is a separately committed store. An injected or
+    # corrupt return value must never be used as a different audit subject or
+    # let the journal finish SUCCEEDED. A failed check leaves RUNNING/UNKNOWN;
+    # it cannot roll back the prior journal or reservation across stores.
+    assert_identity_epoch()
+    if (
+        type(reservation) is not SyntheticReservationReceipt
+        or reservation.occurrence_id != occurrence_id
+        or reservation.registry_revision != bound.registry_revision
+        or reservation.bound_action_id != bound.bound_action_id
+        or reservation.request_id != call.request_id
+        or type(reservation.reserved_at_ms) is not int
+        or reservation.reserved_at_ms != now_ms
+    ):
+        raise SyntheticMockCycleRejected(
+            "synthetic reservation receipt differs from requested WRITE"
+        )
     reservation_epoch = (
         reservation.occurrence_id, reservation.registry_revision,
         reservation.bound_action_id, reservation.request_id,
