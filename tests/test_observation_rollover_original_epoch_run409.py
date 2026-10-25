@@ -104,8 +104,9 @@ def test_retained_history_mutated_during_payload_cannot_be_restored_by_hash(
         return encoded
 
     def hashing(data):
-        calls.append("restored")
-        object.__setattr__(retained, "generation", original_generation)
+        if b'"generation"' in data:
+            calls.append("restored")
+            object.__setattr__(retained, "generation", original_generation)
         return digest(data)
 
     monkeypatch.setattr(rollover, "_canonical_window_payload", encoding)
@@ -127,8 +128,9 @@ def test_retained_hash_drift_cannot_be_restored_by_next_window_check(
 
     def hashing(data):
         value = digest(data)
-        object.__setattr__(retained, "generation", original_generation + 1)
-        calls.append("mutated")
+        if b'"generation"' in data:
+            object.__setattr__(retained, "generation", original_generation + 1)
+            calls.append("mutated")
         return value
 
     def consistency(self):
