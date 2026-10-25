@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sqlite3
+from collections.abc import Callable
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -138,6 +139,98 @@ def _snapshot(graph: PlanGraph, tail: SyntheticPlanTail) -> SyntheticPlanRecover
         name for name, state, _revision in statuses if state == StepState.RUNNING.value
     )
     return SyntheticPlanRecovery(tail, statuses, running)
+
+
+# This recovery object is an inert witness, never an authorization. Pin its
+# original class even if a synthetic test hook later replaces the constructor.
+_RECOVERY_RESULT_TYPE = SyntheticPlanRecovery
+
+
+def _checked_snapshot(
+    graph: PlanGraph, tail: SyntheticPlanTail,
+) -> tuple[SyntheticPlanRecovery, Callable[[], None]]:
+    """Bind the return witness to the replayed graph across COMMIT callbacks.
+
+    A reentrant snapshot/result constructor may return a syntactically valid
+    but forged status, omit a RUNNING step, or replace an equal-valued tail.
+    Capture pre-constructor values and post-constructor carrier references.
+    The returned check also runs *after* COMMIT: rejection must not imply that
+    a successfully committed local journal event was rolled back.
+    """
+    original_tail = (
+        tail.topology_digest, tail.event_count, tail.event_hash,
+        tail.status_digest, tail.last_at_ms,
+    )
+    tail_types = tuple(type(value) for value in original_tail)
+    states = graph.statuses()
+    expected_statuses = tuple(
+        (name, state.state.value, state.revision)
+        for name, state in sorted(states.items())
+    )
+    expected_running = tuple(
+        name for name, state, _revision in expected_statuses
+        if state == StepState.RUNNING.value
+    )
+    result = _snapshot(graph, tail)
+    carriers = (
+        (result.tail, result.step_statuses, result.ambiguous_running_steps)
+        if type(result) is _RECOVERY_RESULT_TYPE else None
+    )
+
+    def assert_result() -> None:
+        current_tail = (
+            tail.topology_digest, tail.event_count, tail.event_hash,
+            tail.status_digest, tail.last_at_ms,
+        )
+        if (
+            type(result) is not _RECOVERY_RESULT_TYPE
+            or type(tail) is not SyntheticPlanTail
+            or tuple(type(value) for value in current_tail) != tail_types
+            or current_tail != original_tail
+            or any(
+                value is not original
+                for value, original in zip(
+                    current_tail, original_tail, strict=True,
+                )
+            )
+            or result.tail is not tail
+            or result.tail is not carriers[0]
+            or result.step_statuses is not carriers[1]
+            or result.ambiguous_running_steps is not carriers[2]
+            or type(result.step_statuses) is not tuple
+            or result.step_statuses != expected_statuses
+            or type(result.ambiguous_running_steps) is not tuple
+            or result.ambiguous_running_steps != expected_running
+        ):
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan recovery result changed during review"
+            )
+        # Status hashing is itself a synthetic callback boundary. Recheck
+        # the exact carriers and values again after that callback.
+        digest = graph.status_digest()
+        after_tail = (
+            tail.topology_digest, tail.event_count, tail.event_hash,
+            tail.status_digest, tail.last_at_ms,
+        )
+        if (
+            digest != original_tail[3]
+            or after_tail != original_tail
+            or any(
+                value is not original
+                for value, original in zip(after_tail, original_tail, strict=True)
+            )
+            or result.tail is not carriers[0]
+            or result.step_statuses is not carriers[1]
+            or result.ambiguous_running_steps is not carriers[2]
+            or result.step_statuses != expected_statuses
+            or result.ambiguous_running_steps != expected_running
+        ):
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan recovery result changed during review"
+            )
+
+    assert_result()
+    return result, assert_result
 
 
 class SyntheticPlanJournal:
@@ -377,7 +470,7 @@ class SyntheticPlanJournal:
                     or prefixes[retained.event_count] != retained
                 ):
                     raise SyntheticPlanJournalRejected("retained synthetic plan history changed")
-                result = _snapshot(graph, prefixes[-1])
+                result, check_result = _checked_snapshot(graph, prefixes[-1])
                 if retained is not None:
                     retained.assert_shape()
                     current = (
@@ -394,6 +487,7 @@ class SyntheticPlanJournal:
                     )
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 conn.commit()
+                check_result()
                 return result
             except BaseException:
                 conn.rollback()
@@ -481,7 +575,7 @@ class SyntheticPlanJournal:
                        WHERE id=1""",
                     (prev.event_count + 1, event_hash, post, at_ms),
                 )
-                result = _snapshot(
+                result, check_result = _checked_snapshot(
                     graph,
                     SyntheticPlanTail(
                         prev.topology_digest, prev.event_count + 1,
@@ -506,6 +600,7 @@ class SyntheticPlanJournal:
                     )
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 conn.commit()
+                check_result()
                 return result
             except BaseException:
                 conn.rollback()
