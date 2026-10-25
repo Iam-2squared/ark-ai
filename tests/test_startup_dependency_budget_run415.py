@@ -57,7 +57,7 @@ def test_forged_cached_snapshot_cannot_exceed_edge_budget():
                         ReadinessState.READY, None, None)
         for i in range(1024)
     )
-    names = tuple(item.component_id for item in roots)
+    names = tuple(sorted(item.component_id for item in roots))
     children = tuple(
         ComponentResult(f"child-{i}", names, ReadinessState.READY,
                         ReadinessState.READY, None, None)
