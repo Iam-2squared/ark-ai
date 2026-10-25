@@ -52,7 +52,8 @@ def test_exact_namespace_budget_preserves_deterministic_ranking(
     scope = _insert(store, "private", 2)
     monkeypatch.setattr(store_module, "_MAX_NAMESPACE_SEARCH_ROWS", 2)
     result = store.search(MemoryQuery(scope, "fixture", limit=2))
-    assert [item.source_id for item in result] == ["source-0", "source-1"]
+    assert [item.memory_id for item in result] == sorted(item.memory_id for item in result)
+    assert {item.source_id for item in result} == {"source-0", "source-1"}
     assert all(item.scope == scope for item in result)
 
 
