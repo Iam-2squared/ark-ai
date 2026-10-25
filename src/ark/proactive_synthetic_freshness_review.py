@@ -161,10 +161,28 @@ def review_prepared_trigger_freshness(
                     "ARK-trigger-witness-v1", row_hashes,
                 ),
             )
+            # The newly constructed witness can be reflected upon by the
+            # integrity/continuity hooks; preserve its original carriers
+            # independently of the outer caller-input epoch.
+            current_rows_epoch = current.row_hashes
+            current_digest_epoch = current.digest
+
+            def assert_current_epoch() -> None:
+                if (
+                    type(current) is not SyntheticTriggerWitness
+                    or current.row_hashes is not current_rows_epoch
+                    or current.digest is not current_digest_epoch
+                ):
+                    raise SyntheticTriggerRejected(
+                        "freshness history changed during read-only review"
+                    )
+
             current.assert_integrity()
+            assert_current_epoch()
             assert_epoch()
             if retained is not None:
                 assert_proactive_history_continues(retained, current)
+                assert_current_epoch()
                 assert_epoch()
             matching = tuple(row for row in rows if row[0] == expected)
             assert_epoch()
@@ -186,12 +204,32 @@ def review_prepared_trigger_freshness(
                 raise SyntheticTriggerRejected("prepared observation stale or clock regressed")
             if policy.identity() != pinned:
                 raise SyntheticTriggerRejected("policy changed during freshness review")
+            assert_current_epoch()
             assert_epoch()
             conn.commit()
+            assert_current_epoch()
             assert_epoch()
-            return SyntheticProactiveFreshnessReview(
+            review = SyntheticProactiveFreshnessReview(
                 expected, prepared, now_ms, current,
             )
+            # A forged or reflectively edited result must not escape merely
+            # because the SQLite snapshot and its pre-construction witness
+            # were valid. No notification or dispatch authority is created.
+            assert_current_epoch()
+            assert_epoch()
+            if (
+                type(review) is not SyntheticProactiveFreshnessReview
+                or review.trigger_id is not expected
+                or type(review.prepared_at_ms) is not int
+                or review.prepared_at_ms != prepared
+                or type(review.checked_at_ms) is not int
+                or review.checked_at_ms != now_ms
+                or review.history is not current
+            ):
+                raise SyntheticTriggerRejected(
+                    "freshness review output changed during construction"
+                )
+            return review
         except BaseException:
             conn.rollback()
             raise
