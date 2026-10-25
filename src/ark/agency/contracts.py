@@ -67,7 +67,7 @@ class ToolCall:
         try:
             frozen = _freeze_json(self.arguments)
             _canonical_json(frozen)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, UnicodeError) as exc:
             raise ValueError("arguments must be canonical JSON-compatible values") from exc
         object.__setattr__(self, "arguments", frozen)
 
@@ -183,22 +183,57 @@ class ToolBackend(Protocol):
     def execute(self, call: ToolCall) -> object: ...
 
 
+# Bound caller-controlled structures before hashing, registry admission or a
+# WRITE token check. These are local fail-closed resource limits, not an
+# authorization policy or a change to valid canonical request identifiers.
+_MAX_ARGUMENT_NODES = 4096
+_MAX_ARGUMENT_DEPTH = 32
+_MAX_ARGUMENT_TEXT_CHARS = 65536
+_MAX_ARGUMENT_TEXT_BYTES = 256 * 1024
+
+
 def _freeze_json(value: object) -> object:
-    if value is None or type(value) in {bool, int, str}:
-        return value
-    if type(value) is float:
-        _canonical_json(value)
-        return value
-    if isinstance(value, Mapping):
-        snapshot: dict[str, object] = {}
-        for key, item in value.items():
-            if type(key) is not str:
-                raise TypeError("JSON object keys must be exact strings")
-            snapshot[key] = _freeze_json(item)
-        return MappingProxyType(snapshot)
-    if isinstance(value, (list, tuple)):
-        return tuple(_freeze_json(item) for item in value)
-    raise TypeError(f"unsupported JSON value type: {type(value).__name__}")
+    nodes = 0
+    text_bytes = 0
+
+    def charge_text(text: str) -> None:
+        nonlocal text_bytes
+        if len(text) > _MAX_ARGUMENT_TEXT_CHARS:
+            raise ValueError("JSON argument text budget exceeded")
+        text_bytes += len(text.encode("utf-8"))
+        if text_bytes > _MAX_ARGUMENT_TEXT_BYTES:
+            raise ValueError("JSON argument text budget exceeded")
+
+    def freeze(item: object, depth: int) -> object:
+        nonlocal nodes
+        if depth > _MAX_ARGUMENT_DEPTH:
+            raise ValueError("JSON argument nesting budget exceeded")
+        nodes += 1
+        if nodes > _MAX_ARGUMENT_NODES:
+            raise ValueError("JSON argument node budget exceeded")
+        if item is None or type(item) in {bool, int}:
+            return item
+        if type(item) is str:
+            charge_text(item)
+            return item
+        if type(item) is float:
+            _canonical_json(item)
+            return item
+        if isinstance(item, Mapping):
+            snapshot: dict[str, object] = {}
+            for key, child in item.items():
+                if type(key) is not str:
+                    raise TypeError("JSON object keys must be exact strings")
+                charge_text(key)
+                if key in snapshot:
+                    raise ValueError("duplicate JSON object key")
+                snapshot[key] = freeze(child, depth + 1)
+            return MappingProxyType(snapshot)
+        if isinstance(item, (list, tuple)):
+            return tuple(freeze(child, depth + 1) for child in item)
+        raise TypeError(f"unsupported JSON value type: {type(item).__name__}")
+
+    return freeze(value, 0)
 
 
 def _jsonable(value: object) -> object:
