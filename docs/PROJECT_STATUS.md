@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — Run 424**
+
+Saved at: **2026-10-25T22:08:29.949+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample immediately preceding normal GitHub Contents checkpoint write; **NOT** authenticated time, human identity, consent, service-billing authorization, or immutable evidence).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `fa620d63a577afe83ba834ea08be5a7b8760ebe7` (Run423 checkpoint; **CI #1142 / 40193247295: Ubuntu/Windows Python 3.11–3.13 all six SUCCESS** at opening inspection).
+**Final Run424 source + tests + engineering-document checkpoint write-basis HEAD:** `83947ebe284af0be8c5750b7e9ef41ae4a15add4`. The last technical-document update was `c2c69743c8575c81931d4cc3bab02f06f3d8cc00`; the narrow subsequent test-formatting repair was `83947ebe284af0be8c5750b7e9ef41ae4a15add4`.
+**Checkpoint-result HEAD:** Cannot be embedded here before GitHub creates the Contents update commit. The connector's returned `commit_sha` identifies this checkpoint-result HEAD and must be verified independently from all predecessor CI evidence. Do not confuse a successful earlier source HEAD with a successful checkpoint HEAD.
+
+### Overall current ARK state
+
+**Local-first disconnected/synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No verified human issuer/consent, signed trusted clock, real ToolBackend result attestation, atomic cross-SQLite snapshot, externally guaranteed exactly-once WRITE execution, live sensor, notifications, trained Candidate, paid compute, or actual autonomous Tool dispatch. Never replay **UNKNOWN/RUNNING or already reserved PENDING WRITE** without independently verified external outcome. Hashes and local reviews are non-authorizing evidence.
+
+### NEW Run424 — 5 independent safe development packages (+58 pytest cases)
+
+1. **Memory pre-COMMIT original owner/namespace carrier fence (+11)** — `src/ark/memory/sqlite_store.py` at `d942cd1c15a32ba3f906e73167b5e237424806dd` and `tests/test_memory_delete_purge_precommit_carriers_run424.py` at `d2d1f5c021f9f6619066aa743d93c50d8ffa89e2`. SELECT/audit SQL callbacks cannot substitute equal-text `MemoryScope` owner/namespace carriers and then commit a deletion or expiry. The no-row DELETE branch also refuses changed scope instead of returning clean `False`. Failure before COMMIT leaves the original row and event; local revision CAS and frozen v1 DDL are preserved.
+2. **Four-store crash-restart suffix loss (+4)** — `tests/test_recovery_four_store_tail_loss_run424.py` at `6bb06b4244a2ebf1ce79314b74c7a4aac70722ed`. Two independent uncertain WRITEs leave durable Planner, Occurrence, ActionAudit, AuditLink evidence; removing the last row from **each store independently** on disposable copies is rejected against separately retained witnesses; no mock backend execution or automatic replay.
+3. **Proactive Startup result-constructor custody (+11)** — `src/ark/proactive_startup_fence_review.py` at `9f02fc25a33ebb277a4fc020b518c8e7c3b48b63` and `tests/test_proactive_startup_final_constructor_run424.py` at `a0dee9d8b1a3d2f2da20f5488f58d40a883ffc7a`. Revalidate previously reviewed Receipt/Policy/readiness and exact returned result field carriers after the final reentrant constructor. No notifications, camera, trusted clock or real dispatch.
+4. **PermissionGate exact stored ToolCall, ToolSpec and token carriers (+30)** — `src/ark/agency/policy.py` at `9d186d6f8c7315e54ea064798863daff0e21cec8` and `tests/test_permission_original_write_carriers_run424.py` at `1dfa43695565c25dd45f2bcb225eef916462e065`. Equal-text ToolCall/tool/spec/token replacements during grant iteration or the under-lock WRITE admission must be rejected **before consuming** the process-local token. Computed `ToolCall.request_id` remains verified by deterministic VALUE, not false-positive string-object identity. No human/durable one-shot authorization is claimed.
+5. **Independent-process Memory CAS single-winner test (+2)** — `tests/test_memory_cross_process_cas_run424.py` originally added at `50478b06e41fb957985f11fc4bf71c923f30de1b`, import-spacing-only repaired at `83947ebe284af0be8c5750b7e9ef41ae4a15add4`. Two disposable local Python processes race on one SQLite revision-1 row; exactly one revision-2 CAS success and matching `update` audit event, the other typed conflict, no duplicate effect. Existing schema unchanged.
+
+**Technical fault matrix:** `docs/JARVIS_MEMORY_PRECOMMIT_FOUR_STORE_PROACTIVE_RUN424.md` at `c2c69743c8575c81931d4cc3bab02f06f3d8cc00`. The tests create no external effects or privileged access. New case count = **11 + 4 + 11 + 30 + 2 = 58**. Opening Run423 Ubuntu Python 3.13 baseline = **2619 passed / 1 skipped**.
+
+### CI — exact commit evidence and actual FAIL history at checkpoint sampling
+
+- **#1142 / 40193247295** opening checkpoint `fa620d63a577afe83ba834ea08be5a7b8760ebe7`: COMPLETED / SUCCESS; all six jobs GREEN.
+- **#1144 / 40194860183** Memory original scope/callback test head `d2d1f5c021f9f6619066aa743d93c50d8ffa89e2`: COMPLETED / SUCCESS; all six GREEN; Ubuntu Python 3.13 Ruff PASS, **2630 passed / 1 skipped**.
+- **#1145 / 40194978306** four-store suffix-loss test head `6bb06b4244a2ebf1ce79314b74c7a4aac70722ed`: COMPLETED / SUCCESS; all six GREEN; Ubuntu Python 3.13 Ruff PASS, **2634 passed / 1 skipped**.
+- **#1147 / 40195208033** Proactive source/test head `a0dee9d8b1a3d2f2da20f5488f58d40a883ffc7a`: COMPLETED / SUCCESS; all six GREEN; Ubuntu Python 3.13 Ruff PASS, **2645 passed / 1 skipped**.
+- **#1150 / 40195519925** PermissionGate source/test head `1dfa43695565c25dd45f2bcb225eef916462e065`: **6/6 SUCCESS, 0/6 FAIL, 0/6 IN PROGRESS/QUEUED** at this checkpoint sampling. Ubuntu Python 3.13 independently reports Ruff PASS, **2675 passed / 1 skipped**. Do NOT claim six GREEN before the remaining jobs actually succeed.
+- **Actual intermediate FAILURE:** **#1152 / 40195769382** on `50478b06e41fb957985f11fc4bf71c923f30de1b` and **#1153 / 40195809544** on `c2c69743c8575c81931d4cc3bab02f06f3d8cc00`: historical FAIL; the new subprocess CAS test had a Ruff `I001` import-block blank-line formatting error. These were lint failures, **not** measured failing CAS semantics; leave historical runs FAILED.
+- **#1154 / 40195917483** narrow Ruff-only repaired test / final implementation HEAD `83947ebe284af0be8c5750b7e9ef41ae4a15add4`: **3/6 SUCCESS, 0/6 FAIL, 3/6 IN PROGRESS/QUEUED** at this checkpoint sampling; Ubuntu Python 3.13 independently reports **Ruff PASS, 2677 passed / 1 skipped**. Do NOT extrapolate to unfinished Windows jobs or the later checkpoint-result HEAD.
+- GitHub Actions runs were automatically triggered by normal permitted GitHub Contents commits. No manual/duplicate equivalent workflow dispatch; no fabricated success, performance, identities or hashes.
+
+**Main / PR verification:** PR #8 remains Draft/open/unmerged at `83947ebe284af0be8c5750b7e9ef41ae4a15add4`, base main `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 remains Draft/open/unmerged/NOT_PASSED at `d6d4c1954a85fc716b1c593ac55c85417912418f`. GitHub REST comparison is capped to 300 file entries even when larger; do **not** interpret that limited page as a complete Git-tree no-modification proof.
+
+### Frozen contracts / blockers / spending and approvals
+
+No edit to frozen V1/V2/Local UI/Launcher or historical evidence, frozen Memory v1 and ActionAudit v1 SQL DDL, V3 Contract 1 SHA-256 `00397c2c62bda4ba2658b59ae71d0ea0ac083924ae7a187fd221d6ad84387f20`, or protected V2 final evaluation. No potentially billable service/GPU/API/new subscription/new account/credential, Candidate adapter or training weights, real device/sensor, notification, human decision, destructive migration, automatic promotion or main merge. GitHub Actions on this **public** repository used the repository's existing normal free CI path; no paid compute was requested or provisioned. Local clock and local outcomes never grant executable authority.
+
+### Next plan / 今後の方針
+
+1. Verify exact-head remaining Windows CI for #1150/#1154 and independently verify the checkpoint-result HEAD. On any FAIL, inspect logs, apply smallest semantics-preserving fix through ordinary Contents writes, and retain historical failure evidence. Do not open duplicate workflows.
+2. Strengthen Planner/PermissionGate/Occurrence/ActionAudit/AuditLink partial-prefix and orphan-audit crash recovery across dependent READ bridges, reserved PENDING and UNKNOWN WRITE, including independent retained evidence. No actual execution or automatic retry.
+3. Test Memory CAS under local multi-process expiry/revision collision, coherent multi-namespace SQLite snapshots, post-COMMIT ambiguity and content-minimized event consistency without frozen-schema changes.
+4. Continue privacy-safe Personal Context retention/revocation and reviewed erasure contracts, with zero actual deletion/disclosure and no imagined cross-store atomicity.
+5. Define reversible trusted-clock and authenticated-issuer *interfaces*, Startup Readiness, Observation and Scheduler fixture adapters, without claiming trusted identity, signing or real-world permission. Keep V3 limited to zero-cost approval/path/identity/reproducibility gates. Require explicit authorization before any spending, protected evaluation, Candidate creation/promotion, frozen-contract edit or main merge.
+
+---
+
+**HISTORICAL — Run423 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 423**
 
 Saved at: **2026-10-25T21:28:14.076+09:00 Asia/Tokyo/JST** (ordinary wall-clock sample immediately before the normal GitHub Contents checkpoint update; **NOT** authenticated time, signed provenance, verified identity, consent or spend authorization).
