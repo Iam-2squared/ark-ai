@@ -120,14 +120,40 @@ def review_synthetic_proactive_startup(
     retained_epoch = None if retained is None else (retained.row_hashes, retained.digest)
 
     def assert_source_epoch() -> None:
+        # Both independent reviewers are reentrant. Check the ORIGINAL trigger,
+        # policy and requirement carriers after EACH review, not only at the
+        # last combined comparison, where a later callback could restore them.
+        receipt_fields = _epoch(receipt, SyntheticTriggerReceipt)
+        policy_fields = _epoch(policy, SyntheticTriggerPolicy)
         if (
             ledger.path is not source_epoch
             or retained_epoch != (
                 None if retained is None else (retained.row_hashes, retained.digest)
             )
+            or len(receipt_fields) != len(pinned[0])
+            or any(
+                actual is not original for actual, original in zip(
+                    receipt_fields, pinned[0], strict=True,
+                )
+            )
+            or len(policy_fields) != len(pinned[1])
+            or any(
+                actual is not original for actual, original in zip(
+                    policy_fields, pinned[1], strict=True,
+                )
+            )
+            or len(requirements) != len(pinned[2])
+            or any(
+                item is not original
+                or item.component_id is not component_id
+                or item.schema_revision is not schema_revision
+                for item, (original, component_id, schema_revision) in zip(
+                    requirements, pinned[2], strict=True,
+                )
+            )
         ):
             raise SyntheticProactiveStartupRejected(
-                "startup trigger source or retained evidence changed during review"
+                "startup trigger input, source or retained evidence changed during review"
             )
 
     readiness_kwargs = {
