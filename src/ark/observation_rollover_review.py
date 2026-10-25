@@ -189,4 +189,21 @@ def review_observation_rollover(
         current.assert_fresh_at(now_ms)
         assert_outer_epoch()
     assert_outer_epoch()
-    return ObservationRolloverWitness(scope, timestamp, window_witness, generation, new_sha)
+    result = ObservationRolloverWitness(scope, timestamp, window_witness, generation, new_sha)
+    # A reflected-mutable dataclass constructor/post-init is a callback too.
+    # Reject any source/history change or retargeted digest carrier that it
+    # creates. Nothing here grants capture, consent or notification authority.
+    assert_outer_epoch()
+    current.assert_consistent()
+    assert_outer_epoch()
+    if (
+        type(result) is not ObservationRolloverWitness
+        or result.privacy_scope is not scope
+        or result.observed_at_ms != timestamp
+        or result.window_witness is not window_witness
+        or result.generation != generation
+        or result.chain_sha256 is not new_sha
+    ):
+        raise ValueError("observation rollover result changed during construction")
+    assert_outer_epoch()
+    return result
