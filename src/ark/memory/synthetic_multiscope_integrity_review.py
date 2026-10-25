@@ -215,15 +215,37 @@ def review_synthetic_memory_scopes(
         for entity in carriers
     )
 
+    def carrier_changed(start: int, stop: int) -> bool:
+        return any(
+            getattr(entity, name) is not value
+            for entity, captured in input_epoch[start:stop]
+            for name, value in captured
+        )
+
     def assert_epoch() -> None:
         try:
-            if store.path is not path_epoch or any(
-                getattr(entity, name) is not value
-                for entity, captured in input_epoch
-                for name, value in captured
-            ):
+            scope_end = len(scopes)
+            if store.path is not path_epoch or carrier_changed(0, scope_end):
+                # Preserve established source/scope diagnostics while moving
+                # the check earlier, before a later callback can restore drift.
                 raise SyntheticMemorySnapshotRejected(
-                    "Memory scope, source or retained witness changed during review"
+                    "Memory scope or source changed during review"
+                )
+            retained_end = scope_end + (
+                0 if retained_events is None else len(retained_events)
+            )
+            if carrier_changed(scope_end, retained_end):
+                for value, digest in zip(retained_events, hashes, strict=True):
+                    value.assert_shape(digest)
+                raise SyntheticMemorySnapshotRejected(
+                    "retained Memory event witness changed during review"
+                )
+            if carrier_changed(retained_end, len(input_epoch)):
+                # Malformed shape must retain its existing specific failure
+                # reason (bool-vs-int, event fields, owner digest, etc.).
+                assert_cached_shape()
+                raise SyntheticMemorySnapshotRejected(
+                    "retained exact Memory snapshot changed during review"
                 )
         except (AttributeError, TypeError) as exc:
             raise SyntheticMemorySnapshotRejected(
