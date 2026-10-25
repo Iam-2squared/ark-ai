@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run 427**
+
+Saved at: **2026-10-26T00:03:12.110+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock sample immediately before the normal GitHub Contents checkpoint write; NOT an authenticated time, user/issuer identity, consent, model provenance or spending approval).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `ba15f294a5d03b7287cfd29c96ccf90ea0eb9f63` (Run426 checkpoint; CI **#1171 / 40200056740 six-job SUCCESS** independently confirmed at this invocation's opening).
+**Run427 final executable source + regression/test repair HEAD / checkpoint write-basis HEAD:** `f00b6f852e728f1d1e199c4a1ffd1fe2860125c5`. The distinct Run427 engineering document HEAD was `6eb374379e3dc7691cbcbb93fb8d8709be148723`. **Checkpoint-result HEAD:** cannot be self-embedded before GitHub creates the commit; use the GitHub Contents API returned `commit_sha`, not a predecessor or imagined SHA. Its own CI will launch and must be verified independently.
+
+### Overall ARK status
+
+**Local-first disconnected/mock/synthetic-only JARVIS foundations; complete JARVIS NOT_PASSED.** No verified human issuer/consent, trusted signed clock, real ToolBackend outcome attestation, atomic cross-SQLite commit/snapshot, external exactly-once execution, live sensing, active notification, real Candidate/model training, or authorized autonomous Tool dispatch. **UNKNOWN/RUNNING and already reserved PENDING WRITE must not be automatically replayed absent separately verified external outcomes.** Local hashes and GREEN mock CI never grant operational authority.
+
+### NEW Run427 — 4 safe source + regression packages (+26 pytest cases)
+
+1. **Cross-store read-only recovery original carrier epoch (+6):** `src/ark/agency/synthetic_recovery_triage.py` at `5bef3b88727d6eedca3de99f7e2278c83864f616`, `tests/test_triage_original_carrier_boundaries_run427.py` at `b83823fd90c893a2d83cd8860ad86b040db0b3ab`. Pin original ToolCall tool/capability/scope and PlanStep scalar carriers, plus retained witness fields, across reentrant PlanGraph and SQLite evidence review. Derived request ID and argument digests remain compared by computed value; original scalar-object substitutions are rejected.
+2. **Mock WRITE original subject and token custody (+7):** `src/ark/agency/synthetic_mock_action_cycle_review.py` at `44badb791a1fe01b327cf07147b5b822a08ebf23`, tests `tests/test_mock_cycle_original_epoch_run427.py` at `429b5b474ae857fc4c2b693bb539d7ee3006dbc0`. Reject equal-valued original ToolCall, Step and one-shot token swaps before or after the synthetic Planner RUNNING transition. Once RUNNING is committed, an input change cannot be treated as rollback or safe replay; no ToolBackend called.
+3. **Startup–Proactive snapshot/retained-trigger original custody (+8):** `src/ark/proactive_startup_fence_review.py` at `39b98eeb3ccd1b4c05492474372fd3edd5683432`, tests `tests/test_proactive_startup_original_snapshot_carriers_run427.py` at `7039383e47984099c506c74fcbd546e87995bf18`. Check exact original StartupSnapshot, ComponentResult and retained trigger-history carriers after each disconnected readiness/trigger reviewer; never authorize startup, notifications, sensors or Tool dispatch.
+4. **Privacy retained revocation witness identity (+5):** `src/ark/personal_context_revocation_continuity_review.py` at `5bcfd262b0f70b8b13876d4c4df6d8c7f95987f8`, `src/ark/personal_context_retention_recheck_review.py` at `cbd556b8b0f1308487db1e3723360c32fa04443c`, tests `tests/test_privacy_retained_witness_id_epoch_run427.py` at `57c7fbbfb4c662ade22624b5c7ce96ca2fc7deca`. A distinct equal-text original `witness_id` is not an unchanged retained evidence carrier. No erasure, disclosure or consent inferred.
+
+**Precise CI compatibility repair:** Existing `tests/test_proactive_startup_fence_run378.py` at `f00b6f852e728f1d1e199c4a1ffd1fe2860125c5` now accepts the earlier `SyntheticProactiveStartupRejected` input-epoch rejection or the preexisting downstream `SyntheticStartupLeaseRejected` integrity rejection, requiring both to represent a fail-closed snapshot modification. This fixes a test *exception-boundary expectation*, not a softened safety gate. Technical fault matrix: `docs/JARVIS_RECOVERY_MOCK_STARTUP_PRIVACY_CARRIER_EPOCH_RUN427.md`.
+
+### CI — exact-head evidence, historical failure preserved
+
+- Opening Run426 source CI **#1169 / 40199645724** and checkpoint CI **#1171 / 40200056740**: each **six of six SUCCESS** after independent observation.
+- **#1173 / 40203927071** on `b83823fd90c893a2d83cd8860ad86b040db0b3ab`: **six of six SUCCESS** for package 1, explicitly observed.
+- **#1175 / 40204075095** on `429b5b474ae857fc4c2b693bb539d7ee3006dbc0`: five SUCCESS / one Windows Python 3.11 IN PROGRESS at last independent observation; no six-job assertion without completion.
+- **Historical genuine FAILs #1177 / 40204283407** on `7039383e47984099c506c74fcbd546e87995bf18` and **#1180 / 40204494357** on `57c7fbbfb4c662ade22624b5c7ce96ca2fc7deca`: an older test expected only the downstream lease-integrity exception but the new stricter original-snapshot fence rejected earlier with `SyntheticProactiveStartupRejected`. Ubuntu Python 3.13 #1177: Ruff PASS, 2754 passed / 1 failed / 1 skipped; #1180: Ruff PASS, 2759 passed / 1 failed / 1 skipped. Failed runs are NOT rewritten GREEN.
+- **Final corrected test/source HEAD #1182 / 40204720625** on `f00b6f852e728f1d1e199c4a1ffd1fe2860125c5`: at checkpoint observation **3/6 jobs SUCCESS, 0/6 FAILED, 3/6 IN PROGRESS/QUEUED**. Ubuntu Python 3.13 **Ruff PASS, 2760 passed / 1 skipped** independently read from its job log. **Do not extrapolate unfinished Windows jobs or claim full CI GREEN here.**
+- Engineering-document HEAD **#1181 / 40204600499** status sampled as **IN_PROGRESS / NO CONCLUSION YET**. This checkpoint-result HEAD's own CI is separate and **NOT YET VERIFIED** when written. No manual duplicate CI reruns or fabricated results.
+
+### Frozen evidence, blockers and zero-spend boundaries
+
+PR #5 remains **Draft/open/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`; PR #8 remains Draft/unmerged. This invocation's normal Contents edits are limited to the enumerated isolated JARVIS source, tests and documentation. Main remained at `7a843f17eb96ed13d66f23b58b06406b3002e405` at opening PR inspection. No changes to frozen V1/V2/Local UI/Launcher or V3 Contract 1, frozen Memory v1 / ActionAudit v1 SQL DDL, or protected final V2 evaluation. No paid service/external GPU, Candidate adapter/weights, new secrets/connections, real hardware/sensors, notifications, executable approval, irreversible deletion, Candidate promotion or main merge. Existing public repo's normal GitHub CI was triggered only by Contents writes. Actual repository billing or owner account identity is not asserted.
+
+### Next plan / 今後の方針
+
+1. **First verify #1182's remaining Windows jobs and the separate checkpoint-result CI exactly;** on any FAIL, inspect logs and repair the smallest safe cause via ordinary GitHub Contents, retaining historical FAILED evidence; never launch equivalent duplicate workflow runs.
+2. Cross-link Planner, PermissionGate, Occurrence, ActionAudit and AuditLink retained-prefix/orphan-audit crash recovery across dependent READ bridges. Deny automatic replay for UNKNOWN, RUNNING and reserved PENDING WRITE until independently attested external outcome; no real backend dispatch.
+3. Extend Memory v1 CAS/expiry/revision contention and coherent multi-namespace snapshots under separate local processes, without frozen DDL changes or claims of cross-file atomicity.
+4. Continue Personal Context revocation and explicit human-reviewed erasure **contracts** (no actual deletion or disclosure), plus independently retained privacy witnesses.
+5. Build reversible deny-only trusted-clock/issuer interfaces and Observation/Scheduler fixture adapters. V3 advancement remains free-only approval/path/identity/reproducibility guard work; require explicit user approval for billing, credentials, hardware, protected evaluation, Candidate creation/promotion, frozen changes or main merge.
+
+---
+
+**HISTORICAL — Run426 and earlier checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 426**
 
 Saved at: **2026-10-25T22:58:23.420+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock sample immediately preceding this normal GitHub Contents checkpoint write; NOT signed time, verified human consent, model provenance, or billing authorization).
