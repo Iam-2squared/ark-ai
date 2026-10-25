@@ -64,11 +64,24 @@ class PermissionGate:
                 stable = (
                     (call.tool, call.capability, call.scope,
                      call.request_id) == call_epoch[:4]
-                    and call.arguments is call_epoch[4]
+                    and all(
+                        actual is original
+                        for actual, original in zip(
+                            (call.tool, call.capability, call.scope, call.arguments),
+                            (call_epoch[0], call_epoch[1], call_epoch[2], call_epoch[4]),
+                            strict=True,
+                        )
+                    )
                     and (
                         (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
                         if one_shot is not None else None
                     ) == token_epoch
+                    and (
+                        one_shot is None
+                        or one_shot.token_id is token_epoch[0]
+                        and one_shot.request_id is token_epoch[1]
+                        and one_shot.expires_at_ms is token_epoch[2]
+                    )
                 )
             except (AttributeError, TypeError, ValueError) as exc:
                 raise PermissionDenied("registered input identity changed") from exc
@@ -232,6 +245,34 @@ class PermissionGate:
         except (AttributeError, TypeError, ValueError) as exc:
             raise PermissionDenied("authorization input identity is invalid") from exc
 
+        def original_field_carriers() -> bool:
+            # request_id on ToolCall is a deterministic computed digest, so
+            # preserve its VALUE (already checked separately), not the identity
+            # of each freshly computed string. Other fields are stored values
+            # whose exact original carriers must survive reentrant callbacks.
+            return (
+                all(
+                    current is initial
+                    for current, initial in zip(
+                        (spec.name, spec.capability, spec.effect),
+                        spec_epoch, strict=True,
+                    )
+                )
+                and all(
+                    current is initial
+                    for current, initial in zip(
+                        (call.tool, call.capability, call.scope, call.arguments),
+                        call_epoch[:4], strict=True,
+                    )
+                )
+                and (
+                    one_shot is None
+                    or one_shot.token_id is token_epoch[0]
+                    and one_shot.request_id is token_epoch[1]
+                    and one_shot.expires_at_ms is token_epoch[2]
+                )
+            )
+
         matching = []
         grant_epochs = []
 
@@ -248,6 +289,7 @@ class PermissionGate:
                         call.arguments, call.request_id,
                     ) == call_epoch
                     and call.arguments is call_epoch[3]
+                    and original_field_carriers()
                     and (
                         (
                             one_shot.token_id, one_shot.request_id,
@@ -300,6 +342,7 @@ class PermissionGate:
                     call.arguments, call.request_id,
                 ) == call_epoch
                 and call.arguments is call_epoch[3]
+                and original_field_carriers()
                 and (
                     (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
                     if one_shot is not None else None
@@ -341,6 +384,7 @@ class PermissionGate:
                             call.arguments, call.request_id,
                         ) == call_epoch
                         and call.arguments is call_epoch[3]
+                        and original_field_carriers()
                         and (
                             one_shot.token_id,
                             one_shot.request_id,
