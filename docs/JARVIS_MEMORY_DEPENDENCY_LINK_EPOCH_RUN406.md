@@ -22,11 +22,17 @@
 - `tests/test_synthetic_write_plan_linked_restarts_run406.py`: **3** end-to-end fixture cases. Exercise two distinct RUNNING/UNKNOWN WRITEs with nonempty ledger, pre-action ActionAudit and link sidecar records; independently retained four-store witness rechecks across SQLite reinitialization; refuse post-restart automatic replay of both; reject erased nonempty retained link history; and keep a PENDING dependent WRITE held when its prerequisite has a persisted reservation + audit link.
 - A synthetic link is a separately committed local record, not user consent, authenticated outcome, permission, trusted time, atomic cross-store snapshot or an external exactly-once receipt.
 
+### D. Offline proactive trigger digest custody
+
+- `src/ark/proactive_synthetic_review.py`: verify the original policy identity, SQLite source and independent retained witness immediately after **each** of the scope/policy/occurrence digest callbacks, rather than relying on a later SQL-phase check. A later callback cannot restore an earlier temporary change and make a newly computed trigger appear to have been based on unmodified inputs.
+- `tests/test_proactive_trigger_digest_epoch_run406.py`: **6** synthetic SQLite cases (each of 3 hashing boundaries; transient mutate-then-restore; equal-value source Path substitution; stable non-dispatching restart). There is no notification, time attestation, policy permission or real ToolBackend. This is an offline preparation marker only.
+
 ## Regression and evidence requirements
 
 - Work-basis checkpoint before this invocation: `99ed02197b1d52607ee7fcdbae93334a53eab4cd` (Run405; GitHub CI #916 / `40145087670` completed SUCCESS).
+- Proactive source/test commits: `7375bf13904d25e38b8b9aa4216a78573f5cff02` and `e4928117f868ded4f8b26abed328c7c1e76536ce` (independent scheduler work while plan CI was active).
 - Source/test commits in chronological order: `e26ec37d73da399f5b5e5dcafdd13a2f3addac1c` (Memory source), `a2485407a684432209e8c91e325fa1bfcbadef3c` (Memory tests), `6a660fcd40ee2051e1ced61b8b9e29c7de5bcfb5` (plan source), `731a6bc8533c6d5c3ca150da5942a06571a0142b` (plan tests), `7cf5a1881494ef9e47672bc90394bcfe3fee7e8d` (linked fixtures), `85a1aec1246cf3ad5ba09a9d54c6f356ba7307fc` (terminal closure repair).
-- Newly added cases: **19**; baseline Run405 **2037** pass; expected collected after all changes **2056** (not a PASS assertion until exact-head CI confirms it).
+- Newly added cases: **25** (8 Memory + 8 dependent-plan + 3 linked-restarter + 6 proactive); baseline Run405 **2037** pass; expected collected after all changes **2062** (not a PASS assertion until exact-head CI confirms it).
 - Requirements before integrating dependent features: exact same HEAD Ruff + pytest GREEN on Ubuntu/Windows Python 3.11–3.13; independent four-store retained proofs must continue to fail closed; keep UNKNOWN WRITE non-replay; no new authority from these diagnostics.
 
 ## Remaining architecture blockers / non-proofs
