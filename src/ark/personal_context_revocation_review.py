@@ -293,6 +293,7 @@ def review_fresh_nonrevoked_context(
     # Local import keeps the optional independent history reviewer separate
     # from this fixture's core SQLite schema and avoids an import cycle.
     from .personal_context_revocation_continuity_review import (
+        SyntheticRevocationWitness,
         review_revocation_continuity,
     )
 
@@ -310,6 +311,11 @@ def review_fresh_nonrevoked_context(
     policy_epoch = (
         policy.total_limit, policy.per_namespace_limit, policy.policy_revision,
     )
+    # The first independently acquired veto history must stay the *original*
+    # witness throughout the Memory projection and the second veto review.
+    # A later callback must not replace its rows/digest with a new local view.
+    original_revocations: tuple[object, object, tuple[object, ...]] | None = None
+    initial_revocations: SyntheticRevocationWitness | None = None
 
     def assert_epoch() -> None:
         # An equal-valued replacement is still a new input epoch: a later
@@ -340,12 +346,34 @@ def review_fresh_nonrevoked_context(
                 current is not pinned
                 for current, pinned in zip(policy_current, policy_epoch, strict=True)
             )
+            or original_revocations is not None and (
+                initial_revocations is None
+                or type(initial_revocations) is not SyntheticRevocationWitness
+                or initial_revocations.rows is not original_revocations[0]
+                or initial_revocations.witness_id is not original_revocations[1]
+                or type(initial_revocations.rows) is not tuple
+                or len(initial_revocations.rows) != len(original_revocations[2])
+                or any(
+                    current is not first
+                    for current, first in zip(
+                        initial_revocations.rows, original_revocations[2],
+                        strict=True,
+                    )
+                )
+            )
         ):
             raise SyntheticContextRevocationRejected(
                 "context source, request or policy changed during review"
             )
 
     before = review_revocation_continuity(ledger, retained=retained_revocations)
+    assert_epoch()
+    if type(before) is not SyntheticRevocationWitness or type(before.rows) is not tuple:
+        raise SyntheticContextRevocationRejected("exact initial privacy witness required")
+    initial_revocations = before
+    original_revocations = (before.rows, before.witness_id, tuple(before.rows))
+    assert_epoch()
+    before.assert_integrity()
     assert_epoch()
     ledger.assert_not_revoked(scopes)
     assert_epoch()
