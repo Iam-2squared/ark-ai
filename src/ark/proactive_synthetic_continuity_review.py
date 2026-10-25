@@ -71,15 +71,22 @@ def assert_proactive_history_continues(
     # Capture both exact carriers *before* either reentrant integrity method.
     retained_rows = retained.row_hashes
     current_rows = current.row_hashes
-    retained_epoch = (retained_rows, retained.digest)
-    current_epoch = (current_rows, current.digest)
+    retained_digest, current_digest = retained.digest, current.digest
+    retained_carriers = tuple(retained_rows)
+    current_carriers = tuple(current_rows)
 
     def assert_epoch() -> None:
         if (
             retained.row_hashes is not retained_rows
             or current.row_hashes is not current_rows
-            or (retained.row_hashes, retained.digest) != retained_epoch
-            or (current.row_hashes, current.digest) != current_epoch
+            or retained.digest is not retained_digest
+            or current.digest is not current_digest
+            or any(now is not first for now, first in zip(
+                retained.row_hashes, retained_carriers, strict=True,
+            ))
+            or any(now is not first for now, first in zip(
+                current.row_hashes, current_carriers, strict=True,
+            ))
         ):
             raise SyntheticTriggerRejected(
                 "proactive history witness changed during continuity check"
@@ -110,10 +117,9 @@ def read_proactive_witness(
     path_epoch = ledger.path
     if not isinstance(path_epoch, Path):
         raise SyntheticTriggerRejected("proactive witness requires a Path source")
-    retained_epoch = (
-        None if retained is None else (retained.row_hashes, retained.digest)
-    )
     retained_rows_carrier = None if retained is None else retained.row_hashes
+    retained_digest = None if retained is None else retained.digest
+    retained_carriers = () if retained is None else tuple(retained_rows_carrier)
 
     def assert_epoch() -> None:
         if (
@@ -121,7 +127,10 @@ def read_proactive_witness(
             or retained is not None
             and (
                 retained.row_hashes is not retained_rows_carrier
-                or (retained.row_hashes, retained.digest) != retained_epoch
+                or retained.digest is not retained_digest
+                or any(now is not first for now, first in zip(
+                    retained.row_hashes, retained_carriers, strict=True,
+                ))
             )
         ):
             raise SyntheticTriggerRejected(
@@ -162,14 +171,38 @@ def read_proactive_witness(
                     "ARK-trigger-witness-v1", hashes,
                 ),
             )
+            witness_rows = witness.row_hashes
+            witness_digest = witness.digest
+            witness_carriers = tuple(witness_rows)
+
+            def assert_witness_epoch() -> None:
+                if (
+                    type(witness) is not SyntheticTriggerWitness
+                    or witness.row_hashes is not witness_rows
+                    or witness.digest is not witness_digest
+                    or any(now is not first for now, first in zip(
+                        witness.row_hashes, witness_carriers, strict=True,
+                    ))
+                ):
+                    raise SyntheticTriggerRejected(
+                        "proactive result witness changed during review"
+                    )
+
+            assert_epoch()
+            assert_witness_epoch()
             witness.assert_integrity()
             assert_epoch()
+            assert_witness_epoch()
             if retained is not None:
                 assert_proactive_history_continues(retained, witness)
-            assert_epoch()
+                assert_epoch()
+                assert_witness_epoch()
             conn.commit()
+            assert_epoch()
+            assert_witness_epoch()
         except BaseException:
             conn.rollback()
             raise
     assert_epoch()
+    assert_witness_epoch()
     return witness
