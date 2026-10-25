@@ -225,12 +225,31 @@ class SyntheticProactiveLedger:
             raise SyntheticTriggerRejected(
                 "policy or ledger path changed before preparation"
             )
+        def assert_digest_epoch() -> None:
+            # Each synthetic digest is a potential reentrant callback. A
+            # later digest must not be able to restore an earlier policy or
+            # retained-history mutation before the SQLite write fence.
+            if self.path is not ledger_path or policy.identity() != pinned:
+                raise SyntheticTriggerRejected(
+                    "policy or ledger path changed during trigger digest"
+                )
+            if retained_epoch is not None and (
+                retained.row_hashes is not retained_rows_carrier
+                or (retained.row_hashes, retained.digest) != retained_epoch
+            ):
+                raise SyntheticTriggerRejected(
+                    "retained proactive witness changed during trigger digest"
+                )
+
         scope = _hash("ARK-trigger-scope-v1", pinned[:4])
+        assert_digest_epoch()
         policy_hash = _hash("ARK-trigger-policy-v1", pinned)
+        assert_digest_epoch()
         trigger = "trigger_" + _hash(
             "ARK-trigger-occurrence-v1",
             (scope, policy_hash, source_digest, observation_digest),
         )
+        assert_digest_epoch()
         resolved = ledger_path.resolve()
         if self.path is not ledger_path:
             raise SyntheticTriggerRejected("proactive ledger path changed before opening")
