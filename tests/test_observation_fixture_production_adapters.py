@@ -90,6 +90,7 @@ def test_fixture_rejects_subclasses_and_malformed_unicode():
 @pytest.mark.parametrize(
     "factory,payload",
     [(text, "a" * (4 * 1024 * 1024 + 1)), (binary, b"a" * (4 * 1024 * 1024 + 1))],
+    ids=("text-over-byte-limit", "binary-over-byte-limit"),
 )
 def test_fixture_rejects_oversized_payload(factory, payload):
     with pytest.raises(ValueError, match="byte budget exceeded"):
