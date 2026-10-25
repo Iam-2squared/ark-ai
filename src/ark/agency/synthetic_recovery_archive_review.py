@@ -280,7 +280,21 @@ def recheck_synthetic_recovery_archive(
     """
     original_bytes = archive.canonical_json if type(archive) is SyntheticRecoveryArchive else None
     original_digest = archive.digest if type(archive) is SyntheticRecoveryArchive else None
+
+    def assert_archive_epoch() -> None:
+        # A matching digest value is not enough: even an equal-valued carrier
+        # replacement during a callback invalidates the caller-held archive.
+        if (
+            type(archive) is not SyntheticRecoveryArchive
+            or archive.canonical_json is not original_bytes
+            or archive.digest is not original_digest
+        ):
+            raise SyntheticRecoveryArchiveRejected(
+                "archive changed during restart review"
+            )
+
     identity, plan, ledger, audit_witness, link, occurrences, links = _restore(archive)
+    assert_archive_epoch()
     if link is not None and link_store is None:
         raise SyntheticRecoveryArchiveRejected("retained link requires link store")
     fresh = review_synthetic_write_recovery(
@@ -289,13 +303,36 @@ def recheck_synthetic_recovery_archive(
         retained_ledger=ledger, retained_audit=audit_witness,
         link_store=link_store, retained_link=link,
     )
-    # A callback may replace the original archive itself during all the reads.
-    if (
-        archive.canonical_json is not original_bytes
-        or archive.digest != original_digest
-    ):
-        raise SyntheticRecoveryArchiveRejected("archive changed during restart review")
+    assert_archive_epoch()
+    # Pin the returned read-only review and its nested witnesses before the
+    # second archive validation. Validation is a callback boundary: a patched
+    # digest/parser must not rewrite evidence immediately before it is returned.
+    fresh_epoch = tuple(
+        (
+            entity,
+            tuple((field.name, getattr(entity, field.name))
+                  for field in fields(entity)),
+        )
+        for entity in (
+            fresh, fresh.plan_tail, fresh.ledger_witness,
+            fresh.audit_witness, fresh.link_witness,
+        )
+        if entity is not None
+    )
+
+    def assert_fresh_epoch() -> None:
+        if any(
+            getattr(entity, name) is not original
+            for entity, values in fresh_epoch
+            for name, original in values
+        ):
+            raise SyntheticRecoveryArchiveRejected(
+                "reopened recovery changed during final archive validation"
+            )
+
     _restore(archive)
+    assert_archive_epoch()
+    assert_fresh_epoch()
     # A retained RUNNING/UNKNOWN WRITE cannot become known simply because a
     # later local planner journal claims success, failure or cancellation.
     # A synthetic status is not a verified external side-effect receipt.
@@ -314,4 +351,6 @@ def recheck_synthetic_recovery_archive(
         raise SyntheticRecoveryArchiveRejected(
             "reopened recovery differs from retained action identity"
         )
+    assert_archive_epoch()
+    assert_fresh_epoch()
     return fresh
