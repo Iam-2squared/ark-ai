@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run 428**
+
+Saved at: **2026-10-26T01:00:45.373+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock immediately before ordinary GitHub Contents checkpoint write; NOT authenticated clock evidence, verified user/issuer consent, approved spending, model provenance, or a signed identity).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `c77329caaef2594b44091b8a591378b75200846c` (Run427 checkpoint; CI **#1183 / 40205112719 six of six SUCCESS** independently confirmed at this invocation's start).
+**Final Run428 executable source + tests HEAD:** `045a8aa9f56a05fba3f8f78d92ba6aba1e867ff9`.
+**Run428 technical document and exact checkpoint write-basis HEAD:** `e657823c8c12004f8c385f62895f8f24d37ee014` (`docs/JARVIS_DIRECT_TRIAGE_PRIVACY_WITNESS_RUN428.md`).
+**Checkpoint-result HEAD:** cannot be pre-embedded in its own Contents commit. Take the **actual returned GitHub Contents commit_sha** as the checkpoint-result HEAD and check its distinct CI rather than borrowing an earlier run's results.
+
+### Overall ARK state
+
+**Complete JARVIS NOT_PASSED.** Local-first, disconnected/mock/synthetic-only JARVIS foundations. No signed trusted clock, verified human issuer/consent, real ToolBackend external outcome attestation, durable atomic transaction across independent SQLite databases, external exactly-once WRITE, live sensing, real notification dispatch, Candidate training, or operational autonomous tools. A local digest or successful test does not provide permissions. **UNKNOWN/RUNNING and reserved PENDING WRITEs never auto-replay** without independently attested outcome.
+
+### NEW Run428 — two coherent safety packages (+10 parameter-expanded pytest cases)
+
+1. **Direct recovery final result + original Plan/BoundAction custody (+6):** `src/ark/agency/synthetic_recovery_triage.py` at `3a5b96f91e7666770f1b4f48ff83a146862df204`, test `tests/test_triage_result_epoch_run428.py` at `8b762562d9e8da195cfe0bdfaa015055fa94f9e9`. Fix the final SyntheticRecoveryReview constructor as an independent adversarial callback boundary. Preserve the exact BoundAction, SyntheticPlanRecovery and PlanTail field objects through the disconnected SQLite review. Reject a forged returned result type/state, changed nested tail carrier, changed ToolCall/BoundAction identity, while preserving all existing no-dispatch/no-replay rules.
+2. **Personal Context first revocation witness custody through second veto (+4):** `src/ark/personal_context_revocation_review.py` at `702fc81c622e945e9fd05013e96688312baaff57`, test `tests/test_context_initial_revocation_witness_epoch_run428.py` at `045a8aa9f56a05fba3f8f78d92ba6aba1e867ff9`. Capture initial revocation witness rows/digest and exact original carriers after first independent prefix replay; recheck them during both veto reads, Memory projection and final replay. Reject an equal-content replacement of a previously retained first witness. No live personal data erasure, disclosure or authenticated consent inferred.
+
+**Technical fault matrix and non-authority scope:** `docs/JARVIS_DIRECT_TRIAGE_PRIVACY_WITNESS_RUN428.md` committed at `e657823c8c12004f8c385f62895f8f24d37ee014`. No external ToolBackend method called, paid compute configured, protected final evaluation opened, or Candidate/real model generated.
+
+### CI / evidence (as independently sampled at checkpoint)
+
+- Run427 corrected executable HEAD **#1182 / 40204720625**: completed SUCCESS; Run427 checkpoint **#1183 / 40205112719**: completed SUCCESS (all six jobs). Historical **#1181 / 40204600499 FAILED** stays FAILED and is not re-labelled.
+- Package 1 source-only **#1184 / 40208630060** at `3a5b96f91e7666770f1b4f48ff83a146862df204`: **all six SUCCESS**.
+- Package 1 source+tests **#1185 / 40208701338** at `8b762562d9e8da195cfe0bdfaa015055fa94f9e9`: **five of six SUCCESS, Windows Python 3.11 IN PROGRESS**, zero observed failures.
+- Package 2 source-only **#1186 / 40208854355** at `702fc81c622e945e9fd05013e96688312baaff57`: **five of six SUCCESS, Windows Python 3.13 IN PROGRESS**, zero observed failures.
+- **Run428 final executable source/tests HEAD #1187 / 40208913492** at `045a8aa9f56a05fba3f8f78d92ba6aba1e867ff9`: **five of six SUCCESS**, Windows Python 3.11 IN PROGRESS; zero observed failures. **Ubuntu Python 3.13 Ruff PASS and 2770 passed / 1 skipped** explicitly read from job log. This is NOT six-job GREEN until that Windows job finishes.
+- Technical doc HEAD **#1188 / 40209178215** at `e657823c8c12004f8c385f62895f8f24d37ee014`: **three of six SUCCESS, Windows jobs IN PROGRESS** at checkpoint sampling. Checkpoint-result HEAD CI is separate and **NOT YET VERIFIED** when this checkpoint is written.
+- The normal GitHub Contents API committed source, tests and one engineering document; the repository's existing CI was triggered automatically. No equivalent manual rerun, new paid API/service/GPU, account credential, or actual physical computer action occurred. Actual owner-side billing settings are not asserted.
+
+### Frozen and safety gates
+
+Both trees were nontruncated at latest precheckpoint inspection: main `7a843f17eb96ed13d66f23b58b06406b3002e405` had 94 files and PR8's documented head `e657823c8c12004f8c385f62895f8f24d37ee014` had 549 (455 additions; **zero main file changes/deletions**). PR #5 is **Draft/unmerged/NOT_PASSED** under its controlling free-only V3 gate. Frozen V1/V2/Local UI/Launcher, Memory V1 SQL DDL, ActionAudit V1 SQL DDL and V3 Contract 1 were not modified. No main merge, real Tool dispatch, private user data deletion, irreversible action, protected V2 final evaluation, Candidate promotion/training, paid API/external GPU or new secrets. Keep PR #8 Draft and JARVIS groundwork isolated/reversible until exact-head tested integration.
+
+### Next plan / 今後の方針
+
+1. **Verify the remaining Windows CI jobs of #1185/#1186/#1187 and technical-document CI #1188, and separately the real checkpoint-result CI.** On failure, inspect exact logs, keep FAILED evidence and apply the smallest semantics-preserving normal Contents fix; no equivalent manual CI rerun.
+2. Extend full read-only Planner–PermissionGate–Occurrence–ActionAudit–AuditLink orphan/tail-loss and dependent READ-bridge fault matrices using separately retained witness prefixes, never enabling automatic replay of UNKNOWN/RUNNING/reserved PENDING WRITE.
+3. Exercise SQLite Memory V1 CAS/expiry and coherent multi-namespace reads under genuinely independent local processes; keep SQL schema frozen and do not claim cross-file atomicity.
+4. Continue first-witness privacy revocation continuity, data-retention/explicit-reviewed erasure **contracts** (not deletion), and deny-only verified-issuer/trusted-clock interfaces.
+5. Advance reversible Observation/Scheduler fixture adapters and free-only V3 approval/path/identity/reproducibility guards without real sensors, notifications, paid GPU, Candidate generation, protected evaluation or merge. Stop only the lane that would require a user authorization.
+
+---
+
+**HISTORICAL — Run427 and earlier checkpoints preserved below verbatim**
+
+# ARK AI Project Status
+
 **LATEST — Run 427**
 
 Saved at: **2026-10-26T00:03:12.110+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock sample immediately before the normal GitHub Contents checkpoint write; NOT an authenticated time, user/issuer identity, consent, model provenance or spending approval).
