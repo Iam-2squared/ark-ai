@@ -114,15 +114,44 @@ def review_synthetic_memory_scopes(
         or any(type(scope) is not MemoryScope for scope in scopes)
     ):
         raise SyntheticMemorySnapshotRejected("exact Memory scope inputs required")
-    values = tuple((scope.owner_id, scope.namespace) for scope in scopes)
+    # Pin caller-owned scopes and source BEFORE constructing duplicate scopes
+    # or hashing them. Each constructor/digest is a callback boundary, and a
+    # later callback must not restore an earlier retargeted owner/path.
+    path_epoch = store.path
+    if not isinstance(path_epoch, Path):
+        raise SyntheticMemorySnapshotRejected("Memory source must retain a Path")
+    scope_origin = tuple(
+        (scope, scope.owner_id, scope.namespace) for scope in scopes
+    )
+
+    def assert_initial_scope_epoch() -> None:
+        if store.path is not path_epoch or any(
+            scope.owner_id is not owner or scope.namespace is not namespace
+            for scope, owner, namespace in scope_origin
+        ):
+            raise SyntheticMemorySnapshotRejected(
+                "Memory scope or source changed during review"
+            )
+
+    assert_initial_scope_epoch()
+    values = tuple((owner, namespace) for _, owner, namespace in scope_origin)
     if (
         len(set(values)) != len(values)
         or len({owner for owner, _ in values}) != 1
     ):
         raise SyntheticMemorySnapshotRejected("scopes must be distinct and same-owner")
-    # Bind values, not frozen dataclass references, before SQLite access.
-    pinned = tuple(MemoryScope(owner, namespace) for owner, namespace in values)
-    hashes = tuple(_scope_digest(scope) for scope in pinned)
+    # Work from copies, checking original scope/source after each boundary,
+    # not just after all hash callbacks have finished.
+    pinned_items = []
+    for owner, namespace in values:
+        pinned_items.append(MemoryScope(owner, namespace))
+        assert_initial_scope_epoch()
+    pinned = tuple(pinned_items)
+    scope_hashes = []
+    for scope in pinned:
+        scope_hashes.append(_scope_digest(scope))
+        assert_initial_scope_epoch()
+    hashes = tuple(scope_hashes)
     if retained_events is not None:
         if (
             type(retained_events) is not tuple
@@ -196,9 +225,7 @@ def review_synthetic_memory_scopes(
         except (AttributeError, TypeError) as exc:
             raise SyntheticMemorySnapshotRejected("invalid retained snapshot") from exc
 
-    path_epoch = store.path
-    if not isinstance(path_epoch, Path):
-        raise SyntheticMemorySnapshotRejected("Memory source must retain a Path")
+    assert_initial_scope_epoch()
     # Every accessor and SQLite callback is a reentrancy boundary. Values
     # alone do not pin reflected-mutable frozen dataclasses: retain their
     # exact original field carriers throughout every namespace and row.
