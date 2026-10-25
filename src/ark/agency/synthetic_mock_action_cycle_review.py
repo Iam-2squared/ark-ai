@@ -110,7 +110,8 @@ def run_synthetic_mock_cycle(
     original_steps = journal._steps
     original_step_fields = tuple(
         (entry, entry.step_id, entry.call, entry.depends_on,
-         entry.call.request_id)
+         entry.call.request_id, entry.call.tool,
+         entry.call.capability, entry.call.scope)
         for entry in original_steps
     )
     bound = registry.bind(call)
@@ -151,20 +152,36 @@ def run_synthetic_mock_cycle(
                 and len(steps) == len(original_step_fields)
                 and all(
                     entry is original and entry.step_id == step_id
+                    and entry.step_id is step_id
                     and entry.call is old_call
                     and entry.depends_on is deps
                     and entry.call.request_id == request_id
-                    for entry, (original, step_id, old_call, deps, request_id)
-                    in zip(steps, original_step_fields, strict=True)
+                    and entry.call.tool is old_tool
+                    and entry.call.capability is old_capability
+                    and entry.call.scope is old_scope
+                    for entry, (
+                        original, step_id, old_call, deps, request_id,
+                        old_tool, old_capability, old_scope,
+                    ) in zip(steps, original_step_fields, strict=True)
                 )
                 and (
                     call.tool, call.capability, call.scope,
                 ) == original_call[:3]
+                and all(
+                    new is old
+                    for new, old in zip(
+                        (call.tool, call.capability, call.scope),
+                        original_call[:3], strict=True,
+                    )
+                )
                 and call.arguments is original_call[3]
                 and call.request_id == original_call[4]
                 and (
                     token.token_id, token.request_id, token.expires_at_ms,
                 ) == original_token
+                and token.token_id is original_token[0]
+                and token.request_id is original_token[1]
+                and token.expires_at_ms is original_token[2]
                 and (
                     bound.registry_revision, bound.bound_action_id,
                 ) == bound_epoch[:2]
