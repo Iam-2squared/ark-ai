@@ -59,6 +59,10 @@ def test_sqlite_final_callbacks_cannot_swap_witness_carriers(
         )
 
     def connection(*args, **kwargs):
+        # Internal schema validation needs a genuine context-managed SQLite
+        # in-memory connection; intercept only the test database handle.
+        if args[0] == ":memory:":
+            return original_connect(*args, **kwargs)
         return ConnectionHook(
             original_connect(*args, **kwargs), phase, retarget,
         )
