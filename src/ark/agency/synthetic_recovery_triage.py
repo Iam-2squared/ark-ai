@@ -42,8 +42,8 @@ from .synthetic_occurrence_audit_link_review import (
 )
 from .synthetic_occurrence_continuity_review import (
     _COLUMNS,
-    SyntheticLedgerWitness,
     _MAX_WITNESS_ROWS,
+    SyntheticLedgerWitness,
     _digest,
     assert_synthetic_history_continues,
     read_synthetic_ledger_witness,
