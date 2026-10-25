@@ -14,7 +14,7 @@ training PASS, signed timestamp, permission, live execution or human approval.
   registry/Planner. No ToolBackend, paid GPU, API, PC, media, notification,
   Candidate, authorization, consent, deletion or external side effect.
 
-## Four source+regression packages (34 parametrized pytest cases)
+## Five source+regression packages (45 parametrized pytest cases)
 
 ### A — Memory DELETE and expired purge after SQLite COMMIT (+12)
 
@@ -72,6 +72,22 @@ A malicious iterable can reflectively alter the result when yielding a next
 sample or during final StopIteration/finally; both now reject. Caller-provided
 clock origin is not authenticated or signed, and no permission is produced.
 
+### E — Observation-to-trigger bounded ingress and result custody (+11)
+
+Source `src/ark/proactive_observation_lineage_fence_review.py` at
+`9e0e352424a462520df981c33a95273490bd0970`.
+Test `tests/test_observation_trigger_budget_and_final_result_run418.py` at
+`d0033f24626c9060167a86785b24daa3af6fc9bf`.
+
+Standalone untrusted source identifiers must be exact, nonblank, valid UTF-8
+and at most 1024 characters, matching the existing ObservationEnvelope budget.
+The correlation entry rejects more than 256 envelopes and unbounded selection
+IDs **before** invoking the costly lineage or SQLite reviewers. After the
+diagnostic result is constructed, check original envelope, trigger receipt,
+retained-policy inputs and exact output digest/ID carriers once more. These
+constraints do not establish source authenticity, notification readiness,
+human consent or external action authority.
+
 ## CI precision and known limits
 
 - Auto-triggered package test commits:
@@ -83,11 +99,17 @@ clock origin is not authenticated or signed, and no permission is produced.
     **#1075 / 40180078670**.
   - Clock `317732d41d33d5daf739ec81c16b902235d35cb1`:
     **#1077 / 40180189276**.
-- At the last independent runs-list sample during this session, #1071,
-  #1073 and #1075 were IN_PROGRESS; #1077 was QUEUED. **Do not infer
-  matrix GREEN from a previous HEAD or an in-progress job.**
+  - Observation `d0033f24626c9060167a86785b24daa3af6fc9bf`:
+    **#1080 / 40180530603**.
+- At the next sampled runs list, #1071 completed SUCCESS six jobs and
+  #1075 was FAIL due to a Windows 3.12 existing frozen Local UI
+  `tests/ui/test_server.py::test_cross_origin_reads_and_writes_rejected[headers2]`
+  `ConnectionAbortedError [WinError 10053]`; Ubuntu 3.11/3.12/3.13 and
+  Windows 3.11/3.13 succeeded. The local server was not changed.
+  #1073/#1077 and final #1080 were not yet whole-matrix verified.
+  **Do not infer GREEN for a later HEAD from any prior success.**
 - Expected baseline: Run417 documented Run416's 2349 plus 52 = 2401;
-  adding 34 cases suggests **2435**, which is a calculation, **not a test
+  adding 45 cases suggests **2446**, which is a calculation, **not a test
   pass claim** until the exact-head pytest and all six CI jobs confirm it.
 - All changes stay within their distinct modules. No new workflow was
   manually dispatched and failed CI must remain in history.
