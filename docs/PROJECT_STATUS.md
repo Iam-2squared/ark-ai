@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run 411**
+
+Saved at: **2026-10-25T13:56:15.225+09:00 Asia/Tokyo/JST** (runtime wall-clock sample immediately before ordinary GitHub Contents checkpoint write; NOT authenticated trusted time, GitHub-server attestation, real consent or human approval).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `7be8cfeaf219921e5a96e9b31de34a69d316d3f7` (Run410 canonical checkpoint; **CI #981 / `40160539009` SUCCESS all six** Ubuntu/Windows Python 3.11–3.13).
+**Latest 3-package source+test HEAD:** `7a78c0b2fa5ba7a19845f42e9d9a774c79acaaf3` (**#988 / 40163498149: IN_PROGRESS** at status time; Ubuntu Python 3.11/3.12/3.13 GREEN; Ubuntu3.13 Ruff **All checks passed**, **2203 pytest passed in 52.14s**. Do not claim Windows or all-six GREEN until those exact jobs succeed).
+**Engineering-doc and checkpoint write-basis HEAD:** `b9506fada4a85a142b266893148828a70ef5ab91` (**#989 / 40163592791: IN_PROGRESS** at status time). This is the freshly re-read HEAD **before** the checkpoint write, NOT the checkpoint-result commit.
+**Checkpoint-result HEAD:** cannot be known within a file before GitHub creates the status commit; the resulting ordinary `update_file.commit_sha` response is the authoritative new HEAD, and its own CI must be inspected separately.
+
+### Overall current ARK state
+
+**Local-first, disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated human issuer or consent, externally attested trusted clock, verified real ToolBackend outcome receipts, multi-SQLite atomicity, OS inode/handle custody, independent exactly-once external side effects, hardware/sensor integration, trained Candidate or actual autonomous WRITE. Mock SUCCEEDED, equal hashes and locally retained witnesses never authorize dispatch, notification, disclosure, promotion or replay. **RUNNING/UNKNOWN WRITE must never automatically replay.**
+
+### NEW Run411 — three independent FREE-only packages / +18 parametrized pytest cases
+
+1. **Recovery archive capture epoch + retained UNKNOWN (+8):** source `src/ark/agency/synthetic_recovery_archive_review.py` commit `43d35ca6296b9b6220feea4b074c645c0bade8fc`; tests `tests/test_recovery_archive_capture_epoch_run411.py` first `51be44af7ffaadf54c87903d72391f5fe8788004`, test-only fixture order repair `b72c8803972345d5085db2168f1031e9d166845a`. Pin the original nested review/witness field carriers through serialization, SHA-256, structural validation and return. Reject a retained RUNNING/UNKNOWN write if a later local journal merely claims terminal success/failure. No verified real outcome.
+2. **Direct cross-store ToolRegistry original subject (+5):** source `src/ark/agency/synthetic_recovery_triage.py` commit `93041747ef28518a8510aa2967528332c1b0d17d`; tests `tests/test_recovery_registry_subject_run411.py` commit `292d084ce55e49e3a78631743fecaf76818f67b2`. Require exact BoundAction / ToolCall / registered entry / revision on initial and final registry binding. Cloned equal-valued ToolCalls, copied registrations and mismatched revisions fail closed.
+3. **Proactive freshness retained carrier custody (+5):** source `src/ark/proactive_synthetic_freshness_review.py` commit `2f97fb6f48b26f01da0da2356939540b8566f7f9`; tests `tests/test_proactive_freshness_carrier_epoch_run411.py` commit `7a78c0b2fa5ba7a19845f42e9d9a774c79acaaf3`. Require original receipt, all policy field and independently retained witness carriers after callback boundaries, not just matching field values. No notifications or ToolBackend calls.
+
+**Engineering fault matrix/evidence:** `docs/JARVIS_ARCHIVE_BINDING_FRESHNESS_EPOCH_RUN411.md` on engineering HEAD `b9506fada4a85a142b266893148828a70ef5ab91`.
+
+### CI and evidence fidelity
+
+- Prior Run410 canonical checkpoint **#981 / `40160539009`: SUCCESS all six**. Prior five-package source #979 and engineering doc #980 also completed SUCCESS all six when re-read.
+- Archive source-only **#982 / `40163203000`: SUCCESS all six**.
+- First new archive-test HEAD **#983 / `40163263861`: FAILURE** (three test-only wrong positional argument order; Ubuntu3.13 **2190 passed, 3 failed**, Ruff PASS). Subsequent source #984 and registry-test #985 inherited the same known fixture failure. Keep those failures in evidence; do not relabel.
+- Narrow fixture-order correction HEAD `b72c8803972345d5085db2168f1031e9d166845a`: **#986 / 40163399862: SUCCESS**, with Ubuntu 3/3 GREEN, Ubuntu3.13 Ruff PASS / **2198 pytest passed**. Windows outcomes must be independently checked.
+- Proactive-source CI **#987 / 40163479009: IN_PROGRESS** and final three-package source+test CI **#988 / 40163498149: IN_PROGRESS**. Exact final HEAD Ubuntu3.13 Ruff PASS / **2203 pytest passed**; all three Ubuntu jobs GREEN. The engineering-doc HEAD **#989 / 40163592791: IN_PROGRESS**. Do not extrapolate these Ubuntu results to unfinished Windows jobs or the eventual checkpoint-result SHA.
+- Every source/test/doc write used the normal GitHub Contents API with a fresh branch HEAD read. No raw Git object/ref writes, force-push, CI rerun, main merge or protected evaluation opening.
+
+### Frozen evidence and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evaluation evidence, V3 Contract 1, Memory v1 and ActionAudit v1 SQL schemas **unchanged**. V3 **PR #5 remains Draft/open/unmerged/NOT_PASSED**; PR #8 remains Draft/unmerged; main was not touched. No paid/potentially billable APIs/services/GPU/compute, new secrets/accounts, Candidate training/weights/promotion, live tools/notifications, sensors, private data export/erasure, physical-PC actions, destructive operations, frozen-contract changes, protected final V2 evaluation or merges requiring explicit approval. Human approval, licensing/privacy and real-world effect gates remain unresolved.
+
+### Next plan / 今後の方針
+
+1. Inspect exact-head CI #988, doc #989 and the eventual checkpoint-result HEAD's **own** six Ubuntu/Windows jobs. On true failures, make only narrow semantics-preserving fixes via ordinary fresh-HEAD GitHub Contents; no duplicate equivalent workflow.
+2. Extend retained UNKNOWN diagnostics to pending-but-reserved WRITEs, separately anchored audit/link witnesses, dependent multi-WRITE crash/restart states, and partial SQLite history loss. Never infer external outcomes or automatic replay.
+3. Advance Memory v1 CAS, coherent multi-namespace snapshot, expiration/concurrency and privacy-safe Personal Context revocation; preserve frozen schemas and audit evidence.
+4. Improve trusted-clock/issuer/audit-before-action interfaces and disconnected Observation/Scheduler fixtures; remain fail-closed without signed real-world authorization or verified backend receipts.
+5. Keep V3 free-only approval, path/identity/provenance/reproducibility safeguards isolated, PR #5 Draft/NOT_PASSED and PR #8 Draft/unmerged. No Candidate, paid compute, protected evaluation opening, sensitive disclosure or main merge without explicit authorization.
+
+---
+
+**HISTORICAL — Run410 and earlier evidence preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 410**
 
 Saved at: **2026-10-25T13:04:18.350+09:00 Asia/Tokyo/JST** (automation runtime wall clock sampled immediately before an ordinary GitHub Contents API checkpoint write; NOT authenticated trusted time, server attestation, human approval or real consent).
