@@ -310,23 +310,34 @@ def review_fresh_nonrevoked_context(
     )
 
     def assert_epoch() -> None:
+        # An equal-valued replacement is still a new input epoch: a later
+        # privacy callback could restore the original and conceal a transient
+        # retarget. Pin each immutable field carrier, not only its value.
+        request_current = (
+            request.owner_id, request.namespaces, request.text,
+            request.per_namespace_limit, request.include_expired,
+        )
+        policy_current = (
+            policy.total_limit, policy.per_namespace_limit,
+            policy.policy_revision,
+        )
         if (
             store.path is not memory_source
             or ledger.path is not veto_source
-            or request.namespaces is not original[1]
-            or (
-                request.owner_id, request.namespaces, request.text,
-                request.per_namespace_limit, request.include_expired,
-            ) != original
+            or any(
+                current is not pinned
+                for current, pinned in zip(request_current, original, strict=True)
+            )
             or any(
                 type(scope) is not MemoryScope
-                or (scope.owner_id, scope.namespace) != (owner, namespace)
+                or scope.owner_id is not owner
+                or scope.namespace is not namespace
                 for scope, owner, namespace in scope_epoch
             )
-            or (
-                policy.total_limit, policy.per_namespace_limit,
-                policy.policy_revision,
-            ) != policy_epoch
+            or any(
+                current is not pinned
+                for current, pinned in zip(policy_current, policy_epoch, strict=True)
+            )
         ):
             raise SyntheticContextRevocationRejected(
                 "context source, request or policy changed during review"
