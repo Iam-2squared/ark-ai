@@ -149,7 +149,8 @@ class SyntheticContextRevocationLedger:
         def assert_scope_epoch() -> None:
             if (
                 type(scope) is not MemoryScope
-                or (scope.owner_id, scope.namespace) != scope_epoch
+                or scope.owner_id is not scope_epoch[0]
+                or scope.namespace is not scope_epoch[1]
             ):
                 raise SyntheticContextRevocationRejected(
                     "scope changed during revocation"
@@ -218,7 +219,8 @@ class SyntheticContextRevocationLedger:
             self._assert_source_path(source_path)
             if any(
                 type(scope) is not MemoryScope
-                or (scope.owner_id, scope.namespace) != (owner, namespace)
+                or scope.owner_id is not owner
+                or scope.namespace is not namespace
                 for scope, owner, namespace in scope_epoch
             ):
                 raise SyntheticContextRevocationRejected(
