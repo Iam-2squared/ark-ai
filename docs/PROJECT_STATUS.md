@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run433**
+
+Saved at: **2026-10-26T04:53:45.152+09:00 Asia/Tokyo/JST** (ordinary untrusted automation runtime wall clock sampled immediately before the normal GitHub Contents write; NOT an authenticated time source, human consent or external outcome attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `a48f9a12d131c4525ce1f09921aedfe17cad5a88` (Run432 checkpoint; opening #1223 / `40224110645` showed **3/6 SUCCESS**, three Windows jobs in progress, not GREEN).
+**Run433 final executable source+test HEAD:** `73c10c2f372aaf1bfa50999d75a525924879213b`.
+**Run433 technical-document / exact checkpoint write-basis HEAD:** `53bbbead26440af364c12ac8399e419e1cc5b653`, `docs/JARVIS_FIXTURE_MEMORY_CLOCK_CARRIER_GATES_RUN433.md`.
+**Checkpoint-result HEAD:** intentionally cannot be embedded inside the commit it creates. Use the normal GitHub Contents API returned `commit_sha` below, then verify the **separate** exact-HEAD CI; older runs do not attest the checkpoint.
+
+### Overall current ARK state / real authority
+
+**Full JARVIS NOT_PASSED.** Local-first disconnected, synthetic and mock-only groundwork. No authenticated human issuer/consent, signed trusted clock, attested external Tool outcome, cross-file SQLite atomic transaction, real-world exactly-once WRITE, live sensing, notifications or operational autonomous dispatch. **UNKNOWN/RUNNING and reserved PENDING WRITEs remain on hold and must never auto-replay.** Frozen V1/V2/Local UI/Launcher evidence and contracts remain unchanged. PR #5 V3 learning stays Draft/unmerged/NOT_PASSED; protected V2 final opening, real Candidate training/promotion and any paid/external GPU compute remain explicitly blocked.
+
+### NEW Run433 — three independent free-only executable work packages (+53 expanded test cases)
+
+1. **Observation fixture constructor result sealing (+26):** `src/ark/observation_fixture_adapters.py` source commit `1ecf19ad27f14beaff791ea4744f24dbed4fc9f0`; tests `tests/test_observation_fixture_constructor_result_run433.py` `55c7ac9003ccedb7d9aef43ca903b33676f26dad`. Both in-memory TEXT/TRANSCRIPT and IMAGE/SCREEN fixtures require the original eight field carriers on their returned `ObservationEnvelope`. Reject forged non-envelope result, post-validation field retargeting and equal-valued source/privacy/digest carrier substitution; preserve raw-content minimization. No device capture, communication, file reads or ToolBackend.
+2. **Memory put original write-carrier pre-COMMIT admission (+20):** `src/ark/memory/sqlite_store.py` source commit `b8a9e2599a0824a2425434d699f8b913822aa8ff`; tests `tests/test_memory_precommit_original_carriers_run433.py` `adc2bd287a11ca4936c62b3fb5f0ec94ad5216d0`. Strengthens the pre-COMMIT clock and audit-event checks for exact owner/namespace, content/source/expiry carriers, not just equality. Cases span create/update, clock/event callbacks, five fields. Before-COMMIT failure rolls back both the row and content-free audit event; no Memory v1 SQL/schema change. A truly COMMITted CAS is still durable and cannot be characterized as undone.
+3. **Synthetic Clock numeric-carrier custody (+7):** `src/ark/agency/synthetic_clock_sequence_review.py` source commit `9088a8718f3756eb1517a1646ea359b777b76cf4`; tests `tests/test_clock_numeric_carrier_custody_run433.py` `73c10c2f372aaf1bfa50999d75a525924879213b`. Previously seen synthetic samples, retained witness numbers and new chain-link numeric fields must keep exact original integer objects even when values match. Tests cover generator continuation, retained validation, constructor and ordinary retained-prefix replay. Hash computation semantics unchanged. The clock remains unauthenticated and deny-only.
+
+**Technical fault matrix:** `docs/JARVIS_FIXTURE_MEMORY_CLOCK_CARRIER_GATES_RUN433.md` at `53bbbead26440af364c12ac8399e419e1cc5b653`. These 53 cases were added, **NOT** declared all-PASS before exact-head CI. No local physical-PC testing or model performance measurement occurred.
+
+### Exact-HEAD tests / GitHub CI at checkpoint sampling
+
+- Run432 final source `cc47895c...`: **#1221 / 40223600447 — 3/6 SUCCESS, 0 FAILURE, 3 Windows IN PROGRESS**. Run432 technical doc **#1222 / 40223781720 — 3/6 SUCCESS, 3 Windows IN PROGRESS**; Run432 checkpoint `a48f9a12...` **#1223 / 40224110645 — 3/6 SUCCESS, 3 Windows IN PROGRESS**. Prior Ubuntu Python 3.13 verified **Ruff PASS, 2850 passed / 1 skipped** only on the previous Run432 source HEAD, not the new code.
+- Observation source+test `55c7ac9003ccedb7d9aef43ca903b33676f26dad`: **#1225 / 40227325547 — 2/6 SUCCESS, 0 FAILURE, 4 unfinished** when sampled.
+- Memory source+test `adc2bd287a11ca4936c62b3fb5f0ec94ad5216d0`: **#1227 / 40227494157 — 0/6 finished, jobs QUEUED**, with no PASS inference.
+- Run433 **final executable source+test** `73c10c2f372aaf1bfa50999d75a525924879213b`: **#1229 / 40227718289 — QUEUED, 0/6 finished**. No full-suite run is asserted GREEN on this HEAD.
+- Technical-document HEAD `53bbbead26440af364c12ac8399e419e1cc5b653`: **#1230 / 40227965932 — QUEUED** at sampling. This does not verify the future checkpoint HEAD.
+- Historical failures in previous rounds remain failures; no duplicate manual workflow dispatch, external GPU, newly paid service, Candidate weight, live Tool execution, notification or new credential was started. Any later CI failure must be inspected and repaired via normal allowed Contents writes, not reclassified.
+
+### Frozen evidence, structural isolation, authorizations
+
+Nontruncated Git Trees at source+test HEAD `73c10c2f372aaf1bfa50999d75a525924879213b`: main `7a843f17eb96ed13d66f23b58b06406b3002e405` **94 blobs**, PR #8 **570 blobs**, **476 added**, **0 modified** original-main blobs, **0 deleted**. The immediately subsequent technical-document commit adds exactly one new file (571 total; no original main file changed). PR #5 independently checked Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, still NOT_PASSED. Frozen V1/V2/Local UI/Launcher, Memory V1 DDL, ActionAudit V1 DDL and V3 Contract 1 untouched. No protected eval, real Candidate/promotion, human-reviewed provenance fabricated, payment, external compute, physical device access, destructive deletion or main merge.
+
+### Next plan / 今後の方針
+
+1. Verify `#1225`, `#1227`, `#1229`, `#1230`, remaining Run432 Windows jobs and the **separate CI of this checkpoint-result SHA** without repeated polling or duplicate manual runs. On an actual FAIL, inspect logs and repair via the normal contents path; immediately work independent modules while CI runs.
+2. Prioritize integrated Planner–PermissionGate–Occurrence–ActionAudit–AuditLink restart/partial-history loss and **READ→WRITE→READ→WRITE** dependency no-replay proofs. Never equate independent SQLite files with cross-store atomicity.
+3. Extend Memory cross-process CAS/expiry/event coherence, including write-callback carrier fencing and distinction between pre-COMMIT rollback and post-COMMIT uncertainty.
+4. Review retained privacy revocation freshness and deny-only issuer/trusted-clock output interfaces; build only reversible disconnected observation/scheduler fixtures, not active capture, notifications or dispatch.
+5. Keep PR #5 and PR #8 Draft/unmerged; require separate real hashes, human-reviewed provenance/consent, hardware identities and explicit budget before V3 spending or protected V2 evaluation. No main merge or irreversible architectural choice without approval.
+
+---
+
+**HISTORICAL — Run432 and earlier checkpoint contents preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run432**
 
 Saved at: **2026-10-26T04:02:23.000+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation runtime wall clock immediately before normal GitHub Contents checkpoint write; NOT signed trusted time, authenticated human consent, external-outcome attestation or billing approval).
