@@ -13,7 +13,11 @@ from pathlib import Path
 from .audit import SQLiteActionAudit
 from .audit_continuity_review import AuditContinuityWitness
 from .contracts import Effect, ToolCall
-from .planner_journal_review import SyntheticPlanJournal, SyntheticPlanTail
+from .planner_journal_review import (
+    SyntheticPlanJournal,
+    SyntheticPlanRecovery,
+    SyntheticPlanTail,
+)
 from .registry import ToolRegistry
 from .synthetic_occurrence_audit_link_review import (
     SyntheticAuditLinkWitness,
@@ -208,6 +212,16 @@ def review_synthetic_write_plan(
             raise SyntheticWritePlanReviewRejected("no synthetic WRITE steps to review")
         baseline = journal.recover(retained=retained_plan)
         assert_epoch()
+        if (
+            type(baseline) is not SyntheticPlanRecovery
+            or type(baseline.tail) is not SyntheticPlanTail
+        ):
+            raise SyntheticWritePlanReviewRejected(
+                "exact synthetic plan recovery snapshot required"
+            )
+        expected_states = dict(
+            (name, state) for name, state, _revision in baseline.step_statuses
+        )
         reviews = []
         witness_epoch = None
         # Returned recovery witnesses are frozen dataclasses, not immutable
@@ -215,7 +229,15 @@ def review_synthetic_write_plan(
         # retarget an earlier review without touching the input PlanGraph.
         # Pin each returned nested carrier immediately and recheck all prior
         # reviews at every independent SQLite read boundary.
-        review_epochs = []
+        # The initial journal recovery is another reflectively mutable
+        # result, not merely a stable source of a tail digest. Later per-step
+        # callbacks must not rewrite its status snapshot or a nested witness
+        # before dependency quarantine is derived from those original states.
+        review_epochs = [tuple(
+            (entity, tuple((field.name, getattr(entity, field.name))
+                           for field in fields(entity)))
+            for entity in (baseline, baseline.tail)
+        )]
 
         def assert_review_epochs() -> None:
             try:
@@ -264,6 +286,15 @@ def review_synthetic_write_plan(
             )
             review_epochs.append(carriers)
             assert_review_epochs()
+            if (
+                reviewed.step_id != name
+                or reviewed.request_id != call.request_id
+                or reviewed.registry_revision != registry_revision
+                or reviewed.step_state != expected_states.get(name)
+            ):
+                raise SyntheticWritePlanReviewRejected(
+                    "synthetic per-step recovery differs from original plan"
+                )
             witnesses = (
                 reviewed.plan_tail, reviewed.ledger_witness,
                 reviewed.audit_witness, reviewed.link_witness,
