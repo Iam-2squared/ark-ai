@@ -206,8 +206,32 @@ def review_synthetic_write_plan(
         assert_epoch()
         reviews = []
         witness_epoch = None
+        # Returned recovery witnesses are frozen dataclasses, not immutable
+        # under reflective object.__setattr__. A later per-step callback can
+        # retarget an earlier review without touching the input PlanGraph.
+        # Pin each returned nested carrier immediately and recheck all prior
+        # reviews at every independent SQLite read boundary.
+        review_epochs = []
+
+        def assert_review_epochs() -> None:
+            try:
+                if any(
+                    getattr(entity, field_name) is not original
+                    for carriers in review_epochs
+                    for entity, pinned_fields in carriers
+                    for field_name, original in pinned_fields
+                ):
+                    raise SyntheticWritePlanReviewRejected(
+                        "synthetic plan returned review changed during diagnosis"
+                    )
+            except (TypeError, AttributeError) as exc:
+                raise SyntheticWritePlanReviewRejected(
+                    "synthetic plan returned review malformed during diagnosis"
+                ) from exc
+
         for name, call in sorted(write_steps):
             assert_epoch()
+            assert_review_epochs()
             reviewed = review_synthetic_write_recovery(
                 journal, ledger_path, audit, registry, call,
                 step_id=name, link_store=link_store,
@@ -217,6 +241,25 @@ def review_synthetic_write_plan(
                 retained_link=retained_link,
             )
             assert_epoch()
+            assert_review_epochs()
+            if type(reviewed) is not SyntheticRecoveryReview:
+                raise SyntheticWritePlanReviewRejected(
+                    "exact synthetic per-step recovery review required"
+                )
+            carriers = tuple(
+                (
+                    entity,
+                    tuple((field.name, getattr(entity, field.name))
+                          for field in fields(entity)),
+                )
+                for entity in (
+                    reviewed, reviewed.plan_tail, reviewed.ledger_witness,
+                    reviewed.audit_witness, reviewed.link_witness,
+                )
+                if entity is not None
+            )
+            review_epochs.append(carriers)
+            assert_review_epochs()
             witnesses = (
                 reviewed.plan_tail, reviewed.ledger_witness,
                 reviewed.audit_witness, reviewed.link_witness,
@@ -231,6 +274,7 @@ def review_synthetic_write_plan(
                 witness_epoch = witnesses
             reviews.append(reviewed)
         first_name, first_call = min(write_steps)
+        assert_review_epochs()
         repeated = review_synthetic_write_recovery(
             journal, ledger_path, audit, registry, first_call,
             step_id=first_name, link_store=link_store,
@@ -240,6 +284,7 @@ def review_synthetic_write_plan(
             retained_link=retained_link,
         )
         assert_epoch()
+        assert_review_epochs()
         if repeated != reviews[0] or journal.recover(retained=retained_plan) != baseline:
             raise SyntheticWritePlanReviewRejected(
                 "synthetic plan evidence changed during final recheck"
@@ -290,6 +335,7 @@ def review_synthetic_write_plan(
         downstream_hold = downstream(set(uncertain), exclude_direct_roots=True)
         terminal_hold = downstream(terminal, exclude_direct_roots=False)
         assert_epoch()
+        assert_review_epochs()
         return SyntheticWritePlanReview(
             tuple(reviews), uncertain, baseline.tail.topology_digest,
             downstream_hold, terminal_hold,
