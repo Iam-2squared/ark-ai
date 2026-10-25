@@ -96,12 +96,12 @@ class ToolRegistry:
                 try:
                     stable = (
                         type(entry) is ToolRegistration
-                        and type(entry.name) is str and entry.name == name
+                        and type(entry.name) is str and entry.name is name
                         and type(entry.capability) is str
-                        and entry.capability == capability
+                        and entry.capability is capability
                         and entry.effect is effect
                         and type(entry.backend_id) is str
-                        and entry.backend_id == backend_id
+                        and entry.backend_id is backend_id
                         and entry.backend is backend
                         and _backend_execute_descriptor(backend) is execute
                     )
@@ -143,6 +143,7 @@ class ToolRegistry:
         # after revision serialization (itself a callback boundary).
         self._registration_epoch = tuple(sorted(retained, key=lambda row: row[1]))
         self._revision = self._compute_revision(ordered)
+        self._revision_epoch = self._revision
         assert_ingress_epoch()
         self._assert_registration_epoch()
 
@@ -152,7 +153,10 @@ class ToolRegistry:
         This is only a local drift check; it is NOT backend attestation against
         malicious in-process rewriting of every private reference.
         """
-        if type(self._revision) is not str:
+        if (
+            type(self._revision) is not str
+            or self._revision is not self._revision_epoch
+        ):
             raise ValueError("registry revision carrier changed")
         if (
             type(self._registrations) is not MappingProxyType
@@ -173,8 +177,8 @@ class ToolRegistry:
                 or type(effect) is not Effect or type(backend_id) is not str
                 or type(entry.name) is not str or type(entry.capability) is not str
                 or type(entry.backend_id) is not str
-                or entry.name != name or entry.capability != capability
-                or entry.effect is not effect or entry.backend_id != backend_id
+                or entry.name is not name or entry.capability is not capability
+                or entry.effect is not effect or entry.backend_id is not backend_id
                 or entry.backend is not backend
                 or current_execute is not execute
                 or self._registrations.get(name) is not entry
