@@ -252,6 +252,13 @@ def review_coherent_snapshot(
     assert_epoch()
     assert_record_epochs()
 
+    # Query hashing is also a reentrant Python boundary. Recheck its input
+    # epoch immediately, before later metadata/JSON callbacks can restore
+    # a temporarily retargeted request, source, or previously read record.
+    query_digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    assert_epoch()
+    assert_record_epochs()
+
     # Only digest identity and revision metadata, never raw Memory content.
     payload = {
         "schema_version": 1,
@@ -261,7 +268,7 @@ def review_coherent_snapshot(
         "read_at_ms": now,
         # Bind selection intent, not only the returned records. The raw query
         # is deliberately absent from the content-free witness payload.
-        "query_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "query_sha256": query_digest,
         "per_namespace_limit": limit,
         "include_expired": include_expired,
         "records": [
