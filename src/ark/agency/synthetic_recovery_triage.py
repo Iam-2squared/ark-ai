@@ -25,7 +25,7 @@ from .planner_journal_review import (
     SyntheticPlanJournal,
     SyntheticPlanTail,
 )
-from .registry import ToolRegistry
+from .registry import BoundAction, ToolRegistry
 from .synthetic_occurrence_audit_link_review import (
     _SELECT as _LINK_ROWS,
 )
@@ -198,6 +198,20 @@ def review_synthetic_write_recovery(
 
     try:
         first = registry.bind(call)
+        assert_epoch()
+        # A substituted registry binder may return a value-equal ToolCall or
+        # an unregistered entry. Matching request hashes are not sufficient:
+        # the diagnosis must remain bound to the original caller object and
+        # the exact registration in this immutable registry revision.
+        if (
+            type(first) is not BoundAction
+            or first.call is not call
+            or first.registration is not registry.get(call.tool)
+            or first.registry_revision != registry_epoch
+        ):
+            raise SyntheticRecoveryRejected(
+                "recovery registry binding subject changed"
+            )
         assert_epoch()
         if first.registration.effect is not Effect.WRITE:
             raise SyntheticRecoveryRejected("only WRITE fixtures may be reviewed")
@@ -376,10 +390,12 @@ def review_synthetic_write_recovery(
         again = registry.bind(call)
         assert_epoch()
         if (
-            again.registry_revision != first.registry_revision
+            type(again) is not BoundAction
+            or again.call is not call
+            or again.registry_revision != first.registry_revision
             or again.bound_action_id != first.bound_action_id
             or again.registration is not first.registration
-            or again.call is not first.call
+            or again.registration is not registry.get(call.tool)
         ):
             raise SyntheticRecoveryRejected(
                 "registry or action changed during recovery diagnosis"
