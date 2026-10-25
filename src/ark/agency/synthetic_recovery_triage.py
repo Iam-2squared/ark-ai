@@ -290,34 +290,6 @@ def review_synthetic_write_recovery(
             audit, retained=retained_audit, require_monotonic_time=True,
         )
         assert_epoch()
-        # A pre-action audit can survive when a reservation row is lost.
-        # Without a retained ledger witness, the old recovery path could
-        # report a PENDING WRITE with no occurrence and overlook this
-        # evidence of an attempted action. Deny that orphan explicitly.
-        # This indexed query uses a separate read-only snapshot; the final
-        # audit continuity recheck below still fences observed drift.
-        if not occurrences and audit_witness.event_count:
-            with closing(audit._connect_readonly()) as orphan_conn:
-                assert_epoch()
-                orphan_conn.execute("BEGIN")
-                try:
-                    _validate_v1_schema(orphan_conn)
-                    assert_epoch()
-                    orphan = orphan_conn.execute(
-                        "SELECT event_id FROM action_events "
-                        "WHERE request_id=? AND outcome=? LIMIT 1",
-                        (first.call.request_id, "synthetic_audit_before_mock"),
-                    ).fetchone()
-                    assert_epoch()
-                    orphan_conn.commit()
-                except BaseException:
-                    orphan_conn.rollback()
-                    raise
-            assert_epoch()
-            if orphan is not None:
-                raise SyntheticRecoveryRejected(
-                    "pre-action audit lacks durable reservation"
-                )
         link_witness = None
         matching_links: tuple[tuple[str, int], ...] = ()
         if link_store is not None:
@@ -399,6 +371,35 @@ def review_synthetic_write_recovery(
             ) != audit_witness:
                 raise SyntheticRecoveryRejected(
                     "audit history changed during sidecar diagnosis"
+                )
+        assert_epoch()
+        # A pre-action audit can survive when a reservation row is lost.
+        # Without a retained ledger witness, the old recovery path could
+        # report a PENDING WRITE with no occurrence and overlook this
+        # evidence of an attempted action. Deny that orphan explicitly.
+        # This indexed query uses a separate read-only snapshot; the final
+        # audit continuity recheck below still fences observed drift.
+        if not occurrences and audit_witness.event_count:
+            with closing(audit._connect_readonly()) as orphan_conn:
+                assert_epoch()
+                orphan_conn.execute("BEGIN")
+                try:
+                    _validate_v1_schema(orphan_conn)
+                    assert_epoch()
+                    orphan = orphan_conn.execute(
+                        "SELECT event_id FROM action_events "
+                        "WHERE request_id=? AND outcome=? LIMIT 1",
+                        (first.call.request_id, "synthetic_audit_before_mock"),
+                    ).fetchone()
+                    assert_epoch()
+                    orphan_conn.commit()
+                except BaseException:
+                    orphan_conn.rollback()
+                    raise
+            assert_epoch()
+            if orphan is not None:
+                raise SyntheticRecoveryRejected(
+                    "pre-action audit lacks durable reservation"
                 )
         assert_epoch()
         # Independent stores have no shared transaction. Re-observe each
