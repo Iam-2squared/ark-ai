@@ -72,6 +72,8 @@ def test_link_open_does_not_accept_equal_path_substitution(
     monkeypatch.setattr(link, "_connect", changed)
     with pytest.raises(links.SyntheticAuditLinkRejected, match="original input or source"):
         _link(state)
+    # Read back without the attack hook: the failed link did not insert a row.
+    monkeypatch.setattr(link, "_connect", original)
     assert link.read_witness().event_count == 0
 
 
