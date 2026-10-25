@@ -1,5 +1,56 @@
 # ARK AI Project Status
 
+**LATEST — Run436**
+
+Saved at: **2026-10-26T08:24:00.240+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before the normal GitHub Contents write; not a trusted signed clock, issuer/consent evidence, or attestation of external effects).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `6de366b0c4e53169c0ac927db6168f5e70d44189` (Run435 checkpoint; its own CI **#1244 / 40237313817 QUEUED** at the opening inspection).
+**Run436 final executable/test HEAD:** `7ac700b7671cd628d89caaa071cd9c39c9fe6d66`.
+**Run436 engineering evidence / exact checkpoint write-basis HEAD:** `b61dc9983e518cd27894bc80da6b76c37fb1a7d6`, `docs/JARVIS_HARD_EXIT_CRASH_BOUNDARIES_RUN436.md`.
+**Checkpoint-result HEAD:** cannot be known inside the commit that creates this checkpoint. Use the normal GitHub Contents `update_file` response `commit_sha`, then inspect its separate exact-HEAD workflow. The older source/document CI **does not attest** this checkpoint commit.
+
+### Overall ARK state and hard boundaries
+
+**Complete JARVIS NOT_PASSED.** Isolated/reversible/local-first/disconnected synthetic fixtures and tests only. There is no signed trusted clock, authenticated human issuer or consent, externally attested Tool outcome, global cross-SQLite transaction, verified real-world exactly-once WRITE, live sensors, notifications or operational autonomous ToolBackend dispatch. **UNKNOWN/RUNNING and reserved PENDING WRITEs must not auto-replay.** PR #5 is Draft/open/unmerged/NOT_PASSED and PR #8 is Draft/open/unmerged. Paid or potentially billable services, external GPUs, real Candidate training/adapter generation, frozen V2 final-evaluation opening, Candidate promotion, credentials, main merge and irreversible operations remain unauthorized and blocked.
+
+### NEW Run436 — three independent hard-process-exit test packages (+9 cases)
+
+1. **Memory + Occurrence + Proactive Scheduler (4 expanded cases)**: new `tests/test_hard_exit_local_durability_run436.py`, commit `a9e7ba8662c0e4949ff74fd864ed89924c23c3c0`. Child interpreter exits using `os._exit` before the Memory audit event (expect atomic rollback of row+event), after Memory COMMIT (expect revision-1 row+event preserved and create CAS conflict), after synthetic occurrence reservation COMMIT (expect one-shot token still consumed after restart), and after proactive marker COMMIT (expect one prepared marker and no repeat). All SQLite files are disposable `tmp_path` fixtures. No backend or notification.
+2. **ActionAudit + privacy revocation (3 expanded cases)**: new `tests/test_hard_exit_audit_privacy_run436.py`, commit `a40852b985faddc009949bbe828c73e885537eea`. Real child exit after audit SQL INSERT but before the enclosing connection commits (expect no row); exit after committed event before Python receipt (expect one retained audit row); privacy veto COMMIT then child exit (expect one hashed-scope revocation that still denies use/regrant after reopening). No real personal data, disclosure or authorization.
+3. **Planner journal (2 expanded cases)**: new `tests/test_hard_exit_planner_journal_run436.py`, commit `7ac700b7671cd628d89caaa071cd9c39c9fe6d66`. Child exit after PlanEvent + header SQL updates but before COMMIT (expect zero rows and PENDING); or after COMMIT before return (expect one durable RUNNING event, recovered UNKNOWN and failed retry from revision zero). No real WRITE.
+4. **Engineering crash-boundary matrix:** `docs/JARVIS_HARD_EXIT_CRASH_BOUNDARIES_RUN436.md` committed at `b61dc9983e518cd27894bc80da6b76c37fb1a7d6`. Explicit per-store expected durable states, source-level limitations, and dependency-aware integration prerequisites. No changes to frozen DDL/contracts or operational code.
+
+**Nine new parameter-expanded cases ADDED, not nine validated PASSes.** The three new test modules and their embedded subprocess programs were statically parsed as Python AST locally without syntax errors. No complete local repository checkout/full pytest/Ruff suite was possible. AST success does not establish import success, OS portability, actual child exit status, or runtime correctness. The source changes in this invocation are new tests only.
+
+### Exact-HEAD CI evidence at Run436 checkpoint
+
+- Opening checkpoint `6de366b0...`: **#1244 / 40237313817 QUEUED**, all six jobs queued when inspected.
+- Package 1 `a9e7ba86...`: **#1245 / 40243820095 QUEUED**.
+- Package 2 `a40852b9...`: **#1246 / 40244016815 QUEUED**.
+- Final executable/test HEAD `7ac700b7...`: **#1247 / 40244183888 QUEUED**, all six Ubuntu/Windows Python 3.11–3.13 jobs queued on last inspection. **No exact final-source HEAD full suite GREEN**, and no pytest/Ruff PASS claimed.
+- Technical-document HEAD `b61dc998...`: **#1248 / 40244472028 QUEUED** at most recent inspection. This is not checkpoint-result CI. Inspect the new checkpoint commit and its own CI separately.
+
+No manual workflow dispatch, redundant rerun or external paid compute. GitHub Actions backlog is a real validation blocker; it is not evidence of successful tests. The new test cases were isolated in independent free-only packages while CI remained queued.
+
+### Frozen contracts / structural isolation
+
+`main` was independently observed at `7a843f17eb96ed13d66f23b58b06406b3002e405` and was not modified this invocation. PR #8 remains Draft/open/unmerged; PR #5 remains Draft/open/unmerged/NOT_PASSED. Frozen V1/V2/Local UI/Launcher evidence and contracts, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, prior provenance/contamination/regression/reproducibility gates and protected final evaluation were not changed. No weights, model/Tokenizer SHA, identity, human approval, result, or PASS fabricated.
+
+### Next plan / 今後の方針
+
+1. Inspect #1247 final test HEAD, #1248 documentation HEAD, and this checkpoint-result HEAD's own six-job CI **when runners run**. Diagnose actual FAILED job logs first; make a minimal semantics-preserving fix only through normal GitHub Contents safety path. Do not dispatch duplicate CI runs or interpret queue status as GREEN.
+2. After the older Run434 plan-wide detached recovery bundle and its dependencies receive **exact-head GREEN**, combine independently retained WRITE witnesses with a restarted READ→WRITE→READ→WRITE Planner–PermissionGate–Occurrence–ActionAudit–AuditLink review, including partial-store COMMIT/crash and downstream UNKNOWN/reserved quarantine. Never claim separate SQLite files are atomic.
+3. Extend bounded cross-process Memory CAS/expiry/event integrity, privacy revocation freshness, and restart-safe synthetic retention without changing frozen schemas.
+4. Advance disconnected, deny-only issuer/trusted-clock/startup/Observation/Scheduler fixtures. Do not enable sensors, notifications, external Tools or unsanctioned disclosure.
+5. Keep PR #5 and #8 Draft/unmerged. Only user-authorized, provenance-clean, non-billable future integration is in scope until explicit approval for any paid GPU/API, real Candidate generation, frozen protected evaluation, irreversible architecture choice, credential, or main merge.
+
+---
+
+**HISTORICAL — Run435 and earlier canonical checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run435**
 
 Saved at: **2026-10-26T06:49:41.469+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before the normal GitHub Contents write; not authenticated trusted time, human consent or external-outcome attestation).
