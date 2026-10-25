@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run 422**
+
+Saved at: **2026-10-25T21:01:04.793+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sampling before the normal GitHub Contents update; **NOT** signed trusted time, human identity, consent, hardware provenance, or spend authorization).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `1a9c28e1d818fc87234207e8bbf6d013fcc7b340` (Run421 checkpoint, CI **#1118 / 40186837160 all six SUCCESS** on opening inspection).
+**Final Run422 four-package source+test+engineering-document HEAD / checkpoint write-basis HEAD:** `eafca3741eb4ed39abc70a27cccaaa5857a9d065` (**CI #1129 / 40190687258 all six SUCCESS**, Ubuntu/Windows Python 3.11/3.12/3.13 independently checked). Ubuntu Python 3.13 job `121160836665`: **Ruff PASS; 2574 passed, 1 skipped in 116.14s**. This includes the post-failure semantics-preserving source repair.
+**Checkpoint-result HEAD:** This file cannot contain its own resulting commit SHA before the normal GitHub Contents update. The connector's returned `commit_sha` is the authoritative checkpoint-result HEAD, distinct from this checkpoint write-basis HEAD; its automatically triggered CI must be checked separately and never assumed GREEN because #1129 is GREEN.
+
+### Overall current ARK state
+
+**Local-first disconnected/synthetic/mock-only JARVIS foundations; full JARVIS NOT_PASSED.** No authenticated human issuer or live consent, signed trusted clock, real ToolBackend outcome attestation, cross-SQLite atomic snapshot, external exactly-once WRITE guarantee, trusted physical-PC/device/sensor access, automatic notification, trained Candidate, or live autonomous Tool execution. Hashes, local witnesses and successful fixture reviews are not authorization or external proof. **UNKNOWN/RUNNING or already reserved PENDING WRITE remains non-replayable without independent external-outcome verification.**
+
+### NEW Run422 — 4 independent free-only implementation+regression packages (+27 parametrized pytest cases)
+
+1. **Observation lineage reuse / returned receipt exact-carrier custody (+9):** `src/ark/observation_reuse_review.py` source `e928a2800f6271aaec946b8a0a93b4f597c691c6`, tests `tests/test_observation_reuse_result_carriers_run422.py` at `dde2e011d8fddb065d27f0a093aa934f04417305`. Original envelope source/adapter/privacy/content-hash carriers pinned *before* observation-ID callbacks; cached and historical/current lineage witnesses rechecked through final constructed receipt. Synthetic-only/no media capture, disclosure, or dispatch.
+2. **Approval + cancellation fence complete receipt custody (+8):** `src/ark/agency/synthetic_approval_cancellation_fence_review.py` source `c63d4c6a81b6f3bb3eecf09956d65fcccfdf3819`, tests `tests/test_approval_fence_result_custody_run422.py` at `8c8cdb5a8cbb6398b85fbb0b330f5d95e95b6d82`; **semantics-preserving fix `eafca3741eb4ed39abc70a27cccaaa5857a9d065`**. Pin original stored claim/ToolCall/registry identifiers and retained cancellation history, verify initial and second independent SQLite cancellation receipts and intermediate synthetic claim receipt after final result construction. Computed ToolCall `request_id` / `arguments_sha256` are deterministically recomputed strings, so compare their **values** while keeping stored scalar carriers exact by identity. The local veto reads are not atomic consent or dispatch permission.
+3. **Occurrence retained-ledger witness COMMIT/connection-close custody (+5):** `src/ark/agency/synthetic_occurrence_continuity_review.py` source `48e4ea6703a6c12b9b7e8e769d69ac2f633378e9`; tests `tests/test_occurrence_witness_commit_custody_run422.py` at `dbe051626bb678f2e8d22ec53f0ac74c577540c5`, narrow test-fixture connection hook repair `d35b3a97483e7591fc4eff62f50437323ac877e8`. Retained/current witness digests and exact row carriers survive independent integrity and history comparisons, read-only SQLite COMMIT, and connection CLOSE. Test-hook repair excludes `:memory:` schema-validation connection from proxying. No reservation, backend execution or DB repair.
+4. **Proactive retained-trigger witness COMMIT/connection-close custody (+5):** `src/ark/proactive_synthetic_continuity_review.py` source `c40196310d5c8b0eeb235a04e4c8acfb8b9d7dbd`; tests `tests/test_proactive_witness_commit_custody_run422.py` at `e894a503b47072225d348f4ed0db658431ea58f3`. Original/returned digest, row-hash tuple and element-carrier identities retained through SQLite transaction and close; no notification or Tool dispatch.
+
+**Engineering fault matrix/document:** `docs/JARVIS_REUSE_CANCELLATION_OCCURRENCE_TRIGGER_CUSTODY_RUN422.md` committed at `3f1338173d255d29c28a546db7c346cb518b3286`. New cases: **9 + 8 + 5 + 5 = 27**. Measured final Ubuntu Python 3.13 count **2574 passed + 1 skipped**, compared with Run421's 2547 passed + 1 skipped.
+
+### CI and real failure history — exact HEADs only
+
+- Opening checkpoint **#1118 / 40186837160** on `1a9c28e1d818fc87234207e8bbf6d013fcc7b340`: **six SUCCESS**.
+- Observation source-only **#1119 / 40190032263** and Observation source+test **#1120 / 40190078811**: **six SUCCESS** independently.
+- Intermediate approval/occurrence/test-hook/technical-doc CI **#1121–#1128**: **FAIL** on some/all jobs. CI #1122 Ubuntu had 96 failures dominated by comparing fresh deterministic ToolCall hash getter return objects using `is` identity instead of values; CI #1124 exposed unscoped mocked SQLite `:memory:` handle in a regression fixture. The semantics-preserving source and test-hook fixes were saved via normal GitHub Contents writes; FAILED history stays FAILED (never relabel historical runs).
+- **Final corrected source+tests+engineering doc `eafca3741eb4ed39abc70a27cccaaa5857a9d065`: CI #1129 / 40190687258 = **6/6 GREEN**; Ruff PASS; Ubuntu Python 3.13 **2574 passed, 1 skipped**, Windows Python 3.11–3.13 each SUCCESS. No duplicate equivalent workflow was launched.
+- **Full nontruncated Git-tree comparison** at corrected code/document HEAD against unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs; 520 branch blobs; 426 added; 0 existing-main modified; 0 removed**. The canonical status file already exists only on this isolated branch.
+
+### Frozen contracts, blockers, strict free-only boundary
+
+**PR #8 Draft/open/unmerged; PR #5 Draft/open/unmerged/NOT_PASSED** (PR #5 HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`; V3 frozen Contract 1 SHA-256 `00397c2c62bda4ba2658b59ae71d0ea0ac083924ae7a187fd221d6ad84387f20`). Frozen V1/V2/Local UI/Launcher evidence, Memory v1 and ActionAudit v1 SQL DDL, V3 frozen Contract 1 and protected V2 evaluation not changed. No spending, potentially billable services, external GPU or compute, paid API, new credentials/accounts, real Candidate adapter/weights, real preflight/training, protected V2 opening, Candidate promotion, human approval claim, live peripherals, actual notification, irreversible mutation or main merge. The synthetic dual cancellation reads and separate SQLite witness transactions are not cross-database atomicity or externally verified exactly-once execution.
+
+### Next plan / 今後の方針
+
+1. Verify the **checkpoint-result HEAD** and all six automatically triggered CI jobs independently from the #1129 code/document GREEN. If any FAIL, inspect logs and repair only via ordinary permitted GitHub Contents writes; do not conceal failed runs.
+2. Advance coordinated Planner / PermissionGate / Occurrence / ActionAudit / AuditLink crash/restart and partially missing cross-SQLite retained history, including orphan pre-action audit and reserved-PENDING/UNKNOWN dependent WRITE non-replayability; never dispatch or retry a WRITE automatically.
+3. Strengthen Memory CAS/multi-process expiry and coherent multi-namespace snapshots; Personal Context privacy-safe retention/revocation/reuse without schema or consent weakening.
+4. Continue disconnected trusted-clock/issuer, readiness, Observation and Proactive Scheduler contract/fixture correlations, no live peripherals or notifications.
+5. Keep PR #5 V3 only in free provenance, immutable identity, approval/path, contamination and reproducibility review. Require explicit authorization before any paid/external work, Candidate generation/promotion, protected evaluation opening, frozen contract modification or approval-gated main merge.
+
+---
+
+**HISTORICAL — Run421 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 421**
 
 Saved at: **2026-10-25T19:56:46.326+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample immediately before the normal GitHub Contents update; **NOT** a signed clock, proof of human consent, runtime identity or spend authorization).
