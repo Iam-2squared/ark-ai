@@ -161,9 +161,14 @@ class SyntheticContextRevocationLedger:
         if type(at_ms) is not int or not 0 <= at_ms <= _MAX:
             raise SyntheticContextRevocationRejected("invalid revocation timestamp")
         with closing(self._connect(readonly=False)) as conn:
+            self._assert_source_path(source_path)
+            assert_scope_epoch()
             conn.execute("BEGIN IMMEDIATE")
             try:
+                self._assert_source_path(source_path)
+                assert_scope_epoch()
                 _validate(conn)
+                self._assert_source_path(source_path)
                 assert_scope_epoch()
                 if conn.execute(
                     "SELECT 1 FROM synthetic_context_revocations WHERE scope_digest=?",
@@ -186,9 +191,15 @@ class SyntheticContextRevocationLedger:
                 assert_scope_epoch()
                 self._assert_source_path(source_path)
                 conn.commit()
+                # A committed veto is never rolled back or re-granted if a
+                # callback retargets its local source after the durable write.
+                self._assert_source_path(source_path)
+                assert_scope_epoch()
             except BaseException:
                 conn.rollback()
                 raise
+        self._assert_source_path(source_path)
+        assert_scope_epoch()
         return digest
 
     def assert_not_revoked(self, scopes: tuple[MemoryScope, ...]) -> None:
@@ -222,8 +233,12 @@ class SyntheticContextRevocationLedger:
         if len(set(digests)) != len(digests):
             raise SyntheticContextRevocationRejected("duplicate context scopes")
         with closing(self._connect(readonly=True)) as conn:
+            assert_epoch()
             conn.execute("BEGIN")
             try:
+                # BEGIN itself and schema validation are separate reentrant
+                # boundaries: never let a later callback restore early drift.
+                assert_epoch()
                 _validate(conn)
                 assert_epoch()
                 for digest in digests:
@@ -239,9 +254,11 @@ class SyntheticContextRevocationLedger:
                     raise SyntheticContextRevocationRejected("context scope changed")
                 assert_epoch()
                 conn.commit()
+                assert_epoch()
             except BaseException:
                 conn.rollback()
                 raise
+        assert_epoch()
 
 
 def review_fresh_nonrevoked_context(
