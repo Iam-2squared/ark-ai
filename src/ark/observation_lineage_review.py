@@ -60,12 +60,44 @@ def review_synthetic_observation_lineage(
         privacy_scope, now_ms, max_age_ms, envelopes,
     )
     window.assert_fresh_at(now_ms)
+    # The initial window validates values, but later ID/hash callbacks can
+    # reflectively replace equal-valued scalar carriers or temporarily change
+    # a parent before restoring it at the final freshness check. Keep the
+    # caller's exact original metadata epoch through graph construction.
+    field_names = (
+        "kind", "source_id", "adapter_id", "privacy_scope",
+        "ingested_at_ms", "content_sha256", "parent_sha256",
+        "schema_version",
+    )
+    epoch = tuple((envelope, tuple(
+        getattr(envelope, name) for name in field_names
+    )) for envelope in envelopes)
+
+    def assert_epoch() -> None:
+        try:
+            if any(
+                any(getattr(item, name) is not original
+                    for name, original in zip(field_names, values, strict=True))
+                for item, values in epoch
+            ):
+                raise SyntheticObservationLineageRejected(
+                    "observation lineage input epoch changed"
+                )
+            window.assert_fresh_at(now_ms)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise SyntheticObservationLineageRejected(
+                "observation lineage input epoch changed"
+            ) from exc
+
     by_content: dict[str, list[ObservationEnvelope]] = {}
     for envelope in envelopes:
+        assert_epoch()
         by_content.setdefault(envelope.content_sha256, []).append(envelope)
+    assert_epoch()
 
     parents: dict[str, str | None] = {}
     for envelope in envelopes:
+        assert_epoch()
         parent_id = None
         if envelope.parent_sha256 is not None:
             options = by_content.get(envelope.parent_sha256, [])
@@ -88,6 +120,7 @@ def review_synthetic_observation_lineage(
                 )
             parent_id = parent.observation_id
         parents[envelope.observation_id] = parent_id
+        assert_epoch()
 
     completed: set[str] = set()
     for start in parents:
@@ -102,18 +135,32 @@ def review_synthetic_observation_lineage(
             current = parents[current]
         completed.update(seen)
 
+    assert_epoch()
     edges = tuple(sorted(parents.items()))
     payload = json.dumps(
         (1, privacy_scope, now_ms, max_age_ms, edges),
         ensure_ascii=True, sort_keys=True, separators=(",", ":"),
         allow_nan=False,
     ).encode("utf-8")
+    assert_epoch()
     digest = "olineage_" + hashlib.sha256(
         b"ARK-observation-lineage-v1\0" + payload
     ).hexdigest()
     # The cached window detects reflected changes to envelope metadata while
     # walking the graph. This does not attest source authenticity.
-    window.assert_fresh_at(now_ms)
-    return SyntheticObservationLineageWitness(
+    assert_epoch()
+    result = SyntheticObservationLineageWitness(
         privacy_scope, now_ms, len(envelopes), digest,
     )
+    assert_epoch()
+    if (
+        type(result) is not SyntheticObservationLineageWitness
+        or result.privacy_scope is not privacy_scope
+        or result.checked_at_ms is not now_ms
+        or result.observation_count != len(envelopes)
+        or result.lineage_digest is not digest
+    ):
+        raise SyntheticObservationLineageRejected(
+            "observation lineage result changed during construction"
+        )
+    return result
