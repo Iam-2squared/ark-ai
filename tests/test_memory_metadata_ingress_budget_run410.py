@@ -7,7 +7,6 @@ import pytest
 
 from ark.memory.contracts import MemoryScope, MemoryWrite
 
-
 SCOPE = MemoryScope("owner", "namespace")
 
 
