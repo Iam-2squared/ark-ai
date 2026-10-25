@@ -24,6 +24,7 @@ from .memory.sqlite_store import SQLiteMemoryStore
 from .personal_context_review import (
     ContextSelectionPolicy,
     SyntheticContextBundle,
+    SyntheticContextItem,
     review_personal_context,
 )
 
@@ -322,11 +323,52 @@ def review_fresh_nonrevoked_context(
     assert_epoch()
     bundle = review_personal_context(snapshot, policy)
     assert_epoch()
+    # The second veto read and retained-history replay are independently
+    # reentrant. Hold the actual private projection across both operations:
+    # otherwise a callback can rewrite the returned content or carrier after
+    # the projection's own final integrity check.
+    if type(bundle) is not SyntheticContextBundle or type(bundle.items) is not tuple:
+        raise SyntheticContextRevocationRejected("context bundle shape changed")
+    bundle_items = bundle.items
+    bundle_id = bundle.bundle_id
+    bundle_digest = bundle.snapshot_digest
+    bundle_items_epoch = tuple((
+        item, item.memory_id, item.namespace, item.content,
+        item.revision, item.provenance_id,
+    ) for item in bundle_items)
+
+    def assert_bundle_epoch() -> None:
+        if (
+            bundle.items is not bundle_items
+            or bundle.bundle_id is not bundle_id
+            or bundle.snapshot_digest is not bundle_digest
+            or bundle.snapshot_digest != snapshot.provenance_sha256
+            or len(bundle.items) != len(bundle_items_epoch)
+            or any(
+                type(item) is not SyntheticContextItem
+                or item is not original
+                or item.memory_id is not memory_id
+                or item.namespace is not namespace
+                or item.content is not content
+                or item.revision != revision
+                or item.provenance_id is not provenance
+                for item, (
+                    original, memory_id, namespace, content, revision, provenance,
+                ) in zip(bundle.items, bundle_items_epoch, strict=True)
+            )
+        ):
+            raise SyntheticContextRevocationRejected(
+                "context bundle changed during final privacy checks"
+            )
+
+    assert_bundle_epoch()
     ledger.assert_not_revoked(scopes)
     assert_epoch()
+    assert_bundle_epoch()
     # Detect disappearance or alteration of any veto that was present before
     # this read, even when a different namespace's row was changed mid-read.
     # A genuinely earlier independent witness also fences pre-existing edits.
     review_revocation_continuity(ledger, retained=before)
     assert_epoch()
+    assert_bundle_epoch()
     return bundle
