@@ -15,7 +15,7 @@ backend, model, sensor, user data export or notification enabled.
   `c2c4297e1251da548a714bbb526ef8f321040eb2`.
 - All changes stay on branch `research/jarvis-foundations`.
 
-## Four source + regression packages
+## Five source + regression packages
 
 ### A. Orphan pre-action audit after reservation loss
 
@@ -67,6 +67,28 @@ record. If a callback changes the caller's write *after* durable COMMIT, refuse
 a clean return but preserve the committed row and matching event. **Never
 claim a committed write was undone or retry it blindly.** No Memory v1 DDL
 changes, external clock evidence or data export.
+
+### E. Privacy revocation result witness carrier custody
+
+`src/ark/personal_context_revocation_continuity_review.py` and
+`tests/test_privacy_revocation_result_custody_run417.py` (5 cases).
+
+The independently retained SQLite revocation review now pins the **newly
+constructed result witness** (including exact row objects and witness-ID
+carrier) through its final integrity check and read-only COMMIT. A mutation by
+a synthetic validation/COMMIT callback fails shut before a result escapes.
+This does not authenticate user consent, perform deletion, or atomically bind
+Memory to the separate privacy veto store.
+
+## Final source/test work basis
+
+Five independent source+test packages add **52 parametrized pytest cases**
+relative to Run416's 2349 cases. The final source+test HEAD before this
+engineering documentation update is
+`ec787df68ded8036c212304c3d28d25da1e8ed8f`, associated with
+CI **#1068 / 40178924081**. At this document edit, success of its complete
+six-environment matrix has not yet been established. The five packages were
+written via the normal GitHub Contents API and no source gate was bypassed.
 
 ## Evidence and CI reporting rule
 
