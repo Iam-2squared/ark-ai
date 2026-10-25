@@ -13,6 +13,52 @@ import hashlib
 from .observations import ObservationEnvelope, ObservationKind
 
 _MAX_FIXTURE_BYTES = 4 * 1024 * 1024
+_ENVELOPE_TYPE = ObservationEnvelope
+
+
+def _sealed_fixture(
+    *,
+    kind: ObservationKind,
+    source_id: str,
+    privacy_scope: str,
+    ingested_at_ms: int,
+    content_sha256: str,
+    parent_sha256: str | None,
+) -> ObservationEnvelope:
+    """Reject a constructor that returns a retargeted or forged fixture.
+
+    Frozen dataclasses can still be changed with object.__setattr__. A fixture
+    constructor (including its validation hook) is an untrusted callback and
+    cannot silently replace the source, privacy or content identity after the
+    caller's raw content was hashed.
+    """
+    adapter_id = f"fixture:{kind.value}:v1"
+    expected = (
+        kind, source_id, adapter_id, privacy_scope, ingested_at_ms,
+        content_sha256, parent_sha256, 1,
+    )
+    envelope = ObservationEnvelope(
+        kind=kind,
+        source_id=source_id,
+        adapter_id=adapter_id,
+        privacy_scope=privacy_scope,
+        ingested_at_ms=ingested_at_ms,
+        content_sha256=content_sha256,
+        parent_sha256=parent_sha256,
+    )
+    if type(envelope) is not _ENVELOPE_TYPE:
+        raise ValueError("fixture constructor returned a non-envelope result")
+    actual = (
+        envelope.kind, envelope.source_id, envelope.adapter_id,
+        envelope.privacy_scope, envelope.ingested_at_ms,
+        envelope.content_sha256, envelope.parent_sha256,
+        envelope.schema_version,
+    )
+    if any(now is not before for now, before in zip(
+        actual, expected, strict=True,
+    )):
+        raise ValueError("fixture envelope fields changed during construction")
+    return envelope
 
 
 def fixture_text_observation(
@@ -41,10 +87,9 @@ def fixture_text_observation(
     if len(data) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
     digest = hashlib.sha256(data).hexdigest()
-    return ObservationEnvelope(
+    return _sealed_fixture(
         kind=kind,
         source_id=source_id,
-        adapter_id=f"fixture:{kind.value}:v1",
         privacy_scope=privacy_scope,
         ingested_at_ms=ingested_at_ms,
         content_sha256=digest,
@@ -72,10 +117,9 @@ def fixture_binary_observation(
     if len(payload) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
     digest = hashlib.sha256(payload).hexdigest()
-    return ObservationEnvelope(
+    return _sealed_fixture(
         kind=kind,
         source_id=source_id,
-        adapter_id=f"fixture:{kind.value}:v1",
         privacy_scope=privacy_scope,
         ingested_at_ms=ingested_at_ms,
         content_sha256=digest,
