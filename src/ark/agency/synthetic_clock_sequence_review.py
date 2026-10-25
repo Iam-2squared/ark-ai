@@ -222,6 +222,12 @@ def review_synthetic_clock_sequence(
                 or prior.chain_hash is not prior_chain_carrier
                 or type(candidate) is not SyntheticClockWitness
                 or _fields(candidate) != (seq, source, wall, mono, next_hash)
+                # A reentrant constructor may replace exact, equal-text
+                # source/hash carriers while preserving the digest values.
+                # Preserve the caller's source and freshly computed chain link
+                # as the original witness objects, not merely their text.
+                or candidate.source_digest is not source
+                or candidate.chain_hash is not next_hash
             ):
                 raise SyntheticClockRejected("constructed clock chain link changed")
             result = candidate
