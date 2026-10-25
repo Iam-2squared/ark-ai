@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run434**
+
+Saved at: **2026-10-26T06:00:51.776+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before normal GitHub Contents write; not an authenticated trusted clock, human consent or external action attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `ece577347637149b948f07b0f377a2d7313a24df` (Run433 checkpoint; its own CI **#1231 / 40228196762 was QUEUED** at opening).
+**Run434 final executable/test HEAD:** `698eab6942c4e7f35c47c2abec7e9985d0669c54`.
+**Run434 technical-document / exact checkpoint write-basis HEAD:** `0f9416da1722d58edda5d0f1a11611f43770f4ed`, `docs/JARVIS_DETACHED_PLAN_PRIVACY_GATE_STARTUP_RUN434.md`.
+**Checkpoint-result HEAD:** unknown inside this commit. Use the actual normal Contents API response `commit_sha` after this write and check **its separate exact-HEAD workflow**; neither preceding HEAD can attest this checkpoint.
+
+### Overall ARK state / authorization boundaries
+
+**Full JARVIS NOT_PASSED.** Local-first, offline, synthetic/mock and reversible foundations only. No authenticated human issuer/consent, signed trusted-clock source, independently attested external Tool outcome, cross-file SQLite atomic transaction, real-world exactly-once WRITE, live multimodal capture, notifications or operational autonomous Tool dispatch. **UNKNOWN/RUNNING and reserved PENDING WRITEs must stay on hold and never auto-replay.** PR #5 remains Draft/open/unmerged/NOT_PASSED; protected frozen V2 final opening, real V3 Candidate training/promotion, paid/external GPU compute and main merge remain hard gated.
+
+### NEW Run434 — four independent safe work packages (+30 parameter-expanded cases)
+
+1. **Detached plan-wide synthetic recovery bundle (+12):** new `src/ark/agency/synthetic_plan_recovery_bundle_review.py` source `dd9107cdab5f9e878fbd8ee11de450c4b2b1e67e`, tests `tests/test_synthetic_plan_bundle_cross_process_run434.py` `3e5e30f921fcd6ae2326fe59f1185919775228a0`. A bounded 4 MiB/128-WRITE canonical content-minimized JSON bundle encapsulates existing per-WRITE retained archives and validates their identities, topology, cross-step witnesses and uncertainty. Tests include a separate interpreter restart, recomputed-hash tampering, malformed encodings and reflective mutations. This **does not yet** reopen all four stores itself, grant replay or establish external outcomes; later integration requires exact-head GREEN.
+2. **Independent-process private-context veto (+5):** `tests/test_privacy_cross_process_veto_projection_run434.py` `00f629580d8c1496836d291bd1d1896aafd116f5` covers a committed revocation of either namespace after first veto or during Memory projection, and independently retained revocation continuity after restart. Fails closed before disclosing a context bundle; no actual personal data, erasure or permission grant.
+3. **PermissionGate process-local race limits (+6):** `tests/test_permission_thread_local_boundaries_run434.py` `11a3afddd0040d877a3bce254c3bb35108746183` checks thread contention on one WRITE token through registered/direct paths. Distinct PermissionGate instances can each admit that token: this is an intentionally documented **lack of durable cross-gate approval**, requiring separate durable Occurrence and verified issuer before any external dispatch.
+4. **Startup original scalar-carrier guard (+7):** source `src/ark/startup_readiness_review.py` `30c0a3fc3d838ca05e573c0b551ed7377ffbac2c`; tests `tests/test_startup_equal_carrier_identity_run434.py` `698eab6942c4e7f35c47c2abec7e9985d0669c54`. Startup component ID, failure code, schema revision now preserve exact original string-object carriers during generator collection and cached snapshot validation. READINESS remains a disconnected, supplied probe claim; no startup activation.
+5. **Engineering evidence / explicit unverified CI:** `docs/JARVIS_DETACHED_PLAN_PRIVACY_GATE_STARTUP_RUN434.md` at `0f9416da1722d58edda5d0f1a11611f43770f4ed` documents threat/fault cases, limitations and an integration sequence without inventing test PASSes.
+
+**Added 30 test cases, NOT 30 validated PASSes.** The container cannot resolve github.com for local clone, so no full repository pytest/Ruff was executed locally. Line lengths in the new files were inspected for >88 columns, but that does not constitute Ruff verification.
+
+### Exact-HEAD GitHub CI (actual sampling, not inferred)
+
+- Run433 prior source+test `73c10c2f372aaf1bfa50999d75a525924879213b`: **#1229 / 40227718289 0/6 finished, all QUEUED** when inspected this invocation. Prior Run433 technical doc **#1230 / 40227965932 0/6 finished, QUEUED**, and checkpoint `ece57734...` **#1231 / 40228196762 0/6 finished, QUEUED**. Older Observation **#1225 / 40227325547 2/6 SUCCESS**, other four unfinished; older Memory **#1227 / 40227494157 QUEUED**. These are not Run434 PASS evidence.
+- Run434 plan source/test `3e5e30f9...`: **#1233 / 40232620906 QUEUED**; privacy test `00f62958...`: **#1234 / 40232710447 QUEUED**; PermissionGate test `11a3afdd...`: **#1235 / 40232827498 QUEUED**.
+- Startup source `30c0a3fc...`: **#1236 / 40233167149 QUEUED**; **final executable/test** `698eab6942c4e7f35c47c2abec7e9985d0669c54`: **#1237 / 40233213149 QUEUED**. No exact-head full-suite/Windows GREEN or test count PASS asserted.
+- Technical-document HEAD `0f9416da1722d58edda5d0f1a11611f43770f4ed`: **#1238 / 40233346726 QUEUED**. The separate future CI for the newly created checkpoint-result SHA must be checked independently. No manually duplicated workflow dispatch or rerun.
+
+### Frozen evidence and structural isolation
+
+Nontruncated Git Tree comparison at exact final executable/test HEAD `698eab6942c4e7f35c47c2abec7e9985d0669c54`: main `7a843f17eb96ed13d66f23b58b06406b3002e405` 94 blobs, PR #8 576 blobs = **482 added, 0 existing main files modified, 0 deleted**. The subsequent technical document is one new file. PR #8 remains Draft/open/unmerged. PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` remains Draft/open/unmerged/NOT_PASSED. Frozen V1/V2/Local UI/Launcher artifacts, Memory v1 and ActionAudit v1 DDL, V3 Contract 1, contamination/provenance/regression/reproducibility gates and protected V2 final opening were not changed. No real Candidate, immutable hashes fabricated, protected evaluation opened, GPU billed, credential connected, human-review decision forged, physical-PC action, destructive personal-data operation or main merge.
+
+### Next plan / 今後の方針
+
+1. Check **#1237 final source+test**, **#1238 technical document**, and the new checkpoint-result CI when runners execute. Inspect actual FAILED job logs before a semantics-preserving normal Contents correction; no duplicate equivalent workflow runs, no bypass. Pipeline independent modules while queued.
+2. Only after validated bundle/source exact-head GREEN, integrate independently retained per-WRITE bundle prefixes into a separate **READ→WRITE→READ→WRITE**, Planner–PermissionGate–Occurrence–ActionAudit–AuditLink restarted-store diagnosis; keep unknown effects and reserved descendants quarantined.
+3. Extend Memory cross-process CAS/expiry and owner/namespace event consistency without schema changes or false cross-file transaction claims; strengthen privacy revocation freshness and post-COMMIT uncertainty.
+4. Advance deny-only issuer/trusted-clock and startup-to-scheduler/Observation disconnected fixture contracts only; no live capture, notification or backend activation.
+5. Keep PR #5 and PR #8 Draft/unmerged. Require independent real materialized model/tokenizer hashes, legally reviewed dataset/provenance/consent, exact runtime/GPU identities and explicit user budget/approvals before any V3 execution, Candidate promotion, frozen V2 evaluation or main merge.
+
+---
+
+**HISTORICAL — Run433 and earlier canonical checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run433**
 
 Saved at: **2026-10-26T04:53:45.152+09:00 Asia/Tokyo/JST** (ordinary untrusted automation runtime wall clock sampled immediately before the normal GitHub Contents write; NOT an authenticated time source, human consent or external outcome attestation).
