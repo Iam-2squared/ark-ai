@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 from .contracts import MemoryScope
@@ -199,11 +199,46 @@ def review_synthetic_memory_scopes(
     path_epoch = store.path
     if not isinstance(path_epoch, Path):
         raise SyntheticMemorySnapshotRejected("Memory source must retain a Path")
+    # Every accessor and SQLite callback is a reentrancy boundary. Values
+    # alone do not pin reflected-mutable frozen dataclasses: retain their
+    # exact original field carriers throughout every namespace and row.
+    carriers = [*scopes]
+    if retained_events is not None:
+        carriers.extend(retained_events)
+    if require_same_snapshot is not None:
+        carriers.append(require_same_snapshot)
+        carriers.extend(require_same_snapshot.scopes)
+        carriers.extend(item.events for item in require_same_snapshot.scopes)
+    input_epoch = tuple(
+        (entity, tuple((field.name, getattr(entity, field.name))
+                       for field in fields(entity)))
+        for entity in carriers
+    )
+
+    def assert_epoch() -> None:
+        try:
+            if store.path is not path_epoch or any(
+                getattr(entity, name) is not value
+                for entity, captured in input_epoch
+                for name, value in captured
+            ):
+                raise SyntheticMemorySnapshotRejected(
+                    "Memory scope, source or retained witness changed during review"
+                )
+        except (AttributeError, TypeError) as exc:
+            raise SyntheticMemorySnapshotRejected(
+                "Memory input carrier changed during review"
+            ) from exc
+
+    assert_epoch()
     results = []
     with closing(store._connect_readonly()) as conn:
+        assert_epoch()
         conn.execute("BEGIN")
+        assert_epoch()
         try:
             _validate_v1_schema(conn)
+            assert_epoch()
             for scope, scope_hash in zip(pinned, hashes, strict=True):
                 raw_events = conn.execute(
                     """SELECT event_id,memory_id,owner_id,namespace,operation,
@@ -212,6 +247,7 @@ def review_synthetic_memory_scopes(
                        ORDER BY event_id LIMIT ?""",
                     (scope.owner_id, scope.namespace, _MAX_EVENTS + 1),
                 ).fetchall()
+                assert_epoch()
                 if len(raw_events) > _MAX_EVENTS:
                     raise SyntheticMemorySnapshotRejected("event budget exceeded")
                 previous = SyntheticMemoryEventWitness(
@@ -256,22 +292,26 @@ def review_synthetic_memory_scopes(
                               (previous.tail_hash, tuple(event))),
                     )
                     prefixes.append(previous)
+                    assert_epoch()
                     last_id = event_id
                 raw_rows = conn.execute(
                     """SELECT * FROM memories WHERE owner_id=? AND namespace=?
                        ORDER BY memory_id LIMIT ?""",
                     (scope.owner_id, scope.namespace, _MAX_ROWS + 1),
                 ).fetchall()
+                assert_epoch()
                 if len(raw_rows) > _MAX_ROWS:
                     raise SyntheticMemorySnapshotRejected("row budget exceeded")
                 live = {}
                 row_hashes = []
                 for raw_row in raw_rows:
                     record = _record(raw_row)
+                    assert_epoch()
                     if record.scope != scope or record.memory_id in live:
                         raise SyntheticMemorySnapshotRejected("Memory row scope or ID mismatch")
                     live[record.memory_id] = record.revision
                     row_hashes.append(_row_hash(record))
+                    assert_epoch()
                 expected = {
                     key: revision for key, (alive, revision) in states.items() if alive
                 }
@@ -288,11 +328,15 @@ def review_synthetic_memory_scopes(
                     scope_hash, previous, len(row_hashes),
                     _hash("ARK-synthetic-memory-live-rows-v1", tuple(row_hashes)),
                 ))
+                assert_epoch()
             conn.commit()
+            assert_epoch()
         except BaseException:
             conn.rollback()
             raise
+    assert_epoch()
     owner_digest = _hash("ARK-synthetic-memory-owner-v1", values[0][0])
+    assert_epoch()
     snapshot = SyntheticMemorySnapshotDigest(
         owner_digest, tuple(results),
         _hash("ARK-synthetic-memory-multiscope-v1", (
@@ -304,6 +348,7 @@ def review_synthetic_memory_scopes(
             ) for row in results),
         )),
     )
+    assert_epoch()
     if store.path is not path_epoch or tuple(
         (scope.owner_id, scope.namespace) for scope in scopes
     ) != values:
@@ -330,4 +375,5 @@ def review_synthetic_memory_scopes(
         )
         if current_epoch != same_epoch or require_same_snapshot != snapshot:
             raise SyntheticMemorySnapshotRejected("retained exact Memory snapshot changed")
+    assert_epoch()
     return snapshot
