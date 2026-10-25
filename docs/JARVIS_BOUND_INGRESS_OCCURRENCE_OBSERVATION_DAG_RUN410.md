@@ -37,6 +37,14 @@
   `09219524714b46c4c229009bccf60e88b0e81eae`,
   tests `28e166cb71ba7523e895da5e3059d25af6222a21`.
   The pre-existing 1,500-step valid deep DAG remains within bounds.
+- Package E — `src/ark/memory/contracts.py` MemoryWrite metadata ingestion
+  rejects actual Mapping.items() streams after 64 yielded entries, irrespective
+  of any dishonest __len__, and rejects duplicate yielded keys before SQLite
+  persistence. Frozen Memory v1 DDL and accepted 64-entry mappings unchanged.
+  Source `ad461148a93eb6e50b8693192b43ddea4fc76018`;
+  tests `tests/test_memory_metadata_ingress_budget_run410.py`, initial
+  `d9e5e3cbb1f02f2246ab361ea5f88c11f9a76743`, import-spacing correction
+  `9948473c9bc2bf74af2a7b3ac169ab3bf94a4d84` (+6 regression cases).
 
 ## Threat/failure matrix
 
@@ -51,6 +59,8 @@
 | Observation direct hash | JSON/hashing callbacks mutate source/privacy/timestamp | Reject rather than return mixed-field digest |
 | Planner capacity | >4,096 steps or >65,536 dependency edges | Reject before graph materialization/traversal |
 | Planner boundary | 4,096 standalone steps or 65,536 edges | Admit unchanged valid DAG |
+| Memory v1 write ingress | Malicious Mapping.items() reports fake length then yields infinitely | Reject by the 65th item; no unbounded materialization |
+| Memory metadata identity | Duplicate yielded key with different value | Reject before storing a misleading replacement |
 
 All test objects are explicitly disconnected fixtures. No raw media is
 loaded or exported; no actual ToolBackend is invoked or notified. The
@@ -70,9 +80,21 @@ external-side-effect attestation.
   #970 / `40159759500`: **IN_PROGRESS** at inspection.
 - Planner final source/test HEAD `28e166cb71ba7523e895da5e3059d25af6222a21`,
   #972 / `40159811089`: **QUEUED** at inspection.
-- Test count expected from +8 ToolCall, +7 Occurrence, +9 Observation
-  (three parameterizations), +5 Planner = **+29**, 2,179 total;
-  **not a claim of 2,179 passed** until exact final-head CI is GREEN.
+- Pre-Memory four-package CI #976 / `40160101058` for
+  `6fbb6231d496c2f3612722a2f0b7149a73fcea01`: **Ubuntu 3/3 GREEN**
+  (Python3.13 Ruff PASS and **2,179 pytest passed**); Windows 3 IN_PROGRESS
+  at this doc edit. Older #968 and #970 failed **ten inherited assertion
+  message matches** despite correct fail-closed behavior; fixed with precise
+  source/token rejection messages by `abf29857b1e824448b8e36483bfcc464e5ec59bf`
+  and three test regex expectations by `638cd02eaf6225f7c8a984942648c7c08389b4d1`.
+  #972 and #975 failed all six **Ruff I001** at newly added Planner test
+  import block; narrowed style fix `6fbb6231d496c2f3612722a2f0b7149a73fcea01`.
+  These failed runs remain historical evidence and are never relabeled GREEN.
+- Five-package total expected +8 ToolCall, +7 Occurrence, +9 Observation
+  (three parameterizations), +5 Planner, +6 Memory = **+35**, 2,185 tests.
+  Memory test-style HEAD `9948473c9bc2bf74af2a7b3ac169ab3bf94a4d84`
+  CI #979 / `40160286078`: **QUEUED** at doc preparation. **2,185 PASS
+  is not yet confirmed** until exact five-package CI finishes.
 - Ruff and all six Ubuntu/Windows Python 3.11–3.13 jobs must be independently
   checked on the exact source/test HEAD and subsequent docs/checkpoint heads.
 
@@ -85,8 +107,8 @@ potentially billable API/service, GPU, additional credentials, real hardware,
 private-data disclosure/deletion, destructive action, main merge or automatic
 approval/promotion has been requested or undertaken.
 
-Next: (1) verify #968/#970/#972 exact-head CI, fix real regressions only via
-normal Contents writes; (2) extend durable reservation/test crash boundaries
+Next: (1) verify the current five-package #979 exact-head CI, fix real
+regressions only via normal Contents writes; (2) extend durable reservation/test crash boundaries
 without conflating mock receipts with real exactly-once effects; (3) test
 Memory v1 CAS/expiry and multi-store retained-witness partial erasure; (4)
 continue privacy-safe Context and disconnected Scheduler/Observation lifecycle;
