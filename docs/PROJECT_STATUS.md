@@ -1,5 +1,58 @@
 # ARK AI Project Status
 
+**LATEST — Run 410**
+
+Saved at: **2026-10-25T13:04:18.350+09:00 Asia/Tokyo/JST** (automation runtime wall clock sampled immediately before an ordinary GitHub Contents API checkpoint write; NOT authenticated trusted time, server attestation, human approval or real consent).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `3474d5326a42044c5bd00886f35f84f8785a1150` (Run409 canonical checkpoint, **CI #963 / `40157683231` SUCCESS on all six Ubuntu/Windows Python 3.11–3.13**).
+**Final five-package source+test HEAD:** `9948473c9bc2bf74af2a7b3ac169ab3bf94a4d84` (**CI #979 / run `40160286078`: IN_PROGRESS, Ubuntu 3/3 GREEN; Windows 3 in progress / 0 failed at last job read**). Exact Ubuntu Python 3.13 Ruff **All checks passed** and **2185 pytest passed in 49.94s**. Do NOT claim all-six success for #979 until Windows completes.
+**Pre-Memory four-package source+test HEAD:** `6fbb6231d496c2f3612722a2f0b7149a73fcea01` (**CI #976 / run `40160101058`: SUCCESS all six**; Ubuntu3.13 Ruff PASS / 2179 pytest PASS).
+**Engineering evidence / checkpoint write-basis HEAD:** `ed869e3eaa0c056058d6466d345bfb7213100803` (**CI #980 / run `40160351289`: IN_PROGRESS at latest check**). This is the re-read branch HEAD **before** the checkpoint Contents write, NOT the checkpoint-result commit.
+**Checkpoint-result HEAD:** not knowable within this file before GitHub creates this commit; the normal `update_file.commit_sha` response is authoritative and its own CI must be inspected separately.
+
+### Overall current ARK state
+
+**Local-first disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated consent/issuer, externally trusted time, verified live ToolBackend outcome receipts, multi-SQLite atomic snapshot, OS inode/handle custody, external exactly-once effects, physical device integration, trained Candidate or actual autonomous WRITE. A locally matching hash, fixture permission token or mock SUCCEEDED marker is never authority to dispatch, notify, disclose, promote or replay. **RUNNING/UNKNOWN WRITE must never automatically replay.**
+
+### NEW Run410 — five independent FREE-only source+regression packages, +35 cases
+
+1. **ToolCall canonical JSON bounded ingress (+8):** `src/ark/agency/contracts.py` source `50489c8dd24b90aece5819da89ae2f3a316695cc` / `tests/test_toolcall_json_budget_run410.py` `0848e07bb3682ddb2911994e937d23d869152d4c`. Cap 4096 nodes, depth 32, 65536 characters per text value and 256 KiB total UTF-8 strings; reject infinite generator-backed Mapping.items(), duplicate keys and invalid Unicode before hashing. Preserve deterministic identities for valid inputs. First package CI #965 / `40159514530`: SUCCESS all six.
+2. **Original token/action source custody across durable reservation (+7):** `src/ark/agency/durable_occurrence_review.py` `b1a53d2ce286b6d1ca677bfd21c818bbc2899c4f`, `tests/test_occurrence_input_commit_epoch_run410.py` `7ab8a5b431d8d6483f5ee292a4234c25f8fce61a`; hash-prefix test fix `56996cb7cfe71370d7eb9eea5d71d0b21b6721f7`, narrow original provenance-diagnostic fix `abf29857b1e824448b8e36483bfcc464e5ec59bf`, test regex alignment `638cd02eaf6225f7c8a984942648c7c08389b4d1`. Recheck source, token and equal-valued replacement arguments after registry, digest, DB open, BEGIN, validation, SELECT, INSERT and COMMIT. A post-COMMIT error retains the consumed reservation; UNKNOWN never replayed. No real WRITE.
+3. **Observation direct ID metadata/epoch fences (+9):** `src/ark/observations.py` `9810027bc89336a2a5d3c39bc41af725104f9662` / `tests/test_observation_direct_identity_epoch_run410.py` `a93f1516d5e5940700f62d380858335af8ac7b57`. Bound source/adapter/privacy IDs to 1024 chars and valid UTF-8; ensure direct `observation_id` checks original values and carriers after JSON serialization and SHA-256. Existing valid frozen observation hash vector unchanged; no actual sensors or exports.
+4. **Standalone Planner graph admission budgets (+5):** `src/ark/agency/planner.py` `09219524714b46c4c229009bccf60e88b0e81eae` / `tests/test_planner_graph_budget_run410.py` `28e166cb71ba7523e895da5e3059d25af6222a21`, narrow Ruff test import-block whitespace fix `6fbb6231d496c2f3612722a2f0b7149a73fcea01`. Max 4096 steps and 65536 dependency edges; reject reflected hostile dependency carriers. Existing 1500-step fixture remains valid.
+5. **MemoryWrite hostile metadata Iterator cap (+6):** `src/ark/memory/contracts.py` `ad461148a93eb6e50b8693192b43ddea4fc76018` / `tests/test_memory_metadata_ingress_budget_run410.py` `d9e5e3cbb1f02f2246ab361ea5f88c11f9a76743`, narrow Ruff test-spacing fix `9948473c9bc2bf74af2a7b3ac169ab3bf94a4d84`. Bound actual `Mapping.items()` yields to at most 64 accepted entries despite a lying `__len__`; duplicate yielded keys are rejected. No frozen Memory v1 SQL/DDL changes.
+
+**Engineering threat, failure and regression matrix:** `docs/JARVIS_BOUND_INGRESS_OCCURRENCE_OBSERVATION_DAG_RUN410.md` (most recent doc HEAD `ed869e3eaa0c056058d6466d345bfb7213100803`).
+
+### CI / evidence integrity
+
+- Prior Run409 checkpoint **#963 / `40157683231`: SUCCESS all 6**.
+- New ToolCall source+test **#965 / `40159514530`: SUCCESS all 6**.
+- Initial Occurrence test **#968 / `40159697018`: FAIL** and intermediate Observation HEAD **#970 / `40159759500`: FAIL** (ten existing tests asserted established source/token rejection-message specificity; the new source initially used a generic message). Fixed source to preserve fail-closed **source-vs-token** diagnostics, amended only affected new tests. Do not relabel failed checks.
+- Planner test HEAD **#972 / `40159811089`: FAIL six** and pre-style-fix **#975 / `40159958353`: FAIL six**, both Ruff I001 import formatting in the new Planner budget test. Repaired only new test spacing through normal Contents. No frozen UI code touched.
+- Repaired four-package HEAD **#976 / `40160101058`: SUCCESS all six**; Ubuntu3.13 Ruff PASS and **2179** passed.
+- Final five-package source+test HEAD **#979 / `40160286078`: 3/6 GREEN, 0 FAILED, Windows 3 IN PROGRESS** at latest check; Ubuntu3.13 Ruff PASS / **2185** passed. Final doc HEAD **#980 / `40160351289`: IN_PROGRESS**. The eventual checkpoint-result SHA's CI must be evaluated independently.
+- Exact-head nontruncated Git Trees versus main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 existing main blobs**, **455 branch blobs**, **361 added; 0 modified existing-main; 0 deleted** at pre-checkpoint doc HEAD. Checkpoint will only update an already new branch-only status file. None of these counts implies cross-store atomicity.
+
+### Frozen evidence and user-authorization boundaries
+
+All frozen V1/V2/Local UI/Launcher contracts and evaluation evidence, V3 Contract 1, protected V2 final evaluation, Memory v1 / ActionAudit v1 SQL schema **unchanged**. **V3 PR #5 remains Draft/open/unmerged/NOT_PASSED**, PR #8 Draft/unmerged, main unchanged. No paid/potentially billable service/API/GPU/compute, Candidate/training/preflight/weights/promotion, protected evaluation opening, credentials/new accounts, physical hardware/sensors, live ToolBackend/notifications, irreversible file/data operations, private data disclosure/erasure, frozen contract edits or main merge. Legal, privacy, human review and real-outcome gates remain unresolved.
+
+### Next plan / 今後の方針
+
+1. Check exact-head five-package **#979**, doc **#980**, and checkpoint-result SHA's own CI across Ubuntu/Windows Python 3.11–3.13; preserve FAIL histories; if true failure occurs, make the narrowest semantics-preserving fix via ordinary fresh-HEAD GitHub Contents. Do not launch duplicate equivalent workflows.
+2. Extend synthetic cross-store Planner/Occurrence/Audit/Link crash/restart and retained-witness partial-erasure diagnostics; keep UNKNOWN and all dependency-held WRITEs non-replayable. No inference of real exactly-once outcomes.
+3. Advance Memory v1 CAS, expiry, concurrent coherent snapshots, stable event/memory rows and privacy-safe Personal Context revocation without changing frozen schemas or leaking user data.
+4. Advance disconnected observation/scheduler fixtures and audit-before-action trusted-issuer/clock interfaces as **deny-by-default diagnostics**, never real dispatch, external notifications or sensor activation without authorization.
+5. Preserve V3 free-only path/identity/provenance/reproducibility gating; PR #5 remains Draft/NOT_PASSED, no paid compute, Candidate generation/promotion or protected-evaluation opening; no main merge requiring approval.
+
+---
+
+**HISTORICAL — Run409 and earlier evidence preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 409**
 
 Saved at: **2026-10-25T12:17:41.077+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this standard GitHub Contents API write; **not** authenticated trusted time, GitHub-server attestation, signed human approval or consent).
