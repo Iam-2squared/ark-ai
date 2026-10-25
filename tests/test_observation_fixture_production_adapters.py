@@ -87,7 +87,10 @@ def test_fixture_rejects_subclasses_and_malformed_unicode():
         text("\ud800")
 
 
-@pytest.mark.parametrize("factory,payload", [(text, "a" * (4 * 1024 * 1024 + 1)), (binary, b"a" * (4 * 1024 * 1024 + 1))])
+@pytest.mark.parametrize(
+    "factory,payload",
+    [(text, "a" * (4 * 1024 * 1024 + 1)), (binary, b"a" * (4 * 1024 * 1024 + 1))],
+)
 def test_fixture_rejects_oversized_payload(factory, payload):
     with pytest.raises(ValueError, match="byte budget exceeded"):
         factory(payload)
@@ -108,7 +111,10 @@ def test_empty_payload_is_deterministic_and_never_implicit_consent():
 
 def test_privacy_scope_source_and_parent_remain_bound_to_identity():
     base = text("private fixture")
-    assert text("private fixture", privacy_scope="offline:other").observation_id != base.observation_id
+    assert (
+        text("private fixture", privacy_scope="offline:other").observation_id
+        != base.observation_id
+    )
     assert text("private fixture", source_id="other").observation_id != base.observation_id
     child = text("private fixture", parent_sha256="a" * 64)
     assert child.observation_id != base.observation_id
