@@ -1,5 +1,60 @@
 # ARK AI Project Status
 
+**LATEST — Run431**
+
+Saved at: **2026-10-26T02:58:50.910+09:00 Asia/Tokyo/JST** (ordinary, unauthenticated automation runtime wall clock sampled immediately before the normal GitHub Contents checkpoint write; not a signed trusted clock, verified human issuer, billing approval or external-outcome attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / PR #8 **Draft/open/unmerged**.
+**Exact work-basis HEAD:** `e4882eee17ffcca5ea629b65cbda142d2ebddce7` (Run430 checkpoint, GitHub Actions **#1204 / 40213762744 all six SUCCESS** verified at opening).
+**Final Run431 executable source+test HEAD:** `71f7262f253fe97ad7fafdaf830095102c7c9d65`.
+**Run431 technical-document / checkpoint exact write-basis HEAD:** `703c4cfe9106ff5c33abee2bf356b3031c9395a7`; `docs/JARVIS_FINAL_RECHECK_MEMORY_AUDIT_RECEIPT_RUN431.md`.
+**Checkpoint-result HEAD:** not knowable inside the commit being created. Use the normal Contents API `commit_sha` returned by this write and inspect its own separate CI. An earlier head's GREEN does not cover this checkpoint.
+
+### Overall ARK state
+
+**Complete JARVIS NOT_PASSED.** Local-first, disconnected/synthetic/mock groundwork only. No verified personal issuer/consent, authenticated trusted clock, external Tool outcome attestation, cross-file SQLite atomicity, real-world exactly-once WRITE, live camera/microphone/display observations, real notifications or operational autonomous dispatch. **UNKNOWN/RUNNING or reserved PENDING WRITEs must never auto-replay** without independently verified external outcome. PR #5 V3 Candidate/paid-compute and protected V2 final-evaluation gates remain closed.
+
+### NEW Run431 — three free-only executable packages (+18 parameter-expanded regression cases), one fault matrix
+
+1. **Planner final journal callback epoch (+5):** source commit `44e5774dfd440e6525d2e25105f3211c8489ad4d`, test commit `82fcc97d886a2336fc122d25242b79ee9e57a31b`. The final independent `journal.recover()` recheck is a reflective callback: verify original PlanSteps, registry identity, retained inputs, and every previously returned per-step witness **after** that call, and require exact final recovery/tail types. Regression injects same-value carrier substitutions and forged earlier review statuses during last callback; stable RUNNING upstream WRITE holds its descendant. No execution path added.
+
+2. **Memory v1 audit event scope custody (+7):** source `7023a5f290300eecc6a84f798ad9dd0b06a3d7bd`, tests `8ddc336ca20e5d4f554788ee624e72bb9300ce12`. Events queries pin the **original owner_id/namespace object carriers**, not only the same text, across SQLite open, schema check and materialization callbacks. Original create/update ordering and privacy namespace scoping preserved. No Memory v1 SQL/schema change.
+
+3. **One-shot synthetic occurrence receipt post-COMMIT (+6):** source `e8c5329b6d06a7a487138cc4e014d8da44654695`, test `71f7262f253fe97ad7fafdaf830095102c7c9d65`. Require original inert receipt type and five original field carriers after receipt constructor; reject forged/equal-carrier returns or late input/source drift. **The committed SQLite token reservation remains durable after any late rejection**. This grants no approval or replay permission.
+
+4. **Technical source-backed fault matrix:** `docs/JARVIS_FINAL_RECHECK_MEMORY_AUDIT_RECEIPT_RUN431.md` committed at `703c4cfe9106ff5c33abee2bf356b3031c9395a7`. Read-only PR #5 gate inspection reconfirmed missing immutable HF materialized hashes, human-approved 120/30 provenance/contamination evidence, exact runtime and hardware/cost approval; no model/weight acquisition, real Candidate, protected eval or external GPU initiated.
+
+### CI and exact-head evidence sampled before checkpoint
+
+- Opening Run430 source #1202 / 40213317868, document #1203 / 40213496408, checkpoint #1204 / 40213762744: **all completed SUCCESS**, six jobs each, as read from repository workflow metadata.
+- Latest Run431 source+test `71f7262f253fe97ad7fafdaf830095102c7c9d65`: Ubuntu Python 3.13 job `121245046985` within **#1210 / 40218603630** independently showed **Ruff PASS and 2810 passed / 1 skipped**, 12+ fixture mock evaluations no real model measurement. Other exact-head jobs are reported independently below.
+- #1205 / 40218236769: **6/6 SUCCESS**, 0 FAIL, 0 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- #1206 / 40218322919: **6/6 SUCCESS**, 0 FAIL, 0 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- #1207 / 40218367918: **5/6 SUCCESS**, 0 FAIL, 1 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- #1208 / 40218438707: **6/6 SUCCESS**, 0 FAIL, 0 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- #1209 / 40218551576: **4/6 SUCCESS**, 0 FAIL, 2 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- #1210 / 40218603630: **3/6 SUCCESS**, 0 FAIL, 3 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- #1211 / 40218784538: **3/6 SUCCESS**, 0 FAIL, 3 IN PROGRESS/QUEUED at checkpoint sampling; exact HEAD only.
+- Distinct CI ID/outcome for the **new checkpoint-result HEAD** cannot be known until the Contents write completes; no manual equivalent rerun or paid runner/GPU was triggered.
+
+### Frozen contracts, isolation, provenance, authorization
+
+Nontruncated Git Tree comparison at `703c4cfe9106ff5c33abee2bf356b3031c9395a7`: main `7a843f17eb96ed13d66f23b58b06406b3002e405` has **94 blobs**, PR8 has **561 blobs**: **467 added, zero existing main files modified or removed**. PR #8 stays Draft/unmerged and PR #5 stays Draft/open/unmerged/NOT_PASSED at `d6d4c1954a85fc716b1c593ac55c85417912418f`. V1/V2/Local UI/Launcher frozen artifacts, Memory v1 / ActionAudit v1 DDL, V3 Contract 1, contamination/provenance/reproducibility/regression gates and protected final V2 opening remain untouched. No material irreversible operation, credential, paid API, GPU, Candidate weights/adapter, human-review fabrication, personal-data deletion, physical-PC action or main merge.
+
+### Next plan / 今後の方針
+
+1. Verify #1205–#1211 remaining Windows/Ubuntu jobs and **this checkpoint-result** exact-HEAD CI. If any FAIL, inspect exact logs, retain historic failure, apply minimal normal Contents repair and immediately switch to an independent lane. Never claim all-green from partial runs or launch duplicate equivalent workflows.
+2. Expand Planner–PermissionGate–Occurrence–ActionAudit–AuditLink multi-WRITE crash and partial-history-loss proof across READ bridges and independent process restarts; persist uncertainty and forbid auto replay of UNKNOWN/RUNNING/reserved PENDING.
+3. Extend Memory multi-process CAS/expiry/event-consistency and coherent multi-namespace reads without schema changes or imaginary cross-file atomicity.
+4. Strengthen Personal Context privacy revocation continuity and deny-only issuer/clock interfaces; reversible Observation/Proactive fixtures only, with no sensing or dispatch.
+5. Keep V3 free-only identity/path/provenance/approval guards reviewed; wait for explicit immutable materialization, human rights/privacy decisions and approved budget before paid compute or real Candidate. Never merge Draft PRs or open frozen evaluation without an explicit gate.
+
+---
+
+**HISTORICAL — Run430 and earlier checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run430**
 
 Saved at: **2026-10-26T01:52:18.749+09:00 Asia/Tokyo/JST** (ordinary untrusted automation/container wall-clock sampled immediately before the permitted GitHub Contents write; not signed trusted time, authenticated consent or billing approval).
