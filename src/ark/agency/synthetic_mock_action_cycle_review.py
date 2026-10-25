@@ -17,7 +17,7 @@ from .contracts import ActionAuditEvent, Effect, OneShotAuthorization, StepState
 from .durable_occurrence_review import SyntheticOccurrenceStore, SyntheticReservationReceipt
 from .planner import PlanGraph
 from .planner_journal_review import SyntheticPlanJournal
-from .registry import ToolRegistry
+from .registry import BoundAction, ToolRegistry
 from .synthetic_occurrence_audit_link_review import SyntheticOccurrenceAuditLinkStore
 
 _MAX = 2**63 - 1
@@ -114,6 +114,19 @@ def run_synthetic_mock_cycle(
         for entry in original_steps
     )
     bound = registry.bind(call)
+    # The binding callback must resolve this exact original ToolCall and
+    # registered backend before RUNNING is durably journaled. Consistently
+    # returning a forged, value-equal BoundAction must not defer rejection
+    # until after an independent occurrence reservation is committed.
+    if (
+        type(bound) is not BoundAction
+        or bound.call is not call
+        or bound.registration is not registry.get(call.tool)
+        or bound.registry_revision != registry.revision
+    ):
+        raise SyntheticMockCycleRejected(
+            "synthetic mock registry binding differs from requested WRITE"
+        )
 
     bound_epoch = (
         bound.registry_revision, bound.bound_action_id,
