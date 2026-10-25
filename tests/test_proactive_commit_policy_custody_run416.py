@@ -25,10 +25,10 @@ def _policy(**overrides):
     return proactive.SyntheticTriggerPolicy(**fields)
 
 
-def _prepare(store, policy):
+def _prepare(store, policy, *, now=100):
     return store.prepare(
         policy, source_digest=A, observation_digest=B,
-        observed_at_ms=100, now_ms=100,
+        observed_at_ms=now, now_ms=now,
     )
 
 
@@ -98,7 +98,7 @@ def test_post_commit_policy_swap_denies_return_but_preserves_row(
             _prepare(store, policy)
     assert store.count() == 1
     with pytest.raises(proactive.SyntheticTriggerRejected, match="duplicate"):
-        _prepare(store, _policy())
+        _prepare(store, _policy(), now=200)
 
 
 def test_forged_post_commit_receipt_does_not_erase_durable_reservation(
@@ -116,4 +116,4 @@ def test_forged_post_commit_receipt_does_not_erase_durable_reservation(
             _prepare(store, _policy())
     assert store.count() == 1
     with pytest.raises(proactive.SyntheticTriggerRejected, match="duplicate"):
-        _prepare(store, _policy())
+        _prepare(store, _policy(), now=200)
