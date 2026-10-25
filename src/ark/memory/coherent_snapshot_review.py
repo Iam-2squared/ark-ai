@@ -105,13 +105,20 @@ def review_coherent_snapshot(
         if (
             request.namespaces is not namespaces
             or tuple((type(value), value) for value in current) != request_epoch
+            or any(
+                value is not original_carrier
+                for value, (_, original_carrier) in zip(
+                    current, request_epoch, strict=True,
+                )
+            )
         ):
             raise MemorySchemaError("snapshot request changed during review")
         if any(
             type(scope) is not scope_type
             or type(scope.owner_id) is not str
             or type(scope.namespace) is not str
-            or (scope.owner_id, scope.namespace) != (owner, namespace)
+            or scope.owner_id is not owner
+            or scope.namespace is not namespace
             for scope, scope_type, owner, namespace in scope_epoch
         ):
             raise MemorySchemaError("memory snapshot scope changed during review")
