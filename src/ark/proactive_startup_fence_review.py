@@ -210,7 +210,46 @@ def review_synthetic_proactive_startup(
             "startup or trigger evidence changed during disconnected review"
         )
     assert_source_epoch()
-    return SyntheticProactiveStartupReview(
+    # A frozen result constructor is still a reentrant boundary. Keep the
+    # previously reviewed receipt digests and exact scalar carriers stable,
+    # including after returning the newly constructed diagnostic.
+    expected_result = (
         first_trigger.trigger_id, first_ready.snapshot_digest,
         first_trigger.history.digest, now_ms,
     )
+    result = SyntheticProactiveStartupReview(*expected_result)
+    assert_source_epoch()
+    try:
+        snapshot._assert_integrity()
+        current_result = (
+            first_trigger.trigger_id, first_ready.snapshot_digest,
+            first_trigger.history.digest, now_ms,
+        )
+        actual_result = (
+            result.trigger_id, result.readiness_digest,
+            result.trigger_history_digest, result.checked_at_ms,
+        )
+        if (
+            type(result) is not SyntheticProactiveStartupReview
+            or _snapshot_epoch(snapshot) != pinned[3]
+            or any(
+                current is not original
+                for current, original in zip(
+                    current_result, expected_result, strict=True,
+                )
+            )
+            or any(
+                actual is not original
+                for actual, original in zip(
+                    actual_result, expected_result, strict=True,
+                )
+            )
+        ):
+            raise SyntheticProactiveStartupRejected(
+                "constructed proactive readiness result changed"
+            )
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise SyntheticProactiveStartupRejected(
+            "constructed proactive readiness result malformed"
+        ) from exc
+    return result
