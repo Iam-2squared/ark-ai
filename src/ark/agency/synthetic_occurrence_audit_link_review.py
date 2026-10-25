@@ -258,12 +258,74 @@ class SyntheticOccurrenceAuditLinkStore:
             or type(at_ms) is not int or not 0 <= at_ms <= _MAX
         ):
             raise SyntheticAuditLinkRejected("exact synthetic link inputs required")
+        if retained is not None and type(retained) is not SyntheticAuditLinkWitness:
+            raise SyntheticAuditLinkRejected("retained link witness has wrong type")
+        # Freeze original input and source *carriers* before any nested shape,
+        # registry, SQLite or hash callback. Equal-valued substitutions are
+        # still epoch changes. This is local custody, not a cross-store proof.
+        link_path_epoch = self._path
+        ledger_path_epoch = ledger._path
+        audit_path_epoch = audit.path
+        call_epoch = (call.tool, call.capability, call.scope, call.arguments)
+        reservation_epoch = (
+            reservation.occurrence_id, reservation.registry_revision,
+            reservation.bound_action_id, reservation.request_id,
+            reservation.reserved_at_ms,
+        )
+        event_epoch = _audit_identity(event)
+        retained_epoch = None if retained is None else (
+            retained.event_count, retained.tail_hash, retained.last_link_at_ms,
+        )
+
+        def assert_input_epoch() -> None:
+            try:
+                stable = (
+                    self._path is link_path_epoch
+                    and ledger._path is ledger_path_epoch
+                    and audit.path is audit_path_epoch
+                    and all(left is right for left, right in zip(
+                        (call.tool, call.capability, call.scope, call.arguments),
+                        call_epoch, strict=True,
+                    ))
+                    and all(left is right for left, right in zip(
+                        (
+                            reservation.occurrence_id, reservation.registry_revision,
+                            reservation.bound_action_id, reservation.request_id,
+                            reservation.reserved_at_ms,
+                        ),
+                        reservation_epoch, strict=True,
+                    ))
+                    and all(left is right for left, right in zip(
+                        _audit_identity(event), event_epoch, strict=True,
+                    ))
+                    and (
+                        retained is None or all(
+                            left is right for left, right in zip(
+                                (
+                                    retained.event_count, retained.tail_hash,
+                                    retained.last_link_at_ms,
+                                ),
+                                retained_epoch, strict=True,
+                            )
+                        )
+                    )
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise SyntheticAuditLinkRejected(
+                    "synthetic link original input or source changed during append"
+                ) from exc
+            if not stable:
+                raise SyntheticAuditLinkRejected(
+                    "synthetic link original input or source changed during append"
+                )
+
+        assert_input_epoch()
         if retained is not None:
-            if type(retained) is not SyntheticAuditLinkWitness:
-                raise SyntheticAuditLinkRejected("retained link witness has wrong type")
             retained.assert_shape()
+            assert_input_epoch()
         try:
             first = registry.bind(call)
+            assert_input_epoch()
             if first.registration.effect is not Effect.WRITE:
                 raise SyntheticAuditLinkRejected("only synthetic WRITE may be linked")
             if (
@@ -288,44 +350,61 @@ class SyntheticOccurrenceAuditLinkStore:
             ):
                 raise SyntheticAuditLinkRejected("synthetic pre-action audit mismatch")
             event_hash = _hash("ARK-synthetic-preaction-audit-v1", event_fields)
+            assert_input_epoch()
         except (TypeError, ValueError, AttributeError, KeyError) as exc:
             raise SyntheticAuditLinkRejected("synthetic identity malformed") from exc
 
+        assert_input_epoch()
         with closing(self._connect()) as conn:
+            assert_input_epoch()
             conn.execute("BEGIN IMMEDIATE")
             try:
+                assert_input_epoch()
                 prefixes = _replay(conn)
+                assert_input_epoch()
                 if retained is not None and (
                     retained.event_count >= len(prefixes)
                     or prefixes[retained.event_count] != retained
                 ):
                     raise SyntheticAuditLinkRejected("retained link history changed before append")
+                assert_input_epoch()
                 previous = prefixes[-1]
                 if previous.event_count >= _LIMIT or at_ms < previous.last_link_at_ms:
                     raise SyntheticAuditLinkRejected("synthetic link capacity or clock regression")
                 # The source ledgers are separately snapshotted. This is not an
                 # atomic three-database proof: future modification still races.
+                assert_input_epoch()
                 uri = ledger._path.resolve().as_uri() + "?mode=ro"
+                assert_input_epoch()
                 with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as source:
+                    assert_input_epoch()
                     source.execute("BEGIN")
+                    assert_input_epoch()
                     _validate_reservations(source)
+                    assert_input_epoch()
                     row = source.execute(
                         """SELECT occurrence_id,registry_revision,bound_action_id,
                                   request_id,reserved_at_ms
                            FROM synthetic_occurrence_reservations WHERE occurrence_id=?""",
                         (reservation.occurrence_id,),
                     ).fetchone()
+                    assert_input_epoch()
                     if row != (
                         reservation.occurrence_id, first.registry_revision,
                         first.bound_action_id, first.call.request_id,
                         reservation.reserved_at_ms,
                     ):
                         raise SyntheticAuditLinkRejected("stored reservation differs from receipt")
+                    assert_input_epoch()
                     source.commit()
+                    assert_input_epoch()
+                assert_input_epoch()
                 observed = audit.events(after_event_id=event.event_id - 1, limit=1)
+                assert_input_epoch()
                 if len(observed) != 1 or _audit_identity(observed[0]) != event_fields:
                     raise SyntheticAuditLinkRejected("stored audit differs from receipt")
                 again = registry.bind(call)
+                assert_input_epoch()
                 if (
                     again.registry_revision != first.registry_revision
                     or again.bound_action_id != first.bound_action_id
@@ -344,6 +423,7 @@ class SyntheticOccurrenceAuditLinkStore:
                     event_hash, at_ms, previous.tail_hash,
                 )
                 link = _hash("ARK-synthetic-audit-link-v1", fields)
+                assert_input_epoch()
                 try:
                     conn.execute(
                         "INSERT INTO synthetic_occurrence_audit_links VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -353,8 +433,12 @@ class SyntheticOccurrenceAuditLinkStore:
                     raise SyntheticAuditLinkRejected(
                         "synthetic occurrence or audit already linked"
                     ) from exc
+                assert_input_epoch()
                 conn.commit()
-                return SyntheticAuditLinkReceipt(reservation.occurrence_id, event.event_id, link)
+                # A post-COMMIT rejection does not erase an already committed
+                # link. Keep durable evidence and deny the diagnostic receipt.
+                assert_input_epoch()
+                return SyntheticAuditLinkReceipt(reservation_epoch[0], event_epoch[0], link)
             except BaseException:
                 conn.rollback()
                 raise
