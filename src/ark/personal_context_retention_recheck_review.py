@@ -119,6 +119,13 @@ def review_synthetic_retention_recheck(
     # Keep independent carrier references before any SQLite/reviewer callback.
     cached_items = cached.items
     cached_item_carriers = tuple(cached_items)
+    cached_head_carriers = tuple(
+        getattr(cached, field.name) for field in fields(SyntheticRetentionInventory)
+        if field.name != "items"
+    )
+    cached_item_fields = tuple(
+        (item.memory_id, item.revision, item.state) for item in cached_items
+    )
     original_scope = (scope.owner_id, scope.namespace)
     # Every inventory pins its own sources, but a caller can reflectively
     # retarget a Path *between* the four otherwise coherent inventory reads.
@@ -138,12 +145,29 @@ def review_synthetic_retention_recheck(
         if (
             memory.path is not memory_source
             or revocations.path is not revocation_source
+            or scope.owner_id is not original_scope[0]
+            or scope.namespace is not original_scope[1]
             or (scope.owner_id, scope.namespace) != original_scope
+            or any(
+                getattr(cached, field.name) is not original
+                for field, original in zip(
+                    (field for field in fields(SyntheticRetentionInventory)
+                     if field.name != "items"),
+                    cached_head_carriers, strict=True,
+                )
+            )
             or _epoch(cached) != pinned
             or cached.items is not cached_items
             or any(
-                item is not original for item, original in zip(
-                    cached.items, cached_item_carriers, strict=True,
+                item is not original or any(
+                    value is not prior
+                    for value, prior in zip(
+                        (item.memory_id, item.revision, item.state),
+                        expected_fields, strict=True,
+                    )
+                )
+                for item, original, expected_fields in zip(
+                    cached.items, cached_item_carriers, cached_item_fields, strict=True,
                 )
             )
             or (
@@ -198,10 +222,52 @@ def review_synthetic_retention_recheck(
         raise SyntheticRetentionRecheckRejected(
             "retention or revocation evidence drifted during diagnostic"
         )
-    return SyntheticRetentionRecheck(
-        cached.scope_digest, cached.inventory_digest,
-        current.inventory_digest, now_ms,
-        tuple(item.memory_id for item in current.items if item.state is RetentionState.EXPIRED),
-        tuple(item.memory_id for item in current.items if item.state is RetentionState.NO_EXPIRY),
-        current.revoked,
+    # The detached review constructor is a final reentrant boundary. Pin
+    # every returned diagnostic carrier and the independently observed
+    # current inventory; neither a forged erasure queue nor an equal-valued
+    # replacement may escape as a successful local review.
+    scope_digest = cached.scope_digest
+    captured_digest = cached.inventory_digest
+    current_digest = current.inventory_digest
+    expired_ids = tuple(
+        item.memory_id for item in current.items if item.state is RetentionState.EXPIRED
     )
+    unbounded_ids = tuple(
+        item.memory_id for item in current.items if item.state is RetentionState.NO_EXPIRY
+    )
+    revoked = current.revoked
+    assert_epoch()
+    result = SyntheticRetentionRecheck(
+        scope_digest, captured_digest, current_digest, now_ms,
+        expired_ids, unbounded_ids, revoked,
+    )
+    assert_epoch()
+    if (
+        _epoch(current) != current_epoch
+        or current.items is not current_items
+        or any(
+            item is not original for item, original in zip(
+                current.items, current_item_carriers, strict=True,
+            )
+        )
+        or current.scope_digest != scope_digest
+        or current.inventory_digest is not current_digest
+        or current.revoked is not revoked
+    ):
+        raise SyntheticRetentionRecheckRejected(
+            "current retention evidence changed during result construction"
+        )
+    if (
+        type(result) is not SyntheticRetentionRecheck
+        or result.scope_digest is not scope_digest
+        or result.captured_inventory_digest is not captured_digest
+        or result.current_inventory_digest is not current_digest
+        or result.checked_at_ms is not now_ms
+        or result.expired_memory_ids is not expired_ids
+        or result.unbounded_memory_ids is not unbounded_ids
+        or result.scope_revoked is not revoked
+    ):
+        raise SyntheticRetentionRecheckRejected(
+            "retention recheck returned result changed during construction"
+        )
+    return result
