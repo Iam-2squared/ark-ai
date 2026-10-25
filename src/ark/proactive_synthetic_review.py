@@ -223,7 +223,7 @@ class SyntheticProactiveLedger:
                 self.path is not ledger_path
                 or any(
                     getattr(policy, name) is not carrier
-                    for name, carrier in zip(policy_names, policy_carriers)
+                    for name, carrier in zip(policy_names, policy_carriers, strict=True)
                 )
             ):
                 raise SyntheticTriggerRejected(
@@ -231,7 +231,7 @@ class SyntheticProactiveLedger:
                 )
             if policy.identity() != pinned or self.path is not ledger_path or any(
                 getattr(policy, name) is not carrier
-                for name, carrier in zip(policy_names, policy_carriers)
+                for name, carrier in zip(policy_names, policy_carriers, strict=True)
             ):
                 raise SyntheticTriggerRejected(
                     f"policy or ledger path changed {stage}"
