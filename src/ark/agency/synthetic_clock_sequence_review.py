@@ -136,6 +136,20 @@ def review_synthetic_clock_sequence(
     # Do not trust a caller-reflectively mutable exported singleton as replay
     # genesis. Each review starts from the module's fixed empty-field vector.
     result = SyntheticClockWitness(*_EMPTY_FIELDS)
+    result_epoch = _fields(result)
+    result_carriers = (result.source_digest, result.chain_hash)
+
+    def assert_result_epoch() -> None:
+        # The iterable may mutate the last locally constructed witness while
+        # yielding its NEXT sample or finishing in generator finally. A frozen
+        # dataclass alone does not protect its reflective result carriers.
+        if (
+            type(result) is not SyntheticClockWitness
+            or _fields(result) != result_epoch
+            or result.source_digest is not result_carriers[0]
+            or result.chain_hash is not result_carriers[1]
+        ):
+            raise SyntheticClockRejected("constructed clock witness changed during sequence")
 
     def assert_epoch() -> None:
         if retained is not None and (
@@ -158,6 +172,7 @@ def review_synthetic_clock_sequence(
         assert_epoch()
         for sample in source_iterator:
             assert_epoch()
+            assert_result_epoch()
             if len(observed) >= max_samples:
                 raise SyntheticClockRejected("clock sample budget exceeded")
             if type(sample) is not SyntheticClockSample:
@@ -210,10 +225,14 @@ def review_synthetic_clock_sequence(
             ):
                 raise SyntheticClockRejected("constructed clock chain link changed")
             result = candidate
+            result_epoch = _fields(candidate)
+            result_carriers = (candidate.source_digest, candidate.chain_hash)
             if retained is not None and seq == retained.event_count and result != retained:
                 raise SyntheticClockRejected("retained clock prefix differs")
-        # A generator's StopIteration/finally may mutate an earlier sample.
+        # StopIteration/finally may rewrite either an earlier input sample
+        # or the last constructed result after its digest has been checked.
         assert_epoch()
+        assert_result_epoch()
         if not observed:
             raise SyntheticClockRejected("empty clock evidence is insufficient")
         if retained is not None and retained.event_count > result.event_count:
