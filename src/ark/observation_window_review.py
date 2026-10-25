@@ -29,6 +29,9 @@ class ObservationWindowReview:
     _carrier_epoch: tuple[ObservationEnvelope, ...] = field(
         init=False, repr=False, compare=False
     )
+    _field_carrier_epoch: tuple[tuple[object, ...], ...] = field(
+        init=False, repr=False, compare=False
+    )
     _header_carrier_epoch: tuple[object, object, object] = field(
         init=False, repr=False, compare=False
     )
@@ -93,6 +96,12 @@ class ObservationWindowReview:
         object.__setattr__(self, "_header_epoch", header)
         object.__setattr__(self, "_header_carrier_epoch", header)
         object.__setattr__(self, "_carrier_epoch", carrier)
+        # A deterministic observation ID attests values, not the original
+        # objects from which a validated window was constructed. Freeze each
+        # member\x27s original field carriers for subsequent reuse checks.
+        object.__setattr__(
+            self, "_field_carrier_epoch", tuple(values for _, values in captured),
+        )
         self.assert_consistent()
 
     def _validate_header(self) -> None:
@@ -144,7 +153,11 @@ class ObservationWindowReview:
             )
         ):
             raise ValueError("observation window header changed after construction")
-        if type(self.envelopes) is not tuple or len(self.envelopes) != len(self._epoch):
+        if (
+            type(self.envelopes) is not tuple
+            or len(self.envelopes) != len(self._epoch)
+            or len(self._field_carrier_epoch) != len(self._epoch)
+        ):
             raise ValueError("observation window tuple changed after construction")
         if self.envelopes is not self._carrier_epoch:
             # A substituted member preserves the original identity diagnostic;
@@ -157,10 +170,24 @@ class ObservationWindowReview:
             ):
                 raise ValueError("observation identity changed after construction")
             raise ValueError("observation window tuple changed after construction")
-        for supplied, (original, identity) in zip(
-            self.envelopes, self._epoch, strict=True
+        names = (
+            "kind", "source_id", "adapter_id", "privacy_scope",
+            "ingested_at_ms", "content_sha256", "parent_sha256",
+            "schema_version",
+        )
+        for supplied, (original, identity), field_epoch in zip(
+            self.envelopes, self._epoch, self._field_carrier_epoch, strict=True,
         ):
-            if supplied is not original or self._check_envelope(supplied) != identity:
+            if supplied is not original or any(
+                getattr(supplied, name) is not pinned
+                for name, pinned in zip(names, field_epoch, strict=True)
+            ):
+                raise ValueError("observation identity changed after construction")
+            current_identity = self._check_envelope(supplied)
+            if current_identity != identity or any(
+                getattr(supplied, name) is not pinned
+                for name, pinned in zip(names, field_epoch, strict=True)
+            ):
                 raise ValueError("observation identity changed after construction")
 
     def assert_fresh_at(self, now_ms: int) -> None:
