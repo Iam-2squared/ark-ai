@@ -133,9 +133,17 @@ def read_proactive_witness(
         retained.assert_integrity()
         assert_epoch()
 
-    uri = path_epoch.resolve().as_uri() + "?mode=ro"
+    # Path resolution, URI construction, SQLite handle creation and BEGIN
+    # are distinct reentrant boundaries. The next callback must not be able
+    # to restore a transiently retargeted source or retained witness.
+    resolved = path_epoch.resolve()
+    assert_epoch()
+    uri = resolved.as_uri() + "?mode=ro"
+    assert_epoch()
     with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
+        assert_epoch()
         conn.execute("BEGIN")
+        assert_epoch()
         try:
             _validate(conn)
             assert_epoch()
