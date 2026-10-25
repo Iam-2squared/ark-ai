@@ -37,12 +37,27 @@ _ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
 )
 
 
+# Bound standalone PlanGraph ingress as well as the narrower durable journal.
+# A dependency-rich but acyclic graph can otherwise consume unbounded CPU and
+# memory during recovery/readiness diagnosis before reaching any policy gate.
+_MAX_PLAN_GRAPH_STEPS = 4096
+_MAX_PLAN_GRAPH_EDGES = 65536
+
+
 class PlanGraph:
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
-        if type(steps) is not tuple or any(type(step) is not PlanStep for step in steps):
+        if type(steps) is not tuple:
             raise TypeError("steps must be a tuple of exact PlanStep values")
         if not steps:
             raise ValueError("plan requires at least one step")
+        if len(steps) > _MAX_PLAN_GRAPH_STEPS:
+            raise ValueError("plan step budget exceeded")
+        if any(type(step) is not PlanStep for step in steps):
+            raise TypeError("steps must be a tuple of exact PlanStep values")
+        if any(type(step.depends_on) is not tuple for step in steps):
+            raise PlanConflictError("plan dependency carrier must be a tuple")
+        if sum(len(step.depends_on) for step in steps) > _MAX_PLAN_GRAPH_EDGES:
+            raise ValueError("plan dependency budget exceeded")
         step_map = {step.step_id: step for step in steps}
         if len(step_map) != len(steps):
             raise ValueError("plan step IDs must be unique")
