@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 
 from .audit import SQLiteActionAudit
@@ -199,6 +199,32 @@ def archive_synthetic_recovery(
         and type(review.link_witness) is not SyntheticAuditLinkWitness
     ):
         raise SyntheticRecoveryArchiveRejected("exact recovery review required")
+    # Frozen review objects remain reflectively mutable in Python.
+    # Pin original carriers of the review and all nested witnesses before
+    # any serialization or hashing callbacks can rewrite them.
+    originals = tuple(
+        (
+            entity,
+            tuple((field.name, getattr(entity, field.name)) for field in fields(entity)),
+        )
+        for entity in (
+            review, review.plan_tail, review.ledger_witness,
+            review.audit_witness, review.link_witness,
+        )
+        if entity is not None
+    )
+
+    def assert_review_epoch() -> None:
+        if any(
+            getattr(entity, name) is not original
+            for entity, values in originals
+            for name, original in values
+        ):
+            raise SyntheticRecoveryArchiveRejected(
+                "recovery review changed during archive capture"
+            )
+
+    assert_review_epoch()
     payload = {
         "version": 1,
         "identity": _fields(review, (
@@ -219,9 +245,18 @@ def archive_synthetic_recovery(
         "audit_links": [list(pair) for pair in review.matching_audit_links],
     }
     try:
+        assert_review_epoch()
         data = _canonical(payload)
-        archive = SyntheticRecoveryArchive(data, _digest(data))
+        assert_review_epoch()
+        digest = _digest(data)
+        assert_review_epoch()
+        archive = SyntheticRecoveryArchive(data, digest)
         _restore(archive)
+        assert_review_epoch()
+        if archive.canonical_json is not data or archive.digest is not digest:
+            raise SyntheticRecoveryArchiveRejected(
+                "recovery archive changed during capture validation"
+            )
         return archive
     except (TypeError, ValueError, AttributeError, OverflowError) as exc:
         raise SyntheticRecoveryArchiveRejected("cannot snapshot recovery review") from exc
@@ -261,6 +296,13 @@ def recheck_synthetic_recovery_archive(
     ):
         raise SyntheticRecoveryArchiveRejected("archive changed during restart review")
     _restore(archive)
+    # A retained RUNNING/UNKNOWN WRITE cannot become known simply because a
+    # later local planner journal claims success, failure or cancellation.
+    # A synthetic status is not a verified external side-effect receipt.
+    if identity["ambiguous_write"] and not fresh.ambiguous_write:
+        raise SyntheticRecoveryArchiveRejected(
+            "archived UNKNOWN WRITE cannot be resolved by local journal"
+        )
     if (
         fresh.step_id != identity["step_id"]
         or fresh.request_id != identity["request_id"]
