@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — Run 415**
+
+Saved at: **2026-10-25T17:06:05.821+09:00 Asia/Tokyo/JST** (runtime wall-clock sample immediately before normal Contents checkpoint write; **not** trusted-clock attestation, server signature, human approval, consent, or spend authorization).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `1e7ff06c976379073e1551ae65cc178e2a8f8eed` (Run414 canonical checkpoint; independently checked **CI #1026 / 40173274118 SUCCESS all six** before Run415 writes).
+**Five-package source+test HEAD:** `4f2d4dcb709f8840945b035ecc3b1247fe243006` (CI #1038 / 40174947584; Ubuntu all three GREEN, Windows 0/3 confirmed GREEN at the checkpoint's last job inspection; other Windows jobs IN_PROGRESS). Ubuntu Python 3.13: **Ruff PASS, 2309 passed** (job `121113500863`); this does **not** establish whole-matrix GREEN.
+**Final engineering-document / checkpoint write-basis HEAD:** `aadcb8c6cfb475a1118e59702e6d84d109b3081b` (**CI #1039 / 40175039765**, Ubuntu 3/3 GREEN; Windows 3/3 IN_PROGRESS at last inspection).
+**Checkpoint-result HEAD:** This file cannot embed its own resulting commit SHA before GitHub creates that commit; normal `update_file.commit_sha` is authoritative and its own CI must be independently checked. Engineering-doc HEAD is the pre-checkpoint write basis, NOT the checkpoint-result HEAD.
+
+### Overall current ARK state
+
+**Local-first, disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** Neither authenticated human issuer/consent nor signed trusted clock, true ToolBackend outcome, cross-store atomic snapshot, real external exactly-once, real sensors/PC effects, autonomous notification, trained Candidate or live dispatch is available. Synthetic hashes and local receipts are **not** authorization or provenance attestation. **UNKNOWN/RUNNING and reserved-PENDING WRITE must not be automatically replayed.** Frozen evidence and PR gates stay protected.
+
+### NEW Run415 — five coherent free-only source/test packages, +25 parametrized pytest cases
+
+1. **Privacy exact request/scope/policy carriers (+5):** source `src/ark/personal_context_revocation_review.py` commit `0e8cd5bcae8216132f92cb8aa38a3a04da16a42c`; test `tests/test_personal_context_carrier_custody_run415.py` `3082a4f9691cafc706aa509eadc980d901b53133`. Deny equal-valued owner/query/policy/scope substitutions through veto callbacks; no private disclosure or model integration.
+2. **Audit-link post-COMMIT receipt custody (+6):** source `src/ark/agency/synthetic_occurrence_audit_link_review.py` `31ee1eda9e67b25ff6badc18be322435a3f70ab0`; test `tests/test_audit_link_receipt_commit_custody_run415.py` `e9bae7c6b4922a54f32dd77bd0be89704e35817b`. Reject forged or retargeted diagnostic outputs while retaining already committed SQLite evidence; no external backend/replay authority.
+3. **Startup graph fan-in/edge budget (+5):** source `src/ark/startup_readiness_review.py` `f43fceb7811b6f6e3eaee5d206bafaef4308e342`; test `tests/test_startup_dependency_budget_run415.py` `778301fe6cb31127fdbd87a822424dd5a4c9e055`, with fixture-only correction `3a399ebf614d8bbb33d3f2f6366173c6eab3e975`. Cap 10,000 nodes, 4,096 edges per node and 65,536 total. Exact boundary remains diagnostic-only; an over-limit cached snapshot rejects.
+4. **Observation rollover constructed-result custody (+4):** source `src/ark/observation_rollover_review.py` `1fdfcdb4f56171d003e01a53460aa8eccf2db7fd`; test `tests/test_observation_rollover_result_custody_run415.py` `7c9b94594f4fa3d03d0455c22ccd27737fab4441`. Recheck original window, retained witness and newly constructed result after callbacks; no camera/mic/notifications.
+5. **Coherent Memory snapshot request/scope carrier custody (+5):** source `src/ark/memory/coherent_snapshot_review.py` `be9f961e60cb21d9d6d7b813c3f695331baed739`; test `tests/test_memory_snapshot_exact_carriers_run415.py` `4f2d4dcb709f8840945b035ecc3b1247fe243006`. Reject equal-value owner/query/scope carrier replacement around tokenizer, SQLite snapshot phases and content-free digest; unchanged Memory v1 schema.
+
+**Engineering evidence/fault matrix:** `docs/JARVIS_PRIVACY_AUDIT_STARTUP_OBSERVATION_RUN415.md` at `aadcb8c6cfb475a1118e59702e6d84d109b3081b`. This documentation does not certify a hardware identity or grant consent.
+
+### CI / evidence fidelity — exact HEAD only
+
+- Run414 initial canonical **#1026 / 40173274118 SUCCESS all six** (independently checked at Run415 start). Prior #1024 / 40172966232 and #1025 / 40173155133 also completed SUCCESS all six.
+- Privacy suite **#1028 / 40174217707 SUCCESS**; audit-link suite **#1030 / 40174310139 SUCCESS**. No external actions occurred.
+- **#1034 / 40174658600 FAILED** at pre-correction observation+startup test HEAD `7c9b94594f4fa3d03d0455c22ccd27737fab4441`: Ubuntu Python 3.11/3.12 logs showed **2303 passed / 1 failed**, Ruff PASS. Cause: newly added forged-snapshot fixture supplied root dependency IDs in numeric rather than lexical order, reaching the existing canonical-dependency check before its intended aggregate-edge check. No source/denial semantics were weakened. Corrected only the test fixture in commit `3a399ebf614d8bbb33d3f2f6366173c6eab3e975`; failure history preserved.
+- Corrected startup **#1036 / 40174793843**: last inspection **5/6 GREEN**; Windows 3.12 IN_PROGRESS. Do not claim six-job GREEN yet.
+- **Latest five-package source/test #1038 / 40174947584** at exact `4f2d4dcb709f8840945b035ecc3b1247fe243006`: Ubuntu Python 3.11/3.12/3.13 **GREEN**, Windows three **IN_PROGRESS** at last inspection. Ubuntu 3.13 job `121113500863`: **All Ruff checks passed; 2309 passed in 114.82s**. Prior Run414 baseline 2284 + 25. Windows six-job GREEN not yet confirmed.
+- Final engineering doc **#1039 / 40175039765** at `aadcb8c6cfb475a1118e59702e6d84d109b3081b`: last inspection Ubuntu three **GREEN**, Windows three **IN_PROGRESS**. Distinct checkpoint-result commit's own CI is a later, independently required check. Never launch an equivalent duplicate CI run.
+- Exact nontruncated Git Tree comparison at engineering-doc HEAD `aadcb8c6cfb475a1118e59702e6d84d109b3081b` against unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs, 481 branch blobs, +387 branch-only blobs, 0 existing-main changed, 0 deleted**. Checkpoint changes only a branch-exclusive status file.
+
+### Frozen contracts and spend / authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher, frozen V3 Contract 1, Memory v1 and ActionAudit v1 schemas **unchanged**. PR #5 Draft/open/unmerged/NOT_PASSED and PR #8 Draft/open/unmerged. main untouched. No paid/potentially billable APIs/services, external GPU/computation, real Candidate/training/adapter/weights, protected V2 final-evaluation opening, promotions, credentials/account connection, physical PC, live external ToolBackend, camera/microphone, automatic notification, privacy deletion/export or irreversible architecture decision performed. Disconnected fixtures only; no human identity/consent/approval fabricated. External exactly-once, multi-store atomicity, true trusted clock and backend outcome remain blockers.
+
+### Next plan / 今後の方針
+
+1. Independently check **#1036**, exact five-package source/test **#1038**, final doc **#1039**, and this checkpoint-result HEAD's own Ubuntu/Windows/Python 3.11–3.13 CI. If FAIL, read logs and apply only the smallest semantics-preserving fix via normal Contents; switch to independent safe lanes while CI runs.
+2. Deepen Planner/PermissionGate/Occurrence/ActionAudit/AuditLink retained-prefix and crash/restart diagnoses under independent SQLite history loss; never auto-replay UNKNOWN or reserved-PENDING WRITE.
+3. Strengthen Memory CAS/concurrent update/expiry/snapshot and privacy-safe Personal Context revocation/retention with content minimization, no frozen-schema changes.
+4. Continue synthetic clock/issuer, startup readiness, Observation and proactive Scheduler independent interfaces; no live hardware, execution, media acquisition or notifications.
+5. Preserve V3 free-only approval/path/identity/reproducibility/contamination gates and PR #5 Draft/NOT_PASSED; real Candidate, external compute, protected V2 gate and main merge need explicit later approval.
+
+---
+
+**HISTORICAL — Run414 and earlier canonical evidence preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run 414**
 
 Saved at: **2026-10-25T16:34:14.113+09:00 Asia/Tokyo/JST** (automation runtime wall-clock sample immediately before normal Contents checkpoint write; NOT authenticated/trusted clock, independent signed timestamp, user consent or human approval).
