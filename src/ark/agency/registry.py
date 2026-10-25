@@ -12,11 +12,14 @@ from types import MappingProxyType
 from .contracts import Effect, ToolBackend, ToolCall
 
 _MAX_REGISTRATIONS = 256  # Bound hostile registration generators before hashing.
+_MAX_REGISTRATION_TEXT = 256  # Bound individual tool/identity text before hashing.
 
 
 def _text(name: str, value: object) -> str:
     if type(value) is not str or not value.strip():
         raise ValueError(f"{name} must be a non-empty exact string")
+    if len(value) > _MAX_REGISTRATION_TEXT:
+        raise ValueError(f"{name} exceeds registry identifier budget")
     return value
 
 
