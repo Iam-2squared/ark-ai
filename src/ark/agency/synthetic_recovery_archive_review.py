@@ -99,13 +99,27 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
         or type(archive.canonical_json) is not bytes
         or not 0 < len(archive.canonical_json) <= _MAX_BYTES
         or type(archive.digest) is not str
-        or archive.digest != _digest(archive.canonical_json)
     ):
         raise SyntheticRecoveryArchiveRejected("archive bytes or digest changed")
+    pinned_json, pinned_digest = archive.canonical_json, archive.digest
+    if pinned_digest != _digest(pinned_json):
+        raise SyntheticRecoveryArchiveRejected("archive bytes or digest changed")
+
+    def assert_archive_epoch() -> None:
+        # A frozen archive is reflectively mutable. Successful digest checks
+        # cannot authenticate a later, equal-valued bytes/string replacement.
+        if archive.canonical_json is not pinned_json or archive.digest is not pinned_digest:
+            raise SyntheticRecoveryArchiveRejected(
+                "recovery archive input epoch changed during decode"
+            )
+
+    assert_archive_epoch()
     try:
-        payload = json.loads(archive.canonical_json)
-        if _canonical(payload) != archive.canonical_json:
+        payload = json.loads(pinned_json)
+        assert_archive_epoch()
+        if _canonical(payload) != pinned_json:
             raise SyntheticRecoveryArchiveRejected("noncanonical recovery archive")
+        assert_archive_epoch()
         _check_keys(payload, (
             "version", "identity", "plan", "ledger", "audit", "link",
             "occurrences", "audit_links",
@@ -188,13 +202,18 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
             raise SyntheticRecoveryArchiveRejected(
                 "archive occurrence references are malformed"
             )
-        return (
+        result = (
             identity, plan, ledger, audit, link,
             tuple(occurrences), tuple((item[0], item[1]) for item in links),
         )
+        assert_archive_epoch()
+        return result
     except SyntheticRecoveryArchiveRejected:
         raise
-    except (KeyError, TypeError, ValueError, AttributeError, OverflowError, RuntimeError) as exc:
+    except (
+        KeyError, TypeError, ValueError, AttributeError, OverflowError,
+        RuntimeError, RecursionError,
+    ) as exc:
         raise SyntheticRecoveryArchiveRejected("invalid recovery archive") from exc
 
 
