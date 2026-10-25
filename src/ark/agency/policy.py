@@ -90,10 +90,15 @@ class PermissionGate:
                 try:
                     stable_grants = all(
                         type(previous) is CapabilityGrant
-                        and (
-                            previous.capability, previous.scope,
-                            previous.expires_at_ms,
-                        ) == epoch
+                        and all(
+                            current is original for current, original in zip(
+                                (
+                                    previous.capability, previous.scope,
+                                    previous.expires_at_ms,
+                                ),
+                                epoch, strict=True,
+                            )
+                        )
                         for previous, epoch in original_grants
                     )
                 except (AttributeError, TypeError, ValueError) as exc:
@@ -251,9 +256,12 @@ class PermissionGate:
                     ) == token_epoch
                     and all(
                         type(item) is CapabilityGrant
-                        and (
-                            item.capability, item.scope, item.expires_at_ms,
-                        ) == epoch
+                        and all(
+                            current is original for current, original in zip(
+                                (item.capability, item.scope, item.expires_at_ms),
+                                epoch, strict=True,
+                            )
+                        )
                         for item, epoch in grant_epochs
                     )
                 )
@@ -298,7 +306,12 @@ class PermissionGate:
                 ) == token_epoch
                 and all(
                     type(grant) is CapabilityGrant
-                    and (grant.capability, grant.scope, grant.expires_at_ms) == epoch
+                    and all(
+                        current is original for current, original in zip(
+                            (grant.capability, grant.scope, grant.expires_at_ms),
+                            epoch, strict=True,
+                        )
+                    )
                     for grant, epoch in grant_epochs
                 )
             )
@@ -335,7 +348,12 @@ class PermissionGate:
                         ) == token_epoch
                         and all(
                             type(grant) is CapabilityGrant
-                            and (grant.capability, grant.scope, grant.expires_at_ms) == epoch
+                            and all(
+                                current is original for current, original in zip(
+                                    (grant.capability, grant.scope, grant.expires_at_ms),
+                                    epoch, strict=True,
+                                )
+                            )
                             for grant, epoch in grant_epochs
                         )
                     )
