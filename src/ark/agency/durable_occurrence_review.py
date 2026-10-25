@@ -61,6 +61,11 @@ class SyntheticReservationReceipt:
         return False
 
 
+# Preserve the exact inert receipt class even if a synthetic fault fixture
+# replaces the exported constructor after the SQLite reservation has committed.
+_RECEIPT_CLASS = SyntheticReservationReceipt
+
+
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
     return tuple(
         tuple(row)
@@ -287,10 +292,31 @@ class SyntheticOccurrenceStore:
                 conn.rollback()
                 raise
         assert_input_epoch()
-        return SyntheticReservationReceipt(
+        # Constructing a receipt is a reflective callback after durable COMMIT.
+        # Reject forged/equal-text-retargeted results and changed inputs without
+        # pretending that the committed one-shot reservation was rolled back.
+        receipt_fields = (
             occurrence_id, first.registry_revision, first.bound_action_id,
             token_epoch[1], now_ms,
         )
+        receipt = SyntheticReservationReceipt(*receipt_fields)
+        assert_input_epoch()
+        if (
+            type(receipt) is not _RECEIPT_CLASS
+            or any(
+                getattr(receipt, name) is not original
+                for name, original in zip((
+                    "occurrence_id", "registry_revision", "bound_action_id",
+                    "request_id", "reserved_at_ms",
+                ), receipt_fields, strict=True)
+            )
+            or first.registry_revision is not receipt_fields[1]
+            or first.bound_action_id is not receipt_fields[2]
+        ):
+            raise SyntheticReplayRejected(
+                "synthetic receipt identity changed after reservation commit"
+            )
+        return receipt
 
     def count_synthetic(self) -> int:
         """Read-only count; missing DB is never created as a side effect."""
