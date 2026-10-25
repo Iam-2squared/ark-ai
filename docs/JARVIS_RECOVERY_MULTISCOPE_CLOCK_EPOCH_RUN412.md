@@ -4,7 +4,7 @@
 
 **Work-basis:** Run411 canonical checkpoint `02cb665a1b11496617974b2190ca914d812c9854`. Independently checked CI #990 / run `40163698641`: completed SUCCESS across Ubuntu/Windows Python 3.11–3.13. Earlier source #988 and engineering #989 also completed SUCCESS all six.
 
-## Implementation and regression matrix (three independent packages; +19 parametrized pytest cases)
+## Implementation and regression matrix (four independent packages; +23 parametrized pytest cases)
 
 ### 1. Detached recovery archive recheck custody (+7)
 
@@ -28,13 +28,20 @@
 - Replace dependency on reflectively mutable exported `EMPTY_CLOCK_WITNESS` for replay initialization and zero-count retained-witness validation with a fixed genesis field vector. Caller-side monkeypatching or reflective poisoning of the exported singleton must not reseed replay or redefine empty witness validity.
 - This is **not** an authenticated clock, signed timestamp, monotonic hardware receipt, human issuer, or grant for external action.
 
+### 4. Archived reserved PENDING WRITE must not be locally terminalized (+4)
+
+- Source `src/ark/agency/synthetic_recovery_archive_review.py` — `3bc9b4151f735253cc74a755392e4a2e4a4a0dcb`, following package 1.
+- Tests `tests/test_recovery_reserved_pending_run412.py` — `2e0e1df302a5d009ead4ee8923a1e5377e1fa02a`.
+- An independently retained archive with `step_state=PENDING` **and an already durable matching reservation** remains unresolved if a later local Planner journal says SUCCEEDED, FAILED, BLOCKED or CANCELLED. That journal-only transition is not a verified external outcome; the archive rechecker now rejects the attempted terminal reclassification.
+- Unchanged reserved-PENDING witnesses and unreserved PENDING→RUNNING witnesses remain diagnostic, with `external_outcome_known=false`, no ToolBackend invocation and no automatic replay. This is a stricter local restart boundary, not global exactly-once semantics.
+
 ## Validation integrity and known CI history
 
-- All eight source/test writes used the normal GitHub Contents API after fresh branch-HEAD reads. No force pushes, raw Git object/ref writes, duplicate workflow dispatches or main merges.
+- All ten source/test writes used the normal GitHub Contents API after fresh branch-HEAD reads. No force pushes, raw Git object/ref writes, duplicate workflow dispatches or main merges.
 - Historical exact-head CI #990, #989 and #988: SUCCESS all six before this run.
 - New archive source CI #991 and archive tests #992 launched automatically; check their six job conclusions independently.
 - Multiscope source/test CI #993/#994 exposed **7 existing test expectation mismatches** in Ubuntu Python 3.12: the earlier guard used one new generic denial message rather than established semantic distinctions; the #994 job reported 2211 passed / 7 failed, Ruff PASS. This is retained as failure evidence, not relabeled GREEN. The narrow later source change preserves the same fail-closed rejection while restoring established diagnostic categories, and the new tests were aligned with those categories. Validation is pending on exact correction HEAD #997/#998; do not transfer earlier CI results to those commits.
-- The clock source/test CI #995/#996 were initially running and inherited the pre-fix Memory mismatch. Do not claim all-six GREEN for them without explicit checks.
+- The clock source/test CI #995/#996 were initially running and inherited the pre-fix Memory mismatch. The reserved-PENDING source/test CI #1000/#1001 were queued at review; do not claim their success before the exact-head jobs complete. Do not claim all-six GREEN for them without explicit checks.
 - Final green status, job counts and SHA must be independently checked. No synthetic hash by itself authorizes operation or establishes external truth.
 
 ## Invariants and next review
