@@ -182,12 +182,34 @@ def review_synthetic_clock_sequence(
                     "synthetic clock sequence, source or time regressed"
                 )
             observed.append((sample, seq, source, wall, mono))
+            # A digest or constructor callback must not alter the previous
+            # link after it has been used in the chain. The sample/retained
+            # witness checks above do not cover the locally built result.
+            prior = result
+            prior_fields = _fields(prior)
+            prior_chain_carrier = prior.chain_hash
             next_hash = _hash(
                 "ARK-disconnected-clock-event-v1",
-                (seq, source, wall, mono, result.chain_hash),
+                (seq, source, wall, mono, prior_chain_carrier),
             )
             assert_epoch()
-            result = SyntheticClockWitness(seq, source, wall, mono, next_hash)
+            if (
+                _fields(prior) != prior_fields
+                or prior.chain_hash is not prior_chain_carrier
+            ):
+                raise SyntheticClockRejected("prior clock chain link changed")
+            if type(next_hash) is not str or not _CHAIN.fullmatch(next_hash):
+                raise SyntheticClockRejected("invalid synthetic clock event digest")
+            candidate = SyntheticClockWitness(seq, source, wall, mono, next_hash)
+            assert_epoch()
+            if (
+                _fields(prior) != prior_fields
+                or prior.chain_hash is not prior_chain_carrier
+                or type(candidate) is not SyntheticClockWitness
+                or _fields(candidate) != (seq, source, wall, mono, next_hash)
+            ):
+                raise SyntheticClockRejected("constructed clock chain link changed")
+            result = candidate
             if retained is not None and seq == retained.event_count and result != retained:
                 raise SyntheticClockRejected("retained clock prefix differs")
         # A generator's StopIteration/finally may mutate an earlier sample.
