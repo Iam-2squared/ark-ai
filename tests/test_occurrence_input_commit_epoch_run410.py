@@ -49,7 +49,7 @@ def test_token_id_mutated_during_digest_cannot_reserve(tmp_path, monkeypatch):
     real = hashlib.sha256
 
     def mutate_digest(payload=b""):
-        if payload.startswith(b"ARK-synthetic-v1\\0"):
+        if payload.startswith(b"ARK-synthetic-v1\0"):
             object.__setattr__(token, "token_id", "token-retargeted")
         return real(payload)
 
@@ -67,7 +67,7 @@ def test_equal_arguments_carrier_changed_during_digest_cannot_reserve(
     real = hashlib.sha256
 
     def mutate_digest(payload=b""):
-        if payload.startswith(b"ARK-synthetic-v1\\0"):
+        if payload.startswith(b"ARK-synthetic-v1\0"):
             _equal_arguments_replacement(call)
         return real(payload)
 
