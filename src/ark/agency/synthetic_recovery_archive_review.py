@@ -34,6 +34,9 @@ _LABEL = b"ARK-synthetic-recovery-archive-v1\0"
 _MAX_BYTES = 4_000_000
 _ALLOWED_STATES = frozenset(state.value for state in StepState)
 _OCCURRENCE_ID = re.compile(r"occ_[0-9a-f]{64}$")
+_REQUEST_ID = re.compile(r"act_[0-9a-f]{64}$")
+_REGISTRY_REVISION = re.compile(r"tools_[0-9a-f]{64}$")
+_BOUND_ACTION_ID = re.compile(r"bound_[0-9a-f]{64}$")
 
 
 class SyntheticRecoveryArchiveRejected(RuntimeError):
@@ -120,6 +123,9 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
             or type(identity["step_state"]) is not str
             or identity["step_state"] not in _ALLOWED_STATES
             or type(identity["ambiguous_write"]) is not bool
+            or _REQUEST_ID.fullmatch(identity["request_id"]) is None
+            or _REGISTRY_REVISION.fullmatch(identity["registry_revision"]) is None
+            or _BOUND_ACTION_ID.fullmatch(identity["bound_action_id"]) is None
         ):
             raise SyntheticRecoveryArchiveRejected("archive identity is malformed")
         # Recovery marks precisely the RUNNING state as ambiguous. An archive
@@ -171,6 +177,12 @@ def _restore(archive: SyntheticRecoveryArchive) -> tuple:
             or len({item[0] for item in links}) != len(links)
             or len({item[1] for item in links}) != len(links)
             or any(item[0] not in occurrences for item in links)
+            # Offline archives must be deterministic local prefixes: neither
+            # forged ordering nor impossible row/event references are valid.
+            or occurrences != sorted(occurrences)
+            or links != sorted(links)
+            or len(occurrences) > len(ledger.row_hashes)
+            or any(item[1] > audit.tail_event_id for item in links)
             or links and link is None
         ):
             raise SyntheticRecoveryArchiveRejected(
