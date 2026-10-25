@@ -283,8 +283,14 @@ def review_coherent_snapshot(
     canonical = json.dumps(
         payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
+    # Serialization and hashing are separate reentrant callback boundaries.
+    # A transient retarget during JSON encoding must not be masked by a
+    # subsequent hash callback that restores the original input carriers.
     assert_epoch()
     assert_record_epochs()
-    return CoherentSnapshotReview(
-        now, scopes, tuple(results), hashlib.sha256(canonical).hexdigest()
-    )
+    digest = hashlib.sha256(canonical).hexdigest()
+    # SHA-256 hooks may also mutate the request, source or hydrated rows.
+    # Refuse a stale but apparently well-formed witness after final hashing.
+    assert_epoch()
+    assert_record_epochs()
+    return CoherentSnapshotReview(now, scopes, tuple(results), digest)
