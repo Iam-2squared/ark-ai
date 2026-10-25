@@ -1,5 +1,58 @@
 # ARK AI Project Status
 
+**LATEST — Run 416**
+
+Saved at: **2026-10-25T17:32:53.712+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample before normal GitHub Contents write; NOT signed trusted-clock evidence, account identity, user consent, or spending authorization).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `3d432f31c717680c156784a332c864994b47f196` (corrected Run415 canonical checkpoint; CI **#1041 / 40175442656 SUCCESS all six** verified before Run416 changes).
+**Five-package source+test HEAD:** `de5dfc6e49e31cc77d4ea6cafd36b359f6e25074`; **CI #1054 / 40176769873**. Its Ubuntu Python 3.13 job `121119020437` reports **Ruff All checks passed; 2349 passed in 74.56 s**. Last independently sampled matrix SUCCESS: ["test (ubuntu-latest, 3.12)","test (ubuntu-latest, 3.13)","test (ubuntu-latest, 3.11)"]. Not yet confirmed: ["test (windows-latest, 3.11) (in_progress)","test (windows-latest, 3.13) (in_progress)","test (windows-latest, 3.12) (in_progress)"]. This is NOT a whole-matrix GREEN assertion unless all six listed.
+**Final engineering-document / checkpoint write-basis HEAD:** `c56c172a9388dd5f0485e5ec9b953170e8263e5a`; **CI #1055 / 40176821799**. Last independently sampled SUCCESS: ["test (ubuntu-latest, 3.12)","test (ubuntu-latest, 3.11)","test (ubuntu-latest, 3.13)"]; not yet confirmed: ["test (windows-latest, 3.12) (in_progress)","test (windows-latest, 3.11) (in_progress)","test (windows-latest, 3.13) (in_progress)"].
+**Checkpoint-result HEAD:** the SHA cannot be embedded in this same file before the normal GitHub Contents API creates its commit. The resulting `update_file.commit_sha` is authoritative; independently verify that new HEAD and its own CI. The doc HEAD above is the **pre-checkpoint basis**, not the checkpoint-result SHA.
+
+### Overall current ARK state
+
+**Local-first disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated human issuer or consent, signed trusted clock, real ToolBackend outcome, atomic multi-SQLite snapshot, external exactly-once effects, live sensors/PC tools, autonomous notifications, trained Candidate, or real dispatch. Local receipts/digests are NOT permission, proof of identity, or attested provenance. **UNKNOWN/RUNNING and reserved-PENDING WRITE must not be replayed automatically.**
+
+### NEW Run416 — five coherent zero-cost packages, +40 parametrized pytest cases
+
+1. **Proactive policy carrier/receipt custody (+10):** source `src/ark/proactive_synthetic_review.py` at `8b752d7b81876fec141e9178efd919db6effa1d9`, test `tests/test_proactive_commit_policy_custody_run416.py` at `c165ec5af8e0e68bc4ab93dde0f8a472b7503cd7`. Bounds owner/namespace/definition/policy revision to 512 characters, requires exact original policy-field carriers through hash/SQLite review, checks post-COMMIT policy/retained/receipt drift and preserves committed marker on late denial. Ruff-only `zip(..., strict=True)` fix `171ed45e1085298b8c2b366f36c961d033d75134`; test-only deferred duplicate attempt at 200ms `5f17a9dc87b8f94b1e167a0d767119223b5b5a0a`. No live notifications.
+2. **Synthetic clock prior chain-link custody (+7):** source `src/ark/agency/synthetic_clock_sequence_review.py` `1d5fad97ede447e83e9848f7087ab2665b541eaf`; test `tests/test_synthetic_clock_chain_custody_run416.py` `d9f4d014cea6d3171a2c9f947f49625212906142`. Reject hash/constructor callbacks that alter prior computed witness or yield malformed digests; time origin remains untrusted.
+3. **Direct Personal Context veto exact carriers (+8):** source `src/ark/personal_context_revocation_review.py` `3e2b3c88a7381e7b98f3993c5ac50a467b0bb35d`; test `tests/test_privacy_direct_scope_custody_run416.py` `2d6e14cf42f0442b26322e77a738bebfa7b3a8a5`. `revoke` and `assert_not_revoked` reject value-identical owner/namespace replacement around digest/schema callbacks; no real consent, deletion or context disclosure.
+4. **Memory event scope/history custody (+8):** source `src/ark/memory/synthetic_event_continuity_review.py` `e9da03dce7deda9ca41d6f2976249a917a1f2f42`; test `tests/test_memory_event_scope_chain_custody_run416.py` `7bc1f85010eced646b55694720aeb360ba969041`. Pin source/scope and retained-witness fields before scope/genesis hashing, witness shape review and SQLite opening; reject previous event-link tamper. No Memory v1 schema change.
+5. **ToolRegistry identifier budget (+7):** source `src/ark/agency/registry.py` `1a8331268896a210a446d07a336a6dfe2ed1ae15`; test `tests/test_registry_identifier_budget_run416.py` `de5dfc6e49e31cc77d4ea6cafd36b359f6e25074`. Bound registration name/capability/backend-id text at 256 chars before hashing; unchanged deterministic reference vectors and no backend dispatch.
+
+**Exact engineering fault matrix and safety scope:** `docs/JARVIS_PROACTIVE_CLOCK_PRIVACY_MEMORY_CUSTODY_RUN416.md` at `c56c172a9388dd5f0485e5ec9b953170e8263e5a`. No attestation or authorization is inferred.
+
+### CI and failure history — never extrapolate from earlier HEADs
+
+- Corrected Run415 checkpoint **#1041 / 40175442656 SUCCESS all six**. Prior Run415 #1036/#1038/#1039/#1040 also completed SUCCESS.
+- Run416 early **#1042–#1049 FAILED** at Ruff B905 on the same two missing `zip(strict=...)` expressions in the new proactive review. Source corrected via ordinary Contents update `171ed45e1085298b8c2b366f36c961d033d75134`; no policy bypass.
+- **#1050 / 40176449113 FAILED** at pre-test-correction HEAD: Ubuntu Python 3.13 Ruff PASS and **2340 passed / 2 failed**, both new proactive fixtures expecting duplicate reservation denial before existing minimum-interval denial. Test-only correction changes the second synthetic timestamp to 200ms while keeping both rejection checks. **#1051** also predates that correction; do not claim GREEN.
+- Corrected four-package HEAD **#1052 / 40176622459** at `5f17a9dc87b8f94b1e167a0d767119223b5b5a0a`: Ubuntu 3.13 job `121118572078` **Ruff PASS / 2342 passed in 70.43s**. Overall six-job result must be confirmed separately.
+- Final five-package source+test **#1054 / 40176769873** at `de5dfc6e49e31cc77d4ea6cafd36b359f6e25074`: Ubuntu 3.13 job `121119020437` **Ruff PASS / 2349 passed in 74.56s**. Remaining OS matrix result accurately shown above; not claimed GREEN until all six succeed.
+- Engineering document **#1055 / 40176821799** at `c56c172a9388dd5f0485e5ec9b953170e8263e5a`: status above. Check this distinct checkpoint-result HEAD's own automatically triggered CI; do not launch duplicate runs.
+
+**Nontruncated exact Git Tree comparison** at document HEAD `c56c172a9388dd5f0485e5ec9b953170e8263e5a` vs unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs / 487 branch blobs / 393 added / zero existing-main modified / zero removed**. Status is a branch-exclusive file; checkpoint cannot change main files.
+
+### Frozen contracts / cost, approval and privacy boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence and V3 Contract 1 remain unchanged. Memory v1/ActionAudit v1 SQL schemas unchanged. PR #5 Draft/open/unmerged/NOT_PASSED; PR #8 Draft/unmerged; main untouched. No paid/potentially billable APIs/services/external GPU/computation, real Candidate/preflight/weights, protected V2 final-evaluation opening, Candidate promotion, new credentials/account connections, real ToolBackend, physical PC/sensor execution, notification, private-data export/deletion, frozen-contract modification, irreversible operation, or merge performed. Only local synthetic diagnostic code and tests were changed. External exactly-once, signed clock, authenticated issuer/consent, true backend outcome and multi-store atomicity remain hard blockers.
+
+### Next plan / 今後の方針
+
+1. Independently check **#1052**, **#1054** exact source+test, **#1055** doc, and checkpoint-result HEAD's *own* Ubuntu/Windows Python 3.11–3.13 CI. If FAIL, inspect logs and make only the smallest semantics-preserving normal Contents fix while advancing a different module; never rerun equivalent workflow.
+2. Advance Planner/PermissionGate/Occurrence/ActionAudit/AuditLink multi-store crash/restart and retained-PENDING/UNKNOWN WRITE non-replay, including concurrent partial history loss; no dispatch or replay authority.
+3. Deepen Memory CAS/concurrent updates/expiry/coherent snapshots, privacy-aware Personal Context revocation/reuse/retention fences, without changing schemas.
+4. Improve disconnected mock issuer/trusted-clock audit ordering, startup fail-shut, observation fixtures and proactive scheduler contracts; no actual hardware/media/notifications.
+5. Keep V3 free-only identity/path/provenance/reproducibility approval guards on the gated Draft PR #5; explicit authorization required for external compute, Candidate, protected evaluation or main merge.
+
+---
+
+**HISTORICAL — Run415 and earlier canonical checkpoints/evidence preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run 415**
 
 **Evidence correction at 2026-10-25T17:08:12.579+09:00 JST:** The first Run415 status write understated the already-verified #1038 Windows job count as 0/3 rather than 2/3. This normal Contents correction fixes only that factual reporting error; no source or CI was changed. The earlier status commit remains in history and is not treated as a separate engineering package.
