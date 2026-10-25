@@ -43,6 +43,7 @@ from .synthetic_occurrence_audit_link_review import (
 from .synthetic_occurrence_continuity_review import (
     _COLUMNS,
     SyntheticLedgerWitness,
+    _MAX_WITNESS_ROWS,
     _digest,
     assert_synthetic_history_continues,
     read_synthetic_ledger_witness,
@@ -243,10 +244,23 @@ def review_synthetic_write_recovery(
             conn.execute("BEGIN")
             try:
                 _validate(conn)
-                rows = tuple(conn.execute(_COLUMNS))
-                hashes = tuple(sorted(
-                    _digest("ARK-reservation-row-v1", row) for row in rows
+                # The direct triage reader must enforce the same finite scan
+                # budget as the standalone retained-witness reader. A corrupt
+                # or unexpectedly huge local ledger cannot allocate an
+                # unbounded tuple before validation.
+                rows = tuple(conn.execute(
+                    _COLUMNS + " LIMIT ?", (_MAX_WITNESS_ROWS + 1,),
                 ))
+                assert_epoch()
+                if len(rows) > _MAX_WITNESS_ROWS:
+                    raise SyntheticRecoveryRejected(
+                        "synthetic recovery reservation row budget exceeded"
+                    )
+                row_hashes = []
+                for row in rows:
+                    row_hashes.append(_digest("ARK-reservation-row-v1", row))
+                    assert_epoch()
+                hashes = tuple(sorted(row_hashes))
                 ledger = SyntheticLedgerWitness(
                     hashes,
                     "synthetic_ledger_" + _digest("ARK-ledger-v1", hashes),
