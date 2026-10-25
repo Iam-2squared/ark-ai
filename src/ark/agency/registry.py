@@ -211,11 +211,12 @@ class ToolRegistry:
         # Direct resolution must obey the same original-input boundary as
         # bind(). A callback in get() may reflectively retarget a frozen call
         # or alter registered backend/effect identity after its first check.
-        stable = ToolCall(call.tool, call.capability, call.scope, call.arguments)
-        epoch = (
-            stable.tool, stable.capability, stable.scope, stable.request_id,
-            call.arguments,
-        )
+        # Capture the ORIGINAL caller-owned scalar carriers before ToolCall
+        # construction, which may itself be a synthetic callback boundary.
+        original = (call.tool, call.capability, call.scope, call.arguments)
+        stable = ToolCall(*original)
+        epoch = (stable.tool, stable.capability, stable.scope, stable.request_id)
+
 
         def assert_call_epoch() -> None:
             if (
@@ -223,8 +224,14 @@ class ToolRegistry:
                 or type(call.capability) is not str
                 or type(call.scope) is not str
                 or (call.tool, call.capability, call.scope, call.request_id)
-                != epoch[:4]
-                or call.arguments is not epoch[4]
+                != epoch
+                or any(
+                    value is not first
+                    for value, first in zip(
+                        (call.tool, call.capability, call.scope, call.arguments),
+                        original, strict=True,
+                    )
+                )
             ):
                 raise ValueError("ToolCall identity changed during registry resolution")
 
@@ -252,8 +259,8 @@ class ToolRegistry:
         # A callback can replace a frozen ToolCall's arguments with a new,
         # value-equal mapping after resolve() has finished its own checks.
         # That is a new caller input epoch even when request_id is unchanged.
-        original_arguments = call.arguments
-        stable = ToolCall(call.tool, call.capability, call.scope, original_arguments)
+        original = (call.tool, call.capability, call.scope, call.arguments)
+        stable = ToolCall(*original)
         original_request_id = stable.request_id
 
         def assert_call_unchanged() -> None:
@@ -264,7 +271,13 @@ class ToolRegistry:
                 or (call.tool, call.capability, call.scope)
                 != (stable.tool, stable.capability, stable.scope)
                 or call.request_id != original_request_id
-                or call.arguments is not original_arguments
+                or any(
+                    value is not first
+                    for value, first in zip(
+                        (call.tool, call.capability, call.scope, call.arguments),
+                        original, strict=True,
+                    )
+                )
             ):
                 raise ValueError("ToolCall identity changed during registry binding")
 
