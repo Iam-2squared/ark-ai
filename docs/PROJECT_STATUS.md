@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — Run 407**
+
+Saved at: **2026-10-25T10:55:57.308+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this standard GitHub Contents API write; **not** authenticated trusted time, human approval, or server attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact work-basis HEAD:** `89de461e7030b9f747b2d7cfc2df435b9a568d02` (prior Run406 checkpoint, **CI #927 / run `40148292385`: completed SUCCESS all six**).
+**Four-package source+test HEAD:** `678967a236d200dfcea9eb4274b9bffbc83b2e31` (**CI #935 / run `40152100238`: completed SUCCESS all six**, Ubuntu Python 3.13 job `121045583556` Ruff PASS and **2088 pytest PASS**).
+**Final five-package source+test HEAD:** `5000a6315cf98615d87430d85b75ce03bbd32c0f` (**CI #938 / run `40152265950`: Ubuntu 3/3 GREEN; Windows 3 IN PROGRESS at latest job read**; Ubuntu Python 3.13 job `121046070261` Ruff **All checks passed** / **2095 pytest passed in 42.06s**. Do not claim all-six GREEN until Windows jobs finish).
+**Engineering-doc / checkpoint write-basis HEAD:** `35141502f6c3704ed29268474a60ab6941523da3` (**CI #939 / run `40152412918`: IN PROGRESS**). This is the freshly verified **pre-write** HEAD, not this checkpoint's resulting commit.
+**Checkpoint-result HEAD:** cannot be known within this file before GitHub writes the commit. Only the standard Contents API `update_file.commit_sha` response identifies it, and its own exact-head CI must be verified separately.
+
+### Overall ARK state
+
+**Local-first disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated human issuer/consent, external trusted clock, live backend/outcome receipt, atomic four-SQLite snapshot, OS inode custody, real device integration, trained Candidate or externally verified exactly-once effects. Neither an independent local hash witness nor a synthetic SUCCEEDED marker grants authority. A RUNNING/UNKNOWN WRITE **must not be automatically replayed**. All frozen V1/V2/Local UI/Launcher evidence, frozen V3 Contract 1, Memory v1 and ActionAudit v1 schema, and protected V2 final evaluation stay unchanged.
+
+### NEW Run407 — five FREE-only implementation/test packages, +33 synthetic regression cases
+
+1. **Mock receipt exact subject binding (+8):** `src/ark/agency/synthetic_mock_action_cycle_review.py`, `tests/test_mock_reservation_receipt_binding_run407.py`. Validate returned reservation exact type and original bound WRITE occurrence/registry/action/request/time **before** ActionAudit or mock SUCCEEDED. A rejected receipt leaves the separately persisted journal RUNNING/UNKNOWN and forbids replay; no backend dispatch.
+2. **Coherent occurrence retained prefix (+8):** `src/ark/agency/synthetic_occurrence_continuity_review.py`, `tests/test_synthetic_ledger_retained_snapshot_run407.py`. Independently retained ledger witness is pinned and checked inside the **same** read-only SQLite snapshot; direct two-witness comparison holds both carrier epochs; bounded 10,000 rows. Initial source `0c71e027fe8e471a2d2e8dca9161d269b63787d3` had faulty escaped regex/domain markers (**CI #930 FAIL**), repaired via ordinary Contents write `3cc08f734d13d1c6606819abfab69d796b60bdeb`; source+tests `b60fd7feef57eb55065603104dafccd3d682fccb` **CI #932 SUCCESS all six**.
+3. **Observation original ingress identity (+7):** `src/ark/observation_window_review.py`, `tests/test_observation_header_ingress_run407.py`. Pin original time/age/privacy header and envelope tuple before first reentrant validation, protect item carriers during hydration and on reuse; no camera, microphone, screen capture or privacy export. Source+tests `674cd29dd006a95adc66ae522cd26dfc35cbba09` **CI #934 SUCCESS all six**.
+4. **Mixed multi-WRITE DAG crash/restart (+3):** `tests/test_synthetic_write_plan_mixed_restart_run407.py`. Unknown root, READ bridge, held dependent WRITE, independent synthetic SUCCEEDED WRITE and terminal FAILED propagation are diagnosed across four separately committed SQLite stores and retained evidence. No external result or replay authority. Included in #935 SUCCESS.
+5. **Proactive retained-witness SQLite-open custody (+7):** `src/ark/proactive_synthetic_continuity_review.py`, `tests/test_proactive_witness_open_epoch_run407.py`. Verify original path/retained witness after resolve, URI, connection, BEGIN before schema and row reads; rejected handle closes, no notification. Source `b2f28cf9d384c898b142b0f88fec53aff4635550` **CI #937 SUCCESS all six**; full five-package test head #938 Windows pending at last read.
+
+**Engineering threat/evidence matrix:** `docs/JARVIS_RECEIPT_LEDGER_INGRESS_DAG_RUN407.md` (final document basis `35141502f6c3704ed29268474a60ab6941523da3`). All saves through ordinary GitHub Contents API on the existing Draft branch; no raw Git objects, ref updates, force pushes, workflow reruns, branch merges, external GPU, chargeable API, device action or real ToolBackend. The initial 2062 tests plus 33 added cases are **2095 passed on Ubuntu Python 3.13 exact final source+test HEAD #938**, not yet a Windows/all-six claim.
+
+### CI / protected evidence integrity
+
+- Initial #927 / `40148292385`: **SUCCESS all 6**.
+- Mock #929 / `40151630127`: **SUCCESS all 6**.
+- Faulty ledger source #930 / `40151753321`: **FAIL**; corrected source #931 SUCCESS; ledger source+tests #932 / `40151817426`: **SUCCESS all 6**.
+- Observation source #933 SUCCESS; source+tests #934 / `40152005809`: **SUCCESS all 6**.
+- Four-package #935 / `40152100238`: **SUCCESS all 6**, Ruff PASS, 2088 passed.
+- Proactive source #937 / `40152234219`: **SUCCESS all 6**; five-package #938 / `40152265950`: **3/6 GREEN / 0 FAIL / 3 Windows IN PROGRESS** when inspected. Ubuntu Python 3.13 **2095 passed** and Ruff PASS. Engineering doc #939 / `40152412918`: **IN PROGRESS** (no final PASS claim).
+- Non-truncated, SHA-based recursive Git Trees at five-package test HEAD vs main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 existing main blobs vs 438 PR blobs, 344 added, 0 modified existing-main, 0 deleted**. Final doc changed only an existing new branch document; frozen main files remain untouched.
+- V3 **PR #5 independently verified Draft/open/unmerged/NOT_PASSED**, HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`.
+
+### Blockers / explicit authorization boundaries
+
+No paid or potentially billable services/API/GPU/cloud, real model Candidate/preflight/weights, external compute, protected V2 final evaluation, Candidate promotion, frozen-contract edits, main merge requiring approval, new credentials/accounts, physical device/sensor operations, unreviewed privacy export/erasure, destructive/irreversible actions, or live WRITE. Authenticated consent/issuer, externally trusted clock, real outcome receipts, verified exactly-once side effects and cross-store atomicity are unresolved. Stay in safe, reversible independent free lanes.
+
+### Next plan / 今後の方針
+
+1. Recheck exact-head five-package **#938** and engineering-doc **#939** across Ubuntu/Windows Python 3.11–3.13; separately check **the eventual checkpoint-result SHA's own CI**. If FAIL, preserve failed evidence and make only a narrow normal-Contents fix; never duplicate an equivalent workflow run.
+2. Expand independent four-DB failure/race/erasure diagnostics with retained witnesses and UNKNOWN non-replay; keep diagnostic DAG holds distinct from authenticated execution authority.
+3. Continue Memory row/event CAS, coherent snapshot/expiry races, privacy-safe Personal Context revocation/projection and bounded observations without altering frozen schemas.
+4. Develop deny-by-default trusted issuer/clock/audit-before-action interfaces and disconnected Scheduler/Observation adapter fixtures; only integrate components on exact-head GREEN evidence.
+5. Preserve V3 free-only provenance/identity/path/reproducibility approvals. PR #5 stays Draft/NOT_PASSED; do not pay, train, open protected eval, promote Candidate or merge without explicit user authorization.
+
+---
+
+**HISTORICAL — Run406 and earlier evidence preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 406**
 
 Saved at: **2026-10-25T09:50:52.202+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this ordinary GitHub Contents API write; **NOT** authenticated trusted time, user consent or a GitHub server timestamp).
