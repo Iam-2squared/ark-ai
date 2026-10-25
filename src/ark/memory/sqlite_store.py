@@ -334,16 +334,29 @@ class SQLiteMemoryStore:
             raise TypeError("include_expired must be a bool")
         # Bind both the database read and its expiry clock to the same read
         # transaction; reject scope retargeting by a reentrant clock callback.
-        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        # Capture original caller carriers before any SQLite or clock callback.
+        original_owner, original_namespace = scope.owner_id, scope.namespace
+        pinned_scope = MemoryScope(original_owner, original_namespace)
         path_epoch = self.path
+
+        def assert_scope_carrier() -> None:
+            if (scope.owner_id is not original_owner
+                    or scope.namespace is not original_namespace):
+                raise MemorySchemaError("memory get scope changed during read")
+
+        assert_scope_carrier()
         with closing(self._connect_readonly()) as conn:
+            assert_scope_carrier()
             conn.execute("BEGIN")
+            assert_scope_carrier()
             _validate_v1_schema(conn)
+            assert_scope_carrier()
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
                 (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchone()
+            assert_scope_carrier()
             if row is None:
                 if (scope.owner_id, scope.namespace) != (
                     pinned_scope.owner_id, pinned_scope.namespace
@@ -353,8 +366,11 @@ class SQLiteMemoryStore:
                     raise MemorySchemaError("memory get source changed during read")
                 return None
             record = _record(row)
+            assert_scope_carrier()
             record_epoch = _hydrated_record_epoch(record)
+            assert_scope_carrier()
             now = self._now() if not include_expired else None
+            assert_scope_carrier()
             if (scope.owner_id, scope.namespace) != (
                 pinned_scope.owner_id, pinned_scope.namespace
             ):
@@ -362,12 +378,14 @@ class SQLiteMemoryStore:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory get source changed during read")
             expired = now is not None and _expired(record, now)
+            assert_scope_carrier()
             if _hydrated_record_epoch(record) != record_epoch:
                 raise MemorySchemaError("decoded Memory get record changed during read")
             if (scope.owner_id, scope.namespace) != (
                 pinned_scope.owner_id, pinned_scope.namespace
             ) or self.path is not path_epoch:
                 raise MemorySchemaError("memory get input changed during expiry check")
+            assert_scope_carrier()
             if expired:
                 return None
             return record
