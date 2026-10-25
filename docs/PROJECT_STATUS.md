@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — Run 418**
+
+Saved at: **2026-10-25T18:30:11.623+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample immediately before a normal GitHub Contents write; NOT a signed trusted-clock witness, account identity, human authorization or consent).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `797eb1675c68cb02b56cb66e1e21ca267014d6ec` (Run417 five-package technical document; **CI #1069 / 40179116377 SUCCESS all six** verified at invocation start).
+**Latest five-package source+test HEAD:** `d0033f24626c9060167a86785b24daa3af6fc9bf` (**CI #1080 / 40180530603**). At the last exact-head job inspection Ubuntu Python 3.11/3.12/3.13 **SUCCESS**; Windows Python 3.11/3.12/3.13 **IN_PROGRESS**. Ubuntu Python 3.13 job `121130437900` reports **Ruff All checks passed / 2446 passed in 116.74s**. This is **NOT an all-six GREEN assertion** until Windows jobs independently succeed.
+**Final engineering-document / checkpoint write-basis HEAD:** `f7616513973c730a6ac4c8783f0be945f12777ce` (CI **#1081 / 40180643128**: last sampled 1/6 SUCCESS, five jobs IN_PROGRESS).
+**Checkpoint-result HEAD:** This markdown cannot contain its own resulting SHA before GitHub creates the commit. The normal `update_file.commit_sha` response is authoritative; check that distinct resulting HEAD and its **own** CI separately. The document basis HEAD above is **not** the checkpoint-result HEAD.
+
+### Overall current ARK state
+
+**Local-first, disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated human consent/issuer, signed trusted clock, real ToolBackend outcome confirmation, multi-SQLite atomic snapshot, external exactly-once WRITE, live sensors or physical PC, automatic notification, trained Candidate, or real dispatch. Hashes and diagnostic receipts are **not** authorization or attested provenance. **UNKNOWN/RUNNING and reserved-PENDING WRITE must never be replayed automatically.** The improvements below only reject inconsistent synthetic evidence.
+
+### NEW Run418 — five isolated, zero-cost implementation+regression packages (+45 pytest cases)
+
+1. **Memory post-COMMIT DELETE/expiry-purge epoch (+12)**: source `src/ark/memory/sqlite_store.py` at `f2e05414295c055eb35fe4fb758086d1d88f4b9e`, tests `tests/test_memory_delete_purge_commit_fence_run418.py` at `1633c107b0020b6c2f6c1957ddd91edcf5c1cae4`. Refuses a clean return when caller scope or SQLite path changes after COMMIT; durable deletion and matching event remain committed, **not rolled back** and not safe to retry. Memory v1 DDL unchanged.
+2. **Privacy retention first/final hash epoch (+10)**: source `src/ark/personal_context_retention_review.py` at `df72763298325c330c3542121acfba23d60728f8`, tests `tests/test_retention_first_hash_and_final_result_run418.py` at `2178e0420807908c487f5d6fd8f9d3217f906643`. Pins original owner/namespace and independent store paths **before** first scope hashing; rechecks row/source epoch after final digest and result construction. Inventory is read-only/content-minimized and does not prove consent or deletion; stores are not atomically coupled.
+3. **Plan-wide returned recovery constructor (+5)**: source `src/ark/agency/synthetic_write_plan_recovery_review.py` at `836969694bc54a648b41e3f8ac4be94affb79ddd`, tests `tests/test_plan_recovery_final_result_epoch_run418.py` at `d11793fc8e67c67db8e212087cd6e45d66bc64f4`. Verifies exact returned step/uncertainty/topology carriers and previously reviewed witnesses *after* final result construction; no external outcome inferred.
+4. **Synthetic clock final constructed witness (+7)**: source `src/ark/agency/synthetic_clock_sequence_review.py` at `ee35f3a5dde14d073ca07689aa7b52aef6f0bd78`, tests `tests/test_clock_constructed_result_generator_epoch_run418.py` at `317732d41d33d5daf739ec81c16b902235d35cb1`. Rejects reflected chain-result mutation during next sample or iterator completion; time remains caller-supplied/untrusted.
+5. **Observation-trigger bounded ingress/output (+11)**: source `src/ark/proactive_observation_lineage_fence_review.py` at `9e0e352424a462520df981c33a95273490bd0970`, tests `tests/test_observation_trigger_budget_and_final_result_run418.py` at `d0033f24626c9060167a86785b24daa3af6fc9bf`. Bounds source UTF-8 metadata to 1024, observation tuple to 256 and selected ID to 256; denies late review result/envelope/trigger retargeting. No camera, microphone, screen capture, notification or dispatch.
+
+**Exact engineering fault matrix:** `docs/JARVIS_POSTCOMMIT_RETENTION_PLAN_CLOCK_RUN418.md` at `f7616513973c730a6ac4c8783f0be945f12777ce`, including original individual source/test HEADs, denial scope, CI and failure history.
+
+### CI and evidence integrity — exact HEAD only
+
+- Run417 opening HEAD **#1069 / 40179116377 SUCCESS all six**; preceding Run417 #1068 also SUCCESS.
+- Memory source+test **#1071 / 40179847950 SUCCESS all six**. Privacy source+test **#1073 / 40179975244 SUCCESS all six**. Planner source-only **#1074 / 40180037513 SUCCESS all six**.
+- Planner source+test **#1075 / 40180078670 FAILED** only on Windows Python 3.12: existing **frozen Local UI** `tests/ui/test_server.py::test_cross_origin_reads_and_writes_rejected[headers2]` encountered `ConnectionAbortedError [WinError 10053]` in the HTTP client. Other five jobs SUCCESS. Do not alter frozen UI or claim a source defect without reproduction. Preserve failed history; do not launch duplicate equivalent reruns.
+- Clock source+test **#1077 / 40180189276 SUCCESS all six**. Other automatically triggered intermediate commits retain their own evidence.
+- Latest five-package source+test **#1080 / 40180530603** at `d0033f24626c9060167a86785b24daa3af6fc9bf`: at final sample **3/6 Ubuntu GREEN**, **three Windows IN_PROGRESS**, no whole-matrix claim. Ubuntu3.13 job `121130437900`: **Ruff PASS / 2446 passed**. Baseline 2401 Run417 + 45 = 2446 verified on Ubuntu 3.13.
+- Engineering-doc **#1081 / 40180643128** at `f7616513973c730a6ac4c8783f0be945f12777ce`: **1/6 GREEN**, five IN_PROGRESS at last sampled check. Check checkpoint-result HEAD and CI independently after this write; no manual equivalent workflow dispatches.
+- **Nontruncated exact Git Tree comparison** at doc HEAD `f7616513973c730a6ac4c8783f0be945f12777ce` vs unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs; 499 branch blobs; 405 branch-only added; zero existing-main modified; zero removed**. This status file is already branch-exclusive, and no main file was edited.
+
+### Frozen contracts, approval/privacy and zero-cost boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1, Memory v1 and ActionAudit v1 schema **unchanged**. **PR #5 Draft/open/unmerged/NOT_PASSED** and PR #8 Draft/unmerged; main untouched. No paid/potentially billable APIs, external GPU/compute, Candidate/adapter/weights, protected V2 final evaluation, Candidate promotion, new credentials or account links, live ToolBackend, physical PC/media, automatic notification, real personal-data disclosure/erasure, irreversible changes or main merge. Local synthetic proofs are not issuer authorization, trusted-time signatures or hardware evidence. Cross-store atomicity, authenticated consent, external exactly-once and live outcome reconciliation remain hard blockers.
+
+### Next plan / 今後の方針
+
+1. Verify exact-head **#1080, #1081 and this checkpoint-result HEAD** across all Ubuntu/Windows Python 3.11–3.13 jobs. If any FAIL, inspect job logs and make a minimal semantics-preserving normal Contents correction on the affected lane only; keep unrelated work moving. Do not rerun duplicate workflows or modify frozen Local UI for a transient socket error.
+2. Deepen Planner/PermissionGate/Occurrence/ActionAudit/AuditLink multi-SQLite crash/restart diagnosis for retained-PENDING/UNKNOWN WRITEs, orphan pre-action audits and concurrent partial history loss. **No automatic action retry or dispatch.**
+3. Advance Memory CAS/concurrent update/expiry/coherent snapshot and Privacy Context revocation/retention/reuse with secure, bounded, content-minimized diagnostics. No frozen SQL schema changes and no irreversible personal-data operations.
+4. Expand disconnected Mock Executor issuer/clock/audit-before-action, startup readiness and Observation/Scheduler correlation fixture contracts; none provide real hardware, user identity, clock attestation, notification or authorization.
+5. Maintain V3 free-only approval/path/provenance/reproducibility/contamination guards and Draft PR #5. Explicit user approval is still required for any spending, Candidate generation/promotion, protected final evaluation, frozen-contract alteration or main merge.
+
+---
+
+**HISTORICAL — Run416 and earlier canonical checkpoints/evidence preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run 416**
 
 Saved at: **2026-10-25T17:32:53.712+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample before normal GitHub Contents write; NOT signed trusted-clock evidence, account identity, user consent, or spending authorization).
