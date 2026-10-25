@@ -27,6 +27,7 @@ def _hash(domain: str, fields: object) -> str:
 
 
 _GENESIS = _hash("ARK-disconnected-clock-genesis-v1", ())
+_EMPTY_FIELDS = (0, "", -1, -1, _GENESIS)
 
 
 class SyntheticClockRejected(RuntimeError):
@@ -64,7 +65,7 @@ class SyntheticClockWitness:
         return False
 
 
-EMPTY_CLOCK_WITNESS = SyntheticClockWitness(0, "", -1, -1, _GENESIS)
+EMPTY_CLOCK_WITNESS = SyntheticClockWitness(*_EMPTY_FIELDS)
 
 
 def _fields(value: SyntheticClockWitness) -> tuple[object, ...]:
@@ -82,7 +83,7 @@ def _check_witness(value: SyntheticClockWitness) -> None:
         or not _CHAIN.fullmatch(value.chain_hash)
         or type(value.source_digest) is not str
         or (
-            value.event_count == 0 and _fields(value) != _fields(EMPTY_CLOCK_WITNESS)
+            value.event_count == 0 and _fields(value) != _EMPTY_FIELDS
         )
         or (
             value.event_count > 0 and (
@@ -132,7 +133,9 @@ def review_synthetic_clock_sequence(
     observed: list[
         tuple[SyntheticClockSample, int, str, int, int]
     ] = []
-    result = EMPTY_CLOCK_WITNESS
+    # Do not trust a caller-reflectively mutable exported singleton as replay
+    # genesis. Each review starts from the module's fixed empty-field vector.
+    result = SyntheticClockWitness(*_EMPTY_FIELDS)
 
     def assert_epoch() -> None:
         if retained is not None and (
