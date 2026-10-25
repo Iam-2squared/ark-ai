@@ -81,6 +81,8 @@ def review_synthetic_observation_reuse(
         cached.privacy_scope, cached.checked_at_ms,
         cached.observation_count, cached.lineage_digest,
     )
+    # A frozen witness still allows reflective replacement with an
+    # equal-valued but different string object during either lineage pass.
     if (
         cached.privacy_scope != privacy_scope
         or now_ms < cached.checked_at_ms
@@ -89,8 +91,18 @@ def review_synthetic_observation_reuse(
         raise SyntheticObservationReuseRejected(
             "observation witness scope, clock or retention window changed"
         )
-    # Bind canonical values, not references to reflectively mutable envelopes.
+    # Pin ORIGINAL carriers before any observation_id callback is evaluated.
+    # Equal-valued envelope identities alone do not detect carrier swaps.
+    field_names = (
+        "kind", "source_id", "adapter_id", "privacy_scope",
+        "ingested_at_ms", "content_sha256", "parent_sha256",
+        "schema_version",
+    )
     try:
+        source_epoch = tuple(
+            (item, tuple(getattr(item, name) for name in field_names))
+            for item in envelopes
+        )
         envelope_epoch = tuple(
             (item, item.observation_id) for item in envelopes
         )
@@ -105,9 +117,23 @@ def review_synthetic_observation_reuse(
                 and type(cached.checked_at_ms) is int
                 and type(cached.observation_count) is int
                 and type(cached.lineage_digest) is str
-                and cached_epoch == (
-                    cached.privacy_scope, cached.checked_at_ms,
-                    cached.observation_count, cached.lineage_digest,
+                and all(
+                    getattr(cached, name) is original
+                    for name, original in zip(
+                        ("privacy_scope", "checked_at_ms", "observation_count",
+                         "lineage_digest"), cached_epoch, strict=True,
+                    )
+                )
+                and len(envelopes) == len(source_epoch)
+                and all(
+                    supplied is original
+                    and all(
+                        getattr(supplied, name) is value
+                        for name, value in zip(field_names, values, strict=True)
+                    )
+                    for supplied, (original, values) in zip(
+                        envelopes, source_epoch, strict=True,
+                    )
                 )
                 and len(envelopes) == len(envelope_epoch)
                 and all(
@@ -130,18 +156,67 @@ def review_synthetic_observation_reuse(
         max_age_ms=max_observation_age_ms,
     )
     assert_epoch()
-    if historical != cached:
+    if type(historical) is not SyntheticObservationLineageWitness or historical != cached:
         raise SyntheticObservationReuseRejected(
             "historical observation lineage differs from retained witness"
         )
+    historical_epoch = (
+        historical.privacy_scope, historical.checked_at_ms,
+        historical.observation_count, historical.lineage_digest,
+    )
     current = review_synthetic_observation_lineage(
         envelopes, privacy_scope=privacy_scope,
         now_ms=now_ms, max_age_ms=max_observation_age_ms,
     )
-    # Recheck after the later review as well. This is still local metadata
-    # consistency only, not evidence of an authenticated media source.
+    # Recheck both intermediate witnesses after the later callback, then
+    # again after result construction. No forged/currently stale lineage
+    # carrier may be silently substituted for a verified fresh witness.
     assert_epoch()
-    return SyntheticObservationReuseReview(
-        cached.lineage_digest, current.lineage_digest,
-        current.observation_count, now_ms,
+    if (
+        type(current) is not SyntheticObservationLineageWitness
+        or current.privacy_scope != privacy_scope
+        or current.checked_at_ms != now_ms
+        or current.observation_count != len(envelopes)
+    ):
+        raise SyntheticObservationReuseRejected(
+            "current observation lineage result differs from reviewed inputs"
+        )
+    current_epoch = (
+        current.privacy_scope, current.checked_at_ms,
+        current.observation_count, current.lineage_digest,
     )
+
+    def assert_witnesses() -> None:
+        if (
+            any(getattr(historical, name) is not original
+                for name, original in zip(
+                    ("privacy_scope", "checked_at_ms", "observation_count",
+                     "lineage_digest"), historical_epoch, strict=True,
+                ))
+            or any(getattr(current, name) is not original
+                   for name, original in zip(
+                       ("privacy_scope", "checked_at_ms", "observation_count",
+                        "lineage_digest"), current_epoch, strict=True,
+                   ))
+        ):
+            raise SyntheticObservationReuseRejected(
+                "observation lineage witness changed during result construction"
+            )
+
+    assert_witnesses()
+    result = SyntheticObservationReuseReview(
+        cached_epoch[3], current_epoch[3], current_epoch[2], now_ms,
+    )
+    assert_epoch()
+    assert_witnesses()
+    if (
+        type(result) is not SyntheticObservationReuseReview
+        or result.previous_lineage_digest is not cached_epoch[3]
+        or result.current_lineage_digest is not current_epoch[3]
+        or result.observation_count is not current_epoch[2]
+        or result.checked_at_ms is not now_ms
+    ):
+        raise SyntheticObservationReuseRejected(
+            "observation reuse result changed during construction"
+        )
+    return result
