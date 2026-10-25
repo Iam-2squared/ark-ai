@@ -1,5 +1,61 @@
 # ARK AI Project Status
 
+**LATEST — Run437**
+
+Saved at: **2026-10-26T08:51:01.456+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock; NOT signed trusted time, consent, a real issuer or external-effect attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `fc0b086d954982ab15f466d78f36f4cc06a8d0aa` (Run436 checkpoint; its own #1249 / 40244595801 CI was QUEUED at inspection).
+**Run437 final executable/test HEAD:** `36c1c9ca4f4d54a44ac64656e4cf85db90ced1ab` (source, focused regressions, and bounded pytest ID correction).
+**Run437 technical-document and exact checkpoint write-basis HEAD:** `2f31ae0838ee36c0c5445eeb888b02485bcf3ae0` (new `docs/JARVIS_OBSERVATION_CI_FORENSIC_GAPS_RUN437.md`).
+**Checkpoint-result HEAD:** not knowable inside the commit creating this file. Read `update_file.result.commit_sha` after this normal GitHub Contents write and inspect that exact HEAD's distinct CI. Earlier source/document CI **does not** attest the checkpoint commit.
+
+### Overall ARK state and protected boundaries
+
+**Complete JARVIS NOT_PASSED.** PR #8 remains Draft/open/unmerged and PR #5 remains Draft/open/unmerged/NOT_PASSED. Isolated/reversible local-first synthetic fixtures and safety reviewers only; no signed trusted clock, verified human issuer/consent, externally authenticated Tool outcome, global atomic transaction across separate SQLite stores, real-world exactly-once WRITE, live camera/microphone/screen acquisition, notifications, or operational autonomous ToolBackend dispatch. **UNKNOWN/RUNNING and reserved PENDING WRITEs must not auto-replay.**
+
+Paid or potentially billable APIs/GPUs/services, real V3 Candidate/adapter generation, protected V2 final-evaluation opening, Candidate promotion, main merge, credentials, irreversible operations and unavailable user hardware actions remain blocked without their respective explicit authorization. No purchased services or live actions were initiated this invocation.
+
+### NEW Run437 — two implementation/test packages and independent forensic audit
+
+1. **Observation-window original field-carrier custody:** updated `src/ark/observation_window_review.py` at `908c644d0fa167a665d7871aecdeda4ea03d0099`. Window construction now retains the original carrier object for each envelope field; reuse checks before and after ID callbacks reject equal-valued but nonidentical replacement of source, adapter, privacy scope, timestamp or content/parent digest. This closes a local reflected-mutation gap which digest-value equality alone cannot detect. Window digest semantics and frozen contracts were not changed.
+2. **Focused regression fixtures:** added `tests/test_observation_window_original_field_carriers_run437.py` at `a8c531abf8fdfac67e099d5939ade733d3491e65`; **21 parameter-expanded cases ADDED, not validated PASSes** (18 field×entrypoint, two callback/hydration cases, one unchanged witness case). No sensors, raw media, notification or dispatch.
+3. **Windows Actions diagnostic/test-ID correction:** retrieved actual Windows job `121260220252` (CI #1221 / run `40223600447`) logs. Pytest completed collection/progress to 100% then began reporting an `ERROR at setup` under a `test_fixture_rejects_oversized_payload[text-aaa...]` node ID derived from a ~4 MiB parameter. Retrieved log already exceeded 4.2 million characters. Underlying setup error and total Windows recovery **not yet proven**. At `36c1c9ca4f4d54a44ac64656e4cf85db90ced1ab`, two descriptive bounded pytest `ids` replace the pathological test display names without changing payload budget or pass/fail assertions. This is a CI output/test ergonomics fix, **not a test skip, relaxed assertion, or GREEN declaration**.
+4. **Independent read-only audit:** `docs/JARVIS_OBSERVATION_CI_FORENSIC_GAPS_RUN437.md` at `2f31ae0838ee36c0c5445eeb888b02485bcf3ae0` describes a candidate detached multi-WRITE bundle step-membership completeness gap. The bundle restorer checks present archives but lacks a caller-retained expected WRITE membership set. No dependent source modified while Run434 bundle's exact-head CI is unverified; reproduce with a focused negative test after dependency GREEN. Bundle remains deny-only and cannot authorize replay.
+
+GitHub compare from Run436 checkpoint through technical-document HEAD reports **4 commits / 4 intended changed paths**: new technical document, updated ObservationWindowReview, new 21-case test module, one-line pytest parameter-ID correction. Source/contract changes are confined to the reversible Draft PR #8. New Python full-repository pytest and Ruff checks were **not executable locally** because the working container could not resolve github.com to clone the repository. The GitHub connector was used for source reads/writes; no local pytest PASS is asserted.
+
+### Exact-HEAD CI evidence
+
+At last actual GitHub Actions inspection:
+
+- #1250 / `40245948671`, observation-window source HEAD `908c644d...`: **QUEUED**.
+- #1251 / `40246006387`, 21-case source+test HEAD `a8c531ab...`: **QUEUED**.
+- #1252 / `40246195602`, final source/test + pytest-ID fix HEAD `36c1c9ca...`: **QUEUED**; six Ubuntu/Windows Python 3.11–3.13 matrix jobs QUEUED.
+- #1253 / `40246456082`, document HEAD `2f31ae08...`: **QUEUED**.
+- Opening #1249 / `40244595801`: **QUEUED**.
+- CI #1221 / `40223600447` (older, distinct HEAD) had Ubuntu three GREEN, Windows three `pytest` steps `in_progress`; Windows job `121260220252` log documents excessive param-ID expansion. These old statuses do not establish the fixed-head CI outcome.
+
+No duplicate workflow run was manually dispatched, no queued CI was called GREEN, no failed log was concealed. The source-level in-memory carrier checks do not provide external authenticity.
+
+### Frozen contracts/evidence and structural isolation
+
+`main` observed unchanged at `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 remains Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher evidence and contracts, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, provenance/contamination/regression/reproducibility gates and the protected V2 final-evaluation boundary were not edited or opened. No model/Tokenizer hashes, real-world identities, human-review decisions, training success or PASS status were fabricated.
+
+### Next plan / 今後の方針
+
+1. **Critical CI validation recovery:** check #1252 final-source HEAD and checkpoint-result HEAD separately when runners execute. Analyze the actual Windows setup failure once logs finish; verify bounded ID patch prevents excessive report output without masking any real test failure. Do not skip tests, relax gates, manually dispatch duplicate CI, or claim Windows GREEN without evidence.
+2. **Original-carrier guard regression:** if #1252 fails, inspect individual steps/logs; apply only the smallest semantics-preserving correction via normal GitHub Contents safety path, re-read latest HEAD immediately before each write, and work a different independent lane during new CI.
+3. **Deferred bundle completeness:** when Run434 detached-bundle dependency gains exact-head GREEN, reproduce a recomputed-digest partial-step bundle and require an independent expected membership witness. No automatic WRITE replay or self-attested action success.
+4. **Independent free lanes:** continue bounded Memory CAS/expiry/event integrity, privacy revocation freshness, disconnected trusted-clock/issuer/Observation/Scheduler tests. Integrate across Planner/PermissionGate/Occurrence/ActionAudit/AuditLink only after lower-level invariants have exact-head GREEN.
+5. Maintain PR #5 and #8 Draft/unmerged. Await explicit user authorization for paid/external compute, real Candidate generation/promotion, frozen evaluation opening, credential/account connection, hardware, materially irreversible architecture, frozen-contract changes or main merge.
+
+---
+
+**HISTORICAL — Run436 and earlier canonical checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run436**
 
 Saved at: **2026-10-26T08:24:00.240+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before the normal GitHub Contents write; not a trusted signed clock, issuer/consent evidence, or attestation of external effects).
