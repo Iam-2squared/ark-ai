@@ -29,28 +29,69 @@ class ObservationWindowReview:
     _carrier_epoch: tuple[ObservationEnvelope, ...] = field(
         init=False, repr=False, compare=False
     )
+    _header_carrier_epoch: tuple[object, object, object] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
-        self._validate_header()
-        if type(self.envelopes) is not tuple or not 1 <= len(self.envelopes) <= 256:
-            raise ValueError("envelopes must be an exact nonempty tuple (max 256)")
-        # Keep the original input tuple, not merely its member objects. A
-        # value-equal replacement during hydration is a different local
-        # observation epoch even if the same envelopes are reused.
+        # Capture the caller's ORIGINAL header and carrier before the first
+        # reentrant validation/hash callback. Capturing after hydration could
+        # silently turn an altered time/age policy into the trusted baseline.
+        header = (self.privacy_scope, self.observed_at_ms, self.max_age_ms)
         carrier = self.envelopes
+        self._validate_header()
+        if any(
+            current is not initial for current, initial in zip(
+                (self.privacy_scope, self.observed_at_ms, self.max_age_ms),
+                header, strict=True,
+            )
+        ) or self.envelopes is not carrier:
+            raise ValueError("observation window input changed during initial validation")
+        if type(carrier) is not tuple or not 1 <= len(carrier) <= 256:
+            raise ValueError("envelopes must be an exact nonempty tuple (max 256)")
+
+        # Each envelope's exact original field carriers must survive all
+        # subsequent envelope ID calculations, not only the final replay.
+        captured: list[tuple[ObservationEnvelope, tuple[object, ...]]] = []
+        names = (
+            "kind", "source_id", "adapter_id", "privacy_scope",
+            "ingested_at_ms", "content_sha256", "parent_sha256",
+            "schema_version",
+        )
+
+        def assert_ingress_epoch() -> None:
+            if any(
+                current is not initial for current, initial in zip(
+                    (self.privacy_scope, self.observed_at_ms, self.max_age_ms),
+                    header, strict=True,
+                )
+            ):
+                raise ValueError("observation window header changed during hydration")
+            for item, values in captured:
+                if any(
+                    getattr(item, name) is not value
+                    for name, value in zip(names, values, strict=True)
+                ):
+                    raise ValueError("observation identity changed during hydration")
+
         epoch: list[tuple[ObservationEnvelope, str]] = []
         identities: set[str] = set()
         for envelope in carrier:
+            assert_ingress_epoch()
+            if type(envelope) is not ObservationEnvelope:
+                raise TypeError("window requires exact ObservationEnvelope values")
+            captured.append((envelope, tuple(getattr(envelope, name) for name in names)))
+            assert_ingress_epoch()
             identity = self._check_envelope(envelope)
+            assert_ingress_epoch()
             if identity in identities:
                 raise ValueError("duplicate observation identity in window")
             identities.add(identity)
             epoch.append((envelope, identity))
+        assert_ingress_epoch()
         object.__setattr__(self, "_epoch", tuple(epoch))
-        object.__setattr__(
-            self, "_header_epoch",
-            (self.privacy_scope, self.observed_at_ms, self.max_age_ms),
-        )
+        object.__setattr__(self, "_header_epoch", header)
+        object.__setattr__(self, "_header_carrier_epoch", header)
         object.__setattr__(self, "_carrier_epoch", carrier)
         self.assert_consistent()
 
@@ -96,7 +137,12 @@ class ObservationWindowReview:
         self._validate_header()
         if (
             self.privacy_scope, self.observed_at_ms, self.max_age_ms
-        ) != self._header_epoch:
+        ) != self._header_epoch or any(
+            current is not initial for current, initial in zip(
+                (self.privacy_scope, self.observed_at_ms, self.max_age_ms),
+                self._header_carrier_epoch, strict=True,
+            )
+        ):
             raise ValueError("observation window header changed after construction")
         if type(self.envelopes) is not tuple or len(self.envelopes) != len(self._epoch):
             raise ValueError("observation window tuple changed after construction")
