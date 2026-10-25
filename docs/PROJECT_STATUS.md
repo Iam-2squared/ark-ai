@@ -1,5 +1,60 @@
 # ARK AI Project Status
 
+**LATEST — Run 414**
+
+Saved at: **2026-10-25T16:34:14.113+09:00 Asia/Tokyo/JST** (automation runtime wall-clock sample immediately before normal Contents checkpoint write; NOT authenticated/trusted clock, independent signed timestamp, user consent or human approval).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `0f9c923117cc56d77dcc5cde47a73b63b37ed57b` (Run413 canonical checkpoint, independently checked **CI #1014 / 40171243516 SUCCESS all six** before any Run414 write).
+**Five-package latest source+test HEAD:** `6406d5fcd62dbcf3da5f884838e7aa811021f389` (**CI #1024 / 40172966232**, only three Ubuntu jobs GREEN; Windows three IN_PROGRESS at checkpoint's last job inspection).
+**Engineering-document and checkpoint write-basis HEAD:** `83bad8662f0612de79a7e1ba97576488568e140b` (**CI #1025 / 40173155133**, IN_PROGRESS at latest job inspection). The HEAD immediately before this status update; it is NOT the resulting checkpoint commit.
+**Checkpoint-result HEAD:** not possible to know inside this markdown file before GitHub creates its commit. The normal `update_file.commit_sha` response is authoritative; check its own six-job CI independently. Never infer the checkpoint CI from earlier source/document jobs.
+
+### Overall current ARK state
+
+**Local-first, disconnected/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated human issuer/consent, attested trusted clock, real ToolBackend outcome receipt, atomic multi-SQLite snapshot, filesystem inode attestation, external exactly-once WRITE, physical PC/sensors, autonomous notification, trained Candidate, or real-action integration. All locally produced approvals/hashes/mock receipts remain **non-authoritative diagnostics**. **UNKNOWN/RUNNING and reserved-PENDING WRITEs are never automatically replayed.** Safety is primarily through denial, not live execution.
+
+### NEW Run414 — five coherent zero-cost source/test packages, +39 parametrized pytest cases
+
+1. **Sidecar Audit Link original WRITE source/field custody (+10):** source `src/ark/agency/synthetic_occurrence_audit_link_review.py` SHA `6ae4cbf7537ab4fe88e914b7ce204fd1716d0d1f`; tests `tests/test_audit_link_write_epoch_run414.py` SHA `5e73d00b3da3dbba243845f9db24788e51d59bc5` with test-only fixture correction `0e6c5ac1b481e4b28ccb3f5659c0b82db95e2721`. Pin original link/ledger/audit Path objects and call/reservation/event/retained-witness carrier identities before registry, SQLite, hash and COMMIT callbacks. Post-COMMIT rejection does not silently roll back a durable sidecar link; no real execution.
+2. **Memory multi-namespace early scope ingress (+5):** source `src/ark/memory/synthetic_multiscope_integrity_review.py` `6a13adbc132f231695d5d9cb438cc7a8ccfefb38`; tests `tests/test_memory_multiscope_ingress_phase_run414.py` `a06f93fbfd99b73159ad821a859637819d5a09b2`. Preserve original owner/namespace and Path before copying scopes and computing the *first* digest. Reject reflected owner/scope/source change before a later callback could restore it. Memory v1 SQL unchanged.
+3. **Reserved-PENDING four-store partial history loss (+4):** `tests/test_synthetic_reserved_pending_four_store_run414.py` `0b2198ded348014509c0309b0af6150b1495e1b6`. PENDING root already has a durable occurrence, pre-action audit and link, while an unrelated WRITE is RUNNING. Dependent WRITE held through READ bridge. Independently clone Planner/Occurrence/Audit/Link SQLite files; delete one row from each cloned store in turn. Separately retained prefix evidence rejects all losses; no backend dispatch or auto-replay.
+4. **Free-only direct-import safety regression (+11):** `tests/test_offline_review_import_boundary_run414.py` `7be562f0f787a4b38aa734ea328ee2ffa82678a3`. AST-enforced denylist of direct network/API/GPU/hardware imports for 10 specified synthetic review modules plus target-existence assertion. This is **not a network sandbox or transitively complete cost assurance**; never claim an untested dynamic path safe.
+5. **PermissionGate exact grant carrier identity through one-shot spend (+9):** source `src/ark/agency/policy.py` `45ab616cf5840e8ea4d0a8755bbece15850cc51a`; tests `tests/test_permission_grant_carrier_epoch_run414.py` `6406d5fcd62dbcf3da5f884838e7aa811021f389`. Fail on equal-valued, new-object capability/scope/expiry grant carrier substitutions during iterator materialization, registered registry rebinding, direct final grant check and WRITE token-lock admission. A token already consumed before post-spend denial remains consumed. This remains **process-local**, not authenticated or restart-safe authorization.
+
+**Engineering fault matrix and precise evidence basis:** `docs/JARVIS_ORIGINAL_EPOCH_RESERVED_PENDING_IMPORT_GATE_RUN414.md` updated at `83bad8662f0612de79a7e1ba97576488568e140b` after read/reconciliation; later checkpoint changes only this status file.
+
+### CI / evidence fidelity — never extrapolate from earlier HEADs
+
+- Run413 initial canonical `0f9c923117cc56d77dcc5cde47a73b63b37ed57b` **#1014 / 40171243516 SUCCESS all six**.
+- Run414 audit source **#1015 / 40172082803 SUCCESS all six**. Memory source **#1016 / 40172172590 SUCCESS all six**; Memory test **#1017 / 40172206899 SUCCESS all six**.
+- **#1018 / 40172255311 FAILED** because an audit-link test retained its deliberate malicious connection monkeypatch through its own benign post-denial readback. This was a test-harness failure, NOT an authorization bypass. Corrected only test cleanup in `0e6c5ac1b481e4b28ccb3f5659c0b82db95e2721`; **#1019 / 40172276144 SUCCESS all six**. Preserve earlier failure.
+- **#1020 / 40172359979 SUCCESS all six** at first-three-package HEAD `0b2198ded348014509c0309b0af6150b1495e1b6`. Ubuntu3.13 **Ruff All checks passed; 2264 passed in 52.27s** (job `121105709272`).
+- **#1021 / 40172594181 SUCCESS all six** at first-four-package HEAD `7be562f0f787a4b38aa734ea328ee2ffa82678a3`. Ubuntu3.13 **Ruff All checks passed; 2275 passed in 43.32s** (job `121106405866`).
+- **#1022 / 40172731675 SUCCESS all six** at initial four-package engineering doc HEAD `a9384468166bae09a855bd2da6cf1c6fb6bb4031`.
+- Fifth-package policy source **#1023 / 40172904355**: Ubuntu3.11/3.12/3.13 GREEN, Windows3 jobs **IN_PROGRESS** at latest observation; NOT a six-job GREEN claim.
+- **Latest five-package source+test #1024 / 40172966232**, exact `6406d5fcd62dbcf3da5f884838e7aa811021f389`: Ubuntu3.11/3.12/3.13 GREEN, Windows3 IN_PROGRESS at latest job inspection; Ubuntu3.13 job `121107539557` reports **Ruff All checks passed and 2284 pytest passed in 52.43s**. Prior 2245 → +39; final six-job GREEN **not yet confirmed** at checkpoint.
+- Final engineering doc `83bad8662f0612de79a7e1ba97576488568e140b`: **#1025 / 40173155133 IN_PROGRESS** (all six running at last check), not yet GREEN. Checkpoint-result SHA has its **own distinct** automatically triggered CI; never duplicate-run an equivalent workflow.
+- Independent **nontruncated** exact Git Tree comparison at final engineering-doc HEAD `83bad8662f0612de79a7e1ba97576488568e140b` against unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs / 475 branch blobs; +381 added, 0 existing-main modified, 0 deleted**. Checkpoint writes only branch-exclusive status; no raw Git tree/ref manipulation, forced update or main merge.
+
+### Frozen contracts / spend and authorization blockers
+
+Frozen V1/V2/Local UI/Launcher evidence, frozen V3 Contract 1, Memory v1 and ActionAudit v1 SQL schemas **unchanged**. V3 **PR #5 Draft/open/unmerged/NOT_PASSED**; JARVIS PR #8 Draft/unmerged; main untouched. Never start paid or potentially billable APIs/services/external GPU/compute, new credentials/accounts, real Candidate/preflight/training/weight generation/promotion, protected V2 final evaluation, live external ToolBackend/notification/sensor/PC effects, personal data export/deletion, frozen-contract change, destructive action, or merge requiring approval. No user-approved issuer, real external outcome or trained Candidate is represented. If a paid/consent/legal/irreversible boundary emerges, document and move to another free isolated lane.
+
+### Next plan / 今後の方針
+
+1. Re-check exact latest source/test **#1024** Windows jobs, final engineering doc **#1025**, and this checkpoint-result HEAD's **own** six Ubuntu/Windows jobs. On true FAIL, read logs and apply only the smallest semantics-preserving regular Contents fix; preserve failed CI history, do not duplicate workflows.
+2. Deepen disconnected audit-link write *commit/returned witness* custody and multi-SQLite retained-PENDING partial history loss, including interleaved independent WRITE and dependent holds. No automatic retry of UNKNOWN or reserved-PENDING.
+3. Improve Memory CAS/concurrency/expiry and privacy-safe Personal Context revocation/retention fences without changing frozen SQL schemas.
+4. Continue mock-only clock/issuer, Observation and proactive Scheduler interfaces, startup fail-shut and no live dispatch/camera/mic/notifications.
+5. Keep V3 free-only reproducibility/identity/provenance/approval guards isolated and PR #5 Draft/NOT_PASSED; no real Candidate/GPU/protected V2 gate/main merge without explicit user action.
+
+---
+
+**HISTORICAL — Run413 and earlier status/evidence preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run 413**
 
 Saved at: **2026-10-25T16:01:40.592+09:00 Asia/Tokyo/JST** (runtime wall-clock sample immediately before ordinary GitHub Contents checkpoint write; NOT a trusted clock, GitHub-server attestation, authenticated user consent, or human approval).
