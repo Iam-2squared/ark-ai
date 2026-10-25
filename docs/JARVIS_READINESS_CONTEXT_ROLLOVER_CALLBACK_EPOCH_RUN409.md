@@ -95,6 +95,25 @@ scoping correction: `10381b4a9ab70b63d3f3d18d8593d0fc4d65e536`.
 - Cached readiness graph semantics still pass through the existing
   StartupSnapshot / lease checks; no real scheduler action or notification.
 
+## Package E — Ordinary Memory event SQLite-open and fetch epochs (+9 regressions)
+
+**Source:** `src/ark/memory/sqlite_store.py`, commit
+`090ed5f85ba9eafd84c7220dd0e6af5dfe3a3e26`.
+
+**Tests:** `tests/test_memory_event_sqlite_phase_epoch_run409.py`,
+commit `463c24f761662ab4577f63a9f23a0ae010291c0f`.
+
+- A standard content-free `MemoryEvent` query is a sequence of distinct
+  SQLite callbacks: read-only connection, `BEGIN`, SQL `SELECT`, and
+  `fetchall`. The reader now verifies its original scope and Path
+  identity immediately after each rather than allowing the next callback
+  to restore a temporary misrouting.
+- Eight negative fixtures cover all four boundaries for either a mutated
+  scope or value-equal but replacement Path; no private content is returned.
+  One positive fixture preserves bounded, strictly increasing event pagination.
+- There is no Memory v1 schema modification, automatic deletion, external
+  export, trained model or real device action.
+
 ## Exact-head CI and evidence interpretation
 
 A GitHub PR workflow run validates only its own exact head SHA and must not
@@ -107,14 +126,17 @@ This is a real failed exact-head run, not proof that startup tests failed, and
 not authorization to alter frozen Local UI. No duplicate workflow rerun was
 started; separate newer commit-triggered runs are evaluated independently.
 
-**Four-package latest source+tests head:** `f728c3e5111d56f0b75de80950d19ab4b66f96d7`.
+**First four-package source+tests head:** `f728c3e5111d56f0b75de80950d19ab4b66f96d7` (**#958 / `40157147248` completed SUCCESS on all six matrix jobs; Ubuntu Python 3.13 Ruff PASS and 2141 pytest PASS**).
 This head follows earlier three-package code+test head
 `10381b4a9ab70b63d3f3d18d8593d0fc4d65e536`
 (**#955 / `40156902277`: IN PROGRESS at an intermediate check**).
 The first two-package test head `6ebd7b355936b48733ae0013c2199174747b1bb4`
 **#952 / `40156698385` completed SUCCESS all six**.
-The four-package exact-head matrix is **not yet established GREEN**.
-Refresh it by SHA before claiming a final result.
+The five-package source+tests HEAD is `463c24f761662ab4577f63a9f23a0ae010291c0f`
+(**#961 / `40157503206` IN PROGRESS when first inspected**). It
+contains 29 prior Run409 regressions plus 9 ordinary Memory event regressions,
+38 total, but the new exact HEAD does not inherit #958's GREEN.
+Refresh the final CI results and assert only observed successes.
 
 ## Immutable and authorization boundaries
 
@@ -126,7 +148,7 @@ credentials, real ToolBackend execution, notification or main merge was used.
 
 ## Next plan / 今後の方針
 
-1. Check #955 exact final source/test HEAD across six OS/Python jobs. Distinguish
+1. Check #961 exact five-package source/test HEAD across six OS/Python jobs. Distinguish
    genuine source regressions from unrelated Windows socket flakiness; never
    weaken a frozen UI test to force a GREEN badge.
 2. Preserve exact prior HEAD evidence and update one canonical
