@@ -44,6 +44,8 @@ def _hash(label: str, values: object) -> str:
 def _text(name: str, value: object) -> None:
     if type(value) is not str or not value or value != value.strip():
         raise ValueError(f"{name} must be a nonempty exact string")
+    if len(value) > 512:
+        raise ValueError(f"{name} exceeds policy string budget")
 
 
 def _int(name: str, value: object, *, minimum: int = 0) -> None:
@@ -205,9 +207,37 @@ class SyntheticProactiveLedger:
         ledger_path = self.path
         if not isinstance(ledger_path, Path):
             raise SyntheticTriggerRejected("proactive ledger path changed")
+        # Policy fields are immutable values but their carriers can be swapped
+        # reflectively during digest / SQLite callbacks. Preserve the exact
+        # field objects before the first policy validation callback.
+        policy_names = (
+            "owner", "namespace", "definition_id", "revision",
+            "policy_revision", "minimum_interval_ms", "rolling_window_ms",
+            "max_preparations_per_window",
+        )
+        policy_carriers = tuple(getattr(policy, name) for name in policy_names)
         pinned = policy.identity()
-        if self.path is not ledger_path:
-            raise SyntheticTriggerRejected("proactive ledger path changed")
+
+        def assert_policy_epoch(stage: str) -> None:
+            if (
+                self.path is not ledger_path
+                or any(
+                    getattr(policy, name) is not carrier
+                    for name, carrier in zip(policy_names, policy_carriers)
+                )
+            ):
+                raise SyntheticTriggerRejected(
+                    f"policy or ledger path changed {stage}"
+                )
+            if policy.identity() != pinned or self.path is not ledger_path or any(
+                getattr(policy, name) is not carrier
+                for name, carrier in zip(policy_names, policy_carriers)
+            ):
+                raise SyntheticTriggerRejected(
+                    f"policy or ledger path changed {stage}"
+                )
+
+        assert_policy_epoch("before preparation")
         retained_epoch = None
         retained_rows_carrier = None
         if retained is not None:
@@ -221,18 +251,13 @@ class SyntheticProactiveLedger:
                 or (retained.row_hashes, retained.digest) != retained_epoch
             ):
                 raise SyntheticTriggerRejected("retained proactive witness changed")
-        if self.path is not ledger_path or policy.identity() != pinned:
-            raise SyntheticTriggerRejected(
-                "policy or ledger path changed before preparation"
-            )
+        assert_policy_epoch("before preparation")
+
         def assert_digest_epoch() -> None:
             # Each synthetic digest is a potential reentrant callback. A
             # later digest must not be able to restore an earlier policy or
             # retained-history mutation before the SQLite write fence.
-            if self.path is not ledger_path or policy.identity() != pinned:
-                raise SyntheticTriggerRejected(
-                    "policy or ledger path changed during trigger digest"
-                )
+            assert_policy_epoch("during trigger digest")
             if retained_epoch is not None and (
                 retained.row_hashes is not retained_rows_carrier
                 or (retained.row_hashes, retained.digest) != retained_epoch
@@ -291,10 +316,7 @@ class SyntheticProactiveLedger:
                         or (retained.row_hashes, retained.digest) != retained_epoch
                     ):
                         raise SyntheticTriggerRejected("retained proactive witness changed")
-                if policy.identity() != pinned or self.path is not ledger_path:
-                    raise SyntheticTriggerRejected(
-                        "policy or ledger path changed before preparation"
-                    )
+                assert_policy_epoch("before preparation")
                 recent = conn.execute(
                     """SELECT prepared_at_ms FROM synthetic_prepared_triggers
                        WHERE scope_digest=? AND policy_digest=?
@@ -323,10 +345,7 @@ class SyntheticProactiveLedger:
                     raise SyntheticTriggerRejected(
                         "duplicate synthetic trigger occurrence"
                     ) from exc
-                if policy.identity() != pinned or self.path is not ledger_path:
-                    raise SyntheticTriggerRejected(
-                        "policy or ledger path changed during preparation"
-                    )
+                assert_policy_epoch("during preparation")
                 if retained_epoch is not None and (
                     retained.row_hashes is not retained_rows_carrier
                     or (retained.row_hashes, retained.digest) != retained_epoch
@@ -335,7 +354,25 @@ class SyntheticProactiveLedger:
                 if self.path is not ledger_path:
                     raise SyntheticTriggerRejected("proactive ledger path changed before commit")
                 conn.commit()
-                return SyntheticTriggerReceipt(trigger, now_ms)
+                # A successful COMMIT is durable even when a subsequent
+                # callback discovers stale input. Never erase or replay it.
+                assert_policy_epoch("after trigger commit")
+                if retained_epoch is not None and (
+                    retained.row_hashes is not retained_rows_carrier
+                    or (retained.row_hashes, retained.digest) != retained_epoch
+                ):
+                    raise SyntheticTriggerRejected(
+                        "retained proactive witness changed after trigger commit"
+                    )
+                receipt = SyntheticTriggerReceipt(trigger, now_ms)
+                assert_policy_epoch("after trigger receipt")
+                if (
+                    type(receipt) is not SyntheticTriggerReceipt
+                    or receipt.trigger_id != trigger
+                    or receipt.prepared_at_ms != now_ms
+                ):
+                    raise SyntheticTriggerRejected("trigger receipt changed")
+                return receipt
             except BaseException:
                 conn.rollback()
                 raise
