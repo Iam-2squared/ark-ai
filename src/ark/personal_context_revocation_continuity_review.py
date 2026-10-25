@@ -92,6 +92,7 @@ def review_revocation_continuity(
         ledger._assert_source_path(source_path)
         if retained is not None and (
             retained.rows is not retained_rows
+            or retained.witness_id is not pinned[1]
             or (retained.rows, retained.witness_id) != pinned
             or any(
                 row is not original for row, original in zip(
