@@ -2,11 +2,13 @@
 
 **LATEST — Run 415**
 
+**Evidence correction at 2026-10-25T17:08:12.579+09:00 JST:** The first Run415 status write understated the already-verified #1038 Windows job count as 0/3 rather than 2/3. This normal Contents correction fixes only that factual reporting error; no source or CI was changed. The earlier status commit remains in history and is not treated as a separate engineering package.
+
 Saved at: **2026-10-25T17:06:05.821+09:00 Asia/Tokyo/JST** (runtime wall-clock sample immediately before normal Contents checkpoint write; **not** trusted-clock attestation, server signature, human approval, consent, or spend authorization).
 
 **Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
 **Exact invocation work-basis HEAD:** `1e7ff06c976379073e1551ae65cc178e2a8f8eed` (Run414 canonical checkpoint; independently checked **CI #1026 / 40173274118 SUCCESS all six** before Run415 writes).
-**Five-package source+test HEAD:** `4f2d4dcb709f8840945b035ecc3b1247fe243006` (CI #1038 / 40174947584; Ubuntu all three GREEN, Windows 0/3 confirmed GREEN at the checkpoint's last job inspection; other Windows jobs IN_PROGRESS). Ubuntu Python 3.13: **Ruff PASS, 2309 passed** (job `121113500863`); this does **not** establish whole-matrix GREEN.
+**Five-package source+test HEAD:** `4f2d4dcb709f8840945b035ecc3b1247fe243006` (CI #1038 / 40174947584; Ubuntu all three GREEN, Windows 3.11/3.13 GREEN and Windows 3.12 IN_PROGRESS at the checkpoint's last job inspection). Ubuntu Python 3.13: **Ruff PASS, 2309 passed** (job `121113500863`); this does **not** establish whole-matrix GREEN.
 **Final engineering-document / checkpoint write-basis HEAD:** `aadcb8c6cfb475a1118e59702e6d84d109b3081b` (**CI #1039 / 40175039765**, Ubuntu 3/3 GREEN; Windows 3/3 IN_PROGRESS at last inspection).
 **Checkpoint-result HEAD:** This file cannot embed its own resulting commit SHA before GitHub creates that commit; normal `update_file.commit_sha` is authoritative and its own CI must be independently checked. Engineering-doc HEAD is the pre-checkpoint write basis, NOT the checkpoint-result HEAD.
 
@@ -30,7 +32,7 @@ Saved at: **2026-10-25T17:06:05.821+09:00 Asia/Tokyo/JST** (runtime wall-clock s
 - Privacy suite **#1028 / 40174217707 SUCCESS**; audit-link suite **#1030 / 40174310139 SUCCESS**. No external actions occurred.
 - **#1034 / 40174658600 FAILED** at pre-correction observation+startup test HEAD `7c9b94594f4fa3d03d0455c22ccd27737fab4441`: Ubuntu Python 3.11/3.12 logs showed **2303 passed / 1 failed**, Ruff PASS. Cause: newly added forged-snapshot fixture supplied root dependency IDs in numeric rather than lexical order, reaching the existing canonical-dependency check before its intended aggregate-edge check. No source/denial semantics were weakened. Corrected only the test fixture in commit `3a399ebf614d8bbb33d3f2f6366173c6eab3e975`; failure history preserved.
 - Corrected startup **#1036 / 40174793843**: last inspection **5/6 GREEN**; Windows 3.12 IN_PROGRESS. Do not claim six-job GREEN yet.
-- **Latest five-package source/test #1038 / 40174947584** at exact `4f2d4dcb709f8840945b035ecc3b1247fe243006`: Ubuntu Python 3.11/3.12/3.13 **GREEN**, Windows three **IN_PROGRESS** at last inspection. Ubuntu 3.13 job `121113500863`: **All Ruff checks passed; 2309 passed in 114.82s**. Prior Run414 baseline 2284 + 25. Windows six-job GREEN not yet confirmed.
+- **Latest five-package source/test #1038 / 40174947584** at exact `4f2d4dcb709f8840945b035ecc3b1247fe243006`: Ubuntu Python 3.11/3.12/3.13 **GREEN**, Windows Python 3.11/3.13 **GREEN**, Windows 3.12 **IN_PROGRESS** at last inspection. Ubuntu 3.13 job `121113500863`: **All Ruff checks passed; 2309 passed in 114.82s**. Prior Run414 baseline 2284 + 25. Windows six-job GREEN not yet confirmed.
 - Final engineering doc **#1039 / 40175039765** at `aadcb8c6cfb475a1118e59702e6d84d109b3081b`: last inspection Ubuntu three **GREEN**, Windows three **IN_PROGRESS**. Distinct checkpoint-result commit's own CI is a later, independently required check. Never launch an equivalent duplicate CI run.
 - Exact nontruncated Git Tree comparison at engineering-doc HEAD `aadcb8c6cfb475a1118e59702e6d84d109b3081b` against unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs, 481 branch blobs, +387 branch-only blobs, 0 existing-main changed, 0 deleted**. Checkpoint changes only a branch-exclusive status file.
 
