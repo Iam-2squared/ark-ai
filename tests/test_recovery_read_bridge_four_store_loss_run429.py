@@ -12,13 +12,17 @@ import pytest
 
 from ark.agency.audit import SQLiteActionAudit
 from ark.agency.contracts import (
-    Effect, OneShotAuthorization, PlanStep, ToolCall,
+    Effect,
+    OneShotAuthorization,
+    PlanStep,
+    ToolCall,
 )
 from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
 from ark.agency.synthetic_mock_action_cycle_review import (
-    SyntheticMockCrashInjected, run_synthetic_mock_cycle,
+    SyntheticMockCrashInjected,
+    run_synthetic_mock_cycle,
 )
 from ark.agency.synthetic_occurrence_audit_link_review import (
     SyntheticOccurrenceAuditLinkStore,
