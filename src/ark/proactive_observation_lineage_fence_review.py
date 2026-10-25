@@ -110,6 +110,24 @@ def review_synthetic_observation_trigger(
     if len(matching) != 1:
         raise SyntheticObservationTriggerRejected("selected observation must be unique")
     selected = matching[0]
+    # Value-equal replacements of frozen envelope/policy/receipt carriers
+    # create a new input epoch even if both reviews compute identical hashes.
+    # Pin exact source references before observation-ID and policy callbacks.
+    envelopes_epoch = tuple(
+        (envelope, tuple(
+            (field.name, getattr(envelope, field.name))
+            for field in fields(ObservationEnvelope)
+        ))
+        for envelope in envelopes
+    )
+    receipt_epoch = tuple(
+        (field.name, getattr(receipt, field.name))
+        for field in fields(SyntheticTriggerReceipt)
+    )
+    policy_epoch = tuple(
+        (field.name, getattr(policy, field.name))
+        for field in fields(SyntheticTriggerPolicy)
+    )
     source_epoch = ledger.path
     if not isinstance(source_epoch, Path):
         raise SyntheticObservationTriggerRejected("observation trigger source is invalid")
@@ -165,6 +183,31 @@ def review_synthetic_observation_trigger(
 
     def ensure_input_epoch() -> None:
         ensure_source_epoch()
+        # Check raw input carriers BEFORE invoking the reentrant policy
+        # identity and observation hashing getters below.
+        if (
+            len(envelopes) != len(envelopes_epoch)
+            or any(
+                current is not original or any(
+                    getattr(current, name) is not saved
+                    for name, saved in original_fields
+                )
+                for current, (original, original_fields) in zip(
+                    envelopes, envelopes_epoch, strict=True,
+                )
+            )
+            or any(
+                getattr(receipt, name) is not saved
+                for name, saved in receipt_epoch
+            )
+            or any(
+                getattr(policy, name) is not saved
+                for name, saved in policy_epoch
+            )
+        ):
+            raise SyntheticObservationTriggerRejected(
+                "observation, policy or receipt carrier changed during review"
+            )
         if (
             (
                 envelopes, tuple(_epoch(x) for x in envelopes),
@@ -175,6 +218,7 @@ def review_synthetic_observation_trigger(
             or retained is not None
             and (
                 retained.row_hashes is not retained_rows_carrier
+                or retained.digest is not retained_epoch[1]
                 or (retained.row_hashes, retained.digest) != retained_epoch
             )
         ):
