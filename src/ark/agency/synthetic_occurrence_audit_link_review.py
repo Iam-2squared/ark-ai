@@ -186,25 +186,55 @@ class SyntheticOccurrenceAuditLinkStore:
         self, *, retained: SyntheticAuditLinkWitness | None = None,
     ) -> SyntheticAuditLinkWitness:
         """One read-only local snapshot; caller must retain earlier evidence separately."""
+        path_epoch = self._path
+        if not isinstance(path_epoch, Path):
+            raise SyntheticAuditLinkRejected("synthetic link source must retain a Path")
+        if retained is not None and type(retained) is not SyntheticAuditLinkWitness:
+            raise SyntheticAuditLinkRejected("retained link witness has wrong type")
+        # Frozen dataclasses can still be changed reflectively: preserve the
+        # original carriers rather than only their equality to a later value.
+        retained_epoch = None if retained is None else (
+            retained.event_count, retained.tail_hash, retained.last_link_at_ms,
+        )
+
+        def assert_epoch() -> None:
+            if self._path is not path_epoch or (
+                retained is not None
+                and (
+                    retained.event_count is not retained_epoch[0]
+                    or retained.tail_hash is not retained_epoch[1]
+                    or retained.last_link_at_ms is not retained_epoch[2]
+                )
+            ):
+                raise SyntheticAuditLinkRejected(
+                    "synthetic link source or retained witness changed during read"
+                )
+
+        assert_epoch()
         if retained is not None:
-            if type(retained) is not SyntheticAuditLinkWitness:
-                raise SyntheticAuditLinkRejected("retained link witness has wrong type")
             retained.assert_shape()
+            assert_epoch()
         with closing(self._connect(readonly=True)) as conn:
+            assert_epoch()
             conn.execute("BEGIN")
             try:
+                assert_epoch()
                 prefixes = _replay(conn)
+                assert_epoch()
                 if retained is not None and (
                     retained.event_count >= len(prefixes)
                     or prefixes[retained.event_count] != retained
                 ):
                     raise SyntheticAuditLinkRejected("retained synthetic link history changed")
+                assert_epoch()
                 result = prefixes[-1]
                 conn.commit()
-                return result
+                assert_epoch()
             except BaseException:
                 conn.rollback()
                 raise
+        assert_epoch()
+        return result
 
     def link_synthetic(
         self,
