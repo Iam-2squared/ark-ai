@@ -103,8 +103,17 @@ def review_audit_continuity(
                 "audit SQLite source changed during continuity review"
             )
         if retained is not None and (
-            retained.event_count, retained.tail_event_id, retained.chain_sha256
-        ) != pinned:
+            type(retained.event_count) is not int
+            or type(retained.tail_event_id) is not int
+            or type(retained.chain_sha256) is not str
+            or retained.event_count is not pinned[0]
+            or retained.tail_event_id is not pinned[1]
+            or retained.chain_sha256 is not pinned[2]
+            or (
+                retained.event_count, retained.tail_event_id,
+                retained.chain_sha256,
+            ) != pinned
+        ):
             raise ActionAuditSchemaError("retained audit witness changed during review")
 
     # A short read transaction pins all event rows to the same SQLite snapshot.
@@ -170,4 +179,22 @@ def review_audit_continuity(
     if pinned is not None and count < pinned[0]:
         raise ActionAuditSchemaError("audit history is shorter than retained witness")
     assert_epoch()
-    return AuditContinuityWitness(count, tail, chain.hex())
+    digest = chain.hex()
+    witness = AuditContinuityWitness(count, tail, digest)
+    # Even a frozen dataclass may be reflectively edited inside a patched
+    # constructor; neither its source nor returned witness may drift while
+    # the final read-only diagnostic is being constructed.
+    assert_epoch()
+    if (
+        type(witness) is not AuditContinuityWitness
+        or type(witness.event_count) is not int
+        or witness.event_count != count
+        or type(witness.tail_event_id) is not int
+        or witness.tail_event_id != tail
+        or type(witness.chain_sha256) is not str
+        or witness.chain_sha256 is not digest
+    ):
+        raise ActionAuditSchemaError(
+            "returned audit continuity witness changed during construction"
+        )
+    return witness
