@@ -1,5 +1,51 @@
 # ARK AI Project Status
 
+**LATEST — Run 429**
+
+Saved at: **2026-10-26T01:25:05.759+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock at the normal GitHub Contents checkpoint write; NOT a trusted timestamp, verified identity, consent, external effect or billing approval).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. **Work-basis HEAD:** `54f3bdcda65c1c0c9e4af963c5c4a860a63fbca8` (Run428 checkpoint, six of six GitHub Actions #1189 / 40209645382 SUCCESS at opening verification).
+**Final Run429 source+tests HEAD / checkpoint exact write-basis HEAD:** `b27622fb74fa18ccfa38bb1743adfdb5e628c145`. Technical-document HEAD `b8c2e337994796b0f2dccd8e908509ab7415009f`.
+**Checkpoint-result HEAD:** not knowable from within the commit being created; use the actual GitHub Contents `commit_sha` returned for this checkpoint and verify its *separate* exact-HEAD CI. Do not attribute a previous SHA's GREEN to this checkpoint.
+
+### Overall ARK state
+
+**Complete JARVIS NOT_PASSED.** Disconnected/mock/synthetic-only, local-first JARVIS foundations. No authenticated human issuer/consent, trusted signed clock, external backend outcome attestation, atomic transactions across SQLite files, external exactly-once WRITE, live sensor capture, real notification, operational autonomous tool action, Candidate training/promotion or V3 protected evaluation. **UNKNOWN/RUNNING and reserved PENDING WRITE cannot auto-replay** without independently verified external outcome.
+
+### NEW Run429 — three coherent free-only development packages (+9 parameter-expanded pytest cases)
+
+1. **Synthetic Clock constructed-carrier fence (+3):** source `src/ark/agency/synthetic_clock_sequence_review.py` committed at `17374bc2711e9731b3b0f42be82198603be73f2f`; regression `tests/test_synthetic_clock_constructor_carriers_run429.py` at `293a37103baec1002acde36051a7a29168108f89`. Require a newly constructed exact-type witness to preserve the exact sampled `source_digest` and newly computed `chain_hash` carriers, rejecting equal-text reflective substitutions. Clock is untrusted/deny-only.
+2. **Process-independent coherent Memory v1 snapshots (+2):** `tests/test_memory_cross_process_snapshot_epoch_run429.py` committed at `f5c9fc2f45d7d20b051f114353291823644bdff8`. During an already-anchored read-only SQLite snapshot, a distinct local Python process commits insert or update operations in two namespaces. The original review must still contain the old cross-namespace records; a new review sees the commits. Existing SQL v1 DDL/API unchanged; not a cross-file atomic snapshot.
+3. **Four-store retained history loss across READ bridge (+4):** `tests/test_recovery_read_bridge_four_store_loss_run429.py` committed at `b932ad848fdc6295d0cce5bee8da1b8d4e876a13`. Independently witness a RUNNING upstream WRITE, a READ bridge, and a separately reserved downstream PENDING WRITE. Reproduce an intact cloned review; then remove only the final row in each *disposable cloned* Planner, Occurrence, ActionAudit, or AuditLink SQLite source and require fail-closed diagnosis/no backend dispatch. **No external effect attestation**.
+4. **Ruff-only regression formatting repair:** historical test HEAD #1193 and technical-document HEAD #1194 each failed the same Ruff I001 import-layout error in the new READ-bridge regression; change only import grouping, retain the failures, and save corrected final source/tests HEAD `b27622fb74fa18ccfa38bb1743adfdb5e628c145`. Technical fault matrix: `docs/JARVIS_CLOCK_MULTIPROCESS_MEMORY_READBRIDGE_RUN429.md`.
+
+### CI / exact-HEAD evidence
+
+- Opening checkpoint `54f3bdcda65c1c0c9e4af963c5c4a860a63fbca8` — **#1189 / 40209645382: all six SUCCESS**.
+- Package 1 tests `293a37103baec1002acde36051a7a29168108f89` — **#1191 / 40210889041: completed SUCCESS, all six**.
+- Memory process-test HEAD `f5c9fc2f45d7d20b051f114353291823644bdff8` — **#1192 / 40210954595**: at recent sampling Ubuntu Python 3.11/3.12/3.13 SUCCESS, Windows Python 3.13 SUCCESS, Windows 3.11/3.12 IN PROGRESS. Ubuntu 3.13 **Ruff PASS, 2775 passed / 1 skipped** confirmed from job log; do not extrapolate to unfinished jobs.
+- **Historical failure #1193 / 40211052218** at `b932ad848fdc6295d0cce5bee8da1b8d4e876a13` and **#1194 / 40211186401** at `b8c2e337994796b0f2dccd8e908509ab7415009f`: completed **FAIL** (Ruff I001 import grouping of new test). Neither failure is re-labelled GREEN; normal Contents repair at `b27622fb74fa18ccfa38bb1743adfdb5e628c145` corrected only the imports.
+- **Final repaired source/test HEAD #1195 / 40211248395** at `b27622fb74fa18ccfa38bb1743adfdb5e628c145`: **3/6 jobs SUCCESS, 0/6 FAILED, remaining IN PROGRESS/QUEUED** at last sampled job state. Ubuntu Python 3.13 **Ruff PASS; 2779 passed / 1 skipped** independently checked from job log. **No final six-job GREEN claim until every job completes.**
+- This checkpoint-result HEAD triggers its own ordinary repository CI; that run ID/outcome is NOT known before the checkpoint commit. No duplicate manual reruns, credentials, paid/external GPU or protected workloads were launched.
+
+### Frozen contracts, isolation, and authorization gates
+
+Both main and PR8 Git Trees were **nontruncated** at the corrected source HEAD: main `7a843f17eb96ed13d66f23b58b06406b3002e405` had 94 blobs and PR8 `b27622fb74fa18ccfa38bb1743adfdb5e628c145` had 553: **459 additions, zero main file modifications/deletions**. PR #5 stays **Draft/open/unmerged/NOT_PASSED** under the controlling V3 free-only gate. Frozen V1/V2/Local UI/Launcher, Memory V1 SQL DDL, ActionAudit V1 SQL DDL, V3 Contract 1 and protected evaluation were not changed. No main merge or Candidate promotion, training or real adapter/weights; no live sensors, privacy erasure, credentials, new account connection, actual external WRITE, irreversible action or potentially billable service was initiated. Existing public-repository CI ran automatically after ordinary Contents commits; owner billing settings are not inferred.
+
+### Next plan / 今後の方針
+
+1. **Verify #1195's unfinished Windows jobs and its exact corrected source HEAD; verify the distinct checkpoint-result CI.** If FAIL, read specific logs, preserve historical evidence, make the smallest safety-preserving normal Contents repair, then switch to an independent lane.
+2. Expand Planner–PermissionGate–Occurrence–ActionAudit–AuditLink cross-store dependent READ-bridge orphan/tail-loss and independently retained-prefix matrices. Never auto-replay UNKNOWN, RUNNING or reserved PENDING WRITE.
+3. Further exercise genuinely independent local-process Memory CAS, expiry and snapshot races without frozen SQL changes or cross-file atomicity claims.
+4. Advance Privacy revocation/witness lifecycle and deny-only issuer/trusted-clock interfaces, without actual data deletion, identity inference or dispatch permissions.
+5. Reversible observation/scheduler fixture work and V3 free-only identity/path/reproducibility preflight controls, keeping Draft PR #5 and #8 unmerged and all authorization boundaries intact.
+
+---
+
+**HISTORICAL — Run428 and previous checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 428**
 
 Saved at: **2026-10-26T01:00:45.373+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock immediately before ordinary GitHub Contents checkpoint write; NOT authenticated clock evidence, verified user/issuer consent, approved spending, model provenance, or a signed identity).
