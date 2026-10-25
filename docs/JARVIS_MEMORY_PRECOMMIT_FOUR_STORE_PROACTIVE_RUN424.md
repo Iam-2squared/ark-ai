@@ -39,8 +39,17 @@ Source: `src/ark/agency/policy.py` at commit `9d186d6f8c7315e54ea064798863daff0e
 - Tests explicitly exercise generator exhaustion and lock-contention callback phases, both direct and registry-bound checks, plus stable permission evaluation. The synthetic backend is never invoked.
 - A consumed in-process token is **not** durable authorized consent across restarts; actual dispatch stays disabled.
 
+## E. Memory v1 multi-process CAS single winner
+
+Test: `tests/test_memory_cross_process_cas_run424.py` at commit `50478b06e41fb957985f11fc4bf71c923f30de1b` (**2 parametrized cases**).
+
+- Two independent locally spawned Python processes open the same initialized SQLite v1 store and wait at a disposable filesystem start barrier before attempting `put(..., expected_revision=1)` on the same Memory identity.
+- Exactly one revision-2 update is allowed to succeed. Its competitor must raise `MemoryConflictError`, leaving **one** durable update row and **one** matching content-free audit event, not duplicate revision-2 events.
+- The committed value may be from either process; the test deliberately avoids assuming a deterministic winner. Read the final store after both workers exit.
+- Child subprocesses run only the repository's local Python/SQLite code, with time bounds and guaranteed cleanup. This fixture is not a distributed transaction, attested identity or privileged action.
+
 ## Evidence status and boundaries
 
-These changes comprise four independent work packages and **56 new parametrized pytest cases (11 + 4 + 11 + 30)**. The prior Run423 source baseline had 2619 passed / 1 skipped on Ubuntu Python 3.13. **Do not declare Run424 GREEN without examining exact-HEAD CI jobs.** The canonical `docs/PROJECT_STATUS.md` contains definitive verified CI metadata and the checkpoint basis.
+These changes comprise five independent work packages and **58 new parametrized pytest cases (11 + 4 + 11 + 30 + 2)**. The prior Run423 source baseline had 2619 passed / 1 skipped on Ubuntu Python 3.13. **Do not declare Run424 GREEN without examining exact-HEAD CI jobs.** The canonical `docs/PROJECT_STATUS.md` contains definitive verified CI metadata and the checkpoint basis.
 
 Still missing: real authenticated human issuer/consent, trusted signed clock, real backend attestation, atomic cross-SQLite snapshot, external exactly-once execution, physical/sensor access and a trained Candidate. UNKNOWN/RUNNING and reserved PENDING WRITE remain non-replayable without independent external outcome verification. No paid services, external compute/GPU, protected V2 final evaluation, frozen-schema changes, promotion, main merge, new credentials or destructive operations.
