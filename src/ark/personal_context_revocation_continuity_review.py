@@ -124,9 +124,36 @@ def review_revocation_continuity(
             )
             assert_epoch()
             witness = SyntheticRevocationWitness(rows, _hash(rows))
+            # The freshly constructed witness is also a reflected-mutable
+            # carrier. An integrity or COMMIT callback must not retarget the
+            # result after its digest was checked and before it is returned.
+            witness_rows = witness.rows
+            witness_id = witness.witness_id
+            witness_row_carriers = tuple(witness_rows)
+
+            def assert_witness_epoch() -> None:
+                if (
+                    type(witness) is not SyntheticRevocationWitness
+                    or witness.rows is not witness_rows
+                    or witness.witness_id is not witness_id
+                    or type(witness.rows) is not tuple
+                    or len(witness.rows) != len(witness_row_carriers)
+                    or any(
+                        now is not before
+                        for now, before in zip(
+                            witness.rows, witness_row_carriers, strict=True,
+                        )
+                    )
+                ):
+                    raise SyntheticContextRevocationRejected(
+                        "revocation result witness changed during review"
+                    )
+
             assert_epoch()
+            assert_witness_epoch()
             witness.assert_integrity()
             assert_epoch()
+            assert_witness_epoch()
             if retained is not None:
                 retained.assert_integrity()
                 assert_epoch()
@@ -136,8 +163,10 @@ def review_revocation_continuity(
                         "retained revocation history changed"
                     )
             assert_epoch()
+            assert_witness_epoch()
             conn.commit()
             assert_epoch()
+            assert_witness_epoch()
             return witness
         except BaseException:
             conn.rollback()
