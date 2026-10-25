@@ -605,17 +605,25 @@ class SQLiteMemoryStore:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory events source changed during read")
 
+        # Opening a read-only SQLite handle, BEGIN, SELECT and fetchall are
+        # separate reentrant boundaries in synthetic fault fixtures. Check
+        # the original scope/source immediately after each boundary so a
+        # later callback cannot restore a short-lived retarget silently.
+        assert_events_epoch()
         with closing(self._connect_readonly()) as conn:
+            assert_events_epoch()
             conn.execute("BEGIN")
             assert_events_epoch()
             _validate_v1_schema(conn)
             assert_events_epoch()
-            rows = conn.execute(
+            cursor = conn.execute(
                 """SELECT * FROM memory_events
                 WHERE owner_id=? AND namespace=? AND event_id>?
                 ORDER BY event_id LIMIT ?""",
                 (pinned_scope.owner_id, pinned_scope.namespace, after_event_id, limit),
-            ).fetchall()
+            )
+            assert_events_epoch()
+            rows = cursor.fetchall()
             assert_events_epoch()
         assert_events_epoch()
         # Event rows have no associated source_id after deletion, so validate
