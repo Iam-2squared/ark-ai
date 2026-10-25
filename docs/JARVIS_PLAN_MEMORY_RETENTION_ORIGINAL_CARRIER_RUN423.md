@@ -71,9 +71,24 @@ mutations of cached, current or returned receipt carriers plus a valid
 non-authorizing review queue (**13 parametrized pytest cases**). No actual
 personal-data deletion, notification, disclosure, or consent assertion.
 
+## Package D — Observation/Trigger correlation exact-carrier custody
+
+`src/ark/proactive_observation_lineage_fence_review.py` now holds exact
+references for every bounded input `ObservationEnvelope` field, trigger
+`SyntheticTriggerReceipt` field, and `SyntheticTriggerPolicy` field before
+the first observation-ID/policy review. Each independent lineage/freshness
+callback is separated by an original-carrier check before recomputing potentially
+reentrant hash identities. Retained `SyntheticTriggerWitness.digest` likewise
+must remain the exact caller-supplied scalar, not just an equal hash.
+
+`tests/test_observation_trigger_original_carriers_run423.py`: eight injected
+equal-valued envelope/policy/receipt/retained witness replacements plus a
+stable no-capture/no-dispatch/no-notification fixture (**9 cases**). No live
+sensor, network, scheduler dispatch, or privacy disclosure.
+
 ## Interactions and remaining gaps
 
-These three modules are intentionally independent and reversible. Each
+These four modules are intentionally independent and reversible. Each
 fixture rejects changes to previously observed local evidence; none supplies
 authenticated issuer identity, externally attested clock, real backend outcome,
 durable distributed WRITE idempotency, or privacy/legal authorization.
