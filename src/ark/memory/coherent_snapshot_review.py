@@ -64,6 +64,10 @@ class CoherentSnapshotReview:
     provenance_sha256: str
 
 
+# Pin the result type independently of a reentrant synthetic constructor hook.
+_COHERENT_SNAPSHOT_RESULT_TYPE = CoherentSnapshotReview
+
+
 def review_coherent_snapshot(
     store: SQLiteMemoryStore, request: CoherentSnapshotRequest
 ) -> CoherentSnapshotReview:
@@ -307,4 +311,20 @@ def review_coherent_snapshot(
     # Refuse a stale but apparently well-formed witness after final hashing.
     assert_epoch()
     assert_record_epochs()
-    return CoherentSnapshotReview(now, scopes, tuple(results), digest)
+    # Result construction is the final callback boundary: a fixture hook can
+    # mutate the original request, source or hydrated rows, or forge the
+    # detached result itself after the content-free digest was computed.
+    detached_records = tuple(results)
+    review = CoherentSnapshotReview(now, scopes, detached_records, digest)
+    assert_epoch()
+    assert_record_epochs()
+    if (
+        type(review) is not _COHERENT_SNAPSHOT_RESULT_TYPE
+        or type(review.read_at_ms) is not int
+        or review.read_at_ms is not now
+        or review.scopes is not scopes
+        or review.records is not detached_records
+        or review.provenance_sha256 is not digest
+    ):
+        raise MemorySchemaError("memory snapshot result changed during review")
+    return review
