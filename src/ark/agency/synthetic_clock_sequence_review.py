@@ -114,17 +114,17 @@ def review_synthetic_clock_sequence(
     if retained is not None and type(retained) is not SyntheticClockWitness:
         raise SyntheticClockRejected("retained clock witness requires exact type")
     retained_epoch = _fields(retained) if retained is not None else None
-    retained_carriers = (
-        (retained.source_digest, retained.chain_hash)
-        if retained is not None else None
-    )
+    retained_carriers = _fields(retained) if retained is not None else None
     if retained is not None:
         _check_witness(retained)
         if (
             _fields(retained) != retained_epoch
-            or (retained.source_digest, retained.chain_hash) != retained_carriers
-            or retained.source_digest is not retained_carriers[0]
-            or retained.chain_hash is not retained_carriers[1]
+            or any(
+                actual is not original
+                for actual, original in zip(
+                    _fields(retained), retained_carriers, strict=True,
+                )
+            )
         ):
             raise SyntheticClockRejected("retained clock witness changed")
         if retained.event_count > max_samples:
@@ -154,14 +154,25 @@ def review_synthetic_clock_sequence(
     def assert_epoch() -> None:
         if retained is not None and (
             _fields(retained) != retained_epoch
-            or retained.source_digest is not retained_carriers[0]
-            or retained.chain_hash is not retained_carriers[1]
+            or any(
+                actual is not original
+                for actual, original in zip(
+                    _fields(retained), retained_carriers, strict=True,
+                )
+            )
         ):
             raise SyntheticClockRejected("retained clock witness changed")
         for sample, seq, source, wall, mono in observed:
             if (
                 type(sample) is not SyntheticClockSample
-                or sample.source_digest is not source
+                or any(
+                    actual is not original
+                    for actual, original in zip(
+                        (sample.seq, sample.source_digest,
+                         sample.wall_ms, sample.monotonic_ns),
+                        (seq, source, wall, mono), strict=True,
+                    )
+                )
                 or (sample.seq, sample.source_digest, sample.wall_ms,
                     sample.monotonic_ns) != (seq, source, wall, mono)
             ):
@@ -226,7 +237,10 @@ def review_synthetic_clock_sequence(
                 # source/hash carriers while preserving the digest values.
                 # Preserve the caller's source and freshly computed chain link
                 # as the original witness objects, not merely their text.
+                or candidate.event_count is not seq
                 or candidate.source_digest is not source
+                or candidate.last_wall_ms is not wall
+                or candidate.last_monotonic_ns is not mono
                 or candidate.chain_hash is not next_hash
             ):
                 raise SyntheticClockRejected("constructed clock chain link changed")
