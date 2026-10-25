@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — Run435**
+
+Saved at: **2026-10-26T06:49:41.469+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before the normal GitHub Contents write; not authenticated trusted time, human consent or external-outcome attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `1d8c78b26463ae823b57d4602674368d68e2147c` (Run434 checkpoint, its own CI **#1239 / 40233461194 QUEUED** at opening).
+**Run435 final executable/test HEAD:** `c8bb9bd5cb85cdeaa04645176484777567a1906f`.
+**Run435 technical-document and exact checkpoint write-basis HEAD:** `b07efecb7feee413e3761e51cf778e30f4e1e0ed`, `docs/JARVIS_PROCESS_CONCURRENCY_MATRIX_RUN435.md`.
+**Checkpoint-result HEAD:** not knowable from inside the commit it creates. Use the normal GitHub Contents write result `commit_sha` and check the **separate exact-HEAD CI**. Neither the final test nor document HEAD attests this checkpoint commit.
+
+### Overall ARK state / hard authorization boundaries
+
+**Complete JARVIS NOT_PASSED.** Local-first, disconnected, synthetic/mock foundations only. No verified human issuer/consent, signed trusted-clock source, independently attested external Tool outcome, cross-file SQLite atomic transaction, real-world exactly-once WRITE, real sensor capture, notification or autonomous backend dispatch. **UNKNOWN/RUNNING and reserved PENDING WRITEs must never auto-replay.** Protected V2 final opening, V3 real Candidate/adapter generation or promotion, paid/external GPU compute and main merge remain blocked. PR #5 Draft/open/unmerged/NOT_PASSED; PR #8 Draft/open/unmerged.
+
+### NEW Run435 — three independent local-process test packages (+10 expanded cases)
+
+1. **Proactive scheduler independent-process preparation contention (+4):** `tests/test_proactive_cross_process_preparation_race_run435.py` committed at `7f6ae0510096bf6c66ee4b242373a463a2594a71`. Two separate interpreters race a shared SQLite proactive ledger. Identical triggers and distinct observations under the same policy must admit only one marker within the minimum interval; distinct policy revision or owner must remain isolated and both admissible. Both records and inactivity flags are inspected; no notification is sent.
+2. **Memory cross-process initial `expected_revision=0` CAS (+4):** `tests/test_memory_cross_process_create_race_run435.py` at `c69e72d6d18f2adcfa5dabb0cdd6803d9810b21e`. Same owner/namespace/source must admit exactly one creation and one conflict; independent owners/namespaces/sources must commit separately. Verify corresponding revision-one, content-free audit events and deterministic record separation.
+3. **Global expiry purge versus independent namespace CAS (+2):** `tests/test_memory_multiscope_cross_process_purge_run435.py` at `c8bb9bd5cb85cdeaa04645176484777567a1906f`. Two expired namespaces and a competing refresh have only two acceptable durable outcomes: both expired rows deleted and refresh conflicts, or one refreshed revision-two row survives while the other expires. Every persistent mutation has a matching scoped event; no private user data involved.
+4. **Engineering fault matrix:** `docs/JARVIS_PROCESS_CONCURRENCY_MATRIX_RUN435.md` at `b07efecb7feee413e3761e51cf778e30f4e1e0ed` documents gates, output alternatives, process barriers, temporary SQLite and current non-authority limits. No claims of all-PASS.
+
+**Added 10 parameter-expanded test cases, not 10 validated PASSes.** No executable source or frozen DDL changes this invocation. Container git cannot resolve github.com, so local full pytest/Ruff was unavailable. New test line lengths were checked for >88 characters, which is not a substitute for Ruff or pytest.
+
+### Exact-HEAD CI sampled during Run435
+
+- Opening Run434 checkpoint `1d8c78b... `: **#1239 / 40233461194 QUEUED**, six pending jobs. Previous final executable/test head `698eab69...`: **#1237 / 40233213149 QUEUED**. Previous detached-recovery bundle therefore **not yet GREEN**, and no integration of it was attempted.
+- New Proactive fixture `7f6ae051...`: **#1240 / 40236887191 QUEUED**, no job success asserted.
+- New Memory initial-create fixture `c69e72d6...`: **#1241 / 40236936295 QUEUED**, no job success asserted.
+- Run435 final executable/test HEAD `c8bb9bd5...`: **#1242 / 40237068953 QUEUED**, no full-suite or Windows GREEN asserted.
+- Technical-document HEAD `b07efecb...`: **#1243 / 40237184462 QUEUED**. This does not validate the future checkpoint-result HEAD; inspect its own distinct CI afterward.
+- These are actual GitHub workflow run IDs and statuses from the most recent checked Actions collection, not assumed PASSes. No duplicate manual workflow dispatch, CI rerun, local model, paid GPU or external ToolBackend.
+
+### Frozen evidence and isolation
+
+Public repository `Iam-2squared/ark-ai`, unchanged `main` HEAD `7a843f17eb96ed13d66f23b58b06406b3002e405`; all Run435 files are newly added inside reversible Draft PR #8. Frozen V1/V2/Local UI/Launcher contracts/evidence, Memory v1 and ActionAudit v1 DDL, V3 Contract 1, provenance/contamination/regression/reproducibility gates and the protected V2 final opening were not edited. No real issuer, immutable real materialized model/tokenizer hashes, human review, external effect, credential, destructive operation, main merge or cost approval invented.
+
+### Next plan / 今後の方針
+
+1. Verify **#1242 final test HEAD**, **#1243 technical-document HEAD**, and checkpoint-result exact CI independently when runners execute; inspect actual failed job logs before any semantics-preserving normal Contents correction. Avoid repeated polling or duplicate equivalent runs; work another free lane while runners are queued.
+2. After exact-head GREEN, expand process-local races into bounded fault injection at COMMIT boundaries, retained audits and crash/restart. Maintain honest process/barrier coverage, not false exhaustive interleavings.
+3. Only when Run434 detached recovery bundle and its dependency code have verified GREEN, test a separate restarted READ→WRITE→READ→WRITE plan across Planner, PermissionGate, Occurrence, ActionAudit and AuditLink with retained evidence and quarantine for ambiguous/reserved successors. Never call independent SQLite stores atomic.
+4. Advance Memory multi-process CAS/expiry and privacy revocation freshness; deny-only trusted issuer/clock and offline Observation/Scheduler fixtures separately. No sensing, notification, real Tool execution or external action.
+5. PR #5 and PR #8 remain Draft/unmerged. Candidate training, paid/external GPU, frozen V2 opening, user credentials, cross-contract changes, irreversible architecture and main merge require their respective explicit approvals, provenance/identity and budget gates.
+
+---
+
+**HISTORICAL — Run434 and earlier canonical checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run434**
 
 Saved at: **2026-10-26T06:00:51.776+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before normal GitHub Contents write; not an authenticated trusted clock, human consent or external action attestation).
