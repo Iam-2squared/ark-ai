@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — Run 413**
+
+Saved at: **2026-10-25T16:01:40.592+09:00 Asia/Tokyo/JST** (runtime wall-clock sample immediately before ordinary GitHub Contents checkpoint write; NOT a trusted clock, GitHub-server attestation, authenticated user consent, or human approval).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `fb33ab136e4610decfa9ddda6654b97df3ba4fe0` (Run412 canonical checkpoint; CI **#1003 / 40167055942 SUCCESS all six** independently checked at invocation start).
+**Latest four-package source+test HEAD:** `7a6cb7e1a7811e6238a146bebf6172f4c3edc9d5` (**#1012 / 40170813017**, exact result below). This contains all **19 new parametrized test cases** plus the narrow Ruff correction.
+**Engineering-document/checkpoint write-basis HEAD:** `86885b416a035c1252ef2b78083bdb5c8b7351c8` (**#1013 / 40170908212**). This is the freshly re-read HEAD **before** this status commit, NOT its resulting HEAD.
+**Checkpoint-result HEAD:** cannot be represented honestly inside this file before GitHub creates the commit; the normal `update_file.commit_sha` response is authoritative, and its own CI must be checked separately.
+
+### Overall current ARK state
+
+**Local-first, disconnected synthetic/mock-only JARVIS foundations; complete JARVIS NOT_PASSED.** No authenticated issuer or consent, signed/attested trusted clock, verified real ToolBackend outcome receipt, shared atomic snapshot across SQLite stores, hardware/sensor integration, independent external exactly-once effects, trained Candidate, or autonomous WRITE. Synthetic audit/hash/clock witnesses are local diagnostic artifacts, not authorization or disclosure evidence. **UNKNOWN/RUNNING and reserved-PENDING WRITE are never automatically replayed.**
+
+### NEW Run413 — four coherent FREE-only source+test packages, 19 cases
+
+1. **Bounded direct triage SQLite reservation scan (+4):** `src/ark/agency/synthetic_recovery_triage.py` source `df2cff17cad437be32023552e1f376441e05ca44`, narrow Ruff import-order fix `976abf78f7894c7f674a70a2de85ebefc31a62f8`; `tests/test_recovery_ledger_bounded_scan_run413.py` `bb36ecb1178d4f76c7aaa597e15651ded9a1151f`. Bound direct row materialization to 10,001 max and reject >10,000; check original input epoch after each row hash so later callbacks cannot silently restore transient drift. No ToolBackend invoked.
+2. **Plan-wide per-step returned witness custody (+5):** `src/ark/agency/synthetic_write_plan_recovery_review.py` `a48eefb7671b9839eba9640be33d3974aaf03ea1`; `tests/test_recovery_plan_returned_epoch_run413.py` `dae1bf3c522e7a526602651fc9d96f36ac993661`. Freeze each returned review and nested witness field carrier across independent per-WRITE SQLite observations and final replay, including value-equal digest carrier swaps. No terminal local status can become an external outcome.
+3. **Audit-link read-only source and retained epoch (+5):** `src/ark/agency/synthetic_occurrence_audit_link_review.py` `a29d8ebc4a9ec4cd5e1c0b044bff9505417d1d76`; `tests/test_audit_link_read_epoch_run413.py` `cb0c21837e5972f67c5bc724de2a509538cdcff0`. Check exact source Path and retained witness field carriers at `_connect`, BEGIN, replay, commit and return; close source-drifted connections. No changes to frozen ActionAudit v1 SQL.
+4. **Personal Context revocation read/write transaction phase fencing (+5):** `src/ark/personal_context_revocation_review.py` `9d957119c1aafba6b38821a632da98337d1bb5e9`; `tests/test_privacy_veto_transaction_epoch_run413.py` `7a6cb7e1a7811e6238a146bebf6172f4c3edc9d5`. Check source/owner/namespace before and after BEGIN, validation, and COMMIT on disconnected local privacy veto reads and writes. On post-COMMIT diagnostic rejection, a committed veto remains durable; never silently regrant consent.
+
+**Engineering fault matrix and exact source/fixture basis:** `docs/JARVIS_RESERVATION_PRIVACY_PHASE_REVIEW_RUN413.md` saved on engineering HEAD `86885b416a035c1252ef2b78083bdb5c8b7351c8`.
+
+### CI / evidence fidelity
+
+- Prior Run412 canonical #1003 / 40167055942 **SUCCESS all six**, source #1001 and doc #1002 also independently observed SUCCESS all six at this invocation's start.
+- First Run413 CI **#1004–#1009 FAILED all six** because an initial added `_MAX_WITNESS_ROWS` import had Ruff `I001` wrong order; inspected #1004 Ubuntu Python 3.13 job `121099779330`, #1007 `121100192036`, #1008 `121100456553`. The narrow semantics-preserving normal Contents correction is `976abf78f7894c7f674a70a2de85ebefc31a62f8`. Preserve failure history; none is GREEN.
+- Post-fix and later exact-head job checks at checkpoint time:
+- #1010 / 40170681605 (exact 976abf78f7894c7f674a70a2de85ebefc31a62f8): **IN_PROGRESS / not concluded**, 5/6 GREEN, 0 FAIL, 1 pending/running
+- #1011 / 40170771616 (exact 9d957119c1aafba6b38821a632da98337d1bb5e9): **COMPLETED / success**, 6/6 GREEN, 0 FAIL, 0 pending/running
+- #1012 / 40170813017 (exact 7a6cb7e1a7811e6238a146bebf6172f4c3edc9d5): **COMPLETED / success**, 6/6 GREEN, 0 FAIL, 0 pending/running
+- #1013 / 40170908212 (exact 86885b416a035c1252ef2b78083bdb5c8b7351c8): **COMPLETED / success**, 6/6 GREEN, 0 FAIL, 0 pending/running
+- **Ubuntu Python 3.13 on exact latest four-package source+test #1012**: Ruff **All checks passed**; **2245 pytest passed in 50.59s** (job `121101084392`). Prior Run412 2226 → **+19**. This does **not** imply unfinished Windows, document HEAD or checkpoint-result HEAD are GREEN.
+- Non-truncated exact Git Tree comparison at engineering HEAD `86885b416a035c1252ef2b78083bdb5c8b7351c8` against main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 main blobs, 469 branch blobs; +375 added; 0 pre-existing-main modified; 0 deleted**. The checkpoint touches only the branch-exclusive `docs/PROJECT_STATUS.md` and will not alter main.
+- No CI rerun, alternate hidden write, raw Git object/ref update, force push, or main merge. All changes through ordinary GitHub Contents API after fresh branch HEAD inspection.
+
+### Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence and contracts, frozen V3 Contract 1, Memory v1 and ActionAudit v1 SQL schemas **unchanged**. V3 **PR #5 Draft/open/unmerged/NOT_PASSED**; JARVIS PR #8 Draft/unmerged, main unchanged. No paid or potentially billable external compute/API/GPU/service, credential/account connection, Candidate training/weights/promotion, protected V2 evaluation, external ToolBackend/notification/sensor/physical-PC use, private-data export/erasure, frozen-contract modification, irreversible architecture action, or approved main merge. Local-only privacy vetoes cannot prove true consent or lawful erasure. Human/legal/licensing/external-effect gates remain unresolved.
+
+### Next plan / 今後の方針
+
+1. Re-check the exact latest **#1012** source/test and **#1013** engineering documentation plus resulting checkpoint HEAD's **own** six Ubuntu/Windows jobs. If CI truly fails, inspect logs and make the smallest normal Contents patch, without weakening denial behavior or re-triggering duplicate workflows.
+2. Advance disconnected audit-link *write-path* carrier custody and retained cross-store multi-WRITE restart/partial history-loss fixtures; hold every UNKNOWN or dependency-blocked WRITE, never auto-replay.
+3. Strengthen Memory CAS/snapshot/expiry concurrency and Personal Context revocation/retention fences without changing frozen SQL schemas.
+4. Advance mock-only trusted-clock/issuer and observation/proactive scheduler interfaces; no real hardware, live dispatch, notification or implicit consent.
+5. Preserve V3 free-only identity/reproducibility/approval checks as isolated safeguards; PR #5 Draft/NOT_PASSED, no paid GPU/Candidate or protected V2 opening without explicit gate.
+
+---
+
+**HISTORICAL — Run412 and earlier evidence preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 412**
 
 Saved at: **2026-10-25T14:51:38.730+09:00 Asia/Tokyo/JST** (automation runtime wall-clock sample immediately before ordinary GitHub Contents checkpoint write; NOT signed trusted time, GitHub-server timestamp attestation, user consent or human approval).
