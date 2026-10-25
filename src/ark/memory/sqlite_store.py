@@ -509,19 +509,35 @@ class SQLiteMemoryStore:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory delete source changed during clock")
             if (
-                scope.owner_id, scope.namespace
-            ) != (pinned_scope.owner_id, pinned_scope.namespace):
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
                 raise MemorySchemaError("memory delete scope changed during clock")
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
                 (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
             ).fetchone()
+            # The read itself is a callback boundary. Never return a clean
+            # missing-row result or mutate a found row using a retargeted
+            # owner/namespace carrier, even if its text remains equal.
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed during read")
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+            ):
+                raise MemorySchemaError("memory delete scope changed during read")
             if row is None:
-                if self.path is not path_epoch:
-                    raise MemorySchemaError("memory delete source changed during read")
                 return False
             stored = _record(row)
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+            ):
+                raise MemorySchemaError("memory delete scope changed during hydration")
             if stored.memory_id != memory_id or stored.scope != pinned_scope:
                 raise MemorySchemaError("stored memory identity differs from delete")
             actual = stored.revision
@@ -539,8 +555,11 @@ class SQLiteMemoryStore:
             self._event(conn, memory_id, pinned_scope, "delete", actual, now)
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory delete source changed before commit")
-            if (scope.owner_id, scope.namespace) != (
-                pinned_scope.owner_id, pinned_scope.namespace
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory delete scope changed before commit")
         assert_post_commit_delete_epoch()
@@ -582,8 +601,11 @@ class SQLiteMemoryStore:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory purge source changed during clock")
             if scope is not None and (
-                scope.owner_id, scope.namespace
-            ) != (pinned_scope.owner_id, pinned_scope.namespace):
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
                 raise MemorySchemaError("memory purge scope changed during clock")
             if pinned_scope is None:
                 rows = conn.execute(
@@ -604,8 +626,11 @@ class SQLiteMemoryStore:
                 # undone on the *next* row must not pass the final-only check.
                 if self.path is not path_epoch:
                     raise MemorySchemaError("memory purge source changed before commit")
-                if scope is not None and (scope.owner_id, scope.namespace) != (
-                    pinned_scope.owner_id, pinned_scope.namespace
+                if scope is not None and (
+                    scope.owner_id is not original_owner
+                    or scope.namespace is not original_namespace
+                    or (scope.owner_id, scope.namespace)
+                    != (pinned_scope.owner_id, pinned_scope.namespace)
                 ):
                     raise MemorySchemaError("memory purge scope changed before commit")
 
@@ -637,8 +662,11 @@ class SQLiteMemoryStore:
                 assert_purge_row_epoch()
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory purge source changed before commit")
-            if scope is not None and (scope.owner_id, scope.namespace) != (
-                pinned_scope.owner_id, pinned_scope.namespace
+            if scope is not None and (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory purge scope changed before commit")
         assert_post_commit_purge_epoch()
