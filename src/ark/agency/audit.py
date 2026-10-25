@@ -110,7 +110,28 @@ class SQLiteActionAudit:
         except (TypeError, ValueError) as exc:
             raise ActionAuditSchemaError("audit call identity is invalid") from exc
         original_arguments = call.arguments
+        original_subject = (call.tool, call.capability, call.scope)
         path_epoch = self.path
+
+        def assert_action_epoch(phase: str) -> None:
+            try:
+                stable = (
+                    call.arguments is original_arguments
+                    and call.tool is original_subject[0]
+                    and call.capability is original_subject[1]
+                    and call.scope is original_subject[2]
+                    and (
+                        call.request_id, call.tool, call.capability,
+                        call.scope, call.arguments_sha256,
+                    ) == identity
+                )
+            except (TypeError, ValueError, AttributeError) as exc:
+                raise ActionAuditSchemaError(
+                    f"audit call identity became invalid {phase}"
+                ) from exc
+            if not stable:
+                raise ActionAuditSchemaError(f"audit call changed {phase}")
+
         with closing(self._connect()) as conn, conn:
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed before append")
@@ -126,17 +147,7 @@ class SQLiteActionAudit:
             now = self._now()
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed during clock")
-            try:
-                current = (
-                    call.request_id, call.tool, call.capability, call.scope,
-                    call.arguments_sha256,
-                )
-            except (TypeError, ValueError, AttributeError) as exc:
-                raise ActionAuditSchemaError(
-                    "audit call identity became invalid during clock"
-                ) from exc
-            if call.arguments is not original_arguments or current != identity:
-                raise ActionAuditSchemaError("audit call changed during clock")
+            assert_action_epoch("during clock")
             cursor = conn.execute(
                 """INSERT INTO action_events(
                     request_id,tool,capability,scope,arguments_sha256,outcome,occurred_at_ms
@@ -150,7 +161,33 @@ class SQLiteActionAudit:
             event_id = int(cursor.lastrowid)
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed before commit")
-        return ActionAuditEvent(event_id, *identity, outcome, now)
+            # A reentrant INSERT callback must not change the original
+            # action carrier after the SQL parameters were captured.
+            assert_action_epoch("before commit")
+        # COMMIT has already happened. Deny a clean result on late source or
+        # input drift, but never claim rollback or automatically retry.
+        if self.path is not path_epoch:
+            raise ActionAuditSchemaError("action audit path changed after commit")
+        assert_action_epoch("after commit")
+        event = ActionAuditEvent(event_id, *identity, outcome, now)
+        if self.path is not path_epoch:
+            raise ActionAuditSchemaError("action audit path changed after commit")
+        assert_action_epoch("after commit")
+        if (
+            type(event) is not ActionAuditEvent
+            or event.event_id is not event_id
+            or event.request_id is not identity[0]
+            or event.tool is not identity[1]
+            or event.capability is not identity[2]
+            or event.scope is not identity[3]
+            or event.arguments_sha256 is not identity[4]
+            or event.outcome is not outcome
+            or event.occurred_at_ms is not now
+        ):
+            raise ActionAuditSchemaError(
+                "constructed action audit event changed after commit"
+            )
+        return event
 
     def events(self, *, after_event_id: int = 0, limit: int = 100) -> list[ActionAuditEvent]:
         if (
