@@ -1,5 +1,56 @@
 # ARK AI Project Status
 
+**LATEST — Run 406**
+
+Saved at: **2026-10-25T09:50:52.202+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this ordinary GitHub Contents API write; **NOT** authenticated trusted time, user consent or a GitHub server timestamp).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact work-basis HEAD:** `99ed02197b1d52607ee7fcdbae93334a53eab4cd` (prior Run405 checkpoint; **CI #916 / run `40145087670` GREEN all 6 Ubuntu/Windows Python 3.11–3.13 jobs**, independently verified at run start).
+**Final source+tests HEAD:** `e4928117f868ded4f8b26abed328c7c1e76536ce` (**CI #925 / run `40148087354`: 3/6 GREEN, 0 FAIL, 3 IN PROGRESS/QUEUED** at fresh job read; Ubuntu 3.13 job `121033639378` **Ruff PASS / 2062 tests PASS**; no unverified all-six GREEN claim).
+**Engineering-doc / checkpoint write-basis HEAD:** `a0e255c62498ebe405a915199d6e9233c5512679` (**CI #926 / run `40148134407`: 3/6 GREEN, 0 FAIL, 3 IN PROGRESS/QUEUED** at fresh job read; this is the just-reread HEAD **before** this checkpoint write, not its result).
+**Checkpoint-result HEAD:** is **not knowable inside this file before its commit**. The normal GitHub Contents `update_file.commit_sha` result is authoritative and its own CI must be examined separately; do NOT transfer earlier GREEN to that new SHA.
+
+### Overall current ARK state
+
+**Local-first; disconnected synthetic/mock-only JARVIS foundations; full JARVIS NOT_PASSED.** No authenticated consent or human issuer, externally trusted clock, real backend receipt or externally verifiable exactly-once effects, coherent atomic snapshot across four independent SQLite stores, OS file-descriptor/inode custody, trained Candidate, physical device integration or autonomous real WRITE. A local policy/trigger, synthetic approval, Planner SUCCEEDED marker, retained chain or matching audit link grants no execution authority. **UNKNOWN WRITE remains UNKNOWN; automatic replay is forbidden.**
+
+### NEW Run406 — four coherent FREE-only implementation + regression packages (+25 tests)
+
+1. **Memory final content-free witness epoch (+8):** `src/ark/memory/coherent_snapshot_review.py`, `tests/test_memory_snapshot_final_digest_epoch_run406.py`. Explicitly revalidate frozen request/source/record carriers **after final JSON encoding and after final SHA-256**, catching callback mutations and mutate-restore before hashing. No v1 Memory schema change or personal-data export.
+2. **Plan-wide DAG dependency holds (+8):** `src/ark/agency/synthetic_write_plan_recovery_review.py`, `tests/test_synthetic_write_plan_dependency_holds_run406.py`. Separate directly uncertain WRITE IDs from **transitively dependent WRITE holds** and failed/cancelled/blocked upstream terminal holds (including READ bridges). Planner's automatic BLOCKED propagation required a narrow closure fix; no runtime authorization or replay.
+3. **Nonempty linked multi-WRITE restart evidence (+3):** `tests/test_synthetic_write_plan_linked_restarts_run406.py`. Two separately linked RUNNING/UNKNOWN writes retain four SQLite store witnesses across restart, cannot replay; erased nonempty link history rejected; a PENDING dependent WRITE with orphan linked reservation is held. No real backend.
+4. **Proactive Scheduler hash-phase epoch (+6):** `src/ark/proactive_synthetic_review.py`, `tests/test_proactive_trigger_digest_epoch_run406.py`. Pin original policy, SQLite source and optional independently retained witness after each synthetic trigger digest callback; refuse transient retarget restored by another hash. No notification, device, user consent or live action.
+
+**GitHub Contents source/test/doc commits before this one canonical checkpoint (10 total):** Memory source `e26ec37d73da399f5b5e5dcafdd13a2f3addac1c`, Memory tests `a2485407a684432209e8c91e325fa1bfcbadef3c`; plan source `6a660fcd40ee2051e1ced61b8b9e29c7de5bcfb5`, plan tests `731a6bc8533c6d5c3ca150da5942a06571a0142b`; nonempty-link tests `7cf5a1881494ef9e47672bc90394bcfe3fee7e8d`; terminal-closure fix `85a1aec1246cf3ad5ba09a9d54c6f356ba7307fc`; engineering doc `e333b5d98cc0285e7b1d68b09b3c74545cd5d822`; Scheduler source `7375bf13904d25e38b8b9aa4216a78573f5cff02`, Scheduler tests `e4928117f868ded4f8b26abed328c7c1e76536ce`; finalized engineering doc `a0e255c62498ebe405a915199d6e9233c5512679`. Technical scope/race/non-proof matrix: `docs/JARVIS_MEMORY_DEPENDENCY_LINK_EPOCH_RUN406.md`.
+
+### Exact-head CI / verified evidence
+
+- Initial Run405 checkpoint **#916 / `40145087670` completed SUCCESS**.
+- Memory regression exact head `a2485407a684432209e8c91e325fa1bfcbadef3c`: **#918 / `40147625074` completed SUCCESS**.
+- Initial dependent-plan test head `731a6bc8533c6d5c3ca150da5942a06571a0142b`: **#920 / `40147726738` FAIL**, Ubuntu 3.13 **4 failed / 2049 passed**, because automatically BLOCKED descendants were excluded from terminal root set closure. Subsequent linked-test head **#921 / `40147818326` FAIL** for the same pre-fix source. Failed SHAs remain explicitly FAILED.
+- Source fix head `85a1aec1246cf3ad5ba09a9d54c6f356ba7307fc`: **#922 / `40147880165` 5/6 GREEN, 0 FAIL, 1 IN PROGRESS/QUEUED** at last job read; Ubuntu 3.13 job `121033027921` **Ruff PASS / 2056 pytest passed**.
+- Final 25-test source+test head `e4928117f868ded4f8b26abed328c7c1e76536ce`: **#925 / `40148087354` 3/6 GREEN, 0 FAIL, 3 IN PROGRESS/QUEUED**, Ubuntu 3.13 job `121033639378` **Ruff PASS / 2062 pytest passed**. Do not infer results for unfinished Windows jobs.
+- Final engineering-doc / checkpoint-basis `a0e255c62498ebe405a915199d6e9233c5512679`: **#926 / `40148134407` 3/6 GREEN, 0 FAIL, 3 IN PROGRESS/QUEUED**. New checkpoint-result HEAD has separate as-yet-unverified CI.
+- Non-truncated Git Tree comparison at doc/checkpoint-basis vs main `7a843f17eb96ed13d66f23b58b06406b3002e405`: **94 existing main blobs; 432 branch blobs; 338 added, 0 modified existing-main files, 0 deleted**. Frozen V1/V2/Local UI/Launcher, Memory v1 + ActionAudit v1 SQL, protected V2 final evaluation and V3 Contract 1 unchanged. V3 PR **#5 Draft/open/unmerged/NOT_PASSED** independently checked.
+
+### Blockers / explicit authorization boundaries
+
+**NO** paid or potentially billable GPU/API/cloud/subscription, real Candidate/weights generation or preflight, protected V2 final-evaluation opening, Candidate promotion, main merge requiring approval, frozen-contract edits, credential/account connections, real PC hardware/sensor/backend execution, unreviewed personal-data export/erasure, destructive actions or irreversible architecture changes. Authenticated issuer/consent, real trusted clock, external outcome receipts and atomic cross-store integrity are unresolved. Free isolated fixture/source work remains permissible.
+
+### Next plan / 今後の方針
+
+1. Verify final-source **#925**, engineering-doc **#926** and *this checkpoint-result SHA's own* CI across all six Ubuntu/Windows Python 3.11–3.13 jobs. On any FAIL, inspect logs and apply the narrowest fix via ordinary fresh-HEAD Contents writes; no duplicate workflow reruns.
+2. Deepen crash/restart tests with dependent mixed-state WRITEs, independent retained ledger/audit/link histories and explicit UNKNOWN non-replay; ensure no diagnostic label is mistaken for authorization.
+3. Continue Memory CAS/expiry/coherent snapshots, privacy revocation races, safe Personal Context projection, and independent event/row integrity, preserving frozen schemas.
+4. Advance deny-by-default authenticated-issuer/trusted-clock interface design and Scheduler/Observation fixture contracts, without real external actions.
+5. Maintain V3 free-only provenance/path/reproducibility gates. PR #5 stays Draft/NOT_PASSED; do not pay, unlock protected final evaluation, train a Candidate or merge main without explicit approval.
+
+---
+
+**HISTORICAL — Run 405 and earlier records preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 405**
 
 Saved at: **2026-10-25T09:01:47.567+09:00 Asia/Tokyo/JST** (execution-runtime wall clock sampled immediately before this ordinary GitHub Contents API update; **NOT** trusted external time, authenticated issuer evidence, or GitHub server receipt).
