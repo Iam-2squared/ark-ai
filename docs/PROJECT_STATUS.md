@@ -1,5 +1,56 @@
 # ARK AI Project Status
 
+**LATEST — Run 421**
+
+Saved at: **2026-10-25T19:56:46.326+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample immediately before the normal GitHub Contents update; **NOT** a signed clock, proof of human consent, runtime identity or spend authorization).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `71c330dd95a854be3ac0d375536ac2e0ec47f059` (Run420 canonical checkpoint; **CI #1108 / 40185240920 all six SUCCESS** on opening inspection).
+**Final four-package source + regression-test HEAD:** `1a39448ae02527c046df75a646ad8cb00a23b883` (CI #1116 / 40186515531: 3/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS/QUEUED at checkpoint sampling). Ubuntu Python 3.13 job `121148330248` reports **Ruff PASS; 2547 passed, 1 skipped in 103.53s**. Do not extrapolate Ubuntu success to unfinished Windows jobs.
+**Engineering document / checkpoint write-basis HEAD:** `9036efae266c2d1200478ebb17011734c6ec3772` (CI #1117 / 40186655614: 3/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS/QUEUED).
+**Checkpoint-result HEAD:** This file cannot contain its own resulting commit SHA prior to GitHub's normal `update_file` write. The connector's returned `commit_sha` identifies the checkpoint-result HEAD; evaluate that exact HEAD's CI separately. The preceding document basis and source HEAD are not the checkpoint-result HEAD.
+
+### Overall current ARK state
+
+**Local-first synthetic/disconnected/mock-only JARVIS foundations; full JARVIS NOT_PASSED.** No verified human issuer/consent, signed trusted clock, real backend outcome attestation, cross-SQLite atomic snapshot, external exactly-once WRITE guarantee, live device/sensor access, notification, trained Candidate or live autonomous Tool execution. Synthetic local receipts, hashes and diagnoses never authorize a real action. **UNKNOWN/RUNNING and already reserved PENDING WRITE remain non-replayable without independently verified external outcomes.**
+
+### NEW Run421 — 4 independent source+test packages (+31 parametrized pytest cases)
+
+1. **Memory snapshot result custody (+9):** `src/ark/memory/coherent_snapshot_review.py` source `806ba1a53d37ef057833271d1984267f4686dc17`, tests `4dc4405c58c004d83b77e5738f55f8856c3bc8d9`. Post-constructor guard pins original request/Path/hydrated rows and detached scopes, records, timestamp and digest; refuses result-forging and equal-valued carriers. Frozen Memory v1 schema untouched.
+2. **Startup readiness final result custody (+10):** `src/ark/startup_readiness_review.py` source `97f674435e8631c2412aa79d74d184b245eeb1bf`, tests `5ce459827389ca27da036a013314a85b7530f31f`. Original probes and constructed `ComponentResult` identities remain fixed after result callback. Synthetic READY cannot activate anything.
+3. **Personal Context fresh projection / retained-veto custody (+7):** `src/ark/personal_context_reuse_review.py` source `e71adb2f2fef0fec2a461ad37725ebc1a5ecd14f`, tests `6e8157e95950ad39a568c82bcd3c0215681b4e65`. Fresh Memory projection's nested carriers and retained revocation evidence rechecked through detached receipt construction; no disclosure, erasure or consent grant.
+4. **Multi-WRITE plan scalar identity custody (+5):** `src/ark/agency/synthetic_write_plan_recovery_review.py` source `f5985917b1490d940012152483ecfb0576191b98`, tests `1a39448ae02527c046df75a646ad8cb00a23b883`. `PlanStep.step_id` and ToolCall tool/capability/scope carrier identities remain pinned through per-step registry review. Never dispatches or auto-replays writes.
+
+**Detailed fault matrix and semantic boundaries:** `docs/JARVIS_RESULT_CUSTODY_CONTEXT_RECOVERY_RUN421.md` committed at `9036efae266c2d1200478ebb17011734c6ec3772`. 9+10+7+5 = **31 new cases** relative to Run420. The **2547 passed, 1 skipped** figure belongs only to the Ubuntu Python 3.13 job on the exact four-package source+test HEAD, not to other HEADs or platforms.
+
+### CI evidence — exact HEAD only
+
+- Run420 prior checkpoint **#1108 / 40185240920**: SUCCESS all six, separate work-basis.
+- Memory source+test **CI #1110 / 40186142948: 6/6 GREEN, 0/6 FAIL, 0/6 IN PROGRESS/QUEUED**: exact HEAD `4dc4405c58c004d83b77e5738f55f8856c3bc8d9`.
+- Startup source+test **CI #1112 / 40186228426: 5/6 GREEN, 0/6 FAIL, 1/6 IN PROGRESS/QUEUED**: exact HEAD `5ce459827389ca27da036a013314a85b7530f31f`.
+- Privacy source+test **CI #1114 / 40186364274: 6/6 GREEN, 0/6 FAIL, 0/6 IN PROGRESS/QUEUED**: exact HEAD `6e8157e95950ad39a568c82bcd3c0215681b4e65`.
+- Final Recovery / four-package source+test **CI #1116 / 40186515531: 3/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS/QUEUED**: exact HEAD `1a39448ae02527c046df75a646ad8cb00a23b883`. Ubuntu 3.13 Ruff PASS, 2547 passed / 1 skipped.
+- Engineering document **CI #1117 / 40186655614: 3/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS/QUEUED**: exact HEAD `9036efae266c2d1200478ebb17011734c6ec3772`. Revisit separately from checkpoint's later CI.
+- **Nontruncated blob Git-tree comparison** at final source+test HEAD against unchanged `main` `7a843f17eb96ed13d66f23b58b06406b3002e405`: 94 main blobs, 514 branch blobs, **420 new / 0 existing-main modified / 0 removed**. Run421 engineering doc and checkpoint are branch-only additions beyond that measured tree.
+
+### Frozen and free-only boundaries
+
+PR #8 remains **Draft/open/unmerged**; PR #5 remains **Draft/open/unmerged/NOT_PASSED**. Frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1, Memory v1 and ActionAudit v1 DDL and protected evaluation boundaries are unchanged. No paid/external GPU/compute, new service, API, subscription, credentials, purchases, protected final evaluation, real Candidate weights/adapters, Candidate promotion, external action, live hardware, actual notification, personal-data erasure/disclosure, irreversible action or main merge. Cross-database snapshots remain independently committed, so matching local evidence is not proof of atomicity or exactly-once external effects.
+
+### Next plan / 今後の方針
+
+1. Inspect remaining exact-head Ubuntu/Windows Python 3.11–3.13 jobs for CI #1112/#1114/#1116, the engineering doc and this checkpoint's resulting SHA. If FAIL, inspect real job logs and apply smallest semantics-preserving repair only via normal permitted GitHub Contents writes. Keep unrelated free lanes active while CI is in flight.
+2. Strengthen coordinated **Planner / PermissionGate / Occurrence / ActionAudit / AuditLink** crash-restart and partial-prefix history-loss diagnostics; treat reserved-PENDING/UNKNOWN and dependent WRITE as non-replayable pending external confirmation.
+3. Advance Memory CAS, multiprocess expiry, coherent multi-namespace snapshots and privacy-safe Context retention/revocation; no DDL weakening.
+4. Continue disconnected issuer/trusted-clock, startup readiness, Observation/Proactive Scheduler fixture boundaries, without activating peripherals or notifications.
+5. Maintain V3 PR #5 free-only provenance/path/identity/reproducibility/contamination/approval guard checks; require explicit user authorization for payment, Candidate generation or promotion, protected V2 evaluation, frozen-contract edits, or main merge.
+
+---
+
+**HISTORICAL — Run420 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 420**
 
 Saved at: **2026-10-25T19:32:58.806+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample immediately before normal GitHub Contents write; **NOT** signed trusted time, user/account identity, human review, consent or spend authorization).
