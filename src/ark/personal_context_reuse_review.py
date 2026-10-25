@@ -134,6 +134,11 @@ def review_synthetic_context_reuse(
             retained_revocations.rows, retained_revocations.witness_id,
         )
 
+    # Pin both SQLite source carriers BEFORE any reentrant constructors or
+    # projections. A constructor that redirects the path must not establish
+    # the new value as the expected baseline.
+    source_epoch = (store.path, ledger.path)
+
     # Record the original immutable content structure before callbacks that
     # may attempt reflection-based mutation of a frozen dataclass.
     identity = _cached_bundle_epoch(cached)
@@ -147,9 +152,62 @@ def review_synthetic_context_reuse(
     policy_epoch = (
         policy.total_limit, policy.per_namespace_limit, policy.policy_revision,
     )
+    # Exact object carriers matter, not only equal-valued str/tuple replacements.
+    cached_items_epoch = tuple((
+        item, item.memory_id, item.namespace, item.content,
+        item.revision, item.provenance_id,
+    ) for item in cached.items)
+    cached_carriers = (cached.items, cached.bundle_id, cached.snapshot_digest)
+
+    def assert_carriers() -> None:
+        try:
+            current_request = (
+                request.owner_id, request.namespaces, request.text,
+                request.per_namespace_limit, request.include_expired,
+            )
+            current_policy = (
+                policy.total_limit, policy.per_namespace_limit,
+                policy.policy_revision,
+            )
+            if (
+                any(now is not original for now, original in zip(
+                    current_request, request_epoch, strict=True,
+                ))
+                or any(now is not original for now, original in zip(
+                    current_policy, policy_epoch, strict=True,
+                ))
+                or store.path is not source_epoch[0]
+                or ledger.path is not source_epoch[1]
+                or cached.items is not cached_carriers[0]
+                or cached.bundle_id is not cached_carriers[1]
+                or cached.snapshot_digest is not cached_carriers[2]
+                or len(cached.items) != len(cached_items_epoch)
+                or any(
+                    current is not item or any(
+                        getattr(current, field) is not original
+                        for field, original in zip(
+                            ("memory_id", "namespace", "content",
+                             "revision", "provenance_id"), saved,
+                            strict=True,
+                        )
+                    )
+                    for current, (item, *saved) in zip(
+                        cached.items, cached_items_epoch, strict=True,
+                    )
+                )
+            ):
+                raise SyntheticContextReuseRejected(
+                    "context policy, request or source changed during recheck"
+                )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise SyntheticContextReuseRejected(
+                "context policy, request or source changed during recheck"
+            ) from exc
+
     CoherentSnapshotRequest(*request_epoch)
+    assert_carriers()
     ContextSelectionPolicy(*policy_epoch)
-    source_epoch = (store.path, ledger.path)
+    assert_carriers()
     fresh = review_fresh_nonrevoked_context(
         store, request, policy, ledger,
         retained_revocations=retained_revocations,
@@ -160,6 +218,7 @@ def review_synthetic_context_reuse(
         raise SyntheticContextReuseRejected(
             "cached context differs from fresh verified projection"
         )
+    assert_carriers()
     if retained_revocations is not None:
         retained_revocations.assert_integrity()
         if (
@@ -183,6 +242,18 @@ def review_synthetic_context_reuse(
         raise SyntheticContextReuseRejected(
             "context policy, request or source changed during recheck"
         )
-    return SyntheticContextReuseReview(
+    assert_carriers()
+    receipt = SyntheticContextReuseReview(
         fresh.bundle_id, fresh.snapshot_digest, now_ms,
     )
+    assert_carriers()
+    if (
+        type(receipt) is not SyntheticContextReuseReview
+        or receipt.bundle_id is not fresh.bundle_id
+        or receipt.snapshot_digest is not fresh.snapshot_digest
+        or receipt.rechecked_at_ms is not now_ms
+    ):
+        raise SyntheticContextReuseRejected(
+            "context reuse returned receipt changed during construction"
+        )
+    return receipt
