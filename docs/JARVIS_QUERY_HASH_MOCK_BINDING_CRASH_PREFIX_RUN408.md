@@ -54,6 +54,22 @@ device/sensor capture, notification, Candidate build or paid action is enabled.
   audit and link rows appear only after their actual commit boundary.
   No cross-SQLite atomicity is inferred.
 
+## Package D — Partial history erasure across four SQLite stores
+
+- Regression: `tests/test_synthetic_four_store_partial_prefix_erasure_run408.py`
+  (4 parameterized cases).
+- Start with two *nonempty* independently committed synthetic WRITE histories.
+  Clone the four closed SQLite files into a fresh, disposable test directory.
+  First prove the full clone exactly matches all four retained witnesses.
+- Delete **one row only in the disposable copy** from, respectively,
+  Planner events, occurrence reservations, ActionAudit events or linked
+  occurrence/audit events. The independently retained pre-erasure witness
+  must force rejection, even though the other stores still contain valid
+  histories and both WRITEs remain locally ambiguous.
+- The untouched original fixtures must still pass exact retained review.
+  Neither partial erasure detection nor local hash agreement attests to
+  atomicity across files, external outcomes, authentication or replay rights.
+
 ## Evidence and non-claims
 
 - Work-basis before Run408 implementation: Run407 checkpoint
@@ -65,7 +81,8 @@ device/sensor capture, notification, Candidate build or paid action is enabled.
 - Regression commits:
   `e0e5b8aa6a56fd0a088eccef7285d71a0b8bb67e` (crash matrix),
   `8b0d315b8fb323b6ba6d3d41ca686dcdc7c1db14` (Memory),
-  `d84d75eee3e09a898473ce42e2a6bc419a31d551` (Mock).
+  `d84d75eee3e09a898473ce42e2a6bc419a31d551` (Mock),
+  `ced693e3912a4002b033aef90672043fda62f973` (partial erasure).
 - **Exact-head CI results must be checked separately** before claiming
   all-six GREEN. In-progress or queued status is not a PASS.
 - FROZEN V1/V2/Local UI/Launcher evidence, Memory v1 schema, ActionAudit
