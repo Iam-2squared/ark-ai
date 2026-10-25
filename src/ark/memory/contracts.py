@@ -44,8 +44,15 @@ class MemoryWrite:
         if len(self.metadata) > 64:
             raise ValueError("metadata exceeds 64 entries")
         snapshot: dict[str, str] = {}
-        for key, value in self.metadata.items():
+        # Mapping.items() may be a hostile, unbounded iterator whose __len__
+        # lies about its size. Bound actual iteration before copying metadata
+        # into a durable write, and disallow ambiguous duplicate yielded keys.
+        for index, (key, value) in enumerate(self.metadata.items()):
+            if index >= 64:
+                raise ValueError("metadata exceeds 64 entries")
             _text("metadata key", key, 4096)
+            if key in snapshot:
+                raise ValueError("metadata contains duplicate key")
             if not isinstance(value, str):
                 raise TypeError("metadata values must be strings")
             if len(value) > 4096:
