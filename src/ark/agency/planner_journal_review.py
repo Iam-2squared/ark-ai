@@ -207,7 +207,15 @@ def _checked_snapshot(
             )
         # Status hashing is itself a synthetic callback boundary. Recheck
         # the exact carriers and values again after that callback.
-        digest = graph.status_digest()
+        try:
+            digest = graph.status_digest()
+        except PlanConflictError as exc:
+            # Preserve the journal's established topology-drift diagnostic.
+            # A reentrant snapshot callback can mutate the original DAG,
+            # which PlanGraph correctly rejects before we compare witnesses.
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan topology changed during review"
+            ) from exc
         after_tail = (
             tail.topology_digest, tail.event_count, tail.event_hash,
             tail.status_digest, tail.last_at_ms,
