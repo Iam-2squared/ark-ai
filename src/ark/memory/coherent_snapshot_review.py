@@ -135,14 +135,30 @@ def review_coherent_snapshot(
             record.scope.owner_id, record.scope.namespace,
         )
         return (
-            id(record.scope),
+            # Keep the actual nested carriers alive. Storing only id(scope)
+            # or metadata's value digest permits equal-valued replacements
+            # after hydration and before content-free snapshot construction.
+            record.scope,
+            record.metadata,
             tuple((type(value), value) for value in fields),
             (type(record.metadata), tuple(sorted(dict(record.metadata).items()))),
+            fields,
         )
 
     def assert_record_epochs() -> None:
         for record, epoch in record_epochs:
-            if type(record) is not MemoryRecord or record_epoch(record) != epoch:
+            if type(record) is not MemoryRecord:
+                raise MemorySchemaError("memory snapshot record changed during review")
+            current = record_epoch(record)
+            if (
+                current[0] is not epoch[0]
+                or current[1] is not epoch[1]
+                or current[2:4] != epoch[2:4]
+                or any(
+                    value is not original
+                    for value, original in zip(current[4], epoch[4], strict=True)
+                )
+            ):
                 raise MemorySchemaError("memory snapshot record changed during review")
 
     def metadata_digest(record: MemoryRecord) -> str:
