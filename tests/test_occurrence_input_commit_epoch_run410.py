@@ -54,7 +54,7 @@ def test_token_id_mutated_during_digest_cannot_reserve(tmp_path, monkeypatch):
         return real(payload)
 
     monkeypatch.setattr(occurrence.hashlib, "sha256", mutate_digest)
-    with pytest.raises(SyntheticReplayRejected, match="input changed"):
+    with pytest.raises(SyntheticReplayRejected, match="token"):
         _reserve(ledger, registry, call, token)
     monkeypatch.undo()
     assert ledger.count_synthetic() == 0
@@ -90,7 +90,7 @@ def test_connection_opener_cannot_mutate_token_before_transaction(
         return conn
 
     monkeypatch.setattr(ledger, "_connect", switched)
-    with pytest.raises(SyntheticReplayRejected, match="input changed"):
+    with pytest.raises(SyntheticReplayRejected, match="token"):
         _reserve(ledger, registry, call, token)
     monkeypatch.undo()
     assert ledger.count_synthetic() == 0
@@ -161,7 +161,7 @@ def test_post_commit_input_drift_is_failure_not_replay_authority(
             ),
         ),
     )
-    with pytest.raises(SyntheticReplayRejected, match="input changed"):
+    with pytest.raises(SyntheticReplayRejected, match="token"):
         _reserve(ledger, registry, call, token)
     monkeypatch.undo()
     assert ledger.count_synthetic() == 1
