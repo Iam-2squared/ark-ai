@@ -79,22 +79,56 @@ def review_observation_rollover(
     if retained is not None and type(retained) is not ObservationRolloverWitness:
         raise TypeError("retained must be an exact ObservationRolloverWitness")
 
+    # Pin original carrier and prior history BEFORE the first consistency
+    # callback. Otherwise an early callback could silently rebase a retained
+    # witness to an alternate but individually valid rollover baseline.
+    header_epoch = (
+        current.privacy_scope, current.observed_at_ms, current.max_age_ms,
+    )
+    envelope_carrier = current.envelopes
+    pinned_previous = None if retained is None else (
+        retained.privacy_scope,
+        retained.observed_at_ms,
+        retained.window_witness,
+        retained.generation,
+        retained.chain_sha256,
+    )
+
+    def assert_outer_epoch() -> None:
+        if (
+            current.privacy_scope is not header_epoch[0]
+            or (
+                current.privacy_scope, current.observed_at_ms,
+                current.max_age_ms,
+            ) != header_epoch
+            or current.envelopes is not envelope_carrier
+        ):
+            raise ValueError("observation window changed during rollover")
+        if retained is not None and (
+            (
+                retained.privacy_scope, retained.observed_at_ms,
+                retained.window_witness, retained.generation,
+                retained.chain_sha256,
+            ) != pinned_previous
+            or retained.privacy_scope is not pinned_previous[0]
+            or retained.window_witness is not pinned_previous[2]
+            or retained.chain_sha256 is not pinned_previous[4]
+        ):
+            raise ValueError("retained observation witness changed")
+
+    assert_outer_epoch()
     current.assert_consistent()
+    assert_outer_epoch()
     if now_ms is not None:
         current.assert_fresh_at(now_ms)
+        assert_outer_epoch()
     pinned_window = (
         current.privacy_scope, current.observed_at_ms, current.witness
     )
-    pinned_previous = None
+    assert_outer_epoch()
     if retained is not None:
-        pinned_previous = (
-            retained.privacy_scope,
-            retained.observed_at_ms,
-            retained.window_witness,
-            retained.generation,
-            retained.chain_sha256,
-        )
         ObservationRolloverWitness(*pinned_previous)
+        assert_outer_epoch()
 
     scope, timestamp, window_witness = pinned_window
     if pinned_previous is None:
@@ -113,6 +147,7 @@ def review_observation_rollover(
                 raise ValueError("same-clock observation rollover is not idempotent")
             result = ObservationRolloverWitness(*pinned_previous)
             current.assert_consistent()
+            assert_outer_epoch()
             if (current.privacy_scope, current.observed_at_ms, current.witness) != (
                 pinned_window
             ):
@@ -124,6 +159,8 @@ def review_observation_rollover(
                 raise ValueError("retained observation witness changed")
             if now_ms is not None:
                 current.assert_fresh_at(now_ms)
+                assert_outer_epoch()
+            assert_outer_epoch()
             return result
         if previous_gen >= _MAX_GENERATION:
             raise ValueError("observation rollover generation exhausted")
@@ -136,8 +173,11 @@ def review_observation_rollover(
         window_witness=window_witness,
         generation=generation,
     )
+    assert_outer_epoch()
     new_sha = hashlib.sha256(previous_digest + b"\\n" + encoded).hexdigest()
+    assert_outer_epoch()
     current.assert_consistent()
+    assert_outer_epoch()
     if (current.privacy_scope, current.observed_at_ms, current.witness) != pinned_window:
         raise ValueError("observation window changed during rollover")
     if retained is not None and (
@@ -147,4 +187,6 @@ def review_observation_rollover(
         raise ValueError("retained observation witness changed")
     if now_ms is not None:
         current.assert_fresh_at(now_ms)
+        assert_outer_epoch()
+    assert_outer_epoch()
     return ObservationRolloverWitness(scope, timestamp, window_witness, generation, new_sha)
