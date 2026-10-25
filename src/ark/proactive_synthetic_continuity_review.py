@@ -22,6 +22,7 @@ from .proactive_synthetic_review import (
 )
 
 _HEX = re.compile(r"[0-9a-f]{64}\Z")
+_MAX_WITNESS_ROWS = 10_000  # Bound row hashing even after schema/row validation.
 _ROWS = """SELECT trigger_id,scope_digest,policy_digest,source_digest,
                   observation_digest,observed_at_ms,prepared_at_ms
            FROM synthetic_prepared_triggers"""
@@ -160,8 +161,12 @@ def read_proactive_witness(
             # ledger path or retained witness must not drift temporarily and
             # then be restored by a later row's digest callback.
             row_hashes = []
-            for row in conn.execute(_ROWS):
+            for index, row in enumerate(conn.execute(_ROWS)):
                 assert_epoch()
+                if index >= _MAX_WITNESS_ROWS:
+                    raise SyntheticTriggerRejected(
+                        "proactive witness row scan budget exceeded"
+                    )
                 row_hashes.append(_digest("ARK-trigger-row-v1", row))
                 assert_epoch()
             hashes = tuple(sorted(row_hashes))
