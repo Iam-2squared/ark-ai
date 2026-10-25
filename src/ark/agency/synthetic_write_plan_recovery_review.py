@@ -330,7 +330,24 @@ def review_synthetic_write_plan(
         )
         assert_epoch()
         assert_review_epochs()
-        if repeated != reviews[0] or journal.recover(retained=retained_plan) != baseline:
+        if repeated != reviews[0]:
+            raise SyntheticWritePlanReviewRejected(
+                "synthetic plan evidence changed during final recheck"
+            )
+        # The last journal recovery is itself an untrusted callback boundary.
+        # It can reflectively mutate an earlier per-step review or the caller's
+        # original PlanStep while still returning a value-equal plan snapshot.
+        # Recheck both epochs *after* this final read, before deriving holds.
+        assert_epoch()
+        assert_review_epochs()
+        final_recovery = journal.recover(retained=retained_plan)
+        assert_epoch()
+        assert_review_epochs()
+        if (
+            type(final_recovery) is not SyntheticPlanRecovery
+            or type(final_recovery.tail) is not SyntheticPlanTail
+            or final_recovery != baseline
+        ):
             raise SyntheticWritePlanReviewRejected(
                 "synthetic plan evidence changed during final recheck"
             )
