@@ -95,8 +95,8 @@ def test_final_constructor_cannot_retarget_privacy_diagnostic(
     monkeypatch.setattr(recheck.SyntheticRetentionRecheck, "__init__", tamper)
     expect = (
         "source or evidence changed" if target.startswith("cached_")
-        else "source or evidence changed" if target == "cached_owner"
-        else "current retention evidence changed" if target.startswith("current_")
+        else "current retention evidence changed"
+        if target in {"current_digest", "current_items"}
         else "returned result changed"
     )
     with pytest.raises(recheck.SyntheticRetentionRecheckRejected, match=expect):
