@@ -25,6 +25,9 @@ from .contracts import (
 
 SCHEMA_VERSION = 1
 SQLITE_INT_MAX = (1 << 63) - 1
+# Match the opt-in coherent snapshot row bound. A ranked lexical search must
+# never hydrate an unbounded namespace before applying its small result limit.
+_MAX_NAMESPACE_SEARCH_ROWS = 10_000
 _BOOTSTRAP_LOCK = Lock()  # process-local WAL setup; SQLite remains cross-process authority
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
@@ -405,11 +408,15 @@ class SQLiteMemoryStore:
             assert_query_epoch()
             # The SELECT anchors the SQLite snapshot before the clock. A
             # concurrent writer in the clock callback cannot mix epochs.
-            rows = conn.execute(
+            cursor = conn.execute(
                 "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
                 (pinned_scope.owner_id, pinned_scope.namespace),
-            ).fetchall()
+            )
             assert_query_epoch()
+            rows = cursor.fetchmany(_MAX_NAMESPACE_SEARCH_ROWS + 1)
+            assert_query_epoch()
+            if len(rows) > _MAX_NAMESPACE_SEARCH_ROWS:
+                raise MemorySchemaError("memory search namespace scan budget exceeded")
             now = self._now()
             assert_query_epoch()
             records: list[MemoryRecord] = []
