@@ -212,6 +212,42 @@ def review_synthetic_context_reuse(
         store, request, policy, ledger,
         retained_revocations=retained_revocations,
     )
+    # A fresh re-projection is a separate reflected-mutable carrier. Pin its
+    # nested identity before equality/receipt callbacks: changing an item while
+    # preserving bundle_id would otherwise escape the cached-only checks.
+    fresh_epoch = _cached_bundle_epoch(fresh)
+    fresh_items = fresh.items
+    fresh_id, fresh_digest = fresh.bundle_id, fresh.snapshot_digest
+    fresh_item_epoch = tuple((
+        item, item.memory_id, item.namespace, item.content,
+        item.revision, item.provenance_id,
+    ) for item in fresh_items)
+
+    def assert_fresh_epoch() -> None:
+        if (
+            type(fresh) is not SyntheticContextBundle
+            or fresh.items is not fresh_items
+            or fresh.bundle_id is not fresh_id
+            or fresh.snapshot_digest is not fresh_digest
+            or _cached_bundle_epoch(fresh) != fresh_epoch
+            or any(
+                current is not original
+                or any(
+                    getattr(current, field) is not saved
+                    for field, saved in zip(
+                        ("memory_id", "namespace", "content",
+                         "revision", "provenance_id"), values, strict=True,
+                    )
+                )
+                for current, (original, *values) in zip(
+                    fresh.items, fresh_item_epoch, strict=True,
+                )
+            )
+        ):
+            raise SyntheticContextReuseRejected(
+                "fresh context changed during reuse"
+            )
+
     # Preserve the established cached-projection diagnostic for callers and
     # prior regression fixtures; policy/source drift is a separate veto.
     if cached != fresh or _cached_bundle_epoch(cached) != identity:
@@ -243,10 +279,21 @@ def review_synthetic_context_reuse(
             "context policy, request or source changed during recheck"
         )
     assert_carriers()
+    assert_fresh_epoch()
     receipt = SyntheticContextReuseReview(
         fresh.bundle_id, fresh.snapshot_digest, now_ms,
     )
     assert_carriers()
+    assert_fresh_epoch()
+    if retained_revocations is not None:
+        retained_revocations.assert_integrity()
+        if (
+            retained_revocations.rows is not retained_epoch[0]
+            or retained_revocations.witness_id is not retained_epoch[1]
+        ):
+            raise SyntheticContextReuseRejected(
+                "retained revocation witness changed during reuse"
+            )
     if (
         type(receipt) is not SyntheticContextReuseReview
         or receipt.bundle_id is not fresh.bundle_id
