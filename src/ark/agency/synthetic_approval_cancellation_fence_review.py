@@ -16,10 +16,12 @@ from .contracts import ToolCall
 from .registry import ToolRegistry
 from .synthetic_approval_cancellation_review import (
     SyntheticCancellationLedger,
+    SyntheticCancellationState,
     SyntheticCancellationWitness,
 )
 from .synthetic_approval_claim_review import (
     SyntheticApprovalEnvelope,
+    SyntheticApprovalReview,
     review_synthetic_approval_claim,
 )
 
@@ -100,16 +102,27 @@ def review_synthetic_approval_cancellation_fence(
     def assert_epoch() -> None:
         if (
             ledger.path is not source_epoch
-            or _epoch(envelope) != original
+            or any(
+                current is not pinned
+                for current, pinned in zip(_epoch(envelope), original, strict=True)
+            )
             or call.arguments is not arguments_epoch
-            or (
-                call.tool, call.capability, call.scope,
-                call.request_id, call.arguments_sha256,
-            ) != call_epoch
-            or registry.revision != registry_epoch
-            or retained is not None
-            and tuple(getattr(retained, field.name) for field in fields(retained))
-            != retained_epoch
+            or any(
+                current is not pinned
+                for current, pinned in zip(
+                    (call.tool, call.capability, call.scope,
+                     call.request_id, call.arguments_sha256),
+                    call_epoch, strict=True,
+                )
+            )
+            or registry.revision is not registry_epoch
+            or retained is not None and any(
+                current is not pinned
+                for current, pinned in zip(
+                    (getattr(retained, field.name) for field in fields(retained)),
+                    retained_epoch, strict=True,
+                )
+            )
         ):
             raise SyntheticApprovalFenceRejected(
                 "claim fence input, source or retained history changed during review"
@@ -118,9 +131,34 @@ def review_synthetic_approval_cancellation_fence(
     first = ledger.review_state(envelope.approval_id, retained=retained)
     assert_epoch()
     if (
+        type(first) is not SyntheticCancellationState
+        or type(first.witness) is not SyntheticCancellationWitness
+    ):
+        raise SyntheticApprovalFenceRejected("invalid initial cancellation evidence")
+    first_witness = first.witness
+    first_epoch = (
+        first.approval_id, first.cancelled, first_witness.event_count,
+        first_witness.tail_hash, first_witness.last_cancelled_at_ms,
+    )
+
+    def assert_first() -> None:
+        if (
+            type(first) is not SyntheticCancellationState
+            or first.witness is not first_witness
+            or any(current is not pinned for current, pinned in zip(
+                (first.approval_id, first.cancelled, first_witness.event_count,
+                 first_witness.tail_hash, first_witness.last_cancelled_at_ms),
+                first_epoch, strict=True,
+            ))
+        ):
+            raise SyntheticApprovalFenceRejected(
+                "initial cancellation receipt changed during review"
+            )
+
+    if (
         first.approval_id != original[0]
         or first.cancelled
-        or first.witness.last_cancelled_at_ms > now_ms
+        or first_witness.last_cancelled_at_ms > now_ms
     ):
         raise SyntheticApprovalFenceRejected("claim cancelled or synthetic clock regressed")
     result = review_synthetic_approval_claim(
@@ -133,22 +171,89 @@ def review_synthetic_approval_cancellation_fence(
         cancelled_ids=frozenset(),
     )
     assert_epoch()
-    second = ledger.review_state(original[0], retained=first.witness)
+    assert_first()
+    if type(result) is not SyntheticApprovalReview:
+        raise SyntheticApprovalFenceRejected("invalid synthetic claim receipt")
+    claim_epoch = (result.approval_id, result.bound_action_id, result.observed_at_ms)
+
+    def assert_claim() -> None:
+        if (
+            type(result) is not SyntheticApprovalReview
+            or any(current is not pinned for current, pinned in zip(
+                (result.approval_id, result.bound_action_id, result.observed_at_ms),
+                claim_epoch, strict=True,
+            ))
+        ):
+            raise SyntheticApprovalFenceRejected(
+                "synthetic claim receipt changed during review"
+            )
+
+    second = ledger.review_state(original[0], retained=first_witness)
     assert_epoch()
+    assert_first()
+    assert_claim()
+    if (
+        type(second) is not SyntheticCancellationState
+        or type(second.witness) is not SyntheticCancellationWitness
+    ):
+        raise SyntheticApprovalFenceRejected("invalid final cancellation evidence")
+    second_witness = second.witness
+    second_epoch = (
+        second.approval_id, second.cancelled, second_witness.event_count,
+        second_witness.tail_hash, second_witness.last_cancelled_at_ms,
+    )
+
+    def assert_second() -> None:
+        if (
+            type(second) is not SyntheticCancellationState
+            or second.witness is not second_witness
+            or any(current is not pinned for current, pinned in zip(
+                (second.approval_id, second.cancelled, second_witness.event_count,
+                 second_witness.tail_hash, second_witness.last_cancelled_at_ms),
+                second_epoch, strict=True,
+            ))
+        ):
+            raise SyntheticApprovalFenceRejected(
+                "final cancellation receipt changed during review"
+            )
+
     if (
         second.approval_id != original[0]
         or second.cancelled
-        or second.witness != first.witness
-        or second.witness.last_cancelled_at_ms > now_ms
-        or _epoch(envelope) != original
+        or second_witness != first_witness
+        or second_witness.last_cancelled_at_ms > now_ms
         or result.approval_id != original[0]
-        or result.bound_action_id != envelope.bound_action_id
+        or result.bound_action_id != original[2]
+        or result.observed_at_ms != now_ms
     ):
         raise SyntheticApprovalFenceRejected(
             "cancellation/claim state changed during disconnected review"
         )
     assert_epoch()
-    return SyntheticApprovalFenceReview(
-        result.approval_id, result.bound_action_id,
-        second.witness.tail_hash, second.witness.event_count, now_ms,
+    assert_first()
+    assert_claim()
+    assert_second()
+    review = SyntheticApprovalFenceReview(
+        claim_epoch[0], claim_epoch[1],
+        second_epoch[3], second_epoch[2], now_ms,
     )
+    # A patched result constructor can reenter and rewrite any prior
+    # local receipt. Check all evidence again AFTER construction.
+    assert_epoch()
+    assert_first()
+    assert_claim()
+    assert_second()
+    if (
+        type(review) is not SyntheticApprovalFenceReview
+        or any(current is not pinned for current, pinned in zip(
+            (review.approval_id, review.bound_action_id,
+             review.cancellation_tail_hash, review.cancellation_event_count,
+             review.observed_at_ms),
+            (claim_epoch[0], claim_epoch[1], second_epoch[3], second_epoch[2], now_ms),
+            strict=True,
+        ))
+    ):
+        raise SyntheticApprovalFenceRejected(
+            "synthetic approval fence result changed during construction"
+        )
+    return review
