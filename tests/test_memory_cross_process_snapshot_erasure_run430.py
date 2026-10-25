@@ -20,16 +20,15 @@ import pathlib
 import sys
 
 from ark.memory import MemoryScope, SQLiteMemoryStore
+from ark.memory.sqlite_store import deterministic_memory_id
 
 path = pathlib.Path(sys.argv[1])
 mode = sys.argv[2]
 store = SQLiteMemoryStore(path, clock_ms=lambda: 200)
 for namespace in ("alpha", "beta"):
     scope = MemoryScope("isolated-owner", namespace)
-    record = store.search_by_placeholder if False else None
-    # Querying the current record by its deterministic identity avoids
-    # sharing any in-process Memory object with the parent snapshot.
-    from ark.memory.sqlite_store import deterministic_memory_id
+    # Recompute the identity in this process; no Memory object is shared
+    # between the writer and the already-anchored reader.
     memory_id = deterministic_memory_id(scope, "base-source")
     if mode == "delete":
         assert store.delete(memory_id, scope, expected_revision=1)
@@ -81,10 +80,9 @@ def test_single_snapshot_remains_pre_erasure_across_two_child_commits(tmp_path, 
     assert after.provenance_sha256 != before.provenance_sha256
     # A committed delete/expiry records one event for each namespace,
     # without retroactively changing the already anchored SQLite snapshot.
-    events = SQLiteMemoryStore(path, clock_ms=lambda: 150).events()
-    assert len(events) == 4
-    assert tuple(event.operation for event in events) == (
-        "create", "create",
-        "delete" if mode == "delete" else "expire",
-        "delete" if mode == "delete" else "expire",
-    )
+    ledger = SQLiteMemoryStore(path, clock_ms=lambda: 150)
+    for namespace in ("alpha", "beta"):
+        events = ledger.events(MemoryScope(owner, namespace))
+        assert tuple(event.operation for event in events) == (
+            "create", "delete" if mode == "delete" else "expire",
+        )
