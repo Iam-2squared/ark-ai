@@ -64,15 +64,22 @@ def assert_synthetic_history_continues(
     # Integrity checks hash Python-held tuples: a reflected mutation of the
     # *other* witness during one check must not become the comparison baseline.
     previous_rows, current_rows = retained.row_hashes, current.row_hashes
-    previous_epoch = (previous_rows, retained.digest)
-    current_epoch = (current_rows, current.digest)
+    previous_digest, current_digest = retained.digest, current.digest
+    previous_carriers = tuple(previous_rows)
+    current_carriers = tuple(current_rows)
 
     def assert_epoch() -> None:
         if (
             retained.row_hashes is not previous_rows
             or current.row_hashes is not current_rows
-            or (retained.row_hashes, retained.digest) != previous_epoch
-            or (current.row_hashes, current.digest) != current_epoch
+            or retained.digest is not previous_digest
+            or current.digest is not current_digest
+            or any(now is not original for now, original in zip(
+                retained.row_hashes, previous_carriers, strict=True,
+            ))
+            or any(now is not original for now, original in zip(
+                current.row_hashes, current_carriers, strict=True,
+            ))
         ):
             raise SyntheticReplayRejected(
                 "synthetic continuity witness changed during comparison"
@@ -103,12 +110,16 @@ def read_synthetic_ledger_witness(
     if retained is not None and type(retained) is not SyntheticLedgerWitness:
         raise SyntheticReplayRejected("exact synthetic retained witness required")
     retained_rows = None if retained is None else retained.row_hashes
-    retained_epoch = None if retained is None else (retained_rows, retained.digest)
+    retained_digest = None if retained is None else retained.digest
+    retained_carriers = () if retained is None else tuple(retained_rows)
 
     def assert_epoch() -> None:
         if retained is not None and (
             retained.row_hashes is not retained_rows
-            or (retained.row_hashes, retained.digest) != retained_epoch
+            or retained.digest is not retained_digest
+            or any(now is not initial for now, initial in zip(
+                retained.row_hashes, retained_carriers, strict=True,
+            ))
         ):
             raise SyntheticReplayRejected(
                 "synthetic retained witness changed during ledger read"
@@ -140,15 +151,40 @@ def read_synthetic_ledger_witness(
             witness = SyntheticLedgerWitness(
                 row_hashes, "synthetic_ledger_" + _digest("ARK-ledger-v1", row_hashes),
             )
+            # A successful read-only COMMIT still runs an observable callback.
+            # Do not return a mutated or replaced final witness afterward.
+            witness_rows = witness.row_hashes
+            witness_digest = witness.digest
+            witness_carriers = tuple(witness_rows)
+
+            def assert_witness() -> None:
+                if (
+                    type(witness) is not SyntheticLedgerWitness
+                    or witness.row_hashes is not witness_rows
+                    or witness.digest is not witness_digest
+                    or any(now is not initial for now, initial in zip(
+                        witness.row_hashes, witness_carriers, strict=True,
+                    ))
+                ):
+                    raise SyntheticReplayRejected(
+                        "synthetic ledger witness changed during read"
+                    )
+
             assert_epoch()
+            assert_witness()
             witness.assert_integrity()
             assert_epoch()
+            assert_witness()
             if retained is not None:
                 assert_synthetic_history_continues(retained, witness)
                 assert_epoch()
+                assert_witness()
             conn.commit()
+            assert_epoch()
+            assert_witness()
         except BaseException:
             conn.rollback()
             raise
     assert_epoch()
+    assert_witness()
     return witness
