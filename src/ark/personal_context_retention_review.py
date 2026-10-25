@@ -93,14 +93,15 @@ def review_synthetic_retention_inventory(
         or type(max_records) is not int or not 1 <= max_records <= 1000
     ):
         raise SyntheticRetentionRejected("exact bounded retention inputs required")
-    epoch = (scope.owner_id, scope.namespace)
-    pinned = MemoryScope(*epoch)
-    scope_hash = _scope_digest(pinned)
-    # The revocation check is a reentrant cross-store call. Bind BOTH local
-    # evidence sources before it, not only the Memory scope. Equal-value Path
-    # replacements during a diagnostic are different local review epochs.
+    # The FIRST scope hashing callback can be reentrant. Pin the original
+    # caller carriers and both independent SQLite sources before invoking it.
+    original_owner = scope.owner_id
+    original_namespace = scope.namespace
+    epoch = (original_owner, original_namespace)
     memory_source = memory.path
     veto_source = ledger.path
+    pinned = MemoryScope(*epoch)
+    scope_hash = _scope_digest(pinned)
     if not isinstance(memory_source, Path) or not isinstance(veto_source, Path):
         raise SyntheticRetentionRejected("retention source path is invalid")
     retained_epoch = None
@@ -120,7 +121,11 @@ def review_synthetic_retention_inventory(
             raise SyntheticRetentionRejected(
                 "retention evidence source changed during inventory"
             )
-        if (scope.owner_id, scope.namespace) != epoch:
+        if (
+            scope.owner_id is not original_owner
+            or scope.namespace is not original_namespace
+            or (scope.owner_id, scope.namespace) != epoch
+        ):
             raise SyntheticRetentionRejected("retention scope changed during inventory")
         if retained_revocations is not None and (
             retained_revocations.rows is not retained_rows_carrier
@@ -231,7 +236,23 @@ def review_synthetic_retention_inventory(
     ).encode("utf-8")
     assert_sources()
     assert_item_epoch()
-    return SyntheticRetentionInventory(
-        scope_hash, "retention_" + hashlib.sha256(payload).hexdigest(),
-        now_ms, revoked, items,
+    digest = "retention_" + hashlib.sha256(payload).hexdigest()
+    # Hash constructors / hexdigest and dataclass construction are distinct
+    # callback edges; neither may silently rebase previously reviewed rows.
+    assert_sources()
+    assert_item_epoch()
+    result = SyntheticRetentionInventory(
+        scope_hash, digest, now_ms, revoked, items,
     )
+    assert_sources()
+    assert_item_epoch()
+    if (
+        type(result) is not SyntheticRetentionInventory
+        or result.scope_digest != scope_hash
+        or result.inventory_digest != digest
+        or result.reviewed_at_ms != now_ms
+        or result.revoked is not revoked
+        or result.items is not items
+    ):
+        raise SyntheticRetentionRejected("retention inventory result changed")
+    return result
