@@ -22,6 +22,11 @@ class ReadinessState(StrEnum):
     DEPENDENCY_BLOCKED = "dependency_blocked"
 
 
+_MAX_COMPONENTS = 10_000
+_MAX_DEPENDENCIES_PER_COMPONENT = 4_096
+_MAX_DEPENDENCY_EDGES = 65_536
+
+
 def _identifier(value: object, label: str) -> str:
     if type(value) is not str or not value.strip() or len(value) > 256:
         raise ValueError(f"{label} must be nonempty bounded exact text")
@@ -40,6 +45,8 @@ class StartupComponent:
         _identifier(self.component_id, "component_id")
         if type(self.dependencies) is not tuple:
             raise TypeError("dependencies must be an exact tuple")
+        if len(self.dependencies) > _MAX_DEPENDENCIES_PER_COMPONENT:
+            raise ValueError("readiness per-component dependency budget exceeded")
         for dependency in self.dependencies:
             _identifier(dependency, "dependency")
         if len(set(self.dependencies)) != len(self.dependencies):
@@ -79,9 +86,13 @@ class StartupSnapshot:
         A local checksum detects stale or altered cached diagnostics; it is
         neither external attestation nor permission to activate a capability.
         """
-        if type(self.components) is not tuple or not self.components:
+        if (
+            type(self.components) is not tuple or not self.components
+            or len(self.components) > _MAX_COMPONENTS
+        ):
             raise ValueError("startup snapshot structure changed")
         names: list[str] = []
+        edge_count = 0
         for item in self.components:
             if (
                 type(item) is not ComponentResult
@@ -95,6 +106,11 @@ class StartupSnapshot:
                 or (item.schema_revision is not None and type(item.schema_revision) is not str)
             ):
                 raise ValueError("startup snapshot component changed")
+            if len(item.dependencies) > _MAX_DEPENDENCIES_PER_COMPONENT:
+                raise ValueError("startup snapshot dependency budget exceeded")
+            edge_count += len(item.dependencies)
+            if edge_count > _MAX_DEPENDENCY_EDGES:
+                raise ValueError("startup snapshot dependency budget exceeded")
             names.append(item.component_id)
         if names != sorted(set(names)):
             raise ValueError("startup snapshot component order changed")
@@ -259,6 +275,7 @@ def evaluate_startup_readiness(
     # and an infinite generator would bypass the review budget altogether.
     snapshot_list: list[StartupComponent] = []
     source_epoch: list[tuple[object, ...]] = []
+    edge_count = 0
 
     def assert_source_epoch() -> None:
         if any(
@@ -279,10 +296,13 @@ def evaluate_startup_readiness(
         # The iterator's next() may have just mutated a previously yielded
         # object. Check before accepting this later component.
         assert_source_epoch()
-        if len(snapshot_list) >= 10_000:
+        if len(snapshot_list) >= _MAX_COMPONENTS:
             raise ValueError("readiness graph exceeds local review budget")
         if type(entry) is not StartupComponent:
             raise TypeError("startup requires exact StartupComponent entries")
+        edge_count += len(entry.dependencies)
+        if edge_count > _MAX_DEPENDENCY_EDGES:
+            raise ValueError("readiness graph dependency budget exceeded")
         source_epoch.append((
             entry, entry.component_id, entry.dependencies, entry.local_state,
             entry.failure_code, entry.schema_revision,
