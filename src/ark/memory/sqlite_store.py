@@ -480,6 +480,20 @@ class SQLiteMemoryStore:
         # Bind both SQL and audit events to one pre-clock identity epoch.
         pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
         path_epoch = self.path
+        original_owner = scope.owner_id
+        original_namespace = scope.namespace
+
+        def assert_post_commit_delete_epoch() -> None:
+            # A post-COMMIT callback cannot retroactively roll back deletion.
+            # Reject a clean return if its original caller/source changed.
+            if (
+                self.path is not path_epoch
+                or scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory delete input changed after commit")
         with closing(self._connect()) as conn, conn:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory delete source changed before transaction")
@@ -522,6 +536,7 @@ class SQLiteMemoryStore:
                 pinned_scope.owner_id, pinned_scope.namespace
             ):
                 raise MemorySchemaError("memory delete scope changed before commit")
+        assert_post_commit_delete_epoch()
         return True
 
     def purge_expired(self, *, scope: MemoryScope | None = None) -> int:
@@ -534,6 +549,24 @@ class SQLiteMemoryStore:
         # or the expiry snapshot. A read-before-write transaction permits a
         # concurrent refresh to resurrect a selected row before deletion.
         path_epoch = self.path
+        original_owner = None if scope is None else scope.owner_id
+        original_namespace = None if scope is None else scope.namespace
+
+        def assert_post_commit_purge_epoch() -> None:
+            # A successful SQLite commit cannot be undone by a diagnostic
+            # rejection. Keep durable deletions/events and refuse a clean
+            # result if the original scope or database source was retargeted.
+            if (
+                self.path is not path_epoch
+                or scope is not None and (
+                    scope.owner_id is not original_owner
+                    or scope.namespace is not original_namespace
+                    or (scope.owner_id, scope.namespace)
+                    != (pinned_scope.owner_id, pinned_scope.namespace)
+                )
+            ):
+                raise MemorySchemaError("memory purge input changed after commit")
+
         with closing(self._connect()) as conn, conn:
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory purge source changed before transaction")
@@ -601,6 +634,7 @@ class SQLiteMemoryStore:
                 pinned_scope.owner_id, pinned_scope.namespace
             ):
                 raise MemorySchemaError("memory purge scope changed before commit")
+        assert_post_commit_purge_epoch()
         return len(rows)
 
     def events(
