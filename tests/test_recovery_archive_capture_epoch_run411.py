@@ -40,6 +40,13 @@ def _review(state):
     )
 
 
+def _recheck(state, archive):
+    call, journal, ledger, audit, registry = state
+    return module.recheck_synthetic_recovery_archive(
+        archive, journal, ledger, audit, registry, call,
+    )
+
+
 @pytest.mark.parametrize("phase", ("serialize", "digest", "restore"))
 def test_archive_capture_rejects_mutation_at_every_callback_phase(
     tmp_path, monkeypatch, phase,
@@ -125,14 +132,14 @@ def test_retained_unknown_cannot_be_cleared_by_local_terminal_status(
     with pytest.raises(
         module.SyntheticRecoveryArchiveRejected, match="archived UNKNOWN WRITE",
     ):
-        module.recheck_synthetic_recovery_archive(archive, *state)
+        _recheck(state, archive)
 
 
 def test_retained_unknown_remains_diagnostic_without_live_authority(tmp_path):
     state = _fixture(tmp_path)
     state[1].append("write", StepState.RUNNING, expected_revision=0, at_ms=10)
     archive = module.archive_synthetic_recovery(_review(state))
-    fresh = module.recheck_synthetic_recovery_archive(archive, *state)
+    fresh = _recheck(state, archive)
     assert fresh.ambiguous_write
     assert not fresh.dispatch_authorized
     assert not fresh.automatic_replay_authorized
