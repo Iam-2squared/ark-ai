@@ -49,7 +49,7 @@ def test_interphase_json_metadata_retarget_restored_by_sha_is_denied(
         return encoded
 
     def sha_hook(value):
-        if value.startswith((b"ARK-observation-lineage-v1" + bytes([0]))):
+        if value.startswith(b"ARK-observation-lineage-v1" + bytes([0])):
             object.__setattr__(root, field, old)
             touched.append("restored")
         return original_sha(value)
@@ -70,7 +70,7 @@ def test_hash_phase_tamper_cannot_be_hidden_by_result_constructor(monkeypatch):
 
     def sha_hook(value):
         result = original_sha(value)
-        if value.startswith((b"ARK-observation-lineage-v1" + bytes([0]))):
+        if value.startswith(b"ARK-observation-lineage-v1" + bytes([0])):
             object.__setattr__(root, "source_id", "redirected")
             touched.append("changed")
         return result
