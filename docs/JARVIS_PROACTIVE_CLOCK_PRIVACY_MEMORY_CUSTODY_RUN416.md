@@ -34,11 +34,18 @@ No real backend, private-context model consumption, network, camera, microphone,
 - Pin exact Memory owner/namespace and source Path *before* scope/genesis hash callbacks; retain caller-supplied witness carriers *before* shape validation, recheck after read-only connection acquisition.
 - Reject reflected edits to a previous synthetic event chain link during hashing. Existing Memory v1 SQL schema and durability semantics remain unchanged.
 
+## Package 5 — Registry identifier resource bounds (7 parametrized cases)
+
+- Source `src/ark/agency/registry.py`: `1a8331268896a210a446d07a336a6dfe2ed1ae15`.
+- Fixture `tests/test_registry_identifier_budget_run416.py`: `de5dfc6e49e31cc77d4ea6cafd36b359f6e25074`.
+- Individual tool-registration name, capability and backend ID fields are bounded to 256 characters *before* deterministic registry-revision materialization, rejecting large caller-controlled text. The exact 256-character boundary and ordinary disconnected binding are regression-tested.
+- The frozen ToolRegistry reference vectors and registry identity hashing algorithm are unchanged. No ToolBackend is executed, no authority is granted.
+
 ## Evidence / correction record
 
-The last independently confirmed baseline is Run415 checkpoint CI **#1041 / 40175442656 SUCCESS six of six**. Runs **#1042–#1049** were observed **FAILED at Ruff B905** because the newly added proactive `zip()` expressions lacked an explicit `strict=`; no pytest result can be inferred for those heads. The correction adds `strict=True` to both calls without weakening scope-custody validation. Check subsequent exact-HEAD CI and inspect any newly exposed pytest failures before declaring GREEN; keep failures in history. Do not restart an equivalent workflow.
+The last independently confirmed baseline is Run415 checkpoint CI **#1041 / 40175442656 SUCCESS six of six**. Runs **#1042–#1049** were observed **FAILED at Ruff B905** because the newly added proactive `zip()` expressions lacked an explicit `strict=`; no pytest result can be inferred for those heads. The correction adds `strict=True` to both calls without weakening scope-custody validation. **#1050 / 40176449113 FAILED** with Ruff PASS and 2,340 passed / 2 failed on Ubuntu Python 3.13. Both failures came from *new test fixtures* that expected SQLite duplicate-detection before the already-established one-millisecond interval check. The test-only correction `5f17a9dc87b8f94b1e167a0d767119223b5b5a0a` advances the second occurrence's synthetic clock to 200 ms, preserving the duplicate key and all rejection semantics. Subsequent #1051/#1052 and later exact-head jobs must be checked independently. Keep failures in history; do not restart equivalent workflows.
 
-**Expected suite arithmetic only:** 2,309 previously verified tests + 33 new parametrized cases = 2,342 tests. This is **not** a claim that 2,342 have passed, nor evidence of all-platform GREEN. Exact test counts and CI runs must be reported separately after measurement.
+**Expected suite arithmetic only:** 2,309 previously verified tests + 40 new parametrized cases = 2,349 tests. This is **not** a claim that 2,349 have passed, nor evidence of all-platform GREEN. Exact test counts and CI runs must be reported separately after measurement.
 
 ## Frozen and hard safety boundaries
 
