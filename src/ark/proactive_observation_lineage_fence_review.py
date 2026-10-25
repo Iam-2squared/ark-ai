@@ -56,9 +56,19 @@ class SyntheticObservationTriggerReview:
 
 
 def synthetic_observation_source_digest(source_id: str) -> str:
-    """Untrusted, domain-separated local source identifier; no origin proof."""
-    if type(source_id) is not str or not source_id.strip():
-        raise SyntheticObservationTriggerRejected("exact synthetic observation source required")
+    """Bounded untrusted source identifier; never proof of media origin."""
+    if (
+        type(source_id) is not str
+        or not 1 <= len(source_id) <= 1024
+        or not source_id.strip()
+    ):
+        raise SyntheticObservationTriggerRejected("exact bounded observation source required")
+    try:
+        source_id.encode("utf-8")
+    except UnicodeError as exc:
+        raise SyntheticObservationTriggerRejected(
+            "observation source must be valid UTF-8"
+        ) from exc
     return _hash("ARK-untrusted-observation-source-v1", source_id)
 
 
@@ -86,7 +96,8 @@ def review_synthetic_observation_trigger(
     """
     if (
         type(envelopes) is not tuple
-        or type(selected_id) is not str or not selected_id
+        or not 1 <= len(envelopes) <= 256
+        or type(selected_id) is not str or not 1 <= len(selected_id) <= 256
         or type(ledger) is not SyntheticProactiveLedger
         or type(receipt) is not SyntheticTriggerReceipt
         or type(policy) is not SyntheticTriggerPolicy
@@ -192,7 +203,25 @@ def review_synthetic_observation_trigger(
             "observation or trigger changed during disconnected review"
         )
     ensure_input_epoch()
-    return SyntheticObservationTriggerReview(
-        selected_id, first_lineage.lineage_digest,
-        first_trigger.trigger_id, first_trigger.history.digest, now_ms,
+    lineage_digest = first_lineage.lineage_digest
+    trigger_id = first_trigger.trigger_id
+    history_digest = first_trigger.history.digest
+    result = SyntheticObservationTriggerReview(
+        selected_id, lineage_digest, trigger_id, history_digest, now_ms,
     )
+    # Even a frozen result constructor is a reflective callback boundary.
+    # A late mutated source/observation/trigger must not escape as a verified
+    # notification or sensor-readiness diagnostic.
+    ensure_input_epoch()
+    if (
+        type(result) is not SyntheticObservationTriggerReview
+        or result.observation_id is not selected_id
+        or result.lineage_digest is not lineage_digest
+        or result.trigger_id is not trigger_id
+        or result.trigger_history_digest is not history_digest
+        or result.checked_at_ms != now_ms
+    ):
+        raise SyntheticObservationTriggerRejected(
+            "constructed observation trigger result changed"
+        )
+    return result
