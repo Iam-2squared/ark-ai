@@ -5,7 +5,6 @@ import pytest
 from ark.agency.contracts import PlanConflictError, PlanStep, ToolCall
 from ark.agency.planner import PlanGraph
 
-
 CALL = ToolCall("offline.read", "offline.read", "local")
 
 
