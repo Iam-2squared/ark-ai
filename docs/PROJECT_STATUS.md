@@ -1,5 +1,58 @@
 # ARK AI Project Status
 
+**LATEST — Run 423**
+
+Saved at: **2026-10-25T21:28:14.076+09:00 Asia/Tokyo/JST** (ordinary wall-clock sample immediately before the normal GitHub Contents checkpoint update; **NOT** authenticated time, signed provenance, verified identity, consent or spend authorization).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `8e56dac72e2681e06755db477e8bc0898ddff2f2` (Run422 checkpoint; **CI #1130 / 40191296165 six SUCCESS** at opening inspection).
+**Run423 final implementation, regression tests and technical-document HEAD / checkpoint write-basis HEAD:** `3f3fa0467a46fe11cbe4d8de49825e92b3da20e0`. CI #1141 / 40193013566: IN_PROGRESS on `3f3fa0467a46fe11cbe4d8de49825e92b3da20e0` as sampled before this checkpoint. **Do not claim six-platform GREEN until six jobs for this exact HEAD complete successfully.**
+**Checkpoint-result HEAD:** Cannot be embedded in this file before the normal GitHub Contents update creates it. The connector's returned `commit_sha` is the checkpoint-result HEAD, distinct from this write-basis HEAD; its automatically launched CI is separately IN PROGRESS / QUEUED until independently confirmed. No self-referential fabricated SHA.
+
+### Overall current ARK state
+
+**Local-first disconnected/mock/synthetic-only JARVIS foundations; complete JARVIS NOT_PASSED.** This run enhances the trust boundary around returned local witnesses, original snapshot/row carriers and offline observation correlation. No authenticated human issuer/consent, trusted signed time, real ToolBackend result attestation, atomic multi-SQLite snapshot, externally guaranteed exactly-once execution, live sensor, automatic notification, trained Candidate, paid compute or real autonomous Tool dispatch. **UNKNOWN/RUNNING and already reserved PENDING WRITE remain strictly non-replayable without independent external outcome proof.**
+
+### NEW Run423 — 4 independent safe implementation + negative-regression packages (+45 parametrized pytest cases)
+
+1. **Planner four-store diagnostic — initial recovery snapshot custody and per-WRITE subject binding (+11):** `src/ark/agency/synthetic_write_plan_recovery_review.py` saved at `8dade4f7d899c0cfb7a0142aa17bd30acade0f90`; `tests/test_plan_recovery_baseline_state_epoch_run423.py` at `07d82e932cde83e638f755645be0bd3b4f3b72ef`. Keep the original recovered Planner state and nested tail **by exact carrier identity** throughout all independent SQLite reviews and final diagnosis; reject forged per-step id/request/registry revision/status. No replay.
+2. **Memory v1 coherent snapshot — hydrated Scope, Metadata, scalar identity (+12):** `src/ark/memory/coherent_snapshot_review.py` at `984f919557a7f1ccb8e4518e16d15728192a6690`; `tests/test_memory_snapshot_hydrated_identity_run423.py` at `fd918e8d0c534153f569bec3c4b508091331a6a6`. Pin exact original scope and metadata object references and scalar carriers, not solely `id(scope)` / value comparisons. No SQL schema changes or data disclosure.
+3. **Personal Context privacy retention — original inventory and final human-review queue (+13):** `src/ark/personal_context_retention_recheck_review.py` at `f017c4b449321c14e3f74e5204df5612e0e4b68c`; `tests/test_retention_recheck_result_custody_run423.py` at `2bfc8a157c9f2d864d815ee2660681c805df6116`; smallest test-only expected-diagnostic repair `834f3253fc987cac24f979b69ba5ed783a1e719d`. Detect cached/current/returned inventory and queue tampering after final constructor. **Human erasure review only; no delete or disclosure authority.**
+4. **Observation–Trigger disconnected correlation — original envelope/Policy/Receipt carriers (+9):** `src/ark/proactive_observation_lineage_fence_review.py` at `d9f4a571d160fe5f0f201c4d2cf149b4969d54c8`; `tests/test_observation_trigger_original_carriers_run423.py` at `91195128349a52f8d787765da73f1211dc8384ba`. Exact source/adapter/privacy/parent/content fields, trigger policy/receipt and retained local digest survive independent read-only fixture reviews. No real sensing or notification.
+
+**Engineering evidence:** `docs/JARVIS_PLAN_MEMORY_RETENTION_ORIGINAL_CARRIER_RUN423.md` created at `93b4e18f0182d365c45fbd21962ab9387e3c32ce`, extended at `3f3fa0467a46fe11cbe4d8de49825e92b3da20e0`. New test count = **11 + 12 + 13 + 9 = 45**. The last independently GREEN prior-baseline HEAD Run422 had **2574 passed / 1 skipped**. **No unverified Run423 total is declared PASS.**
+
+### CI — accurate exact-HEAD history at checkpoint sampling
+
+- Opening Run422 checkpoint: #1130 / 40191296165: COMPLETED / SUCCESS on `8e56dac72e2681e06755db477e8bc0898ddff2f2`; six jobs SUCCESS.
+- Initial Planner/Memory source + new regression tests and privacy source were independently six-job GREEN: #1131 / 40192048503: COMPLETED / SUCCESS on `8dade4f7d899c0cfb7a0142aa17bd30acade0f90`, #1132 / 40192137272: COMPLETED / SUCCESS on `984f919557a7f1ccb8e4518e16d15728192a6690`, #1133 / 40192225819: COMPLETED / SUCCESS on `07d82e932cde83e638f755645be0bd3b4f3b72ef`, #1134 / 40192288317: COMPLETED / SUCCESS on `fd918e8d0c534153f569bec3c4b508091331a6a6`, #1135 / 40192392141: COMPLETED / SUCCESS on `f017c4b449321c14e3f74e5204df5612e0e4b68c`.
+- **Actual intermediate FAIL:** #1136 / 40192454723: COMPLETED / FAILURE on `2bfc8a157c9f2d864d815ee2660681c805df6116` and #1137 / 40192602690: COMPLETED / FAILURE on `93b4e18f0182d365c45fbd21962ab9387e3c32ce`. Ubuntu Python 3.13 reported **2609 passed / 1 failed / 1 skipped**, with new privacy test `current_inventory_digest` expecting the wrong exception text for a mutated *returned receipt* rather than a mutated *current inventory*. Source correctly denied mutation. The narrow test-only correction at `834f3253fc987cac24f979b69ba5ed783a1e719d` preserves fail-closed implementation. Historical CI remains FAILED.
+- Corrected privacy regression: #1138 / 40192845393: IN_PROGRESS on `834f3253fc987cac24f979b69ba5ed783a1e719d`.
+- Independent Observation source: #1139 / 40192933048: IN_PROGRESS on `d9f4a571d160fe5f0f201c4d2cf149b4969d54c8`.
+- Four-package source + tests: #1140 / 40192969040: IN_PROGRESS on `91195128349a52f8d787765da73f1211dc8384ba`.
+- Final engineering document: #1141 / 40193013566: IN_PROGRESS on `3f3fa0467a46fe11cbe4d8de49825e92b3da20e0`.
+- **No duplicate CI dispatch**, no CI result fabricated. GitHub Actions was triggered by permitted normal Contents commits. For pending matrix jobs, do not extrapolate an Ubuntu result to Windows.
+
+**Full Git-tree comparison** at `93b4e18f0182d365c45fbd21962ab9387e3c32ce` against unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`: nontruncated **94 main blobs, 524 branch blobs, 430 added, zero existing-main modified or removed**. Subsequent source/test/doc changes are confined to the isolated branch (tree comparison for this checkpoint HEAD remains independently checkable).
+
+### Frozen contracts, blockers and spending/approval boundaries
+
+**V1/V2/Local UI/Launcher frozen evidence unmodified; frozen Memory v1 and ActionAudit v1 SQL schema unmodified.** PR #8 Draft/unmerged; V3 PR #5 Draft/unmerged/NOT_PASSED at `d6d4c1954a85fc716b1c593ac55c85417912418f`; frozen V3 Contract 1 SHA-256 `00397c2c62bda4ba2658b59ae71d0ea0ac083924ae7a187fd221d6ad84387f20` unchanged. Protected V2 final evaluation unopened. No paid/external GPU, billable API/compute, new subscription/service/account/credential, physical PC or sensor action, real Candidate weights/adapter, promotion, destructive state migration or approval-gated main merge. Synthetic local hashes are not trusted human approval, external attestation or backend exactly-once proof.
+
+### Next plan / 今後の方針
+
+1. Complete exact-head CI verification for **#1138–#1141**, then separately for the checkpoint-result HEAD. On any FAIL, inspect its log and apply the smallest semantics-preserving correction through normal permitted GitHub Contents only; leave failed runs as failed.
+2. Advance four-store Planner / PermissionGate / Occurrence / ActionAudit / AuditLink recovery across partial prefix loss, orphan pre-action audit, reserved-PENDING and UNKNOWN dependent WRITE; no live side effects or automatic retry.
+3. Continue Memory CAS/multiprocess expiry and coherent multi-namespace read snapshots, Personal Context retention/revocation/erasure-review safety without pretending independent SQLite files are atomic.
+4. Build reversible authenticated issuer/trusted-clock *interfaces* and read-only Startup Readiness, Observation and Proactive Scheduler fixture adapters, with no source-of-truth or real-world authorization fabrication.
+5. Restrict V3 to free-only approval/path/identity/reproducibility/contamination guards. Explicit user gates remain mandatory for compute, protected evaluation, Candidate creation/promotion, frozen contract edits and main merge.
+
+---
+
+**HISTORICAL — Run422 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 422**
 
 Saved at: **2026-10-25T21:01:04.793+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sampling before the normal GitHub Contents update; **NOT** signed trusted time, human identity, consent, hardware provenance, or spend authorization).
