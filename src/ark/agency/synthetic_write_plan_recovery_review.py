@@ -182,6 +182,7 @@ def review_synthetic_write_plan(
 
     try:
         write_steps = []
+        expected_bound_ids: dict[str, str] = {}
         seen_requests = set()
         for (
             _step, name, call, _dependencies, _arguments, request, _call_identity,
@@ -208,6 +209,9 @@ def review_synthetic_write_plan(
                     )
                 seen_requests.add(request)
                 write_steps.append((name, call))
+                # Pin the independently bound registry identity before any
+                # per-step SQLite review or injected diagnostic callback.
+                expected_bound_ids[name] = bound.bound_action_id
         if not write_steps:
             raise SyntheticWritePlanReviewRejected("no synthetic WRITE steps to review")
         baseline = journal.recover(retained=retained_plan)
@@ -290,7 +294,13 @@ def review_synthetic_write_plan(
                 reviewed.step_id != name
                 or reviewed.request_id != call.request_id
                 or reviewed.registry_revision != registry_revision
+                or reviewed.bound_action_id != expected_bound_ids[name]
                 or reviewed.step_state != expected_states.get(name)
+                # A forged per-step review must not conceal a recovered
+                # RUNNING WRITE by claiming that its outcome is unambiguous.
+                or reviewed.ambiguous_write is not (
+                    name in baseline.ambiguous_running_steps
+                )
             ):
                 raise SyntheticWritePlanReviewRejected(
                     "synthetic per-step recovery differs from original plan"
