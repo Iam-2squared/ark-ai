@@ -336,10 +336,29 @@ def review_synthetic_write_plan(
         terminal_hold = downstream(terminal, exclude_direct_roots=False)
         assert_epoch()
         assert_review_epochs()
-        return SyntheticWritePlanReview(
-            tuple(reviews), uncertain, baseline.tail.topology_digest,
+        # Constructing the frozen result is still a reflective callback
+        # boundary. Keep the exact original witness and output carriers
+        # stable through the last step, never returning retargeted evidence.
+        final_steps = tuple(reviews)
+        topology_digest = baseline.tail.topology_digest
+        result = SyntheticWritePlanReview(
+            final_steps, uncertain, topology_digest,
             downstream_hold, terminal_hold,
         )
+        assert_epoch()
+        assert_review_epochs()
+        if (
+            type(result) is not SyntheticWritePlanReview
+            or result.steps is not final_steps
+            or result.uncertain_step_ids is not uncertain
+            or result.plan_topology_digest is not topology_digest
+            or result.downstream_write_hold_step_ids is not downstream_hold
+            or result.terminally_blocked_write_step_ids is not terminal_hold
+        ):
+            raise SyntheticWritePlanReviewRejected(
+                "synthetic plan constructed recovery result changed"
+            )
+        return result
     except (KeyError, AttributeError, TypeError, ValueError) as exc:
         raise SyntheticWritePlanReviewRejected(
             "synthetic plan registry or evidence malformed"
