@@ -17,7 +17,7 @@ from pathlib import Path
 
 from .durable_occurrence_review import SyntheticReplayRejected, _validate
 
-_HEX = re.compile(r"[0-9a-f]{64}\\Z")
+_HEX = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_WITNESS_ROWS = 10_000
 _COLUMNS = """SELECT token_digest, occurrence_id, registry_revision,
                      bound_action_id, request_id, reserved_at_ms, expires_at_ms
@@ -28,7 +28,7 @@ def _digest(label: str, data: object) -> str:
     encoded = json.dumps(
         data, ensure_ascii=True, separators=(",", ":"), sort_keys=True,
     ).encode("utf-8")
-    return hashlib.sha256(label.encode("utf-8") + b"\\0" + encoded).hexdigest()
+    return hashlib.sha256(label.encode("utf-8") + b"\0" + encoded).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)
