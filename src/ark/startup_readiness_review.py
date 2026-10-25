@@ -103,6 +103,7 @@ class StartupSnapshot:
         # fixture callbacks. Hold each original carrier through those calls:
         # a mutation restored by the next callback must not go unnoticed.
         components_epoch = self.components
+        digest_epoch = self.digest
         carrier_epoch = tuple(
             (
                 item, item.component_id, item.dependencies, item.local_state,
@@ -114,6 +115,7 @@ class StartupSnapshot:
         def assert_component_epoch() -> None:
             if (
                 self.components is not components_epoch
+                or self.digest is not digest_epoch
                 or len(components_epoch) != len(carrier_epoch)
                 or any(
                     item is not original
@@ -369,4 +371,8 @@ def evaluate_startup_readiness(
         payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
     assert_source_epoch()
-    return StartupSnapshot(components, "startup_" + hashlib.sha256(encoded).hexdigest())
+    # SHA-256 is another reentrant fixture boundary: do not return READY
+    # evidence if a hash callback rewrites an earlier probe carrier.
+    digest = "startup_" + hashlib.sha256(encoded).hexdigest()
+    assert_source_epoch()
+    return StartupSnapshot(components, digest)
