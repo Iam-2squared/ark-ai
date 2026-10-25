@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — Run 426**
+
+Saved at: **2026-10-25T22:58:23.420+09:00 Asia/Tokyo/JST** (ordinary untrusted runtime wall-clock sample immediately preceding this normal GitHub Contents checkpoint write; NOT signed time, verified human consent, model provenance, or billing authorization).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `cf22a2823b9de380d273274ff42cd7682737e14b` (Run425 in-progress working HEAD at opening; its CI **#1162 / 40198320060 subsequently finished six-job SUCCESS**).
+**Run426 final executable source + tests HEAD:** `845d3bfa08b88a16dbc7b968addac29a3768ded7` (Planner diagnostic fix applied through the normal GitHub Contents API).
+**Engineering document / checkpoint write-basis HEAD:** `ae8401ee306f90286267aa30c43f1509d64145a9`. Its CI **#1170 / 40199867848** was IN_PROGRESS at latest observation.
+**Checkpoint-result HEAD:** Not self-embeddable before the Contents API generates this checkpoint commit. The GitHub connector's returned `commit_sha` must be verified separately; do not treat predecessor CI as exact checkpoint-HEAD GREEN.
+
+### Overall current ARK state
+
+**Local-first disconnected/synthetic/mock-only foundations; complete JARVIS NOT_PASSED.** No authenticated human/permission issuer, trustworthy signed clock, real ToolBackend outcome attestation, atomic snapshot/commit across independent SQLite databases, external exactly-once execution, live camera/microphone/screen, active notifications, real Candidate, GPU training, or authorized autonomous Tool dispatch. Even a valid local audit hash is NOT a real-world action approval. **UNKNOWN/RUNNING and already reserved PENDING WRITE cannot be automatically replayed without independently verified external outcome.**
+
+### NEW Run426 — 3 independent no-cost implementation + regression packages (+37 pytest cases)
+
+1. **Planner SyntheticPlanJournal recovered result custody (+20):** Source `src/ark/agency/planner_journal_review.py` first at `2924289de4b7c20853f79d141101e5d3db4b196f`, narrow diagnostic fix at `845d3bfa08b88a16dbc7b968addac29a3768ded7`; test `tests/test_planner_journal_result_commit_custody_run426.py` at `57ff6a90ba6fdc44e4011c151a69de6ee5808e3a`. Bind original Planner journal tail, derived statuses and ambiguous RUNNING steps across synthetic result construction AND local SQLite COMMIT. Reject forged SUCCEEDED status, missing RUNNING, cloned equal tail, wrong returned type, and reflected tail mutation. Pre-COMMIT rejection rolls back local event; post-COMMIT rejection preserves already durable RUNNING event, without auto replay.
+2. **ToolRegistry exact original ToolCall carrier custody (+13):** Source `src/ark/agency/registry.py` at `bdeaa6dac258d4460bb44424b1fa8d554d2652e5`; tests `tests/test_registry_original_toolcall_carriers_run426.py` at `9f482faef4b276b0edd76874dc66bc475c833085`. Pin original tool/capability/scope/argument objects before cloning, registry lookup, resolution and binding hashes. Reject equal-text replaced objects despite unchanged deterministic Request ID; do not invoke registered backends or grant durable approval.
+3. **Bounded Proactive witness hashing (+4):** Source `src/ark/proactive_synthetic_continuity_review.py` at `4236914b26f94fb9099ac0c2518ec0f2060d0373`; tests `tests/test_proactive_witness_row_budget_run426.py` at `6d35493c00e7749935c164721e9c9cb573d8041b`. Max 10,000 history rows during read-only digesting, independent of preceding SQLite schema/row preflight. Reject overflow before hashing its row or returning truncated evidence. No notifications/Tool dispatch.
+
+**Engineering fault matrix:** `docs/JARVIS_PLANNER_REGISTRY_PROACTIVE_RESULT_CUSTODY_RUN426.md` at `ae8401ee306f90286267aa30c43f1509d64145a9`. Prior unsaved Run425 development is documented at `docs/JARVIS_PROCESS_CAS_PRIVACY_READ_BRIDGE_AUDIT_RUN425.md`; Run425 introduced multi-process Memory CAS expiry collisions, READ-bridge recovery, privacy revocation, ActionAudit concurrent writes and post-COMMIT event custody. Do not silently erase that source history merely because canonical status was last saved as Run424.
+
+### CI — exact commits, actual failures and sampling limitations
+
+- Opening `cf22a2823b9de380d273274ff42cd7682737e14b`: **CI #1162 / 40198320060 COMPLETED SUCCESS, six of six**.
+- **Real historical FAILs** #1163 / 40199112834, #1164 / 40199219504 and intervening #1165–#1168 at earlier HEADs: injected Planner graph input drift surfaced a raw `PlanConflictError` during the newly added status digest instead of established `SyntheticPlanJournalRejected("...topology changed...")`. This was failure of error-boundary compatibility, NOT successful dispatch or permission. Leave failed CI history unchanged. The smallest semantics-preserving correction is `845d3bfa08b88a16dbc7b968addac29a3768ded7`.
+- **Final executable source/test HEAD CI #1169 / 40199645724** at `845d3bfa08b88a16dbc7b968addac29a3768ded7`: at latest exact-job observation **Ubuntu Python 3.11, 3.12 and 3.13 SUCCESS**, Windows Python 3.11, 3.12, 3.13 IN PROGRESS. Ubuntu Python 3.13: **Ruff PASS; 2734 passed / 1 skipped**. No full six-job GREEN claim before actual Windows completions.
+- **Engineering document HEAD #1170 / 40199867848** at `ae8401ee306f90286267aa30c43f1509d64145a9`: IN_PROGRESS. The current checkpoint-result HEAD's own CI is a separate, later validation and is **NOT YET VERIFIED** when this line was written.
+- Normal GitHub Contents writes automatically triggered the repository's existing public-repository CI. No duplicate manual reruns, invented timestamps/hashes/results, paid GPU, API billing or physical-PC use.
+
+**Exact Git-tree comparison:** main `7a843f17eb96ed13d66f23b58b06406b3002e405` versus documentation HEAD `ae8401ee306f90286267aa30c43f1509d64145a9`: nontruncated trees; 94 main files, 541 branch files, **447 added, 0 changed, 0 removed** relative to main. Frozen main artifacts were not edited by this isolated branch at that inspected HEAD.
+
+### Frozen contracts and approval / no-cost boundaries
+
+PR #5 remains **Draft/unmerged/NOT_PASSED** at `d6d4c1954a85fc716b1c593ac55c85417912418f`; PR #8 remains Draft/unmerged. No edit to frozen V1/V2/Local UI/Launcher, frozen Memory v1 and ActionAudit v1 SQL DDL, V3 Contract 1 SHA-256 `00397c2c62bda4ba2658b59ae71d0ea0ac083924ae7a187fd221d6ad84387f20`, or protected final V2 evaluation. No real Candidate adapter/weight generation, external GPU, new subscription/paid compute/API, credentials/connection, real sensor/device, notification, irreversible operation, automatic Candidate promotion or approval-gated main merge. No manufactured human reviewer, trusted runtime identity, billing approval or PASS.
+
+### Next plan / 今後の方針
+
+1. Check exact #1169/#1170 Windows jobs and the separately generated checkpoint-HEAD CI. On FAIL, preserve failed evidence, fix only via ordinary safety-permitted GitHub Contents writes and revalidate; no duplicate equivalent workflow dispatch.
+2. Extend retained-prefix and orphan-audit crash-restart review across Planner, PermissionGate, Occurrence, ActionAudit and AuditLink; keep UNKNOWN and reserved PENDING WRITEs quarantined through READ dependency bridges, without real backend dispatch.
+3. Strengthen Memory v1 cross-process CAS/revision/expiry and coherent multi-namespace snapshots with retained independent evidence. Do not claim atomic consistency across separate SQLite files or mutate frozen DDL.
+4. Continue Personal Context retention/revocation and reviewed erasure contracts without real deletion/disclosure or imagined authenticated consent.
+5. Develop reversible, testable issuer/trusted-clock interfaces and Observation/Scheduler fixture adapters; advance V3 only on no-cost approval/path/identity/reproducibility guards. Require explicit authorization before spend, credential/physical actions, protected evaluation, Candidate creation/promotion, frozen-contract change or main merge.
+
+---
+
+**HISTORICAL — Run424 and earlier checkpoints remain verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run 424**
 
 Saved at: **2026-10-25T22:08:29.949+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock sample immediately preceding normal GitHub Contents checkpoint write; **NOT** authenticated time, human identity, consent, service-billing authorization, or immutable evidence).
