@@ -160,7 +160,12 @@ def test_snapshot_reflectively_changed_mid_read_is_denied(tmp_path: Path, monkey
         return result
 
     monkeypatch.setattr(module, "review_prepared_trigger_freshness", injected)
-    with pytest.raises(SyntheticStartupLeaseRejected, match="integrity"):
+    # The cross-review original-carrier fence may now reject this mutation
+    # *before* the downstream lease integrity check. Both are fail-closed.
+    with pytest.raises(
+        (SyntheticStartupLeaseRejected, SyntheticProactiveStartupRejected),
+        match="integrity|input, source or retained",
+    ):
         _review(state)
 
 
