@@ -685,15 +685,24 @@ class SQLiteMemoryStore:
             raise ValueError("after_event_id must be a non-negative integer")
         if type(limit) is not int or not 1 <= limit <= 1000:
             raise ValueError("limit must be an integer from 1 to 1000")
-        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        # Caller-owned immutable dataclasses can be reflectively retargeted
+        # to a distinct equal-text owner/namespace during a SQLite callback.
+        # A value-equal replacement is still a changed audit-query identity.
+        original_owner = scope.owner_id
+        original_namespace = scope.namespace
+        pinned_scope = MemoryScope(original_owner, original_namespace)
         path_epoch = self.path
 
         def assert_events_epoch() -> None:
             # Decoding individual event rows is reentrant under synthetic
             # failure injection. Checking only after all rows lets a scope
             # or Path retargeting be restored by the next row's callback.
-            if (scope.owner_id, scope.namespace) != (
-                pinned_scope.owner_id, pinned_scope.namespace
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace) != (
+                    pinned_scope.owner_id, pinned_scope.namespace
+                )
             ):
                 raise MemorySchemaError("memory events scope changed during read")
             if self.path is not path_epoch:
