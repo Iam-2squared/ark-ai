@@ -285,12 +285,28 @@ class ToolRegistry:
         assert_call_unchanged()
         self._assert_registration_epoch()
         assert_call_unchanged()
-        return BoundAction(
+        bound = BoundAction(
             registry_revision=revision,
             call=call,
             registration=registration,
             bound_action_id=bound_action_id,
         )
+        # BoundAction is a frozen carrier, not an immutable proof. A patched
+        # constructor can reflectively mutate the call, registration or its
+        # own fields *after* the earlier hash/registry checks. Never return
+        # an inconsistent action identity or authorize backend execution.
+        assert_call_unchanged()
+        self._assert_registration_epoch()
+        assert_call_unchanged()
+        if (
+            type(bound) is not BoundAction
+            or bound.registry_revision is not revision
+            or bound.call is not call
+            or bound.registration is not registration
+            or bound.bound_action_id is not bound_action_id
+        ):
+            raise ValueError("registry bound result changed during construction")
+        return bound
 
     @classmethod
     def _compute_revision(cls, registrations: list[ToolRegistration]) -> str:
