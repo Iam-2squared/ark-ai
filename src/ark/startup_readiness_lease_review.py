@@ -84,9 +84,30 @@ def review_synthetic_startup_lease(
         or now_ms - captured_at_ms > max_age_ms
     ):
         raise SyntheticStartupLeaseRejected("synthetic startup lease expired or clock regressed")
+    # Snapshot the ORIGINAL requirement carriers before the first reentrant
+    # shape method; a later callback must not promote a substitute component.
+    epoch = tuple((item, item.component_id, item.schema_revision) for item in requirements)
+
+    def assert_requirements() -> None:
+        try:
+            stable = len(requirements) == len(epoch) and all(
+                current is item
+                and current.component_id is component_id
+                and current.schema_revision is schema_revision
+                for current, (item, component_id, schema_revision) in zip(
+                    requirements, epoch, strict=True,
+                )
+            )
+        except (AttributeError, TypeError, ValueError):
+            stable = False
+        if not stable:
+            raise SyntheticStartupLeaseRejected(
+                "readiness requirement epoch changed during review"
+            )
+
     for item in requirements:
         item.assert_shape()
-    epoch = tuple((item, item.component_id, item.schema_revision) for item in requirements)
+        assert_requirements()
     names = tuple(item.component_id for item in requirements)
     if len(set(names)) != len(names):
         raise SyntheticStartupLeaseRejected("duplicate required readiness component")
@@ -108,17 +129,20 @@ def review_synthetic_startup_lease(
     def assert_epoch() -> None:
         if (
             snapshot.components is not components
-            or snapshot.digest != digest
+            or snapshot.digest is not digest
             or len(snapshot.components) != len(component_epoch)
             or any(
                 current is not original
                 or current.dependencies is not dependencies
-                or (
-                    current.component_id, current.dependencies,
-                    current.local_state, current.effective_state,
-                    current.failure_code, current.schema_revision,
-                ) != (
-                    component_id, dependencies, local, effective, failure, schema,
+                or any(
+                    now is not original
+                    for now, original in zip(
+                        (current.component_id, current.dependencies,
+                         current.local_state, current.effective_state,
+                         current.failure_code, current.schema_revision),
+                        (component_id, dependencies, local, effective, failure, schema),
+                        strict=True,
+                    )
                 )
                 for current, (
                     original, component_id, dependencies, local, effective,
@@ -163,6 +187,7 @@ def review_synthetic_startup_lease(
             )
         snapshot._assert_integrity()
         assert_epoch()
+        assert_requirements()
         if (
             snapshot.digest != digest
             or any(
@@ -175,6 +200,20 @@ def review_synthetic_startup_lease(
             raise SyntheticStartupLeaseRejected("readiness inputs changed during review")
     except (ValueError, TypeError, AttributeError) as exc:
         raise SyntheticStartupLeaseRejected("startup snapshot integrity rejected") from exc
-    return SyntheticStartupLeaseReview(
+    assert_requirements()
+    result = SyntheticStartupLeaseReview(
         digest, tuple(sorted(names)), captured_at_ms, now_ms,
     )
+    assert_epoch()
+    assert_requirements()
+    if (
+        type(result) is not SyntheticStartupLeaseReview
+        or result.snapshot_digest is not digest
+        or result.required_components != tuple(sorted(names))
+        or result.captured_at_ms is not captured_at_ms
+        or result.checked_at_ms is not now_ms
+    ):
+        raise SyntheticStartupLeaseRejected(
+            "readiness result changed during construction"
+        )
+    return result
