@@ -135,12 +135,12 @@ class StartupSnapshot:
                 or len(components_epoch) != len(carrier_epoch)
                 or any(
                     item is not original
-                    or item.component_id != old_id
+                    or item.component_id is not old_id
                     or item.dependencies is not old_dependencies
                     or item.local_state is not old_local
                     or item.effective_state is not old_effective
-                    or item.failure_code != old_failure
-                    or item.schema_revision != old_schema
+                    or item.failure_code is not old_failure
+                    or item.schema_revision is not old_schema
                     for item, (
                         original, old_id, old_dependencies, old_local,
                         old_effective, old_failure, old_schema,
@@ -284,11 +284,11 @@ def evaluate_startup_readiness(
     def assert_source_epoch() -> None:
         if any(
             type(entry) is not StartupComponent
-            or entry.component_id != component_id
+            or entry.component_id is not component_id
             or entry.dependencies is not dependencies
             or entry.local_state is not local_state
-            or entry.failure_code != failure_code
-            or entry.schema_revision != schema_revision
+            or entry.failure_code is not failure_code
+            or entry.schema_revision is not schema_revision
             for (
                 entry, component_id, dependencies, local_state,
                 failure_code, schema_revision,
