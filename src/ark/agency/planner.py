@@ -172,7 +172,11 @@ class PlanGraph:
                 for step_id in sorted(self.steps)
             ],
         }
-        return _plan_digest("plan_", payload)
+        digest = _plan_digest("plan_", payload)
+        # Hash/JSON callbacks are reentrant in fault fixtures. The witness
+        # must not describe an earlier PlanStep epoch than the one returned.
+        self._assert_plan_epoch()
+        return digest
 
     def status_digest(self) -> str:
         """Canonical full status witness including derived BLOCKED revisions.
@@ -193,7 +197,7 @@ class PlanGraph:
                     "revision": status.revision,
                 }
             )
-        return _plan_digest(
+        digest = _plan_digest(
             "pstate_",
             {
                 "schema_version": 1,
@@ -201,13 +205,25 @@ class PlanGraph:
                 "statuses": entries,
             },
         )
+        # A canonical snapshot is only valid if neither its plan inputs nor
+        # the authoritative statuses changed during either digest callback.
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        return digest
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
         self._assert_plan_epoch()
         self._assert_status_epoch()
         # Return detached value snapshots: frozen dataclass fields can still be
         # changed by object.__setattr__ on a caller-held reference.
-        return MappingProxyType({key: replace(value) for key, value in self._status.items()})
+        detached = MappingProxyType({
+            key: replace(value) for key, value in self._status.items()
+        })
+        # Dataclass snapshot construction is also a fault-injection boundary.
+        # Reject stale detached snapshots if an internal carrier drifted.
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        return detached
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
         self._assert_plan_epoch()
