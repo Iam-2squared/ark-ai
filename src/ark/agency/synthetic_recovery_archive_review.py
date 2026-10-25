@@ -340,6 +340,20 @@ def recheck_synthetic_recovery_archive(
         raise SyntheticRecoveryArchiveRejected(
             "archived UNKNOWN WRITE cannot be resolved by local journal"
         )
+    # A PENDING local journal can already have a durable reservation. Once
+    # retained, that reservation makes any later local-only terminal verdict
+    # insufficient to establish the external result or safely dismiss it.
+    if (
+        identity["step_state"] == StepState.PENDING.value
+        and occurrences
+        and fresh.step_state in {
+            StepState.SUCCEEDED.value, StepState.FAILED.value,
+            StepState.CANCELLED.value, StepState.BLOCKED.value,
+        }
+    ):
+        raise SyntheticRecoveryArchiveRejected(
+            "archived reserved PENDING WRITE cannot be resolved by local journal"
+        )
     if (
         fresh.step_id != identity["step_id"]
         or fresh.request_id != identity["request_id"]
