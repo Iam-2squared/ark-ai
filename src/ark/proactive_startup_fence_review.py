@@ -118,6 +118,17 @@ def review_synthetic_proactive_startup(
     if not isinstance(source_epoch, Path):
         raise SyntheticProactiveStartupRejected("exact startup trigger source required")
     retained_epoch = None if retained is None else (retained.row_hashes, retained.digest)
+    retained_hash_carriers = (
+        () if retained is None else tuple(retained.row_hashes)
+    )
+    # Independent readiness and trigger readers are separate callbacks.
+    # Preserve the ORIGINAL snapshot/component carriers across both, not
+    # merely their digest-equivalent values checked at the very end.
+    snapshot_components = snapshot.components
+    snapshot_digest = snapshot.digest
+    snapshot_carriers = tuple(
+        (item, _epoch(item, ComponentResult)) for item in snapshot_components
+    )
 
     def assert_source_epoch() -> None:
         # Both independent reviewers are reentrant. Check the ORIGINAL trigger,
@@ -127,8 +138,30 @@ def review_synthetic_proactive_startup(
         policy_fields = _epoch(policy, SyntheticTriggerPolicy)
         if (
             ledger.path is not source_epoch
-            or retained_epoch != (
-                None if retained is None else (retained.row_hashes, retained.digest)
+            or retained is not None and (
+                retained.row_hashes is not retained_epoch[0]
+                or retained.digest is not retained_epoch[1]
+                or any(
+                    current is not original for current, original in zip(
+                        retained.row_hashes, retained_hash_carriers, strict=True,
+                    )
+                )
+            )
+            or snapshot.components is not snapshot_components
+            or snapshot.digest is not snapshot_digest
+            or len(snapshot.components) != len(snapshot_carriers)
+            or any(
+                current is not original
+                or any(
+                    actual is not pinned_field
+                    for actual, pinned_field in zip(
+                        _epoch(current, ComponentResult),
+                        original_fields, strict=True,
+                    )
+                )
+                for current, (original, original_fields) in zip(
+                    snapshot.components, snapshot_carriers, strict=True,
+                )
             )
             or len(receipt_fields) != len(pinned[0])
             or any(
