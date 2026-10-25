@@ -183,16 +183,23 @@ class SyntheticOccurrenceStore:
         )
 
         def assert_input_epoch() -> None:
+            # Preserve established fail-closed provenance diagnostics, so
+            # source vs token changes remain distinguishable in durable tests.
+            if self._path is not path_epoch:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence source changed during reserve"
+                )
             try:
+                if (token.token_id, token.request_id, token.expires_at_ms) != token_epoch:
+                    raise SyntheticReplayRejected(
+                        "synthetic token changed during reserve"
+                    )
                 stable = (
-                    self._path is path_epoch
-                    and call.arguments is arguments_epoch
+                    call.arguments is arguments_epoch
                     and (
                         call.tool, call.capability, call.scope,
                         call.request_id, call.arguments_sha256,
                     ) == call_epoch
-                    and (token.token_id, token.request_id, token.expires_at_ms)
-                    == token_epoch
                 )
             except (TypeError, ValueError, AttributeError) as exc:
                 raise SyntheticReplayRejected(
