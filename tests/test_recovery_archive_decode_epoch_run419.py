@@ -1,7 +1,5 @@
 """Detached synthetic recovery archive input carrier custody at read boundaries."""
 
-import json
-
 import pytest
 
 import ark.agency.synthetic_recovery_archive_review as module
