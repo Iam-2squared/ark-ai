@@ -89,10 +89,11 @@ def review_synthetic_approval_cancellation_fence(
     if not isinstance(source_epoch, Path):
         raise SyntheticApprovalFenceRejected("exact claim cancellation source required")
     arguments_epoch = call.arguments
-    call_epoch = (
-        call.tool, call.capability, call.scope,
-        call.request_id, call.arguments_sha256,
-    )
+    # The last two identities are deterministic computed properties: their
+    # getters return freshly hashed strings even for unchanged ToolCalls.
+    # Pin stored carriers by identity, but compare derived hashes by value.
+    call_epoch = (call.tool, call.capability, call.scope)
+    derived_epoch = (call.request_id, call.arguments_sha256)
     registry_epoch = registry.revision
     retained_epoch = (
         None if retained is None
@@ -110,11 +111,11 @@ def review_synthetic_approval_cancellation_fence(
             or any(
                 current is not pinned
                 for current, pinned in zip(
-                    (call.tool, call.capability, call.scope,
-                     call.request_id, call.arguments_sha256),
+                    (call.tool, call.capability, call.scope),
                     call_epoch, strict=True,
                 )
             )
+            or (call.request_id, call.arguments_sha256) != derived_epoch
             or registry.revision is not registry_epoch
             or retained is not None and any(
                 current is not pinned
