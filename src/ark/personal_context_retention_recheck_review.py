@@ -174,6 +174,9 @@ def review_synthetic_retention_recheck(
                 retained_revocations is not None
                 and retained_revocations.rows is not retained_rows
             )
+            or retained_revocations is not None and (
+                retained_revocations.witness_id is not retained_epoch[1]
+            )
             or retained_epoch != (
                 None if retained_revocations is None else (
                     retained_revocations.rows, retained_revocations.witness_id,
