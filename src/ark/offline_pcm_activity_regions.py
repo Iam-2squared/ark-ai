@@ -104,7 +104,7 @@ def detect_activity_regions(
     regions = tuple(
         ActivityRegion(start, end, start * frame_samples,
                        min(total_samples, end * frame_samples), count)
-        for start, end, count in zip(starts, ends, counts)
+        for start, end, count in zip(starts, ends, counts, strict=True)
         if count >= min_active_frames
     )
     return ActivityRegions(
