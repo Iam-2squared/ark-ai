@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — Run461**
+
+**Saved at:** **2026-10-27T06:01:37.470+09:00 Asia/Tokyo/JST** (observed wall clock before the ordinary GitHub Contents checkpoint write; NOT an independently trusted clock, commit timestamp, consent, authorization or human review).
+
+**Branch/PR:** `research/jarvis-foundations` / **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `bb40a28f91f3a9eada030a782317598995e12d01` (Run460 checkpoint, verified on entry).
+**Final source/test HEAD:** `b31ba86f4ec4be53b6c7a62879662b3ab9a5c68d`.
+**Technical evidence / checkpoint-write-basis HEAD:** `362c47e73f58143bd5251e590d0d19dbe98c1f59` (evidence `docs/JARVIS_POSIX_EPOCH_RESERVATION_CI_RUN461.md`).
+**Checkpoint-result HEAD:** this commit cannot know its own hash. Verify the GitHub Contents update result and independently re-read the current branch HEAD after save. The evidence HEAD above is pre-checkpoint, **not** the resulting checkpoint HEAD.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+Local-first, free-only, disconnected and reversible foundation work. No live PC Tool execution, independently authenticated issuer/owner, consent provenance, trusted clock, coherent cross-store WRITE or independently attested multi-SQLite read, proven external exactly-once effect, live audio/camera capture, approved Candidate training/weight generation/promotion, protected V2 final-evaluation opening or main merge. Unknown/RUNNING and reserved PENDING WRITE remain fail-closed, never automatically replayed.
+
+### NEW this invocation — four independently scoped meaningful work packages
+
+1. **Detached store-epoch continuity** — New `src/ark/disconnected_epoch_vector.py` blob `02084f2175dd9526dbbcad594fd261121f6b478a`; `tests/test_disconnected_epoch_vector_run461.py` blob `e284e86d4c76b66d44aadc6b4f4c3294587c36cb`. Exact-type 16-store bounded synthetic identity/schema/incarnation, hash, generation/event/clock rollback and same-revision drift checks. Pure diagnostic; no coherent database snapshot, independent witness custody or execution/disclosure authority.
+2. **Descriptor-anchored POSIX fixture custody** — New `src/ark/disconnected_posix_handle_seal.py` blob `0e6f5d7de2fc8f195dc66bdd7dd0b36f524b3a16`; `tests/test_disconnected_posix_handle_seal_run461.py` blob `62f4f0ed90af26698c150486d258009de91ee074`. Bounded read-only 8 MiB synthetic source, nested dir_fd + O_NOFOLLOW path opens, retained parent descriptors, final regular-file/hardlink constraints, fstat rechecks, path-component rechecks and SHA-256 double read. Windows/unsupported platforms fail closed, not fallback. Read-time swap scenarios have synthetic fixtures; not a perpetual atomic pathname guarantee, owner authentication, WAL coherence or protection against post-check swapping.
+3. **Mixed-plan WRITE reservation alias fencing** — Updated `src/ark/agency/disconnected_write_recovery_fence.py` blob `a24bd3de6863c5951838da03fe1a4b2113e39d2d`; added `tests/test_disconnected_write_reservation_uniqueness_run461.py` blob `3d8950c9d96e20d300e0e43530ae91b0c3f0d453`. Two WRITE steps must not claim one occurrence reservation, including when each state separately quarantines it. READ/mock-only and nonreplay gates unchanged.
+4. **Old-head CI observation regression expectation** — Updated `tests/test_observation_window_review_run361.py` blob `7b3a2d895bee49320b05c0daeb7a2a330cfc4eb2`. Rejects substituting an equal-valued new field-carrier string after reflected tamper, while the exact ORIGINAL carrier may be restored. Aligns test with stronger existing production identity pinning instead of relaxing that guard. Source-grounded correction; this observation test was NOT executed locally against the full package this invocation.
+
+All six new/changed source/test blobs in the first three packages and the observation test were independently read back from GitHub and matched expected hashes. Technical evidence saved separately at the exact checkpoint-write-basis HEAD above. **Eight ordinary GitHub Contents commits saved before this checkpoint**; no force push, ref override, merge or duplicate workflow dispatch.
+
+### Verification and CI — strict evidence scope
+
+- Isolated local Python 3.13.5, pytest 9.0.2: **63 PASSED** for the new detached suites; `compileall` **PASS**; modified/new source/tests had no >100-column lines. This is NOT repository-wide pytest or Ruff, and does not attest Python 3.11/3.12 or Windows.
+- Additional seeded, uncommitted synthetic probes: **2,000** epoch transitions (1,714 deliberately valid, 286 deliberately rejected) and **300/300** changed-byte file seal reviews rejected. These are not extra saved pytest tests or cross-store integrity evidence.
+- Old-head #1244 / `40237313817`: historical Ubuntu pytest **FAIL** on the two old private-veto test expectations; Windows jobs **CANCELLED**, not GREEN. Current committed privacy expectations already differ from that old head.
+- Old-head #1251 / `40246006387`: Ubuntu 3.11 **FAIL** 3 tests (two old privacy expectations and the observation carrier-restoration expectation now corrected). Windows three still **IN PROGRESS** at inspection; other older in-progress jobs existed. None prove latest-head success or failure.
+- New commits #1404–#1409 queued; final source/test #1410 / `40400342219`, exact HEAD `b31ba86f4ec4be53b6c7a62879662b3ab9a5c68d`: **QUEUED** at last lookup. Evidence #1411 / `40400552897`, exact HEAD `362c47e73f58143bd5251e590d0d19dbe98c1f59`: **QUEUED**. Earlier inspection had **158 QUEUED**, 7 historical IN PROGRESS. Checkpoint-run ID/status requires post-write lookup. No new manual CI run, rerun, paid runner or cancellation.
+- Local git clone from github.com unavailable due DNS; entire-repo pytest/Ruff and six-environment exact-HEAD CI GREEN **NOT VERIFIED**. Do not promote gates from focused local tests.
+
+### Frozen evidence and hard boundaries unchanged
+
+V1/V2/Local UI/Launcher, Memory V1 schema, ActionAudit V1, V3 Contract 1, dataset provenance/contamination/reproducibility/regression, V2 protected final-evaluation and explicit main-merge approval remain frozen. PR #5 and PR #8 stay Draft/unmerged. No billable service, paid GPU/API, training/Candidate generation, new account/secret, real personal data, real Tool/backend or physical hardware action, protected evaluation, irreversible/destructive action or contract mutation. Pure hashes and caller-asserted identities are never trusted independent witnesses.
+
+### Next plan / 今後の方針
+
+1. Follow naturally advancing source/test #1410, evidence #1411 and exact checkpoint CI. Analyze factual Windows or newer Linux pytest failures, without duplicate reruns, weakening safety assertions or assuming queue implies PASS.
+2. Validate the POSIX descriptor-fixture tests across Python and supported OS CI; on Windows, require a separately reviewed safe handle/junction/reparse approach. Never silently substitute unsafe path opens.
+3. Prioritize Memory CAS/schema/row/event/expiry/coherent snapshots, Planner restart-safe UNKNOWN WRITE fencing and durable occurrence uniqueness, ToolRegistry exact identities, PermissionGate exact-type and trusted-clock audit-before-action. Preserve strong independent witness and explicit authorization boundaries.
+4. Prepare independent synthetic Personal Context privacy and Observation fixture evidence, and free-only V3 identity/path gates. Integrate only after relevant lower-level exact-head GREEN. Keep protected V2 final evaluation, real Candidate and main merge closed.
+
+---
+
+**HISTORICAL — Run460 and earlier checkpoint sections retained verbatim**
+
+# ARK AI Project Status
+
 **LATEST — Run460**
 
 **Saved at:** **2026-10-27T04:51:54.623+09:00 Asia/Tokyo/JST** (observed local wall clock before
