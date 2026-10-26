@@ -1,5 +1,51 @@
 # ARK AI Project Status
 
+**LATEST — Run459**
+
+**Saved at:** **2026-10-27T04:08:52.460+09:00 Asia/Tokyo/JST** (observed local wall clock just before the ordinary GitHub Contents write; NOT independently trusted time, commit timestamp, user consent or reviewer approval).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged, V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `e7bba49168119be69a648d07a45ca8ba614d3429` (Run458 source/test head checked on entry).
+**Final source/test HEAD:** `47d7672cc06232341a29a2b934b199dbe09155b1`.
+**Technical evidence / checkpoint-write-basis HEAD:** `92861d27d6395c39d4356994e1c11b26a3d6b168` (`docs/JARVIS_CI_STEP_TIMING_AND_PNG_SCANLINES_RUN459.md`).
+**Checkpoint-result HEAD:** this commit cannot contain its own resulting SHA. Read the GitHub Contents update result and verify the independent PR HEAD after the write. Evidence HEAD above is pre-checkpoint, NOT the result.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+ARK remains detached, local-first, reversible and free-only. No real physical-PC Tool action, camera/microphone capture, authenticated user/issuer, provable consent/retention authority, independently trusted clock, complete cross-store WRITE coherence, validated full ASR, protected V2 final opening, approved real Candidate/weights or promotion. All uncertain UNKNOWN/RUNNING WRITE and reserved PENDING WRITE remain in nonreplay quarantine. Local hashes and caller-provided identities are not signatures, consent or authentication.
+
+### NEW this invocation — two independently validated packages and CI observation
+
+1. **Truthful offline CI activity timing:** Updated `scripts/ci_queue_review.py` (blob `1777c11f07e922e3e0b2e4c15a896707a12cebb6`) and added `tests/test_ci_queue_review_run459.py` (blob `8d778f46cc11bf624664f516cb4f94f46b0622ef`). A run queued for hours but executing pytest for seconds must NOT be falsely flagged as a stalled pytest. In-progress run duration now uses `run_started_at`, active pytest duration uses its own `started_at`; missing starts are UNKNOWN, impossible and malformed timestamp carriers rejected. **21 local pytest PASSED**. This is a diagnostic, not proof of runner deadlock, CI green, payment or permission; no Actions were manually started/canceled/rerun.
+2. **Offline bounded PNG scanline reconstruction:** Added `src/ark/offline_png_scanlines.py` (blob `8cc2ae951de60df4f1f9ff02bb58fc67dcddba54`) and `tests/test_offline_png_scanlines_run459.py` (blob `dac6ec960b9f2bc34ab34ab0d6f7cc1ecfb9667e`). Checks strict supplied format, <=8 MiB compressed bytes / <=4,194,304 pixels / <=40 MiB expansion; full zlib trailer/end, 5 PNG row filters and indexed palette bounds. Returns only reconstructed-byte digest/size and filter counts. No raw pixels exposed, no PNG framing binding, image authenticity, consent, camera, Observation or Tool integration. **37 local pytest PASSED**.
+3. **Read-only evidence:** Python 3.13.5, pytest 9.0.2 **58 PASSED**, `compileall` PASS, all new/changed source/test lines <=100 chars; exact local Git blobs verified against GitHub saved blobs. Seeded uncommitted 2,000 IDAT byte-mutations: 1,991 rejected, 9 were still-valid encoded streams, 0 unexpected exceptions. One incorrect local test Paeth expectation was corrected *before* final PASS. No entire-repo pytest, Ruff, 3.11/3.12, Windows, packaged UI smoke or all-six GitHub CI GREEN.
+
+### CI/evidence — latest-head matrix QUEUED, not GREEN
+
+- Corrected CI timing regression `#1391` / `40383198527`, head `d09163d015d2db57cf203aefa5566d83b3816423`: **QUEUED** at observation.
+- PNG implementation `#1392` / `40383581000`, head `f6942a951137168b2fb5d6ecf8570ab08f9df241`: **QUEUED**.
+- Final source/test `#1393` / `40383680459`, exact head `47d7672cc06232341a29a2b934b199dbe09155b1`: **QUEUED**.
+- Run458 `#1390` / `40381657473`: **QUEUED**. Historical #1244 `40237313817` retained IN PROGRESS Windows pytest jobs and failed historical Linux jobs. These are older-head evidence, not a latest-head PASS. No duplicate workflow dispatch, cancellation, paid runner or gate relaxation.
+- Evidence-document and this checkpoint-result CI cannot be certified GREEN before execution. Separate exact-head verification required.
+
+### Frozen boundaries and blockers
+
+Frozen V1/V2/Local UI/Launcher evidence, Memory V1 schema, ActionAudit V1, V3 Contract 1, provenance/contamination/regression/reproducibility and protected V2 final-evaluation gates **unchanged**. PR #5 and #8 remain Draft/unmerged. No paid/external compute, GPU training, subscription/API, new account/credentials, actual user data, approved Candidate/adapter/weights, automatic promotion, effectful Tool, destructive action, physical device action, protected final evaluation, or main merge. PNG scanline module remains isolated until its own and PNG-container dependencies' exact-head GREEN. GitHub Actions queue/backlog remains a material blocker.
+
+### Next plan / 今後の方針
+
+1. Observe *naturally progressing* #1393 plus evidence/checkpoint exact-head matrix; diagnose factual Windows pytest or newer CI failures without initiating duplicate or billable runs. Do not infer GREEN from local 58 PASS.
+2. Continue Memory CAS/coherent snapshots, exact event/expiry and Planner multi-WRITE recovery/unknown fencing in independent lanes. Maintain trusted-clock audit-before-action, immutable ToolRegistry and exact-type PermissionGate. Never replay uncertain/reserved WRITE.
+3. When exact-head lower-level CI is GREEN, design strict metadata/digest binding between PNG framing and scanline verifier using private synthetic fixtures; no camera/real Observation, owner attribution, consent or Tool authority without explicit independent gates.
+4. Strengthen free-only V3 path/identity/evidence guards and privacy lifecycle; keep PR #5 Draft and protected V2 evaluation closed. Preserve snapshots/provenance and avoid irreversible architecture decisions.
+
+---
+
+**HISTORICAL — Run457 and earlier checkpoint evidence preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run457**
 
 **Saved at:** **2026-10-27T02:56:09.471+09:00 Asia/Tokyo/JST** (ordinary local wall-clock observation immediately before the normal GitHub Contents checkpoint write; NOT a trusted clock, commit timestamp, human approval or consent).
