@@ -107,8 +107,22 @@ def _chain(previous: str, index: int, row: ReadReceipt) -> str:
 
 
 def _safe_path(path: Path, *, must_exist: bool) -> None:
-    if type(path) is not type(Path(".")) or not path.is_absolute():
+    if (
+        type(path) is not type(Path("."))
+        or not path.is_absolute()
+        or ".." in path.parts
+    ):
         raise ReadJournalRejected("explicit absolute local Path required")
+    # path.parent.is_symlink() misses a symbolic GRANDPARENT. Reject all
+    # non-directory/symbolic ancestors before any open("x") or SQLite access.
+    # Ancestry inspection is not an atomic open-handle/path custody proof.
+    try:
+        for parent in path.parents:
+            info = parent.lstat()
+            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                raise ReadJournalRejected("journal ancestor is not a real directory")
+    except OSError as exc:
+        raise ReadJournalRejected("journal ancestor unavailable") from exc
     if path.is_symlink() or (must_exist and not path.exists()):
         raise ReadJournalRejected("missing or symbolic journal path")
     if path.exists() and not stat.S_ISREG(path.stat(follow_symlinks=False).st_mode):
