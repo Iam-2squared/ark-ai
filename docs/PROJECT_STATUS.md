@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run441**
+
+Saved at: **2026-10-26T12:02:05.110+09:00 Asia/Tokyo/JST** (ordinary unauthenticated runtime wall clock immediately before a permitted GitHub Contents write, NOT signed trusted time, consent, human identity or external action attestation).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**; **PR #5 Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `031f93ee0d0492d3c3c891c63779f952060c460e` (Run440 canonical checkpoint; no other HEAD had been added when this invocation began).
+**Run441 final executable/test HEAD:** `c44207564868bbd7c9422d8f39870e0b71d57e7d`.
+**Run441 technical document / exact checkpoint-write-basis HEAD:** `6547a321928a2684d20200c13572fef5d8200cd5`, `docs/JARVIS_UNTRUSTED_AUTHORITY_ERASURE_BOUNDARIES_RUN441.md`.
+**Checkpoint-result HEAD:** necessarily unknowable *inside the commit creating this status*. Read normal GitHub Contents `update_file.result.commit_sha` after the write and independently inspect that exact SHA's CI; do not substitute earlier source/document CI.
+
+### Overall ARK state and authority boundaries
+
+**Complete JARVIS NOT_PASSED.** Isolated, reversible, disconnected local-first evidence/fixture work only; no authenticated issuer/human consent, signed trusted time, independently verified external action, cross-SQLite atomic transaction, live sensors, autonomous tool dispatch or genuine real-world exactly-once WRITE. UNKNOWN/RUNNING and reserved PENDING WRITEs **never automatically replay**. No spending or potentially billable service, external GPU, Candidate/adapter generation, frozen final-evaluation opening, Candidate promotion, new account/credentials, material irreversible operations, protected-contract edits, physical PC actions or main merge.
+
+### NEW Run441 — two standalone source/test packages plus technical evidence
+
+1. **Unauthenticated issuer/clock/consent/audit gap reviewer:** new `src/ark/agency/synthetic_authority_boundary_review.py`, exact Git blob `6166604041cb563a47fbd10e7eee78516c70ced2`. Binds synthetic issuer/subject, registry/bound-action, occurrence and time claims to bounded local SHA-256 and six proof-gap fields. Rejects claimant-provided "verified" flags, malformed identities/times, and reflective changes. Issuer/clock/consent/dispatch/replay/outcome authorization flags are **always false**. This creates no signed clock or consent authority.
+2. **Authority negative regressions:** `tests/test_synthetic_authority_boundary_run441.py`, blob `d8db67a1758e3a44b6feebb4ed2d32be93ed4e1f`; local focused coverage of malformed claims/flags, retained local-digest drift and digest-callback mutation. First source+test package HEAD `5d4ee804cae6a2056e963d2422b782ec72a182d1`.
+3. **Privacy erasure evidence reviewer:** new `src/ark/privacy_erasure_evidence_review.py`, blob `217a7d2cd5d1b6132ad1336467a9cc2a03ecda65`. Pure bounded no-I/O classification of untrusted row/readers/WAL/checkpoint/secure-delete/backup claims. Even optimistic values never prove deletion, reclamation or forensic erasure and never authorize cleanup. This follows `docs/PRIVACY_ERASURE_SEMANTICS.md` without modifying an actual store.
+4. **Erasure negative regressions:** `tests/test_privacy_erasure_evidence_run441.py`, blob `e7397ead82e8a8dc7281320da644a90a7d89fbe5`; tests reader-held snapshots, incomplete checkpoint, nonzero or unknown WAL bytes, backup exposure, invalid observations and reflective drift.
+5. **Grounded technical matrix:** `docs/JARVIS_UNTRUSTED_AUTHORITY_ERASURE_BOUNDARIES_RUN441.md`. GitHub `compare_commits` from original Run440 checkpoint through final source/test HEAD reports **four commits, exactly four added files**, no existing files changed or deleted. Final document was a fifth Contents commit. No frozen contracts/evidence were edited.
+
+### Exact-HEAD validation, distinct scopes
+
+- **Local isolated new-module tests:** Python 3.13.5, `PYTHONPATH=/mnt/data/ark_run441/src python -m pytest -q /mnt/data/ark_run441/tests` => **47 passed** (both new source+test packages). Python `compileall` PASS. The four GitHub-returned blob SHAs equal the exact local files tested. This is NOT full-repository pytest, Ruff or Windows proof; local Ruff is unavailable and the full repository cannot be cloned from the container.
+- Authority package source+test HEAD `5d4ee804...`: CI **#1271 / run 40261533715 QUEUED** on inspection.
+- Final source/test HEAD `c4420756...`: CI **#1273 / run 40261622594 QUEUED** on inspection.
+- Technical document HEAD `6547a321...`: CI **#1274 / run 40261837521 QUEUED** on inspection.
+- Opening Run440 checkpoint HEAD `031f93ee...`: CI **#1269 / run 40258311242 QUEUED** at first inspection. No equivalence asserted across distinct HEADs, and the forthcoming checkpoint-result HEAD requires separate CI. No duplicate workflow dispatch, rerun or cancellation was performed.
+- GitHub public repository, standard six-job Ubuntu/Windows Python 3.11–3.13 CI is in a significant runner backlog. No attempt to bypass normal repository safeguards, use raw Git writes or weaken regressions was made.
+
+### Frozen evidence, concurrency and blockers
+
+`main` was independently observed at `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` remained Draft/unmerged; PR #8 remains Draft/unmerged. Frozen V1/V2/Local UI/Launcher, Memory v1 Schema, ActionAudit v1 Schema, V3 Contract 1, contamination/provenance/reproducibility boundaries and the protected final evaluation are unchanged. The new standalone reports are **diagnostic, never trusted authorization or destruction evidence**. Multi-store real-world outcome ambiguity remains an explicit blocker.
+
+### Next plan / 今後の方針
+
+1. Verify exact-HEAD CI **#1273**, document **#1274**, and the new checkpoint-result CI, including Ruff/full pytest on six Ubuntu/Windows environments; if any job fails, inspect the actual trace and fix only the smallest semantics-preserving issue through the normal GitHub Contents API after re-reading HEAD. Do not rerun equivalent workflows.
+2. Once older Run434 detached bundle, Run438 independent expected-WRITE membership and Run439 quarantine matrix have their respective exact-head GREEN, connect strictly deny-only membership checks across incomplete/rehashed multi-SQLite archives with hard-exit/reopen cases; NEVER auto-replay UNKNOWN/RUNNING/reserved PENDING WRITE.
+3. In parallel, advance Memory multiprocess CAS/expiry/row-event integrity; Personal Context revocation freshness; signed issuer/clock/verifier **interfaces** without granting real authority; synthetic observation/readiness privacy fixtures and free V3 provenance/path guards.
+4. Keep PR #5 and PR #8 Draft/unmerged and all frozen evidence unchanged. Explicit authorization is still required for real Candidate generation, protected evaluation opening, promotion, new credentials, potentially billable services, destructive erasure, substantive irreversible architecture or main merge.
+
+---
+
+**HISTORICAL — Run440 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run440**
 
 Saved at: **2026-10-26T11:16:36.081+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation wall clock sampled immediately before the normal GitHub Contents update, NOT signed trusted time, real-world effect attestation or consent).
