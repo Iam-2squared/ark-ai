@@ -1,7 +1,7 @@
-"""Offline GitHub Actions queue audit from already-exported JSON snapshots.
+"""Offline audit of already exported GitHub Actions JSON snapshots.
 
-Never connects to GitHub, starts a runner, cancels/retries a run, reads logs or
-modifies an action. No authorization, billing or CI outcome is inferred.
+Never connects to GitHub, starts, retries, cancels or bills a runner. Aged
+running steps are forensic candidates, not proof of a deadlock or CI failure.
 """
 
 from __future__ import annotations
@@ -34,11 +34,23 @@ def _instant(raw: object) -> datetime:
     return result
 
 
+def _age(now: datetime, started: datetime) -> int:
+    duration = int((now - started).total_seconds())
+    if duration < 0:
+        raise QueueReviewRejected("event starts after audit snapshot")
+    return duration
+
+
 def audit_actions_queue(
     runs: dict, job_groups: tuple[dict, ...], *, captured_at: str,
     stale_after_seconds: int = 3600,
 ) -> dict:
-    """Summarize stale runs/pytest jobs, never judge unexecuted CI as GREEN."""
+    """Review elapsed durations, never infer GREEN or proven runner deadlock.
+
+    A queued run is aged from its creation time, an in-progress run from its
+    run_started_at, and an active pytest step from its own started_at. Missing
+    starts are reported UNKNOWN rather than borrowing the older run age.
+    """
     if (
         type(runs) is not dict or type(runs.get("total_count")) is not int
         or type(runs.get("workflow_runs")) is not list
@@ -55,6 +67,7 @@ def audit_actions_queue(
     status_counts = {"queued": 0, "in_progress": 0, "completed": 0,
                      "waiting": 0, "pending": 0}
     stale_runs = []
+    unknown_run_starts = []
     for run in runs["workflow_runs"]:
         if type(run) is not dict:
             raise QueueReviewRejected("invalid run metadata")
@@ -68,15 +81,27 @@ def audit_actions_queue(
             or type(status) is not str or status not in _STATES
         ):
             raise QueueReviewRejected("duplicate or invalid run identity/state")
-        age = int((now - _instant(created)).total_seconds())
-        if age < 0:
-            raise QueueReviewRejected("run creation occurs after audit snapshot")
-        selected[ident] = (sha, status, age)
+        created_at = _instant(created)
+        run_age = _age(now, created_at)
+        active_age = None
+        if status == "queued":
+            active_age = run_age
+        elif status == "in_progress":
+            started = run.get("run_started_at")
+            if started is None:
+                unknown_run_starts.append(ident)
+            else:
+                run_start = _instant(started)
+                if run_start < created_at:
+                    raise QueueReviewRejected("run start predates creation")
+                active_age = _age(now, run_start)
+        selected[ident] = (sha, status, run_age, created_at)
         status_counts[status] += 1
-        if status in ("queued", "in_progress") and age >= stale_after_seconds:
-            stale_runs.append((ident, status, age))
+        if active_age is not None and active_age >= stale_after_seconds:
+            stale_runs.append((ident, status, active_age))
 
-    stuck_pytest = []
+    long_pytest = []
+    unknown_pytest_starts = []
     observed_jobs = set()
     job_count = 0
     for batch in job_groups:
@@ -97,18 +122,30 @@ def audit_actions_queue(
             ):
                 raise QueueReviewRejected("unknown, duplicate or invalid job")
             observed_jobs.add(jid)
-            _, parent_status, age = selected[rid]
-            if parent_status == "completed" and status in ("queued", "in_progress"):
-                raise QueueReviewRejected("unfinished job under completed run")
-            active_pytest = [
+            _, parent_status, run_age, created_at = selected[rid]
+            if (parent_status == "completed" and status in ("queued", "in_progress")) or (
+                parent_status == "queued" and status == "in_progress"
+            ):
+                raise QueueReviewRejected("inconsistent parent/job state")
+            active = [
                 step for step in job["steps"]
                 if type(step) is dict and step.get("name") == "Run pytest"
                 and step.get("status") == "in_progress"
             ]
-            if len(active_pytest) > 1:
-                raise QueueReviewRejected("duplicate pytest step in job")
-            if active_pytest and status == "in_progress" and age >= stale_after_seconds:
-                stuck_pytest.append((rid, jid, age))
+            if len(active) > 1:
+                raise QueueReviewRejected("duplicate active pytest step")
+            if not active or status != "in_progress":
+                continue
+            started = active[0].get("started_at")
+            if started is None:
+                unknown_pytest_starts.append((rid, jid))
+                continue
+            start_time = _instant(started)
+            if start_time < created_at:
+                raise QueueReviewRejected("pytest started before run creation")
+            elapsed = _age(now, start_time)
+            if elapsed >= stale_after_seconds:
+                long_pytest.append((rid, jid, elapsed, run_age))
 
     return {
         "observed_at_utc": captured_at,
@@ -122,8 +159,14 @@ def audit_actions_queue(
             for ident, status, age in sorted(stale_runs)
         ],
         "stale_pytest_jobs": [
-            {"run_id": rid, "job_id": jid, "run_age_seconds": age}
-            for rid, jid, age in sorted(stuck_pytest)
+            {"run_id": rid, "job_id": jid, "step_age_seconds": elapsed,
+             "run_age_seconds": run_age}
+            for rid, jid, elapsed, run_age in sorted(long_pytest)
+        ],
+        "unknown_run_start_ids": sorted(unknown_run_starts),
+        "unknown_pytest_start_jobs": [
+            {"run_id": rid, "job_id": jid}
+            for rid, jid in sorted(unknown_pytest_starts)
         ],
         "coverage_complete": len(selected) == runs["total_count"],
         "all_six_matrix_green_verified": False,
