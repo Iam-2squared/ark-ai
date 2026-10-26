@@ -1,5 +1,123 @@
 # ARK AI Project Status
 
+**LATEST — Run447**
+
+Saved at: **2026-10-26T17:04:38.059+09:00 Asia/Tokyo/JST** (ordinary unauthenticated runtime
+wall-clock observation, not trusted time, authenticated identity, verified
+human consent, or external execution attestation).
+
+**Branch/PR:** research/jarvis-foundations / **PR #8 Draft/open/unmerged**;
+PR #5 **Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** 645c5d1643dd1b263f1fa6b68c74b0f49a824a07
+(Run446 checkpoint, observed at invocation start).
+**Final source/test HEAD:** 35286278d41f0c340f0c36666818c7f7a5982145.
+**Technical evidence / exact checkpoint-write-basis HEAD:**
+b76036a02ef6ca22fbd7bcc57a78a7d21b3e44c5;
+docs/JARVIS_LOCAL_TEXT_CHUNK_AND_TRANSCRIPT_RUN447.md.
+**Checkpoint-result HEAD:** not knowable inside the content committed here;
+use the normal GitHub Contents update_file.result.commit_sha AFTER the write
+and inspect its separate exact-HEAD CI. Source/document CI does not attest it.
+
+### Overall ARK state
+
+**Complete JARVIS: NOT_PASSED.** The work remains local-first,
+synthetic-only, disconnected, reversible. No real Memory retrieval, identity,
+human consent, trusted clock, real microphone, camera, model-driven agent,
+external ToolBackend, globally atomic cross-store transaction, external
+execution outcome or real-world exactly-once WRITE. UNKNOWN/RUNNING and
+reserved PENDING WRITEs **never automatically replay**. PR #5 remains Draft,
+real Candidate/training and protected frozen V2 evaluation unopened; no
+Candidate promotion, paid/external compute, credential/account connection,
+potentially billable service, destructive/irreversible action, frozen-contract
+change, physical-PC access, or main merge.
+
+### NEW Run447 — 2 independent implementation/test packages, 4 source/test commits
+
+1. **Actual complete bounded UTF-8 local text chunking:** new
+   src/ark/local_text_chunking.py (Git blob b65ca3b225332ec20b15197bf80634b65db1ceb7)
+   and tests/test_local_text_chunking_run447.py (blob
+   da41bb52a9b545baa6479008bfffabea5a2abb6b). Bounded 65,536 source bytes,
+   max 4,096 bytes/chunk and 64 chunks, codepoint-safe spans, exact complete
+   reconstruction, caller-supplied owner/scope/source digests, local per-chunk
+   and complete-membership integrity checks. Raw caller text remains in memory:
+   neither consent nor authentication, storage/retention/export nor safe prompt
+   ingestion is implied. **33 isolated Python 3.13.5 pytest cases PASS**.
+2. **Metadata-only transcript timeline review:** new
+   src/ark/transcript_timeline_fixture.py (blob
+   81d5ccc89fe3345d6478ee5dea1dae299876b43b)
+   and tests/test_transcript_timeline_fixture_run447.py (blob
+   f2abd59d7b05710a9249a8064ca030c184f657ca).
+   Exact count, up to 512 nonoverlapping bounded spans in a caller-declared
+   <=2-hour clip, exact millisecond/confidence-ppm/speaker-label shapes,
+   local timing/silence/speaker-count digest. Never captures audio, emits
+   transcript text, claims speaker identity, ASR calibration, consent or
+   action authority. **27 isolated Python 3.13.5 pytest cases PASS**.
+3. **Repository evidence:** GitHub compare from the exact starting HEAD to
+   final source/test HEAD confirms **4 commits, 4 new files, zero existing
+   files modified/deleted**. All four GitHub-returned blob SHA-1 values
+   exactly match independently computed local git hash-object values from
+   the bytes run by isolated pytest. The separate technical evidence document
+   records inputs, limits, counterexamples and non-guarantees.
+
+### Exact-head tests/CI — NOT ALL GREEN
+
+- Python 3.13.5 isolated suite:
+  PYTHONPATH=/mnt/data/ark_run447/src python -m pytest -q /mnt/data/ark_run447/tests
+  -> **60 PASSED (33 + 27)**; compileall PASS; all four new Python files'
+  lines <=100 characters. Local Ruff unavailable; local full repository
+  checkout blocked by GitHub hostname DNS, so no full-repo pytest, Ruff,
+  packaging/UI, Python 3.11/3.12 or Windows proof is claimed.
+- Source/test HEAD 35286278...: **CI #1312, run 40289200580 QUEUED** at check.
+- Technical evidence HEAD b76036a0...:
+  **CI #1313, run 40289569972 QUEUED** at check.
+- Package CI #1309/#1310/#1311 (runs 40288998635/40289072543/
+  40289143287) QUEUED on inspection. The checkpoint-result CI has to be
+  read after this write. No all-six-job GREEN inferred.
+- CI backlog: Run446 checkpoint #1308 had six QUEUED jobs, and older #1231
+  had Ubuntu 3/3 GREEN while Windows 3/3 stayed in pytest IN PROGRESS
+  with a multi-megabyte test parameter ID logged; Run437 attempted to
+  shorten that ID, but its effectiveness is not yet proven.
+  No duplicate CI rerun, cancellation or workflow/test relaxation.
+
+### Frozen evidence, blockers and authorization boundaries
+
+Main independently checked unchanged at 7a843f17eb96ed13d66f23b58b06406b3002e405.
+PR #5 still at d6d4c1954a85fc716b1c593ac55c85417912418f
+Draft/open/unmerged/NOT_PASSED; PR #8 Draft/unmerged.
+Frozen V1/V2/Local UI/Launcher, Memory V1 Schema, ActionAudit V1 Schema,
+V3 Contract 1, protected evaluations, contamination/provenance/reproducibility
+gates preserved. Neither a caller-supplied digest nor confidence number can
+authenticate real user data, ASR outputs, timing, personal-data consent
+or permission to disclose/action. The CI backlog is a real blocker; local
+tests are not substituted for exact-head GREEN.
+
+### Next plan / 今後の方針
+
+1. Verify source CI #1312, technical evidence #1313 and newly created
+   checkpoint-result CI. Inspect exact failing logs when available; fix
+   semantics-preservingly using only normal GitHub Contents after fresh
+   HEAD/blob checks, with no duplicate equivalent CI runs.
+2. Keep offline chunking detached until source membership, revocation,
+   retention, authentic scopes/consent and required lower-level GREEN exist.
+   Never serialize raw/partially masked private text to external destinations.
+3. Keep transcript timeline detached until real audio provenance, explicit
+   privacy consent, calibrated ASR/speaker evidence and exact-head GREEN.
+   Independently advance bounded synthetic alignment fixtures only.
+4. Continue independent Memory CAS/expiry/row-event integrity,
+   multi-WRITE crash/recovery quarantine, Trusted Clock/Issuer interfaces,
+   scheduler/Observation and startup-readiness review, without enabling
+   actual WRITE/notification dispatch or automatic uncertain WRITE replay.
+5. Preserve Draft PR #5 and #8, frozen contracts/evidence and zero-cost
+   boundaries. Escalate before payment, potentially billable actions,
+   credentials, physical PC, destructive/irreversible actions, real Candidate,
+   protected evaluation opening, promotion, frozen-contract changes or merge.
+
+---
+
+**HISTORICAL — Run446 and earlier canonical checkpoints preserved verbatim**
+
+# ARK AI Project Status
+
 **LATEST — Run446**
 
 Saved at: **2026-10-26T15:57:55.040+09:00 Asia/Tokyo/JST** (ordinary, unauthenticated runtime wall-clock observation immediately before normal GitHub Contents update; not signed trusted time, human consent, or external execution proof).
