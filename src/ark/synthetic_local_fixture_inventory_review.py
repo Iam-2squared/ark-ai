@@ -67,7 +67,7 @@ def _validate_path(path: object) -> tuple[str, ...]:
     if (
         not encoded or len(encoded) > _MAX_PATH_BYTES
         or unicodedata.normalize("NFC", path) != path
-        or "\" in path or ":" in path or "\x00" in path
+        or "\\" in path or ":" in path or "\x00" in path
         or any(ord(char) < 32 or ord(char) == 127 for char in path)
     ):
         raise SyntheticFixtureInventoryRejected("unsafe fixture path")
