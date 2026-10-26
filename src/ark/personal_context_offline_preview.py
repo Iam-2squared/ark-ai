@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _RECORD = re.compile(r"rec_[0-9a-f]{32}\Z")
@@ -30,7 +30,7 @@ class OfflineContextFixture:
     record_id: str
     owner_digest: str
     scope_digest: str
-    content: str
+    content: str = field(repr=False)
     content_sha256: str
     expires_at_ms: int
 
@@ -39,7 +39,7 @@ class OfflineContextFixture:
 class OfflineContextPreview:
     owner_digest: str
     record_ids: tuple[str, ...]
-    canonical_local_json: str
+    canonical_local_json: str = field(repr=False)
     local_digest: str
 
     @property
