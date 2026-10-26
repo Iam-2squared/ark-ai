@@ -1,5 +1,52 @@
 # ARK AI Project Status
 
+**LATEST — Run443**
+
+Saved at: **2026-10-26T14:01:18.307+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock observation immediately before this normal GitHub Contents write, NOT attested trusted time, human consent, authenticated identity or external execution proof).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**; **PR #5 Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `60eab2ba7aeb85079244aad780b3e92e8d74b57d` (Run442 canonical checkpoint independently observed at start).
+**Final source/test HEAD:** `a0f700e2c13b111d823f46b52639f71e14660621`.
+**Technical evidence / exact checkpoint-write-basis HEAD:** `f8c95d94c6136d3312896aca732b81ce0de72148`; `docs/JARVIS_DETACHED_TOOL_BATCH_AND_CONTEXT_SEARCH_RUN443.md` (Git blob `ee92c45354919c436796a88785ce10f452f48eef`).
+**Checkpoint-result HEAD:** cannot be known from within the commit writing this status; use the normal `update_file.result.commit_sha` after the write and inspect that exact SHA's CI independently. Neither source nor document CI attests the checkpoint commit.
+
+### Overall ARK state and limits
+
+**Complete JARVIS: NOT_PASSED.** New features are disconnected/reversible synthetic-only groundwork. No real ToolRegistry/PermissionGate dispatch, real user Memory, authenticated issuer or trusted clock, fresh human consent, verified real-world external result, global cross-SQLite atomicity or exactly-once real WRITE. UNKNOWN/RUNNING and reserved PENDING WRITEs are NEVER automatically replayed. No paid/external GPU or APIs, Candidate/adapter/weights, protected V2 final evaluation, promotion, frozen-contract changes, destructive action, user credentials, physical PC operation, or main merge.
+
+### NEW Run443 — 2 independent implementation/test packages
+
+1. **Detached READ-tool batch PLAN (no execution):** `src/ark/agency/disconnected_batch_plan.py`, blob `df72ad0f4d86d6346d2c70beb7ff18d98c0d1f43`; `tests/test_disconnected_batch_plan_run443.py`, blob `6d1b68834804a1c023aee7565387a4e3a8c09224`. Bounded 24-step fixture-only graph of 4 offline operation labels, canonical JSON and per-step earlier-only dependencies with an independent local retained SHA-256 integrity check. Explicit dispatch, WRITE, replay and execution-evidence flags always False. **26 local PASS**.
+2. **Actual deterministic on-device lexical lookup over synthetic Context:** `src/ark/offline_context_search.py`, blob `c8f923e7fe032c7ff2ed82d4c694d7fcafc0554c`; `tests/test_offline_context_search_run443.py`, blob `d1ebb1a53cd4959aea0cbb5547c594efb30214f5`. Strict owner/scope/expiry/content-hash/UTF-8/byte budgets, fail-closed mixed-record rejection, deterministic at-most-8 local excerpt ranking. No real Memory, model, export, consent proof, retention authorization or trusted time. **37 local PASS**.
+3. **Technical evidence and GitHub integrity:** `docs/JARVIS_DETACHED_TOOL_BATCH_AND_CONTEXT_SEARCH_RUN443.md` documents guarantees and non-guarantees. GitHub compare from original checkpoint through final source/test HEAD found **4 commits, exactly 4 added files, zero existing-file modifications/deletions**. All 4 GitHub-returned blobs match exact locally pytest-tested Git blobs.
+4. **CI read-only forensic:** backlog persists; 51 queued and 7 in progress when checked. The old Run433 #1231 has 3/3 Ubuntu GREEN but all Windows 3/3 in pytest, so neither that earlier CI nor queued newer runs prove current source correctness. No duplicate workflow dispatch, cancellation or CI weakening.
+
+### Exact-head tests/CI — scope remains explicit
+
+- Isolated Python **3.13.5**: `PYTHONPATH=/mnt/data/ark_run443/src python -m pytest -q /mnt/data/ark_run443/tests` => **63 passed**; Python `compileall` PASS; no new source/test lines over 100 characters. Test-fixture surrogate encoder corrected locally before GitHub upload. These are exactly the four Github blob-matched source/test bytes, not Ruff/full-repo/Windows CI proof.
+- Final source/test HEAD `a0f700e2...`: **CI #1286, run ID `40271622461`, QUEUED**; all six jobs queued.
+- Technical document HEAD `f8c95d94...`: **CI #1287, run ID `40271857783`, QUEUED**.
+- Opening checkpoint `60eab2ba...`: **CI #1282, run ID `40266617246`, QUEUED**.
+- **Final checkpoint-result CI must be retrieved after this write. All six Ubuntu/Windows Python 3.11–3.13 latest-head GREEN is NOT verified.** No full repository checkout (GitHub DNS unavailable locally), Ruff or full packaged integration run locally.
+
+### Frozen state, blockers, authorization
+
+`main` independently observed unchanged at `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` Draft/open/unmerged/NOT_PASSED; PR #8 Draft/open/unmerged. Frozen V1/V2/Local UI/Launcher evidence, Memory V1 and ActionAudit V1 schemas, V3 Contract 1, contamination/provenance/reproducibility controls and protected evaluation boundaries are unchanged. Local SHA-256 only checks content drift, not independent trusted authority. Offline Context excerpts may contain caller-provided text and must not be exported. CI backlog and genuine authenticated approval/time/effect evidence remain unresolved.
+
+### Next plan / 今後の方針
+
+1. Inspect exact source #1286, document #1287 and new checkpoint-result CI; diagnose real Ubuntu/Windows failures using exact logs and fix only through normal GitHub Contents after re-reading HEAD. Never treat older green or local pass as latest full green, rerun equivalent workflows or weaken CI.
+2. Only when Run442 disconnected toolbox and Run443 detached batch EACH have required GREEN, implement isolated **disconnected/mock** multi-tool request/result binding; no actual external execution or automatic replay.
+3. Only after Context preview, revocation and local lexical lookup each have GREEN, design a privacy-safe local admission path with fresh explicit revocation veto; caller scope and synthetic clock remain non-authoritative.
+4. After earlier recovery components' exact-head GREEN, add deny-only detached WRITE membership/quarantine integration with crash/reopen tests, and advance Memory CAS/expiry/row-event audits separately. NEVER automatically replay UNKNOWN/RUNNING/reserved PENDING WRITEs.
+5. Keep PR #5 and PR #8 Draft/unmerged, frozen evidence intact and free-only limits. Explicit authorization is still required for potentially billable operations, credentials, real Candidate generation, protected final evaluation, promotion, destructive/irreversible actions, protected-contract edits or main merge.
+
+---
+
+**HISTORICAL — Run442 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run442**
 
 Saved at: **2026-10-26T12:57:39.483+09:00 Asia/Tokyo/JST** (ordinary unauthenticated runtime wall clock sampled immediately before the normal GitHub Contents write; NOT trusted time, human consent, verified identity or attested external effect).
