@@ -12,7 +12,7 @@ import json
 import re
 import unicodedata
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOC = re.compile(r"doc_[0-9a-f]{16}\Z")
@@ -36,7 +36,7 @@ class OfflineIndexDocument:
     owner_sha256: str
     scope_sha256: str
     text_sha256: str
-    text: str
+    text: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,7 +44,7 @@ class OfflineIndexQuery:
     owner_sha256: str
     scope_sha256: str
     query_sha256: str
-    query: str
+    query: str = field(repr=False)
     documents: tuple[OfflineIndexDocument, ...]
     expected_document_ids: tuple[str, ...]
     limit: int = 8
