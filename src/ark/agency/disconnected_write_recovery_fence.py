@@ -107,6 +107,10 @@ def review_disconnected_recovery_fence(
     dispositions: dict[str, str] = {}
     decisions: list[OfflineRecoveryDisposition] = []
     canonical: list[tuple[object, ...]] = []
+    # No two WRITE steps may claim the same durable occurrence reservation.
+    # A reused reservation ID creates ambiguous recovery ownership even when
+    # both steps are otherwise held and no action is actually dispatched.
+    reservations_seen: set[str] = set()
     for name, effect, deps, state, result, reservation in saved:
         epoch()
         if (
@@ -127,6 +131,10 @@ def review_disconnected_recovery_fence(
             ))
         ):
             raise OfflineRecoveryFenceRejected("invalid ordered mixed-plan step")
+        if reservation is not None:
+            if reservation in reservations_seen:
+                raise OfflineRecoveryFenceRejected("WRITE reservation reused across steps")
+            reservations_seen.add(reservation)
         if state in ("SUCCEEDED", "RUNNING") and any(
             states[dep] != "SUCCEEDED" for dep in deps
         ):
