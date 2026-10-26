@@ -107,8 +107,10 @@ def _check_path(path: object, *, exists: bool) -> Path:
         raise DueReservationRejected("due ancestor unavailable") from exc
     if path.is_symlink() or (exists and not path.exists()):
         raise DueReservationRejected("missing or symbolic due ledger")
-    if path.exists() and not stat.S_ISREG(path.stat(follow_symlinks=False).st_mode):
-        raise DueReservationRejected("due ledger must be a regular file")
+    if path.exists():
+        info = path.stat(follow_symlinks=False)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise DueReservationRejected("due ledger requires one regular-file link")
     if not path.parent.is_dir() or path.parent.is_symlink():
         raise DueReservationRejected("due ledger parent must be a real directory")
     return path
