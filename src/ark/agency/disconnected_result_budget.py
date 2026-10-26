@@ -175,7 +175,7 @@ def seal_detached_read_results(
     seen: set[str] = set()
     validated = []
     total = 0
-    for expected, row, fields in zip(
+    for expected, _row, fields in zip(
         captured_expected, captured_results, captured_fields, strict=True,
     ):
         epoch()
