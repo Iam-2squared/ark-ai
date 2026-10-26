@@ -60,7 +60,7 @@ def _check_label(label: object) -> bool:
 
 
 def _check_path(path: object) -> bool:
-    if type(path) is not str or len(path) > 256 or "\" in path:
+    if type(path) is not str or len(path) > 256 or "\\" in path:
         return False
     parts = path.split("/")
     return bool(parts) and all(
