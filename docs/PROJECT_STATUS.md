@@ -1,5 +1,54 @@
 # ARK AI Project Status
 
+**LATEST — Run452**
+
+**Saved at:** **2026-10-26T22:19:25.707+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation taken immediately before the normal GitHub Contents checkpoint update; NOT a trusted clock, Git commit timestamp, consent, or independent production evidence).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft, open, unmerged**.
+**PR #5:** Draft, open, unmerged; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `da20f0efda5f24737b453702360aff2d95a7b62e` (Run451 checkpoint).
+**Final source/test and CI-workflow HEAD:** `c19454666f61e4ed4d618b8acaf8fd842eeb9376`.
+**Technical evidence / exact checkpoint-write-basis HEAD:** `31fcee7edc5619094b7d94eaa55ef1e020bb0ec8`, `docs/JARVIS_PRIVACY_REPR_AND_CI_WATCHDOG_RUN452.md`.
+**Checkpoint-result HEAD:** intrinsically cannot be self-embedded in this commit. Read the returned `update_file.result.commit_sha` **after** this Contents update; examine its GitHub Actions independently. The above HEAD is the pre-checkpoint basis, NOT the result.
+
+### Overall current ARK — JARVIS NOT_PASSED
+
+Free-only isolated, reversible, local-first groundwork. No production owner/authenticated issuer, trusted clock, user consent/revocation proof, real Memory ingestion, microphone/ASR source, ToolRegistry/PermissionGate-to-effectful-executor integration, cross-DB atomic WRITE, real action proof or Candidate evaluation PASS. **UNKNOWN/RUNNING and reserved PENDING WRITE must NEVER be automatically replayed.** Hash/repr behavior never authenticates observations or grants permission.
+
+### NEW this invocation — three compatible development packages
+
+1. **Personal Context / text / WAV privacy diagnostic hardening.** Six existing detached modules now shield **11** sensitive dataclass fields using `field(repr=False)` while retaining explicit access, positional constructors and existing computation: Personal Context fixture+preview, offline search record/hit/query, text index documents/queries, original and derived text chunks, raw WAV bytes, potentially incomplete redaction preview. Added `tests/test_privacy_sensitive_repr_run452.py` (blob `e8234308a4aca34442203117dea2dcae2aeefe43`): **11 parameterized cases + 4 explicit tests**.
+2. **Disconnected synthetic Tool payload privacy.** Four existing independent non-effectful modules now shield **7** additional JSON input/result/plan fields in toolbox, batch plan, result budget and reference binding. Added `tests/test_disconnected_tool_sensitive_repr_run452.py` (blob `9c579267012e181767a42901981ac4606427feba`): **7 parameterized cases + 3 explicit tests**. Nested synthetic result/step `repr` can no longer inadvertently print its canonical JSON. No actual tool dispatch.
+3. **CI duration fail-closed guard.** `.github/workflows/ci.yml` blob `9e4f4e94ad0b4091d1e60cdb3b5de9f81d935954` now has a per-matrix-job `timeout-minutes: 45`. No tests, OS/Python cells, Ruff/pytest, Node, package, UI, V2-eval steps or assertions were skipped. Timeout is FAIL, never GREEN; prior active runs cannot inherit this change.
+
+Total meaningful source/test/workflow files changed or added: **13** (10 existing modules, 2 new regression files, 1 CI workflow). Separate technical evidence file added. Frozen source/contracts untouched. Ordinary Contents writes only; no git-object bypass, force push, runner rerun, or main merge.
+
+### Tests / CI / evidence — local static validation only, NOT GREEN
+
+- GitHub source and test **saved**: all **10/10** changed source modules re-fetched and exact expected `field(repr=False)` occurrences confirmed. Both new test files and CI YAML were re-read; each new test source line <=100 characters.
+- **25 NEW test cases defined, NOT EXECUTED at this exact HEAD.** Full clone unavailable in the current container because github.com DNS resolution fails; exact-source Python pytest, Ruff, Windows/Linux matrix, Node and packaged-entrypoint checks are **NOT RUN LOCALLY**. Do not misreport these cases as PASSED.
+- Exact source/test+workflow HEAD GitHub Actions **#1354, run `40328636093`: QUEUED** at inspection; CI-workflow HEAD **#1349, run `40328338734`: QUEUED**; technical evidence HEAD **#1355, run `40329305152`: QUEUED**. This checkpoint-result run is necessarily unknown inside its own commit. No equivalent duplicate workflow triggered manually.
+- Independent **historical** CI #1237 / run `40233213149` Ubuntu 3.11 pytest: **2 FAILED, 2931 PASSED, 1 SKIPPED** from `tests/test_privacy_cross_process_veto_projection_run434.py`. This expectation was corrected in Run448; correction has not received latest-head GREEN. Windows 3.13 job `121289190570` was still **IN PROGRESS**, with an approximately 4.2 million-character pytest error log caused by a giant parametrized fixture ID. Run438 later shortened IDs but cannot retroactively repair old runs. GitHub Actions backlog remains an external validation blocker.
+- Technical record: `docs/JARVIS_PRIVACY_REPR_AND_CI_WATCHDOG_RUN452.md`. `repr=False` prevents only implicit diagnostic dumping, **not** explicit `asdict`, field access, export, pickling, raw logging or PII disclosure. No verified identity/consent/revocation follows from this change.
+
+### Frozen contracts and hard authorization boundaries
+
+Unchanged: frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, independent review/provenance/contamination/regression/reproducibility gates and protected V2 final-evaluation restrictions. PR #5 and PR #8 stay Draft/unmerged. Zero paid/external GPU/API/training spend; zero new paid services/subscriptions, credentials or account connections; zero real Candidate/adapter/weight generation, promotion, physical-PC work, destructive/irreversible action, actual microphone or ToolBackend dispatch, main merge, frozen-contract change or protected final-evaluation opening.
+
+### Next plan / 今後の方針
+
+1. Validate **exact source/test, technical-doc and checkpoint-result HEADs** when backlog CI progresses; diagnose Windows logs and any new regressions, never claim all-six GREEN or rerun equivalent queued jobs. Respect the new timeout as FAIL when reached.
+2. Review explicit `asdict`, JSON export, tracing and audit log paths for private content beyond `repr`; keep owner/scope/consent/revocation barriers separated from caller-asserted digests.
+3. Advance independent Memory multi-process CAS, expiry+event coherence, Planner durable multi-WRITE recovery (non-replay), Trusted Clock and startup readiness, preserving detached-only boundaries until their lower-level exact-head CI evidence is GREEN.
+4. Only after lower-level validations, evaluate mock-only ToolRegistry/PermissionGate/disconnected execution and WAV-to-PCM fixture pipeline; never infer authority from model text/audio/transcripts or synthetic outcomes.
+5. Maintain all frozen V1/V2/UI/Launcher and V3 gates; PR #5/#8 Draft, no spend or protected evaluation, no irreversible action, no main merge without separate approval.
+
+---
+
+**HISTORICAL — full preserved Run451 and earlier checkpoints follow**
+
+# ARK AI Project Status
+
 **LATEST — Run451**
 
 Saved at: **2026-10-26T21:00:17.600+09:00 Asia/Tokyo/JST** (ordinary unauthenticated
