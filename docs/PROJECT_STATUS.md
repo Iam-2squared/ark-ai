@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run463**
+
+**Saved at:** **2026-10-27T07:54:26.981+09:00 Asia/Tokyo/JST** (observed container wall time before the ordinary GitHub Contents write, not a trusted clock, external attestation, user identity, consent or actual commit time).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `a67046751344f193c81239ca04e943496f267ef6` (Run462 checkpoint; verified on entry).
+**Final source/test HEAD:** `80a81dd42eb8c5ada5d3dd6a37315cb1a3549514`.
+**Technical evidence / checkpoint-write-basis HEAD:** `066c9a291904b134598134562715e7a97facf401` (`docs/JARVIS_SQLITE_HARDLINK_CUSTODY_RUN463.md`).
+**Checkpoint-result HEAD:** this file does **not** self-attest its own resulting commit SHA. Validate the Contents update result and independent PR + branch HEAD **after** writing. Evidence HEAD is pre-checkpoint, not checkpoint-result.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+The project is local-first, free-only, isolated/reversible and mock/fixture only. No verified JARVIS-level autonomous authority, authenticated owner/user consent, trusted clock, real Tool dispatch/notification, independent SQLite/WAL custody, cross-store atomic WRITE, external exactly-once effect, live camera/microphone access, authorized real Candidate generation or protected V2 evaluation. No main merge. Unknown/RUNNING/reserved PENDING WRITE remains quarantined; caller-supplied identities and hashes are not authorizations.
+
+### NEW this invocation — three independent fixture ledger hardening lanes + regression suite
+
+1. **Privacy veto SQLite path:** Existing fixture file now must be a regular file with exactly one hardlink before initial/reopen SQLite path operations. `src/ark/disconnected_privacy_veto.py`, blob `2bef2c311f5cbc942cee15b557da97e095ed9110`, commit `5394d56531da3b8966327eaf313f710f79b873ee`.
+2. **Scheduler due-slot reservation path:** Apply the same deny-only hardlink alias guard to `src/ark/agency/disconnected_due_reservation.py`, blob `4678e7f2ba70a7b564a8f1573ddb85e2db154cdd`, commit `d4775380625b856627407220360cce11eab49ad8`.
+3. **Planner disconnected READ journal path:** Apply the same hardlink alias guard to `src/ark/agency/disconnected_read_journal.py`, blob `d20fbbe43a4931f12419510352b27da5c49b7256`, commit `828cd9337971debadd59832b953fa81675ccd88c`.
+4. **Six parametrized synthetic negative/positive tests:** New `tests/test_disconnected_sqlite_hardlink_fence_run463.py`, blob `ba9da95332c372a77bcd789c60165cef0129d79c`, commit `80a81dd42eb8c5ada5d3dd6a37315cb1a3549514`. Original and alias path are rejected with link count 2; expected restoration after unlinking alias.
+5. Technical evidence saved separately at checkpoint-write-basis `066c9a291904b134598134562715e7a97facf401`. Five ordinary GitHub Contents commits before this checkpoint; no force push, raw Git-object bypass, destructive branch edit, PR merge or duplicate dispatch.
+
+### Verification, CI, limitations — exact evidence labels
+
+- All four modified/new source/test files fetched again at exact PR HEAD, matching the expected Git Blob SHAs and guards/fixture test presence; zero lines above configured 100-column Ruff limit. GitHub Contents commit ancestry inspected for sequential fast-forward preservation.
+- **One isolated local Python 3.13.5 POSIX SQLite hardlink smoke scenario PASS**. This is a filesystem semantics check only, **not** the six repository pytest cases.
+- **Six new pytest cases DEFINED / NOT RUN**; repository-wide pytest, Ruff, Python 3.11/3.12 runtime and exact-head Windows/Linux six-job CI **NOT VERIFIED**. Container GitHub DNS failure prevents repository checkout.
+- Source/test #1423, run `40415539405`, exact `80a81dd42eb8c5ada5d3dd6a37315cb1a3549514`: **QUEUED** at inspection. Evidence #1424, run `40415912617`, exact `066c9a291904b134598134562715e7a97facf401`: **QUEUED**. Checkpoint CI must be identified **after** this write. Branch-filtered Actions count **173 QUEUED** when sampled; old #1251 / `40246006387` three Ubuntu failures on an older HEAD (one observation and two privacy expectations corrected later) and three Windows pytest jobs still IN PROGRESS. No latest-head GREEN claim, retry/cancel/dispatch.
+- A one-link check is only a pre-open check: it is **not** inode/descriptor custody, WAL/-shm/-journal sidecar custody, TOCTOU resistance, Windows junction/reparse proof, storage rollback attestation, user identity/consent, trusted time or permission. These scope limits are retained.
+
+### Frozen contracts, authorization boundaries, blockers
+
+No changes to frozen V1/V2/Local UI/Launcher evidence or contracts, Memory v1 schema, ActionAudit v1, V3 Contract 1, provenance/contamination/reproducibility/regression guards. PR #5 and PR #8 remain Draft/unmerged. No new paid compute/API/service, GPU, real Candidate weight/adapter, promotion, protected V2 evaluation opening, real physical-PC action, credential/account connection, real personal data, external Tool, notification, irreversible action or main merge. CI queue and platform-specific SQLite descriptor/sidecar custody remain blockers.
+
+### Next plan / 今後の方針
+
+1. Examine naturally progressing exact-head #1423/#1424 and checkpoint CI, prioritize fixing **proven latest-head** failures; investigate historical Windows pytest stalls without cancel/rerun storms or weakening the tests.
+2. Design fail-closed normal-path descriptor/handle custody and SQLite sidecar ancestry/hardlink rules on POSIX and Windows in separately proven fixtures; do not imply atomic protection from current `st_nlink` checks.
+3. Continue Memory row/event integrity, CAS/expiry/coherent snapshots and Planner multi-WRITE UNKNOWN quarantine, registry-bound PermissionGate, trusted-clock audit-before-action in independent free-only lanes. Integrate only with dependency exact-HEAD GREEN.
+4. Preserve Personal Context privacy and V3 path/identity/reproducibility guards; keep Candidate, protected V2 final evaluation and merges behind the explicit user gates.
+
+---
+
+**HISTORICAL — Run462 and all earlier checkpoint sections preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run462**
 
 **Saved at:** **2026-10-27T06:56:22.466+09:00 Asia/Tokyo/JST** (observed local wall time before normal GitHub Contents update; NOT a trusted clock, commit timestamp, user consent, authentication or independent attestation).
