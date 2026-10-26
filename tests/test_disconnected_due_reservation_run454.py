@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import sqlite3
-from multiprocessing import get_context
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import FrozenInstanceError
+from multiprocessing import get_context
 
 import pytest
 
