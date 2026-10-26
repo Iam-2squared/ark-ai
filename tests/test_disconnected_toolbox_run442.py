@@ -28,7 +28,7 @@ def request(operation: str, raw: str) -> mod.DisconnectedToolRequest:
     }),
     ("text.find", '{"needle":"abc","text":"xabcabc"}', {"index": 1}),
     ("text.find", '{"needle":"not found","text":"hello"}', {"index": -1}),
-    ("json.inspect", '{"json":"{\\"a\\":1}"}', {
+    ("json.inspect", '{"json":"{\\\"a\\\":1}"}', {
         "kind": "object", "items": 1,
     }),
     ("json.inspect", '{"json":"[1,2,null]"}', {"kind": "array", "items": 3}),
@@ -64,12 +64,12 @@ def test_deterministic_memory_only_results(operation, raw, expected):
     ("math.sum", '{"values":[1],"values":[2]}'),
     ("math.sum", '{"values": [1]}'),
     ("math.sum", '{"values":[1]} '),
-    ("json.inspect", '{"json":"{\\"x\\":1,\\"x\\":2}"}'),
-    ("json.inspect", '{"json":"{\\"x\\": 1}"}'),
+    ("json.inspect", '{"json":"{\\\"x\\\":1,\\\"x\\\":2}"}'),
+    ("json.inspect", '{"json":"{\\\"x\\\": 1}"}'),
     ("json.inspect", '{"json":"[1.5]"}'),
     ("json.inspect", '{"json":"NaN"}'),
     ("json.inspect", '{"json":"[9223372036854775808]"}'),
-    ("json.inspect", '{"json":"[\\"\\\\ud800\\"]"}'),
+    ("json.inspect", '{"json":"[\\\"\\\\ud800\\\"]"}'),
 ])
 def test_reject_unsafe_requests(operation, raw):
     with pytest.raises(mod.DisconnectedToolRejected):
