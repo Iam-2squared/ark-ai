@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+**LATEST — Run457**
+
+**Saved at:** **2026-10-27T02:56:09.471+09:00 Asia/Tokyo/JST** (ordinary local wall-clock observation immediately before the normal GitHub Contents checkpoint write; NOT a trusted clock, commit timestamp, human approval or consent).
+
+**Branch/PR:** \`research/jarvis-foundations\` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged; V3 remains **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** \`f94ddcdcb35bcbb6cf637a7c9dca0ac800142ba3\` (Run456 checkpoint; verified at start).
+**Final source/test HEAD:** \`b818535bdf0da27f561a6ba02f2d9a20097a2f81\`.
+**Technical evidence and exact checkpoint-write-basis HEAD:** \`3311ef105da3614417bfe3b3e7aed05181386af7\` (\`docs/JARVIS_PNG_SOURCE_IDENTITY_RUN457.md\`).
+**Checkpoint-result HEAD:** this commit cannot embed its own resulting SHA; use the GitHub Contents update result and an independent PR HEAD read after the write. The technical evidence HEAD above is *pre-checkpoint*, not the result.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+Detached, reversible, local-first JARVIS foundations; no proven real physical-PC action, microphone/camera capture, pixel decode, authenticated user/issuer, actual consent/retention custody, independently trusted clock, fully coherent cross-store WRITE, validated full ASR, protected V2 final opening, Candidate/weight generation, promotion, or main merge. UNKNOWN/RUNNING and reserved PENDING WRITE cannot automatically replay. Local hashes, inode checks and caller-supplied identity are not signatures or authentication.
+
+### NEW this invocation — two independently validated packages and CI read-only audit
+
+1. **Bounded PNG framing inventory:** \`src/ark/offline_png_inventory.py\` blob \`732d655106a11a2d33a4e2607fe3ca971658ea71\` and \`tests/test_offline_png_inventory_run457.py\` blob \`11aa3ebea7e323a4063c29eddd4970f9f3bdc812\`. Synthetic provided PNG bytes only; strict signature, IHDR, bit depth, dimensions, 8 MiB / 4,194,304 pixels, contiguous IDAT/PLTE/IEND ordering, CRC and source SHA-256. Rejects ancillary EXIF/text/private chunks, invalid format and over-budget inputs; output contains no pixels. Deliberately **does not decompress or authenticate any image**. No camera/observation/consent/Tool integration.
+2. **Detached local file-source pin:** \`src/ark/disconnected_local_source_pin.py\` blob \`1eb8f572b818c7bccc04a578749af8467cd952b2\` and \`tests/test_disconnected_local_source_pin_run457.py\` blob \`a4291faf6c0b5cc6bcf3b8001859cb502c6bd6a6\`. Read-only repeated \`lstat\` tracks absolute native path and directory/device/inode/size/mtime identity; refuses symlinked ancestors/files, hardlinks, missing paths, stale pins and reflective witness mutation. Does not open/create/delete a file or prove bytes, WAL coherence, stable FD, consent, issuer or external identity; post-check TOCTOU persists.
+3. **Validation/read-only CI forensics:** Local Python 3.13.5 / pytest 9.0.2 **56 PASSED** (34 PNG + 22 local-source), \`compileall\` PASS, all added source/test lines <=100 characters. GitHub saved Git Blob SHAs matched tested local bytes. Independent uncommitted seeded tests: 2,500 PNG mutations (28 still valid **framing**, not proven decodable), 250 successful source-pin original/changed pairs with stale mutation rejection. Older #1244 Ubuntu test failure is a historical Run434 test assertion (\`assert 1 == 2\`) adjusted in Run448; that does NOT prove latest-head GREEN. No manual CI runs, cancellation or paid compute.
+
+### CI/evidence — isolated local GREEN; six-environment GitHub matrix PENDING
+
+- PNG source #1382 \`40372251312\`, PNG tests #1383 \`40372341887\`, file-pin source #1384 \`40372416840\`, final source/test HEAD #1385 \`40372604053\`: **QUEUED** at observation.
+- Evidence/technical document HEAD #1386 \`40372989343\`: **QUEUED** at observation.
+- Earlier Run456 checkpoint #1381 \`40364345469\`: **QUEUED** (6 jobs queued); six pre-Run452 Windows pytest runner jobs continue IN PROGRESS on historical runs. New 45-minute timeout only applies when new jobs begin.
+- This checkpoint-result CI ID cannot be known before saving; check separately. No whole-repository pytest/Ruff, Windows, Python 3.11/3.12, package/UI smoke or six-cell exact-head GREEN. Local full clone blocked by github.com DNS. Neither test definitions nor syntactic correctness imply integration PASS.
+
+### Frozen evidence / safety boundaries
+
+V1/V2/Local UI/Launcher evidence, Memory V1 schema, ActionAudit V1, V3 Contract 1, provenance/contamination/regression/reproducibility controls, and protected final evaluation **unchanged**. PR #5/#8 Draft/unmerged. No paid API/compute/GPU, account/secret, external runtime, real user data ingestion, physical hardware, authorized effectful Tool, protected V2 final evaluation, real Candidate/adapter/weights, automatic promotion, irreversible user-data operation, or main merge. No bypass of normal Contents write guards.
+
+### Next plan / 今後の方針
+
+1. Observe naturally progressing exact-head CI (#1385, #1386 and checkpoint-result), investigate real failures/Windows runner backlog; no duplicate re-runs or skipped regression gates. Do not claim all-six GREEN without evidence.
+2. Continue independent Memory CAS, event/expiry/snapshot verification and Planner mixed-WRITE recovery/Trusted Clock/registry-bound PermissionGate. Never replay uncertain/reserved WRITE; only integrate after exact lower-level GREEN and actual authorization authority.
+3. If the PNG parser later meets GREEN, design separate bounded decompression and decoded-image fixtures before any camera or observation integration. PNG framing alone is not an image authenticity or pixel-validity claim.
+4. Treat file pin as metadata continuity diagnostic only. Require retained independent witness custody, secure file-handle identity, WAL-coherent snapshots and privacy rights before using with any real Memory/Planner storage. Maintain free-only/frozen/approval boundaries.
+
+---
+
+**HISTORICAL — complete Run456 and all earlier checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run456**
 
 **Saved at:** **2026-10-27T01:59:04.216+09:00 Asia/Tokyo/JST** (ordinary local wall-clock observation immediately before normal GitHub Contents checkpoint write; NOT a trusted timestamp, Git commit time, user consent or review approval).
