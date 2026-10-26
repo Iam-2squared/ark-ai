@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run445**
+
+Saved at: **2026-10-26T15:31:20.558+09:00 Asia/Tokyo/JST** (ordinary, unauthenticated runtime wall-clock sample immediately before the normal GitHub Contents write; NOT trusted time, authenticated consent, verified real-world outcome or signed execution evidence).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. **PR #5 Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `849018aa741b88d89d48aa84e3baa4850c05f3e9` (Run444 technical evidence HEAD; the canonical status at invocation start was Run443 at `07d25a353537f02ceab5698c1081bd6ce3551ad3`). Run444's separate uncheckpointed source/technical evidence was preserved, not re-attributed.
+**Run445 final executable/test HEAD:** `776698750a8b0b36314f3a51499ebf3530cbf04e`.
+**Run445 technical document / exact checkpoint-write-basis HEAD:** `b5624ed37b3890e904c53e898bd5c6a95581bbf9`, `docs/JARVIS_READ_SET_AND_LOCAL_REDACTION_RUN445.md`, Git blob `410f80eb3101b493bb5b61a5d960fcaf79d2b0e9`.
+**Checkpoint-result HEAD:** cannot be known inside its own commit; use the normal `update_file.result.commit_sha` returned *after* this write, and inspect that exact new SHA's CI. Older source or document CI does not validate the checkpoint commit.
+
+### Overall ARK state
+
+**Complete JARVIS: NOT_PASSED.** Work remains disconnected, reversible, synthetic-only/local-first foundations, not a deployed autonomous assistant. No real user Memory, authenticated issuer, signed trusted time, actual human permission, verified external effect, cross-SQLite global atomicity or real-world exactly-once WRITE. UNKNOWN/RUNNING or reserved PENDING WRITE **never automatically replay**. No paid/external compute or GPU, credentials, new services, model adapter/Candidate generation, protected frozen V2 final evaluation, promotion, irreversible action, physical-PC actions, contract mutation or main merge.
+
+### NEW Run445 — 2 meaningful source/test packages, six package commits + evidence
+
+1. **Detached complete READ result membership/budget:** added `src/ark/agency/disconnected_result_budget.py`, Git blob `ef8a892e1df8fbcd8e64f9fea5f15119a2f2461f`, and `tests/test_disconnected_result_budget_run445.py`, Git blob `dd7539ca44e0c6618bd48ec59ffd9c4f5472b520`. Checks original ordered 1–24 expected READ steps, exact operation identity, total/missing/extra/reordered result set, per-JSON and aggregate byte budgets, strict canonical JSON and independent caller-provided SHA-256 matches; stores no actual result contents in the returned witness. Plan and result provenance remain unauthenticated; no dispatch, external effect or replay permission. **39 isolated local tests PASSED.**
+2. **Local-only Context complete/partial redaction preview:** added `src/ark/offline_context_redaction.py`, Git blob `0a6f361ea7d9b4d2287d756209495dc8986f1b46`, and `tests/test_offline_context_redaction_run445.py`, Git blob `cd39b5b629bf4af86a905b4f16e90611cc70d65a`. Validates exact owner/scope digest, independently retained source digest, short labels and bounded Unicode spans; complete mode requires every codepoint covered; explicitly opted-in partial mode can expose source text **locally**. This is not automated PII detection, deletion/erasure, consent or export authorization. **27 isolated local tests PASSED.**
+3. **Semantics-preserving Ruff-preflight cleanup:** after exact local testing, both modules' unused loop binder variables were renamed to underscore-prefixed names to avoid predictable B007 warnings. The corrected final source blobs above were independently locally retested. No source/test file from before this run was edited.
+4. **GitHub evidence:** compare work-basis `849018aa...` against final source HEAD `77669875...` returned **6 commits**, exactly **four new files, zero files modified/deleted relative to work-basis**. All four final GitHub Blob SHAs equal the exact local pytest-tested bytes. `docs/JARVIS_READ_SET_AND_LOCAL_REDACTION_RUN445.md` records bounds, non-guarantees and actual evidence.
+
+### Exact-head testing and CI: NOT yet all GREEN
+
+- Local isolated Python **3.13.5**: `PYTHONPATH=/mnt/data/ark_run445/src python -m pytest -q /mnt/data/ark_run445/tests` → **66 PASSED** (39 + 27); Python `compileall` PASS and all new source/test lines at most 100 characters. Local `ruff` is unavailable, full-repo checkout was blocked by GitHub hostname DNS failure, so this is **not Ruff, full-repository pytest, packaging/UI or Windows/Python3.11–3.12 proof**.
+- Final source/test `776698750...`: **CI #1300, Run ID `40279849044`, QUEUED** on inspection.
+- Technical document HEAD `b5624ed...`: **CI #1301, Run ID `40280065250`, QUEUED** on inspection.
+- Previous Run444 technical document HEAD `849018aa...`: **CI #1294, Run ID `40278082870`, QUEUED**, with its source HEAD #1293 `40277762483` QUEUED. Prior Run443 #1286 and checkpoint #1288 also remained QUEUED.
+- **Final checkpoint-result CI must be inspected after this write.** No six-job Ubuntu/Windows Python3.11–3.13 GREEN declared, no duplicated workflow runs.
+- Read-only backlog diagnosis: old Run434 checkpoint #1231 (Run ID `40228196762`) had Ubuntu three jobs GREEN and Windows three jobs in pytest IN PROGRESS for many hours; a Windows job log fetch returned BlobNotFound, so the root cause and effectiveness of oversized pytest parameter-name repairs are **not confirmed**. No workflow relaxation/cancellation/retry.
+
+### Frozen state, blockers, approvals
+
+`main` independently observed unchanged at `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f` remained Draft/unmerged/NOT_PASSED; PR #8 remained Draft/open/unmerged. V1/V2/Local UI/Launcher frozen contracts and evidence, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, protected evaluations and provenance/contamination/reproducibility gates were **not changed**. New hashed witnesses and mask labels are caller supplied, not authenticated authority. CI backlog, consent/identity, trusted-clock and real-execution results are unresolved. No free-to-paid boundary crossed.
+
+### Next plan / 今後の方針
+
+1. Verify exact-HEAD **#1300 source/test, #1301 technical docs and newly created checkpoint CI** when runners execute. If any FAIL, inspect exact logs, make the smallest semantics-preserving fix using normal GitHub Contents only after fresh HEAD/blob checks; never launch duplicate workflows or hide failures.
+2. Keep the Run445 READ result-set witness **detached** until Run442 Toolbox, Run443 Batch, Run444 journal/reference and its own exact-head CI are GREEN. Then attempt only mock/disconnected READ result-custody integration with explicit plan membership, no external effects, permissions or replay.
+3. Keep Run445 privacy masking **detached** until Memory/Personal Context revocation/retention/freshness/consent dependencies have independently verified GREEN; later design fresh veto-before-return, never exporting raw or partially masked fixture text.
+4. Continue independent Memory multiprocess CAS/expiry, cross-store WRITE completeness/quarantine, trusted clock/issuer contract review, scheduler/Observation fixture and startup readiness. Keep UNKNOWN/RUNNING/reserved PENDING WRITE denied automatic replay.
+5. Maintain PR #5 Draft/NOT_PASSED, PR #8 Draft/unmerged, all frozen gates/evidence and zero-cost-only boundaries. Escalate before paid or billable services, credentials, physical-PC work, Candidate/weights, protected evaluation opening, promotion, destructive action, frozen-contract changes, substantive irreversible architecture or main merge.
+
+---
+
+**HISTORICAL — Run443 and earlier canonical checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run443**
 
 Saved at: **2026-10-26T14:01:18.307+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock observation immediately before this normal GitHub Contents write, NOT attested trusted time, human consent, authenticated identity or external execution proof).
