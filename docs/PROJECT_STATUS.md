@@ -1,5 +1,145 @@
 # ARK AI Project Status
 
+**LATEST — Run448**
+
+Saved at: **2026-10-26T18:18:48.838+09:00 Asia/Tokyo/JST** (ordinary unauthenticated
+wall-clock observation immediately before a normal GitHub Contents update;
+not GitHub commit time, trusted clock, authenticated identity, proven
+human consent, external action attestation, or a final evaluation).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**;
+PR #5 **Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `6ae21d16841360a137c7448936c743774e9d976b`
+(Run447 checkpoint, freshly read before work).
+**Final source/test HEAD:** `6a6f05650b67cbafaf163037560658e2fc0f3261`.
+**Technical evidence / exact checkpoint-write-basis HEAD:**
+`5dffee77ba9237e3a8a8e3185ef3406691adb21c`,
+`docs/JARVIS_OFFLINE_LEXICAL_PCM_AND_PRIVACY_CI_RUN448.md`.
+**Checkpoint-result HEAD:** cannot be known inside the checkpoint commit
+being created. Read the actual normal `update_file.result.commit_sha`
+AFTER this write and inspect its own CI; do not substitute the source or
+technical-document CI for the new checkpoint HEAD.
+
+### Overall ARK state
+
+**Complete JARVIS: NOT_PASSED.** This branch is still isolated,
+reversible, local-first. No production Memory source, true owner identity,
+trustworthy scope/consent, trusted clock, genuine speaker identification,
+audio capture, ASR or real-world ToolBackend. No globally atomic
+cross-store transaction, no actual outcome attestation, no exactly-once
+external WRITE. All UNKNOWN/RUNNING and reserved PENDING WRITEs remain
+quarantined and **never automatically replayed**. No real Candidate, paid
+or external compute, secrets/new account connection, protected frozen V2
+evaluation, frozen-contract change, promotion, external action, material
+irreversibility, physical-PC operation, or main merge.
+
+### NEW Run448 — three coherent packages, five source/test commits
+
+1. **Actual disconnected in-memory lexical search:** new
+   `src/ark/offline_text_index.py` (blob
+   `f83c98559ba35a9acd3332823151798f35ab9b19`) and
+   `tests/test_offline_text_index_run448.py` (blob
+   `f14119e85fdc7e8903d0b239400b698292de3f7e`).
+   Bounded exact-document, query, ownership/scope shape, SHA-256 input,
+   complete caller-declared document membership and Unicode lexical
+   ranking with deterministic scores. Returns only IDs, hashes, scores,
+   never source text/snippets. **38 isolated local tests PASS.**
+   Independent ownership/membership witnesses, revocation, consent,
+   external disclosure and integration with live Memory are NOT proven.
+2. **Actual disconnected bounded PCM/WAVE inspection:** new
+   `src/ark/offline_pcm_wav.py` (blob
+   `08a69ff9e676acf23704b8b0dc261a45fc1b2982`) and
+   `tests/test_offline_pcm_wav_run448.py` (blob
+   `6156dec2c5edf6cace3d71b586557d00c34268b2`).
+   Checks actual caller-supplied canonical RIFF/WAVE bytes, PCM
+   format/frame alignment, declared sizes, byte rate, padding and
+   SHA-256; max 8 MiB and 120 seconds. Returns no raw audio.
+   No microphone, model, real sound capture, ASR, legal consent or
+   speaker proof. **42 isolated local tests PASS.**
+3. **Confirmed older CI failure, corrected the exact regression test:**
+   GitHub Actions #1237, run `40233213149`, on historical source HEAD
+   `698eab6942c4e7f35c47c2abec7e9985d0669c54` has three failed
+   Ubuntu jobs; independently inspected 3.11 and 3.13 raw logs show
+   two failing cases `test_privacy_cross_process_veto_projection_run434.py`
+   in the same stale expectation: `len(checks)==2` although the second
+   native veto correctly raises before recording a *successful* clearance.
+   Existing privacy source remains intact. Test-only blob
+   `61b197bdf0728c25387a55a9f9beb7082836b418` now separately
+   counts two attempted reads and exactly one successful clearance,
+   requiring the same fail-closed `revoked` exception. This is a
+   real log-backed test regression fix, **not yet CI GREEN**.
+
+GitHub compare from Run447 checkpoint to final Run448 source/test HEAD
+confirms exactly five normal Contents commits: four new files and one
+existing test modified, no executable source deletions or frozen files
+modified. Four new GitHub blob SHA-1 values match local `git hash-object`
+for the exact bytes used in isolated testing.
+
+### Local tests, CI and evidence — NOT ALL GREEN
+
+- Isolated local Python **3.13.5 pytest 80 PASSED** (38 + 42);
+  `compileall` PASS, all four new files <=100 chars per line.
+  Deterministic additional local WAV mutation probe: 2,000 byte-mutated
+  fixtures processed without unexpected uncaught exceptions; 937
+  rejected malformed and 1,063 still structurally accepted, since
+  valid-format changed audio is *not* evidence of trusted provenance.
+  Separate Unicode/long-document lexical boundary smoke PASS.
+- Integrated historical privacy test fix has source/log review only;
+  isolated 80-test pass **does not run it**. Local Ruff is unavailable;
+  full local GitHub clone blocked by DNS. No full repository pytest,
+  Ruff, Python 3.11/3.12, Windows, UI/packaging or all-six-job GREEN.
+- **Final source/test HEAD CI #1319**, run `40298027737`,
+  **QUEUED** at verified inspection.
+- **Technical document HEAD CI #1320**, run `40298264481`,
+  **QUEUED** at verified inspection. Checkpoint-result CI must be
+  inspected separately *after* normal update succeeds.
+- At a sampled inspection, **81 queued and 6 in-progress** repository
+  workflow runs. Historical #1237 Ubuntu 3/3 completed FAILURE and
+  Windows 3/3 still IN PROGRESS in pytest; the older Windows-parameter
+  log-size issue remains unresolved until newer exact-head CI proves
+  recovery. We never dispatch duplicate CI, cancel workflows, relax
+  tests or treat a pending runner as success.
+
+### Frozen evidence, safe boundaries, blockers
+
+Main rechecked at start as `7a843f17eb96ed13d66f23b58b06406b3002e405`;
+PR #5 at `d6d4c1954a85fc716b1c593ac55c85417912418f`
+Draft/NOT_PASSED. Preserve frozen V1/V2/Local UI/Launcher evidence,
+Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, protected
+evaluation and contamination/provenance/reproducibility/human-review
+gates. New fixture hashes and scope labels are untrusted claims, not
+authentication or permission to disclose. Cross-store recovery and
+exact-head CI backlog remain independent blockers. No new paid
+services, subscriptions, GPUs, training, irreversible operations,
+credentials, privacy-risk data import, or main merge.
+
+### Next plan / 今後の方針
+
+1. Check source CI #1319, evidence CI #1320 and actual separate
+   checkpoint-result CI. Confirm whether corrected privacy regression
+   clears all Python/OS jobs, investigate any new failures from exact
+   job logs and repair minimally through normal fresh-HEAD/blob Contents.
+   Never duplicate equivalent workflows or weaken checks.
+2. Keep new lexical search and PCM parser detached while exact-head
+   GREEN, independently witnessed complete Memory records, scope,
+   consent/revocation/retention and real audio provenance are missing.
+   Connect only reversible synthetic/mock adapters after prerequisites.
+3. Independently advance multi-process Memory CAS/expiry/row-event
+   integrity, cross-store WRITE-recovery quarantine, auth/clock
+   interfaces, and startup/scheduler tests without automatic
+   replay or true external effects.
+4. Preserve both Draft PRs and all frozen contracts/evidence.
+   Escalate the affected lane for potential spend, secrets,
+   actual user hardware, protected evaluation, Candidate promotion,
+   irreversible action, unresolved privacy/licensing or main merge;
+   continue other free isolated lanes.
+
+---
+
+**HISTORICAL — Run447 and earlier canonical checkpoints preserved below verbatim**
+
+# ARK AI Project Status
+
 **LATEST — Run447**
 
 Saved at: **2026-10-26T17:04:38.059+09:00 Asia/Tokyo/JST** (ordinary unauthenticated runtime
