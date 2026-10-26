@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run449**
+
+Saved at: **2026-10-26T18:53:40+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation immediately before a normal GitHub Contents update; NOT a trusted-clock measurement, GitHub commit timestamp, authenticated consent or final evaluation).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**; PR #5 **Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `5ede1f5ee13b4da83dd19245eb1dd1119d198f92` (Run448 checkpoint, read before this invocation).
+**Final source/test HEAD:** `3ea6bfc42e74d7329d2ba0d1bba66cd44e9fa7a5`.
+**Technical-evidence / checkpoint-write-basis HEAD:** `cd32006245f370169a4bbbc8a9a54f7663f77905`;
+`docs/JARVIS_OFFLINE_PCM_ACTIVITY_BINARY_INVENTORY_RUN449.md`.
+**Checkpoint-result HEAD:** cannot be known inside this commit being created; read actual GitHub Contents `update_file.result.commit_sha` AFTER this write, then inspect its own CI independently.
+
+### Overall ARK state
+
+**Complete JARVIS: NOT_PASSED.** Research PR #8 remains isolated, reversible and free-only. No production Memory source, authenticated owner/consent/issuer, trusted clock, proven audio source/speaker, microphone, ASR, live ToolBackend, external outcome attestation, globally atomic cross-store WRITE or exactly-once external execution. UNKNOWN/RUNNING WRITE and reserved PENDING WRITE remain quarantined and NEVER replayed automatically.
+
+### NEW Run449 — two independent, functional local groundwork packages
+
+1. **Integer-only offline PCM amplitude analysis**: `src/ark/offline_pcm_activity.py` (blob `b023b64ca89f02dde7b931a98227cfaeb844122b`) and `tests/test_offline_pcm_activity_run449.py` (blob `f329e04afaefe09791e604ad08cbf8fd61b0b2f3`). Caller-supplied raw PCM, exact type/hash/frame/duration/window budgets, full-frame 8/16/24/32-bit mono/stereo integer peak and energy, no microphone/speech recognition. **33 isolated local pytest PASS**. No output PCM bytes. Statistics remain locally sensitive and disclosure NOT authorized.
+2. **Byte-complete offline binary fixture inventory**: `src/ark/offline_binary_inventory.py` (blob `efde2d483a2c2bf944f32dd663b18a295b644515`) and `tests/test_offline_binary_inventory_run449.py` (blob `9ca230d6f57c47e792b503dc57b2381637b2ef44`). Metadata-only chunk spans and SHA-256 digest manifest with exact full-source verification against externally retained source/inventory hashes, up to 2 MiB/64 chunks. Detects drops, repeats, reordering, offsets, altered bytes. **25 isolated local pytest PASS**. Caller-controlled hashes are not provenance or authorization.
+
+All four GitHub blob SHA values match local `git hash-object` for exact bytes used in isolated tests. Four normal Contents source/test commits, one technical document commit. Neither module imports, changes nor authorizes another unGREEN source lane.
+
+### Tests, CI and evidence — NOT ALL GREEN
+
+- Local Python 3.13.5 / pytest 9.0.2: **58 PASSED** (33+25), focused. `compileall` PASS. Independently exercised **400 PCM** seeded amplitude/energy invariants and **600 binary** random membership/budget invariants: PASS.
+- Local GitHub clone failed due DNS `github.com`; local Ruff is unavailable. Full repository pytest/Ruff, packaging/UI, Python 3.11/3.12, Windows and six-environment exact-head GREEN **NOT CONFIRMED**.
+- First source HEAD `ec98c2a8ac036db4e57884ccc4c3e9ab23e91ee8`: #1322, run 40302383410: QUEUED (no conclusion).
+- Source after PCM tests `45dee6a5d026ed8cb2c58ae3087678b45539ea5d`: #1323, run 40302449248: QUEUED (no conclusion).
+- Binary source HEAD `572bb2510a59750d98d23024d6360d945627d23f`: #1324, run 40302575543: QUEUED (no conclusion).
+- **Final source/test HEAD `3ea6bfc42e74d7329d2ba0d1bba66cd44e9fa7a5`: #1325, run 40302683430: QUEUED (no conclusion)**.
+- Technical document HEAD `cd32006245f370169a4bbbc8a9a54f7663f77905`: #1326, run 40302896678: QUEUED (no conclusion).
+- Checkpoint-result CI remains **UNOBSERVED** until after this update. No extra equivalent workflows manually dispatched or CI tests relaxed. Prior Run448 final checkpoint CI #1321, run `40298584099`, was QUEUED on inspection. Multiple Windows jobs in older CI remain unresolved; never infer current-head GREEN from older run.
+
+### Frozen contracts, blockers and authorization boundaries
+
+PR #5 remains Draft/unmerged, no Candidate generation/training, no protected V2 final evaluation, no paid/external compute, subscriptions or credentials, no external operations, irreversible system/PC changes, main merge or automatic promotion. Preserve frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema, ActionAudit V1 Schema and V3 Contract 1, contamination/provenance/reproducibility/approval and human review gates. No integration of detached audio/binary source with production permission, Memory, WAV or ASR before their lower-level invariants have exact-head GREEN. No cross-store atomicity or external exactly-once guarantee.
+
+### Next plan / 今後の方針
+
+1. Inspect exact-head GitHub CI and diagnose Windows/Ubuntu failures and queue without running duplicates; make only proven minimal fixes, then work independent lanes while CI is pending.
+2. Once WAV and detached activity exact-head CI GREEN, prepare a read-only PCM extraction/energy mock with strict identity/consent lineage, no microphone, ASR, or external action.
+3. Independently retain binary source/inventory witnesses and test restart/partial fixture handling before any ingest path; do not call a digest proof of origin.
+4. Advance Memory CAS, coherent expiry/event snapshots, Planner multi-WRITE quarantine/restart and registered ToolRegistry/PermissionGate mock integration **only after dependent exact-head GREEN**; keep Personal Context privacy veto and V3 free-only safeguards independently progressing.
+
+---
+
+**HISTORICAL — preserved Run448 and earlier checkpoint below**
+
 **LATEST — Run448**
 
 Saved at: **2026-10-26T18:18:48.838+09:00 Asia/Tokyo/JST** (ordinary unauthenticated
