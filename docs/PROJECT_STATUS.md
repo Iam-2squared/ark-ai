@@ -1,5 +1,120 @@
 # ARK AI Project Status
 
+**LATEST — Run460**
+
+**Saved at:** **2026-10-27T04:51:54.623+09:00 Asia/Tokyo/JST** (observed local wall clock before
+the normal GitHub Contents checkpoint write; not an independently trusted time,
+Git commit timestamp, human review, approval or consent).
+
+**Branch/PR:** `research/jarvis-foundations` / **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `93a906b17256a84b73c87f3ba7c1e858d1b6eddc` (Run459 checkpoint, verified on entry).
+**Final source/test HEAD:** `0805459319f99d0d8a74ea545654a08c5f7f9525`.
+**Technical evidence and checkpoint-write-basis HEAD:** `d17058c102079bbd2879dcac4339bd92a2321504`
+(`docs/JARVIS_SQLITE_PATH_ANCESTRY_RUN460.md`).
+**Checkpoint-result HEAD:** this commit cannot contain its own SHA. The GitHub
+Contents update result and independent PR HEAD must be inspected after saving.
+The evidence SHA immediately above is PRE-checkpoint, not the result.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+ARK remains a local-first, detached/reversible, free-only research foundation.
+No real effectful Tool, independently authenticated owner/issuer or consent,
+trusted clock, coherent multi-store WRITE, proven external exactly-once action,
+live camera/microphone, full validated speech or pixel-recognition system,
+approved Candidate/adapter/weight generation, protected V2 final-evaluation
+opening or permitted main integration. All UNKNOWN, RUNNING and reserved
+PENDING WRITE remain fail-closed and never auto-replayed.
+
+### NEW this invocation — 3 independent meaningful security hardening packages
+
+1. **Disconnected privacy veto source ancestry:** `src/ark/disconnected_privacy_veto.py`
+   blob `754604e05f5aeec7a0b94dbfbea7e83cc4702bbf`;
+   `tests/test_disconnected_privacy_veto_ancestry_run460.py` blob
+   `d45f3df950b169b4d25394580baf9a8a4b87e21e`.
+   Reject lexical `..` and every symbolic/non-directory ancestor, including
+   a symlinked grandparent not caught by checking only the immediate parent.
+   **4 new pytest tests defined, NOT YET EXECUTED**.
+2. **Disconnected scheduler due reservation ancestry:**
+   `src/ark/agency/disconnected_due_reservation.py`
+   blob `26368f35f41cceb93448bd643ed1b23058fc42bf`;
+   `tests/test_disconnected_due_reservation_ancestry_run460.py`
+   blob `00642d66a0a768a9460078a9f1391bc312307d8d`.
+   Same path containment hardening on setup and source reopen; preserves
+   inert/non-notifying reservation semantics. **4 new pytest tests defined,
+   NOT YET EXECUTED**.
+3. **Disconnected READ receipt journal ancestry:**
+   `src/ark/agency/disconnected_read_journal.py`
+   blob `34dd72753fa373d900973194fdd131892287e416`;
+   `tests/test_disconnected_read_journal_ancestry_run460.py`
+   blob `cb3e2b98daa65049539e8411f5f47d1ef8daf0ab`.
+   Reject redirected ancestors prior to `open("x")`/SQLite reads and
+   reopens; preserves original receipt chain/CAS semantics. **4 new pytest
+   tests defined, NOT YET EXECUTED**.
+
+### Tests/CI/evidence — do not conflate local checks with exact-head GREEN
+
+- Ordinary GitHub Contents writes saved **6 source/test commits** and **one
+  technical evidence commit**. Independent readback matched all **six exact
+  saved blob SHAs**. All changed source/test lines were <=100 columns.
+- Python 3.13.5 standalone **4-case path-guard LOGIC smoke PASSED**, covering
+  nested real parents, symlinked ancestors, lexical `..` and missing parents.
+  This is NOT running the 12 committed pytest cases against repository
+  modules. A local full clone is blocked by github.com DNS resolution; hence
+  no locally executed repo pytest, Ruff, Python 3.11/3.12, Windows or
+  all-six-matrix GREEN is asserted.
+- Existing final Run459 #1395 / `40384123788`: **QUEUED** at observation.
+- New source/test ordinary PR CI: #1396 / `40389594467`,
+  #1397 / `40389658443`, #1398 / `40389706509`,
+  #1399 / `40389756551`, #1400 / `40389836731`,
+  and **latest source/test HEAD** #1401 / `40389879282`:
+  all **QUEUED** at inspection. Evidence #1402 / `40390336949`:
+  **QUEUED**. This checkpoint-result CI must be read separately.
+- At CI inspection: **152 QUEUED, 6 IN PROGRESS** across repository runs.
+  Historical #1244 / `40237313817` retains three Windows
+  `Run pytest` steps IN PROGRESS, three old-head Ubuntu failures.
+  45-minute watchdog is newer and not retroactive. No manual duplicate
+  workflow dispatch, cancellation or paid runner was initiated.
+
+### Frozen evidence, authorization boundaries, and remaining blockers
+
+V1/V2/Local UI/Launcher evidence, Memory v1 schema, ActionAudit v1,
+V3 Contract 1, training contamination/provenance/regression/reproducibility
+controls, PR #5 Draft, protected V2 final-evaluation gate and main-merge
+approval are **unchanged**. No billable GPU/API/external training, new
+subscription/credentials/account, real user data, hardware/capture,
+external effect, irreversible action, real Candidate generation/promotion,
+protected evaluation or main merge.
+
+Path ancestry checks are **not atomic safe opens**; ancestor swaps after
+inspection (TOCTOU) and real Windows junction/reparse-point behavior remain
+unverified. SQLite quick_check and local hashes alone never prove source
+authenticity, independent witness custody, multi-file WAL coherence, consent,
+actual privacy deletion or execution authority. The 12 new tests remain CI
+pending; GREEN cannot be invented from saved definitions.
+
+### Next plan / 今後の方針
+
+1. Follow naturally queued **exact-head** #1401 and later evidence/
+   checkpoint runs. Diagnose real CI errors, specifically historical Windows
+   pytest stalls, without manually rerunning or weakening test gates.
+2. Improve safe local file-handle/ancestor identity evidence and Windows
+   junction fixtures in isolated lanes; never claim the present path check
+   eliminates all TOCTOU or reparse risks.
+3. Prioritize Memory schema/row/event integrity, CAS/expiry/coherent
+   snapshots and Planner multi-WRITE recovery with explicit UNKNOWN fencing;
+   retain immutable registry and exact-type PermissionGate controls.
+4. Only after exact dependency heads become GREEN, evaluate reversible
+   fixture-only integration with privacy veto, scheduler and READ journals.
+   Keep protected V2, V3 real Candidate and main merge frozen pending
+   their independent required authorization.
+
+---
+
+**HISTORICAL — full Run459 and earlier checkpoint content retained unchanged**
+
+# ARK AI Project Status
+
 **LATEST — Run459**
 
 **Saved at:** **2026-10-27T04:08:52.460+09:00 Asia/Tokyo/JST** (observed local wall clock just before the ordinary GitHub Contents write; NOT independently trusted time, commit timestamp, user consent or reviewer approval).
