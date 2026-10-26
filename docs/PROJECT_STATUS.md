@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run454**
+
+**Saved at:** **2026-10-26T23:43:08,700+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation immediately before an ordinary GitHub Contents update; NOT a trusted clock, user consent, reviewer approval, exact commit time or production evidence).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `447174982ed181a369077b00639eabe850467d24` (Run453 checkpoint, verified before any source write).
+**Final source/test HEAD:** `d6efa7b5c85e9ec2a1c3527279756abdf4b2f5e1`.
+**Technical evidence / exact checkpoint-write-basis HEAD:** `7a0e816b09094c97a03fde2a01fc1b59e000f478`, `docs/JARVIS_DUE_SLOT_AND_AUDIO_TRANSCRIPT_RUN454.md`.
+**Checkpoint-result HEAD:** cannot be self-embedded in the commit being created. After this Contents update, separately inspect its returned `update_file.result.commit_sha` and exact-head GitHub Actions. The technical evidence HEAD above is PRE-CHECKPOINT, not the result.
+
+### Overall current ARK — complete JARVIS NOT_PASSED
+
+Development remains detached, reversible, local-first and free-only. No authenticated owner/issuer/consent or independently trusted clock, proven external effect, real ASR/microphone, actual scheduler notification/dispatch, verified Memory source, cross-SQLite atomic WRITE, Candidate promotion or protected final-evaluation PASS. **Never automatically replay reserved PENDING, RUNNING or UNKNOWN WRITE**. Caller-supplied digests and witness records are NOT signatures or authorization.
+
+### NEW this invocation — 2 coherent functional packages + CI-read-only forensics
+
+1. **Detached durable synthetic due-slot scheduler reservations.** Added `src/ark/agency/disconnected_due_reservation.py`, Git blob `311b95a7f47833a226bb2ea274dd5a64e37f715c`, with `tests/test_disconnected_due_reservation_run454.py`, blob `7cdd485a2890475450b5f6c406b37de278f237e0`. Atomic SQLite `BEGIN IMMEDIATE` slot reservation, deterministic policy/due identity, 60,000ms lateness cap, <=512 row/schema integrity audit, monotonic caller-clock check, independently held count/digest witness comparison, non-recreation on missing DB, persisted restart/duplicate/race suppression and no dispatch permission. Tested both threads and spawned processes. A locally regenerated witness after complete storage rollback cannot detect rollback; only an independently RETAINED original can veto. Synthetic clocks and receipts cannot authorize real action.
+2. **Disconnected audio-to-transcript claimed-frame binding.** Added `src/ark/offline_transcript_binding.py`, Git blob `7baad5fc869c24c2314876bc16d2e2c7c3def098`, with `tests/test_offline_transcript_binding_run454.py`, blob `2a1c1b8f15ca7a1d2d2f007ada38a87bffd09d42`. Validates bounded frame intervals, exact owner/scope/audio/text digests, canonical NFC, rejects overlap/reorder/control/bidi/surrogates; outputs hash + metadata only, no transcript text in preview. No real audio source or ASR authentication, speaker identification, consent or Tool execution.
+3. **Independent GitHub Actions read-only inspection.** At inspection **123 queued / 6 in progress**. Older #1239–1244 still running, exact final source/test CI **#1367**, run `40341699473`, **QUEUED**, all 6 Windows/Linux Python cells queued. Technical evidence CI **#1368**, run `40342008422`, **QUEUED**. No duplicate workflow re-runs, cancellation, paid runner or destructive maintenance.
+
+Five normal GitHub Contents source/test commits (four file creations plus one import-order correction) and one technical evidence commit. All saved content is isolated; frozen source/contracts/evaluation fixtures untouched.
+
+### Tests / CI / provenance — LOCAL PASS, exact-head matrix NOT GREEN
+
+- Python **3.13.5**, pytest **9.0.2**: **55 PASSED** focused local cases on byte-identical GitHub-saved source/test files; four `git hash-object` SHAs independently matched GitHub contents blob SHA. `compileall` PASS; each new Python source/test line <=100 columns.
+- Additional independent, seeded probes: **180** synthetic SQLite reservations/duplicate vetoes and **500** transcript-bound interval acceptance/hash-tamper refusals PASS; these are not extra pytest cases.
+- GitHub Actions exact source/test HEAD `d6efa7b5c85e9ec2a1c3527279756abdf4b2f5e1`: #1367 run `40341699473` QUEUED. Doc HEAD `7a0e816b09094c97a03fde2a01fc1b59e000f478`: #1368 run `40342008422` QUEUED. **Checkpoint-result CI unknown until returned SHA exists.**
+- Whole-repo pytest, Ruff, Python 3.11/3.12, Windows/Ubuntu matrix, UI/packaging and all-six exact-HEAD GREEN NOT confirmed. The container cannot clone github.com (DNS failure); local Ruff unavailable. No unsupported claim of integrated PASS.
+
+### Frozen contracts / costs / real-world authorization
+
+Frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1 and contamination/provenance/regression/reproducibility + protected final-evaluation gates UNCHANGED. PR #5 and #8 still Draft/unmerged. No spend, paid/external compute, training weights/Candidate, protected V2 evaluation, new secrets/account, physical PC, real audio recording, real scheduler dispatch, effectful Tool, destructive user file/data work, irrevocable action, automatic Candidate promotion or main merge.
+
+### Next plan / 今後の方針
+
+1. Read exact source/test, technical doc and checkpoint-result Actions when runners advance; isolate concrete failures. No equivalent duplicate CI launches, weakening assertions, or premature six-environment GREEN. Examine Windows/queue backlog using read-only evidence.
+2. Keep detached due reservations inert. Prior to any actual scheduler: independently secured witness custody, caller-clock trust chain, authenticated owner/issuer, explicit user consent, revocation, audit-before-action and occurrence/replay protections. Never replay UNKNOWN/RUNNING/reserved PENDING writes.
+3. Keep transcript-to-audio binding a synthetic metadata contract. Source verification, retention policy and privacy-safe observation/ASR provenance must be independently established before any integration or external export.
+4. Advance free independent Memory CAS/event/expiry coherence, Planner recovery/multi-WRITE nonreplay, immutable ToolRegistry/PermissionGate contract and startup readiness. Integrate only after dependencies' exact-head GREEN.
+5. Preserve frozen evidence/contracts and explicit human gates; do not start paid compute, real Candidate, protected evaluation, promotion, physical hardware actions or main merge.
+
+---
+
+**HISTORICAL — complete Run453 and all earlier checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run453**
 
 **Saved at:** **2026-10-26T23:07:26.472+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation immediately before a normal GitHub Contents checkpoint update; NOT a trusted clock, Git commit time, user consent, reviewer approval or production evidence).
