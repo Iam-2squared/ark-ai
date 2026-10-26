@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _RECORD = re.compile(r"rec_[0-9a-f]{32}\Z")
@@ -31,7 +31,7 @@ class OfflineContextSearchRecord:
     record_id: str
     owner_digest: str
     scope_digest: str
-    content: str
+    content: str = field(repr=False)
     content_sha256: str
     expires_at_ms: int
 
@@ -40,13 +40,13 @@ class OfflineContextSearchRecord:
 class OfflineContextSearchHit:
     record_id: str
     score: int
-    excerpt: str
+    excerpt: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
 class OfflineContextSearchPreview:
     owner_digest: str
-    query: str
+    query: str = field(repr=False)
     hits: tuple[OfflineContextSearchHit, ...]
     local_digest: str
 
