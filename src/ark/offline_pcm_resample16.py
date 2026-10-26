@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import re
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 MAX_PCM_BYTES = 2 * 1024 * 1024
 _RATES = frozenset({8_000, 16_000, 22_050, 32_000, 44_100, 48_000})
@@ -28,7 +28,7 @@ class ResampledPcm:
     target_rate: int
     source_samples: int
     output_samples: int
-    pcm: bytes  # sensitive; never auto-log, upload, persist or dispatch
+    pcm: bytes = field(repr=False)  # sensitive; never auto-log, upload, persist or dispatch
 
 
 def _round_ratio_away_from_zero(numerator: int, denominator: int) -> int:
