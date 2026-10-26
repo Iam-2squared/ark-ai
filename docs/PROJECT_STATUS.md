@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — Run453**
+
+**Saved at:** **2026-10-26T23:07:26.472+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation immediately before a normal GitHub Contents checkpoint update; NOT a trusted clock, Git commit time, user consent, reviewer approval or production evidence).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `883c786c4f9b2c922dfc62b6c6f5b8148ace8df6` (Run452 checkpoint).
+**Final source/test HEAD:** `b33945bb51c41a4050787086ec2c625e6ac48787`.
+**Technical evidence / exact checkpoint-write-basis HEAD:** `e977833cf2e41fe24b95b0474f5d5f11e96c8c9a`, `docs/JARVIS_OFFLINE_MEMORY_DELTA_PRIVATE_DIAGNOSTICS_RUN453.md`.
+**Checkpoint-result HEAD:** intrinsically cannot appear within the commit being created. Read the returned `update_file.result.commit_sha` AFTER this Contents write and inspect the resulting exact-head CI independently. Do not conflate the pre-checkpoint work-basis HEAD with the result.
+
+### Overall current ARK — JARVIS NOT_PASSED
+
+Only detached, reversible local-first groundwork. No authenticated owner/issuer/consent/independent trusted clock, verified Memory event source, proven cross-SQLite atomic WRITE, human review proof, real ToolBackend dispatch, PC/microphone actions, genuine ASR, protected final-eval PASS or Candidate promotion. **UNKNOWN/RUNNING and reserved PENDING WRITE must NEVER be auto-replayed.** Synthetic hash chains are not signatures or authority.
+
+### NEW this invocation — two independent code/test packages + CI forensic review
+
+1. **Offline Memory snapshot delta review:** Added `src/ark/offline_memory_delta.py` Git blob `a13e3f9dbd072bfcc4d2ce71f237f81f57c11b80` and `tests/test_offline_memory_delta_run453.py` blob `65f188c5213b8458b2688ec1a85663c76ca64600`. Exact-type, bounded <=64-row deterministic metadata-only before/after classification. Rejects owner/scope and creation drift, invalid/expired carriers, revision gaps, silent changes, duplicate/missing/unbound synthetic removal tombstones. Caller-provided fingerprints and events remain untrusted. No CAS/erasure proof or mutation/replay.
+2. **Public-code-only privacy diagnostic ledger:** Added `src/ark/private_diagnostic_ledger.py` blob `db6acd49aa2de52372dc473934fa63524e7fb191` and `tests/test_private_diagnostic_ledger_run453.py` blob `20b57ef7344ae0aa942059a59c62101cc036c7a7`. Fixed safe component/stage/outcome/reason enums, exact-sequence bounded canonical JSONL + SHA-256 chaining, raw dynamic text rejection, zero persistence/dispatch/export authorization. A supplied anchor is NOT trustworthy provenance or ActionAudit evidence.
+3. **Independent historical CI forensics:** Inspected #1243 run `40237184462` Ubuntu 3.13; observed 2 FAILED, 2941 PASSED, 1 SKIPPED, both obsolete successful-veto-clearance count assertions. Current privacy regression test blob `61b197bdf0728c25387a55a9f9beb7082836b418` now checks 2 ATTEMPTS vs 1 successful clearance. The older failing SHA does NOT prove recovery of latest HEAD. Earlier count observed 113 queued and 7 in-progress Actions runs; after technical-document save, queued count observed 118. No manual reruns or cancellation.
+
+Four normal Contents source/test commits plus one normal technical evidence commit. All four added files are isolated; no frozen source, contract, test, evaluation dataset, workflow or older implementation changed.
+
+### Tests / CI / evidence — local GREEN only, whole-repo CI PENDING
+
+- Python **3.13.5 / pytest 9.0.2**, **68 PASSED** focused regression cases (**43 Memory + 25 private diagnostics**) using byte-identical GitHub-saved source/test blob hashes. `compileall` PASS. All new Python lines <=100 characters.
+- Additional uncommitted, independent seeded local property probes: **1,200** Memory snapshot-change/revision/removal oracle examples and **500** private diagnostic chained-sequence/unsafe-code rejection cases PASS. These are NOT counted as pytest tests.
+- GitHub Actions for Memory test HEAD `6cc10ab9459ea4b4a525cb6459258b908e555e1d`: **#1358**, run `40335104634`, **QUEUED** at inspection.
+- GitHub Actions for final source/test HEAD `b33945bb51c41a4050787086ec2c625e6ac48787`: **#1360**, run `40335857725`, **QUEUED** at inspection.
+- Technical evidence HEAD `e977833cf2e41fe24b95b0474f5d5f11e96c8c9a`: **#1361**, run `40336375575`, **QUEUED** at inspection. Checkpoint-result CI is unknown until commit completes.
+- Ruff not installed locally; whole-repository pytest/Ruff, Python 3.11/3.12, Windows/Linux matrix and six-environment exact-head GREEN are NOT confirmed. Full clone still fails github.com DNS. Do NOT mistake local success for an integrated PASS.
+
+### Frozen contracts and authorization blockers
+
+Frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, human-review and provenance/contamination/regression/reproducibility gates and protected final-evaluation boundaries **unchanged**. PR #5 and #8 remain Draft/unmerged. No paid API/GPU/compute, Candidate/weights/adapters, protected V2 evaluation, automatic promotion, new credentials/accounts, physical machine, real Memory export, network/tool dispatch, destructive DB/file work, irreversible action or main merge.
+
+### Next plan / 今後の方針
+
+1. Observe naturally scheduled **exact source/test + documentation + checkpoint HEAD** Actions results once available; diagnose any real failures; do not rerun duplicates, weaken checks or claim six-cell GREEN early. Audit queue/Windows backlog without over-polling.
+2. Keep Memory delta diagnostic detached. Obtain independently trusted source snapshot, CAS event/tombstone custody, source epoch and trusted-clock evidence before any actual Memory integration. Failed/missing removal proof must remain deny-only.
+3. Keep privacy diagnostic JSONL in-memory. Validate fixed-code projection at real disconnected call-sites with safe scope/consent and audit controls; never export raw private data or treat hash/anchor as authentic authorization.
+4. Advance independent Planner recovery, multi-WRITE non-replay and tool Registry/PermissionGate trusted-clock/issuer contracts; only integrate lower layers after their exact-head CI GREEN.
+5. Preserve frozen contracts, PR #5/#8 Draft, free-only boundaries, protected V2 final evaluation, and explicit approval for main merges/real operations.
+
+---
+
+**HISTORICAL — complete Run452 and earlier checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run452**
 
 **Saved at:** **2026-10-26T22:19:25.707+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation taken immediately before the normal GitHub Contents checkpoint update; NOT a trusted clock, Git commit timestamp, consent, or independent production evidence).
