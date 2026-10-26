@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _ID = re.compile(r"req_[0-9a-f]{32}\Z")
 _OPERATIONS = frozenset(("math.sum", "text.stats", "text.find", "json.inspect"))
@@ -30,7 +30,7 @@ class DisconnectedToolRejected(ValueError):
 class DisconnectedToolRequest:
     request_id: str
     operation: str
-    canonical_args_json: str
+    canonical_args_json: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +38,7 @@ class DisconnectedToolResult:
     request_id: str
     operation: str
     input_digest: str
-    canonical_result_json: str
+    canonical_result_json: str = field(repr=False)
     result_digest: str
 
     @property
