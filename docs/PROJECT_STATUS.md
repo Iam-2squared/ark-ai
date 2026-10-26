@@ -1,5 +1,61 @@
 # ARK AI Project Status
 
+**LATEST — Run438**
+
+Saved at: **2026-10-26T10:05:53.664+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before the GitHub Contents write; NOT trusted-clock, user consent, or external-effect attestation).
+
+**Branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Exact invocation work-basis HEAD:** `71870e40d9b8a89c86bef9b121934a6ac2edcc99` (Run437 checkpoint; its #1254 / 40246598956 CI was QUEUED at opening inspection).
+**Run438 final executable/test HEAD:** `7f819a32227093cf91c315793933a3372a8768a7` (independent expected-membership source+21-case tests, and separate 2-case CI guard).
+**Run438 technical-document / exact checkpoint write-basis HEAD:** `87be96f454f68b01cf17139574614908d4bd331a`; `docs/JARVIS_INDEPENDENT_WRITE_MEMBERSHIP_AND_CI_ID_RUN438.md`.
+**Checkpoint-result HEAD:** not knowable inside the commit that creates this file. Inspect this GitHub Contents `update_file.result.commit_sha` after the write and inspect its separate exact-HEAD CI; neither source nor documentation CI attests the checkpoint commit.
+
+### Overall ARK state and protected authority boundary
+
+**Complete JARVIS NOT_PASSED.** PR #8 remains Draft/open/unmerged and PR #5 remains Draft/open/unmerged/NOT_PASSED. The work is isolated, reversible, disconnected local-first forensic/fixture foundation only: no authenticated human issuer/consent, signed trusted-clock source, trusted external action receipt, global transaction across independent SQLite stores, verified real-world exactly-once WRITE, operational autonomous ToolBackend, live sensors, or notifications. **UNKNOWN/RUNNING and reserved PENDING WRITEs must never auto-replay.**
+
+No paid or potentially billable API/GPU/service, subscription, real V3 Candidate training or adapter generation, Candidate promotion, frozen V2 final-evaluation opening, new credentials, protected/frozen contract edit, irreversible operation, unavailable user PC action, or main merge was authorized or executed.
+
+### NEW Run438 — two independent work packages + read-only CI recovery forensics
+
+1. **Expected complete-WRITE membership prerequisite:** created `src/ark/agency/synthetic_expected_write_membership_review.py` on `fb4c912415aa492e57b1e1cc6f84404ab64f1b96`. Caller-retained, independently captured sorted/unique WRITE step IDs plus exact plan topology are bound by a 128-step, per-ID/byte-budgeted, SHA-256-domained **local integrity** witness. A separate validation API rejects missing, extra, duplicate, reordered or cross-topology recovered WRITE IDs and reflective witness drift. Its result is never execution, consent or replay authority. It **does not import or integrate** the still-unverified Run434 detached-bundle decoder: the expected set cannot be honestly reconstructed from the very archive it is meant to audit.
+2. **Focused expected-membership regressions:** `tests/test_synthetic_expected_write_membership_run438.py` at `da9820c259ddef3f32f9a639f140387581fc13b2` adds **21 parameter-expanded cases**. The exact new source/test bytes were staged in an isolated local Python 3.13.5 sandbox and all **21 passed** (`pytest -q`). Git blob SHA cross-check: source `4060dc3b8aa9e7473d8ea2231edf4d6bdaf63d3d`, test `5790a490a95198fc55a815eaba525cda056febaf`, matching GitHub. This is not a full-repository, matrix, or operational proof.
+3. **Windows pytest CI-regression guard:** added `tests/test_ci_fixture_param_id_guard_run438.py` at `7f819a32227093cf91c315793933a3372a8768a7`, with **2 AST-only cases** ensuring the original two 4,194,305-byte observation fixtures remain oversized/rejected but have distinct explicit <=64-character pytest parameter IDs. The local cases **2 passed** against a representative copy of the inspected decorator and test body; the guard's exact Git blob `e9d46b4193fe33b6120364d0f61227d2d522cfac` matches the locally tested file. It does not execute the real GitHub repository pytest collection or prove Windows is fixed.
+4. **Independent CI log and backlog forensics:** older Windows jobs `121260770970`, `121261741097`, and `121271173411` each returned ~4.2-million-character pytest logs ending in giant `ERROR at setup` parametrized payload IDs, not a completed traceback. #1221 / 40223600447 had Ubuntu 3/3 GREEN but its three Windows jobs subsequently appeared **CANCELLED** in a fresh job read; #1222 / 40223781720, #1223 / 40224110645, #1224 / 40227265210 had Ubuntu 3/3 GREEN but Windows 3/3 remained **IN PROGRESS** on the `Run pytest` step. This gives a concrete CI throughput blocker, not a verified test fix. No run was manually cancelled, rerun, or duplicated.
+
+A technical matrix and source-level limits were saved in `docs/JARVIS_INDEPENDENT_WRITE_MEMBERSHIP_AND_CI_ID_RUN438.md`. New material remained within Draft PR #8; no frozen-contract code path was edited.
+
+### Exact-HEAD test and CI evidence (non-equivalent scopes)
+
+- Local isolated membership: **21 passed** under Python 3.13.5 against Git-blob-identical new module/test bytes.
+- Local independent CI guard: **2 passed** under Python 3.13.5 against a representative copied fixture decorator/test-body snippet; exact guard file bytes match Git blob. Full project imports, full repository pytest and Ruff **NOT RUN**: the working container cannot resolve `github.com` for a checkout and Ruff is not installed locally.
+- New source CI **#1255 / 40251633322**, source HEAD `fb4c9124...`: **QUEUED**.
+- Membership source+test CI **#1256 / 40251731215**, HEAD `da9820c2...`: **QUEUED**.
+- Final executable/test CI **#1257 / 40252121935**, HEAD `7f819a32...`: **QUEUED**.
+- Document CI **#1258 / 40252322852**, HEAD `87be96f4...`: **QUEUED**.
+- Opening Run437 checkpoint CI **#1254 / 40246598956** and Run437 source CI **#1252 / 40246195602**: **QUEUED** on inspection.
+- **The forthcoming checkpoint-result HEAD requires its own CI**, which cannot be attested in this same commit. Historical older successful Ubuntu jobs are not evidence of Run438 final-head GREEN.
+
+No CI failure was weakened, no tests were skipped, no GitHub raw-Git/force-push safeguard bypass was used, and no extra workflow was dispatched. Retained old CI results and cancellations were not described as passing.
+
+### Frozen evidence, repository isolation and blockers
+
+`main` inspected at `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 independently inspected Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`. Frozen V1/V2/Local UI/Launcher evidence, Memory v1/ActionAudit v1 DDL, V3 Contract 1, contamination/provenance/regression/reproducibility gates and protected V2 final-evaluation budget remain unchanged. Detached bundle source is unintegrated while dependent Run434 CI is not GREEN. No identities, hashes, review decisions or PASS results were fabricated.
+
+### Next plan / 今後の方針
+
+1. **CI throughput and actual failure recovery:** inspect #1252, #1257 and checkpoint-result HEAD after GitHub runners process their queues; distinguish cancelled historical Windows jobs from test FAIL/GREEN. Confirm bounded IDs end pathological 4 MiB node names, capture the real setup traceback if it becomes available, and make only minimal normal-Contents fixes while concurrently working an orthogonal free lane. Do not cancel/rerun equivalent workflows or weaken tests for throughput.
+2. **Independent membership integration, conditional on dependency GREEN:** after Run434 decoder and its exact-head CI become GREEN, capture the complete WRITE set from independently retained original PlanGraph inputs, compare it with detached archives and add recomputed-digest omission/substitution negative regressions. Never treat archive header or self-hashed subset as complete proof.
+3. **Cross-store restart-safe WRITE quarantine:** only after Planner/PermissionGate/Occurrence/ActionAudit/AuditLink lower-level GREEN, advance disconnected crash/reopen review without global-transaction or backend-effect claims. UNKNOWN/RUNNING and reserved PENDING remain non-replayable.
+4. **Independent free lanes:** bounded Memory multi-process CAS, expiry and event lineage, Personal Context revocation, synthetic clock/issuer deny-only interfaces, Observation/Startup/Scheduler fixtures and V3 zero-cost path/identity audits. No hardware/notification/disclosure or live Tool dispatch.
+5. Keep both PR #5 and PR #8 Draft/unmerged; require the named explicit user approvals before spending, real Candidate generation, frozen evaluation opening, promotion, credentials, irreversible architecture, contract changes or main merge.
+
+---
+
+**HISTORICAL — Run437 and all previous canonical checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run437**
 
 Saved at: **2026-10-26T08:51:01.456+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock; NOT signed trusted time, consent, a real issuer or external-effect attestation).
