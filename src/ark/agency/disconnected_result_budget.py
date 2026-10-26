@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _REQ = re.compile(r"req_[0-9a-f]{32}\Z")
 _STEP = re.compile(r"step_[0-9a-f]{16}\Z")
@@ -29,7 +29,7 @@ class DisconnectedResultsRejected(ValueError):
 class DetachedReadResult:
     step_id: str
     operation: str
-    canonical_result_json: str
+    canonical_result_json: str = field(repr=False)
     content_sha256: str
 
 
