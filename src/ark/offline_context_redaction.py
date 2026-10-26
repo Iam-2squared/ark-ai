@@ -118,7 +118,7 @@ def preview_offline_redaction(
     masked = 0
     output: list[str] = []
     index: list[tuple[int, int, str]] = []
-    for row, (start, end, label) in zip(originals, pinned, strict=True):
+    for _row, (start, end, label) in zip(originals, pinned, strict=True):
         assert_epoch()
         if (
             type(start) is not int or type(end) is not int
