@@ -127,8 +127,10 @@ def _path(value: object, *, exists: bool) -> Path:
         raise OfflinePrivacyVetoRejected("veto ancestor unavailable") from exc
     if value.is_symlink() or (exists and not value.exists()):
         raise OfflinePrivacyVetoRejected("missing or symbolic veto ledger")
-    if value.exists() and not stat.S_ISREG(value.stat(follow_symlinks=False).st_mode):
-        raise OfflinePrivacyVetoRejected("veto ledger must be a regular file")
+    if value.exists():
+        info = value.stat(follow_symlinks=False)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise OfflinePrivacyVetoRejected("veto ledger requires one regular-file link")
     if not value.parent.is_dir() or value.parent.is_symlink():
         raise OfflinePrivacyVetoRejected("veto parent must be a real directory")
     return value
