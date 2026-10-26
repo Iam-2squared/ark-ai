@@ -2,7 +2,7 @@
 
 An independent retained tip/count detects truncation or rewrite. Neither SQLite
 nor SHA-256 authenticates a model, human, tool dispatch, or real-world effect.
-No executor, model, ToolRegistry, MemoryStore or exteic REservice is accessed.
+No executor, model, ToolRegistry, MemoryStore or external service is accessed.
 """
 
 from __future__ import annotations
@@ -215,7 +215,7 @@ class DisconnectedReadJournal:
             self._connection.execute("BEGIN")
             actual = self._scan()
             if actual != retained:
-                raise ReadJournalRejected("exteic REwitness disagrees with journal")
+                raise ReadJournalRejected("external witness disagrees with journal")
             self._connection.execute("COMMIT")
             return actual
         except BaseException:
