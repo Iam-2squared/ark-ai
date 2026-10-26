@@ -151,7 +151,8 @@ def test_excessive_schema_bytes_rejected():
     conn = sqlite3.connect(":memory:")
     try:
         for i in range(22):
-            conn.execute(f"CREATE TABLE t{i} (text_{i} TEXT DEFAULT '{"a" * 3400}')")
+            large_default = "a" * 3400
+            conn.execute(f"CREATE TABLE t{i} (text_{i} TEXT DEFAULT '{large_default}')")
         conn.execute("PRAGMA query_only=ON")
         with pytest.raises(SQLiteSchemaProbeRejected, match="byte budget"):
             capture_disconnected_sqlite_schema(conn)
