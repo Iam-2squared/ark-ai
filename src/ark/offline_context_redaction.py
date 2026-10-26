@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _LABEL = re.compile(r"[A-Z][A-Z0-9_]{0,19}\Z")
@@ -35,7 +35,7 @@ class RedactedOfflinePreview:
     owner_digest: str
     scope_digest: str
     source_sha256: str
-    masked_text: str
+    masked_text: str = field(repr=False)
     masked_characters: int
     complete_masking: bool
     local_digest: str
