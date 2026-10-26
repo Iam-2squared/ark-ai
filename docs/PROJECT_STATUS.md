@@ -1,5 +1,125 @@
 # ARK AI Project Status
 
+**LATEST — Run451**
+
+Saved at: **2026-10-26T21:00:17.600+09:00 Asia/Tokyo/JST** (ordinary unauthenticated
+wall-clock observation immediately before a normal GitHub Contents update;
+NOT a trusted-clock measurement, GitHub commit timestamp, human consent or
+independent production evidence).
+
+**Branch/PR:** research/jarvis-foundations / PR #8 **Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged, V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** f296fff8996b501aa4f21fd9257b97744dea01f1
+(Run450 checkpoint; inspected before new work).
+**Final source/test HEAD:** 2d883a4b36e6eec6a7f237fa308b4e8190cd704f.
+**Technical evidence / exact checkpoint-write-basis HEAD:**
+495de058a2ffd774818e356bbacf34ffcbd2c85f,
+docs/JARVIS_PCM_REGIONS_RESAMPLE_BOUNDARIES_RUN451.md.
+**Checkpoint-result HEAD:** cannot be embedded truthfully inside its own
+commit; inspect returned update_file.result.commit_sha AFTER this write,
+then inspect its exact-head CI separately. The HEAD above is the
+pre-checkpoint work basis, not the result of this checkpoint mutation.
+
+### Overall ARK state — NOT_PASSED
+
+Complete JARVIS **NOT_PASSED**. Foundation work remains free-only,
+isolated, reversible and fixture-driven. No trusted local microphone/source,
+ASR, real speaker identification, proven owner/consent/issuer/trusted clock,
+fully validated ToolRegistry-to-PermissionGate-to-Executor authorization,
+production Memory ingestion, proven cross-store atomic WRITE or real action.
+UNKNOWN/RUNNING and reserved PENDING WRITEs remain quarantined and must
+NEVER be automatically replayed.
+
+### NEW Run451 — two independent offline PCM packages
+
+1. **Deterministic signed16 mono activity regions:** new
+   src/ark/offline_pcm_activity_regions.py (Git blob SHA-1
+   56710a4a266ff13fa89d5a171aa511ee3fe8074b) and
+   tests/test_offline_pcm_activity_regions_run451.py (blob
+   bfce57329f507bf35c74860877f59a8852ff3637).
+   Exact bytes/checksum, sample/frame/duration thresholds, integer mean-square,
+   bounded silence-gap bridging, real-active-frame filtering and <=32
+   metadata-only regions; no raw PCM output, recording, actual VAD or ASR.
+   Semantics-preserving strict zip cardinality used for Ruff B905 compliance.
+
+2. **Deterministic bounded signed16 mono resampling:** new
+   src/ark/offline_pcm_resample16.py (blob
+   242fa1e2bdcd4e056c0cfeee187b1f6ba339a3e7) and
+   tests/test_offline_pcm_resample16_run451.py (blob
+   1d9ab4d8c7af13fe8aae106d89bc72d2653ae3c5).
+   Rates 8/16/22.05/32/44.1/48 kHz, integer linear interpolation,
+   exact source/output checksums, ties-away-from-zero, ceil output length
+   and strict 2 MiB/120s budgets. No anti-alias filter: NOT production
+   resampling or an authenticated observation. Returned raw PCM is SENSITIVE:
+   repr=False now prevents accidental dataclass diagnostic disclosure,
+   independently regression tested; output must not be persisted/shared
+   or routed to tools without separate verified permission.
+
+Six normal Contents source/test commits (four new files and two
+semantics-preserving hardening updates) plus one technical evidence commit;
+no existing frozen source, tests, contracts or evaluation evidence modified.
+
+### Tests / CI / evidence — NOT ALL GREEN
+
+- Isolated Python 3.13.5, pytest 9.0.2: **90 PASSED** on locally
+  Git-blob-identical saved source/test files. compileall and AST parse PASS;
+  Python line lengths <=100.
+- Separate seeded property checks: **1,200** deterministic unbridged
+  activity-region oracle probes and **300** constant-signal resampling
+  invariants PASS. Resampling test additionally includes **240** seeded
+  reference comparisons inside one pytest case (NOT 240 separate tests).
+- Local Ruff unavailable; full GitHub clone blocked by DNS. Full-repository
+  pytest/Ruff, Python 3.11/3.12, Windows, packaging/UI and six-environment
+  exact-HEAD GREEN have **NOT** been confirmed.
+- **Final source/test HEAD CI #1340, run ID 40318589714:** QUEUED
+  at inspection; **technical evidence CI #1341, run ID 40319074940:**
+  QUEUED at inspection. Checkpoint-result CI unobserved inside this update.
+  No duplicate equivalent workflow dispatched.
+- Historical CI #1237 / run 40233213149: Ubuntu pytest failed on prior
+  privacy-test expectation (corrected in Run448); its Windows jobs were
+  still IN PROGRESS on inspection and active job log fetch failed 404.
+  No assertion that Windows backlog is resolved. Local PASS does not
+  supersede a failing/queued exact-head GitHub matrix.
+
+### Frozen contracts, blockers and authorization
+
+V1/V2/Local UI/Launcher frozen evidence, Memory V1 Schema,
+ActionAudit V1 Schema, V3 Contract 1 and contamination/provenance,
+reproducibility/regression, human review and protected evaluation
+boundaries are unchanged. PR #5 and PR #8 remain Draft/unmerged.
+No new account/credentials, paid/external GPU/compute, paid API or
+subscriptions, real Candidate/adapter/weight generation, protected V2
+final-evaluation opening, automatic Candidate promotion, destructive or
+irreversible operations, actual physical-PC action, real-world ToolBackend,
+frozen contract change or main merge. Synthetic digests, audio segments
+and resampled PCM DO NOT authorize any action or privacy disclosure.
+
+### Next plan / 今後の方針
+
+1. Inspect exact checkpoint HEAD and queued source/technical CI when evidence
+   becomes available; diagnose real Windows and Ubuntu failures. Do not
+   duplicate queued workflows or declare unverified GREEN.
+2. Only after respective exact-head lower-level GREEN, prepare a
+   disconnected WAV -> mono16 -> resampling -> amplitude/segment fixture
+   pipeline preserving independently retained owner, privacy and source
+   lineage. Do not treat caller-supplied checksums as consent or provenance;
+   do not capture live microphones or transmit sensitive audio.
+3. Keep transcript cues separate from immutable ToolRegistry, exact-type
+   PermissionGate, trusted-clock audit-before-action, durable occurrence
+   reservation and privacy revocation. No effectful execution integration
+   until every underlying invariant is proved GREEN and approved.
+4. Resume independent Memory CAS/expiry/coherent snapshots, Planner
+   multi-WRITE crash recovery, privacy-safe Personal Context and V3
+   free-only guard investigation while current audio CI is outstanding.
+5. Preserve frozen contracts, PR #5 Draft, PR #8 Draft, protected gates,
+   cost ceiling of zero, and UNKNOWN/RUNNING/PENDING WRITE non-replay.
+
+---
+
+**HISTORICAL — preserved Run450 and all earlier checkpoints below**
+
+# ARK AI Project Status
+
 **LATEST — Run450**
 
 Saved at: **2026-10-26T20:00:54.041+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock
