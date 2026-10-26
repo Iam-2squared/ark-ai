@@ -89,8 +89,22 @@ def _check_witness(witness: object) -> None:
 
 
 def _check_path(path: object, *, exists: bool) -> Path:
-    if type(path) is not type(Path(".")) or not path.is_absolute():
+    if (
+        type(path) is not type(Path("."))
+        or not path.is_absolute()
+        or ".." in path.parts
+    ):
         raise DueReservationRejected("absolute local fixture Path required")
+    # Checking only path.parent.is_symlink() accepts a redirected grandparent.
+    # Validate every ancestor before SQLite opens or creates a fixture file.
+    # No filesystem path check alone can eliminate concurrent path swaps.
+    try:
+        for parent in path.parents:
+            info = parent.lstat()
+            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                raise DueReservationRejected("due ancestor is not a real directory")
+    except OSError as exc:
+        raise DueReservationRejected("due ancestor unavailable") from exc
     if path.is_symlink() or (exists and not path.exists()):
         raise DueReservationRejected("missing or symbolic due ledger")
     if path.exists() and not stat.S_ISREG(path.stat(follow_symlinks=False).st_mode):
