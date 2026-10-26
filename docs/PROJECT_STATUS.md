@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+**LATEST — Run456**
+
+**Saved at:** **2026-10-27T01:59:04.216+09:00 Asia/Tokyo/JST** (ordinary local wall-clock observation immediately before normal GitHub Contents checkpoint write; NOT a trusted timestamp, Git commit time, user consent or review approval).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `729738dd10e87ba177e9de9cad3395ddd27230f8` (Run455 checkpoint, re-read at invocation start).
+**Final source/test HEAD:** `e7119dbaeb8a8f7382b82f94ecbfbcb6e3812f37`.
+**Technical evidence / exact checkpoint-write-basis HEAD:** `fed91875358039ccaa7eaa83e9c0ff1e77eb79d1`, `docs/JARVIS_PRIVACY_VETO_MIXED_WRITE_RECOVERY_RUN456.md`.
+**Checkpoint-result HEAD:** cannot appear in the commit being created. Inspect the returned `update_file.result.commit_sha` after saving; the technical evidence HEAD above is the pre-checkpoint basis, not the result.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+Detached, reversible local-first foundations only. No authenticated user/issuer, consent, independently trusted clock, production Memory retention authority, externally proven action, cross-SQLite atomic WRITE, verified audio/ASR/microphone, protected V2 final evaluation, Candidate/promotion or main merge. UNKNOWN/RUNNING and reserved PENDING WRITE **must NEVER be automatically replayed**. Local hash chains are not signatures or independent source attestation.
+
+### NEW this invocation — two independently validated packages
+
+1. **Restart-safe, synthetic privacy veto CAS.** Added `src/ark/disconnected_privacy_veto.py` Git blob `6f42302ad0b2e7a85f914d00856c05ac9cb2cc50` and `tests/test_disconnected_privacy_veto_run456.py` blob `017d1b45efbde02a0391c68b6040a5c0f306033a`. Locally created SQLite fixture records owner/scope hash claims with monotonic one-way denial; uses `BEGIN IMMEDIATE`, exact schema/storage, content-hash witness, CAS, and fail-closed read-only review. Duplicate/stale/rollback/tampered-row/schema/caller-clock cases are rejected. Absence of a veto NEVER proves consent; returned permissions/authenticity are permanently false. Caller must actually retain an earlier independent witness to notice coherent rollback.
+2. **Mixed-plan WRITE recovery quarantine.** Added `src/ark/agency/disconnected_write_recovery_fence.py` blob `fad64577b20f78802dac3bdf94308fb996dcf9a9` and `tests/test_disconnected_write_recovery_fence_run456.py` blob `32970264b64e6c4126bbac3ed57b61e9ba882f57`. Validates exact bounded ordered DAG claims (max 24), rejects impossible success/running ancestry, propagates terminal/uncertain holds, and quarantines UNKNOWN/RUNNING and reserved PENDING WRITE. Unreserved PENDING WRITE remains HELD, never runnable. `READY_MOCK_ONLY` applies only to detached READ classification and authorizes NO execution. No backend, Planner journal, permission gate or real PC integration.
+3. **Independent proof work:** Two packages have byte-identical saved GitHub source/test files; local Python 3.13.5 / pytest 9.0.2 **59 PASSED** (**27 privacy veto + 32 mixed-plan recovery**), `compileall` PASS, all added source lines <=100 characters. Added uncommitted 2,000 seeded recovery property checks and one 64-thread stale-witness CAS stress probe PASS. No source/test in-flight CI dependency was modified.
+
+### CI/evidence — local GREEN; GitHub exact-head matrix PENDING
+
+- Source/test HEAD `e7119dbaeb8a8f7382b82f94ecbfbcb6e3812f37`: CI **#1379**, Run ID `40363780665`, **QUEUED** at observation.
+- Technical evidence HEAD `fed91875358039ccaa7eaa83e9c0ff1e77eb79d1`: CI **#1380**, Run ID `40364111584`, **QUEUED** at observation.
+- Previous checkpoint `729738dd10e87ba177e9de9cad3395ddd27230f8`: CI **#1375**, Run ID `40352748781`, all six jobs **QUEUED** at observation. In the independent queue read, **135 QUEUED / 6 IN PROGRESS** were observed.
+- Checkpoint-result CI: unknown until this commit returns. Whole-repo pytest/Ruff, Windows+Ubuntu Python 3.11–3.13 six-cell exact-HEAD GREEN, packaging, UI smoke are **NOT VERIFIED**; no local full clone due to github.com DNS restriction. No manual CI run/rerun/cancellation or paid runner.
+
+### Frozen contracts, hard blockers, authorization
+
+Frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema, ActionAudit V1, V3 Contract 1, provenance/contamination/regression/reproducibility gates and protected final-evaluation boundaries remain **unchanged**. PR #5 and PR #8 stay Draft/unmerged. No paid/external compute/API/GPU, subscriptions, secrets/accounts, physical PC action, real ASR, Candidate/adapter/weight generation, protected V2 final opening, real notification/Tool dispatch, automatic promotion, destructive user-data work or main merge. Local fixture DB is not a production privacy authority or independently verifiable clock/consent.
+
+### Next plan / 今後の方針
+
+1. Check exact source/test/document/checkpoint HEAD GitHub Actions only when naturally progressing; diagnose actual failures, especially Windows backlog. Do not duplicate runs, weaken gates, or claim six-cell GREEN prematurely.
+2. Cross-process and crash-injection tests for the isolated veto, including original filesystem source identity, privacy owner authentication and independent consent/revocation witness custody **before** any real Personal Context integration. Absence of a veto never grants context access.
+3. Continue disconnected Planner multi-WRITE recovery, issuer/Trusted Clock/PermissionGate and audit-before-action evidence. No UNKNOWN/RUNNING or reserved PENDING WRITE auto-replay. Connect only after lower-level exact-head GREEN and explicit human gates.
+4. Advance independent Memory CAS/expiry/event integrity and startup readiness while preserving frozen and no-cost boundaries.
+
+---
+
+**HISTORICAL — complete Run455 and all earlier checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run455**
 
 **Saved at:** **2026-10-27T00:47:05.895+09:00 Asia/Tokyo/JST** (ordinary unauthenticated
