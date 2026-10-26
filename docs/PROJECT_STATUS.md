@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+**LATEST — Run464**
+
+**Saved at:** **2026-10-27T08:56:16.595+09:00 Asia/Tokyo/JST** (observed local container time before normal GitHub Contents write; not the server commit timestamp, a trusted clock, independent attestation, human consent or identity).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `a689fd0c7d266c392dd7078263ecadf642c6a704` (Run463 checkpoint; independently verified at entry).
+**Final source/test HEAD:** `593c95e0d311f42121618a09c6d9eba690a22c20`.
+**Technical-evidence / checkpoint-write-basis HEAD:** `010008c2a1a7bb9c2c4e1973fb25120914038937`, file `docs/JARVIS_SIDECAR_CROSS_PLAN_CUSTODY_RUN464.md`.
+**Checkpoint-result HEAD:** cannot self-attest this commit's SHA. Confirm the Contents update result and PR/branch latest HEAD after this write; the technical-evidence SHA immediately above is PRE-checkpoint.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+ARK remains a free-only, local-first, isolated/reversible system of tested fixtures and early foundations, not a confirmed autonomous JARVIS. No trusted clock or independently authenticated owner/consent, no real connected Tool dispatch/notification, no independently attested WAL or coherent cross-store WRITE, no external exactly-once effects, real sensor access, V3 Candidate weights, protected V2 final-evaluation opening or main merge. Caller-supplied hashes and untrusted state are not authority; UNKNOWN/RUNNING or reserved PENDING WRITE must never auto-replay.
+
+### NEW this invocation — two independently tested high-priority packages
+
+1. **POSIX SQLite main+sidecar metadata custody:** added `src/ark/disconnected_sqlite_sidecar_custody.py`, source Git Blob `36d2d22ad15272ec97323fe84c0a24d764ef6c66`, and `tests/test_disconnected_sqlite_sidecar_custody_run464.py`, test Git Blob `1cc311cfa01559576860666e365e314bba197de9`. Descriptor-relative no-follow directory/file checks and double snapshots for the synthetic main DB, `-wal`, `-shm`, `-journal`. Reject symlink/hardlink aliases, file/parent swaps, invalid types and >64MiB files. Detects sidecar appearance/removal/changes without exposing bytes or opening SQLite. **30 local pytest PASSED**. POSIX-only; unsupported Windows handle API fails closed.
+2. **Cross-plan duplicate WRITE reservation fence:** added `src/ark/agency/disconnected_reservation_overlap.py`, source Git Blob `301c8fd86006f7ef432f2e8da8751deb7ae6f258`, and `tests/test_disconnected_reservation_overlap_run464.py`, test Git Blob `80195332e6d15b58c352e95d0804ea345025e7b2`. Review up to 16 plans and 24 WRITE steps per plan, rejecting duplicate slot IDs across and within plans, duplicated plan IDs/revisions, malformed carriers and reflective mutations. No persistent CAS, independently complete snapshot, trusted identity, external effect or dispatch capability. **30 local pytest PASSED**.
+3. Four ordinary GitHub Contents source/test commits `06265726a008e8c5587eca73ea2bf419399f5467`, `b567a5c522ad61463270d36d9fe6a03310d4b83d`, `1fb74c32101d0289a796dc5aae27d1f36aa8e22a`, `593c95e0d311f42121618a09c6d9eba690a22c20`, plus one technical-evidence commit at the exact pre-checkpoint HEAD above. All four source/test blobs were independently fetched from GitHub at final source/test HEAD and matched the locally tested Git Blob identities. No force push, raw object write, branch override, merge, manual CI rerun or cancellation.
+
+### Tests, CI and blockers — evidence scope
+
+- Local isolated Python **3.13.5**, pytest **9.0.2**: **60 PASSED** on the four new files (30+30). `compileall` PASS, Python **3.11 grammar parse** PASS, no new source/test lines >100 characters. This is NOT an actual Python 3.11/3.12 runtime run, Windows test execution, whole-repo pytest or Ruff.
+- Uncommitted deterministic probes: **900** distinct synthetic multi-plan reservation sets accepted, **300** colliding sets rejected, **150** synthetic SQLite sidecar changes rejected. They are not additional committed pytest cases and do not establish durable consistency.
+- GitHub PR-triggered source/test CI #1429 / Run ID `40422796206` on exact `593c95e0d311f42121618a09c6d9eba690a22c20`: **QUEUED** at inspection. Evidence CI #1430 / `40423090617` on `010008c2a1a7bb9c2c4e1973fb25120914038937`: **QUEUED**. Checkpoint CI ID must be fetched after this write. Existing older run #1251 / `40246006387` Ubuntu FAIL and three Windows pytest IN PROGRESS belong to another, older HEAD. Earlier branch backlog **173 QUEUED / 7 IN PROGRESS**, before the new commits. No latest six-environment GREEN claim.
+- Container GitHub DNS prevents git clone, so repository-wide pytest/Ruff and complete dependency validation remain unverified. Detached sidecar identities do not establish WAL transaction atomicity, durable pathname custody, independently held witnesses or Windows junction/reparse security. Cross-plan review is only as complete and authentic as the supplied claim set; it cannot replace transactional global occurrence CAS.
+
+### Frozen contracts and hard authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher and evidence, Memory V1 schema, ActionAudit V1, V3 Contract 1, dataset provenance, contamination, reproducibility and regression gates unchanged. PR #5 and #8 stay Draft/unmerged. No paid/external GPU or API/services, real Candidate/adapter/weight generation, protected V2 final evaluation opening, new credentials/account connection, actual user data, live hardware, external Tool execution, automatic promotion, destructive/irreversible action, frozen contract mutation or main merge. No existing protection weakened; newly added tests are deny-only synthetic proofs.
+
+### Next plan / 今後の方針
+
+1. Continue naturally progressing exact-source #1429, evidence #1430, and identify the checkpoint run after this update; fix only authentic latest-head CI failures, especially the Windows pytest bottleneck, without duplicate runs, cancellation storms or weakening tests.
+2. Extend SQLite descriptor/sidecar interleaving and Windows handle/reparse-safe design as a separate free-only lane; refuse unsupported platforms rather than mistaking repeated path checks for atomic WAL evidence.
+3. Advance Memory row/event integrity, cross-process CAS/expiry/coherent snapshots and Planner restart-safe UNKNOWN/multi-WRITE quarantine. Investigate durable occurrence uniqueness backed by an actual transactional store and independent evidence; do not integrate these unverified detached diagnostics.
+4. Preserve Registry-bound Tool identity, exact-type PermissionGate, trusted-clock audit-before-action, privacy-first Personal Context, multimodal fixture isolation and V3 free-only identity/reproducibility guards. Integration, real Candidate, protected evaluation and main merge stay closed until their explicit gates.
+
+---
+
+**HISTORICAL — Run463 and all prior status sections preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run463**
 
 **Saved at:** **2026-10-27T07:54:26.981+09:00 Asia/Tokyo/JST** (observed container wall time before the ordinary GitHub Contents write, not a trusted clock, external attestation, user identity, consent or actual commit time).
