@@ -87,18 +87,22 @@ def test_other_process_veto_after_first_clearance_is_fail_closed(
 ):
     memory, veto, request, policy = _fixture(tmp_path)
     native = veto.assert_not_revoked
-    checks = []
+    attempts = []
+    clearances = []
 
     def check_then_revoke(scopes):
+        attempts.append(True)
+        # A failing second veto raises *before* another successful clearance.
         native(scopes)
-        checks.append(True)
-        if len(checks) == 1:
+        clearances.append(True)
+        if len(clearances) == 1:
             _revoke_in_child(veto, namespace)
 
     monkeypatch.setattr(veto, "assert_not_revoked", check_then_revoke)
     with pytest.raises(SyntheticContextRevocationRejected, match="revoked"):
         module.review_fresh_nonrevoked_context(memory, request, policy, veto)
-    assert len(checks) == 2
+    assert attempts == [True, True]
+    assert clearances == [True]
 
 
 def test_original_revocation_witness_survives_independent_restart(tmp_path):
