@@ -116,3 +116,9 @@ def test_random_integer_reference_differential():
             magnitude = (2 * abs(numerator) + target) // (2 * target)
             expected.append(-magnitude if numerator < 0 else magnitude)
         assert unpack(result.pcm) == expected
+
+
+def test_repr_cannot_dump_sensitive_raw_pcm():
+    result = resample(pcm(5, 10, 15))
+    assert 'pcm=' not in repr(result)
+    assert repr(result.pcm) not in repr(result)
