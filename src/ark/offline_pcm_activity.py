@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-offline-pcm-activity-v1\0"
@@ -27,7 +27,7 @@ class OfflinePcmActivityRequest:
     owner_sha256: str
     privacy_sha256: str
     pcm_sha256: str
-    pcm_bytes: bytes
+    pcm_bytes: bytes = field(repr=False)
     channels: int
     sample_rate_hz: int
     bits_per_sample: int
