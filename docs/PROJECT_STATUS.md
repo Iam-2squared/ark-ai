@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — Run462**
+
+**Saved at:** **2026-10-27T06:56:22.466+09:00 Asia/Tokyo/JST** (observed local wall time before normal GitHub Contents update; NOT a trusted clock, commit timestamp, user consent, authentication or independent attestation).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `a72c0b8b8fa078fe792921d57bdad5a133007ac1` (Run461 checkpoint, verified on entry).
+**Final source/test HEAD:** `9486ed2290d82169e2ed6bf6dbb048b8c89c63e9`.
+**Technical evidence / checkpoint-write-basis HEAD:** `e8a43a8ce13cbcf25d1b2c3c68ab6b719b4779d3` (`docs/JARVIS_SCHEDULE_SQLITE_SCHEMA_RUN462.md`).
+**Checkpoint-result HEAD:** this content cannot know its own commit SHA. GitHub Contents update result and independent PR HEAD must be checked AFTER saving. The evidence SHA above is PRE-checkpoint, not the resulting checkpoint SHA.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+Local-first, free-only, mock-only and reversible research foundations. No live microphone/camera, real PC Tool/notification, independently authenticated owner/issuer or consent, trusted clock, independently held SQLite/WAL or coherent cross-store WRITE proof, proven external exactly-once effect, approved real Candidate training/weight generation/promotion, protected V2 final-evaluation opening or main merge. Reserved PENDING/UNKNOWN/RUNNING WRITE stays quarantined without automatic replay. Synthetic digests and caller-provided identities never grant authorization.
+
+### NEW this invocation — two independent coherent packages
+
+1. **Fail-closed recurring scheduler preview:** Added `src/ark/disconnected_schedule_preview.py` blob `861ca7357cf1331edd29414636430ac114b3b29c` and `tests/test_disconnected_schedule_preview_run462.py` blob `5ac7fd1600e31f3c00c6050b3009abccec20dad8`. Bounded exact-type recurring intervals, SHA-256 policy/index/due occurrence IDs, claimed prior cursor continuity, expiry quarantine with no catch-up or implicit replay. Outcomes NOT_DUE/DUE_UNVERIFIED/EXPIRED_QUARANTINE/EXHAUSTED. NO real clock, timer, persistent cursor, approval, dispatch or notification.
+2. **Read-only synthetic SQLite schema seal:** Added `src/ark/disconnected_sqlite_schema_probe.py` blob `cc76f000cd1bce50e73dda0e71bc9ada6fe1b711` and `tests/test_disconnected_sqlite_schema_probe_run462.py` final blob `5760277b5247de75b47781f6ff9dcaad62e694dd`. Exact idle single-main query-only SQLite Connection; repeated schema inventory inside a read transaction; bounded 128-object/65,536-byte DDL hashes and SQLite schema/user versions. Rejects attached DBs, write-enabled input, DDL drift and forged retained seals. Returns no table rows, authority or independent WAL provenance.
+
+Five ordinary GitHub Contents source/test commits, including a small normal-path Python 3.11 f-string fixture correction, and one separately saved technical-evidence commit. All four saved blob hashes independently re-read from GitHub and matched tested local `git hash-object` values. No ref rewrite, raw-Git-object bypass, force push, merge, paid API, or duplicate manual workflow dispatch.
+
+### Local tests, additional probes and CI — strict scope
+
+- Isolated local Python 3.13.5, pytest 9.0.2: **46 PASSED** (35 recurrence; 11 SQLite). `compileall` **PASS**, Python 3.11 AST-grammar parse **PASS**; all changed lines at most 100 columns. The one locally defective subclass test was fixed BEFORE these final PASS counts. The saved SQLite fixture later received the small Python 3.11-compatible edit and its exact final blob matches the locally re-run 46/46 suite.
+- Additional seeded, uncommitted diagnostics: **3,000/3,000** recurrence cases (1,586 expired/quarantined) and **500/500** synthetic SQLite schema reviews (120 stable, 380 drift rejected). These are not committed pytest or cross-store consistency evidence.
+- Whole-repository pytest, Ruff, Python 3.11/3.12 runtime suites, Windows/Linux GitHub six-matrix on the exact head: **NOT VERIFIED**. Local git clone still blocked by github.com DNS; no full local repository checkout. Never equate local Python 3.11 syntax parsing with actual matrix PASS.
+- Latest source/test #1417 / run `40408006256` exact HEAD `9486ed2290d82169e2ed6bf6dbb048b8c89c63e9`: **QUEUED**; six jobs QUEUED at inspection. Earlier source/test #1413–#1416 also queued. Evidence #1418 / `40408352039`, exact head `e8a43a8ce13cbcf25d1b2c3c68ab6b719b4779d3`: **QUEUED**. Checkpoint CI requires postwrite read. Branch-filtered Actions counts **166 QUEUED / 7 IN PROGRESS** at inspection. Historical #1251 Windows `Run pytest` steps remain IN PROGRESS; old Ubuntu failures are not latest-head results. No manual retry, cancel, dispatch or paid runner.
+
+### Frozen contracts, boundaries, blockers
+
+V1/V2/Local UI/Launcher evidence, Memory v1 schema, ActionAudit v1, V3 Contract 1, contamination/provenance/reproducibility/regression, explicit V3 real training/approval and protected V2 final-evaluation gates unchanged. PR #5 and #8 remain Draft/unmerged. No new paid service, GPU training, Candidate weights, real user data, credential/account connection, destructive operation, external Tool, real notification, hardware use, protected evaluation, automatic Candidate promotion, frozen contract change or main merge.
+
+The scheduler cursor has **no authenticated origin, durable CAS or trusted clock**. Its occurrence ID is separate from the due-reservation ledger; do NOT treat the two as integrated. SQLite schema seal has **no file-handle custody, row/event integrity, independent witness, WAL atomicity or cross-DB transaction**. Both new modules remain isolated pending exact dependency-head GREEN. CI queue remains the highest verification bottleneck.
+
+### Next plan / 今後の方針
+
+1. Monitor naturally progressing exact-head #1417/#1418 and checkpoint CI; diagnose real newer Linux/Windows failures and historic `Run pytest` stalls without rerun storms, cancellation, or weakened test semantics.
+2. Prepare an independently reviewed synthetic durable cursor/occurrence-CAS and expiry policy before connecting recurrence to disconnected due reservations; require trusted time, user consent, ToolRegistry+PermissionGate+audit-before-action separately for any live operation.
+3. Advance Memory row/event integrity, CAS/expiry and coherent snapshot safety, Planner multi-WRITE restart recovery/UNKNOWN quarantine, immutable registry and exact PermissionGate, in separate lanes with exact-head GREEN before integration.
+4. Continue free-only PR #5 identity/path/reproducibility guards and privacy-first Personal Context/Observation fixtures. Keep V2 protected final evaluation, real Candidate generation/promotion and main merge closed.
+
+---
+
+**HISTORICAL — Run461 and all earlier checkpoint sections retained unchanged**
+
+# ARK AI Project Status
+
 **LATEST — Run461**
 
 **Saved at:** **2026-10-27T06:01:37.470+09:00 Asia/Tokyo/JST** (observed wall clock before the ordinary GitHub Contents checkpoint write; NOT an independently trusted clock, commit timestamp, consent, authorization or human review).
