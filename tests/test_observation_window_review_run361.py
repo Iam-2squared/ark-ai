@@ -77,10 +77,19 @@ def test_reflected_envelope_change_is_detected_on_reuse():
     envelope = _envelope()
     window = _window(envelope)
     old = window.witness
+    original_carrier = envelope.content_sha256
     object.__setattr__(envelope, "content_sha256", "a" * 64)
     with pytest.raises(ValueError, match="identity changed"):
         window.assert_consistent()
-    object.__setattr__(envelope, "content_sha256", hashlib.sha256(b"data").hexdigest())
+    # Returning to equal bytes with a new str still violates the frozen
+    # original field-carrier identity: do not weaken the safety check.
+    equal_replacement = hashlib.sha256(b"data").hexdigest()
+    assert equal_replacement == original_carrier
+    assert equal_replacement is not original_carrier
+    object.__setattr__(envelope, "content_sha256", equal_replacement)
+    with pytest.raises(ValueError, match="identity changed"):
+        window.assert_consistent()
+    object.__setattr__(envelope, "content_sha256", original_carrier)
     assert window.witness == old
 
 
