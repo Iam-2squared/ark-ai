@@ -30,7 +30,7 @@ class OfflineCueRejected(ValueError):
 @dataclass(frozen=True, slots=True)
 class OfflineWakeCue:
     cue_id: str
-    phrase: str
+    phrase: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
