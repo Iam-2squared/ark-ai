@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-offline-binary-inventory-v1\0"
@@ -29,7 +29,7 @@ class OfflineBinaryRequest:
     owner_sha256: str
     privacy_sha256: str
     source_sha256: str
-    source_bytes: bytes
+    source_bytes: bytes = field(repr=False)
     chunk_bytes: int = 65_536
 
 
