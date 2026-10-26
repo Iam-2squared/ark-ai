@@ -125,8 +125,10 @@ def _safe_path(path: Path, *, must_exist: bool) -> None:
         raise ReadJournalRejected("journal ancestor unavailable") from exc
     if path.is_symlink() or (must_exist and not path.exists()):
         raise ReadJournalRejected("missing or symbolic journal path")
-    if path.exists() and not stat.S_ISREG(path.stat(follow_symlinks=False).st_mode):
-        raise ReadJournalRejected("journal must be a regular file")
+    if path.exists():
+        info = path.stat(follow_symlinks=False)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ReadJournalRejected("journal requires one regular-file link")
     if not path.parent.is_dir() or path.parent.is_symlink():
         raise ReadJournalRejected("journal parent must be an existing directory")
 
