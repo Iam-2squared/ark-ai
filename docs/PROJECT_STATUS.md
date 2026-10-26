@@ -1,5 +1,52 @@
 # ARK AI Project Status
 
+**LATEST — Run440**
+
+Saved at: **2026-10-26T11:16:36.081+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation wall clock sampled immediately before the normal GitHub Contents update, NOT signed trusted time, real-world effect attestation or consent).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**. **PR #5 Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `c1f5cf9a37c2f2cdd5c64fdcd7c15025f5795126` (concurrent uncheckpointed Run439 source+test commits; latest previous canonical status was Run438 at `0ddd2349b27409a0f6d192c2f83f7ca9eba4e9be`).
+**Run440 final executable/test HEAD:** `0b51ce3018c8c558a74028c7c7be4eb5e029f5d6`.
+**Run440 technical document / exact checkpoint-write-basis HEAD:** `4b82c61fc3204eb7a01268eee52fa77b8b75738a` (`docs/JARVIS_FREE_FIXTURE_INVENTORY_AND_LANE_SCHEDULING_RUN440.md`).
+**Checkpoint-result HEAD:** necessarily unknowable *inside the commit creating this checkpoint*. The normal GitHub Contents `update_file.result.commit_sha` must be read after this write; source/document HEAD CI does not attest the checkpoint-result commit.
+
+### Overall ARK state / hard boundaries
+
+**Complete JARVIS NOT_PASSED.** The user-visible system is still an isolated, reversible, disconnected local-first safety/fixture foundation, not autonomous JARVIS. No authenticated human issuer or consent, trusted signed time, attested external action outcome, cross-SQLite atomic transaction, real-world exactly-once WRITE, live sensor input, autonomous ToolBackend or notifications. UNKNOWN/RUNNING and reserved PENDING WRITEs **never automatically replay**. Frozen V1/V2/Local UI/Launcher evidence, Memory V1 schema, ActionAudit V1 schema, V3 Contract 1, frozen final evaluation, contamination/provenance/reproducibility gates all remain untouched. No spending, paid/potentially billable service, GPU, real Candidate/adapter generation, promotion, secrets/credentials/new connections, main merge, PC/hardware action or materially irreversible change.
+
+### NEW Run440 — two independent code/test packages + a grounded technical matrix
+
+1. **Read-only bounded synthetic local fixture inventory:** new `src/ark/synthetic_local_fixture_inventory_review.py`, Git blob `6d7cf62f1017778135a7b98771ad425f569d0e28`. Explicit, locally named .json/.txt/.fixture files only, 64-file/8 MiB each/16 MiB total resource bounds; canonical POSIX paths, Windows-drive/alternate-stream/traversal/hidden-name/device-name/symlink rejection; pre/post regular-file fingerprint checks, SHA-256 file digests and optional independent retained witness. No directory traversal discovery, file modification, model/weights loading, Candidate activity, network or tool execution. This catches ordinary drift, **not forged origin proofs, malicious same-inode races or trusted file custody**.
+2. **36 focused inventory regressions:** `tests/test_synthetic_local_fixture_inventory_run440.py`, exact Git blob `68de9e30981efdf84612e80de253f4c58fd08c6c`. Local isolated Python 3.13.5 **36 passed**, including unsafe paths, same-size changed bytes, symlink denial, missing-file noncreation, witness tampering and byte-size bounds. Only disposable local files.
+3. **Deny-only dependency-aware work-lane selector:** new `src/ark/agency_synthetic_lane_selector_review.py`, exact Git blob `83d0c88f0e9f9327ade76d74df94d24406a71488`. Deterministically proposes up to five nonconflicting, reversible, explicitly free-local work lanes. Rejects unknown/billable costs, approval-needed or irreversible work, bad DAGs, incomplete dependencies, unconfirmed caller-claimed GREEN labels, CI path overlaps and unsafe path inputs. **No CI attestation, GitHub write rights, action dispatch or spending authority** is conferred by any returned selection.
+4. **23 independent scheduler regressions:** `tests/test_agency_synthetic_lane_selector_run440.py`, exact blob `64674e67f0708c92f40bfbe8e9c9825a70ac1c74`. Isolated local Python 3.13.5 **23 passed**, including dependency/cycle/cost/approval/conflict/capacity/invalid-type cases.
+5. **Grounded technical evidence:** `docs/JARVIS_FREE_FIXTURE_INVENTORY_AND_LANE_SCHEDULING_RUN440.md` documents limits, source hashes, negative cases, CI backlog and next gates. GitHub compare `c1f5cf9a...4b82c61f` shows **7 commits / exactly five added paths**, zero existing-file changes in that range. Two initial source-file Contents commits had an escaped-backslash transcription syntax defect; both were corrected immediately with the **normal** `update_file` Contents route. The four final GitHub blobs match the bytes tested locally. Earlier intermediate heads were not called GREEN.
+
+### Exact-HEAD validation (non-equivalent scopes)
+
+- Locally staged **59 passed (36 + 23)** under Python 3.13.5 (`PYTHONPATH` targeting the isolated two-module source tree); `compileall` PASS. This is NOT full-repo pytest, Windows compatibility, exact GitHub checkout integration, or Ruff verification; local `ruff` unavailable and container cannot resolve github.com to clone.
+- Final source/test HEAD `0b51ce30...`: CI **#1267 / run 40257968115**, **all 6 Ubuntu/Windows Python 3.11–3.13 jobs QUEUED** on actual check.
+- Document HEAD `4b82c61f...`: CI **#1268 / run 40258119735, QUEUED** on latest run list.
+- Concurrent Run439 source/test HEAD `c1f5cf9a...`: CI **#1261 / run 40256028959**, all six jobs **QUEUED**; Run439's cross-store uncertainty path is NOT validated GREEN and was not connected to Run440 code.
+- Run438 previous checkpoint CI **#1259 / 40252525301 QUEUED** on latest Actions list. The forthcoming checkpoint-result commit requires independent exact-HEAD CI inspection. No new workflow was manually dispatched, cancelled or rerun. In-flight CI source paths were not modified again after their final validated bytes were committed.
+
+### Frozen contracts, concurrency and blockers
+
+`main` observed at `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 and PR #8 independently observed Draft/open/unmerged. Run439 concurrent branch edits were retained without overwrite or forced merge; Run440's additions do not import the pending Run434 detached bundle or Run439 quarantine matrix. No paid/external GPU activity, authenticated issuer, human reviewer, dataset/model hashes or final PASS is asserted. Github CI backlog and local Ruff/checkout unavailability are genuine validation blockers, not permission to relax tests.
+
+### Next plan / 今後の方針
+
+1. Check final-source **#1267** and the eventual checkpoint-result HEAD CI, including Ruff and full pytest across six Ubuntu/Windows environments; diagnose actual failures and repair only through normal GitHub Contents after a fresh branch HEAD read. Do not manually dispatch duplicate runs or falsely conflate old-head GREEN with latest-head correctness. Preserve historical CI failures and initial escape corrections.
+2. When the Run434 recovery bundle and Run439 uncertainty matrix independently have exact-head GREEN, connect the independent expected WRITE membership proof in a strictly deny-only, detached/reversible path; test missing/rehashed archives and multi-SQLite partial COMMIT/restart. No UNKNOWN/RUNNING/reserved PENDING replay.
+3. Continue Memory multiprocess CAS/expiry/event integrity and Personal Context opt-out freshness as independent free paths. Develop signed clock/issuer boundaries only with explicit authority separation and no real authentication claims.
+4. Keep both PRs Draft; do not modify frozen contracts, protected evaluation, Candidate promotion/weights, paid services, credentials, hardware, destructive operations or main without their user authorization. Diagnostic free-only lane selection never substitutes for real CI verification or permissions.
+
+---
+
+**HISTORICAL — Run438 and earlier canonical checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run438**
 
 Saved at: **2026-10-26T10:05:53.664+09:00 Asia/Tokyo/JST** (ordinary unauthenticated automation/runtime wall clock sampled immediately before the GitHub Contents write; NOT trusted-clock, user consent, or external-effect attestation).
