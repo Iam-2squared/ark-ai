@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _REQUEST_ID = re.compile(r"req_[0-9a-f]{32}\Z")
 _STEP_ID = re.compile(r"step_[0-9a-f]{16}\Z")
@@ -29,7 +29,7 @@ class DisconnectedBatchRejected(ValueError):
 class DisconnectedBatchStep:
     step_id: str
     operation: str
-    canonical_args_json: str
+    canonical_args_json: str = field(repr=False)
     depends_on: tuple[str, ...] = ()
 
 
@@ -37,7 +37,7 @@ class DisconnectedBatchStep:
 class DisconnectedBatchPlan:
     request_id: str
     steps: tuple[DisconnectedBatchStep, ...]
-    canonical_plan_json: str
+    canonical_plan_json: str = field(repr=False)
     plan_digest: str
 
     @property
