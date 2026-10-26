@@ -1,5 +1,51 @@
 # ARK AI Project Status
 
+**LATEST — Run446**
+
+Saved at: **2026-10-26T15:57:55.040+09:00 Asia/Tokyo/JST** (ordinary, unauthenticated runtime wall-clock observation immediately before normal GitHub Contents update; not signed trusted time, human consent, or external execution proof).
+
+**Branch/PR:** research/jarvis-foundations / **PR #8 Draft/open/unmerged**; PR #5 **Draft/open/unmerged/NOT_PASSED**.
+**Exact invocation work-basis HEAD:** d8cdee2052febd2c2fafb54b4c88209e1d079880 (Run445 canonical checkpoint, independently observed at invocation start).
+**Final source/test HEAD:** dd9e5acee2a18fd5aad5786c402198e637a0644e.
+**Technical evidence / exact checkpoint-write-basis HEAD:** e68881808b459e317d2f9d60f897e9a96812a541; docs/JARVIS_READ_RECOVERY_CONTEXT_MEMBERSHIP_RUN446.md.
+**Checkpoint-result HEAD:** unknowable within this commit; use update_file.result.commit_sha returned AFTER the normal Contents write and inspect its own CI. Earlier source/document CI does not validate the checkpoint-result commit.
+
+### Overall ARK state
+
+**Complete JARVIS: NOT_PASSED.** New foundation work remains detached, synthetic fixture-only, reversible and local-first. No real user Memory, authenticated issuer, trusted time, verified human consent, external ToolBackend, global cross-SQLite atomicity, proven real-world outcome or exactly-once real WRITE. **UNKNOWN/RUNNING and reserved PENDING WRITE are never automatically replayed.** No paid services/API/GPU/external compute, new secrets/connections, real Candidate/adapter/weights, protected final V2 evaluation opening, Candidate promotion, irreversible operation, physical-PC action, frozen contract mutation or main merge.
+
+### NEW Run446 — 2 independent implementation + test packages, 4 source/test commits, 1 technical evidence commit
+
+1. **Detached READ crash/recovery propagation:** added src/ark/agency/disconnected_read_recovery_schedule.py (Git blob **5c51b6e0ed4a45ce3c51f5b2d9d09010a3f3c6a7**) and tests/test_disconnected_read_recovery_schedule_run446.py (**6a0deb3c3a2309dface7457f9a59f0ebead06c54**). Strict bounded 1–24 topologically ordered READ fixture graph, previous-step dependency validation, exact lifecycle/result-digest shape, terminal failure/downstream holds, RUNNING/UNKNOWN quarantine, and unconnected READY_MOCK_ONLY hints. Rejects contradictory completion and reflective input substitutions. All capability flags explicitly deny dispatch, automatic replay and external-result verification. **35 isolated local Python tests PASS.**
+2. **Detached metadata-only Context membership/expiry/revocation veto:** added src/ark/offline_context_membership_guard.py (Git blob **12084bba6e3b3acd17deab8a0dfdf8e3ab13aa1a**) and tests/test_offline_context_membership_guard_run446.py (**040b22e66964d29ee9bb7ff181874644a62333d9**). Exact caller-supplied independent membership (1–32 sorted record IDs), matching owner/scope/content SHA identifiers, 1–16 sorted scope veto records, expiry and caller-clock freshness, complete scope-veto coverage, reflective carrier stability. Returns ONLY owner digest/counts/membership hash, never text, consent or disclosure/retention authorization. **53 isolated local Python tests PASS.**
+3. **Evidence and integrity:** independent Python 3.13.5 isolated fixture directory, **88 PASSED** total (35+53), Python compileall PASS; every new Python source/test line <=100 characters. All **four** GitHub Blob hashes match the exact tested local bytes. GitHub compare d8cdee2...dd9e5ace confirms **4 commits, exactly 4 new files and ZERO previously existing files modified/deleted**; doc at docs/JARVIS_READ_RECOVERY_CONTEXT_MEMBERSHIP_RUN446.md records limits, counterexamples and future integration holds.
+4. **CI root-cause observation:** existing .github/workflows/ci.yml remains unchanged; pytest is run on six Ubuntu/Windows Python 3.11–3.13 jobs. Older Windows tests have prolonged IN PROGRESS / queue starvation; true failure/repair confirmation is unresolved. No forced CI rerun, cancellation, duplicate workflow dispatch, or removal/relaxation of tests.
+
+### Exact-head CI and honest validation scope
+
+- **Run446 source/test HEAD dd9e5ace...:** CI **#1306**, Run ID **40282540849**, **QUEUED** at latest inspection.
+- **Run446 document HEAD e688818...:** CI **#1307**, Run ID **40282739474**, **QUEUED** at latest inspection.
+- Run445 checkpoint HEAD d8cdee205...: CI **#1302**, Run ID **40280323791**, QUEUED at start.
+- **Checkpoint-result CI must be inspected after this write**, never inferred from earlier source CI. No six-job GREEN declaration. Local Ruff is unavailable; full-repository checkout failed due GitHub hostname DNS in local shell, so local isolated pytest is **not** full-repository pytest, packaging/UI, Windows, or Python 3.11/3.12 evidence.
+
+### Frozen evidence, guardrails and blockers
+
+main independently read unchanged at **7a843f17eb96ed13d66f23b58b06406b3002e405**. PR #5 HEAD **d6d4c1954a85fc716b1c593ac55c85417912418f** remained Draft/NOT_PASSED; PR #8 remained Draft/unmerged. Frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema, ActionAudit V1 Schema, V3 Contract 1, Candidate contamination/provenance/reproducibility gates, and protected evaluations remain untouched. Fake or missing signatures, clocks, consent and synthetic result digests never permit actual tool dispatch. The independent membership/clock/veto fixtures can be jointly forged and are NOT authentication, disclosure authority or coherent cross-store snapshots. CI backlog remains primary verification blocker, not proof of GREEN.
+
+### Next plan / 今後の方針
+
+1. Inspect precise source CI **#1306**, technical doc CI **#1307** and the separate checkpoint-result CI once actually run. If FAIL, inspect exact logs and repair through normal Contents writes only after re-reading latest branch/blob; never trigger duplicate equivalent workflows or weaken checks.
+2. Keep detached READ recovery schedule completely disconnected until Run442 Toolbox, Run443 Batch Planner, Run444 READ Journal/Reference Binding and Run445 READ complete-result membership and their integration dependencies show exact-head GREEN. Then build **mock-only** multi-step READ/recovery validation with custody checks and no actual external effects/replay.
+3. Keep Context membership guard detached until trusted independent Memory/read membership, revocation continuity, retention, clock freshness and human permission gates have GREEN. Never export raw/partially redacted records from local fixtures; no consent or deletion guarantees.
+4. Independently advance Memory multi-process CAS/expiry/row-event integrity, cross-store WRITE completeness/quarantine, trusted-clock/issuer interfaces, scheduler/Observation fixture and startup readiness. Quarantine every unknown or in-flight WRITE with no automatic replay.
+5. Preserve PR #5 Draft/NOT_PASSED, PR #8 Draft/unmerged, all frozen contracts/evidence and free-only boundaries. Escalate before any paid/potentially billable action, credentials, real Candidate, protected evaluation opening, human review required, irreversible action, frozen-contract change or main merge.
+
+---
+
+**HISTORICAL — Run445 and earlier canonical checkpoints preserved below verbatim**
+
+# ARK AI Project Status
+
 **LATEST — Run445**
 
 Saved at: **2026-10-26T15:31:20.558+09:00 Asia/Tokyo/JST** (ordinary, unauthenticated runtime wall-clock sample immediately before the normal GitHub Contents write; NOT trusted time, authenticated consent, verified real-world outcome or signed execution evidence).
