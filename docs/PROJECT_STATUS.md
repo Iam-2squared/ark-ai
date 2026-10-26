@@ -1,5 +1,114 @@
 # ARK AI Project Status
 
+**LATEST — Run455**
+
+**Saved at:** **2026-10-27T00:47:05.895+09:00 Asia/Tokyo/JST** (ordinary unauthenticated
+wall-clock observation immediately before this ordinary GitHub Contents update;
+NOT a trusted clock, user consent, reviewer decision, or exact commit time).
+
+**Branch/PR:** `research/jarvis-foundations` / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD:** `ecb3c1dd5ccb6783066b0d268f659120483eed69` (Run454 checkpoint).
+**Final source/test HEAD:** `a50b53d525d717085b4efaf0aae52ddfac8ee523`.
+**Technical evidence / exact checkpoint-write-basis HEAD:**
+`757cdb9477b3e105e7b6bc14e022686868cbd735`,
+`docs/JARVIS_PRIVATE_PCM_CUE_REPR_RUN455.md`.
+**Checkpoint-result HEAD:** cannot self-embed the SHA of the commit being
+created. After this Contents update, inspect returned
+`update_file.result.commit_sha` and its exact-head CI separately.
+The technical evidence HEAD above is BEFORE the checkpoint update.
+
+### Overall current ARK — complete JARVIS NOT_PASSED
+
+Only detached reversible local-first, free-only foundations. No authenticated
+issuer/owner/consent, independently trusted clock, proven real-world Tool
+effect, end-to-end PCM/ASR pipeline, cross-DB atomic WRITE, authoritative
+Memory source, protected evaluation PASS or Candidate promotion.
+Never replay ambiguous UNKNOWN/RUNNING or reserved PENDING WRITE.
+
+### NEW this invocation — two compatible privacy work packages + CI review
+
+1. **Raw-audio representation leak repair:** `OfflinePcmActivityRequest.pcm_bytes`
+   in `src/ark/offline_pcm_activity.py` and
+   `OfflineBinaryRequest.source_bytes` in
+   `src/ark/offline_binary_inventory.py` now use `field(repr=False)`.
+   Final file GitHub blobs `25c76bb1052c50229fe9b5284adfceac9b5d05c3`
+   and `00929a7930592397baf739e0f8f0a09064297eec`.
+2. **Nested wake-cue phrase privacy:** `OfflineWakeCue.phrase`
+   in `src/ark/offline_transcript_cues.py` now uses `field(repr=False)`,
+   preventing the phrase appearing implicitly through nested
+   `OfflineCueRequest.cues` repr; blob
+   `fe0020baf0b7bddda46508bbe1a161e58f9ad0a3`.
+   The cue's underlying data and exact match semantics remain intact.
+3. **Regression + read-only CI evidence:** added
+   `tests/test_private_fixture_repr_run455.py` with four focused
+   regression test functions (blob `bc7633d952952e5ee7a961348b91883b810ca8eb`).
+   Inspected older #1238 and #1243 failures: only historical
+   successful-veto counter assertions at older source HEADs, revised in
+   Run448; NOT evidence that later HEAD is GREEN. At start 125 queued and
+   6 in-progress Actions runs. No manual re-run/cancel/duplicate workflow.
+
+All three source patches preserve constructors, algorithms, SHA/identity,
+fixture budgets and detached execution boundaries. Four source/test changes
+were saved via the ordinary GitHub Contents API, followed by one evidence
+document. No raw Git-object bypass, force push, main merge or separate
+credentials were used.
+
+### Tests / CI / provenance — UNEXECUTED regression, not integrated GREEN
+
+- Python **3.13.5**, test source local `py_compile` and AST syntax/count
+  review **PASS**; **4 new tests defined but NOT EXECUTED** on real source.
+  Exact local `git hash-object` for the test file matches GitHub blob
+  `bc7633d952952e5ee7a961348b91883b810ca8eb`.
+  GitHub-saved source edits and blob SHA verified through the connector.
+- Source/test HEAD `a50b53d525d717085b4efaf0aae52ddfac8ee523`:
+  CI **#1373**, Run ID `40352175630`, **QUEUED** at last check.
+  Technical evidence HEAD `757cdb9477b3e105e7b6bc14e022686868cbd735`:
+  CI **#1374**, Run ID `40352511973`, **QUEUED** at last check.
+  Checkpoint-result CI necessarily pending its SHA.
+- Whole-repo pytest/Ruff, Python 3.11/3.12, Windows/Ubuntu all-six matrix,
+  UI/package smoke and exact-head GREEN **NOT VERIFIED**. Full clone from
+  the Python container cannot resolve github.com DNS. Ruff unavailable
+  locally. Never confuse static source or test definitions with passing tests.
+
+### Frozen contracts, privacy and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, Memory V1 Schema,
+ActionAudit V1 Schema, V3 Contract 1, contamination/provenance/
+regression/reproducibility gates and protected final-evaluation rules
+**UNCHANGED**. PR #5 and PR #8 remain Draft/unmerged. No paid API/GPU/
+external compute, subscriptions, Candidate/weight/adapter generation,
+V2 protected evaluation, new secrets/accounts, physical-PC actions,
+ASR/microphone, real scheduler notification, effectful Tool, destructive
+or irreversible operation, auto-promotion, or main merge.
+
+**Limitation:** `repr=False` only prevents implicit debugging
+representation. Explicit `asdict`, serialization, pickling, direct
+attribute access, telemetry and logs can still leak values. It is NOT
+redaction, authentication, consent, provenance, or disclosure approval.
+
+### Next plan / 今後の方針
+
+1. Observe source/test #1373, technical doc #1374 and eventual
+   checkpoint-result exact-head CI naturally; diagnose real failures.
+   Do not launch duplicate equivalent runs or claim all-six GREEN early.
+2. Audit explicit logging/serialization/export surfaces that bypass
+   `repr=False`, and require an actual owner/scope/consent/revocation
+   control before sensitive fixture material is reused or disclosed.
+3. In independent, no-effect workstreams continue Memory multi-process
+   CAS/expiry/event coherence, Planner multi-WRITE crash non-replay,
+   immutable ToolRegistry / exact-type PermissionGate and Trusted Clock
+   readiness. Integrate only with correct exact-HEAD GREEN evidence.
+4. Preserve the frozen contracts, free-only boundary, PR #5/#8 Draft,
+   protected V2 final evaluation, explicit candidate/human review and
+   main-merge approval gates.
+
+---
+
+**HISTORICAL — complete Run454 and all earlier checkpoints preserved below**
+
+# ARK AI Project Status
+
 **LATEST — Run454**
 
 **Saved at:** **2026-10-26T23:43:08,700+09:00 Asia/Tokyo/JST** (ordinary unauthenticated wall-clock observation immediately before an ordinary GitHub Contents update; NOT a trusted clock, user consent, reviewer approval, exact commit time or production evidence).
