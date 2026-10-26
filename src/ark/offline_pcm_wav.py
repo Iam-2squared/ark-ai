@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_WAV_BYTES = 8 * 1024 * 1024
@@ -26,7 +26,7 @@ class OfflineWaveRequest:
     owner_sha256: str
     privacy_sha256: str
     wav_sha256: str
-    wav_bytes: bytes
+    wav_bytes: bytes = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
