@@ -108,8 +108,23 @@ def _valid_witness(witness: object) -> bool:
 
 
 def _path(value: object, *, exists: bool) -> Path:
-    if type(value) is not type(Path(".")) or not value.is_absolute():
+    if (
+        type(value) is not type(Path("."))
+        or not value.is_absolute()
+        or ".." in value.parts
+    ):
         raise OfflinePrivacyVetoRejected("exact absolute fixture path required")
+    # An ordinary parent.is_symlink() check misses symbolic GRANDPARENTS.
+    # Refuse symlinked or non-directory ancestors before SQLite can create
+    # or reopen a ledger through a redirected fixture path. This is not an
+    # atomic defense against an attacker swapping a parent after validation.
+    try:
+        for parent in value.parents:
+            info = parent.lstat()
+            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                raise OfflinePrivacyVetoRejected("veto ancestor is not a real directory")
+    except OSError as exc:
+        raise OfflinePrivacyVetoRejected("veto ancestor unavailable") from exc
     if value.is_symlink() or (exists and not value.exists()):
         raise OfflinePrivacyVetoRejected("missing or symbolic veto ledger")
     if value.exists() and not stat.S_ISREG(value.stat(follow_symlinks=False).st_mode):
