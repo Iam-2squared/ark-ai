@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _REQUEST = re.compile(r"req_[0-9a-f]{32}\Z")
 _STEP = re.compile(r"step_[0-9a-f]{16}\Z")
@@ -29,7 +29,7 @@ class ReadBindingRejected(ValueError):
 @dataclass(frozen=True, slots=True)
 class SyntheticReadResult:
     step_id: str
-    canonical_result_json: str
+    canonical_result_json: str = field(repr=False)
     retained_digest: str
 
 
@@ -37,7 +37,7 @@ class SyntheticReadResult:
 class SyntheticBoundArguments:
     request_id: str
     used_step_ids: tuple[str, ...]
-    canonical_args_json: str
+    canonical_args_json: str = field(repr=False)
     binding_digest: str
 
     @property
