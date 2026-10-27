@@ -61,6 +61,26 @@ class DisconnectedEpochVector:
         return False
 
 
+def _carrier_values(stores: tuple[DisconnectedStoreEpoch, ...]) -> tuple[tuple[object, ...], ...]:
+    return tuple(tuple(getattr(store, item.name) for item in fields(store)) for store in stores)
+
+
+def _assert_carriers(
+    stores: tuple[DisconnectedStoreEpoch, ...],
+    original_stores: tuple[DisconnectedStoreEpoch, ...],
+    originals: tuple[DisconnectedStoreEpoch, ...],
+    values: tuple[tuple[object, ...], ...],
+) -> None:
+    if stores is not original_stores or len(stores) != len(originals):
+        raise EpochVectorRejected("store tuple changed during review")
+    for current, original, previous in zip(stores, originals, values, strict=True):
+        if current is not original:
+            raise EpochVectorRejected("store epoch carrier changed during review")
+        now = tuple(getattr(current, item.name) for item in fields(current))
+        if any(left is not right for left, right in zip(now, previous, strict=True)):
+            raise EpochVectorRejected("store field carrier changed during review")
+
+
 def _rows(stores: object) -> tuple[tuple[object, ...], ...]:
     if (
         type(stores) is not tuple
@@ -68,7 +88,7 @@ def _rows(stores: object) -> tuple[tuple[object, ...], ...]:
         or any(type(s) is not DisconnectedStoreEpoch for s in stores)
     ):
         raise EpochVectorRejected("exact bounded store tuple required")
-    rows = tuple(tuple(getattr(s, f.name) for f in fields(s)) for s in stores)
+    rows = _carrier_values(stores)
     previous = ""
     for row in rows:
         sid, incarnation, schema, generation, events, tail, state, time_ns = row
@@ -95,15 +115,21 @@ def capture_disconnected_epoch_vector(
 ) -> DisconnectedEpochVector:
     """Canonicalize synthetic store claims without vouching for their origins."""
     original = stores
-    carriers = tuple(stores)
     rows = _rows(stores)
+    carriers = tuple(stores)
+    values = rows
+    _assert_carriers(stores, original, carriers, values)
     digest = _canonical_digest(rows)
-    if stores is not original or any(s is not c for s, c in zip(stores, carriers,
-                                                                 strict=True)):
-        raise EpochVectorRejected("store tuple mutated while capturing")
+    _assert_carriers(stores, original, carriers, values)
     if _rows(stores) != rows:
         raise EpochVectorRejected("store epoch changed while capturing")
-    return DisconnectedEpochVector(stores=stores, digest=digest)
+    _assert_carriers(stores, original, carriers, values)
+    result = DisconnectedEpochVector(stores=stores, digest=digest)
+    _assert_carriers(stores, original, carriers, values)
+    if (type(result) is not DisconnectedEpochVector or result.stores is not stores
+            or result.digest is not digest):
+        raise EpochVectorRejected("constructed store vector changed")
+    return result
 
 
 def _validated_vector(vector: object) -> tuple[tuple[object, ...], ...]:
@@ -112,14 +138,19 @@ def _validated_vector(vector: object) -> tuple[tuple[object, ...], ...]:
     original_stores = vector.stores
     original_digest = vector.digest
     rows = _rows(original_stores)
+    carriers = tuple(original_stores)
+    values = rows
+    _assert_carriers(vector.stores, original_stores, carriers, values)
     if type(original_digest) is not str or _SHA.fullmatch(original_digest) is None:
         raise EpochVectorRejected("malformed vector digest")
     if _canonical_digest(rows) != original_digest:
         raise EpochVectorRejected("store vector digest mismatch")
     if vector.stores is not original_stores or vector.digest is not original_digest:
         raise EpochVectorRejected("vector carrier changed during review")
+    _assert_carriers(vector.stores, original_stores, carriers, values)
     if _rows(original_stores) != rows:
         raise EpochVectorRejected("store epoch changed during review")
+    _assert_carriers(vector.stores, original_stores, carriers, values)
     return rows
 
 
