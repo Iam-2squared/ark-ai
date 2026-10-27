@@ -1,5 +1,49 @@
 # ARK AI Project Status
 
+**LATEST — Run465**
+
+**Saved at:** **2026-10-27T10:06:14.433137622+09:00 Asia/Tokyo/JST** (observed isolated container wall time immediately before the normal GitHub Contents write; not a trusted clock, GitHub commit timestamp, external attestation, owner authentication or consent).
+
+**Branch/PR:** research/jarvis-foundations / PR **#8 Draft/open/unmerged**.
+**PR #5:** Draft/open/unmerged at d6d4c1954a85fc716b1c593ac55c85417912418f; V3 NOT_PASSED.
+**Exact invocation work-basis HEAD:** 83579ed0dcd4464419ec81ba52e89a130bf2ff52 (Run464 checkpoint, verified at entry).
+**Latest saved source/test HEAD and checkpoint-write-basis HEAD:** 17731b546611a34f4eda71e430945ca9b3617699.
+**Checkpoint-result HEAD:** this file cannot self-attest its own GitHub commit SHA; the HEAD above is PRE-checkpoint. Confirm normal Contents update SHA, PR and branch latest HEAD independently AFTER saving this file.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+ARK is still free-only, local-first, isolated/reversible synthetic foundation work. No independently trusted time, authenticated owner/consent, proven real registry-bound Tool dispatch, notification, independently held filesystem/WAL custody, guaranteed cross-store atomicity, or exactly-once external WRITE. The new durable ledger demonstrates **at most one local SQLite reservation winner** on the tested identity, NOT at most one real-world effect and never automatic replay authority.
+
+### NEW this invocation — two independent work packages
+
+1. **Durable synthetic WRITE slot reservation.** Added src/ark/agency/disconnected_write_slot_ledger.py, Git Blob **b4343041fa1dada30cae39b7fd8d28b3ff671d87**, ordinary GitHub Contents commit 3df71aa073831c7a9faafbc380bc732b0572a833; tests tests/test_disconnected_write_slot_ledger_run465.py, Blob **5a019a0c902bffb8df90eb94f5a42a8ddfba188c**, commit e2379f59fe2009a80c03a4930d25fb3cb89a40bb. Exact plan/step/request identity derives each occurrence slot. BEGIN IMMEDIATE and UNIQUE enforce local reservation uniqueness, all-or-nothing bounded 16-claim batches, same-step different-request denial, thread/process contention and restart replay refusal. A bounded 512-row append-only chain and caller-retained witness reject stale counters, row/schema edits, duplicate insertion, missing old storage, symlink ancestry and one-file hardlink aliases. **32 new local pytest PASS.** An unretained post-commit witness blocks further append until reconciliation. Caller-held witness is not independently authenticated; path TOCTOU, WAL sidecars, storage rollback, true crash durability, consent and real execution remain unproven.
+2. **Memory epoch vector exact-carrier custody.** Strengthened existing src/ark/disconnected_epoch_vector.py, Blob **8e62450f1f41b50d48833c8ca1c5bc3fdd12a8fe**, ordinary update commit 38b889be59638072581fc1f43b2b6e05d8c06198. Added tests/test_disconnected_epoch_carrier_custody_run465.py, Blob **9f677c03441094f6fe01d80834a5ff7d456e5430**, commit 17731b546611a34f4eda71e430945ca9b3617699. Fail closed on reflective same-valued replacement of store field objects, store tuples and constructed vector digest while hashing or validating. Retains previous rollback/schema constraints and strictly denied consent/dispatch. **11 new local pytest PASS.** This does not certify coherent multi-store snapshots or independent witness ownership.
+3. Four ordinary GitHub Contents source/test commits saved sequentially on PR #8, re-reading HEAD before writes; four Git Blob hashes independently fetched from GitHub and matched the tested local files. No force push, raw Git-object write bypass, PR merge, duplicate workflow reruns or cancellation.
+
+### Local evidence, CI and blockers — exact scope
+
+- Isolated POSIX Python **3.13.5**, pytest **9.0.2**: **43/43 PASSED** on both new saved suites (32+11) after correcting one invalid positive test fixture before the final run. Python 3.11 AST grammar check and Python 3.13 compileall PASS for all four new/modified source/test files; no line above 100 columns. This is NOT actual Python 3.11/3.12 execution, Windows pytest, whole-repository pytest or Ruff. GitHub DNS blocks container checkout and isolated Ruff is not installed.
+- Additional **1,600 uncommitted** synthetic probes: 400 isolated local SQLite reservations accepted and their 400 duplicate replay attempts rejected; 400 synthetic Memory epoch transitions accepted and 400 silent tail-reuse alterations rejected. These are not committed regression test counts, authenticated proofs or real WRITE evidence.
+- GitHub Actions source/test workflow **#1435**, Run ID **40430032063**, exact final source/test HEAD 17731b546611a34f4eda71e430945ca9b3617699: **QUEUED** at inspection. Prior source/test #1432–#1434 also QUEUED. Read-only Actions snapshot: **170 QUEUED / 7 IN PROGRESS**. Historical run #1251 (40246006387) has three old-head Ubuntu FAIL and three Windows pytest IN PROGRESS; these results cannot represent Run465. The current workflow includes a 45-minute job timeout, but this alone has not cleared historical jobs. No manual rerun, cancellation, external runner, billable service or invented GREEN evidence.
+- Exact HEAD dependency integration and all six-environment CI remain unverified. New standalone fixtures do not connect to real Tool registry, Memory storage, approval grant, scheduler dispatch, real PC or an independently owned trusted clock.
+
+### Frozen contracts / hard boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, Memory V1 schema, ActionAudit V1, V3 Contract 1, contamination/provenance/reproducibility/regression rules and protected V2 evaluation gate unchanged. PR #5 and #8 remain Draft/open/unmerged. No paid/external GPU/API/service, real Candidate weights/adapters/training, automatic promotion, new credential/account connection, real personal information, live sensors, Tool execution, destructive operation, main merge or unsupported physical hardware use.
+
+### Next plan / 今後の方針
+
+1. Examine naturally progressing exact-HEAD #1435 and checkpoint CI; diagnose queued Actions and old Windows pytest stalls from job-step evidence without duplicate dispatch, cancellation storms or weakening tests.
+2. Independently test crash/restart, storage rollback and persistent witness custody for the new WRITE slot ledger, plus SQLite descriptor/WAL and Windows reparse-safe path handling. Do NOT equate a unique local reservation with external exactly-once effects.
+3. Advance Memory event/row CAS, expiry and coherent snapshots; Planner UNKNOWN/RUNNING recovery and no-replay; immutable ToolRegistry/PermissionGate, trusted-clock audit-before-action. Integrate only after verified dependency exact-head GREEN.
+4. Continue privacy-safe Personal Context, Observation and proactive scheduler fixtures and V3 free-only path/identity/provenance guards. Keep Candidate generation, protected final evaluation, main merge and any paid operations gated.
+
+---
+
+**HISTORICAL — Run464 and all prior checkpoints preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run464**
 
 **Saved at:** **2026-10-27T08:56:16.595+09:00 Asia/Tokyo/JST** (observed local container time before normal GitHub Contents write; not the server commit timestamp, a trusted clock, independent attestation, human consent or identity).
