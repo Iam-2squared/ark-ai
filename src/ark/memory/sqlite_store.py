@@ -404,7 +404,9 @@ class SQLiteMemoryStore:
         if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
             raise TypeError("query requires exact MemoryQuery and MemoryScope")
         original_scope = query.scope
-        pinned_scope = MemoryScope(original_scope.owner_id, original_scope.namespace)
+        original_owner = original_scope.owner_id
+        original_namespace = original_scope.namespace
+        pinned_scope = MemoryScope(original_owner, original_namespace)
         pinned_text = query.text
         pinned_limit = query.limit
         pinned_include_expired = query.include_expired
@@ -417,12 +419,15 @@ class SQLiteMemoryStore:
             if (
                 query.scope is not original_scope
                 or type(query.scope) is not MemoryScope
+                or query.scope.owner_id is not original_owner
+                or query.scope.namespace is not original_namespace
                 or (query.scope.owner_id, query.scope.namespace)
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory search scope changed during clock")
             if (
-                type(query.text) is not str or query.text != pinned_text
+                type(query.text) is not str or query.text is not pinned_text
+                or query.text != pinned_text
                 or type(query.limit) is not int or query.limit != pinned_limit
                 or type(query.include_expired) is not bool
                 or query.include_expired != pinned_include_expired
@@ -432,6 +437,7 @@ class SQLiteMemoryStore:
         with closing(self._connect_readonly()) as conn:
             assert_query_epoch()
             conn.execute("BEGIN")
+            assert_query_epoch()
             _validate_v1_schema(conn)
             assert_query_epoch()
             # The SELECT anchors the SQLite snapshot before the clock. A
