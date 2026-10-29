@@ -17,7 +17,6 @@ from ark.agency.disconnected_read_journal import (
     genesis_witness,
 )
 
-
 REQUEST = "req_" + "a" * 32
 SHA = "b" * 64
 
