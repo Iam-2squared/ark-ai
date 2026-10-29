@@ -102,7 +102,7 @@ def render_private_diagnostic_ledger(
     epoch()
     chain = retained_anchor_sha256
     lines: list[str] = []
-    for index, (event, seq, component, stage, outcome, reason) in enumerate(pins):
+    for index, (_event, seq, component, stage, outcome, reason) in enumerate(pins):
         epoch()
         if (
             type(seq) is not int or seq != start_sequence + index
