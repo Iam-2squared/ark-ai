@@ -161,7 +161,7 @@ def test_witness_must_be_exact_structured_type(tmp_path, witness):
 
 
 def test_thread_concurrent_same_witness_exactly_one_local_reservation(tmp_path):
-    db = ledger(tmp_path)
+    _db = ledger(tmp_path)
     witness = genesis_write_slot_witness()
     path = tmp_path / "synthetic.db"
     with ThreadPoolExecutor(max_workers=16) as pool:
