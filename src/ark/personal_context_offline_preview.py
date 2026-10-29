@@ -114,7 +114,7 @@ def build_offline_context_preview(
     entries = []
     ids = []
     total = 0
-    for record, captured in pinned:
+    for _record, captured in pinned:
         assert_epoch()
         record_id, owner, scope, content, content_sha, expires = captured
         if (
