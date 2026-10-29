@@ -7,7 +7,9 @@ import struct
 import pytest
 
 from ark.offline_pcm_wav import (
-    OfflineWaveRejected, OfflineWaveRequest, inspect_local_pcm_wav,
+    OfflineWaveRejected,
+    OfflineWaveRequest,
+    inspect_local_pcm_wav,
 )
 
 SHA = "a" * 64
