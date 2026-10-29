@@ -7,7 +7,6 @@ import pytest
 
 from ark.agency import disconnected_batch_plan as mod
 
-
 REQ = "req_" + "a" * 32
 
 
