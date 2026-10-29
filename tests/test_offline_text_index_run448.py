@@ -6,7 +6,10 @@ import hashlib
 import pytest
 
 from ark.offline_text_index import (
-    OfflineIndexDocument, OfflineIndexQuery, OfflineIndexRejected, search_offline_text,
+    OfflineIndexDocument,
+    OfflineIndexQuery,
+    OfflineIndexRejected,
+    search_offline_text,
 )
 
 SHA = "a" * 64
