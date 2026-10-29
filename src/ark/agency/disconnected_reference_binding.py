@@ -212,7 +212,7 @@ def bind_synthetic_read_arguments(
     parsed: dict[str, object] = {}
     digest_by_id: dict[str, str] = {}
     last_order = -1
-    for row, name, raw, expected in pinned:
+    for _row, name, raw, expected in pinned:
         assert_epoch()
         if (
             type(name) is not str or name not in order
