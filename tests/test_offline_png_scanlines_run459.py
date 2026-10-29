@@ -1,14 +1,16 @@
 """Synthetic zlib/PNG scanlines stay bounded and never release raw pixels."""
 
-from dataclasses import FrozenInstanceError, replace
 import hashlib
 import random
 import zlib
+from dataclasses import FrozenInstanceError, replace
 
 import pytest
 
 from ark.offline_png_scanlines import (
-    OfflineScanlineRejected, OfflineScanlineRequest, inspect_offline_png_scanlines,
+    OfflineScanlineRejected,
+    OfflineScanlineRequest,
+    inspect_offline_png_scanlines,
 )
 
 
