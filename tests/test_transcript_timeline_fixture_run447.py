@@ -6,7 +6,6 @@ import pytest
 
 from ark import transcript_timeline_fixture as mod
 
-
 SHA_A = "a" * 64
 SHA_B = "b" * 64
 SESSION = "session_" + "c" * 16
