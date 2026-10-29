@@ -137,7 +137,7 @@ def search_offline_context(
     total = 0
     last_id = ""
     scored: list[tuple[int, str, str]] = []
-    for row, saved in zip(rows, fields, strict=True):
+    for _row, saved in zip(rows, fields, strict=True):
         assert_epoch()
         record_id, owner, scope, content, digest, expires = saved
         if (
