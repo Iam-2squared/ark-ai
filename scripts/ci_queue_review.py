@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 _SHA = re.compile(r"[0-9a-f]{40}\Z")
@@ -26,7 +26,7 @@ def _instant(raw: object) -> datetime:
     if type(raw) is not str or len(raw) != 20 or not raw.endswith("Z"):
         raise QueueReviewRejected("UTC timestamp must be YYYY-MM-DDTHH:MM:SSZ")
     try:
-        result = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        result = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
     except ValueError as exc:
         raise QueueReviewRejected("invalid UTC timestamp") from exc
     if result.strftime("%Y-%m-%dT%H:%M:%SZ") != raw:
