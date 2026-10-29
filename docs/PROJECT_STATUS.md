@@ -1,5 +1,55 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / CI lint restoration after Run466 source work**
+
+**Saved at:** **2026-10-30T08:51:00.062+09:00 Asia/Tokyo/JST** (observed runtime wall time immediately before normal GitHub Contents write; not trusted time, user authentication, consent or independent attestation).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**PR #5:** `research/v3-learning-evaluation` / Draft/open/unmerged at `d6d4c1954a85fc716b1c593ac55c85417912418f`, V3 NOT_PASSED.
+**Exact invocation work-basis HEAD:** `f2935b609ac76ddc8ed1172dbad55ceb3e6093a8` (pre-existing Run466 synthetic schedule quarantine and Memory exact-carrier commits already present at entry; not claimed as new work).
+**Exact saved source/test HEAD and checkpoint-write-basis HEAD:** `65b274dcea386ca3ffadc9d888c798c9a9d564e4`.
+**Checkpoint-result HEAD:** this file cannot self-attest its own GitHub commit. The HEAD immediately above is PRE-checkpoint; inspect the normal Contents update SHA and PR/branch latest HEAD afterward.
+
+### Overall ARK — complete JARVIS NOT_PASSED
+
+ARK remains free-only, local-first, heavily fixture/mock oriented and deliberately without authenticated live authority. The CI lint gate was a real regression: this invocation addressed it without changing frozen V1/V2/Local UI/Launcher evidence, the V3 contract, protected evaluation, dispatch/authorization boundary, or any previous test assertions. Cross-store atomicity, real user consent, independent trusted clock, durable external exactly-once WRITE, live observation/tool execution and JARVIS integration remain unproven.
+
+### NEW this invocation — three coherent CI recovery work packages
+
+1. **Exact-head CI root-cause forensic diagnosis.** Historical source/test workflow **#1440**, run **40433258495**, HEAD `f2935b609ac76ddc8ed1172dbad55ceb3e6093a8`, completed FAILURE on **all six** Ubuntu/Windows Python 3.11–3.13 jobs at `ruff check .`. Every pytest step was skipped; this is not a pytest failure and previous descriptions of queued CI were stale. Its authoritative job log revealed exactly **14 Ruff errors**: **UP017 ×1, B007 ×4, F841 ×1, I001 ×8** across 14 source/test files.
+2. **Production source fixes through normal GitHub Contents writes.** Updated five paths: `scripts/ci_queue_review.py` (Python 3.11+ `datetime.UTC` alias), `src/ark/agency/disconnected_reference_binding.py`, `src/ark/offline_context_search.py`, `src/ark/personal_context_offline_preview.py`, and `src/ark/private_diagnostic_ledger.py` (four intentionally unused loop bindings renamed; loop bodies, fail-closed policy and data checks unchanged). No functional authorization behavior added.
+3. **Focused test-only lint normalization through normal Contents writes.** Updated nine test paths: `test_ci_fixture_param_id_guard_run438.py`, `test_disconnected_batch_plan_run443.py`, `test_disconnected_read_journal_run444.py`, `test_disconnected_write_slot_ledger_run465.py`, `test_local_text_chunking_run447.py`, `test_offline_pcm_wav_run448.py`, `test_offline_png_scanlines_run459.py`, `test_offline_text_index_run448.py`, `test_transcript_timeline_fixture_run447.py`. Removed excess import-section blank lines, put imports in correct order/one-per-line, and renamed an unused test-local ledger reference while retaining its lifecycle. No assertions, test data, fixtures, coverage or execution permissions were weakened. **14 ordinary Contents source/test commits**, ordered fast-forward, no raw Git objects, force push, merge, workflow rerun or cancellation. All **14 exact source/test blob SHAs independently refetched from GitHub at `65b274dcea386ca3ffadc9d888c798c9a9d564e4` and matched the saved write results**.
+
+### Verified CI/evidence and remaining blockers — exact scope
+
+- Latest source/test workflow **#1454**, run **40975419176**, exact source/test HEAD `65b274dcea386ca3ffadc9d888c798c9a9d564e4` at inspection:
+  - test (ubuntu-latest, 3.12): job=completed/success; Ruff=success; pytest=success.
+  - test (ubuntu-latest, 3.13): job=completed/success; Ruff=success; pytest=success.
+  - test (windows-latest, 3.11): job=in_progress/IN_PROGRESS; Ruff=success; pytest=IN_PROGRESS.
+  - test (windows-latest, 3.13): job=in_progress/IN_PROGRESS; Ruff=success; pytest=IN_PROGRESS.
+  - test (windows-latest, 3.12): job=in_progress/IN_PROGRESS; Ruff=success; pytest=IN_PROGRESS.
+  - test (ubuntu-latest, 3.11): job=completed/success; Ruff=success; pytest=success.
+- All six Ruff steps were **SUCCESS** at this inspection. Job-level/pytest status above is per-job evidence only; **do not declare 6/6 full CI GREEN** until every matrix job completes successfully.
+- No local repository checkout or local whole-suite pytest/Ruff: the isolated container's GitHub DNS lookup fails. Existing historical local tests under earlier SHA cannot substitute for latest-head evidence.
+- Entry run #1440 and its 14 Ruff failures are superseded by the exact-head six successful Ruff steps, not erased. No duplicate workflow dispatch or paid/large runner was started; automatic Actions triggers followed ordinary file commits.
+
+### Frozen contracts / hard authorization boundaries
+
+V1/V2/Local UI/Launcher evidence, frozen Memory schema and ActionAudit contracts, V3 Contract 1, provenance/contamination/regression/reproducibility gates, and protected V2 final evaluation unchanged. Both PRs remain Draft/unmerged. No paid/external GPU/API/service, real Candidate adapter/weights, training, protected evaluation opening, Candidate promotion, live PC action, real personal data, new credential/account connection, automated tool dispatch, destructive operation, or main merge. Existing uncertainty around WAL descriptor custody, trusted clock, restart-safe permission, cross-store coherent snapshots and exactly-once effects remains explicitly gated.
+
+### Next plan / 今後の方針
+
+1. Inspect the eventual **exact-head #1454** matrix outcome, especially Windows pytest duration and any real failures. Make the smallest semantics-preserving correction only if exact logs justify it; do not weaken tests or relaunch duplicate runs.
+2. Continue Memory row/event integrity, cross-process CAS and expiry, exact original-carrier scope/query pinning and coherent snapshots using existing source contracts and exact-head GREEN dependencies.
+3. Continue Planner UNKNOWN/RUNNING and multi-WRITE recovery with no automatic replay; registry-bound immutable Tool identity, exact-type PermissionGate, trusted-clock audit-before-action, durable occurrence reservation and independent retained-witness verification.
+4. Advance isolated, privacy-safe Personal Context/Observation/Proactive Scheduler fixtures and V3 free-only provenance/path guards; keep real Candidate, paid services, protected evaluation and main merge behind explicit authorization.
+
+---
+
+**HISTORICAL — Run465 and all earlier checkpoints retained verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — Run465**
 
 **Saved at:** **2026-10-27T10:06:14.433137622+09:00 Asia/Tokyo/JST** (observed isolated container wall time immediately before the normal GitHub Contents write; not a trusted clock, GitHub commit timestamp, external attestation, owner authentication or consent).
