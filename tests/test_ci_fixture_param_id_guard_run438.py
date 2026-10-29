@@ -7,7 +7,6 @@ any tests, modify the CI workflow, or rely on any network/runner service.
 import ast
 from pathlib import Path
 
-
 _TARGET = Path(__file__).with_name("test_observation_fixture_production_adapters.py")
 _LIMIT = 4 * 1024 * 1024
 
