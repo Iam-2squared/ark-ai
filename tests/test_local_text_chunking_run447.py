@@ -7,7 +7,6 @@ import pytest
 
 from ark import local_text_chunking as mod
 
-
 SHA_A = "a" * 64
 SHA_B = "b" * 64
 
