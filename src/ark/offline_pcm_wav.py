@@ -59,6 +59,9 @@ class OfflineWaveReview:
         return False
 
 
+_REVIEW_TYPE = OfflineWaveReview
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -152,7 +155,28 @@ def inspect_local_pcm_wav(request: OfflineWaveRequest) -> OfflineWaveReview:
     channels, sample_rate, bits = fmt
     milliseconds, remainder = divmod(frame_count * 1000, sample_rate)
     check_epoch()
-    return OfflineWaveReview(
+    result = OfflineWaveReview(
         owner, privacy, expected_hash, pcm_sha, channels, sample_rate,
         bits, frame_count, milliseconds, remainder,
     )
+    check_epoch()
+    if (
+        type(result) is not _REVIEW_TYPE
+        or result.owner_sha256 is not owner
+        or result.privacy_sha256 is not privacy
+        or result.wav_sha256 is not expected_hash
+        or result.pcm_sha256 is not pcm_sha
+        or result.channel_count is not channels
+        or result.sample_rate_hz is not sample_rate
+        or result.bits_per_sample is not bits
+        or result.frame_count is not frame_count
+        or result.duration_ms_floor is not milliseconds
+        or result.duration_ms_remainder is not remainder
+        or result.microphone_provenance_verified is not False
+        or result.consent_verified is not False
+        or result.speech_recognized is not False
+        or result.authorized_to_disclose is not False
+    ):
+        raise OfflineWaveRejected("constructed WAV review changed or claims authority")
+    check_epoch()
+    return result
