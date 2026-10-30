@@ -59,6 +59,9 @@ class OfflineContextPreview:
         return False
 
 
+_PREVIEW_RESULT_TYPE = OfflineContextPreview
+
+
 def build_offline_context_preview(
     fixtures: tuple[OfflineContextFixture, ...],
     *,
@@ -153,7 +156,7 @@ def build_offline_context_preview(
     result = OfflineContextPreview(owner_digest, tuple(ids), payload, digest)
     assert_epoch()
     if (
-        type(result) is not OfflineContextPreview
+        type(result) is not _PREVIEW_RESULT_TYPE
         or result.owner_digest is not owner_digest
         or result.record_ids != tuple(ids)
         or result.canonical_local_json is not payload
