@@ -146,7 +146,7 @@ def review_synthetic_memory_event_continuity(
             try:
                 stable_retained = (
                     type(retained) is _WITNESS_TYPE
-                    and all(
+                    and not any(
                         current is not before for current, before in zip(
                             (
                                 retained.scope_digest, retained.event_count,
@@ -154,7 +154,7 @@ def review_synthetic_memory_event_continuity(
                             ),
                             retained_epoch, strict=True,
                         )
-                    ) is False
+                    )
                     and retained.deletion_authorized is False
                     and retained.context_use_authorized is False
                     and retained.external_disclosure_authorized is False
