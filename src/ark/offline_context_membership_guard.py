@@ -65,6 +65,9 @@ class OfflineContextMembershipReview:
         return False
 
 
+_MEMBERSHIP_RESULT_TYPE = OfflineContextMembershipReview
+
+
 def review_offline_context_membership(
     records: tuple[ContextRecordClaim, ...],
     *,
@@ -186,7 +189,7 @@ def review_offline_context_membership(
     )
     epoch()
     if (
-        type(result) is not OfflineContextMembershipReview
+        type(result) is not _MEMBERSHIP_RESULT_TYPE
         or result.owner_digest is not owner_digest
         or result.record_count != len(records)
         or result.scope_count != len(scope_vetoes)
