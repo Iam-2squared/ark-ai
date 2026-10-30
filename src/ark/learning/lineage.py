@@ -17,12 +17,28 @@ class ArtifactIdentity:
     tool_revision: str
 
     def validate(self) -> None:
-        if not self.kind.strip() or not self.path.strip() or not self.tool_revision.strip():
+        # Identity carriers must be inert, exact built-in values. A subclass
+        # can override strip/iteration and change evidence during validation.
+        fields = (self.kind, self.path, self.tool_revision)
+        if any(
+            type(value) is not str
+            or not value.strip()
+            or len(value) > 4096
+            or any(ord(char) < 32 for char in value)
+            for value in fields
+        ):
             raise ValueError("artifact identity fields required")
-        if len(self.sha256) != 64 or any(c not in "0123456789abcdef" for c in self.sha256):
+        if (
+            type(self.sha256) is not str
+            or len(self.sha256) != 64
+            or any(c not in "0123456789abcdef" for c in self.sha256)
+        ):
             raise ValueError("artifact SHA-256 required")
         if type(self.bytes) is not int or self.bytes <= 0:
             raise ValueError("artifact byte size required")
+
+
+_ARTIFACT_TYPE = ArtifactIdentity
 
 
 @dataclass(frozen=True)
@@ -37,7 +53,12 @@ class CandidateLineage:
     schema_version: int = 1
 
     def validate(self) -> None:
-        if self.schema_version != 1 or self.quantization != "Q4_K_M":
+        if (
+            type(self.schema_version) is not int
+            or self.schema_version != 1
+            or type(self.quantization) is not str
+            or self.quantization != "Q4_K_M"
+        ):
             raise ValueError("unsupported lineage schema/quantization")
         for artifact in (
             self.base,
@@ -47,6 +68,8 @@ class CandidateLineage:
             self.gguf_q4km,
             self.paired_base_q4km,
         ):
+            if type(artifact) is not _ARTIFACT_TYPE:
+                raise ValueError("exact artifact lineage identity required")
             artifact.validate()
         if self.gguf_q4km.tool_revision != self.paired_base_q4km.tool_revision:
             raise ValueError("Candidate and paired baseline quantizer revision mismatch")
