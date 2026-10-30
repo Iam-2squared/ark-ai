@@ -179,6 +179,12 @@ def build_code_tree_identity(root: Path) -> dict:
         raise ValueError("runtime code manifest requires learning Python sources")
     rows = [file_identity(path, label=path.relative_to(root).as_posix()) for path in paths]
     _assert_snapshot_entries(learning_root, entries)
+    # The learning subtree has its own enumeration epoch, but pyproject.toml
+    # lives outside it. Rehash packaging after all Python files so a build
+    # metadata change during code capture cannot silently keep the old hash.
+    # This is a best-effort local check, not a hostile-writer atomic snapshot.
+    if file_identity(paths[0], label="pyproject.toml") != rows[0]:
+        raise ValueError("runtime packaging metadata changed during code capture")
     manifest = {
         "schema_version": 1,
         "scope": "pyproject.toml+src/ark/learning/**/*.py",
