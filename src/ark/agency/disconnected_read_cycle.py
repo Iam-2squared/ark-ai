@@ -11,7 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
-from .contracts import CapabilityGrant, Effect, PlanConflictError, StepState
+from .contracts import CapabilityGrant, Effect, PermissionDenied, PlanConflictError, StepState
 from .disconnected_read_preflight import (
     DisconnectedReadPreflight,
     DisconnectedReadPreflightRejected,
@@ -63,6 +63,17 @@ def _digest(payload: object) -> str:
         separators=(",", ":"), allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(b"ARK-offline-read-cycle-v1\0" + encoded).hexdigest()
+
+
+def _preflight_digest(payload: object) -> str:
+    """Independently reproduce the frozen detached-preflight receipt encoding."""
+    encoded = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False,
+        separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(
+        b"ARK-disconnected-registered-read-preflight-v1\\0" + encoded
+    ).hexdigest()
 
 
 def simulate_registered_read_cycle(
@@ -177,7 +188,12 @@ def simulate_registered_read_cycle(
                 )
             )
             expected_bound: list[str] = []
-            for step_id in expected_ready:
+            # A forged exact-type preview must not bypass registry rejection
+            # of a non-ready WRITE descendant or a missing READ grant.
+            # Rebind *all* steps, and independently authorize ready READ
+            # steps using the caller's original exact grant tuple. READ
+            # authorization consumes no one-shot WRITE token.
+            for step_id in sorted(shadow.steps):
                 call = shadow.steps[step_id].call
                 bound = registry.bind(call)
                 if (
@@ -188,8 +204,38 @@ def simulate_registered_read_cycle(
                     or bound.registration.effect is not Effect.READ
                 ):
                     raise DisconnectedReadCycleRejected("READ wave registry drift")
-                expected_bound.append(bound.bound_action_id)
-        except (KeyError, TypeError, ValueError, PlanConflictError) as exc:
+                if step_id in expected_ready:
+                    permitted = gate.authorize_registered(
+                        registry, call, grants, now_ms=observed_at_ms,
+                    )
+                    if (
+                        type(permitted) is not BoundAction
+                        or permitted.call is not call
+                        or permitted.registration is not bound.registration
+                        or permitted.registry_revision != revision
+                        or permitted.bound_action_id != bound.bound_action_id
+                    ):
+                        raise DisconnectedReadCycleRejected(
+                            "READ wave independent grant binding drift"
+                        )
+                    expected_bound.append(bound.bound_action_id)
+            grant_fingerprint = _preflight_digest([
+                (grant.capability, grant.scope, grant.expires_at_ms)
+                for grant in grants
+            ])
+            expected_fingerprint = _preflight_digest({
+                "topology": topology,
+                "status": before,
+                "registry": revision,
+                "grants": grant_fingerprint,
+                "clock_observation_ms": observed_at_ms,
+                "ready": list(zip(expected_ready, expected_bound, strict=True)),
+            })
+        except DisconnectedReadCycleRejected:
+            raise
+        except (
+            KeyError, TypeError, ValueError, PlanConflictError, PermissionDenied,
+        ) as exc:
             raise DisconnectedReadCycleRejected("READ wave identity recheck failed") from exc
         source_stable()
         if (
@@ -197,6 +243,8 @@ def simulate_registered_read_cycle(
             or review.topology_digest != topology
             or review.status_digest != before
             or review.registry_revision != revision
+            or review.grant_fingerprint != grant_fingerprint
+            or review.fingerprint != expected_fingerprint
             or not review.ready_step_ids
             or type(review.ready_step_ids) is not tuple
             or type(review.ready_bound_ids) is not tuple
