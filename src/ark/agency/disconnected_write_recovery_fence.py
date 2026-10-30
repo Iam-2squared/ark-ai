@@ -212,6 +212,13 @@ def review_disconnected_recovery_fence(
     if (
         type(review) is not _FENCE_TYPE or review.plan_id is not plan_id
         or review.decisions is not frozen or review.digest is not digest
+        # A synthetic recovery disposition is not a signed action grant.
+        # Refuse an exact-type result whose descriptors were made to imply
+        # WRITE, dispatch, automatic replay, or external outcome authority.
+        or review.dispatch_authorized is not False
+        or review.automatic_replay_authorized is not False
+        or review.write_authorized is not False
+        or review.external_outcome_verified is not False
     ):
         raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
     return review
