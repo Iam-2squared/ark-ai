@@ -38,7 +38,7 @@ def test_plain_ascii_near_raw_budget_still_supported():
     assert result == _build(rows)
 
 
-@pytest.mark.parametrize("char", ["\\x00", "\\x01", "\\x1f"])
+@pytest.mark.parametrize("char", ["\x00", "\x01", "\x1f"])
 def test_escaped_serialization_above_fixed_budget_is_rejected(char):
     # JSON \\u00xx escaping expands four 4,000-byte fixtures to over 96 KiB,
     # despite their original UTF-8 content fitting the 16 KiB input budget.
@@ -48,8 +48,8 @@ def test_escaped_serialization_above_fixed_budget_is_rejected(char):
 
 
 def test_moderate_escaped_payload_is_allowed():
-    result = _build((_item(1, "\\x00" * 2048),))
-    assert json.loads(result.canonical_local_json)["records"][0]["content"] == "\\x00" * 2048
+    result = _build((_item(1, "\x00" * 2048),))
+    assert json.loads(result.canonical_local_json)["records"][0]["content"] == "\x00" * 2048
 
 
 def test_same_value_record_ids_carrier_replacement_is_rejected(monkeypatch):
