@@ -108,7 +108,7 @@ def hash_file(path: Path) -> tuple[str, int]:
             raise ValueError("lineage hash path cannot contain symlinks")
         before = path.lstat()
         if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-            raise ValueError("lineage hash path requires one regular-file link")
+            raise ValueError("lineage hash path requires one regular non-symlink file with one link")
         h = hashlib.sha256()
         size = 0
         with path.open("rb") as handle:
@@ -133,5 +133,7 @@ def hash_file(path: Path) -> tuple[str, int]:
         ):
             raise ValueError("lineage hash path changed after reading")
     except OSError as exc:
+        if isinstance(exc, FileNotFoundError):
+            raise ValueError("lineage hash path must be an existing non-symlink file") from exc
         raise ValueError("lineage hash path unavailable during verification") from exc
     return h.hexdigest(), size
