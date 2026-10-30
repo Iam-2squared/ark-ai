@@ -182,12 +182,14 @@ class DisconnectedWriteSlotLedger:
         if type(create) is not bool:
             raise WriteSlotLedgerRejected("explicit exact create flag required")
         self._path = _check_path(path, create=create)
-        mode = "rwc" if create else "rw"
+        # Reopening a persisted WRITE slot ledger only inspects its history.
+        # The explicit create branch alone may take a write/bootstrap lock.
+        mode = "rwc" if create else "ro"
         with closing(sqlite3.connect(
             self._path.as_uri() + "?mode=" + mode,
             uri=True, timeout=10, isolation_level=None,
         )) as conn:
-            conn.execute("BEGIN IMMEDIATE")
+            conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
                     if (conn.execute("PRAGMA user_version").fetchone() != (0,)
