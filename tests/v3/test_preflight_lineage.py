@@ -191,3 +191,52 @@ def test_training_revalidates_typed_preflight_evidence(tmp_path, mutation):
 
     with pytest.raises(RuntimeError, match="preflight report evidence is invalid"):
         _verify_preflight_report(path, _training_snapshot_for_payload(preflight, payload))
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"device": "different-GPU"}, "device does not match measured runtime"),
+        ({"vram_gib": 23.0}, "VRAM does not match measured runtime"),
+        (
+            {"tokenizer_probe_sha256": "9" * 64},
+            "tokenizer probe does not match frozen snapshot",
+        ),
+        (
+            {"peak_vram_mib": 14_000.0},
+            "allocated VRAM exceeds reserved VRAM",
+        ),
+        (
+            {"peak_reserved_vram_mib": 25_000.0},
+            "reserved VRAM exceeds measured GPU capacity",
+        ),
+        ({"wall_seconds": 3_600.1}, "wall time exceeds frozen execution budget"),
+    ],
+)
+def test_preflight_report_rejects_cross_binding_mismatches(changes, message):
+    with pytest.raises(ValueError, match=message):
+        build_preflight_report(
+            resolved_preflight_snapshot(), replace(evidence(), **changes), runtime_identity(),
+        )
+
+
+@pytest.mark.parametrize(
+    "tamper",
+    [
+        {"peak_vram_mib": 14_000.0},
+        {"peak_reserved_vram_mib": 25_000.0},
+        {"wall_seconds": 3_600.1},
+    ],
+)
+def test_training_rechecks_hash_matching_preflight_cross_bindings(tmp_path, tamper):
+    frozen = resolved_preflight_snapshot()
+    report = json.loads(build_preflight_report(frozen, evidence(), runtime_identity()))
+    report["evidence"].update(tamper)
+    payload = (
+        json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+    ).encode()
+    path = tmp_path / "tampered-but-bound-preflight.json"
+    path.write_bytes(payload)
+    training_snapshot = _training_snapshot_for_payload(frozen, payload)
+    with pytest.raises(RuntimeError, match="preflight report measurements are inconsistent"):
+        _verify_preflight_report(path, training_snapshot)
