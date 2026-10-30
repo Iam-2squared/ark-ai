@@ -69,6 +69,11 @@ class ReadJournalWitness:
         return False
 
 
+# Preserve original, non-authorizing carrier types against injected factories.
+_RECEIPT_TYPE = ReadReceipt
+_WITNESS_TYPE = ReadJournalWitness
+
+
 def genesis_witness() -> ReadJournalWitness:
     """The single valid starting witness for a new, empty local journal."""
     return ReadJournalWitness(0, _GENESIS)
@@ -76,7 +81,7 @@ def genesis_witness() -> ReadJournalWitness:
 
 def _check_witness(witness: ReadJournalWitness) -> None:
     if (
-        type(witness) is not ReadJournalWitness
+        type(witness) is not _WITNESS_TYPE
         or type(witness.count) is not int or not 0 <= witness.count <= _MAX_ROWS
         or type(witness.tip_sha256) is not str
         or _SHA.fullmatch(witness.tip_sha256) is None
@@ -86,7 +91,7 @@ def _check_witness(witness: ReadJournalWitness) -> None:
 
 def _check_receipt(row: ReadReceipt) -> None:
     if (
-        type(row) is not ReadReceipt
+        type(row) is not _RECEIPT_TYPE
         or type(row.request_id) is not str or _REQUEST.fullmatch(row.request_id) is None
         or type(row.step_id) is not str or _STEP.fullmatch(row.step_id) is None
         or type(row.operation) is not str or row.operation not in _OPS
@@ -227,12 +232,34 @@ class DisconnectedReadJournal:
     def verify(self, retained: ReadJournalWitness) -> ReadJournalWitness:
         """Verify a stable SQLite read snapshot against caller-retained state."""
         _check_witness(retained)
+        pinned = (retained.count, retained.tip_sha256)
+
+        def stable() -> None:
+            if (
+                type(retained) is not _WITNESS_TYPE
+                or retained.count is not pinned[0]
+                or retained.tip_sha256 is not pinned[1]
+            ):
+                raise ReadJournalRejected("retained READ witness changed during verify")
+
+        stable()
         try:
             self._connection.execute("BEGIN")
             actual = self._scan()
-            if actual != retained:
+            stable()
+            if (
+                type(actual) is not _WITNESS_TYPE
+                or actual.count != pinned[0]
+                or actual.tip_sha256 != pinned[1]
+                or actual.dispatch_authorized is not False
+                or actual.effect_proven is not False
+                or actual.replay_authorized is not False
+                or actual.independent_custody_proven is not False
+            ):
                 raise ReadJournalRejected("external witness disagrees with journal")
             self._connection.execute("COMMIT")
+            # Read-only COMMIT can still be a synthetic callback boundary.
+            stable()
             return actual
         except BaseException:
             if self._connection.in_transaction:
@@ -240,35 +267,49 @@ class DisconnectedReadJournal:
             raise
 
     def append(self, row: ReadReceipt, retained: ReadJournalWitness) -> ReadJournalWitness:
-        """Append one synthetic READ digest with transaction-scoped CAS."""
+        """Append one synthetic READ digest with transaction-scoped CAS.
+
+        Post-COMMIT validation is diagnostic only: a failed result must never
+        imply that the SQLite append was rolled back or is safe to retry.
+        """
         _check_receipt(row)
         _check_witness(retained)
-        # Retain the caller's exact dataclass fields before entering SQLite.
         fields = (row.request_id, row.step_id, row.operation,
                   row.input_digest, row.result_digest)
+        witness_epoch = (retained.count, retained.tip_sha256)
+
+        def stable() -> None:
+            if (
+                type(row) is not _RECEIPT_TYPE
+                or type(retained) is not _WITNESS_TYPE
+                or retained.count is not witness_epoch[0]
+                or retained.tip_sha256 is not witness_epoch[1]
+                or any(current is not earlier for current, earlier in zip(
+                    (row.request_id, row.step_id, row.operation,
+                     row.input_digest, row.result_digest), fields, strict=True,
+                ))
+            ):
+                raise ReadJournalRejected("READ append carriers changed")
+
+        stable()
         try:
             self._connection.execute("BEGIN IMMEDIATE")
             actual = self._scan()
-            if actual != retained or actual.count >= _MAX_ROWS:
+            stable()
+            if (
+                type(actual) is not _WITNESS_TYPE
+                or actual != retained or actual.count >= _MAX_ROWS
+            ):
                 raise ReadJournalRejected("stale or exhausted journal witness")
-            if any(current is not earlier for current, earlier in zip(
-                (row.request_id, row.step_id, row.operation,
-                 row.input_digest, row.result_digest), fields, strict=True,
-            )):
-                raise ReadJournalRejected("receipt mutated before append")
             next_index = actual.count + 1
             next_tip = _chain(actual.tip_sha256, next_index, row)
+            stable()
             self._connection.execute(
                 "INSERT INTO receipts VALUES (?,?,?,?,?,?,?,?)",
                 (next_index, *fields, actual.tip_sha256, next_tip),
             )
-            if any(current is not earlier for current, earlier in zip(
-                (row.request_id, row.step_id, row.operation,
-                 row.input_digest, row.result_digest), fields, strict=True,
-            )):
-                raise ReadJournalRejected("receipt mutated before commit")
+            stable()
             self._connection.execute("COMMIT")
-            return ReadJournalWitness(next_index, next_tip)
         except sqlite3.IntegrityError as exc:
             if self._connection.in_transaction:
                 self._connection.execute("ROLLBACK")
@@ -277,3 +318,20 @@ class DisconnectedReadJournal:
             if self._connection.in_transaction:
                 self._connection.execute("ROLLBACK")
             raise
+        # COMMIT is durable. An invalid result or mutated caller receipt must
+        # fail closed, without claiming rollback or performing an automatic retry.
+        stable()
+        result = ReadJournalWitness(next_index, next_tip)
+        stable()
+        if (
+            type(result) is not _WITNESS_TYPE
+            or type(result.count) is not int or result.count != next_index
+            or type(result.tip_sha256) is not str or result.tip_sha256 != next_tip
+            or result.dispatch_authorized is not False
+            or result.effect_proven is not False
+            or result.replay_authorized is not False
+            or result.independent_custody_proven is not False
+        ):
+            raise ReadJournalRejected("post-commit READ witness changed")
+        stable()
+        return result
