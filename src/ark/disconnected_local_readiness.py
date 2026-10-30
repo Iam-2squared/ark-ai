@@ -134,12 +134,44 @@ def review_disconnected_local_readiness(
         if not stable:
             raise DisconnectedLocalReadinessRejected("startup epoch changed")
 
+    def checked_seal_epoch(
+        value: object, *, phase: str,
+    ) -> tuple[object, ...]:
+        # An equal-valued but replaced seal, a duck-typed result, or a
+        # source-authorizing descriptor is not a stable startup witness.
+        try:
+            if (
+                type(value) is not DisconnectedSQLiteSchemaSeal
+                or value.source_authenticated is not False
+                or value.independent_custody_proven is not False
+                or value.wal_snapshot_verified is not False
+                or value.cross_store_atomicity_proven is not False
+                or value.application_data_disclosure_authorized is not False
+            ):
+                raise DisconnectedLocalReadinessRejected(
+                    f"startup {phase} schema authority invalid"
+                )
+            return (
+                value.schema_sha256, value.object_count,
+                value.user_version, value.schema_version,
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            if type(exc) is DisconnectedLocalReadinessRejected:
+                raise
+            raise DisconnectedLocalReadinessRejected(
+                f"startup {phase} schema receipt invalid"
+            ) from exc
+
     assert_epoch()
+    checked_seal_epoch(retained_schema, phase="retained")
     try:
         first = review_disconnected_sqlite_schema(connection, retained_schema)
     except SQLiteSchemaProbeRejected as exc:
         raise DisconnectedLocalReadinessRejected("startup schema probe denied") from exc
     assert_epoch()
+    first_epoch = checked_seal_epoch(first, phase="first")
+    if first_epoch != schema_epoch:
+        raise DisconnectedLocalReadinessRejected("startup first schema differs")
     try:
         preview = preview_registered_read_plan(
             plan, registry, gate, grants, observed_at_ms=observed_at_ms,
@@ -162,12 +194,60 @@ def review_disconnected_local_readiness(
         or preview.automatic_replay_authorized is not False
     ):
         raise DisconnectedLocalReadinessRejected("startup READ receipt invalid")
+    preview_epoch = (
+        preview.topology_digest, preview.status_digest, preview.registry_revision,
+        preview.grant_fingerprint, preview.ready_step_ids,
+        preview.ready_bound_ids, preview.fingerprint,
+    )
+
+    def assert_preview_epoch() -> None:
+        try:
+            current = (
+                preview.topology_digest, preview.status_digest,
+                preview.registry_revision, preview.grant_fingerprint,
+                preview.ready_step_ids, preview.ready_bound_ids,
+                preview.fingerprint,
+            )
+            stable = (
+                type(preview) is _PREFLIGHT_TYPE
+                and all(
+                    value is old for value, old in zip(
+                        current, preview_epoch, strict=True,
+                    )
+                )
+                and preview.dispatch_authorized is False
+                and preview.external_result_verified is False
+                and preview.authenticated_clock_or_consent is False
+                and preview.automatic_replay_authorized is False
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise DisconnectedLocalReadinessRejected(
+                "startup READ receipt epoch invalid"
+            ) from exc
+        if not stable:
+            raise DisconnectedLocalReadinessRejected(
+                "startup READ receipt epoch changed"
+            )
+
+    assert_preview_epoch()
     try:
         second = review_disconnected_sqlite_schema(connection, retained_schema)
     except SQLiteSchemaProbeRejected as exc:
         raise DisconnectedLocalReadinessRejected("startup schema changed") from exc
     assert_epoch()
-    if first != retained_schema or second != first:
+    assert_preview_epoch()
+    second_epoch = checked_seal_epoch(second, phase="second")
+    if (
+        second_epoch != schema_epoch
+        or first != retained_schema
+        or second != first
+        or any(
+            current is not old for current, old in zip(
+                checked_seal_epoch(first, phase="first"), first_epoch,
+                strict=True,
+            )
+        )
+    ):
         raise DisconnectedLocalReadinessRejected("startup schema is not stable")
     packed = json.dumps(
         (schema_epoch, topology, status, revision, preview.fingerprint,
@@ -176,11 +256,13 @@ def review_disconnected_local_readiness(
     ).encode("ascii")
     fingerprint = hashlib.sha256(_DOMAIN + packed).hexdigest()
     assert_epoch()
+    assert_preview_epoch()
     report = DisconnectedLocalReadiness(
         retained_schema.schema_sha256, topology, revision,
         preview.ready_step_ids, fingerprint,
     )
     assert_epoch()
+    assert_preview_epoch()
     if (
         type(report) is not _REPORT_TYPE
         or report.schema_sha256 is not schema_epoch[0]
@@ -194,4 +276,5 @@ def review_disconnected_local_readiness(
         or report.cross_store_atomicity_proven is not False
     ):
         raise DisconnectedLocalReadinessRejected("startup report changed")
+    assert_preview_epoch()
     return report
