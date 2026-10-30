@@ -148,11 +148,29 @@ def build_offline_context_preview(
     if ids != sorted(set(ids)):
         raise OfflineContextPreviewRejected("duplicate or unordered context identity")
     assert_epoch()
+    expected_payload = {"owner_digest": owner_digest, "records": entries}
     payload = json.dumps(
-        {"owner_digest": owner_digest, "records": entries},
+        expected_payload,
         sort_keys=True, ensure_ascii=True, allow_nan=False, separators=(",", ":"),
     )
     assert_epoch()
+    # A buggy/injected serializer can emit syntactically valid JSON with a
+    # different owner, record or content. Never hash-and-return such bytes as
+    # though they were the exact caller-reviewed fixture epoch.
+    try:
+        decoded = json.loads(payload)
+    except (TypeError, ValueError, UnicodeError) as exc:
+        raise OfflineContextPreviewRejected("context preview serialization invalid") from exc
+    assert_epoch()
+    if type(decoded) is not dict or decoded != expected_payload:
+        raise OfflineContextPreviewRejected("context preview serialization disagrees with fixtures")
+    canonical = json.dumps(
+        decoded, sort_keys=True, ensure_ascii=True, allow_nan=False,
+        separators=(",", ":"),
+    )
+    assert_epoch()
+    if type(payload) is not str or payload != canonical:
+        raise OfflineContextPreviewRejected("context preview serialization is not canonical")
     serialized = payload.encode("utf-8")
     if len(serialized) > _MAX_SERIALIZED_BYTES:
         raise OfflineContextPreviewRejected("serialized context preview budget exceeded")
