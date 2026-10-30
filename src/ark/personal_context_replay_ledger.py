@@ -193,12 +193,15 @@ class DisconnectedContextReplayLedger:
         if type(create) is not bool:
             raise OfflineContextReplayRejected("exact creation option required")
         self._path = _check_path(path, create=create)
-        mode = "rwc" if create else "rw"
+        # Existing replay history is inspected in a read-only snapshot.
+        # A RESERVED SQLite writer lock is reserved for explicit creation
+        # and later CAS reservation, never merely for restart validation.
+        mode = "rwc" if create else "ro"
         with closing(sqlite3.connect(
             self._path.as_uri() + "?mode=" + mode,
             uri=True, timeout=10, isolation_level=None,
         )) as conn:
-            conn.execute("BEGIN IMMEDIATE")
+            conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
                     if (
