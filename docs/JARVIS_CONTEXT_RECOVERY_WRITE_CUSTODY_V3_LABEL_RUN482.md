@@ -49,3 +49,12 @@ Both PR #5 and #8 are Draft/unmerged. Frozen V1/V2/Local UI/Launcher, Memory/age
 3. Advance Planner UNKNOWN WRITE quarantine, independent registry/permission identity, trusted-clock audit-before-action, and scheduler replay prevention in isolated synthetic lanes.
 4. Advance Personal Context retention/revocation, privacy-aware startup readiness and disconnected Observation fixtures.
 5. Keep V3 free-only model/path/approval/provenance guards separate; protected V2 and paid training paths remain blocked.
+
+
+## D. V3 canonical evidence JSON byte-budget guard — 7 new authored pytest cases
+
+Additional independent PR #5 package (after this document was first saved): updated src/ark/learning/run_manifest.py (blob 49c3ff1a0946c8444f084783e3c38562c2b990c1); new tests/v3/test_manifest_canonical_json_budget_run482.py (blob e639f60e04b91072689aedc80134c54d91db0a02). Final PR #5 source/test HEAD now 23609fe758c4221618977d6349e9bf78610ce745; intermediate C package HEAD b22f7fac3f8a6fe1d9fbcd054ceb8d8d1f14a15b retains separate six-job GREEN evidence.
+
+Limit locally read Candidate evidence JSON to 1,048,576 bytes **before** invoking JSON parsing, rather than loading an arbitrary-sized attacker-controlled file. Reject oversize, preserve canonical representation, missing-file and nonstandard-constant validation; test exact byte budget and pre-parser rejection. Tests are synthetic local JSON, never a real Candidate, GPU or training run. This is a parser memory cap, not an external compute spending guard.
+
+CI #1645 / 41084880241 on final PR #5 HEAD was IN PROGRESS at first check; its exact Ubuntu/Windows outcome must be checked separately. Combined Run482 totals: **four** coherent packages, **60** newly authored pytest cases (19 + 10 + 24 + 7). The earlier three-package work-basis statements above remain historically accurate for those packages but are not the final invocation-wide PR #5 head.
