@@ -13,7 +13,7 @@ import json
 import sqlite3
 from dataclasses import dataclass
 
-from .agency.contracts import CapabilityGrant, PlanConflictError
+from .agency.contracts import CapabilityGrant, PlanConflictError, StepState
 from .agency.disconnected_read_preflight import (
     DisconnectedReadPreflight,
     DisconnectedReadPreflightRejected,
@@ -194,6 +194,68 @@ def review_disconnected_local_readiness(
         or preview.automatic_replay_authorized is not False
     ):
         raise DisconnectedLocalReadinessRejected("startup READ receipt invalid")
+    # A returned preflight receipt is a caller-observable Python object, not
+    # an independently authenticated authority. Check exact READY membership
+    # and registered identities instead of trusting a forged same-type preview.
+    try:
+        statuses = plan.statuses()
+        expected_ready = tuple(
+            step_id for step_id in sorted(plan.steps)
+            if statuses[step_id].state is StepState.PENDING
+            and all(
+                statuses[dep].state is StepState.SUCCEEDED
+                for dep in plan.steps[step_id].depends_on
+            )
+        )
+        expected_bound = tuple(
+            registry.bind(plan.steps[step_id].call).bound_action_id
+            for step_id in expected_ready
+        )
+    except (KeyError, TypeError, ValueError, PlanConflictError) as exc:
+        raise DisconnectedLocalReadinessRejected(
+            "startup READY identity could not be verified"
+        ) from exc
+    assert_epoch()
+    if (
+        preview.ready_step_ids != expected_ready
+        or preview.ready_bound_ids != expected_bound
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup READY membership or registry binding changed"
+        )
+
+    # Independently recompute the canonical preflight hash from authoritative
+    # inputs. A field-shuffled but same-type preflight cannot become readiness.
+    def preflight_digest(payload: object) -> str:
+        data = json.dumps(
+            payload, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False,
+        ).encode("utf-8")
+        return hashlib.sha256(
+            b"ARK-disconnected-registered-read-preflight-v1\\0" + data
+        ).hexdigest()
+
+    expected_grants = preflight_digest([
+        (grant.capability, grant.scope, grant.expires_at_ms)
+        for grant in grants
+    ])
+    expected_fingerprint = preflight_digest({
+        "topology": topology,
+        "status": status,
+        "registry": revision,
+        "grants": expected_grants,
+        "clock_observation_ms": observed_at_ms,
+        "ready": list(zip(expected_ready, expected_bound, strict=True)),
+    })
+    assert_epoch()
+    if (
+        preview.grant_fingerprint != expected_grants
+        or preview.fingerprint != expected_fingerprint
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup preflight evidence fingerprint changed"
+        )
+
     preview_epoch = (
         preview.topology_digest, preview.status_digest, preview.registry_revision,
         preview.grant_fingerprint, preview.ready_step_ids,
