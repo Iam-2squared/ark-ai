@@ -65,6 +65,10 @@ class SyntheticQuarantineMatrix:
         return False
 
 
+_FINDING_TYPE = SyntheticQuarantineFinding
+_MATRIX_TYPE = SyntheticQuarantineMatrix
+
+
 def _valid_id(value: object) -> bool:
     if type(value) is not str or not value.strip() or len(value) > _MAX_ID_CHARS:
         return False
@@ -133,9 +137,25 @@ def diagnose_disconnected_write_quarantine(
 
     assert_epoch()
     encoded_rows = []
-    findings = []
+    findings: list[SyntheticQuarantineFinding] = []
+    finding_epoch: list[tuple[SyntheticQuarantineFinding, str, tuple[str, ...]]] = []
+
+    def stable_findings() -> None:
+        if len(findings) != len(finding_epoch) or any(
+            type(item) is not _FINDING_TYPE
+            or item is not original
+            or item.step_id is not name
+            or item.reasons is not reasons
+            or item.automatic_replay_authorized is not False
+            for item, (original, name, reasons) in zip(
+                findings, finding_epoch, strict=True,
+            )
+        ):
+            raise SyntheticQuarantineMatrixRejected("WRITE finding carrier changed")
+
     for name, row in zip(expected, observed, strict=True):
         assert_epoch()
+        stable_findings()
         if (
             row.step_id != name
             or type(row.plan_state) is not str
@@ -161,7 +181,18 @@ def diagnose_disconnected_write_quarantine(
             reasons.append("audit_link_recorded")
             if row.reservation == "absent" or row.preaction_audit == "absent":
                 reasons.append("cross_store_orphan")
-        findings.append(SyntheticQuarantineFinding(name, tuple(reasons)))
+        codes = tuple(reasons)
+        finding = SyntheticQuarantineFinding(name, codes)
+        if (
+            type(finding) is not _FINDING_TYPE
+            or finding.step_id is not name
+            or finding.reasons is not codes
+            or finding.automatic_replay_authorized is not False
+        ):
+            raise SyntheticQuarantineMatrixRejected("invalid WRITE finding carrier")
+        findings.append(finding)
+        finding_epoch.append((finding, name, codes))
+        stable_findings()
         encoded_rows.append((
             name, row.plan_state, row.reservation,
             row.preaction_audit, row.audit_link,
@@ -175,19 +206,25 @@ def diagnose_disconnected_write_quarantine(
     if len(payload) > _MAX_BYTES:
         raise SyntheticQuarantineMatrixRejected("WRITE matrix budget exceeded")
     assert_epoch()
+    stable_findings()
     local_digest = _hash(payload)
     assert_epoch()
+    stable_findings()
+    frozen_findings = tuple(findings)
     result = SyntheticQuarantineMatrix(
-        original_topology, expected, tuple(findings), local_digest,
+        original_topology, expected, frozen_findings, local_digest,
     )
     assert_epoch()
+    stable_findings()
     if (
-        type(result) is not SyntheticQuarantineMatrix
+        type(result) is not _MATRIX_TYPE
         or result.topology_digest is not original_topology
         or result.observed_write_step_ids is not expected
-        or type(result.findings) is not tuple
-        or len(result.findings) != len(expected)
+        or result.findings is not frozen_findings
         or result.local_digest is not local_digest
+        or result.dispatch_authorized is not False
+        or result.automatic_replay_authorized is not False
+        or result.external_outcome_known is not False
     ):
         raise SyntheticQuarantineMatrixRejected("WRITE diagnostic result changed")
     return result
