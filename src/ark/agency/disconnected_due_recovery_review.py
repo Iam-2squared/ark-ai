@@ -104,6 +104,19 @@ def review_restarted_due_reservations(
     observed = ledger.witness()
     retained_epoch()
     current = _checked(observed)
+    observed_count, observed_fingerprint = observed.count, observed.fingerprint
+
+    def observed_epoch() -> None:
+        retained_epoch()
+        if (
+            type(observed) is not _WITNESS_TYPE
+            or _checked(observed) != current
+            or observed.count is not observed_count
+            or observed.fingerprint is not observed_fingerprint
+        ):
+            raise DisconnectedDueRecoveryRejected("observed due witness changed")
+
+    observed_epoch()
     if current[0] < prior[0]:
         raise DisconnectedDueRecoveryRejected("retained due reservation count regressed")
     if current[0] == prior[0] and current[1] != prior[1]:
@@ -115,18 +128,11 @@ def review_restarted_due_reservations(
     payload = json.dumps(
         (prior, current, status), separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
-    retained_epoch()
-    if (
-        type(observed) is not _WITNESS_TYPE
-        or observed.count is not current[0]
-        or observed.fingerprint is not current[1]
-        or observed.independent_custody_proven is not False
-    ):
-        raise DisconnectedDueRecoveryRejected("observed due witness changed")
+    observed_epoch()
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
-    retained_epoch()
+    observed_epoch()
     result = DisconnectedDueRecoveryReview(prior[0], current[0], status, digest)
-    retained_epoch()
+    observed_epoch()
     if (
         type(result) is not _RESULT_TYPE
         or result.previous_count is not prior[0]
@@ -141,4 +147,5 @@ def review_restarted_due_reservations(
         or result.automatic_replay_authorized is not False
     ):
         raise DisconnectedDueRecoveryRejected("due recovery result changed")
+    observed_epoch()
     return result
