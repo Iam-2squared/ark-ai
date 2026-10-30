@@ -32,6 +32,21 @@ def _hash_file(path: Path) -> tuple[str, int]:
     return h.hexdigest(), size
 
 
+def _identity_label(label: object) -> str:
+    """Canonical relative label; metadata aliases cannot escape a manifest."""
+    if (
+        type(label) is not str
+        or not 1 <= len(label) <= 4096
+        or label.startswith("/")
+        or "\\" in label
+        or any(ord(ch) < 32 or ord(ch) == 127 for ch in label)
+        or any(part in ("", ".", "..") for part in label.split("/"))
+        or re.fullmatch(r"[A-Za-z]:", label.split("/")[0]) is not None
+    ):
+        raise ValueError("identity label must be an exact relative POSIX path")
+    return label
+
+
 def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     """Hash one existing regular file, checking its path and byte epoch.
 
@@ -40,6 +55,7 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     security boundary against a hostile writer, or future file immutability.
     """
     path = Path(path)
+    safe_label = _identity_label(path.name if label is None else label)
     if ".." in path.parts:
         raise ValueError("identity path may not traverse parent aliases")
     try:
@@ -69,7 +85,7 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
         or epoch(before) != epoch(after)
     ):
         raise ValueError("identity file changed during hashing")
-    return FileIdentity(label or path.name, sha, size, False)
+    return FileIdentity(safe_label, sha, size, False)
 
 
 def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
