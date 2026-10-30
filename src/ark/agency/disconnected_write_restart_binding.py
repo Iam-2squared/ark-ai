@@ -211,6 +211,19 @@ def review_disconnected_write_restart(
                         raise OfflineWriteRestartRejected(
                             "WRITE was incorrectly released by quarantine"
                         )
+                # Membership alone can omit an already-reserved WRITE from
+                # the caller's plan. A partial restart claim must not be
+                # presented as reconciliation of the complete persisted plan.
+                # Reservations for *other* plans are independent and allowed.
+                persisted_for_plan = frozenset(
+                    (step_id, slot_id)
+                    for saved_plan, step_id, slot_id in rows
+                    if saved_plan == plan_id
+                )
+                if frozenset(matched) != persisted_for_plan:
+                    raise OfflineWriteRestartRejected(
+                        "unrepresented durable WRITE reservations for this plan"
+                    )
                 stable()
                 assert_fence()
                 if _inspect(conn) != observed:
