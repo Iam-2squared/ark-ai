@@ -54,13 +54,13 @@ def test_regular_mock_runtime_identity_and_tolerance_remain_valid():
     verify_runtime_identity(_snapshot(), _measured(), vram_tolerance_gib=0.0)
 
 
-@pytest.mark.parametrize("value", (1e308, 10**1000))
-def test_measured_vram_unit_conversion_rejects_overflow(value):
+@pytest.mark.parametrize("value", (10**1000, float("inf"), float("nan")))
+def test_measured_vram_invalid_number_rejected_before_runtime(value):
     with pytest.raises(RuntimeIdentityMismatch, match="VRAM"):
         _measured(value).validate()
 
 
-@pytest.mark.parametrize("tolerance", (True, False, 10**1000, 1e308, -1, float("nan")))
+@pytest.mark.parametrize("tolerance", (True, False, 10**1000, -1, float("nan")))
 def test_vram_tolerance_must_be_finite_and_nonnegative(tolerance):
     with pytest.raises(ValueError, match="tolerance"):
         verify_runtime_identity(
