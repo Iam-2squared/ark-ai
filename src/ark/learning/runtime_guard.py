@@ -131,7 +131,46 @@ def verify_runtime_identity(
         or type(snapshot.get("hardware")) is not dict
     ):
         raise RuntimeIdentityMismatch("invalid frozen runtime identity container")
+    # The frozen snapshot is caller-owned. Preserve exact key/value carriers
+    # *before* invoking measured-runtime validation or subsequent callbacks.
+    # Missing required fields are a denial, never an unclassified KeyError.
+    environment_fields = (
+        "os_or_image_digest", "python", "torch", "transformers",
+        "peft", "accelerate", "cuda_runtime",
+    )
+    hardware_fields = ("device", "driver", "vram_gib")
+    source_environment = snapshot["environment"]
+    source_hardware = snapshot["hardware"]
+    try:
+        environment_epoch = tuple(
+            (name, source_environment[name]) for name in environment_fields
+        )
+        hardware_epoch = tuple(
+            (name, source_hardware[name]) for name in hardware_fields
+        )
+        measured_epoch = tuple(
+            (name, getattr(actual, name))
+            for name in (*environment_fields, "device", "driver", "vram_gib")
+        )
+    except (KeyError, AttributeError) as exc:
+        raise RuntimeIdentityMismatch("incomplete frozen runtime identity") from exc
+
+    def assert_identity_epoch() -> None:
+        if (
+            snapshot.get("environment") is not source_environment
+            or snapshot.get("hardware") is not source_hardware
+            or any(source_environment[name] is not value
+                   for name, value in environment_epoch)
+            or any(source_hardware[name] is not value
+                   for name, value in hardware_epoch)
+            or any(getattr(actual, name) is not value
+                   for name, value in measured_epoch)
+        ):
+            raise RuntimeIdentityMismatch("runtime identity epoch changed during validation")
+
+    assert_identity_epoch()
     actual.validate()
+    assert_identity_epoch()
     if type(vram_tolerance_gib) not in (int, float):
         raise ValueError("finite non-negative VRAM tolerance required")
     try:
@@ -141,16 +180,8 @@ def verify_runtime_identity(
     if not math.isfinite(tolerance) or tolerance < 0:
         raise ValueError("finite non-negative VRAM tolerance required")
 
-    expected_environment = snapshot["environment"]
-    for field in (
-        "os_or_image_digest",
-        "python",
-        "torch",
-        "transformers",
-        "peft",
-        "accelerate",
-        "cuda_runtime",
-    ):
+    expected_environment = dict(environment_epoch)
+    for field in environment_fields:
         expected = expected_environment[field]
         if type(expected) is not str or not expected.strip():
             raise RuntimeIdentityMismatch(f"invalid frozen runtime identity for {field}")
@@ -161,7 +192,7 @@ def verify_runtime_identity(
                 f"expected {expected!r}, observed {observed!r}"
             )
 
-    expected_hardware = snapshot["hardware"]
+    expected_hardware = dict(hardware_epoch)
     expected_device = expected_hardware["device"]
     expected_driver = expected_hardware["driver"]
     if type(expected_device) is not str or not expected_device.strip():
@@ -188,6 +219,7 @@ def verify_runtime_identity(
             f"GPU VRAM identity mismatch: expected {expected_vram_float:.3f} GiB, "
             f"observed {actual_vram:.3f} GiB"
         )
+    assert_identity_epoch()
 
 
 class WallTimeBudget:
