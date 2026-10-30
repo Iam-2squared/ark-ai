@@ -29,6 +29,8 @@ SQLITE_INT_MAX = (1 << 63) - 1
 # never hydrate an unbounded namespace before applying its small result limit.
 _MAX_NAMESPACE_SEARCH_ROWS = 10_000
 _BOOTSTRAP_LOCK = Lock()  # process-local WAL setup; SQLite remains cross-process authority
+# Preserve the real event result class across synthetic constructor injection.
+_MEMORY_EVENT_RESULT_TYPE = MemoryEvent
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
 _SCHEMA_V1_SQL = """CREATE TABLE memories(
@@ -768,9 +770,36 @@ class SQLiteMemoryStore:
         # V1 permits clocks to move backwards between independent memories:
         # ordering is by event_id only, never by occurred_at_ms.
         result: list[MemoryEvent] = []
+        # Returning a forged event (or mutating an earlier event while later
+        # rows are hydrated) must not convert local audit history into a
+        # different scope, revision or operation. All carriers are captured
+        # independently of the replaceable event constructor.
+        event_epochs: list[tuple[MemoryEvent, tuple[object, ...]]] = []
+
+        def assert_event_results() -> None:
+            for event, saved in event_epochs:
+                try:
+                    current = (
+                        event.event_id, event.memory_id, event.scope,
+                        event.scope.owner_id, event.scope.namespace,
+                        event.operation, event.revision, event.occurred_at_ms,
+                    )
+                except (AttributeError, TypeError, ValueError) as exc:
+                    raise MemorySchemaError("memory event result changed during read") from exc
+                if (
+                    type(event) is not _MEMORY_EVENT_RESULT_TYPE
+                    or type(event.scope) is not MemoryScope
+                    or any(
+                        field is not original
+                        for field, original in zip(current, saved, strict=True)
+                    )
+                ):
+                    raise MemorySchemaError("memory event result changed during read")
+
         previous_id = after_event_id
         for row in rows:
             assert_events_epoch()
+            assert_event_results()
 
             def stored_int(event_row: sqlite3.Row, column: str, *, minimum: int) -> int:
                 value = event_row[column]
@@ -805,11 +834,21 @@ class SQLiteMemoryStore:
                 raise MemorySchemaError("stored event scope does not match query")
             if operation not in {"create", "update", "delete", "expire"}:
                 raise MemorySchemaError("stored event operation is invalid")
-            result.append(
-                MemoryEvent(event_id, memory_id, recorded_scope, operation, revision, occurred)
+            event = MemoryEvent(
+                event_id, memory_id, recorded_scope, operation, revision, occurred,
             )
             assert_events_epoch()
+            # Capturing SQL argument carriers rather than fields from the
+            # constructed result prevents forged equal-valued replacements.
+            event_epochs.append((
+                event,
+                (event_id, memory_id, recorded_scope, owner_id, namespace,
+                 operation, revision, occurred),
+            ))
+            assert_event_results()
+            result.append(event)
         assert_events_epoch()
+        assert_event_results()
         return result
 
     def _initialize(self) -> None:
