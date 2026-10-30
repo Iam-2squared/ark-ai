@@ -183,17 +183,18 @@ class DisconnectedDueReservations:
     """Fixture SQLite reservations, never an actual autonomous scheduler."""
 
     def __init__(self, path: Path, *, require_existing: bool = False) -> None:
-        # Legacy synthetic fixture creation remains available, but a restart
-        # must use mode=rw to prevent silent storage re-creation after loss.
+        # Only explicit fixture creation may take write intent. Existing-only
+        # restart opens SQLite in read-only mode with a read transaction:
+        # neither bootstrap/migration nor a RESERVED writer lock is allowed.
         if type(require_existing) is not bool:
             raise DueReservationRejected("exact existing-only flag required")
         self._path = _check_path(path, exists=require_existing)
-        mode = "rw" if require_existing else "rwc"
+        mode = "ro" if require_existing else "rwc"
         with closing(sqlite3.connect(
             self._path.as_uri() + "?mode=" + mode,
             uri=True, timeout=10, isolation_level=None,
         )) as conn:
-            conn.execute("BEGIN IMMEDIATE")
+            conn.execute("BEGIN" if require_existing else "BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
