@@ -236,8 +236,11 @@ class DisconnectedMemoryWitnessLedger:
                     pass
             except OSError as exc:
                 raise MemoryWitnessLedgerRejected("ledger already exists or unsafe") from exc
-        with closing(self._open(read_only=False)) as conn:
-            conn.execute("BEGIN IMMEDIATE")
+        # Existing witness histories are inspected, never migrated. Do not
+        # acquire a RESERVED SQLite writer lock merely to reopen a ledger.
+        # Explicit create=True retains its separate write/bootstrap path.
+        with closing(self._open(read_only=not create)) as conn:
+            conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
                     if (
