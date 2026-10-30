@@ -39,13 +39,15 @@ class PreflightEvidence:
             raise ValueError("valid accelerator identity required")
         for name in ("vram_gib", "peak_vram_mib", "peak_reserved_vram_mib", "wall_seconds"):
             value = getattr(self, name)
-            if (
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(value)
-                or value <= 0
-            ):
-                raise ValueError("finite positive preflight measurements required")
+            message = "finite positive preflight measurements required"
+            if type(value) not in (int, float):
+                raise ValueError(message)
+            try:
+                measured = float(value)
+            except (OverflowError, ValueError) as exc:
+                raise ValueError(message) from exc
+            if not math.isfinite(measured) or measured <= 0:
+                raise ValueError(message)
         if any(
             value is not True
             for value in (self.base_loaded, self.forward_backward_ok, self.optimizer_step_ok)
