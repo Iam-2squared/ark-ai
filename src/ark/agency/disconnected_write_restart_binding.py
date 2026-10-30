@@ -226,7 +226,26 @@ def review_disconnected_write_restart(
     try:
         if ledger.inspect(retained=retained) != observed:
             raise OfflineWriteRestartRejected("WRITE ledger changed after read")
+        # The public inspect method is an overridable callback. A callback
+        # returning a stale, equal-valued result while appending a reservation
+        # cannot rebase our earlier committed SQLite epoch. Reopen and read
+        # the actual rows independently after that callback.
+        stable()
+        assert_fence()
+        with closing(ledger._open(read_only=True)) as second:
+            second.execute("BEGIN")
+            try:
+                if _inspect(second) != observed:
+                    raise OfflineWriteRestartRejected("WRITE ledger changed after read")
+                second.commit()
+            except BaseException:
+                second.rollback()
+                raise
+    except sqlite3.Error as exc:
+        raise OfflineWriteRestartRejected("WRITE ledger cannot be rechecked") from exc
     except ValueError as exc:
+        if type(exc) is OfflineWriteRestartRejected:
+            raise
         raise OfflineWriteRestartRejected("WRITE witness no longer matches") from exc
     stable()
     assert_fence()
