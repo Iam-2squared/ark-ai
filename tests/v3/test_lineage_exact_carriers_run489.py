@@ -39,7 +39,7 @@ def test_valid_lineage_is_deterministic_and_nonexecuting():
     ("kind", StrCarrier("base")),
     ("path", StrCarrier("local/base.bin")),
     ("tool_revision", StrCarrier("a" * 40)),
-    ("path", "local\\x00binary"),
+    ("path", "local" + chr(0) + "binary"),
     ("path", "line\nfeed"),
     ("path", "x" * 4097),
     ("kind", "  "),
