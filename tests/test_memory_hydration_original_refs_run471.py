@@ -48,7 +48,9 @@ def test_equal_value_nested_carrier_substitution_changes_epoch(field):
 
 
 def test_normal_sqlite_read_and_search_remain_valid(tmp_path):
-    clock = lambda: 101
+    def clock():
+        return 101
+
     store = SQLiteMemoryStore(tmp_path / "memory.db", clock_ms=clock)
     scope = MemoryScope("owner", "synthetic")
     created = store.put(MemoryWrite(scope, "source", "fixture"))
