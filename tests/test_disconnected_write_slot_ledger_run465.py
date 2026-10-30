@@ -267,3 +267,46 @@ def test_reflective_claim_mutation_during_commit_precheck_denied(tmp_path, monke
     with pytest.raises(WriteSlotLedgerRejected, match="changed"):
         db.reserve_many((item,), retained=genesis_write_slot_witness())
     assert db.inspect(retained=genesis_write_slot_witness()) == genesis_write_slot_witness()
+
+
+def test_postcommit_returned_receipt_mutation_is_denied_without_replay(tmp_path, monkeypatch):
+    from ark.agency import disconnected_write_slot_ledger as module
+
+    db = ledger(tmp_path)
+    retained = genesis_write_slot_witness()
+    real_receipt = module.WriteSlotReservationReceipt
+
+    def corrupt_receipt(count, witness):
+        receipt = real_receipt(count, witness)
+        object.__setattr__(receipt, "added_count", count + 1)
+        return receipt
+
+    monkeypatch.setattr(module, "WriteSlotReservationReceipt", corrupt_receipt)
+    with pytest.raises(WriteSlotLedgerRejected, match="post-commit"):
+        db.reserve_many((claim(1),), retained=retained)
+    with sqlite3.connect(tmp_path / "synthetic.db") as conn:
+        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
+    with pytest.raises(WriteSlotLedgerRejected, match="stale"):
+        db.inspect(retained=retained)
+
+
+def test_postcommit_claim_reflection_is_denied_and_not_rolled_back(tmp_path, monkeypatch):
+    from ark.agency import disconnected_write_slot_ledger as module
+
+    db = ledger(tmp_path)
+    retained = genesis_write_slot_witness()
+    item = claim(1)
+    real_receipt = module.WriteSlotReservationReceipt
+
+    def tamper_claim(count, witness):
+        old_plan = item.plan_id
+        object.__setattr__(item, "plan_id", ("x" + old_plan)[1:])
+        return real_receipt(count, witness)
+
+    monkeypatch.setattr(module, "WriteSlotReservationReceipt", tamper_claim)
+    with pytest.raises(WriteSlotLedgerRejected, match="carriers changed"):
+        db.reserve_many((item,), retained=retained)
+    with sqlite3.connect(tmp_path / "synthetic.db") as conn:
+        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
+    with pytest.raises(WriteSlotLedgerRejected, match="stale"):
+        db.inspect(retained=retained)
