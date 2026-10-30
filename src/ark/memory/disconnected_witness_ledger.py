@@ -92,7 +92,7 @@ def _path(path: object, *, create: bool) -> Path:
             info = path.lstat()
         except FileNotFoundError:
             if not create:
-                raise MemoryWitnessLedgerRejected("missing retained ledger")
+                raise MemoryWitnessLedgerRejected("missing retained ledger") from None
         else:
             if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise MemoryWitnessLedgerRejected("existing or aliased ledger")
@@ -147,7 +147,9 @@ def _decoded(raw: object) -> AtomicMemoryEpochReview:
         raise MemoryWitnessLedgerRejected("invalid persisted witness epoch") from exc
 
 
-def _inspect(conn: sqlite3.Connection) -> tuple[MemoryLedgerWitness, AtomicMemoryEpochReview | None]:
+def _inspect(
+    conn: sqlite3.Connection,
+) -> tuple[MemoryLedgerWitness, AtomicMemoryEpochReview | None]:
     _schema(conn)
     witness = genesis_memory_ledger_witness()
     previous = None
