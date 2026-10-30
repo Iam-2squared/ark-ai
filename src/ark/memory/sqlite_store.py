@@ -720,15 +720,23 @@ class SQLiteMemoryStore:
                 assert_purge_row_epoch()
                 if pinned_scope is not None and stored.scope != pinned_scope:
                     raise MemorySchemaError("stored memory scope differs from expiry query")
-                # Bind deletion to the exact row/scope/revision/expiry predicate
-                # observed under the lock. Only actual deletions emit events.
+                # Bind the DELETE to the *entire* selected row image, not
+                # just revision and expiry eligibility. A reentrant local
+                # callback can rewrite an already-expired row while keeping
+                # its revision and <=now predicate unchanged; never emit a
+                # terminal event for a different row image.
                 deleted = conn.execute(
                     """DELETE FROM memories
                     WHERE memory_id=? AND owner_id=? AND namespace=?
-                    AND revision=? AND expires_at_ms IS NOT NULL AND expires_at_ms<=?""",
+                    AND source_id=? AND content=? AND metadata_json=?
+                    AND content_sha256=? AND created_at_ms=? AND updated_at_ms=?
+                    AND revision=? AND expires_at_ms=? AND expires_at_ms<=?""",
                     (
-                        stored.memory_id, stored.scope.owner_id, stored.scope.namespace,
-                        stored.revision, now,
+                        row["memory_id"], row["owner_id"], row["namespace"],
+                        row["source_id"], row["content"], row["metadata_json"],
+                        row["content_sha256"], row["created_at_ms"],
+                        row["updated_at_ms"], row["revision"],
+                        row["expires_at_ms"], now,
                     ),
                 )
                 if deleted.rowcount != 1:
