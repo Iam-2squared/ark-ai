@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-import ark.learning.preflight as mod
+from ark.learning import preflight as mod
 from ark.learning.runtime_guard import RuntimeIdentity
 
 
