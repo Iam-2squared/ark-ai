@@ -207,7 +207,7 @@ class WallTimeBudget:
         if not math.isfinite(seconds):
             raise ValueError("wall-clock timeout seconds overflow")
         self.timeout_seconds = seconds
-        if type(started) is bool:
+        if started is not None and type(started) not in (int, float):
             raise ValueError("finite wall-clock start required")
         try:
             measured_start = time.monotonic() if started is None else float(started)
@@ -216,9 +216,15 @@ class WallTimeBudget:
         if not math.isfinite(measured_start):
             raise ValueError("finite wall-clock start required")
         self.started = measured_start
+        # An observed timeout is terminal for this budget instance. Caller-
+        # supplied time can be untrusted, but cannot rewind a prior reading.
+        self._last_checked_at = measured_start
+        self._timed_out = False
 
     def check(self, phase: str, *, now: float | None = None) -> None:
-        if type(now) is bool:
+        if self._timed_out:
+            raise RuntimeError("approved wall-clock timeout already exceeded")
+        if now is not None and type(now) not in (int, float):
             raise RuntimeError("finite wall-clock reading required")
         try:
             current = time.monotonic() if now is None else float(now)
@@ -229,9 +235,11 @@ class WallTimeBudget:
         elapsed = current - self.started
         if not math.isfinite(elapsed):
             raise RuntimeError("finite wall-clock elapsed time required")
-        if elapsed < 0:
+        if elapsed < 0 or current < self._last_checked_at:
             raise RuntimeError("monotonic clock moved backwards")
+        self._last_checked_at = current
         if elapsed > self.timeout_seconds:
+            self._timed_out = True
             raise RuntimeError(
                 f"approved wall-clock timeout exceeded during {phase}: "
                 f"{elapsed:.1f}s > {self.timeout_seconds:.1f}s"
