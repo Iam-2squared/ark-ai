@@ -196,13 +196,22 @@ def _require_text(value: object, field: str) -> None:
 
 
 def _require_positive_number(value: object, field: str) -> None:
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, (int, float))
-        or value <= 0
-        or (isinstance(value, float) and not math.isfinite(value))
-    ):
-        raise ExecutionBlocked(f"finite positive numeric value required: {field}")
+    message = f"finite positive numeric value required: {field}"
+    if type(value) not in (int, float) or value <= 0:
+        raise ExecutionBlocked(message)
+    try:
+        measured = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise ExecutionBlocked(message) from exc
+    if not math.isfinite(measured):
+        raise ExecutionBlocked(message)
+    # Unit conversions must remain finite before any authorized compute.
+    scales = {
+        "hardware.vram_gib": 1024.0,
+        "budget.wall_clock_timeout_minutes": 60.0,
+    }
+    if field in scales and not math.isfinite(measured * scales[field]):
+        raise ExecutionBlocked(message)
 
 
 def _require_exact_section_shape(snapshot: dict, section: str) -> None:
