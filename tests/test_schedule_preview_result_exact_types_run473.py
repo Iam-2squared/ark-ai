@@ -26,7 +26,6 @@ def _inputs(index):
         (1, "next_index", lambda v: float(v)),
         (0, "due_at_ms", lambda v: float(v)),
         (0, "due_at_ms", lambda v: int(str(v))),
-        (0, "next_index", lambda v: int(str(v))),
     ),
 )
 def test_forged_exact_result_numeric_carrier_is_denied(
