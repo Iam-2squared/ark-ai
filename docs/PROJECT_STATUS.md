@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-31 / Run487: complete-plan WRITE quarantine, independent Context replay restart tip, bounded Memory JSON, V3 packaging rehash**
+
+**Saved at:** **2026-10-31T05:44:43+09:00 Asia/Tokyo/JST**, locally observed immediately before checkpoint composition; NOT an independently authenticated clock, GitHub commit timestamp, approval, or consent.
+
+**Canonical branch / PR:** `research/jarvis-foundations` / PR #8 **Draft, open, unmerged**.
+**Separate V3 branch / PR:** `research/v3-learning-evaluation` / PR #5 **Draft, open, unmerged**.
+**Invocation initial work-basis HEADs:** PR #8 `dfbcd69f93a19a95110c7b7dfa3af5ce15dbe5ea`; PR #5 `683cfa5f580dfff1fe8402f9859f875877e15a76`.
+**Final source/test HEADs (BEFORE technical evidence):** PR #8 `f458ffe66682c8767a50472478f2128a464ad5f5`; PR #5 `afb462ed85b7ca7ce0f9c75b4efd641297fa0ddf`.
+**Checkpoint-write-basis HEAD:** `e226f3261e8c6e0c4fdc1bdfdbc58609039c0af5` (PRE-checkpoint, including Run487 technical evidence).
+**Checkpoint-result HEAD:** This file cannot attest the SHA of its own containing commit. Use the ordinary GitHub Contents update result and independently re-read the branch HEAD; do not confuse pre-checkpoint and result SHAs.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+**FOUR** reversible, free-only source/test packages and **29 newly authored parameterized pytest cases** (Planner 8, Context 8, Memory 8, V3 5), plus narrow authoring corrections and technical evidence. No actual ToolBackend, sensor, notification, physical-PC test, real training, external GPU, paid API/service, model Candidate, protected V2 final evaluation, irreversible action, automatic promotion, new secret/account or approval-required main merge was performed. The software cannot yet establish authenticated external outcomes, exactly-once effects, trusted time, genuine consent or independent history custody.
+
+### NEW this invocation — exact file identities
+
+1. **Planner WRITE restart complete membership:** PR #8 `src/ark/agency/disconnected_write_restart_binding.py` blob `2c4645185b8c76d844698c6cc4828cd831eb1239`; `tests/test_disconnected_write_restart_completeness_run487.py` blob `853bbf1b115a89abd9292dc6d70f065364564acb`. 8 new cases. Require every durable reservation for the claimed plan to be represented by an exact WRITE step/slot. Partial plans or hidden reservations fail closed; other plans are independent. No automatic WRITE replay or dispatch.
+2. **Personal Context restart independent SQLite tip:** PR #8 `src/ark/personal_context_replay_recovery.py` blob `609ed7e004f7f4a97b278f0e9b6a37e015d06016`; `tests/test_context_replay_independent_restart_tip_run487.py` blob `cf0d8da88dedebcac80b6b9f0d9d0b379688c859`. 8 new cases. Reject a forged/stale public `witness()` callback using a new read-only SQLite transaction before classification and after result construction. Appended history remains UNVERIFIED; no consent, disclosure or authenticated writer.
+3. **Retained Memory JSON bound:** PR #8 `src/ark/memory/disconnected_witness_ledger.py` blob `8133a2a85b42db9c8f9f418844ac8edba6242847`; `tests/test_memory_witness_json_depth_run487.py` blob `bca1e557d0f04c8b3879f8da6578221674b91d46`. 8 new cases. Reject more than 64 JSON container levels independently of decoder recursion behavior, correctly honor escaped quotes, normalize recursion errors; frozen Memory v1 schema untouched.
+4. **V3 runtime packaging identity recheck:** PR #5 `src/ark/learning/identity.py` blob `b0a0867da50bc5fbe3744235dd1fd0f66d97cba7`; `tests/v3/test_code_tree_packaging_epoch_run487.py` blob `32adcedd9ee5b34ef9be6f9ad3b7cd3d174baf74`. 5 new cases. Rehash `pyproject.toml` after enumerating/hashing runtime Python files to catch packaging byte drift during capture. Best-effort, not atomic or safe against same-byte filesystem replacement.
+5. **Technical evidence:** `docs/JARVIS_WRITE_COMPLETENESS_CONTEXT_RESTART_MEMORY_DEPTH_V3_CODE_RUN487.md`, committed on PRE-checkpoint HEAD `e226f3261e8c6e0c4fdc1bdfdbc58609039c0af5`. All eight final source/test file blobs independently re-read from actual branch refs.
+
+### Exact-head CI / tests
+
+- Previous Run486 PR #8 source/test #1689 / `41118860216`: **six-job GREEN**, Ubuntu/Windows Python 3.11–3.13, older source. Run486 document #1690 / `41119009690`: **six-job GREEN**, older source. Previous checkpoint #1691 / `41119183007`: SUCCESS.
+- Run487 PR #8 intermediate source/test #1693 / `41124882121`: **IN PROGRESS** at last job check, Ubuntu three and Windows 3.13 GREEN; Windows 3.11/3.12 running. Intermediate #1695 / `41124970568`: **IN PROGRESS**, Ubuntu three GREEN, Windows three still running.
+- **PR #8 latest Run487 source/test HEAD** `f458ffe66682c8767a50472478f2128a464ad5f5`: #1699 / `41125283519` **IN PROGRESS/QUEUED**, one Ubuntu 3.12 job running, other five queued at last review; **NOT GREEN**.
+- **PR #5 latest Run487 source/test HEAD** `afb462ed85b7ca7ce0f9c75b4efd641297fa0ddf`: #1701 / `41125460905` **IN PROGRESS/QUEUED**, Ubuntu 3.11 and Windows 3.13 running, other four queued at last review; **NOT GREEN**.
+- PR #8 technical-evidence CI #1702 / `41125586981`: **QUEUED** at last check; this checkpoint may trigger an additional distinct run. No manual duplicate workflow launched.
+- Independent local full pytest/Ruff **NOT VERIFIED**: GitHub DNS resolution failed for local `git ls-remote`. Do not claim the new cases pass until the exact SHA CI passes.
+
+### Frozen, privacy, cost and authorization boundaries
+
+Main base HEAD `7a843f17eb96ed13d66f23b58b06406b3002e405` remains unchanged at last check. The three independently re-read immutable PR #8 blobs remain Memory SQLite v1 `0aba6392b39563df520aa8b378d0b313f0cc0a0d`, Memory contract `b6e93821ecd69270a7634aceb20775dc36e9953c`, Agency contract `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`. No intentional V3 Contract 1, V1/V2/Local UI/Launcher, protected V2 scorer, contamination/provenance/reproducibility or regression gate edits.
+
+A local SQLite hash chain or an alleged witness cannot prove independent writer/consent custody, chronological history, true deletion or cross-store atomicity. UNKNOWN WRITE is never automatically retried. Missing real HF revision/bytes, approved 120/30 dataset/human decisions, pinned runtime/device identities and billing/user authorization keep all external GPU/paid compute, real Candidate, protected V2 opening, promotion, and approval-required merge blocked. No irreversible or real-world side effects.
+
+### Next plan / 今後の方針
+
+1. Verify final-source-head PR #8 #1699 and PR #5 #1701 across **all six** jobs and fix any failure narrowly through normal GitHub Contents API only, not raw Git objects or force push; verify separate documentation/checkpoint CI without duplicate launches.
+2. Advance independent Memory witness/custody boundaries, CAS and coherent SQLite snapshot verification, while keeping unauthenticated history clearly labeled.
+3. Prioritize Planner manual UNKNOWN WRITE reconciliation, trusted-clock audit-before-action, persistent occurrence/replay protection, and disconnected ToolRegistry/PermissionGate evidence. Do not authorize external Tool execution.
+4. Advance privacy-safe Context retention/revocation, Scheduler duplicate prevention, Observation fixtures and startup readiness.
+5. Continue free-only V3 identity/path/approval/reproducibility guards; no real Candidate/training/protected V2/paid GPU until separate explicit gates are satisfied.
+
+---
+
+**HISTORICAL — Run486 and earlier status preserved below, without revisions**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-31 / Run486: disconnected restart witness coherence, Planner WRITE replay quarantine, V3 bounded execution JSON**
 
 **Saved at:** **2026-10-31T04:54:41+09:00 Asia/Tokyo/JST**, observed from the local wall clock before checkpoint composition; **NOT** independently authenticated time, a GitHub commit timestamp, user consent, or human approval.
