@@ -1,6 +1,6 @@
 # Run483 — independent synthetic safety repairs (free-only)
 
-This addendum records four independently reversible source/test packages on **Draft, unmerged** branches. These changes do not prove real-world execution, user consent, trusted time, independently authenticated history, physical-PC readiness, training authorization, or a complete JARVIS. No credentials, paid API/GPU, model weights, Candidate, protected V2 evaluation, tool dispatch, irreversible action or main merge was performed.
+This addendum records five independently reversible source/test packages on **Draft, unmerged** branches. These changes do not prove real-world execution, user consent, trusted time, independently authenticated history, physical-PC readiness, training authorization, or a complete JARVIS. No credentials, paid API/GPU, model weights, Candidate, protected V2 evaluation, tool dispatch, irreversible action or main merge was performed.
 
 ## Exact source and test identities
 
@@ -10,8 +10,9 @@ This addendum records four independently reversible source/test packages on **Dr
 | Memory retained-chain edge custody | PR #8 | `src/ark/memory/retained_epoch_chain.py` `1bb052e80d049ed929d037dd32e6d48e49b2e1ee` | `tests/test_retained_memory_edge_custody_run483.py` `7b0b60ed2c4d28e7d992eed0f08e836cefd37d15` | 6 |
 | Durable WRITE slot receipt authority | PR #8 | `src/ark/agency/disconnected_write_slot_ledger.py` `209189379ca17659968bcb38f3bace1ab665da5c` | `tests/test_write_slot_receipt_authority_run483.py` `ff0fb98658795a015cb3dd89a0e8cd053e90752c` | 8 |
 | V3 saved execution snapshot byte-budget | PR #5 | `src/ark/learning/run_manifest.py` `b249b1c153e7456e883f8a5bb003ecd30da80ef3` | `tests/v3/test_candidate_snapshot_bounded_read_run483.py` `8766e59c7ad4b5efdd4c5d79182cba4506578772` | 11 |
+| READ fixture bridge binding/receipt custody | PR #8 | `src/ark/agency/disconnected_read_receipt_bridge.py` `6cd53c6c28ab2880a6f6bf56f3ed0cb91b0c68f7` | `tests/test_read_bridge_verified_custody_run483.py` `1e54a724ff9bde9e3224a9d120826a2dd64672da` | 7 |
 
-Total **32 new authored pytest cases**, not a stand-in for executed CI evidence.
+Total **39 new authored pytest cases**, not a stand-in for executed CI evidence.
 
 ### 1. Restart due witness: prevent mixed review epochs
 
@@ -29,9 +30,13 @@ Total **32 new authored pytest cases**, not a stand-in for executed CI evidence.
 
 The Candidate run evidence verifier previously used unbounded `Path.read_bytes()` for its saved execution snapshot, while other JSON evidence was bounded. It now reads no more than `len(expected_snapshot) + 1` bytes after rejecting an over-1MiB expected canonical snapshot. Existing exact byte equality remains mandatory. This does not run training, inspect a real model or create Candidate output, and is not a hostile-writer-safe file-descriptor seal.
 
+### 5. READ bridge: preserve the recomputed binding and original receipt class
+
+The disconnected READ bridge now pins the original `ReadReceipt` class and independently retains every recomputed fixture-binding carrier through construction and return. It rejects a substituted compatible-looking receipt or a binding edited by the receipt constructor, even if the original request/result remained unchanged. This does not invoke ToolBackend, grant external action authority, or bypass the detached journal's CAS/replay fence.
+
 ## CI provenance (as observed during authoring)
 
-- PR #8 final **source/test** HEAD `07816a2d01320c2b16bcc3271d0a6a54f1cc743a`; CI run #1655 / ID `41093907124` **IN PROGRESS** (six OS/Python jobs in progress on last read), not yet GREEN.
+- PR #8 four-package **source/test** HEAD `07816a2d01320c2b16bcc3271d0a6a54f1cc743a`; CI run #1655 / ID `41093907124` **IN PROGRESS** on last read (superseded source baseline). The **five-package final source/test HEAD** is `298ad1cb28a8cb5d53d328c95d2a342c20209134`, CI #1658 / ID `41094569246` **QUEUED**, not GREEN.
 - PR #5 final **source/test** HEAD `d8669d3bb45d8cd766123bdd6536fbec8664eba5`; CI run #1651 / ID `41093316371` **six-job GREEN**, Ubuntu+Windows Python 3.11–3.13 individually verified.
 - Prior checkpoint HEAD `3683f5a8e9eb055e3ba860bd40d4c94194f47d35`, CI #1647 / ID `41085199568` **six-job GREEN**, historical baseline only.
 - Independent local whole-repository pytest/Ruff **NOT VERIFIED**: the local git clone cannot resolve github.com. GitHub CI is the available execution evidence; no equivalent workflow reruns were manually triggered.
