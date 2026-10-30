@@ -20,8 +20,8 @@ from .retained_epoch_review import (
     review_retained_memory_epoch,
 )
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-memory-retained-epoch-chain-v1\\0"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-memory-retained-epoch-chain-v1\0"
 _MAX_EPOCHS = 16
 _EPOCH_TYPE = AtomicMemoryEpochReview
 _EDGE_TYPE = RetainedMemoryEpochComparison
