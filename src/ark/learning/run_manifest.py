@@ -24,6 +24,9 @@ class CandidateRunManifestError(RuntimeError):
     pass
 
 
+_MAX_CANONICAL_JSON_BYTES = 1_048_576
+
+
 def _reject_nonstandard_json_constant(token: str) -> None:
     raise ValueError(f"non-standard JSON constant is forbidden: {token}")
 
@@ -39,7 +42,15 @@ def _require_nonempty_directory(root: Path, relative: str) -> None:
 
 
 def _load_canonical_json(path: Path, label: str) -> tuple[dict, bytes]:
-    payload = path.read_bytes()
+    # A forged or unexpectedly huge evidence file must never be read without
+    # a byte limit before canonical JSON validation. This is local-only.
+    try:
+        with path.open("rb") as handle:
+            payload = handle.read(_MAX_CANONICAL_JSON_BYTES + 1)
+    except OSError as exc:
+        raise CandidateRunManifestError(f"{label} cannot be read") from exc
+    if len(payload) > _MAX_CANONICAL_JSON_BYTES:
+        raise CandidateRunManifestError(f"{label} exceeds canonical JSON byte budget")
     try:
         parsed = json.loads(payload, parse_constant=_reject_nonstandard_json_constant)
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
