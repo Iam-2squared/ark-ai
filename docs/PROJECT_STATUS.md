@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run480: retained Memory content epochs, private context request binding, disconnected due restart triage, V3 directory inode epoch; CI corrective evidence**
+
+**Saved at:** **2026-10-30T23:03:21.832258215+09:00 Asia/Tokyo/JST** (locally observed clock before checkpoint preparation; NOT an authenticated timestamp, actual GitHub commit timestamp, trusted scheduler clock, consent or approval).
+
+**Canonical branch / PR:** research/jarvis-foundations / PR #8 **Draft/open/unmerged**.
+**Separate V3 branch / PR:** research/v3-learning-evaluation / PR #5 **Draft/open/unmerged**.
+**Invocation initial work-basis HEAD:** PR #8 a13c6424d9f96a0d64e72ff117b370acefcf2ecd; PR #5 58a8f53c69ebb9104a95c9419ac6a4cf7e101087.
+**Final source/test HEAD:** PR #8 bbff54155714a9d26aea039608c6c574a23a3c8f (Context error-boundary correction included); PR #5 ac08ee7f69c04fe6eb24d5dd1a044e5fc289118c (V3 legacy diagnostic correction included).
+**Checkpoint write-basis HEAD:** 0beb343c2c8e03fdf586c1b38b9e338b4745938d (**PRE-checkpoint**, already includes Run480 technical evidence).
+**Checkpoint-result HEAD:** The content of this committed file cannot independently assert the SHA of its own containing Git commit. Verify the normal Contents update return value and reread branch/PR HEAD afterward. The PRE-checkpoint HEAD above is **not** the checkpoint-result SHA.
+
+### Overall ARK state — JARVIS NOT_PASSED
+
+Four coherent, fully synthetic/free-only packages authored and saved, **44 new pytest cases**. No standalone physical PC/runtime proof, real OS/Tool/sensor dispatch, authenticated permissions, trusted clock, independent event writer custody, protected V2 final evaluation, V3 Candidate/weights, external GPU, paid API, promotion or main merge. Lower-level tests are incremental evidence, NOT a completed JARVIS system or authority to act. Frozen V1/V2/Local UI/Launcher evidence and protected contracts are retained.
+
+### NEW this invocation — four packages
+
+1. **V3 root/nested directory identity epoch, 5 cases:** src/ark/learning/identity.py blob 8295659ad59735edc7c07ca5af67ff87cff9003f, tests/v3/test_manifest_directory_epoch_run480.py blob 761c5481911b30d763ce75dff69794bc87132f6f. Root and entry inode/stat epochs catch same-name directory replacement across manifest hashing. No hostile concurrent writer guarantee.
+2. **Memory v1 clock-independent local snapshot content fingerprint + retained history triage, 12 cases:** src/ark/memory/atomic_epoch_review.py blob 7d3ba8d50e3ed048d70cb6d3496211c350e9a3b2, new src/ark/memory/retained_epoch_review.py blob 7d4245014e90429cba5812341ad01e5985fa00ed, tests/test_memory_retained_epoch_review_run480.py blob d4d8ae1d8339759b5f1637356534ec4f598c291d. Same-tail content edits and count/tail regressions rejected; appended history remains **ADVANCED_HISTORY_UNVERIFIED**, not independently proven. Memory v1 DDL untouched.
+3. **Personal Context offline request-bound fixture integrity, 16 cases:** new src/ark/personal_context_request_binding.py blob b5d484218efda86547e57dc03ea963ddc642f7ae and tests/test_personal_context_request_binding_run480.py blob 9f6fea433b913375109dbeea0372e420c05fb676. Canonical local JSON/digest verified with strict owner/record/scope/budgets; hash bound to exact synthetic request; no raw content in receipt, fresh revocation/consent/retention/export/Tool permissions.
+4. **Disconnected due-slot restart witness comparison, 11 cases:** new src/ark/agency/disconnected_due_recovery_review.py blob cba9ea9895c153dca261473cd023493df777869f and tests/test_disconnected_due_recovery_run480.py blob d3c6aebd57ac16a83005438617cfee50816a0a36. Rejects retained count regression or same-count rewrite; advanced sequence marked unverified. Never executes a due occurrence or auto-replays a WRITE.
+
+**Technical evidence:** docs/JARVIS_RETAINED_EPOCH_REQUEST_BINDING_DIRECTORY_ID_RUN480.md committed as 0beb343c2c8e03fdf586c1b38b9e338b4745938d. All nine source/test blob SHAs re-fetched directly from exact PR branches. All source/test and documentation changes used normal GitHub Contents writes; no raw Git object/ref operations, no force-push.
+
+### Tests / CI — exact head, failure visibility, and pending states
+
+- Previous Run479 checkpoint PR #8 HEAD a13c6424d9f96a0d64e72ff117b370acefcf2ecd: #1610 / run 41059506054 SUCCESS, but older baseline.
+- **PR #8 Memory-only source/test HEAD 006f0c1871d1a864c46e4973ec5ae0e5cf2a5a90: #1616 / 41067052307 six-job CI SUCCESS**; does not cover later Context/Scheduler source.
+- **PR #5 corrected final source/test HEAD ac08ee7f69c04fe6eb24d5dd1a044e5fc289118c: #1619 / 41067545964 six-job CI SUCCESS** Ubuntu/Windows Python 3.11–3.13 (direct job check).
+- PR #5 earlier V3 HEAD 329c44498042f4c39ed8a2ecce3aac83b1722819: #1612 / 41066585009 **FAIL** on three pre-existing regex expectations; repaired original diagnostic without weakening the new inode guard, then confirmed #1619 GREEN.
+- PR #8 intermediate Context test HEAD ee9d189372e4e24ca4d85a14c419f824b91930d0: #1618 / 41067395976 **FAIL** on explicit size-limit error getting wrapped as generic JSON rejection; repaired narrow exception handler through normal Contents update.
+- **PR #8 final corrected source/test HEAD bbff54155714a9d26aea039608c6c574a23a3c8f: #1622 / 41067877747 IN PROGRESS** when last checked; no six-job GREEN claim. Scheduler source/test HEAD 1c39d6bd8cf1a72a7881dc2b749141a28865dc4f #1621 / 41067765315 failed Ubuntu due to the already-corrected Context test. Run480 technical document #1623 / 41068253887 IN PROGRESS, newer than final source HEAD.
+- **Independent local whole-repo pytest/Ruff NOT VERIFIED**: no DNS access to clone repo. All authored cases are saved; only actual completed CI is executed evidence. No duplicate workflow reruns, manually triggered billable jobs or external GPUs.
+
+### Frozen contracts, blockers and authorization limits
+
+Both PR #5 and #8 **Draft/unmerged**. V1/V2/Local UI/Launcher frozen evidence, Memory v1 DDL, protected V2 evaluation gate, V3 approved 120 train/30 validation one-Candidate/no-sweep experiment contract, contamination/provenance/regression/reproducibility and human-review rules **unchanged**. No real Candidate/weights, paid services/GPUs/APIs, secrets/new accounts, real data or media capture, irreversible operations, ToolBackend/OS dispatch, promotions or main merge.
+
+Still blocked: independent retained audit/event writer provenance, trusted-clock custody and human consent/revocation, cross-store atomicity, recovery of uncertain real WRITE effects, physical PC evidence, verifiable model bytes and dataset licensing/provenance/human review, and spending-enforceable provider controls with separate explicit authorization. A local SQLite hash or a caller-provided ID cannot establish these.
+
+### Next plan / 今後の方針
+
+1. Confirm exact corrected PR #8 source CI #1622 and later Run480 document/checkpoint CI. Any actual failure requires job-log inspection and smallest semantics-preserving fix, with independent lanes used while CI runs.
+2. Continue independent retained Memory epoch/cas/event continuity with externally retained witness limits explicit; do not assume an append-prefix or trusted writer.
+3. Advance Planner UNKNOWN WRITE quarantine, exact registry/permission identity, occurrence/replay and trusted-clock audit-before-action **contracts**. No real dispatch or uncertain automatic retry.
+4. Advance Scheduler restart/due occurrence custody, Personal Context revocation/reuse/privacy, Observation fixtures and V3 free-only approval/path/reproducibility guards.
+5. Protected V2 eval, actual Candidate generation/promotion, paid compute or approval-gated main merge remain blocked pending separate explicit authorization and evidence.
+
+---
+
+**HISTORICAL — Run479 and earlier canonical/frozen evidence preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run479 CI corrective update: Observation legacy diagnostics restored without weakening original validator**
 
 **Saved at:** **2026-10-30T21:58:13.165351055+09:00 Asia/Tokyo/JST** (local wall-clock observation immediately before correction preparation, not authenticated timestamp, user authorization or GitHub commit time).
