@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run476: disconnected startup readiness, request-bound fixture replay, READ and scheduler authority fences, V3 identity disappearance denial**
+
+**Saved at:** **2026-10-30T18:58:33.127+09:00 Asia/Tokyo/JST** (observed automation wall clock immediately before ordinary checkpoint write; not an independently authenticated clock or GitHub commit timestamp).
+
+**Canonical branch / PR:** `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+**Separate V3 branch / PR:** `research/v3-learning-evaluation` / **PR #5 Draft, open, unmerged**.
+**Invocation work-basis HEAD (PR #8):** `f91dc62c18fc17b7796d584ef4872c44b9f4fbd6` (Run475 checkpoint).
+**Invocation work-basis HEAD (PR #5):** `23fe76a18a2197cf19ff7daa9ac403e64d23cb4b` (Run475 source/test).
+**Final source/test HEAD (PR #8):** `455407fde900085056c546041e427ddeea9b370f`.
+**Final source/test HEAD (PR #5):** `7e887160853017b98373cfa88cbeeec9c7deef0a`.
+**Checkpoint-write-basis HEAD:** `a9cb7b2fbccfbd88880608b27e80fe63eae3942a` (**PRE-checkpoint**, including technical evidence).
+**Checkpoint-result HEAD:** This file cannot self-attest the commit creating its own update; use the ordinary GitHub Contents API returned SHA and independently re-read the PR/branch head. Do NOT relabel the PRE-checkpoint SHA as the result.
+
+### Overall current ARK state — complete JARVIS NOT_PASSED
+
+Five reversible, synthetic, local-first packages advanced, including the first optional detached readiness review joining an existing query-only SQLite schema seal and exact registered READ-only preflight. This is **NOT** a live startup authorization or integrated JARVIS. No authenticated user consent or trusted clock, actual ToolBackend/OS/notification dispatch, external exactly-once WRITE outcome, independently retained writer provenance, atomic cross-store snapshot, real Candidate training/evaluation, or physical-PC/GPU proof has been demonstrated.
+
+### NEW this invocation — five meaningful packages, 63 authored pytest cases
+
+1. **Scheduler due-preview authority deny (16 cases):** `src/ark/disconnected_schedule_preview.py` blob `69d1d3a7d436afb9635bc6959049982d7269075d`; test `tests/test_schedule_preview_authority_fence_run476.py` blob `0f5028d4d6de15d53c495d15d8ce4a536bc93e56`. Reject exact-type synthetic due receipts that falsely claim trusted clock, consent, notification, Tool or replay authorization. No scheduled action launched.
+2. **READ Planner/Registry/Gate cycle authority deny (8 cases):** `src/ark/agency/disconnected_read_cycle.py` blob `e40072cff42c3796ffe1c5202b515f0354f8e973`; test `tests/test_read_cycle_authority_fence_run476.py` blob `8662c29c3caf36519fd70bba0286835a0475f385`. Reject forged preflight and completed shadow receipt authority flags; no ToolBackend invocation, original PlanGraph untouched.
+3. **Per-request disconnected fixture result binding (16 cases):** new `src/ark/agency/disconnected_fixture_binding.py` blob `f65d08e04760a72458ec64abbc6421194d1e234e`; test `tests/test_disconnected_fixture_request_binding_run476.py` blob `e37608b3d4eff76c6a0ccc652955b7d13713b13d`. Recompute only deterministic in-memory READ fixtures and create separate request-ID-domain witness, preventing cross-request hash reuse. Existing toolbox v1 hashes and frozen contracts unchanged. Not durable/authenticated execution evidence.
+4. **V3 runtime identity field-disappearance fail-closed (10 cases):** `src/ark/learning/runtime_guard.py` blob `9b1092a91396efdf1e5fb9a8cd89449ef918bbc1`; test `tests/v3/test_runtime_identity_field_disappearance_run476.py` blob `0599309951a21c725a217700b81248b1fc11e0f5`. Deleted frozen/observed identity fields during callbacks now produce RuntimeIdentityMismatch, not raw missing-field exceptions. No GPU measurement/training/provisioning performed.
+5. **Detached local startup readiness (13 cases):** new `src/ark/disconnected_local_readiness.py` blob `cb09258e6588552306cd3c5f670d5a6adc1b5d6e`; test `tests/test_disconnected_local_readiness_run476.py` blob `62b2e54ea2e8c62bffba20d2861a07c19e73863e`. Join previously validated disconnected SQLite schema probe with READ preflight; recheck schema and exact plan/registry/grants without row reads, filesystem access, notifications or backend dispatch. Two separated reads do not prove atomicity.
+
+**Persistence/evidence:** 10 ordinary GitHub Contents API source/test commits plus technical evidence `docs/JARVIS_OFFLINE_READINESS_REPLAY_V3_RUN476.md` blob `03239accf4089e06bf8786e090f5127ac084b9fa` at `a9cb7b2fbccfbd88880608b27e80fe63eae3942a`. All ten source/test files re-fetched from their exact final branch HEADs with content SHA matched. No force, raw object/ref safety bypass, duplicate equivalent workflow runs or main merge.
+
+### Tests / CI — distinguish exact HEADs
+
+- **PR #5 exact final source/test HEAD** `7e887160853017b98373cfa88cbeeec9c7deef0a`: **#1567 / run `41036617556` ALL SIX Ubuntu/Windows Python 3.11–3.13 jobs GREEN** at last job inspection, including existing Ruff/pytest flow. An explicit full local test run was not performed.
+- **PR #8 final source/test HEAD** `455407fde900085056c546041e427ddeea9b370f`: **#1571 / run `41036936776` IN PROGRESS** at last observation, all six jobs running/queued earlier and none reported FAILED then. **Do not claim current PR #8 6/6 GREEN**. Intermediate binding-only source/test #1565 / run `41036476964` was IN PROGRESS (Ubuntu Python 3.12/3.13 GREEN, other jobs still running) at last review.
+- **Historical baseline:** PR #8 #1557 / run `41028977437` **6/6 GREEN** on prior Run475 source/test HEAD `e0db4fba5ac1ffcfe7d0e5090fceb34b04c79a69`; checkpoint #1559 / run `41029300776` completed success on prior Run475 checkpoint. Prior PR #5 #1553 / run `41028538883` was 6/6 GREEN on its earlier HEAD, not used to certify Run476.
+- **63 authored pytest cases:** saved to GitHub, not claimed locally executed. Full local pytest/Ruff **NOT VERIFIED**; exact-head CI is authoritative only where its actual jobs were observed. GitHub repository visibility observed **PUBLIC**, and all Actions are ordinary automatically triggered standard public-repository workflows, with no paid/external compute provisioned.
+
+### Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher frozen evidence and contracts, Memory v1 DDL, protected V2 final evaluation, V3 Contract 1 (120 approved train/30 validation, one Candidate/no sweep), contamination/provenance/regression/reproducibility gates, human review and main merge approval remain unchanged. **PR #5 and #8 both Draft/open/unmerged.** No real user data, external Tool/OS/sensor access, new accounts/secrets/credentials, paid APIs/compute, Candidate adapter/weights or automatic promotion.
+
+Unresolved: independent immutable model/tool revision+byte identities, approved dataset provenance and licensing, audited consent and trusted-clock authority, isolated SQLite writer provenance and cross-process/cross-store integrity, durable external WRITE reconciliation, verified actual hardware/runtime, provider-side enforcement of billing caps and explicitly approved JPY/time limits. Synthetic diagnostics and in-process budgets cannot remove these blockers.
+
+### Next plan / 今後の方針
+
+1. Verify **PR #8 #1571 / `41036936776`** exact-final-HEAD CI and any later checkpoint CI; if actual failure, inspect jobs/logs and make the smallest semantics-preserving normal Contents API fix. Run other independent free lanes while CI remains in flight.
+2. Advance Memory exact-row/event CAS, bounded expiry and coherent snapshot/restart witnesses without changing frozen v1 schema; strengthen independently retained proof limitations.
+3. Continue Planner UNKNOWN WRITE quarantine/recovery, registry-bound identity, audit-before-action trusted clock, replay protection and safe mock executor. Integrate only after lower-level exact-HEAD GREEN, never grant live execution authority from synthetic receipts.
+4. Continue proactive Scheduler occurrence state, Personal Context privacy lifecycle/consent revocation, offline Observation and opt-in startup readiness, with no real notifications/capture.
+5. Continue V3 free-only approval/path/identity/reproducibility review; block paid compute, real Candidate, protected evaluation, promotions and main merges pending explicit user authorization.
+
+---
+
+**HISTORICAL — Run475 and every earlier canonical/frozen record preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run475: READ recovery decision custody, SQLite journal post-COMMIT witness, V3 identity epochs, bounded private context JSON**
 
 **Saved at:** **2026-10-30T17:50:25.350835413+09:00 Asia/Tokyo/JST** (local runtime wall observation before checkpoint preparation, not independently trusted time or the GitHub commit timestamp).
