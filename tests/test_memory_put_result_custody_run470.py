@@ -91,10 +91,16 @@ def test_update_result_forgery_preserves_committed_revision_and_event(tmp_path, 
     path, store, scope = _fixture(tmp_path)
     initial = store.put(MemoryWrite(scope, "source-identity", "initial text"))
     original = storage.MemoryRecord
+    constructor_calls = 0
 
     def injected(*args):
+        nonlocal constructor_calls
+        constructor_calls += 1
         result = original(*args)
-        object.__setattr__(result, "revision", 999)
+        # First constructor hydrates the previous row before the transaction
+        # commits. Only the second constructor is the returned post-COMMIT row.
+        if constructor_calls == 2:
+            object.__setattr__(result, "revision", 999)
         return result
 
     monkeypatch.setattr(storage, "MemoryRecord", injected)
@@ -105,6 +111,8 @@ def test_update_result_forgery_preserves_committed_revision_and_event(tmp_path, 
         )
     with sqlite3.connect(path) as conn:
         rows = conn.execute("SELECT content,revision FROM memories").fetchall()
-        events = conn.execute("SELECT operation,revision FROM memory_events ORDER BY event_id")
+        events = conn.execute(
+            "SELECT operation,revision FROM memory_events ORDER BY event_id"
+        ).fetchall()
     assert rows == [("committed replacement", 2)]
     assert events == [("create", 1), ("update", 2)]
