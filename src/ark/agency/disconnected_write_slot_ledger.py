@@ -237,10 +237,23 @@ class DisconnectedWriteSlotLedger:
                 raise WriteSlotLedgerRejected("invalid synthetic reservation claim")
 
         def stable() -> None:
-            if (old_witness != (retained.count, retained.chain_sha256)
-                    or any(c is not old or
-                           (c.slot_id, c.plan_id, c.step_id, c.request_sha256) != values
-                           for c, old, values in zip(claims, originals, saved, strict=True))):
+            if (
+                old_witness != (retained.count, retained.chain_sha256)
+                or retained.count is not old_witness[0]
+                or retained.chain_sha256 is not old_witness[1]
+                or any(
+                    c is not old
+                    or (c.slot_id, c.plan_id, c.step_id, c.request_sha256) != values
+                    or any(
+                        current is not pinned
+                        for current, pinned in zip(
+                            (c.slot_id, c.plan_id, c.step_id, c.request_sha256),
+                            values, strict=True,
+                        )
+                    )
+                    for c, old, values in zip(claims, originals, saved, strict=True)
+                )
+            ):
                 raise WriteSlotLedgerRejected("reservation carriers changed")
 
         originals = tuple(claims)
