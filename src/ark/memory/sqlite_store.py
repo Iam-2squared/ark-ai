@@ -625,9 +625,19 @@ class SQLiteMemoryStore:
         assert_post_commit_delete_epoch()
         return True
 
-    def purge_expired(self, *, scope: MemoryScope | None = None) -> int:
+    def purge_expired(
+        self, *, scope: MemoryScope | None = None, limit: int | None = None,
+    ) -> int:
+        """Atomically purge expired rows; optional bounded batches are opt-in.
+
+        The original unlimited mode remains for compatibility. A bounded
+        call deletes at most `limit` rows in deterministic memory-ID order,
+        with one event per deletion in the same SQLite write transaction.
+        """
         if scope is not None and type(scope) is not MemoryScope:
             raise TypeError("scope must be an exact MemoryScope")
+        if limit is not None and (type(limit) is not int or not 1 <= limit <= 1000):
+            raise ValueError("purge limit must be an exact integer from 1 to 1000")
         pinned_scope = (
             MemoryScope(scope.owner_id, scope.namespace) if scope is not None else None
         )
@@ -667,18 +677,28 @@ class SQLiteMemoryStore:
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory purge scope changed during clock")
+            # The bounded mode never hydrates more than one configured page
+            # before validating each row and appending its matching event.
+            # The suffix is a fixed SQL fragment, never caller-provided text.
+            suffix = " LIMIT ?" if limit is not None else ""
             if pinned_scope is None:
                 rows = conn.execute(
                     """SELECT * FROM memories
-                    WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=? ORDER BY memory_id""",
-                    (now,),
+                    WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=? ORDER BY memory_id"""
+                    + suffix,
+                    (now,) if limit is None else (now, limit),
                 ).fetchall()
             else:
                 rows = conn.execute(
                     """SELECT * FROM memories
                     WHERE owner_id=? AND namespace=? AND expires_at_ms IS NOT NULL
-                    AND expires_at_ms<=? ORDER BY memory_id""",
-                    (pinned_scope.owner_id, pinned_scope.namespace, now),
+                    AND expires_at_ms<=? ORDER BY memory_id"""
+                    + suffix,
+                    (
+                        (pinned_scope.owner_id, pinned_scope.namespace, now)
+                        if limit is None else
+                        (pinned_scope.owner_id, pinned_scope.namespace, now, limit)
+                    ),
                 ).fetchall()
             def assert_purge_row_epoch() -> None:
                 # Each decoded row and event write can be a synthetic
