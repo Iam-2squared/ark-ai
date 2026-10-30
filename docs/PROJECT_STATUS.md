@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-31 / Run482: Context restart replay triage; Planner WRITE finding custody; V3 identity-label and canonical JSON budget guards**
+
+**Saved at:** **2026-10-31T00:54:43+09:00 Asia/Tokyo/JST**, observed via local wall-clock immediately before checkpoint preparation. This is NOT a trusted/authenticated clock, a human approval timestamp, or the actual GitHub commit timestamp.
+
+**Canonical branch / PR:** research/jarvis-foundations / PR #8 **Draft, open, unmerged**.
+**Separate V3 branch / PR:** research/v3-learning-evaluation / PR #5 **Draft, open, unmerged**.
+**Initial invocation work-basis HEAD:** PR #8 13733061a2bb61a1d5a60b91582763be921a13b1; PR #5 21de6635404b9e277c363a5b795ca52006bcbe62.
+**Final source/test HEAD:** PR #8 2100b45c2d4dea6bcb205ab6abc46ba4924933ef; PR #5 23609fe758c4221618977d6349e9bf78610ce745.
+**Checkpoint-write-basis HEAD (including technical evidence addendum):** fca4cd43ad4a3122488b025d97d613c0723089f4 **PRE-checkpoint**.
+**Checkpoint-result HEAD:** The text of this committed file cannot know the Git SHA of its own containing commit. The normal Contents update commit SHA and subsequent independently re-read branch/PR HEAD are the checkpoint-result evidence. Do not mistake the PRE-checkpoint SHA for the result.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+**Four** independent, reversible, fully synthetic and free-only work packages, **60 new authored pytest parameterized cases** (19 + 10 + 24 + 7) saved on Draft branches. PR #5 intermediate 24-case package already has exact-head six-job GREEN; full final source HEAD outcomes still pending as detailed below. Authored tests are NOT automatically execution evidence. No real local physical-PC/OS/ToolBackend, live Personal Context data/export, camera/microphone, authenticated human consent, trusted-clock provenance, independently custodied event writer, atomic cross-store effects, actual model training, Candidate, protected V2 evaluation or main merge. No spending or new credentials/account connections.
+
+### NEW work this invocation — exact files and immutable identities
+
+1. **Personal Context synthetic replay-restart continuity (19 cases).** Added src/ark/personal_context_replay_recovery.py blob 4711d9d5119eaf44499b14640985a41ee4515b70 and tests/test_personal_context_replay_recovery_run482.py blob 94f89a271b61d6ef0c28c6e6dca5c286f3f0605f on PR #8. Read-only compare of caller-retained witness against fresh SQLite witness, reject count regression, same-count rewrite, forged exact types, carrier/path/receipt mutation. Appended history explicitly ADVANCED_HISTORY_UNVERIFIED, not custody/consent/revocation or replay authorization. No context text stored or disclosed by reviewer.
+2. **Planner disconnected WRITE quarantine matrix finding custody (10 cases).** Updated src/ark/agency/synthetic_write_quarantine_matrix_review.py blob c0f8778333924ada05fe13358abfeddd6de410c8; added tests/test_write_quarantine_finding_custody_run482.py blob 06495583e20bd37ae657a51edf097f4e332eafe3 on PR #8. Every earlier result finding exact type, identity, reason tuple and false authority property revalidated across callbacks; forged/reordered final matrix and dispatch/replay/outcome authority rejected. UNKNOWN WRITE stays quarantined; no real dispatch/retry.
+3. **V3 file identity canonical label validation (24 cases).** Updated src/ark/learning/identity.py blob add2c7c740a2487fcf377b26d829f418326f4dcc; added tests/v3/test_identity_label_boundary_run482.py blob 8dd52adb338b46b5b8de8dc7b35ce8ce026eada1 on PR #5. Local relative label requires exact string, bounded canonical POSIX segments, no traversal/absolute/drive/backslash/control chars, checked before byte hashing. No real model or dataset accessed.
+4. **V3 bounded canonical evidence JSON read (7 cases).** Updated src/ark/learning/run_manifest.py blob 49c3ff1a0946c8444f084783e3c38562c2b990c1; added tests/v3/test_manifest_canonical_json_budget_run482.py blob e639f60e04b91072689aedc80134c54d91db0a02 on PR #5. Limit local JSON evidence reads to 1,048,576 bytes before parser invocation, preserve canonical/error restrictions. Only synthetic local JSON fixtures, no Candidate creation, model training or GPU.
+
+**Technical evidence:** docs/JARVIS_CONTEXT_RECOVERY_WRITE_CUSTODY_V3_LABEL_RUN482.md blob 4fff4cda90f95198769f52a6b28236108f258e35, latest evidence-addendum commit fca4cd43ad4a3122488b025d97d613c0723089f4. All six source/test blob SHA references reread directly. GitHub writes used normal Contents API, with prior HEAD checks, no raw Git objects/ref rewriting, force-push, duplicate reruns or merge.
+
+### CI / tests — latest source HEADs distinguished from older jobs
+
+- Prior Run481 PR #8 checkpoint HEAD 13733061a2bb61a1d5a60b91582763be921a13b1: #1636 / 41078042907 **six-job SUCCESS** (older baseline).
+- PR #8 Context source/test HEAD 63f23d4e8206e97907ef49aac0a8c5c1fe4195d3: #1638 / 41083685953 **IN PROGRESS** at last job read; Ubuntu 3/3 and Windows 3.11 GREEN, Windows 3.12/3.13 pending.
+- **PR #8 final source/test HEAD** 2100b45c2d4dea6bcb205ab6abc46ba4924933ef: #1642 / 41084068310 **IN PROGRESS** at last job read; Ubuntu 3/3 and Windows 3.12 GREEN, Windows 3.11/3.13 pending. Do NOT state six-job GREEN until actually observed.
+- PR #8 technical document initial #1643 / 41084360736 and updated addendum #1646 / 41084978724 **IN PROGRESS** at last read, later document-only HEADs.
+- PR #5 label-only source/test HEAD b22f7fac3f8a6fe1d9fbcd054ceb8d8d1f14a15b: #1640 / 41083841017 **six-job SUCCESS**, directly verified Ubuntu/Windows Python 3.11–3.13. This is not final JSON-read-budget source HEAD.
+- **PR #5 final two-package source/test HEAD** 23609fe758c4221618977d6349e9bf78610ce745: #1645 / 41084880241 **IN PROGRESS** at last job read; Ubuntu 3/3 GREEN, Windows 3/3 pending. No six-job success claim yet.
+- **Independent local whole-repo pytest/Ruff NOT VERIFIED**: local git clone failed on GitHub DNS resolution; Github Actions green jobs are the only actual run evidence. No duplicate equivalent workflows manually rerun.
+
+### Frozen contracts, gates and blockers
+
+Both PR #5 and #8 remain **Draft/unmerged**. Frozen Memory v1 sqlite_store blob 0aba6392b39563df520aa8b378d0b313f0cc0a0d; Memory contracts b6e93821ecd69270a7634aceb20775dc36e9953c; agency contracts 13f1bb725f9c2c783e29402ca4a6e0f86b850ef9; V3 CONTRACT.md b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23 unchanged at last read. Historical V1/V2/Local UI/Launcher frozen evidence, protected V2 final-evaluation opening gate, V3 single approved experiment/no-sweep and contamination/provenance/regression/reproducibility/human review criteria unchanged. No paid external compute/APIs, real Candidate adapter/weights, protected evaluation, real-world actions, new accounts/secrets, irreversible changes, automatic promotion, or explicit-approval-required main merge.
+
+Still blocked: authenticated consent/revocation, trusted-clock/audit writer custody, historical append-prefix guarantees, cross-store atomicity, unknown real WRITE outcome reconciliation, physical PC evidence, independently verified local model/data bytes and licensing/provenance/human approval, provider spending-enforceable controls. Local hash chains or synthetic request IDs cannot establish these guarantees.
+
+### Next plan / 今後の方針
+
+1. Check PR #8 exact-source CI #1642 and later docs/checkpoint CI, plus PR #5 final CI #1645 (all Windows jobs). On any real FAIL, obtain job logs, make minimal semantics-preserving correction through normal GitHub path, and work on independent lane while CI runs; never duplicate equivalent workflows.
+2. Continue Memory CAS, schema/event integrity and independently retained epochs without claiming unauthenticated history as independently controlled custody.
+3. Continue Planner UNKNOWN WRITE quarantine and manual reconciliation, immutable ToolRegistry/exact PermissionGate, trusted-clock audit-before-action, request/occurrence anti-replay, persistent Scheduler state, and startup readiness; no real effect or automatic retry.
+4. Advance privacy-safe Personal Context retention/revocation and offline Observation fixture contracts with opt-in and privacy separation; no sensor or external disclosure.
+5. Preserve isolated/free-only V3 byte identity, path, approval, provenance and reproducibility guards; real Candidate, protected V2 final eval, paid computation, promotion, frozen-contract changes and approval-required main merges remain blocked until separate explicit authorization and evidence.
+
+---
+
+**HISTORICAL — Run481 and earlier canonical/frozen status preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-31 / Run481: Memory retained-chain, Personal Context request replay ledger, offline WAV receipt custody, V3 numeric safety**
 
 **Saved at:** **2026-10-31T00:07:42+09:00 Asia/Tokyo/JST** (observed local wall clock immediately before checkpoint preparation, not authenticated trusted time, user consent, actual GitHub commit time or safety authorization).
