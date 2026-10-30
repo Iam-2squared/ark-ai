@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run469: three disconnected JARVIS integrity packages plus V3 free-only preflight cross-binding**
+
+**Saved at:** **2026-10-30T11:58:33.939+09:00 Asia/Tokyo/JST** (observed invocation wall time immediately before the ordinary GitHub Contents write; not authenticated trusted time, owner identity or independent attestation).
+
+**Canonical branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Separate guarded PR:** `research/v3-learning-evaluation` / **PR #5 Draft/open/unmerged**, latest verified HEAD `92d0af2fa6ca60ea466875b54c491a3a13552801`; V3 NOT_PASSED.
+**Exact invocation work-basis HEAD (PR #8):** `04492e3b6a4874f61928b996f55d1f4149c03a15` (Run468 checkpoint).
+**Exact final source/test HEAD (PR #8):** `5e67867be364900aed982916797c84c1d02d0d5a`.
+**Exact PR #8 checkpoint-write-basis HEAD:** `c502fa59fa4a186b9f063565175ae1f1c2062031` (includes Run469 evidence document; is PRE-checkpoint).
+**PR #5 source/test work-basis HEAD:** `d6d4c1954a85fc716b1c593ac55c85417912418f`.
+**PR #5 new source/test HEAD:** `92d0af2fa6ca60ea466875b54c491a3a13552801`.
+**Checkpoint-result-HEAD wording:** this file cannot self-attest its own commit. The PRE-checkpoint HEAD above is not the checkpoint-result SHA. The ordinary update response and independent subsequent PR/branch read establish that result.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+ARK continues as free-only, local-first and fail-closed with independently reviewed disconnected foundation code. Authenticated live consent and trusted time, real ToolBackend execution, independently anchored durable permission/audit, external exactly-once WRITE outcome, full cross-store atomicity, real multimodal capture and end-to-end JARVIS remain unproven. Synthetic receipt/preview labels are **not** execution authority. Frozen historical V1/V2/Local UI/Launcher tests and contracts remain unchanged.
+
+### NEW work this invocation — 4 meaningful packages, 9 source/test commits, 28 focused tests authored
+
+1. **PR #8 exact READ readiness:** `src/ark/agency/disconnected_read_preflight.py` Blob `b1809da0d799dc8a42908ca2e8f355893108211d`; `tests/test_disconnected_read_preflight_ready_epoch_run469.py` Blob `222290e8b358999b6501b9631a941451a39d5037`. Recomputed exact sorted ready list from independent detached Planner statuses and dependencies before any PermissionGate grant checks; rejects omitted/duplicate/cloned/reordered/not-ready steps and non-tuple selection. **Seven** new pytest cases. No backend dispatch.
+2. **PR #8 Memory event result custody:** `src/ark/memory/sqlite_store.py` Blob `2ed441a90a9e80e1729cd4848fefc24262528a4d`; `tests/test_memory_event_result_custody_run469.py` Blob `de36f1e94d09dd03faed2fa2bb57735ea36c83bc`. Exact original MemoryEvent type, row field identities, nested scope and previously hydrated event carriers pinned during the bounded ordinary event reader; forged/equal-value/earlier-row mutation rejected without touching frozen Memory v1 schema or CAS. **Seven** new cases.
+3. **PR #8 schedule-to-quarantine continuity:** `src/ark/disconnected_schedule_preview.py` Blob `5810c5ae751fd828b624414b77357fbfb7ea8f1d`; `tests/test_schedule_preview_quarantine_bridge_run469.py` Blob `1f3a00684ff836fb03ac9bedd6c165d25b7cb0fd`. Original inert preview result class pinned; synthetic three-slot preview/quarantine IDs matched in a disposable SQLite ledger, restart retained witness checked, nonexpired/stale/foreign policy rejected. **Five** cases. A synthetic cursor movement in a test is not autonomous execution.
+4. **PR #5 free-only V3 preflight evidence binding:** `src/ark/learning/preflight.py` Blob `e2b409f6c1470794edb295a45020b8abeea559a5`; `src/ark/learning/training_cli.py` Blob `857554ba1450805ed2619b247094c72930678829`; `tests/v3/test_preflight_lineage.py` Blob `8732982c7b95b58deeafcbfc473234d9106619d9`. Added validation-only equality/tolerance guards for measured device and VRAM, tokenizer probe, allocated-vs-reserved-vs-capacity VRAM and wall-clock budget. The saved report is revalidated during the training approval gate, not only when constructed. **Nine** focused tests. No actual preflight, training, GPU, model download or paid compute invoked. The separate PR remains Draft.
+5. PR #8 technical evidence `docs/JARVIS_READINESS_MEMORY_EVENT_SCHEDULE_RUN469.md` saved at commit `c502fa59fa4a186b9f063565175ae1f1c2062031`. The six PR #8 source/test blobs were independently re-read at exact source/test HEAD and matched; PR #5 exact branch/HEAD was re-read. Ordinary GitHub Contents writes only; no raw Git objects or force pushes. All new test counts above are **authored**, not falsely treated as fully passed until exact-head CI.
+
+### CI / tests / evidence — separate exact HEADs
+
+- **Prior PR #8 checkpoint CI #1478**, run `40988864884`, exact earlier SHA `04492e3b6a4874f61928b996f55d1f4149c03a15`: **COMPLETED SUCCESS, 6/6** Ubuntu/Windows Python 3.11–3.13. Prior source CI #1476, run `40988304821`, also **COMPLETED SUCCESS, 6/6**. Historical evidence only, not Run469 source proof.
+- **New PR #8 final source/test CI:** #1484 / run `40993984716` / exact `5e67867be364900aed982916797c84c1d02d0d5a`: **IN_PROGRESS / NOT CONCLUDED** at checkpoint inspection. Technical evidence run #1485 / `40994201688`: **IN_PROGRESS**.
+- **Prior PR #5 exact HEAD CI #151**, run `36223644908`, old `d6d4c1954a85fc716b1c593ac55c85417912418f`: **COMPLETED SUCCESS**. New PR #5 final source/test CI #1488, run `40994482596`, exact `92d0af2fa6ca60ea466875b54c491a3a13552801`: **COMPLETED / SUCCESS** at checkpoint inspection.
+- Whole-repository local checkout still unavailable due container DNS; no independent full local pytest/Ruff, physical Windows/GPU testing, real Candidate or provider attestation claimed. Intermediate CI success does not automatically certify later HEADs. No duplicate manual workflows dispatched.
+
+### Frozen contracts, boundaries, blockers
+
+Historical frozen V1/V2/Local UI/Launcher evidence, Memory v1 schema and Action Audit, V3 Contract 1 and its fixed 120/30 experiment, contamination/provenance/regression/reproducibility rules and protected V2 final evaluation remain unchanged. PR #5 and #8 Draft/open/unmerged. No paid/external GPU/compute, paid API or service, purchases, Candidate adapter/weights, promotion, protected V2 opening, new secrets/credentials, real personal context, real OS/camera/microphone/Tool execution, destructive operation, or main merge. Preflight snapshots in deterministic tests are fake fixtures, **not user spending consent**.
+
+PR #5 still lacks independently verified immutable HF revision and file identities, actual human-reviewed dataset/contamination decisions, runtime toolbyte identities, specific GPU/provider, user-approved JPY/time ceiling and provider billing/cost-cap proof. Canonical export path/alias safety remains a free-only review item. Extreme finite-number arithmetic overflow in V3 derived MiB/seconds comparisons needs further fail-closed validation before a paid run. The latest head's full CI gate is not inferred from earlier GREEN.
+
+### Next plan / 今後の方針
+
+1. Check PR #8 exact-head #1484 and PR #5 exact-head #1488 six-job outcomes. On observed failure inspect actual logs, implement the smallest semantics-preserving fix, and immediately switch to independent lanes during CI; do not duplicate workflows or loosen regressions.
+2. Advance Memory CAS/concurrency/expiry, event history independent custody and coherent snapshots; keep actual user data and frozen schema untouched.
+3. Advance Planner durable UNKNOWN/RUNNING WRITE quarantine and restart recovery; keep all WRITE effects blocked until authenticated owner permission, trusted clock, audit-before-action and occurrence/replay authorization are demonstrably complete with exact-head GREEN.
+4. Continue disconnected proactive schedule cursor/expiry and privacy-first Personal Context/Observation fixture integration after required lower-level exact-head GREEN, never assuming local metadata is external authority.
+5. Harden remaining PR #5 free-only numerical/path/reproducibility guards, while preserving separate explicit user gates for real preflight/Candidate generation, protected V2 evaluation and any billable action. PR #5 stays Draft; no main merge.
+
+---
+
+**HISTORICAL — Run468 and all earlier frozen/source evidence retained verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run468 three disconnected JARVIS integration packages, nine source/test commits**
 
 **Saved at:** **2026-10-30T10:56:20.403+09:00 Asia/Tokyo/JST** (observed runtime wall time before the normal GitHub Contents checkpoint write; not a trusted clock, GitHub commit timestamp, owner authentication, human review or independent attestation).
