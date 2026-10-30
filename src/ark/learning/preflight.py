@@ -69,14 +69,42 @@ class DisabledRealPreflightBackend:
         raise RuntimeError("real GPU preflight backend is not installed/authorized")
 
 
+def verify_preflight_measurements(
+    snapshot: dict,
+    evidence: PreflightEvidence,
+    runtime_identity: RuntimeIdentity,
+) -> None:
+    """Bind non-Candidate evidence to the same measured, frozen execution.
+
+    This is validation only: no GPU calls, model loading, training or billing.
+    The caller's report remains non-authoritative without an independently
+    authorized snapshot and retained evidence bytes.
+    """
+    evidence.validate()
+    verify_runtime_identity(snapshot, runtime_identity)
+    if evidence.device != runtime_identity.device:
+        raise ValueError("preflight device does not match measured runtime")
+    if abs(float(evidence.vram_gib) - float(runtime_identity.vram_gib)) > 0.05:
+        raise ValueError("preflight VRAM does not match measured runtime")
+    if evidence.tokenizer_probe_sha256 != snapshot["tokenizer"]["chat_template_probe_sha256"]:
+        raise ValueError("preflight tokenizer probe does not match frozen snapshot")
+    if evidence.peak_vram_mib > evidence.peak_reserved_vram_mib:
+        raise ValueError("preflight allocated VRAM exceeds reserved VRAM")
+    measured_capacity_mib = float(runtime_identity.vram_gib) * 1024
+    if evidence.peak_reserved_vram_mib > measured_capacity_mib:
+        raise ValueError("preflight reserved VRAM exceeds measured GPU capacity")
+    budget_seconds = float(snapshot["budget"]["wall_clock_timeout_minutes"]) * 60
+    if evidence.wall_seconds > budget_seconds:
+        raise ValueError("preflight wall time exceeds frozen execution budget")
+
+
 def build_preflight_report(
     snapshot: dict,
     evidence: PreflightEvidence,
     runtime_identity: RuntimeIdentity,
 ) -> bytes:
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="preflight")
-    evidence.validate()
-    verify_runtime_identity(snapshot, runtime_identity)
+    verify_preflight_measurements(snapshot, evidence, runtime_identity)
     report = {
         "schema_version": 1,
         "kind": "NON_CANDIDATE_PREFLIGHT",
