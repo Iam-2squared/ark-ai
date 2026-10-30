@@ -184,14 +184,19 @@ class WallTimeBudget:
     """Soft fail-closed wall-time guard checked at every controlled runtime boundary."""
 
     def __init__(self, timeout_minutes: float, *, started: float | None = None):
-        if (
-            isinstance(timeout_minutes, bool)
-            or not isinstance(timeout_minutes, (int, float))
-            or not math.isfinite(float(timeout_minutes))
-            or timeout_minutes <= 0
-        ):
-            raise ValueError("finite positive wall-clock timeout required")
-        self.timeout_seconds = float(timeout_minutes) * 60.0
+        message = "finite positive wall-clock timeout required"
+        if type(timeout_minutes) not in (int, float):
+            raise ValueError(message)
+        try:
+            minutes = float(timeout_minutes)
+        except (OverflowError, ValueError) as exc:
+            raise ValueError(message) from exc
+        if not math.isfinite(minutes) or minutes <= 0:
+            raise ValueError(message)
+        seconds = minutes * 60.0
+        if not math.isfinite(seconds):
+            raise ValueError("wall-clock timeout seconds overflow")
+        self.timeout_seconds = seconds
         measured_start = time.monotonic() if started is None else float(started)
         if not math.isfinite(measured_start):
             raise ValueError("finite wall-clock start required")
