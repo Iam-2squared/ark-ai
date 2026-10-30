@@ -23,6 +23,8 @@ from .disconnected_read_journal import (
 from .disconnected_toolbox import DisconnectedToolRequest, DisconnectedToolResult
 
 _STEP = re.compile(r"step_[0-9a-f]{16}\Z")
+_RECEIPT_TYPE = ReadReceipt
+_BINDING_TYPE = DisconnectedFixtureBinding
 
 
 class DisconnectedReadBridgeRejected(ValueError):
@@ -93,7 +95,7 @@ def prepare_disconnected_read_receipt(
         raise DisconnectedReadBridgeRejected("fixture rebinding failed") from exc
     stable()
     if (
-        type(verified) is not DisconnectedFixtureBinding
+        type(verified) is not _BINDING_TYPE
         or any(a != b for a, b in zip(
             (verified.request_id, verified.operation, verified.input_digest,
              verified.result_digest, verified.request_bound_digest),
@@ -108,13 +110,33 @@ def prepare_disconnected_read_receipt(
         or binding_fields[1] != request_fields[1]
     ):
         raise DisconnectedReadBridgeRejected("READ fixture request binding mismatch")
+    verified_carriers = (
+        verified.request_id, verified.operation, verified.input_digest,
+        verified.result_digest, verified.request_bound_digest,
+    )
+
+    def stable_verified() -> None:
+        if (
+            type(verified) is not _BINDING_TYPE
+            or any(now is not old for now, old in zip((
+                verified.request_id, verified.operation, verified.input_digest,
+                verified.result_digest, verified.request_bound_digest,
+            ), verified_carriers, strict=True))
+            or verified.dispatch_authorized is not False
+            or verified.external_outcome_verified is not False
+            or verified.automatic_replay_authorized is not False
+        ):
+            raise DisconnectedReadBridgeRejected("verified READ binding carrier changed")
+
+    stable_verified()
     receipt = ReadReceipt(
         request_fields[0], step_id, request_fields[1],
         result_fields[2], result_fields[4],
     )
     stable()
+    stable_verified()
     if (
-        type(receipt) is not ReadReceipt
+        type(receipt) is not _RECEIPT_TYPE
         or receipt.request_id is not request_fields[0]
         or receipt.step_id is not step_id
         or receipt.operation is not request_fields[1]
@@ -122,6 +144,7 @@ def prepare_disconnected_read_receipt(
         or receipt.result_digest is not result_fields[4]
     ):
         raise DisconnectedReadBridgeRejected("READ receipt construction changed")
+    stable_verified()
     return receipt
 
 
