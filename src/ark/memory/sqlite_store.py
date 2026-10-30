@@ -994,6 +994,10 @@ def _hydrated_record_epoch(record: MemoryRecord) -> tuple[object, ...]:
             record.source_id, record.content, record.created_at_ms,
             record.updated_at_ms, record.expires_at_ms, record.revision,
             record.content_sha256, tuple(sorted(record.metadata.items())),
+            # Keep the original nested objects alive for the entire epoch.
+            # Bare id() snapshots can be fooled by allocator address reuse if
+            # reflection replaces a frozen scope/metadata and frees the old one.
+            record.scope, record.metadata,
         )
     except (AttributeError, TypeError, ValueError) as exc:
         raise MemorySchemaError("decoded Memory record carrier changed") from exc
