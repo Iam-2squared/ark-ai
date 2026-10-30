@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import stat
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -84,13 +86,52 @@ class CandidateLineage:
 
 
 def hash_file(path: Path) -> tuple[str, int]:
+    """Hash only a stable, single-link local file, never a redirected source.
+
+    Metadata checks mitigate routine path races but cannot establish OS or
+    writer authenticity; callers must independently bind the resulting bytes.
+    """
+    if type(path) is not type(Path(".")) and type(path) is not str:
+        raise ValueError("lineage hash path requires an exact local path")
     path = Path(path)
-    if not path.is_file() or path.is_symlink():
-        raise ValueError("lineage hash path must be an existing non-symlink file")
-    h = hashlib.sha256()
-    size = 0
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            h.update(chunk)
-            size += len(chunk)
+    if ".." in path.parts or len(str(path)) > 4096:
+        raise ValueError("lineage hash path must not traverse aliases")
+
+    def epoch(info: os.stat_result) -> tuple[int, ...]:
+        return (
+            info.st_dev, info.st_ino, info.st_mode, info.st_nlink,
+            info.st_size, info.st_mtime_ns, info.st_ctime_ns,
+        )
+
+    try:
+        if path.is_symlink() or any(parent.is_symlink() for parent in path.parents):
+            raise ValueError("lineage hash path cannot contain symlinks")
+        before = path.lstat()
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise ValueError("lineage hash path requires one regular-file link")
+        h = hashlib.sha256()
+        size = 0
+        with path.open("rb") as handle:
+            opened = os.fstat(handle.fileno())
+            if (
+                not stat.S_ISREG(opened.st_mode)
+                or opened.st_nlink != 1
+                or epoch(opened) != epoch(before)
+            ):
+                raise ValueError("lineage hash path changed before reading")
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                h.update(chunk)
+                size += len(chunk)
+            if epoch(os.fstat(handle.fileno())) != epoch(before):
+                raise ValueError("lineage hash path changed during reading")
+        after = path.lstat()
+        if (
+            epoch(after) != epoch(before)
+            or size != before.st_size
+            or path.is_symlink()
+            or any(parent.is_symlink() for parent in path.parents)
+        ):
+            raise ValueError("lineage hash path changed after reading")
+    except OSError as exc:
+        raise ValueError("lineage hash path unavailable during verification") from exc
     return h.hexdigest(), size
