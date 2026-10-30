@@ -232,7 +232,7 @@ def review_disconnected_local_readiness(
             ensure_ascii=False, allow_nan=False,
         ).encode("utf-8")
         return hashlib.sha256(
-            b"ARK-disconnected-registered-read-preflight-v1\\0" + data
+            b"ARK-disconnected-registered-read-preflight-v1\0" + data
         ).hexdigest()
 
     expected_grants = preflight_digest([
