@@ -192,6 +192,13 @@ def preview_disconnected_schedule(
         or result.occurrence_id is not occurrence
         or result.due_at_ms is not due
         or result.fingerprint is not fingerprint
+        # A synthetic result must not advertise consent, clock authenticity,
+        # OS notification, Tool execution or replay after its constructor.
+        or result.trusted_clock_verified is not False
+        or result.notification_authorized is not False
+        or result.tool_execution_authorized is not False
+        or result.automatic_replay_authorized is not False
+        or result.consent_verified is not False
     ):
         raise SchedulePreviewRejected("constructed preview carrier changed")
     return result
