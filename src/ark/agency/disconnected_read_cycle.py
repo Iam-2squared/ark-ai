@@ -253,6 +253,9 @@ def simulate_registered_read_cycle(
             or len(review.ready_step_ids) != len(review.ready_bound_ids)
             or len(set(review.ready_step_ids)) != len(review.ready_step_ids)
             or review.dispatch_authorized is not False
+            or review.external_result_verified is not False
+            or review.authenticated_clock_or_consent is not False
+            or review.automatic_replay_authorized is not False
         ):
             raise DisconnectedReadCycleRejected("READ wave receipt is not authoritative")
 
@@ -309,6 +312,12 @@ def simulate_registered_read_cycle(
         or result.wave_bound_step_hashes is not frozen_waves
         or result.final_status_digest is not final
         or result.fingerprint is not fingerprint
+        # Synthetic READ completion must never be promoted into authority
+        # by a forged exact-type result or a replaced class descriptor.
+        or result.dispatch_authorized is not False
+        or result.external_result_verified is not False
+        or result.automatic_replay_authorized is not False
+        or result.authenticated_clock_or_consent is not False
     ):
         raise DisconnectedReadCycleRejected("simulation receipt changed")
     return result
