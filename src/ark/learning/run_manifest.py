@@ -60,6 +60,25 @@ def _load_canonical_json(path: Path, label: str) -> tuple[dict, bytes]:
     return parsed, payload
 
 
+def _require_expected_snapshot_bytes(path: Path, expected: bytes) -> None:
+    """Compare saved snapshot bytes without unbounded reads of untrusted files.
+
+    This is a local size guard, not a file-descriptor seal or a guarantee
+    against a concurrently hostile filesystem writer.
+    """
+    if type(expected) is not bytes or len(expected) > _MAX_CANONICAL_JSON_BYTES:
+        raise CandidateRunManifestError("authorized snapshot exceeds canonical JSON byte budget")
+    try:
+        with path.open("rb") as handle:
+            observed = handle.read(len(expected) + 1)
+    except OSError as exc:
+        raise CandidateRunManifestError("saved execution snapshot cannot be read") from exc
+    if observed != expected:
+        raise CandidateRunManifestError(
+            "saved execution snapshot bytes do not match the authorized snapshot"
+        )
+
+
 def _require_exact_int(metrics: dict, field: str, expected: int | None = None) -> int:
     value = metrics.get(field)
     if type(value) is not int or value <= 0:
@@ -153,10 +172,7 @@ def _validate_candidate_evidence(snapshot: dict, root: Path) -> str:
             raise CandidateRunManifestError(f"Candidate run is missing {label}")
 
     expected_snapshot = canonical_json(snapshot)
-    if snapshot_path.read_bytes() != expected_snapshot:
-        raise CandidateRunManifestError(
-            "saved execution snapshot bytes do not match the authorized snapshot"
-        )
+    _require_expected_snapshot_bytes(snapshot_path, expected_snapshot)
 
     metrics, _ = _load_canonical_json(metrics_path, "training metrics")
     _validate_training_metrics(snapshot, metrics, snapshot_sha)
