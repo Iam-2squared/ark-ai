@@ -142,19 +142,31 @@ def review_synthetic_memory_event_continuity(
             raise SyntheticMemoryEventRejected(
                 "Memory source or scope changed during review"
             )
-        if retained is not None and any(
-            current is not before
-            for current, before in zip(
-                (
-                    retained.scope_digest, retained.event_count,
-                    retained.last_event_id, retained.tail_hash,
-                ),
-                retained_epoch, strict=True,
-            )
-        ):
-            raise SyntheticMemoryEventRejected(
-                "independently retained Memory witness changed during review"
-            )
+        if retained is not None:
+            try:
+                stable_retained = (
+                    type(retained) is _WITNESS_TYPE
+                    and all(
+                        current is not before for current, before in zip(
+                            (
+                                retained.scope_digest, retained.event_count,
+                                retained.last_event_id, retained.tail_hash,
+                            ),
+                            retained_epoch, strict=True,
+                        )
+                    ) is False
+                    and retained.deletion_authorized is False
+                    and retained.context_use_authorized is False
+                    and retained.external_disclosure_authorized is False
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise SyntheticMemoryEventRejected(
+                    "retained Memory witness authority or epoch invalid"
+                ) from exc
+            if not stable_retained:
+                raise SyntheticMemoryEventRejected(
+                    "retained Memory witness authority or epoch changed"
+                )
 
     assert_epoch()
     scope_hash = _scope_digest(pinned)
@@ -190,6 +202,9 @@ def review_synthetic_memory_event_continuity(
                             current.last_event_id, current.tail_hash,
                         ), original_fields, strict=True,
                     ))
+                    or current.deletion_authorized is not False
+                    or current.context_use_authorized is not False
+                    or current.external_disclosure_authorized is not False
                 ):
                     raise SyntheticMemoryEventRejected(
                         "earlier Memory event witness changed during review"
