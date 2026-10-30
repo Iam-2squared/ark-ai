@@ -53,10 +53,17 @@ def _load_canonical_json(path: Path, label: str) -> tuple[dict, bytes]:
         raise CandidateRunManifestError(f"{label} exceeds canonical JSON byte budget")
     try:
         parsed = json.loads(payload, parse_constant=_reject_nonstandard_json_constant)
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        # A lexically valid JSON exponent may decode to infinity even when
+        # NaN/Infinity tokens are forbidden. Canonical re-serialization and
+        # hostile nesting must fail with this domain's error, not leak raw
+        # RecursionError/ValueError into the evidence decision path.
+        if type(parsed) is not dict or canonical_json(parsed) != payload:
+            raise CandidateRunManifestError(f"{label} is not valid canonical JSON")
+    except (
+        UnicodeDecodeError, json.JSONDecodeError, ValueError,
+        RecursionError, OverflowError, TypeError,
+    ) as exc:
         raise CandidateRunManifestError(f"{label} is not valid canonical JSON") from exc
-    if not isinstance(parsed, dict) or canonical_json(parsed) != payload:
-        raise CandidateRunManifestError(f"{label} is not valid canonical JSON")
     return parsed, payload
 
 
