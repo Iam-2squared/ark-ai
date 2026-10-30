@@ -39,6 +39,9 @@ class SyntheticObservationLineageWitness:
         return False
 
 
+_LINEAGE_RESULT_TYPE = SyntheticObservationLineageWitness
+
+
 def review_synthetic_observation_lineage(
     envelopes: tuple[ObservationEnvelope, ...],
     *,
@@ -154,7 +157,7 @@ def review_synthetic_observation_lineage(
     )
     assert_epoch()
     if (
-        type(result) is not SyntheticObservationLineageWitness
+        type(result) is not _LINEAGE_RESULT_TYPE
         or result.privacy_scope is not privacy_scope
         or result.checked_at_ms is not now_ms
         or result.observation_count != len(envelopes)
