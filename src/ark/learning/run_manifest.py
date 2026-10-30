@@ -25,6 +25,36 @@ class CandidateRunManifestError(RuntimeError):
 
 
 _MAX_CANONICAL_JSON_BYTES = 1_048_576
+_MAX_CANONICAL_JSON_DEPTH = 128
+
+
+def _reject_excessive_json_nesting(payload: bytes) -> None:
+    """Refuse deep containers independently of platform JSON recursion limits.
+
+    Only brackets outside JSON strings count. The parser still validates syntax,
+    including escapes, after this bounded linear preflight.
+    """
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in payload:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:  # Backslash
+                escaped = True
+            elif byte == 0x22:  # Quote
+                in_string = False
+        elif byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):  # Opening object or array
+            depth += 1
+            if depth > _MAX_CANONICAL_JSON_DEPTH:
+                raise CandidateRunManifestError(
+                    "evidence is not valid canonical JSON: nesting budget exceeded"
+                )
+        elif byte in (0x7D, 0x5D):  # Closing object or array
+            depth -= 1
 
 
 def _reject_nonstandard_json_constant(token: str) -> None:
@@ -51,6 +81,7 @@ def _load_canonical_json(path: Path, label: str) -> tuple[dict, bytes]:
         raise CandidateRunManifestError(f"{label} cannot be read") from exc
     if len(payload) > _MAX_CANONICAL_JSON_BYTES:
         raise CandidateRunManifestError(f"{label} exceeds canonical JSON byte budget")
+    _reject_excessive_json_nesting(payload)
     try:
         parsed = json.loads(payload, parse_constant=_reject_nonstandard_json_constant)
         # A lexically valid JSON exponent may decode to infinity even when
