@@ -221,17 +221,51 @@ class DisconnectedScheduleQuarantineLedger:
 
     def inspect(self, *, retained: QuarantineWitness) -> QuarantineWitness:
         self._check_witness(retained)
+        original_path = self._path
+        original_policy = self._epoch
         original = (retained.count, retained.chain_sha256)
+
+        def stable() -> None:
+            # Open/BEGIN/validation/COMMIT are independent callback boundaries.
+            # A value-equal witness or source carrier swap is still a new epoch.
+            if (
+                self._path is not original_path
+                or self._epoch is not original_policy
+                or type(retained) is not QuarantineWitness
+                or retained.count is not original[0]
+                or retained.chain_sha256 is not original[1]
+            ):
+                raise ScheduleQuarantineRejected("quarantine inspect carrier changed")
+
+        stable()
         with closing(self._open(read_only=True)) as conn:
+            stable()
             conn.execute("BEGIN")
+            stable()
             try:
-                actual = _validate(conn, self._epoch)
-                if actual != retained or original != (retained.count, retained.chain_sha256):
+                actual = _validate(conn, original_policy)
+                stable()
+                if type(actual) is not QuarantineWitness or actual != retained:
                     raise ScheduleQuarantineRejected("stale or changed quarantine witness")
+                result_epoch = (actual.count, actual.chain_sha256)
                 conn.commit()
+                stable()
+                if (
+                    type(actual) is not QuarantineWitness
+                    or actual.count is not result_epoch[0]
+                    or actual.chain_sha256 is not result_epoch[1]
+                ):
+                    raise ScheduleQuarantineRejected("quarantine inspect result changed")
             except BaseException:
                 conn.rollback()
                 raise
+        stable()
+        if (
+            type(actual) is not QuarantineWitness
+            or actual.count is not result_epoch[0]
+            or actual.chain_sha256 is not result_epoch[1]
+        ):
+            raise ScheduleQuarantineRejected("quarantine inspect result changed")
         return actual
 
     @staticmethod
@@ -250,6 +284,19 @@ class DisconnectedScheduleQuarantineLedger:
         self._check_witness(retained)
         original = (retained.count, retained.chain_sha256)
         original_epoch = self._epoch
+        original_path = self._path
+
+        def stable() -> None:
+            if (
+                self._path is not original_path
+                or self._epoch is not original_epoch
+                or type(retained) is not QuarantineWitness
+                or retained.count is not original[0]
+                or retained.chain_sha256 is not original[1]
+            ):
+                raise ScheduleQuarantineRejected("quarantine write carrier changed")
+
+        stable()
         if (type(index) is not int or type(observed_ms) is not int
                 or not 0 <= observed_ms <= _MAX_MS
                 or type(occurrence_id) is not str
@@ -262,11 +309,15 @@ class DisconnectedScheduleQuarantineLedger:
         if (occurrence_id != derive_quarantined_occurrence(policy, index)
                 or observed_ms <= due + self._epoch[4]):
             raise ScheduleQuarantineRejected("occurrence is not expired or not policy-bound")
+        stable()
         with closing(self._open(read_only=False)) as conn:
+            stable()
             conn.execute("BEGIN IMMEDIATE")
+            stable()
             try:
-                current = _validate(conn, self._epoch)
-                if current != retained or original != (retained.count, retained.chain_sha256):
+                current = _validate(conn, original_epoch)
+                stable()
+                if current != retained:
                     raise ScheduleQuarantineRejected("stale or rolled-back quarantine witness")
                 if index != current.count or current.count >= _MAX_ROWS:
                     raise ScheduleQuarantineRejected("out-of-order or duplicate quarantine")
@@ -282,13 +333,12 @@ class DisconnectedScheduleQuarantineLedger:
                 conn.execute("INSERT INTO quarantines VALUES(?,?,?,?,?)",
                              (seq, occurrence_id, due, observed_ms, chain))
                 result = QuarantineWitness(seq, chain)
-                if _validate(conn, self._epoch) != result:
+                if _validate(conn, original_epoch) != result:
                     raise ScheduleQuarantineRejected("quarantine write lost integrity")
-                if (original != (retained.count, retained.chain_sha256)
-                        or self._epoch is not original_epoch):
-                    raise ScheduleQuarantineRejected("quarantine input changed before commit")
+                stable()
                 result_epoch = (result.count, result.chain_sha256)
                 conn.commit()
+                stable()
             except sqlite3.IntegrityError as exc:
                 conn.rollback()
                 raise ScheduleQuarantineRejected("duplicate quarantine occurrence") from exc
@@ -297,6 +347,7 @@ class DisconnectedScheduleQuarantineLedger:
                 raise
         # This reservation is already durable. Never return a forged or
         # reflectively retargeted receipt as an authority to advance a cursor.
+        stable()
         receipt = QuarantineReceipt(result, index)
         if (
             type(receipt) is not QuarantineReceipt
@@ -311,6 +362,8 @@ class DisconnectedScheduleQuarantineLedger:
             or retained.count is not original[0]
             or retained.chain_sha256 is not original[1]
             or self._epoch is not original_epoch
+            or self._path is not original_path
         ):
             raise ScheduleQuarantineRejected("post-commit quarantine receipt changed")
+        stable()
         return receipt
