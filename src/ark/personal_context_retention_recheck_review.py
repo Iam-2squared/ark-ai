@@ -58,6 +58,9 @@ class SyntheticRetentionRecheck:
         return False
 
 
+_RESULT_TYPE = SyntheticRetentionRecheck
+
+
 def _epoch(value: SyntheticRetentionInventory) -> tuple[object, ...]:
     """Pin nested item VALUES, not only references to frozen dataclasses.
 
@@ -261,7 +264,11 @@ def review_synthetic_retention_recheck(
             "current retention evidence changed during result construction"
         )
     if (
-        type(result) is not SyntheticRetentionRecheck
+        type(result) is not _RESULT_TYPE
+        or result.deletion_authorized is not False
+        or result.erasure_completed is not False
+        or result.context_use_authorized is not False
+        or result.external_disclosure_authorized is not False
         or result.scope_digest is not scope_digest
         or result.captured_inventory_digest is not captured_digest
         or result.current_inventory_digest is not current_digest
