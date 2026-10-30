@@ -72,7 +72,7 @@ def _preflight_digest(payload: object) -> str:
         separators=(",", ":"), allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(
-        b"ARK-disconnected-registered-read-preflight-v1\\0" + encoded
+        b"ARK-disconnected-registered-read-preflight-v1\0" + encoded
     ).hexdigest()
 
 
