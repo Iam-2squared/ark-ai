@@ -10,7 +10,11 @@ import pytest
 import ark.disconnected_restart_witness_bundle as bundle
 from ark.agency.disconnected_due_reservation import DisconnectedDueReservations
 from ark.memory.atomic_epoch_review import AtomicMemoryEpochReview
-from ark.memory.disconnected_witness_ledger import DisconnectedMemoryWitnessLedger
+from ark.memory.disconnected_witness_ledger import (
+    DisconnectedMemoryWitnessLedger,
+    MemoryWitnessLedgerRejected,
+    genesis_memory_ledger_witness,
+)
 from ark.personal_context_replay_ledger import (
     DisconnectedContextReplayLedger,
     OfflineContextReplayWitness,
@@ -26,8 +30,6 @@ def _setup(tmp_path):
     due = DisconnectedDueReservations(due_path)
     # The actual genesis tips are read from each new local store. They are
     # retained by this test caller, never treated as authenticated custody.
-    from ark.memory.disconnected_witness_ledger import genesis_memory_ledger_witness
-
     retained = (
         genesis_memory_ledger_witness(), context.witness(), due.witness(),
     )
@@ -83,7 +85,7 @@ def test_appended_memory_observation_requires_new_retained_witness(tmp_path):
         ("a" * 64,), (1,), (1,), (1,), "b" * 64, "c" * 64,
     )
     changed = stores[0].append(epoch, retained=witnesses[0])
-    with pytest.raises(Exception):
+    with pytest.raises(MemoryWitnessLedgerRejected, match="retained witness mismatch"):
         _review(stores, witnesses)
     assert _review(stores, (changed, witnesses[1], witnesses[2])).memory_epochs == 1
 
