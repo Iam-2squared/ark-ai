@@ -1,5 +1,50 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run467 exact-carrier WRITE-slot CI recovery and Memory snapshot receipt custody**
+
+**Saved at:** **2026-10-30T10:09:47.776+09:00 Asia/Tokyo/JST** (observed runtime wall time before a normal GitHub Contents write; neither trusted clock nor independent attestation).
+
+**Branch/PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**PR #5:** `research/v3-learning-evaluation` / Draft/open/unmerged, HEAD `d6d4c1954a85fc716b1c593ac55c85417912418f`; V3 NOT_PASSED.
+**Exact invocation work-basis HEAD:** `5560c296e229e76f2282f6b76c7b31b201adfe5a` (existing concurrent Windows source-seal changes and earlier Run466 checkpoint were already present; not claimed as newly authored).
+**Exact latest source/test HEAD and checkpoint-write-basis HEAD:** `dc7c877b7ce54019e8d393079dc1edb510f3c5d1`.
+**Checkpoint-result HEAD:** this file cannot self-attest its own commit. The SHA above is PRE-checkpoint; use the normal Contents update commit_sha and independently check PR/branch HEAD after saving.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+Local-first, free-only and fixture/mock-only foundations continue. No authenticated live owner/consent, independent trusted clock, real Tool dispatch, verified external exactly-once WRITE, cross-store atomic snapshot, verified persistent external action outcome or real JARVIS integration is claimed. The isolated code below is not release authorization.
+
+### NEW this invocation — two meaningful independent packages / three ordinary Contents commits
+
+1. **Planner durable WRITE reservation carrier integrity / exact CI failure fix.** Source `src/ark/agency/disconnected_write_slot_ledger.py`, Git Blob `b2bfdd18c64b904ac6ce4ab61f3801d098411dfe`, commit `9d36104415495f97f1be6249f86e3841a46b2404`. The post-commit `stable()` path now also compares *identity* of all original WRITE claim fields and the caller's retained witness fields, not just value equality. Prevents a reflected equal-valued new string object from passing as the original claim after SQLite COMMIT; post-commit detection never implies rollback, replay, or dispatch authorization. This directly addresses the exact Ubuntu CI #1463 failure of existing `test_postcommit_claim_reflection_is_denied_and_not_rolled_back` without changing test assertions.
+2. **Independent Memory multi-namespace synthetic review receipt integrity.** Source `src/ark/memory/synthetic_multiscope_integrity_review.py`, Git Blob `e23cbf1b15bc0519fd5d7150b817985338fb6307`, commit `a62a045c263665c4535a8f5aedafc04927e91eb9`. Pin original result classes and the exact nested scope/event receipt carriers before/after final digest and constructor callbacks; reject forged result objects, forged digests or equal-valued carrier substitutions. The frozen Memory v1 schema, actual user data, consent, access control, and existing review behavior remain untouched. This is NOT independent content provenance or coherent cross-database snapshot attestation.
+3. **Five focused synthetic regression tests.** Added `tests/test_memory_multiscope_result_custody_run467.py`, Git Blob `b77b825c71f1df1e3743c66a8fb33851df583216`, commit `dc7c877b7ce54019e8d393079dc1edb510f3c5d1`. Covers ordinary exact snapshot re-review/no authority; forged digest; same-valued digest replacement; nested event replacement from result callback; same-valued scope receipt replacement during final hashing. Only disposable local SQLite synthetic fixtures, no secrets, no real personal data or actions.
+4. Re-read PR #8 HEAD before each normal Contents write, preserved fast-forward history, and independently fetched the final source/test HEAD to verify all three Git Blob SHAs. No raw Git-object bypass, force push, merge, workflow rerun, cancellation or new service.
+
+### Tests / CI / evidence at this inspection
+
+- Historical exact source-head CI **#1454**, Run ID `40975419176`, source HEAD `65b274dcea386ca3ffadc9d888c798c9a9d564e4`: Ubuntu 3/3 SUCCESS; Windows 3/3 FAIL at the disconnected file-seal fixture (different older source head). Six Ruff steps PASS; this was NOT six-job GREEN.
+- Existing source-head CI **#1463**, Run ID `40982629035`, entry HEAD `5560c296e229e76f2282f6b76c7b31b201adfe5a`: Ubuntu Python 3.11/3.12/3.13 each had one **FAIL** due equal-valued WRITE-slot claim replacement being rejected with wrong earlier diagnostic, `4491 passed, 1 skipped, 1 failed`. Corrected source without weakening negative tests. Its earlier failures remain valid only for its old SHA.
+- Latest inspected source/test CI **#1466**, Run ID `40983728330`, source/test HEAD `dc7c877b7ce54019e8d393079dc1edb510f3c5d1`: **Ubuntu Python 3.11/3.12/3.13 each completed SUCCESS with `4497 passed, 1 skipped`; Ruff and pytest steps GREEN. Windows Python 3.11/3.12/3.13 had Ruff SUCCESS, pytest **IN_PROGRESS** at last inspection. The complete 6-environment CI is **NOT YET GREEN**. No duplicate CI dispatch and no paid runners requested.
+- Isolated container could not clone the GitHub repository due DNS; no independent local whole-suite pytest/Ruff. The 5 new tests are committed and covered by the successful Ubuntu CI run, but no verified Windows PASS. Exact local-PC/GPU test, trusted-clock verification, byte-provenance attestation and real user consent remain unperformed.
+
+### Frozen contracts, authorization boundaries, unresolved blockers
+
+Frozen V1/V2/Local UI/Launcher evidence, frozen Memory v1 schema and ActionAudit, V3 Contract 1, provenance/contamination/regression/reproducibility gates, protected V2 final-evaluation boundaries unchanged. PR #5 and #8 remain Draft/open/unmerged. **No** paid/external GPU, API/service or potentially billable action; real Candidate adapter/weights, model training, promotion, V2 protected evaluation opening, new credentials/accounts, destructive action, real OS/Tool execution, user personal data, or main merge. Caller-retained local hashes/identities do NOT prove authentication or durable independent authority. Windows source seal, WAL custody, multi-store atomicity and durable external exactly-once effects remain incomplete.
+
+### Next plan / 今後の方針
+
+1. Verify exact-head #1466 Windows pytest outcome when available, inspect genuine errors, and make minimal semantics-preserving fixes in the affected lane only; never duplicate workflows or weaken tests.
+2. Continue Memory schema/row/event integrity, CAS/expiry and coherent read-only snapshots with exact-head evidence; keep immutable witness and reentrancy checks.
+3. Advance Planner UNKNOWN/RUNNING/pending WRITE quarantine, durable occurrence uniqueness, registry-bound Tool identity, exact-type PermissionGate, audit-before-action and trusted-clock blockers without automatic effect replay.
+4. Continue privacy-first Personal Context and Observation, proactive schedule cursor/occurrence invariants and V3 free-only guard audits independently. No real Candidate, external spend, protected evaluation, main merge or cross-module live dispatch without authorization and exact-head GREEN.
+
+---
+
+**HISTORICAL — previous canonical checkpoint and all older material retained verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / CI lint restoration after Run466 source work**
 
 **Saved at:** **2026-10-30T08:51:00.062+09:00 Asia/Tokyo/JST** (observed runtime wall time immediately before normal GitHub Contents write; not trusted time, user authentication, consent or independent attestation).
