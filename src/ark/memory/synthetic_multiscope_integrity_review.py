@@ -93,6 +93,12 @@ class SyntheticMemorySnapshotDigest:
         return False
 
 
+# A reentrant synthetic constructor may be replaced after import. Keep the
+# original result types separate from any reflected constructor binding.
+_MEMORY_SCOPE_RESULT_TYPE = SyntheticMemoryScopeDigest
+_MEMORY_SNAPSHOT_RESULT_TYPE = SyntheticMemorySnapshotDigest
+
+
 def review_synthetic_memory_scopes(
     store: SQLiteMemoryStore,
     scopes: tuple[MemoryScope, ...],
@@ -386,18 +392,64 @@ def review_synthetic_memory_scopes(
     assert_epoch()
     owner_digest = _hash("ARK-synthetic-memory-owner-v1", values[0][0])
     assert_epoch()
-    snapshot = SyntheticMemorySnapshotDigest(
-        owner_digest, tuple(results),
-        _hash("ARK-synthetic-memory-multiscope-v1", (
-            owner_digest,
-            tuple((
-                row.scope_digest, row.events.tail_hash,
-                row.events.event_count, row.events.last_event_id,
-                row.live_row_count, row.live_rows_digest,
-            ) for row in results),
-        )),
-    )
+    receipt_items = tuple(results)
+    # Frozen dataclasses can be reflectively changed at the final digest and
+    # result-constructor callbacks. Hold exact field objects, not just values.
+    receipt_epoch = tuple((
+        item,
+        tuple(getattr(item, field.name) for field in fields(item)),
+        item.events,
+        tuple(getattr(item.events, field.name) for field in fields(item.events)),
+    ) for item in receipt_items)
+
+    def assert_receipt_epoch() -> None:
+        for item, original_fields, event, event_fields in receipt_epoch:
+            if (
+                type(item) is not _MEMORY_SCOPE_RESULT_TYPE
+                or type(item.events) is not SyntheticMemoryEventWitness
+                or item.events is not event
+                or any(
+                    getattr(item, field.name) is not value
+                    for field, value in zip(fields(item), original_fields, strict=True)
+                )
+                or any(
+                    getattr(event, field.name) is not value
+                    for field, value in zip(fields(event), event_fields, strict=True)
+                )
+            ):
+                raise SyntheticMemorySnapshotRejected(
+                    "constructed Memory scope receipt changed during review"
+                )
+
+    assert_receipt_epoch()
+    snapshot_digest = _hash("ARK-synthetic-memory-multiscope-v1", (
+        owner_digest,
+        tuple((
+            row.scope_digest, row.events.tail_hash,
+            row.events.event_count, row.events.last_event_id,
+            row.live_row_count, row.live_rows_digest,
+        ) for row in receipt_items),
+    ))
     assert_epoch()
+    assert_receipt_epoch()
+    snapshot = SyntheticMemorySnapshotDigest(
+        owner_digest, receipt_items, snapshot_digest,
+    )
+
+    def assert_snapshot_epoch() -> None:
+        assert_receipt_epoch()
+        if (
+            type(snapshot) is not _MEMORY_SNAPSHOT_RESULT_TYPE
+            or snapshot.owner_digest is not owner_digest
+            or snapshot.scopes is not receipt_items
+            or snapshot.snapshot_digest is not snapshot_digest
+        ):
+            raise SyntheticMemorySnapshotRejected(
+                "constructed Memory snapshot receipt changed during review"
+            )
+
+    assert_epoch()
+    assert_snapshot_epoch()
     if store.path is not path_epoch or tuple(
         (scope.owner_id, scope.namespace) for scope in scopes
     ) != values:
@@ -425,4 +477,5 @@ def review_synthetic_memory_scopes(
         if current_epoch != same_epoch or require_same_snapshot != snapshot:
             raise SyntheticMemorySnapshotRejected("retained exact Memory snapshot changed")
     assert_epoch()
+    assert_snapshot_epoch()
     return snapshot
