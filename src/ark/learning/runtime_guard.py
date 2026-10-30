@@ -46,7 +46,7 @@ class RuntimeIdentity:
         )
         for field in text_fields:
             value = getattr(self, field)
-            if not isinstance(value, str) or not value.strip():
+            if type(value) is not str or not value.strip():
                 raise RuntimeIdentityMismatch(
                     f"invalid measured runtime identity for {field}"
                 )
@@ -123,6 +123,14 @@ def verify_runtime_identity(
     vram_tolerance_gib: float = 0.05,
 ) -> None:
     """Require the measured runtime to match the user-reviewed execution snapshot."""
+    if type(actual) is not RuntimeIdentity:
+        raise RuntimeIdentityMismatch("exact measured RuntimeIdentity required")
+    if (
+        type(snapshot) is not dict
+        or type(snapshot.get("environment")) is not dict
+        or type(snapshot.get("hardware")) is not dict
+    ):
+        raise RuntimeIdentityMismatch("invalid frozen runtime identity container")
     actual.validate()
     if type(vram_tolerance_gib) not in (int, float):
         raise ValueError("finite non-negative VRAM tolerance required")
@@ -144,7 +152,7 @@ def verify_runtime_identity(
         "cuda_runtime",
     ):
         expected = expected_environment[field]
-        if not isinstance(expected, str) or not expected.strip():
+        if type(expected) is not str or not expected.strip():
             raise RuntimeIdentityMismatch(f"invalid frozen runtime identity for {field}")
         observed = getattr(actual, field)
         if observed != expected:
@@ -156,9 +164,9 @@ def verify_runtime_identity(
     expected_hardware = snapshot["hardware"]
     expected_device = expected_hardware["device"]
     expected_driver = expected_hardware["driver"]
-    if not isinstance(expected_device, str) or not expected_device.strip():
+    if type(expected_device) is not str or not expected_device.strip():
         raise RuntimeIdentityMismatch("invalid frozen GPU device identity")
-    if not isinstance(expected_driver, str) or not expected_driver.strip():
+    if type(expected_driver) is not str or not expected_driver.strip():
         raise RuntimeIdentityMismatch("invalid frozen GPU driver identity")
     if actual.device != expected_device:
         raise RuntimeIdentityMismatch("GPU device identity does not match frozen snapshot")
