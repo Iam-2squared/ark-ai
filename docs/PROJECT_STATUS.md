@@ -1,5 +1,60 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run478: disconnected READ fixture-to-CAS journal bridge, atomic Memory row+event epoch, free-only V3 local file identity and human-review packet custody**
+
+**Saved at:** **2026-10-30T20:56:33.843392900+09:00 Asia/Tokyo/JST** (observed local runtime wall-clock before checkpoint preparation; not an independently authenticated clock, GitHub commit timestamp or proof of user consent).
+
+**Canonical branch / PR:** `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+**Separate V3 branch / PR:** `research/v3-learning-evaluation` / **PR #5 Draft, open, unmerged**.
+**Invocation work-basis HEAD (PR #8):** `4575adfdf7442d322814e6b7478d3c5d6d04d7fe` (Run477 canonical checkpoint).
+**Invocation work-basis HEAD (PR #5):** `ede4ccffb10e381291500bea522e0067390520de` (Run477 source/test).
+**Final source/test HEAD (PR #8):** `ec2fb3d6dbc6904ad77ee776ca7c6fd401ab92e4`.
+**Final source/test HEAD (PR #5):** `da3d18994af5dcc74f93cbab99095ba2876ffe6d`.
+**Checkpoint-write-basis HEAD:** `af3d2f1b536938d7539cfea20a1c750b8870ed81` (**PRE-checkpoint**, includes Run478 technical evidence).
+**Checkpoint-result HEAD:** The checked-in document cannot independently attest the SHA of the Git commit containing itself. Verify the normal GitHub Contents API returned SHA and independently reread current PR/branch HEAD after the write. **Do not use PRE-checkpoint HEAD as checkpoint-result SHA.**
+
+### Overall ARK state — JARVIS NOT_PASSED
+
+Four coherent, synthetic, reversible and local-first packages saved (**48 new authored pytest cases**). These do NOT demonstrate completed JARVIS; real ToolBackend/OS/sensor actions; authenticated consent; trusted clock; independent, durable audit/write outcome provenance; cross-store atomicity; physical GPU validation; actual Candidate generation; protected V2 evaluation or V3 PASS. No paid/possibly billable action, GPU rental, paid API, additional account/credential, main merge or Candidate promotion.
+
+### NEW this invocation — four packages and exact file identities
+
+1. **Disconnected request-bound READ fixture -> SQLite CAS journal bridge (16 cases)**: new `src/ark/agency/disconnected_read_receipt_bridge.py` blob `d1f569fe4ad87d4e3c143f8b1f9f6b9648c2b5ac`, new `tests/test_disconnected_read_receipt_bridge_run478.py` blob `264df7cf1320650f6aed749ac5e2074562bf4df9`. Exact local fixture recomputation + request-scoped binding precedes a v1 ReadReceipt. Opt-in caller-opened `DisconnectedReadJournal` appends once with retained witness CAS and verifies across restart; it **never retries** a possibly committed append. The extra request-bound digest is NOT persisted in journal v1, so an independent retained binding is still necessary. No backend dispatch or grant.
+2. **Single read-transaction Memory v1 row/event epoch (18 cases)**: new `src/ark/memory/atomic_epoch_review.py` blob `4fcc91a65ae6dda3dd3b17888ddc75d683bbc758`, new `tests/test_memory_atomic_epoch_review_run478.py` blob `3b7e838344a1d4b621a12ed3366bc54fd709ac4e`. Bounded, ordered, single-owner namespace review of row and event metadata in one query-only SQLite transaction; first read pins pre-clock WAL snapshot. Result reveals no Memory content and grants no disclosure/action authority. One-database snapshot only, not independently authenticated writer history, a cross-store transaction or validated consent. Frozen Memory v1 DDL unchanged.
+3. **V3 local byte-identity file epoch and alias guard (8 cases)**: `src/ark/learning/identity.py` blob `eca613513d6a27e40fd0575c59e3426031ab9e5f`; new `tests/v3/test_local_identity_file_epoch_run478.py` blob `372a9480a90a6f60314401f379a0920ae73d38a0`. Reject parent traversal, symlink ancestors, multi-linked files and before/after hash metadata drift; manifest format untouched. This does not close an adversarial open-handle/TOCTOU race or attest a real model file.
+4. **V3 unapproved human-review authorization packet input-epoch custody (6 cases)**: `src/ark/learning/authorization.py` blob `c0152e84947e9e43456d05317f8edaaaa0169cb0`; new `tests/v3/test_authorization_packet_epoch_run478.py` blob `fd8d7a6a62934cb2b6deb2ac0841e36000808239`. Pins the complete unapproved execution snapshot across validation, core SHA, nested copies and packet SHA; packet remains a review request, **never an authorization** for a paid GPU, preflight or training.
+
+**Technical evidence:** `docs/JARVIS_READ_JOURNAL_MEMORY_ATOMIC_V3_IDENTITY_RUN478.md` committed at `af3d2f1b536938d7539cfea20a1c750b8870ed81`. Eight source/test file blobs re-fetched and SHA matched on exact branches. Eight normal GitHub Contents source/test commits + one technical document commit. No force-push/raw-object/ref bypass, duplicate manual CI launch, merge, or frozen contract edits.
+
+### Tests / CI — distinguish exact source HEADs and pending documentation runs
+
+- **PR #8 final source/test HEAD `ec2fb3d6dbc6904ad77ee776ca7c6fd401ab92e4`: #1591 / run `41050781096` — SIX JOBS GREEN**, Ubuntu/Windows Python 3.11, 3.12, 3.13, observed directly via job API after successful execution; the GitHub top-level run state had not yet synchronized to COMPLETED at prior query. Do not use this success to attest a later documentation/checkpoint HEAD.
+- **PR #5 final source/test HEAD `da3d18994af5dcc74f93cbab99095ba2876ffe6d`: #1595 / run `41051214897` COMPLETED SUCCESS — SIX JOBS GREEN**, directly inspected all six Ubuntu/Windows Python 3.11–3.13 jobs.
+- **PR #5 preceding source-only HEAD `90c6907997078b61ed76aed60baa0964e919a8d4`: #1594 / `41051156238` FAILED** one Windows Python 3.11 pre-existing UI HTTP negative test with `ConnectionAbortedError [WinError 10053]`; 5 other jobs GREEN. Failure not concealed. Final newer exact source/test HEAD #1595 did succeed across six jobs. This older transient failure alone does not justify weakening CI.
+- **PR #8 Run478 technical doc HEAD `af3d2f1b536938d7539cfea20a1c750b8870ed81`: #1596 / run `41051456973` IN PROGRESS**, all six jobs running at last direct inspection; this does not replace source CI #1591.
+- **Historical Run477 PR #8 checkpoint `4575adfdf7442d322814e6b7478d3c5d6d04d7fe`: #1587 / `41045591097` COMPLETED SUCCESS, six jobs GREEN.**
+- **Local whole-repository pytest/Ruff: NOT VERIFIED.** New 48 cases are authored and GitHub-saved; only actual exact-head CI jobs count as executed evidence. Automatic standard GitHub Actions on existing PUBLIC repo; no external paid compute provisioned.
+
+### Frozen contracts / authorization blockers
+
+V1/V2/Local UI/Launcher frozen evidence, Memory v1 schema, final protected V2 evaluation gate, V3 Contract 1 (120 approved train, 30 validation, one Candidate, no sweep), human review, provenance/contamination/regression/reproducibility gates and explicit main merge approval unchanged. PR #5 and #8 Draft/open/unmerged. No new credentials/secrets, real user data, paid API, external GPU, trained adapter/weights, Candidate promotion, irreversible operations or live dispatch.
+
+Still blocked: independently verified model/tool immutable revisions and byte identities; reviewed dataset licensing/provenance; authenticated human consent/review; trusted clock; external writer and audit custody; durable reconciled real WRITE outcomes; cross-store atomicity; physical PC/GPU runtime proof; provider-enforceable spending/time/JPY caps and separate explicit payment authorization.
+
+### Next plan / 今後の方針
+
+1. Confirm exact-head post-documentation/checkpoint CI (#1596 and new checkpoint run); if FAILED, inspect logs and correct smallest semantics-preserving fault via normal GitHub Contents API. Avoid redundant equivalent workflow runs.
+2. Extend Memory row/event CAS and bounded expiry with independent retained restart witnesses; evaluate cross-store snapshot limitations without modifying frozen v1 DDL.
+3. Join disconnected Planner/immutable registry/exact PermissionGate/READ journal only after existing exact-HEAD GREEN; strengthen UNKNOWN WRITE quarantine, audit-before-action trusted-clock and exactly-once occurrence **contracts**, never real execution or auto-replay.
+4. Advance mock Scheduler restart custody, Personal Context revocation/retention and Observation fixture adapters; prevent real capture/notification/external export.
+5. Continue free-only V3 approval/path/source identity and reproducibility guards; real Candidate, paid compute, protected evaluation, promotion and main merge stay blocked until explicit separately authorized decisions.
+
+---
+
+**HISTORICAL — Run477 and earlier canonical/frozen evidence preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run477: strict startup receipt custody, Memory event authority fences, UNKNOWN WRITE recovery denial, V3 preflight report input epochs**
 
 **Saved at:** **2026-10-30T20:04:45.883452706+09:00 Asia/Tokyo/JST** (observed container wall time immediately before checkpoint preparation, NOT an independently authenticated clock, GitHub commit timestamp or real-world scheduling assertion).
