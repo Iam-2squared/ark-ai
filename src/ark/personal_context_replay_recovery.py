@@ -11,12 +11,15 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sqlite3
+from contextlib import closing
 from dataclasses import dataclass
 
 from .personal_context_replay_ledger import (
     DisconnectedContextReplayLedger,
     OfflineContextReplayRejected,
     OfflineContextReplayWitness,
+    _inspect,
 )
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -125,7 +128,34 @@ def review_restarted_context_replay(
         ):
             raise OfflineContextRecoveryRejected("observed context replay witness changed")
 
-    stable_observed()
+    def verify_durable_tip() -> None:
+        # witness() is a public, overridable callback. It can return a forged
+        # or stale but exact-type result, including after an intervening SQLite
+        # append. Read the real rows in a separate read-only transaction.
+        stable_observed()
+        try:
+            with closing(ledger._open(read_only=True)) as conn:
+                conn.execute("BEGIN")
+                try:
+                    durable = _inspect(conn)
+                    stable_observed()
+                    if _witness_fields(durable) != current:
+                        raise OfflineContextRecoveryRejected(
+                            "context replay durable tip differs from callback"
+                        )
+                    conn.commit()
+                except BaseException:
+                    conn.rollback()
+                    raise
+        except (sqlite3.Error, OfflineContextReplayRejected) as exc:
+            if type(exc) is OfflineContextRecoveryRejected:
+                raise
+            raise OfflineContextRecoveryRejected(
+                "context replay durable tip cannot be verified"
+            ) from exc
+        stable_observed()
+
+    verify_durable_tip()
     if current[0] < pinned[0]:
         raise OfflineContextRecoveryRejected("context replay history count regressed")
     if current[0] == pinned[0] and current[1] != pinned[1]:
@@ -163,4 +193,5 @@ def review_restarted_context_replay(
         or result.automatic_replay_authorized is not False
     ):
         raise OfflineContextRecoveryRejected("context replay review result changed")
+    verify_durable_tip()
     return result
