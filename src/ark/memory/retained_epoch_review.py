@@ -15,8 +15,8 @@ from dataclasses import dataclass
 from .atomic_epoch_review import AtomicMemoryEpochReview
 from .contracts import MemorySchemaError
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-memory-retained-epoch-comparison-v1\\0"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-memory-retained-epoch-comparison-v1\0"
 _REVIEW_TYPE = AtomicMemoryEpochReview
 _MAX_ROWS = 10_000
 _MAX_EVENTS = 10_000
