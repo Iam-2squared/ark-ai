@@ -56,7 +56,7 @@ class RuntimeIdentity:
             measured_vram = float(self.vram_gib)
         except (OverflowError, ValueError) as exc:
             raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity") from exc
-        if not math.isfinite(measured_vram) or not math.isfinite(measured_vram * 1024.0):
+        if not math.isfinite(measured_vram):
             raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity")
 
 
