@@ -222,3 +222,79 @@ def test_metadata_diagnostics_expose_names_not_values():
     assert module._different_metadata_fields((1, 2, 3, 4, 5), (1, 7, 3, 9, 5)) == (
         "device,mtime_ns"
     )
+
+
+def test_reparse_ancestor_bit_flag_rejected(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import ark.disconnected_file_seal as module
+
+    path = fixture(tmp_path)
+    real_lstat = module.os.lstat
+
+    def flagged(item):
+        info = real_lstat(item)
+        if os.fspath(item) == os.fspath(tmp_path):
+            return SimpleNamespace(
+                st_mode=info.st_mode, st_dev=info.st_dev, st_ino=info.st_ino,
+                st_file_attributes=0x400,
+            )
+        return info
+
+    monkeypatch.setattr(module.os, "lstat", flagged)
+    with pytest.raises(DisconnectedFileSealRejected, match="ancestor"):
+        capture_disconnected_file_seal(path)
+
+
+def test_reparse_source_bit_flag_rejected(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import ark.disconnected_file_seal as module
+
+    path = fixture(tmp_path)
+    real_lstat = module.os.lstat
+
+    def flagged(item):
+        info = real_lstat(item)
+        if os.fspath(item) == os.fspath(path):
+            return SimpleNamespace(
+                st_mode=info.st_mode, st_nlink=info.st_nlink,
+                st_file_attributes=0x400,
+            )
+        return info
+
+    monkeypatch.setattr(module.os, "lstat", flagged)
+    with pytest.raises(DisconnectedFileSealRejected, match="reparse"):
+        capture_disconnected_file_seal(path)
+
+
+def test_bounded_single_read_request_and_two_pass_digest(tmp_path, monkeypatch):
+    import ark.disconnected_file_seal as module
+
+    content = b"x" * 200_000
+    path = fixture(tmp_path, content)
+    real_read = module.os.read
+    requests = []
+
+    def traced_read(fd, amount):
+        requests.append(amount)
+        return real_read(fd, amount)
+
+    monkeypatch.setattr(module.os, "read", traced_read)
+    seal = capture_disconnected_file_seal(path)
+    assert seal.size_bytes == len(content)
+    assert len(requests) >= 2
+    assert requests[0] >= len(content)
+    assert max(requests) <= 8 * 1024 * 1024 + 1
+
+
+def test_windows_path_handle_birthtime_policy(tmp_path):
+    path = fixture(tmp_path)
+    seal = capture_disconnected_file_seal(path)
+    info = os.lstat(path)
+    expected = (
+        info.st_birthtime_ns
+        if os.name == "nt" and hasattr(info, "st_birthtime_ns")
+        else info.st_ctime_ns
+    )
+    assert seal.ctime_ns == expected
