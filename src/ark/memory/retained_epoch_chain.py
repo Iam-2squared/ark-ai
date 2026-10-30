@@ -104,12 +104,32 @@ def review_retained_memory_chain(
     totals = [0] * len(scope_ids)
     edge_summaries: list[tuple[object, ...]] = []
     advanced = False
+    pinned_edges: list[tuple[object, ...]] = []
+
+    def stable_edges() -> None:
+        for edge, scopes, counts, status, digest in pinned_edges:
+            if (
+                type(edge) is not _EDGE_TYPE
+                or edge.scope_fingerprints is not scopes
+                or edge.new_event_counts is not counts
+                or edge.status is not status
+                or edge.comparison_digest is not digest
+                or edge.historical_prefix_proven is not False
+                or edge.independent_writer_proven is not False
+                or edge.custody_authenticated is not False
+                or edge.memory_disclosure_authorized is not False
+                or edge.dispatch_authorized is not False
+            ):
+                raise MemorySchemaError("Memory chain earlier edge result changed")
+
     for index, (previous, current) in enumerate(
         zip(originals, originals[1:], strict=False),
     ):
         stable()
+        stable_edges()
         edge = review_retained_memory_epoch(previous, current)
         stable()
+        stable_edges()
         prev_fields = pinned[index]
         next_fields = pinned[index + 1]
         growth = tuple(
@@ -137,6 +157,11 @@ def review_retained_memory_chain(
             or edge.dispatch_authorized is not False
         ):
             raise MemorySchemaError("Memory chain edge result changed")
+        pinned_edges.append((
+            edge, edge.scope_fingerprints, edge.new_event_counts,
+            edge.status, edge.comparison_digest,
+        ))
+        stable_edges()
         advanced |= any(growth)
         for j, count in enumerate(growth):
             totals[j] += count
@@ -145,6 +170,7 @@ def review_retained_memory_chain(
              edge.status, growth),
         )
         stable()
+        stable_edges()
 
     status = (
         "ADVANCED_HISTORY_UNVERIFIED"
@@ -162,12 +188,15 @@ def review_retained_memory_chain(
         payload, separators=(",", ":"), ensure_ascii=True, allow_nan=False,
     ).encode("ascii")
     stable()
+    stable_edges()
     digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     stable()
+    stable_edges()
     result = RetainedMemoryChainReview(
         len(originals), scope_ids, counts, status, digest,
     )
     stable()
+    stable_edges()
     if (
         type(result) is not _RESULT_TYPE
         or type(result.observations) is not int
@@ -183,4 +212,5 @@ def review_retained_memory_chain(
         or result.dispatch_authorized is not False
     ):
         raise MemorySchemaError("Memory chain result changed")
+    stable_edges()
     return result
