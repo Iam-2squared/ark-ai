@@ -62,6 +62,59 @@ class PreflightEvidence:
             raise ValueError("preflight runtime failure")
 
 
+_EVIDENCE_TYPE = PreflightEvidence
+_IDENTITY_TYPE = RuntimeIdentity
+_EVIDENCE_FIELDS = tuple(PreflightEvidence.__dataclass_fields__)
+_IDENTITY_FIELDS = tuple(RuntimeIdentity.__dataclass_fields__)
+
+
+def _pin_json_tree(value: object, depth: int = 0) -> tuple:
+    """Retain original execution-snapshot carriers, including nested scalars.
+
+    This is a callback-epoch guard, not a signature or authorization grant.
+    """
+    if depth > 16:
+        raise ValueError("preflight snapshot exceeds review depth")
+    if type(value) is dict:
+        if len(value) > 128:
+            raise ValueError("preflight snapshot exceeds review object budget")
+        return (
+            value, "object",
+            tuple(
+                (key, _pin_json_tree(item, depth + 1))
+                for key, item in value.items()
+            ),
+        )
+    if type(value) is list:
+        if len(value) > 256:
+            raise ValueError("preflight snapshot exceeds review array budget")
+        return (
+            value, "array",
+            tuple(_pin_json_tree(item, depth + 1) for item in value),
+        )
+    return value, "scalar", None
+
+
+def _assert_json_tree_epoch(value: object, pinned: tuple) -> None:
+    original, kind, children = pinned
+    if value is not original:
+        raise ValueError("preflight snapshot changed during evidence binding")
+    if kind == "object":
+        if type(value) is not dict or len(value) != len(children):
+            raise ValueError("preflight snapshot mapping changed")
+        for (current_key, current), (key, child) in zip(
+            value.items(), children, strict=True,
+        ):
+            if current_key is not key:
+                raise ValueError("preflight snapshot key carrier changed")
+            _assert_json_tree_epoch(current, child)
+    elif kind == "array":
+        if type(value) is not list or len(value) != len(children):
+            raise ValueError("preflight snapshot array changed")
+        for current, child in zip(value, children, strict=True):
+            _assert_json_tree_epoch(current, child)
+
+
 class PreflightBackend(Protocol):
     def run(self, snapshot: dict) -> PreflightEvidence: ...
 
@@ -109,21 +162,67 @@ def build_preflight_report(
     evidence: PreflightEvidence,
     runtime_identity: RuntimeIdentity,
 ) -> bytes:
+    """Create a non-authorizing report bound to one unchanged input epoch."""
+    if (
+        type(snapshot) is not dict
+        or type(evidence) is not _EVIDENCE_TYPE
+        or type(runtime_identity) is not _IDENTITY_TYPE
+    ):
+        raise ValueError("exact preflight report input types required")
+    snapshot_epoch = _pin_json_tree(snapshot)
+    evidence_epoch = tuple(getattr(evidence, name) for name in _EVIDENCE_FIELDS)
+    identity_epoch = tuple(getattr(runtime_identity, name) for name in _IDENTITY_FIELDS)
+
+    def assert_epoch() -> None:
+        _assert_json_tree_epoch(snapshot, snapshot_epoch)
+        try:
+            stable = (
+                type(evidence) is _EVIDENCE_TYPE
+                and type(runtime_identity) is _IDENTITY_TYPE
+                and all(
+                    getattr(evidence, name) is value
+                    for name, value in zip(
+                        _EVIDENCE_FIELDS, evidence_epoch, strict=True,
+                    )
+                )
+                and all(
+                    getattr(runtime_identity, name) is value
+                    for name, value in zip(
+                        _IDENTITY_FIELDS, identity_epoch, strict=True,
+                    )
+                )
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError("preflight result input epoch invalid") from exc
+        if not stable:
+            raise ValueError("preflight result input epoch changed")
+
+    assert_epoch()
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="preflight")
+    assert_epoch()
     verify_preflight_measurements(snapshot, evidence, runtime_identity)
+    assert_epoch()
+    core_sha = execution_core_sha256(snapshot)
+    assert_epoch()
+    identity_dict = asdict(runtime_identity)
+    assert_epoch()
+    evidence_dict = asdict(evidence)
+    assert_epoch()
     report = {
         "schema_version": 1,
         "kind": "NON_CANDIDATE_PREFLIGHT",
         "execution_snapshot_sha256": snapshot_sha,
-        "execution_core_sha256": execution_core_sha256(snapshot),
-        "runtime_identity": asdict(runtime_identity),
-        "evidence": asdict(evidence),
+        "execution_core_sha256": core_sha,
+        "runtime_identity": identity_dict,
+        "evidence": evidence_dict,
         "candidate_created": False,
         "validation_opened": False,
         "historical_v2_opened": False,
         "full_training_authorized": False,
     }
-    return canonical_json(report)
+    payload = canonical_json(report)
+    assert_epoch()
+    return payload
 
 
 def preflight_report_sha256(
