@@ -272,13 +272,20 @@ class DisconnectedMemoryWitnessLedger:
         old_tip = (retained.epochs, retained.chain_sha256)
 
         def stable() -> None:
-            if (
-                type(review) is not _REVIEW_TYPE
-                or any(a is not b for a, b in zip(_validate(review), old_fields, strict=True))
-                or (retained.epochs, retained.chain_sha256) != old_tip
-                or retained.epochs is not old_tip[0]
-                or retained.chain_sha256 is not old_tip[1]
-            ):
+            try:
+                unchanged = (
+                    type(review) is _REVIEW_TYPE
+                    and all(
+                        a is b
+                        for a, b in zip(_validate(review), old_fields, strict=True)
+                    )
+                    and (retained.epochs, retained.chain_sha256) == old_tip
+                    and retained.epochs is old_tip[0]
+                    and retained.chain_sha256 is old_tip[1]
+                )
+            except (MemorySchemaError, AttributeError, TypeError) as exc:
+                raise MemoryWitnessLedgerRejected("Memory witness inputs changed") from exc
+            if not unchanged:
                 raise MemoryWitnessLedgerRejected("Memory witness inputs changed")
 
         stable()
