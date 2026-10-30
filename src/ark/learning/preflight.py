@@ -93,9 +93,13 @@ def verify_preflight_measurements(
     if evidence.peak_vram_mib > evidence.peak_reserved_vram_mib:
         raise ValueError("preflight allocated VRAM exceeds reserved VRAM")
     measured_capacity_mib = float(runtime_identity.vram_gib) * 1024
+    if not math.isfinite(measured_capacity_mib):
+        raise ValueError("preflight measured GPU capacity conversion overflow")
     if evidence.peak_reserved_vram_mib > measured_capacity_mib:
         raise ValueError("preflight reserved VRAM exceeds measured GPU capacity")
     budget_seconds = float(snapshot["budget"]["wall_clock_timeout_minutes"]) * 60
+    if not math.isfinite(budget_seconds):
+        raise ValueError("preflight frozen wall-clock budget conversion overflow")
     if evidence.wall_seconds > budget_seconds:
         raise ValueError("preflight wall time exceeds frozen execution budget")
 
