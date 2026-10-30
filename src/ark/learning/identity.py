@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -71,11 +72,29 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     return FileIdentity(label or path.name, sha, size, False)
 
 
-def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool], ...]:
-    """Bound a local manifest to an enumerated directory tree.
+def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
+    """Retain directory/file identity, not only a reusable relative name."""
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        raise ValueError("snapshot entry disappeared during enumeration") from exc
+    if (
+        (is_dir and not stat.S_ISDIR(info.st_mode))
+        or (not is_dir and not stat.S_ISREG(info.st_mode))
+    ):
+        raise ValueError("snapshot entry type changed during enumeration")
+    return (
+        info.st_dev, info.st_ino, info.st_mode, info.st_size,
+        info.st_mtime_ns, info.st_ctime_ns, info.st_nlink,
+    )
 
-    This detects new/deleted/renamed entries between enumeration and hashing.
-    It does not prevent hostile concurrent writes after a file was hashed.
+
+def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...]], ...]:
+    """Bound local manifest to names AND file/directory metadata epochs.
+
+    Root is included explicitly, so replacing a tree with a same-name copy
+    cannot pass merely because the directory listing looks identical. This
+    remains a best-effort local check, NOT a hostile-writer-safe snapshot.
     """
     root = Path(root)
     if (
@@ -85,7 +104,7 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool], ...]:
         or ".." in root.parts
     ):
         raise ValueError("snapshot root must be a non-aliased local directory")
-    entries: list[tuple[str, Path, bool]] = []
+    entries = [("", root, True, _entry_epoch(root, is_dir=True))]
     for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
         if path.is_symlink():
             raise ValueError("snapshot contains a symlink entry")
@@ -95,18 +114,21 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool], ...]:
             is_dir = False
         else:
             raise ValueError(f"unsupported snapshot entry: {path}")
-        entries.append((path.relative_to(root).as_posix(), path, is_dir))
+        entries.append((
+            path.relative_to(root).as_posix(), path, is_dir,
+            _entry_epoch(path, is_dir=is_dir),
+        ))
     return tuple(entries)
 
 
 def _assert_snapshot_entries(
-    root: Path, original: tuple[tuple[str, Path, bool], ...],
+    root: Path, original: tuple[tuple[str, Path, bool, tuple[int, ...]], ...],
 ) -> None:
     now = _snapshot_entries(root)
-    if tuple((rel, is_dir) for rel, _, is_dir in now) != tuple(
-        (rel, is_dir) for rel, _, is_dir in original
+    if tuple((rel, is_dir, epoch) for rel, _, is_dir, epoch in now) != tuple(
+        (rel, is_dir, epoch) for rel, _, is_dir, epoch in original
     ):
-        raise ValueError("snapshot entries changed during hashing")
+        raise ValueError("snapshot entries or directory identities changed during hashing")
 
 
 def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
@@ -115,7 +137,7 @@ def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
     entries = _snapshot_entries(root)
     rows = [
         file_identity(path, label=relative)
-        for relative, path, is_dir in entries if not is_dir
+        for relative, path, is_dir, _ in entries if not is_dir
     ]
     _assert_snapshot_entries(root, entries)
     if not rows:
@@ -135,7 +157,7 @@ def build_code_tree_identity(root: Path) -> dict:
         raise ValueError("runtime code root is missing src/ark/learning")
     entries = _snapshot_entries(learning_root)
     paths = [root / "pyproject.toml"] + [
-        path for _, path, is_dir in entries if not is_dir and path.suffix == ".py"
+        path for _, path, is_dir, _ in entries if not is_dir and path.suffix == ".py"
     ]
     if len(paths) < 2:
         raise ValueError("runtime code manifest requires learning Python sources")
