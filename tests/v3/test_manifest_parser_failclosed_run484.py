@@ -63,3 +63,26 @@ def test_exact_valid_canonical_bytes_still_accepted(tmp_path):
 def test_nonobject_noncanonical_or_invalid_unicode_is_refused(tmp_path, payload):
     with pytest.raises(manifest.CandidateRunManifestError, match="canonical JSON"):
         _load(tmp_path, payload)
+
+
+@pytest.mark.parametrize("depth", (129, 256, 1600, 8192))
+def test_nesting_limit_does_not_depend_on_interpreter_stack(tmp_path, depth):
+    payload = b'{"nested":' + b"[" * depth + b"0" + b"]" * depth + b"}\n"
+    with pytest.raises(manifest.CandidateRunManifestError, match="nesting budget"):
+        _load(tmp_path, payload)
+
+
+@pytest.mark.parametrize("literal", ("[" * 300, "}" * 300, '\\"[' * 200))
+def test_brackets_inside_json_strings_do_not_count_as_nesting(tmp_path, literal):
+    payload = canonical_json({"literal": literal, "value": 1})
+    parsed, observed = _load(tmp_path, payload)
+    assert parsed == {"literal": literal, "value": 1}
+    assert observed == payload
+
+
+def test_json_container_depth_at_limit_is_accepted(tmp_path):
+    # Root object plus 127 nested arrays: exactly 128 containers.
+    payload = b'{"nested":' + b"[" * 127 + b"0" + b"]" * 127 + b"}\n"
+    parsed, observed = _load(tmp_path, payload)
+    assert observed == payload
+    assert "nested" in parsed
