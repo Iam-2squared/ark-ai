@@ -71,20 +71,53 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     return FileIdentity(label or path.name, sha, size, False)
 
 
-def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
+def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool], ...]:
+    """Bound a local manifest to an enumerated directory tree.
+
+    This detects new/deleted/renamed entries between enumeration and hashing.
+    It does not prevent hostile concurrent writes after a file was hashed.
+    """
     root = Path(root)
-    if not root.is_dir() or root.is_symlink():
-        raise ValueError("snapshot root must be an existing non-symlink directory")
-    rows: list[FileIdentity] = []
+    if (
+        not root.is_dir()
+        or root.is_symlink()
+        or any(parent.is_symlink() for parent in root.parents)
+        or ".." in root.parts
+    ):
+        raise ValueError("snapshot root must be a non-aliased local directory")
+    entries: list[tuple[str, Path, bool]] = []
     for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
+        if path.is_symlink():
+            raise ValueError("snapshot contains a symlink entry")
         if path.is_dir():
-            if path.is_symlink():
-                raise ValueError("symlinked directories are not allowed in identity snapshots")
-            continue
-        if not path.is_file():
+            is_dir = True
+        elif path.is_file():
+            is_dir = False
+        else:
             raise ValueError(f"unsupported snapshot entry: {path}")
-        relative = path.relative_to(root).as_posix()
-        rows.append(file_identity(path, label=relative))
+        entries.append((path.relative_to(root).as_posix(), path, is_dir))
+    return tuple(entries)
+
+
+def _assert_snapshot_entries(
+    root: Path, original: tuple[tuple[str, Path, bool], ...],
+) -> None:
+    now = _snapshot_entries(root)
+    if tuple((rel, is_dir) for rel, _, is_dir in now) != tuple(
+        (rel, is_dir) for rel, _, is_dir in original
+    ):
+        raise ValueError("snapshot entries changed during hashing")
+
+
+def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
+    """Produce a local manifest without accepting a changing file listing."""
+    root = Path(root)
+    entries = _snapshot_entries(root)
+    rows = [
+        file_identity(path, label=relative)
+        for relative, path, is_dir in entries if not is_dir
+    ]
+    _assert_snapshot_entries(root, entries)
     if not rows:
         raise ValueError("snapshot directory contains no files")
     return tuple(rows)
@@ -100,13 +133,14 @@ def build_code_tree_identity(root: Path) -> dict:
     learning_root = root / "src" / "ark" / "learning"
     if not learning_root.is_dir() or learning_root.is_symlink():
         raise ValueError("runtime code root is missing src/ark/learning")
-    paths = [root / "pyproject.toml"] + sorted(
-        (p for p in learning_root.rglob("*.py") if p.is_file()),
-        key=lambda p: p.relative_to(root).as_posix(),
-    )
+    entries = _snapshot_entries(learning_root)
+    paths = [root / "pyproject.toml"] + [
+        path for _, path, is_dir in entries if not is_dir and path.suffix == ".py"
+    ]
     if len(paths) < 2:
         raise ValueError("runtime code manifest requires learning Python sources")
     rows = [file_identity(path, label=path.relative_to(root).as_posix()) for path in paths]
+    _assert_snapshot_entries(learning_root, entries)
     manifest = {
         "schema_version": 1,
         "scope": "pyproject.toml+src/ark/learning/**/*.py",
