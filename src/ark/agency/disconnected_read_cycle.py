@@ -11,7 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
-from .contracts import CapabilityGrant, PlanConflictError, StepState
+from .contracts import CapabilityGrant, Effect, PlanConflictError, StepState
 from .disconnected_read_preflight import (
     DisconnectedReadPreflight,
     DisconnectedReadPreflightRejected,
@@ -19,7 +19,7 @@ from .disconnected_read_preflight import (
 )
 from .planner import PlanGraph
 from .policy import PermissionGate
-from .registry import ToolRegistry
+from .registry import BoundAction, ToolRegistry
 
 _MAX_STEPS = 24
 _REVIEW_TYPE = DisconnectedReadPreflight
@@ -86,6 +86,10 @@ def simulate_registered_read_cycle(
         or type(gate) is not PermissionGate
         or type(grants) is not tuple
         or not 1 <= len(plan.steps) <= _MAX_STEPS
+        or type(observed_at_ms) is not int
+        or not 0 <= observed_at_ms <= 2**63 - 1
+        or len(grants) > 128
+        or any(type(grant) is not CapabilityGrant for grant in grants)
     ):
         raise DisconnectedReadCycleRejected("exact bounded read-cycle inputs required")
     try:
@@ -94,6 +98,10 @@ def simulate_registered_read_cycle(
         revision = registry.revision
         original_steps = tuple(plan.steps[key] for key in sorted(plan.steps))
         initial = plan.statuses()
+        grant_epoch = tuple(
+            (grant, grant.capability, grant.scope, grant.expires_at_ms)
+            for grant in grants
+        )
     except (AttributeError, TypeError, ValueError, PlanConflictError) as exc:
         raise DisconnectedReadCycleRejected("source plan is unstable") from exc
     if any(
@@ -108,6 +116,16 @@ def simulate_registered_read_cycle(
                 plan.topology_digest() != topology
                 or plan.status_digest() != status
                 or registry.revision != revision
+                or any(
+                    type(grant) is not CapabilityGrant
+                    or grant is not carrier
+                    or grant.capability is not capability
+                    or grant.scope is not scope
+                    or grant.expires_at_ms is not expiry
+                    for grant, (carrier, capability, scope, expiry) in zip(
+                        grants, grant_epoch, strict=True,
+                    )
+                )
                 or any(
                     plan.steps[entry.step_id] is not entry
                     for entry in original_steps
@@ -144,12 +162,46 @@ def simulate_registered_read_cycle(
         except (TypeError, ValueError, PlanConflictError, DisconnectedReadPreflightRejected) as exc:
             raise DisconnectedReadCycleRejected("READ wave preflight denied") from exc
         source_stable()
+        # A synthetic callback may forge an exact-type preflight receipt.
+        # Independently rederive the *entire* ready frontier and registry
+        # bound identities from the shadow graph; a plausible fingerprint or
+        # matching cardinality alone is not authority for mock progression.
+        try:
+            shadow_states = shadow.statuses()
+            expected_ready = tuple(
+                step_id for step_id in sorted(shadow.steps)
+                if shadow_states[step_id].state is StepState.PENDING
+                and all(
+                    shadow_states[dep].state is StepState.SUCCEEDED
+                    for dep in shadow.steps[step_id].depends_on
+                )
+            )
+            expected_bound: list[str] = []
+            for step_id in expected_ready:
+                call = shadow.steps[step_id].call
+                bound = registry.bind(call)
+                if (
+                    type(bound) is not BoundAction
+                    or bound.call is not call
+                    or bound.registry_revision != revision
+                    or type(bound.registration.effect) is not Effect
+                    or bound.registration.effect is not Effect.READ
+                ):
+                    raise DisconnectedReadCycleRejected("READ wave registry drift")
+                expected_bound.append(bound.bound_action_id)
+        except (KeyError, TypeError, ValueError, PlanConflictError) as exc:
+            raise DisconnectedReadCycleRejected("READ wave identity recheck failed") from exc
+        source_stable()
         if (
             type(review) is not _REVIEW_TYPE
             or review.topology_digest != topology
             or review.status_digest != before
             or review.registry_revision != revision
             or not review.ready_step_ids
+            or type(review.ready_step_ids) is not tuple
+            or type(review.ready_bound_ids) is not tuple
+            or review.ready_step_ids != expected_ready
+            or review.ready_bound_ids != tuple(expected_bound)
             or len(review.ready_step_ids) != len(review.ready_bound_ids)
             or len(set(review.ready_step_ids)) != len(review.ready_step_ids)
             or review.dispatch_authorized is not False
