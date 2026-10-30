@@ -10,7 +10,9 @@ from dataclasses import replace
 import pytest
 
 from ark.learning.runtime_guard import (
-    RuntimeIdentity, RuntimeIdentityMismatch, verify_runtime_identity,
+    RuntimeIdentity,
+    RuntimeIdentityMismatch,
+    verify_runtime_identity,
 )
 
 
