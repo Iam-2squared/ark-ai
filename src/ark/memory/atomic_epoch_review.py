@@ -62,6 +62,38 @@ class AtomicMemoryEpochReview:
         return False
 
 
+
+def _validate_event_causality(
+    identities: list[tuple[object, ...]],
+    events: list[tuple[object, ...]],
+) -> None:
+    """Fail closed on a broken *local* v1 create/update/terminal history.
+
+    Re-creation after delete/expire starts a fresh revision-1 lifecycle.
+    Event IDs may have gaps from other namespaces. This checks only the
+    already-sampled SQLite rows, not who wrote them or external custody.
+    """
+    live: dict[str, int] = {}
+    for _event_id, memory_id, operation, revision, _at_ms in events:
+        previous = live.get(memory_id)
+        if operation == "create":
+            if previous is not None or revision != 1:
+                raise MemorySchemaError("Memory epoch event lifecycle invalid")
+            live[memory_id] = 1
+        elif operation == "update":
+            if previous is None or previous >= SQLITE_INT_MAX or revision != previous + 1:
+                raise MemorySchemaError("Memory epoch event lifecycle invalid")
+            live[memory_id] = revision
+        else:  # delete or expire: terminal at the unchanged final revision
+            if previous is None or revision != previous:
+                raise MemorySchemaError("Memory epoch event lifecycle invalid")
+            del live[memory_id]
+
+    observed = {row[0]: row[2] for row in identities}
+    if len(observed) != len(identities) or observed != live:
+        raise MemorySchemaError("Memory epoch live rows disagree with event lifecycle")
+
+
 _RESULT_TYPE = AtomicMemoryEpochReview
 
 
@@ -202,6 +234,7 @@ def review_atomic_memory_epoch(
                 last_id = event_id
                 stable()
 
+            _validate_event_causality(identities, events)
             row_counts.append(len(identities))
             event_counts.append(len(events))
             event_tail_ids.append(last_id)
