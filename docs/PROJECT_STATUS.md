@@ -1,5 +1,53 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run468 three disconnected JARVIS integration packages, nine source/test commits**
+
+**Saved at:** **2026-10-30T10:56:20.403+09:00 Asia/Tokyo/JST** (observed runtime wall time before the normal GitHub Contents checkpoint write; not a trusted clock, GitHub commit timestamp, owner authentication, human review or independent attestation).
+
+**Branch/PR:** research/jarvis-foundations / **PR #8 Draft/open/unmerged**.
+**PR #5:** research/v3-learning-evaluation / **Draft/open/unmerged**, HEAD d6d4c1954a85fc716b1c593ac55c85417912418f; V3 NOT_PASSED.
+**Exact invocation work-basis HEAD:** 2dddc4cd95ae9e8d198d3d6e08963d61ce716d7e (prior Run467 checkpoint; independently checked at entry).
+**Exact final source/test HEAD:** 152312d42d923d9dc9633d63c06aa4d87895ac7c.
+**Exact checkpoint-write-basis HEAD:** 20879b1278002ecd0a58fa91fc51c3f1e9982371 (after the Run468 technical evidence document; pre-checkpoint).
+**Checkpoint-result HEAD:** this content cannot self-attest its own commit. The immediately preceding HEAD is PRE-checkpoint; the normal Contents update response and an independent subsequent branch/PR read are the authoritative result.
+
+### Overall ARK status — complete JARVIS NOT_PASSED
+
+ARK remains free-only, local-first and deliberately fail-closed. The new join of Planner/Registry/Gate is READ-only and diagnostic; no real ToolBackend dispatch, independent consent/owner authentication, trusted-clock service, durable external exactly-once WRITE, verified outcome, cross-store atomic snapshot or integrated JARVIS is proven. All three packages use local/synthetic inputs, never real personal data, camera, microphone, physical-PC operations or paid services.
+
+### NEW this invocation — 3 substantive packages / 9 ordinary source-test commits + 1 evidence document
+
+1. **Registry-bound disconnected READ plan preflight.** Added src/ark/agency/disconnected_read_preflight.py, Git Blob e163e4e57727d6e3a27560effef6dbd2a07924e4, commit db077be509b7e71ceafad013222ce6bcccd96dd9; test tests/test_disconnected_read_preflight_run468.py, Blob 6535fa9c161eba70773d39e8ccc6884942986b52, commit 006abcc5d52ee38aed5c61b286f93797d3cfefd7. Bounded exact PlanGraph/ToolRegistry/PermissionGate READ-only preflight, 24-step and 128-grant budgets, exact original grant carriers, stable topology/status/revision witness, reject all registered WRITE even unready, grant-check ready READ only, no backend.execute. Return content-free detached receipt with all dispatch/replay/outcome/authenticated-clock/consent flags false. **21 focused pytest cases authored**, not locally executed as a complete ARK checkout.
+2. **Privacy and Personal Context forged-constructor protection.** Existing detached, deny-only modules pin the ORIGINAL result class independent of replaceable global constructors: src/ark/offline_context_redaction.py (Blob 9fe4961828160c531d5d3225eb15283ba7ab5ac3, commit 487b4bb22f0358d1e69392871bd1f06b8a1f52e4), src/ark/offline_context_membership_guard.py (Blob c8db51affe0f7ac9346f7f1de6d0d71d74da772b, commit 79d9ba3e99f788a63536280e6290b80cde3d6638), src/ark/personal_context_offline_preview.py (Blob 2871156bce50f4f7b9f8f78fe3c1fcda41803f4f, commit 986b34496af61b9e444c9ad9457058fd1656f05d). New tests/test_private_preview_result_type_run468.py, Blob fc78d049078b17074a8ce8ca9b9c54d0f53d6573, commit efa9cc8212760c1de784aafe630784cf094fd5cb; **6 tests authored**. No consent, disclosure, retention or export authority introduced.
+3. **Observation metadata lineage/reuse forged-result protection.** Modified src/ark/observation_lineage_review.py, Blob d35dc0e69e92a0311ed7767d56247895f21c76f2, commit 21a5cab4687fdae35356fe004915b178834653ad; src/ark/observation_reuse_review.py, Blob cb9ce8b147b326a08ff8415c60e20259f6a0a3e3, commit bf6e581f9fad40e41d4741d069caf05612fb70ae. Added tests/test_observation_result_type_run468.py, Blob 841cd11fb7a38e1a41d8a483be1b35175685f60a, commit 152312d42d923d9dc9633d63c06aa4d87895ac7c; **4 tests authored**. Original lineage/reuse witness classes pinned, no source/parent/timing/privacy checks weakened and no real media/dispatch.
+4. **Technical evidence + independent V3 free-only read audit.** Created docs/JARVIS_REGISTERED_READ_PRIVACY_OBSERVATION_RUN468.md, ordinary commit 20879b1278002ecd0a58fa91fc51c3f1e9982371, documenting exact bound/offline/non-authority distinctions, Git Blob identities, CI and next gates. Read-only PR #5 pre-paid-compute gate audit reaffirmed unresolved immutable HF base/tokenizer revision+file bytes, human-approved 120 train/30 validation and contamination decisions, pinned environment/tool identities, user JPY/time ceilings and provider billing evidence. V3 Contract 1 unchanged, no model bytes downloaded and no authorization inferred.
+5. Independently re-read all **nine new/modified source/test Git Blobs** at exact source/test HEAD 152312d42d923d9dc9633d63c06aa4d87895ac7c and matched hashes. Nine ordinary Contents source/test commits fast-forward; one independent technical-document commit. Re-read branch HEAD immediately before each write, no force push/raw Git-object safety bypass, merge, workflow cancellation or manual duplicate runs.
+
+### CI / tests / limitations — exact HEAD and run ID
+
+- **Pre-invocation Run467 checkpoint CI #1467**, Run ID **40984181901**, exact prior HEAD 2dddc4cd95ae9e8d198d3d6e08963d61ce716d7e: **COMPLETED SUCCESS 6/6** Ubuntu/Windows Python 3.11–3.13 jobs, including Ruff/pytest/JS smoke/CLI. Ubuntu 3.11 authoritative log: **4497 passed, 1 skipped**. Another prior source HEAD #1466, Run ID 40983728330, also 6/6 SUCCESS. They are earlier-HEAD evidence, **not the latest new source/test CI**.
+- New source-only CI #1468, Run ID 40987616172, head db077be509b7e71ceafad013222ce6bcccd96dd9: **COMPLETED SUCCESS** at latest inspection. Partial privacy-source CI #1471, Run ID 40987857074, head 79d9ba3e99f788a63536280e6290b80cde3d6638: **COMPLETED SUCCESS**. Intermediate source/test runs may still be in progress. These do not validate all new packages together.
+- **Latest new source/test CI #1476**, Run ID **40988304821**, exact HEAD 152312d42d923d9dc9633d63c06aa4d87895ac7c: **QUEUED at latest inspection**. The Run468 technical-document CI #1477, Run ID **40988735524**, exact HEAD 20879b1278002ecd0a58fa91fc51c3f1e9982371: **QUEUED**. Latest checkpoint CI is necessarily after this file write; not pre-declared.
+- **31 new pytest cases authored** (READ 21, privacy 6, Observation 4). The isolated container's Python 3.13.5 new-file grammar checks succeeded, but GitHub DNS prevented obtaining the full repository; local full pytest, Ruff and Windows runtime have **not** run on the new exact HEAD. Do not report 31 local PASS, six-matrix new-head GREEN, or a later integration PASS until corresponding evidence is available.
+
+### Frozen contracts and hard authorization stops
+
+Frozen V1/V2/Local UI/Launcher historical evidence, Memory v1 schema and ActionAudit, V3 Contract 1, protected V2 final evaluation and provenance/contamination/regression/reproducibility requirements unchanged. PR #5 and #8 remain Draft/open/unmerged. No paid/external GPU/API/service/subscription, real Candidate training/adapter/weights/promotion, protected V2 final-evaluation opening, user-owned personal context, hardware action, new credentials, model download, real tool execution, destructive/irreversible action, or main merge. Caller-controlled hashes, timestamps, grants and registry identities do not independently prove consent, trust or dispatch authority.
+
+### Next plan / 今後の方針
+
+1. **Verify CI #1476 and #1477 at their exact HEADs**, especially six Windows/Linux Python combinations; if failure inspect the actual job logs and perform only the smallest semantics-preserving fix, never weakening regression assertions or rerunning equivalent workflows.
+2. Advance independent Memory row/event/CAS/expiry/coherent snapshot consistency and integrity evidence. Preserve independent original-carrier witnesses and avoid live cross-store claims.
+3. Keep the disconnected READ preflight **non-executable** until authenticated permission, owner consent, trusted clock and audit-before-action have exact-head GREEN and separate integration/authorization evidence.
+4. Continue Planner durable UNKNOWN/RUNNING WRITE quarantine, occurrence/replay fencing and reversible mock-only executor foundations; no automatic side-effect retry.
+5. Continue privacy-safe Personal Context and Observation fixtures and free-only V3 reproducibility/identity-path guard review. No paid compute, real Candidate, protected V2 evaluation, model promotion or main merge without explicit authorization.
+
+---
+
+**HISTORICAL — prior Run467 checkpoint and all older evidence retained verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run467 exact-carrier WRITE-slot CI recovery and Memory snapshot receipt custody**
 
 **Saved at:** **2026-10-30T10:09:47.776+09:00 Asia/Tokyo/JST** (observed runtime wall time before a normal GitHub Contents write; neither trusted clock nor independent attestation).
