@@ -165,7 +165,7 @@ def review_synthetic_memory_event_continuity(
                 ) from exc
             if not stable_retained:
                 raise SyntheticMemoryEventRejected(
-                    "retained Memory witness authority or epoch changed"
+                    "independently retained Memory witness changed during review"
                 )
 
     assert_epoch()
