@@ -11,7 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
-from .contracts import CapabilityGrant, Effect, PermissionDenied, PlanConflictError
+from .contracts import CapabilityGrant, Effect, PermissionDenied, PlanConflictError, StepState
 from .planner import PlanGraph
 from .policy import PermissionGate
 from .registry import BoundAction, ToolRegistry
@@ -152,8 +152,34 @@ def preview_registered_read_plan(
             raise DisconnectedReadPreflightRejected("non-READ or unstable tool identity")
         bindings[step_id] = bound
 
-    ready = plan.ready_steps()
+    # A ready_steps() result is an independent callback boundary. Recompute
+    # expected readiness from the authoritative detached statuses and exact
+    # registered PlanStep carriers, rather than trusting an overridden method
+    # that could omit, duplicate or introduce a not-yet-ready READ step.
+    try:
+        statuses = plan.statuses()
+        expected_ready = tuple(
+            plan.steps[step_id]
+            for step_id in sorted(plan.steps)
+            if statuses[step_id].state is StepState.PENDING
+            and all(
+                statuses[dep].state is StepState.SUCCEEDED
+                for dep in plan.steps[step_id].depends_on
+            )
+        )
+        ready = plan.ready_steps()
+    except (KeyError, TypeError, ValueError, PlanConflictError) as exc:
+        raise DisconnectedReadPreflightRejected("unstable ready-step selection") from exc
     stable()
+    if (
+        type(ready) is not tuple
+        or len(ready) != len(expected_ready)
+        or any(
+            actual is not expected
+            for actual, expected in zip(ready, expected_ready, strict=True)
+        )
+    ):
+        raise DisconnectedReadPreflightRejected("ready-step selection changed")
     ready_step_ids: list[str] = []
     ready_bound_ids: list[str] = []
     for step in ready:
