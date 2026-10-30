@@ -82,6 +82,10 @@ class WriteSlotReservationReceipt:
         return False
 
 
+_RECEIPT_TYPE = WriteSlotReservationReceipt
+_WITNESS_TYPE = WriteSlotLedgerWitness
+
+
 def _hash(value: tuple[object, ...]) -> str:
     encoded = json.dumps(value, ensure_ascii=True, separators=(",", ":")).encode("ascii")
     return hashlib.sha256(_DOMAIN + encoded).hexdigest()
@@ -106,9 +110,10 @@ def derive_disconnected_write_slot_id(
 
 
 def _check_witness(value: object) -> None:
-    if (type(value) is not WriteSlotLedgerWitness
+    if (type(value) is not _WITNESS_TYPE
             or type(value.count) is not int or not 0 <= value.count <= _MAX_ROWS
-            or not _valid(value.chain_sha256, _SHA)):
+            or not _valid(value.chain_sha256, _SHA)
+            or value.independently_authenticated is not False):
         raise WriteSlotLedgerRejected("invalid retained witness")
 
 
@@ -292,15 +297,30 @@ class DisconnectedWriteSlotLedger:
         receipt = WriteSlotReservationReceipt(len(saved), current)
         stable()
         if (
-            type(receipt) is not WriteSlotReservationReceipt
+            type(receipt) is not _RECEIPT_TYPE
             or type(receipt.added_count) is not int
             or receipt.added_count != len(saved)
             or receipt.witness is not current
-            or type(current) is not WriteSlotLedgerWitness
+            or type(current) is not _WITNESS_TYPE
+            or current.independently_authenticated is not False
+            or receipt.dispatch_authorized is not False
+            or receipt.automatic_replay_authorized is not False
+            or receipt.exact_once_external_effect_proven is not False
+            or receipt.trusted_clock_verified is not False
+            or receipt.owner_or_consent_verified is not False
             or (current.count, current.chain_sha256) != committed_witness
             or current.count is not committed_witness[0]
             or current.chain_sha256 is not committed_witness[1]
         ):
             raise WriteSlotLedgerRejected("post-commit reservation receipt changed")
         stable()
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or receipt.dispatch_authorized is not False
+            or receipt.automatic_replay_authorized is not False
+            or receipt.exact_once_external_effect_proven is not False
+            or receipt.trusted_clock_verified is not False
+            or receipt.owner_or_consent_verified is not False
+        ):
+            raise WriteSlotLedgerRejected("post-commit reservation authority changed")
         return receipt
