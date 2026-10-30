@@ -156,16 +156,25 @@ def verify_runtime_identity(
         raise RuntimeIdentityMismatch("incomplete frozen runtime identity") from exc
 
     def assert_identity_epoch() -> None:
-        if (
-            snapshot.get("environment") is not source_environment
-            or snapshot.get("hardware") is not source_hardware
-            or any(source_environment[name] is not value
-                   for name, value in environment_epoch)
-            or any(source_hardware[name] is not value
-                   for name, value in hardware_epoch)
-            or any(getattr(actual, name) is not value
-                   for name, value in measured_epoch)
-        ):
+        # A reentrant synthetic validation callback may delete a required
+        # identity field rather than merely replacing it. Missing identities
+        # are a V3 guard denial, not an unclassified KeyError/AttributeError.
+        try:
+            stable = (
+                snapshot.get("environment") is source_environment
+                and snapshot.get("hardware") is source_hardware
+                and all(source_environment[name] is value
+                        for name, value in environment_epoch)
+                and all(source_hardware[name] is value
+                        for name, value in hardware_epoch)
+                and all(getattr(actual, name) is value
+                        for name, value in measured_epoch)
+            )
+        except (KeyError, AttributeError, TypeError) as exc:
+            raise RuntimeIdentityMismatch(
+                "runtime identity epoch changed during validation"
+            ) from exc
+        if not stable:
             raise RuntimeIdentityMismatch("runtime identity epoch changed during validation")
 
     assert_identity_epoch()
