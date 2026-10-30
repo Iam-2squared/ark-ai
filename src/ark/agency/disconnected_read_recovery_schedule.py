@@ -58,6 +58,10 @@ class DetachedReadRecoverySchedule:
         return False
 
 
+_DECISION_TYPE = ReadRecoveryDecision
+_SCHEDULE_TYPE = DetachedReadRecoverySchedule
+
+
 def schedule_detached_read_recovery(
     request_id: str, steps: tuple[ReadRecoveryStep, ...],
 ) -> DetachedReadRecoverySchedule:
@@ -98,8 +102,25 @@ def schedule_detached_read_recovery(
     dispositions: dict[str, str] = {}
     manifest: list[dict[str, object]] = []
     decisions: list[ReadRecoveryDecision] = []
+    decision_epoch: list[tuple[ReadRecoveryDecision, str, str]] = []
+
+    def stable_decisions() -> None:
+        # A frozen dataclass can still be rewritten by object.__setattr__.
+        # Retain every earlier constructed decision across later callbacks.
+        if len(decisions) != len(decision_epoch) or any(
+            type(value) is not _DECISION_TYPE
+            or value is not original
+            or value.step_id is not name
+            or value.disposition is not code
+            for value, (original, name, code) in zip(
+                decisions, decision_epoch, strict=True,
+            )
+        ):
+            raise DetachedReadRecoveryRejected("READ recovery decision carrier changed")
+
     for name, operation, deps, state, digest in pinned:
         epoch()
+        stable_decisions()
         if (
             type(name) is not str or _STEP.fullmatch(name) is None
             or name in prior_states or type(operation) is not str
@@ -131,7 +152,16 @@ def schedule_detached_read_recovery(
             disposition = "WAIT_DEPENDENCY"
         else:
             disposition = "READY_MOCK_ONLY"
-        decisions.append(ReadRecoveryDecision(name, disposition))
+        decision = ReadRecoveryDecision(name, disposition)
+        if (
+            type(decision) is not _DECISION_TYPE
+            or decision.step_id is not name
+            or decision.disposition is not disposition
+        ):
+            raise DetachedReadRecoveryRejected("invalid READ recovery decision carrier")
+        decisions.append(decision)
+        decision_epoch.append((decision, name, disposition))
+        stable_decisions()
         prior_states[name] = state
         dispositions[name] = disposition
         manifest.append({
@@ -139,6 +169,7 @@ def schedule_detached_read_recovery(
             "state": state, "result_sha256": digest, "disposition": disposition,
         })
         epoch()
+        stable_decisions()
     payload = json.dumps(
         {"request_id": request_id, "steps": manifest},
         sort_keys=True, separators=(",", ":"), ensure_ascii=True,
@@ -146,16 +177,22 @@ def schedule_detached_read_recovery(
     if len(payload) > 32_768:
         raise DetachedReadRecoveryRejected("recovery manifest too large")
     epoch()
+    stable_decisions()
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     epoch()
+    stable_decisions()
     frozen_decisions = tuple(decisions)
     schedule = DetachedReadRecoverySchedule(request_id, frozen_decisions, digest)
     epoch()
+    stable_decisions()
     if (
-        type(schedule) is not DetachedReadRecoverySchedule
+        type(schedule) is not _SCHEDULE_TYPE
         or schedule.request_id is not request_id
         or schedule.decisions is not frozen_decisions
         or schedule.schedule_digest is not digest
+        or schedule.dispatch_authorized is not False
+        or schedule.automatic_replay_authorized is not False
+        or schedule.external_outcome_verified is not False
     ):
         raise DetachedReadRecoveryRejected("recovery schedule altered before return")
     return schedule
