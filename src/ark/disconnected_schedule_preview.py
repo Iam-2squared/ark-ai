@@ -179,10 +179,18 @@ def preview_disconnected_schedule(
     assert_epoch()
     if (
         type(result) is not _RESULT_TYPE
-        or (result.state, result.next_index, result.occurrence_id,
-            result.due_at_ms, result.fingerprint)
-        != (state, index, occurrence, due, fingerprint)
-        or result.state is not state or result.occurrence_id is not occurrence
+        or type(result.state) is not str
+        or type(result.next_index) is not int
+        or type(result.fingerprint) is not str
+        or (
+            result.occurrence_id is not None
+            and type(result.occurrence_id) is not str
+        )
+        or (result.due_at_ms is not None and type(result.due_at_ms) is not int)
+        or result.state is not state
+        or result.next_index is not index
+        or result.occurrence_id is not occurrence
+        or result.due_at_ms is not due
         or result.fingerprint is not fingerprint
     ):
         raise SchedulePreviewRejected("constructed preview carrier changed")
