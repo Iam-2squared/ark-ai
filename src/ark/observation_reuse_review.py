@@ -46,6 +46,10 @@ class SyntheticObservationReuseReview:
         return False
 
 
+_LINEAGE_WITNESS_TYPE = SyntheticObservationLineageWitness
+_REUSE_RESULT_TYPE = SyntheticObservationReuseReview
+
+
 def review_synthetic_observation_reuse(
     cached: SyntheticObservationLineageWitness,
     envelopes: tuple[ObservationEnvelope, ...],
@@ -62,7 +66,7 @@ def review_synthetic_observation_reuse(
     two reads are not globally atomic and can race after this review.
     """
     if (
-        type(cached) is not SyntheticObservationLineageWitness
+        type(cached) is not _LINEAGE_WITNESS_TYPE
         or type(envelopes) is not tuple
         or type(privacy_scope) is not str or not privacy_scope.strip()
         or type(now_ms) is not int or not 0 <= now_ms <= _MAX
@@ -156,7 +160,7 @@ def review_synthetic_observation_reuse(
         max_age_ms=max_observation_age_ms,
     )
     assert_epoch()
-    if type(historical) is not SyntheticObservationLineageWitness or historical != cached:
+    if type(historical) is not _LINEAGE_WITNESS_TYPE or historical != cached:
         raise SyntheticObservationReuseRejected(
             "historical observation lineage differs from retained witness"
         )
@@ -173,7 +177,7 @@ def review_synthetic_observation_reuse(
     # carrier may be silently substituted for a verified fresh witness.
     assert_epoch()
     if (
-        type(current) is not SyntheticObservationLineageWitness
+        type(current) is not _LINEAGE_WITNESS_TYPE
         or current.privacy_scope != privacy_scope
         or current.checked_at_ms != now_ms
         or current.observation_count != len(envelopes)
@@ -210,7 +214,7 @@ def review_synthetic_observation_reuse(
     assert_epoch()
     assert_witnesses()
     if (
-        type(result) is not SyntheticObservationReuseReview
+        type(result) is not _REUSE_RESULT_TYPE
         or result.previous_lineage_digest is not cached_epoch[3]
         or result.current_lineage_digest is not current_epoch[3]
         or result.observation_count is not current_epoch[2]
