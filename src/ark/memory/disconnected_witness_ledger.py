@@ -140,7 +140,7 @@ def _decoded(raw: object) -> AtomicMemoryEpochReview:
         if quoted:
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == chr(92):
                 escaped = True
             elif char == '"':
                 quoted = False
