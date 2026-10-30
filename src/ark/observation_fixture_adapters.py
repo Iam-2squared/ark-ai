@@ -14,6 +14,10 @@ from .observations import ObservationEnvelope, ObservationKind
 
 _MAX_FIXTURE_BYTES = 4 * 1024 * 1024
 _ENVELOPE_TYPE = ObservationEnvelope
+# Keep a stable copy of the frozen v1 validator. An injected constructor or
+# __post_init__ replacement must not turn invalid fixture metadata into a
+# seemingly valid envelope by skipping the original validation hook.
+_VALIDATE_ENVELOPE = ObservationEnvelope.__post_init__
 
 
 def _sealed_fixture(
@@ -48,6 +52,7 @@ def _sealed_fixture(
     )
     if type(envelope) is not _ENVELOPE_TYPE:
         raise ValueError("fixture constructor returned a non-envelope result")
+    _VALIDATE_ENVELOPE(envelope)
     actual = (
         envelope.kind, envelope.source_id, envelope.adapter_id,
         envelope.privacy_scope, envelope.ingested_at_ms,
