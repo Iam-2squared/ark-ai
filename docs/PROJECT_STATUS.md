@@ -1,5 +1,56 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-31 / Run486: disconnected restart witness coherence, Planner WRITE replay quarantine, V3 bounded execution JSON**
+
+**Saved at:** **2026-10-31T04:54:41+09:00 Asia/Tokyo/JST**, observed from the local wall clock before checkpoint composition; **NOT** independently authenticated time, a GitHub commit timestamp, user consent, or human approval.
+
+**Canonical branch / PR:** `research/jarvis-foundations` / PR #8 **Draft, open, unmerged**.
+**Separate V3 branch / PR:** `research/v3-learning-evaluation` / PR #5 **Draft, open, unmerged**.
+**Invocation initial work-basis HEADs:** PR #8 `2cd04830aa36cb4d678f6c7b8739d8d7f1c7690c`; PR #5 `40c77ec0edfd2f7d268454407a8eaac2b84275e2`.
+**Final source/test HEADs:** PR #8 `ebc0470db85ddca90dd0b38e58cf0bd5597be5c2`; PR #5 `683cfa5f580dfff1fe8402f9859f875877e15a76`.
+**Checkpoint-write-basis HEAD:** `84dc4f8f1d34d25ad784064581c6b82f3f77b149` (**PRE-checkpoint**, including technical evidence).
+**Checkpoint-result HEAD:** Not assertable inside the containing file. Use the ordinary GitHub Contents update result, then independently re-read PR #8 HEAD; do not misrepresent the pre-checkpoint SHA as the resulting commit SHA.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+**THREE** meaningful, reversible, zero-new-cost source/test packages; **55 newly authored parameterized pytest cases** (17 Memory/Context/Scheduler restart, 15 Planner WRITE restart, 23 V3 JSON). These disconnected fixtures **do not** establish physical-PC integration, true owner identity or revocation consent, independently authenticated witness/history, trusted clock, audit-before-real-action, cross-store atomicity, exactly-once external effects, approved real Candidate, protected V2 final evaluation or complete JARVIS readiness. No paid services/APIs, external/GPU compute, new secrets/accounts, real Tool/sensor actions, irreversible operations, automatic promotion or approval-required main merge attempted.
+
+### NEW this invocation — evidence by package
+
+1. **Disconnected three-store restart witness sweep (17 cases).** PR #8 `src/ark/disconnected_restart_witness_bundle.py` blob `33d56e112f3a2c4fdb07800788d4730bdb7b5e58`; `tests/test_disconnected_restart_witness_bundle_run486.py` blob `09d759b3360bd96020439324689df687d115f0f4`. Read-only exact retained Memory, Context replay and due reservation tips; two sweeps and result authority checks. Failed initial CI #1683 Ruff B017 was corrected via normal Contents API to assert `MemoryWitnessLedgerRejected`, source/test head `cd23e57e1f4bdcff358d130c3d208ff295d4a2ec`. No authenticated custody or cross-SQLite snapshot.
+2. **Planner WRITE restart membership/quarantine (15 cases).** PR #8 `src/ark/agency/disconnected_write_restart_binding.py` blob `96eb2afd1c4b58b26a5d2856797e41b6bf20aab4`; `tests/test_disconnected_write_restart_binding_run486.py` blob `0ecef132eedd1190e9c3d61d32fa9a067f9dab73`. Matches synthetic Planner reservation IDs to SQLite rows, denies UNKNOWN/RUNNING/reserved WRITE replay and all action authority. Intermediate #1688 uncovered one genuine post-read mutation detection bug (1 failed, 5049 passed, 1 skipped on Ubuntu 3.11): injected `inspect` could append while returning stale tip. Smallest semantics-preserving source correction independently opens a second read-only SQLite row/tip recheck after the callback. Final source/test HEAD `ebc0470db85ddca90dd0b38e58cf0bd5597be5c2`, pending exact-head CI #1689. The failing test was retained.
+3. **V3 execution snapshot bounded loader (23 cases).** PR #5 `src/ark/learning/execution.py` blob `3292658f155bd69c68cb683631cdf46bc66f0b03`; `tests/v3/test_execution_snapshot_loader_budget_run486.py` blob `b69c2a9701b919a2951c6939bac259284fe30f9e`. Maximum 1MiB read, maximum 128 JSON container depth, nonfinite exponent rejection, legacy valid JSON object behavior retained. No training, GPU or Candidate; latest exact-head #1685 passed six Python 3.11–3.13 Ubuntu/Windows jobs.
+4. **Technical evidence:** `docs/JARVIS_RESTART_WITNESS_WRITE_V3_BOUND_RUN486.md`, saved on PR #8 source/test + doc HEAD `84dc4f8f1d34d25ad784064581c6b82f3f77b149`; all six new source/test blobs independently re-read. All writes used normal GitHub Contents API after re-reading latest HEAD; no raw Git object/ref fallback, force push, duplicate workflow launch or protected merge.
+
+### CI/test facts, exact work-basis evidence
+
+- Earlier PR #8 Run485 source/test `4ddc2f552c4ffef6503a639020c71c40173f9153`: #1679 / `41111159887` **six-job GREEN**, older only. Previous checkpoint `2cd04830aa36cb4d678f6c7b8739d8d7f1c7690c`: #1681 / `41111553579` GREEN; older only.
+- Run486 PR #8 intermediate #1683 / `41118079511` **FAIL** (Ruff B017), repaired by `cd23e57e...` -> #1686 / `41118343631` **IN PROGRESS** at last check (Ubuntu 3/3 GREEN, Windows still running). Source-only WRITE #1687 / `41118468096` **IN PROGRESS** (Ubuntu 3/3 GREEN, Windows running). Test HEAD #1688 / `41118551159` **FAIL observed on Ubuntu 3.11** (post-inspect injected SQLite append), fixed on final source/test `ebc0470db85ddca90dd0b38e58cf0bd5597be5c2`.
+- **PR #8 latest source/test CI #1689 / `41118860216`: IN PROGRESS (all six jobs IN PROGRESS at last exact-head read)**. Do **NOT** claim GREEN before all six succeed.
+- PR #8 Run486 technical-evidence CI #1690 / `41119009690`: **QUEUED** at last read. This checkpoint creates separate CI; no automatic statement about its result.
+- **PR #5 latest exact source/test `683cfa5f580dfff1fe8402f9859f875877e15a76`: #1685 / `41118243577` six-job GREEN** (all 3 Ubuntu + all 3 Windows Python 3.11–3.13). Intermediate source-only #1684 / `41118195102` SUCCESS.
+- Independent local whole-repository pytest/Ruff **NOT VERIFIED**: `git ls-remote` failed DNS resolution for `github.com`. CI GREEN on a specific SHA does not prove other SHA/physical-PC acceptance.
+
+### Frozen, privacy and authorization boundaries
+
+Both PRs **Draft and unmerged**, `main` HEAD unchanged `7a843f17eb96ed13d66f23b58b06406b3002e405`. Frozen Memory v1 SQLite store blob `0aba6392b39563df520aa8b378d0b313f0cc0a0d`, Memory contract blob `b6e93821ecd69270a7634aceb20775dc36e9953c`, Agency contract blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`, independently re-read unchanged. V3 Contract 1, V1/V2/Local UI/Launcher history, protected V2 evaluation and contamination/provenance/regression/reproducibility gates not modified.
+
+Caller-supplied local witness hashes cannot authenticate history authors, consent, independent custody or rollback-free origin. Multi-store review is non-atomic and cannot grant execution; UNKNOWN WRITE is never automatically replayed. Real GPU/training/weights/Candidate and external billing remain blocked; human approval, legal/licensing/privacy ambiguities, main merge, physical-PC actions, destructive changes and protected final evaluation require explicit authorized gates.
+
+### Next plan / 今後の方針
+
+1. Confirm **exact PR #8 source/test #1689 all six jobs**, inspect failures if any and repair narrowly via normal Contents API only; inspect separate checkpoint CI without duplicate runs.
+2. Strengthen Memory witness CAS/restart durability and explicit unauthenticated-history limitations; avoid presenting same-machine hashes as provenance.
+3. Extend Planner UNKNOWN WRITE manual reconciliation, trusted-clock audit-before-action, occurrence/replay safety and disconnected ToolRegistry, only after dependent exact-head GREEN.
+4. Review Scheduler durable duplicate prevention and privacy-safe Personal Context consent/revocation/retention, Observation fixture contracts and startup readiness; no real sensors or content export.
+5. Preserve V3 free-only snapshot/identity/path/approval/reproducibility gates. Real Candidate generation, paid/external GPU, protected V2 final evaluation, promotion and approval-required main merge remain blocked.
+
+---
+
+**HISTORICAL — Run485 and earlier complete status preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-31 / Run485: independent Memory witness ledger, Scheduler/Context post-COMMIT custody, V3 canonical JSON nesting bound**
 
 **Saved at:** **2026-10-31T03:58:36+09:00 Asia/Tokyo/JST** (locally observed before checkpoint preparation; NOT an authenticated trusted-clock attestation, GitHub commit clock, human approval or consent).
