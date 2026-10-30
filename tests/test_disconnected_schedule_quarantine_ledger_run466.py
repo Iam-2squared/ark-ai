@@ -199,3 +199,44 @@ def test_occurrence_matches_previous_preview_formula():
         assert derive_quarantined_occurrence(p, index) == "slot_" + hashlib.sha256(
             b"ARK-disconnected-schedule-preview-v1\0" + b"occurrence\0" + payload
         ).hexdigest()
+
+
+def test_postcommit_quarantine_receipt_mutation_is_denied(tmp_path, monkeypatch):
+    import ark.disconnected_schedule_quarantine_ledger as module
+
+    db, p, path = fresh(tmp_path)
+    prior = genesis_quarantine_witness(p)
+    real_receipt = module.QuarantineReceipt
+
+    def corrupt_receipt(witness, index):
+        receipt = real_receipt(witness, index)
+        object.__setattr__(receipt, "quarantined_index", index + 1)
+        return receipt
+
+    monkeypatch.setattr(module, "QuarantineReceipt", corrupt_receipt)
+    with pytest.raises(ScheduleQuarantineRejected, match="post-commit"):
+        advance(db, p, 0, prior, 10_501)
+    with sqlite3.connect(path) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
+    with pytest.raises(ScheduleQuarantineRejected, match="stale"):
+        db.inspect(retained=prior)
+
+
+def test_postcommit_quarantine_policy_carrier_replacement_is_denied(tmp_path, monkeypatch):
+    import ark.disconnected_schedule_quarantine_ledger as module
+
+    db, p, path = fresh(tmp_path)
+    prior = genesis_quarantine_witness(p)
+    real_receipt = module.QuarantineReceipt
+
+    def replace_policy_epoch(witness, index):
+        db._epoch = tuple(list(db._epoch))
+        return real_receipt(witness, index)
+
+    monkeypatch.setattr(module, "QuarantineReceipt", replace_policy_epoch)
+    with pytest.raises(ScheduleQuarantineRejected, match="post-commit"):
+        advance(db, p, 0, prior, 10_501)
+    with sqlite3.connect(path) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
+    with pytest.raises(ScheduleQuarantineRejected, match="stale"):
+        db.inspect(retained=prior)
