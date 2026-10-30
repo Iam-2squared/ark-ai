@@ -57,6 +57,9 @@ class RedactedOfflinePreview:
         return False
 
 
+_REDACTED_RESULT_TYPE = RedactedOfflinePreview
+
+
 def preview_offline_redaction(
     text: str,
     *,
@@ -152,7 +155,8 @@ def preview_offline_redaction(
     )
     assert_epoch()
     if (
-        result.owner_digest is not owner_digest
+        type(result) is not _REDACTED_RESULT_TYPE
+        or result.owner_digest is not owner_digest
         or result.scope_digest is not scope_digest
         or result.source_sha256 is not observed
         or result.masked_text is not result_text
