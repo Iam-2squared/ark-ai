@@ -97,12 +97,18 @@ def test_export_plan_rejects_unpinned_converter_bytes(tmp_path):
     converter.write_bytes(b"one")
     quantizer.write_bytes(b"two")
     snapshot = resolved_snapshot(converter, quantizer)
+    # Keep distinct existing input roots so the byte-identity regression
+    # exercises converter drift rather than the independent output-overlap gate.
+    base = tmp_path / "base"
+    merged = tmp_path / "merged"
+    base.mkdir()
+    merged.mkdir()
     converter.write_bytes(b"changed")
     with pytest.raises(ValueError, match="converter bytes"):
         build_export_plan(
             snapshot,
-            base_dir=tmp_path,
-            merged_candidate_dir=tmp_path,
+            base_dir=base,
+            merged_candidate_dir=merged,
             converter_path=converter,
             quantizer_path=quantizer,
             output_dir=tmp_path / "out",
