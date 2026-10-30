@@ -67,9 +67,14 @@ def _require_finite_number(
     allow_zero: bool = False,
 ) -> float:
     value = metrics.get(field)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if type(value) not in (int, float):
         raise CandidateRunManifestError(f"training metrics {field} must be numeric")
-    measured = float(value)
+    try:
+        measured = float(value)
+    except (OverflowError, ValueError) as exc:
+        raise CandidateRunManifestError(
+            f"training metrics {field} must be finite numeric"
+        ) from exc
     if not math.isfinite(measured) or measured < 0 or (not allow_zero and measured == 0):
         qualifier = "finite non-negative" if allow_zero else "finite positive"
         raise CandidateRunManifestError(f"training metrics {field} must be {qualifier}")
