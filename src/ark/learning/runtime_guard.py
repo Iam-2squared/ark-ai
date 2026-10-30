@@ -50,12 +50,13 @@ class RuntimeIdentity:
                 raise RuntimeIdentityMismatch(
                     f"invalid measured runtime identity for {field}"
                 )
-        if (
-            isinstance(self.vram_gib, bool)
-            or not isinstance(self.vram_gib, (int, float))
-            or not math.isfinite(float(self.vram_gib))
-            or self.vram_gib <= 0
-        ):
+        if type(self.vram_gib) not in (int, float) or self.vram_gib <= 0:
+            raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity")
+        try:
+            measured_vram = float(self.vram_gib)
+        except (OverflowError, ValueError) as exc:
+            raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity") from exc
+        if not math.isfinite(measured_vram):
             raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity")
 
 
@@ -164,14 +165,14 @@ def verify_runtime_identity(
         raise RuntimeIdentityMismatch("GPU driver identity does not match frozen snapshot")
 
     expected_vram = expected_hardware["vram_gib"]
-    if (
-        isinstance(expected_vram, bool)
-        or not isinstance(expected_vram, (int, float))
-        or not math.isfinite(float(expected_vram))
-        or expected_vram <= 0
-    ):
+    if type(expected_vram) not in (int, float) or expected_vram <= 0:
         raise RuntimeIdentityMismatch("invalid frozen GPU VRAM identity")
-    expected_vram_float = float(expected_vram)
+    try:
+        expected_vram_float = float(expected_vram)
+    except (OverflowError, ValueError) as exc:
+        raise RuntimeIdentityMismatch("invalid frozen GPU VRAM identity") from exc
+    if not math.isfinite(expected_vram_float):
+        raise RuntimeIdentityMismatch("invalid frozen GPU VRAM identity")
     actual_vram = float(actual.vram_gib)
     if abs(actual_vram - expected_vram_float) > vram_tolerance_gib:
         raise RuntimeIdentityMismatch(
