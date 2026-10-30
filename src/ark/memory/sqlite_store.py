@@ -12,6 +12,7 @@ from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
 from threading import Lock
+from types import MappingProxyType
 
 from .contracts import (
     MemoryConflictError,
@@ -29,8 +30,9 @@ SQLITE_INT_MAX = (1 << 63) - 1
 # never hydrate an unbounded namespace before applying its small result limit.
 _MAX_NAMESPACE_SEARCH_ROWS = 10_000
 _BOOTSTRAP_LOCK = Lock()  # process-local WAL setup; SQLite remains cross-process authority
-# Preserve the real event result class across synthetic constructor injection.
+# Preserve original result classes across synthetic constructor injection.
 _MEMORY_EVENT_RESULT_TYPE = MemoryEvent
+_MEMORY_RECORD_RESULT_TYPE = MemoryRecord
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
 _SCHEMA_V1_SQL = """CREATE TABLE memories(
@@ -329,6 +331,28 @@ class SQLiteMemoryStore:
             revision,
             content_hash,
         )
+        assert_post_commit_epoch()
+        # COMMIT already happened. Never return a forged record or a result
+        # whose original value carriers changed during the constructor.
+        try:
+            intact = (
+                type(record) is _MEMORY_RECORD_RESULT_TYPE
+                and record.memory_id is memory_id
+                and record.scope is pinned_scope
+                and record.source_id is pinned_source_id
+                and record.content is pinned_content
+                and record.created_at_ms is created
+                and record.updated_at_ms is now
+                and record.expires_at_ms is pinned_expiry
+                and record.revision is revision
+                and record.content_sha256 is content_hash
+                and type(record.metadata) is MappingProxyType
+                and dict(record.metadata) == metadata_copy
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise MemorySchemaError("memory put result changed after commit") from exc
+        if not intact:
+            raise MemorySchemaError("memory put result changed after commit")
         assert_post_commit_epoch()
         return record
 
