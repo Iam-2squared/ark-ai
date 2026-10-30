@@ -128,7 +128,7 @@ def _assert_snapshot_entries(
     if tuple((rel, is_dir, epoch) for rel, _, is_dir, epoch in now) != tuple(
         (rel, is_dir, epoch) for rel, _, is_dir, epoch in original
     ):
-        raise ValueError("snapshot entries or directory identities changed during hashing")
+        raise ValueError("snapshot entries changed during hashing")
 
 
 def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
