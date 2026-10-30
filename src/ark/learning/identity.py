@@ -32,12 +32,42 @@ def _hash_file(path: Path) -> tuple[str, int]:
 
 
 def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
+    """Hash one existing regular file, checking its path and byte epoch.
+
+    These before/after checks detect ordinary replacement or mutation during
+    local manifest generation. They are NOT an atomic descriptor-based open,
+    security boundary against a hostile writer, or future file immutability.
+    """
     path = Path(path)
-    if not path.is_file():
-        raise ValueError(f"identity path is not a file: {path}")
-    if path.is_symlink():
-        raise ValueError(f"symlinked files are not allowed in identity manifests: {path}")
-    sha, size = _hash_file(path)
+    if ".." in path.parts:
+        raise ValueError("identity path may not traverse parent aliases")
+    try:
+        if any(parent.is_symlink() for parent in path.parents):
+            raise ValueError("symlinked identity file ancestors are forbidden")
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"identity path must be one regular non-symlink file: {path}")
+        before = path.stat(follow_symlinks=False)
+        if not path.is_file() or before.st_nlink != 1:
+            raise ValueError("identity file must have one regular-file link")
+        sha, size = _hash_file(path)
+        after = path.stat(follow_symlinks=False)
+    except OSError as exc:
+        raise ValueError("identity file became unavailable during hashing") from exc
+    # Include mode, link count and inode as well as the size/timestamps.
+    # Never return a digest from a file known to have changed mid-read.
+    def epoch(info: object) -> tuple[int, ...]:
+        return (
+            info.st_dev, info.st_ino, info.st_mode, info.st_size,
+            info.st_mtime_ns, info.st_ctime_ns, info.st_nlink,
+        )
+
+    if (
+        path.is_symlink()
+        or not path.is_file()
+        or size != before.st_size
+        or epoch(before) != epoch(after)
+    ):
+        raise ValueError("identity file changed during hashing")
     return FileIdentity(label or path.name, sha, size, False)
 
 
