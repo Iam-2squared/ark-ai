@@ -277,6 +277,12 @@ class DisconnectedContextReplayLedger:
                     (seq, *fields, chain),
                 )
                 expected = OfflineContextReplayWitness(seq, chain)
+                committed_tip = _check_witness(expected)
+                if (
+                    expected.count is not seq
+                    or expected.chain_sha256 is not chain
+                ):
+                    raise OfflineContextReplayRejected("context committed witness changed")
                 stable()
                 if _inspect(conn) != expected:
                     raise OfflineContextReplayRejected("context reservation integrity mismatch")
@@ -291,9 +297,20 @@ class DisconnectedContextReplayLedger:
 
         # COMMIT is already durable locally; a postcommit callback failure
         # must never be described as a rollback or retried automatically.
+        def stable_witness() -> None:
+            if (
+                type(expected) is not _WITNESS_TYPE
+                or expected.count is not committed_tip[0]
+                or expected.chain_sha256 is not committed_tip[1]
+                or _check_witness(expected) != committed_tip
+            ):
+                raise OfflineContextReplayRejected("postcommit context witness changed")
+
         stable()
+        stable_witness()
         receipt = OfflineContextReplayReceipt(fields[0], expected)
         stable()
+        stable_witness()
         if (
             type(receipt) is not _RECEIPT_TYPE
             or receipt.request_id is not fields[0]
