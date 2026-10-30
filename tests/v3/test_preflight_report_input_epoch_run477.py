@@ -13,7 +13,6 @@ import pytest
 from ark.learning import preflight as mod
 from ark.learning.runtime_guard import RuntimeIdentity
 
-
 _TEMPLATE = Path(__file__).resolve().parents[2] / (
     "docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json"
 )
