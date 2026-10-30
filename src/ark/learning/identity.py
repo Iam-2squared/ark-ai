@@ -204,9 +204,9 @@ def build_hf_snapshot_identity(
     chat_template_probe: Path,
 ) -> dict:
     """Hash a materialized HF snapshot and derive base/tokenizer snapshot digests."""
-    if model_id != "Qwen/Qwen3-4B-Instruct-2507":
+    if type(model_id) is not str or model_id != "Qwen/Qwen3-4B-Instruct-2507":
         raise ValueError("unexpected experiment-001 model ID")
-    if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+    if type(revision) is not str or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("immutable 40-hex HF revision required")
     files = directory_file_identities(root)
     by_path = {row.path: row for row in files}
@@ -264,9 +264,9 @@ def build_hf_snapshot_identity(
 
 
 def build_tool_identity(path: Path, *, git_revision: str, role: str) -> dict:
-    if re.fullmatch(r"[0-9a-f]{40}", git_revision) is None:
+    if type(git_revision) is not str or re.fullmatch(r"[0-9a-f]{40}", git_revision) is None:
         raise ValueError("exact 40-hex tool revision required")
-    if role not in {"hf_to_gguf_converter", "quantizer"}:
+    if type(role) is not str or role not in {"hf_to_gguf_converter", "quantizer"}:
         raise ValueError("unsupported export tool role")
     identity = file_identity(path)
     return {
