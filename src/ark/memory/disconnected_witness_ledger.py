@@ -129,6 +129,29 @@ def _payload(review: AtomicMemoryEpochReview) -> str:
 def _decoded(raw: object) -> AtomicMemoryEpochReview:
     if type(raw) is not str or len(raw) > 4096:
         raise MemoryWitnessLedgerRejected("invalid witness epoch payload")
+    # The 4KiB byte budget alone does not bound JSON container depth.
+    # Reject pathological nesting deterministically on every Python/OS,
+    # before decoder recursion limits are reached. Quoted brackets do not
+    # contribute to the container depth.
+    depth = 0
+    quoted = False
+    escaped = False
+    for char in raw:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif char == "\\\\":
+                escaped = True
+            elif char == '"':
+                quoted = False
+        elif char == '"':
+            quoted = True
+        elif char in "[{":
+            depth += 1
+            if depth > 64:
+                raise MemoryWitnessLedgerRejected("witness JSON nesting budget exceeded")
+        elif char in "]}":
+            depth -= 1
     try:
         parsed = json.loads(raw)
         if (
@@ -143,7 +166,7 @@ def _decoded(raw: object) -> AtomicMemoryEpochReview:
         if _payload(review) != raw:
             raise MemoryWitnessLedgerRejected("witness epoch is not canonical")
         return review
-    except (TypeError, ValueError, MemorySchemaError) as exc:
+    except (TypeError, ValueError, MemorySchemaError, RecursionError) as exc:
         raise MemoryWitnessLedgerRejected("invalid persisted witness epoch") from exc
 
 
