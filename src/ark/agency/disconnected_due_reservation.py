@@ -102,6 +102,7 @@ def _check_witness(witness: object) -> None:
         or not 0 <= witness.count <= _MAX_ROWS
         or type(witness.fingerprint) is not str
         or _SHA.fullmatch(witness.fingerprint) is None
+        or witness.independent_custody_proven is not False
     ):
         raise DueReservationRejected("invalid independently retained due witness")
 
@@ -275,19 +276,36 @@ class DisconnectedDueReservations:
                 )
                 result, _ = _inspect(conn)
                 assert_retained_epoch()
+                if (
+                    type(result) is not _WITNESS_TYPE
+                    or result.count != current.count + 1
+                    or result.independent_custody_proven is not False
+                ):
+                    raise DueReservationRejected("unverified due reservation insert")
+                result_epoch = (result.count, result.fingerprint)
                 conn.commit()
-                assert_retained_epoch()
             except sqlite3.IntegrityError as exc:
                 conn.rollback()
                 raise DueReservationRejected("duplicate synthetic due occurrence") from exc
             except BaseException:
                 conn.rollback()
                 raise
+        def assert_committed_witness() -> None:
+            if (
+                type(result) is not _WITNESS_TYPE
+                or result.count is not result_epoch[0]
+                or result.fingerprint is not result_epoch[1]
+                or result.independent_custody_proven is not False
+            ):
+                raise DueReservationRejected("post-commit due witness changed")
+
         assert_retained_epoch()
+        assert_committed_witness()
         # This is post-COMMIT: a forged result is rejected, never silently
         # described as a rolled-back reservation or retried as a new WRITE.
         receipt = DueReservationReceipt(identity, due_at_ms, observed_now_ms, result)
         assert_retained_epoch()
+        assert_committed_witness()
         if (
             type(receipt) is not _RECEIPT_TYPE
             or receipt.occurrence_id is not identity
