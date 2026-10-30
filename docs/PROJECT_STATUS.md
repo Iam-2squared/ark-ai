@@ -1,5 +1,57 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run473: Memory exact-row expiry CAS, independent READ frontier, forged scheduler receipt rejection, and free-only V3 runtime proof**
+
+**Saved at:** **2026-10-30T15:53:07.342+09:00 Asia/Tokyo/JST** (runtime wall clock observed immediately before normal GitHub Contents API checkpoint write; not an independently trusted clock, human consent, budget approval or commit timestamp).
+
+**Canonical branch / PR:** `research/jarvis-foundations` / **PR #8 Draft/open/unmerged**.
+**Separate V3 branch / PR:** `research/v3-learning-evaluation` / **PR #5 Draft/open/unmerged**.
+**Invocation work-basis HEAD (PR #8):** `22bba5ddd8e96d8ef9b550194ca412c925757edd`.
+**Invocation work-basis HEAD (PR #5):** `b8cd2ca0c8668b52677af2668689569afaca7a8f`.
+**Final source/test HEAD (PR #8):** `477ac60f01ff543ffd480184e3c0d3d8e7ba52b9`.
+**Final source/test HEAD (PR #5):** `05e82f883ffa40c80e406db372afee2007f29ab3`.
+**Checkpoint-write-basis HEAD:** `f6c1df62f34bd51356b600ac612104b872002476` (**PRE-checkpoint**, includes Run473 technical evidence). **Checkpoint-result HEAD:** This checked-in document cannot attest its own resulting commit SHA; verify separately using GitHub Contents API write response and subsequent branch/PR ref read. Do not confuse this PRE-checkpoint HEAD with the result.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+Local-first, safety-gated, free-only work continues. No live OS/Tool dispatch, authenticated consent, trusted-clock authority, external durable exactly-once WRITE outcome, fully atomic cross-store snapshot, physical PC/GPU proof, real model training, Candidate generation/promotion, verified real capture, or integrated JARVIS capability is demonstrated. Isolated simulations and green CI do not authorize paid compute or real-world actions.
+
+### NEW this invocation — 4 substantive work packages, 50 synthetic pytest cases, 10 source/test commits
+
+1. **PR #8 Memory selected-row CAS:** `src/ark/memory/sqlite_store.py` Blob `0aba6392b39563df520aa8b378d0b313f0cc0a0d`; `tests/test_memory_expiry_exact_row_cas_run473.py` Blob `e43f7553504f10dc834b2232b2a153eb70c76711`; **8 cases**. Bounded expiry DELETE now matches the exact originally selected row image (including content, metadata, revision, source, all timestamps and precise expiry) as well as expiry eligibility. Same-transaction synthetic row rewrites cannot cause a delete/audit event for different row content. On mismatch, the transaction rolls back; no automatic retry. Memory v1 DDL unchanged.
+2. **PR #8 detached READ frontier:** `src/ark/agency/disconnected_read_cycle.py` Blob `2264e2807ca2cebd139a2af4fc4b502faeeb2151`; `tests/test_disconnected_read_cycle_frontier_run473.py` Blob `aa95c6abea5e1dd71bc6ca315c02b535393318d1`; **12 cases**. Exact typed clock/grant input and retained grant epoch, independently recomputed full shadow ready frontier and registry-bound READ tool identity prevent forged exact-type preflight receipts from omitting/reordering mock steps. Never dispatches a backend or mutates caller's plan.
+3. **PR #8 proactive schedule receipt integrity:** `src/ark/disconnected_schedule_preview.py` Blob `2c45568c4f62411c0a72b4033527b7b3d947648a`; `tests/test_schedule_preview_result_exact_types_run473.py` Blob `8685f88cee54cd4de56bcb955a3cd71923b7666d`; **7 cases**. Constructed inert due-preview result must retain exact index/due timestamp and identity rather than accepting bool/float equal-value substitutions. No cursor persistence, timer, notification, trusted clock or consent granted.
+4. **PR #5 free-only runtime identity:** `src/ark/learning/runtime_guard.py` Blob `f94b50959dfbc791f0f349380ea6e1a67644796c`; `tests/v3/test_runtime_identity_exact_carriers_run473.py` Blob `4a346fb4b6b654acd1d96e9a8909a5ee68c6d3bc`; **23 cases**. Exact measured RuntimeIdentity, exact string fields and exact frozen snapshot dictionaries reject forged str subclass equality and overridden runtime validators. No GPU or Candidate.
+5. **Regression/evidence:** Real CI #1530 / run `41015872732` failed Ruff I001 in the new V3 test import, fixed by a normal test-only Contents update without weakening expectations. An initial schedule test used a Python small-integer interned fixture that could not model equal-valued distinct object identity; removed that invalid fixture before the latest source/test CI. All eight final source/test blobs were re-read from the matching GitHub HEADs. Technical evidence: `docs/JARVIS_ROW_CAS_READ_FRONTIER_RUNTIME_SCHEDULE_RUN473.md` saved at commit `f6c1df62f34bd51356b600ac612104b872002476`. No forced refs, raw Git object write bypass, duplicate workflows or merges.
+
+### CI / tests — exact HEADs and honest boundaries
+
+- **PR #5 final source/test HEAD** `05e82f883ffa40c80e406db372afee2007f29ab3`: **#1531 / run `41016073075` COMPLETED SUCCESS, 6/6 Ubuntu/Windows Python 3.11–3.13 jobs GREEN**; preceding #1530 failed and remains labeled historical FAIL.
+- **PR #8 final source/test HEAD** `477ac60f01ff543ffd480184e3c0d3d8e7ba52b9`: **#1534 / run `41016303125` NOT FULL GREEN at checkpoint observation**. Success jobs: test (ubuntu-latest, 3.11); test (ubuntu-latest, 3.12); test (ubuntu-latest, 3.13). Pending jobs: test (windows-latest, 3.11); test (windows-latest, 3.12); test (windows-latest, 3.13). Failed jobs: none. This is an exact commit, not the later docs-only HEAD.
+- **PR #8 earlier Memory package source/test HEAD** `635ecc4a4a527ab5d29fa259ef1136b4cd613439`: #1526 / run `41015488388` COMPLETED SUCCESS; that historical check does not validate subsequent READ/scheduler edits. Baseline #1522 / `41010963942` and #1524 / `41011368088` also COMPLETED SUCCESS for their older exact HEADs.
+- New 50 pytest cases **authored and saved, not locally executed**. Full local pytest/Ruff remains UNVERIFIED because the container cannot resolve GitHub DNS to clone the repository. GitHub Actions is independently checked for the specific HEAD; no claim of all-environment PR #8 GREEN until #1534 concludes.
+- GitHub repository visibility was observed PUBLIC; only standard automatic public-repository GitHub Actions workflows from ordinary commits were invoked. No paid/external GPU jobs, external compute or newly billable service authorized.
+
+### Frozen contracts, blockers and free-only boundaries
+
+V1/V2/Local UI/Launcher frozen evidence, historical Action Audit, Memory v1 DDL, protected V2 final evaluation and its explicit opening gate, V3 Contract 1 (120 train/30 validation, one Candidate/no sweep), provenance/contamination/regression/reproducibility safeguards and merge gates remain unchanged. **Both PRs Draft/unmerged.** No live user data, secrets, new account connection, hosted GPU, real Candidate adapter/weights, model promotion, destructive action or paid computation.
+
+V3 still needs independently verified immutable HF model/tool byte identities, human-reviewed dataset/provenance/contamination decisions, actual hardware/provider/runtime proof, approved JPY and wall-time ceilings and independently enforced billing caps before any external compute or preflight; those are not manufactured by CI. SQLite transaction/row CAS is not independently authenticated writer provenance. READ and scheduler simulations convey no execution/consent/time authority.
+
+### Next plan / 今後の方針
+
+1. Verify **PR #8 #1534 / `41016303125`** Windows results on the exact final source/test HEAD. If failures emerge, inspect actual job logs, fix the smallest semantics-preserving issue via normal GitHub path and pipeline unrelated lanes while CI runs; never claim a newer docs/checkpoint HEAD inherited source GREEN.
+2. Improve Memory event-to-row continuity and independent retained history witnesses, multi-process CAS/expiry privacy controls and coherent snapshot recovery without frozen schema changes; do not silently run retention deletion without user policy.
+3. Advance Planner persistent UNKNOWN WRITE quarantine, restart recovery, registry-bound immutable Tool identity, exact PermissionGate, trusted-clock audit-before-action and replay-resistant disconnected mock executor; connect only with exact-head GREEN and explicit authority.
+4. Continue proactive scheduler occurrence custody, Personal Context privacy lifecycle, startup readiness and offline Observation fixtures; no live OS/camera/microphone/tool effect.
+5. Continue V3 free-only identity/path/authorization/reproducibility review. Paid compute, protected V2 evaluation, Candidate generation/promotion and main merge remain hard stopped pending explicit user decisions.
+
+---
+
+**HISTORICAL — Run472 and all prior frozen/canonical history retained below without rewriting**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run472: disconnected READ-only DAG cycle, opt-in bounded Memory expiry, V3 numeric guards and exact-head CI**
 
 **Saved at:** **2026-10-30T14:57:31.674+09:00 Asia/Tokyo/JST** (observed wall-clock time immediately before preparation; not independently trusted time, authenticated consent, billing authorization, or the GitHub commit timestamp).
