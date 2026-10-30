@@ -136,9 +136,63 @@ def _reject_nonstandard_json_constant(token: str) -> None:
     raise ValueError(f"non-standard JSON constant is forbidden: {token}")
 
 
+_MAX_EXECUTION_SNAPSHOT_BYTES = 1_048_576
+_MAX_EXECUTION_SNAPSHOT_DEPTH = 128
+
+
+def _require_bounded_snapshot_nesting(raw: bytes) -> None:
+    """Reject excessive container depth without relying on Python recursion."""
+    depth = 0
+    quoted = False
+    escaped = False
+    for byte in raw:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                quoted = False
+        elif byte == 0x22:
+            quoted = True
+        elif byte in (0x7B, 0x5B):
+            depth += 1
+            if depth > _MAX_EXECUTION_SNAPSHOT_DEPTH:
+                raise ValueError("execution snapshot JSON nesting budget exceeded")
+        elif byte in (0x7D, 0x5D):
+            depth -= 1
+
+
+def _finite_json_float(text: str) -> float:
+    value = float(text)
+    if not math.isfinite(value):
+        raise ValueError("execution snapshot JSON contains nonfinite numeric value")
+    return value
+
+
 def load_snapshot(path: Path) -> dict:
-    raw = Path(path).read_bytes()
-    parsed = json.loads(raw, parse_constant=_reject_nonstandard_json_constant)
+    """Read only bounded, finite local snapshot JSON; never start compute.
+
+    This loader intentionally preserves noncanonical-but-valid object JSON.
+    Frozen experiment semantics and authorization gates remain the responsibility
+    of validate_experiment_001; loading is never proof of approval.
+    """
+    try:
+        with Path(path).open("rb") as handle:
+            raw = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
+    except OSError as exc:
+        raise ValueError("execution snapshot cannot be read") from exc
+    if len(raw) > _MAX_EXECUTION_SNAPSHOT_BYTES:
+        raise ValueError("execution snapshot exceeds JSON byte budget")
+    _require_bounded_snapshot_nesting(raw)
+    try:
+        parsed = json.loads(
+            raw,
+            parse_constant=_reject_nonstandard_json_constant,
+            parse_float=_finite_json_float,
+        )
+    except (UnicodeDecodeError, RecursionError, OverflowError, json.JSONDecodeError) as exc:
+        raise ValueError("execution snapshot JSON cannot be decoded") from exc
     if not isinstance(parsed, dict):
         raise ValueError("execution snapshot must be a JSON object")
     return parsed
