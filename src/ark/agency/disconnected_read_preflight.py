@@ -134,14 +134,41 @@ def preview_registered_read_plan(
     # Bind all graph actions before reviewing any grants: a non-ready WRITE
     # descendant must not silently slip through a READ-only preview.
     bindings: dict[str, BoundAction] = {}
+    # Registry.bind() returns a frozen *carrier*, not an immutable receipt.
+    # A later gate callback must not replace an earlier bound ID, registration,
+    # or call with an equal-valued object after that binding was checked.
+    bound_epochs: list[tuple[str, BoundAction, object, object, object, object]] = []
+
+    def assert_bound_epochs() -> None:
+        if len(bindings) != len(bound_epochs):
+            raise DisconnectedReadPreflightRejected("READ binding set changed")
+        try:
+            for key, original, call, registration, bound_revision, bound_id in bound_epochs:
+                current = bindings.get(key)
+                if (
+                    current is not original
+                    or type(current) is not BoundAction
+                    or current.call is not call
+                    or current.registration is not registration
+                    or current.registry_revision is not bound_revision
+                    or current.bound_action_id is not bound_id
+                ):
+                    raise DisconnectedReadPreflightRejected("READ binding carrier changed")
+        except (AttributeError, TypeError, ValueError) as exc:
+            if type(exc) is DisconnectedReadPreflightRejected:
+                raise
+            raise DisconnectedReadPreflightRejected("READ binding carrier invalid") from exc
+
     for step_id in sorted(plan.steps):
         stable()
+        assert_bound_epochs()
         step = plan.steps[step_id]
         try:
             bound = registry.bind(step.call)
         except (KeyError, TypeError, ValueError) as exc:
             raise DisconnectedReadPreflightRejected("unregistered or changed tool") from exc
         stable()
+        assert_bound_epochs()
         if (
             type(bound) is not BoundAction
             or bound.call is not step.call
@@ -151,6 +178,11 @@ def preview_registered_read_plan(
         ):
             raise DisconnectedReadPreflightRejected("non-READ or unstable tool identity")
         bindings[step_id] = bound
+        bound_epochs.append((
+            step_id, bound, bound.call, bound.registration,
+            bound.registry_revision, bound.bound_action_id,
+        ))
+        assert_bound_epochs()
 
     # A ready_steps() result is an independent callback boundary. Recompute
     # expected readiness from the authoritative detached statuses and exact
@@ -171,6 +203,7 @@ def preview_registered_read_plan(
     except (KeyError, TypeError, ValueError, PlanConflictError) as exc:
         raise DisconnectedReadPreflightRejected("unstable ready-step selection") from exc
     stable()
+    assert_bound_epochs()
     if (
         type(ready) is not tuple
         or len(ready) != len(expected_ready)
@@ -184,6 +217,7 @@ def preview_registered_read_plan(
     ready_bound_ids: list[str] = []
     for step in ready:
         stable()
+        assert_bound_epochs()
         bound = bindings[step.step_id]
         try:
             verified = gate.authorize_registered(
@@ -192,6 +226,7 @@ def preview_registered_read_plan(
         except (KeyError, TypeError, ValueError, PermissionDenied) as exc:
             raise DisconnectedReadPreflightRejected("READ grant preflight denied") from exc
         stable()
+        assert_bound_epochs()
         if (
             type(verified) is not BoundAction
             or verified.call is not step.call
@@ -204,11 +239,13 @@ def preview_registered_read_plan(
         ready_bound_ids.append(bound.bound_action_id)
 
     stable()
+    assert_bound_epochs()
     grant_fingerprint = _digest([
         (grant.capability, grant.scope, grant.expires_at_ms)
         for grant in grants
     ])
     stable()
+    assert_bound_epochs()
     entries = tuple(ready_step_ids)
     bound_ids = tuple(ready_bound_ids)
     fingerprint = _digest({
@@ -220,10 +257,12 @@ def preview_registered_read_plan(
         "ready": list(zip(entries, bound_ids, strict=True)),
     })
     stable()
+    assert_bound_epochs()
     result = DisconnectedReadPreflight(
         topology, status, revision, grant_fingerprint, entries, bound_ids, fingerprint,
     )
     stable()
+    assert_bound_epochs()
     if (
         type(result) is not _RESULT_TYPE
         or result.topology_digest is not topology
@@ -235,4 +274,5 @@ def preview_registered_read_plan(
         or result.fingerprint is not fingerprint
     ):
         raise DisconnectedReadPreflightRejected("detached preflight result changed")
+    assert_bound_epochs()
     return result
