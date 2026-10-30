@@ -66,6 +66,12 @@ class OfflineRecoveryFence:
         return False
 
 
+# Pin original inert result carriers. Synthetic constructor injection must not
+# replace an offline disposition with a fabricated dispatch-capable object.
+_DISPOSITION_TYPE = OfflineRecoveryDisposition
+_FENCE_TYPE = OfflineRecoveryFence
+
+
 def review_disconnected_recovery_fence(
     plan_id: str, steps: tuple[OfflineRecoveryStepClaim, ...],
 ) -> OfflineRecoveryFence:
@@ -106,13 +112,27 @@ def review_disconnected_recovery_fence(
     states: dict[str, str] = {}
     dispositions: dict[str, str] = {}
     decisions: list[OfflineRecoveryDisposition] = []
+    decision_epoch: list[tuple[OfflineRecoveryDisposition, str, str]] = []
     canonical: list[tuple[object, ...]] = []
+
+    def stable_decisions() -> None:
+        if len(decisions) != len(decision_epoch) or any(
+            type(current) is not _DISPOSITION_TYPE
+            or current is not original
+            or current.step_id is not name
+            or current.code is not code
+            for current, (original, name, code) in zip(
+                decisions, decision_epoch, strict=True,
+            )
+        ):
+            raise OfflineRecoveryFenceRejected("mixed-plan disposition changed")
     # No two WRITE steps may claim the same durable occurrence reservation.
     # A reused reservation ID creates ambiguous recovery ownership even when
     # both steps are otherwise held and no action is actually dispatched.
     reservations_seen: set[str] = set()
     for name, effect, deps, state, result, reservation in saved:
         epoch()
+        stable_decisions()
         if (
             type(name) is not str or _STEP.fullmatch(name) is None or name in states
             or type(effect) is not str or effect not in ("READ", "WRITE")
@@ -161,22 +181,36 @@ def review_disconnected_recovery_fence(
             code = "HELD_WRITE_APPROVAL"
         else:
             code = "READY_MOCK_ONLY"
-        decisions.append(OfflineRecoveryDisposition(name, code))
+        decision = OfflineRecoveryDisposition(name, code)
+        if (
+            type(decision) is not _DISPOSITION_TYPE
+            or decision.step_id is not name
+            or decision.code is not code
+        ):
+            raise OfflineRecoveryFenceRejected("invalid mixed-plan disposition carrier")
+        decisions.append(decision)
+        decision_epoch.append((decision, name, code))
+        stable_decisions()
         states[name] = state
         dispositions[name] = code
         canonical.append((name, effect, deps, state, result, reservation, code))
         epoch()
+        stable_decisions()
     encoded = json.dumps((plan_id, canonical), ensure_ascii=True,
                          separators=(",", ":")).encode("ascii")
     if len(encoded) > 24_576:
         raise OfflineRecoveryFenceRejected("mixed-plan metadata budget exceeded")
     epoch()
+    stable_decisions()
     digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    epoch()
+    stable_decisions()
     frozen = tuple(decisions)
     review = OfflineRecoveryFence(plan_id, frozen, digest)
     epoch()
+    stable_decisions()
     if (
-        type(review) is not OfflineRecoveryFence or review.plan_id is not plan_id
+        type(review) is not _FENCE_TYPE or review.plan_id is not plan_id
         or review.decisions is not frozen or review.digest is not digest
     ):
         raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
