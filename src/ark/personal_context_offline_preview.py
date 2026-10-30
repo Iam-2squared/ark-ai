@@ -18,6 +18,8 @@ _MAX = 2**63 - 1
 _MAX_RECORDS = 32
 _MAX_CONTENT = 4_096
 _MAX_TOTAL = 16_384
+# JSON string escaping can expand accepted UTF-8 fixture bytes substantially.
+_MAX_SERIALIZED_BYTES = 65_536
 _DOMAIN = b"ARK-local-context-fixture-preview-v1\0"
 
 
@@ -151,16 +153,24 @@ def build_offline_context_preview(
         sort_keys=True, ensure_ascii=True, allow_nan=False, separators=(",", ":"),
     )
     assert_epoch()
-    digest = hashlib.sha256(_DOMAIN + payload.encode("utf-8")).hexdigest()
+    serialized = payload.encode("utf-8")
+    if len(serialized) > _MAX_SERIALIZED_BYTES:
+        raise OfflineContextPreviewRejected("serialized context preview budget exceeded")
+    digest = hashlib.sha256(_DOMAIN + serialized).hexdigest()
     assert_epoch()
-    result = OfflineContextPreview(owner_digest, tuple(ids), payload, digest)
+    record_ids = tuple(ids)
+    result = OfflineContextPreview(owner_digest, record_ids, payload, digest)
     assert_epoch()
     if (
         type(result) is not _PREVIEW_RESULT_TYPE
         or result.owner_digest is not owner_digest
-        or result.record_ids != tuple(ids)
+        or result.record_ids is not record_ids
         or result.canonical_local_json is not payload
         or result.local_digest is not digest
+        or result.consent_verified is not False
+        or result.external_export_authorized is not False
+        or result.tool_dispatch_authorized is not False
+        or result.retention_authorized is not False
     ):
         raise OfflineContextPreviewRejected("constructed context preview changed")
     return result
