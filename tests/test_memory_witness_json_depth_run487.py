@@ -36,11 +36,7 @@ def test_brackets_inside_escaped_json_string_are_not_counted_as_containers():
         witness._decoded(raw)
 
 
-def test_malformed_quoted_brackets_are_not_authorized(tmp_path):
-    store = witness.DisconnectedMemoryWitnessLedger(
-        tmp_path / "retained.sqlite", create=True,
-    )
-    genesis = witness.genesis_memory_ledger_witness()
+def test_malformed_quoted_brackets_are_not_authorized():
     with pytest.raises(witness.MemoryWitnessLedgerRejected):
         witness._decoded('["\\\"' + "[" * 70)
 
