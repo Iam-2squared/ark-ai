@@ -17,7 +17,6 @@ from pathlib import Path
 
 _MAX_BYTES = 8 * 1024 * 1024
 _MAX_PATH = 4096
-_CHUNK = 65536
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-disconnected-file-seal-v1\0"
 _METADATA_FIELDS = ("size_bytes", "device", "inode", "mtime_ns", "ctime_ns")
@@ -75,7 +74,8 @@ def _parents(path: Path) -> str:
     try:
         for item in reversed(path.parents):
             info = os.lstat(item)
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            if (not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode)
+                    or getattr(info, "st_file_attributes", 0) & 0x400):
                 raise DisconnectedFileSealRejected("source ancestor is not a real directory")
             chain.append((str(item), info.st_dev, info.st_ino))
     except OSError as exc:
@@ -93,8 +93,18 @@ def _parents(path: Path) -> str:
 def _metadata(info: os.stat_result) -> tuple[int, ...]:
     if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
         raise DisconnectedFileSealRejected("source must be singly linked regular file")
+    if getattr(info, "st_file_attributes", 0) & 0x400:
+        raise DisconnectedFileSealRejected("source reparse point is unsafe")
+    # CPython Windows 3.12+ may expose creation time via stat(path).ctime
+    # but *change* time via fstat(fd).ctime for the same open file.
+    # Compare the portable creation-time carrier on Windows, and separately
+    # monitor the handle change time while reading.
+    ctime_ns = (
+        getattr(info, "st_birthtime_ns", info.st_ctime_ns)
+        if os.name == "nt" else info.st_ctime_ns
+    )
     metadata = (
-        info.st_size, info.st_dev, info.st_ino, info.st_mtime_ns, info.st_ctime_ns,
+        info.st_size, info.st_dev, info.st_ino, info.st_mtime_ns, ctime_ns,
     )
     if any(type(value) is not int or value < 0 for value in metadata):
         raise DisconnectedFileSealRejected("invalid source metadata")
@@ -125,7 +135,8 @@ def _once(path: Path) -> DisconnectedFileSeal:
     except OSError as exc:
         raise DisconnectedFileSealRejected("local source unavailable or unsafe") from exc
     try:
-        handle_initial = _metadata(os.fstat(fd))
+        initial_handle_info = os.fstat(fd)
+        handle_initial = _metadata(initial_handle_info)
         if handle_initial != original:
             names = _different_metadata_fields(original, handle_initial)
             raise DisconnectedFileSealRejected(
@@ -134,14 +145,22 @@ def _once(path: Path) -> DisconnectedFileSeal:
         digest = hashlib.sha256()
         count = 0
         while True:
-            chunk = os.read(fd, min(_CHUNK, _MAX_BYTES - count + 1))
+            # One bounded request reduces a mixture of data from different
+            # epochs across many 64KiB reads. This is NOT an atomic snapshot.
+            chunk = os.read(fd, _MAX_BYTES - count + 1)
             count += len(chunk)
             if count > _MAX_BYTES:
                 raise DisconnectedFileSealRejected("source exceeds read byte budget")
             if not chunk:
                 break
             digest.update(chunk)
-        if count != original[0] or _metadata(os.fstat(fd)) != original:
+        final_handle_info = os.fstat(fd)
+        if (
+            count != original[0]
+            or _metadata(final_handle_info) != original
+            or (os.name == "nt" and
+                final_handle_info.st_ctime_ns != initial_handle_info.st_ctime_ns)
+        ):
             raise DisconnectedFileSealRejected("source changed during read")
     except OSError as exc:
         raise DisconnectedFileSealRejected("local source read failed") from exc
