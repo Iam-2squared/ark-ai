@@ -1,5 +1,45 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run479 CI corrective update: Observation legacy diagnostics restored without weakening original validator**
+
+**Saved at:** **2026-10-30T21:58:13.165351055+09:00 Asia/Tokyo/JST** (local wall-clock observation immediately before correction preparation, not authenticated timestamp, user authorization or GitHub commit time).
+
+**Canonical branch / PR:** `research/jarvis-foundations`, PR #8 Draft/open/unmerged. **V3 branch / PR:** `research/v3-learning-evaluation`, PR #5 Draft/open/unmerged.
+**Invocation work-basis:** PR #8 `3760edf4ea95b84259fb5f7c0b0c2f39c144876a`; PR #5 `da3d18994af5dcc74f93cbab99095ba2876ffe6d`.
+**Run479 4-package source/test HEADs:** PR #8 `28a74b44dd0bb571e09d6e00df7e6b344b83737d`; PR #5 `58a8f53c69ebb9104a95c9419ac6a4cf7e101087`.
+**Post-CI minimal corrective source HEAD (PR #8):** `a4ffb6400667cc5046d2535e92dc655279558c7e` (Observation only, preserves old diagnostics and new validation).
+**Correction documentation write-basis HEAD:** `0a15e26172e535757d8e93e8560ce915efc25245` (**PRE-checkpoint**); updated `docs/JARVIS_MEMORY_CAUSAL_JSON_OBSERVATION_V3_TREE_RUN479.md` blob `d2ee6177a0e432acbceec400cbe1298131d667ae`.
+**Checkpoint-result HEAD:** This file cannot independently attest its own Git commit SHA. Verify normal Contents update commit SHA and a separate current branch/PR HEAD read; the PRE-checkpoint HEAD above is NOT the result commit.
+
+### Overall ARK state — JARVIS NOT_PASSED
+
+Four safe/free-only packages, **33 authored pytest cases**: Memory atomic event lifecycle consistency (10); local-only Personal Context canonical serialization binding (7); retained original Observation v1 validation (9); V3 local directory/code enumeration-epoch safety (7). Original file/blob identities, technical rationale and frozen historical evidence are retained in the Run479 section immediately below. The source correction is not an additional package and does not grant real dispatch/consent.
+
+### Actual CI failure and repair; exact-head evidence
+
+- **PR #8 Memory-only head `96f2332832e19398dbbd8f3ea2c905ad578ed7ac`: #1599 / `41057851722` all SIX Ubuntu/Windows Python 3.11–3.13 jobs GREEN**, confirmed from job API. Does not attest later source.
+- **PR #8 four-package source head `28a74b44dd0bb571e09d6e00df7e6b344b83737d`: #1605 / `41058572131` FAILED** Ubuntu 3.11, 3.12, 3.13 (two legacy observation error-message regex assertions; Ubuntu 3.11 showed 2 failed, 4828 passed, 1 skipped). Failure NOT concealed. Existing retarget rejection must retain `changed during construction` before pinned validator checks unchanged metadata.
+- **Corrected PR #8 source head `a4ffb6400667cc5046d2535e92dc655279558c7e`: #1608 / `41059246727` QUEUED** when last checked. No six-job GREEN claim until final exact-head jobs complete. The updated Run479 technical document and this checkpoint are later commits; do NOT substitute preceding source CI.
+- **PR #5 final source/test head `58a8f53c69ebb9104a95c9419ac6a4cf7e101087`: #1601 / `41058026831` IN PROGRESS**; Ubuntu 3/3 and Windows Python 3.11/3.13 GREEN, Windows Python 3.12 still running at last inspection. No six-job GREEN claim yet.
+- Run478 source baselines #1591 / `41050781096` and #1595 / `41051214897` had six jobs GREEN but do not attest this invocation. **Local whole-repo pytest/Ruff NOT VERIFIED**, Git clone DNS unavailable. Only ordinary automatic GitHub Actions on already-public repo, no manually duplicated runs or paid/external compute.
+
+### Frozen state, authorizations, blockers
+
+Both PR #5 and #8 stay Draft/unmerged; V1/V2/Local UI/Launcher frozen evidence, Memory v1 DDL, protected V2 evaluation gate, V3 one-Candidate contract, contamination/provenance/regression/reproducibility and human review rules unchanged. No real Candidate/weights, training, GPU rental, paid API, secrets/new account connection, physical PC action, real data/media capture, ToolBackend/OS dispatch, paid operations, promotion, destructive changes or main merge. Missing independently verified external writer/audit and clock/consent custody, provenance/licensing/human review, real WRITE outcome reconciliation, cross-store atomicity, immutable model byte identities, physical execution proof and provider enforceable spending caps.
+
+### Next plan / 今後の方針
+
+1. Complete exact-head CI #1608 and #1601, plus later doc/checkpoint CI. On another failure, inspect job logs and correct the narrow contract mismatch; never conceal a failed job or duplicate workflow.
+2. Develop retained Memory event epochs/restart witnesses, independent audit-before-action/clock and UNKNOWN WRITE isolation with exact PermissionGate/ToolRegistry, without irreversible execution.
+3. Advance Scheduler/revocation/Observation fixtures on free independent lanes, and keep V3 pre-paid identity/path/reproducibility review isolated.
+4. Protected V2 evaluation, full Candidate generation/promotion, paid services or main merges remain gated by separate explicit user authorization and evidence.
+
+---
+
+**HISTORICAL — Original Run479 pre-CI checkpoint and earlier status preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run479: Memory lifecycle-to-live-row check, private context canonical JSON binding, pinned Observation validator, V3 snapshot enumeration epoch**
 
 **Saved at:** **2026-10-30T21:54:35.827610936+09:00 Asia/Tokyo/JST** (observed local wall time immediately before checkpoint preparation, not authenticated trusted time, the actual GitHub commit timestamp, or a proof of consent).
