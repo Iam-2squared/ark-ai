@@ -264,6 +264,7 @@ class DisconnectedWriteSlotLedger:
                 if _inspect(conn) != current:
                     raise WriteSlotLedgerRejected("reservation append lost integrity")
                 stable()
+                committed_witness = (current.count, current.chain_sha256)
                 conn.commit()
             except sqlite3.IntegrityError as exc:
                 conn.rollback()
@@ -271,4 +272,22 @@ class DisconnectedWriteSlotLedger:
             except BaseException:
                 conn.rollback()
                 raise
-        return WriteSlotReservationReceipt(len(saved), current)
+        # A commit has already reserved these identities. If a callback or
+        # reflective mutation changes a claim, retained witness or receipt,
+        # fail closed without pretending that rolling back is still possible.
+        stable()
+        receipt = WriteSlotReservationReceipt(len(saved), current)
+        stable()
+        if (
+            type(receipt) is not WriteSlotReservationReceipt
+            or type(receipt.added_count) is not int
+            or receipt.added_count != len(saved)
+            or receipt.witness is not current
+            or type(current) is not WriteSlotLedgerWitness
+            or (current.count, current.chain_sha256) != committed_witness
+            or current.count is not committed_witness[0]
+            or current.chain_sha256 is not committed_witness[1]
+        ):
+            raise WriteSlotLedgerRejected("post-commit reservation receipt changed")
+        stable()
+        return receipt
