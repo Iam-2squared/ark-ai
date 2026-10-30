@@ -182,13 +182,23 @@ def _inspect(conn: sqlite3.Connection) -> tuple[DueReservationWitness, int | Non
 class DisconnectedDueReservations:
     """Fixture SQLite reservations, never an actual autonomous scheduler."""
 
-    def __init__(self, path: Path) -> None:
-        self._path = _check_path(path, exists=False)
-        with closing(sqlite3.connect(self._path, timeout=10, isolation_level=None)) as conn:
+    def __init__(self, path: Path, *, require_existing: bool = False) -> None:
+        # Legacy synthetic fixture creation remains available, but a restart
+        # must use mode=rw to prevent silent storage re-creation after loss.
+        if type(require_existing) is not bool:
+            raise DueReservationRejected("exact existing-only flag required")
+        self._path = _check_path(path, exists=require_existing)
+        mode = "rw" if require_existing else "rwc"
+        with closing(sqlite3.connect(
+            self._path.as_uri() + "?mode=" + mode,
+            uri=True, timeout=10, isolation_level=None,
+        )) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
+                    if require_existing:
+                        raise DueReservationRejected("uninitialized due ledger on restart")
                     if tuple(conn.execute("SELECT name FROM sqlite_master")):
                         raise DueReservationRejected("unversioned nonempty due ledger")
                     conn.execute(_DDL)
@@ -200,6 +210,38 @@ class DisconnectedDueReservations:
             except BaseException:
                 conn.rollback()
                 raise
+
+    @classmethod
+    def reopen_with_witness(
+        cls, path: Path, *, retained: DueReservationWitness,
+    ) -> DisconnectedDueReservations:
+        """Read-only restart reconciliation before any new due reservation.
+
+        A separately retained caller witness is necessary but does not prove
+        independent custody, trusted time, consent, or execution authority.
+        """
+        if cls is not DisconnectedDueReservations:
+            raise DueReservationRejected("exact due ledger restart class required")
+        _check_witness(retained)
+        epoch = (retained.count, retained.fingerprint)
+        store = cls(path, require_existing=True)
+        with closing(store._open(read_only=True)) as conn:
+            conn.execute("BEGIN")
+            try:
+                actual, _ = _inspect(conn)
+                if (
+                    type(retained) is not _WITNESS_TYPE
+                    or retained.count is not epoch[0]
+                    or retained.fingerprint is not epoch[1]
+                    or actual != retained
+                    or store._path is not path
+                ):
+                    raise DueReservationRejected("retained due witness differs on restart")
+                conn.commit()
+            except BaseException:
+                conn.rollback()
+                raise
+        return store
 
     def _open(self, *, read_only: bool) -> sqlite3.Connection:
         path = _check_path(self._path, exists=True)
