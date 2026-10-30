@@ -81,6 +81,9 @@ def _check_witness(value: SyntheticClockWitness) -> None:
         or not 0 <= value.event_count <= _LIMIT
         or type(value.chain_hash) is not str
         or not _CHAIN.fullmatch(value.chain_hash)
+        or value.trusted_clock_verified is not False
+        or value.dispatch_authorized is not False
+        or value.automatic_replay_authorized is not False
         or type(value.source_digest) is not str
         or (
             value.event_count == 0 and _fields(value) != _EMPTY_FIELDS
@@ -148,6 +151,9 @@ def review_synthetic_clock_sequence(
             or _fields(result) != result_epoch
             or result.source_digest is not result_carriers[0]
             or result.chain_hash is not result_carriers[1]
+            or result.trusted_clock_verified is not False
+            or result.dispatch_authorized is not False
+            or result.automatic_replay_authorized is not False
         ):
             raise SyntheticClockRejected("constructed clock witness changed during sequence")
 
@@ -242,6 +248,9 @@ def review_synthetic_clock_sequence(
                 or candidate.last_wall_ms is not wall
                 or candidate.last_monotonic_ns is not mono
                 or candidate.chain_hash is not next_hash
+                or candidate.trusted_clock_verified is not False
+                or candidate.dispatch_authorized is not False
+                or candidate.automatic_replay_authorized is not False
             ):
                 raise SyntheticClockRejected("constructed clock chain link changed")
             result = candidate
