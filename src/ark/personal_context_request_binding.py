@@ -116,6 +116,8 @@ def bind_offline_context_request(
             allow_nan=False, separators=(",", ":"),
         )
     except (TypeError, ValueError, UnicodeError) as exc:
+        if type(exc) is OfflineContextBindingRejected:
+            raise
         raise OfflineContextBindingRejected("context preview JSON invalid") from exc
     unchanged()
     if (
