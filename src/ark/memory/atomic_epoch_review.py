@@ -31,6 +31,7 @@ _MAX_EVENTS_PER_SCOPE = 10_000
 _MEMORY_ID = re.compile(r"mem_[0-9a-f]{64}\Z")
 _OPERATIONS = frozenset(("create", "update", "delete", "expire"))
 _DOMAIN = b"ARK-memory-single-tx-event-epoch-v1\0"
+_CONTENT_DOMAIN = b"ARK-memory-retained-content-epoch-v1\0"
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +41,9 @@ class AtomicMemoryEpochReview:
     event_counts: tuple[int, ...]
     event_tail_ids: tuple[int, ...]
     epoch_digest: str
+    # Optional for legacy callers constructing only a five-field result.
+    # New reviewer results always supply the clock-independent content digest.
+    content_digest: str = ""
 
     @property
     def independent_writer_proven(self) -> bool:
@@ -254,11 +258,20 @@ def review_atomic_memory_epoch(
     stable()
     digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     stable()
+    content_encoded = json.dumps(
+        scope_payloads, sort_keys=True, ensure_ascii=False, allow_nan=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    stable()
+    content_digest = hashlib.sha256(_CONTENT_DOMAIN + content_encoded).hexdigest()
+    stable()
     fingerprints = tuple(scope_hashes)
     rows = tuple(row_counts)
     events = tuple(event_counts)
     tails = tuple(event_tail_ids)
-    review = AtomicMemoryEpochReview(fingerprints, rows, events, tails, digest)
+    review = AtomicMemoryEpochReview(
+        fingerprints, rows, events, tails, digest, content_digest,
+    )
     stable()
     if (
         type(review) is not _RESULT_TYPE
@@ -267,6 +280,7 @@ def review_atomic_memory_epoch(
         or review.event_counts is not events
         or review.event_tail_ids is not tails
         or review.epoch_digest is not digest
+        or review.content_digest is not content_digest
         or review.independent_writer_proven is not False
         or review.cross_store_atomicity_proven is not False
         or review.trusted_clock_proven is not False
