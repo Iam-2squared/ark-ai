@@ -52,7 +52,6 @@ def _sealed_fixture(
     )
     if type(envelope) is not _ENVELOPE_TYPE:
         raise ValueError("fixture constructor returned a non-envelope result")
-    _VALIDATE_ENVELOPE(envelope)
     actual = (
         envelope.kind, envelope.source_id, envelope.adapter_id,
         envelope.privacy_scope, envelope.ingested_at_ms,
@@ -63,6 +62,9 @@ def _sealed_fixture(
         actual, expected, strict=True,
     )):
         raise ValueError("fixture envelope fields changed during construction")
+    # Preserve legacy retargeting diagnostics before independently rejecting
+    # invalid-but-unchanged metadata from a bypassed constructor validator.
+    _VALIDATE_ENVELOPE(envelope)
     return envelope
 
 
