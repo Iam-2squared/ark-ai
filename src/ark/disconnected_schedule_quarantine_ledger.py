@@ -249,6 +249,7 @@ class DisconnectedScheduleQuarantineLedger:
         """Record one *already expired* synthetic occurrence in order, without dispatch."""
         self._check_witness(retained)
         original = (retained.count, retained.chain_sha256)
+        original_epoch = self._epoch
         if (type(index) is not int or type(observed_ms) is not int
                 or not 0 <= observed_ms <= _MAX_MS
                 or type(occurrence_id) is not str
@@ -283,8 +284,10 @@ class DisconnectedScheduleQuarantineLedger:
                 result = QuarantineWitness(seq, chain)
                 if _validate(conn, self._epoch) != result:
                     raise ScheduleQuarantineRejected("quarantine write lost integrity")
-                if original != (retained.count, retained.chain_sha256):
-                    raise ScheduleQuarantineRejected("retained witness changed before commit")
+                if (original != (retained.count, retained.chain_sha256)
+                        or self._epoch is not original_epoch):
+                    raise ScheduleQuarantineRejected("quarantine input changed before commit")
+                result_epoch = (result.count, result.chain_sha256)
                 conn.commit()
             except sqlite3.IntegrityError as exc:
                 conn.rollback()
@@ -292,4 +295,22 @@ class DisconnectedScheduleQuarantineLedger:
             except BaseException:
                 conn.rollback()
                 raise
-        return QuarantineReceipt(result, index)
+        # This reservation is already durable. Never return a forged or
+        # reflectively retargeted receipt as an authority to advance a cursor.
+        receipt = QuarantineReceipt(result, index)
+        if (
+            type(receipt) is not QuarantineReceipt
+            or receipt.witness is not result
+            or type(result) is not QuarantineWitness
+            or (result.count, result.chain_sha256) != result_epoch
+            or result.count is not result_epoch[0]
+            or result.chain_sha256 is not result_epoch[1]
+            or type(receipt.quarantined_index) is not int
+            or receipt.quarantined_index != index
+            or original != (retained.count, retained.chain_sha256)
+            or retained.count is not original[0]
+            or retained.chain_sha256 is not original[1]
+            or self._epoch is not original_epoch
+        ):
+            raise ScheduleQuarantineRejected("post-commit quarantine receipt changed")
+        return receipt
