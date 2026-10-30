@@ -173,25 +173,31 @@ def review_restarted_context_replay(
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     stable_observed()
     result = OfflineContextRecoveryReview(pinned[0], current[0], status, digest)
-    stable_observed()
-    if (
-        type(result) is not _RESULT_TYPE
-        or type(result.retained_count) is not int
-        or result.retained_count != pinned[0]
-        or type(result.observed_count) is not int
-        or result.observed_count != current[0]
-        or type(result.status) is not str
-        or result.status is not status
-        or type(result.comparison_sha256) is not str
-        or result.comparison_sha256 is not digest
-        or result.historical_prefix_proven is not False
-        or result.independent_custody_proven is not False
-        or result.consent_verified is not False
-        or result.revocation_freshness_verified is not False
-        or result.context_disclosure_authorized is not False
-        or result.tool_dispatch_authorized is not False
-        or result.automatic_replay_authorized is not False
-    ):
-        raise OfflineContextRecoveryRejected("context replay review result changed")
+    def verify_result() -> None:
+        # The final durable-tip callback can mutate a previously validated
+        # result carrier. Never return that modified report or added authority.
+        stable_observed()
+        if (
+            type(result) is not _RESULT_TYPE
+            or type(result.retained_count) is not int
+            or result.retained_count != pinned[0]
+            or type(result.observed_count) is not int
+            or result.observed_count != current[0]
+            or type(result.status) is not str
+            or result.status is not status
+            or type(result.comparison_sha256) is not str
+            or result.comparison_sha256 is not digest
+            or result.historical_prefix_proven is not False
+            or result.independent_custody_proven is not False
+            or result.consent_verified is not False
+            or result.revocation_freshness_verified is not False
+            or result.context_disclosure_authorized is not False
+            or result.tool_dispatch_authorized is not False
+            or result.automatic_replay_authorized is not False
+        ):
+            raise OfflineContextRecoveryRejected("context replay review result changed")
+
+    verify_result()
     verify_durable_tip()
+    verify_result()
     return result
