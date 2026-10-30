@@ -56,7 +56,7 @@ class RuntimeIdentity:
             measured_vram = float(self.vram_gib)
         except (OverflowError, ValueError) as exc:
             raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity") from exc
-        if not math.isfinite(measured_vram):
+        if not math.isfinite(measured_vram) or not math.isfinite(measured_vram * 1024.0):
             raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity")
 
 
@@ -124,12 +124,13 @@ def verify_runtime_identity(
 ) -> None:
     """Require the measured runtime to match the user-reviewed execution snapshot."""
     actual.validate()
-    if (
-        isinstance(vram_tolerance_gib, bool)
-        or not isinstance(vram_tolerance_gib, (int, float))
-        or not math.isfinite(float(vram_tolerance_gib))
-        or vram_tolerance_gib < 0
-    ):
+    if type(vram_tolerance_gib) not in (int, float):
+        raise ValueError("finite non-negative VRAM tolerance required")
+    try:
+        tolerance = float(vram_tolerance_gib)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError("finite non-negative VRAM tolerance required") from exc
+    if not math.isfinite(tolerance) or tolerance < 0:
         raise ValueError("finite non-negative VRAM tolerance required")
 
     expected_environment = snapshot["environment"]
@@ -174,7 +175,7 @@ def verify_runtime_identity(
     if not math.isfinite(expected_vram_float):
         raise RuntimeIdentityMismatch("invalid frozen GPU VRAM identity")
     actual_vram = float(actual.vram_gib)
-    if abs(actual_vram - expected_vram_float) > vram_tolerance_gib:
+    if abs(actual_vram - expected_vram_float) > tolerance:
         raise RuntimeIdentityMismatch(
             f"GPU VRAM identity mismatch: expected {expected_vram_float:.3f} GiB, "
             f"observed {actual_vram:.3f} GiB"
@@ -198,16 +199,28 @@ class WallTimeBudget:
         if not math.isfinite(seconds):
             raise ValueError("wall-clock timeout seconds overflow")
         self.timeout_seconds = seconds
-        measured_start = time.monotonic() if started is None else float(started)
+        if type(started) is bool:
+            raise ValueError("finite wall-clock start required")
+        try:
+            measured_start = time.monotonic() if started is None else float(started)
+        except (OverflowError, ValueError, TypeError) as exc:
+            raise ValueError("finite wall-clock start required") from exc
         if not math.isfinite(measured_start):
             raise ValueError("finite wall-clock start required")
         self.started = measured_start
 
     def check(self, phase: str, *, now: float | None = None) -> None:
-        current = time.monotonic() if now is None else float(now)
+        if type(now) is bool:
+            raise RuntimeError("finite wall-clock reading required")
+        try:
+            current = time.monotonic() if now is None else float(now)
+        except (OverflowError, ValueError, TypeError) as exc:
+            raise RuntimeError("finite wall-clock reading required") from exc
         if not math.isfinite(current):
             raise RuntimeError("finite wall-clock reading required")
         elapsed = current - self.started
+        if not math.isfinite(elapsed):
+            raise RuntimeError("finite wall-clock elapsed time required")
         if elapsed < 0:
             raise RuntimeError("monotonic clock moved backwards")
         if elapsed > self.timeout_seconds:
