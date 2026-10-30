@@ -68,18 +68,36 @@ class DueReservationReceipt:
         return False
 
 
+# Frozen inert result classes: injected constructors must not create
+# authority-looking compatible objects or equal-valued carrier substitutions.
+_WITNESS_TYPE = DueReservationWitness
+_RECEIPT_TYPE = DueReservationReceipt
+
+
+def _checked_witness(count: int, fingerprint: str) -> DueReservationWitness:
+    witness = DueReservationWitness(count, fingerprint)
+    if (
+        type(witness) is not _WITNESS_TYPE
+        or witness.count is not count
+        or witness.fingerprint is not fingerprint
+        or witness.independent_custody_proven is not False
+    ):
+        raise DueReservationRejected("constructed due witness changed")
+    return witness
+
+
 def _digest(rows: tuple[tuple[object, ...], ...]) -> str:
     payload = json.dumps(rows, separators=(",", ":"), ensure_ascii=True).encode("ascii")
     return hashlib.sha256(_DOMAIN + payload).hexdigest()
 
 
 def genesis_due_witness() -> DueReservationWitness:
-    return DueReservationWitness(0, _digest(()))
+    return _checked_witness(0, _digest(()))
 
 
 def _check_witness(witness: object) -> None:
     if (
-        type(witness) is not DueReservationWitness
+        type(witness) is not _WITNESS_TYPE
         or type(witness.count) is not int
         or not 0 <= witness.count <= _MAX_ROWS
         or type(witness.fingerprint) is not str
@@ -157,7 +175,7 @@ def _inspect(conn: sqlite3.Connection) -> tuple[DueReservationWitness, int | Non
         saved.append((seq, occurrence, policy, due, reserved))
         last_reserved = reserved
     rows = tuple(saved)
-    return DueReservationWitness(len(rows), _digest(rows)), last_reserved
+    return _checked_witness(len(rows), _digest(rows)), last_reserved
 
 
 class DisconnectedDueReservations:
@@ -219,18 +237,32 @@ class DisconnectedDueReservations:
         _check_witness(retained)
         prior_epoch = (retained.count, retained.fingerprint)
         path_epoch = self._path
+
+        def assert_retained_epoch() -> None:
+            # The frozen witness is still reflectively mutable; a callback
+            # replacing its hash with a distinct equal-valued string is a
+            # different custody epoch even when SQLite contents match.
+            if (
+                type(retained) is not _WITNESS_TYPE
+                or retained.count is not prior_epoch[0]
+                or retained.fingerprint is not prior_epoch[1]
+                or self._path is not path_epoch
+            ):
+                raise DueReservationRejected("retained due custody changed")
+
+        assert_retained_epoch()
         identity = "slot_" + hashlib.sha256(
             _DOMAIN + (policy_sha256 + ":" + str(due_at_ms)).encode("ascii")
         ).hexdigest()
-        if (retained.count, retained.fingerprint) != prior_epoch:
-            raise DueReservationRejected("retained witness changed")
+        assert_retained_epoch()
         with closing(self._open(read_only=False)) as conn:
-            if self._path is not path_epoch:
-                raise DueReservationRejected("due source changed before transaction")
+            assert_retained_epoch()
             conn.execute("BEGIN IMMEDIATE")
+            assert_retained_epoch()
             try:
                 current, last = _inspect(conn)
-                if current != retained or (retained.count, retained.fingerprint) != prior_epoch:
+                assert_retained_epoch()
+                if current != retained:
                     raise DueReservationRejected("stale or rewritten due ledger")
                 if last is not None and observed_now_ms < last:
                     raise DueReservationRejected("caller due clock regressed")
@@ -242,15 +274,30 @@ class DisconnectedDueReservations:
                      due_at_ms, observed_now_ms),
                 )
                 result, _ = _inspect(conn)
-                if self._path is not path_epoch:
-                    raise DueReservationRejected("due source changed before commit")
-                if (retained.count, retained.fingerprint) != prior_epoch:
-                    raise DueReservationRejected("retained witness changed before commit")
+                assert_retained_epoch()
                 conn.commit()
+                assert_retained_epoch()
             except sqlite3.IntegrityError as exc:
                 conn.rollback()
                 raise DueReservationRejected("duplicate synthetic due occurrence") from exc
             except BaseException:
                 conn.rollback()
                 raise
-        return DueReservationReceipt(identity, due_at_ms, observed_now_ms, result)
+        assert_retained_epoch()
+        # This is post-COMMIT: a forged result is rejected, never silently
+        # described as a rolled-back reservation or retried as a new WRITE.
+        receipt = DueReservationReceipt(identity, due_at_ms, observed_now_ms, result)
+        assert_retained_epoch()
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or receipt.occurrence_id is not identity
+            or receipt.due_at_ms is not due_at_ms
+            or receipt.reserved_at_ms is not observed_now_ms
+            or receipt.witness is not result
+            or receipt.execution_authorized is not False
+            or receipt.notification_authorized is not False
+            or receipt.automatic_replay_authorized is not False
+            or receipt.trusted_clock_verified is not False
+        ):
+            raise DueReservationRejected("constructed due reservation receipt changed")
+        return receipt
