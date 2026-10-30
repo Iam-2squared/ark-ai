@@ -1,5 +1,58 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-30 / Run471: READ registry binding custody, scheduler quarantine source/witness custody, Memory nested read witness and V3 export destination guards**
+
+**Saved at:** **2026-10-30T13:50:30.461+09:00 Asia/Tokyo/JST** (runtime wall time observed immediately before normal GitHub Contents checkpoint preparation; not an independent trusted clock, owner authentication, user consent, or the GitHub commit timestamp).
+
+**Canonical branch/PR:** `research/jarvis-foundations` / **PR #8 Draft, open, unmerged**.
+**Guarded separate branch/PR:** `research/v3-learning-evaluation` / **PR #5 Draft, open, unmerged**, exact source/test HEAD `2072549789588939dc958aa0ce51f74edf04da28`; V3 **NOT_PASSED**.
+**Exact invocation work-basis HEAD, PR #8:** `4bbfa0762540ac7be4794c7244ee8941ffd9ebb6` (Run470 checkpoint).
+**Exact invocation work-basis HEAD, PR #5:** `70852b312d2a7c6b12e796ce1838c2379fe1bcb6`.
+**Exact final source/test HEAD, PR #8:** `b824173f23d7bd98573eb4bd1b958536a724c738` (includes Ruff E731 test-only fix).
+**Exact final source/test HEAD, PR #5:** `2072549789588939dc958aa0ce51f74edf04da28`.
+**Exact PR #8 checkpoint-write-basis HEAD:** `b824173f23d7bd98573eb4bd1b958536a724c738` (**PRE-checkpoint**).
+**Checkpoint-result HEAD:** this file cannot self-attest its own resulting commit SHA. The PRE-checkpoint basis is not the result; validate the ordinary Contents response and subsequent GitHub branch/PR read independently.
+
+### Overall ARK state — JARVIS complete: NOT_PASSED
+
+ARK is local-first, free-only, and safety-gated. These are disconnected/mock/validation-only improvements. Owner-authenticated consent, independently trusted clock and audit, durable exactly-once external WRITE effects, real Tool/OS execution, physical Windows/GPU verification, true multi-store atomicity and end-to-end JARVIS remain unproven. Local/CI success provides no authority for spending, model training or Candidate promotion.
+
+### NEW in this invocation — 4 substantive packages, 32 synthetic pytest cases authored; 10 ordinary source/test commits plus 1 technical document
+
+1. **PR #8 READ Planner × ToolRegistry × PermissionGate carrier custody.** `disconnected_read_preflight.py` now retains original BoundAction/call/registration/revision/identifier object carriers through every reentrant gate callback, rejecting equal-value replacement. Source blob `32c7e4794a7e07723d854db3914a7a966d58d445`; test `test_disconnected_read_binding_custody_run471.py`, blob `4a2c6a1cc4a5f7d3b45062554488450c1b91e7ec`. **9** new cases. No backend dispatch.
+2. **PR #8 disconnected schedule SQLite quarantine.** `disconnected_schedule_quarantine_ledger.py` now pins path, policy tuple, retained witness and result carriers across read-only inspect, begin, validation, COMMIT and return, and denies changed source during WRITE. A rejection before COMMIT rolls back; after COMMIT it never claims rollback. Source blob `fe1a3db7719104eccfa656c57efe8a9a094c21e1`; test `test_disconnected_quarantine_epoch_custody_run471.py`, blob `b845fd0e2dd509fa63f6380f5e48a3414a5f1df2`. **7** cases. No clock/notification/Tool authority.
+3. **PR #8 Memory read nested identity.** Private `_hydrated_record_epoch` now retains exact original scope and metadata object references alongside ID/value witnesses, closing the Python allocator-ID reuse blind spot without any Memory v1 schema or public API change. Source blob `4be68251ab948052f3119407ed3358fc864e4077`; final test `test_memory_hydration_original_refs_run471.py` after lint fix, **4** cases. No personal data.
+4. **PR #5 free-only paired GGUF export path custody.** `export_plan.py` rejects unsafe or existing output, traversal, aliased parents, protected model/Candidate input-tree overlap and normalized deployed-model collisions **before** hashing tools or producing commands. Source blob `a5c9786731a982fec5e454d0e961e4e5fdc60e42`; updated existing converter mismatch fixture remains stringent, plus `test_export_output_custody_run471.py`, blob `a779a8930069388f9c193c1989eb3279cc36f2c1`, **12** new tests. This is a precheck, not TOCTOU-proof filesystem enforcement; no conversion, GPU or Candidate executed.
+5. **Real CI defect fixed without weakening assertions.** Exact PR #8 source/test #1511 failed Ruff E731 (assignment of a lambda in the newly added Memory test) before pytest. Replaced it with a named clock function in one normal test update, commit `b824173f23d7bd98573eb4bd1b958536a724c738`. Older #1511 and the subsequent docs-only #1512 remain historical FAIL; no duplicate workflow was launched. Nine changed source/test paths were independently read back from the corresponding branches, and exact Git blobs matched reported source/test identities.
+6. Technical package evidence: `docs/JARVIS_BOUND_READ_QUARANTINE_MEMORY_EXPORT_RUN471.md` at commit `6edf7df48d0c7efcb720285b51aeec8168ffef2d`. It records pre-lint-fix source/test HEAD separately, not a false final current-head PASS.
+
+### Exact-head CI and validation status at checkpoint inspection
+
+- **PR #5 final source/test HEAD** `2072549789588939dc958aa0ce51f74edf04da28`: **#1509 / run `41004714195` COMPLETED SUCCESS; all 6 Ubuntu/Windows Python 3.11–3.13 Ruff and pytest jobs GREEN**. Previous #1507 failed at an overlapping output fixture; #1508, run `41004675814`, was 6/6 GREEN after preserving the converter-byte test with separated input roots. #1509 is the exact later test-inclusive proof.
+- **PR #8 latest source/test HEAD** `b824173f23d7bd98573eb4bd1b958536a724c738`: **#1513 / run `41005029103`, IN_PROGRESS/NOT CONCLUDED** at inspection. **Ruff step succeeded on all six jobs**, pytest/remaining steps still active. Do not declare exact-head GREEN pending completion.
+- **PR #8 prior checkpoint HEAD** `4bbfa0762540ac7be4794c7244ee8941ffd9ebb6`: #1502 / `41000360408` COMPLETED SUCCESS, 6/6, historical only. Separate new READ source-only #1503 / `41004337465` was SUCCESS; do not apply this to later changes.
+- Local whole-repository checkout/pytest/Ruff remains **UNVERIFIED** because the container cannot resolve GitHub for clone; the above GREEN is independently reported by GitHub Actions, not claimed local execution. All 32 test cases are authored; PR #8 completion still depends on its exact latest CI.
+
+### Frozen boundaries, blockers and authorization
+
+No frozen V1/V2/Local UI/Launcher evidence, Memory v1 DDL, Action Audit, V3 Contract 1 (120 train/30 validation, one Candidate, no sweep), contamination/provenance/reproducibility/regression gates or protected V2 final-evaluation gate changed. PR #5 and PR #8 remain Draft/open/unmerged. No paid/external compute, new subscriptions/APIs, real GPU, actual training or preflight, Candidate weights/promotion, user credentials, live personal data, real Tool execution, OS access or main merge was performed.
+
+V3 still needs independently verified immutable HF revision and byte identities, actual human-reviewed dataset/provenance/contamination decisions, exact runtime/GPU and provider identities, user-approved JPY/timeout ceilings and provider-side billing caps. File path prechecks cannot prove race-free output creation. Planner/Memory still lack external trusted time/consent authority and independently anchored durable external exactly-once WRITE outcome.
+
+### Next plan / 今後の方針
+
+1. Check **exact PR #8 HEAD CI #1513**. On real failure diagnose job logs and make a smallest-invariant-preserving fix without duplicate workflows or test weakening; meanwhile proceed on a dependency-independent lane.
+2. Progress Memory CAS, bounded expiry scans, event and row integrity, independent history witnesses and coherent snapshot validation; preserve frozen DDL and explicit user-data separation.
+3. Progress Planner persistent UNKNOWN/RUNNING WRITE quarantine, registry-bound identity, exact-type permission and audit-before-action/trusted-clock/replay boundaries. No real dispatch or ambiguous automatic replay.
+4. Continue safe proactive scheduler retention/occurrence invariants and privacy-first Personal Context/Observation fixtures, connecting only after dependency-specific exact-head GREEN.
+5. Continue V3 free-only output/path/identity/approval/TOCTOU/reproducibility review without paid compute, protected V2 opening, Candidate creation or main merge.
+
+---
+
+**HISTORICAL — Run470 and all earlier canonical/frozen evidence retained verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-30 / Run470: Memory post-commit record custody, Planner recovery result custody, and free-only V3 numeric/path guards**
 
 **Saved at:** **2026-10-30T12:59:19.173+09:00 Asia/Tokyo/JST** (observed authoring wall time immediately before the ordinary GitHub Contents checkpoint write; not independently trusted time, user authentication, consent, billing authorization or the GitHub commit timestamp).
