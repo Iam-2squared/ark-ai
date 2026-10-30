@@ -16,8 +16,10 @@ from .atomic_epoch_review import AtomicMemoryEpochReview
 from .contracts import MemorySchemaError
 from .retained_epoch_review import (
     RetainedMemoryEpochComparison,
-    _validate as _validate_epoch,
     review_retained_memory_epoch,
+)
+from .retained_epoch_review import (
+    _validate as _validate_epoch,
 )
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
