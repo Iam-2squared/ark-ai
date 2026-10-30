@@ -160,9 +160,18 @@ def preview_offline_redaction(
         or result.scope_digest is not scope_digest
         or result.source_sha256 is not observed
         or result.masked_text is not result_text
+        or type(result.masked_characters) is not int
         or result.masked_characters != masked
+        or type(result.complete_masking) is not bool
         or result.complete_masking is not require_complete
         or result.local_digest is not digest
+        # A local masking receipt is not consent, erasure, an export
+        # authorization, or a ToolBackend execution grant.
+        or result.consent_verified is not False
+        or result.privacy_erasure_proven is not False
+        or result.external_export_authorized is not False
+        or result.tool_dispatch_authorized is not False
     ):
         raise OfflineRedactionRejected("masked preview construction mutated")
+    assert_epoch()
     return result
