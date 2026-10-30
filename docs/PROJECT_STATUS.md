@@ -1,5 +1,59 @@
 # ARK AI Project Status
 
+**LATEST — 2026-10-31 / Run484: independent READ readiness, privacy masking authority fence, bounded V3 JSON parser failures**
+
+**Saved at:** **2026-10-31T02:52:44+09:00 Asia/Tokyo/JST** (local-time observation immediately before checkpoint preparation, NOT authenticated trusted time, actual GitHub commit timestamp, approval, or consent).
+
+**Canonical branch / PR:** `research/jarvis-foundations` / PR #8 **Draft, open, unmerged**.
+**Separate V3 branch / PR:** `research/v3-learning-evaluation` / PR #5 **Draft, open, unmerged**.
+**Invocation initial work-basis HEADs:** PR #8 `9814c25d03ea408f02955e37404cf0b783ca3c66`; PR #5 `d8669d3bb45d8cd766123bdd6536fbec8664eba5`.
+**Final source/test HEADs:** PR #8 `fb67c8feaa1e25bb4979f40fb5de6189bddbb967`; PR #5 `f5f4a87c6985a6c5c6992d7b14a35cc314a6741f`.
+**Checkpoint-write-basis HEAD (after technical evidence):** `9f144086a176e9cb24be51befa5f31ffcc60a765` **PRE-checkpoint**.
+**Checkpoint-result HEAD:** This file cannot know its own containing commit SHA. Confirm the Contents update commit SHA and re-read PR #8 HEAD after this update. NEVER report the PRE-checkpoint SHA as the result SHA.
+
+### Overall ARK state — complete JARVIS NOT_PASSED
+
+**THREE** coherent, disconnected, zero-new-cost work packages, with **32 newly authored parameterized pytest cases** (9 + 8 + 15). This is NOT a proven physical-PC integration, authenticated consent/clock or independently custodied audit, safe external Tool action, cross-store atomicity, external exactly-once execution, genuine V3 model/data identity, Candidate training, protected V2 final evaluation, or JARVIS readiness. No paid API/external GPU/service, new accounts or credentials, real sensor/ToolBackend dispatch, irreversible action, automatic promotion or approval-required main merge was attempted.
+
+### NEW this invocation — precise source/test artifact identities
+
+1. **Startup registered READ preflight custody (9 cases).** PR #8 `src/ark/disconnected_local_readiness.py` blob `e4ed7a32f2a6a7327d3acfd689f5ece6db24dafc`; `tests/test_disconnected_startup_preflight_custody_run484.py` blob `93fe6afc2ca036697c8d54e6f188d39ccf65a814`. After the original preflight, independently recompute READY plan membership and registry-bound action IDs, grant digest and canonical preflight evidence hash. Reject forged same-type preflight receipts; no ToolBackend or startup permission. An intermediate double-escaped domain separator was corrected through the normal Contents API before the test commit.
+
+2. **Local Context mask result cannot grant privacy authority (8 cases).** PR #8 `src/ark/offline_context_redaction.py` blob `41793fcf34014d643f4b2ee2b7a17651a194c8e9`; `tests/test_offline_redaction_receipt_authority_run484.py` blob `6ad09aa848993f515d509c2a036906c419c4d3dc`. Require exact masked-character integer and reject spoofed consent, erasure, export or dispatch claims on an otherwise exact-type preview. Full masking is not deletion, an authenticated owner, or external disclosure consent.
+
+3. **V3 canonical JSON parser failure handling (15 cases).** PR #5 `src/ark/learning/run_manifest.py` blob `236299b8d1b8ae7cc4bda5081229b504fa687055`; `tests/v3/test_manifest_parser_failclosed_run484.py` blob `9624f73ca1528cba01011dabad8b73312d53a0ef`. Existing local-only capped read and byte-canonical comparison now reject JSON overflow to nonfinite numbers, excessively nested JSON and serialization errors through `CandidateRunManifestError`. No GPU, real Candidate, authorization, frozen contract change or protected evaluation opening.
+
+**Technical evidence:** `docs/JARVIS_READINESS_REDACTION_V3_JSON_RUN484.md` saved at PR #8 HEAD `9f144086a176e9cb24be51befa5f31ffcc60a765` prior to this status update. Source/test blob identities were independently re-read at exact draft branch refs. All GitHub mutations used ordinary Contents API, never raw Git object/ref updates, force-push, main merge, or manually duplicated workflows.
+
+### CI, tests, exact-head evidence
+
+- Prior PR #8 Run483 checkpoint HEAD `9814c25d03ea408f02955e37404cf0b783ca3c66`: #1660 / run `41095217819` **six-job SUCCESS**. This is older, not Run484 source evidence.
+- **PR #8 Run484 final source/test HEAD** `fb67c8feaa1e25bb4979f40fb5de6189bddbb967`: #1665 / run `41101556659` **QUEUED** (all six Linux/Windows Python 3.11–3.13 jobs QUEUED at last job read). Cannot claim GREEN.
+- **PR #5 Run484 final source/test HEAD** `f5f4a87c6985a6c5c6992d7b14a35cc314a6741f`: #1667 / run `41101765576` **QUEUED** (six jobs queued at last job read). Cannot claim GREEN.
+- PR #8 technical documentation HEAD and this checkpoint will have separate CI status; do not substitute document CI for source-head tests.
+- **Local whole-repository pytest and Ruff NOT VERIFIED**: local `git ls-remote` failed because `github.com` DNS resolution was unavailable. Authored test cases are NOT passing evidence until exact-head CI succeeds.
+- No duplicate or paid workflow runs requested.
+
+### Frozen contracts, approval blockers, security scope
+
+Both PRs **Draft/unmerged**; base main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. Memory v1 SQLite store blob `0aba6392b39563df520aa8b378d0b313f0cc0a0d`; frozen Memory contract blob `b6e93821ecd69270a7634aceb20775dc36e9953c`; Agency contract blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 Contract 1 blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`: re-read unchanged. V1/V2/Local UI/Launcher historical evidence and protected evaluation boundaries remain frozen.
+
+Independent authenticated writer-custodied history, trusted clock/audit-before-action, user consent/revocation, multi-store/OS atomicity and real external WRITE outcome reconciliation are NOT proven. Physical-PC actions and V3 immutable base/dataset/tool hashes, licensing/provenance/human review, paid-GPU ceiling and explicit spend permission remain unresolved. Do not generate real Candidate weights, open protected V2 final evaluation, promote automatically, or merge main.
+
+### Next plan / 今後の方針
+
+1. **Check actual exact-head CI #1665 and #1667** without duplicate runs. If FAIL, inspect job logs and apply minimal semantics-preserving repair through normal Contents API; while CI is running work only on an independent lane.
+2. Advance independently retained Memory event witnesses, CAS and coherent snapshots without overstating caller-controlled hashes as authenticated source custody.
+3. Progress Planner UNKNOWN WRITE quarantine and manual reconciliation, trusted-clock audit-before-action/occurrence replay fences, durable Scheduler and readiness while preserving no-dispatch controls.
+4. Advance Personal Context retention/revocation and Observation offline fixtures with privacy and data-boundary protection, no sensors or exports.
+5. Keep V3 approval/path/identity/reproducibility safeguards free-only and isolated. Real training, GPU, Candidate, human approval, protected V2 opening and approval-required merges remain blocked pending explicit consent and evidence.
+
+---
+
+**HISTORICAL — Run483 and earlier canonical/frozen status preserved verbatim below**
+
+# ARK AI Project Status
+
 **LATEST — 2026-10-31 / Run483: Scheduler observed-witness epoch, Memory edge custody, Planner WRITE/READ receipts, V3 bounded snapshot bytes**
 
 **Saved at:** **2026-10-31T02:00:51+09:00 Asia/Tokyo/JST**, observed through the local wall clock before checkpoint preparation. This is NOT an authenticated trusted-clock attestation, human consent timestamp, or the actual GitHub commit timestamp.
