@@ -20,6 +20,7 @@ _MAX_PATH = 4096
 _CHUNK = 65536
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-disconnected-file-seal-v1\0"
+_METADATA_FIELDS = ("size_bytes", "device", "inode", "mtime_ns", "ctime_ns")
 
 
 class DisconnectedFileSealRejected(ValueError):
@@ -102,6 +103,17 @@ def _metadata(info: os.stat_result) -> tuple[int, ...]:
     return metadata
 
 
+def _different_metadata_fields(
+    expected: tuple[int, ...], observed: tuple[int, ...],
+) -> str:
+    """Give safe, value-free diagnostics when path/handle metadata disagree."""
+    return ",".join(
+        name for name, before, after in zip(
+            _METADATA_FIELDS, expected, observed, strict=True,
+        ) if before != after
+    )
+
+
 def _once(path: Path) -> DisconnectedFileSeal:
     parent_first = _parents(path)
     try:
@@ -113,8 +125,12 @@ def _once(path: Path) -> DisconnectedFileSeal:
     except OSError as exc:
         raise DisconnectedFileSealRejected("local source unavailable or unsafe") from exc
     try:
-        if _metadata(os.fstat(fd)) != original:
-            raise DisconnectedFileSealRejected("source changed before read")
+        handle_initial = _metadata(os.fstat(fd))
+        if handle_initial != original:
+            names = _different_metadata_fields(original, handle_initial)
+            raise DisconnectedFileSealRejected(
+                f"source changed before read (metadata fields: {names})"
+            )
         digest = hashlib.sha256()
         count = 0
         while True:
