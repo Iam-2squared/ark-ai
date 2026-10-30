@@ -192,3 +192,33 @@ def test_seal_contains_no_payload_or_write_calls(tmp_path, monkeypatch):
     monkeypatch.setattr(module.os, "write", forbid)
     seal = capture_disconnected_file_seal(path)
     assert content not in repr(seal).encode()
+
+
+def test_path_handle_mismatch_diagnostic_is_value_free(tmp_path, monkeypatch):
+    import ark.disconnected_file_seal as module
+
+    path = fixture(tmp_path, b"synthetic metadata diagnostic")
+    original_metadata = module._metadata
+    invocations = 0
+
+    def altered_metadata(info):
+        nonlocal invocations
+        invocations += 1
+        original = original_metadata(info)
+        if invocations == 2:
+            return (*original[:3], original[3] + 1, original[4])
+        return original
+
+    monkeypatch.setattr(module, "_metadata", altered_metadata)
+    with pytest.raises(DisconnectedFileSealRejected, match="metadata fields: mtime_ns") as err:
+        capture_disconnected_file_seal(path)
+    assert str(path) not in str(err.value)
+    assert "synthetic metadata diagnostic" not in str(err.value)
+
+
+def test_metadata_diagnostics_expose_names_not_values():
+    import ark.disconnected_file_seal as module
+
+    assert module._different_metadata_fields((1, 2, 3, 4, 5), (1, 7, 3, 9, 5)) == (
+        "device,mtime_ns"
+    )
