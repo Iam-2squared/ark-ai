@@ -83,6 +83,30 @@ class SyntheticMemoryEventWitness:
         return False
 
 
+# Freeze the inert receipt contract across synthetic constructor substitution.
+_WITNESS_TYPE = SyntheticMemoryEventWitness
+
+
+def _new_witness(
+    scope_digest: str, event_count: int, last_event_id: int, tail_hash: str,
+) -> SyntheticMemoryEventWitness:
+    witness = SyntheticMemoryEventWitness(
+        scope_digest, event_count, last_event_id, tail_hash,
+    )
+    if (
+        type(witness) is not _WITNESS_TYPE
+        or witness.scope_digest is not scope_digest
+        or witness.event_count is not event_count
+        or witness.last_event_id is not last_event_id
+        or witness.tail_hash is not tail_hash
+        or witness.deletion_authorized is not False
+        or witness.context_use_authorized is not False
+        or witness.external_disclosure_authorized is not False
+    ):
+        raise SyntheticMemoryEventRejected("constructed Memory event witness changed")
+    return witness
+
+
 def review_synthetic_memory_event_continuity(
     memory: SQLiteMemoryStore,
     scope: MemoryScope,
@@ -102,7 +126,7 @@ def review_synthetic_memory_event_continuity(
     original = (scope.owner_id, scope.namespace)
     path_epoch = memory.path
     pinned = MemoryScope(*original)
-    if retained is not None and type(retained) is not SyntheticMemoryEventWitness:
+    if retained is not None and type(retained) is not _WITNESS_TYPE:
         raise SyntheticMemoryEventRejected("exact retained Memory witness required")
     retained_epoch = None if retained is None else (
         retained.scope_digest, retained.event_count,
@@ -138,9 +162,42 @@ def review_synthetic_memory_event_continuity(
     if retained is not None:
         retained.assert_shape(scope_hash)
         assert_epoch()
-    genesis = SyntheticMemoryEventWitness(scope_hash, 0, 0, _genesis(scope_hash))
+    genesis = _new_witness(scope_hash, 0, 0, _genesis(scope_hash))
     assert_epoch()
     prefixes = [genesis]
+    # Retain exact original witness carriers. Reentrant hashing or decoding
+    # may rewrite an earlier prefix after it is no longer the latest link.
+    prefix_epochs = [(
+        genesis, (
+            genesis.scope_digest, genesis.event_count,
+            genesis.last_event_id, genesis.tail_hash,
+        ),
+    )]
+
+    def assert_prefixes_stable() -> None:
+        if len(prefixes) != len(prefix_epochs):
+            raise SyntheticMemoryEventRejected("Memory event prefix set changed")
+        try:
+            for current, (original_witness, original_fields) in zip(
+                prefixes, prefix_epochs, strict=True,
+            ):
+                if (
+                    current is not original_witness
+                    or type(current) is not _WITNESS_TYPE
+                    or any(now is not original for now, original in zip(
+                        (
+                            current.scope_digest, current.event_count,
+                            current.last_event_id, current.tail_hash,
+                        ), original_fields, strict=True,
+                    ))
+                ):
+                    raise SyntheticMemoryEventRejected(
+                        "earlier Memory event witness changed during review"
+                    )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise SyntheticMemoryEventRejected(
+                "earlier Memory event witness is invalid"
+            ) from exc
 
     with closing(memory._connect_readonly()) as conn:
         assert_epoch()
@@ -210,8 +267,13 @@ def review_synthetic_memory_event_continuity(
                     raise SyntheticMemoryEventRejected(
                         "prior Memory event chain link changed"
                     )
-                prefixes.append(SyntheticMemoryEventWitness(
-                    scope_hash, prior.event_count + 1, event_id, digest,
+                next_count = prior.event_count + 1
+                witness = _new_witness(scope_hash, next_count, event_id, digest)
+                prefixes.append(witness)
+                prefix_epochs.append((
+                    witness, (
+                        scope_hash, next_count, event_id, digest,
+                    ),
                 ))
                 assert_epoch()
                 last_id = event_id
@@ -240,6 +302,7 @@ def review_synthetic_memory_event_continuity(
                     "Memory event lifecycle differs from live rows"
                 )
             assert_epoch()
+            assert_prefixes_stable()
             if retained is not None and (
                 retained.event_count >= len(prefixes)
                 or prefixes[retained.event_count] != retained
@@ -253,4 +316,5 @@ def review_synthetic_memory_event_continuity(
             conn.rollback()
             raise
     assert_epoch()
+    assert_prefixes_stable()
     return prefixes[-1]
