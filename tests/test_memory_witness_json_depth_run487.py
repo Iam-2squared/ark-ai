@@ -31,7 +31,7 @@ def test_short_valid_epoch_round_trips_without_changing_schema():
 def test_brackets_inside_escaped_json_string_are_not_counted_as_containers():
     raw = "[" + json.dumps('"' + "[" * 200) + "]"
     with pytest.raises(
-        witness.MemoryWitnessLedgerRejected, match="invalid witness epoch structure",
+        witness.MemoryWitnessLedgerRejected, match="invalid persisted witness epoch",
     ):
         witness._decoded(raw)
 
