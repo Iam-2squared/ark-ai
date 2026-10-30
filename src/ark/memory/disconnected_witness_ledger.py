@@ -267,20 +267,38 @@ class DisconnectedMemoryWitnessLedger:
     def inspect(self, *, retained: MemoryLedgerWitness) -> MemoryLedgerWitness:
         """Require the exact previously retained chain tip; never auto-repair."""
         _check_witness(retained)
-        initial = (retained.epochs, retained.chain_sha256)
+        original_path = self._path
+        original = (retained.epochs, retained.chain_sha256)
+
+        def stable() -> None:
+            # SQLite callbacks and an OS open can re-enter fixture code. An
+            # equal-valued Path or witness substitution is not the same epoch.
+            if (
+                self._path is not original_path
+                or type(retained) is not _WITNESS_TYPE
+                or retained.epochs is not original[0]
+                or retained.chain_sha256 is not original[1]
+            ):
+                raise MemoryWitnessLedgerRejected("retained Memory witness carrier changed")
+
+        stable()
         with closing(self._open(read_only=True)) as conn:
+            stable()
             conn.execute("BEGIN")
+            stable()
             try:
                 observed, _ = _inspect(conn)
-                if (
-                    observed != retained
-                    or (retained.epochs, retained.chain_sha256) != initial
-                ):
+                stable()
+                _check_witness(observed)
+                if observed != retained:
                     raise MemoryWitnessLedgerRejected("retained witness mismatch")
                 conn.commit()
+                stable()
             except BaseException:
                 conn.rollback()
                 raise
+        stable()
+        _check_witness(observed)
         return observed
 
     def append(
@@ -293,6 +311,7 @@ class DisconnectedMemoryWitnessLedger:
             raise MemoryWitnessLedgerRejected("exact local Memory epoch required")
         old_fields = _validate(review)
         old_tip = (retained.epochs, retained.chain_sha256)
+        original_path = self._path
 
         def stable() -> None:
             try:
@@ -302,6 +321,7 @@ class DisconnectedMemoryWitnessLedger:
                         a is b
                         for a, b in zip(_validate(review), old_fields, strict=True)
                     )
+                    and self._path is original_path
                     and (retained.epochs, retained.chain_sha256) == old_tip
                     and retained.epochs is old_tip[0]
                     and retained.chain_sha256 is old_tip[1]
