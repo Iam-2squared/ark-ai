@@ -16,7 +16,12 @@ from .dataset import digest
 from .execution import execution_core_sha256, load_snapshot, validate_experiment_001
 from .hf_lora import HfLoRAFullRun, HfLoRAPreflightBackend
 from .identity import build_code_tree_identity
-from .preflight import PreflightEvidence, build_preflight_report, run_authorized_preflight
+from .preflight import (
+    PreflightEvidence,
+    build_preflight_report,
+    run_authorized_preflight,
+    verify_preflight_measurements,
+)
 from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
 
 
@@ -155,6 +160,13 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
     expected_vram = float(snapshot["hardware"]["vram_gib"])
     if abs(float(recorded_evidence.vram_gib) - expected_vram) > 0.05:
         raise RuntimeError("preflight GPU VRAM does not match frozen snapshot")
+    # Revalidate the saved report during the training gate, not only when it
+    # was first constructed. A hash-matching report with inconsistent
+    # measured evidence must never count as successful mechanics.
+    try:
+        verify_preflight_measurements(snapshot, recorded_evidence, recorded_runtime)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("preflight report measurements are inconsistent") from exc
 
 
 def run_preflight(args: argparse.Namespace) -> dict:
