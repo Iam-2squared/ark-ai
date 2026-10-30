@@ -69,6 +69,11 @@ class DisconnectedDuePreview:
         return False
 
 
+# A reentrant synthetic constructor must not replace an inert result class
+# with a compatible-looking object that advertises authority.
+_RESULT_TYPE = DisconnectedDuePreview
+
+
 def _valid_policy(policy: object) -> None:
     if type(policy) is not DisconnectedSchedulePolicy:
         raise SchedulePreviewRejected("exact synthetic schedule policy required")
@@ -173,7 +178,7 @@ def preview_disconnected_schedule(
     result = DisconnectedDuePreview(state, index, occurrence, due, fingerprint)
     assert_epoch()
     if (
-        type(result) is not DisconnectedDuePreview
+        type(result) is not _RESULT_TYPE
         or (result.state, result.next_index, result.occurrence_id,
             result.due_at_ms, result.fingerprint)
         != (state, index, occurrence, due, fingerprint)
