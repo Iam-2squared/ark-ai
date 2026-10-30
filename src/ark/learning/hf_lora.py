@@ -25,6 +25,32 @@ class LoRARuntimeError(RuntimeError):
     pass
 
 
+def _validate_candidate_output_path(output: Path, base_dir: Path) -> None:
+    """Reject traversal, aliased parents and outputs inside input model bytes.
+
+    This is a free validation-only precheck, not a TOCTOU-resistant OS handle
+    seal and not authorization for training or any filesystem write.
+    """
+    if (
+        ".." in output.parts
+        or len(str(output)) > 4096
+        or output.name in ("", ".", "..")
+        or output.exists()
+        or output.is_symlink()
+        or not output.parent.is_dir()
+        or any(parent.is_symlink() for parent in output.parents)
+    ):
+        raise LoRARuntimeError(
+            "Candidate output directory must be new under safe existing parents"
+        )
+    # A path containing a junction/symlink or other resolvable ancestor
+    # alias must not escape the directory seen by the caller.
+    if output.parent.resolve(strict=True) != output.parent.absolute():
+        raise LoRARuntimeError("Candidate output parent resolves through an alias")
+    if output.resolve(strict=False).is_relative_to(base_dir.resolve(strict=False)):
+        raise LoRARuntimeError("Candidate output cannot be inside base model snapshot")
+
+
 def deterministic_training_order(rows: list[dict], seed: int = 42) -> list[dict]:
     if len({row.get("candidate_id") for row in rows}) != len(rows):
         raise ValueError("training rows require unique candidate_id values")
@@ -248,18 +274,7 @@ class HfLoRAFullRun:
         snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
         wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
         wall_budget.check("training-start")
-        if (
-            self.output_dir.exists()
-            or self.output_dir.is_symlink()
-            or not self.output_dir.parent.is_dir()
-            or any(
-                parent.is_symlink()
-                for parent in (self.output_dir.parent, *self.output_dir.parents)
-            )
-        ):
-            raise LoRARuntimeError(
-                "Candidate output directory must be new under safe existing parents"
-            )
+        _validate_candidate_output_path(self.output_dir, self.base_dir)
         train_rows, _ = _verify_local_identities(
             snapshot,
             base_dir=self.base_dir,
