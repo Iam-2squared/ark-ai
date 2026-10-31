@@ -1071,6 +1071,13 @@ def _record(row: sqlite3.Row) -> MemoryRecord:
         raise MemorySchemaError("stored memory scope or source is invalid") from exc
     if memory_id != expected_id:
         raise MemorySchemaError("stored memory identity digest does not match")
+    # SQLite can retain canonical rows written by another local process or
+    # manually edited after startup. Apply the same v1 ingress budgets on
+    # hydration; a correct hash alone does not make oversized data valid.
+    if not source_id.strip() or len(source_id) > 512:
+        raise MemorySchemaError("stored source_id exceeds MemoryWrite bounds")
+    if not content.strip() or len(content) > 1_000_000:
+        raise MemorySchemaError("stored content exceeds MemoryWrite bounds")
     if content_sha != hashlib.sha256(content.encode()).hexdigest():
         raise MemorySchemaError("stored memory content digest does not match")
     try:
@@ -1081,6 +1088,11 @@ def _record(row: sqlite3.Row) -> MemoryRecord:
         type(k) is str and type(v) is str for k, v in metadata.items()
     ):
         raise MemorySchemaError("stored metadata is not an exact string mapping")
+    if len(metadata) > 64 or any(
+        not key.strip() or len(key) > 4096 or len(value) > 4096
+        for key, value in metadata.items()
+    ):
+        raise MemorySchemaError("stored metadata exceeds MemoryWrite bounds")
     canonical = json.dumps(
         metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     )
