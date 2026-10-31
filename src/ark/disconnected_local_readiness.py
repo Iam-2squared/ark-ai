@@ -338,5 +338,20 @@ def review_disconnected_local_readiness(
         or report.cross_store_atomicity_proven is not False
     ):
         raise DisconnectedLocalReadinessRejected("startup report changed")
+    # The report's False-returning authority getters above can mutate
+    # reflected startup inputs or the report itself. Close both epochs after
+    # the last authority inspection; this remains diagnostic-only.
     assert_preview_epoch()
+    assert_epoch()
+    if (
+        type(report) is not _REPORT_TYPE
+        or report.schema_sha256 is not schema_epoch[0]
+        or report.topology_digest is not topology
+        or report.registry_revision is not revision
+        or report.ready_step_ids is not preview.ready_step_ids
+        or report.review_digest is not fingerprint
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup report changed after authority review"
+        )
     return report
