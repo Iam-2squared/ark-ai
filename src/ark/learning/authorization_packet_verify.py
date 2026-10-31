@@ -124,6 +124,10 @@ def verify_detached_authorization_packet(
             or witness.internal_packet_sha256 is not internal
         ):
             raise LocalPacketBindingRejected("packet witness changed after review")
+        # Field reads can also be reflected callbacks. A witness getter that
+        # returns the correct digest must not rewrite a packet or snapshot
+        # after the preceding unchanged() check.
+        unchanged()
         return witness
     except (TypeError, KeyError, OverflowError, UnicodeError, RecursionError) as exc:
         raise LocalPacketBindingRejected("unreadable detached review packet") from exc
