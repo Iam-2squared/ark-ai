@@ -131,3 +131,50 @@ def test_subclass_mapping_cannot_supply_packet():
 
     with pytest.raises(ValueError, match="exact"):
         mod.build_preflight_authorization_packet(FauxDict(_unapproved_snapshot()))
+
+
+def test_packet_serializer_cannot_retarget_review_scope_after_bytes(monkeypatch):
+    source = _unapproved_snapshot()
+    original = mod.canonical_json
+
+    def corrupt_packet_after_encoding(value):
+        encoded = original(value)
+        if type(value) is dict and value.get("request_scope") == (
+            "EXTERNAL_COMPUTE_PLUS_NON_CANDIDATE_PREFLIGHT_ONLY"
+        ):
+            value["request_scope"] = "UNAUTHORIZED_FULL_TRAINING"
+        return encoded
+
+    monkeypatch.setattr(mod, "canonical_json", corrupt_packet_after_encoding)
+    with pytest.raises(ValueError, match="changed"):
+        mod.build_preflight_authorization_packet(source)
+
+
+def test_packet_digest_callback_cannot_rewrite_detached_method(monkeypatch):
+    source = _unapproved_snapshot()
+    captured = []
+    original_copy = mod.deepcopy
+    original_sha = mod.sha256_bytes
+
+    def capture_copy(value):
+        output = original_copy(value)
+        captured.append(output)
+        return output
+
+    def tamper_after_hash(value):
+        digest = original_sha(value)
+        assert captured
+        captured[0]["unexpected_runtime_permission"] = True
+        return digest
+
+    monkeypatch.setattr(mod, "deepcopy", capture_copy)
+    monkeypatch.setattr(mod, "sha256_bytes", tamper_after_hash)
+    with pytest.raises(ValueError, match="changed"):
+        mod.build_preflight_authorization_packet(source)
+
+
+def test_packet_digest_still_binds_unmodified_review_fields():
+    packet = mod.build_preflight_authorization_packet(_unapproved_snapshot())
+    digest = packet.pop("packet_sha256")
+    assert digest == mod.sha256_bytes(mod.canonical_json(packet))
+    assert packet["hard_stops_after_preflight"]["main_merge_authorized"] is False
