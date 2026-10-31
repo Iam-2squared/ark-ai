@@ -1,5 +1,53 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run508 / 2026-11-01: FOUR free-only source/test work packages, 37 newly authored pytest cases. Memory full-row event-alignment digest, detached manual UNKNOWN WRITE packet verification, Observation post-denial source/result epochs, and V3 review-only packet output custody. ARK/JARVIS/V3 overall: NOT_PASSED.**
+
+**Saved at:** **2026-11-01T01:57:37.240+09:00 Asia/Tokyo/JST** (automation-run clock sample just before the normal GitHub Contents API write; NOT a trusted-clock attestation).
+
+## LATEST — exact work basis / branch, PR and checkpoint wording
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`: **initial work-basis HEAD** `358dd1cc042ba9fb23ffb6c62b2f22af88a963e2`, **final source/test HEAD** `651d71307ef472c170ced7cbb175b191a4ea7799`, **technical evidence and checkpoint write-basis HEAD** `7a3cdfa617cf701433972b911fabe66eaf140a20`. This canonical file is updated **ONCE** in this invocation. **Checkpoint-result HEAD** is returned after the write and independently reread; it is intentionally not circularly invented in the file.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`: **initial work-basis HEAD** `f8f6e2abfd914478466e5c260d9da95341684d13`; final source/test HEAD `9b5eb790aa8584bef898498383c9d98f4c24e477`. No training, protected evaluation or merge.
+- **main** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged. Frozen V1/V2/Local UI/Launcher evidence and contract boundaries unchanged.
+- [Run508 detailed source/evidence](https://github.com/Iam-2squared/ark-ai/blob/7a3cdfa617cf701433972b911fabe66eaf140a20/docs/JARVIS_RUN508_LOCAL_ROW_TRIAGE_OBSERVATION_V3_PACKET.md) lists exact file/blob hashes, scope/limitations and test count.
+
+## NEW work this invocation
+
+1. **Memory alignment complete row digest**: `src/ark/memory/sqlite_event_alignment.py` blob `0097a299f22ce0597cbe3146bc366b89530b543e`; new `tests/test_memory_alignment_full_row_digest_run508.py` blob `ac879876cf02ea99b3a4bba66e9791cddc14df3c`. The read-only event-alignment digest now includes canonical metadata commitment, created/updated times and expiry as well as ID/revision/content commitment. **5 authored pytest cases**; not authenticated historical provenance.
+2. **Manual-only UNKNOWN WRITE packet validation**: new `src/ark/agency/offline_write_triage_verify.py` blob `9c201aef9ba5a1b3c4a07d1a39e0ed992c7cd6c2` and `tests/test_offline_write_triage_verify_run508.py` blob `a473740a3ad98b65d5eb52bdba4652c9bd18fd82`. Recomputes detached packet digest from the retained local witness and checks identity, safe dispositions, no duplicated steps and denied authority flags. **22 authored pytest cases**; no human verification, external outcomes, dispatch, retry or independent witness authentication.
+3. **V3 review-packet output custody**: `src/ark/learning/authorization.py` blob `d8557138737eb47b90af868b47ed9489747bb553`; `tests/v3/test_authorization_packet_output_epoch_run508.py` blob `c254842e6d5b81c428dc6cf45f62c6711684034e`. Require exact absolute output path and stable packet JSON epoch through serialization. **5 authored pytest cases**; no spend/training/evaluation approval.
+4. **Observation lineage post-authority epoch**: `src/ark/observation_lineage_review.py` blob `585d37c0b4f61379e8e152e50b643bb3bec2a97c`; `tests/test_observation_lineage_post_authority_epoch_run508.py` blob `f02912e59995b4a4241d6572da2d040a4b11f3b8`. Reject denial-only property callbacks that silently mutate observation privacy/identities or the result after the first check. **5 authored pytest cases**; no media capture/disclosure/Tool execution.
+
+**37 newly authored pytest cases** across four packages; NOT a claim of independent local pytest/Ruff or local model tests. Local GitHub clone failed DNS resolution. Writes used only normal GitHub Contents API, not raw-object bypass.
+
+## CI/evidence — exact-head scope
+
+- **PR #5 latest source/test** [run 41221755534](https://github.com/Iam-2squared/ark-ai/actions/runs/41221755534), HEAD `9b5eb790aa8584bef898498383c9d98f4c24e477`: individual **6/6 GREEN** across Ubuntu/Windows and Python 3.11–3.13; workflow completed SUCCESS.
+- **PR #8 latest source/test** [run 41221892145](https://github.com/Iam-2squared/ark-ai/actions/runs/41221892145), HEAD `651d71307ef472c170ced7cbb175b191a4ea7799`: **IN_PROGRESS at checkpoint reading**. NOT called 6/6 until the exact six jobs are verified.
+- **PR #8 evidence-only commit** [run 41222058040](https://github.com/Iam-2squared/ark-ai/actions/runs/41222058040), HEAD `7a3cdfa617cf701433972b911fabe66eaf140a20`: **IN_PROGRESS at checkpoint reading**; separate from source-head CI. This checkpoint write may trigger another run.
+- Earlier PR #8 [run 41217528638](https://github.com/Iam-2squared/ark-ai/actions/runs/41217528638) at prior source/evidence head `358dd1cc042ba9fb23ffb6c62b2f22af88a963e2`: SUCCESS, not proof of newly authored changes.
+- Independent local pytest and Ruff: **NOT VERIFIED** (container DNS cannot resolve GitHub; no local checkout). Intermediate CI outcomes never promote final-head proof.
+
+## Frozen contracts, blockers, authorization boundaries
+
+- Frozen Memory `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`; Agency `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`, all rechecked unchanged.
+- No paid/potentially billable external service, external GPU, Candidate/real adapter or weights, protected V2 final evaluation, reviewer/consent/approval fabrication, secrets or new account, unavailable PC action, destructive operation, real ToolBackend/OS dispatch, automatic uncertain WRITE replay, model promotion, frozen-contract change or main merge. Both PRs remain Draft/unmerged.
+- Locally matched hashes cannot prove authenticated writer history or external effect, including malicious joint data/history rewrites. File guards do not defeat an adversarial OS or guarantee atomic directory traversal.
+- V3 unresolved paid/hardware/human gates: immutable upstream/local model/tokenizer hashes, real reviewed 120/30 dataset/provenance/contamination, measured environment/tool/device/driver identities, explicit human spend authorization and cost cap. Candidate promotion and protected evaluation remain closed. **Overall NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Resolve **exact-head PR #8 CI** (all Windows/Ubuntu jobs), compare with PR #5 and checkpoint CI; repair only substantiated failures with guards intact and no duplicate runs.
+2. Advance Memory coherent CAS/event snapshots with externally retained witnesses and independent row/event chronology, without alleging signed provenance.
+3. Advance durable **manual-only UNKNOWN WRITE** outcome-review witnesses, ToolRegistry-bound immutable identity, exact-type PermissionGate, trusted-clock audit-before-action and disconnected mock preflight, without real execution/replay.
+4. Extend restart-safe Scheduler occurrence claims, Personal Context consent/revocation, Observation offline fixtures and V3 free identity/reproducibility/approval-path guards. Escalate only paid, protected, physical, irreversible or approval-requiring lanes; otherwise continue free independent work.
+
+---
+
+## Historical checkpoint — Run507 (previous canonical text preserved verbatim below)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run507 / 2026-11-01: THREE free-only source/test packages, 34 newly authored pytest cases. Memory persisted-row/event lifecycle reconciliation, Planner manual-only uncertain WRITE investigation queue, and V3 anchored local identity file paths. JARVIS/V3 overall: NOT_PASSED.**
 
 **Saved at:** **2026-11-01T01:00:13.180+09:00 Asia/Tokyo/JST** (automation runtime wall-clock sample just before normal Contents API write, not trusted-time attestation).
