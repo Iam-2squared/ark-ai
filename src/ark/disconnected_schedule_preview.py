@@ -201,4 +201,18 @@ def preview_disconnected_schedule(
         or result.consent_verified is not False
     ):
         raise SchedulePreviewRejected("constructed preview carrier changed")
+    # Authority property descriptors can execute injected side effects. Do not
+    # return a due label if reading a nominally False grant mutated the policy,
+    # cursor, or the otherwise valid result fields after their first check.
+    assert_epoch()
+    if (
+        type(result) is not _RESULT_TYPE
+        or result.state is not state
+        or result.next_index is not index
+        or result.occurrence_id is not occurrence
+        or result.due_at_ms is not due
+        or result.fingerprint is not fingerprint
+    ):
+        raise SchedulePreviewRejected("constructed preview changed after authority review")
+    assert_epoch()
     return result
