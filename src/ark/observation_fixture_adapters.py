@@ -65,6 +65,23 @@ def _sealed_fixture(
     # Preserve legacy retargeting diagnostics before independently rejecting
     # invalid-but-unchanged metadata from a bypassed constructor validator.
     _VALIDATE_ENVELOPE(envelope)
+    # The independent validator invokes local digest/metadata callbacks. Even
+    # though this is a frozen carrier, a callback can reflectively replace its
+    # fields after the constructor's first identity check. Never return such a
+    # mixed-epoch envelope as a valid observation fixture.
+    after_validation = (
+        envelope.kind, envelope.source_id, envelope.adapter_id,
+        envelope.privacy_scope, envelope.ingested_at_ms,
+        envelope.content_sha256, envelope.parent_sha256,
+        envelope.schema_version,
+    )
+    if (
+        type(envelope) is not _ENVELOPE_TYPE
+        or any(now is not old for now, old in zip(
+            after_validation, expected, strict=True,
+        ))
+    ):
+        raise ValueError("fixture envelope fields changed during validation")
     return envelope
 
 
