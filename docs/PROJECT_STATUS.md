@@ -1,5 +1,55 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run515 / 2026-11-01: FOUR free-only meaningful source+test packages (62 newly authored pytest cases, including parametric cases); detached Planner/Registry/PermissionGate READ-cycle receipt recheck, one-transaction Memory coherent receipt final-denial integrity, synthetic V3 paired-validation report rederivation, and cumulative bounded V3 comparison input protection. All foundations stay detached/reversible. Overall ARK/JARVIS/V3: NOT_PASSED.**
+
+**Saved at:** **2026-11-01T08:53:21.717+09:00 Asia/Tokyo/JST**, sampled from ordinary runtime wall-clock directly before this GitHub Contents API write, **not** a trusted clock, billing approval, model attestation, consent or execution grant.
+
+## LATEST — exact work basis, branches/PRs, source and checkpoint semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`: initial **work-basis HEAD** `56cae9511d4997d0f635e993b321cb1b30a3da58` (Run514 checkpoint). Final **source+test HEAD** `32c3920992c3c666d825c647055dec90f45a7f64`. [Run515 JARVIS technical evidence](https://github.com/Iam-2squared/ark-ai/blob/229e605e77309b2318370f53aebee63b0c29190e/docs/JARVIS_RUN515_READ_RECEIPT_COHERENT_DENIAL.md) committed at **checkpoint write-basis HEAD** `229e605e77309b2318370f53aebee63b0c29190e`.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`: initial **work-basis HEAD** `4601abec9bce8cfae4cd3dea612bc395688f9b29`; first V3 validation-only source+test HEAD `3d28263f64657ea1f5463ab2b97c38514a97669c`; final V3 **source+test HEAD** `03b5b452cfe7dcfdd11371c0d21a86b0edebfda2` after cumulative text-budget and redundant exception correction. [Run515 V3 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/a73919dca17ce3370cf90711e0e499b55e0cb163/docs/v3/RUN515_DETACHED_VALIDATION_RECHECK.md) at documentation HEAD `a73919dca17ce3370cf90711e0e499b55e0cb163`.
+- **main** `7a843f17eb96ed13d66f23b58b06406b3002e405` verified. No main merge, no frozen source or contract mutation.
+- This is exactly **ONE** canonical status update near the end of this meaningful invocation. The **checkpoint-result HEAD** is generated and returned by GitHub after this standard Contents write, separately re-read and verified; **not fabricated or circularly embedded into the pre-write document**. The checkpoint file's blob SHA is independently checked afterward.
+
+## NEW — four zero-cost, isolated packages (62 authored pytest cases)
+
+1. **PR #8 Planner/Registry/PermissionGate detached mock READ receipt recheck (25 cases).** New `src/ark/agency/disconnected_read_cycle_receipt_recheck.py` blob `4b289e3ec3a28e6af36dc588dafeaa1c6096fd60`; tests `tests/test_disconnected_read_cycle_retained_recheck_run515.py` blob `430bfa473e805d36aa8e2238b37db964232e11c3`. Re-simulate exact READ-only pending DAG and independently match original retained fields, frontier/binding fingerprints, registry/policy, synthetic time, grant epoch and non-authority flags. Detect invalid exact types, stale/mismatched scopes/expiry, reflected field replacement and replay attempts. No ToolBackend, external READ, WRITE, real approval, grant spending, dispatch or execution.
+2. **PR #8 Memory one-SQLite-snapshot final denial getter hardening (12 cases).** Source `src/ark/memory/sqlite_retained_coherent_review.py` blob `50bc78827538c11d73ff5c0df149fc992b32f70d`; tests `tests/test_memory_coherent_final_denial_run515.py` blob `78463d183306362f88c155bf1f431a29f1d51fa2`. Recheck all report values after final false-valued cross-store authority descriptor callback to reject mutated digests, counters, status, same-value replaced carrier and row-delta acknowledgment. Maintains unchanged SQLite snapshot/evidence semantics and no memory disclosure/authorization.
+3. **PR #5 V3 detached validation-only paired report verifier (18 cases).** `src/ark/learning/detached_comparison_recheck.py` independently rederives 30 synthetic paired case order, category, regressions/improvements, failure counts, category counts and immutable non-V2-opening/no-promotion semantics. Strict in-memory carrier epochs, canonical retained bytes and independently supplied hash. Tests `tests/v3/test_detached_comparison_recheck_run515.py` blob `22e9d76a9bed0aa903294adf7f71b07da7e22595`. Does **not** use real model or generate a Candidate.
+4. **PR #5 V3 bounded synthetic paired report inputs (7 cases).** Same verifier final blob `574bfa59cb91c6e79b10bdda2dab34b04bcf0697`; new `tests/v3/test_detached_comparison_text_budget_run515.py` blob `f398f62bf09fb57e7b6c26488bb0a66c8835b5df`. Before callbacks, require <=4096 characters per text carrier and <=32768 total across both reports; reject malformed Unicode or oversized fixture input without changing the underlying V3 validation contract. This is not an execution gate or an authentication claim.
+
+**62 = 25 + 12 + 18 + 7 newly authored pytest cases**, not independently run local PASS. Code/test/docs written only through the normal GitHub Contents API after new HEAD reads; no force push, raw objects, hidden routes or safeguard bypass.
+
+## CI / precise evidence — never promote older HEAD success
+
+- Predecessor **Run514** [PR #8 CI 41249803719](https://github.com/Iam-2squared/ark-ai/actions/runs/41249803719) and [PR #5 corrected CI 41250109256](https://github.com/Iam-2squared/ark-ai/actions/runs/41250109256) verified at this invocation's start **6/6 SUCCESS**, but do not validate Run515 changes.
+- **PR #8 initial READ receipt tests:** [41253713874](https://github.com/Iam-2squared/ark-ai/actions/runs/41253713874) at HEAD `f5d036463d0e055754489d34e8289f1d006ea1f4`: **6/6 FAIL** due to new test import-format Ruff I001; corrected test imports without changing semantic checks. [41253814057](https://github.com/Iam-2squared/ark-ai/actions/runs/41253814057) validates the corrected earlier READ source HEAD, **not** the final Memory+READ source.
+- **PR #8 final Run515 source+test:** [41253895460](https://github.com/Iam-2squared/ark-ai/actions/runs/41253895460) at HEAD `32c3920992c3c666d825c647055dec90f45a7f64`: **5/6 GREEN, 1/6 IN PROGRESS** at checkpoint sampling. All six GREEN may **NOT** be claimed until six jobs finish success.
+- **PR #8 evidence-doc HEAD:** [41253973375](https://github.com/Iam-2squared/ark-ai/actions/runs/41253973375) in_progress/no conclusion (distinct head).
+- **PR #5 first paired verifier tests:** [41253820235](https://github.com/Iam-2squared/ark-ai/actions/runs/41253820235) at original HEAD `8415a3eed5ac8c996a2bf084b94d513c4d06bfc2`: **6/6 FAIL** Ruff I001 import format; corrected only import order. [41253908564](https://github.com/Iam-2squared/ark-ai/actions/runs/41253908564) at first corrected V3 source/test HEAD `3d28263f64657ea1f5463ab2b97c38514a97669c`: **6/6 GREEN** (not the final later text-budget source).
+- **PR #5 final Run515 source+test:** [41254241274](https://github.com/Iam-2squared/ark-ai/actions/runs/41254241274) at HEAD `03b5b452cfe7dcfdd11371c0d21a86b0edebfda2`: **6/6 GREEN** at checkpoint sampling; latest exact-source full matrix GREEN **NOT** yet established unless 6/6 completed.
+- **PR #5 evidence-doc HEAD:** [41254263529](https://github.com/Iam-2squared/ark-ai/actions/runs/41254263529) completed/success (distinct head).
+- Independent local full-checkout pytest/Ruff: **NOT PERFORMED** (local checkout GitHub DNS unavailable). These counts are CI job statuses only, not independent physical-PC or GPU/model evidence.
+
+## Frozen evidence, safety boundaries and blockers
+
+- Contract SHA unchanged from independent file reads: Memory `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`; Agency `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher frozen evidence, historical scorer, final evaluation budget and main unchanged.
+- Absolutely **NO** paid/potentially billable service, external GPU/API, model download/remote compute, real Candidate/adapter/weights, protected V2 final opening, promotion, credentials, new account connection, actual external ToolBackend/OS operation, physical-PC action, destructive/irreversible erasure, automatic unknown WRITE replay or main merge.
+- Hashes and SQLite/reproduced local mock receipts do not independently prove source, writer, clock, user consent, privacy/forensic erasure, cross-store atomicity, model identity or human review. V3 retains unresolved immutable HF revision/base+tokenizer byte hashes, 120/30 actual human-reviewed dataset and contamination decisions, pinned runtime/device identities, exact provider-side billing guard and explicit JPY spend authorization. **ARK/JARVIS/V3 remain NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Resolve six-job **exact-head** CI for PR #8 `32c3920...` and PR #5 `03b5b45...`, then distinct evidence/checkpoint HEADs. Inspect actual failures first; fix only verified regressions without relaxing denial semantics or running equivalent duplicate workflows.
+2. Expand Planner mock READ integration on exact GREEN lower-level contracts; audit detached receipt **tuple/resource budgets**, original grant-carrier custody and first/last callback rechecks, then attach restart-safe read-only recovery fixtures. Never actual ToolBackend dispatch.
+3. Advance Memory CAS and coherent cross-process/witness custody, durable Planner UNKNOWN WRITE **manual-only** recovery, immutable registry-bound identity and exact-type PermissionGate, and trusted-clock audit-before-action/occurrence fencing before any executor pathway.
+4. Strengthen Scheduler occurrence deduplication/restart safety, Personal Context consent/revocation/retention/possible-erasure, privacy-safe Observation fixture ingestion and local startup readiness. Continue V3 offline identity/path/reproducibility guards only; stop specific paid/contract/final-evaluation/Candidate/merge lanes for explicit user approval while continuing safe free work.
+
+---
+
+## Historical checkpoint — Run514 (preserved below)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run514 / 2026-11-01: FOUR independent free-only development packages, 65 newly authored pytest cases including parametrizations; one-transaction Memory row/event causality, disconnected registered READ receipt callback guards, strict privacy-erasure no-authority, offline V3 non-Candidate measurement validation. One V3 CI regression was a test regex mismatch and was corrected without weakening denial semantics. Overall ARK/JARVIS/V3: NOT_PASSED.**
 
 **Saved at:** **2026-11-01T07:53:28.389+09:00 Asia/Tokyo/JST**, sampled from ordinary runtime wall clock directly before this standard GitHub Contents API checkpoint write. **NOT a trusted clock, authorization token, cost approval or model identity proof.**
