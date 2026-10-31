@@ -6,6 +6,7 @@ No downloads or network access occur here. These helpers only hash already-prese
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import stat
 from dataclasses import dataclass
@@ -23,12 +24,32 @@ class FileIdentity:
 
 
 def _hash_file(path: Path) -> tuple[str, int]:
+    """Reject a redirected open and metadata changes to the opened file."""
+    before = path.lstat()
+
+    def epoch(info: os.stat_result) -> tuple[int, ...]:
+        return (
+            info.st_dev, info.st_ino, info.st_mode, info.st_nlink,
+            info.st_size, info.st_mtime_ns, info.st_ctime_ns,
+        )
+
     h = hashlib.sha256()
     size = 0
     with path.open("rb") as handle:
+        opened = os.fstat(handle.fileno())
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or opened.st_nlink != 1
+            or epoch(opened) != epoch(before)
+        ):
+            raise ValueError("identity file changed during hashing")
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             h.update(chunk)
             size += len(chunk)
+        if epoch(os.fstat(handle.fileno())) != epoch(before):
+            raise ValueError("identity file changed during hashing")
+    if epoch(path.lstat()) != epoch(before):
+        raise ValueError("identity file changed during hashing")
     return h.hexdigest(), size
 
 
