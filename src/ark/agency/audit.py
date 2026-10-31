@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 import time
 from collections.abc import Callable
@@ -9,7 +10,7 @@ from contextlib import closing
 from pathlib import Path
 from threading import Lock
 
-from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall
+from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall, _canonical_json
 
 SCHEMA_VERSION = 1
 _SQLITE_INT_MAX = 2**63 - 1
@@ -245,6 +246,18 @@ class SQLiteActionAudit:
                 or any(char not in "0123456789abcdef" for char in arguments_sha256)
             ):
                 raise ActionAuditSchemaError("audit stored digest identity is invalid")
+            # The audit intentionally stores no raw ToolCall.arguments, but
+            # the deterministic request ID can still be recomputed from its
+            # separately persisted argument digest and identity fields.
+            # Reject self-contradictory, individually well-formed row values.
+            expected_request_id = "act_" + hashlib.sha256(_canonical_json({
+                "arguments_sha256": arguments_sha256,
+                "capability": capability,
+                "scope": scope,
+                "tool": tool,
+            })).hexdigest()
+            if request_id != expected_request_id:
+                raise ActionAuditSchemaError("audit stored request identity is inconsistent")
             result.append(ActionAuditEvent(
                 event_id, request_id, tool, capability, scope, arguments_sha256, outcome, occurred
             ))
