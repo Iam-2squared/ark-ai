@@ -110,3 +110,83 @@ def detect_activity_regions(
     return ActivityRegions(
         expected_sha256, sample_rate, frame_samples, total_samples, active_total, regions
     )
+
+
+
+def verify_activity_regions(
+    report: ActivityRegions,
+    pcm: bytes,
+    expected_sha256: str,
+    sample_rate: int,
+    *,
+    frame_ms: int = 20,
+    rms_threshold: int = 512,
+    bridge_silence_frames: int = 1,
+    min_active_frames: int = 1,
+    max_regions: int = 32,
+) -> None:
+    """Recompute a detached fixture report against independently pinned inputs.
+
+    This is consistency verification, not speaker identification, provenance,
+    consent, microphone access, or permission to disclose private audio.
+    Passing parameters copied from an untrusted report does NOT establish an
+    independent identity or threshold boundary.
+    """
+    if type(report) is not ActivityRegions or type(report.regions) is not tuple:
+        raise OfflineActivityRejected("exact detached activity report required")
+    fields = (
+        report.source_sha256, report.sample_rate, report.frame_samples,
+        report.total_samples, report.active_frame_count, report.regions,
+    )
+    if (
+        type(fields[0]) is not str
+        or any(type(value) is not int for value in fields[1:5])
+        or any(
+            type(region) is not ActivityRegion
+            or any(type(value) is not int for value in (
+                region.start_frame, region.end_frame, region.start_sample,
+                region.end_sample, region.active_frames,
+            ))
+            for region in fields[5]
+        )
+    ):
+        raise OfflineActivityRejected("detached activity report shape invalid")
+    reference = detect_activity_regions(
+        pcm, expected_sha256, sample_rate, frame_ms=frame_ms,
+        rms_threshold=rms_threshold, bridge_silence_frames=bridge_silence_frames,
+        min_active_frames=min_active_frames, max_regions=max_regions,
+    )
+    observed = (
+        report.source_sha256, report.sample_rate, report.frame_samples,
+        report.total_samples, report.active_frame_count, report.regions,
+    )
+    if any(current is not first for current, first in zip(
+        observed, fields, strict=True,
+    )):
+        raise OfflineActivityRejected("detached activity report changed during verification")
+    for current, expected in zip(observed[:5], (
+        reference.source_sha256, reference.sample_rate, reference.frame_samples,
+        reference.total_samples, reference.active_frame_count,
+    ), strict=True):
+        if type(current) is not type(expected) or current != expected:
+            raise OfflineActivityRejected("detached activity report differs from source")
+    if len(report.regions) != len(reference.regions):
+        raise OfflineActivityRejected("detached activity regions differ from source")
+    for region, expected in zip(report.regions, reference.regions, strict=True):
+        observed_region = (
+            region.start_frame, region.end_frame, region.start_sample,
+            region.end_sample, region.active_frames,
+        )
+        expected_region = (
+            expected.start_frame, expected.end_frame, expected.start_sample,
+            expected.end_sample, expected.active_frames,
+        )
+        if observed_region != expected_region:
+            raise OfflineActivityRejected("detached activity regions differ from source")
+    if any(current is not first for current, first in zip(
+        (
+            report.source_sha256, report.sample_rate, report.frame_samples,
+            report.total_samples, report.active_frame_count, report.regions,
+        ), fields, strict=True,
+    )):
+        raise OfflineActivityRejected("detached activity report changed during verification")
