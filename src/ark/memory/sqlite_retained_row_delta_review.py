@@ -142,6 +142,10 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
             except BaseException:
                 conn.rollback()
                 raise
+    except MemoryRowDeltaRejected:
+        raise
+    except MemorySchemaError as exc:
+        raise MemoryRowDeltaRejected("Memory row or schema integrity unavailable") from exc
     except sqlite3.Error as exc:
         raise MemoryRowDeltaRejected("read-only Memory snapshot unavailable") from exc
     if store.path is not path:
