@@ -12,7 +12,6 @@ from dataclasses import dataclass
 
 from .disconnected_batch_plan import (
     DisconnectedBatchPlan,
-    DisconnectedBatchRejected,
     verify_disconnected_batch_plan,
 )
 from .disconnected_batch_schedule import (
@@ -189,6 +188,8 @@ def simulate_disconnected_batch_fixture_cycle(
                     parsed, ensure_ascii=True, sort_keys=True,
                     separators=(",", ":"), allow_nan=False,
                 )
+            except DisconnectedBatchCycleRejected:
+                raise
             except (TypeError, ValueError, UnicodeError, RecursionError) as exc:
                 raise DisconnectedBatchCycleRejected("noncanonical detached result") from exc
             if (
