@@ -61,7 +61,7 @@ def test_all_success_has_bounded_digests_and_no_authority():
     ((B,), ("SUCCEEDED", "FAILED", "BLOCKED", "BLOCKED", "SUCCEEDED"), (A, E)),
     ((C,), ("SUCCEEDED", "SUCCEEDED", "FAILED", "BLOCKED", "SUCCEEDED"), (A, B, E)),
     ((D,), ("SUCCEEDED", "SUCCEEDED", "SUCCEEDED", "FAILED", "SUCCEEDED"),
-     (A, B, C, E)),
+     (A, B, E, C)),
     ((E,), ("SUCCEEDED", "SUCCEEDED", "SUCCEEDED", "SUCCEEDED", "FAILED"),
      (A, B, C, D)),
     ((A, B), ("FAILED", "FAILED", "BLOCKED", "BLOCKED", "SUCCEEDED"), (E,)),
