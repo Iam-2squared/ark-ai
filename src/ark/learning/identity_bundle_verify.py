@@ -229,6 +229,46 @@ def inspect_local_identity_bundle(
     ):
         raise LocalIdentityBundleRejected("bundle report changed after denial")
     stable_first_pass()
+    # Denial getters and a reentrant result constructor may mutate an
+    # earlier component file after the two per-component inspection passes.
+    # A third bounded check of EVERY original component detects routine late
+    # rewrites, including same-length changes with restored timestamps.
+    # This is still not an atomic filesystem snapshot or upstream attestation.
+    for (name, path, sha), expected_component in zip(
+        captured, frozen, strict=True,
+    ):
+        stable()
+        stable_first_pass()
+        try:
+            final = verify_local_identity_artifact(path, retained_sha256=sha)
+        except (ValueError, OSError) as exc:
+            raise LocalIdentityBundleRejected(
+                "bundle component changed after report construction"
+            ) from exc
+        stable()
+        stable_first_pass()
+        if (
+            type(final) is not _ARTIFACT_WITNESS_TYPE
+            or (name, final.artifact_sha256, final.artifact_bytes,
+                final.top_level_keys) != expected_component
+            or any(getattr(final, flag) is not False for flag in _FLAGS)
+        ):
+            raise LocalIdentityBundleRejected(
+                "bundle component changed after report construction"
+            )
+    stable()
+    stable_first_pass()
+    if (
+        type(report) is not _WITNESS_TYPE
+        or report.components is not frozen
+        or report.bundle_sha256 is not digest
+        or any(getattr(report, flag) is not False for flag in _FLAGS)
+    ):
+        raise LocalIdentityBundleRejected("bundle report changed after final file check")
+    stable()
+    stable_first_pass()
+    if report.components is not frozen or report.bundle_sha256 is not digest:
+        raise LocalIdentityBundleRejected("bundle report changed during final review")
     return report
 
 
