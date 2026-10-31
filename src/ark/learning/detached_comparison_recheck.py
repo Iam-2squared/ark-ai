@@ -119,6 +119,7 @@ def verify_detached_validation_comparison(
             or len(previous) != 30
             or len(upcoming) != 30
             or previous.keys() != upcoming.keys()
+            or tuple(previous) != tuple(upcoming)
             or any(previous[k].category != upcoming[k].category for k in previous)
             or any(
                 getattr(current, name) != getattr(candidate, name)
