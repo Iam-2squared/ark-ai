@@ -77,7 +77,11 @@ class PlanGraph:
         # values against object.__setattr__ reflection. Pin exact plan inputs.
         self._step_mapping_epoch = self.steps
         self._step_epoch = tuple(
-            (step_id, step, step.call, step.depends_on, step.call.arguments, step.call.request_id)
+            (
+                step_id, step, step.step_id, step.call, step.depends_on,
+                step.call.tool, step.call.capability, step.call.scope,
+                step.call.arguments, step.call.request_id,
+            )
             for step_id, step in sorted(self.steps.items())
         )
         # A caller can reflectively mutate even a frozen PlanStepStatus or
@@ -134,16 +138,26 @@ class PlanGraph:
             or len(self._step_epoch) != len(self.steps)
         ):
             raise PlanConflictError("plan mapping changed after construction")
-        for step_id, step, call, depends_on, arguments, request_id in self._step_epoch:
+        for (
+            step_id, step, original_step_id, call, depends_on,
+            tool, capability, scope, arguments, request_id,
+        ) in self._step_epoch:
             if (
                 type(step) is not PlanStep
                 or type(step.step_id) is not str
                 or step.step_id != step_id
+                or step.step_id is not original_step_id
                 or self.steps.get(step_id) is not step
                 or step.call is not call
                 or type(call) is not type(step.call)
                 or type(depends_on) is not tuple
                 or step.depends_on is not depends_on
+                # A reflected replacement with equal text still changes the
+                # original action/step carrier; its digest alone cannot
+                # establish exact-input custody for later Planner phases.
+                or call.tool is not tool
+                or call.capability is not capability
+                or call.scope is not scope
                 or call.arguments is not arguments
             ):
                 raise PlanConflictError("plan step input changed after construction")
