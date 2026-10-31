@@ -119,20 +119,41 @@ def verify_disconnected_batch_schedule(
     if type(schedule) is not DisconnectedBatchSchedule:
         raise DisconnectedBatchRejected("exact detached schedule type required")
     expected = build_disconnected_batch_schedule(plan, retained_digest=retained_digest)
-    if (
-        type(schedule.request_id) is not str
-        or type(schedule.plan_digest) is not str
-        or type(schedule.schedule_digest) is not str
-        or type(schedule.waves) is not tuple
-        or any(
-            type(wave) is not tuple or any(type(step) is not str for step in wave)
-            for wave in schedule.waves
+
+    def exact_fields() -> bool:
+        # Do not delegate integrity to a dataclass __eq__ that can be replaced
+        # or can run arbitrary caller-controlled callbacks.
+        return (
+            type(schedule) is DisconnectedBatchSchedule
+            and type(schedule.request_id) is str
+            and schedule.request_id == expected.request_id
+            and type(schedule.plan_digest) is str
+            and schedule.plan_digest == expected.plan_digest
+            and type(schedule.schedule_digest) is str
+            and schedule.schedule_digest == expected.schedule_digest
+            and type(schedule.waves) is tuple
+            and len(schedule.waves) == len(expected.waves)
+            and all(
+                type(wave) is tuple
+                and all(type(step) is str for step in wave)
+                for wave in schedule.waves
+            )
+            and schedule.waves == expected.waves
         )
-        or schedule != expected
-        or any(type(getattr(schedule, name)) is not bool or getattr(schedule, name)
-               for name in (
-                   "dispatch_authorized", "parallel_execution_authorized",
-                   "write_authorized", "replay_authorized",
-               ))
-    ):
+
+    if not exact_fields():
         raise DisconnectedBatchRejected("detached batch schedule integrity mismatch")
+    for name in (
+        "dispatch_authorized", "parallel_execution_authorized",
+        "write_authorized", "replay_authorized",
+    ):
+        if getattr(schedule, name) is not False:
+            raise DisconnectedBatchRejected("detached batch schedule integrity mismatch")
+    # Denial-only properties are callbacks: a False result can still mutate a
+    # frozen dataclass reflectively. Recheck after the final getter and after
+    # the independently retained plan is revalidated.
+    if not exact_fields():
+        raise DisconnectedBatchRejected("detached batch schedule changed after denial")
+    verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    if not exact_fields():
+        raise DisconnectedBatchRejected("detached batch schedule changed during review")
