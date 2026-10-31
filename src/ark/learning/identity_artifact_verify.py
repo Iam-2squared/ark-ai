@@ -201,4 +201,42 @@ def verify_local_identity_artifact(
         raise LocalIdentityArtifactRejected(
             "identity artifact witness changed during final path recheck"
         )
+    # A stable inode, size and mtime do not guarantee immutable bytes.
+    # Re-read the complete bounded content after callbacks that built the
+    # witness. This detects routine same-size/timestamp-restored file edits,
+    # without claiming an atomic OS snapshot or upstream model provenance.
+    try:
+        with path.open("rb") as second_handle:
+            second_before = os.fstat(second_handle.fileno())
+            second_raw = second_handle.read(_MAX_ARTIFACT_BYTES + 1)
+            second_after = os.fstat(second_handle.fileno())
+    except OSError as exc:
+        raise LocalIdentityArtifactRejected(
+            "identity file unavailable during final byte recheck"
+        ) from exc
+    if (
+        not os.path.samestat(before, second_before)
+        or not os.path.samestat(second_before, second_after)
+        or second_before.st_nlink != 1
+        or second_after.st_size != before.st_size
+        or second_after.st_mtime_ns != before.st_mtime_ns
+        or len(second_raw) != before.st_size
+        or hashlib.sha256(second_raw).hexdigest() != digest
+    ):
+        raise LocalIdentityArtifactRejected(
+            "identity file bytes changed after verified read"
+        )
+    assert_retained_path()
+    if (
+        type(result) is not _WITNESS_TYPE
+        or result.artifact_sha256 is not digest
+        or type(result.artifact_bytes) is not int
+        or result.artifact_bytes != len(raw)
+        or type(result.top_level_keys) is not tuple
+        or result.top_level_keys != tuple(sorted(parsed))
+    ):
+        raise LocalIdentityArtifactRejected(
+            "identity witness changed during final byte recheck"
+        )
+    assert_retained_path()
     return result
