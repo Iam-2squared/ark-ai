@@ -22,14 +22,19 @@ class ArtifactIdentity:
         # Identity carriers must be inert, exact built-in values. A subclass
         # can override strip/iteration and change evidence during validation.
         fields = (self.kind, self.path, self.tool_revision)
-        if any(
-            type(value) is not str
-            or not value.strip()
-            or len(value) > 4096
-            or any(ord(char) < 32 for char in value)
-            for value in fields
-        ):
-            raise ValueError("artifact identity fields required")
+        for value in fields:
+            if (
+                type(value) is not str
+                or not value.strip()
+                or any(ord(char) < 32 or ord(char) == 127 for char in value)
+            ):
+                raise ValueError("artifact identity fields required")
+            try:
+                encoded = value.encode("utf-8", errors="strict")
+            except UnicodeError as exc:
+                raise ValueError("artifact identity fields require valid UTF-8") from exc
+            if len(encoded) > 4096:
+                raise ValueError("artifact identity UTF-8 byte budget exceeded")
         if (
             type(self.sha256) is not str
             or len(self.sha256) != 64
