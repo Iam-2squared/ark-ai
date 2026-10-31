@@ -253,6 +253,11 @@ def review_synthetic_retention_inventory(
         or result.reviewed_at_ms != now_ms
         or result.revoked is not revoked
         or result.items is not items
+        # Even an exact inventory DTO can have class properties spoofed by
+        # a reentrant fixture. Retention review never proves authorization.
+        or result.erasure_completed is not False
+        or result.deletion_authorized is not False
+        or result.context_use_authorized is not False
     ):
         raise SyntheticRetentionRejected("retention inventory result changed")
     return result
