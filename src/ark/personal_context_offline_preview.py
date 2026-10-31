@@ -207,3 +207,107 @@ def build_offline_context_preview(
         )
     assert_epoch()
     return result
+
+
+def verify_offline_context_preview(
+    report: OfflineContextPreview,
+    fixtures: tuple[OfflineContextFixture, ...],
+    *,
+    owner_digest: str,
+    allowed_scope_digests: tuple[str, ...],
+    observed_at_ms: int,
+    retained_local_digest: str,
+) -> None:
+    """Verify an independently retained synthetic preview without disclosure.
+
+    This only checks caller-provided fixture bytes, scope and expiry against
+    the detached receipt. It does not authenticate user consent, ownership,
+    live Memory rows, current time, or permission to export these contents.
+    """
+    if (
+        type(report) is not _PREVIEW_RESULT_TYPE
+        or type(retained_local_digest) is not str
+        or _DIGEST.fullmatch(retained_local_digest) is None
+        or type(fixtures) is not tuple
+    ):
+        raise OfflineContextPreviewRejected("exact retained context preview required")
+    originals = tuple(fixtures)
+    captured = tuple(
+        (item, item.record_id, item.owner_digest, item.scope_digest,
+         item.content, item.content_sha256, item.expires_at_ms)
+        for item in originals if type(item) is OfflineContextFixture
+    )
+
+    def stable_sources() -> None:
+        if (
+            type(fixtures) is not tuple
+            or len(originals) != len(fixtures)
+            or len(captured) != len(originals)
+            or any(
+                fixtures[i] is not fields[0]
+                or any(now is not old for now, old in zip(
+                    (fields[0].record_id, fields[0].owner_digest,
+                     fields[0].scope_digest, fields[0].content,
+                     fields[0].content_sha256, fields[0].expires_at_ms),
+                    fields[1:], strict=True,
+                ))
+                for i, fields in enumerate(captured)
+            )
+        ):
+            raise OfflineContextPreviewRejected("retained fixture changed during review")
+
+    expected = build_offline_context_preview(
+        fixtures, owner_digest=owner_digest,
+        allowed_scope_digests=allowed_scope_digests,
+        observed_at_ms=observed_at_ms,
+    )
+    stable_sources()
+
+    def exact_report() -> bool:
+        return (
+            type(report) is _PREVIEW_RESULT_TYPE
+            and type(report.owner_digest) is str
+            and report.owner_digest == expected.owner_digest
+            and type(report.record_ids) is tuple
+            and all(type(name) is str for name in report.record_ids)
+            and report.record_ids == expected.record_ids
+            and type(report.canonical_local_json) is str
+            and report.canonical_local_json == expected.canonical_local_json
+            and type(report.local_digest) is str
+            and report.local_digest == expected.local_digest
+            and report.local_digest == retained_local_digest
+        )
+
+    if not exact_report():
+        raise OfflineContextPreviewRejected("retained context preview mismatch")
+    for flag in (
+        "consent_verified", "external_export_authorized",
+        "tool_dispatch_authorized", "retention_authorized",
+    ):
+        if getattr(report, flag) is not False:
+            raise OfflineContextPreviewRejected(
+                "retained context preview gained authority"
+            )
+    # Even a denial getter that returns False may mutate the untrusted
+    # fixture, record scope, or private serialized result.
+    stable_sources()
+    if not exact_report():
+        raise OfflineContextPreviewRejected(
+            "retained context preview changed after denial"
+        )
+    latest = build_offline_context_preview(
+        fixtures, owner_digest=owner_digest,
+        allowed_scope_digests=allowed_scope_digests,
+        observed_at_ms=observed_at_ms,
+    )
+    stable_sources()
+    if (
+        not exact_report()
+        or type(latest) is not _PREVIEW_RESULT_TYPE
+        or latest.local_digest != expected.local_digest
+        or latest.canonical_local_json != expected.canonical_local_json
+        or latest.record_ids != expected.record_ids
+    ):
+        raise OfflineContextPreviewRejected(
+            "retained context fixtures changed during verification"
+        )
