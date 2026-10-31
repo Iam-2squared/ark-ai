@@ -15,6 +15,10 @@ from pathlib import Path
 from .execution import canonical_json, sha256_bytes
 
 
+_MAX_SNAPSHOT_ENTRIES = 16_384
+_MAX_SNAPSHOT_PATH_BYTES = 4_096
+
+
 @dataclass(frozen=True)
 class FileIdentity:
     path: str
@@ -78,6 +82,12 @@ def _identity_label(label: object) -> str:
         or re.fullmatch(r"[A-Za-z]:", label.split("/")[0]) is not None
     ):
         raise ValueError("identity label must be an exact relative POSIX path")
+    try:
+        raw = label.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise ValueError("identity label must be valid UTF-8") from exc
+    if len(raw) > 4096:
+        raise ValueError("identity label byte budget exceeded")
     return label
 
 
@@ -155,7 +165,25 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     ):
         raise ValueError("snapshot root must be a non-aliased local directory")
     entries = [("", root, True, _entry_epoch(root, is_dir=True))]
-    for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
+    # Bound enumeration before sorting: sorted(rglob("*")) alone can consume
+    # unbounded memory on a malformed materialized model snapshot.
+    paths = []
+    path_bytes = 0
+    for path in root.rglob("*"):
+        if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
+            raise ValueError("snapshot entry count exceeds local budget")
+        relative = path.relative_to(root).as_posix()
+        try:
+            encoded = relative.encode("utf-8", errors="strict")
+        except UnicodeError as exc:
+            raise ValueError("snapshot has an invalid UTF-8 path") from exc
+        if len(encoded) > _MAX_SNAPSHOT_PATH_BYTES:
+            raise ValueError("snapshot relative path exceeds local budget")
+        path_bytes += len(encoded)
+        if path_bytes > _MAX_SNAPSHOT_PATH_BYTES * _MAX_SNAPSHOT_ENTRIES:
+            raise ValueError("snapshot path inventory exceeds local budget")
+        paths.append(path)
+    for path in sorted(paths, key=lambda p: p.as_posix()):
         if path.is_symlink():
             raise ValueError("snapshot contains a symlink entry")
         if path.is_dir():
