@@ -318,10 +318,11 @@ def simulate_disconnected_failure_fixture(
         projection.projection_digest, failed_step_ids,
         projection.terminal_states, tuple(successful),
     ))
+    frozen_results = tuple(successful)
     receipt = DisconnectedFailureFixtureReceipt(
         plan_epoch[0], plan_epoch[3], schedule_epoch[3],
         projection.projection_digest, failed_step_ids,
-        projection.terminal_states, tuple(successful), digest,
+        projection.terminal_states, frozen_results, digest,
     )
     stable()
     if (
@@ -332,10 +333,28 @@ def simulate_disconnected_failure_fixture(
         or receipt.projection_digest is not projection.projection_digest
         or receipt.failed_step_ids is not failed_step_ids
         or receipt.terminal_states is not projection.terminal_states
+        or receipt.result_digests is not frozen_results
         or receipt.fixture_digest is not digest
         or any(getattr(receipt, key) is not False for key in _FLAGS)
     ):
         raise DisconnectedFailureFixtureRejected("synthetic receipt changed")
+    # Denial properties can run code and mutate the frozen output, plan,
+    # schedule, or a previously verified projection.
+    stable()
+    if (
+        type(receipt) is not _RECEIPT_TYPE
+        or receipt.request_id is not plan_epoch[0]
+        or receipt.plan_digest is not plan_epoch[3]
+        or receipt.schedule_digest is not schedule_epoch[3]
+        or receipt.projection_digest is not projection.projection_digest
+        or receipt.failed_step_ids is not failed_step_ids
+        or receipt.terminal_states is not projection.terminal_states
+        or receipt.result_digests is not frozen_results
+        or receipt.fixture_digest is not digest
+    ):
+        raise DisconnectedFailureFixtureRejected(
+            "synthetic receipt changed after authority review"
+        )
     return receipt
 
 
@@ -346,24 +365,71 @@ def verify_disconnected_failure_fixture(
     *,
     retained_digest: str,
 ) -> None:
-    """Recompute a hypothetical failure fixture, never authenticate outcomes."""
-    if type(receipt) is not _RECEIPT_TYPE:
+    """Independently rederive a hypothetical fixture, never certify outcomes."""
+    if (
+        type(receipt) is not _RECEIPT_TYPE
+        or type(receipt.failed_step_ids) is not tuple
+        or any(type(item) is not str for item in receipt.failed_step_ids)
+    ):
         raise DisconnectedFailureFixtureRejected("exact synthetic receipt required")
+    pinned_failures = receipt.failed_step_ids
     expected = simulate_disconnected_failure_fixture(
         plan, schedule, retained_digest=retained_digest,
-        failed_step_ids=receipt.failed_step_ids,
+        failed_step_ids=pinned_failures,
     )
-    if (
-        type(receipt.failed_step_ids) is not tuple
-        or type(receipt.terminal_states) is not tuple
-        or type(receipt.result_digests) is not tuple
-        or any(
-            type(pair) is not tuple or len(pair) != 2
-            or type(pair[0]) is not str or type(pair[1]) is not str
-            for pair in receipt.terminal_states + receipt.result_digests
-        )
-        or type(receipt.fixture_digest) is not str
-        or receipt != expected
-        or any(getattr(receipt, key) is not False for key in _FLAGS)
-    ):
+
+    def exact_fields() -> bool:
+        # Reflective dataclass equality is not independent evidence.
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or type(receipt.request_id) is not str
+            or receipt.request_id != expected.request_id
+            or type(receipt.plan_digest) is not str
+            or receipt.plan_digest != expected.plan_digest
+            or type(receipt.schedule_digest) is not str
+            or receipt.schedule_digest != expected.schedule_digest
+            or type(receipt.projection_digest) is not str
+            or receipt.projection_digest != expected.projection_digest
+            or type(receipt.failed_step_ids) is not tuple
+            or receipt.failed_step_ids is not pinned_failures
+            or receipt.failed_step_ids != expected.failed_step_ids
+            or type(receipt.fixture_digest) is not str
+            or receipt.fixture_digest != expected.fixture_digest
+        ):
+            return False
+        for actual, correct in (
+            (receipt.terminal_states, expected.terminal_states),
+            (receipt.result_digests, expected.result_digests),
+        ):
+            if (
+                type(actual) is not tuple
+                or any(
+                    type(pair) is not tuple or len(pair) != 2
+                    or type(pair[0]) is not str or type(pair[1]) is not str
+                    for pair in actual
+                )
+                or actual != correct
+            ):
+                return False
+        return True
+
+    if not exact_fields():
         raise DisconnectedFailureFixtureRejected("synthetic receipt mismatch")
+    for key in _FLAGS:
+        if getattr(receipt, key) is not False:
+            raise DisconnectedFailureFixtureRejected(
+                "synthetic receipt gained authority"
+            )
+    if not exact_fields():
+        raise DisconnectedFailureFixtureRejected(
+            "synthetic receipt changed after denial"
+        )
+    # Validate the source DAG again after the last reflective callback.
+    verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    verify_disconnected_batch_schedule(
+        schedule, plan, retained_digest=retained_digest,
+    )
+    if not exact_fields():
+        raise DisconnectedFailureFixtureRejected(
+            "synthetic fixture changed during verification"
+        )
