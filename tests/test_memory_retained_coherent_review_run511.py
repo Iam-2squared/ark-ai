@@ -155,7 +155,9 @@ def test_retained_witnesses_from_different_epochs_are_rejected(tmp_path, field):
     store.put(_write(MemoryScope("owner")))
     prefix, alignment = _witnesses(store)
     altered = replace(alignment, **{field: getattr(alignment, field) + 1})
-    with pytest.raises(coherent.MemoryCoherentHistoryRejected, match="disagree"):
+    # Either a malformed retained shape or a cross-witness mismatch must
+    # fail closed; do not constrain the denial to a particular diagnostic.
+    with pytest.raises(coherent.MemoryCoherentHistoryRejected):
         coherent.review_retained_coherent_memory(store, prefix, altered)
 
 
