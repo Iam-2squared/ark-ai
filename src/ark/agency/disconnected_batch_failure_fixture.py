@@ -20,7 +20,14 @@ from .disconnected_batch_schedule import (
     verify_disconnected_batch_schedule,
 )
 from .disconnected_batch_terminal_projection import (
+    DisconnectedBatchTerminalReceipt,
     project_disconnected_batch_terminals,
+    verify_disconnected_batch_terminals,
+)
+from .disconnected_fixture_binding import (
+    DisconnectedFixtureBinding,
+    DisconnectedFixtureBindingRejected,
+    bind_disconnected_fixture_result,
 )
 from .disconnected_toolbox import (
     DisconnectedToolRejected,
@@ -108,6 +115,28 @@ def simulate_disconnected_failure_fixture(
         plan, schedule, retained_digest=retained_digest,
         failed_step_ids=failed_step_ids,
     )
+    # The projection is a callback result, not a source of authority.
+    # Recompute with the independently imported terminal verifier before
+    # even a disconnected mock result is permitted.
+    if (
+        type(projection) is not DisconnectedBatchTerminalReceipt
+        or projection.failed_step_ids is not failed_step_ids
+        or projection.dispatch_authorized is not False
+        or projection.write_authorized is not False
+        or projection.automatic_replay_authorized is not False
+        or projection.failure_claim_authenticated is not False
+    ):
+        raise DisconnectedFailureFixtureRejected(
+            "hypothetical terminal projection gained authority"
+        )
+    try:
+        verify_disconnected_batch_terminals(
+            projection, plan, schedule, retained_digest=retained_digest,
+        )
+    except (TypeError, ValueError) as exc:
+        raise DisconnectedFailureFixtureRejected(
+            "hypothetical terminal projection mismatch"
+        ) from exc
     plan_epoch = (
         plan.request_id, plan.steps, plan.canonical_plan_json, plan.plan_digest,
     )
@@ -141,6 +170,11 @@ def simulate_disconnected_failure_fixture(
                  projection.terminal_states, projection.projection_digest),
                 projection_epoch, strict=True,
             ))
+            or type(projection) is not DisconnectedBatchTerminalReceipt
+            or projection.dispatch_authorized is not False
+            or projection.write_authorized is not False
+            or projection.automatic_replay_authorized is not False
+            or projection.failure_claim_authenticated is not False
             or type(plan.steps) is not tuple
             or len(plan.steps) != len(records)
             or any(
@@ -181,6 +215,10 @@ def simulate_disconnected_failure_fixture(
                     "disconnected successful fixture rejected"
                 ) from exc
             stable()
+            result_epoch = (
+                result.request_id, result.operation, result.input_digest,
+                result.canonical_result_json, result.result_digest,
+            )
             if (
                 type(result) is not _RESULT_TYPE
                 or type(result.request_id) is not str
@@ -224,7 +262,38 @@ def simulate_disconnected_failure_fixture(
                 raise DisconnectedFailureFixtureRejected(
                     "synthetic result content mismatch"
                 )
-            successful.append((step_id, result.result_digest))
+            # The toolbox's SHA binds operation/result bytes but does not
+            # prove the claimed result actually follows from the inputs.
+            # A second fixed fixture implementation rederives it without
+            # executing a real tool, and binds the synthetic request ID.
+            try:
+                bound = bind_disconnected_fixture_result(request, result)
+            except (DisconnectedFixtureBindingRejected, TypeError, ValueError) as exc:
+                raise DisconnectedFailureFixtureRejected(
+                    "synthetic recomputation mismatch"
+                ) from exc
+            stable()
+            if (
+                type(bound) is not DisconnectedFixtureBinding
+                or bound.request_id != plan_epoch[0]
+                or bound.operation != operation
+                or bound.input_digest != result_epoch[2]
+                or bound.result_digest != result_epoch[4]
+                or type(bound.request_bound_digest) is not str
+                or len(bound.request_bound_digest) != 64
+                or bound.dispatch_authorized is not False
+                or bound.external_outcome_verified is not False
+                or bound.automatic_replay_authorized is not False
+                or any(a is not b for a, b in zip(
+                    (result.request_id, result.operation, result.input_digest,
+                     result.canonical_result_json, result.result_digest),
+                    result_epoch, strict=True,
+                ))
+            ):
+                raise DisconnectedFailureFixtureRejected(
+                    "synthetic request-bound fixture changed"
+                )
+            successful.append((step_id, bound.request_bound_digest))
             stable()
     if seen != set(records_by_id) or len(successful) != sum(
         state == "SUCCEEDED" for state in state_by_id.values()
