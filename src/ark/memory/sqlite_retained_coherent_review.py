@@ -16,10 +16,10 @@ import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 
-from .contracts import MemorySchemaError, MemoryScope
+from . import sqlite_alignment_retained_review as retained_alignment
 from . import sqlite_event_alignment as alignment
 from . import sqlite_event_prefix_review as prefix
-from . import sqlite_alignment_retained_review as retained_alignment
+from .contracts import MemorySchemaError, MemoryScope
 from .sqlite_store import SQLITE_INT_MAX, SQLiteMemoryStore, _record, _validate_v1_schema
 
 _MAX_ROWS = 10_000
@@ -144,7 +144,12 @@ def review_retained_coherent_memory(
                     rows += 1
                     if rows > _MAX_ROWS:
                         raise MemoryCoherentHistoryRejected("coherent row scan budget exceeded")
-                    record = _record(row)
+                    try:
+                        record = _record(row)
+                    except MemorySchemaError as exc:
+                        raise MemoryCoherentHistoryRejected(
+                            "invalid stored Memory row"
+                        ) from exc
                     stable()
                     memory_id = record.memory_id
                     owner = record.scope.owner_id
