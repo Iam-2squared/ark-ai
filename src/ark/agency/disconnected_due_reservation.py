@@ -232,6 +232,10 @@ class DisconnectedDueReservations:
             try:
                 actual, _ = _inspect(conn)
                 _check_witness(actual)
+                # The caller-held witness can be reflectively changed while
+                # the independent SQLite snapshot is inspected. A retained
+                # tip is never permission, even if its digest still matches.
+                _check_witness(retained)
                 if (
                     type(retained) is not _WITNESS_TYPE
                     or retained.count is not epoch[0]
@@ -241,9 +245,13 @@ class DisconnectedDueReservations:
                 ):
                     raise DueReservationRejected("retained due witness differs on restart")
                 conn.commit()
+                _check_witness(retained)
             except BaseException:
                 conn.rollback()
                 raise
+        _check_witness(retained)
+        if store._path is not path:
+            raise DueReservationRejected("due ledger source changed after restart")
         return store
 
     def _open(self, *, read_only: bool) -> sqlite3.Connection:
@@ -289,6 +297,9 @@ class DisconnectedDueReservations:
         path_epoch = self._path
 
         def assert_retained_epoch() -> None:
+            # The retained witness must remain non-authorizing throughout
+            # every callback/transaction boundary, not just at entry.
+            _check_witness(retained)
             # The frozen witness is still reflectively mutable; a callback
             # replacing its hash with a distinct equal-valued string is a
             # different custody epoch even when SQLite contents match.
