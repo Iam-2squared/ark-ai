@@ -115,16 +115,32 @@ def hash_file(path: Path) -> tuple[str, int]:
         size = 0
         with path.open("rb") as handle:
             opened = os.fstat(handle.fileno())
+            # On Windows descriptor and pathname stat can report different
+            # creation/change-time semantics for the *same* file. Match the
+            # real file ID and portable content fields across those sources;
+            # then compare full metadata epochs within each stat source.
+            opened_epoch = epoch(opened)
             if (
                 not stat.S_ISREG(opened.st_mode)
                 or opened.st_nlink != 1
-                or epoch(opened) != epoch(before)
+                or before.st_ino == 0
+                or opened.st_ino == 0
+                or not os.path.samestat(before, opened)
+                or opened.st_size != before.st_size
+                or opened.st_mtime_ns != before.st_mtime_ns
+                or (
+                    os.name != "nt"
+                    and (
+                        opened.st_mode != before.st_mode
+                        or opened.st_ctime_ns != before.st_ctime_ns
+                    )
+                )
             ):
                 raise ValueError("lineage hash path changed before reading")
             for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                 h.update(chunk)
                 size += len(chunk)
-            if epoch(os.fstat(handle.fileno())) != epoch(before):
+            if epoch(os.fstat(handle.fileno())) != opened_epoch:
                 raise ValueError("lineage hash path changed during reading")
         after = path.lstat()
         if (
