@@ -5,8 +5,8 @@ from dataclasses import replace
 import pytest
 
 from ark.agency.disconnected_batch_plan import (
-    DisconnectedBatchStep,
     DisconnectedBatchRejected,
+    DisconnectedBatchStep,
     build_disconnected_batch_plan,
 )
 from ark.agency.disconnected_batch_schedule import (
