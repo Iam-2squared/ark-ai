@@ -225,9 +225,27 @@ def review_prepared_trigger_freshness(
                 or type(review.checked_at_ms) is not int
                 or review.checked_at_ms != now_ms
                 or review.history is not current
+                or review.notification_authorized is not False
+                or review.dispatch_authorized is not False
+                or review.automatic_replay_authorized is not False
             ):
                 raise SyntheticTriggerRejected(
                     "freshness review output changed during construction"
+                )
+            # Denial-only properties can be reentrant synthetic callbacks.
+            # A false result must not hide a modified output, witness,
+            # policy, receipt or ledger source after the earlier comparisons.
+            assert_current_epoch()
+            assert_epoch()
+            if (
+                type(review) is not SyntheticProactiveFreshnessReview
+                or review.trigger_id is not expected
+                or review.prepared_at_ms != prepared
+                or review.checked_at_ms != now_ms
+                or review.history is not current
+            ):
+                raise SyntheticTriggerRejected(
+                    "freshness review output changed after authority checks"
                 )
             return review
         except BaseException:
