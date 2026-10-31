@@ -14,7 +14,6 @@ from pathlib import Path
 
 from .execution import canonical_json, sha256_bytes
 
-
 _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
 
