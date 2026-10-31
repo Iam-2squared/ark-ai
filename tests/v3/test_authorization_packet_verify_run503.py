@@ -173,9 +173,14 @@ def test_late_witness_digest_getter_cannot_mutate_review_inputs(monkeypatch, tar
                 packet["request_scope"] = "FULL_TRAINING"
         return value
 
+    def preserve_slot_setter(self, value):
+        # A frozen slots dataclass initializes through object.__setattr__.
+        # Keep construction intact so this tests the later *getter* epoch.
+        original_descriptor.__set__(self, value)
+
     monkeypatch.setattr(
         mod.LocalPacketBindingWitness, "snapshot_sha256",
-        property(late_getter),
+        property(late_getter, preserve_slot_setter),
     )
     with pytest.raises(ValueError, match="changed"):
         mod.verify_detached_authorization_packet(
