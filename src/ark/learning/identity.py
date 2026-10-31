@@ -269,7 +269,12 @@ def build_hf_snapshot_identity(
         raise ValueError("unexpected experiment-001 model ID")
     if type(revision) is not str or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise ValueError("immutable 40-hex HF revision required")
-    files = directory_file_identities(root)
+    # Capture a tree epoch before hashing model bytes. The separately hashed
+    # chat-template probe may be evaluated later; ensure it cannot silently
+    # describe a different snapshot epoch than these manifest rows.
+    snapshot_root = Path(root)
+    source_entries = _snapshot_entries(snapshot_root)
+    files = directory_file_identities(snapshot_root)
     by_path = {row.path: row for row in files}
     required_files = ("config.json", "tokenizer_config.json", "tokenizer.json")
     missing = [name for name in required_files if name not in by_path]
@@ -312,6 +317,9 @@ def build_hf_snapshot_identity(
     probe = file_identity(Path(chat_template_probe), label="chat-template-probe.txt")
     if probe.bytes <= 0:
         raise ValueError("chat-template probe must be non-empty")
+    # This bounded metadata recheck is best-effort only: local filesystem
+    # epochs do not authenticate a remote Hub revision or hostile OS writer.
+    _assert_snapshot_entries(snapshot_root, source_entries)
     return {
         "model_id": model_id,
         "revision": revision,
