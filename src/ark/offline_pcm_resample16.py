@@ -31,6 +31,9 @@ class ResampledPcm:
     pcm: bytes = field(repr=False)  # sensitive; never auto-log, upload, persist or dispatch
 
 
+_RESULT_TYPE = ResampledPcm
+
+
 def _round_ratio_away_from_zero(numerator: int, denominator: int) -> int:
     sign = -1 if numerator < 0 else 1
     return sign * ((abs(numerator) * 2 + denominator) // (2 * denominator))
@@ -77,7 +80,27 @@ def resample_pcm16(
                 value = _round_ratio_away_from_zero(weighted, target_rate)
             struct.pack_into("<h", out, 2 * j, max(-32768, min(32767, value)))
         output = bytes(out)
-    return ResampledPcm(
-        expected_sha256, hashlib.sha256(output).hexdigest(), source_rate,
-        target_rate, source_samples, output_samples, output,
+    output_digest = hashlib.sha256(output).hexdigest()
+    result = ResampledPcm(
+        expected_sha256, output_digest, source_rate, target_rate,
+        source_samples, output_samples, output,
     )
+    # Result construction is a local extension boundary, not evidence of a
+    # trusted microphone or user approval. In particular a swapped factory or
+    # reflective field replacement must not retarget PCM bytes or digests.
+    if type(result) is not _RESULT_TYPE:
+        raise OfflineResampleRejected("resample result type changed")
+    expected = (
+        expected_sha256, output_digest, source_rate, target_rate,
+        source_samples, output_samples, output,
+    )
+    actual = (
+        result.source_sha256, result.output_sha256,
+        result.source_rate, result.target_rate, result.source_samples,
+        result.output_samples, result.pcm,
+    )
+    if any(now is not old for now, old in zip(
+        actual, expected, strict=True,
+    )):
+        raise OfflineResampleRejected("resample output fields changed")
+    return result
