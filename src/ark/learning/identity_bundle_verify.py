@@ -365,5 +365,23 @@ def verify_local_identity_bundle(
         or type(latest) is not _WITNESS_TYPE
         or latest.components != expected.components
         or latest.bundle_sha256 != expected.bundle_sha256
+        or any(getattr(report, flag) is not False for flag in _FLAGS)
+        or any(getattr(latest, flag) is not False for flag in _FLAGS)
     ):
         raise LocalIdentityBundleRejected("bundle files changed during verification")
+    # The last read is itself a reentrant boundary. A callback can replace
+    # the authority property or the retained report field *after* the earlier
+    # false-valued guard, without changing a pinned digest or file. Check the
+    # source and returned carriers once more after consulting those getters.
+    stable_pins()
+    if (
+        not exact_report()
+        or any(getattr(report, flag) is not False for flag in _FLAGS)
+        or any(getattr(latest, flag) is not False for flag in _FLAGS)
+    ):
+        raise LocalIdentityBundleRejected(
+            "bundle report gained authority during final verification"
+        )
+    stable_pins()
+    if not exact_report():
+        raise LocalIdentityBundleRejected("bundle report changed at final return")
