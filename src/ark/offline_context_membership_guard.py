@@ -194,6 +194,12 @@ def review_offline_context_membership(
         or result.record_count != len(records)
         or result.scope_count != len(scope_vetoes)
         or result.membership_sha256 is not digest
+        # A successful membership check is not consent or a disclosure grant.
+        # Verify these descriptors even on an exact-type reflected result.
+        or result.consent_verified is not False
+        or result.disclosure_authorized is not False
+        or result.retention_authorized is not False
+        or result.trusted_clock_verified is not False
     ):
         raise OfflineContextAdmissionRejected("constructed admission review mutated")
     return result
