@@ -107,3 +107,34 @@ PR #5 remains **Draft/unmerged** under its controlling gate. There was no
 protected V2 final-evaluation opening, real adapter/Candidate generation,
 external GPU, paid action, automatic promotion, main merge or live device read.
 Overall JARVIS/V3 remains **NOT_PASSED**.
+
+
+## 4. Follow-up exact-output binding and adversarial terminal projection gate
+
+The previous run's *detached failure fixture* was extended after its
+wave-order test fix received **6/6 GREEN** at source/test run
+`41198507228` (#1874). This extension is a **distinct dependent package**.
+
+- Revised fixture source blob:
+  `ea394a349d112651e401df3df67352776a9572ea`,
+  source commit `ba12d3b5d28eb6f60b36636e72046ae3397ce0a2`.
+- New adversarial test file:
+  `tests/test_disconnected_batch_failure_binding_run502.py`,
+  blob `7d35b35c64e8945d22ec0d15f8d6ee4732a68018`,
+  test commit `900e9d8cd4c15cf4c77ca15224f983c3f4929fe0`;
+  **20 authored parameterized cases**.
+- The projected hypothetical terminal states are explicitly rechecked against
+  an independently recomputed plan/terminal schedule *before any mock step*.
+  The result of each memory-only mock step is also rederived using the
+  established `disconnected_fixture_binding` implementation, including
+  a request-bound digest. This closes a synthetic forgery in which altered
+  mock output and its SHA were mutually consistent but not consistent with
+  the deterministic input/operation.
+- Separate mutation and fake-authority test cases exercise forged exact-type
+  projections, fake request bindings and changes across callback boundaries.
+  No real permission gate or ToolBackend dispatch is involved.
+
+Total new cases authored in this invocation: **123** (38 + 34 + 31 + 20),
+not a substitute for actual exact-head test evidence. CI run
+`41199101911` (#1877) is associated with the dependent fixture-binding
+source/test HEAD; its conclusion must be checked rather than assumed.
