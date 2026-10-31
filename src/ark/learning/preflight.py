@@ -129,19 +129,59 @@ def verify_preflight_measurements(
     evidence: PreflightEvidence,
     runtime_identity: RuntimeIdentity,
 ) -> None:
-    """Bind non-Candidate evidence to the same measured, frozen execution.
+    """Validation-only measurement binding for one unchanged in-memory epoch.
 
-    This is validation only: no GPU calls, model loading, training or billing.
-    The caller's report remains non-authoritative without an independently
-    authorized snapshot and retained evidence bytes.
+    This direct entry point accepts exact validated types and checks every
+    original field carrier after validation callbacks. It never calls a GPU
+    backend and does NOT grant preflight/training or billing authorization.
     """
+    if (
+        type(snapshot) is not dict
+        or type(evidence) is not _EVIDENCE_TYPE
+        or type(runtime_identity) is not _IDENTITY_TYPE
+    ):
+        raise ValueError("exact non-Candidate measurement inputs required")
+    snapshot_epoch = _pin_json_tree(snapshot)
+    evidence_epoch = tuple(getattr(evidence, field) for field in _EVIDENCE_FIELDS)
+    identity_epoch = tuple(getattr(runtime_identity, field) for field in _IDENTITY_FIELDS)
+
+    def stable() -> None:
+        _assert_json_tree_epoch(snapshot, snapshot_epoch)
+        try:
+            if (
+                type(evidence) is not _EVIDENCE_TYPE
+                or type(runtime_identity) is not _IDENTITY_TYPE
+                or any(
+                    getattr(evidence, field) is not original
+                    for field, original in zip(
+                        _EVIDENCE_FIELDS, evidence_epoch, strict=True,
+                    )
+                )
+                or any(
+                    getattr(runtime_identity, field) is not original
+                    for field, original in zip(
+                        _IDENTITY_FIELDS, identity_epoch, strict=True,
+                    )
+                )
+            ):
+                raise ValueError("measurement input epoch changed")
+        except (AttributeError, TypeError) as exc:
+            raise ValueError("measurement input epoch invalid") from exc
+
+    stable()
     evidence.validate()
+    stable()
     verify_runtime_identity(snapshot, runtime_identity)
+    stable()
     if evidence.device != runtime_identity.device:
         raise ValueError("preflight device does not match measured runtime")
     if abs(float(evidence.vram_gib) - float(runtime_identity.vram_gib)) > 0.05:
         raise ValueError("preflight VRAM does not match measured runtime")
-    if evidence.tokenizer_probe_sha256 != snapshot["tokenizer"]["chat_template_probe_sha256"]:
+    tokenizer = snapshot.get("tokenizer")
+    budget = snapshot.get("budget")
+    if type(tokenizer) is not dict or type(budget) is not dict:
+        raise ValueError("frozen preflight measurement bindings missing")
+    if evidence.tokenizer_probe_sha256 != tokenizer.get("chat_template_probe_sha256"):
         raise ValueError("preflight tokenizer probe does not match frozen snapshot")
     if evidence.peak_vram_mib > evidence.peak_reserved_vram_mib:
         raise ValueError("preflight allocated VRAM exceeds reserved VRAM")
@@ -150,11 +190,20 @@ def verify_preflight_measurements(
         raise ValueError("preflight measured GPU capacity conversion overflow")
     if evidence.peak_reserved_vram_mib > measured_capacity_mib:
         raise ValueError("preflight reserved VRAM exceeds measured GPU capacity")
-    budget_seconds = float(snapshot["budget"]["wall_clock_timeout_minutes"]) * 60
+    minutes = budget.get("wall_clock_timeout_minutes")
+    if type(minutes) not in (int, float):
+        raise ValueError("finite positive frozen preflight wall-clock budget required")
+    try:
+        budget_seconds = float(minutes) * 60
+    except (OverflowError, ValueError) as exc:
+        raise ValueError("finite positive frozen preflight wall-clock budget required") from exc
     if not math.isfinite(budget_seconds):
         raise ValueError("preflight frozen wall-clock budget conversion overflow")
+    if budget_seconds <= 0:
+        raise ValueError("finite positive frozen preflight wall-clock budget required")
     if evidence.wall_seconds > budget_seconds:
         raise ValueError("preflight wall time exceeds frozen execution budget")
+    stable()
 
 
 def build_preflight_report(
