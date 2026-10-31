@@ -134,7 +134,9 @@ def test_runtime_validation_cannot_rebind_preflight_evidence(monkeypatch):
         object.__setattr__(evidence, "wall_seconds", 13.5)
 
     monkeypatch.setattr(RuntimeIdentity, "validate", changed)
-    with pytest.raises(ValueError, match="result input epoch"):
+    # The inner no-GPU measurement validator now denies with its own
+    # explicit epoch diagnostic, without weakening the original guard.
+    with pytest.raises(ValueError, match="measurement input epoch"):
         mod.build_preflight_report(_snapshot(), evidence, _identity())
 
 
