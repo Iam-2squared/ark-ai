@@ -146,15 +146,42 @@ def inspect_local_identity_bundle(
             raise LocalIdentityBundleRejected("bundle component witness gained authority")
         first_pass.append(witness)
         components.append((name, sha, witness.artifact_bytes, witness.top_level_keys))
+    # The first pass's witness objects remain caller-visible to a reentrant
+    # component verifier. Equality-only comparisons cannot detect replacing
+    # their SHA or key tuple with equal-valued new carriers during pass two.
+    first_pass_epochs = tuple((
+        witness, witness.artifact_sha256, witness.artifact_bytes,
+        witness.top_level_keys,
+    ) for witness in first_pass)
+
+    def stable_first_pass() -> None:
+        for witness, digest, size, keys in first_pass_epochs:
+            if (
+                type(witness) is not _ARTIFACT_WITNESS_TYPE
+                or witness.artifact_sha256 is not digest
+                or witness.artifact_bytes is not size
+                or witness.top_level_keys is not keys
+                or any(getattr(witness, flag) is not False for flag in _FLAGS)
+                or witness.artifact_sha256 is not digest
+                or witness.artifact_bytes is not size
+                or witness.top_level_keys is not keys
+            ):
+                raise LocalIdentityBundleRejected(
+                    "first-pass identity witness changed during bundle review"
+                )
+
+    stable_first_pass()
     # A component can be replaced while inspecting another file. All files
     # must still match the original independent pins at the end of the scan.
     for (_, path, sha), witness in zip(captured, first_pass, strict=True):
         stable()
+        stable_first_pass()
         try:
             repeated = verify_local_identity_artifact(path, retained_sha256=sha)
         except (ValueError, OSError) as exc:
             raise LocalIdentityBundleRejected("bundle changed between reads") from exc
         stable()
+        stable_first_pass()
         if (
             type(repeated) is not _ARTIFACT_WITNESS_TYPE
             or type(repeated.artifact_sha256) is not str
@@ -179,10 +206,13 @@ def inspect_local_identity_bundle(
                 "bundle component changed after authority review"
             )
     stable()
+    stable_first_pass()
     frozen = tuple(components)
     digest = _hash(frozen)
+    stable_first_pass()
     report = LocalIdentityBundleWitness(frozen, digest)
     stable()
+    stable_first_pass()
     if (
         type(report) is not _WITNESS_TYPE
         or report.components is not frozen
@@ -198,6 +228,7 @@ def inspect_local_identity_bundle(
         or report.bundle_sha256 is not digest
     ):
         raise LocalIdentityBundleRejected("bundle report changed after denial")
+    stable_first_pass()
     return report
 
 
