@@ -41,7 +41,7 @@ class ArtifactIdentity:
             or any(c not in "0123456789abcdef" for c in self.sha256)
         ):
             raise ValueError("artifact SHA-256 required")
-        if type(self.bytes) is not int or self.bytes <= 0:
+        if type(self.bytes) is not int or not 1 <= self.bytes <= (1 << 63) - 1:
             raise ValueError("artifact byte size required")
 
 
