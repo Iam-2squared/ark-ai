@@ -365,4 +365,27 @@ def review_retained_coherent_memory(
     ):
         raise MemoryCoherentHistoryRejected("coherent result acquired authority")
     stable()
+    # Every flag above is an overridable property callback, including the
+    # LAST cross_store_atomicity_proven getter. A false-valued getter must not
+    # alter the report after the earlier digest/field check.
+    if (
+        type(report) is not _RESULT
+        or type(report.previous_event_count) is not int
+        or report.previous_event_count != old_prefix[0]
+        or type(report.current_event_count) is not int
+        or report.current_event_count != count
+        or type(report.row_count) is not int or report.row_count != rows
+        or type(report.scope_count) is not int
+        or report.scope_count != len(scopes)
+        or type(report.last_event_id) is not int
+        or report.last_event_id != last_id
+        or report.status is not status
+        or report.current_alignment_sha256 is not current_alignment_sha
+        or report.current_event_sha256 is not current_event_sha
+        or report.review_sha256 is not digest
+        or report.retained_row_delta_checked is not (old_rows is not None)
+    ):
+        raise MemoryCoherentHistoryRejected(
+            "coherent report changed after final denial callback"
+        )
     return report
