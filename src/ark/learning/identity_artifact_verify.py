@@ -48,6 +48,10 @@ class LocalIdentityArtifactWitness:
         return False
 
 
+# Bind to the original inert witness class, not a replaced module constructor.
+_WITNESS_TYPE = LocalIdentityArtifactWitness
+
+
 def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for name, value in pairs:
@@ -129,11 +133,36 @@ def verify_local_identity_artifact(
             raise LocalIdentityArtifactRejected("identity artifact must be canonical JSON")
     except (UnicodeError, TypeError, ValueError, RecursionError, OverflowError) as exc:
         raise LocalIdentityArtifactRejected("identity artifact JSON rejected") from exc
+    # Parse/constructor code may take time, and an accidental writer can
+    # replace the path after the earlier post-read check. Recheck the *path*
+    # identity before and after witness creation. This is not an atomic FS
+    # snapshot and cannot attest to a malicious kernel or concurrent writer.
+    def assert_retained_path() -> None:
+        try:
+            current = path.lstat()
+            if (
+                not stat.S_ISREG(current.st_mode)
+                or not os.path.samestat(before, current)
+                or current.st_size != before.st_size
+                or current.st_mtime_ns != before.st_mtime_ns
+                or current.st_nlink != 1
+                or path.is_symlink()
+                or any(parent.is_symlink() for parent in path.parents)
+            ):
+                raise LocalIdentityArtifactRejected(
+                    "identity file changed after verified read"
+                )
+        except OSError as exc:
+            raise LocalIdentityArtifactRejected(
+                "identity file became unavailable"
+            ) from exc
+
+    assert_retained_path()
     result = LocalIdentityArtifactWitness(
         digest, len(raw), tuple(sorted(parsed)),
     )
     if (
-        type(result) is not LocalIdentityArtifactWitness
+        type(result) is not _WITNESS_TYPE
         or result.artifact_sha256 is not digest
         or type(result.artifact_bytes) is not int
         or result.artifact_bytes != len(raw)
@@ -144,4 +173,5 @@ def verify_local_identity_artifact(
         or result.protected_evaluation_authorized is not False
     ):
         raise LocalIdentityArtifactRejected("identity artifact witness changed")
+    assert_retained_path()
     return result
