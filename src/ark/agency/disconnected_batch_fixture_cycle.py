@@ -247,17 +247,38 @@ def verify_disconnected_batch_fixture_cycle(
     expected = simulate_disconnected_batch_fixture_cycle(
         plan, schedule, retained_digest=retained_digest,
     )
-    if (
-        type(receipt.request_id) is not str
-        or type(receipt.plan_digest) is not str
-        or type(receipt.schedule_digest) is not str
-        or type(receipt.cycle_digest) is not str
-        or type(receipt.wave_result_hashes) is not tuple
-        or any(
-            type(wave) is not tuple or any(type(item) is not str for item in wave)
-            for wave in receipt.wave_result_hashes
+
+    def exact_fields() -> bool:
+        # Compare primitive data, never a replaceable dataclass __eq__ method.
+        return (
+            type(receipt) is _RECEIPT_TYPE
+            and type(receipt.request_id) is str
+            and receipt.request_id == expected.request_id
+            and type(receipt.plan_digest) is str
+            and receipt.plan_digest == expected.plan_digest
+            and type(receipt.schedule_digest) is str
+            and receipt.schedule_digest == expected.schedule_digest
+            and type(receipt.cycle_digest) is str
+            and receipt.cycle_digest == expected.cycle_digest
+            and type(receipt.wave_result_hashes) is tuple
+            and all(
+                type(wave) is tuple
+                and all(type(item) is str for item in wave)
+                for wave in receipt.wave_result_hashes
+            )
+            and receipt.wave_result_hashes == expected.wave_result_hashes
         )
-        or receipt != expected
-        or any(getattr(receipt, key) is not False for key in _RECEIPT_FLAGS)
-    ):
+
+    if not exact_fields():
         raise DisconnectedBatchCycleRejected("detached cycle receipt integrity mismatch")
+    for key in _RECEIPT_FLAGS:
+        if getattr(receipt, key) is not False:
+            raise DisconnectedBatchCycleRejected("detached cycle receipt gained authority")
+    # Denial-only receipt properties are callbacks and can mutate a frozen
+    # object or its inputs while still returning False.
+    if not exact_fields():
+        raise DisconnectedBatchCycleRejected("detached cycle receipt changed after denial")
+    verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    verify_disconnected_batch_schedule(schedule, plan, retained_digest=retained_digest)
+    if not exact_fields():
+        raise DisconnectedBatchCycleRejected("detached cycle receipt changed during review")
