@@ -117,6 +117,32 @@ def verify_disconnected_registered_read_receipt(
                 or any(getattr(receipt, flag) is not False for flag in _FLAGS)
             ):
                 raise DisconnectedReadReceiptRejected("READ receipt or input epoch changed")
+            # The last authority getter is itself a callback. No input
+            # carrier may change while returning the exact False value.
+            if (
+                any(current is not initial for current, initial in zip(
+                    (
+                        receipt.registry_revision, receipt.bound_action_id,
+                        receipt.request_id, receipt.tool_name, receipt.capability,
+                    ), receipt_epoch, strict=True,
+                ))
+                or any(current is not initial for current, initial in zip(
+                    (call.tool, call.capability, call.scope, call.arguments),
+                    call_epoch, strict=True,
+                ))
+                or call.request_id != request_id
+                or any(
+                    grant is not original
+                    or grant.capability is not capability
+                    or grant.scope is not scope
+                    or grant.expires_at_ms is not expiry
+                    for grant, (original, capability, scope, expiry) in zip(
+                        grants, grant_epochs, strict=True,
+                    )
+                )
+                or registry.revision != revision
+            ):
+                raise DisconnectedReadReceiptRejected("READ receipt or input epoch changed")
         except DisconnectedReadReceiptRejected:
             raise
         except (AttributeError, TypeError, ValueError) as exc:
