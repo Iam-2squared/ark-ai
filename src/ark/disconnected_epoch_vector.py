@@ -147,6 +147,8 @@ def capture_disconnected_epoch_vector(
 
 
 def _validated_vector(vector: object) -> tuple[tuple[object, ...], ...]:
+    if type(vector) is not DisconnectedEpochVector:
+        raise EpochVectorRejected("exact vector required")
     _assert_non_authorizing(vector)
     original_stores = vector.stores
     original_digest = vector.digest
