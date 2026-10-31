@@ -75,6 +75,8 @@ def verify_local_identity_artifact(
     """
     if (
         type(path) is not type(Path("."))
+        or not path.is_absolute()
+        or len(str(path)) > 4096
         or ".." in path.parts
         or type(retained_sha256) is not str
         or _SHA.fullmatch(retained_sha256) is None
