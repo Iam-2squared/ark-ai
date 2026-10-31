@@ -8,7 +8,11 @@ import pytest
 
 import ark.agency.disconnected_read_cycle_receipt_recheck as recheck
 from ark.agency.contracts import (
-    CapabilityGrant, Effect, PlanStep, StepState, ToolCall,
+    CapabilityGrant,
+    Effect,
+    PlanStep,
+    StepState,
+    ToolCall,
 )
 from ark.agency.disconnected_read_cycle import simulate_registered_read_cycle
 from ark.agency.planner import PlanGraph
