@@ -54,6 +54,7 @@ def verify_detached_validation_comparison(
         raise DetachedComparisonRejected("exact bounded validation inputs required")
 
     originals = []
+    cumulative_text_chars = 0
     for report in (current, candidate):
         fields = tuple(getattr(report, name) for name in _FIELDS)
         cases = report.cases
@@ -81,9 +82,10 @@ def verify_detached_validation_comparison(
         texts = fields[:5] + tuple(
             value for _, values in case_epochs for value in values[:2]
         )
+        cumulative_text_chars += sum(len(value) for value in texts)
         if (
             any(len(value) > _MAX_FIELD_CHARS for value in texts)
-            or sum(len(value) for value in texts) > _MAX_INPUT_CHARS
+            or cumulative_text_chars > _MAX_INPUT_CHARS
         ):
             raise DetachedComparisonRejected("validation text input budget exceeded")
         originals.append((report, fields, case_epochs))
