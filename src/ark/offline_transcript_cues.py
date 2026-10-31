@@ -68,6 +68,9 @@ class OfflineCueResult:
         return False
 
 
+_RESULT_TYPE = OfflineCueResult
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -194,7 +197,34 @@ def review_offline_transcript_cues(request: OfflineCueRequest) -> OfflineCueResu
     )
     epoch()
     result = OfflineCueResult(match_id, command_sha, command, inventory_sha, result_sha)
+    expected_result = (match_id, command_sha, command, inventory_sha, result_sha)
+
+    def result_epoch() -> None:
+        if (
+            type(result) is not _RESULT_TYPE
+            or any(now is not old for now, old in zip(
+                (
+                    result.matched_cue_id, result.command_sha256,
+                    result.command_text, result.cue_inventory_sha256,
+                    result.result_sha256,
+                ),
+                expected_result, strict=True,
+            ))
+        ):
+            raise OfflineCueRejected("cue result carrier changed")
+
     epoch()
-    if type(result) is not OfflineCueResult or result.result_sha256 is not result_sha:
-        raise OfflineCueRejected("cue result carrier changed")
+    result_epoch()
+    # A transcript cue is not speaker verification, recorded consent, or an
+    # execution capability. Denial-only getters are checked *before* output;
+    # they are callback boundaries, so pin the result again afterwards.
+    if (
+        result.speaker_authenticated is not False
+        or result.microphone_provenance_verified is not False
+        or result.action_authorized is not False
+        or result.consent_verified is not False
+    ):
+        raise OfflineCueRejected("cue result claims unauthenticated authority")
+    epoch()
+    result_epoch()
     return result
