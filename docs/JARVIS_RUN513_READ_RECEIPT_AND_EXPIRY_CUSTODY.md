@@ -41,3 +41,16 @@ Threat model: a benign/reflective reentrant callback mutating frozen receipt fie
 ## Next plan
 
 Check exact-head CI and fix source/test only if a genuine failure occurs; then continue durable CAS/event snapshot corroboration, Planner UNKNOWN WRITE manual-only evidence, registry-bound mock READ fixture integration after exact-head GREEN, trusted-clock audit-before-action contracts, scheduler restart duplicate prevention and scoped privacy revocation with no actual side effect.
+
+
+### Package C — proactive scheduler freshness report no-authority fence
+
+- Source commit 53bc3853ece87de03fa7473617af4935de31032c.
+- Source path src/ark/proactive_synthetic_freshness_review.py, blob c1740cca06e2c8055f9ba87e077aa4ac0bcad5eb.
+- Test commit / updated final PR #8 source+test HEAD af2cca7f6cbdd2f2719a9ac238082f203f9776e3.
+- Test path tests/test_proactive_freshness_authority_run513.py, blob 3e702ed5729b6edcf299e77ed5b354d780658fd9.
+- **10 authored pytest cases** (three authority flags each tested against True and numeric zero, three reflected-denial mutation targets, one no-effect control).
+
+A synthetic prepared scheduler marker still cannot grant real notification, Tool dispatch, or automatic replay. The result-construction validation now rejects any authority flag that is not the exact False object, then rechecks the source epoch, constructed trigger-history witness, and returned result field identities after all those getter callbacks. A local freshness receipt remains a diagnostic under caller-supplied time and policy: no notification or real-world scheduling occurs.
+
+**Revised Run513 PR #8 authored total: 41 cases** (21 READ receipt + 10 expiry + 10 scheduler). The earlier 31 count is the package A+B intermediate total only. Previous CI run 41245181320 validates only the A+B intermediate source HEAD; it does not validate this C package. Exact latest source/test CI is [run 41245451032](https://github.com/Iam-2squared/ark-ai/actions/runs/41245451032), **QUEUED at package preparation**, so there is no latest-head 6/6 GREEN claim here.
