@@ -109,11 +109,33 @@ def review_synthetic_erasure_evidence(
     blockers.append("forensic_scope_not_attested")
     blocked = tuple(blockers)
     result = SyntheticErasureAssessment(digest, blocked, epoch[1] == "absent")
+    original_absence = epoch[1] == "absent"
+
+    def assert_inert_result() -> None:
+        # A logical absence claim is NOT a deletion/forensic erasure proof.
+        # Properties are callbacks and may reflectively mutate a frozen
+        # result or the source even while returning the exact False value.
+        if (
+            type(result) is not SyntheticErasureAssessment
+            or result.evidence_digest is not digest
+            or result.blockers is not blocked
+            or type(result.logical_absence_claimed) is not bool
+            or result.logical_absence_claimed is not original_absence
+            or result.row_deletion_proven is not False
+            or result.wal_reclamation_proven is not False
+            or result.forensic_erasure_verified is not False
+            or result.cleanup_authorized is not False
+            or result.evidence_digest is not digest
+            or result.blockers is not blocked
+            or result.logical_absence_claimed is not original_absence
+        ):
+            raise SyntheticErasureRejected(
+                "erasure assessment changed or acquired authority"
+            )
+
     assert_epoch()
-    if (
-        type(result) is not SyntheticErasureAssessment
-        or result.evidence_digest is not digest
-        or result.blockers is not blocked
-    ):
-        raise SyntheticErasureRejected("erasure assessment changed during construction")
+    assert_inert_result()
+    assert_epoch()
+    assert_inert_result()
+    assert_epoch()
     return result
