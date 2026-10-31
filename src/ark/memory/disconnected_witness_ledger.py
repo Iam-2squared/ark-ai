@@ -348,8 +348,10 @@ class DisconnectedMemoryWitnessLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 observed, last = _inspect(conn)
-                # An equal-valued witness from SQLite is not necessarily an
-                # exact, non-authorizing witness at this CAS boundary.
+                # A callback may change the caller's retained authority while
+                # the SQLite row is being inspected. Check caller custody first,
+                # then independently validate the observed witness before CAS.
+                stable()
                 _check_witness(observed)
                 stable()
                 if observed != retained:
