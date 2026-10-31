@@ -174,4 +174,29 @@ def verify_local_identity_artifact(
     ):
         raise LocalIdentityArtifactRejected("identity artifact witness changed")
     assert_retained_path()
+    # Denial-only witness properties execute callbacks. A property returning
+    # False can still rewrite a field of this frozen carrier after the first
+    # identity check. Never return a post-denial mixed-epoch witness.
+    if (
+        type(result) is not _WITNESS_TYPE
+        or result.artifact_sha256 is not digest
+        or type(result.artifact_bytes) is not int
+        or result.artifact_bytes != len(raw)
+        or type(result.top_level_keys) is not tuple
+        or result.top_level_keys != tuple(sorted(parsed))
+        or any(type(key) is not str for key in result.top_level_keys)
+    ):
+        raise LocalIdentityArtifactRejected(
+            "identity artifact witness changed after authority review"
+        )
+    assert_retained_path()
+    if (
+        type(result) is not _WITNESS_TYPE
+        or result.artifact_sha256 is not digest
+        or result.artifact_bytes != len(raw)
+        or result.top_level_keys != tuple(sorted(parsed))
+    ):
+        raise LocalIdentityArtifactRejected(
+            "identity artifact witness changed during final path recheck"
+        )
     return result
