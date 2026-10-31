@@ -161,19 +161,28 @@ def review_memory_expiry_candidates(
         scope_hash, now_ms, len(selected), more, candidate_hash, fingerprint,
     )
     stable()
-    if (
-        type(report) is not _RECEIPT_TYPE
-        or report.scope_sha256 is not scope_hash
-        or report.read_at_ms is not now_ms
-        or type(report.candidate_count) is not int
-        or report.candidate_count != len(selected)
-        or type(report.has_more) is not bool
-        or report.has_more is not more
-        or report.candidate_sha256 is not candidate_hash
-        or report.preview_sha256 is not fingerprint
-        or any(getattr(report, flag) is not False for flag in _FLAGS)
+    def same_report() -> bool:
+        return (
+            type(report) is _RECEIPT_TYPE
+            and report.scope_sha256 is scope_hash
+            and report.read_at_ms is now_ms
+            and type(report.candidate_count) is int
+            and report.candidate_count == len(selected)
+            and type(report.has_more) is bool
+            and report.has_more is more
+            and report.candidate_sha256 is candidate_hash
+            and report.preview_sha256 is fingerprint
+        )
+
+    if not same_report() or any(
+        getattr(report, flag) is not False for flag in _FLAGS
     ):
         raise MemoryExpiryPreviewRejected("expiry report gained authority or changed")
+    # Authority getters are callbacks: a False result may conceal mutation
+    # of the frozen receipt or original source scope.
+    stable()
+    if not same_report():
+        raise MemoryExpiryPreviewRejected("expiry report changed after authority review")
     return report
 
 
@@ -186,7 +195,11 @@ def verify_memory_expiry_preview(
     limit: int,
     retained_preview_sha256: str,
 ) -> None:
-    """Re-read an unchanged page; no permission to perform a future purge."""
+    """Re-read a bounded page; evidence is neither erasure nor permission.
+
+    The retained digest is an independently supplied comparison value, not a
+    clock, custody proof, consent, or authorization to run a later purge.
+    """
     if (
         type(report) is not _RECEIPT_TYPE
         or type(retained_preview_sha256) is not str
@@ -194,18 +207,63 @@ def verify_memory_expiry_preview(
         or any(c not in "0123456789abcdef" for c in retained_preview_sha256)
     ):
         raise MemoryExpiryPreviewRejected("exact retained expiry fingerprint required")
+
+    source_path = store.path if type(store) is _STORE_TYPE else None
+    owner = scope.owner_id if type(scope) is _SCOPE_TYPE else None
+    namespace = scope.namespace if type(scope) is _SCOPE_TYPE else None
+
+    def stable_sources() -> None:
+        if (
+            type(store) is not _STORE_TYPE
+            or store.path is not source_path
+            or type(scope) is not _SCOPE_TYPE
+            or scope.owner_id is not owner
+            or scope.namespace is not namespace
+        ):
+            raise MemoryExpiryPreviewRejected("retained expiry source changed")
+
     expected = review_memory_expiry_candidates(
         store, scope, now_ms=now_ms, limit=limit,
     )
-    if (
-        type(report.scope_sha256) is not str
-        or type(report.read_at_ms) is not int
-        or type(report.candidate_count) is not int
-        or type(report.has_more) is not bool
-        or type(report.candidate_sha256) is not str
-        or type(report.preview_sha256) is not str
-        or report.preview_sha256 != retained_preview_sha256
-        or report != expected
-        or any(getattr(report, flag) is not False for flag in _FLAGS)
-    ):
+    stable_sources()
+
+    def exact_fields() -> bool:
+        # Never trust a replaceable dataclass __eq__ or coercible booleans.
+        return (
+            type(report) is _RECEIPT_TYPE
+            and type(report.scope_sha256) is str
+            and report.scope_sha256 == expected.scope_sha256
+            and type(report.read_at_ms) is int
+            and report.read_at_ms == expected.read_at_ms
+            and type(report.candidate_count) is int
+            and report.candidate_count == expected.candidate_count
+            and type(report.has_more) is bool
+            and report.has_more is expected.has_more
+            and type(report.candidate_sha256) is str
+            and report.candidate_sha256 == expected.candidate_sha256
+            and type(report.preview_sha256) is str
+            and report.preview_sha256 == expected.preview_sha256
+            and report.preview_sha256 == retained_preview_sha256
+        )
+
+    if not exact_fields():
         raise MemoryExpiryPreviewRejected("retained expiry preview mismatch")
+    for flag in _FLAGS:
+        if getattr(report, flag) is not False:
+            raise MemoryExpiryPreviewRejected("retained expiry preview gained authority")
+    # Even the final denial getter may mutate a frozen report, scope, or
+    # SQLite page. Check those after all callbacks, and recompute the page
+    # without granting a future TOCTOU-free deletion guarantee.
+    stable_sources()
+    if not exact_fields():
+        raise MemoryExpiryPreviewRejected("retained expiry preview changed after denial")
+    latest = review_memory_expiry_candidates(
+        store, scope, now_ms=now_ms, limit=limit,
+    )
+    stable_sources()
+    if (
+        not exact_fields()
+        or type(latest) is not _RECEIPT_TYPE
+        or latest.preview_sha256 != expected.preview_sha256
+    ):
+        raise MemoryExpiryPreviewRejected("retained expiry page changed during review")
