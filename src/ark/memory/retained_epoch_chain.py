@@ -212,5 +212,19 @@ def review_retained_memory_chain(
         or result.dispatch_authorized is not False
     ):
         raise MemorySchemaError("Memory chain result changed")
+    # Denied-authority getters can be reflected callbacks. Their final
+    # False result must not conceal a late rewrite of an observed Memory
+    # epoch or of this otherwise-valid synthetic review.
+    stable()
     stable_edges()
+    if (
+        type(result) is not _RESULT_TYPE
+        or type(result.observations) is not int
+        or result.observations != len(originals)
+        or result.scope_fingerprints is not scope_ids
+        or result.added_event_counts is not counts
+        or result.status is not status
+        or result.chain_digest is not digest
+    ):
+        raise MemorySchemaError("Memory chain result changed after authority review")
     return result
