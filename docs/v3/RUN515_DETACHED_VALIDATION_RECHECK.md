@@ -1,5 +1,11 @@
 # Run515 — Detached synthetic V3 paired-validation custody
 
+> **LATEST Run515 V3 extension (source/test HEAD `03b5b452cfe7dcfdd11371c0d21a86b0edebfda2`):** The first package's `3d28263...` below is a historical, **already 6/6 GREEN** source head in [CI 41253908564](https://github.com/Iam-2squared/ark-ai/actions/runs/41253908564), not the current final source HEAD. The new fourth cross-lane package bounds the detached-only comparison's caller-held report text *before* validation callbacks: each scalar string is at most 4096 characters, with a cumulative cap of 32768 across **both** 30-case reports. It preserves validation semantics while rejecting oversized model/case/category identities and UTF-8-invalid content. The original `ValueError` catch also handles `UnicodeError`; no redundant exception clause is needed.
+
+**Extension exact evidence:** source `src/ark/learning/detached_comparison_recheck.py` blob `574bfa59cb91c6e79b10bdda2dab34b04bcf0697`; tests `tests/v3/test_detached_comparison_text_budget_run515.py` blob `f398f62bf09fb57e7b6c26488bb0a66c8835b5df`, **7 newly authored parametrized/individual pytest cases**. Source+test latest HEAD `03b5b452cfe7dcfdd11371c0d21a86b0edebfda2`. The added input limit is for this independent, read-only verifier only; V3 Contract and underlying validation scorer are unchanged. This exact head's CI was not yet complete when this amendment was prepared; do not treat first package CI as newest source-head evidence. No Candidate, training, protected V2 opening, model/PC operation, paid API, billing approval or merge.
+
+---
+
 **Status:** validation-only, free-only local fixture work. V3, ARK, JARVIS: **NOT_PASSED**. PR #5 remains Draft and unmerged. No training, Candidate weight generation, external GPU or protected V2 evaluation.
 
 ## Exact work basis and file custody
