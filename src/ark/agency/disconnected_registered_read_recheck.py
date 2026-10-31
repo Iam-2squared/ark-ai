@@ -130,19 +130,40 @@ def verify_disconnected_registered_read_receipt(
     except (DisconnectedReadPreflightRejected, KeyError, TypeError, ValueError) as exc:
         raise DisconnectedReadReceiptRejected("fresh registry READ review denied") from exc
     stable()
-    if (
-        type(expected) is not _RECEIPT
-        or any(
-            type(field) is not str
-            for field in receipt_epoch
-        )
-        or (
-            expected.registry_revision, expected.bound_action_id,
-            expected.request_id, expected.tool_name, expected.capability,
-        ) != receipt_epoch
-        or any(getattr(expected, flag) is not False for flag in _FLAGS)
+    if type(expected) is not _RECEIPT or any(
+        type(field) is not str for field in receipt_epoch
     ):
         raise DisconnectedReadReceiptRejected("retained READ binding differs")
+    expected_epoch = (
+        expected.registry_revision, expected.bound_action_id,
+        expected.request_id, expected.tool_name, expected.capability,
+    )
+
+    def expected_stable() -> None:
+        fields = (
+            expected.registry_revision, expected.bound_action_id,
+            expected.request_id, expected.tool_name, expected.capability,
+        )
+        if (
+            type(expected) is not _RECEIPT
+            or fields != receipt_epoch
+            or any(current is not initial for current, initial in zip(
+                fields, expected_epoch, strict=True,
+            ))
+            or any(getattr(expected, flag) is not False for flag in _FLAGS)
+            # Re-read after the LAST descriptor: a getter may have altered
+            # the previously examined ID but returned the exact False.
+            or any(current is not initial for current, initial in zip(
+                (
+                    expected.registry_revision, expected.bound_action_id,
+                    expected.request_id, expected.tool_name, expected.capability,
+                ), expected_epoch, strict=True,
+            ))
+        ):
+            raise DisconnectedReadReceiptRejected("retained READ binding differs")
+
+    expected_stable()
     stable()
-    # The last step intentionally returns no token, receipt or dispatch hook.
+    expected_stable()
+    # No execution token, receipt, or dispatch hook is returned.
     return None
