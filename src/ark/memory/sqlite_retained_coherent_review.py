@@ -115,6 +115,8 @@ def review_retained_coherent_memory(
                 raise MemoryCoherentHistoryRejected(
                     "retained source/witness changed during coherent read"
                 )
+        except MemoryCoherentHistoryRejected:
+            raise
         except MemorySchemaError as exc:
             raise MemoryCoherentHistoryRejected("retained witness changed") from exc
 
