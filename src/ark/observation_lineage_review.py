@@ -171,4 +171,30 @@ def review_synthetic_observation_lineage(
         raise SyntheticObservationLineageRejected(
             "observation lineage result changed during construction"
         )
+    # Denial-property getters are callbacks. A reflected getter may return
+    # False while rewriting the result or any original observation after the
+    # preceding epoch check. No post-denial mixed epoch may escape.
+    assert_epoch()
+    if (
+        type(result) is not _LINEAGE_RESULT_TYPE
+        or result.privacy_scope is not privacy_scope
+        or result.checked_at_ms is not now_ms
+        or type(result.observation_count) is not int
+        or result.observation_count != len(envelopes)
+        or result.lineage_digest is not digest
+    ):
+        raise SyntheticObservationLineageRejected(
+            "observation lineage result changed after authority review"
+        )
+    assert_epoch()
+    if (
+        type(result) is not _LINEAGE_RESULT_TYPE
+        or result.privacy_scope is not privacy_scope
+        or result.checked_at_ms is not now_ms
+        or result.observation_count != len(envelopes)
+        or result.lineage_digest is not digest
+    ):
+        raise SyntheticObservationLineageRejected(
+            "observation lineage result changed during final epoch check"
+        )
     return result
