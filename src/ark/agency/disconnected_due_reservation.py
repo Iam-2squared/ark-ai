@@ -299,10 +299,9 @@ class DisconnectedDueReservations:
         def assert_retained_epoch() -> None:
             # The retained witness must remain non-authorizing throughout
             # every callback/transaction boundary, not just at entry.
-            _check_witness(retained)
-            # The frozen witness is still reflectively mutable; a callback
-            # replacing its hash with a distinct equal-valued string is a
-            # different custody epoch even when SQLite contents match.
+            # Report a changed custody *carrier* before checking semantic
+            # validity. Both must fail closed; this distinction also makes a
+            # float/count substitution unambiguously a custody-epoch drift.
             if (
                 type(retained) is not _WITNESS_TYPE
                 or retained.count is not prior_epoch[0]
@@ -310,6 +309,7 @@ class DisconnectedDueReservations:
                 or self._path is not path_epoch
             ):
                 raise DueReservationRejected("retained due custody changed")
+            _check_witness(retained)
 
         assert_retained_epoch()
         identity = "slot_" + hashlib.sha256(
