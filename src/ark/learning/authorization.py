@@ -110,6 +110,29 @@ def build_preflight_authorization_packet(snapshot: dict) -> dict:
     return packet
 
 
+
+def _write_new_authorization_packet(path: Path, packet: dict) -> None:
+    """Save review-only JSON, rejecting known path aliases before exclusive create.
+
+    This is not an atomic directory-fd traversal or approval to spend money.
+    The payload is generated without opening any execution or evaluation gate.
+    """
+    if (
+        type(path) is not type(Path("."))
+        or ".." in path.parts
+        or len(str(path)) > 4096
+        or path.name in ("", ".", "..")
+        or path.exists()
+        or path.is_symlink()
+        or not path.parent.is_dir()
+        or any(parent.is_symlink() for parent in path.parents)
+    ):
+        raise ValueError("authorization packet output must be a new non-aliased file")
+    data = canonical_json(packet)
+    with path.open("xb") as handle:
+        handle.write(data)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build ARK V3 preflight authorization packet")
     parser.add_argument("--snapshot", type=Path, required=True)
@@ -120,8 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     if output.exists() or output.is_symlink() or not output.parent.is_dir():
         raise ValueError("authorization packet output must be a new file")
     packet = build_preflight_authorization_packet(load_snapshot(args.snapshot))
-    with output.open("xb") as handle:
-        handle.write(canonical_json(packet))
+    _write_new_authorization_packet(output, packet)
     print(f"packet_sha256={packet['packet_sha256']}")
     return 0
 
