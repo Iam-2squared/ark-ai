@@ -107,9 +107,7 @@ def build_offline_write_triage_packet(
         if (
             ledger._path is not original_path
             or plan_id is not original_plan
-            or steps is not original_steps and any(
-                now is not first for now, first in zip(steps, original_steps)
-            )
+            or steps is not original_steps
             or type(retained) is not WriteSlotLedgerWitness
             or retained.count is not previous_count
             or retained.chain_sha256 is not previous_chain
