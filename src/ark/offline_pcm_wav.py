@@ -179,4 +179,22 @@ def inspect_local_pcm_wav(request: OfflineWaveRequest) -> OfflineWaveReview:
     ):
         raise OfflineWaveRejected("constructed WAV review changed or claims authority")
     check_epoch()
+    # A False-returning property may still mutate the exact frozen result
+    # through object.__setattr__. The first field checks preceded those
+    # authority probes, so repeat them after the final authority getter.
+    if (
+        type(result) is not _REVIEW_TYPE
+        or result.owner_sha256 is not owner
+        or result.privacy_sha256 is not privacy
+        or result.wav_sha256 is not expected_hash
+        or result.pcm_sha256 is not pcm_sha
+        or result.channel_count is not channels
+        or result.sample_rate_hz is not sample_rate
+        or result.bits_per_sample is not bits
+        or result.frame_count is not frame_count
+        or result.duration_ms_floor is not milliseconds
+        or result.duration_ms_remainder is not remainder
+    ):
+        raise OfflineWaveRejected("constructed WAV review changed after authority review")
+    check_epoch()
     return result
