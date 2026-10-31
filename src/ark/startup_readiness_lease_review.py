@@ -216,4 +216,43 @@ def review_synthetic_startup_lease(
         raise SyntheticStartupLeaseRejected(
             "readiness result changed during construction"
         )
+
+    # A readiness receipt is diagnostic, never permission to start a backend.
+    # Check every denial property before return; property callbacks may still
+    # reflectively retarget the frozen result, required probes or source graph.
+    # A post-constructor check alone cannot detect a False-returning getter
+    # that changes these inputs after its first inspection.
+    receipt_epoch = (
+        result.snapshot_digest, result.required_components,
+        result.captured_at_ms, result.checked_at_ms,
+    )
+
+    def assert_result_epoch() -> None:
+        if (
+            type(result) is not SyntheticStartupLeaseReview
+            or any(current is not previous for current, previous in zip(
+                (
+                    result.snapshot_digest, result.required_components,
+                    result.captured_at_ms, result.checked_at_ms,
+                ),
+                receipt_epoch, strict=True,
+            ))
+        ):
+            raise SyntheticStartupLeaseRejected("readiness receipt epoch changed")
+
+    for flag in (
+        "startup_authorized", "dispatch_authorized", "notification_authorized",
+    ):
+        if getattr(result, flag) is not False:
+            raise SyntheticStartupLeaseRejected("readiness receipt gained authority")
+        assert_result_epoch()
+        assert_epoch()
+        assert_requirements()
+
+    # The last integrity callback also executes Python code; close all epochs
+    # after it, without confusing a READY probe with actual startup authority.
+    snapshot._assert_integrity()
+    assert_epoch()
+    assert_requirements()
+    assert_result_epoch()
     return result
