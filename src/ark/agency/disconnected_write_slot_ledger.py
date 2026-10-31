@@ -218,6 +218,7 @@ class DisconnectedWriteSlotLedger:
         source = self._path
 
         def stable() -> None:
+            _check_witness(retained)
             if (
                 self._path is not source
                 or type(retained) is not _WITNESS_TYPE
@@ -232,6 +233,7 @@ class DisconnectedWriteSlotLedger:
             conn.execute("BEGIN")
             try:
                 actual = _inspect(conn)
+                _check_witness(actual)
                 stable()
                 if actual != retained or original != (retained.count, retained.chain_sha256):
                     raise WriteSlotLedgerRejected("stale or changed retained history")
@@ -240,6 +242,7 @@ class DisconnectedWriteSlotLedger:
                 conn.rollback()
                 raise
         stable()
+        _check_witness(actual)
         return actual
 
     def reserve_many(
@@ -262,6 +265,9 @@ class DisconnectedWriteSlotLedger:
                 raise WriteSlotLedgerRejected("invalid synthetic reservation claim")
 
         def stable() -> None:
+            # A retained witness is never authority. Re-check its denied
+            # capability flag at every re-entrant SQLite boundary.
+            _check_witness(retained)
             if (
                 self._path is not source
                 or type(retained) is not _WITNESS_TYPE
@@ -289,6 +295,7 @@ class DisconnectedWriteSlotLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 current = _inspect(conn)
+                _check_witness(current)
                 stable()
                 if current != retained:
                     raise WriteSlotLedgerRejected("stale or rolled-back reservation witness")
@@ -301,7 +308,9 @@ class DisconnectedWriteSlotLedger:
                                  (seq, slot, plan, step, request, chain))
                     current = WriteSlotLedgerWitness(seq, chain)
                 stable()
-                if _inspect(conn) != current:
+                inspected = _inspect(conn)
+                _check_witness(inspected)
+                if inspected != current:
                     raise WriteSlotLedgerRejected("reservation append lost integrity")
                 stable()
                 committed_witness = (current.count, current.chain_sha256)
@@ -316,6 +325,7 @@ class DisconnectedWriteSlotLedger:
         # reflective mutation changes a claim, retained witness or receipt,
         # fail closed without pretending that rolling back is still possible.
         stable()
+        _check_witness(current)
         receipt = WriteSlotReservationReceipt(len(saved), current)
         stable()
         if (
