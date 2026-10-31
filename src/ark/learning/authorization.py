@@ -133,6 +133,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     """
     if (
         type(path) is not type(Path("."))
+        or not path.is_absolute()
         or ".." in path.parts
         or len(str(path)) > 4096
         or path.name in ("", ".", "..")
@@ -142,9 +143,18 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
         or any(parent.is_symlink() for parent in path.parents)
     ):
         raise ValueError("authorization packet output must be a new non-aliased file")
+    # A serializer callback must not make the reviewed JSON tree differ
+    # from the exact bytes that will be exclusively created on disk.
+    # This is local custody only: not approval, atomic directory traversal,
+    # or a guarantee against an adversarial filesystem writer.
+    if type(packet) is not dict:
+        raise ValueError("exact authorization packet mapping required")
+    epoch = _pin_json_tree(packet)
     data = canonical_json(packet)
+    _assert_json_tree_epoch(packet, epoch)
     with path.open("xb") as handle:
         handle.write(data)
+    _assert_json_tree_epoch(packet, epoch)
 
 
 def main(argv: list[str] | None = None) -> int:
