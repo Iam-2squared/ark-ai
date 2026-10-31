@@ -148,7 +148,7 @@ def inspect_local_identity_bundle(
         components.append((name, sha, witness.artifact_bytes, witness.top_level_keys))
     # A component can be replaced while inspecting another file. All files
     # must still match the original independent pins at the end of the scan.
-    for (name, path, sha), witness in zip(captured, first_pass, strict=True):
+    for (_, path, sha), witness in zip(captured, first_pass, strict=True):
         stable()
         try:
             repeated = verify_local_identity_artifact(path, retained_sha256=sha)
