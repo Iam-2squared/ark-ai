@@ -214,6 +214,11 @@ def verify_local_identity_bundle(
         or _SHA.fullmatch(retained_bundle_sha256) is None
     ):
         raise LocalIdentityBundleRejected("exact bundle and retained root required")
+    # Capture the original report carriers BEFORE any component verifier
+    # callback. Matching values or local SHA-256 bytes cannot excuse a
+    # reflected replacement by an equal-valued new tuple/string mid-review.
+    original_components = report.components
+    original_report_digest = report.bundle_sha256
     original_pins = tuple(pins) if type(pins) is tuple else ()
     pinned_fields = tuple(
         (pin.name, pin.path, pin.retained_sha256)
@@ -247,6 +252,8 @@ def verify_local_identity_bundle(
     def exact_report() -> bool:
         if (
             type(report) is not _WITNESS_TYPE
+            or report.components is not original_components
+            or report.bundle_sha256 is not original_report_digest
             or type(report.bundle_sha256) is not str
             or report.bundle_sha256 != retained_bundle_sha256
             or report.bundle_sha256 != expected.bundle_sha256
