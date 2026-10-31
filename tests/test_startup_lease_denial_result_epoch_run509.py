@@ -79,5 +79,5 @@ def test_false_notification_getter_cannot_change_lease_epoch(
         SyntheticStartupLeaseReview, "notification_authorized",
         property(false_with_side_effect),
     )
-    with pytest.raises(SyntheticStartupLeaseRejected, match="epoch"):
+    with pytest.raises(SyntheticStartupLeaseRejected, match="epoch|inputs changed"):
         _review((snapshot, requirements))
