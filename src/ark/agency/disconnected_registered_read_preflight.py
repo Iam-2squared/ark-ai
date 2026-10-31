@@ -138,24 +138,40 @@ def review_disconnected_registered_read(
     except (KeyError, PermissionDenied, TypeError, ValueError) as exc:
         raise DisconnectedReadPreflightRejected("registered READ preflight denied") from exc
 
-    report = _REPORT(
+    report_epoch = (
         before.registry_revision, before.bound_action_id, request_id,
         before.registration.name, before.registration.capability,
     )
+    report = _REPORT(*report_epoch)
+
+    def stable_report() -> None:
+        # Authority descriptors are callbacks, not plain stored booleans.
+        # Recheck the ORIGINAL field carriers *after* the final callback;
+        # a frozen dataclass may still be reflectively rewritten.
+        if type(report) is not _REPORT:
+            raise DisconnectedReadPreflightRejected("preflight report gained authority")
+        def same_fields() -> bool:
+            return all(
+                value is initial for value, initial in zip(
+                    (
+                        report.registry_revision, report.bound_action_id,
+                        report.request_id, report.tool_name, report.capability,
+                    ), report_epoch, strict=True,
+                )
+            )
+        if (
+            not same_fields()
+            or report.backend_dispatched is not False
+            or report.external_read_authorized is not False
+            or report.write_authorized is not False
+            or report.trusted_clock_verified is not False
+            or report.durable_permission_proven is not False
+            or not same_fields()
+        ):
+            raise DisconnectedReadPreflightRejected("preflight report gained authority")
+
     stable_inputs()
-    if (
-        type(report) is not _REPORT
-        or report.registry_revision is not before.registry_revision
-        or report.bound_action_id is not before.bound_action_id
-        or report.request_id is not request_id
-        or report.tool_name is not before.registration.name
-        or report.capability is not before.registration.capability
-        or report.backend_dispatched is not False
-        or report.external_read_authorized is not False
-        or report.write_authorized is not False
-        or report.trusted_clock_verified is not False
-        or report.durable_permission_proven is not False
-    ):
-        raise DisconnectedReadPreflightRejected("preflight report gained authority")
+    stable_report()
     stable_inputs()
+    stable_report()
     return report
