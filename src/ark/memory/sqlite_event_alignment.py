@@ -105,9 +105,20 @@ def review_memory_event_alignment(
                     owner, namespace = record.scope.owner_id, record.scope.namespace
                     current[record.memory_id] = (owner, namespace, record.revision)
                     scopes.add((owner, namespace))
+                    # A snapshot fingerprint must cover the entire validated
+                    # persisted row, not just the identity/revision/content
+                    # digest. Otherwise expiry, metadata, or timestamps could
+                    # change while the audit fingerprint stayed identical.
+                    # Only a SHA-256 commitment, never plaintext metadata,
+                    # is included in the returned review.
+                    metadata_sha = hashlib.sha256(
+                        row["metadata_json"].encode("utf-8")
+                    ).hexdigest()
                     _charge(digest, (
                         "row", record.memory_id, owner, namespace, record.source_id,
-                        record.revision, record.content_sha256,
+                        record.revision, record.content_sha256, metadata_sha,
+                        record.created_at_ms, record.updated_at_ms,
+                        record.expires_at_ms,
                     ))
                 lifecycle: dict[str, tuple[str, str, int, bool]] = {}
                 count = 0
