@@ -1,51 +1,50 @@
 # ARK AI — Canonical Project Status
 
-**LATEST — 2026-10-31 / Run494: four free-only packages, 32 new parameter-expanded tests, two CI regression fixes.**
+**LATEST — 2026-10-31 / Run495: four free-only packages, 14 new pytest functions / 18 expanded cases; V3 Windows regression repaired and verified 6/6.**
 
-**Saved at:** **2026-10-31T12:47:21+09:00 Asia/Tokyo/JST**, measured from the local-time source before this GitHub Contents write, **not a trusted/attested clock**.
+**Saved at:** **2026-10-31T13:51:40+09:00 Asia/Tokyo/JST** (local-time source read immediately before this Contents write; **not** a trusted or attested clock).
 
-**Overall ARK/JARVIS: NOT_PASSED.** Isolated reversible local/mock architectural foundations continue; no JARVIS end-to-end PASS, actual Tool execution, authenticated cross-store custody, genuine user consent, protected V2 evaluation, authorized Candidate, or human review is claimed.
+**Overall ARK/JARVIS: NOT_PASSED.** Local, detached/mock foundations are advancing; no end-to-end JARVIS PASS, authenticated independent SQLite custody, real execution, user consent, model Candidate, protected V2 final evaluation, or human review is established.
 
 ## LATEST branch and SHA provenance
 
-- **JARVIS foundations:** [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`, OPEN / DRAFT / UNMERGED. Run494 **initial work-basis HEAD** `e3a509eea4e3c67ec175399b402932b3edd0cdaa` (Run493 checkpoint). Final source/test HEAD `8e9fcccf5112617bf49ad6b6547ca5564d81dbb8`. Technical-report and **checkpoint-write-basis HEAD** `6e8961a3b4144a8c24e84fa3e3ee7ba5cd0bf1fa`. The checkpoint-result HEAD cannot appear inside its own contents without circular reference: the GitHub Contents write result plus subsequent head read establishes it.
-- **V3 independent branch:** [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`, OPEN / DRAFT / UNMERGED. Initial Run494 HEAD `7bd2ad6450c3a887351705f11054313de49c809c`; final source/test/fix HEAD `ebc83999d83fb108db08be67fea0ece178523f90`.
-- **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged. No merges, force-pushes, raw Git-object safety bypass, deletion, physical-PC operation or irreversible action.
-- Detailed code/test/CI provenance: [Run494 technical report](JARVIS_EPOCH_CONTEXT_SCHEMA_V3_SNAPSHOT_RUN494.md), saved on PR #8 as `6e8961a3b4144a8c24e84fa3e3ee7ba5cd0bf1fa`.
+- **JARVIS foundations:** [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`, OPEN / DRAFT / UNMERGED. **Initial invocation work-basis HEAD** `5ec2ed88d09f44b7ecddbcc7cb4db111118b6bf8` (Run494 checkpoint). **Final source/test HEAD** `fb8843bd331fae3f122b878be0a97aaa02c1a575`. **Checkpoint-write-basis HEAD** `be65aacb4b2b986a659cb33da93e1b37eda60928` (Run495 technical report). **Checkpoint-result HEAD** is the new commit from the GitHub Contents write, verified with a subsequent branch read, not asserted by a self-referential SHA inside the checkpoint.
+- **V3 independent:** [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`, OPEN / DRAFT / UNMERGED. Initial invocation HEAD `ebc83999d83fb108db08be67fea0ece178523f90`. **Final source/test HEAD** `c42521c16b7d52cd39c4c2aff413ab001c321b29`.
+- **main** `7a843f17eb96ed13d66f23b58b06406b3002e405`, no changes by this invocation.
+- Full code/test provenance: [Run495 technical report](JARVIS_RECOVERY_CONTEXT_PNG_V3_CUSTODY_RUN495.md), saved as `be65aacb4b2b986a659cb33da93e1b37eda60928`.
 
-## NEW work in this invocation (4 independently scoped packages)
+## NEW work this invocation — four independent, reversible packages
 
-1. **Memory/Planner cross-store epoch-vector denial:** `src/ark/disconnected_epoch_vector.py`; reject reflected same-type result authority on capture, progress review, disclosure, dispatch, trusted time and custody. Source `8577529209502337d875b4aae000786c5af4ceb1`, test `e3bc7f39ba83c3c72971e5cd716563a37a8bf332` (11 new cases). Old exact-type diagnostic restored after CI detection via `8e9fcccf5112617bf49ad6b6547ca5564d81dbb8`.
-2. **Privacy Context membership:** `src/ark/offline_context_membership_guard.py`; reflectively forged consent/retention/export/time authorization is rejected, unchanged no-content decision. Source `837ebd5c98857fc71960ac783a9043027d8f1037`, test `c96d92f6b63dc6b7336603811325dd5bced58c63` (5 cases).
-3. **Read-only SQLite startup metadata seal:** `src/ark/disconnected_sqlite_schema_probe.py`; capture and compare require non-authorizing exact seal descriptors, not merely matching hashes. Source `b7f710f2679ed9730b0203aaf33e49cd1b534d44`, test `a77c6111f8e17c592284c2fa761c36b98065d23c` (11 cases).
-4. **V3 local identity inventory:** `src/ark/learning/identity.py`; bounded local snapshot enumeration before sorting, relative path UTF-8 limits; no network/weight creation. Source `8e73a863c9be86f9b5d6516f8dea611ce29996d2`, test `f86f7fc63d996a9b8d128cf89bbe355e697e72d1` (5 cases). Ruff I001 blank-line regression corrected via `ebc83999d83fb108db08be67fea0ece178523f90`.
+1. **V3 file/hash portability:** `src/ark/learning/lineage.py`, source `a3fb7ba1d60e6ca77dbb82bac31244d20b288b4c`; tests `c42521c16b7d52cd39c4c2aff413ab001c321b29` (3 functions/cases). Windows pathname/descriptor ctime semantics no longer falsely reject a stable file, while same-file identity, size, mtime, link-count and intra-source metadata changes remain guarded. One previous Windows Python 3.13 CI regression resolved.
+2. **Planner mixed READ/WRITE restart quarantine:** `src/ark/agency/disconnected_write_recovery_fence.py`, source `4efc312a9e8aaec7baf156ca1de43c8c7cc62d6b`, tests `af8d2b56a322730ef85ee7d0abb0a2b71e45cc18` (3 cases). Recheck original step/disposition/report after reflected result permission getters. UNKNOWN/RUNNING WRITE stays quarantined.
+3. **Privacy-safe Personal Context:** `src/ark/offline_context_membership_guard.py`, source `61c0404d6c88bcb3f6ae9a39eab22a8b7dedaab1`, tests `0859da4e9bf1adef47bf518dab018eaa7a00d4f2` (2 functions/3 cases). Late revocation, record expiry and forged result SHA are rejected after result getter evaluation.
+4. **Offline PNG observation fixture:** `src/ark/offline_png_inventory.py`, source `5d26550f63c1cc1cbd046636d7e37e6de61d21a0`, tests `fb8843bd331fae3f122b878be0a97aaa02c1a575` (6 functions/9 cases). Exact result metadata, denied sensor/consent/disclosure authority and post-construction request/result custody now checked. No camera, image decode, or content release.
 
-**Total: 12 new pytest functions, 32 expanded cases.** Tests are not counted as passing until the exact final source HEAD completes the GitHub Actions matrix.
+**Total NEW: 14 pytest functions, 18 expanded cases.** The new PR #8 tests are not counted as GREEN before their exact-head CI completes.
 
-## CI and tests — strict exact-source evidence
+## CI / tests — exact source HEAD only
 
-- **Previous PR #8 Run493 source** `b3a9c941ee80c768ed8e9db0a69d4195c18dae7d`: run [#1771 / 41161548147](https://github.com/Iam-2squared/ark-ai/actions/runs/41161548147), **6/6 GREEN** verified per job.
-- **Earlier Run494 PR #8 epoch source/test:** [41165494597](https://github.com/Iam-2squared/ark-ai/actions/runs/41165494597), **FAIL** (Ubuntu 3.12: 5,165 pass, one failure on old `exact vector` diagnostic). Existing test retained, source repaired.
-- **PR #8 final Run494 source/test HEAD** `8e9fcccf5112617bf49ad6b6547ca5564d81dbb8`: [41165783405](https://github.com/Iam-2squared/ark-ai/actions/runs/41165783405), **6 matrix jobs QUEUED at last check**, not GREEN. Later documentation/checkpoint-only commits do not prove a new source revision.
-- **Previous PR #5 Run493 source** `7bd2ad6450c3a887351705f11054313de49c809c`: run [#1767 / 41161362307](https://github.com/Iam-2squared/ark-ai/actions/runs/41161362307), **6/6 GREEN**.
-- **Earlier Run494 PR #5 source/test** [41165540546](https://github.com/Iam-2squared/ark-ai/actions/runs/41165540546): **FAIL 6/6 jobs** from Ruff I001 spacing; fixed without weakening tests.
-- **PR #5 final Run494 source/test HEAD** `ebc83999d83fb108db08be67fea0ece178523f90`: [41165719631](https://github.com/Iam-2squared/ark-ai/actions/runs/41165719631), **1/6 GREEN, one running, four queued** at last check; not full GREEN.
-- Independent local full pytest/Ruff: **NOT VERIFIED** (direct GitHub network DNS unavailable). No duplicate manual workflow dispatch.
+- **Previous PR #8 Run494 source** `8e9fcccf5112617bf49ad6b6547ca5564d81dbb8`: [#1783 / 41165783405](https://github.com/Iam-2squared/ark-ai/actions/runs/41165783405) **6/6 GREEN**, reverified on all Ubuntu/Windows Python 3.11–3.13 jobs; last checkpoint #1785 also 6/6 GREEN.
+- **Previous PR #5 Run494 source** `ebc83999d83fb108db08be67fea0ece178523f90`: [#1782 / 41165719631](https://github.com/Iam-2squared/ark-ai/actions/runs/41165719631) **FAIL 1/6**, Windows Python 3.13 ordinary file rejected by pathname/handle ctime mismatch; source repaired without dropping tests.
+- **Current PR #5 Run495 final source/test** `c42521c16b7d52cd39c4c2aff413ab001c321b29`: [#1787 / 41169960149](https://github.com/Iam-2squared/ark-ai/actions/runs/41169960149) **6/6 GREEN**, verified job-by-job.
+- **Current PR #8 Run495 final source/test** `fb8843bd331fae3f122b878be0a97aaa02c1a575`: [#1793 / 41170158527](https://github.com/Iam-2squared/ark-ai/actions/runs/41170158527), **1 job IN PROGRESS + 5 QUEUED at last job read**, not GREEN. Earlier independent Planner #1789, Context #1791 and PNG-source #1792 also running or queued. Report-only [#1794 / 41170205011](https://github.com/Iam-2squared/ark-ai/actions/runs/41170205011) **6 QUEUED**, not source proof.
+- Independent full local pytest/Ruff: **NOT VERIFIED** (container direct git DNS unavailable). No manual duplicate workflow runs.
 
-## Frozen and authorization boundaries (unchanged)
+## Frozen contracts/evidence and authorization boundaries — unchanged
 
-- Memory v1 contract `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`; Agency v1 contract `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`.
-- Frozen V3 `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23` and companion hash blob `176154514bd6be22685ca0555bc682c3bd8d45dc`, freshly confirmed unchanged. Preserve V1/V2/Local UI/Launcher evidence, V2 final suite, Experiment 001 and all contamination/provenance/regression/reproducibility gates.
-- No external/paid GPU, paid APIs, billable services, paid compute, credentials/secrets/account connections, real Candidate/adapters/weights, protected V2 suite, Candidate promotion, real Tool execution, user-consent action, destructive operations, main merge or hardware action.
-- SQLite hashes and local snapshots are not independent writer attestation, genuine cross-database atomic snapshots, trusted clocks, human authorizations or exactly-once real-world outcomes. UNKNOWN/RUNNING WRITE remains quarantined. V3 remains Draft and awaits authentic identities, human dataset review, cost cap and explicit gates.
+- Frozen Memory v1 `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`, Agency v1 `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`.
+- Frozen V3 `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23` and companion hash-file blob `176154514bd6be22685ca0555bc682c3bd8d45dc`; all four re-read unchanged. V1/V2/Local UI/Launcher gates and evidence retained.
+- **No paid/external compute, paid API, GPU training, real Candidate/weight generation, protected V2 final suite, promotion, external Tool execution, account connection, secrets, irreversible action, main merge, or frozen-contract change.** PR #5 remains Draft/unmerged under its controlling gate; PR #8 likewise Draft/unmerged.
+- Detached local hashes/SQLite witnesses do **not** prove an independent writer, consent, trusted time, coherent cross-store atomicity, or a real-world outcome. UNKNOWN WRITE retains fail-closed quarantine. PR #5 still lacks authorized human review/real identities/cost approval.
 
 ## Next plan / 今後の方針
 
-1. Confirm exact-head six-job CI for PR #8 `8e9fcc...` and PR #5 `ebc839...`. If failures occur, inspect logs, repair only affected semantics through the normal permitted path, and perform independent work while CI runs.
-2. Advance Memory CAS, event history, independent coherent-state checks; Planner registry-bound identities, terminal propagation and manual UNKNOWN WRITE recovery; trusted-clock audit-before-action and occurrence/replay protection.
-3. Extend Scheduler durable replay fencing, Personal Context revocation/expiry/consent veto and offline Observation fixtures, testing lower-level gates before integration.
-4. Continue V3 local identity, manifest/provenance, reproducibility and approval guards, without paid compute, protected final evaluation, Candidate promotion or main merge.
+1. **CI closure:** confirm #1793 and the final checkpoint run's six jobs; investigate any failures at the exact commit and repair smallest source/test issue through the normal permitted path. No redundant workflow re-dispatch.
+2. **Memory:** schema, row/event integrity, CAS concurrency, expiry, independently retained tip evidence and coherent state diagnostics.
+3. **Planner and Agency:** manual UNKNOWN WRITE recovery diagnostics, immutable registry identities, exact-type permissions, trusted-clock audit-before-action and occurrence/replay fencing; integration only after lower-level exact-head GREEN.
+4. **Personal Context, Scheduler and multimodal:** independent revocation/retention veto, durable due/replay gates, disconnected observation fixtures; preserve no-sensor/no-disclosure defaults.
+5. **V3 free lane:** local identity/provenance/reproducibility/approval guards only; do not open the protected V2 evaluation or initiate real training.
 
 ---
 
-**Previous intact historical checkpoint:** [Run493 `e3a509eea4e3c67ec175399b402932b3edd0cdaa`](https://github.com/Iam-2squared/ark-ai/blob/e3a509eea4e3c67ec175399b402932b3edd0cdaa/docs/PROJECT_STATUS.md). Previous Run493 technical report and archived Run487–492 evidence remain in GitHub history and `docs/history/`; none of the frozen contracts or old evidence files were rewritten.
+**Prior intact latest checkpoint:** [Run494 at `5ec2ed88d09f44b7ecddbcc7cb4db111118b6bf8`](https://github.com/Iam-2squared/ark-ai/blob/5ec2ed88d09f44b7ecddbcc7cb4db111118b6bf8/docs/PROJECT_STATUS.md). Earlier statuses and Run487–494 reports remain in git history/docs; no frozen or historical evidence rewritten.
