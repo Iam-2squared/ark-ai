@@ -162,6 +162,11 @@ def review_synthetic_observation_lineage(
         or result.checked_at_ms is not now_ms
         or result.observation_count != len(envelopes)
         or result.lineage_digest is not digest
+        # A real DTO with reflected property changes is just as unsafe as an
+        # injected lookalike. Local lineage evidence never grants access.
+        or result.media_capture_authorized is not False
+        or result.disclosure_authorized is not False
+        or result.dispatch_authorized is not False
     ):
         raise SyntheticObservationLineageRejected(
             "observation lineage result changed during construction"
