@@ -191,12 +191,14 @@ class DisconnectedScheduleQuarantineLedger:
             raise ScheduleQuarantineRejected("exact create flag required")
         self._path = _path(path, create=create)
         self._epoch = _policy_epoch(policy)
-        mode = "rwc" if create else "rw"
+        # Existing-ledger startup is inspection-only. Do not reserve a
+        # SQLite writer slot or permit mutation merely to validate a restart.
+        mode = "rwc" if create else "ro"
         with closing(sqlite3.connect(
             self._path.as_uri() + "?mode=" + mode, uri=True,
             isolation_level=None, timeout=10,
         )) as conn:
-            conn.execute("BEGIN IMMEDIATE")
+            conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
                     if (conn.execute("PRAGMA user_version").fetchone() != (0,)
