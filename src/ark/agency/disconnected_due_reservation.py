@@ -204,7 +204,8 @@ class DisconnectedDueReservations:
                         raise DueReservationRejected("unversioned nonempty due ledger")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
-                _inspect(conn)
+                inspected, _ = _inspect(conn)
+                _check_witness(inspected)
                 if self._path is not path:
                     raise DueReservationRejected("due ledger path changed")
                 conn.commit()
@@ -230,6 +231,7 @@ class DisconnectedDueReservations:
             conn.execute("BEGIN")
             try:
                 actual, _ = _inspect(conn)
+                _check_witness(actual)
                 if (
                     type(retained) is not _WITNESS_TYPE
                     or retained.count is not epoch[0]
@@ -258,9 +260,13 @@ class DisconnectedDueReservations:
             conn.execute("BEGIN")
             try:
                 result, _ = _inspect(conn)
+                _check_witness(result)
                 if self._path is not source:
                     raise DueReservationRejected("due ledger source changed during read")
                 conn.commit()
+                _check_witness(result)
+                if self._path is not source:
+                    raise DueReservationRejected("due ledger source changed after read")
                 return result
             except BaseException:
                 conn.rollback()
@@ -305,6 +311,7 @@ class DisconnectedDueReservations:
             assert_retained_epoch()
             try:
                 current, last = _inspect(conn)
+                _check_witness(current)
                 assert_retained_epoch()
                 if current != retained:
                     raise DueReservationRejected("stale or rewritten due ledger")
@@ -318,6 +325,7 @@ class DisconnectedDueReservations:
                      due_at_ms, observed_now_ms),
                 )
                 result, _ = _inspect(conn)
+                _check_witness(result)
                 assert_retained_epoch()
                 if (
                     type(result) is not _WITNESS_TYPE
