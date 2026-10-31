@@ -221,4 +221,17 @@ def review_disconnected_recovery_fence(
         or review.external_outcome_verified is not False
     ):
         raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
+    # Result descriptors are invoked code, not inert persisted evidence.
+    # A reflected property can return False while rewriting a claim,
+    # disposition, or even this frozen result in its getter. Recheck all
+    # original carriers *after* the final authority-property inspection.
+    epoch()
+    stable_decisions()
+    if (
+        type(review) is not _FENCE_TYPE
+        or review.plan_id is not plan_id
+        or review.decisions is not frozen
+        or review.digest is not digest
+    ):
+        raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
     return review
