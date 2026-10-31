@@ -83,3 +83,56 @@ def test_string_subclass_and_path_subclass_not_accepted_as_identity(tmp_path):
 
     with pytest.raises(ValueError, match="lineage hash path"):
         hash_file(StringPath(str(path)))
+
+
+def test_same_size_replacement_cannot_impersonate_opened_file(tmp_path, monkeypatch):
+    path = tmp_path / "artifact.bin"
+    path.write_bytes(b"ORIGINAL")
+    substitute = tmp_path / "substitute.bin"
+    substitute.write_bytes(b"REPLACED")
+    old = path.stat()
+    os.utime(substitute, ns=(old.st_atime_ns, old.st_mtime_ns))
+    original_open = Path.open
+    replaced = False
+
+    def swap_before_open(self, *args, **kwargs):
+        nonlocal replaced
+        if self == path and not replaced:
+            replaced = True
+            substitute.replace(path)
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", swap_before_open)
+    with pytest.raises(ValueError, match="lineage hash path changed before reading"):
+        hash_file(path)
+    assert replaced
+
+
+def test_descriptor_must_refer_to_preflight_file(tmp_path, monkeypatch):
+    path = tmp_path / "artifact.bin"
+    path.write_bytes(b"unchanged")
+    monkeypatch.setattr(os.path, "samestat", lambda before, opened: False)
+    with pytest.raises(ValueError, match="lineage hash path changed before reading"):
+        hash_file(path)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows path/fd ctime semantics")
+def test_windows_path_vs_handle_ctime_difference_is_not_a_file_swap(tmp_path, monkeypatch):
+    path = tmp_path / "artifact.bin"
+    data = b"stable byte identity"
+    path.write_bytes(data)
+    original_fstat = os.fstat
+
+    class WindowsHandleStat:
+        def __init__(self, stat_result):
+            for field in (
+                "st_dev", "st_ino", "st_mode", "st_nlink", "st_size",
+                "st_mtime_ns", "st_ctime_ns",
+            ):
+                setattr(self, field, getattr(stat_result, field))
+            self.st_ctime_ns += 1
+
+    monkeypatch.setattr(
+        os, "fstat", lambda fd: WindowsHandleStat(original_fstat(fd)),
+    )
+    assert hash_file(path) == (hashlib.sha256(data).hexdigest(), len(data))
