@@ -196,5 +196,5 @@ def verify_detached_validation_comparison(
         return None
     except DetachedComparisonRejected:
         raise
-    except (AttributeError, KeyError, TypeError, ValueError, OverflowError, UnicodeError) as exc:
+    except (AttributeError, KeyError, TypeError, ValueError, OverflowError) as exc:
         raise DetachedComparisonRejected("paired validation could not be reproduced") from exc
