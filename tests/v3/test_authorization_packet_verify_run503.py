@@ -86,7 +86,9 @@ def test_tampered_packet_or_snapshot_is_rejected(kind):
     elif kind == "candidate":
         packet["preflight"]["candidate_created"] = True
     elif kind == "evaluation":
-        packet["hard_stops_after_preflight"]["historical_v2_opening_requires_later_explicit_authorization"] = False
+        packet["hard_stops_after_preflight"][
+            "historical_v2_opening_requires_later_explicit_authorization"
+        ] = False
     elif kind == "internal":
         packet["packet_sha256"] = "f" * 64
     elif kind == "extra":
