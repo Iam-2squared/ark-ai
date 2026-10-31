@@ -79,6 +79,12 @@ class OfflineIndexResult:
         return False
 
 
+# The original denial-only result and hit carriers cannot be swapped by a
+# reentrant synthetic constructor during evidence assembly.
+_RESULT_TYPE = OfflineIndexResult
+_HIT_TYPE = OfflineIndexHit
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -218,4 +224,41 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
         [(r.document_id, r.score, r.distinct_matches, r.document_sha256) for r in hits],
     ))
     check_epoch()
-    return OfflineIndexResult(hits, len(rows), len(terms), inventory, result)
+    output = OfflineIndexResult(hits, len(rows), len(terms), inventory, result)
+
+    def assert_output() -> None:
+        check_epoch()
+        if (
+            type(output) is not _RESULT_TYPE
+            or output.hits is not hits
+            or type(output.scanned_count) is not int
+            or output.scanned_count != len(rows)
+            or type(output.query_token_count) is not int
+            or output.query_token_count != len(terms)
+            or output.inventory_sha256 is not inventory
+            or output.result_sha256 is not result
+            or any(
+                type(hit) is not _HIT_TYPE
+                or hit.document_id is not original.document_id
+                or type(hit.distinct_matches) is not int
+                or hit.distinct_matches != original.distinct_matches
+                or type(hit.score) is not int
+                or hit.score != original.score
+                or hit.document_sha256 is not original.document_sha256
+                for hit, original in zip(output.hits, hits, strict=True)
+            )
+        ):
+            raise OfflineIndexRejected("local index result carrier changed")
+
+    assert_output()
+    # A detached lexical hit is never authenticated source custody, live
+    # consent, revocation freshness, or authority for content disclosure.
+    if (
+        output.identity_authenticated is not False
+        or output.disclosure_authorized is not False
+        or output.revocation_verified is not False
+    ):
+        raise OfflineIndexRejected("local index result authority changed")
+    # Authority descriptors may have altered nested hits or source carriers.
+    assert_output()
+    return output
