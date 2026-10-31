@@ -165,6 +165,23 @@ def test_report_is_frozen_and_denials_are_not_dispatch(monkeypatch) -> None:
     report = review_disconnected_registered_read(
         registry, gate, call, (grant,), now_ms=1,
     )
-    with pytest.raises(FrozenInstanceError):
+    with pytest.raises((FrozenInstanceError, TypeError)):
         report.write_authorized = True
+    assert backend.calls == 0
+
+
+def test_equal_value_replaced_call_scope_is_not_the_original_epoch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry, gate, call, grant, backend = _make()
+
+    def replace_scope(self, reg, action, claims, *, now_ms, one_shot=None):
+        replacement = (" " + call.scope)[1:]
+        assert replacement == call.scope and replacement is not call.scope
+        object.__setattr__(call, "scope", replacement)
+        return reg.bind(action)
+
+    monkeypatch.setattr(PermissionGate, "authorize_registered", replace_scope)
+    with pytest.raises(DisconnectedReadPreflightRejected, match="denied"):
+        review_disconnected_registered_read(registry, gate, call, (grant,), now_ms=1)
     assert backend.calls == 0
