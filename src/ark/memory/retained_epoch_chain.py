@@ -228,3 +228,79 @@ def review_retained_memory_chain(
     ):
         raise MemorySchemaError("Memory chain result changed after authority review")
     return result
+
+
+def verify_retained_memory_chain(
+    receipt: RetainedMemoryChainReview,
+    epochs: tuple[AtomicMemoryEpochReview, ...],
+) -> None:
+    """Recompute an untrusted detached chain receipt from retained observations.
+
+    Verification remains read-only and does not certify the source, writer,
+    provenance, event append prefix, consent, deletion or disclosure.
+    """
+    if (
+        type(receipt) is not _RESULT_TYPE
+        or type(epochs) is not tuple
+        or not 2 <= len(epochs) <= _MAX_EPOCHS
+    ):
+        raise MemorySchemaError("exact retained Memory chain receipt and epochs required")
+    original_epochs = tuple(epochs)
+    pinned = tuple(_validate_epoch(epoch) for epoch in original_epochs)
+
+    def unchanged() -> None:
+        if (
+            len(epochs) != len(original_epochs)
+            or any(
+                current is not original
+                or type(current) is not _EPOCH_TYPE
+                or any(
+                    now is not old
+                    for now, old in zip(_validate_epoch(current), fields, strict=True)
+                )
+                for current, original, fields in zip(
+                    epochs, original_epochs, pinned, strict=True,
+                )
+            )
+        ):
+            raise MemorySchemaError("retained Memory chain changed during verification")
+
+    unchanged()
+    expected = review_retained_memory_chain(epochs)
+    unchanged()
+
+    def exact_receipt() -> bool:
+        # Structural value checks, not dataclass equality: a caller can replace
+        # __eq__ or use reflective getters on this local review object.
+        return (
+            type(receipt) is _RESULT_TYPE
+            and type(receipt.observations) is int
+            and receipt.observations == expected.observations
+            and type(receipt.scope_fingerprints) is tuple
+            and all(type(scope) is str for scope in receipt.scope_fingerprints)
+            and receipt.scope_fingerprints == expected.scope_fingerprints
+            and type(receipt.added_event_counts) is tuple
+            and all(type(count) is int for count in receipt.added_event_counts)
+            and receipt.added_event_counts == expected.added_event_counts
+            and type(receipt.status) is str
+            and receipt.status == expected.status
+            and type(receipt.chain_digest) is str
+            and _SHA.fullmatch(receipt.chain_digest) is not None
+            and receipt.chain_digest == expected.chain_digest
+        )
+
+    if not exact_receipt():
+        raise MemorySchemaError("retained Memory chain receipt integrity mismatch")
+    for flag in (
+        "historical_prefix_proven", "independent_writer_proven",
+        "custody_authenticated", "memory_disclosure_authorized",
+        "dispatch_authorized",
+    ):
+        if getattr(receipt, flag) is not False:
+            raise MemorySchemaError("retained Memory chain receipt gained authority")
+    # A denial property that returns False can still rewrite an input epoch
+    # or receipt. Re-read after every getter, including the last one.
+    unchanged()
+    if not exact_receipt():
+        raise MemorySchemaError("retained Memory chain receipt changed after denial")
+    unchanged()
