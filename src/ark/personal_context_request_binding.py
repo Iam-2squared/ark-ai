@@ -178,4 +178,26 @@ def bind_offline_context_request(
         or result.retention_authorized is not False
     ):
         raise OfflineContextBindingRejected("constructed context binding changed")
+    # False-returning authority descriptors are callbacks too. Their last
+    # access may mutate the preview or an already-checked result field.
+    unchanged()
+    if (
+        type(result) is not _BINDING_TYPE
+        or result.request_id is not request_id
+        or result.owner_digest is not owner
+        or result.context_digest is not digest
+        or type(result.record_count) is not int
+        or result.record_count != len(ids)
+        or result.binding_digest is not binding_digest
+    ):
+        raise OfflineContextBindingRejected(
+            "context binding changed after authority review"
+        )
+    # The last preview authority getter may also have changed its input.
+    if any(now is not old for now, old in zip(
+        (preview.owner_digest, preview.record_ids,
+         preview.canonical_local_json, preview.local_digest),
+        pinned, strict=True,
+    )):
+        raise OfflineContextBindingRejected("context preview carrier changed")
     return result
