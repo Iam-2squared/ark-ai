@@ -96,7 +96,7 @@ def review_disconnected_registered_read(
                     (call.tool, call.capability, call.scope, call.arguments),
                     call_epoch, strict=True,
                 )
-            ) is False
+            )
             or any(
                 type(grant) is not CapabilityGrant
                 or grant.capability is not capability
