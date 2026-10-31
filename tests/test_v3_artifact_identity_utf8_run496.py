@@ -19,9 +19,9 @@ def _artifact():
 @pytest.mark.parametrize(
     ("field", "value"),
     (
-        ("kind", "model\\x7f"),
-        ("path", "local.gguf\\x7f"),
-        ("tool_revision", "rev-1\\x7f"),
+        ("kind", "model\x7f"),
+        ("path", "local.gguf\x7f"),
+        ("tool_revision", "rev-1\x7f"),
         ("path", "name" + chr(0xD800)),
         ("kind", "あ" * 1400),
         ("path", "あ" * 1400),
