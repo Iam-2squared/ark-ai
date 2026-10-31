@@ -138,3 +138,33 @@ Total new cases authored in this invocation: **123** (38 + 34 + 31 + 20),
 not a substitute for actual exact-head test evidence. CI run
 `41199101911` (#1877) is associated with the dependent fixture-binding
 source/test HEAD; its conclusion must be checked rather than assumed.
+
+
+### Dependent binding CI failure and minimal recovery
+
+The first dependent source+test run `41199101911` (#1877) was **FAIL**:
+8 failures in the new adversarial test file, with 5,495 tests passing and
+one skipped in the first Ubuntu 3.11 job. Four checks expected the outer
+exception class even though the original terminal projector rejected an
+illegitimate authority descriptor earlier; three checks overconstrained the
+error wording when the independent request-binding code rejected first.
+Those expectations were corrected **without suppressing rejection**.
+
+The eighth failure exposed a genuine missing comparison: a synthetic
+callback could replace a valid request-bound digest with an unrelated 64-hex
+string, while all other fields still matched. The source now **independently
+rederives** the binding digest from pinned request ID, operation, input SHA
+and result SHA using the existing versioned domain separator. A forged
+exact-type binding must match those bytes, not merely their length.
+
+- Corrected source commit `db33a11f6f3c55e16c247aa7a9354f2b8718694c`,
+  blob `53663b1890d3c017e701ef61fae7e8c61984455f`.
+- Corrected adversarial test commit
+  `7af123bb41bd43cdc4b9cff00b98a86b29f7c4fe`,
+  blob `3c2a8ddea9176bd30fcc1455b6eff126411f6381`.
+- New exact-head source/test CI `41199329547` (#1880) was QUEUED at
+  documentation composition; no final GREEN claim until job verification.
+
+The correction does not promote a digest to authentication, authorize a
+backend, or change frozen contracts. No duplicate equivalent CI rerun was
+requested; GitHub automatically starts PR checks for each distinct commit.
