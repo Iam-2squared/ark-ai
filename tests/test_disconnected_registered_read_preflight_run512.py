@@ -7,13 +7,13 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
-from ark.agency.policy import PermissionGate
-from ark.agency.registry import ToolRegistration, ToolRegistry
 from ark.agency.disconnected_registered_read_preflight import (
     DisconnectedReadPreflight,
     DisconnectedReadPreflightRejected,
     review_disconnected_registered_read,
 )
+from ark.agency.policy import PermissionGate
+from ark.agency.registry import ToolRegistration, ToolRegistry
 
 
 class _NoDispatchBackend:
