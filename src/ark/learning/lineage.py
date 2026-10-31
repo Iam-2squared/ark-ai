@@ -34,7 +34,7 @@ class ArtifactIdentity:
             except UnicodeError as exc:
                 raise ValueError("artifact identity fields require valid UTF-8") from exc
             if len(encoded) > 4096:
-                raise ValueError("artifact identity UTF-8 byte budget exceeded")
+                raise ValueError("artifact identity fields UTF-8 byte budget exceeded")
         if (
             type(self.sha256) is not str
             or len(self.sha256) != 64
