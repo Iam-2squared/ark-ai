@@ -61,6 +61,19 @@ class DisconnectedEpochVector:
         return False
 
 
+def _assert_non_authorizing(vector: object) -> None:
+    """An epoch-vector hash never becomes permission, consent or trusted time."""
+    if (
+        type(vector) is not DisconnectedEpochVector
+        or vector.coherent_snapshot_proven is not False
+        or vector.trusted_time_proven is not False
+        or vector.independent_custody_proven is not False
+        or vector.memory_disclosure_authorized is not False
+        or vector.dispatch_authorized is not False
+    ):
+        raise EpochVectorRejected("store vector acquired authority")
+
+
 def _carrier_values(stores: tuple[DisconnectedStoreEpoch, ...]) -> tuple[tuple[object, ...], ...]:
     return tuple(tuple(getattr(store, item.name) for item in fields(store)) for store in stores)
 
@@ -129,12 +142,12 @@ def capture_disconnected_epoch_vector(
     if (type(result) is not DisconnectedEpochVector or result.stores is not stores
             or result.digest is not digest):
         raise EpochVectorRejected("constructed store vector changed")
+    _assert_non_authorizing(result)
     return result
 
 
 def _validated_vector(vector: object) -> tuple[tuple[object, ...], ...]:
-    if type(vector) is not DisconnectedEpochVector:
-        raise EpochVectorRejected("exact vector required")
+    _assert_non_authorizing(vector)
     original_stores = vector.stores
     original_digest = vector.digest
     rows = _rows(original_stores)
@@ -151,6 +164,7 @@ def _validated_vector(vector: object) -> tuple[tuple[object, ...], ...]:
     if _rows(original_stores) != rows:
         raise EpochVectorRejected("store epoch changed during review")
     _assert_carriers(vector.stores, original_stores, carriers, values)
+    _assert_non_authorizing(vector)
     return rows
 
 
@@ -180,4 +194,6 @@ def review_disconnected_epoch_progress(
             raise EpochVectorRejected("new generation lacks advancing event/state witness")
     if _validated_vector(retained) != earlier or _validated_vector(observed) != later:
         raise EpochVectorRejected("review inputs changed during comparison")
+    _assert_non_authorizing(retained)
+    _assert_non_authorizing(observed)
     return observed
