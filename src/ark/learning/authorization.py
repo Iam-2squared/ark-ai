@@ -105,8 +105,22 @@ def build_preflight_authorization_packet(snapshot: dict) -> dict:
         },
     }
     stable()
-    packet["packet_sha256"] = sha256_bytes(canonical_json(packet))
+    # The review packet is a separate mutable JSON tree. A serializer or
+    # digest callback can rewrite the packet AFTER returning its earlier
+    # bytes without changing the pinned execution snapshot. Bind both epochs
+    # before adding the derived digest; this does not grant approval.
+    packet_epoch = _pin_json_tree(packet)
     stable()
+    canonical_packet = canonical_json(packet)
+    stable()
+    _assert_json_tree_epoch(packet, packet_epoch)
+    packet_digest = sha256_bytes(canonical_packet)
+    stable()
+    _assert_json_tree_epoch(packet, packet_epoch)
+    packet["packet_sha256"] = packet_digest
+    stable()
+    if packet["packet_sha256"] != packet_digest:
+        raise ValueError("authorization review packet changed after hashing")
     return packet
 
 
