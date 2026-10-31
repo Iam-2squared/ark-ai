@@ -193,6 +193,7 @@ class DisconnectedContextReplayLedger:
         if type(create) is not bool:
             raise OfflineContextReplayRejected("exact creation option required")
         self._path = _check_path(path, create=create)
+        source = self._path
         # Existing replay history is inspected in a read-only snapshot.
         # A RESERVED SQLite writer lock is reserved for explicit creation
         # and later CAS reservation, never merely for restart validation.
@@ -211,7 +212,9 @@ class DisconnectedContextReplayLedger:
                         raise OfflineContextReplayRejected("new context ledger not empty")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
-                _inspect(conn)
+                _check_witness(_inspect(conn))
+                if self._path is not source:
+                    raise OfflineContextReplayRejected("context startup source changed")
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -232,9 +235,13 @@ class DisconnectedContextReplayLedger:
             conn.execute("BEGIN")
             try:
                 current = _inspect(conn)
+                _check_witness(current)
                 if self._path is not source:
                     raise OfflineContextReplayRejected("context ledger path changed")
                 conn.commit()
+                _check_witness(current)
+                if self._path is not source:
+                    raise OfflineContextReplayRejected("context ledger path changed")
                 return current
             except BaseException:
                 conn.rollback()
