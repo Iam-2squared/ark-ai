@@ -275,6 +275,9 @@ class DisconnectedContextReplayLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 actual = _inspect(conn)
+                # Equality of digests does not validate the type or denied
+                # authority of the independently observed SQLite witness.
+                _check_witness(actual)
                 stable()
                 if (actual.count, actual.chain_sha256) != previous:
                     raise OfflineContextReplayRejected("stale retained context request history")
@@ -294,7 +297,9 @@ class DisconnectedContextReplayLedger:
                 ):
                     raise OfflineContextReplayRejected("context committed witness changed")
                 stable()
-                if _inspect(conn) != expected:
+                observed = _inspect(conn)
+                _check_witness(observed)
+                if observed != expected:
                     raise OfflineContextReplayRejected("context reservation integrity mismatch")
                 stable()
                 conn.commit()
