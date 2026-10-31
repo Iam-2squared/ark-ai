@@ -90,7 +90,7 @@ def review_disconnected_registered_read(
         if (
             (call.tool, call.capability, call.scope, call.request_id)
             != (*call_epoch[:3], request_id)
-            or any(
+            or not all(
                 current is original
                 for current, original in zip(
                     (call.tool, call.capability, call.scope, call.arguments),
@@ -133,6 +133,8 @@ def review_disconnected_registered_read(
         ):
             raise DisconnectedReadPreflightRejected("registered READ binding changed")
         stable_inputs()
+    except DisconnectedReadPreflightRejected:
+        raise
     except (KeyError, PermissionDenied, TypeError, ValueError) as exc:
         raise DisconnectedReadPreflightRejected("registered READ preflight denied") from exc
 
