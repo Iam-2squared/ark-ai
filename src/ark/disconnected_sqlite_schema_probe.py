@@ -54,6 +54,22 @@ class DisconnectedSQLiteSchemaSeal:
         return False
 
 
+_SEAL_TYPE = DisconnectedSQLiteSchemaSeal
+
+
+def _assert_inert_seal(seal: object) -> None:
+    """A local schema hash must not impersonate trusted custody or disclosure."""
+    if (
+        type(seal) is not _SEAL_TYPE
+        or seal.source_authenticated is not False
+        or seal.independent_custody_proven is not False
+        or seal.wal_snapshot_verified is not False
+        or seal.cross_store_atomicity_proven is not False
+        or seal.application_data_disclosure_authorized is not False
+    ):
+        raise SQLiteSchemaProbeRejected("schema seal acquired authority")
+
+
 def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
     databases = tuple(connection.execute("PRAGMA database_list"))
     if (
@@ -112,7 +128,9 @@ def capture_disconnected_sqlite_schema(
         if _state(connection) != first:
             raise SQLiteSchemaProbeRejected("schema changed within read transaction")
         connection.execute("COMMIT")
-        return DisconnectedSQLiteSchemaSeal(*first)
+        seal = DisconnectedSQLiteSchemaSeal(*first)
+        _assert_inert_seal(seal)
+        return seal
     except sqlite3.Error as exc:
         raise SQLiteSchemaProbeRejected("cannot read stable SQLite schema") from exc
     finally:
@@ -140,6 +158,7 @@ def review_disconnected_sqlite_schema(
         retained.schema_sha256, retained.object_count,
         retained.user_version, retained.schema_version,
     )
+    _assert_inert_seal(retained)
     current = capture_disconnected_sqlite_schema(connection)
     if (
         (retained.schema_sha256, retained.object_count,
@@ -148,4 +167,6 @@ def review_disconnected_sqlite_schema(
         or current != retained
     ):
         raise SQLiteSchemaProbeRejected("retained and current schema differ")
+    _assert_inert_seal(retained)
+    _assert_inert_seal(current)
     return current
