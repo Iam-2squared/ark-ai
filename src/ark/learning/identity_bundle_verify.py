@@ -157,11 +157,26 @@ def inspect_local_identity_bundle(
         stable()
         if (
             type(repeated) is not _ARTIFACT_WITNESS_TYPE
-            or repeated != witness
+            or type(repeated.artifact_sha256) is not str
+            or repeated.artifact_sha256 != sha
+            or repeated.artifact_sha256 != witness.artifact_sha256
+            or type(repeated.artifact_bytes) is not int
+            or repeated.artifact_bytes != witness.artifact_bytes
+            or type(repeated.top_level_keys) is not tuple
+            or repeated.top_level_keys != witness.top_level_keys
             or any(getattr(repeated, flag) is not False for flag in _FLAGS)
         ):
             raise LocalIdentityBundleRejected(
                 "bundle component changed between reads"
+            )
+        stable()
+        if (
+            repeated.artifact_sha256 != sha
+            or repeated.artifact_bytes != witness.artifact_bytes
+            or repeated.top_level_keys != witness.top_level_keys
+        ):
+            raise LocalIdentityBundleRejected(
+                "bundle component changed after authority review"
             )
     stable()
     frozen = tuple(components)
@@ -175,6 +190,14 @@ def inspect_local_identity_bundle(
         or any(getattr(report, flag) is not False for flag in _FLAGS)
     ):
         raise LocalIdentityBundleRejected("bundle report gained authority")
+    # False-valued denial getters may rewrite this frozen report or a pin.
+    stable()
+    if (
+        type(report) is not _WITNESS_TYPE
+        or report.components is not frozen
+        or report.bundle_sha256 is not digest
+    ):
+        raise LocalIdentityBundleRejected("bundle report changed after denial")
     return report
 
 
@@ -184,25 +207,85 @@ def verify_local_identity_bundle(
     *,
     retained_bundle_sha256: str,
 ) -> None:
-    """Re-read and require separately pinned bundle digest; no approval issued."""
+    """Re-read independently pinned local JSON; never issue training approval."""
     if (
         type(report) is not _WITNESS_TYPE
         or type(retained_bundle_sha256) is not str
         or _SHA.fullmatch(retained_bundle_sha256) is None
     ):
         raise LocalIdentityBundleRejected("exact bundle and retained root required")
+    original_pins = tuple(pins) if type(pins) is tuple else ()
+    pinned_fields = tuple(
+        (pin.name, pin.path, pin.retained_sha256)
+        for pin in original_pins if type(pin) is _PIN_TYPE
+    )
+
+    def stable_pins() -> None:
+        if (
+            type(pins) is not tuple
+            or len(pins) != len(original_pins)
+            or len(pinned_fields) != len(original_pins)
+            or any(
+                pin is not original
+                or type(pin) is not _PIN_TYPE
+                or any(
+                    now is not initial for now, initial in zip(
+                        (pin.name, pin.path, pin.retained_sha256),
+                        fields, strict=True,
+                    )
+                )
+                for pin, original, fields in zip(
+                    pins, original_pins, pinned_fields, strict=True,
+                )
+            )
+        ):
+            raise LocalIdentityBundleRejected("bundle pin carrier changed")
+
     expected = inspect_local_identity_bundle(pins)
-    if (
-        type(report.components) is not tuple
-        or any(
-            type(item) is not tuple or len(item) != 4
-            or type(item[0]) is not str or type(item[1]) is not str
-            or type(item[2]) is not int or type(item[3]) is not tuple
-            for item in report.components
-        )
-        or type(report.bundle_sha256) is not str
-        or report.bundle_sha256 != retained_bundle_sha256
-        or report != expected
-        or any(getattr(report, flag) is not False for flag in _FLAGS)
-    ):
+    stable_pins()
+
+    def exact_report() -> bool:
+        if (
+            type(report) is not _WITNESS_TYPE
+            or type(report.bundle_sha256) is not str
+            or report.bundle_sha256 != retained_bundle_sha256
+            or report.bundle_sha256 != expected.bundle_sha256
+            or type(report.components) is not tuple
+            or len(report.components) != len(expected.components)
+        ):
+            return False
+        for actual, correct in zip(
+            report.components, expected.components, strict=True,
+        ):
+            if (
+                type(actual) is not tuple
+                or len(actual) != 4
+                or type(actual[0]) is not str
+                or type(actual[1]) is not str
+                or type(actual[2]) is not int
+                or type(actual[3]) is not tuple
+                or any(type(key) is not str for key in actual[3])
+                or actual != correct
+            ):
+                return False
+        return True
+
+    if not exact_report():
         raise LocalIdentityBundleRejected("retained bundle root mismatch")
+    for flag in _FLAGS:
+        if getattr(report, flag) is not False:
+            raise LocalIdentityBundleRejected("retained bundle gained authority")
+    stable_pins()
+    if not exact_report():
+        raise LocalIdentityBundleRejected("retained bundle changed after denial")
+    # A denial getter can also change on-disk bytes. A final bounded re-read
+    # observes routine post-validation drift, but is not an atomic OS snapshot.
+    latest = inspect_local_identity_bundle(pins)
+    stable_pins()
+    if (
+        not exact_report()
+        or type(latest) is not _WITNESS_TYPE
+        or latest.components != expected.components
+        or latest.bundle_sha256 != expected.bundle_sha256
+    ):
+        raise LocalIdentityBundleRejected("bundle files changed during verification")
