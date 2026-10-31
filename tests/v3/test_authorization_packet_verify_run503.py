@@ -152,3 +152,33 @@ def test_packet_type_is_exact_not_mapping_subclass():
             snapshot, UntrustedMapping(packet),
             retained_packet_file_sha256=retained,
         )
+
+
+@pytest.mark.parametrize("target", ["snapshot", "packet"])
+def test_late_witness_digest_getter_cannot_mutate_review_inputs(monkeypatch, target):
+    snapshot, packet, retained = _inputs()
+    original_descriptor = mod.LocalPacketBindingWitness.snapshot_sha256
+    calls = 0
+
+    def late_getter(self):
+        nonlocal calls
+        calls += 1
+        value = original_descriptor.__get__(self, type(self))
+        # The third access happens during the final witness field check,
+        # after the previous snapshot/packet epoch check already passed.
+        if calls == 3:
+            if target == "snapshot":
+                snapshot["budget"]["max_cost_jpy"] = 999
+            else:
+                packet["request_scope"] = "FULL_TRAINING"
+        return value
+
+    monkeypatch.setattr(
+        mod.LocalPacketBindingWitness, "snapshot_sha256",
+        property(late_getter),
+    )
+    with pytest.raises(ValueError, match="changed"):
+        mod.verify_detached_authorization_packet(
+            snapshot, packet, retained_packet_file_sha256=retained,
+        )
+    assert calls >= 3
