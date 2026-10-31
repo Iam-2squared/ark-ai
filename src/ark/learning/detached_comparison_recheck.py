@@ -22,6 +22,8 @@ _CASE_FIELDS = (
     "case_id", "category", "passed", "runtime_failure", "memory_failure",
 )
 _MAX_BYTES = 128 * 1024
+_MAX_FIELD_CHARS = 4096
+_MAX_INPUT_CHARS = 32768
 
 
 class DetachedComparisonRejected(ValueError):
@@ -73,6 +75,17 @@ def verify_detached_validation_comparison(
             for _, values in case_epochs
         ):
             raise DetachedComparisonRejected("validation case carrier invalid")
+        # The retained byte bound alone is too late: caller-held model/case
+        # strings could be huge before the comparison is serialized. Charge
+        # them before invoking any report validation or comparison callback.
+        texts = fields[:5] + tuple(
+            value for _, values in case_epochs for value in values[:2]
+        )
+        if (
+            any(len(value) > _MAX_FIELD_CHARS for value in texts)
+            or sum(len(value) for value in texts) > _MAX_INPUT_CHARS
+        ):
+            raise DetachedComparisonRejected("validation text input budget exceeded")
         originals.append((report, fields, case_epochs))
 
     def stable() -> None:
@@ -181,5 +194,5 @@ def verify_detached_validation_comparison(
         return None
     except DetachedComparisonRejected:
         raise
-    except (AttributeError, KeyError, TypeError, ValueError, OverflowError) as exc:
+    except (AttributeError, KeyError, TypeError, ValueError, OverflowError, UnicodeError) as exc:
         raise DetachedComparisonRejected("paired validation could not be reproduced") from exc
