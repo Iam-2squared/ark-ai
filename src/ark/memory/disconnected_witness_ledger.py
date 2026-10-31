@@ -71,7 +71,14 @@ def _digest(data: object) -> str:
 
 
 def genesis_memory_ledger_witness() -> MemoryLedgerWitness:
-    return MemoryLedgerWitness(0, _digest(("genesis",)))
+    expected = _digest(("genesis",))
+    witness = MemoryLedgerWitness(0, expected)
+    # A synthetic constructor or modified descriptor must not elevate the
+    # standalone genesis receipt into custody, disclosure or Tool authority.
+    _check_witness(witness)
+    if witness.epochs != 0 or witness.chain_sha256 != expected:
+        raise MemoryWitnessLedgerRejected("Memory genesis witness changed")
+    return witness
 
 
 def _path(path: object, *, create: bool) -> Path:
@@ -201,8 +208,12 @@ def _inspect(
                 raise MemoryWitnessLedgerRejected("retained witness history rewritten")
             previous = review
             witness = MemoryLedgerWitness(seq, wanted)
+            _check_witness(witness)
+            if witness.epochs != seq or witness.chain_sha256 != wanted:
+                raise MemoryWitnessLedgerRejected("Memory history witness changed")
     except sqlite3.Error as exc:
         raise MemoryWitnessLedgerRejected("cannot read retained witness history") from exc
+    _check_witness(witness)
     return witness, previous
 
 
