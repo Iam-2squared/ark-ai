@@ -230,6 +230,7 @@ class DisconnectedMemoryWitnessLedger:
         if type(create) is not bool:
             raise MemoryWitnessLedgerRejected("explicit create flag required")
         self._path = _path(path, create=create)
+        source = self._path
         if create:
             try:
                 with path.open("xb"):
@@ -251,6 +252,8 @@ class DisconnectedMemoryWitnessLedger:
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
                 _inspect(conn)
+                if self._path is not source:
+                    raise MemoryWitnessLedgerRejected("witness startup path changed")
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -318,6 +321,9 @@ class DisconnectedMemoryWitnessLedger:
 
         def stable() -> None:
             try:
+                # Recheck denied authority on every callback boundary, not
+                # only at entry or after a locally committed append.
+                _check_witness(retained)
                 unchanged = (
                     type(review) is _REVIEW_TYPE
                     and all(
