@@ -38,6 +38,7 @@ from .disconnected_toolbox import (
 
 _DOMAIN = b"ARK-detached-failure-fixture-v1\0"
 _TOOL_DOMAIN = b"ARK-disconnected-toolbox-v1\0"
+_BINDING_DOMAIN = b"ARK-disconnected-fixture-request-binding-v1\0"
 _FLAGS = (
     "dispatch_authorized", "write_authorized", "automatic_replay_authorized",
     "failure_authenticated", "external_outcome_verified",
@@ -273,6 +274,15 @@ def simulate_disconnected_failure_fixture(
                     "synthetic recomputation mismatch"
                 ) from exc
             stable()
+            # An exact-type returned binding can itself be replaced. Check
+            # its request-bound fingerprint independently of that callback.
+            binding_payload = json.dumps(
+                (plan_epoch[0], operation, result_epoch[2], result_epoch[4]),
+                ensure_ascii=True, separators=(",", ":"),
+            ).encode("ascii")
+            expected_binding = hashlib.sha256(
+                _BINDING_DOMAIN + binding_payload
+            ).hexdigest()
             if (
                 type(bound) is not DisconnectedFixtureBinding
                 or bound.request_id != plan_epoch[0]
@@ -280,7 +290,7 @@ def simulate_disconnected_failure_fixture(
                 or bound.input_digest != result_epoch[2]
                 or bound.result_digest != result_epoch[4]
                 or type(bound.request_bound_digest) is not str
-                or len(bound.request_bound_digest) != 64
+                or bound.request_bound_digest != expected_binding
                 or bound.dispatch_authorized is not False
                 or bound.external_outcome_verified is not False
                 or bound.automatic_replay_authorized is not False
