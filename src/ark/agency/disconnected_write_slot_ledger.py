@@ -198,6 +198,8 @@ class DisconnectedWriteSlotLedger:
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
                 _inspect(conn)
+                if self._path is not path:
+                    raise WriteSlotLedgerRejected("ledger path changed during startup")
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -213,16 +215,31 @@ class DisconnectedWriteSlotLedger:
         """Compare an independently retained caller witness; never recreate missing DB."""
         _check_witness(retained)
         original = (retained.count, retained.chain_sha256)
+        source = self._path
+
+        def stable() -> None:
+            if (
+                self._path is not source
+                or type(retained) is not _WITNESS_TYPE
+                or retained.count is not original[0]
+                or retained.chain_sha256 is not original[1]
+                or retained.independently_authenticated is not False
+            ):
+                raise WriteSlotLedgerRejected("read-only ledger custody changed")
+
+        stable()
         with closing(self._open(read_only=True)) as conn:
             conn.execute("BEGIN")
             try:
                 actual = _inspect(conn)
+                stable()
                 if actual != retained or original != (retained.count, retained.chain_sha256):
                     raise WriteSlotLedgerRejected("stale or changed retained history")
                 conn.commit()
             except BaseException:
                 conn.rollback()
                 raise
+        stable()
         return actual
 
     def reserve_many(
@@ -235,6 +252,7 @@ class DisconnectedWriteSlotLedger:
         _check_witness(retained)
         saved = tuple((c.slot_id, c.plan_id, c.step_id, c.request_sha256) for c in claims)
         old_witness = (retained.count, retained.chain_sha256)
+        source = self._path
         if len(set(saved)) != len(saved):
             raise WriteSlotLedgerRejected("duplicate identities in batch")
         for slot, plan, step, request in saved:
@@ -245,7 +263,9 @@ class DisconnectedWriteSlotLedger:
 
         def stable() -> None:
             if (
-                old_witness != (retained.count, retained.chain_sha256)
+                self._path is not source
+                or type(retained) is not _WITNESS_TYPE
+                or old_witness != (retained.count, retained.chain_sha256)
                 or retained.count is not old_witness[0]
                 or retained.chain_sha256 is not old_witness[1]
                 or any(
