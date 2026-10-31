@@ -155,7 +155,7 @@ def test_substituted_policy_return_cannot_pass_binding_check(
         return object()
 
     monkeypatch.setattr(PermissionGate, "authorize_registered", substitute)
-    with pytest.raises(DisconnectedReadPreflightRejected, match="denied"):
+    with pytest.raises(DisconnectedReadPreflightRejected, match="binding changed"):
         review_disconnected_registered_read(registry, gate, call, (grant,), now_ms=1)
     assert backend.calls == 0
 
@@ -182,6 +182,6 @@ def test_equal_value_replaced_call_scope_is_not_the_original_epoch(
         return reg.bind(action)
 
     monkeypatch.setattr(PermissionGate, "authorize_registered", replace_scope)
-    with pytest.raises(DisconnectedReadPreflightRejected, match="denied"):
+    with pytest.raises(DisconnectedReadPreflightRejected, match="identity changed"):
         review_disconnected_registered_read(registry, gate, call, (grant,), now_ms=1)
     assert backend.calls == 0
