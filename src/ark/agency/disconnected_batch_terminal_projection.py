@@ -187,17 +187,43 @@ def verify_disconnected_batch_terminals(
         plan, schedule, retained_digest=retained_digest,
         failed_step_ids=receipt.failed_step_ids,
     )
-    if (
-        type(receipt.failed_step_ids) is not tuple
-        or type(receipt.terminal_states) is not tuple
-        or any(
-            type(pair) is not tuple or len(pair) != 2
-            or type(pair[0]) is not str or type(pair[1]) is not str
-            or pair[1] not in _STATES
-            for pair in receipt.terminal_states
+
+    def exact_fields() -> bool:
+        # A synthetic receipt's __eq__ may be replaced. Verify each carrier
+        # independently instead of treating Python equality as provenance.
+        return (
+            type(receipt) is _RECEIPT_TYPE
+            and type(receipt.request_id) is str
+            and receipt.request_id == expected.request_id
+            and type(receipt.plan_digest) is str
+            and receipt.plan_digest == expected.plan_digest
+            and type(receipt.schedule_digest) is str
+            and receipt.schedule_digest == expected.schedule_digest
+            and type(receipt.failed_step_ids) is tuple
+            and all(type(item) is str for item in receipt.failed_step_ids)
+            and receipt.failed_step_ids == expected.failed_step_ids
+            and type(receipt.terminal_states) is tuple
+            and all(
+                type(pair) is tuple and len(pair) == 2
+                and type(pair[0]) is str and type(pair[1]) is str
+                and pair[1] in _STATES
+                for pair in receipt.terminal_states
+            )
+            and receipt.terminal_states == expected.terminal_states
+            and type(receipt.projection_digest) is str
+            and receipt.projection_digest == expected.projection_digest
         )
-        or type(receipt.projection_digest) is not str
-        or receipt != expected
-        or any(getattr(receipt, flag) is not False for flag in _FLAGS)
-    ):
+
+    if not exact_fields():
         raise DisconnectedBatchTerminalRejected("terminal projection integrity mismatch")
+    for flag in _FLAGS:
+        if getattr(receipt, flag) is not False:
+            raise DisconnectedBatchTerminalRejected("terminal projection gained authority")
+    # A denial getter may return False after reflectively rewriting the
+    # receipt or caller plan. Recheck both after the last callback.
+    if not exact_fields():
+        raise DisconnectedBatchTerminalRejected("terminal projection changed after denial")
+    verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    verify_disconnected_batch_schedule(schedule, plan, retained_digest=retained_digest)
+    if not exact_fields():
+        raise DisconnectedBatchTerminalRejected("terminal projection changed during review")
