@@ -208,6 +208,13 @@ def verify_memory_expiry_preview(
     ):
         raise MemoryExpiryPreviewRejected("exact retained expiry fingerprint required")
 
+    # The retained receipt has identity-bearing scalar carriers. Re-reading
+    # a mutable SQLite page must not silently accept a value-equal replacement
+    # of those carriers inside a reflected frozen dataclass.
+    original_receipt_fields = (
+        report.scope_sha256, report.read_at_ms, report.candidate_count,
+        report.has_more, report.candidate_sha256, report.preview_sha256,
+    )
     source_path = store.path if type(store) is _STORE_TYPE else None
     owner = scope.owner_id if type(scope) is _SCOPE_TYPE else None
     namespace = scope.namespace if type(scope) is _SCOPE_TYPE else None
@@ -231,6 +238,15 @@ def verify_memory_expiry_preview(
         # Never trust a replaceable dataclass __eq__ or coercible booleans.
         return (
             type(report) is _RECEIPT_TYPE
+            and all(
+                current is original for current, original in zip(
+                    (
+                        report.scope_sha256, report.read_at_ms, report.candidate_count,
+                        report.has_more, report.candidate_sha256, report.preview_sha256,
+                    ),
+                    original_receipt_fields, strict=True,
+                )
+            )
             and type(report.scope_sha256) is str
             and report.scope_sha256 == expected.scope_sha256
             and type(report.read_at_ms) is int
@@ -265,5 +281,19 @@ def verify_memory_expiry_preview(
         not exact_fields()
         or type(latest) is not _RECEIPT_TYPE
         or latest.preview_sha256 != expected.preview_sha256
+        or any(getattr(report, flag) is not False for flag in _FLAGS)
+        or any(getattr(latest, flag) is not False for flag in _FLAGS)
     ):
         raise MemoryExpiryPreviewRejected("retained expiry page changed during review")
+    # An authority getter itself may mutate this retained receipt, or return
+    # False only until the final SQLite scan. Recheck after those callbacks.
+    stable_sources()
+    if not exact_fields() or any(
+        getattr(report, flag) is not False for flag in _FLAGS
+    ):
+        raise MemoryExpiryPreviewRejected(
+            "retained expiry report changed after final denial"
+        )
+    stable_sources()
+    if not exact_fields():
+        raise MemoryExpiryPreviewRejected("retained expiry report changed at return")
