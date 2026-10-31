@@ -7,6 +7,7 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from ark.agency.disconnected_write_recovery_fence import (
+    OfflineRecoveryFence,
     OfflineRecoveryFenceRejected,
     OfflineRecoveryStepClaim,
     review_disconnected_recovery_fence,
@@ -147,3 +148,41 @@ def test_nested_terminal_precedence_and_no_write_ready():
     assert codes(review) == (
         "QUARANTINE_RESERVED_WRITE", "TERMINAL", "HOLD_TERMINAL",
     )
+
+
+def test_result_authority_getter_cannot_rewrite_original_step(monkeypatch):
+    claim = item(A)
+
+    def forged(self):
+        object.__setattr__(claim, "state", "UNKNOWN")
+        return False
+
+    monkeypatch.setattr(
+        OfflineRecoveryFence, "external_outcome_verified", property(forged),
+    )
+    with pytest.raises(OfflineRecoveryFenceRejected, match="carrier mutated"):
+        result(claim)
+
+
+def test_result_authority_getter_cannot_rewrite_disposition(monkeypatch):
+    def forged(self):
+        object.__setattr__(self.decisions[0], "code", "HELD_WRITE_APPROVAL")
+        return False
+
+    monkeypatch.setattr(
+        OfflineRecoveryFence, "external_outcome_verified", property(forged),
+    )
+    with pytest.raises(OfflineRecoveryFenceRejected, match="disposition changed"):
+        result(item(A))
+
+
+def test_result_authority_getter_cannot_rewrite_digest(monkeypatch):
+    def forged(self):
+        object.__setattr__(self, "digest", "0" * 64)
+        return False
+
+    monkeypatch.setattr(
+        OfflineRecoveryFence, "external_outcome_verified", property(forged),
+    )
+    with pytest.raises(OfflineRecoveryFenceRejected, match="result carrier changed"):
+        result(item(A))
