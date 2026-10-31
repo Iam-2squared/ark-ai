@@ -9,7 +9,9 @@ import pytest
 import ark.learning.detached_comparison_recheck as detached
 from ark.learning.execution import canonical_json, sha256_bytes
 from ark.learning.validation import (
-    ValidationCase, ValidationReport, compare_validation,
+    ValidationCase,
+    ValidationReport,
+    compare_validation,
 )
 
 
