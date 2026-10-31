@@ -202,4 +202,16 @@ def review_offline_context_membership(
         or result.trusted_clock_verified is not False
     ):
         raise OfflineContextAdmissionRejected("constructed admission review mutated")
+    # A reflected authority-property getter may return False after revoking
+    # a scope, aging a record, or rewriting the otherwise frozen result.
+    # Inspect original Context carriers and the result again after getters.
+    epoch()
+    if (
+        type(result) is not _MEMBERSHIP_RESULT_TYPE
+        or result.owner_digest is not owner_digest
+        or result.record_count != len(records)
+        or result.scope_count != len(scope_vetoes)
+        or result.membership_sha256 is not digest
+    ):
+        raise OfflineContextAdmissionRejected("constructed admission review mutated")
     return result
