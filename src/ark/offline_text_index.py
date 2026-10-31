@@ -224,6 +224,12 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
         [(r.document_id, r.score, r.distinct_matches, r.document_sha256) for r in hits],
     ))
     check_epoch()
+    # A hit and its tuple element are the same mutable-under-reflection object.
+    # Preserve field carriers separately; comparing hit to itself is not a
+    # post-callback integrity check.
+    hit_epochs = tuple((
+        hit, hit.document_id, hit.distinct_matches, hit.score, hit.document_sha256,
+    ) for hit in hits)
     output = OfflineIndexResult(hits, len(rows), len(terms), inventory, result)
 
     def assert_output() -> None:
@@ -239,13 +245,16 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
             or output.result_sha256 is not result
             or any(
                 type(hit) is not _HIT_TYPE
-                or hit.document_id is not original.document_id
+                or hit is not original
+                or hit.document_id is not doc_id
                 or type(hit.distinct_matches) is not int
-                or hit.distinct_matches != original.distinct_matches
+                or hit.distinct_matches != matches
                 or type(hit.score) is not int
-                or hit.score != original.score
-                or hit.document_sha256 is not original.document_sha256
-                for hit, original in zip(output.hits, hits, strict=True)
+                or hit.score != score
+                or hit.document_sha256 is not content_hash
+                for hit, (original, doc_id, matches, score, content_hash) in zip(
+                    output.hits, hit_epochs, strict=True,
+                )
             )
         ):
             raise OfflineIndexRejected("local index result carrier changed")
