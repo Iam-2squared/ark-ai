@@ -191,4 +191,19 @@ def build_offline_context_preview(
         or result.retention_authorized is not False
     ):
         raise OfflineContextPreviewRejected("constructed context preview changed")
+    # Reading a denial-only authority descriptor is a callback boundary:
+    # the last getter might have changed a previously checked input or
+    # result field. Never return a private fixture preview from that epoch.
+    assert_epoch()
+    if (
+        type(result) is not _PREVIEW_RESULT_TYPE
+        or result.owner_digest is not owner_digest
+        or result.record_ids is not record_ids
+        or result.canonical_local_json is not payload
+        or result.local_digest is not digest
+    ):
+        raise OfflineContextPreviewRejected(
+            "context preview changed after authority review"
+        )
+    assert_epoch()
     return result
