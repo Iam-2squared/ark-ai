@@ -16,6 +16,7 @@ from .disconnected_write_slot_ledger import (
     WriteSlotLedgerWitness,
 )
 from .offline_write_manual_triage import (
+    OfflineWriteTriageItem,
     OfflineWriteTriagePacket,
     OfflineWriteTriageRejected,
     build_offline_write_triage_packet,
@@ -77,6 +78,8 @@ def recheck_offline_write_triage(
         or type(plan_id) is not str
         or type(steps) is not tuple or not 1 <= len(steps) <= 24
         or type(packet) is not OfflineWriteTriagePacket
+        or type(packet.items) is not tuple or len(packet.items) > 24
+        or any(type(item) is not OfflineWriteTriageItem for item in packet.items)
         or any(type(s) is not OfflineRecoveryStepClaim for s in steps)
     ):
         raise OfflineWriteTriageRecheckRejected("exact local triage inputs required")
@@ -91,6 +94,12 @@ def recheck_offline_write_triage(
         step, step.step_id, step.effect, step.depends_on, step.state,
         step.result_sha256, step.reservation_id,
     ) for step in steps)
+    # Frozen dataclasses can still be changed through object.__setattr__ in a
+    # reentrant callback. Pin each nested item, not only the containing tuple.
+    item_epoch = tuple((
+        item, item.step_id, item.claimed_state, item.disposition,
+        item.reservation_id, item.investigation,
+    ) for item in packet.items)
 
     def stable() -> None:
         if (
@@ -108,8 +117,23 @@ def recheck_offline_write_triage(
                 packet_epoch, strict=True,
             ))
             or len(steps) != len(step_epoch)
+            or len(packet.items) != len(item_epoch)
         ):
             raise OfflineWriteTriageRecheckRejected("triage inputs changed during recheck")
+        for item, saved in zip(packet.items, item_epoch, strict=True):
+            if (
+                type(item) is not OfflineWriteTriageItem or item is not saved[0]
+                or any(now is not old for now, old in zip(
+                    (
+                        item.step_id, item.claimed_state, item.disposition,
+                        item.reservation_id, item.investigation,
+                    ),
+                    saved[1:], strict=True,
+                ))
+            ):
+                raise OfflineWriteTriageRecheckRejected(
+                    "nested triage item changed during recheck"
+                )
         for step, saved in zip(steps, step_epoch, strict=True):
             if (
                 type(step) is not OfflineRecoveryStepClaim or step is not saved[0]
