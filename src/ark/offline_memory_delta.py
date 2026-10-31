@@ -78,6 +78,9 @@ class OfflineMemoryDeltaReview:
         return False
 
 
+_REVIEW_TYPE = OfflineMemoryDeltaReview
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -234,6 +237,45 @@ def review_offline_memory_delta(
     _check_snapshot_pinned(current_pin)
     if any(not _stable(pin) for pin in removal_pins):
         raise OfflineMemoryDeltaRejected("removal receipt changed before result")
-    return OfflineMemoryDeltaReview(
+    result = OfflineMemoryDeltaReview(
         previous_hash, latest_hash, digest, added, updated_ids, dropped, unchanged,
     )
+    # A synthetic checksum cannot upgrade Memory custody, deletion evidence,
+    # or Tool authorization. Check exact result fields and denied authorities.
+    if (
+        type(result) is not _REVIEW_TYPE
+        or result.prior_fingerprint is not previous_hash
+        or result.current_fingerprint is not latest_hash
+        or result.delta_fingerprint is not digest
+        or result.added_ids is not added
+        or result.updated_ids is not updated_ids
+        or result.removed_ids is not dropped
+        or type(result.unchanged_count) is not int
+        or result.unchanged_count != unchanged
+        or result.source_authenticated is not False
+        or result.cross_store_atomicity_verified is not False
+        or result.deletion_or_erasure_proven is not False
+        or result.tool_dispatch_authorized is not False
+    ):
+        raise OfflineMemoryDeltaRejected(
+            "constructed Memory delta changed or claims authority"
+        )
+    # False-returning authority getters can have side effects. Recheck the
+    # inputs and result after those getters, without granting any permission.
+    _check_snapshot_pinned(prior_pin)
+    _check_snapshot_pinned(current_pin)
+    if any(not _stable(pin) for pin in removal_pins):
+        raise OfflineMemoryDeltaRejected("removal receipt changed during result review")
+    if (
+        type(result) is not _REVIEW_TYPE
+        or result.prior_fingerprint is not previous_hash
+        or result.current_fingerprint is not latest_hash
+        or result.delta_fingerprint is not digest
+        or result.added_ids is not added
+        or result.updated_ids is not updated_ids
+        or result.removed_ids is not dropped
+        or type(result.unchanged_count) is not int
+        or result.unchanged_count != unchanged
+    ):
+        raise OfflineMemoryDeltaRejected("Memory delta changed after authority review")
+    return result
