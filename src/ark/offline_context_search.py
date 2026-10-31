@@ -162,13 +162,24 @@ def search_offline_context(
         if hashlib.sha256(raw).hexdigest() != digest:
             raise OfflineContextSearchRejected("search record hash mismatch")
         assert_epoch()
-        normalized = content.casefold()
+        # A full Unicode casefold may expand one source character into
+        # several normalized codepoints (e.g. ß -> ss). Folded offsets are
+        # not valid slice positions in the original private fixture text.
+        folded_parts: list[str] = []
+        original_positions: list[int] = []
+        for position, character in enumerate(content):
+            folded = character.casefold()
+            folded_parts.append(folded)
+            original_positions.extend([position] * len(folded))
+        normalized = "".join(folded_parts)
         if all(term in normalized for term in terms):
             score = sum(normalized.count(term) for term in terms)
-            first = min(normalized.find(term) for term in terms)
-            # Stable Unicode character slicing; no unbounded regex or tokenizers.
-            begin = max(0, first - 64)
-            excerpt = content[begin:first + 96]
+            first_folded = min(normalized.find(term) for term in terms)
+            first_source = original_positions[first_folded]
+            # The excerpt is always sliced at ORIGINAL Unicode codepoint
+            # offsets; never accidentally omit the matched text after folds.
+            begin = max(0, first_source - 64)
+            excerpt = content[begin:first_source + 96]
             scored.append((score, record_id, excerpt))
         assert_epoch()
     scored.sort(key=lambda item: (-item[0], item[1]))
