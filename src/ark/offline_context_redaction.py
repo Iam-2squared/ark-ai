@@ -174,4 +174,24 @@ def preview_offline_redaction(
     ):
         raise OfflineRedactionRejected("masked preview construction mutated")
     assert_epoch()
+    # Denial-only authority properties are callback boundaries. A getter
+    # returning False may still reflectively replace a frozen result field.
+    # Revalidate the exact output after the LAST property read, not just the
+    # unchanged caller input. The masked text must remain the reviewed bytes.
+    if (
+        type(result) is not _REDACTED_RESULT_TYPE
+        or result.owner_digest is not owner_digest
+        or result.scope_digest is not scope_digest
+        or result.source_sha256 is not observed
+        or result.masked_text is not result_text
+        or type(result.masked_characters) is not int
+        or result.masked_characters != masked
+        or type(result.complete_masking) is not bool
+        or result.complete_masking is not require_complete
+        or result.local_digest is not digest
+    ):
+        raise OfflineRedactionRejected(
+            "masked preview changed after authority review"
+        )
+    assert_epoch()
     return result
