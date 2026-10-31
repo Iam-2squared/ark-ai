@@ -37,16 +37,29 @@ def _hash_file(path: Path) -> tuple[str, int]:
     size = 0
     with path.open("rb") as handle:
         opened = os.fstat(handle.fileno())
+        # Windows path-stat and descriptor-stat can describe the *same* file
+        # with different ctime semantics (creation vs change time). Compare
+        # the actual file ID and portable content metadata across sources;
+        # compare each source's complete epoch only against itself.
         if (
             not stat.S_ISREG(opened.st_mode)
             or opened.st_nlink != 1
-            or epoch(opened) != epoch(before)
+            or before.st_ino == 0
+            or opened.st_ino == 0
+            or not os.path.samestat(before, opened)
+            or before.st_size != opened.st_size
+            or before.st_mtime_ns != opened.st_mtime_ns
+            or (
+                os.name != "nt"
+                and (before.st_mode != opened.st_mode
+                     or before.st_ctime_ns != opened.st_ctime_ns)
+            )
         ):
             raise ValueError("identity file changed during hashing")
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             h.update(chunk)
             size += len(chunk)
-        if epoch(os.fstat(handle.fileno())) != epoch(before):
+        if epoch(os.fstat(handle.fileno())) != epoch(opened):
             raise ValueError("identity file changed during hashing")
     if epoch(path.lstat()) != epoch(before):
         raise ValueError("identity file changed during hashing")
