@@ -133,18 +133,26 @@ def prepare_disconnected_read_receipt(
         request_fields[0], step_id, request_fields[1],
         result_fields[2], result_fields[4],
     )
+    def stable_receipt() -> None:
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or receipt.request_id is not request_fields[0]
+            or receipt.step_id is not step_id
+            or receipt.operation is not request_fields[1]
+            or receipt.input_digest is not result_fields[2]
+            or receipt.result_digest is not result_fields[4]
+        ):
+            raise DisconnectedReadBridgeRejected("READ receipt construction changed")
+
     stable()
     stable_verified()
-    if (
-        type(receipt) is not _RECEIPT_TYPE
-        or receipt.request_id is not request_fields[0]
-        or receipt.step_id is not step_id
-        or receipt.operation is not request_fields[1]
-        or receipt.input_digest is not result_fields[2]
-        or receipt.result_digest is not result_fields[4]
-    ):
-        raise DisconnectedReadBridgeRejected("READ receipt construction changed")
+    stable_receipt()
+    # The last authority getter on the recomputed binding is a callback.
+    # Recheck the actual receipt after that callback; a frozen dataclass can
+    # still be reflectively changed without modifying the recomputed binding.
     stable_verified()
+    stable()
+    stable_receipt()
     return receipt
 
 
