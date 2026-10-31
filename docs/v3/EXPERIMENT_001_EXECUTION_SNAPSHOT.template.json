@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "experiment_id": "v3-format-compliance-001",
+  "authorization": {
+    "external_compute_authorized": false,
+    "preflight_authorized": false,
+    "real_training_authorized": false,
+    "v2_opening_authorized": false,
+    "promotion_authorized": false
+  },
+  "code": {
+    "git_sha": "UNRESOLVED",
+    "manifest_sha256": "UNRESOLVED",
+    "clean_tree_required": true
+  },
+  "base": {
+    "model_id": "Qwen/Qwen3-4B-Instruct-2507",
+    "revision": "UNRESOLVED",
+    "file_sha256_manifest": "UNRESOLVED"
+  },
+  "tokenizer": {
+    "revision": "SAME_AS_BASE",
+    "file_sha256_manifest": "UNRESOLVED",
+    "chat_template_probe_sha256": "UNRESOLVED"
+  },
+  "dataset": {
+    "train_count": 120,
+    "validation_count": 30,
+    "canonical_sha256": "UNRESOLVED",
+    "provenance_manifest_sha256": "UNRESOLVED",
+    "contamination_report_sha256": "UNRESOLVED"
+  },
+  "method": {
+    "name": "lora",
+    "rank": 8,
+    "alpha": 16,
+    "dropout": 0.0,
+    "target_modules": ["q_proj", "v_proj"],
+    "epochs": 1,
+    "learning_rate": 0.0001,
+    "seed": 42,
+    "max_sequence_length": 256,
+    "microbatch": 1,
+    "gradient_accumulation": 8,
+    "optimizer": "adamw_torch",
+    "optimizer_betas": [0.9, 0.999],
+    "optimizer_eps": 1e-8,
+    "optimizer_weight_decay": 0.01,
+    "optimizer_amsgrad": false,
+    "optimizer_maximize": false,
+    "scheduler": "constant",
+    "precision": "bf16",
+    "gradient_checkpointing": false
+  },
+  "environment": {
+    "os_or_image_digest": "UNRESOLVED",
+    "python": "UNRESOLVED",
+    "torch": "UNRESOLVED",
+    "transformers": "UNRESOLVED",
+    "peft": "UNRESOLVED",
+    "accelerate": "UNRESOLVED",
+    "cuda_runtime": "UNRESOLVED",
+    "bitsandbytes": "NOT_REQUIRED_FOR_LORA"
+  },
+  "hardware": {
+    "device": "UNRESOLVED",
+    "vram_gib": "UNRESOLVED",
+    "driver": "UNRESOLVED",
+    "preflight_report_sha256": "UNRESOLVED"
+  },
+  "budget": {
+    "full_candidate_runs": 1,
+    "max_cost_jpy": "USER_APPROVAL_REQUIRED",
+    "wall_clock_timeout_minutes": "USER_APPROVAL_REQUIRED"
+  },
+  "export": {
+    "llama_cpp_revision": "UNRESOLVED",
+    "converter_identity": "UNRESOLVED",
+    "quantizer_identity": "UNRESOLVED",
+    "quantization": "Q4_K_M",
+    "paired_baseline_required": true
+  },
+  "evaluation": {
+    "validation_count": 30,
+    "v2_current_runs": 2,
+    "v2_candidate_runs": 2,
+    "v2_opening_requires_explicit_authorization": true,
+    "no_retuning_after_v2_opening": true
+  },
+  "privacy": {
+    "private_sessions_allowed": false,
+    "personal_memory_allowed": false,
+    "secrets_allowed": false,
+    "unattributed_text_allowed": false
+  }
+}
