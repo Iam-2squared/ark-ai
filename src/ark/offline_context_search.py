@@ -67,6 +67,11 @@ class OfflineContextSearchPreview:
         return False
 
 
+# Pin the original inert carrier classes against synthetic constructor injection.
+_RESULT_TYPE = OfflineContextSearchPreview
+_HIT_TYPE = OfflineContextSearchHit
+
+
 def _utf8(value: str) -> bytes:
     try:
         return value.encode("utf-8", errors="strict")
@@ -168,8 +173,9 @@ def search_offline_context(
         assert_epoch()
     scored.sort(key=lambda item: (-item[0], item[1]))
     assert_epoch()
+    selected = tuple(scored[:max_hits])
     hits = tuple(OfflineContextSearchHit(record_id, score, excerpt)
-                 for score, record_id, excerpt in scored[:max_hits])
+                 for score, record_id, excerpt in selected)
     payload = json.dumps(
         {"owner_digest": owner_digest, "query": query,
          "hits": [(hit.record_id, hit.score, hit.excerpt) for hit in hits]},
@@ -179,11 +185,35 @@ def search_offline_context(
     local_digest = hashlib.sha256(_DOMAIN + payload.encode("utf-8")).hexdigest()
     assert_epoch()
     result = OfflineContextSearchPreview(owner_digest, query, hits, local_digest)
-    assert_epoch()
+    def assert_result() -> None:
+        assert_epoch()
+        if (
+            type(result) is not _RESULT_TYPE
+            or result.owner_digest is not owner_digest
+            or result.query is not query
+            or result.hits is not hits
+            or result.local_digest is not local_digest
+            or any(
+                type(hit) is not _HIT_TYPE
+                or hit.record_id is not record_id
+                or type(hit.score) is not int or hit.score != score
+                or hit.excerpt is not excerpt
+                for hit, (score, record_id, excerpt) in zip(
+                    result.hits, selected, strict=True,
+                )
+            )
+        ):
+            raise OfflineContextSearchRejected("search preview result changed")
+
+    assert_result()
+    # These synthetic search results cannot prove consent, disclosure,
+    # retention or Tool authority. Descriptors may mutate inputs/results.
     if (
-        type(result) is not OfflineContextSearchPreview
-        or result.owner_digest is not owner_digest or result.query is not query
-        or result.hits is not hits or result.local_digest is not local_digest
+        result.consent_verified is not False
+        or result.external_export_authorized is not False
+        or result.tool_dispatch_authorized is not False
+        or result.retention_authorized is not False
     ):
-        raise OfflineContextSearchRejected("search preview result changed")
+        raise OfflineContextSearchRejected("search preview authority changed")
+    assert_result()
     return result
