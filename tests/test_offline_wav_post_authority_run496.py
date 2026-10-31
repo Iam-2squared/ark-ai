@@ -11,7 +11,7 @@ import ark.offline_pcm_wav as wave
 
 
 def _request():
-    samples = b"\\x01\\x00" * 80
+    samples = b"\x01\x00" * 80
     fmt = struct.pack("<HHIIHH", 1, 1, 8_000, 16_000, 2, 16)
     body = (
         b"WAVE" + b"fmt " + struct.pack("<I", 16) + fmt
