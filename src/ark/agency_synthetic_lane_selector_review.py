@@ -55,6 +55,10 @@ class SyntheticLaneSelection:
         return False
 
 
+# A synthetic callback must not replace the original denial-only result type.
+_SELECTION_RESULT_TYPE = SyntheticLaneSelection
+
+
 def _check_label(label: object) -> bool:
     return type(label) is str and _LABEL.fullmatch(label) is not None
 
@@ -196,11 +200,25 @@ def review_disconnected_work_lanes(
     assert_epoch()
     result = SyntheticLaneSelection(decision[0], decision[1], digest)
     assert_epoch()
+    def assert_result() -> None:
+        assert_epoch()
+        if (
+            type(result) is not _SELECTION_RESULT_TYPE
+            or result.selected is not decision[0]
+            or result.deferred is not decision[1]
+            or result.diagnostic_digest is not digest
+        ):
+            raise SyntheticLaneSelectionRejected("work decision changed during return")
+
+    assert_result()
+    # No selector diagnostic is permission for execution, writing to GitHub,
+    # or incurring cost. Even False-returning descriptors may mutate inputs
+    # or returned selections after the first field check.
     if (
-        type(result) is not SyntheticLaneSelection
-        or result.selected is not decision[0]
-        or result.deferred is not decision[1]
-        or result.diagnostic_digest is not digest
+        result.execution_authorized is not False
+        or result.github_write_authorized is not False
+        or result.spending_authorized is not False
     ):
-        raise SyntheticLaneSelectionRejected("work decision changed during return")
+        raise SyntheticLaneSelectionRejected("work decision forged authority")
+    assert_result()
     return result
