@@ -70,6 +70,9 @@ class OfflinePngInventory:
         return False
 
 
+_INVENTORY_TYPE = OfflinePngInventory
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -164,10 +167,53 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
             if size != 0 or cursor != len(data):
                 raise OfflinePngRejected("PNG requires final empty IEND")
             assert_epoch()
-            return OfflinePngInventory(
-                owner, privacy, declared_digest, idat_digest.hexdigest(),
+            hashed_idat = idat_digest.hexdigest()
+            result = OfflinePngInventory(
+                owner, privacy, declared_digest, hashed_idat,
                 width, height, color, depth, idat_count, idat_bytes,
             )
+            assert_epoch()
+            if (
+                type(result) is not _INVENTORY_TYPE
+                or result.owner_sha256 is not owner
+                or result.privacy_sha256 is not privacy
+                or result.source_sha256 is not declared_digest
+                or result.idat_sha256 is not hashed_idat
+                or any(
+                    type(value) is not int or value != expected
+                    for value, expected in zip(
+                        (result.width, result.height, result.color_type,
+                         result.bit_depth, result.idat_chunks,
+                         result.total_idat_bytes),
+                        (width, height, color, depth, idat_count, idat_bytes),
+                        strict=True,
+                    )
+                )
+                or result.decoded_pixels_verified is not False
+                or result.capture_provenance_verified is not False
+                or result.consent_verified is not False
+                or result.context_release_authorized is not False
+            ):
+                raise OfflinePngRejected(
+                    "constructed PNG inventory changed or claims authority"
+                )
+            # Authority getters may execute injected code before returning
+            # False; revalidate source and constructed fields afterwards.
+            assert_epoch()
+            if (
+                type(result) is not _INVENTORY_TYPE
+                or result.owner_sha256 is not owner
+                or result.privacy_sha256 is not privacy
+                or result.source_sha256 is not declared_digest
+                or result.idat_sha256 is not hashed_idat
+                or (result.width, result.height, result.color_type,
+                    result.bit_depth, result.idat_chunks,
+                    result.total_idat_bytes) != (
+                        width, height, color, depth, idat_count, idat_bytes
+                    )
+            ):
+                raise OfflinePngRejected("constructed PNG inventory changed")
+            return result
         else:
             raise OfflinePngRejected("unknown, private, or reordered PNG chunk")
     raise OfflinePngRejected("PNG missing final IEND")
