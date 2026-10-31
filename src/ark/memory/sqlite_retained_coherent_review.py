@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from . import sqlite_alignment_retained_review as retained_alignment
 from . import sqlite_event_alignment as alignment
 from . import sqlite_event_prefix_review as prefix
+from . import sqlite_retained_row_delta_review as row_delta
 from .contracts import MemorySchemaError, MemoryScope
 from .sqlite_store import SQLITE_INT_MAX, SQLiteMemoryStore, _record, _validate_v1_schema
 
@@ -42,6 +43,9 @@ class RetainedCoherentMemoryReview:
     current_alignment_sha256: str
     current_event_sha256: str
     review_sha256: str
+    # True only when a separately retained per-row witness was reconciled
+    # inside this same SQLite transaction; NOT authenticated writer evidence.
+    retained_row_delta_checked: bool = False
 
     @property
     def independently_authenticated(self) -> bool:
@@ -76,13 +80,16 @@ def review_retained_coherent_memory(
     store: SQLiteMemoryStore,
     prior_prefix: prefix.MemoryEventPrefixWitness,
     prior_alignment: alignment.MemoryEventAlignmentReview,
+    *,
+    prior_rows: row_delta.MemoryRowDeltaWitness | None = None,
 ) -> RetainedCoherentMemoryReview:
     """Recheck an old event prefix and current live rows in one local read TX.
 
-    Preserve BOTH previous witnesses outside this SQLite file. Neither
-    witness attests its own custody. When a valid event tail has advanced,
-    the current row state is checked for lifecycle consistency, but arbitrary
-    older row bytes cannot be reconstructed from the v1 event schema.
+    Preserve previous witnesses outside this SQLite file. The optional
+    per-row witness binds unchanged old rows even when another memory has
+    appended events; it is inspected in the SAME read transaction as the
+    event-prefix and lifecycle checks. None authenticates custody or writer.
+    A row with its own appended event is not authenticated by that event.
     """
     if type(store) is not _STORE:
         raise MemoryCoherentHistoryRejected("exact Memory source required")
@@ -96,6 +103,12 @@ def review_retained_coherent_memory(
         or old_prefix[1] != old_alignment[3]
     ):
         raise MemoryCoherentHistoryRejected("retained witnesses disagree on event epoch")
+    try:
+        old_rows = row_delta._validate(prior_rows) if prior_rows is not None else None
+    except MemorySchemaError as exc:
+        raise MemoryCoherentHistoryRejected("invalid retained row witness") from exc
+    if old_rows is not None and old_rows[:3] != old_prefix:
+        raise MemoryCoherentHistoryRejected("retained row witness event epoch differs")
 
     path = store.path
 
@@ -111,6 +124,20 @@ def review_retained_coherent_memory(
                     retained_alignment._epoch(prior_alignment),
                     old_alignment, strict=True,
                 ))
+                or (
+                    old_rows is not None
+                    and (
+                        type(prior_rows) is not row_delta.MemoryRowDeltaWitness
+                        or prior_rows.event_count is not old_rows[0]
+                        or prior_rows.last_event_id is not old_rows[1]
+                        or prior_rows.event_prefix_sha256 is not old_rows[2]
+                        or prior_rows.rows is not old_rows[3]
+                        or prior_rows.independently_authenticated is not False
+                        or prior_rows.historical_writer_authenticated is not False
+                        or prior_rows.disclosure_authorized is not False
+                        or prior_rows.action_authorized is not False
+                    )
+                )
             ):
                 raise MemoryCoherentHistoryRejected(
                     "retained source/witness changed during coherent read"
@@ -131,6 +158,8 @@ def review_retained_coherent_memory(
     scopes: set[tuple[str, str]] = set()
     current: dict[str, tuple[str, str, int]] = {}
     lifecycle: dict[str, tuple[str, str, int, bool]] = {}
+    row_commitments: dict[str, tuple[str, int, str]] = {}
+    touched_after_retained: set[str] = set()
 
     try:
         stable()
@@ -159,6 +188,8 @@ def review_retained_coherent_memory(
                     if memory_id in current:
                         raise MemoryCoherentHistoryRejected("duplicate live Memory identity")
                     current[memory_id] = (owner, namespace, record.revision)
+                    if old_rows is not None:
+                        row_commitments[memory_id] = row_delta._commitment(row)
                     scopes.add((owner, namespace))
                     metadata_hash = hashlib.sha256(
                         row["metadata_json"].encode("utf-8")
@@ -224,6 +255,8 @@ def review_retained_coherent_memory(
                     if count <= old_prefix[0]:
                         prefix._charge(prior_hash, entry)
                         old_tail = event_id
+                    elif old_rows is not None:
+                        touched_after_retained.add(memory_id)
                     alignment._charge(aligned_hash, ("event",) + entry)
                     last_id = event_id
                     stable()
@@ -243,6 +276,18 @@ def review_retained_coherent_memory(
                     raise MemoryCoherentHistoryRejected(
                         "live Memory row lacks creation event"
                     )
+                if old_rows is not None:
+                    # Verify row deltas against the SAME WAL snapshot. Another
+                    # memory's new event does not excuse an old row rewrite.
+                    before_rows = {item[0]: item for item in old_rows[3]}
+                    for identifier in before_rows.keys() | row_commitments.keys():
+                        if (
+                            before_rows.get(identifier) != row_commitments.get(identifier)
+                            and identifier not in touched_after_retained
+                        ):
+                            raise MemoryCoherentHistoryRejected(
+                                "Memory row changed without its own appended event"
+                            )
                 stable()
                 conn.rollback()
             except BaseException:
@@ -275,9 +320,17 @@ def review_retained_coherent_memory(
         "ADVANCED_PREFIX_UNAUTHENTICATED"
         if count > old_prefix[0] else "UNCHANGED_LOCAL_HISTORY"
     )
+    row_witness_root = (
+        hashlib.sha256(
+            row_delta._DOMAIN + json.dumps(
+                old_rows, separators=(",", ":"), ensure_ascii=True,
+            ).encode("ascii")
+        ).hexdigest()
+        if old_rows is not None else None
+    )
     payload = json.dumps(
         (old_prefix, old_alignment, rows, count, len(scopes), last_id,
-         current_alignment_sha, current_event_sha, status),
+         current_alignment_sha, current_event_sha, status, row_witness_root),
         separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
     stable()
@@ -286,6 +339,7 @@ def review_retained_coherent_memory(
     report = _RESULT(
         old_prefix[0], count, rows, len(scopes), last_id, status,
         current_alignment_sha, current_event_sha, digest,
+        old_rows is not None,
     )
     stable()
     if (
@@ -301,6 +355,7 @@ def review_retained_coherent_memory(
         or report.current_alignment_sha256 is not current_alignment_sha
         or report.current_event_sha256 is not current_event_sha
         or report.review_sha256 is not digest
+        or report.retained_row_delta_checked is not (old_rows is not None)
         or report.independently_authenticated is not False
         or report.historical_writer_authenticated is not False
         or report.consent_verified is not False
