@@ -251,7 +251,8 @@ class DisconnectedMemoryWitnessLedger:
                         raise MemoryWitnessLedgerRejected("new witness ledger not empty")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
-                _inspect(conn)
+                inspected, _ = _inspect(conn)
+                _check_witness(inspected)
                 if self._path is not source:
                     raise MemoryWitnessLedgerRejected("witness startup path changed")
                 conn.commit()
@@ -347,6 +348,9 @@ class DisconnectedMemoryWitnessLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 observed, last = _inspect(conn)
+                # An equal-valued witness from SQLite is not necessarily an
+                # exact, non-authorizing witness at this CAS boundary.
+                _check_witness(observed)
                 stable()
                 if observed != retained:
                     raise MemoryWitnessLedgerRejected("stale witness CAS tip")
@@ -364,7 +368,9 @@ class DisconnectedMemoryWitnessLedger:
                     (seq, payload, status, new_sha),
                 )
                 stable()
-                if _inspect(conn)[0] != MemoryLedgerWitness(seq, new_sha):
+                inspected, _ = _inspect(conn)
+                _check_witness(inspected)
+                if inspected != MemoryLedgerWitness(seq, new_sha):
                     raise MemoryWitnessLedgerRejected("witness insert changed")
                 stable()
                 conn.commit()
