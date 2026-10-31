@@ -13,7 +13,19 @@ _MODEL_ID = "Qwen/Qwen3-4B-Instruct-2507"
 
 def _write_new_json(path: Path, payload: dict) -> str:
     path = Path(path)
-    if path.exists() or path.is_symlink() or not path.parent.is_dir():
+    # Exclusive creation protects the final file, but does not establish
+    # custody if any already-existing parent is a symlink or the requested
+    # name traverses through "..". Reject those aliases before writing an
+    # otherwise reproducible local identity artifact.
+    if (
+        ".." in path.parts
+        or len(str(path)) > 4096
+        or path.name in ("", ".", "..")
+        or path.exists()
+        or path.is_symlink()
+        or not path.parent.is_dir()
+        or any(parent.is_symlink() for parent in path.parents)
+    ):
         raise ValueError("identity output must be a new file under an existing directory")
     data = canonical_json(payload)
     with path.open("xb") as handle:
