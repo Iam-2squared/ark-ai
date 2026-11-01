@@ -18,6 +18,12 @@ In the disconnected, read-only `build_offline_write_triage_packet` function:
 
 Source safety hardening is at commits `f702acd357ac1731ad380aed9315e4262c1127f3` and `c43e67b65d3557188f22d2e0ed1f82b078db17ad`. Eleven new cases (five nested fields, five packet fields and one valid UNKNOWN fixture) were authored in `tests/test_offline_write_triage_last_denial_run522.py`, combined source+test HEAD `9e75a1dd58876ee3eb39cccc6b9df243aecc4051`. Exact [CI 41281914831](https://github.com/Iam-2squared/ark-ai/actions/runs/41281914831) was IN PROGRESS at initial inspection; final six-platform GREEN is not claimed here.
 
+## NEW — observation reuse cannot acquire action authority
+
+`review_synthetic_observation_reuse` now checks **all four denied capabilities** of the returned local fixture report: media capture, disclosure, notification, and dispatch. It then rechecks the original cached witness, observation envelopes, both lineage review witnesses, and all return fields **after the last false-valued capability getter**. A getter that falsely denies dispatch while changing a previous lineage hash, expiry time, source identity or the result is rejected. This is a simulated private observation only and does **not** capture media or verify consent.
+
+Source commit `34825f5c8022c7cd423e6c7d7f8a7bb92c441785`; eleven new focused cases in `tests/test_observation_reuse_denial_custody_run522.py` at exact source+test HEAD `3422761ad9120f761550a5af73331f294936fb2f`. No six-platform CI success is inferred from the earlier startup or triage HEAD.
+
 ## Explicit trust and authorization limits
 
 These local checksum and SQLite fixtures cannot prove who originally wrote the record, human consent, a trusted clock, historical/externally completed effects, forensic erasure, or cross-store atomicity. A late failure after durable COMMIT must be manually reviewed and must never trigger automatic WRITE retry. No ToolBackend action, notification, new credential/account connection, paid service, external GPU, model generation/training, protected V2 opening, Candidate promotion, frozen-contract change, main merge or physical-PC action occurred.
