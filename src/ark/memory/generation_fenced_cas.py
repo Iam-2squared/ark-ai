@@ -143,6 +143,10 @@ def _snapshot(
             or type(at) is not int or not 0 <= at <= SQLITE_INT_MAX
         ):
             raise MemoryGenerationCASRejected("Memory generation event identity invalid")
+        if updated_at is not None and at < updated_at:
+            raise MemoryGenerationCASRejected(
+                "Memory generation event clock moved backward"
+            )
         if operation == "create":
             if alive or revision != 1:
                 raise MemoryGenerationCASRejected("Memory generation create sequence invalid")
@@ -272,6 +276,16 @@ def generation_fenced_memory_update(
                 raise MemoryConflictError("memory revision exhausted")
             now = store._now()
             stable()
+            # Never revive an expired row or persist a newly expired value.
+            # This is a local clock sanity guard, NOT trusted-clock authorization.
+            if now < current.updated_at_ms:
+                raise MemoryConflictError("generation CAS clock regressed")
+            if current.expires_at_ms is not None and now >= current.expires_at_ms:
+                raise MemoryConflictError("generation CAS source expired")
+            if original_expiry is not None and now >= original_expiry:
+                raise MemoryGenerationCASRejected(
+                    "generation CAS proposed expiry is not future"
+                )
             revision = current.revision + 1
             changed = conn.execute(
                 "UPDATE memories SET content=?,metadata_json=?,content_sha256=?,"
