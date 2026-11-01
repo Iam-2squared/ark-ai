@@ -223,7 +223,42 @@ def review_offline_schedule_resume(
             or preview.state != expected_state
         ):
             raise ScheduleResumeRejected("offline preview differs from recurrence")
+        # A caller-replaced preview can lie about its digest while preserving
+        # every visible slot field. Recompute the preview's own fingerprint
+        # from the original policy/cursor/time, not from the preview callback.
+        preview_payload = json.dumps(
+            (policy_epoch, cursor_epoch, observed_now_ms, expected_state,
+             expected_occurrence, expected_due),
+            separators=(",", ":"), ensure_ascii=True,
+        ).encode("ascii")
+        expected_fingerprint = hashlib.sha256(
+            b"ARK-disconnected-schedule-preview-v1\0"
+            + b"preview\0" + preview_payload
+        ).hexdigest()
+        if preview.fingerprint != expected_fingerprint:
+            raise ScheduleResumeRejected("offline preview fingerprint disagrees with inputs")
+        preview_epoch = (
+            preview.state, preview.next_index, preview.occurrence_id,
+            preview.due_at_ms, preview.fingerprint,
+        )
+        preview_descriptors = tuple(getattr(DisconnectedDuePreview, key)
+                                    for key in _DENIALS)
+
+        def stable_preview() -> None:
+            if (
+                type(preview) is not DisconnectedDuePreview
+                or any(current is not original for current, original in zip((
+                    preview.state, preview.next_index, preview.occurrence_id,
+                    preview.due_at_ms, preview.fingerprint,
+                ), preview_epoch, strict=True))
+                or any(getattr(DisconnectedDuePreview, key) is not original
+                       for key, original in zip(_DENIALS, preview_descriptors, strict=True))
+            ):
+                raise ScheduleResumeRejected("offline preview changed after validation")
+
+        stable_preview()
         second = ledger.inspect(retained=retained_quarantine)
+        stable_preview()
         stable()
         if type(second) is not QuarantineWitness or second != first:
             raise ScheduleResumeRejected("quarantine history changed during preview")
@@ -244,6 +279,7 @@ def review_offline_schedule_resume(
         descriptors = tuple(getattr(OfflineScheduleResumeReview, key) for key in _DENIALS)
 
         def stable_output() -> None:
+            stable_preview()
             if (
                 type(output) is not OfflineScheduleResumeReview
                 or any(a is not b for a, b in zip((
@@ -264,6 +300,7 @@ def review_offline_schedule_resume(
             stable_output()
         last = ledger.inspect(retained=retained_quarantine)
         stable()
+        stable_preview()
         stable_output()
         if type(last) is not QuarantineWitness or last != first:
             raise ScheduleResumeRejected("quarantine history changed after witness")
