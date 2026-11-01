@@ -167,7 +167,9 @@ def _raw(receipt: DisconnectedBatchCycleReceipt) -> bytes:
     return encoded
 
 
-def _result(file_hash: str, receipt: DisconnectedBatchCycleReceipt) -> ArchivedDisconnectedBatchCycle:
+def _result(
+    file_hash: str, receipt: DisconnectedBatchCycleReceipt,
+) -> ArchivedDisconnectedBatchCycle:
     outcome = ArchivedDisconnectedBatchCycle(
         file_hash, receipt.request_id, receipt.plan_digest, receipt.cycle_digest,
     )
