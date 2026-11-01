@@ -85,7 +85,8 @@ def test_detached_packet_delta_survives_fresh_local_file_review(tmp_path, change
     assert _check(fixture) is None
     receipt = fixture[4]
     assert receipt.changed_paths == (() if not change else (
-        "budget.max_cost_jpy", "execution_snapshot_sha256", "packet_sha256",
+        "budget.max_cost_jpy", "execution_core_sha256",
+        "execution_snapshot_sha256", "packet_sha256",
     ))
     assert receipt.external_compute_authorized is False
     assert receipt.candidate_generation_authorized is False
