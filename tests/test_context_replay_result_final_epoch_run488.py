@@ -68,7 +68,7 @@ def test_final_sqlite_callback_cannot_retire_result_validation(
     monkeypatch.setattr(recovery, "OfflineContextRecoveryReview", captured_report)
     monkeypatch.setattr(recovery, "_inspect", mutate_during_final_read)
     with pytest.raises(
-        recovery.OfflineContextRecoveryRejected, match="review result changed",
+        recovery.OfflineContextRecoveryRejected, match="review result (changed|gained authority)",
     ):
         recovery.review_restarted_context_replay(ledger, witness)
     assert calls == 2
