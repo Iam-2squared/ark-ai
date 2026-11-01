@@ -223,10 +223,15 @@ def load_snapshot(path: Path) -> dict:
             final_bytes = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
     except OSError as exc:
         raise ValueError("execution snapshot source changed during JSON decode") from exc
-    identity = lambda info: (
-        info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns,
+    initial_identity = (
+        initial_stat.st_dev, initial_stat.st_ino,
+        initial_stat.st_size, initial_stat.st_mtime_ns,
     )
-    if final_bytes != raw or identity(final_stat) != identity(initial_stat):
+    final_identity = (
+        final_stat.st_dev, final_stat.st_ino,
+        final_stat.st_size, final_stat.st_mtime_ns,
+    )
+    if final_bytes != raw or final_identity != initial_identity:
         raise ValueError("execution snapshot source changed during JSON decode")
     return parsed
 
