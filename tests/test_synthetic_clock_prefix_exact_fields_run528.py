@@ -9,7 +9,6 @@ import pytest
 
 from ark.agency import synthetic_clock_sequence_review as clock
 
-
 SOURCE = "a" * 64
 
 
