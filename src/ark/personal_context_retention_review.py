@@ -260,4 +260,25 @@ def review_synthetic_retention_inventory(
         or result.context_use_authorized is not False
     ):
         raise SyntheticRetentionRejected("retention inventory result changed")
+    # All three denial-only properties are callback boundaries. Even a
+    # False-valued final getter can reflectively rewrite a frozen result,
+    # its retained items, scope, or source path. Recheck AFTER the final
+    # getter without treating this diagnostic as consent or erasure proof.
+    def assert_result_fields() -> None:
+        if (
+            type(result) is not SyntheticRetentionInventory
+            or result.scope_digest is not scope_hash
+            or result.inventory_digest is not digest
+            or result.reviewed_at_ms is not now_ms
+            or result.revoked is not revoked
+            or result.items is not items
+        ):
+            raise SyntheticRetentionRejected(
+                "retention inventory changed after authority denial"
+            )
+
+    assert_result_fields()
+    assert_sources()
+    assert_item_epoch()
+    assert_result_fields()
     return result
