@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
 from pathlib import Path
 from typing import Literal
@@ -191,8 +192,10 @@ def load_snapshot(path: Path) -> dict:
     Frozen experiment semantics and authorization gates remain the responsibility
     of validate_experiment_001; loading is never proof of approval.
     """
+    source = Path(path)
     try:
-        with Path(path).open("rb") as handle:
+        with source.open("rb") as handle:
+            initial_stat = os.fstat(handle.fileno())
             raw = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
     except OSError as exc:
         raise ValueError("execution snapshot cannot be read") from exc
@@ -210,6 +213,21 @@ def load_snapshot(path: Path) -> dict:
         raise ValueError("execution snapshot JSON cannot be decoded") from exc
     if not isinstance(parsed, dict):
         raise ValueError("execution snapshot must be a JSON object")
+    # The decoded object must still represent the same local file epoch.
+    # Recheck the actual bytes and file identity after arbitrary decoder
+    # callbacks. This is local TOCTOU defense, not a filesystem lock,
+    # authenticated provenance, or compute authorization.
+    try:
+        with source.open("rb") as handle:
+            final_stat = os.fstat(handle.fileno())
+            final_bytes = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
+    except OSError as exc:
+        raise ValueError("execution snapshot source changed during JSON decode") from exc
+    identity = lambda info: (
+        info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns,
+    )
+    if final_bytes != raw or identity(final_stat) != identity(initial_stat):
+        raise ValueError("execution snapshot source changed during JSON decode")
     return parsed
 
 
