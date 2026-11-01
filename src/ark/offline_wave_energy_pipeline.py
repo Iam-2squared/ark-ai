@@ -173,7 +173,6 @@ def preview_offline_wav_energy(
 
         # The strict WAV inspector accepts exactly fmt(16) + data(PCM),
         # including the one trailing RIFF pad byte when the payload is odd.
-        frame_width = header_width
         raw = payload[44:44 + pcm_length]
         if (
             not raw or len(raw) != pcm_length
