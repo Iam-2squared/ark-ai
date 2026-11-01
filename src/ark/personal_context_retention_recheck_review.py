@@ -263,21 +263,57 @@ def review_synthetic_retention_recheck(
         raise SyntheticRetentionRecheckRejected(
             "current retention evidence changed during result construction"
         )
-    if (
-        type(result) is not _RESULT_TYPE
-        or result.deletion_authorized is not False
-        or result.erasure_completed is not False
-        or result.context_use_authorized is not False
-        or result.external_disclosure_authorized is not False
-        or result.scope_digest is not scope_digest
-        or result.captured_inventory_digest is not captured_digest
-        or result.current_inventory_digest is not current_digest
-        or result.checked_at_ms is not now_ms
-        or result.expired_memory_ids is not expired_ids
-        or result.unbounded_memory_ids is not unbounded_ids
-        or result.scope_revoked is not revoked
-    ):
-        raise SyntheticRetentionRecheckRejected(
-            "retention recheck returned result changed during construction"
-        )
+    # Every denial property is an overridable callback in test fixtures.
+    # A False return can still mutate already-checked cached/current evidence,
+    # result fields or an earlier authority descriptor. Validate the original
+    # carriers after EACH callback, including the last one.
+    denial_names = (
+        "deletion_authorized", "erasure_completed",
+        "context_use_authorized", "external_disclosure_authorized",
+    )
+    denial_descriptors = tuple(getattr(_RESULT_TYPE, key) for key in denial_names)
+
+    def assert_result_epoch() -> None:
+        assert_epoch()
+        if (
+            _epoch(current) != current_epoch
+            or current.items is not current_items
+            or any(
+                item is not original for item, original in zip(
+                    current.items, current_item_carriers, strict=True,
+                )
+            )
+            or current.scope_digest is not scope_digest
+            or current.inventory_digest is not current_digest
+            or current.revoked is not revoked
+            or type(result) is not _RESULT_TYPE
+            or result.scope_digest is not scope_digest
+            or result.captured_inventory_digest is not captured_digest
+            or result.current_inventory_digest is not current_digest
+            or type(result.checked_at_ms) is not int
+            or result.checked_at_ms is not now_ms
+            or type(result.expired_memory_ids) is not tuple
+            or result.expired_memory_ids is not expired_ids
+            or type(result.unbounded_memory_ids) is not tuple
+            or result.unbounded_memory_ids is not unbounded_ids
+            or type(result.scope_revoked) is not bool
+            or result.scope_revoked is not revoked
+            or any(
+                getattr(_RESULT_TYPE, key) is not descriptor
+                for key, descriptor in zip(
+                    denial_names, denial_descriptors, strict=True,
+                )
+            )
+        ):
+            raise SyntheticRetentionRecheckRejected(
+                "retention recheck returned result changed during construction"
+            )
+
+    assert_result_epoch()
+    for authority in denial_names:
+        if getattr(result, authority) is not False:
+            raise SyntheticRetentionRecheckRejected(
+                "retention recheck returned result changed during construction"
+            )
+        assert_result_epoch()
     return result
