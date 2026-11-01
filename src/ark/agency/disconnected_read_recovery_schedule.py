@@ -136,6 +136,16 @@ def schedule_detached_read_recovery(
         ):
             raise DetachedReadRecoveryRejected("invalid ordered READ state or digest")
         ancestors = tuple(dispositions[dep] for dep in deps)
+        # A failed, running, or unknown *started* child cannot legitimately
+        # precede its dependency's success. Do not launder such contradictory
+        # restart history into a seemingly terminal or quarantined decision.
+        # An unstarted child remains a valid HOLD/WAIT diagnostic.
+        if state in ("FAILED", "RUNNING", "UNKNOWN") and any(
+            prior_states[dep] != "SUCCEEDED" for dep in deps
+        ):
+            raise DetachedReadRecoveryRejected(
+                "started READ after unresolved dependency"
+            )
         if state == "SUCCEEDED":
             if any(prior_states[dep] != "SUCCEEDED" for dep in deps):
                 raise DetachedReadRecoveryRejected("success after unresolved dependency")
