@@ -1,5 +1,51 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run527 / 2026-11-01:** FOUR coherent, free-only, independently scoped implementation+test packages: (1) registered READ aggregate exact child digest/type verification, (2) privacy Context admission denial-descriptor epoch, (3) retained Memory row-witness capture post-denial integrity, (4) V3 execution authorization-scope exact-type gate. **24 newly authored pytest cases = 9 + 6 + 4 + 5** plus two source-grounded technical evidence documents. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 remain Draft/unmerged.
+
+**Saved at:** **2026-11-01T19:58:11.480+09:00 Asia/Tokyo/JST**, observed ordinary host wall-clock immediately before this GitHub Contents checkpoint write. NOT trusted-clock attestation, proof of user consent, authenticated execution authorization, cost approval, human review or model identity.
+
+## LATEST — exact work basis, branches and checkpoint-result semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`: **initial work-basis HEAD** `1e9da4620c743b400e7eb55e4bfcf295cbe9875f`. Registered READ final source `b887a0e5c4b5f2bb8935d3a182a50a94d76fd242`, source+test `1692632b56cee858f80258e05543e152041cce54`; Context source+tests `4ab73b15a65328dd3682c0503a3bf2284b809343`; Memory source+test `fdec9059a147e3f3155a9385ccf878e18aebbf13`; [Run527 JARVIS technical evidence](https://github.com/Iam-2squared/ark-ai/blob/6546d409c016a6773faae42bd6348d8204f5fa37/docs/JARVIS_RUN527_RECEIPT_CONTEXT_MEMORY_CUSTODY.md), latest documentation and **checkpoint write-basis HEAD** `6546d409c016a6773faae42bd6348d8204f5fa37`.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`: **initial work-basis HEAD** `198f0a703ef805d0fde23a008974e54d9f2008fc`; implementation `d4d2658edbb1c19e712cdb4251396254ae7c9f0c`; source+test `9c197dd5d846d1ac4a44b4c37c55433d1a067c1d`; [Run527 V3 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/d955338b4c3af8b7cc53de9475dd77d7e8b48c8f/docs/v3/RUN527_EXACT_AUTHORIZATION_SCOPE.md), latest observed HEAD `d955338b4c3af8b7cc53de9475dd77d7e8b48c8f`.
+- **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405` (both PR bases agree). The **checkpoint-result commit SHA cannot appear in its own content**: GitHub assigns it after this update; re-read the resulting branch HEAD and status Blob immediately after writing. Checkpoint CI runs at a distinct HEAD and cannot inherit any earlier GREEN.
+
+## NEW — source, tests and evidence
+
+1. **Registered READ aggregate (9 cases):** `src/ark/agency/disconnected_registered_batch_receipt_set.py` independently recomputes the exact domain-separated child digest of a canonical step receipt, rather than trusting any lower-case 64-hex value from a replaceable child callback. It enforces exact string types on all child receipt scalar identifiers/hashes. A first source write accidentally encoded the digest domain NUL as literal backslash-zero; this was corrected at `b887a0e5c4b5f2bb8935d3a182a50a94d76fd242` before the complete test package, with no authority/dispatch relaxation. `tests/test_registered_batch_receipt_set_run524.py` adds forged valid-hex digests and same-value subclass cases. Existing disconnected READ remains a diagnostic only.
+2. **Privacy Context descriptor epoch (6 cases):** `src/ark/offline_context_membership_guard.py` retains the original four authority-property descriptor objects before result creation and rejects a false-valued final getter that reflectively changes an earlier authority property. Tests in `tests/test_context_membership_exact_output_types_run526.py` include even False-to-False descriptor substitutions. No personal text is fetched, disclosed or retained.
+3. **Memory retained row witness capture (4 cases):** `src/ark/memory/sqlite_retained_row_delta_review.py` compares originally validated event count, last event ID, prefix SHA-256 and row tuple against the final returned witness, and also binds four no-authority descriptors, after a reentrant final getter. `tests/test_memory_retained_row_delta_run512.py` supplies synthetic field/descriptor mutations. The frozen SQLite schema is unchanged and this is NOT authenticated historical authorship.
+4. **V3 execution scope gate (5 cases):** `src/ark/learning/execution.py` now requires a plain `str` literal `none`, `preflight` or `training` and an exact `dict` snapshot before evaluating any frozen identity or authorization data. `tests/v3/test_execution.py` rejects str subclasses, custom hash/equality-based training impersonation and dict subclasses. It does NOT authorize training or change frozen experiment-001 settings.
+
+**24 authored cases are not automatically independent local PASS evidence.** Local git/pytest/Ruff against the full repo could not be run here: this container's GitHub DNS lookup failed. GitHub Actions CI must be judged on exact source/test HEADs; prior-head GREEN is never inherited.
+
+## CI / validation — sampled before checkpoint write
+
+- **PR #8 latest combined source+tests:** [41299441373](https://github.com/Iam-2squared/ark-ai/actions/runs/41299441373), exact `fdec9059a147e3f3155a9385ccf878e18aebbf13`: **0/6 GREEN, 0 FAIL, 6 IN PROGRESS, 0 QUEUED, 0 OTHER**. Not declared six-job GREEN unless all six complete successfully.
+- **PR #8 latest technical evidence:** [41299532852](https://github.com/Iam-2squared/ark-ai/actions/runs/41299532852), exact `6546d409c016a6773faae42bd6348d8204f5fa37`: **0/6 GREEN, 0 FAIL, 1 IN PROGRESS, 5 QUEUED, 0 OTHER**.
+- **PR #5 latest source+tests:** [41299327848](https://github.com/Iam-2squared/ark-ai/actions/runs/41299327848), exact `9c197dd5d846d1ac4a44b4c37c55433d1a067c1d`: **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER**.
+- **PR #5 technical evidence:** [41299501022](https://github.com/Iam-2squared/ark-ai/actions/runs/41299501022), exact `d955338b4c3af8b7cc53de9475dd77d7e8b48c8f`: **5/6 GREEN, 0 FAIL, 1 IN PROGRESS, 0 QUEUED, 0 OTHER**.
+- **Prior Run526 PR #8 checkpoint** [41295439748](https://github.com/Iam-2squared/ark-ai/actions/runs/41295439748) was separately confirmed **6/6 GREEN**. It does NOT validate the new Run527 sources. This Run527 checkpoint creates a distinct CI head/run; do not invent its ID/result before observation.
+
+## Frozen contracts / blocked authorization boundaries
+
+- Re-read unchanged frozen blobs: `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Frozen V1/V2/Local UI/Launcher evidence, scorer/policy and protected V2 final gate are unchanged.
+- **No paid or external GPU/API/compute, subscriptions, real Candidate adapter/weight generation, credentials, model download, external ToolBackend, camera/microphone, user content disclosure, autonomous replay/notification, destructive operation, Candidate promotion, human-review decision, protected V2 evaluation opening or main merge.** Both PRs remain Draft/unmerged. Synthetic hashes are not authenticated identities, trusted clocks, atomic cross-store provenance, consent or external effect proofs.
+- V3 remains blocked on exact upstream model/tokenizer/tool byte revision and hashes, reviewed/approved dataset and contamination evidence, local runtime identity, explicit user-paid-compute authorization and provider billing hard caps. No PASS claim.
+
+## Next plan / 今後の方針
+
+1. Re-read **PR #8 exact Run527 source CI 41299441373** and **PR #5 docs CI 41299501022**, plus their independent documentation/checkpoint CI. On FAIL examine precise failing-job logs and fix the smallest issue on the normal Contents API path, without weakening refusals. Avoid duplicate CI launches.
+2. Strengthen Memory **CAS/concurrency/expiry coherent row-event snapshots and post-commit witness integrity**; ensure captured baseline cannot be silently reinterpreted after restart. Keep read-only evidence and genuine user consent separate.
+3. Extend Planner DAG / immutable ToolRegistry / exact PermissionGate / registered READ journal **persistent multistep recovery** with no automatic re-execution of an unknown external effect. Preserve UNKNOWN WRITE manual-only quarantine.
+4. Advance trusted-clock audit-before-action and occurrence/replay fences, Scheduler restart deduplication, Personal Context privacy revocation, offline observation fixture identity and startup readiness. Continue independent **free-only** V3 reproducibility/approval/path checks. Any real paid/hardware/credentials/contract/V2/Candidate/main-merge gate stops only its own lane until explicitly approved.
+
+---
+
+## Historical checkpoint — Run526 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run526 / 2026-11-01:** THREE independently scoped, free-only, reversible source+test packages (1) V3 wall-time approval-epoch mutation fence, (2) disconnected registered READ child receipt independent aggregate binding, (3) synthetic Personal Context admission exact integer count custody. **28 newly authored pytest cases (12 + 9 + 7)**, plus one test-only Ruff import-order correction and three explanatory technical records. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 remain Draft/unmerged.
 
 **Saved at:** **2026-11-01T18:59:01.130+09:00 Asia/Tokyo/JST**, ordinary host wall-clock observation immediately before permitted GitHub Contents checkpoint write. Not a trusted clock, actor authentication, authorization, consent or model/runtime identity attestation.
