@@ -204,5 +204,8 @@ def review_unapproved_packet_delta(
         stable_result()
         stable()
         return result
-    except (ExecutionBlocked, ValueError, TypeError, KeyError, RecursionError, OverflowError) as exc:
+    except (
+        ExecutionBlocked, ValueError, TypeError, KeyError,
+        RecursionError, OverflowError,
+    ) as exc:
         raise ReviewPacketDeltaRejected("unapproved packet delta review denied") from exc
