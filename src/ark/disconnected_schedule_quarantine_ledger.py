@@ -368,4 +368,68 @@ class DisconnectedScheduleQuarantineLedger:
         ):
             raise ScheduleQuarantineRejected("post-commit quarantine receipt changed")
         stable()
+        # Persisted quarantine is only an overdue classification. Even a
+        # false-valued reentrant result getter may alter the returned witness,
+        # its authority descriptors or the already-committed SQLite history.
+        denial_flags = (
+            "execution_authorized", "notification_authorized",
+            "automatic_replay_authorized", "trusted_clock_verified",
+            "consent_verified",
+        )
+        descriptors = tuple(getattr(QuarantineReceipt, key) for key in denial_flags)
+        for key in denial_flags:
+            if getattr(receipt, key) is not False:
+                raise ScheduleQuarantineRejected("post-commit quarantine gained authority")
+            stable()
+        if (
+            type(receipt) is not QuarantineReceipt
+            or receipt.witness is not result
+            or type(result) is not QuarantineWitness
+            or result.count is not result_epoch[0]
+            or result.chain_sha256 is not result_epoch[1]
+            or type(receipt.quarantined_index) is not int
+            or receipt.quarantined_index != index
+            or any(
+                getattr(QuarantineReceipt, key) is not before
+                for key, before in zip(denial_flags, descriptors, strict=True)
+            )
+        ):
+            raise ScheduleQuarantineRejected("post-commit quarantine result epoch changed")
+        # Read the durable journal again AFTER all result callbacks. A failed
+        # post-COMMIT review never rolls back, retries, dispatches or advances
+        # the synthetic occurrence.
+        try:
+            with closing(self._open(read_only=True)) as readonly:
+                readonly.execute("BEGIN")
+                try:
+                    persisted = _validate(readonly, original_epoch)
+                    if (
+                        type(persisted) is not QuarantineWitness
+                        or persisted.count != result_epoch[0]
+                        or persisted.chain_sha256 != result_epoch[1]
+                    ):
+                        raise ScheduleQuarantineRejected(
+                            "post-commit quarantine history changed after denial"
+                        )
+                    readonly.rollback()
+                except BaseException:
+                    readonly.rollback()
+                    raise
+        except sqlite3.Error as exc:
+            raise ScheduleQuarantineRejected(
+                "post-commit quarantine history cannot be rechecked"
+            ) from exc
+        stable()
+        if (
+            type(receipt) is not QuarantineReceipt
+            or receipt.witness is not result
+            or result.count is not result_epoch[0]
+            or result.chain_sha256 is not result_epoch[1]
+            or receipt.quarantined_index != index
+            or any(
+                getattr(QuarantineReceipt, key) is not before
+                for key, before in zip(denial_flags, descriptors, strict=True)
+            )
+        ):
+            raise ScheduleQuarantineRejected("post-commit quarantine changed at return")
         return receipt
