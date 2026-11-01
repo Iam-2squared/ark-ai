@@ -18,7 +18,11 @@ from .disconnected_batch_cycle_archive import (
     DisconnectedBatchArchiveRejected,
     review_disconnected_batch_fixture_cycle_archive,
 )
-from .disconnected_batch_plan import DisconnectedBatchPlan, DisconnectedBatchRejected
+from .disconnected_batch_plan import (
+    DisconnectedBatchPlan,
+    DisconnectedBatchRejected,
+    DisconnectedBatchStep,
+)
 from .disconnected_batch_schedule import DisconnectedBatchSchedule
 from .disconnected_registered_batch_receipt_set import (
     RegisteredBatchSetRejected,
@@ -118,6 +122,20 @@ def review_registered_cycle_archive_bridge(
         schedule.schedule_digest,
     )
     original_evidence = tuple(evidence)
+    # Plan steps and registered receipt carriers are frozen dataclasses, but
+    # object.__setattr__ can still replace their fields during a reviewer
+    # callback. Retaining only the outer tuple identity is insufficient.
+    step_carriers = tuple(plan.steps)
+    step_fields = tuple(
+        (step.step_id, step.operation, step.canonical_args_json, step.depends_on)
+        for step in step_carriers
+    )
+    evidence_fields = tuple(
+        (item.journal, item.retained_journal, item.link, item.call,
+         item.grants, item.request, item.result, item.binding)
+        for item in original_evidence
+    )
+    waves = tuple(schedule.waves)
 
     def stable() -> None:
         if (
@@ -128,6 +146,32 @@ def review_registered_cycle_archive_bridge(
             or any(now is not original for now, original in zip(
                 evidence, original_evidence, strict=True,
             ))
+            or type(plan.steps) is not tuple
+            or any(
+                type(step) is not DisconnectedBatchStep
+                or step is not carrier
+                or any(value is not original for value, original in zip((
+                    step.step_id, step.operation, step.canonical_args_json,
+                    step.depends_on,
+                ), fields, strict=True))
+                for step, carrier, fields in zip(
+                    plan.steps, step_carriers, step_fields, strict=True,
+                )
+            )
+            or type(schedule.waves) is not tuple
+            or any(wave is not original for wave, original in zip(
+                schedule.waves, waves, strict=True,
+            ))
+            or any(
+                type(item) is not RegisteredBatchStepEvidence
+                or any(value is not original for value, original in zip((
+                    item.journal, item.retained_journal, item.link, item.call,
+                    item.grants, item.request, item.result, item.binding,
+                ), fields, strict=True))
+                for item, fields in zip(
+                    evidence, evidence_fields, strict=True,
+                )
+            )
             or any(now is not original for now, original in zip(
                 (plan.request_id, plan.steps, plan.canonical_plan_json, plan.plan_digest),
                 plan_epoch, strict=True,
