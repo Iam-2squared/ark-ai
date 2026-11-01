@@ -91,7 +91,7 @@ def review_memory_event_alignment(
             try:
                 _validate_v1_schema(conn)
                 stable_source()
-                current: dict[str, tuple[str, str, int]] = {}
+                current: dict[str, tuple[str, str, int, int, int]] = {}
                 scopes: set[tuple[str, str]] = set()
                 rows = 0
                 for row in conn.execute("SELECT * FROM memories ORDER BY memory_id"):
@@ -103,7 +103,10 @@ def review_memory_event_alignment(
                     if record.memory_id in current:
                         raise MemoryEventAlignmentRejected("duplicate live memory identity")
                     owner, namespace = record.scope.owner_id, record.scope.namespace
-                    current[record.memory_id] = (owner, namespace, record.revision)
+                    current[record.memory_id] = (
+                        owner, namespace, record.revision,
+                        record.created_at_ms, record.updated_at_ms,
+                    )
                     scopes.add((owner, namespace))
                     # A snapshot fingerprint must cover the entire validated
                     # persisted row, not just the identity/revision/content
@@ -120,7 +123,11 @@ def review_memory_event_alignment(
                         record.created_at_ms, record.updated_at_ms,
                         record.expires_at_ms,
                     ))
-                lifecycle: dict[str, tuple[str, str, int, bool]] = {}
+                # Persisted v1 event times must reconcile with the live row's
+                # current lifetime, not merely its final revision. The
+                # clock is caller-supplied and need not be monotonic, so do
+                # not require chronological event timestamps.
+                lifecycle: dict[str, tuple[str, str, int, bool, int, int]] = {}
                 count = 0
                 last_id = 0
                 for event in conn.execute(
@@ -155,6 +162,8 @@ def review_memory_event_alignment(
                         if revision != 1 or previous is not None and previous[3]:
                             raise MemoryEventAlignmentRejected("invalid Memory creation history")
                         active = True
+                        created_at = at
+                        last_write_at = at
                     else:
                         if previous is None or not previous[3]:
                             raise MemoryEventAlignmentRejected("event without active Memory")
@@ -162,7 +171,11 @@ def review_memory_event_alignment(
                         if revision != wanted:
                             raise MemoryEventAlignmentRejected("Memory revision history differs")
                         active = operation == "update"
-                    lifecycle[memory_id] = (owner, namespace, revision, active)
+                        created_at = previous[4]
+                        last_write_at = at if active else previous[5]
+                    lifecycle[memory_id] = (
+                        owner, namespace, revision, active, created_at, last_write_at,
+                    )
                     scopes.add((owner, namespace))
                     last_id = event_id
                     _charge(digest, (
@@ -172,8 +185,12 @@ def review_memory_event_alignment(
                 for memory_id, state in lifecycle.items():
                     expected = current.pop(memory_id, None)
                     if state[3]:
-                        if expected != state[:3]:
-                            raise MemoryEventAlignmentRejected("live Memory lacks matching event")
+                        if expected != (
+                            state[0], state[1], state[2], state[4], state[5],
+                        ):
+                            raise MemoryEventAlignmentRejected(
+                                "live Memory row/time lacks matching event"
+                            )
                     elif expected is not None:
                         raise MemoryEventAlignmentRejected("terminal Memory still has a row")
                 if current:
