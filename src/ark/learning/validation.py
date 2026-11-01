@@ -162,6 +162,11 @@ def compare_validation(current: ValidationReport, candidate: ValidationReport) -
     new = {case.case_id: case for case in candidate.cases}
     if old.keys() != new.keys():
         raise ValueError("validation case identities differ")
+    # The detached byte-for-byte rechecker already rejects case reordering.
+    # Enforce the same exact case sequence at this direct comparison boundary:
+    # identical sets of IDs are insufficient to preserve paired provenance.
+    if tuple(old) != tuple(new):
+        raise ValueError("validation case order differs")
     for case_id in old:
         if old[case_id].category != new[case_id].category:
             raise ValueError("validation category mismatch")
