@@ -170,6 +170,10 @@ def build_offline_write_triage_packet(
     ):
         raise OfflineWriteTriageRejected("durable reservation coverage changed")
     pinned = tuple(packet_items)
+    item_epoch = tuple((
+        item, item.step_id, item.claimed_state, item.disposition,
+        item.reservation_id, item.investigation,
+    ) for item in pinned)
     encoded = json.dumps(
         (plan_id, previous_count, previous_chain, recovery.fingerprint,
          [(i.step_id, i.claimed_state, i.disposition, i.reservation_id, i.investigation)
@@ -197,11 +201,6 @@ def build_offline_write_triage_packet(
     # A false-valued denial property is still a Python callback. It can
     # reflectively edit a frozen packet or a nested item after the digest was
     # calculated. Check *all* retained fields after the final denial getter.
-    item_epoch = tuple((
-        item, item.step_id, item.claimed_state, item.disposition,
-        item.reservation_id, item.investigation,
-    ) for item in pinned)
-
     def assert_packet_epoch() -> None:
         if (
             type(packet) is not _PACKET_TYPE
