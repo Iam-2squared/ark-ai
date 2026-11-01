@@ -117,11 +117,49 @@ def review_passive_readiness_transition(
                 or result.promotion_authorized is not False
             ):
                 raise PassiveTransitionRejected("unapproved shape review gained authority")
+            # An exact-type shape callback is not itself an immutable file
+            # identity. Independently bind its reported SHA to the canonical
+            # bytes of the still-unapproved source snapshot.
+            canonical = json.dumps(
+                mapping, ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False,
+            ).encode("utf-8")
+            if result.snapshot_sha256 != hashlib.sha256(canonical).hexdigest():
+                raise PassiveTransitionRejected("shape callback digest mismatch")
             stable()
             return result
 
         initial_before = inspect(before)
         initial_after = inspect(after)
+        report_fields = (
+            "snapshot_sha256", "unresolved_paths",
+            "invalid_shape_paths", "checked_path_count",
+        )
+        source_reports = (initial_before, initial_after)
+        source_epochs = tuple(
+            tuple(getattr(result, name) for name in report_fields)
+            for result in source_reports
+        )
+
+        def stable_source_reports() -> None:
+            for result, original in zip(
+                source_reports, source_epochs, strict=True,
+            ):
+                if (
+                    type(result) is not UnapprovedSnapshotShapeReview
+                    or any(
+                        getattr(result, name) is not prior
+                        for name, prior in zip(
+                            report_fields, original, strict=True,
+                        )
+                    )
+                ):
+                    raise PassiveTransitionRejected(
+                        "unapproved source report changed during transition"
+                    )
+            stable()
+
+        stable_source_reports()
         before_unresolved = set(initial_before.unresolved_paths)
         after_unresolved = set(initial_after.unresolved_paths)
         before_invalid = set(initial_before.invalid_shape_paths)
@@ -154,18 +192,22 @@ def review_passive_readiness_transition(
         def stable_report() -> None:
             if (
                 type(report) is not PassiveReadinessTransition
-                or tuple(getattr(report, n) for n in (
-                    "before_sha256", "after_sha256", "newly_plausible_paths",
-                    "became_unresolved_paths", "newly_malformed_paths",
-                    "syntax_repaired_paths", "transition_sha256",
-                )) != original
+                or any(
+                    getattr(report, name) is not prior
+                    for name, prior in zip((
+                        "before_sha256", "after_sha256",
+                        "newly_plausible_paths", "became_unresolved_paths",
+                        "newly_malformed_paths", "syntax_repaired_paths",
+                        "transition_sha256",
+                    ), original, strict=True)
+                )
                 or any(
                     getattr(PassiveReadinessTransition, n) is not desc
                     for n, desc in zip(_DENIED, descriptors, strict=True)
                 )
             ):
                 raise PassiveTransitionRejected("passive transition report changed")
-            stable()
+            stable_source_reports()
 
         stable_report()
         for name in _DENIED:
