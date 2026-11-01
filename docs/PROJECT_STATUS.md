@@ -1,5 +1,55 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run520 / 2026-11-01: FIVE coherent zero-cost, reversible packages, 69 newly authored pytest cases. Registered READ/journal restart reconciliation, Scheduler final-denial integrity, V3 mock-gate input epoch, V3 direct paired validation strict carriers, and combined paired input pre-scan/budget. Earlier exact-source CI successes listed below; no later source PASS inferred from earlier commits. ARK/JARVIS/V3 overall NOT_PASSED.**
+
+**Saved at:** **2026-11-01T13:55:21.205+09:00 Asia/Tokyo/JST** (ordinary workflow wall-clock reading just before this normal GitHub Contents write; NOT trusted runtime time, owner consent, GPU/provider billing or Tool action authorization).
+
+## LATEST — branch and exact work-basis/commit semantics
+
+- **PR #8:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`. Initial work-basis HEAD `1a8718c8f2c49e7c35d82e3a7c39ed4a6b2328e2` (Run519 checkpoint). Final combined **source+test HEAD** `c02aae319b1c72ab07830fb8f319ca1df29347f8`; [Run520 JARVIS evidence](https://github.com/Iam-2squared/ark-ai/blob/59eb09382190812ef5266d775673dd669ec4ed6e/docs/JARVIS_RUN520_REGISTERED_RECEIPT_DUE_PREFIX.md). **Checkpoint write-basis HEAD:** `59eb09382190812ef5266d775673dd669ec4ed6e` (documentation included).
+- **PR #5:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`. Initial work-basis HEAD `a5ef1aaa4dd840afd5916fa9fea32ccb83cfdc9a` (Run519 docs). Final **source+test HEAD** `9d6937ead4abb061a95c74209bbcb351a1642c6a`; [mock epoch evidence](https://github.com/Iam-2squared/ark-ai/blob/f3fe21e75fa528290c427e51173ea93e49f6d7ec/docs/v3/RUN520_MOCK_EVIDENCE_EPOCH.md) and [paired validation evidence](https://github.com/Iam-2squared/ark-ai/blob/f87800744f742818dd93e9089a8f69375283ee2a/docs/v3/RUN520_VALIDATION_EXACT_EPOCH.md) at docs HEAD `f87800744f742818dd93e9089a8f69375283ee2a`.
+- **main:** unchanged at shared base `7a843f17eb96ed13d66f23b58b06406b3002e405`; no merge. The **checkpoint-result HEAD** is assigned by GitHub *after* this Contents update and cannot be embedded circularly in the status that creates it. Re-read branch HEAD and the actual committed status blob SHA separately after saving. This is the **only** Run520 canonical checkpoint update.
+
+## NEW — five independent source+test packages / 69 authored pytest cases
+
+1. **Registered fixture → retained journal READ reconciliation (18 cases; PR #8).** `src/ark/agency/disconnected_registered_receipt_review.py` added at `b2fb77e1fb0888befbd318938d9993cfa6a22d9b`, tests `tests/test_registered_receipt_restart_review_run520.py` at `5890fe2995b11125a3f2d35df96b16205e36163c`. Recomputes immutable Registry/PermissionGate/fixture `act_`→`req_` local correlation, then verifies the bounded SQLite v1 journal chain AND exact target row in one read transaction against separately retained caller link/witness. Rechecks original inputs after snapshot. No schema change, linked action stored in v1, backend dispatch, replay or historical identity/consent proof.
+2. **V3 mock gate input epochs (17 cases; PR #5).** `src/ark/learning/gate.py` at `e20a27e7fc86426823237b4d411cc1d4067a15`, tests `tests/v3/test_mock_gate_epoch_run520.py` at `2b3ceb3455616f8e3864e910ea30dda8786c3efe`. Pins exact mock evidence carriers, evaluates unchanged frozen simulation policy on the captured snapshot, rejects reflected/reentrant mutation before an eligible-in-simulation result. No real V2 opening/promotion.
+3. **Scheduler due-prefix terminal recheck (9 cases; PR #8).** `src/ark/agency/disconnected_due_prefix_review.py` at `49781e368213f82069b11898b1166a314f5ef45e`, tests `tests/test_due_prefix_final_fields_run520.py` at combined source/test HEAD `c02aae319b1c72ab07830fb8f319ca1df29347f8`. Rechecks all count/status/fingerprint/digest fields after false-valued authority getters, including final source/retained witness epoch; still no notification or schedule execution.
+4. **Direct paired V3 validation carrier integrity (18 cases; PR #5).** `src/ark/learning/validation.py` at `033f6858217864a0bd4ea6b2616fb19439ebc26c`, tests `tests/v3/test_validation_exact_epoch_run520.py` at `332b41466aef0d4d909bcc2b0d52e4bbc3b5a7db`. Requires exact 30-case/report/case/primitive types, bounded field text, unchanged report and nested case identities across validation/comparison callbacks; preserves the original paired non-V2 comparison result.
+5. **Paired V3 total-budget/pre-scan fence (7 cases; PR #5).** Latest `src/ark/learning/validation.py` at `9b0a6f444a7f072a2e621c1397193a23575ff2e7`; earlier total-budget test adapted at `5f5d4a7fa3d8275dfa256f1ad8abeb2778797dca`; new `tests/v3/test_validation_pre_scan_budget_run520.py` at final source+test HEAD `9d6937ead4abb061a95c74209bbcb351a1642c6a`. Pre-checks exactly 30 exact case carriers before any case-getter/validation callback, rejects malformed/unhashable IDs before set hashing, and bounds combined paired synthetic string inputs to 32,768 characters.
+
+**69 = 18 registered receipt + 17 V3 mock gate + 9 due-prefix + 18 V3 direct validation + 7 paired pre-scan authored pytest cases.** One earlier aggregate-budget test expectation was corrected to require the newly enforced rejection. No independent local full-checkout pytest/Ruff executed: this runtime cannot resolve GitHub for a local git clone. Cases authored are not independently observed local PASS counts. All GitHub writes used the normal Contents API with fresh source SHA/branch HEAD checks; no raw Git objects, force push, unapproved merge, or protection bypass.
+
+## CI/evidence — exact commits, no inherited GREEN
+
+- **PR8 registered READ:** [CI 41274238791](https://github.com/Iam-2squared/ark-ai/actions/runs/41274238791) — 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED (six-job GREEN).
+- **PR8 final due/source:** [CI 41274431370](https://github.com/Iam-2squared/ark-ai/actions/runs/41274431370) — 5/6 GREEN, 0 FAIL, 1 IN PROGRESS, 0 QUEUED.
+- **PR8 docs:** [CI 41274652929](https://github.com/Iam-2squared/ark-ai/actions/runs/41274652929) — 3/6 GREEN, 0 FAIL, 3 IN PROGRESS, 0 QUEUED.
+- **PR5 mock gate:** [CI 41274334811](https://github.com/Iam-2squared/ark-ai/actions/runs/41274334811) — 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED (six-job GREEN).
+- **PR5 direct validation:** [CI 41274600892](https://github.com/Iam-2squared/ark-ai/actions/runs/41274600892) — 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED (six-job GREEN).
+- **PR5 final joint budget:** [CI 41274827128](https://github.com/Iam-2squared/ark-ai/actions/runs/41274827128) — 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED (six-job GREEN).
+- **PR5 docs:** [CI 41274854619](https://github.com/Iam-2squared/ark-ai/actions/runs/41274854619) — 3/6 GREEN, 0 FAIL, 3 IN PROGRESS, 0 QUEUED.
+- Any not-yet-six-job-GREEN run above is **IN PROGRESS/NOT VERIFIED** for that exact source+test or documentation HEAD. Do not confuse earlier source CI with later combined source, docs or this status checkpoint. The checkpoint's separate CI will have a newly assigned run ID after this write.
+- Frozen Memory schema/contract blob `b6e93821ecd69270a7634aceb20775dc36e9953c` and Agency contract blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9` re-read unchanged; historical V3 Contract blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23` remains frozen. No changes to V1/V2/Local UI/Launcher frozen evidence, protected V2 scorer/gate, or main.
+- No paid/external compute/API/GPU, new credential/account connection, provider spending, real Candidate weights/adapter, protected evaluation, physical-PC action, external ToolBackend READ/WRITE, destructive erasure, automatic WRITE replay, notification, promotion or main merge.
+
+## Blockers, authority and confidence
+
+Detached hashes/SQLite witnesses establish only local consistency: they cannot attest an independent historical writer, complete storage rollback immunity, cross-store atomicity, trusted clock, human consent, privacy/backup forensic erasure, authentic model/dataset identities or externally completed Tool effects. Real V3 still lacks immutable HF upstream revision and per-file verified hashes, human-owned/approved/contamination-reviewed 120/30 data, exact physical runtime/device/tool identities, explicit provider/JPY cap and authorized hard stop, and protected scorer gate. PR #5 and #8 remain Draft/unmerged; overall **ARK/JARVIS/V3 NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Resolve the latest exact HEADs' six-platform CI and status-checkpoint CI separately, inspect only real failing job steps/logs, and make minimal semantics-preserving changes through ordinary permitted GitHub Contents writes; no duplicate equivalent workflow reruns.
+2. After lower-layer CI is GREEN, add separately retained `act_`→`req_` link evidence with restart-safe read-only Planner DAG/Registry/READ journal mock integration, without storing authority in journal v1. Preserve no auto-retry after uncertain COMMIT.
+3. Advance Memory CAS/coherent SQLite event+row snapshots/expiry/retained prefix, UNKNOWN WRITE durable manual-only recovery, Trusted Clock audit-before-action and occurrence/replay fencing, Scheduler restart/deduplication, startup readiness, privacy-safe Personal Context and Observation fixtures.
+4. Continue zero-cost V3 identity/path/byte/reproducibility guards while keeping actual model download/external GPU/provider cost, human reviews, protected V2 evaluation opening, frozen-contract changes, Candidate generation/promotion and main merges blocked by their explicit gates.
+
+---
+
+## Historical checkpoint — Run519 (preserved below)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run519 / 2026-11-01: FIVE free-only, reversible development packages, 78 newly authored pytest cases (25 V3 + 28 READ join + 10 Memory + 15 PCM), and one semantics-preserving old CI-test expectation fix. V3 exact source/test and docs six-environment CI GREEN; PR #8 final combined source/test and docs CI still unresolved/queued, NOT claimed GREEN. All work local/mock-only, PR #5 and #8 Draft/unmerged, overall ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-01T13:02:12+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock observation immediately before the normal GitHub Contents update, NOT a trusted clock/consent/execution/spend authorization).
