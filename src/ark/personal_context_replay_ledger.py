@@ -299,7 +299,13 @@ class DisconnectedContextReplayLedger:
                 stable()
                 observed = _inspect(conn)
                 _check_witness(observed)
-                if observed != expected:
+                # Witness class equality is patchable: compare exact scalars
+                # obtained from the same SQLite write transaction before
+                # COMMIT, so a forged __eq__ cannot accept a wrong chain.
+                if (
+                    observed.count != committed_tip[0]
+                    or observed.chain_sha256 != committed_tip[1]
+                ):
                     raise OfflineContextReplayRejected("context reservation integrity mismatch")
                 stable()
                 conn.commit()
