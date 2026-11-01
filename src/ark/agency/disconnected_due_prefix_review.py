@@ -164,11 +164,56 @@ def review_retained_due_prefix(
         or result.automatic_replay_authorized is not False
     ):
         raise DisconnectedDuePrefixRejected("due prefix review acquired authority")
+    # A false-valued authority getter may reflectively mutate *any* field
+    # of the frozen report, including status/count (not only its digest).
+    # Check the complete result again AFTER the last denial callback and
+    # after the final source/witness validation. This is still diagnostic;
+    # it cannot certify a historic writer, clock, consent or notification.
+    pinned_result = (old_count, current_epoch[0], current_epoch[1], status, digest)
+
+    def stable_result() -> None:
+        attributes = (
+            "previous_count", "current_count", "current_fingerprint",
+            "status", "review_sha256",
+        )
+        flags = (
+            "independently_authenticated", "historical_writer_proven",
+            "trusted_clock_verified", "notification_authorized",
+            "tool_dispatch_authorized", "automatic_replay_authorized",
+        )
+        before = tuple(getattr(result, name) for name in attributes)
+        if (
+            type(result) is not _RESULT
+            or type(before[0]) is not int
+            or type(before[1]) is not int
+            or any(type(value) is not str for value in before[2:])
+            or any(a is not b for a, b in zip(before, pinned_result, strict=True))
+            or any(getattr(result, flag) is not False for flag in flags)
+        ):
+            raise DisconnectedDuePrefixRejected(
+                "due prefix review changed after denial"
+            )
+        # The *last* denial getter can itself mutate count/status or the
+        # retained source. Do not return solely on pre-callback values.
+        after = tuple(getattr(result, name) for name in attributes)
+        if any(a is not b for a, b in zip(after, pinned_result, strict=True)):
+            raise DisconnectedDuePrefixRejected(
+                "due prefix review changed after final authority getter"
+            )
+
+    stable_result()
+    stable()
+    stable_result()
     stable()
     if (
         type(result) is not _RESULT
-        or result.current_fingerprint is not current_epoch[1]
-        or result.review_sha256 is not digest
+        or any(a is not b for a, b in zip(
+            (
+                result.previous_count, result.current_count,
+                result.current_fingerprint, result.status, result.review_sha256,
+            ),
+            pinned_result, strict=True,
+        ))
     ):
-        raise DisconnectedDuePrefixRejected("due prefix review changed after denial")
+        raise DisconnectedDuePrefixRejected("due prefix result changed at return")
     return result
