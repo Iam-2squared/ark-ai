@@ -145,6 +145,18 @@ def review_offline_schedule_resume(
         ):
             raise ScheduleResumeRejected("offline schedule resume carrier changed")
 
+    # Never use the replaceable dataclass __eq__ when determining whether
+    # the three independently read quarantine witnesses match the retained
+    # prefix. A patched True equality could conceal a forged/stale callback.
+    def same_witness(candidate: QuarantineWitness, expected: QuarantineWitness) -> bool:
+        return (
+            type(candidate) is QuarantineWitness
+            and type(candidate.count) is int
+            and type(candidate.chain_sha256) is str
+            and candidate.count == expected.count
+            and candidate.chain_sha256 == expected.chain_sha256
+        )
+
     stable()
     if (
         ledger_epoch != policy_epoch
@@ -168,8 +180,8 @@ def review_offline_schedule_resume(
         first = ledger.inspect(retained=retained_quarantine)
         denied_quarantine(first)
         stable()
-        if first != retained_quarantine:
-            raise ScheduleResumeRejected("quarantine inspection gained authority")
+        if not same_witness(first, retained_quarantine):
+            raise ScheduleResumeRejected("quarantine inspection differs from retained")
         # A restart claim must not silently turn the caller clock backward
         # relative to a quarantine time already persisted in the local ledger.
         # Inspect the floor in a read-only transaction bracketed by the two
@@ -278,7 +290,7 @@ def review_offline_schedule_resume(
         denied_quarantine(second)
         stable_preview()
         stable()
-        if type(second) is not QuarantineWitness or second != first:
+        if not same_witness(second, retained_quarantine):
             raise ScheduleResumeRejected("quarantine history changed during preview")
         fields = (
             retained_quarantine.chain_sha256, retained_quarantine.count,
@@ -321,7 +333,7 @@ def review_offline_schedule_resume(
         stable()
         stable_preview()
         stable_output()
-        if type(last) is not QuarantineWitness or last != first:
+        if not same_witness(last, retained_quarantine):
             raise ScheduleResumeRejected("quarantine history changed after witness")
         return output
     except (ScheduleQuarantineRejected, SchedulePreviewRejected, sqlite3.Error) as exc:
