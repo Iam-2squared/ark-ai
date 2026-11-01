@@ -201,7 +201,7 @@ def project_disconnected_batch_terminals(
         raise DisconnectedBatchTerminalRejected("terminal receipt changed")
     for flag in _FLAGS:
         if getattr(report, flag) is not False:
-            raise DisconnectedBatchTerminalRejected("terminal receipt gained authority")
+            raise DisconnectedBatchTerminalRejected("terminal receipt changed")
         stable_report()
         stable()
     # A reentrant final denial callback can also retarget a DAG step. Make
