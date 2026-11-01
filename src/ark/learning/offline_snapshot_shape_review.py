@@ -99,7 +99,15 @@ def _plausible_shape(path: str, value: object) -> bool:
         )
     if path == "budget.wall_clock_timeout_minutes":
         return type(value) is int and 1 <= value <= 525_600
-    return type(value) is str and 0 < len(value.strip()) <= 256
+    # Human-readable identity/version labels cannot safely include invisible
+    # controls or whitespace that alters copy/paste and audit presentation.
+    # This is only a passive syntax hint, never byte-identity verification.
+    return (
+        type(value) is str
+        and 0 < len(value) <= 256
+        and value == value.strip()
+        and value.isprintable()
+    )
 
 
 def review_unapproved_v3_snapshot_shapes(
