@@ -7,8 +7,8 @@ import struct
 
 import pytest
 
-from ark.offline_pcm_wav import OfflineWaveRequest
 from ark import offline_wave_energy_pipeline as pipeline
+from ark.offline_pcm_wav import OfflineWaveRequest
 
 
 def _wave(samples: bytes, *, rate: int = 16_000, channels: int = 1, bits: int = 16):
