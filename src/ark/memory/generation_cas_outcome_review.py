@@ -18,6 +18,9 @@ from dataclasses import dataclass
 from .contracts import MemoryConflictError, MemorySchemaError, MemoryScope, MemoryWrite
 from .generation_fenced_cas import (
     MemoryGenerationCASToken,
+    _digest,
+    _EVENT_DOMAIN,
+    _MAX_EVENTS,
     _snapshot,
     _token_fields,
 )
@@ -126,6 +129,24 @@ def review_memory_generation_cas_outcome(
                 stable()
                 record, observed = _snapshot(conn, memory_id, scope, source)
                 stable()
+                # A syntactically valid retained prefix is not evidence. Bind
+                # it to the actual persisted history at the old event tip.
+                rows = conn.execute(
+                    "SELECT event_id,owner_id,namespace,operation,revision,occurred_at_ms "
+                    "FROM memory_events WHERE memory_id=? AND event_id<=? "
+                    "ORDER BY event_id LIMIT ?",
+                    (memory_id, retained.last_event_id, _MAX_EVENTS + 1),
+                ).fetchall()
+                prefix = [tuple(row) for row in rows]
+                if (
+                    not prefix or len(prefix) > _MAX_EVENTS
+                    or prefix[-1][0] != retained.last_event_id
+                    or _digest(_EVENT_DOMAIN, prefix) != retained.event_prefix_sha256
+                ):
+                    raise MemoryCASOutcomeRejected(
+                        "retained CAS event prefix disagrees with SQLite"
+                    )
+                stable()
                 again_record, again = _snapshot(conn, memory_id, scope, source)
                 if record != again_record or observed != again:
                     raise MemoryCASOutcomeRejected("CAS observation snapshot changed")
@@ -137,6 +158,12 @@ def review_memory_generation_cas_outcome(
         stable()
         if observed.create_event_id != retained.create_event_id:
             raise MemoryCASOutcomeRejected("CAS generation replaced; manual review")
+        if (
+            observed.revision == retained.revision
+            and observed.last_event_id == retained.last_event_id
+            and observed.row_sha256 != retained.row_sha256
+        ):
+            raise MemoryCASOutcomeRejected("retained row contradicts same-version row")
         if (
             observed.last_event_id < retained.last_event_id
             or observed.revision < retained.revision
