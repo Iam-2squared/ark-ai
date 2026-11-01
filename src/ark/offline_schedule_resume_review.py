@@ -11,6 +11,8 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sqlite3
+from contextlib import closing
 from dataclasses import dataclass, field
 
 from .disconnected_schedule_preview import (
@@ -151,6 +153,29 @@ def review_offline_schedule_resume(
             or first.independently_authenticated is not False
         ):
             raise ScheduleResumeRejected("quarantine inspection gained authority")
+        # A restart claim must not silently turn the caller clock backward
+        # relative to a quarantine time already persisted in the local ledger.
+        # Inspect the floor in a read-only transaction bracketed by the two
+        # independently retained chain inspections. This detects regression;
+        # it does NOT authenticate the caller's clock or authorize a slot.
+        with closing(ledger._open(read_only=True)) as conn:
+            conn.execute("BEGIN")
+            tail = (
+                conn.execute(
+                    "SELECT observed_ms FROM quarantines WHERE seq=?",
+                    (retained_quarantine.count,),
+                ).fetchone()
+                if retained_quarantine.count else None
+            )
+            conn.rollback()
+        stable()
+        if retained_quarantine.count and (
+            tail is None or len(tail) != 1 or type(tail[0]) is not int
+            or not 0 <= tail[0] <= 2**63 - 1
+        ):
+            raise ScheduleResumeRejected("quarantine clock floor unavailable")
+        if tail is not None and observed_now_ms < tail[0]:
+            raise ScheduleResumeRejected("resume clock regressed below quarantine floor")
         preview = preview_disconnected_schedule(
             policy, cursor, observed_now_ms=observed_now_ms,
         )
@@ -212,5 +237,5 @@ def review_offline_schedule_resume(
         if type(last) is not QuarantineWitness or last != first:
             raise ScheduleResumeRejected("quarantine history changed after witness")
         return output
-    except (ScheduleQuarantineRejected, SchedulePreviewRejected) as exc:
+    except (ScheduleQuarantineRejected, SchedulePreviewRejected, sqlite3.Error) as exc:
         raise ScheduleResumeRejected("offline schedule resume verification rejected") from exc
