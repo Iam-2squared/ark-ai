@@ -176,7 +176,7 @@ def test_result_constructor_cannot_claim_write_authority(tmp_path, monkeypatch):
     plan, step, _, _ = _identities()
     claim = OfflineRecoveryStepClaim(step, "WRITE", (), "UNKNOWN")
     monkeypatch.setattr(binding, "OfflineWriteRestartReport", lambda *a: object())
-    with pytest.raises(binding.OfflineWriteRestartRejected, match="acquired authority"):
+    with pytest.raises(binding.OfflineWriteRestartRejected, match="changed after review"):
         _review(ledger, retained, plan, (claim,))
 
 
