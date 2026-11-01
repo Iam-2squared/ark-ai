@@ -87,10 +87,14 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
 
         stable()
         authorization = snapshot["authorization"]
-        if type(authorization) is not dict or any(
-            type(authorization.get(key)) is not bool
-            or authorization[key] is not False
-            for key in _DENIED
+        if (
+            type(authorization) is not dict
+            or set(authorization) != set(_DENIED)
+            or any(
+                type(authorization[key]) is not bool
+                or authorization[key] is not False
+                for key in _DENIED
+            )
         ):
             raise OfflineReadinessRejected("unapproved authorization flags required")
         stable()
