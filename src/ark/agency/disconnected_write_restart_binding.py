@@ -276,19 +276,52 @@ def review_disconnected_write_restart(
     report = OfflineWriteRestartReport(plan_id, len(steps), len(matched), count, digest)
     stable()
     assert_fence()
-    if (
-        type(report) is not _REPORT
-        or report.plan_id is not plan_id
-        or report.total_steps != len(steps)
-        or report.reserved_write_steps != len(matched)
-        or report.quarantined_write_steps != count
-        or report.fingerprint is not digest
-        or report.tool_dispatch_authorized is not False
-        or report.write_replay_authorized is not False
-        or report.external_outcome_verified is not False
-        or report.trusted_clock_verified is not False
-        or report.consent_verified is not False
-        or report.cross_store_atomicity_proven is not False
+    # A false-valued authority getter is still a reentrant callback.
+    # Capture the original result carriers before invoking any of them;
+    # no getter may rewrite the report, original Planner claim or slot ledger.
+    expected_report = (plan_id, len(steps), len(matched), count, digest)
+
+    def stable_report() -> None:
+        if (
+            type(report) is not _REPORT
+            or any(now is not prior for now, prior in zip((
+                report.plan_id, report.total_steps,
+                report.reserved_write_steps, report.quarantined_write_steps,
+                report.fingerprint,
+            ), expected_report, strict=True))
+        ):
+            raise OfflineWriteRestartRejected("WRITE restart report changed after review")
+
+    stable_report()
+    for name in (
+        "tool_dispatch_authorized", "write_replay_authorized",
+        "external_outcome_verified", "trusted_clock_verified",
+        "consent_verified", "cross_store_atomicity_proven",
     ):
-        raise OfflineWriteRestartRejected("WRITE restart report acquired authority")
+        if getattr(report, name) is not False:
+            raise OfflineWriteRestartRejected("WRITE restart report acquired authority")
+        stable_report()
+        stable()
+        assert_fence()
+
+    # A False-valued final getter may also rewrite the durable WRITE ledger
+    # while leaving the report and claimant carriers unchanged. Reopen an
+    # independent read-only transaction after the LAST authority callback.
+    try:
+        with closing(ledger._open(read_only=True)) as final:
+            final.execute("BEGIN")
+            try:
+                if _inspect(final) != observed:
+                    raise OfflineWriteRestartRejected(
+                        "WRITE ledger changed after final authority denial"
+                    )
+                final.commit()
+            except BaseException:
+                final.rollback()
+                raise
+    except sqlite3.Error as exc:
+        raise OfflineWriteRestartRejected(
+            "WRITE ledger cannot be verified after denial"
+        ) from exc
+    stable_report()
     return report
