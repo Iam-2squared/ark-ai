@@ -183,8 +183,27 @@ def review_passive_readiness_transition(
             tuple(getattr(result, name) for name in report_fields)
             for result in source_reports
         )
+        # A denied-only transition getter can still rebind a source report's
+        # False-valued authority descriptor. Retain exact original class
+        # descriptors through the *last* independent reinspection; neither
+        # source report is an approval or an authenticated material identity.
+        source_denials = (
+            "external_compute_authorized", "preflight_authorized",
+            "real_training_authorized", "candidate_generation_authorized",
+            "v2_opening_authorized", "promotion_authorized",
+        )
+        source_descriptors = tuple(
+            getattr(UnapprovedSnapshotShapeReview, name) for name in source_denials
+        )
 
         def stable_source_reports() -> None:
+            if any(
+                getattr(UnapprovedSnapshotShapeReview, name) is not original
+                for name, original in zip(
+                    source_denials, source_descriptors, strict=True,
+                )
+            ):
+                raise PassiveTransitionRejected("source report authority changed")
             for result, original in zip(
                 source_reports, source_epochs, strict=True,
             ):
@@ -200,6 +219,13 @@ def review_passive_readiness_transition(
                     raise PassiveTransitionRejected(
                         "unapproved source report changed during transition"
                     )
+            if any(
+                getattr(UnapprovedSnapshotShapeReview, name) is not original
+                for name, original in zip(
+                    source_denials, source_descriptors, strict=True,
+                )
+            ):
+                raise PassiveTransitionRejected("source report authority changed")
             stable()
 
         stable_source_reports()
