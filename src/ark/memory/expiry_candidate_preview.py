@@ -138,6 +138,34 @@ def review_memory_expiry_candidates(
                         or record.expires_at_ms > now_ms
                     ):
                         raise MemoryExpiryPreviewRejected("expiry candidate scope or time drift")
+                    # The preview is a *row/event* observation, not merely a
+                    # content hash of the currently selected live row. Verify
+                    # its latest persisted event in the SAME read transaction.
+                    # A missing create, mismatched revision/scope, or terminal
+                    # delete/expire event must never appear as a valid due row.
+                    # This is local consistency, not authenticated authorship.
+                    last_event = conn.execute(
+                        "SELECT owner_id,namespace,operation,revision "
+                        "FROM memory_events WHERE memory_id=? "
+                        "ORDER BY event_id DESC LIMIT 1",
+                        (record.memory_id,),
+                    ).fetchone()
+                    stable()
+                    if (
+                        last_event is None
+                        or type(last_event[0]) is not str
+                        or type(last_event[1]) is not str
+                        or type(last_event[2]) is not str
+                        or type(last_event[3]) is not int
+                        or (last_event[0], last_event[1]) != original
+                        or last_event[3] != record.revision
+                        or last_event[2] != (
+                            "create" if record.revision == 1 else "update"
+                        )
+                    ):
+                        raise MemoryExpiryPreviewRejected(
+                            "expiry candidate lacks matching live Memory event"
+                        )
                     if len(selected) < limit:
                         selected.append((
                             record.memory_id, record.revision, record.content_sha256,
