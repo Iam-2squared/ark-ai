@@ -251,17 +251,44 @@ def review_retained_memory_row_delta(
     root = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     stable()
     report = _REPORT(len(old_rows), len(rows), len(events) - old_count, changes, root)
+
+    def report_stable() -> None:
+        if (
+            type(report) is not _REPORT
+            or type(report.retained_rows) is not int
+            or report.retained_rows != len(old_rows)
+            or type(report.current_rows) is not int
+            or report.current_rows != len(rows)
+            or type(report.appended_events) is not int
+            or report.appended_events != len(events) - old_count
+            or type(report.explained_changes) is not int
+            or report.explained_changes != changes
+            or type(report.review_sha256) is not str
+            or report.review_sha256 is not root
+            or report.writer_authenticated is not False
+            or report.disclosure_authorized is not False
+            or report.action_authorized is not False
+        ):
+            raise MemoryRowDeltaRejected("Memory row review gained authority or changed")
+
+    report_stable()
+    stable()
+    # Authority properties are callbacks. Their final False return can still
+    # rewrite an earlier field or flag, even with frozen dataclass instances.
+    report_stable()
+    stable()
     if (
         type(report) is not _REPORT
+        or type(report.retained_rows) is not int
         or report.retained_rows != len(old_rows)
+        or type(report.current_rows) is not int
         or report.current_rows != len(rows)
+        or type(report.appended_events) is not int
         or report.appended_events != len(events) - old_count
+        or type(report.explained_changes) is not int
         or report.explained_changes != changes
+        or type(report.review_sha256) is not str
         or report.review_sha256 is not root
-        or report.writer_authenticated is not False
-        or report.disclosure_authorized is not False
-        or report.action_authorized is not False
     ):
-        raise MemoryRowDeltaRejected("Memory row review gained authority")
-    stable()
+        raise MemoryRowDeltaRejected("Memory row report changed after final denial")
     return report
