@@ -286,6 +286,15 @@ def generation_fenced_memory_update(
                 raise MemoryGenerationCASRejected(
                     "generation CAS proposed expiry is not future"
                 )
+            # A revision token is not permission to relax a retention deadline.
+            # Until a separate consent/retention gate is proven, never extend
+            # or clear an already finite expiry, even before its deadline.
+            if current.expires_at_ms is not None and (
+                original_expiry is None or original_expiry > current.expires_at_ms
+            ):
+                raise MemoryGenerationCASRejected(
+                    "generation CAS expiry extension needs independent authorization"
+                )
             revision = current.revision + 1
             changed = conn.execute(
                 "UPDATE memories SET content=?,metadata_json=?,content_sha256=?,"
