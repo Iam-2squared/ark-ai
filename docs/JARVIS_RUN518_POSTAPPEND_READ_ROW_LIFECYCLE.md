@@ -38,7 +38,19 @@ time, privacy erasure or historical writer authenticity.
   cases** covering seven malformed history/row states and valid
   update-delete and delete-recreate lifecycles.
 
-**15 total newly authored local pytest cases** in the two PR #8 packages.
+- **Personal Context retained-prefix final denial** 
+  `src/ark/personal_context_replay_prefix_review.py`: source commit
+  `8f1140c5fac8672090474fc460e2e40c02d79e4e`, blob
+  `26bf48c7d80a506b99ba48734d7ae0a255483a47`. Recheck all
+  local summary counters, status carrier identities, hashes, and seven denied
+  authority flags after the final witness/denial property callbacks; never
+  treat a local prefix hash as consent, revocation freshness or disclosure.
+  Test commit `827d04bc149a01f35f4d08fd5bfcb2e175071213`,
+  `tests/test_context_prefix_final_denial_run518.py`: **7 authored pytest
+  cases** (five late-result substitutions, one final retained-witness
+  callback substitution and one inert stable fixture).
+
+**22 total newly authored local pytest cases** in the three PR #8 packages.
 Source and tests were saved through standard GitHub Contents API after a fresh
 HEAD read, without raw Git objects, force pushes or protected contract edits.
 Authored cases are not an independently executed local PASS count.
@@ -53,7 +65,7 @@ Authored cases are not an independently executed local PASS count.
   [41266319918](https://github.com/Iam-2squared/ark-ai/actions/runs/41266319918)
   and final combined PR #8 source/test
   [41266474450](https://github.com/Iam-2squared/ark-ai/actions/runs/41266474450)
-  were **IN PROGRESS** when this document was prepared. No final 6/6 GREEN
+  were **IN PROGRESS** when the first version of this document was prepared. No final 6/6 GREEN
   claim is inherited from an older HEAD.
 - Independent full-checkout local pytest/Ruff, physical-PC runtime, external
   identity, trusted clock and storage forensics were NOT performed.
@@ -72,3 +84,22 @@ without granting dispatch; strengthen Memory CAS/retained cross-process
 witnesses, UNKNOWN WRITE manual-only recovery and trusted-clock
 audit-before-action. Avoid any implication that local hashes authenticate
 external effects, approval or data deletion.
+
+### Later CI failure and semantics-preserving correction
+
+The preliminary combined source/test CI
+[41266474450](https://github.com/Iam-2squared/ark-ai/actions/runs/41266474450)
+reported **three existing Run512 test assertion failures**: the new
+fail-closed Memory lifecycle check rejects malformed states earlier with
+`live Memory row differs from event lifecycle` or
+`live Memory row lacks creation event`, before the previous fallback
+`without its own` / `event prefix` checks. The normal Contents API
+updated **only the corresponding regex expectations** in
+`tests/test_memory_retained_row_delta_run512.py`, commit
+`94ec1ee60a0bb0a7aa99ad22cf4e8ad765f8a2f9`, blob
+`244c96015e4b54831ceb1b1ccdafd9a1a4383abb`. No safety check,
+contract, lifecycle rule or rejection was weakened. Corrected CI
+[41266626048](https://github.com/Iam-2squared/ark-ai/actions/runs/41266626048)
+was **IN PROGRESS** when this amendment was prepared; Context source/test
+[41266752405](https://github.com/Iam-2squared/ark-ai/actions/runs/41266752405)
+was **QUEUED**. Do not inherit older GREEN onto either final HEAD.
