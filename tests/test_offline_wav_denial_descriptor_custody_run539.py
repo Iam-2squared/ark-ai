@@ -15,7 +15,7 @@ from ark import offline_pcm_wav as wave
 
 
 def _fixture() -> wave.OfflineWaveRequest:
-    samples = b"\\x00\\x00" * 80
+    samples = bytes(160)
     fmt = struct.pack("<HHIIHH", 1, 1, 8000, 16000, 2, 16)
     chunks = (
         b"fmt " + struct.pack("<I", len(fmt)) + fmt
