@@ -21,7 +21,7 @@ def _snapshot():
 
 @pytest.mark.parametrize("field,value", (
     ("unresolved_paths", ()),
-    ("invalid_shape_paths", ("code.git_sha",)),
+    ("invalid_shape_paths", ("fictional.invalid",)),
     ("unresolved_paths", ("fictional.source",)),
 ))
 def test_correct_snapshot_sha_does_not_validate_forged_categories(
