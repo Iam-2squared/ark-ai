@@ -32,7 +32,7 @@ def test_duplicate_keys_at_every_depth_are_rejected(tmp_path, payload):
 
 def test_noncanonical_unique_object_is_still_accepted(tmp_path):
     path = tmp_path / "safe-snapshot.json"
-    path.write_bytes(b'{ "z": { "value": 2 }, "a": 1 }\\n')
+    path.write_bytes(b'{ "z": { "value": 2 }, "a": 1 }')
     assert load_snapshot(path) == {"z": {"value": 2}, "a": 1}
 
 
