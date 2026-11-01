@@ -16,6 +16,7 @@ from ark.agency.disconnected_write_restart_binding import (
 from ark.agency.disconnected_write_slot_ledger import (
     DetachedWriteSlotClaim,
     DisconnectedWriteSlotLedger,
+    WriteSlotLedgerRejected,
     derive_disconnected_write_slot_id,
     genesis_write_slot_witness,
 )
@@ -108,4 +109,5 @@ def test_last_false_getter_cannot_append_undetected_durable_write_slot(
     ):
         review(case)
     # Even the test's synthetic reserve is not permission to dispatch/replay.
-    assert ledger.inspect(retained=ledger.inspect(retained=retained)).count == 1
+    with pytest.raises(WriteSlotLedgerRejected, match="stale or changed retained history"):
+        ledger.inspect(retained=retained)
