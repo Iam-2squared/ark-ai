@@ -184,6 +184,17 @@ def review_offline_context_membership(
     epoch()
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     epoch()
+    # A false-valued getter can still replace another class-level property,
+    # causing the returned object to appear authorized after its first read.
+    # Pin the original descriptor identities before any result constructor or
+    # property callback and reject swaps without invoking additional getters.
+    denial_names = (
+        "consent_verified", "disclosure_authorized",
+        "retention_authorized", "trusted_clock_verified",
+    )
+    denial_descriptors = tuple(
+        vars(_MEMBERSHIP_RESULT_TYPE)[name] for name in denial_names
+    )
     result = OfflineContextMembershipReview(
         owner_digest, len(records), len(scope_vetoes), digest,
     )
@@ -222,4 +233,13 @@ def review_offline_context_membership(
         or result.membership_sha256 is not digest
     ):
         raise OfflineContextAdmissionRejected("constructed admission review mutated")
+    if any(
+        vars(_MEMBERSHIP_RESULT_TYPE).get(name) is not original
+        for name, original in zip(
+            denial_names, denial_descriptors, strict=True,
+        )
+    ):
+        raise OfflineContextAdmissionRejected(
+            "Context authority descriptor changed during review"
+        )
     return result
