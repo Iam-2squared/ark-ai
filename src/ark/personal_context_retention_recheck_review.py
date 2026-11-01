@@ -283,7 +283,9 @@ def review_synthetic_retention_recheck(
                     current.items, current_item_carriers, strict=True,
                 )
             )
-            or current.scope_digest is not scope_digest
+            # Cached and current inventories are separately constructed:
+            # the same scope digest VALUE need not share a str object.
+            or current.scope_digest != scope_digest
             or current.inventory_digest is not current_digest
             or current.revoked is not revoked
             or type(result) is not _RESULT_TYPE
