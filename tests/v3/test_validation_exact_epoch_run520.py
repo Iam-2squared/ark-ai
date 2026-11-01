@@ -100,13 +100,14 @@ def test_overall_bounded_input_budget_rejects_60_large_labels():
                 category="c" * 500)
         for i, case in enumerate(base.cases)
     )
-    # 30 * (506 + 500) > total 32,768 only when both reports are
-    # compared; validate is independently bounded per report.
+    # Each report is within its own 32,768-character budget, but the
+    # paired input must be bounded as a whole before comparison.
     one = replace(base, cases=cases)
     one.validate()
     other = replace(report("candidate"), cases=cases)
-    outcome = compare_validation(one, other)
-    assert outcome["promotion_decision"] == "NOT_AUTHORIZED_FROM_VALIDATION"
+    other.validate()
+    with pytest.raises(ValueError, match="paired validation total text"):
+        compare_validation(one, other)
 
 
 def test_late_current_report_mutation_during_validate_is_rejected(monkeypatch):
