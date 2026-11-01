@@ -189,14 +189,43 @@ def review_registered_batch_receipt_set(
                 item.request, item.result, item.binding,
                 observed_at_ms=observed_at_ms,
             )
+            if type(review) is not RegisteredBatchReceiptReview:
+                raise RegisteredBatchSetRejected("exact READ step receipt required")
+            child_fields = (
+                "step_id", "plan_digest", "schedule_digest", "wave_index",
+                "action_request_id", "fixture_request_id", "link_sha256",
+                "journal_count", "journal_tip_sha256", "review_sha256",
+            )
+            child_epoch = tuple(getattr(review, field) for field in child_fields)
+            matching_waves = tuple(
+                index for index, wave in enumerate(schedule.waves)
+                if step.step_id in wave
+            )
             if (
-                type(review) is not RegisteredBatchReceiptReview
+                len(matching_waves) != 1
                 or review.step_id != step.step_id
+                or review.plan_digest != plan.plan_digest
+                or review.schedule_digest != schedule.schedule_digest
+                or type(review.wave_index) is not int
+                or review.wave_index != matching_waves[0]
                 or review.action_request_id != item.call.request_id
                 or review.fixture_request_id != item.request.request_id
-                or type(review.wave_index) is not int
+                or review.link_sha256 != item.link.link_sha256
+                or type(review.journal_count) is not int
+                or review.journal_count != item.retained_journal.count
+                or review.journal_tip_sha256 != item.retained_journal.tip_sha256
+                or type(review.review_sha256) is not str
+                or len(review.review_sha256) != 64
+                or any(char not in "0123456789abcdef" for char in review.review_sha256)
             ):
                 raise RegisteredBatchSetRejected("READ step receipt disagrees with DAG")
+            # Do not inherit a child's alleged authority or a field mutation
+            # triggered by a false-valued final denial callback.
+            if any(getattr(review, name) is not False for name in _DENIALS):
+                raise RegisteredBatchSetRejected("READ step receipt gained authority")
+            if tuple(getattr(review, field) for field in child_fields) != child_epoch:
+                raise RegisteredBatchSetRejected("READ step receipt changed after denial")
+            stable_carriers()
             rows.append((
                 review.step_id, review.action_request_id,
                 review.fixture_request_id, review.wave_index, review.review_sha256,
