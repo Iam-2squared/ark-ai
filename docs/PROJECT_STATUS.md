@@ -1,5 +1,58 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run528 / 2026-11-01:** FIVE independently scoped, **free-only** source+focused-test packages: (1) durable synthetic WRITE post-COMMIT receipt and SQLite chain custody, (2) V3 non-authorizing authorization-packet postwrite byte verification, (3) Memory expiry row/event same-snapshot coherence, (4) Scheduler overdue quarantine post-COMMIT no-authority/SQLite fence, (5) synthetic clock retained-prefix equality-independent comparison. **33 newly authored pytest cases = 7 + 5 + 6 + 11 + 4**, with one clock-test-only Ruff I001 whitespace repair after an intermediate import-layout attempt. Three source-grounded technical records; one canonical status update at end. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 remain Draft/unmerged.
+
+**Saved at:** **2026-11-01T21:01:07.857+09:00 Asia/Tokyo/JST**, ordinary automation host wall-clock observed immediately before this permitted GitHub Contents write. This is NOT a trusted-clock, consent, authenticated review or model/runtime identity attestation.
+
+## LATEST — exact work bases, branches and checkpoint semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`: **initial work-basis HEAD** `a903a5deecf83307b1929f13add3e44b9265844e`. WRITE source `a91a6b088249ff194c6a33ad4e5fd37cd96d3fd4`, source+test `a8d82ba0d9b644c7281ae144960139f5a6e43875`; expiry source `27e7c5570bb3c1e4b99f36156d45f0ddd47b48c1`, source+test `5f0ed7d4e5f0d4acbb3d599e2bb909d6ed42c652`; quarantine source `89825b17c04056de468cba4128a887d96d0e7444`, source+test `2031de2195c9f411e3d0eec15f1ef01cdffb92a5`; clock source `6112c1e3acc60d090144a0b9cb83a9a7e00b09dd`, source+test `76e33a9c245e4bb441686c8527869b54bcd4ad3a`, clock test-only fixes `ab8c28a5a33f6a22d2cb63619c7322b69ec81fa9` and `b31ddc63b54441a50a7067d79df6fcaf74d67d30`. [Run528 3-area evidence](https://github.com/Iam-2squared/ark-ai/blob/202a97298736ca93e2144a4ef484525e3ad6d625/docs/JARVIS_RUN528_POSTCOMMIT_EXPIRY_QUARANTINE_CUSTODY.md); [clock evidence](https://github.com/Iam-2squared/ark-ai/blob/1e604a7122db0304b1c0603d86ff6b5ba8579d91/docs/JARVIS_RUN528_SYNTHETIC_CLOCK_EXACT_PREFIX.md). **Checkpoint write-basis HEAD** `b31ddc63b54441a50a7067d79df6fcaf74d67d30`.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`: **initial work-basis HEAD** `d955338b4c3af8b7cc53de9475dd77d7e8b48c8f`; packet source `723cdb7ac30367d13ff0b540e0a59af3e848c8e1`, source+test `5bc906ca91e8cec5d748c3ccf492fecd2d09e4e5`; [V3 evidence](https://github.com/Iam-2squared/ark-ai/blob/dc4fd97bbf3f2148c6c5eb06eb6045b1770bef7d/docs/v3/RUN528_REVIEW_PACKET_POSTWRITE_CUSTODY.md), latest observed PR5 HEAD `dc4fd97bbf3f2148c6c5eb06eb6045b1770bef7d`.
+- **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405`; no merge. **Checkpoint-result HEAD cannot appear in its own content**, because GitHub assigns the SHA only after the write; re-read resulting HEAD and Blob afterwards. Earlier-head GREEN never establishes checkpoint-head GREEN.
+
+## NEW — implementation + focused synthetic tests
+
+1. **WRITE reservation — 7 cases:** `src/ark/agency/disconnected_write_slot_ledger.py` rechecks retained witness, immutable receipt and denied authority descriptors after reentrant last callbacks and independently reopens the post-COMMIT SQLite reservation chain read-only. Explicitly no rollback, retry or external exactly-once proof after a committed reservation. Tests `tests/test_write_slot_final_postcommit_epoch_run528.py`.
+2. **V3 review packet — 5 cases:** `src/ark/learning/authorization.py` verifies exact count from create-only `write()`, canonical bytes reread after close, source packet epoch and regular non-aliased output file identity; fails on short write, different same-sized bytes, later packet mutation, hardlink alias. Tests `tests/v3/test_authorization_packet_postwrite_custody_run528.py`. It does not authorize compute or make filesystem traversal race-free.
+3. **Memory expiry — 6 cases:** `src/ark/memory/expiry_candidate_preview.py` rechecks the newest persisted live event for each due row **inside the same read-only SQLite snapshot**, including overflow `limit+1` row; requires matching scope/revision and create/update operation, never deletion authorization. Tests `tests/test_memory_expiry_event_alignment_run528.py`. Last-event agreement is not authenticated full lineage.
+4. **Scheduler quarantine — 11 cases:** `src/ark/disconnected_schedule_quarantine_ledger.py` protects last-callback result fields/descriptors and post-COMMIT persisted overdue classification against source/journal drift. Does not notify, dispatch, replay or attest trusted time. Tests `tests/test_schedule_quarantine_postcommit_denial_run528.py`.
+5. **Synthetic clock — 4 cases:** `src/ark/agency/synthetic_clock_sequence_review.py` compares exact retained clock prefix fields instead of replaceable `SyntheticClockWitness.__eq__`; rejects falsely equal forged hashes/times without rejecting correct prefixes if equality is malicious. Tests `tests/test_synthetic_clock_prefix_exact_fields_run528.py`. Earlier CI `41303975329`, `41304010925`, `41304130720` failed Ruff I001 because of an extra blank line after imports; fixed only the test whitespace at `b31ddc63b54441a50a7067d79df6fcaf74d67d30`. No source guard was relaxed.
+
+**All 33 counts refer to AUTHORED pytest cases, not independently run local PASS.** No standalone full checkout/pytest/Ruff in this runtime (GitHub DNS unavailable to local git); GitHub Actions checked source/test HEADs independently. Do not infer GREEN at the newest branch or this checkpoint from earlier commits.
+
+## Exact-head CI / validation — sampled before this checkpoint write
+
+- [CI 41303082616](https://github.com/Iam-2squared/ark-ai/actions/runs/41303082616): **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+- [CI 41303379126](https://github.com/Iam-2squared/ark-ai/actions/runs/41303379126): **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+- [CI 41303535547](https://github.com/Iam-2squared/ark-ai/actions/runs/41303535547): **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+- [CI 41304230145](https://github.com/Iam-2squared/ark-ai/actions/runs/41304230145): **3/6 GREEN, 0 FAIL, 3 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+- [CI 41303639764](https://github.com/Iam-2squared/ark-ai/actions/runs/41303639764): **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+- [CI 41303249117](https://github.com/Iam-2squared/ark-ai/actions/runs/41303249117): **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+- [CI 41303673977](https://github.com/Iam-2squared/ark-ai/actions/runs/41303673977): **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED, 0 OTHER** (this exact run HEAD only).
+
+- PR #8 latest corrected clock-test head run [41304230145](https://github.com/Iam-2squared/ark-ai/actions/runs/41304230145) is the relevant source/test CI; the older clock-test failure runs are superseded, NOT evidence of PASS. PR #8 newest source/checkpoint after this write will have another distinct CI result.
+- PR #8 source/3-area docs and clock docs have independent earlier HEAD CI, not inherited. PR #5 review-packet output docs exact-head run `41303673977` is included above.
+- Frozen contract blob IDs rechecked: `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Frozen V1/V2/Local UI/Launcher evidence unchanged; protected V2 final evaluation unopened.
+
+## Hard boundaries / unresolved blockers
+
+- **No paid/external GPU, APIs, compute, subscription or other potentially billed action; no real Candidate adapter/weights, protected V2 final evaluation, Candidate promotion, human reviewer decision, new credentials, physical target PC, actual ToolBackend, microphone/camera, personal disclosure, automatic WRITE retry, irreversible deletion, main merge, or frozen-contract change.** PR #5/#8 remain Draft and reversible. Synthetic witnesses/hash chains do NOT prove owner identity, consent, trusted clock, real external outcomes or cross-store atomicity.
+- V3 requires real immutable upstream model/tokenizer/converter hashes and revision, human-approved exact dataset/provenance and contamination evidence, measured reproducible environment, and **explicit prior spending permission with billing hard caps** before any real preflight/training. No external paid lane is unblocked.
+
+## Next plan / 今後の方針
+
+1. Finish the **exact `b31ddc63...` clock test CI `41304230145`** and then new checkpoint CI; inspect failing job logs if needed. Fix only normal permitted test/lint or semantics-preserving failures; never weaken denial boundaries or duplicate equivalent workflow runs. Preserve PR #5/#8 Draft.
+2. Continue lower-level Memory CAS/expiry/event lifecycle and retained after-COMMIT coherent-snapshot proofs, including restart and concurrent writer tests, without changing frozen schema.
+3. Strengthen Planner DAG / exact PermissionGate / immutable ToolRegistry and disconnected registered READ multi-step persistence/recovery. UNKNOWN WRITE remains manual-only quarantined, never replay.
+4. Extend trusted-clock audit-before-action and scheduler occurrence/restart deduplication in synthetic, disconnected lanes, privacy-safe Personal Context revocation/retention, startup readiness and observation fixtures. Connect components only after their own exact-head GREEN.
+5. Advance free-only V3 path/approval/identity/reproducibility guards in PR #5; real model, GPU, dataset human review, spending, Candidate, protected V2, irreversible action and main merge each remain distinct explicit authorization gates.
+
+---
+
+## Historical checkpoint — Run527 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run527 / 2026-11-01:** FOUR coherent, free-only, independently scoped implementation+test packages: (1) registered READ aggregate exact child digest/type verification, (2) privacy Context admission denial-descriptor epoch, (3) retained Memory row-witness capture post-denial integrity, (4) V3 execution authorization-scope exact-type gate. **24 newly authored pytest cases = 9 + 6 + 4 + 5** plus two source-grounded technical evidence documents. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 remain Draft/unmerged.
 
 **Saved at:** **2026-11-01T19:58:11.480+09:00 Asia/Tokyo/JST**, observed ordinary host wall-clock immediately before this GitHub Contents checkpoint write. NOT trusted-clock attestation, proof of user consent, authenticated execution authorization, cost approval, human review or model identity.
