@@ -18,7 +18,7 @@ from .disconnected_batch_cycle_archive import (
     DisconnectedBatchArchiveRejected,
     review_disconnected_batch_fixture_cycle_archive,
 )
-from .disconnected_batch_plan import DisconnectedBatchPlan
+from .disconnected_batch_plan import DisconnectedBatchPlan, DisconnectedBatchRejected
 from .disconnected_batch_schedule import DisconnectedBatchSchedule
 from .disconnected_registered_batch_receipt_set import (
     RegisteredBatchSetRejected,
@@ -220,5 +220,8 @@ def review_registered_cycle_archive_bridge(
             raise RegisteredArchiveBridgeRejected("detached join sources drifted")
         stable_report()
         return report
-    except (DisconnectedBatchArchiveRejected, RegisteredBatchSetRejected) as exc:
+    except (
+        DisconnectedBatchArchiveRejected, DisconnectedBatchRejected,
+        RegisteredBatchSetRejected,
+    ) as exc:
         raise RegisteredArchiveBridgeRejected("detached archive or READ review rejected") from exc
