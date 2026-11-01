@@ -345,14 +345,82 @@ class DisconnectedWriteSlotLedger:
             or current.chain_sha256 is not committed_witness[1]
         ):
             raise WriteSlotLedgerRejected("post-commit reservation receipt changed")
+        # Freeze class-level denial descriptors too: a false-valued getter
+        # may replace another descriptor while processing the final callback.
+        # The witness and SQLite write are already committed, so a failed
+        # final review must NEVER be represented as a rolled-back reservation.
+        denial_names = (
+            "dispatch_authorized", "automatic_replay_authorized",
+            "exact_once_external_effect_proven", "trusted_clock_verified",
+            "owner_or_consent_verified",
+        )
+        denial_descriptors = tuple(
+            getattr(_RECEIPT_TYPE, name) for name in denial_names
+        )
         stable()
         if (
             type(receipt) is not _RECEIPT_TYPE
-            or receipt.dispatch_authorized is not False
-            or receipt.automatic_replay_authorized is not False
-            or receipt.exact_once_external_effect_proven is not False
-            or receipt.trusted_clock_verified is not False
-            or receipt.owner_or_consent_verified is not False
+            or any(getattr(receipt, name) is not False for name in denial_names)
         ):
             raise WriteSlotLedgerRejected("post-commit reservation authority changed")
+        # Check *after* the final reentrant getter, not merely before it.
+        stable()
+        _check_witness(current)
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or type(receipt.added_count) is not int
+            or receipt.added_count != len(saved)
+            or receipt.witness is not current
+            or current.count is not committed_witness[0]
+            or current.chain_sha256 is not committed_witness[1]
+            or any(
+                getattr(_RECEIPT_TYPE, name) is not descriptor
+                for name, descriptor in zip(
+                    denial_names, denial_descriptors, strict=True,
+                )
+            )
+        ):
+            raise WriteSlotLedgerRejected("post-commit reservation receipt epoch changed")
+        # Reopen a *read-only* transaction after all receipt callbacks; a
+        # synthetic callback may alter persisted history after COMMIT.
+        # This is local continuity detection, not proof of an external effect.
+        try:
+            with closing(self._open(read_only=True)) as readonly:
+                readonly.execute("BEGIN")
+                try:
+                    persisted = _inspect(readonly)
+                    _check_witness(persisted)
+                    if (
+                        type(persisted) is not _WITNESS_TYPE
+                        or persisted.count != current.count
+                        or persisted.chain_sha256 != current.chain_sha256
+                    ):
+                        raise WriteSlotLedgerRejected(
+                            "post-commit reservation persisted history changed"
+                        )
+                    readonly.rollback()
+                except BaseException:
+                    readonly.rollback()
+                    raise
+        except sqlite3.Error as exc:
+            raise WriteSlotLedgerRejected(
+                "post-commit reservation history cannot be rechecked"
+            ) from exc
+        stable()
+        _check_witness(current)
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or receipt.witness is not current
+            or type(receipt.added_count) is not int
+            or receipt.added_count != len(saved)
+            or current.count is not committed_witness[0]
+            or current.chain_sha256 is not committed_witness[1]
+            or any(
+                getattr(_RECEIPT_TYPE, name) is not descriptor
+                for name, descriptor in zip(
+                    denial_names, denial_descriptors, strict=True,
+                )
+            )
+        ):
+            raise WriteSlotLedgerRejected("post-commit reservation receipt changed at return")
         return receipt
