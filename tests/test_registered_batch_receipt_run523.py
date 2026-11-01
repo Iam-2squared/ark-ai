@@ -173,7 +173,7 @@ def test_last_authority_getter_cannot_modify_result(
         property(forged_denial),
     )
     try:
-        with pytest.raises(RegisteredBatchReceiptRejected, match="authority"):
+        with pytest.raises(RegisteredBatchReceiptRejected, match="changed after denial"):
             invoke(case)
         assert case["backend"].calls == 0
     finally:
