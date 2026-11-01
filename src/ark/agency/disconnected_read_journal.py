@@ -85,6 +85,10 @@ def _check_witness(witness: ReadJournalWitness) -> None:
         or type(witness.count) is not int or not 0 <= witness.count <= _MAX_ROWS
         or type(witness.tip_sha256) is not str
         or _SHA.fullmatch(witness.tip_sha256) is None
+        or witness.dispatch_authorized is not False
+        or witness.effect_proven is not False
+        or witness.replay_authorized is not False
+        or witness.independent_custody_proven is not False
     ):
         raise ReadJournalRejected("invalid retained witness")
 
@@ -182,12 +186,18 @@ class DisconnectedReadJournal:
         _safe_path(path, must_exist=True)
         try:
             connection = sqlite3.connect(path, timeout=10, isolation_level=None)
-            connection.execute("PRAGMA busy_timeout=10000")
-            rows = connection.execute("SELECT revision FROM marker").fetchall()
-            if rows != [(_SCHEMA,)]:
-                raise ReadJournalRejected("foreign journal marker")
-            _verify_schema(connection)
-            cls(connection)._scan()
+            try:
+                connection.execute("PRAGMA busy_timeout=10000")
+                rows = connection.execute("SELECT revision FROM marker").fetchall()
+                if rows != [(_SCHEMA,)]:
+                    raise ReadJournalRejected("foreign journal marker")
+                _verify_schema(connection)
+                cls(connection)._scan()
+            except BaseException:
+                # A rejected or corrupt database must not retain its SQLite
+                # handle, including on the custom rejection path.
+                connection.close()
+                raise
             return cls(connection)
         except sqlite3.Error as exc:
             raise ReadJournalRejected("unreadable journal schema") from exc
@@ -235,6 +245,7 @@ class DisconnectedReadJournal:
         pinned = (retained.count, retained.tip_sha256)
 
         def stable() -> None:
+            _check_witness(retained)
             if (
                 type(retained) is not _WITNESS_TYPE
                 or retained.count is not pinned[0]
@@ -279,6 +290,7 @@ class DisconnectedReadJournal:
         witness_epoch = (retained.count, retained.tip_sha256)
 
         def stable() -> None:
+            _check_witness(retained)
             if (
                 type(row) is not _RECEIPT_TYPE
                 or type(retained) is not _WITNESS_TYPE
