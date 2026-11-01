@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pytest
 
@@ -199,6 +199,56 @@ def test_reflective_result_denial_cannot_forge_join_hash(tmp_path, monkeypatch):
     try:
         with pytest.raises(bridge.RegisteredArchiveBridgeRejected, match="report changed"):
             _review(case)
+        assert case["backend"].calls == 0
+    finally:
+        case["journal"].close()
+
+
+@pytest.mark.parametrize("target", (
+    "step_operation", "step_arg_carrier", "request_carrier", "grants_carrier",
+))
+def test_second_registered_read_callback_cannot_retarget_joined_sources(
+    tmp_path, monkeypatch, target,
+):
+    case = _fixture(tmp_path)
+    native = bridge.review_registered_batch_receipt_set
+    calls = [0]
+
+    def late_mutation(*args, **kwargs):
+        reviewed = native(*args, **kwargs)
+        calls[0] += 1
+        if calls[0] == 2:
+            if target == "step_operation":
+                object.__setattr__(
+                    case["plan"].steps[0], "operation", "text.stats",
+                )
+            elif target == "step_arg_carrier":
+                item = case["plan"].steps[0]
+                old = item.canonical_args_json
+                clone = ("!" + old)[1:]
+                assert clone == old and clone is not old
+                object.__setattr__(item, "canonical_args_json", clone)
+            elif target == "request_carrier":
+                item = case["evidence"][0]
+                clone = replace(item.request)
+                assert clone == item.request and clone is not item.request
+                object.__setattr__(item, "request", clone)
+            else:
+                item = case["evidence"][0]
+                clone = tuple(list(item.grants))
+                assert clone == item.grants and clone is not item.grants
+                object.__setattr__(item, "grants", clone)
+        return reviewed
+
+    monkeypatch.setattr(
+        bridge, "review_registered_batch_receipt_set", late_mutation,
+    )
+    try:
+        with pytest.raises(
+            bridge.RegisteredArchiveBridgeRejected, match="source changed",
+        ):
+            _review(case)
+        assert calls[0] == 2
         assert case["backend"].calls == 0
     finally:
         case["journal"].close()
