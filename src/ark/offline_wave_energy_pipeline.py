@@ -13,8 +13,10 @@ from dataclasses import dataclass
 
 from .offline_pcm_activity_regions import (
     ActivityRegion,
+    ActivityRegions,
     OfflineActivityRejected,
     detect_activity_regions,
+    verify_activity_regions,
 )
 from .offline_pcm_mono16 import (
     OfflinePcmConvertRejected,
@@ -163,6 +165,16 @@ def preview_offline_wav_energy(
             frame_ms=20, rms_threshold=rms_threshold,
         )
         stable_request()
+        # The detector return is a replaceable callback result. Exact
+        # data-shape checks alone cannot prove activity counts or timeline.
+        # Independently derive every region from the pinned normalized bytes.
+        if type(reviewed) is not ActivityRegions:
+            raise OfflineWavePipelineRejected("exact activity report required")
+        verify_activity_regions(
+            reviewed, normalized.pcm, normalized.output_sha256, _TARGET_RATE,
+            frame_ms=20, rms_threshold=rms_threshold,
+        )
+        stable_request()
         if (
             reviewed.source_sha256 != normalized.output_sha256
             or reviewed.total_samples != normalized.output_samples
@@ -226,6 +238,13 @@ def preview_offline_wav_energy(
             if getattr(result, flag) is not False:
                 raise OfflineWavePipelineRejected("energy preview gained authority")
             stable_result()
+        # A false-valued result getter can also reflectively retarget the
+        # activity report. Recheck full frame/region recomputation afterward.
+        verify_activity_regions(
+            reviewed, normalized.pcm, normalized.output_sha256, _TARGET_RATE,
+            frame_ms=20, rms_threshold=rms_threshold,
+        )
+        stable_result()
         return result
     except (
         OfflineWaveRejected, OfflinePcmConvertRejected,
