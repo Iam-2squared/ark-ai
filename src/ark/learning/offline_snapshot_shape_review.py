@@ -129,6 +129,75 @@ def review_unapproved_v3_snapshot_shapes(
             or inventory.unresolved_count != len(inventory.unresolved_paths)
         ):
             raise OfflineShapeRejected("readiness source changed")
+        # Never let an exact-type but replaced inventory callback supply its
+        # own path classification.  The source is still unapproved, yet the
+        # passive report must at least describe its *actual* placeholder bytes.
+        expected_unresolved = {
+            f"{section}.{name}"
+            for section, names in _SECTIONS.items()
+            for name in names
+            if (
+                type(snapshot[section][name]) is str
+                and snapshot[section][name] in _PLACEHOLDERS
+            )
+        }
+        tokenizer_revision = snapshot["tokenizer"]["revision"]
+        base_revision = snapshot["base"]["revision"]
+        if (
+            (type(tokenizer_revision) is str
+             and tokenizer_revision in _PLACEHOLDERS)
+            or (tokenizer_revision == "SAME_AS_BASE"
+                and type(base_revision) is str
+                and base_revision in _PLACEHOLDERS)
+        ):
+            expected_unresolved.add("tokenizer.revision")
+        if inventory.unresolved_paths != tuple(sorted(expected_unresolved)):
+            raise OfflineShapeRejected("inventory path classification mismatch")
+        stable()
+        # The inventory's non-authority properties are also checked here,
+        # independently of how its replaceable callable constructed it.
+        inventory_denials = (
+            "external_compute_authorized", "candidate_generation_authorized",
+            "protected_evaluation_authorized", "promotion_authorized",
+        )
+        inventory_epoch = (
+            inventory.snapshot_sha256, inventory.unresolved_paths,
+            inventory.unresolved_count,
+        )
+        inventory_descriptors = tuple(
+            getattr(OfflineReadinessInventory, key) for key in inventory_denials
+        )
+
+        def assert_inventory_epoch() -> None:
+            if (
+                type(inventory) is not OfflineReadinessInventory
+                or any(current is not original for current, original in zip(
+                    (inventory.snapshot_sha256, inventory.unresolved_paths,
+                     inventory.unresolved_count), inventory_epoch, strict=True,
+                ))
+                or any(getattr(OfflineReadinessInventory, key) is not descriptor
+                       for key, descriptor in zip(
+                           inventory_denials, inventory_descriptors, strict=True,
+                       ))
+            ):
+                raise OfflineShapeRejected("inventory source changed after review")
+            for key in inventory_denials:
+                if getattr(inventory, key) is not False:
+                    raise OfflineShapeRejected("inventory gained authority")
+            if (
+                any(getattr(OfflineReadinessInventory, key) is not descriptor
+                    for key, descriptor in zip(
+                        inventory_denials, inventory_descriptors, strict=True,
+                    ))
+                or any(current is not original for current, original in zip(
+                    (inventory.snapshot_sha256, inventory.unresolved_paths,
+                     inventory.unresolved_count), inventory_epoch, strict=True,
+                ))
+            ):
+                raise OfflineShapeRejected("inventory changed during denial")
+            stable()
+
+        assert_inventory_epoch()
         unresolved = set(inventory.unresolved_paths)
         invalid: set[str] = set()
         count = 0
@@ -194,6 +263,9 @@ def review_unapproved_v3_snapshot_shapes(
             if getattr(result, name) is not False:
                 raise OfflineShapeRejected("shape review gained authority")
             stable_result()
+            assert_inventory_epoch()
+        assert_inventory_epoch()
+        stable_result()
         return result
     except (
         OfflineReadinessRejected, KeyError, TypeError, ValueError,
