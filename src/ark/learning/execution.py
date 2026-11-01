@@ -10,6 +10,7 @@ import json
 import math
 import os
 import re
+import stat
 from pathlib import Path
 from typing import Literal
 
@@ -185,6 +186,10 @@ def _unique_snapshot_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]
     return result
 
 
+def _snapshot_stat_identity(info: os.stat_result) -> tuple[int, int, int, int]:
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
+
+
 def load_snapshot(path: Path) -> dict:
     """Read only bounded, finite local snapshot JSON; never start compute.
 
@@ -194,11 +199,24 @@ def load_snapshot(path: Path) -> dict:
     """
     source = Path(path)
     try:
+        initial_path_stat = source.lstat()
+    except OSError as exc:
+        raise ValueError("execution snapshot cannot be read") from exc
+    if not stat.S_ISREG(initial_path_stat.st_mode):
+        raise ValueError("execution snapshot source must be a regular local file")
+    if initial_path_stat.st_size > _MAX_EXECUTION_SNAPSHOT_BYTES:
+        raise ValueError("execution snapshot exceeds JSON byte budget")
+    try:
         with source.open("rb") as handle:
             initial_stat = os.fstat(handle.fileno())
             raw = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
     except OSError as exc:
         raise ValueError("execution snapshot cannot be read") from exc
+    if (
+        not stat.S_ISREG(initial_stat.st_mode)
+        or _snapshot_stat_identity(initial_stat) != _snapshot_stat_identity(initial_path_stat)
+    ):
+        raise ValueError("execution snapshot source changed before JSON decode")
     if len(raw) > _MAX_EXECUTION_SNAPSHOT_BYTES:
         raise ValueError("execution snapshot exceeds JSON byte budget")
     _require_bounded_snapshot_nesting(raw)
@@ -218,20 +236,20 @@ def load_snapshot(path: Path) -> dict:
     # callbacks. This is local TOCTOU defense, not a filesystem lock,
     # authenticated provenance, or compute authorization.
     try:
+        final_path_stat = source.lstat()
         with source.open("rb") as handle:
             final_stat = os.fstat(handle.fileno())
             final_bytes = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
     except OSError as exc:
         raise ValueError("execution snapshot source changed during JSON decode") from exc
-    initial_identity = (
-        initial_stat.st_dev, initial_stat.st_ino,
-        initial_stat.st_size, initial_stat.st_mtime_ns,
-    )
-    final_identity = (
-        final_stat.st_dev, final_stat.st_ino,
-        final_stat.st_size, final_stat.st_mtime_ns,
-    )
-    if final_bytes != raw or final_identity != initial_identity:
+    initial_identity = _snapshot_stat_identity(initial_stat)
+    if (
+        not stat.S_ISREG(final_path_stat.st_mode)
+        or not stat.S_ISREG(final_stat.st_mode)
+        or final_bytes != raw
+        or _snapshot_stat_identity(final_stat) != initial_identity
+        or _snapshot_stat_identity(final_path_stat) != initial_identity
+    ):
         raise ValueError("execution snapshot source changed during JSON decode")
     return parsed
 
