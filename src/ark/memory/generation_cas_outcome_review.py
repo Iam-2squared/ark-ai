@@ -17,10 +17,10 @@ from dataclasses import dataclass
 
 from .contracts import MemoryConflictError, MemorySchemaError, MemoryScope, MemoryWrite
 from .generation_fenced_cas import (
-    MemoryGenerationCASToken,
-    _digest,
     _EVENT_DOMAIN,
     _MAX_EVENTS,
+    MemoryGenerationCASToken,
+    _digest,
     _snapshot,
     _token_fields,
 )
