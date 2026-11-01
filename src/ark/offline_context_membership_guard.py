@@ -190,9 +190,13 @@ def review_offline_context_membership(
     epoch()
     if (
         type(result) is not _MEMBERSHIP_RESULT_TYPE
+        or type(result.owner_digest) is not str
         or result.owner_digest is not owner_digest
+        or type(result.record_count) is not int
         or result.record_count != len(records)
+        or type(result.scope_count) is not int
         or result.scope_count != len(scope_vetoes)
+        or type(result.membership_sha256) is not str
         or result.membership_sha256 is not digest
         # A successful membership check is not consent or a disclosure grant.
         # Verify these descriptors even on an exact-type reflected result.
@@ -208,9 +212,13 @@ def review_offline_context_membership(
     epoch()
     if (
         type(result) is not _MEMBERSHIP_RESULT_TYPE
+        or type(result.owner_digest) is not str
         or result.owner_digest is not owner_digest
+        or type(result.record_count) is not int
         or result.record_count != len(records)
+        or type(result.scope_count) is not int
         or result.scope_count != len(scope_vetoes)
+        or type(result.membership_sha256) is not str
         or result.membership_sha256 is not digest
     ):
         raise OfflineContextAdmissionRejected("constructed admission review mutated")
