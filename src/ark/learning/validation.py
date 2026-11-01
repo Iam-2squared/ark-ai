@@ -52,9 +52,6 @@ class ValidationReport:
             raise ValueError("experiment-001 validation requires exactly 30 cases")
         if any(type(case) is not ValidationCase for case in self.cases):
             raise ValueError("validation case carrier must be exact")
-        ids = [case.case_id for case in self.cases]
-        if len(set(ids)) != len(ids):
-            raise ValueError("validation cases must be unique")
         total_text = 0
         for value in (
             self.model_role, self.model_identity, self.scorer_sha256,
@@ -77,6 +74,8 @@ class ValidationReport:
                 if len(value) > _MAX_FIELD_CHARS:
                     raise ValueError("validation case text budget exceeded")
                 total_text += len(value)
+        if len({case.case_id for case in self.cases}) != len(self.cases):
+            raise ValueError("validation cases must be unique")
         if total_text > _MAX_TOTAL_TEXT:
             raise ValueError("validation total text budget exceeded")
 
@@ -84,8 +83,12 @@ class ValidationReport:
 def _epoch(report: ValidationReport) -> tuple[object, ...]:
     """Pin exact report/case carriers before any potentially patched validator."""
     fields = tuple(getattr(report, name) for name in _REPORT_FIELDS)
-    if type(fields[-1]) is not tuple:
-        raise ValueError("validation cases must be an exact tuple")
+    if (
+        type(fields[-1]) is not tuple
+        or len(fields[-1]) != 30
+        or any(type(case) is not ValidationCase for case in fields[-1])
+    ):
+        raise ValueError("validation requires exactly 30 exact case carriers")
     cases = tuple(
         (case, tuple(getattr(case, name) for name in _CASE_FIELDS))
         for case in fields[-1]
@@ -135,6 +138,19 @@ def compare_validation(current: ValidationReport, candidate: ValidationReport) -
     stable()
     candidate.validate()
     stable()
+    # Direct comparisons must enforce the same combined input budget as the
+    # detached V3 rechecker, not permit two individually maximal reports.
+    total_text = sum(
+        len(value)
+        for _, fields, cases in (current_epoch, candidate_epoch)
+        for value in (
+            *fields[:5],
+            *(text for _, values in cases for text in values[:2]),
+        )
+    )
+    stable()
+    if total_text > _MAX_TOTAL_TEXT:
+        raise ValueError("paired validation total text budget exceeded")
     if current.model_role != "paired_current" or candidate.model_role != "candidate":
         raise ValueError("expected paired_current vs candidate")
     for field in ("scorer_sha256", "runtime_identity", "prompt_contract_sha256"):
