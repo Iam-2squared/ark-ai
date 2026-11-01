@@ -65,3 +65,28 @@ def test_regular_synthetic_admission_remains_diagnostic():
     assert result.disclosure_authorized is False
     assert result.retention_authorized is False
     assert result.trusted_clock_verified is False
+
+
+@pytest.mark.parametrize("target_permission", [
+    "consent_verified", "disclosure_authorized", "retention_authorized",
+])
+@pytest.mark.parametrize("replacement_value", [True, False])
+def test_last_false_denial_cannot_replace_an_earlier_authority_descriptor(
+    monkeypatch, target_permission, replacement_value,
+):
+    original = mod._MEMBERSHIP_RESULT_TYPE
+
+    def change_previous_descriptor(self):
+        monkeypatch.setattr(
+            original, target_permission,
+            property(lambda ignored: replacement_value),
+        )
+        return False
+
+    monkeypatch.setattr(
+        original, "trusted_clock_verified", property(change_previous_descriptor),
+    )
+    with pytest.raises(
+        mod.OfflineContextAdmissionRejected, match="authority descriptor changed",
+    ):
+        _admission()
