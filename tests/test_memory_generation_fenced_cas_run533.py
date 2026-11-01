@@ -10,8 +10,8 @@ from threading import Barrier
 import pytest
 
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
-from ark.memory.contracts import MemoryConflictError
 from ark.memory import generation_fenced_cas as cas
+from ark.memory.contracts import MemoryConflictError
 
 
 def _fixture(tmp_path):
