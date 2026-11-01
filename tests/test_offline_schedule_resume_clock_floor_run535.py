@@ -4,10 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from ark.offline_schedule_resume_review import (
-    ScheduleResumeRejected,
-    review_offline_schedule_resume,
-)
 from ark.disconnected_schedule_preview import (
     DisconnectedScheduleCursor,
     DisconnectedSchedulePolicy,
@@ -17,6 +13,10 @@ from ark.disconnected_schedule_quarantine_ledger import (
     QuarantinePolicy,
     derive_quarantined_occurrence,
     genesis_quarantine_witness,
+)
+from ark.offline_schedule_resume_review import (
+    ScheduleResumeRejected,
+    review_offline_schedule_resume,
 )
 
 
