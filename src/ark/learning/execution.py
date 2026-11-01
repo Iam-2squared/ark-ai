@@ -170,6 +170,20 @@ def _finite_json_float(text: str) -> float:
     return value
 
 
+def _unique_snapshot_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguous duplicate authorization/identity keys at every depth.
+
+    Noncanonical whitespace and key ordering remain accepted, but two textual
+    declarations of the same JSON member must never silently use last-wins.
+    """
+    result: dict[str, object] = {}
+    for name, value in pairs:
+        if name in result:
+            raise ValueError("execution snapshot contains duplicate JSON key")
+        result[name] = value
+    return result
+
+
 def load_snapshot(path: Path) -> dict:
     """Read only bounded, finite local snapshot JSON; never start compute.
 
@@ -190,6 +204,7 @@ def load_snapshot(path: Path) -> dict:
             raw,
             parse_constant=_reject_nonstandard_json_constant,
             parse_float=_finite_json_float,
+            object_pairs_hook=_unique_snapshot_pairs,
         )
     except (UnicodeDecodeError, RecursionError, OverflowError, json.JSONDecodeError) as exc:
         raise ValueError("execution snapshot JSON cannot be decoded") from exc
