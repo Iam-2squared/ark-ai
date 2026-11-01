@@ -174,28 +174,42 @@ def review_restarted_context_replay(
     stable_observed()
     result = OfflineContextRecoveryReview(pinned[0], current[0], status, digest)
     def verify_result() -> None:
-        # The final durable-tip callback can mutate a previously validated
-        # result carrier. Never return that modified report or added authority.
-        stable_observed()
-        if (
-            type(result) is not _RESULT_TYPE
-            or type(result.retained_count) is not int
-            or result.retained_count != pinned[0]
-            or type(result.observed_count) is not int
-            or result.observed_count != current[0]
-            or type(result.status) is not str
-            or result.status is not status
-            or type(result.comparison_sha256) is not str
-            or result.comparison_sha256 is not digest
-            or result.historical_prefix_proven is not False
-            or result.independent_custody_proven is not False
-            or result.consent_verified is not False
-            or result.revocation_freshness_verified is not False
-            or result.context_disclosure_authorized is not False
-            or result.tool_dispatch_authorized is not False
-            or result.automatic_replay_authorized is not False
+        # Denial-only properties are arbitrary Python callbacks in synthetic
+        # fixtures: a False getter can still rewrite an earlier checked result
+        # or silently tamper with the local SQLite source. Check the original
+        # carriers after EACH getter and re-read the durable tip once more
+        # after the LAST callback. None of this attests an external actor.
+        def stable_result_carriers() -> None:
+            stable_observed()
+            if (
+                type(result) is not _RESULT_TYPE
+                or type(result.retained_count) is not int
+                or result.retained_count != pinned[0]
+                or type(result.observed_count) is not int
+                or result.observed_count != current[0]
+                or type(result.status) is not str
+                or result.status is not status
+                or type(result.comparison_sha256) is not str
+                or result.comparison_sha256 is not digest
+            ):
+                raise OfflineContextRecoveryRejected(
+                    "context replay review result changed"
+                )
+
+        stable_result_carriers()
+        for name in (
+            "historical_prefix_proven", "independent_custody_proven",
+            "consent_verified", "revocation_freshness_verified",
+            "context_disclosure_authorized", "tool_dispatch_authorized",
+            "automatic_replay_authorized",
         ):
-            raise OfflineContextRecoveryRejected("context replay review result changed")
+            if getattr(result, name) is not False:
+                raise OfflineContextRecoveryRejected(
+                    "context replay review result gained authority"
+                )
+            stable_result_carriers()
+        verify_durable_tip()
+        stable_result_carriers()
 
     verify_result()
     verify_durable_tip()
