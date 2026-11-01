@@ -17,8 +17,10 @@ from .disconnected_fixture_binding import (
 )
 from .disconnected_read_journal import (
     DisconnectedReadJournal,
+    ReadJournalRejected,
     ReadJournalWitness,
     ReadReceipt,
+    _chain,
 )
 from .disconnected_toolbox import DisconnectedToolRequest, DisconnectedToolResult
 
@@ -227,15 +229,24 @@ def append_disconnected_fixture_read(
             )
 
     stable()
-    saved = journal.append(receipt, retained)
-    # Fail closed even if journal.append committed and a later callback
-    # changed its inputs. This diagnostic cannot undo the durable append.
+    # The journal's v1 deterministic chain binds the returned tip to THIS
+    # exact fixture receipt, not just to a claimed count. It is local
+    # consistency evidence, never proof of an external READ or writer.
+    expected_tip = _chain(prior[1], prior[0] + 1, receipt)
     stable()
+    saved = journal.append(receipt, retained)
+    # A failure after this point may follow a durable SQLite COMMIT.
+    # Never auto-retry or claim a rollback based on this diagnostic.
+    stable()
+    saved_epoch = (
+        saved.count, saved.tip_sha256,
+    ) if type(saved) is ReadJournalWitness else ()
     if (
         type(saved) is not ReadJournalWitness
         or type(saved.count) is not int
         or saved.count != prior[0] + 1
         or type(saved.tip_sha256) is not str
+        or saved.tip_sha256 != expected_tip
         or saved.dispatch_authorized is not False
         or saved.effect_proven is not False
         or saved.replay_authorized is not False
@@ -245,4 +256,44 @@ def append_disconnected_fixture_read(
             "untrusted READ journal result; commit status must be inspected"
         )
     stable()
+    try:
+        # Reopen a consistent read epoch through the journal's verifier.
+        # An append callback could claim success without persisting a row.
+        observed = journal.verify(saved)
+    except ReadJournalRejected as exc:
+        raise DisconnectedReadBridgeRejected(
+            "READ journal post-append verification failed; do not retry"
+        ) from exc
+    stable()
+    if (
+        type(saved) is not ReadJournalWitness
+        or saved.count is not saved_epoch[0]
+        or saved.tip_sha256 is not saved_epoch[1]
+        or type(observed) is not ReadJournalWitness
+        or type(observed.count) is not int
+        or observed.count != prior[0] + 1
+        or type(observed.tip_sha256) is not str
+        or observed.tip_sha256 != expected_tip
+        or any(getattr(observed, flag) is not False for flag in (
+            "dispatch_authorized", "effect_proven",
+            "replay_authorized", "independent_custody_proven",
+        ))
+    ):
+        raise DisconnectedReadBridgeRejected(
+            "untrusted READ post-append evidence; commit status must be inspected"
+        )
+    # A false-valued flag getter is also a callback. Recheck both carriers
+    # after the final denial rather than returning a stale proof of success.
+    stable()
+    if (
+        type(saved) is not ReadJournalWitness
+        or saved.count is not saved_epoch[0]
+        or saved.tip_sha256 is not saved_epoch[1]
+        or type(observed) is not ReadJournalWitness
+        or observed.count != prior[0] + 1
+        or observed.tip_sha256 != expected_tip
+    ):
+        raise DisconnectedReadBridgeRejected(
+            "READ post-append witness changed; commit status must be inspected"
+        )
     return saved
