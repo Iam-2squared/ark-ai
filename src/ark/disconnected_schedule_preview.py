@@ -175,44 +175,50 @@ def preview_disconnected_schedule(
     ).encode("ascii")
     fingerprint = hashlib.sha256(_DOMAIN + b"preview\0" + packed).hexdigest()
     assert_epoch()
+    denial_names = (
+        "trusted_clock_verified", "notification_authorized",
+        "tool_execution_authorized", "automatic_replay_authorized",
+        "consent_verified",
+    )
+    denial_descriptors = tuple(
+        getattr(_RESULT_TYPE, name) for name in denial_names
+    )
     result = DisconnectedDuePreview(state, index, occurrence, due, fingerprint)
+
+    def stable_result() -> None:
+        # Even a False property may rewrite an EARLIER authority descriptor.
+        # Bind all descriptor objects as well as the exact returned fields.
+        if (
+            type(result) is not _RESULT_TYPE
+            or type(result.state) is not str
+            or type(result.next_index) is not int
+            or type(result.fingerprint) is not str
+            or (result.occurrence_id is not None
+                and type(result.occurrence_id) is not str)
+            or (result.due_at_ms is not None
+                and type(result.due_at_ms) is not int)
+            or result.state is not state
+            or result.next_index is not index
+            or result.occurrence_id is not occurrence
+            or result.due_at_ms is not due
+            or result.fingerprint is not fingerprint
+            or any(
+                getattr(_RESULT_TYPE, name) is not descriptor
+                for name, descriptor in zip(
+                    denial_names, denial_descriptors, strict=True,
+                )
+            )
+        ):
+            raise SchedulePreviewRejected("constructed preview carrier changed")
+
     assert_epoch()
-    if (
-        type(result) is not _RESULT_TYPE
-        or type(result.state) is not str
-        or type(result.next_index) is not int
-        or type(result.fingerprint) is not str
-        or (
-            result.occurrence_id is not None
-            and type(result.occurrence_id) is not str
-        )
-        or (result.due_at_ms is not None and type(result.due_at_ms) is not int)
-        or result.state is not state
-        or result.next_index is not index
-        or result.occurrence_id is not occurrence
-        or result.due_at_ms is not due
-        or result.fingerprint is not fingerprint
-        # A synthetic result must not advertise consent, clock authenticity,
-        # OS notification, Tool execution or replay after its constructor.
-        or result.trusted_clock_verified is not False
-        or result.notification_authorized is not False
-        or result.tool_execution_authorized is not False
-        or result.automatic_replay_authorized is not False
-        or result.consent_verified is not False
-    ):
-        raise SchedulePreviewRejected("constructed preview carrier changed")
-    # Authority property descriptors can execute injected side effects. Do not
-    # return a due label if reading a nominally False grant mutated the policy,
-    # cursor, or the otherwise valid result fields after their first check.
+    stable_result()
+    for name in denial_names:
+        if getattr(result, name) is not False:
+            raise SchedulePreviewRejected("constructed preview carrier changed")
+        assert_epoch()
+        stable_result()
+    # The caller-supplied clock is not trusted and this is never a dispatch.
     assert_epoch()
-    if (
-        type(result) is not _RESULT_TYPE
-        or result.state is not state
-        or result.next_index is not index
-        or result.occurrence_id is not occurrence
-        or result.due_at_ms is not due
-        or result.fingerprint is not fingerprint
-    ):
-        raise SchedulePreviewRejected("constructed preview changed after authority review")
-    assert_epoch()
+    stable_result()
     return result
