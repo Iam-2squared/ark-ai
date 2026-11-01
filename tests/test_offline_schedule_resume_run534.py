@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from dataclasses import replace
 
 import pytest
 
@@ -171,3 +172,61 @@ def test_final_false_authority_getter_cannot_rewrite_witness(monkeypatch, tmp_pa
     )
     with pytest.raises(resume.ScheduleResumeRejected, match="witness changed"):
         _review(ledger, policy, DisconnectedScheduleCursor(0), genesis, 1000)
+
+
+@pytest.mark.parametrize("spoof", (
+    "wrong_state", "wrong_due", "wrong_occurrence", "boolean_due",
+))
+def test_restart_rejects_forged_exact_type_preview_without_any_dispatch(
+    tmp_path, monkeypatch, spoof,
+):
+    _, ledger, policy, _, genesis = _fixture(tmp_path)
+    native = resume.preview_disconnected_schedule
+
+    def forged(*args, **kwargs):
+        value = native(*args, **kwargs)
+        changes = {
+            "wrong_state": {"state": "NOT_DUE"},
+            "wrong_due": {"due_at_ms": 1001},
+            "wrong_occurrence": {"occurrence_id": "slot_" + "f" * 64},
+            "boolean_due": {"due_at_ms": True},
+        }
+        return replace(value, **changes[spoof])
+
+    monkeypatch.setattr(resume, "preview_disconnected_schedule", forged)
+    with pytest.raises(resume.ScheduleResumeRejected, match="preview"):
+        _review(ledger, policy, DisconnectedScheduleCursor(0), genesis, 1000)
+    assert ledger.inspect(retained=genesis) == genesis
+
+
+def test_boolean_index_equal_to_one_cannot_imitate_restart_cursor(
+    tmp_path, monkeypatch,
+):
+    _, ledger, policy, qpolicy, genesis = _fixture(tmp_path)
+    first = derive_quarantined_occurrence(qpolicy, 0)
+    saved = ledger.quarantine_expired(
+        index=0, occurrence_id=first, observed_ms=1200, retained=genesis,
+    )
+    native = resume.preview_disconnected_schedule
+
+    def forged(*args, **kwargs):
+        return replace(native(*args, **kwargs), next_index=True)
+
+    monkeypatch.setattr(resume, "preview_disconnected_schedule", forged)
+    with pytest.raises(resume.ScheduleResumeRejected, match="preview"):
+        _review(
+            ledger, policy, DisconnectedScheduleCursor(1, first),
+            saved.witness, 1800,
+        )
+    assert ledger.inspect(retained=saved.witness) == saved.witness
+
+
+def test_honest_due_classification_is_unverified_and_never_authorizing(tmp_path):
+    _, ledger, policy, _, genesis = _fixture(tmp_path)
+    outcome = _review(
+        ledger, policy, DisconnectedScheduleCursor(0), genesis, 1000,
+    )
+    assert outcome.next_state == "DUE_UNVERIFIED"
+    assert outcome.notification_authorized is False
+    assert outcome.tool_execution_authorized is False
+    assert outcome.automatic_replay_authorized is False
