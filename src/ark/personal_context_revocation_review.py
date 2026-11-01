@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import stat
 from contextlib import closing
 from pathlib import Path
 
@@ -77,12 +78,43 @@ def _validate(conn: sqlite3.Connection) -> None:
             raise SyntheticContextRevocationRejected("revocation row integrity failed")
 
 
+def _check_local_revocation_path(path: Path) -> None:
+    """Reject obvious symlink/alias sources before fixture SQLite access.
+
+    A path inspection is not atomic open-handle custody and cannot prove
+    filesystem ownership or user consent. Missing source files are handled
+    by the existing SQLite read-only restart behavior.
+    """
+    try:
+        for parent in path.parents:
+            info = parent.lstat()
+            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                raise SyntheticContextRevocationRejected(
+                    "revocation path ancestor is not a real directory"
+                )
+        if path.is_symlink():
+            raise SyntheticContextRevocationRejected(
+                "revocation source symlink is forbidden"
+            )
+        if path.exists():
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise SyntheticContextRevocationRejected(
+                    "revocation source must be one regular-file link"
+                )
+    except OSError as exc:
+        raise SyntheticContextRevocationRejected(
+            "revocation source path cannot be checked"
+        ) from exc
+
+
 class SyntheticContextRevocationLedger:
     """Irreversible-within-fixture scope veto; no grant/reenrollment API."""
 
     def __init__(self, path: Path) -> None:
         if not isinstance(path, Path):
             raise TypeError("revocation path must be a pathlib.Path")
+        _check_local_revocation_path(path)
         self.path = path
         self._source_path = path
         with closing(sqlite3.connect(path, timeout=10, isolation_level=None)) as conn:
@@ -112,6 +144,7 @@ class SyntheticContextRevocationLedger:
             raise SyntheticContextRevocationRejected(
                 "revocation source path changed"
             )
+        _check_local_revocation_path(expected)
 
     def _connect(self, *, readonly: bool) -> sqlite3.Connection:
         self._assert_source_path(self._source_path)
