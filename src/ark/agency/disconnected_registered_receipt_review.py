@@ -227,8 +227,11 @@ def review_retained_registered_receipt(
         stable_review()
         stable()
         stable_review()
-        # The last denial callback may also mutate the separately retained
-        # link/witness, so recheck the original inputs *after* that callback.
+        # Last denial callbacks may mutate *either* the detached witness or
+        # the original registry/call/grant/fixture carriers. Repeat the READ
+        # binding without dispatch and inspect our output one final time.
+        stable()
+        rebind()
         stable()
         if any(a is not b for a, b in zip((
             reviewed.step_id, reviewed.action_request_id,
