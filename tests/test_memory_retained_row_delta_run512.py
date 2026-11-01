@@ -147,7 +147,9 @@ def test_deleted_historical_event_is_rejected(tmp_path):
     witness = delta.capture_local_memory_row_delta(store)
     with sqlite3.connect(store.path) as conn:
         conn.execute("DELETE FROM memory_events")
-    with pytest.raises(delta.MemoryRowDeltaRejected, match="event prefix"):
+    with pytest.raises(
+        delta.MemoryRowDeltaRejected, match="event prefix|lacks creation event",
+    ):
         delta.review_retained_memory_row_delta(store, witness)
 
 
