@@ -115,11 +115,18 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
                 stable()
                 if type(value) is str and value in _PLACEHOLDERS:
                     unresolved.append(f"{section}.{name}")
-        # SAME_AS_BASE is a declared relationship, not a verified tokenizer
-        # commit. Explicitly report it while the referenced base is missing.
+        # Tokenizer revision is a separate identity requirement even though
+        # _SECTIONS only enumerates its materialized byte/hash fields.
+        # SAME_AS_BASE is a declared relationship, not a verified commit:
+        # either unresolved base marker keeps the alias unresolved too.
+        tokenizer_revision = snapshot["tokenizer"].get("revision")
+        base_revision = snapshot["base"]["revision"]
         if (
-            snapshot["tokenizer"].get("revision") == "SAME_AS_BASE"
-            and snapshot["base"]["revision"] == "UNRESOLVED"
+            (type(tokenizer_revision) is str and tokenizer_revision in _PLACEHOLDERS)
+            or (
+                tokenizer_revision == "SAME_AS_BASE"
+                and type(base_revision) is str and base_revision in _PLACEHOLDERS
+            )
         ):
             unresolved.append("tokenizer.revision")
         stable()
