@@ -143,19 +143,30 @@ def review_synthetic_clock_sequence(
     result_carriers = (result.source_digest, result.chain_hash)
 
     def assert_result_epoch() -> None:
-        # The iterable may mutate the last locally constructed witness while
-        # yielding its NEXT sample or finishing in generator finally. A frozen
-        # dataclass alone does not protect its reflective result carriers.
-        if (
-            type(result) is not SyntheticClockWitness
-            or _fields(result) != result_epoch
-            or result.source_digest is not result_carriers[0]
-            or result.chain_hash is not result_carriers[1]
-            or result.trusted_clock_verified is not False
-            or result.dispatch_authorized is not False
-            or result.automatic_replay_authorized is not False
+        # A false-valued denial getter can be reentrant: it must not rewrite
+        # the just-checked witness or silently replace the original SHA
+        # carrier after the last field comparison.
+        def stable_result_fields() -> None:
+            if (
+                type(result) is not SyntheticClockWitness
+                or _fields(result) != result_epoch
+                or result.source_digest is not result_carriers[0]
+                or result.chain_hash is not result_carriers[1]
+            ):
+                raise SyntheticClockRejected(
+                    "constructed clock witness changed during sequence"
+                )
+
+        stable_result_fields()
+        for flag in (
+            "trusted_clock_verified", "dispatch_authorized",
+            "automatic_replay_authorized",
         ):
-            raise SyntheticClockRejected("constructed clock witness changed during sequence")
+            if getattr(result, flag) is not False:
+                raise SyntheticClockRejected(
+                    "constructed clock witness gained authority"
+                )
+            stable_result_fields()
 
     def assert_epoch() -> None:
         if retained is not None and (
@@ -253,6 +264,17 @@ def review_synthetic_clock_sequence(
                 or candidate.automatic_replay_authorized is not False
             ):
                 raise SyntheticClockRejected("constructed clock chain link changed")
+            # The candidate's last false-valued authority getter may
+            # reflectively alter its fields AFTER the earlier scalar checks.
+            # Do not promote that altered candidate into the next link.
+            if (
+                _fields(candidate) != (seq, source, wall, mono, next_hash)
+                or candidate.source_digest is not source
+                or candidate.chain_hash is not next_hash
+            ):
+                raise SyntheticClockRejected(
+                    "constructed clock chain link changed after denial"
+                )
             result = candidate
             result_epoch = _fields(candidate)
             result_carriers = (candidate.source_digest, candidate.chain_hash)
