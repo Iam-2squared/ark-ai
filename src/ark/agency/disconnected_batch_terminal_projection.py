@@ -158,7 +158,37 @@ def project_disconnected_batch_terminals(
         plan_epoch[0], plan_epoch[3], schedule_epoch[3],
         failed_step_ids, ordered, digest,
     )
+    # The denied-authority properties themselves are callback boundaries.
+    # Even a False getter may reflectively mutate the returned terminal
+    # projection or the original plan, so check after EVERY getter (including
+    # the last) instead of trusting the earlier one-shot tuple comparison.
+    report_epoch = (
+        report.request_id, report.plan_digest, report.schedule_digest,
+        report.failed_step_ids, report.terminal_states, report.projection_digest,
+    )
+    descriptors = tuple(getattr(_RECEIPT_TYPE, flag) for flag in _FLAGS)
+
+    def stable_report() -> None:
+        if (
+            type(report) is not _RECEIPT_TYPE
+            or any(
+                now is not original
+                for now, original in zip(
+                    (report.request_id, report.plan_digest, report.schedule_digest,
+                     report.failed_step_ids, report.terminal_states,
+                     report.projection_digest),
+                    report_epoch, strict=True,
+                )
+            )
+            or any(
+                getattr(_RECEIPT_TYPE, flag) is not descriptor
+                for flag, descriptor in zip(_FLAGS, descriptors, strict=True)
+            )
+        ):
+            raise DisconnectedBatchTerminalRejected("terminal receipt changed")
+
     stable()
+    stable_report()
     if (
         type(report) is not _RECEIPT_TYPE
         or report.request_id is not plan_epoch[0]
@@ -167,9 +197,19 @@ def project_disconnected_batch_terminals(
         or report.failed_step_ids is not failed_step_ids
         or report.terminal_states is not ordered
         or report.projection_digest is not digest
-        or any(getattr(report, flag) is not False for flag in _FLAGS)
     ):
         raise DisconnectedBatchTerminalRejected("terminal receipt changed")
+    for flag in _FLAGS:
+        if getattr(report, flag) is not False:
+            raise DisconnectedBatchTerminalRejected("terminal receipt gained authority")
+        stable_report()
+        stable()
+    # A reentrant final denial callback can also retarget a DAG step. Make
+    # sure that the independently retained plan and schedule still verify.
+    verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    verify_disconnected_batch_schedule(schedule, plan, retained_digest=retained_digest)
+    stable_report()
+    stable()
     return report
 
 
