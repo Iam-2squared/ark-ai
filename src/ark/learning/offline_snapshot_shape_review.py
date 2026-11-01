@@ -33,6 +33,7 @@ _SHA_PATHS = frozenset((
     "tokenizer.file_sha256_manifest", "tokenizer.chat_template_probe_sha256",
     "dataset.canonical_sha256", "dataset.provenance_manifest_sha256",
     "dataset.contamination_report_sha256", "hardware.preflight_report_sha256",
+    "export.converter_identity", "export.quantizer_identity",
 ))
 _NUMBER_PATHS = frozenset((
     "hardware.vram_gib", "budget.max_cost_jpy",
