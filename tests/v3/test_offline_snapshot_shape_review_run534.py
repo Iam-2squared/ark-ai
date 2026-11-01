@@ -120,6 +120,9 @@ def test_identity_digest_ignores_mapping_insertion_order():
 
 def test_reflective_input_drift_during_shape_probe_is_rejected(monkeypatch):
     source = _snapshot()
+    # A literal placeholder is intentionally skipped by the shape checker.
+    # Supply a syntactically concrete value to exercise this callback edge.
+    source["code"]["git_sha"] = "a" * 40
     original = review._plausible_shape
 
     def mutate(path, value):
