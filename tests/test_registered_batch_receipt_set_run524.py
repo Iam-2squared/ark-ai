@@ -368,3 +368,39 @@ def test_parent_rejects_equivalent_child_string_subclasses(
         assert case["backend"].calls == 0
     finally:
         case["journal"].close()
+
+
+@pytest.mark.parametrize("forged_authority", [False, True])
+def test_final_child_review_cannot_replace_batch_authority_descriptor(
+    tmp_path, monkeypatch, forged_authority,
+):
+    """Even a false-valued replacement after denial is an altered result epoch."""
+    case = setup_case(tmp_path, count=1)
+    original_child = batch_module.review_registered_batch_receipt
+    child_calls = 0
+
+    def final_child_callback(*args, **kwargs):
+        nonlocal child_calls
+        result = original_child(*args, **kwargs)
+        child_calls += 1
+        # The parent reads a registered child three times: initial,
+        # repeat, and after the first parent denial checks.
+        if child_calls == 3:
+            monkeypatch.setattr(
+                RegisteredBatchSetReview,
+                "backend_dispatched",
+                property(lambda self: forged_authority),
+            )
+        return result
+
+    monkeypatch.setattr(
+        batch_module, "review_registered_batch_receipt", final_child_callback,
+    )
+    try:
+        with pytest.raises(RegisteredBatchSetRejected, match="result changed"):
+            invoke(case)
+        assert child_calls == 3
+        assert case["backend"].calls == 0
+        assert not case["gate"]._consumed_tokens
+    finally:
+        case["journal"].close()
