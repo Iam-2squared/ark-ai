@@ -18,10 +18,46 @@ class SimulationEvidence:
 
 
 def simulate_gate(evidence: SimulationEvidence) -> dict:
-    if evidence.measurement_kind != "mock":
+    """Evaluate bounded, exact-typed *mock* evidence, never actual V2 runs.
+
+    Malformed synthetic inputs cannot become simulation-eligible through
+    Python truthiness (1 == True) or sequence equality aliases. This is
+    input hardening only; valid frozen policy outcomes are unchanged.
+    """
+    if (
+        type(evidence) is not SimulationEvidence
+        or type(evidence.measurement_kind) is not str
+        or evidence.measurement_kind != "mock"
+    ):
         raise StopRequired("STOP before real evaluation/promotion decision")
-    reasons = []
     old, new = evidence.baseline_runs, evidence.candidate_runs
+    exact_runs = (
+        type(old) is tuple
+        and type(new) is tuple
+        and len(old) == len(new) == 2
+        and all(
+            type(run) is tuple
+            and 1 <= len(run) <= 4096
+            and all(type(answer) is bool for answer in run)
+            for run in (*old, *new)
+        )
+    )
+    exact_control_flags = all(
+        type(getattr(evidence, field)) is bool
+        for field in (
+            "controlled", "provenance_reviewed",
+            "contamination_suspected", "memory_error",
+        )
+    ) and type(evidence.runtime_failures) is int
+    if not exact_runs or not exact_control_flags:
+        return {
+            "simulation_decision": "REJECT",
+            "reasons": ["noncanonical_mock_evidence"],
+            "model_promotion_status": "NOT_EVALUATED",
+            "automatic_promotion": False,
+            "v3_gate": "NOT_PASSED",
+        }
+    reasons = []
     if (
         len(old) != 2
         or len(new) != 2
