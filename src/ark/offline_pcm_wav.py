@@ -160,6 +160,19 @@ def inspect_local_pcm_wav(request: OfflineWaveRequest) -> OfflineWaveReview:
         bits, frame_count, milliseconds, remainder,
     )
     check_epoch()
+    # Pin all denied-authority descriptors BEFORE any potentially reentrant
+    # property getter. A getter that returns False can still replace another
+    # class property with a later authority-granting implementation.
+    denied = (
+        "microphone_provenance_verified", "consent_verified",
+        "speech_recognized", "authorized_to_disclose",
+    )
+    denied_descriptors = tuple(getattr(_REVIEW_TYPE, key) for key in denied)
+    if (
+        type(_REVIEW_TYPE) is not type
+        or any(not isinstance(descriptor, property) for descriptor in denied_descriptors)
+    ):
+        raise OfflineWaveRejected("WAV denial descriptors not exact properties")
     if (
         type(result) is not _REVIEW_TYPE
         or result.owner_sha256 is not owner
@@ -197,4 +210,9 @@ def inspect_local_pcm_wav(request: OfflineWaveRequest) -> OfflineWaveReview:
     ):
         raise OfflineWaveRejected("constructed WAV review changed after authority review")
     check_epoch()
+    if any(
+        getattr(_REVIEW_TYPE, key) is not original
+        for key, original in zip(denied, denied_descriptors, strict=True)
+    ):
+        raise OfflineWaveRejected("WAV denial authority descriptors changed")
     return result
