@@ -122,11 +122,30 @@ def verify_detached_authorization_packet(
             or witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
             or witness.packet_file_sha256 is not observed
             or witness.internal_packet_sha256 is not internal
+            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
         ):
             raise LocalPacketBindingRejected("packet witness changed after review")
-        # Field reads can also be reflected callbacks. A witness getter that
-        # returns the correct digest must not rewrite a packet or snapshot
-        # after the preceding unchanged() check.
+        # A late false-valued denial getter may also replace a previously
+        # inspected authority descriptor. Re-read every flag after the prior
+        # pass; inspect all retained fields after the denial callbacks.
+        unchanged()
+        if (
+            type(witness) is not _WITNESS_TYPE
+            or witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
+            or witness.packet_file_sha256 is not observed
+            or witness.internal_packet_sha256 is not internal
+            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
+        ):
+            raise LocalPacketBindingRejected("packet witness changed in final review")
+        unchanged()
+        if (
+            witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
+            or witness.packet_file_sha256 is not observed
+            or witness.internal_packet_sha256 is not internal
+            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
+        ):
+            raise LocalPacketBindingRejected("packet witness changed after final denial")
+        # Field reads and denial getters are reflective callback boundaries.
         unchanged()
         return witness
     except (TypeError, KeyError, OverflowError, UnicodeError, RecursionError) as exc:
