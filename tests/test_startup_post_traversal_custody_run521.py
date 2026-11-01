@@ -46,8 +46,8 @@ def test_state_lookup_rejects_reentrant_snapshot_edit(
 
     def modified(self):
         nonlocal checks
-        original(self)
         checks += 1
+        original(self)
         if checks == 2:
             root = next(
                 item for item in self.components if item.component_id == "root"
@@ -68,8 +68,8 @@ def test_blocker_traversal_rejects_reentrant_snapshot_edit(monkeypatch, target):
 
     def modified(self):
         nonlocal checks
-        original(self)
         checks += 1
+        original(self)
         if checks == 2:
             root = next(
                 item for item in self.components if item.component_id == "root"
