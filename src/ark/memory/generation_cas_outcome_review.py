@@ -147,8 +147,11 @@ def review_memory_generation_cas_outcome(
                         "retained CAS event prefix disagrees with SQLite"
                     )
                 stable()
-                again_record, again = _snapshot(conn, memory_id, scope, source)
-                if record != again_record or observed != again:
+                _, again = _snapshot(conn, memory_id, scope, source)
+                # Dataclass __eq__ is replaceable in synthetic callbacks;
+                # compare the exact row/event token bytes, never a patched
+                # equality method when deciding whether a snapshot drifted.
+                if _token_fields(observed) != _token_fields(again):
                     raise MemoryCASOutcomeRejected("CAS observation snapshot changed")
                 stable()
         except (sqlite3.Error, MemoryConflictError, MemorySchemaError) as exc:
@@ -172,7 +175,37 @@ def review_memory_generation_cas_outcome(
         return record, observed
 
     record, observed = inspect()
-    if observed == retained:
+    observed_epoch = _token_fields(observed)
+    record_epoch = (
+        record.memory_id, record.scope, record.source_id, record.content,
+        record.metadata, dict(record.metadata), record.created_at_ms,
+        record.updated_at_ms, record.expires_at_ms, record.revision,
+        record.content_sha256,
+    )
+
+    def stable_observation() -> None:
+        if (
+            type(observed) is not MemoryGenerationCASToken
+            or any(now is not old for now, old in zip(
+                _token_fields(observed), observed_epoch, strict=True,
+            ))
+            or any(now is not old for now, old in zip((
+                record.memory_id, record.scope, record.source_id, record.content,
+                record.metadata, record.created_at_ms, record.updated_at_ms,
+                record.expires_at_ms, record.revision, record.content_sha256,
+            ), (
+                record_epoch[0], record_epoch[1], record_epoch[2],
+                record_epoch[3], record_epoch[4], record_epoch[6],
+                record_epoch[7], record_epoch[8], record_epoch[9],
+                record_epoch[10],
+            ), strict=True))
+            or dict(record.metadata) != record_epoch[5]
+        ):
+            raise MemoryCASOutcomeRejected("CAS observed row or event token changed")
+        stable()
+
+    stable_observation()
+    if observed_epoch == prior:
         label = "UNCHANGED_OBSERVED"
     elif (
         observed.revision == retained.revision + 1
@@ -208,12 +241,14 @@ def review_memory_generation_cas_outcome(
         ))
         if (
             type(result) is not MemoryCASOutcomeReview
-            or current != pinned
+            or any(now is not old for now, old in zip(
+                current, pinned, strict=True,
+            ))
             or any(getattr(MemoryCASOutcomeReview, name) is not desc
                    for name, desc in zip(_DENIED, descriptors, strict=True))
         ):
             raise MemoryCASOutcomeRejected("CAS observation report changed")
-        stable()
+        stable_observation()
 
     stable_result()
     for name in _DENIED:
@@ -222,6 +257,6 @@ def review_memory_generation_cas_outcome(
         stable_result()
     _, final = inspect()
     stable_result()
-    if final != observed:
+    if _token_fields(final) != observed_epoch:
         raise MemoryCASOutcomeRejected("CAS observation drifted during review")
     return result
