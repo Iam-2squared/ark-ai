@@ -1,5 +1,51 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run526 / 2026-11-01:** THREE independently scoped, free-only, reversible source+test packages (1) V3 wall-time approval-epoch mutation fence, (2) disconnected registered READ child receipt independent aggregate binding, (3) synthetic Personal Context admission exact integer count custody. **28 newly authored pytest cases (12 + 9 + 7)**, plus one test-only Ruff import-order correction and three explanatory technical records. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 remain Draft/unmerged.
+
+**Saved at:** **2026-11-01T18:59:01.130+09:00 Asia/Tokyo/JST**, ordinary host wall-clock observation immediately before permitted GitHub Contents checkpoint write. Not a trusted clock, actor authentication, authorization, consent or model/runtime identity attestation.
+
+## LATEST — branches, initial work basis and checkpoint semantics
+
+- PR #8 [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`: **initial work-basis HEAD** `6ccf4789bf3e322403d2a9b3c2ce9f28209dacf6`. Registered READ source `ab8085c5ab597550138a488c8f4fb63bdf52bb6f`, regression tests `5ab4267e965091da970cf66e21fb863f03042907`, Ruff-only ordering repair `400577ff456f2e07b23da056838c325ed1222cb0`, [technical evidence](https://github.com/Iam-2squared/ark-ai/blob/3398f569d0b0e0634d1fbb21a1eb65bfdc0d3976/docs/JARVIS_RUN526_REGISTERED_CHILD_RECEIPT_CUSTODY.md) `3398f569d0b0e0634d1fbb21a1eb65bfdc0d3976`. Independent Context source `0e2ded155508c1a6758752814827d47f0b33a0fa`, source+test HEAD `2f3bfde1b8f19c5e9aa11cabae367fc4c41bf46f`, [Context evidence](https://github.com/Iam-2squared/ark-ai/blob/5fe4dbfcef069d1d67352292e4fd6abbecb964de/docs/JARVIS_RUN526_CONTEXT_ADMISSION_EXACT_NUMERIC_TYPES.md) `5fe4dbfcef069d1d67352292e4fd6abbecb964de`. **Checkpoint write-basis HEAD:** `5fe4dbfcef069d1d67352292e4fd6abbecb964de`.
+- PR #5 [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`: **initial work-basis HEAD** `566b27114a5449e2306a782d3652728958ca7a1c`. Source `db5897477a14c54274057b9375bd23016ee9b590`, source+test HEAD `4bb65b84ea8560b98f9be9abfd836ac91510abc1`, [V3 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/198f0a703ef805d0fde23a008974e54d9f2008fc/docs/v3/RUN526_WALL_BUDGET_APPROVAL_EPOCH.md), latest observed HEAD `198f0a703ef805d0fde23a008974e54d9f2008fc`.
+- **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. The **checkpoint-result HEAD cannot be included in its own commit** because GitHub assigns it after this file update. Re-read resulting branch HEAD and Blob after write. The checkpoint's exact-head CI is separate; previous code/doc GREEN does not establish checkpoint GREEN.
+
+## NEW — implementation and bounded tests
+
+1. **V3 wall-time budget original approval pair (12 new cases):** `src/ark/learning/runtime_guard.py` retains the original exact float `(started, timeout_seconds)`; at any future controlled check, a changed or mistyped budget is denied and latched terminally, including numeric bool substitution and NaN. Ordinary sampling/deadline behavior is preserved. Tests: `tests/v3/test_wall_time_budget_approval_epoch_run526.py`. This is in-process diagnostic integrity, NOT a secure monotonic clock, process-tamper boundary, provider-side spending cap or training approval.
+2. **Registered synthetic READ receipt child custody (9 new cases):** `src/ark/agency/disconnected_registered_batch_receipt_set.py` independently checks every child report's exact type, parent DAG/schedule digests, wave, `act_`/`req_` IDs, registered link hash, retained SQLite journal count/tip, exact 64-hex receipt hash, strictly false authority properties and post-getter unchanged fields before aggregation. Tests appended to `tests/test_registered_batch_receipt_set_run524.py`. Neither the child receipt nor the aggregate proves actual execution, authenticated consent, single-transaction cross-journal consistency or safe replay.
+3. **Privacy Context admission count exact types (7 new cases):** `src/ark/offline_context_membership_guard.py` now checks `record_count` and `scope_count` are exact `int` in initial and post-denial result validation. Reflection-based constructor/callback substitution of `True` or `1.0` for one is denied despite Python numeric equality. Tests: `tests/test_context_membership_exact_output_types_run526.py`. This is only synthetic metadata review, NOT user identity, consent, revocation or disclosure authority.
+
+**28 newly authored cases**, NOT the independently confirmed pytest PASS count; local standalone git checkout/pytest/Ruff unavailable due container DNS failure to resolve github.com. GitHub Actions performs exact-head CI. PR8 first regression-test CI [41294787361](https://github.com/Iam-2squared/ark-ai/actions/runs/41294787361) failed all six Ruff jobs on I001 **before pytest**; corrected the single test import order with no production guard relaxation. No duplicate equivalent CI was manually launched.
+
+## CI / tests — sampled BEFORE this checkpoint write
+
+- **PR8 registered source**, [41294989445](https://github.com/Iam-2squared/ark-ai/actions/runs/41294989445): **4/6 GREEN; 0 FAIL; 2 IN PROGRESS; 0 QUEUED; 0 OTHER**, exact-head status observed before checkpoint. Earlier-head GREEN never transfers to later file commits.
+- **PR8 registered docs**, [41295075581](https://github.com/Iam-2squared/ark-ai/actions/runs/41295075581): **3/6 GREEN; 0 FAIL; 3 IN PROGRESS; 0 QUEUED; 0 OTHER**, exact-head status observed before checkpoint. Earlier-head GREEN never transfers to later file commits.
+- **PR8 Context source**, [41295218077](https://github.com/Iam-2squared/ark-ai/actions/runs/41295218077): **3/6 GREEN; 0 FAIL; 3 IN PROGRESS; 0 QUEUED; 0 OTHER**, exact-head status observed before checkpoint. Earlier-head GREEN never transfers to later file commits.
+- **PR8 Context docs**, [41295253659](https://github.com/Iam-2squared/ark-ai/actions/runs/41295253659): **0/6 GREEN; 0 FAIL; 6 IN PROGRESS; 0 QUEUED; 0 OTHER**, exact-head status observed before checkpoint. Earlier-head GREEN never transfers to later file commits.
+- **PR5 wall-time source**, [41294678904](https://github.com/Iam-2squared/ark-ai/actions/runs/41294678904): **6/6 GREEN; 0 FAIL; 0 IN PROGRESS; 0 QUEUED; 0 OTHER**, exact-head status observed before checkpoint. Earlier-head GREEN never transfers to later file commits.
+- **PR5 wall-time docs**, [41295053152](https://github.com/Iam-2squared/ark-ai/actions/runs/41295053152): **6/6 GREEN; 0 FAIL; 0 IN PROGRESS; 0 QUEUED; 0 OTHER**, exact-head status observed before checkpoint. Earlier-head GREEN never transfers to later file commits.
+
+## Frozen contracts / blockers / authorization boundaries
+
+- Independently re-read unchanged blob IDs: `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Frozen V1/V2/Local UI/Launcher evidence and protected final evaluation remain unchanged.
+- **No paid/external GPU/API/compute, subscriptions, real Candidate adapter or weights, new credentials/secrets, model download, protected V2 evaluation opening, promotion, real ToolBackend or camera/microphone action, automatic replay, notifications, irreversible deletion, human-review decision or main merge.** PR #5 and #8 stay Draft/unmerged; free-only local fixture and journal results do not authenticate a historical actor or create execution authority.
+- Real V3 remains blocked by exact immutable upstream model/tokenizer/tool bytes and HF revision, locally pinned runtime identity, reviewed frozen 120/30 dataset and contamination decisions, independent human and provider spend caps, and explicit future approvals. **Overall NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Resolve precise current PR #8 registered/Context source+documentation CI and the distinct checkpoint CI. If any FAIL, read failing job logs, make smallest semantics-preserving repair through normal Contents API; do not claim a later head GREEN based on earlier successful jobs.
+2. Strengthen and validate **Memory row/event CAS + expiry coherent snapshots** and retained witness restart behavior; extend disconnected Planner DAG registered READ lineage and post-COMMIT recheck, preserving UNKNOWN WRITE manual-only recovery and no automatic replay.
+3. Advance local ToolRegistry/PermissionGate binding and trusted-clock audit-before-action/occurrence replay controls, scheduler restart deduplication, privacy-safe Personal Context revocation, offline Observation and startup readiness without real effects. Integrate only after exact lower-layer GREEN.
+4. Continue independent free-only V3 path/identity/approval/reproducibility guards; stop only a lane requiring payment, credentials, physical PC, protected V2 opening, Candidate creation, frozen-contract changes, destructive action or main merge needing explicit user approval; other safe lanes remain available.
+
+---
+
+## Historical checkpoint — Run525 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run525 / 2026-11-01:** Four independent, free-only work packages: (1) synthetic Observation lineage late-denial callback/descriptor integrity; (2) V3 paired validation original exact validator pin; (3) correction of three Run524 CI test expectation failures without changing refusal semantics; (4) V3 runtime identity original exact validator pin. **20 newly authored pytest cases** (6 + 8 + 6); three older failing assertions adjusted across two test files. Prior concurrent Run524 source/test work pre-dated this invocation and is NOT counted as new work here. **ARK/JARVIS/V3 NOT_PASSED.** PR #5/#8 still Draft and unmerged.
 
 **Saved at:** **2026-11-01T18:24:06.314+09:00 Asia/Tokyo/JST**, ordinary wall clock captured immediately before the permitted GitHub Contents checkpoint write. Not a trusted-clock witness, human review, consent, billing approval, provenance attestation or external execution authority.
