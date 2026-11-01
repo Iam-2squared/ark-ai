@@ -64,6 +64,9 @@ class OfflinePcmMono16:
         return False
 
 
+_RESULT_TYPE = OfflinePcmMono16
+
+
 def _sha(x: object) -> bool:
     return type(x) is str and _SHA.fullmatch(x) is not None
 
@@ -151,11 +154,37 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
         rate, channels, bits, frames, output_bytes,
     )
     epoch()
+    def assert_result_epoch() -> None:
+        # A constructor or false-valued denial getter can reflectively edit
+        # the frozen audio witness. The returned PCM must remain bound to
+        # the *original* owner/privacy/source and exact output bytes.
+        if (
+            type(result) is not _RESULT_TYPE
+            or result.owner_sha256 is not owner
+            or result.privacy_sha256 is not privacy
+            or result.source_sha256 is not claimed
+            or result.output_sha256 is not output_sha
+            or result.inventory_sha256 is not inventory_sha
+            or result.sample_rate_hz is not rate
+            or result.source_channels is not channels
+            or result.source_bits_per_sample is not bits
+            or result.frame_count is not frames
+            or type(result.pcm16_mono) is not bytes
+            or result.pcm16_mono is not output_bytes
+        ):
+            raise OfflinePcmConvertRejected("conversion result changed during creation")
+
+    assert_result_epoch()
+    epoch()
     if (
-        type(result) is not OfflinePcmMono16
-        or result.pcm16_mono is not output_bytes
-        or result.output_sha256 is not output_sha
-        or result.inventory_sha256 is not inventory_sha
+        result.source_authenticated is not False
+        or result.consent_verified is not False
+        or result.audio_disclosure_authorized is not False
+        or result.speech_recognized is not False
     ):
-        raise OfflinePcmConvertRejected("conversion result changed during creation")
+        raise OfflinePcmConvertRejected("conversion result acquired authority")
+    # The LAST denial getter is itself a callback. Do not return an audio
+    # digest, scope, raw byte carrier or provenance marker from a mixed epoch.
+    assert_result_epoch()
+    epoch()
     return result
