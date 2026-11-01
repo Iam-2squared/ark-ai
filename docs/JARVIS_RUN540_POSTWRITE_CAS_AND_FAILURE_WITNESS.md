@@ -25,3 +25,11 @@
 ## Deferred integration
 
 An unknown post-COMMIT outcome remains manual-only; a matching row cannot prove who wrote it. Planner terminal receipts and registered READ evidence live in separate stores and never establish cross-store atomicity or real ToolBackend outcomes. Subsequent work should integrate failure archive and registered READ identity under a non-executing shared read protocol, validate consent/retention and occurrence replay independently, and preserve all frozen contracts. PR #5/#8 remain Draft/unmerged; ARK/JARVIS overall NOT_PASSED.
+
+
+## Run540 continuation — Scheduler quarantine authority epoch
+
+- Independent third foundation lane: `src/ark/offline_schedule_resume_review.py` source commit `66c44c1f1eb3482437e8eba684e8c83de75f16c5`; `tests/test_schedule_resume_quarantine_denial_epoch_run540.py` commit `0c5a46082f4621ad1b4c4484442c17202464f40f`.
+- The restart review pins the class descriptor of `QuarantineWitness.independently_authenticated` before the first ledger inspection and checks it plus exact False on **every** one of the three retained-prefix observations. A later inspection cannot silently install a different False-only or True getter, or mutate that witness's own count/hash carriers during the getter. This is isolated from real timers, OS trusted clocks, notifications and ToolBackend dispatch.
+- **6 additional newly authored parametrized cases**: one normal three-read due preview and five injected permission-property rebind cases after the first, second or third read. The combined **PR #8 new cases in this Run540 note are 16** (10 earlier plus 6 Scheduler); this is a count of authored cases, **not** standalone pytest success. PR #5 independently adds 14 V3 cases, for **30 authored cases across four lanes**.
+- Source/test HEAD for this continuation: `0c5a46082f4621ad1b4c4484442c17202464f40f`. Its own exact-head CI must be checked after completion. A green result on the earlier PR #8 source/test HEAD does not imply this later Scheduler HEAD is green.
