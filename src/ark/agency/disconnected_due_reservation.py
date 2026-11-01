@@ -240,7 +240,8 @@ class DisconnectedDueReservations:
                     type(retained) is not _WITNESS_TYPE
                     or retained.count is not epoch[0]
                     or retained.fingerprint is not epoch[1]
-                    or actual != retained
+                    or actual.count != epoch[0]
+                    or actual.fingerprint != epoch[1]
                     or store._path is not path
                 ):
                     raise DueReservationRejected("retained due witness differs on restart")
@@ -324,7 +325,10 @@ class DisconnectedDueReservations:
                 current, last = _inspect(conn)
                 _check_witness(current)
                 assert_retained_epoch()
-                if current != retained:
+                if (
+                    current.count != prior_epoch[0]
+                    or current.fingerprint != prior_epoch[1]
+                ):
                     raise DueReservationRejected("stale or rewritten due ledger")
                 if last is not None and observed_now_ms < last:
                     raise DueReservationRejected("caller due clock regressed")
