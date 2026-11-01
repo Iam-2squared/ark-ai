@@ -11,9 +11,11 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+from .offline_readiness_inventory import _PLACEHOLDERS, _SECTIONS
 from .offline_snapshot_shape_review import (
     OfflineShapeRejected,
     UnapprovedSnapshotShapeReview,
+    _plausible_shape,
     review_unapproved_v3_snapshot_shapes,
 )
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
@@ -74,6 +76,39 @@ class PassiveReadinessTransition:
         return False
 
 
+def _independent_shape_paths(mapping: dict) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Derive visible syntax categories from input, never from the shape callback.
+
+    This is a review guard only: syntax cannot establish actual artifact
+    identity, human authorization or billable compute permission.
+    """
+    unresolved: set[str] = set()
+    invalid: set[str] = set()
+    for section, names in _SECTIONS.items():
+        values = mapping[section]
+        if type(values) is not dict:
+            raise PassiveTransitionRejected("unapproved shape section invalid")
+        for name in names:
+            path = f"{section}.{name}"
+            value = values[name]
+            if type(value) is str and value in _PLACEHOLDERS:
+                unresolved.add(path)
+            elif not _plausible_shape(path, value):
+                invalid.add(path)
+    alias = mapping["tokenizer"]["revision"]
+    base = mapping["base"]["revision"]
+    if alias == "SAME_AS_BASE":
+        if type(base) is str and base in _PLACEHOLDERS:
+            unresolved.add("tokenizer.revision")
+        elif not _plausible_shape("base.revision", base):
+            invalid.add("tokenizer.revision")
+    elif type(alias) is str and alias in _PLACEHOLDERS:
+        unresolved.add("tokenizer.revision")
+    elif not _plausible_shape("base.revision", alias):
+        invalid.add("tokenizer.revision")
+    return tuple(sorted(unresolved)), tuple(sorted(invalid))
+
+
 def review_passive_readiness_transition(
     before: dict, after: dict,
 ) -> PassiveReadinessTransition:
@@ -126,6 +161,14 @@ def review_passive_readiness_transition(
             ).encode("utf-8")
             if result.snapshot_sha256 != hashlib.sha256(canonical).hexdigest():
                 raise PassiveTransitionRejected("shape callback digest mismatch")
+            # An exact-class callback with the correct SHA can still invent
+            # path categories and fabricate apparent readiness progress.
+            expected_unresolved, expected_invalid = _independent_shape_paths(mapping)
+            if (
+                result.unresolved_paths != expected_unresolved
+                or result.invalid_shape_paths != expected_invalid
+            ):
+                raise PassiveTransitionRejected("shape callback path classification mismatch")
             stable()
             return result
 
