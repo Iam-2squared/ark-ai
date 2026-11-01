@@ -13,6 +13,8 @@ import re
 from dataclasses import dataclass
 
 from .disconnected_write_recovery_fence import (
+    OfflineRecoveryDisposition,
+    OfflineRecoveryFence,
     OfflineRecoveryStepClaim,
     review_disconnected_recovery_fence,
 )
@@ -144,9 +146,70 @@ def build_offline_write_triage_packet(
         or recovery.trusted_clock_verified is not False
         or recovery.consent_verified is not False
         or recovery.cross_store_atomicity_proven is not False
+        or type(fence) is not OfflineRecoveryFence
+        or fence.plan_id != plan_id
+        or type(fence.decisions) is not tuple
         or len(fence.decisions) != len(steps)
+        or type(fence.digest) is not str
+        or _SHA.fullmatch(fence.digest) is None
+        or any(type(item) is not OfflineRecoveryDisposition
+               for item in fence.decisions)
     ):
         raise OfflineWriteTriageRejected("local recovery proof gained authority")
+
+    # The child is a Python callback result, not independent custody.
+    # Verify its complete canonical digest and exact carrier types here,
+    # not merely the claimed per-step disposition string.
+    fence_epoch = tuple(
+        (item, item.step_id, item.code) for item in fence.decisions
+    )
+    fence_pin = (fence.plan_id, fence.decisions, fence.digest)
+
+    def stable_fence() -> None:
+        if (
+            type(fence) is not OfflineRecoveryFence
+            or fence.plan_id is not fence_pin[0]
+            or fence.decisions is not fence_pin[1]
+            or fence.digest is not fence_pin[2]
+            or len(fence.decisions) != len(fence_epoch)
+            or any(
+                type(item) is not OfflineRecoveryDisposition
+                or item is not saved_item
+                or item.step_id is not step_id or item.code is not code
+                for item, (saved_item, step_id, code) in zip(
+                    fence.decisions, fence_epoch, strict=True,
+                )
+            )
+        ):
+            raise OfflineWriteTriageRejected("manual WRITE disposition changed")
+        stable()
+
+    stable_fence()
+    if any(
+        type(item.step_id) is not str or type(item.code) is not str
+        for item in fence.decisions
+    ):
+        raise OfflineWriteTriageRejected("noncanonical manual WRITE disposition")
+    canonical = tuple(
+        (*fields, item.code)
+        for fields, item in zip(saved, fence.decisions, strict=True)
+    )
+    raw = json.dumps(
+        (plan_id, canonical), ensure_ascii=True, separators=(",", ":"),
+    ).encode("ascii")
+    expected_fence_digest = hashlib.sha256(
+        b"ARK-disconnected-mixed-recovery-fence-v1\\0" + raw
+    ).hexdigest()
+    if fence.digest != expected_fence_digest:
+        raise OfflineWriteTriageRejected("manual WRITE fence digest mismatch")
+    stable_fence()
+    for name in (
+        "dispatch_authorized", "automatic_replay_authorized",
+        "write_authorized", "external_outcome_verified",
+    ):
+        if getattr(fence, name) is not False:
+            raise OfflineWriteTriageRejected("manual WRITE fence gained authority")
+        stable_fence()
     packet_items = []
     for fields, decision in zip(saved, fence.decisions, strict=True):
         step_id, effect, _, state, _, reservation = fields
@@ -165,6 +228,7 @@ def build_offline_write_triage_packet(
             step_id, state, decision.code, reservation, investigation,
         ))
         stable()
+        stable_fence()
     if recovery.reserved_write_steps != sum(
         item.reservation_id is not None for item in packet_items
     ):
@@ -234,5 +298,6 @@ def build_offline_write_triage_packet(
     ):
         raise OfflineWriteTriageRejected("operator packet acquired authority")
     stable()
+    stable_fence()
     assert_packet_epoch()
     return packet
