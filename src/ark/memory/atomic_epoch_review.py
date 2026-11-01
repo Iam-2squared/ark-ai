@@ -288,4 +288,39 @@ def review_atomic_memory_epoch(
         or review.dispatch_authorized is not False
     ):
         raise MemorySchemaError("Memory epoch result changed")
+
+    # The five denial getters above are callback boundaries. Even a getter
+    # returning False can reflectively rewrite this frozen carrier after its
+    # digest/count fields have already been checked. Preserve the ORIGINAL
+    # field objects before returning any apparently safe snapshot.
+    def stable_result() -> None:
+        if (
+            type(review) is not _RESULT_TYPE
+            or type(review.scope_fingerprints) is not tuple
+            or review.scope_fingerprints is not fingerprints
+            or type(review.row_counts) is not tuple
+            or review.row_counts is not rows
+            or type(review.event_counts) is not tuple
+            or review.event_counts is not events
+            or type(review.event_tail_ids) is not tuple
+            or review.event_tail_ids is not tails
+            or type(review.epoch_digest) is not str
+            or review.epoch_digest is not digest
+            or type(review.content_digest) is not str
+            or review.content_digest is not content_digest
+        ):
+            raise MemorySchemaError("Memory epoch report changed after denial")
+
+    stable_result()
+    stable()
+    if (
+        review.independent_writer_proven is not False
+        or review.cross_store_atomicity_proven is not False
+        or review.trusted_clock_proven is not False
+        or review.memory_disclosure_authorized is not False
+        or review.dispatch_authorized is not False
+    ):
+        raise MemorySchemaError("Memory epoch report gained authority")
+    stable_result()
+    stable()
     return review
