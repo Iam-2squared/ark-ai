@@ -186,12 +186,43 @@ def review_offline_schedule_resume(
             or preview.state not in (
                 "NOT_DUE", "DUE_UNVERIFIED", "EXPIRED_QUARANTINE", "EXHAUSTED",
             )
+            or type(preview.next_index) is not int
             or preview.next_index != retained_quarantine.count
+            or (preview.occurrence_id is not None
+                and type(preview.occurrence_id) is not str)
+            or (preview.due_at_ms is not None
+                and type(preview.due_at_ms) is not int)
             or type(preview.fingerprint) is not str
             or _SHA.fullmatch(preview.fingerprint) is None
             or any(getattr(preview, key) is not False for key in _DENIALS)
         ):
             raise ScheduleResumeRejected("offline due preview gained authority")
+        # A callback may return an exact-class, denied-only preview that
+        # nevertheless lies about a slot or its due classification. Recompute
+        # the next occurrence independently of the preview implementation.
+        if cursor.next_index == policy.occurrence_count:
+            expected_occurrence, expected_due, expected_state = (
+                None, None, "EXHAUSTED",
+            )
+        else:
+            expected_occurrence = derive_quarantined_occurrence(
+                QuarantinePolicy(*policy_epoch), cursor.next_index,
+            )
+            expected_due = (
+                policy.first_due_at_ms + cursor.next_index * policy.interval_ms
+            )
+            if observed_now_ms < expected_due:
+                expected_state = "NOT_DUE"
+            elif observed_now_ms - expected_due <= policy.grace_ms:
+                expected_state = "DUE_UNVERIFIED"
+            else:
+                expected_state = "EXPIRED_QUARANTINE"
+        if (
+            preview.occurrence_id != expected_occurrence
+            or preview.due_at_ms != expected_due
+            or preview.state != expected_state
+        ):
+            raise ScheduleResumeRejected("offline preview differs from recurrence")
         second = ledger.inspect(retained=retained_quarantine)
         stable()
         if type(second) is not QuarantineWitness or second != first:
