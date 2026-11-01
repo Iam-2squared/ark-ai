@@ -80,6 +80,12 @@ class ValidationReport:
             raise ValueError("validation total text budget exceeded")
 
 
+# A test or untrusted caller can replace a public class method at runtime.
+# Retain the original exact-type validator so a patched no-op cannot skip
+# bounded 30-case validation at the paired-comparison boundary.
+_ORIGINAL_REPORT_VALIDATOR = ValidationReport.validate
+
+
 def _epoch(report: ValidationReport) -> tuple[object, ...]:
     """Pin exact report/case carriers before any potentially patched validator."""
     fields = tuple(getattr(report, name) for name in _REPORT_FIELDS)
@@ -134,9 +140,16 @@ def compare_validation(current: ValidationReport, candidate: ValidationReport) -
             raise ValueError("paired validation carriers changed during comparison")
 
     stable()
+    # Preserve the original method callback boundaries for synthetic
+    # mutation tests, but never depend on a replaceable public method as
+    # the ONLY guard before comparing or interpreting validation results.
     current.validate()
     stable()
+    _ORIGINAL_REPORT_VALIDATOR(current)
+    stable()
     candidate.validate()
+    stable()
+    _ORIGINAL_REPORT_VALIDATOR(candidate)
     stable()
     # Direct comparisons must enforce the same combined input budget as the
     # detached V3 rechecker, not permit two individually maximal reports.
