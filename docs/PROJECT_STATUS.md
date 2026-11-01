@@ -1,5 +1,52 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run529 / 2026-11-01:** TWO free-only, independently scoped source+focused-test packages: (1) complete bounded SQLite Memory expiry row/event lifecycle reconciliation in one read snapshot, including delete/recreate and overflow pagination; (2) read-only, restart-safe V3 review authorization-packet *file* custody, canonical JSON and independent retained SHA verification. **26 newly authored pytest cases = 9 + 17** and two source-grounded technical records. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 stay Draft/unmerged. No external services or real Tool execution.
+
+**Saved at:** **2026-11-01T21:24:45.641+09:00 Asia/Tokyo/JST**, ordinary host wall-clock observed immediately before this normal GitHub Contents checkpoint write, NOT trusted time, user consent, model identity, review authorization or a provider billing attestation.
+
+## LATEST — branches, exact work bases and checkpoint semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`: **initial work-basis HEAD** `2d02d5d8c46d14d02c3130dd0adc911736798b22`. Expiry source `174e8f513e60b61d9c821ff154c982206ca39eaf`; source+test `3487049ba2887c6c5dd1ca2595ee99ecdb4cf9c7`; [Run529 Memory evidence](https://github.com/Iam-2squared/ark-ai/blob/662256cc53af54c0d3ae483a2b904eb0f70d979c/docs/JARVIS_RUN529_MEMORY_EXPIRY_FULL_EVENT_CHAIN.md). **Checkpoint write-basis HEAD** `662256cc53af54c0d3ae483a2b904eb0f70d979c`.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`: **initial work-basis HEAD** `dc4fd97bbf3f2148c6c5eb06eb6045b1770bef7d`. Detached file reviewer source `a59d2422264ecd1614d6856afeea1ebbab2a0fc9`; source+test `d471a7fa7918c1085f7ef7da378ce619d94170be`; [Run529 V3 evidence](https://github.com/Iam-2squared/ark-ai/blob/311eee866cf99cfd43077c684f7a3fe38cb1f946/docs/v3/RUN529_DETACHED_REVIEW_PACKET_FILE_CUSTODY.md). Latest PR5 HEAD `311eee866cf99cfd43077c684f7a3fe38cb1f946`.
+- **main** remains the unchanged PR base `7a843f17eb96ed13d66f23b58b06406b3002e405`. **Checkpoint-result HEAD is necessarily unknown until GitHub writes this content** and cannot be put into its own bytes. Re-read result HEAD/Blob after this operation. GREEN on an earlier head does not confer GREEN on a documentation/checkpoint head.
+
+## NEW — source, tests, evidence
+
+1. **Memory full expiry event lineage (9 authored tests):** `src/ark/memory/expiry_candidate_preview.py` now scans each candidate's whole SQLite `memory_events` lifecycle inside the same bounded read-only transaction, rather than trusting only the latest revision-matching event. Checks sequential active create/update revisions, legitimate terminal delete/expire then recreate, exact persisted scope and event timestamp alignment with the selected live row. Includes the `limit+1` overflow row and caps aggregate scanned events at 40,000, refusing unsupported partial scans. Tests `tests/test_memory_expiry_full_lifecycle_run529.py` cover missing intermediate history, forged timestamps/revisions/terminal state, mid-chain scope changes, overflow tampering, valid recreation and pagination. Existing read-only, no-deletion authority preserved. No signed authorship, cross-process lock, or permission to erase.
+2. **V3 detached on-disk review packet (17 authored tests):** new `src/ark/learning/authorization_packet_file_review.py` verifies a create-only, independently retained review packet on **restart** by reopening exact regular non-aliased local file bytes (65,536-byte ceiling), comparing inode/device/size/mtime and full SHA-256, rejecting ambiguous duplicate/nonfinite/noncanonical JSON and symlink/hardlink/traversal aliases, rebuilding the unapproved expected packet through the existing verifier, then reopening file again after callbacks. Tests `tests/v3/test_authorization_packet_file_review_run529.py` cover normal reload, aliases, malformed/tampered bytes, stale retained digest and reentrant source/file changes. This cannot authorize spending, paid preflight, full training, V2 opening, promotion or main merge; filesystem race immunity and authenticated external provenance are not claimed.
+
+**26 counts are newly AUTHORED pytest cases, not independently run local PASS.** Standalone local checkout/pytest/Ruff was not available due GitHub DNS resolution failure. Exact-head GitHub Actions CI supplies external test evidence. Existing lower-level frozen v1/v2 schema/contracts and test boundaries were not changed.
+
+## CI / verification — exact heads sampled before checkpoint
+
+- **PR8 source+test** [41305225866](https://github.com/Iam-2squared/ark-ai/actions/runs/41305225866) on `3487049ba2887c6c5dd1ca2595ee99ecdb4cf9c7`: **6/6 GREEN (3 Ubuntu, 3 Windows)**.
+- **PR8 technical evidence** [41306013073](https://github.com/Iam-2squared/ark-ai/actions/runs/41306013073) on `662256cc53af54c0d3ae483a2b904eb0f70d979c`: **1/6 GREEN, 5 IN PROGRESS, 0 FAIL** at last sampled job check; this run's final state is NOT yet certified.
+- **PR5 source+test** [41305493393](https://github.com/Iam-2squared/ark-ai/actions/runs/41305493393) on `d471a7fa7918c1085f7ef7da378ce619d94170be`: **6/6 GREEN**.
+- **PR5 technical evidence** [41305896377](https://github.com/Iam-2squared/ark-ai/actions/runs/41305896377) on `311eee866cf99cfd43077c684f7a3fe38cb1f946`: **6/6 GREEN**.
+- Previous Run528 PR8 checkpoint [41304467133](https://github.com/Iam-2squared/ark-ai/actions/runs/41304467133): **6/6 GREEN** but only its own earlier head. The NEW Run529 checkpoint/head will need its distinct CI result.
+
+Frozen blobs re-read unchanged: `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Frozen V1/V2/Local UI/Launcher evidence remains undisturbed; protected V2 final evaluation unopened.
+
+## Hard blockers / authorization boundaries
+
+- No paid or potentially billable service, external GPU, model download, live Candidate weights, protected final V2 evaluation, Candidate promotion, human-review impersonation, new credentials, physical target PC, external ToolBackend, real camera/microphone, automatic WRITE replay/notifications, irreversible deletion, frozen contract edits or main merge. Both PRs remain Draft.
+- V3 needs true upstream model/tokenizer/converter byte identities and revision, reviewed 120/30 dataset and contamination evidence, measured reproducible environment, explicit prior user spend authorization and enforceable provider billing caps. No real preflight, training, promotion or protected evaluation is approved.
+- New local packet verifier and synthetic Memory event witness are diagnostic only: hashes do not authenticate consent, authorship, trusted time, cross-store atomicity or external execution.
+
+## Next plan / 今後の方針
+
+1. Resolve **PR8 Run529 documentation CI 41306013073** and the distinct NEW checkpoint CI after it appears. On failure inspect exact job logs, correct only normal semantics-preserving source/lint/test issues, and work independent lanes during CI; do not manually launch duplicate runs.
+2. Expand Memory cross-process CAS and row/event lifecycle verification, including bounded long histories, revival and concurrent writer/restart tests; preserve v1 frozen schema and keep expiry preview separate from purge authorization.
+3. Extend Planner multi-step persistent recovery with exact registry-bound READ identities, terminal dependency propagation and no unknown-write automatic retry; keep ToolRegistry/PermissionGate/audit-before-action checks separate from trusted clock/consent.
+4. Advance disconnected Scheduler occurrence/replay/clock fences, Personal Context consent revocation and retention snapshots, observation fixture privacy and startup readiness after their lower-level GREEN.
+5. Continue free-only V3 review packet input/file path, identity, approval and reproducibility checks in Draft PR5. No payment/physical actions, genuine Candidate, protected V2 opening, promotion or merge without distinct explicit authorization.
+
+---
+
+## Historical checkpoint — Run528 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run528 / 2026-11-01:** FIVE independently scoped, **free-only** source+focused-test packages: (1) durable synthetic WRITE post-COMMIT receipt and SQLite chain custody, (2) V3 non-authorizing authorization-packet postwrite byte verification, (3) Memory expiry row/event same-snapshot coherence, (4) Scheduler overdue quarantine post-COMMIT no-authority/SQLite fence, (5) synthetic clock retained-prefix equality-independent comparison. **33 newly authored pytest cases = 7 + 5 + 6 + 11 + 4**, with one clock-test-only Ruff I001 whitespace repair after an intermediate import-layout attempt. Three source-grounded technical records; one canonical status update at end. **ARK/JARVIS/V3 overall NOT_PASSED.** PR #5/#8 remain Draft/unmerged.
 
 **Saved at:** **2026-11-01T21:01:07.857+09:00 Asia/Tokyo/JST**, ordinary automation host wall-clock observed immediately before this permitted GitHub Contents write. This is NOT a trusted-clock, consent, authenticated review or model/runtime identity attestation.
