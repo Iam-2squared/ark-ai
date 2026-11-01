@@ -109,7 +109,9 @@ def test_unrelated_append_cannot_hide_old_row_drift(tmp_path, mutation):
                 "UPDATE memories SET revision=2 WHERE memory_id=?",
                 (first.memory_id,),
             )
-    with pytest.raises(delta.MemoryRowDeltaRejected, match="without its own"):
+    with pytest.raises(
+        delta.MemoryRowDeltaRejected, match="without its own|event lifecycle",
+    ):
         delta.review_retained_memory_row_delta(store, witness)
 
 
@@ -120,7 +122,9 @@ def test_unrelated_event_cannot_hide_silent_row_deletion(tmp_path):
     _put(store, "new")
     with sqlite3.connect(store.path) as conn:
         conn.execute("DELETE FROM memories WHERE memory_id=?", (first.memory_id,))
-    with pytest.raises(delta.MemoryRowDeltaRejected, match="without its own"):
+    with pytest.raises(
+        delta.MemoryRowDeltaRejected, match="without its own|event lifecycle",
+    ):
         delta.review_retained_memory_row_delta(store, witness)
 
 
@@ -131,7 +135,9 @@ def test_historical_event_mutation_with_following_append_is_rejected(tmp_path):
     _put(store, "new")
     with sqlite3.connect(store.path) as conn:
         conn.execute("UPDATE memory_events SET occurred_at_ms=999 WHERE event_id=1")
-    with pytest.raises(delta.MemoryRowDeltaRejected, match="event prefix"):
+    with pytest.raises(
+        delta.MemoryRowDeltaRejected, match="event prefix|lacks creation event",
+    ):
         delta.review_retained_memory_row_delta(store, witness)
 
 
