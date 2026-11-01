@@ -107,20 +107,20 @@ def review_offline_schedule_resume(
     # Quarantine reports are diagnostic only. A late ledger.inspect callback
     # must not rebind their False-only authority property, even to another
     # getter returning False; the final read has no authenticated actor.
-    quarantine_denial = getattr(QuarantineWitness, "independently_authenticated")
+    quarantine_denial = QuarantineWitness.independently_authenticated
 
     def denied_quarantine(candidate: QuarantineWitness) -> None:
         if type(candidate) is not QuarantineWitness:
             raise ScheduleResumeRejected("quarantine witness type changed")
         pinned = (candidate.count, candidate.chain_sha256)
         if (
-            getattr(QuarantineWitness, "independently_authenticated")
+            QuarantineWitness.independently_authenticated
             is not quarantine_denial
             or candidate.independently_authenticated is not False
             or any(current is not original for current, original in zip(
                 (candidate.count, candidate.chain_sha256), pinned, strict=True,
             ))
-            or getattr(QuarantineWitness, "independently_authenticated")
+            or QuarantineWitness.independently_authenticated
             is not quarantine_denial
         ):
             raise ScheduleResumeRejected("quarantine witness gained authority or changed")
