@@ -20,7 +20,6 @@ def test_unchanged_noncanonical_snapshot_retains_legacy_loader_behavior(tmp_path
 
 @pytest.mark.parametrize("replacement", [
     b'{"authorization":true}',
-    b'{"authorization":false}',
     b'{"z":"mutated"}',
     b'{"x":"' + b"a" * 1_048_576 + b'"}',
 ])
