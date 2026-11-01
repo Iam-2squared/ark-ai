@@ -237,7 +237,18 @@ class StartupSnapshot:
         self._assert_integrity()
         for item in self.components:
             if item.component_id == component_id:
-                return item.effective_state
+                observed = item.effective_state
+                # Even a getter returning a valid READY/BLOCKED enum can
+                # reflectively mutate the rest of the frozen cached graph.
+                # Recompute integrity after that final lookup before reuse.
+                self._assert_integrity()
+                if (
+                    type(observed) is not ReadinessState
+                    or item.effective_state is not observed
+                ):
+                    raise ValueError("startup snapshot changed at state return")
+                return observed
+        self._assert_integrity()
         raise KeyError(f"unknown readiness component: {component_id}")
 
     def root_blockers(self, component_id: str) -> tuple[str, ...]:
@@ -263,7 +274,11 @@ class StartupSnapshot:
                 found.add(name)
             else:
                 pending.extend(item.dependencies)
-        return tuple(sorted(found))
+        blockers = tuple(sorted(found))
+        # Traversal itself reads caller-reflectable fields. A previously
+        # validated graph can change after the pre-traversal digest check.
+        self._assert_integrity()
+        return blockers
 
 
 # Preserve the canonical result type through a synthetic constructor callback.
