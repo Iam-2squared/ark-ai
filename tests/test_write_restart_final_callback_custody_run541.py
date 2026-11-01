@@ -100,7 +100,7 @@ def test_final_sqlite_callback_cannot_change_previous_recovery_epoch(
 
     monkeypatch.setattr(binding, "review_disconnected_recovery_fence", capture)
     monkeypatch.setattr(binding, "_inspect", mutate_on_final)
-    expected = "carriers changed" if target == "step" else "quarantine changed"
+    expected = "step changed" if target == "step" else "quarantine changed"
     with pytest.raises(binding.OfflineWriteRestartRejected, match=expected):
         binding.review_disconnected_write_restart(ledger, retained, PLAN, (step,))
     assert state["reads"] == 4
