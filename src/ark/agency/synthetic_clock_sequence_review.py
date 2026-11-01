@@ -278,7 +278,15 @@ def review_synthetic_clock_sequence(
             result = candidate
             result_epoch = _fields(candidate)
             result_carriers = (candidate.source_digest, candidate.chain_hash)
-            if retained is not None and seq == retained.event_count and result != retained:
+            # A public frozen dataclass still has a patchable __eq__.
+            # It must not be the sole authority for accepting/rejecting a
+            # retained history prefix. Check the exact validated field vector
+            # instead, without promoting this local digest to trusted time.
+            if (
+                retained is not None
+                and seq == retained.event_count
+                and _fields(result) != retained_epoch
+            ):
                 raise SyntheticClockRejected("retained clock prefix differs")
         # StopIteration/finally may rewrite either an earlier input sample
         # or the last constructed result after its digest has been checked.
