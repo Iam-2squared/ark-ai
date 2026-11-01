@@ -183,3 +183,36 @@ def test_v2_and_promotion_cannot_be_pre_authorized():
     value["authorization"]["v2_opening_authorized"] = True
     with pytest.raises(ExecutionBlocked, match="may not pre-authorize"):
         validate_experiment_001(value)
+
+
+class _PretendScope:
+    def __hash__(self):
+        return hash("training")
+
+    def __eq__(self, other):
+        return other == "training"
+
+
+class _ScopeSubclass(str):
+    pass
+
+
+@pytest.mark.parametrize("scope", [
+    _ScopeSubclass("none"), _ScopeSubclass("preflight"),
+    _ScopeSubclass("training"), _PretendScope(),
+])
+def test_scope_authorization_rejects_equal_but_inexact_carriers(scope):
+    value = resolved_snapshot()
+    value["authorization"].update({
+        "external_compute_authorized": True,
+        "preflight_authorized": True,
+        "real_training_authorized": True,
+    })
+    with pytest.raises(ValueError, match="invalid authorization scope"):
+        validate_experiment_001(value, authorization_scope=scope)
+
+
+def test_snapshot_requires_plain_decoded_mapping_not_dict_subclass():
+    value = resolved_snapshot()
+    with pytest.raises(ExecutionBlocked, match="exact execution snapshot mapping"):
+        validate_experiment_001(type("UntrustedMapping", (dict,), {})(value))
