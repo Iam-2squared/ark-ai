@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from .authorization import build_preflight_authorization_packet
 from .authorization_packet_file_review import verify_local_authorization_packet_file
-from .execution import canonical_json
+from .execution import ExecutionBlocked, canonical_json
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -204,5 +204,5 @@ def review_unapproved_packet_delta(
         stable_result()
         stable()
         return result
-    except (ValueError, TypeError, KeyError, RecursionError, OverflowError) as exc:
+    except (ExecutionBlocked, ValueError, TypeError, KeyError, RecursionError, OverflowError) as exc:
         raise ReviewPacketDeltaRejected("unapproved packet delta review denied") from exc
