@@ -269,10 +269,24 @@ class WallTimeBudget:
         # supplied time can be untrusted, but cannot rewind a prior reading.
         self._last_checked_at = measured_start
         self._timed_out = False
+        # Diagnostic approval epoch: a caller may inspect these public fields,
+        # but changing either cannot silently extend a pre-approved budget.
+        self._approved_epoch = (measured_start, seconds)
+        self._epoch_invalidated = False
 
     def check(self, phase: str, *, now: float | None = None) -> None:
         if self._timed_out:
             raise RuntimeError("approved wall-clock timeout already exceeded")
+        if self._epoch_invalidated:
+            raise RuntimeError("approved wall-clock budget was changed")
+        if (
+            type(self.started) is not float
+            or type(self.timeout_seconds) is not float
+            or self.started != self._approved_epoch[0]
+            or self.timeout_seconds != self._approved_epoch[1]
+        ):
+            self._epoch_invalidated = True
+            raise RuntimeError("approved wall-clock budget changed after construction")
         if now is not None and type(now) not in (int, float):
             raise RuntimeError("finite wall-clock reading required")
         try:
