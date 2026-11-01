@@ -134,7 +134,7 @@ def preview_offline_wav_energy(
         # therefore changing normalization and activity boundaries. Parse the
         # canonical 44-byte header from the pinned original WAV independently.
         if (
-            len(payload) < 44 or payload[12:20] != b"fmt \\x10\\x00\\x00\\x00"
+            len(payload) < 44 or payload[12:20] != (b"fmt " + struct.pack("<I", 16))
             or payload[36:40] != b"data"
         ):
             raise OfflineWavePipelineRejected("WAV canonical header unavailable")
