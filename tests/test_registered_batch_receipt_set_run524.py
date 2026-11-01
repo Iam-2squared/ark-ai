@@ -7,7 +7,6 @@ from dataclasses import dataclass, replace
 import pytest
 
 import ark.agency.disconnected_registered_batch_receipt_set as batch_module
-
 from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
 from ark.agency.disconnected_batch_plan import (
     DisconnectedBatchStep,
@@ -20,13 +19,13 @@ from ark.agency.disconnected_read_journal import (
     genesis_witness,
 )
 from ark.agency.disconnected_read_receipt_bridge import prepare_disconnected_read_receipt
+from ark.agency.disconnected_registered_batch_receipt_review import RegisteredBatchReceiptReview
 from ark.agency.disconnected_registered_batch_receipt_set import (
     RegisteredBatchSetRejected,
     RegisteredBatchSetReview,
     RegisteredBatchStepEvidence,
     review_registered_batch_receipt_set,
 )
-from ark.agency.disconnected_registered_batch_receipt_review import RegisteredBatchReceiptReview
 from ark.agency.disconnected_registered_fixture_join import (
     review_registered_disconnected_fixture,
 )
