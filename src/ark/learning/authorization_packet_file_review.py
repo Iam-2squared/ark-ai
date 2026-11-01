@@ -114,17 +114,54 @@ def verify_local_authorization_packet_file(
         if type(packet) is not dict or canonical_json(packet) != raw:
             raise LocalPacketBindingRejected("review packet is not canonical JSON")
         stable_snapshot()
+        # Keep the parsed packet itself pinned across the delegated verifier.
+        # A detached verifier's successful return is not an immutable custody
+        # boundary when its witness or input can be reflectively changed.
+        packet_epoch = _pin_json_tree(packet)
+        expected_snapshot_sha = packet["execution_snapshot_sha256"]
+        expected_internal_sha = packet["packet_sha256"]
         witness = verify_detached_authorization_packet(
             snapshot, packet,
             retained_packet_file_sha256=retained_packet_file_sha256,
         )
-        stable_snapshot()
-        # The detached review may contain reentrant digest/denial callbacks.
-        # Repeat the byte and identity check AFTER it returns, not just before.
+
+        def stable_review() -> None:
+            stable_snapshot()
+            _assert_json_tree_epoch(packet, packet_epoch)
+            if (
+                type(witness) is not LocalPacketBindingWitness
+                or type(witness.snapshot_sha256) is not str
+                or witness.snapshot_sha256 != expected_snapshot_sha
+                or type(witness.packet_file_sha256) is not str
+                or witness.packet_file_sha256 != retained_packet_file_sha256
+                or type(witness.internal_packet_sha256) is not str
+                or witness.internal_packet_sha256 != expected_internal_sha
+            ):
+                raise LocalPacketBindingRejected("review packet witness changed after binding")
+
+        def denied() -> None:
+            if (
+                witness.external_compute_authorized is not False
+                or witness.candidate_generation_authorized is not False
+                or witness.protected_evaluation_authorized is not False
+                or witness.main_merge_authorized is not False
+            ):
+                raise LocalPacketBindingRejected("review packet witness gained authority")
+            # Each denial property is a callback boundary. A false-valued
+            # property must not be able to rewrite earlier identity fields.
+            stable_review()
+
+        stable_review()
+        denied()
+        # The detached review and denial callbacks may mutate the file.
+        # Reopen after the callbacks, then repeat the identity/denial fences.
         final_raw, final_epoch = _read_exact_local_packet(packet_path)
-        stable_snapshot()
+        stable_review()
         if final_epoch != file_epoch or final_raw != raw:
             raise LocalPacketBindingRejected("review packet file changed during binding")
+        denied()
+        stable_review()
+        # No operation or approval is authorized by the returned witness.
         return witness
     except (TypeError, KeyError, UnicodeError, RecursionError) as exc:
         raise LocalPacketBindingRejected("review packet file cannot be verified") from exc
