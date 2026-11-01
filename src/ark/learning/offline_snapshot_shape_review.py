@@ -15,10 +15,10 @@ import re
 from dataclasses import dataclass
 
 from .offline_readiness_inventory import (
-    OfflineReadinessInventory,
-    OfflineReadinessRejected,
     _PLACEHOLDERS,
     _SECTIONS,
+    OfflineReadinessInventory,
+    OfflineReadinessRejected,
     inventory_unapproved_v3_readiness,
 )
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
