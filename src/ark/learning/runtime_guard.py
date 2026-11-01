@@ -60,6 +60,10 @@ class RuntimeIdentity:
             raise RuntimeIdentityMismatch("invalid measured GPU VRAM identity")
 
 
+# Keep the exact validation body available even when an untrusted synthetic
+# callback replaces the public RuntimeIdentity.validate method.
+_ORIGINAL_RUNTIME_VALIDATOR = RuntimeIdentity.validate
+
 def _package_version(name: str) -> str:
     try:
         return importlib.metadata.version(name)
@@ -178,7 +182,11 @@ def verify_runtime_identity(
             raise RuntimeIdentityMismatch("runtime identity epoch changed during validation")
 
     assert_identity_epoch()
+    # Preserve callback execution (including reflective mutation tests), but
+    # never let a replaceable public method be the sole exact-type/VRAM guard.
     actual.validate()
+    assert_identity_epoch()
+    _ORIGINAL_RUNTIME_VALIDATOR(actual)
     assert_identity_epoch()
     if type(vram_tolerance_gib) not in (int, float):
         raise ValueError("finite non-negative VRAM tolerance required")
