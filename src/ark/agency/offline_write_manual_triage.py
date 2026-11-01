@@ -194,12 +194,46 @@ def build_offline_write_triage_packet(
         or packet.automatic_replay_authorized is not False
     ):
         raise OfflineWriteTriageRejected("operator packet acquired authority")
+    # A false-valued denial property is still a Python callback. It can
+    # reflectively edit a frozen packet or a nested item after the digest was
+    # calculated. Check *all* retained fields after the final denial getter.
+    item_epoch = tuple((
+        item, item.step_id, item.claimed_state, item.disposition,
+        item.reservation_id, item.investigation,
+    ) for item in pinned)
+
+    def assert_packet_epoch() -> None:
+        if (
+            type(packet) is not _PACKET_TYPE
+            or packet.plan_id is not plan_id
+            or packet.items is not pinned
+            or packet.reservation_chain_sha256 is not previous_chain
+            or packet.recovery_fingerprint is not recovery.fingerprint
+            or packet.packet_sha256 is not fingerprint
+            or len(packet.items) != len(item_epoch)
+            or any(
+                type(item) is not _ITEM_TYPE
+                or item is not saved[0]
+                or any(now is not old for now, old in zip((
+                    item.step_id, item.claimed_state, item.disposition,
+                    item.reservation_id, item.investigation,
+                ), saved[1:], strict=True))
+                for item, saved in zip(packet.items, item_epoch, strict=True)
+            )
+        ):
+            raise OfflineWriteTriageRejected(
+                "operator packet or nested item changed after authority denial"
+            )
+
     stable()
+    assert_packet_epoch()
     if (
-        packet.plan_id is not plan_id
-        or packet.items is not pinned
-        or packet.packet_sha256 is not fingerprint
-        or any(type(item) is not _ITEM_TYPE for item in packet.items)
+        packet.human_review_completed is not False
+        or packet.external_outcome_verified is not False
+        or packet.dispatch_authorized is not False
+        or packet.automatic_replay_authorized is not False
     ):
-        raise OfflineWriteTriageRejected("operator packet changed after authority check")
+        raise OfflineWriteTriageRejected("operator packet acquired authority")
+    stable()
+    assert_packet_epoch()
     return packet
