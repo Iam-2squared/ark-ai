@@ -211,10 +211,33 @@ def review_retained_registered_receipt(
                 raise RegisteredReceiptReviewRejected(
                     "read-only reconciliation gained authority"
                 )
+            # A false-valued authority getter can still mutate frozen dataclass
+            # fields through object.__setattr__. Inspect *after* the last getter;
+            # never return a result whose witness/identity changed mid-denial.
+            after = (
+                reviewed.step_id, reviewed.action_request_id,
+                reviewed.fixture_request_id, reviewed.link_sha256,
+                reviewed.journal_count, reviewed.journal_tip_sha256,
+            )
+            if any(a is not b for a, b in zip(after, expected, strict=True)):
+                raise RegisteredReceiptReviewRejected(
+                    "read-only reconciliation changed after authority denial"
+                )
 
         stable_review()
         stable()
         stable_review()
+        # The last denial callback may also mutate the separately retained
+        # link/witness, so recheck the original inputs *after* that callback.
+        stable()
+        if any(a is not b for a, b in zip((
+            reviewed.step_id, reviewed.action_request_id,
+            reviewed.fixture_request_id, reviewed.link_sha256,
+            reviewed.journal_count, reviewed.journal_tip_sha256,
+        ), expected, strict=True)):
+            raise RegisteredReceiptReviewRejected(
+                "read-only reconciliation changed at return"
+            )
         return reviewed
     except (
         ReadJournalRejected, DisconnectedReadBridgeRejected,
