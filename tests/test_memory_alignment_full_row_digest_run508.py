@@ -8,19 +8,24 @@ import sqlite3
 import pytest
 
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
-from ark.memory.sqlite_event_alignment import review_memory_event_alignment
+from ark.memory.sqlite_event_alignment import (
+    MemoryEventAlignmentRejected,
+    review_memory_event_alignment,
+)
 
 
 @pytest.mark.parametrize(
-    ("sql", "params"),
+    ("sql", "params", "timestamp_mismatch"),
     [
-        ("UPDATE memories SET expires_at_ms=?", (9000,)),
-        ("UPDATE memories SET metadata_json=?", ('{"review":"local"}',)),
-        ("UPDATE memories SET created_at_ms=?, updated_at_ms=?", (4500, 4900)),
-        ("UPDATE memories SET updated_at_ms=?", (6000,)),
+        ("UPDATE memories SET expires_at_ms=?", (9000,), False),
+        ("UPDATE memories SET metadata_json=?", ('{"review":"local"}',), False),
+        ("UPDATE memories SET created_at_ms=?, updated_at_ms=?", (4500, 4900), True),
+        ("UPDATE memories SET updated_at_ms=?", (6000,), True),
     ],
 )
-def test_every_mutable_row_epoch_changes_local_alignment_digest(tmp_path, sql, params):
+def test_every_mutable_row_epoch_changes_local_alignment_digest(
+    tmp_path, sql, params, timestamp_mismatch,
+):
     store = SQLiteMemoryStore(tmp_path / "memory.db", clock_ms=lambda: 5000)
     store.put(MemoryWrite(MemoryScope("owner"), "source", "private local text"))
     before = review_memory_event_alignment(store)
@@ -30,6 +35,12 @@ def test_every_mutable_row_epoch_changes_local_alignment_digest(tmp_path, sql, p
     with sqlite3.connect(store.path) as conn:
         conn.execute(sql, params)
 
+    if timestamp_mismatch:
+        # A newer integrity contract rejects row/event time drift before
+        # it can be represented as an ordinary valid changed digest.
+        with pytest.raises(MemoryEventAlignmentRejected, match="row/time"):
+            review_memory_event_alignment(store)
+        return
     after = review_memory_event_alignment(store)
     assert (before.row_count, before.event_count) == (1, 1)
     assert (after.row_count, after.event_count) == (1, 1)
