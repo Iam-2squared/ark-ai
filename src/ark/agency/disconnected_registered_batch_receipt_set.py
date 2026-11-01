@@ -265,6 +265,9 @@ def review_registered_batch_receipt_set(
         ).hexdigest()
         result = _RESULT(*payload, digest)
         expected = (*payload, digest)
+        # A final child/journal callback must not replace the authority
+        # descriptors after the original denial pass has completed.
+        denial_descriptors = tuple(getattr(_RESULT, name) for name in _DENIALS)
 
         def stable_result() -> None:
             if (
@@ -273,6 +276,12 @@ def review_registered_batch_receipt_set(
                     result.plan_digest, result.schedule_digest,
                     result.step_receipts, result.review_sha256,
                 ), expected, strict=True))
+                or any(
+                    getattr(_RESULT, name) is not original
+                    for name, original in zip(
+                        _DENIALS, denial_descriptors, strict=True,
+                    )
+                )
             ):
                 raise RegisteredBatchSetRejected("batch result changed after review")
 
@@ -286,6 +295,17 @@ def review_registered_batch_receipt_set(
         # it cannot make multiple SQLite stores a single atomic transaction.
         if review_all() != initial:
             raise RegisteredBatchSetRejected("batch receipts changed after denial")
+        stable_result()
+        stable_carriers()
+        # The final child pass can itself be a reentrant mutation boundary.
+        # Never return a report whose class-level authority changed after
+        # the earlier denial checks. An extra denial sweep also catches
+        # false-valued getters that retarget earlier result fields.
+        for name in _DENIALS:
+            if getattr(result, name) is not False:
+                raise RegisteredBatchSetRejected("batch result gained authority")
+            stable_result()
+            stable_carriers()
         stable_result()
         stable_carriers()
         return result
