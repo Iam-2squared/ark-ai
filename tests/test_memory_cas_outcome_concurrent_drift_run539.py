@@ -57,11 +57,15 @@ def test_concurrent_writer_during_false_authority_getter_denies_stale_report(
     assert [e.operation for e in observer.events(scope)] == (
         ["create", "delete"] if interleaving == "delete" else ["create", "update"]
     )
-    assert writer.get(first.memory_id, scope, include_expired=True) is (
-        None if interleaving == "delete" else writer.get(
-            first.memory_id, scope, include_expired=True
+    observed = writer.get(first.memory_id, scope, include_expired=True)
+    if interleaving == "delete":
+        assert observed is None
+    else:
+        assert observed is not None
+        assert observed.revision == 2
+        assert observed.content == (
+            "target" if interleaving == "identical_update" else "other"
         )
-    )
 
 
 @pytest.mark.parametrize("column,value", (
