@@ -213,14 +213,46 @@ def review_synthetic_observation_reuse(
     )
     assert_epoch()
     assert_witnesses()
+    def assert_result_epoch() -> None:
+        if (
+            type(result) is not _REUSE_RESULT_TYPE
+            or result.previous_lineage_digest is not cached_epoch[3]
+            or result.current_lineage_digest is not current_epoch[3]
+            or result.observation_count is not current_epoch[2]
+            or result.checked_at_ms is not now_ms
+        ):
+            raise SyntheticObservationReuseRejected(
+                "observation reuse result changed during construction or denial"
+            )
+
+    assert_result_epoch()
+    # Diagnostic observation freshness is NEVER consent to capture media,
+    # disclose Personal Context, notify, or execute an external ToolBackend.
+    # Each property is a callback boundary even when it returns False.
     if (
-        type(result) is not _REUSE_RESULT_TYPE
-        or result.previous_lineage_digest is not cached_epoch[3]
-        or result.current_lineage_digest is not current_epoch[3]
-        or result.observation_count is not current_epoch[2]
-        or result.checked_at_ms is not now_ms
+        result.media_capture_authorized is not False
+        or result.disclosure_authorized is not False
+        or result.notification_authorized is not False
+        or result.dispatch_authorized is not False
     ):
         raise SyntheticObservationReuseRejected(
-            "observation reuse result changed during construction"
+            "observation reuse result acquired authority"
         )
+    assert_epoch()
+    assert_witnesses()
+    assert_result_epoch()
+    # Re-read denial flags in case the first getters replaced a later one;
+    # after the final getter, inspect every originally pinned carrier again.
+    if (
+        result.media_capture_authorized is not False
+        or result.disclosure_authorized is not False
+        or result.notification_authorized is not False
+        or result.dispatch_authorized is not False
+    ):
+        raise SyntheticObservationReuseRejected(
+            "observation reuse result acquired authority"
+        )
+    assert_epoch()
+    assert_witnesses()
+    assert_result_epoch()
     return result
