@@ -1,5 +1,55 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run522 / 2026-11-01:** FOUR free-only work packages: repair seven Run521 CI test-instrumentation failures without altering the startup guard; strengthen manual-only UNKNOWN WRITE triage packet+item custody; reject duplicate V3 execution-snapshot JSON keys at every depth; and enforce observation reuse's four explicit no-authority flags with post-denial source/witness custody. **30 newly authored pytest cases** (11 triage + 8 V3 + 11 observation), plus seven existing startup test parameterizations corrected. PR #5 exact new source CI six-job GREEN; PR #8 latest combined source and docs CI are NOT YET six-job GREEN. **ARK/JARVIS/V3 overall NOT_PASSED.**
+
+**Saved at:** **2026-11-01T15:49:58.101+09:00 Asia/Tokyo/JST**, ordinary execution wall clock immediately before this permitted GitHub Contents update. This time is NOT trusted-clock evidence, human approval, consent, billable-provider authorization, or permission for ToolBackend action.
+
+## LATEST — work basis / branch and checkpoint-result semantics
+
+- **PR #8:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`. Initial **work-basis HEAD** `06c2a413d943d3b9fc70cd9a13f805519a3ffaa2` (Run521 checkpoint). Final **source+tests HEAD** `3422761ad9120f761550a5af73331f294936fb2f`. [Run522 JARVIS evidence](https://github.com/Iam-2squared/ark-ai/blob/c4a57263a6d383b11177d42743dc3c700bfd4b09/docs/JARVIS_RUN522_STARTUP_FIX_WRITE_TRIAGE_FINAL_CUSTODY.md), evidence HEAD `c4a57263a6d383b11177d42743dc3c700bfd4b09` and **checkpoint write-basis HEAD** `c4a57263a6d383b11177d42743dc3c700bfd4b09`.
+- **PR #5:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`. Initial **work-basis HEAD** `538148e8ae8385782a1ebf6c3817f55a1cf874d9` (Run521 documentation). Final **source+tests HEAD** `25d5a9f1e817f03410216dc961b37bb197ccf027`; [Run522 V3 evidence](https://github.com/Iam-2squared/ark-ai/blob/9fcde28bfda66850482f59e116220d1c9e873363/docs/v3/RUN522_DUPLICATE_EXECUTION_SNAPSHOT_JSON_KEYS.md), docs HEAD `9fcde28bfda66850482f59e116220d1c9e873363`.
+- **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405` (confirmed via GitHub branch commit and both Draft PR bases). **Checkpoint-result HEAD cannot be embedded in its own commit**; GitHub assigns it after the Contents update. Re-read the branch HEAD and committed status Blob after saving. The checkpoint CI is a distinct later HEAD and must not inherit source/test CI. This is the **single Run522 canonical PROJECT_STATUS update**.
+
+## NEW — four implementation/test work packages / 30 authored cases
+
+1. **Startup CI regression repair (existing seven cases).** Run521 exact [CI 41278527291](https://github.com/Iam-2squared/ark-ai/actions/runs/41278527291) was six-job FAIL. All seven failures arose from `tests/test_startup_post_traversal_custody_run521.py` incrementing its instrumentation counter *after* an integrity validator which correctly threw on the third attempted check. Move counter increment before the original validation in commit `e24ceb53c4929a0c72126e8bc10d8ab70a2acda0`; retain the `checks >= 3` assertion. Production startup readiness/denial semantics are unchanged.
+2. **Offline manual WRITE triage (11 cases).** `src/ark/agency/offline_write_manual_triage.py` at `f702acd357ac1731ad380aed9315e4262c1127f3` and `c43e67b65d3557188f22d2e0ed1f82b078db17ad`, tests `tests/test_offline_write_triage_last_denial_run522.py` at combined HEAD `9e75a1dd58876ee3eb39cccc6b9df243aecc4051`. Pin nested packet items before report construction and recheck packet and each nested identity, disposition and digest after final false-valued authority getters. An UNKNOWN WRITE stays quarantined, never auto-dispatched/replayed. No external ToolBackend call or real human resolution.
+3. **V3 execution snapshot duplicate-key exclusion (8 cases).** `src/ark/learning/execution.py` at `56cdfb351cdcab6765b23977bba47e2e7db3dd87`, tests `tests/v3/test_execution_snapshot_duplicate_keys_run522.py` final combined HEAD `25d5a9f1e817f03410216dc961b37bb197ccf027`. Bounded local `json.loads` now rejects duplicated member names at every depth, including decoded-equivalent Unicode keys and repeated authorization/identity members. Valid unique noncanonical JSON remains accepted. No training/authorization semantics or frozen V3 contract changed.
+4. **Observation reuse permission denial and post-callback integrity (11 cases).** `src/ark/observation_reuse_review.py` at `34825f5c8022c7cd423e6c7d7f8a7bb92c441785`, tests `tests/test_observation_reuse_denial_custody_run522.py` final combined HEAD `3422761ad9120f761550a5af73331f294936fb2f`. A diagnostic observation witness must explicitly deny media capture, disclosure, notification and dispatch; recheck original cached/source/lineage/result fields after all getters, rejecting false-valued property callbacks that mutate evidence. No physical capture or external action.
+
+**30 = 11 + 8 + 11 newly authored pytest cases, not independently observed local PASS counts.** An attempted local GitHub checkout still failed DNS resolution (`Could not resolve host: github.com`). No independent full local pytest/Ruff claim; GitHub Actions jobs below are scoped to their exact HEADs.
+
+## CI and evidence — sampled before this checkpoint write
+
+- **Earlier Run521 PR #8 source** [41278527291](https://github.com/Iam-2squared/ark-ai/actions/runs/41278527291) on `e84155f14d0fa4becd5803c4f63fad0371f2a551`: 0/6 GREEN, 6 FAIL, 0 IN PROGRESS, 0 QUEUED — NOT exact-run six-job GREEN. Failed seven startup test assertions; repaired in newer test commit.
+- **PR #8 startup repair** [41281766421](https://github.com/Iam-2squared/ark-ai/actions/runs/41281766421), exact `e24ceb53c4929a0c72126e8bc10d8ab70a2acda0`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED — exact-run GREEN.
+- **PR #8 manual WRITE triage** [41281914831](https://github.com/Iam-2squared/ark-ai/actions/runs/41281914831), exact `9e75a1dd58876ee3eb39cccc6b9df243aecc4051`: 4/6 GREEN, 0 FAIL, 2 IN PROGRESS, 0 QUEUED — NOT exact-run six-job GREEN.
+- **PR #8 final observation source+tests** [41282248911](https://github.com/Iam-2squared/ark-ai/actions/runs/41282248911), exact `3422761ad9120f761550a5af73331f294936fb2f`: 0/6 GREEN, 0 FAIL, 3 IN PROGRESS, 3 QUEUED — NOT exact-run six-job GREEN.
+- **PR #8 latest technical evidence** [41282270952](https://github.com/Iam-2squared/ark-ai/actions/runs/41282270952), exact `c4a57263a6d383b11177d42743dc3c700bfd4b09`: 0/6 GREEN, 0 FAIL, 0 IN PROGRESS, 6 QUEUED — NOT exact-run six-job GREEN.
+- **PR #5 final execution-snapshot source+tests** [41281996563](https://github.com/Iam-2squared/ark-ai/actions/runs/41281996563), exact `25d5a9f1e817f03410216dc961b37bb197ccf027`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED — exact-run GREEN.
+- **PR #5 latest evidence doc** [41282074094](https://github.com/Iam-2squared/ark-ai/actions/runs/41282074094), exact `9fcde28bfda66850482f59e116220d1c9e873363`: 6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED — exact-run GREEN.
+- A distinct **Run522 checkpoint CI** will be created by GitHub after this write. Its run ID and six-job outcome cannot be reported before GitHub creates them.
+
+## Frozen evidence, blockers and safety authorization
+
+- Fresh independent frozen-file rereads: Memory `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`; Agency `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; frozen V3 `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. No changes to main, protected V2 final scorer/gate, V1/V2/Local UI/Launcher freeze or these contract blobs.
+- **No paid/external GPU/API/compute, billable service, credentials, provider account, model download, real Candidate generation/training, V2 protected evaluation opening, promotion, human approval, real READ/WRITE backend, irreversible deletion, automated WRITE replay, notification or main merge.** PR #5 and #8 remain Draft/unmerged. Later groundwork is isolated/reversible.
+- Retained local hashes, SQLite CAS/journal chains, synthetic clocks, observation/source digests and exact fields show *local consistency only*: not independently authenticated history, consent, OS trust, external effect proof, privacy forensic erasure, provider billing guarantees or cross-store atomicity.
+- Real V3 is still blocked on immutable HF upstream revision and verified model/tokenizer bytes, rights/provenance/contamination-reviewed and human-approved 120/30 data, exact local/physical environment and tool hashes, GPU/VRAM/device/driver identity, explicit JPY ceiling/timeout and provider cost-cap evidence, and the protected evaluation gate. **ARK/JARVIS/V3 NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Confirm each latest exact-HEAD six-platform CI separately (PR #8 observation source+docs, PR #5 docs, new checkpoint). On real FAIL inspect precise failing job/step logs, repair semantics-preservingly through normal Contents API; no duplicate equivalent workflows or safety-path bypass.
+2. After lower-layer exact-head GREEN, connect Planner DAG/registered `act_`→fixture `req_` correlation and retained READ SQLite journal in a single **disconnected mock, non-dispatching** recovery reviewer; retain external witness custody and prohibit automatic replay after uncertain COMMIT.
+3. Advance Memory CAS/concurrent revision fencing and coherent event/row snapshots, durable UNKNOWN WRITE **manual-only** triage, trusted-clock audit-before-action / occurrence protection, proactive scheduler restart deduplication, startup readiness evidence and privacy-safe Personal Context/Observation fixture lifecycle.
+4. Continue free V3 path/byte/identity/reproducibility guards; stop specific lanes for any external GPU/provider spending, new secrets/accounts, real Candidate, protected V2 opening, contract change, irreversible operation or main merge requiring explicit consent; keep other independent free lanes moving.
+
+---
+
+## Historical checkpoint — Run521 (preserved below)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run521 / 2026-11-01: FOUR coherent zero-cost, reversible packages, 39 newly authored pytest cases. Registered READ retained receipt final-denial rebind, Personal Context retention post-authority custody, Startup readiness post-lookup/traversal integrity, and aligned direct/detached V3 paired case ordering. PR #5 exact source+test 6/6 GREEN. PR #8 final source+test and documentation CI still not yet six-job GREEN at this sampling; no inherited PASS. Overall ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-01T14:55:04.129+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock immediately before this normal GitHub Contents write, NOT a trusted clock, owner consent, physical operation, protected scorer authorization, provider spending approval or any Tool grant).
