@@ -14,11 +14,12 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
-from .contracts import MemorySchemaError, MemoryScope
+from .contracts import MemoryRecord, MemorySchemaError, MemoryScope
 from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
 
 _DOMAIN = b"ARK-read-only-memory-expiry-preview-v1\0"
 _MAX_ROWS = 1_000
+_MAX_EVENT_SCAN = 40_000  # Aggregate cap across all returned and overflow rows.
 _MAX_TIME = (1 << 63) - 1
 _FLAGS = (
     "deletion_authorized", "physical_erasure_proven",
@@ -74,6 +75,85 @@ def _hash(tag: str, payload: object) -> str:
     return hashlib.sha256(_DOMAIN + tag.encode("ascii") + b"\0" + encoded).hexdigest()
 
 
+def _check_due_event_chain(
+    conn: sqlite3.Connection,
+    record: MemoryRecord,
+    scope: tuple[str, str],
+    remaining: int,
+) -> int:
+    """Reconcile the complete persisted lifecycle in the *existing* read snapshot.
+
+    Rev 1 may legitimately recur after delete/expire and recreation. A live
+    cycle must start with create, advance revisions one step per update, and
+    end at precisely the selected row's create/update timestamp. A bounded
+    scan fails closed if history cannot be checked without exhausting budget.
+    This is integrity checking, never authenticated authorship or erase consent.
+    """
+    if remaining <= 0:
+        raise MemoryExpiryPreviewRejected("expiry event scan budget exceeded")
+    events = conn.execute(
+        "SELECT event_id,owner_id,namespace,operation,revision,occurred_at_ms "
+        "FROM memory_events WHERE memory_id=? ORDER BY event_id LIMIT ?",
+        (record.memory_id, remaining + 1),
+    ).fetchall()
+    if len(events) > remaining:
+        raise MemoryExpiryPreviewRejected("expiry event scan budget exceeded")
+    active = False
+    revision = 0
+    created_at = None
+    last_at = None
+    previous_event_id = 0
+    for event_id, owner, namespace, operation, event_revision, at in events:
+        if (
+            type(event_id) is not int
+            or event_id <= previous_event_id
+            or type(owner) is not str
+            or type(namespace) is not str
+            or (owner, namespace) != scope
+            or type(operation) is not str
+            or type(event_revision) is not int
+            or type(at) is not int
+            or not 0 <= at <= _MAX_TIME
+        ):
+            raise MemoryExpiryPreviewRejected(
+                "expiry candidate lacks matching live Memory event"
+            )
+        previous_event_id = event_id
+        if operation == "create":
+            if active or event_revision != 1:
+                raise MemoryExpiryPreviewRejected(
+                    "expiry candidate lacks matching live Memory event"
+                )
+            active, revision, created_at = True, 1, at
+        elif operation == "update":
+            if not active or event_revision != revision + 1:
+                raise MemoryExpiryPreviewRejected(
+                    "expiry candidate lacks matching live Memory event"
+                )
+            revision = event_revision
+        elif operation in ("delete", "expire"):
+            if not active or event_revision != revision:
+                raise MemoryExpiryPreviewRejected(
+                    "expiry candidate lacks matching live Memory event"
+                )
+            active = False
+        else:
+            raise MemoryExpiryPreviewRejected(
+                "expiry candidate lacks matching live Memory event"
+            )
+        last_at = at
+    if (
+        not active
+        or revision != record.revision
+        or created_at != record.created_at_ms
+        or last_at != record.updated_at_ms
+    ):
+        raise MemoryExpiryPreviewRejected(
+            "expiry candidate lacks matching live Memory event"
+        )
+    return len(events)
+
+
 def review_memory_expiry_candidates(
     store: SQLiteMemoryStore,
     scope: MemoryScope,
@@ -110,6 +190,7 @@ def review_memory_expiry_candidates(
 
     stable()
     selected: list[tuple[str, int, str, int, int]] = []
+    remaining_events = _MAX_EVENT_SCAN
     try:
         with closing(store._connect_readonly()) as conn:
             stable()
@@ -138,34 +219,13 @@ def review_memory_expiry_candidates(
                         or record.expires_at_ms > now_ms
                     ):
                         raise MemoryExpiryPreviewRejected("expiry candidate scope or time drift")
-                    # The preview is a *row/event* observation, not merely a
-                    # content hash of the currently selected live row. Verify
-                    # its latest persisted event in the SAME read transaction.
-                    # A missing create, mismatched revision/scope, or terminal
-                    # delete/expire event must never appear as a valid due row.
-                    # This is local consistency, not authenticated authorship.
-                    last_event = conn.execute(
-                        "SELECT owner_id,namespace,operation,revision "
-                        "FROM memory_events WHERE memory_id=? "
-                        "ORDER BY event_id DESC LIMIT 1",
-                        (record.memory_id,),
-                    ).fetchone()
+                    # Validate the entire row lifecycle, including previous
+                    # delete/recreate cycles, using THIS SQLite snapshot. The
+                    # limit+1 overflow row must pass the same review.
+                    remaining_events -= _check_due_event_chain(
+                        conn, record, original, remaining_events,
+                    )
                     stable()
-                    if (
-                        last_event is None
-                        or type(last_event[0]) is not str
-                        or type(last_event[1]) is not str
-                        or type(last_event[2]) is not str
-                        or type(last_event[3]) is not int
-                        or (last_event[0], last_event[1]) != original
-                        or last_event[3] != record.revision
-                        or last_event[2] != (
-                            "create" if record.revision == 1 else "update"
-                        )
-                    ):
-                        raise MemoryExpiryPreviewRejected(
-                            "expiry candidate lacks matching live Memory event"
-                        )
                     if len(selected) < limit:
                         selected.append((
                             record.memory_id, record.revision, record.content_sha256,
