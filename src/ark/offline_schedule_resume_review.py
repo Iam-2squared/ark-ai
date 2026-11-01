@@ -22,10 +22,10 @@ from .disconnected_schedule_preview import (
 )
 from .disconnected_schedule_quarantine_ledger import (
     DisconnectedScheduleQuarantineLedger,
+    QuarantinePolicy,
     QuarantineWitness,
     ScheduleQuarantineRejected,
     derive_quarantined_occurrence,
-    QuarantinePolicy,
 )
 
 _DOMAIN = b"ARK-offline-schedule-resume-review-v1\0"
