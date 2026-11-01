@@ -219,7 +219,6 @@ def review_registered_batch_receipt_set(
                     "action_request_id", "fixture_request_id", "link_sha256",
                     "journal_tip_sha256", "review_sha256",
                 ))
-                or type(review.review_sha256) is not str
                 or len(review.review_sha256) != 64
                 or any(char not in "0123456789abcdef" for char in review.review_sha256)
             ):
@@ -228,7 +227,7 @@ def review_registered_batch_receipt_set(
             # separated digest. A well-formed 64-hex string alone is NOT a
             # valid receipt, even if an untrusted child reviewer returns it.
             expected_child_digest = hashlib.sha256(
-                b"ARK-disconnected-registered-batch-receipt-v1\\0"
+                b"ARK-disconnected-registered-batch-receipt-v1\0"
                 + json.dumps(
                     child_epoch[:-1], ensure_ascii=True, separators=(",", ":"),
                 ).encode("ascii")
