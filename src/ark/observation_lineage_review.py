@@ -197,4 +197,29 @@ def review_synthetic_observation_lineage(
         raise SyntheticObservationLineageRejected(
             "observation lineage result changed during final epoch check"
         )
+    # A False-valued final denial getter may replace an EARLIER denial
+    # descriptor after the first pass. Re-read each denial in order, then
+    # recheck the original input epoch and immutable output after every
+    # callback. This is a local synthetic guard, not consent or authority.
+    for authority_name in (
+        "media_capture_authorized", "disclosure_authorized",
+        "dispatch_authorized",
+    ):
+        if getattr(result, authority_name) is not False:
+            raise SyntheticObservationLineageRejected(
+                "observation lineage result gained authority after denial"
+            )
+        assert_epoch()
+        if (
+            type(result) is not _LINEAGE_RESULT_TYPE
+            or result.privacy_scope is not privacy_scope
+            or result.checked_at_ms is not now_ms
+            or type(result.observation_count) is not int
+            or result.observation_count != len(envelopes)
+            or result.lineage_digest is not digest
+        ):
+            raise SyntheticObservationLineageRejected(
+                "observation lineage result changed after denial"
+            )
+    assert_epoch()
     return result
