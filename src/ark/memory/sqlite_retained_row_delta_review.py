@@ -17,7 +17,7 @@ from contextlib import closing
 from dataclasses import dataclass
 
 from . import sqlite_event_prefix_review as prefix
-from .contracts import MemorySchemaError
+from .contracts import MemorySchemaError, MemoryScope
 from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
 
 _MAX_ROWS = 10_000
@@ -104,13 +104,19 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
             try:
                 _validate_v1_schema(conn)
                 rows = []
+                current: dict[str, tuple[str, str, int]] = {}
                 for row in conn.execute("SELECT * FROM memories ORDER BY memory_id"):
                     if len(rows) >= _MAX_ROWS:
                         raise MemoryRowDeltaRejected("row scan budget exceeded")
-                    rows.append(_commitment(row))
+                    commitment = _commitment(row)
+                    rows.append(commitment)
+                    current[commitment[0]] = (
+                        row["owner_id"], row["namespace"], commitment[1],
+                    )
                     if store.path is not path:
                         raise MemoryRowDeltaRejected("Memory source retargeted")
                 events = []
+                lifecycle: dict[str, tuple[str, str, int, bool]] = {}
                 previous_id = 0
                 for entry in conn.execute(
                     "SELECT event_id,memory_id,owner_id,namespace,operation,"
@@ -134,10 +140,55 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
                         or type(namespace) is not str
                     ):
                         raise MemoryRowDeltaRejected("invalid persisted event")
+                    # Unlike a mere old-prefix comparison, an independent
+                    # row snapshot must also reconcile the CURRENT lifecycle.
+                    # No synthetic appended event can excuse a revision,
+                    # scope or active/deleted mismatch of the live row.
+                    try:
+                        MemoryScope(owner, namespace)
+                    except (TypeError, ValueError) as exc:
+                        raise MemoryRowDeltaRejected(
+                            "invalid persisted event scope"
+                        ) from exc
+                    previous = lifecycle.get(memory_id)
+                    if previous is not None and previous[:2] != (owner, namespace):
+                        raise MemoryRowDeltaRejected("Memory event scope changed")
+                    if operation == "create":
+                        if revision != 1 or previous is not None and previous[3]:
+                            raise MemoryRowDeltaRejected(
+                                "invalid Memory event creation lifecycle"
+                            )
+                        active = True
+                    else:
+                        if previous is None or not previous[3]:
+                            raise MemoryRowDeltaRejected(
+                                "Memory event lacks active predecessor"
+                            )
+                        wanted = previous[2] + (operation == "update")
+                        if revision != wanted:
+                            raise MemoryRowDeltaRejected(
+                                "Memory event revision lifecycle mismatch"
+                            )
+                        active = operation == "update"
+                    lifecycle[memory_id] = (owner, namespace, revision, active)
                     events.append(tuple(entry))
                     previous_id = event_id
                     if store.path is not path:
                         raise MemoryRowDeltaRejected("Memory source retargeted")
+                for identifier, state in lifecycle.items():
+                    observed = current.pop(identifier, None)
+                    if state[3] and observed != state[:3]:
+                        raise MemoryRowDeltaRejected(
+                            "live Memory row differs from event lifecycle"
+                        )
+                    if not state[3] and observed is not None:
+                        raise MemoryRowDeltaRejected(
+                            "terminal Memory event left a live row"
+                        )
+                if current:
+                    raise MemoryRowDeltaRejected(
+                        "live Memory row lacks creation event"
+                    )
                 conn.rollback()
             except BaseException:
                 conn.rollback()
