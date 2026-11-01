@@ -316,3 +316,55 @@ def test_aggregate_rechecks_child_after_false_denial_getter(tmp_path, monkeypatc
         assert case["backend"].calls == 0
     finally:
         case["journal"].close()
+
+
+@pytest.mark.parametrize("forged_digest", ["0" * 64, "f" * 64])
+def test_parent_recomputes_exact_child_digest_not_just_hex_shape(
+    tmp_path, monkeypatch, forged_digest,
+):
+    case = setup_case(tmp_path, count=1)
+    try:
+        valid = _one_child_receipt(case)
+        assert valid.review_sha256 != forged_digest
+        forged = replace(valid, review_sha256=forged_digest)
+        monkeypatch.setattr(
+            batch_module, "review_registered_batch_receipt",
+            lambda *args, **kwargs: forged,
+        )
+        with pytest.raises(RegisteredBatchSetRejected, match="digest disagrees"):
+            invoke(case)
+        assert case["backend"].calls == 0
+        assert not case["gate"]._consumed_tokens
+    finally:
+        case["journal"].close()
+
+
+class _EquivalentStrSubclass(str):
+    """Equals canonical str values but is not an exact untrusted receipt type."""
+
+
+@pytest.mark.parametrize("field", [
+    "step_id", "plan_digest", "schedule_digest", "action_request_id",
+    "fixture_request_id", "link_sha256", "journal_tip_sha256",
+])
+def test_parent_rejects_equivalent_child_string_subclasses(
+    tmp_path, monkeypatch, field,
+):
+    case = setup_case(tmp_path, count=1)
+    try:
+        valid = _one_child_receipt(case)
+        forged = replace(
+            valid, **{field: _EquivalentStrSubclass(getattr(valid, field))}
+        )
+        assert getattr(forged, field) == getattr(valid, field)
+        monkeypatch.setattr(
+            batch_module, "review_registered_batch_receipt",
+            lambda *args, **kwargs: forged,
+        )
+        with pytest.raises(
+            RegisteredBatchSetRejected, match="READ step receipt disagrees",
+        ):
+            invoke(case)
+        assert case["backend"].calls == 0
+    finally:
+        case["journal"].close()
