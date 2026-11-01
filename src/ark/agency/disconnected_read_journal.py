@@ -169,13 +169,20 @@ class DisconnectedReadJournal:
             with path.open("x", encoding="utf-8"):
                 pass
             connection = sqlite3.connect(path, timeout=10, isolation_level=None)
-            connection.execute("PRAGMA busy_timeout=10000")
-            connection.execute("PRAGMA journal_mode=WAL")
-            connection.execute("BEGIN IMMEDIATE")
-            connection.execute(_MARKER_DDL)
-            connection.execute("INSERT INTO marker VALUES (?)", (_SCHEMA,))
-            connection.execute(_RECEIPT_DDL)
-            connection.execute("COMMIT")
+            try:
+                connection.execute("PRAGMA busy_timeout=10000")
+                connection.execute("PRAGMA journal_mode=WAL")
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(_MARKER_DDL)
+                connection.execute("INSERT INTO marker VALUES (?)", (_SCHEMA,))
+                connection.execute(_RECEIPT_DDL)
+                connection.execute("COMMIT")
+            except BaseException:
+                # A failed creation must not leak the SQLite handle or imply
+                # that an incomplete new file is a valid marked journal.
+                # Never delete that file automatically: custody is external.
+                connection.close()
+                raise
             return cls(connection)
         except (FileExistsError, OSError, sqlite3.Error) as exc:
             raise ReadJournalRejected("cannot create new local journal") from exc
@@ -188,11 +195,15 @@ class DisconnectedReadJournal:
             connection = sqlite3.connect(path, timeout=10, isolation_level=None)
             try:
                 connection.execute("PRAGMA busy_timeout=10000")
+                # Marker, schema and chain must come from ONE SQLite snapshot.
+                # No claim of cross-process custody or writer authentication.
+                connection.execute("BEGIN")
                 rows = connection.execute("SELECT revision FROM marker").fetchall()
                 if rows != [(_SCHEMA,)]:
                     raise ReadJournalRejected("foreign journal marker")
                 _verify_schema(connection)
                 cls(connection)._scan()
+                connection.execute("COMMIT")
             except BaseException:
                 # A rejected or corrupt database must not retain its SQLite
                 # handle, including on the custom rejection path.
