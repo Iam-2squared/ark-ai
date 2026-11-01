@@ -166,10 +166,48 @@ def review_retained_context_replay_prefix(
     ):
         raise OfflineContextPrefixRejected("context replay result acquired authority")
     stable()
+    # The last denied-authority property is a callback. A False getter can
+    # still rewrite a previously checked count, status or permission flag,
+    # and the retained-witness getter in stable() may run afterward too.
+    # Recheck ALL result fields and denied authorities after those callbacks.
+    def result_stable() -> None:
+        if (
+            type(result) is not _RESULT
+            or type(result.retained_count) is not int
+            or result.retained_count != old_count
+            or type(result.current_count) is not int
+            or result.current_count != current_epoch[0]
+            or type(result.status) is not str
+            or result.status is not status
+            or type(result.current_chain_sha256) is not str
+            or result.current_chain_sha256 is not current_epoch[1]
+            or type(result.review_sha256) is not str
+            or result.review_sha256 is not digest
+            or result.historical_writer_authenticated is not False
+            or result.independent_custody_proven is not False
+            or result.consent_verified is not False
+            or result.revocation_freshness_verified is not False
+            or result.context_disclosure_authorized is not False
+            or result.tool_dispatch_authorized is not False
+            or result.automatic_replay_authorized is not False
+        ):
+            raise OfflineContextPrefixRejected(
+                "context result changed after denial"
+            )
+
+    result_stable()
+    stable()
+    # A denial getter may have returned False while replacing an earlier
+    # carrier. A second scalar pass avoids returning that mixed result.
     if (
         type(result) is not _RESULT
+        or type(result.retained_count) is not int
+        or result.retained_count != old_count
+        or type(result.current_count) is not int
+        or result.current_count != current_epoch[0]
+        or result.status is not status
         or result.current_chain_sha256 is not current_epoch[1]
         or result.review_sha256 is not digest
     ):
-        raise OfflineContextPrefixRejected("context result changed after denial")
+        raise OfflineContextPrefixRejected("context result changed after final review")
     return result
