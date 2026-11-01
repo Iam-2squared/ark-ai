@@ -185,14 +185,25 @@ def schedule_detached_read_recovery(
     schedule = DetachedReadRecoverySchedule(request_id, frozen_decisions, digest)
     epoch()
     stable_decisions()
-    if (
-        type(schedule) is not _SCHEDULE_TYPE
-        or schedule.request_id is not request_id
-        or schedule.decisions is not frozen_decisions
-        or schedule.schedule_digest is not digest
-        or schedule.dispatch_authorized is not False
-        or schedule.automatic_replay_authorized is not False
-        or schedule.external_outcome_verified is not False
-    ):
-        raise DetachedReadRecoveryRejected("recovery schedule altered before return")
+    def assert_inert_schedule() -> None:
+        if (
+            type(schedule) is not _SCHEDULE_TYPE
+            or schedule.request_id is not request_id
+            or schedule.decisions is not frozen_decisions
+            or schedule.schedule_digest is not digest
+            or schedule.dispatch_authorized is not False
+            or schedule.automatic_replay_authorized is not False
+            or schedule.external_outcome_verified is not False
+        ):
+            raise DetachedReadRecoveryRejected("recovery schedule altered before return")
+
+    assert_inert_schedule()
+    # A false-valued final denial getter is still a callback: it can mutate
+    # an earlier witness field, a previously checked flag or a nested decision.
+    # Check those carriers after all three non-authority getters have run.
+    epoch()
+    stable_decisions()
+    assert_inert_schedule()
+    epoch()
+    stable_decisions()
     return schedule
