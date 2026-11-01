@@ -229,3 +229,48 @@ def test_modified_or_unknown_schema_is_rejected(tmp_path):
         conn.execute("PRAGMA user_version=987")
     with pytest.raises(delta.MemoryRowDeltaRejected):
         delta.review_retained_memory_row_delta(store, witness)
+
+
+@pytest.mark.parametrize(("field", "replacement"), [
+    ("event_count", 2),
+    ("event_prefix_sha256", "f" * 64),
+    ("rows", ()),
+])
+def test_capture_refuses_mutated_witness_after_last_false_denial(
+    tmp_path, monkeypatch, field, replacement,
+):
+    store = _store(tmp_path)
+    _put(store)
+    def mutate_capture(self):
+        object.__setattr__(self, field, replacement)
+        return False
+
+    monkeypatch.setattr(
+        delta.MemoryRowDeltaWitness, "action_authorized",
+        property(mutate_capture),
+    )
+    with pytest.raises(delta.MemoryRowDeltaRejected, match="changed after denial"):
+        delta.capture_local_memory_row_delta(store)
+
+
+def test_capture_refuses_swapped_prior_denial_descriptor(
+    tmp_path, monkeypatch,
+):
+    store = _store(tmp_path)
+    _put(store)
+
+    def mutate_capture(self):
+        monkeypatch.setattr(
+            delta.MemoryRowDeltaWitness, "independently_authenticated",
+            property(lambda ignored: True),
+        )
+        return False
+
+    monkeypatch.setattr(
+        delta.MemoryRowDeltaWitness, "action_authorized",
+        property(mutate_capture),
+    )
+    with pytest.raises(
+        delta.MemoryRowDeltaRejected, match="authority descriptor changed",
+    ):
+        delta.capture_local_memory_row_delta(store)
