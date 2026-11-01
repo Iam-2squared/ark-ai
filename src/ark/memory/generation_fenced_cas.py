@@ -316,6 +316,10 @@ def generation_fenced_memory_update(
             stable()
             if (
                 updated.revision != revision
+                or updated.content != original_content
+                or dict(updated.metadata) != metadata
+                or updated.expires_at_ms != original_expiry
+                or updated.updated_at_ms != now
                 or updated.content_sha256 != content_hash
                 or updated_token.create_event_id != fresh.create_event_id
                 or updated_token.last_event_id <= fresh.last_event_id
