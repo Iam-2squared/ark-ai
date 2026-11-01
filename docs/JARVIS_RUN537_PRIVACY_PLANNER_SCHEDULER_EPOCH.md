@@ -34,3 +34,12 @@ Initial new-privacy CI [41340366153](https://github.com/Iam-2squared/ark-ai/acti
 2. Review post-callback source identity and cross-store clock/provenance consistency without granting real execution or silently widening retention.
 3. Preserve all frozen V1/V2/Local UI/Launcher and V3 Contract evidence, keep PR #5/#8 Draft, and do not merge main without required approval.
 4. Leave paid/possibly billable services, external GPU, Candidate generation, protected V2 evaluation, new credentials, actual notifications, private erasure, live ToolBackend and irreversible actions blocked pending explicit authorization.
+
+
+## 4. Personal Context request binding — permission descriptor custody
+
+`src/ark/personal_context_request_binding.py` at `3efc7e234ace7a6ace23244cf56ac8318d7f2a8c` pins exact preview and returned-binding permission descriptors before the first authority callback. Every late False getter is bracketed by original carrier checks, including the previously validated denied descriptors. An earlier permission getter cannot be rebound by the last getter to create misleading affirmative authorization, even if the replacement also returns False.
+
+`tests/test_context_binding_permission_descriptors_run537.py` at `2b184f4d3e6328d50fa9c2bfa3deabb89180c530` adds **8 authored cases**: four late binding-descriptor rebindings, two preview-descriptor rebindings, an equal-value result digest carrier replacement and a deterministic, content-minimized deny-only control. GitHub CI [41341497716](https://github.com/Iam-2squared/ark-ai/actions/runs/41341497716) was **QUEUED** at last observation; no source/test GREEN is claimed before exact-head validation.
+
+This request-scoped local JSON binding does not consult a live revocation ledger or legal/consent authority, and the added guards do not make a context fixture eligible for actual external disclosure, retention or Tool execution. The package is independent of the in-flight SQLite retention, Planner and Scheduler validations.
