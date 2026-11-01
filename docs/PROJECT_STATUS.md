@@ -1,5 +1,55 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run542 / 2026-11-02 JST:** FOUR coherent zero-new-cost, local-first, disconnected **source + regression-test packages** saved normally across PR #8 and PR #5; TWO grounded technical notes. **24 newly authored parameter-expanded pytest cases** (PR #8: 13; PR #5: 11), **not** 24 individually executed local pytest PASS. PR #5 source+test exact commit **6/6 GREEN**; the newer PR #5 note commit CI has not yet been certified. PR #8 newer source/test and note commits are **NOT YET EXACT-HEAD ALL-SIX GREEN**. ARK/JARVIS/V3 overall **NOT_PASSED**; both PRs Draft/unmerged, no real action, Candidate, protected evaluation, paid compute, irreversible deletion or frozen-contract change.
+
+**Saved at:** **2026-11-02T08:58:32.162+09:00 Asia/Tokyo/JST**, sampled from ordinary automation-host wall time directly before this normal GitHub Contents checkpoint write; this is NOT trusted time, attested custody, human approval, authenticated identity, consent or authorization.
+
+## LATEST — exact branch/PR and checkpoint semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`, exact **invocation work-basis HEAD** `4fea93c734aa3c50bcdf0237b360c19194f4540b`; exact **checkpoint write-basis HEAD** `b2d589f07f91fe892593654ae45e02e3532549d0`. GitHub will generate a **new checkpoint-result HEAD**, which cannot truthfully be embedded in the document that creates it. After this Contents write independently re-read both PR head and status blob; the reported checkpoint-result SHA belongs to that post-write observation.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`, exact invocation work-basis `45db7ae561f8091dcf650f6053e1771b5651671a`, current observed technical-note HEAD `75c5ce54962c61acd40cf52a0b4bd94b859dcec8`.
+- **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. No main merge, PR readiness promotion, force push, alternate Git object writes or protected-evaluation opening.
+
+## NEW — four coherent packages (24 authored test variants)
+
+1. **Scheduler due-slot witness scalar CAS (PR #8, 6 cases):** source `6234e75f2db5dbed98267a4ef89eeb14bf1bfeac`, test `63d69b90470ad4a68b10cab334ad7edc70fdd4f2`. Transaction-scoped reserve CAS and read-only reopen compare the independently retained **count/fingerprint scalars** to actual SQLite observations instead of a forgeable `DueReservationWitness.__eq__`. Regression fixtures exercise stale count/hash, always-True/False equality, successful legitimate reservations and non-authorizing receipts. No scheduler dispatch or trusted clock.
+2. **Personal Context replay ledger pre-COMMIT integrity (PR #8, 3 cases):** source `fc10292a304e46d0f4b9fa060d99d18325a26804`, test `7a38ad5008050398f58374181193573ccb287e46`. Recomputed observed SQLite witness count/chain must match original scalars even if dataclass equality is replaced. A forged post-insert snapshot is rejected in the write transaction and rolled back; **post-COMMIT UNKNOWN never triggers automatic retry**.
+3. **Personal Context privacy-veto SQLite path custody (PR #8, 4 cases):** source `098684cf3c72dd7f5f1eabe9507be0df29611600`, test `01ebb64c84bed460fd16111520c36d03633acc5a`. Rejects symlink file targets, symlink ancestors and hard-linked existing SQLite files before initial local fixture access and on source path checks. Allows ordinary same-path reopen. **Path prechecking is not atomic against concurrent swaps, does not erase data and proves no consent**.
+4. **V3 unapproved human-readable identity shape review (PR #5, 11 cases):** source `668c973f086dc93e273dd2946408ce91fb444288`, test `08e6ffd86473a46e1cb1a9b65ca86afbe75f173a`. Passive syntax inventory marks padded/invisible-control labels as invalid while leaving literal placeholders and strict hash/revision checks untouched. Readable strings remain unverified identities, never approval for preflight, training, protected V2 evaluation, Candidate promotion or spending.
+
+**Saved notes:** [Run542 JARVIS CAS and revocation path](https://github.com/Iam-2squared/ark-ai/blob/b2d589f07f91fe892593654ae45e02e3532549d0/docs/JARVIS_RUN542_SCALAR_CAS_AND_REVOCATION_PATH_CUSTODY.md); [Run542 V3 passive label shape](https://github.com/Iam-2squared/ark-ai/blob/75c5ce54962c61acd40cf52a0b4bd94b859dcec8/docs/v3/RUN542_PASSIVE_PRINTABLE_IDENTITY_SHAPE.md).
+
+## CI / regression evidence — exact commits only
+
+- **Inherited PR #8 Run541 checkpoint:** `4fea93c734aa3c50bcdf0237b360c19194f4540b`, [41359930929](https://github.com/Iam-2squared/ark-ai/actions/runs/41359930929), **6/6 GREEN** independently checked this invocation, but only for the older HEAD.
+- **PR #8 due-scalar tests:** `63d69b90470ad4a68b10cab334ad7edc70fdd4f2`, [41363949311](https://github.com/Iam-2squared/ark-ai/actions/runs/41363949311): last read **4/6 GREEN, 2 IN PROGRESS**, not final.
+- **PR #8 context replay tests:** `7a38ad5008050398f58374181193573ccb287e46`, [41364089593](https://github.com/Iam-2squared/ark-ai/actions/runs/41364089593): last read **3/6 GREEN, 3 IN PROGRESS**, not final.
+- **PR #8 privacy path tests:** `01ebb64c84bed460fd16111520c36d03633acc5a`, [41364392231](https://github.com/Iam-2squared/ark-ai/actions/runs/41364392231): last read **1/6 GREEN, 5 NOT YET COMPLETE**, not final.
+- **PR #8 latest pre-checkpoint note HEAD:** `b2d589f07f91fe892593654ae45e02e3532549d0`, [41364493854](https://github.com/Iam-2squared/ark-ai/actions/runs/41364493854): last read **6 NOT YET COMPLETE**. The new checkpoint commit also requires separate exact-HEAD checks.
+- **PR #5 new source+test:** `08e6ffd86473a46e1cb1a9b65ca86afbe75f173a`, [41364207690](https://github.com/Iam-2squared/ark-ai/actions/runs/41364207690), **6/6 GREEN** independently examined.
+- **PR #5 current technical-note HEAD:** `75c5ce54962c61acd40cf52a0b4bd94b859dcec8`, [41364517347](https://github.com/Iam-2squared/ark-ai/actions/runs/41364517347), **6 NOT YET COMPLETE** at last read.
+- All jobs are the existing GitHub public-repository CPU Ubuntu/Windows Python 3.11–3.13 CI. No duplicate manual workflow launches. No standalone comprehensive local pytest or local Ruff PASS is claimed.
+
+## Frozen contracts / blockers / authorization boundary
+
+**Frozen files re-read, identical blob SHAs:** Memory v1 `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher frozen evidence and protected V2 final-evaluation boundary remain untouched.
+
+**No payment or potentially billable external action, external GPU, paid API/service, model/weight Candidate generation, credential/account connection, real ToolBackend, microphone, notification, destructive data cleanup, automatic ambiguous WRITE retry, human signoff simulation, promotion, protected V2 evaluation or main merge.** PR #5/#8 remain Draft and reversible. Unresolved real-data provenance/licensing review, material model/tokenizer/hardware hashes, trustworthy clock/actor identity, human approval, privacy consent and provider billing ceilings are blockers for their respective lanes, not permissions. No bypass of GitHub safety checks.
+
+## Next plan / 今後の方針
+
+1. **Close exact-head CI:** independently verify all six jobs on latest PR #8 source/test + checkpoint and PR #5 note; if any fail, inspect actual logs, correct only the minimal defective source/test via normal safe GitHub Contents writes; work independent lanes while CI is active and never launch duplicate runs.
+2. **Memory / Planner integration:** prioritize generation-safe SQLite CAS with expiry/revocation, concurrent writes and COMMIT-UNKNOWN manual-only recovery, then persistently reconcile FAILED/BLOCKED mock DAGs, bound registry/gate identities and READ chain receipts; integrate only where lower-level exact-head CI is GREEN.
+3. **Trusted Clock / Scheduler:** enforce durable occurrence identity, strict audit-before-action, replay/rollback rejection and read-only recovery; caller-supplied time and local hashes do not authenticate a clock.
+4. **Personal Context / startup / observations:** privacy-consent withdrawal, retention and redaction, deterministic local startup readiness, offline WAV/PNG fixture pipelines, all non-executing until actual independent authorization/evidence gates exist.
+5. **Free V3:** path/identity/approval/provenance/reproducibility guards and local-only review. Never start paid/external compute, real Candidate, V2 protected evaluation, or promotion without explicit controlling approvals.
+
+---
+
+## Historical canonical checkpoint — Run541 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run541 / 2026-11-02 JST:** FIVE free-only/disconnected coherent source+test packages and THREE technical notes successfully saved through **normal GitHub Contents writes**. **27 newly authored parameter-expanded pytest cases** (PR #8: 21; PR #5: 6); these are authored cases, **not** 27 separately executed standalone local pytest PASS. One PR #8 test assertion message was minimally corrected after examining the actual failed CI log. PR #5 exact latest technical-note HEAD has **6/6 GREEN**. PR #8 latest source/technical-note HEAD **NOT YET ALL-SIX GREEN** (last pre-checkpoint source/docs CI QUEUED/IN PROGRESS). ARK/JARVIS/V3 overall **NOT_PASSED**, both PRs Draft/unmerged. No paid/external compute, real action, protected V2 final evaluation, Candidate, irreversible operation or frozen-contract changes.
 
 **Saved at:** **2026-11-02T08:00:21.787+09:00 Asia/Tokyo/JST**, sampled from this automation host's ordinary wall clock immediately before the normal GitHub Contents checkpoint write. This is **not** a trusted clock, signed record, user consent, authenticated identity or approval.
