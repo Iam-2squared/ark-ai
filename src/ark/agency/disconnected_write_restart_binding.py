@@ -280,6 +280,14 @@ def review_disconnected_write_restart(
     # Capture the original result carriers before invoking any of them;
     # no getter may rewrite the report, original Planner claim or slot ledger.
     expected_report = (plan_id, len(steps), len(matched), count, digest)
+    # False-valued authority getters can still rebind another descriptor,
+    # including a descriptor that itself continues to return False.
+    denials = (
+        "tool_dispatch_authorized", "write_replay_authorized",
+        "external_outcome_verified", "trusted_clock_verified",
+        "consent_verified", "cross_store_atomicity_proven",
+    )
+    denial_descriptors = tuple(getattr(_REPORT, name) for name in denials)
 
     def stable_report() -> None:
         if (
@@ -289,15 +297,13 @@ def review_disconnected_write_restart(
                 report.reserved_write_steps, report.quarantined_write_steps,
                 report.fingerprint,
             ), expected_report, strict=True))
+            or any(getattr(_REPORT, name) is not pinned
+                   for name, pinned in zip(denials, denial_descriptors, strict=True))
         ):
             raise OfflineWriteRestartRejected("WRITE restart report changed after review")
 
     stable_report()
-    for name in (
-        "tool_dispatch_authorized", "write_replay_authorized",
-        "external_outcome_verified", "trusted_clock_verified",
-        "consent_verified", "cross_store_atomicity_proven",
-    ):
+    for name in denials:
         if getattr(report, name) is not False:
             raise OfflineWriteRestartRejected("WRITE restart report acquired authority")
         stable_report()
@@ -323,5 +329,10 @@ def review_disconnected_write_restart(
         raise OfflineWriteRestartRejected(
             "WRITE ledger cannot be verified after denial"
         ) from exc
+    # The final SQLite inspection is a callback boundary too: an injected
+    # adapter can mutate a previously verified Planner claim or disposition
+    # without changing the SQLite rows. Reject that post-read drift.
+    stable()
+    assert_fence()
     stable_report()
     return report
