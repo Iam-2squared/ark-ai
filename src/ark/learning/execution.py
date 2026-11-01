@@ -343,6 +343,15 @@ def _require_exact_section_shape(snapshot: dict, section: str) -> None:
 def validate_experiment_001(
     snapshot: dict, *, authorization_scope: AuthorizationScope = "none"
 ) -> str:
+    # The scope is an execution authorization boundary, not a duck-typed
+    # equality comparison: bool, str subclasses and custom objects must not
+    # impersonate the literal preflight/training scopes.
+    if type(authorization_scope) is not str or authorization_scope not in {
+        "none", "preflight", "training",
+    }:
+        raise ValueError("invalid authorization scope")
+    if type(snapshot) is not dict:
+        raise ExecutionBlocked("exact execution snapshot mapping required")
     missing = sorted(_REQUIRED_TOP - snapshot.keys())
     if missing:
         raise ExecutionBlocked(f"snapshot missing sections: {', '.join(missing)}")
@@ -357,9 +366,6 @@ def validate_experiment_001(
         or snapshot.get("experiment_id") != "v3-format-compliance-001"
     ):
         raise ExecutionBlocked("unexpected snapshot schema/experiment")
-    if authorization_scope not in {"none", "preflight", "training"}:
-        raise ValueError("invalid authorization scope")
-
     method = snapshot["method"]
     integer_method_fields = (
         "rank",
