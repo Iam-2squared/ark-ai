@@ -253,7 +253,29 @@ def capture_local_memory_row_delta(store: SQLiteMemoryStore) -> MemoryRowDeltaWi
     rows, events = _scan(store)
     root = _prefix_hash(events, len(events))
     result = _WITNESS(len(events), events[-1][0] if events else 0, root, rows)
-    _validate(result)
+    denial_fields = (
+        "independently_authenticated", "historical_writer_authenticated",
+        "disclosure_authorized", "action_authorized",
+    )
+    denial_descriptors = tuple(vars(_WITNESS)[name] for name in denial_fields)
+    pinned = _validate(result)
+    # Even a False-valued final getter can reflectively replace a frozen
+    # witness field or an earlier denial property. A local capture must never
+    # return that altered baseline as independently authenticated evidence.
+    if any(
+        now is not original for now, original in zip((
+            result.event_count, result.last_event_id,
+            result.event_prefix_sha256, result.rows,
+        ), pinned, strict=True)
+    ):
+        raise MemoryRowDeltaRejected("captured row witness changed after denial")
+    if any(
+        vars(_WITNESS).get(name) is not original
+        for name, original in zip(denial_fields, denial_descriptors, strict=True)
+    ):
+        raise MemoryRowDeltaRejected(
+            "captured row witness authority descriptor changed"
+        )
     return result
 
 
