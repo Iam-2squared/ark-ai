@@ -321,7 +321,9 @@ class DisconnectedReadJournal:
             stable()
             if (
                 type(actual) is not _WITNESS_TYPE
-                or actual != retained or actual.count >= _MAX_ROWS
+                or actual.count != witness_epoch[0]
+                or actual.tip_sha256 != witness_epoch[1]
+                or actual.count >= _MAX_ROWS
             ):
                 raise ReadJournalRejected("stale or exhausted journal witness")
             next_index = actual.count + 1
