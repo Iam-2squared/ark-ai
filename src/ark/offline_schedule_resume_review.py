@@ -104,6 +104,26 @@ def review_offline_schedule_resume(
     witness_epoch = (
         retained_quarantine.count, retained_quarantine.chain_sha256,
     )
+    # Quarantine reports are diagnostic only. A late ledger.inspect callback
+    # must not rebind their False-only authority property, even to another
+    # getter returning False; the final read has no authenticated actor.
+    quarantine_denial = getattr(QuarantineWitness, "independently_authenticated")
+
+    def denied_quarantine(candidate: QuarantineWitness) -> None:
+        if type(candidate) is not QuarantineWitness:
+            raise ScheduleResumeRejected("quarantine witness type changed")
+        pinned = (candidate.count, candidate.chain_sha256)
+        if (
+            getattr(QuarantineWitness, "independently_authenticated")
+            is not quarantine_denial
+            or candidate.independently_authenticated is not False
+            or any(current is not original for current, original in zip(
+                (candidate.count, candidate.chain_sha256), pinned, strict=True,
+            ))
+            or getattr(QuarantineWitness, "independently_authenticated")
+            is not quarantine_denial
+        ):
+            raise ScheduleResumeRejected("quarantine witness gained authority or changed")
 
     def stable() -> None:
         if (
@@ -146,12 +166,9 @@ def review_offline_schedule_resume(
             raise ScheduleResumeRejected("non-genesis cursor without quarantines")
     try:
         first = ledger.inspect(retained=retained_quarantine)
+        denied_quarantine(first)
         stable()
-        if (
-            type(first) is not QuarantineWitness
-            or first != retained_quarantine
-            or first.independently_authenticated is not False
-        ):
+        if first != retained_quarantine:
             raise ScheduleResumeRejected("quarantine inspection gained authority")
         # A restart claim must not silently turn the caller clock backward
         # relative to a quarantine time already persisted in the local ledger.
@@ -258,6 +275,7 @@ def review_offline_schedule_resume(
 
         stable_preview()
         second = ledger.inspect(retained=retained_quarantine)
+        denied_quarantine(second)
         stable_preview()
         stable()
         if type(second) is not QuarantineWitness or second != first:
@@ -299,6 +317,7 @@ def review_offline_schedule_resume(
                 raise ScheduleResumeRejected("offline resume gained authority")
             stable_output()
         last = ledger.inspect(retained=retained_quarantine)
+        denied_quarantine(last)
         stable()
         stable_preview()
         stable_output()
