@@ -1,5 +1,57 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run521 / 2026-11-01: FOUR coherent zero-cost, reversible packages, 39 newly authored pytest cases. Registered READ retained receipt final-denial rebind, Personal Context retention post-authority custody, Startup readiness post-lookup/traversal integrity, and aligned direct/detached V3 paired case ordering. PR #5 exact source+test 6/6 GREEN. PR #8 final source+test and documentation CI still not yet six-job GREEN at this sampling; no inherited PASS. Overall ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-01T14:55:04.129+09:00 Asia/Tokyo/JST** (ordinary runtime wall-clock immediately before this normal GitHub Contents write, NOT a trusted clock, owner consent, physical operation, protected scorer authorization, provider spending approval or any Tool grant).
+
+## LATEST — exact work-basis HEAD, branch/PR and checkpoint-result semantics
+
+- **PR #8:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`. Initial work-basis HEAD **`b2b0b0f5290238c2401c3189ff6c629421245374`** (Run520 checkpoint). Final combined **source+test HEAD** `e84155f14d0fa4becd5803c4f63fad0371f2a551`; Run521 [technical evidence](https://github.com/Iam-2squared/ark-ai/blob/c87332be4f71cdc5b3724ca5dccc9b88f407f9df/docs/JARVIS_RUN521_FINAL_AUTHORITY_RETENTION_STARTUP.md). **Checkpoint write-basis HEAD** `c87332be4f71cdc5b3724ca5dccc9b88f407f9df` (includes evidence doc).
+- **PR #5:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`. Initial work-basis HEAD `f87800744f742818dd93e9089a8f69375283ee2a` (Run520 docs). Final **source+test HEAD** `97d6719359ed919f5cc0ca22e7d21dd86466fb59`; [Run521 V3 evidence](https://github.com/Iam-2squared/ark-ai/blob/538148e8ae8385782a1ebf6c3817f55a1cf874d9/docs/v3/RUN521_ORDERED_PAIRED_VALIDATION.md), latest documentation HEAD **`538148e8ae8385782a1ebf6c3817f55a1cf874d9`**.
+- **main:** unchanged at **`7a843f17eb96ed13d66f23b58b06406b3002e405`**. The checkpoint-result HEAD is assigned *after* this Contents update and cannot be embedded circularly in its own source. Re-read branch HEAD and the committed status blob after saving, and distinguish the checkpoint CI from the source/test CI. This is the **single Run521 canonical PROJECT_STATUS update**.
+
+## NEW — four coherent source+test packages / 39 authored pytest cases
+
+1. **PR #8 exact registered READ final-denial custody — 12 cases.**
+   `src/ark/agency/disconnected_registered_receipt_review.py` at source commits `39102daeb7f20c680ad7408f5b7c4da099a0d2a9` and `bb5d83b777b49b8ecdf1aa6fef202f8d76767e82`, test `tests/test_registered_receipt_final_denial_run521.py` at combined HEAD `897f41a0bc96ae249d1d622c67f49bcb9c2b3064`. After the last false-valued authority getter, verify the entire result tuple, independently retained link/witness and exact original Registry/ToolCall/grants/disconnected fixture by safe mock rebinding. No backend call, journal schema rewrite, external READ, historic actor proof or automatic retry.
+2. **PR #5 exact paired validation ID ordering — 8 cases.**
+   `src/ark/learning/validation.py` at `f39781fbb18bb5e30fcc9f3bdcd41fdf324df850`, `tests/v3/test_validation_order_contract_run521.py` at combined HEAD `97d6719359ed919f5cc0ca22e7d21dd86466fb59`. Requires direct Current/Candidate comparison to use the same exact 30-case sequence already required by detached byte audit; identical ID sets with different order now fail closed. Arbitrary but *shared* input order remains valid. No protected V2 opening/promotion semantics changed.
+3. **PR #8 privacy-safe retention last-denial review — 11 cases.**
+   `src/ark/personal_context_retention_review.py` at `2fc71d79fbc61230870e28027433c9e0d175d7b3`, `tests/test_retention_last_denial_custody_run521.py` at combined HEAD `49874d2bcef64d887d68009b249bfe4c03c6bffc`. Recheck inventory digest/flags/identity, retained items, original scope and independent SQLite source paths after all false-only authority callbacks. Does not delete data, prove forensic erasure or grant use of Personal Context.
+4. **PR #8 cached startup post-traversal witness — 8 cases.**
+   `src/ark/startup_readiness_review.py` at `3306176b671c084cdc3a7141297c515b686ad470`, `tests/test_startup_post_traversal_custody_run521.py` at final combined HEAD `e84155f14d0fa4becd5803c4f63fad0371f2a551`. Re-derive cached graph digest and dependency semantics after `state()` lookup and `root_blockers()` traversal, to reject late reflective graph edits. A READY fixture remains diagnostic, never execution authority.
+
+**39 = 12 READ + 8 V3 + 11 retention + 8 startup newly authored pytest cases.** Authored cases are not observed standalone local PASS counts. A full local checkout, pytest and Ruff could not run due to GitHub DNS/network limitations in the container; CI evidence is kept exact-commit scoped. No raw Git object/ref workaround, force push, branch overwrite, duplicate equivalent workflow rerun, protected evaluation opening or main merge.
+
+## CI / test evidence — sampled at checkpoint write (exact HEADs only)
+
+- **PR #8 final source+test** [CI 41278527291](https://github.com/Iam-2squared/ark-ai/actions/runs/41278527291), exact `e84155f14d0fa4becd5803c4f63fad0371f2a551`: **0/6 GREEN, 0 FAIL, 4 IN PROGRESS, 2 QUEUED — NOT YET VERIFIED AT SIX ENVIRONMENTS**.
+- **PR #8 technical evidence** [CI 41278577868](https://github.com/Iam-2squared/ark-ai/actions/runs/41278577868), exact `c87332be4f71cdc5b3724ca5dccc9b88f407f9df`: **0/6 GREEN, 0 FAIL, 0 IN PROGRESS, 6 QUEUED — NOT YET VERIFIED AT SIX ENVIRONMENTS**.
+- **PR #8 intermediate registered receipt test** [CI 41278284115](https://github.com/Iam-2squared/ark-ai/actions/runs/41278284115) on `897f41a0bc96ae249d1d622c67f49bcb9c2b3064` was in progress during the earlier sample. Do not treat older GREEN as evidence for the final combined source.
+- **PR #5 final source+test** [CI 41278352619](https://github.com/Iam-2squared/ark-ai/actions/runs/41278352619), exact `97d6719359ed919f5cc0ca22e7d21dd86466fb59`: **6/6 GREEN, 0 FAIL, 0 IN PROGRESS, 0 QUEUED — EXACT-HEAD SUCCESS**.
+- **PR #5 docs** [CI 41278598295](https://github.com/Iam-2squared/ark-ai/actions/runs/41278598295), exact `538148e8ae8385782a1ebf6c3817f55a1cf874d9`: **1/6 GREEN, 0 FAIL, 3 IN PROGRESS, 2 QUEUED — NOT YET VERIFIED AT SIX ENVIRONMENTS**.
+- Prior Run520 [PR #8 checkpoint CI 41274924675](https://github.com/Iam-2squared/ark-ai/actions/runs/41274924675) and [PR #5 final source CI 41274827128](https://github.com/Iam-2squared/ark-ai/actions/runs/41274827128) completed SUCCESS on **older HEADs only**. A separate Run521 checkpoint CI will be assigned a new run ID by GitHub after this write.
+
+## Frozen boundaries, evidence limits and blockers
+
+- No intentional changes to frozen V1/V2/Local UI/Launcher evidence; protected V2 scorer/gate, Memory v1 schema, Agency contracts or frozen V3 Contract. Historical Memory schema/contract blob `b6e93821ecd69270a7634aceb20775dc36e9953c`, Agency contract blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`, and V3 frozen Contract blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23` remain the previously recorded evidence references; no fresh cross-branch frozen-blob equality claim is made here.
+- **No monetary or external actions:** no paid/billable service or external GPU/API, new credentials or account connections, model download, real Candidate generation/training/weights, protected V2 final evaluation, Candidate promotion, real ToolBackend READ/WRITE, physical-PC action, notification, automatic WRITE replay, irreversible deletion, human-review decision or main merge.
+- SHA hashes, local SQLite witnesses, exact identity carriers and fixture clocks prove at most *local consistency*: not historical writer authenticity, independent custody, user consent, forensic deletion across backups, cross-store atomicity, immutable upstream model identity or external Tool effects.
+- Real V3 still lacks immutable upstream HF base/tokenizer/revision plus verified file hashes, human-owned rights/provenance/contamination-reviewed 120/30 data, physical runtime/device/tool identity, explicit authorized provider spending ceiling and stop condition, and the protected scorer gate. Both PRs stay Draft; **ARK/JARVIS/V3 overall NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Confirm PR #8 exact final source+test six-platform CI `41278527291` and its documentation CI, PR #5 documentation CI and the new checkpoint CI independently; on FAIL inspect actual failed job steps/logs and repair only the verified issue through ordinary Contents API. Do not rerun equivalent workflows or inherit earlier GREEN.
+2. When lower-layer source CI is exact-HEAD GREEN, extend *read-only* Planner DAG/ToolRegistry/`act_`→`req_` link and retained SQLite READ journal mock recovery, preserving separate custody and **no automatic replay after uncertain COMMIT**. Never make the v1 journal a permission registry.
+3. Prioritize Memory CAS/concurrent revision fencing, coherent event+row snapshots, durable UNKNOWN WRITE **manual-only** triage, trusted-clock audit-before-action and occurrence fencing, Scheduler restart deduplication, startup readiness evidence and Personal Context revocation/privacy lifecycle.
+4. Independently continue free V3 approval/path/bytes/reproducibility guards; keep actual external compute, real Candidate, human decisions, protected V2 opening, frozen-contract changes, irreversible operations and main merge blocked by their specific gates.
+
+---
+
+## Historical checkpoint — Run520 (preserved below)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run520 / 2026-11-01: FIVE coherent zero-cost, reversible packages, 69 newly authored pytest cases. Registered READ/journal restart reconciliation, Scheduler final-denial integrity, V3 mock-gate input epoch, V3 direct paired validation strict carriers, and combined paired input pre-scan/budget. Earlier exact-source CI successes listed below; no later source PASS inferred from earlier commits. ARK/JARVIS/V3 overall NOT_PASSED.**
 
 **Saved at:** **2026-11-01T13:55:21.205+09:00 Asia/Tokyo/JST** (ordinary workflow wall-clock reading just before this normal GitHub Contents write; NOT trusted runtime time, owner consent, GPU/provider billing or Tool action authorization).
