@@ -6,7 +6,7 @@
 
 - PR #5 `research/v3-learning-evaluation` remained **Draft/unmerged**. This package started from HEAD `57579d4ea25070bb743365daf3c1f55951e35c21`.
 - Source: `src/ark/learning/offline_readiness_transition.py`, introduced by commit `a831df69394b22555ab0b5b852c26500cf03a601`.
-- Tests: `tests/v3/test_passive_readiness_transition_run536.py`, introduced by `72074067d573bde4e902fc1b92d69e2ac84117ac`, **16 authored pytest parameter cases**, not a claim about independent local pytest.
+- Tests: `tests/v3/test_passive_readiness_transition_run536.py`, introduced by `72074067d573bde4e902fc1b92d69e2ac84117ac`, **17 authored pytest cases**, not a claim about independent local pytest.
 - Exact source/test HEAD [Actions run 41338397659](https://github.com/Iam-2squared/ark-ai/actions/runs/41338397659): **6/6 GREEN** (Ubuntu and Windows, Python 3.11–3.13), directly read from individual job conclusions.
 - Frozen V3 `docs/v3/CONTRACT.md` remains unchanged. Neither the training contract nor the protected V2 evaluation/scorer was opened or edited.
 
