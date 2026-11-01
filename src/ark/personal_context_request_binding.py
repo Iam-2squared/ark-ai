@@ -75,6 +75,21 @@ def bind_offline_context_request(
         preview.owner_digest, preview.record_ids,
         preview.canonical_local_json, preview.local_digest,
     )
+    preview_permissions = (
+        "consent_verified", "external_export_authorized",
+        "tool_dispatch_authorized", "retention_authorized",
+    )
+    binding_permissions = (
+        "consent_verified", "revocation_freshness_verified",
+        "external_export_authorized", "tool_dispatch_authorized",
+        "retention_authorized",
+    )
+    preview_descriptors = tuple(
+        getattr(_PREVIEW_TYPE, name) for name in preview_permissions
+    )
+    binding_descriptors = tuple(
+        getattr(_BINDING_TYPE, name) for name in binding_permissions
+    )
 
     def unchanged() -> None:
         try:
@@ -88,6 +103,23 @@ def bind_offline_context_request(
                 or preview.external_export_authorized is not False
                 or preview.tool_dispatch_authorized is not False
                 or preview.retention_authorized is not False
+            ):
+                raise OfflineContextBindingRejected("context preview carrier changed")
+            # The final False getter can still mutate the previously checked
+            # source or an earlier permission descriptor. Check both again.
+            if (
+                any(
+                    now is not old for now, old in zip((
+                        preview.owner_digest, preview.record_ids,
+                        preview.canonical_local_json, preview.local_digest,
+                    ), pinned, strict=True)
+                )
+                or any(
+                    getattr(_PREVIEW_TYPE, name) is not original
+                    for name, original in zip(
+                        preview_permissions, preview_descriptors, strict=True,
+                    )
+                )
             ):
                 raise OfflineContextBindingRejected("context preview carrier changed")
         except (AttributeError, TypeError, ValueError) as exc:
@@ -162,42 +194,31 @@ def bind_offline_context_request(
     result = OfflineContextRequestBinding(
         request_id, owner, digest, len(ids), binding_digest,
     )
-    unchanged()
-    if (
-        type(result) is not _BINDING_TYPE
-        or result.request_id is not request_id
-        or result.owner_digest is not owner
-        or result.context_digest is not digest
-        or type(result.record_count) is not int
-        or result.record_count != len(ids)
-        or result.binding_digest is not binding_digest
-        or result.consent_verified is not False
-        or result.revocation_freshness_verified is not False
-        or result.external_export_authorized is not False
-        or result.tool_dispatch_authorized is not False
-        or result.retention_authorized is not False
-    ):
-        raise OfflineContextBindingRejected("constructed context binding changed")
-    # False-returning authority descriptors are callbacks too. Their last
-    # access may mutate the preview or an already-checked result field.
-    unchanged()
-    if (
-        type(result) is not _BINDING_TYPE
-        or result.request_id is not request_id
-        or result.owner_digest is not owner
-        or result.context_digest is not digest
-        or type(result.record_count) is not int
-        or result.record_count != len(ids)
-        or result.binding_digest is not binding_digest
-    ):
-        raise OfflineContextBindingRejected(
-            "context binding changed after authority review"
-        )
-    # The last preview authority getter may also have changed its input.
-    if any(now is not old for now, old in zip(
-        (preview.owner_digest, preview.record_ids,
-         preview.canonical_local_json, preview.local_digest),
-        pinned, strict=True,
-    )):
-        raise OfflineContextBindingRejected("context preview carrier changed")
+    def stable_result() -> None:
+        # Preview permission getters and constructed-result permission getters
+        # are reentrant callbacks. Neither may silently grant authority by
+        # rebinding a previously checked descriptor or replacing its evidence.
+        unchanged()
+        if (
+            type(result) is not _BINDING_TYPE
+            or result.request_id is not request_id
+            or result.owner_digest is not owner
+            or result.context_digest is not digest
+            or type(result.record_count) is not int
+            or result.record_count != len(ids)
+            or result.binding_digest is not binding_digest
+            or any(
+                getattr(_BINDING_TYPE, name) is not original
+                for name, original in zip(
+                    binding_permissions, binding_descriptors, strict=True,
+                )
+            )
+        ):
+            raise OfflineContextBindingRejected("constructed context binding changed")
+
+    stable_result()
+    for authority in binding_permissions:
+        if getattr(result, authority) is not False:
+            raise OfflineContextBindingRejected("constructed context binding changed")
+        stable_result()
     return result
