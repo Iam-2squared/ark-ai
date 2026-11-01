@@ -190,12 +190,54 @@ def review_disconnected_failure_archive(
         )
         if _encode(again) != raw:
             raise DisconnectedFailureArchiveRejected("failure fixture changed on replay")
+        # The final file read is a callback boundary. A custom read adapter
+        # may mutate a frozen witness by reflection *after* _witness() has
+        # checked it. Pin fields, receipt carriers and denial descriptors
+        # across that last read, including equal-but-replaced carriers.
+        source_epoch = _receipt_epoch(expected)
+        descriptors = tuple(
+            getattr(ArchivedDisconnectedFailure, key) for key in _DENIALS
+        )
         witness = _witness(retained_file_sha256, expected)
+        witness_epoch = (
+            witness.file_sha256, witness.request_id, witness.plan_digest,
+            witness.projection_digest, witness.fixture_digest,
+            witness.failed_step_ids, witness.terminal_counts,
+        )
+
+        def assert_final_epoch() -> None:
+            if (
+                type(witness) is not ArchivedDisconnectedFailure
+                or any(now is not old for now, old in zip((
+                    witness.file_sha256, witness.request_id, witness.plan_digest,
+                    witness.projection_digest, witness.fixture_digest,
+                    witness.failed_step_ids, witness.terminal_counts,
+                ), witness_epoch, strict=True))
+                or any(now is not old for now, old in zip(
+                    _receipt_epoch(expected), source_epoch, strict=True,
+                ))
+                or any(getattr(ArchivedDisconnectedFailure, key) is not original
+                       for key, original in zip(
+                           _DENIALS, descriptors, strict=True,
+                       ))
+            ):
+                raise DisconnectedFailureArchiveRejected(
+                    "failure archive final witness/source changed"
+                )
+
+        assert_final_epoch()
+        for name in _DENIALS:
+            if getattr(witness, name) is not False:
+                raise DisconnectedFailureArchiveRejected(
+                    "failure archive final witness gained authority"
+                )
+            assert_final_epoch()
         final, final_epoch = _read_once(path)
         if final != first or final_epoch != first_epoch:
             raise DisconnectedFailureArchiveRejected("failure archive changed after review")
         if _receipt_epoch(expected) != _receipt_epoch(again):
             raise DisconnectedFailureArchiveRejected("failure receipt changed after review")
+        assert_final_epoch()
         return witness
     except (DisconnectedBatchArchiveRejected, TypeError) as exc:
         raise DisconnectedFailureArchiveRejected(
