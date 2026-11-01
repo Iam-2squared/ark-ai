@@ -10,7 +10,6 @@ from ark.agency.disconnected_fixture_binding import bind_disconnected_fixture_re
 from ark.agency.disconnected_read_journal import ReadReceipt
 from ark.agency.disconnected_toolbox import (
     DisconnectedToolRequest,
-    DisconnectedToolResult,
     execute_disconnected_fixture_tool,
 )
 from ark.agency.policy import PermissionGate
