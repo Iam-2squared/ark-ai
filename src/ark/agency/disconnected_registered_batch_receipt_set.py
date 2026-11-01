@@ -214,11 +214,29 @@ def review_registered_batch_receipt_set(
                 or type(review.journal_count) is not int
                 or review.journal_count != item.retained_journal.count
                 or review.journal_tip_sha256 != item.retained_journal.tip_sha256
+                or any(type(getattr(review, name)) is not str for name in (
+                    "step_id", "plan_digest", "schedule_digest",
+                    "action_request_id", "fixture_request_id", "link_sha256",
+                    "journal_tip_sha256", "review_sha256",
+                ))
                 or type(review.review_sha256) is not str
                 or len(review.review_sha256) != 64
                 or any(char not in "0123456789abcdef" for char in review.review_sha256)
             ):
                 raise RegisteredBatchSetRejected("READ step receipt disagrees with DAG")
+            # Independently re-bind the child's canonical tuple to its domain-
+            # separated digest. A well-formed 64-hex string alone is NOT a
+            # valid receipt, even if an untrusted child reviewer returns it.
+            expected_child_digest = hashlib.sha256(
+                b"ARK-disconnected-registered-batch-receipt-v1\\0"
+                + json.dumps(
+                    child_epoch[:-1], ensure_ascii=True, separators=(",", ":"),
+                ).encode("ascii")
+            ).hexdigest()
+            if review.review_sha256 != expected_child_digest:
+                raise RegisteredBatchSetRejected(
+                    "READ step receipt digest disagrees with fields"
+                )
             # Do not inherit a child's alleged authority or a field mutation
             # triggered by a false-valued final denial callback.
             if any(getattr(review, name) is not False for name in _DENIALS):
