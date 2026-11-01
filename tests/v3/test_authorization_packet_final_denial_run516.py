@@ -7,10 +7,9 @@ protected evaluation, paid service, or merge capability is exercised.
 from __future__ import annotations
 
 import pytest
+from test_authorization_packet_verify_run503 import _inputs
 
 from ark.learning import authorization_packet_verify as verifier
-
-from test_authorization_packet_verify_run503 import _inputs
 
 
 @pytest.mark.parametrize("late_call", (1, 2, 3))
