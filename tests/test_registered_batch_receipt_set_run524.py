@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pytest
+
+import ark.agency.disconnected_registered_batch_receipt_set as batch_module
 
 from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
 from ark.agency.disconnected_batch_plan import (
@@ -24,6 +26,7 @@ from ark.agency.disconnected_registered_batch_receipt_set import (
     RegisteredBatchStepEvidence,
     review_registered_batch_receipt_set,
 )
+from ark.agency.disconnected_registered_batch_receipt_review import RegisteredBatchReceiptReview
 from ark.agency.disconnected_registered_fixture_join import (
     review_registered_disconnected_fixture,
 )
@@ -229,5 +232,88 @@ def test_true_or_integer_authority_flags_are_rejected(tmp_path, monkeypatch):
     try:
         with pytest.raises(RegisteredBatchSetRejected, match="gained authority"):
             invoke(case)
+    finally:
+        case["journal"].close()
+
+
+def _one_child_receipt(case):
+    item = case["evidence"][0]
+    return batch_module.review_registered_batch_receipt(
+        case["plan"], case["schedule"], case["plan"].plan_digest,
+        item.journal, item.retained_journal, item.link,
+        case["registry"], case["gate"], item.call, item.grants, STEP_A,
+        item.request, item.result, item.binding, observed_at_ms=50,
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "forged_value"),
+    (
+        ("plan_digest", "0" * 64),
+        ("schedule_digest", "0" * 64),
+        ("wave_index", 1),
+        ("link_sha256", "0" * 64),
+        ("journal_count", 0),
+        ("journal_tip_sha256", "0" * 64),
+        ("review_sha256", "X" * 64),
+    ),
+)
+def test_aggregate_independently_rejects_forged_child_fields(
+    tmp_path, monkeypatch, field, forged_value,
+):
+    case = setup_case(tmp_path, count=1)
+    try:
+        valid = _one_child_receipt(case)
+        forged = replace(valid, **{field: forged_value})
+        monkeypatch.setattr(
+            batch_module, "review_registered_batch_receipt",
+            lambda *args, **kwargs: forged,
+        )
+        with pytest.raises(RegisteredBatchSetRejected, match="READ step receipt"):
+            invoke(case)
+        assert case["backend"].calls == 0
+    finally:
+        case["journal"].close()
+
+
+def test_aggregate_cannot_inherit_forged_child_authority(tmp_path, monkeypatch):
+    case = setup_case(tmp_path, count=1)
+    try:
+        valid = _one_child_receipt(case)
+        monkeypatch.setattr(
+            batch_module, "review_registered_batch_receipt",
+            lambda *args, **kwargs: valid,
+        )
+        monkeypatch.setattr(
+            RegisteredBatchReceiptReview, "write_authorized",
+            property(lambda self: 1),
+        )
+        with pytest.raises(RegisteredBatchSetRejected, match="gained authority"):
+            invoke(case)
+        assert case["backend"].calls == 0
+    finally:
+        case["journal"].close()
+
+
+def test_aggregate_rechecks_child_after_false_denial_getter(tmp_path, monkeypatch):
+    case = setup_case(tmp_path, count=1)
+    try:
+        valid = _one_child_receipt(case)
+        monkeypatch.setattr(
+            batch_module, "review_registered_batch_receipt",
+            lambda *args, **kwargs: valid,
+        )
+
+        def mutation(self):
+            object.__setattr__(self, "review_sha256", "0" * 64)
+            return False
+
+        monkeypatch.setattr(
+            RegisteredBatchReceiptReview, "independent_custody_proven",
+            property(mutation),
+        )
+        with pytest.raises(RegisteredBatchSetRejected, match="changed after denial"):
+            invoke(case)
+        assert case["backend"].calls == 0
     finally:
         case["journal"].close()
