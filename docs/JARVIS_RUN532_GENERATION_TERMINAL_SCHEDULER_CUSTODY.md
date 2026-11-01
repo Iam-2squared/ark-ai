@@ -62,7 +62,7 @@ error-string expectation; do not count it as latest corrected-head GREEN.
 
 ## Exact-head test semantics and boundaries
 
-The three packages contain **33 newly authored parametrized pytest cases**
+The three packages contain **33 initially authored parametrized pytest cases**
 (21 Memory + 6 Planner + 6 Scheduler). Authored-case counts are not local
 pytest PASS counts. The source/test changes remain isolated on PR #8
 (`research/jarvis-foundations`), Draft/unmerged. No main merge or V1/V2
@@ -85,3 +85,30 @@ or real ToolBackend is permitted by this work.
    terminal propagation in a disconnected integration test.
 4. Extend trusted-time audit-before-action, restart occurrence uniqueness,
    consent/retention privacy and safe startup, still mock/local-first.
+
+
+## 4. Independent privacy erasure descriptor boundary (6 authored cases)
+
+Source `src/ark/privacy_erasure_evidence_review.py` at commit
+`94cbb57ecc693a7360f84582cff0344f4eca8a97`, new
+`tests/test_privacy_erasure_descriptor_epoch_run532.py` at commit
+`784dbb79484573d75bc25d85db66289b60f5f1e2`.
+
+The optimistic synthetic erasure assessment previously evaluated all four
+denied-authority getters but could not detect a late false-returning getter
+**replacing an earlier property descriptor**. The new source pins each
+`SyntheticErasureAssessment` class descriptor before reentrant permission
+reads and checks its identity at the result boundary. Six cases cover a
+normally inert assessment plus first/final false-authority callbacks which
+replace an earlier or later denied property, even with another false-looking
+property.
+
+This does **not** prove forensic deletion, memory erasure, WAL compaction,
+consent, or backup deletion. No file or database deletion is performed. The
+older return fields and rejection message stay unchanged.
+
+**Run532 total: 39 newly authored PR #8 parametrized pytest cases**:
+21 Memory, 6 Planner, 6 Scheduler, 6 privacy. Together with the distinct
+16-case PR #5 V3 review package: **55 new authored cases in five packages**.
+Counts are not standalone local pytest PASS counts. CI must be verified for
+the exact corresponding head after this latest privacy change.
