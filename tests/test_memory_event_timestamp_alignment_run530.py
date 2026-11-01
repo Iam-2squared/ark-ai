@@ -90,7 +90,7 @@ def test_local_clock_does_not_need_to_be_monotonic(tmp_path):
     store, _, observed, second = _fixture(tmp_path)
     observed["ms"] = 500
     changed = store.put(
-        MemoryWrite(scope, "source", "clock moved backward"),
+        MemoryWrite(second.scope, "source", "clock moved backward"),
         expected_revision=second.revision,
     )
     assert changed.updated_at_ms == 500
