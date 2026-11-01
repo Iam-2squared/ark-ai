@@ -30,6 +30,27 @@ class DetachedComparisonRejected(ValueError):
     """Retained paired-validation output cannot be independently reproduced."""
 
 
+def _exact_comparison_shape(observed: object, expected: object) -> bool:
+    """Reject equality aliases such as True == 1 and 1.0 == 1.
+
+    A callback-produced result must retain the entire canonical JSON tree's
+    *types*, not merely Python value equality. This never grants authority.
+    """
+    if type(observed) is not type(expected):
+        return False
+    if type(expected) is dict:
+        return observed.keys() == expected.keys() and all(
+            _exact_comparison_shape(observed[key], expected[key])
+            for key in expected
+        )
+    if type(expected) is list:
+        return len(observed) == len(expected) and all(
+            _exact_comparison_shape(a, b)
+            for a, b in zip(observed, expected, strict=True)
+        )
+    return type(expected) in (str, int, bool, type(None)) and observed == expected
+
+
 def verify_detached_validation_comparison(
     current: ValidationReport,
     candidate: ValidationReport,
@@ -178,7 +199,7 @@ def verify_detached_validation_comparison(
         stable()
         if (
             type(actual) is not dict
-            or actual != expected
+            or not _exact_comparison_shape(actual, expected)
             or type(actual.get("historical_v2_opened")) is not bool
             or actual["historical_v2_opened"] is not False
             or type(actual.get("blocks_v2_opening")) is not bool
