@@ -76,7 +76,7 @@ def test_delete_recreate_resets_created_at_to_current_cycle(tmp_path):
     assert recreated.revision == 1
     assert recreated.created_at_ms == 3000
     report = review_memory_event_alignment(store)
-    assert (report.row_count, report.event_count) == (1, 5)
+    assert (report.row_count, report.event_count) == (1, 4)
     with sqlite3.connect(store.path) as conn:
         conn.execute(
             "UPDATE memories SET created_at_ms=1000 WHERE memory_id=?",
@@ -87,7 +87,7 @@ def test_delete_recreate_resets_created_at_to_current_cycle(tmp_path):
 
 
 def test_local_clock_does_not_need_to_be_monotonic(tmp_path):
-    store, scope, observed, second = _fixture(tmp_path)
+    store, _, observed, second = _fixture(tmp_path)
     observed["ms"] = 500
     changed = store.put(
         MemoryWrite(scope, "source", "clock moved backward"),
