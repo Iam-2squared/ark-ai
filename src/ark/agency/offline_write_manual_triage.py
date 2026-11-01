@@ -198,7 +198,7 @@ def build_offline_write_triage_packet(
         (plan_id, canonical), ensure_ascii=True, separators=(",", ":"),
     ).encode("ascii")
     expected_fence_digest = hashlib.sha256(
-        b"ARK-disconnected-mixed-recovery-fence-v1\\0" + raw
+        b"ARK-disconnected-mixed-recovery-fence-v1\0" + raw
     ).hexdigest()
     if fence.digest != expected_fence_digest:
         raise OfflineWriteTriageRejected("manual WRITE fence digest mismatch")
