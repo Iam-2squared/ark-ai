@@ -110,6 +110,15 @@ def review_synthetic_erasure_evidence(
     blocked = tuple(blockers)
     result = SyntheticErasureAssessment(digest, blocked, epoch[1] == "absent")
     original_absence = epoch[1] == "absent"
+    # Property getters are arbitrary Python callbacks, even if they return
+    # False. A late getter must not replace an earlier authority descriptor.
+    authority_names = (
+        "row_deletion_proven", "wal_reclamation_proven",
+        "forensic_erasure_verified", "cleanup_authorized",
+    )
+    authority_descriptors = tuple(
+        getattr(SyntheticErasureAssessment, name) for name in authority_names
+    )
 
     def assert_inert_result() -> None:
         # A logical absence claim is NOT a deletion/forensic erasure proof.
@@ -128,6 +137,12 @@ def review_synthetic_erasure_evidence(
             or result.evidence_digest is not digest
             or result.blockers is not blocked
             or result.logical_absence_claimed is not original_absence
+            or any(
+                getattr(SyntheticErasureAssessment, name) is not descriptor
+                for name, descriptor in zip(
+                    authority_names, authority_descriptors, strict=True,
+                )
+            )
         ):
             raise SyntheticErasureRejected(
                 "erasure assessment changed or acquired authority"
