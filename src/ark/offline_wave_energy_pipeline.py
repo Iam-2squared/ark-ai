@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import struct
 from dataclasses import dataclass
 
 from .offline_pcm_activity_regions import (
@@ -24,7 +25,12 @@ from .offline_pcm_mono16 import (
     convert_offline_pcm_mono16,
 )
 from .offline_pcm_resample16 import OfflineResampleRejected, resample_pcm16
-from .offline_pcm_wav import OfflineWaveRejected, OfflineWaveRequest, inspect_local_pcm_wav
+from .offline_pcm_wav import (
+    OfflineWaveRejected,
+    OfflineWaveRequest,
+    OfflineWaveReview,
+    inspect_local_pcm_wav,
+)
 
 _TARGET_RATE = 16_000
 _DOMAIN = b"ARK-offline-wave-energy-pipeline-v1\0"
@@ -115,17 +121,59 @@ def preview_offline_wav_energy(
         stable_request()
         owner, privacy, claimed_wav, payload = original
         if (
-            wave.owner_sha256 != owner
+            type(wave) is not OfflineWaveReview
+            or wave.owner_sha256 != owner
             or wave.privacy_sha256 != privacy
             or wave.wav_sha256 != claimed_wav
             or type(payload) is not bytes
         ):
             raise OfflineWavePipelineRejected("WAV source identity mismatch")
 
+        # The inspector is a substitutable callback. Its claimed format can
+        # preserve the WAV checksum while lying about the sample rate and
+        # therefore changing normalization and activity boundaries. Parse the
+        # canonical 44-byte header from the pinned original WAV independently.
+        if (
+            len(payload) < 44 or payload[12:20] != b"fmt \\x10\\x00\\x00\\x00"
+            or payload[36:40] != b"data"
+        ):
+            raise OfflineWavePipelineRejected("WAV canonical header unavailable")
+        encoding, channels, rate, byte_rate, header_width, bits = struct.unpack_from(
+            "<HHIIHH", payload, 20,
+        )
+        if (
+            encoding != 1 or channels not in (1, 2)
+            or bits not in (8, 16, 24, 32)
+            or not 8_000 <= rate <= 48_000
+            or header_width != channels * bits // 8
+            or byte_rate != rate * header_width
+        ):
+            raise OfflineWavePipelineRejected("WAV header is noncanonical")
+        pcm_length = struct.unpack_from("<I", payload, 40)[0]
+        if (
+            not pcm_length or pcm_length % header_width
+            or 44 + pcm_length + (pcm_length & 1) != len(payload)
+        ):
+            raise OfflineWavePipelineRejected("WAV data length inconsistent")
+        frames = pcm_length // header_width
+        millis, remainder = divmod(frames * 1000, rate)
+        if (
+            type(wave.channel_count) is not int
+            or type(wave.sample_rate_hz) is not int
+            or type(wave.bits_per_sample) is not int
+            or type(wave.frame_count) is not int
+            or type(wave.duration_ms_floor) is not int
+            or type(wave.duration_ms_remainder) is not int
+            or (wave.channel_count, wave.sample_rate_hz, wave.bits_per_sample,
+                wave.frame_count, wave.duration_ms_floor,
+                wave.duration_ms_remainder)
+            != (channels, rate, bits, frames, millis, remainder)
+        ):
+            raise OfflineWavePipelineRejected("WAV callback format disagrees with header")
+
         # The strict WAV inspector accepts exactly fmt(16) + data(PCM),
         # including the one trailing RIFF pad byte when the payload is odd.
-        frame_width = wave.channel_count * wave.bits_per_sample // 8
-        pcm_length = wave.frame_count * frame_width
+        frame_width = header_width
         raw = payload[44:44 + pcm_length]
         if (
             not raw or len(raw) != pcm_length
