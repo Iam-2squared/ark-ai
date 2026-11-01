@@ -285,4 +285,50 @@ def review_synthetic_proactive_startup(
         raise SyntheticProactiveStartupRejected(
             "constructed proactive readiness result malformed"
         ) from exc
+    # Every synthetic READY result is a denial-only diagnostic. These
+    # properties can be overridden by reentrant fixture callbacks; reject
+    # both truthy "grants" and false-valued getters that change source
+    # evidence or the result AFTER the constructor's earlier checks.
+    for name in (
+        "startup_authorized", "notification_authorized",
+        "dispatch_authorized", "automatic_replay_authorized",
+    ):
+        try:
+            denied = getattr(result, name)
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise SyntheticProactiveStartupRejected(
+                "final proactive authority getter failed"
+            ) from exc
+        if denied is not False:
+            raise SyntheticProactiveStartupRejected(
+                "final proactive readiness gained execution authority"
+            )
+        assert_source_epoch()
+    try:
+        snapshot._assert_integrity()
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise SyntheticProactiveStartupRejected(
+            "startup snapshot changed during final authority denial"
+        ) from exc
+    assert_source_epoch()
+    final_sources = (
+        first_trigger.trigger_id, first_ready.snapshot_digest,
+        first_trigger.history.digest, now_ms,
+    )
+    final_result = (
+        result.trigger_id, result.readiness_digest,
+        result.trigger_history_digest, result.checked_at_ms,
+    )
+    if (
+        type(result) is not SyntheticProactiveStartupReview
+        or any(now is not prior for now, prior in zip(
+            final_sources, expected_result, strict=True,
+        ))
+        or any(now is not prior for now, prior in zip(
+            final_result, expected_result, strict=True,
+        ))
+    ):
+        raise SyntheticProactiveStartupRejected(
+            "final proactive readiness witness changed after denial"
+        )
     return result
