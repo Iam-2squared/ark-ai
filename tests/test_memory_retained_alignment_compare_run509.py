@@ -12,6 +12,7 @@ from ark.memory.sqlite_alignment_retained_review import (
     compare_retained_memory_alignment,
 )
 from ark.memory.sqlite_event_alignment import (
+    MemoryEventAlignmentRejected,
     MemoryEventAlignmentReview,
     review_memory_event_alignment,
 )
@@ -55,20 +56,36 @@ def test_legitimate_append_is_explicitly_not_authenticated(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("sql", "parameters"),
+    ("sql", "parameters", "rejection", "message"),
     [
-        ("UPDATE memories SET expires_at_ms=?", (9000,)),
-        ("UPDATE memories SET metadata_json=?", ('{"retained":"different"}',)),
-        ("UPDATE memories SET updated_at_ms=?", (6000,)),
-        ("UPDATE memory_events SET occurred_at_ms=?", (6000,)),
+        (
+            "UPDATE memories SET expires_at_ms=?", (9000,),
+            MemoryAlignmentHistoryRejected, "without appended",
+        ),
+        (
+            "UPDATE memories SET metadata_json=?", ('{"retained":"different"}',),
+            MemoryAlignmentHistoryRejected, "without appended",
+        ),
+        (
+            "UPDATE memories SET updated_at_ms=?", (6000,),
+            MemoryEventAlignmentRejected, "row/time",
+        ),
+        (
+            "UPDATE memory_events SET occurred_at_ms=?", (6000,),
+            MemoryEventAlignmentRejected, "row/time",
+        ),
     ],
 )
-def test_no_event_append_cannot_hide_changed_local_data(tmp_path, sql, parameters):
+def test_no_event_append_cannot_hide_changed_local_data(
+    tmp_path, sql, parameters, rejection, message,
+):
     store, _ = _memory(tmp_path)
     retained = review_memory_event_alignment(store)
     with sqlite3.connect(store.path) as conn:
         conn.execute(sql, parameters)
-    with pytest.raises(MemoryAlignmentHistoryRejected, match="without appended"):
+    # Row/event time mismatches now fail in the lower-level exact-snapshot
+    # audit; other persisted-row edits reach the retained digest comparison.
+    with pytest.raises(rejection, match=message):
         compare_retained_memory_alignment(store, retained)
 
 
