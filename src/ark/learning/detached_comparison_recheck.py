@@ -214,6 +214,23 @@ def verify_detached_validation_comparison(
         ):
             raise DetachedComparisonRejected("retained validation bytes mismatch")
         stable()
+        # The comparison callback returns a mutable JSON tree. Serializing
+        # the independent expected tree can itself be a reentrant callback.
+        # Bind the callback's ACTUAL bytes as well, and inspect its exact JSON
+        # types again after both serializations, before returning success.
+        actual_bytes = canonical_json(actual)
+        stable()
+        if (
+            actual_bytes != retained_report_bytes
+            or not _exact_comparison_shape(actual, expected)
+            or actual.get("historical_v2_opened") is not False
+            or actual.get("promotion_decision")
+            != "NOT_AUTHORIZED_FROM_VALIDATION"
+        ):
+            raise DetachedComparisonRejected(
+                "comparison callback changed after validation"
+            )
+        stable()
         return None
     except DetachedComparisonRejected:
         raise
