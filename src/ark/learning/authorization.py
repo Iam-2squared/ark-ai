@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import stat
 from copy import deepcopy
 from pathlib import Path
 
@@ -153,8 +154,39 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     data = canonical_json(packet)
     _assert_json_tree_epoch(packet, epoch)
     with path.open("xb") as handle:
-        handle.write(data)
+        written = handle.write(data)
+        if type(written) is not int or written != len(data):
+            raise ValueError("authorization review packet write was incomplete")
     _assert_json_tree_epoch(packet, epoch)
+    # COMMIT-equivalent boundary: a successful write call is not proof that
+    # the exact reviewed bytes reached the new file. Re-open the local file
+    # after the handle closes, and refuse an altered byte stream or alias.
+    # Never interpret this check as approval to pay for compute or training.
+    try:
+        before = path.lstat()
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or before.st_nlink != 1
+            or before.st_size != len(data)
+            or path.is_symlink()
+            or any(parent.is_symlink() for parent in path.parents)
+        ):
+            raise ValueError("authorization packet output alias or size changed")
+        saved_bytes = path.read_bytes()
+        after = path.lstat()
+    except OSError as exc:
+        raise ValueError("authorization packet output cannot be rechecked") from exc
+    _assert_json_tree_epoch(packet, epoch)
+    if (
+        saved_bytes != data
+        or not stat.S_ISREG(after.st_mode)
+        or after.st_nlink != 1
+        or (after.st_dev, after.st_ino, after.st_size)
+        != (before.st_dev, before.st_ino, before.st_size)
+        or path.is_symlink()
+        or any(parent.is_symlink() for parent in path.parents)
+    ):
+        raise ValueError("authorization packet output bytes or identity changed")
 
 
 def main(argv: list[str] | None = None) -> int:
