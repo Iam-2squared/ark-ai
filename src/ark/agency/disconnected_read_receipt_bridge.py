@@ -172,4 +172,77 @@ def append_disconnected_fixture_read(
     if type(journal) is not DisconnectedReadJournal:
         raise DisconnectedReadBridgeRejected("exact detached READ journal required")
     receipt = prepare_disconnected_read_receipt(step_id, request, result, binding)
-    return journal.append(receipt, retained)
+    # The bridge's fixture inputs outlive preparation: journal.append contains
+    # SQLite/hash callback boundaries which do NOT inspect these objects.
+    # Keep them pinned across the append, including its post-COMMIT epoch.
+    originals = (
+        (request, (request.request_id, request.operation, request.canonical_args_json)),
+        (result, (
+            result.request_id, result.operation, result.input_digest,
+            result.canonical_result_json, result.result_digest,
+        )),
+        (binding, (
+            binding.request_id, binding.operation, binding.input_digest,
+            binding.result_digest, binding.request_bound_digest,
+        )),
+        (receipt, (
+            receipt.request_id, receipt.step_id, receipt.operation,
+            receipt.input_digest, receipt.result_digest,
+        )),
+    )
+    prior = (retained.count, retained.tip_sha256)
+
+    def stable() -> None:
+        attributes = (
+            ("request_id", "operation", "canonical_args_json"),
+            ("request_id", "operation", "input_digest", "canonical_result_json",
+             "result_digest"),
+            ("request_id", "operation", "input_digest", "result_digest",
+             "request_bound_digest"),
+            ("request_id", "step_id", "operation", "input_digest", "result_digest"),
+        )
+        if (
+            type(request) is not DisconnectedToolRequest
+            or type(result) is not DisconnectedToolResult
+            or type(binding) is not DisconnectedFixtureBinding
+            or type(receipt) is not _RECEIPT_TYPE
+            or type(retained) is not ReadJournalWitness
+            or retained.count is not prior[0]
+            or retained.tip_sha256 is not prior[1]
+            or any(
+                getattr(obj, name) is not value
+                for (obj, fields), names in zip(originals, attributes, strict=True)
+                for name, value in zip(names, fields, strict=True)
+            )
+            or binding.dispatch_authorized is not False
+            or binding.external_outcome_verified is not False
+            or binding.automatic_replay_authorized is not False
+            or result.dispatch_authorized is not False
+            or result.external_outcome_known is not False
+            or result.automatic_replay_authorized is not False
+        ):
+            raise DisconnectedReadBridgeRejected(
+                "READ fixture carriers changed during journal append; "
+                "commit may have happened, do not retry automatically"
+            )
+
+    stable()
+    saved = journal.append(receipt, retained)
+    # Fail closed even if journal.append committed and a later callback
+    # changed its inputs. This diagnostic cannot undo the durable append.
+    stable()
+    if (
+        type(saved) is not ReadJournalWitness
+        or type(saved.count) is not int
+        or saved.count != prior[0] + 1
+        or type(saved.tip_sha256) is not str
+        or saved.dispatch_authorized is not False
+        or saved.effect_proven is not False
+        or saved.replay_authorized is not False
+        or saved.independent_custody_proven is not False
+    ):
+        raise DisconnectedReadBridgeRejected(
+            "untrusted READ journal result; commit status must be inspected"
+        )
+    stable()
+    return saved
