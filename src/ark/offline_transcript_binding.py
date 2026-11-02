@@ -72,6 +72,32 @@ class TranscriptBindingPreview:
         return False
 
 
+_PREVIEW_TYPE = TranscriptBindingPreview
+_PREVIEW_DENIAL_NAMES = (
+    "audio_or_transcript_authenticated", "user_consent_proven",
+    "asr_verified", "tool_execution_authorized",
+)
+_ORIGINAL_PREVIEW_DENIALS = tuple(
+    vars(_PREVIEW_TYPE)[name] for name in _PREVIEW_DENIAL_NAMES
+)
+
+
+def _assert_preview_denials() -> None:
+    """Reject even False-only authority replacements before reviewing text."""
+    if (
+        TranscriptBindingPreview is not _PREVIEW_TYPE
+        or any(
+            vars(_PREVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _PREVIEW_DENIAL_NAMES, _ORIGINAL_PREVIEW_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise TranscriptBindingRejected(
+            "transcript preview authority definition changed"
+        )
+
+
 def _hash(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -94,6 +120,7 @@ def review_audio_transcript_binding(
     audio: AudioMetadataClaim, segments: tuple[TranscriptSegmentClaim, ...],
 ) -> TranscriptBindingPreview:
     """Bind bounded synthetic text to frame intervals without any side effects."""
+    _assert_preview_denials()
     if type(audio) is not AudioMetadataClaim or type(segments) is not tuple:
         raise TranscriptBindingRejected("exact audio and segment carrier types required")
     if not 1 <= len(segments) <= _MAX_SEGMENTS:
@@ -116,6 +143,7 @@ def review_audio_transcript_binding(
                    item.text_sha256, item.text) for item in original_segments)
 
     def assert_epoch() -> None:
+        _assert_preview_denials()
         current_audio = (
             audio.owner_sha256, audio.scope_sha256, audio.audio_sha256,
             audio.sample_rate_hz, audio.frame_count,
@@ -159,6 +187,34 @@ def review_audio_transcript_binding(
     ).encode("ascii")
     fingerprint = hashlib.sha256(_DOMAIN + payload).hexdigest()
     assert_epoch()
-    return TranscriptBindingPreview(
+    report = _PREVIEW_TYPE(
         fingerprint, len(saved), total_bytes, saved[0][1], previous_end, audio_fields[2],
     )
+    expected = (
+        fingerprint, len(saved), total_bytes, saved[0][1], previous_end,
+        audio_fields[2],
+    )
+
+    def stable_report() -> None:
+        assert_epoch()
+        if (
+            type(report) is not _PREVIEW_TYPE
+            or any(
+                current is not original for current, original in zip(
+                    (
+                        report.fingerprint, report.segment_count,
+                        report.total_text_bytes, report.first_frame,
+                        report.final_frame, report.audio_sha256,
+                    ),
+                    expected, strict=True,
+                )
+            )
+        ):
+            raise TranscriptBindingRejected("transcript preview changed")
+
+    stable_report()
+    for name in _PREVIEW_DENIAL_NAMES:
+        if getattr(report, name) is not False:
+            raise TranscriptBindingRejected("transcript preview gained authority")
+        stable_report()
+    return report
