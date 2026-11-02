@@ -70,6 +70,17 @@ class MemoryCASOutcomeReview:
         return False
 
 
+_ORIGINAL_DENIALS = tuple(getattr(MemoryCASOutcomeReview, name) for name in _DENIED)
+
+
+def _require_original_denials() -> None:
+    if any(
+        getattr(MemoryCASOutcomeReview, name) is not original
+        for name, original in zip(_DENIED, _ORIGINAL_DENIALS, strict=True)
+    ):
+        raise MemoryCASOutcomeRejected("CAS outcome authority definition changed")
+
+
 def review_memory_generation_cas_outcome(
     store: SQLiteMemoryStore,
     proposed: MemoryWrite,
@@ -91,6 +102,7 @@ def review_memory_generation_cas_outcome(
         or type(proposed.scope) is not MemoryScope
     ):
         raise MemoryCASOutcomeRejected("exact Memory CAS observation inputs required")
+    _require_original_denials()
     prior = _token_fields(retained)
     scope = proposed.scope
     owner, namespace = scope.owner_id, scope.namespace
@@ -105,6 +117,7 @@ def review_memory_generation_cas_outcome(
     expected_content_sha = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
     def stable() -> None:
+        _require_original_denials()
         if (
             type(store) is not SQLiteMemoryStore
             or store.path is not path
@@ -232,7 +245,7 @@ def review_memory_generation_cas_outcome(
         "observation", "retained_prefix_sha256", "observed_prefix_sha256",
         "observed_row_sha256", "expected_content_sha256", "review_sha256",
     ))
-    descriptors = tuple(getattr(MemoryCASOutcomeReview, name) for name in _DENIED)
+    descriptors = _ORIGINAL_DENIALS
 
     def stable_result() -> None:
         current = tuple(getattr(result, name) for name in (
