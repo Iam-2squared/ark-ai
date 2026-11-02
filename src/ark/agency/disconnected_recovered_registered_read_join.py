@@ -245,6 +245,8 @@ def review_recovered_registered_reads(
             type(recovered) is not _RECOVERY
             or type(recovered.successful_step_ids) is not tuple
             or recovered.successful_step_ids != success
+            # One valid journal cannot be rebound to a different DAG run.
+            or recovered.request_id != plan_fields[0]
             or recovered.journal_tip_sha256 != retained_fields[1]
             or recovered.review_sha256 != _digest(
                 _RECOVERY_DOMAIN,
