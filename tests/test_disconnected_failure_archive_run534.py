@@ -230,7 +230,8 @@ def test_false_denial_getter_cannot_rewrite_final_witness(tmp_path, monkeypatch)
             receipt, plan, schedule, retained_plan_digest=plan.plan_digest,
             path=path,
         )
-    assert path.exists()
+    # The original denial definition is now checked before create-only I/O.
+    assert not path.exists()
 
 
 def test_file_changed_during_second_read_cannot_pass(tmp_path, monkeypatch):
