@@ -87,12 +87,12 @@ def test_subclass_witness_constructor_is_rejected(tmp_path, monkeypatch):
     "candidate_generation_authorized",
     "protected_evaluation_authorized",
 ])
-def test_local_witness_cannot_claim_authority(tmp_path, monkeypatch, field):
+def test_preinstalled_witness_authority_substitution_is_quarantined(tmp_path, monkeypatch, field):
     path, digest = fixture(tmp_path)
     monkeypatch.setattr(
         mod.LocalIdentityArtifactWitness, field, property(lambda self: True),
     )
-    with pytest.raises(mod.LocalIdentityArtifactRejected, match="witness changed"):
+    with pytest.raises(mod.LocalIdentityArtifactRejected, match="authority definition changed"):
         mod.verify_local_identity_artifact(path, retained_sha256=digest)
 
 
