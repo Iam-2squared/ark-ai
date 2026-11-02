@@ -193,9 +193,29 @@ def schedule_detached_read_recovery(
     stable_decisions()
     frozen_decisions = tuple(decisions)
     schedule = DetachedReadRecoverySchedule(request_id, frozen_decisions, digest)
+    denial_names = (
+        "dispatch_authorized", "automatic_replay_authorized",
+        "external_outcome_verified",
+    )
+    denial_descriptors = tuple(
+        getattr(_SCHEDULE_TYPE, name) for name in denial_names
+    )
     epoch()
     stable_decisions()
+
     def assert_inert_schedule() -> None:
+        # A false-valued getter can substitute another false-valued property.
+        # Compare original class descriptors as well as output field carriers
+        # before and AFTER all denial callbacks.
+        if any(
+            getattr(_SCHEDULE_TYPE, name) is not original
+            for name, original in zip(
+                denial_names, denial_descriptors, strict=True,
+            )
+        ):
+            raise DetachedReadRecoveryRejected(
+                "recovery schedule authority descriptor changed"
+            )
         if (
             type(schedule) is not _SCHEDULE_TYPE
             or schedule.request_id is not request_id
@@ -204,6 +224,12 @@ def schedule_detached_read_recovery(
             or schedule.dispatch_authorized is not False
             or schedule.automatic_replay_authorized is not False
             or schedule.external_outcome_verified is not False
+            or any(
+                getattr(_SCHEDULE_TYPE, name) is not original
+                for name, original in zip(
+                    denial_names, denial_descriptors, strict=True,
+                )
+            )
         ):
             raise DetachedReadRecoveryRejected("recovery schedule altered before return")
 
