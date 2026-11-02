@@ -291,3 +291,33 @@ def test_recovered_join_never_returns_authority_from_forged_getter(
         assert not case["gate"]._consumed_tokens
     finally:
         case["journal"].close()
+
+
+@pytest.mark.parametrize(
+    "states",
+    (("SUCCEEDED", "SUCCEEDED"), ("SUCCEEDED", "FAILED")),
+)
+def test_recovered_sqlite_request_cannot_be_replayed_under_another_plan(
+    tmp_path, states,
+):
+    """A valid registry/journal read is not evidence for another DAG request."""
+    case = make_case(tmp_path, states)
+    foreign = build_disconnected_batch_plan(
+        "req_" + "e" * 32, case["plan"].steps,
+    )
+    foreign_schedule = build_disconnected_batch_schedule(
+        foreign, retained_digest=foreign.plan_digest,
+    )
+    try:
+        with pytest.raises(
+            joined.RecoveredRegisteredReadRejected,
+            match="recovery report or digest disagrees",
+        ):
+            invoke(
+                case, plan=foreign, schedule=foreign_schedule,
+                retained_plan_digest=foreign.plan_digest,
+            )
+        assert case["backend"].calls == 0
+        assert not case["gate"]._consumed_tokens
+    finally:
+        case["journal"].close()
