@@ -31,7 +31,9 @@ def test_stale_restart_is_rejected_with_always_true_witness_equality(
     ledger, old, _, plan, steps = _setup(tmp_path)
     with monkeypatch.context() as patch:
         patch.setattr(slots.WriteSlotLedgerWitness, "__eq__", lambda self, other: True)
-        with pytest.raises(restart.OfflineWriteRestartRejected, match="durable WRITE history differs"):
+        with pytest.raises(
+            restart.OfflineWriteRestartRejected, match="durable WRITE history differs",
+        ):
             restart.review_disconnected_write_restart(ledger, old, plan, steps)
 
 
@@ -78,7 +80,9 @@ def test_public_reinspection_callback_cannot_claim_forged_tip(
     with monkeypatch.context() as patch:
         patch.setattr(slots.WriteSlotLedgerWitness, "__eq__", lambda self, other: True)
         patch.setattr(ledger, "inspect", forged_inspect)
-        with pytest.raises(restart.OfflineWriteRestartRejected, match="WRITE ledger changed after read"):
+        with pytest.raises(
+            restart.OfflineWriteRestartRejected, match="WRITE ledger changed after read",
+        ):
             restart.review_disconnected_write_restart(ledger, retained, plan, steps)
 
 
