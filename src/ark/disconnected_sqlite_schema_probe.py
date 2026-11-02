@@ -55,18 +55,39 @@ class DisconnectedSQLiteSchemaSeal:
 
 
 _SEAL_TYPE = DisconnectedSQLiteSchemaSeal
+_DENIALS = (
+    "source_authenticated", "independent_custody_proven",
+    "wal_snapshot_verified", "cross_store_atomicity_proven",
+    "application_data_disclosure_authorized",
+)
+# A getter replaced with a different False-only callback is not an original
+# denial. Pin descriptors at module import, before untrusted reviews.
+_ORIGINAL_DENIALS = tuple(getattr(_SEAL_TYPE, key) for key in _DENIALS)
+
+
+def _seal_fields(seal: DisconnectedSQLiteSchemaSeal) -> tuple[str, int, int, int]:
+    return (
+        seal.schema_sha256, seal.object_count, seal.user_version,
+        seal.schema_version,
+    )
 
 
 def _assert_inert_seal(seal: object) -> None:
-    """A local schema hash must not impersonate trusted custody or disclosure."""
-    if (
-        type(seal) is not _SEAL_TYPE
-        or seal.source_authenticated is not False
-        or seal.independent_custody_proven is not False
-        or seal.wal_snapshot_verified is not False
-        or seal.cross_store_atomicity_proven is not False
-        or seal.application_data_disclosure_authorized is not False
-    ):
+    """Check deny-only descriptors and the entire carrier after each callback."""
+    if type(seal) is not _SEAL_TYPE:
+        raise SQLiteSchemaProbeRejected("schema seal acquired authority")
+    fields = _seal_fields(seal)
+    for key, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True):
+        if (
+            getattr(_SEAL_TYPE, key) is not original
+            or getattr(seal, key) is not False
+            or _seal_fields(seal) != fields
+        ):
+            raise SQLiteSchemaProbeRejected("schema seal acquired authority")
+    if any(
+        getattr(_SEAL_TYPE, key) is not original
+        for key, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+    ) or _seal_fields(seal) != fields:
         raise SQLiteSchemaProbeRejected("schema seal acquired authority")
 
 
@@ -130,6 +151,8 @@ def capture_disconnected_sqlite_schema(
         connection.execute("COMMIT")
         seal = DisconnectedSQLiteSchemaSeal(*first)
         _assert_inert_seal(seal)
+        if _seal_fields(seal) != first:
+            raise SQLiteSchemaProbeRejected("schema seal changed during capture")
         return seal
     except sqlite3.Error as exc:
         raise SQLiteSchemaProbeRejected("cannot read stable SQLite schema") from exc
@@ -161,12 +184,13 @@ def review_disconnected_sqlite_schema(
     _assert_inert_seal(retained)
     current = capture_disconnected_sqlite_schema(connection)
     if (
-        (retained.schema_sha256, retained.object_count,
-         retained.user_version, retained.schema_version) != original
+        _seal_fields(retained) != original
         or retained.schema_sha256 is not original[0]
-        or current != retained
+        or _seal_fields(current) != original
     ):
         raise SQLiteSchemaProbeRejected("retained and current schema differ")
     _assert_inert_seal(retained)
     _assert_inert_seal(current)
+    if _seal_fields(retained) != original or _seal_fields(current) != original:
+        raise SQLiteSchemaProbeRejected("schema seal changed during review")
     return current
