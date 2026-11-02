@@ -63,7 +63,7 @@ def test_preinstalled_false_only_pair_authority_swap_denied_before_database(
     def forbidden(*args, **kwargs):
         pytest.fail("spoofed authority should reject before any SQLite review")
 
-    monkeypatch.setattr(mod, "_TRIAGE_FN", forbidden)
+    monkeypatch.setattr(type(store), "_connect_readonly", forbidden)
     monkeypatch.setattr(mod.MemoryAmbiguityPair, name, property(lambda _: False))
     with pytest.raises(mod.MemoryAmbiguityPairRejected, match="authority changed"):
         _review(store, proposed, retained)
@@ -81,6 +81,7 @@ def test_callback_can_not_mutate_original_proposed_payload(
         return result
 
     monkeypatch.setattr(mod, "_TRIAGE_FN", mutate)
+    monkeypatch.setattr(mod.triage_module, "review_uncertain_memory_commit", mutate)
     with pytest.raises(mod.MemoryAmbiguityPairRejected, match="epoch changed"):
         _review(store, proposed, retained)
 
@@ -94,6 +95,9 @@ def test_dual_review_disagreement_rejected_without_retry(monkeypatch, tmp_path):
         return replace(result, observation="DIVERGED_OBSERVED")
 
     monkeypatch.setattr(mod, "_OUTCOME_FN", inconsistent)
+    monkeypatch.setattr(
+        mod.outcome_module, "review_memory_generation_cas_outcome", inconsistent,
+    )
     with pytest.raises(mod.MemoryAmbiguityPairRejected, match="disagree"):
         _review(store, proposed, retained)
 
@@ -112,6 +116,9 @@ def test_second_read_drift_rejected_without_attribution(monkeypatch, tmp_path):
         return result
 
     monkeypatch.setattr(mod, "_OUTCOME_FN", changed_second)
+    monkeypatch.setattr(
+        mod.outcome_module, "review_memory_generation_cas_outcome", changed_second,
+    )
     with pytest.raises(mod.MemoryAmbiguityPairRejected, match="drifted"):
         _review(store, proposed, retained)
     assert calls == 2
