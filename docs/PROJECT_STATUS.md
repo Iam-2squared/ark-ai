@@ -1,5 +1,55 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run544 / 2026-11-02 JST:** FOUR meaningful, reversible zero-new-cost source+regression-test packages saved via the normal GitHub Contents API (**PR #8: three; PR #5: one**). **18 newly authored pytest cases** (PR #8: 15; PR #5: 3), three grounded technical notes, and one minimum Ruff-only test-format correction. New cases are **authored**, not independently executed local pytest PASS. The PR #5 latest-note HEAD and the PR #8 WRITE-slot source+tests have independently inspected **6/6 GREEN** GitHub Actions matrix evidence; PR #8 newest Planner-test-fix/checkpoint HEAD is **NOT YET exact-head 6/6 GREEN**. ARK/JARVIS/V3 overall **NOT_PASSED**. Draft PRs remain unmerged, without real dispatch, training, Candidate promotion, protected evaluation or spending.
+
+**Saved at:** **2026-11-02T10:58:36.016+09:00 Asia/Tokyo/JST** sampled from the ordinary automation host clock immediately before the normal checkpoint Contents write. This wall clock is **not** a trusted clock, signature, consent, authenticated actor, attested file provenance or human approval.
+
+## LATEST — exact work basis, branch and checkpoint semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. Exact **invocation work-basis HEAD** `f88c75063366b23b7f7b37248183a0b26527e95d`; exact **checkpoint write-basis HEAD** `11905d5e0cf5e2e1e2ca078773809eef282f70a5`. The GitHub checkpoint-result commit does not exist until this document is written, so its SHA **cannot truthfully appear within its own content**. Independently re-read PR HEAD and status blob after the write to establish the checkpoint-result HEAD.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`. Exact work-basis HEAD `1ed8036ad45c98463d05bce76fdabb5d488b95b0`; latest independently observed note HEAD `25302483bff25557a940b9c2110e60141333b41f`.
+- **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, independently checked before checkpoint. No merge, force-push, readiness promotion or frozen contract change.
+
+## NEW — four coherent packages, 18 authored test cases
+
+1. **Detached WRITE slot ledger primitive custody (PR #8, 4 tests):** source `f95ded7336768147b5365fc32573bd40afdb7b7d`, tests `8862c09a5a4e5e139bf4758540cf72c8dd78cf38`. Replaced three patchable `WriteSlotLedgerWitness.__eq__` decisions with direct persisted count and chain SHA-256 comparison. Stale read/write or forged second SQLite inspection cannot be accepted even under always-True equality; legitimate no-dispatch operations remain valid under always-False equality.
+2. **Passive V3 transition source equality independence (PR #5, 3 tests):** source `ad91ebd8b20b3f3900f91e592fc2de8de36318f1`, tests `1f896b188790bc0695b8dd29eef92964f1f5be8b`. Removed final dependency on replaceable shape report `__eq__` and compare independently validated SHA/count/path fields directly. Always-True, always-False and raising equality test cases. No real model, identity proof or approval.
+3. **Detached Memory witness SQLite CAS scalar integrity (PR #8, 4 tests):** source `5081abc132ded6f35d5d51cd7cda1ab1c2a9cc45`, tests `3d130215f598ed67129acab8239ba7060423b9e0`. Replaced three synthetic Memory ledger `MemoryLedgerWitness.__eq__` comparisons in restart/CAS/post-insert checks with exact epoch-count/chain SHA. A stale update rejects and a forged second scan rolls back before COMMIT. No frozen Memory v1 API/schema modification or automatic COMMIT-UNKNOWN retry.
+4. **Planner durable WRITE restart verification (PR #8, 7 tests):** source `e9401cc84a66222973d42fa9117f32a667957ed4`, authored tests `8f1c2b96cfff978102043e58bc4c7d3e5175520f`, **Ruff E501-only correction** `11905d5e0cf5e2e1e2ca078773809eef282f70a5`. Replace five dataclass object-equality checks across independent read-only rechecks with exact `WriteSlotLedgerWitness` validation and pinned count/SHA. UNKNOWN/RUNNING WRITE remains quarantined; no actual ToolBackend. The initial new-test CI failed **6/6** at lint because two test lines exceeded 100 characters; only the two expectation lines were wrapped, with semantics unchanged. Correction's exact-HEAD CI is pending.
+
+**Saved technical notes:** [WRITE Slot + Memory scalar CAS](https://github.com/Iam-2squared/ark-ai/blob/9f621838de5ff20feef0f2537f8eaf7dfcdc0ab9/docs/JARVIS_RUN544_DETACHED_LEDGER_SCALAR_CAS.md); [Planner restart scalar custody](https://github.com/Iam-2squared/ark-ai/blob/1145bc044b8727cec15ba8df5d8fbfafd757beb3/docs/JARVIS_RUN544_PLANNER_WRITE_RESTART_SCALAR_CUSTODY.md); [V3 passive transition reinspection](https://github.com/Iam-2squared/ark-ai/blob/25302483bff25557a940b9c2110e60141333b41f/docs/v3/RUN544_PASSIVE_SHAPE_SCALAR_RECHECK.md).
+
+## Exact-commit CI and evidence at checkpoint preparation
+
+- **PR #8 baseline** `f88c75063366b23b7f7b37248183a0b26527e95d`, run [41369956608](https://github.com/Iam-2squared/ark-ai/actions/runs/41369956608): **6/6 GREEN** (older HEAD).
+- **PR #8 WRITE source+tests** `8862c09a5a4e5e139bf4758540cf72c8dd78cf38`, run [41373933860](https://github.com/Iam-2squared/ark-ai/actions/runs/41373933860): **6/6 GREEN**, independently checked all Windows/Ubuntu Python 3.11–3.13 jobs.
+- **PR #8 Memory source+tests** `3d130215f598ed67129acab8239ba7060423b9e0`, run [41374273541](https://github.com/Iam-2squared/ark-ai/actions/runs/41374273541): **GREEN (run overall)**; newer commits not certified by this run.
+- **PR #8 Planner test pre-fix** `8f1c2b96cfff978102043e58bc4c7d3e5175520f`, run [41374898998](https://github.com/Iam-2squared/ark-ai/actions/runs/41374898998): **6/6 FAIL**, Ubuntu 3.12 log independently inspected: Ruff E501 at test lines 34 and 81; two-line-wrap correction `11905d5e0cf5e2e1e2ca078773809eef282f70a5` saved via ordinary Contents API. Exact corrected source/test and upcoming checkpoint **NOT YET GREEN**, no duplicate workflow dispatch.
+- **PR #8 preceding Planner technical note** `1145bc044b8727cec15ba8df5d8fbfafd757beb3`, run [41374976823](https://github.com/Iam-2squared/ark-ai/actions/runs/41374976823): **FAIL (failure)**; it predates the Ruff correction, so cannot certify current source.
+- **PR #5 test commit** `1f896b188790bc0695b8dd29eef92964f1f5be8b`, run [41374061988](https://github.com/Iam-2squared/ark-ai/actions/runs/41374061988): **6/6 GREEN**, independently checked.
+- **PR #5 current technical-note HEAD** `25302483bff25557a940b9c2110e60141333b41f`, run [41374460915](https://github.com/Iam-2squared/ark-ai/actions/runs/41374460915): **6/6 GREEN**, independently checked all six jobs.
+- The new PR #8 checkpoint commit and resulting GitHub Actions run do **not** exist at content-authoring time; establish exact identifiers only by independent post-write reads. GitHub-hosted existing public-repository CPU CI is not external paid compute or a model/training run. No standalone comprehensive local Ruff/pytest PASS asserted.
+
+## Frozen boundaries / blockers
+
+**Frozen blob SHA checks this invocation:** Memory v1 `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher frozen evidence and protected V2 final gate not edited. Both PRs Draft/unmerged. No spending, billable compute, external GPU, paid API, model download, real Candidate/weights, actual ToolBackend, notification, data disclosure, physical-PC claim, user-consent simulation, new secrets, destructive deletion, automatic replay or main merge.
+
+**Still unresolved:** independent persisted witness custody; trusted timestamp/actor identity; exact ToolRegistry+PermissionGate runtime binding; replay-safe after-COMMIT unknown outcomes; independent data/model/tokenizer provenance and license review; real hardware, real evaluation gate and explicit spending authorization. Synthetic hashes are neither approvals nor external-effect proofs.
+
+## Next plan / 今後の方針
+
+1. **CI closure at exact current HEAD:** inspect six jobs for the corrected Planner test and upcoming checkpoint; if failed, inspect logs and make only the smallest normal Contents API correction, without weakening denials. Keep other workstreams independent while CI runs and avoid duplicate dispatch.
+2. **Cross-component recovery:** integrate exact-head-GREEN Memory CAS, immutable registry and READ journal with persisted FAILED/BLOCKED Planner state, preserving COMMIT-UNKNOWN manual-only behavior and no real WRITE replay.
+3. **Trusted clock, Scheduler, audit:** pre-action audit and occurrence identities, restart-safe reservation/snapshot continuity, robust monotonicity and replay protection; never infer live permission from local clock or hash.
+4. **Personal Context and observation:** explicit revocation/retention, private data redaction, safe mock WAV/PNG lineage, startup readiness; no sensor/network access or automatic disclosure.
+5. **V3 free-only:** passive identity/path/reproducibility checks only. No protected V2 opening, real Candidate, paid GPU/API, promotion, frozen changes or main merge absent separate explicit authorization.
+
+---
+
+## Archived canonical checkpoint — Run543 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run543 / 2026-11-02 JST:** FIVE coherent free-only, nonexecuting source+test packages (PR #8: 4, PR #5: 1), **38 newly authored parameter-expanded pytest cases** (PR #8: 30; PR #5: 8) and TWO grounded technical notes were saved through the ordinary GitHub Contents API. Authored cases are **NOT** independently executed local pytest PASS. The PR #5 current note HEAD has **6/6 GREEN** independently inspected; the PR #8 latest source/test and this new checkpoint are **NOT YET exact-head ALL-SIX GREEN**. One pre-checkpoint PR #8 startup fixture CI failure was traced to an injected constructor causing an unhandled AttributeError; an exact-type fail-closed guard was applied and awaits CI. ARK/JARVIS/V3 overall **NOT_PASSED**. Both PRs Draft/unmerged. No real ToolBackend, spending, Candidate, protected evaluation, irreversible deletion, or frozen-contract change.
 
 **Saved at:** **2026-11-02T09:56:49.876+09:00 Asia/Tokyo/JST**, sampled from the automation host's ordinary wall clock just before this normal checkpoint write, **NOT** signed/trusted time, consent, source provenance, authenticated identity, or human approval.
