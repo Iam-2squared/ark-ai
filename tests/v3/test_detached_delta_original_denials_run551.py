@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
 from ark.learning import authorization_packet_delta_recheck as mod
 from ark.learning import authorization_packet_delta_review as base
+from ark.learning.execution import canonical_json
 
 
 def _receipt():
-    return base.ReviewPacketDelta(
-        "a" * 64, "b" * 64, ("unapproved.path",), "c" * 64,
-    )
+    old, new, paths = "a" * 64, "b" * 64, ("unapproved.path",)
+    digest = hashlib.sha256(
+        b"ARK-v3-unapproved-packet-delta-review-v1\\0"
+        + canonical_json((old, new, paths))
+    ).hexdigest()
+    return base.ReviewPacketDelta(old, new, paths, digest)
 
 
 def _check(monkeypatch, receipt):
@@ -73,3 +79,16 @@ def test_original_denials_preserve_inert_mock_review(monkeypatch):
     assert _check(monkeypatch, receipt) is None
     assert receipt.external_compute_authorized is False
     assert receipt.protected_evaluation_authorized is False
+
+
+@pytest.mark.parametrize("field", ("delta_sha256", "changed_paths"))
+def test_matching_forged_review_callback_cannot_hide_a_bad_delta(
+    monkeypatch, field,
+):
+    receipt = _receipt()
+    object.__setattr__(
+        receipt, field,
+        "0" * 64 if field == "delta_sha256" else ("foreign.path",),
+    )
+    with pytest.raises(mod.DetachedPacketDeltaRejected, match="digest disagrees"):
+        _check(monkeypatch, receipt)
