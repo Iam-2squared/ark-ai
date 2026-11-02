@@ -81,7 +81,11 @@ def test_false_denial_getter_cannot_retarget_equal_bundle_carrier(
         mod.LocalIdentityBundleWitness,
         "protected_evaluation_authorized", property(denial),
     )
-    with pytest.raises(mod.LocalIdentityBundleRejected, match="changed after denial"):
+    # Original denial definitions are checked before a getter can mutate
+    # an equal-valued retained carrier.
+    with pytest.raises(
+        mod.LocalIdentityBundleRejected, match="authority definition changed",
+    ):
         _verify(pins, report)
     assert pins[0].path.read_bytes() == original_bytes
 
