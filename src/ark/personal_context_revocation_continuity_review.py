@@ -61,6 +61,11 @@ class SyntheticRevocationWitness:
             raise SyntheticContextRevocationRejected("retained revocation digest mismatch")
 
 
+# Reject a preinstalled or reentrant replacement of the validator itself.
+# Merely calling a mutable method cannot establish even local witness shape.
+_ORIGINAL_WITNESS_VALIDATOR = SyntheticRevocationWitness.assert_integrity
+
+
 def review_revocation_continuity(
     ledger: SyntheticContextRevocationLedger,
     *, retained: SyntheticRevocationWitness | None = None,
@@ -89,6 +94,13 @@ def review_revocation_continuity(
         pinned = (retained_rows, retained.witness_id)
 
     def assert_epoch() -> None:
+        if (
+            SyntheticRevocationWitness.assert_integrity
+            is not _ORIGINAL_WITNESS_VALIDATOR
+        ):
+            raise SyntheticContextRevocationRejected(
+                "revocation integrity validator changed"
+            )
         ledger._assert_source_path(source_path)
         if retained is not None and (
             retained.rows is not retained_rows
