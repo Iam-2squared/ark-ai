@@ -183,6 +183,17 @@ def review_disconnected_write_restart(
         ):
             raise OfflineWriteRestartRejected("Planner quarantine changed")
 
+    def matches_retained_tip(value: object) -> bool:
+        # Dataclass equality can be rebound at runtime. A restart review
+        # must validate each independently observed SQLite tip by scalars.
+        if type(value) is not _WITNESS:
+            return False
+        try:
+            _check_witness(value)
+        except ValueError:
+            return False
+        return value.count == prior_count and value.chain_sha256 == prior_hash
+
     stable()
     assert_fence()
     try:
@@ -192,7 +203,7 @@ def review_disconnected_write_restart(
                 observed = _inspect(conn)
                 stable()
                 assert_fence()
-                if observed != retained:
+                if not matches_retained_tip(observed):
                     raise OfflineWriteRestartRejected("durable WRITE history differs")
                 rows = tuple(conn.execute(
                     "SELECT plan_id,step_id,slot_id FROM synthetic_write_slots"
@@ -226,7 +237,7 @@ def review_disconnected_write_restart(
                     )
                 stable()
                 assert_fence()
-                if _inspect(conn) != observed:
+                if not matches_retained_tip(_inspect(conn)):
                     raise OfflineWriteRestartRejected("WRITE ledger changed during review")
                 conn.commit()
             except BaseException:
@@ -237,7 +248,7 @@ def review_disconnected_write_restart(
     stable()
     assert_fence()
     try:
-        if ledger.inspect(retained=retained) != observed:
+        if not matches_retained_tip(ledger.inspect(retained=retained)):
             raise OfflineWriteRestartRejected("WRITE ledger changed after read")
         # The public inspect method is an overridable callback. A callback
         # returning a stale, equal-valued result while appending a reservation
@@ -248,7 +259,7 @@ def review_disconnected_write_restart(
         with closing(ledger._open(read_only=True)) as second:
             second.execute("BEGIN")
             try:
-                if _inspect(second) != observed:
+                if not matches_retained_tip(_inspect(second)):
                     raise OfflineWriteRestartRejected("WRITE ledger changed after read")
                 second.commit()
             except BaseException:
@@ -317,7 +328,7 @@ def review_disconnected_write_restart(
         with closing(ledger._open(read_only=True)) as final:
             final.execute("BEGIN")
             try:
-                if _inspect(final) != observed:
+                if not matches_retained_tip(_inspect(final)):
                     raise OfflineWriteRestartRejected(
                         "WRITE ledger changed after final authority denial"
                     )
