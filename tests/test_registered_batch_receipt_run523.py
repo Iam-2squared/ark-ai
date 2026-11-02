@@ -190,3 +190,59 @@ def test_local_journal_tamper_is_not_accepted(tmp_path):
             invoke(case)
     finally:
         case["journal"].close()
+
+
+@pytest.mark.parametrize("name", (
+    "backend_dispatched", "write_authorized", "automatic_replay_authorized",
+    "dependencies_completed_proven", "independent_custody_proven",
+))
+def test_nonoriginal_denial_never_enters_registered_journal(
+    tmp_path, monkeypatch, name,
+):
+    """A property returning False is not proof of its original authority."""
+    from ark.agency import disconnected_registered_batch_receipt_review as mod
+
+    case = setup_case(tmp_path)
+    try:
+        monkeypatch.setattr(
+            RegisteredBatchReceiptReview, name, property(lambda _self: False),
+        )
+
+        def forbidden_scan():
+            raise AssertionError("untrusted denial entered the READ journal")
+
+        monkeypatch.setattr(case["journal"], "_scan", forbidden_scan)
+        with pytest.raises(RegisteredBatchReceiptRejected, match="descriptor replaced"):
+            invoke(case)
+        assert case["backend"].calls == 0
+        assert not case["gate"]._consumed_tokens
+        assert mod._ORIGINAL_DENIALS[0] is not None
+    finally:
+        case["journal"].close()
+
+
+def test_registered_batch_rejects_denial_replacement_inside_receipt_callback(
+    tmp_path, monkeypatch,
+):
+    """The first genuine journal observation must not launder a late swap."""
+    from ark.agency import disconnected_registered_batch_receipt_review as mod
+
+    case = setup_case(tmp_path)
+    original = mod.review_retained_registered_receipt
+
+    def substituted(*args, **kwargs):
+        result = original(*args, **kwargs)
+        monkeypatch.setattr(
+            RegisteredBatchReceiptReview, "write_authorized",
+            property(lambda _self: False),
+        )
+        return result
+
+    monkeypatch.setattr(mod, "review_retained_registered_receipt", substituted)
+    try:
+        with pytest.raises(RegisteredBatchReceiptRejected, match="descriptor replaced"):
+            invoke(case)
+        assert case["backend"].calls == 0
+        assert not case["gate"]._consumed_tokens
+    finally:
+        case["journal"].close()
