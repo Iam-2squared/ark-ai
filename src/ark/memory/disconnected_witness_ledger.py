@@ -308,7 +308,11 @@ class DisconnectedMemoryWitnessLedger:
                 observed, _ = _inspect(conn)
                 stable()
                 _check_witness(observed)
-                if observed != retained:
+                # Dataclass equality is replaceable; pin the read-only tip scalars.
+                if (
+                    observed.epochs != original[0]
+                    or observed.chain_sha256 != original[1]
+                ):
                     raise MemoryWitnessLedgerRejected("retained witness mismatch")
                 conn.commit()
                 stable()
@@ -365,7 +369,11 @@ class DisconnectedMemoryWitnessLedger:
                 stable()
                 _check_witness(observed)
                 stable()
-                if observed != retained:
+                # The SQLite CAS tip is independent of patched witness __eq__.
+                if (
+                    observed.epochs != old_tip[0]
+                    or observed.chain_sha256 != old_tip[1]
+                ):
                     raise MemoryWitnessLedgerRejected("stale witness CAS tip")
                 if observed.epochs >= _MAX_EPOCHS:
                     raise MemoryWitnessLedgerRejected("witness history budget exceeded")
@@ -383,7 +391,8 @@ class DisconnectedMemoryWitnessLedger:
                 stable()
                 inspected, _ = _inspect(conn)
                 _check_witness(inspected)
-                if inspected != MemoryLedgerWitness(seq, new_sha):
+                # Verify the in-transaction appended chain by exact scalars.
+                if inspected.epochs != seq or inspected.chain_sha256 != new_sha:
                     raise MemoryWitnessLedgerRejected("witness insert changed")
                 stable()
                 conn.commit()
