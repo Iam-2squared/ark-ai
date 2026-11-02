@@ -18,7 +18,7 @@ def test_file_epoch_tracks_metadata_change_time(tmp_path):
     _, path, _ = _saved_packet(tmp_path)
     epoch = mod._file_epoch(path.stat())
     assert len(epoch) == 5
-    assert epoch[-1] == path.stat().st_ctime_ns
+    assert epoch[-1] == (path.stat().st_ctime_ns if os.name == "posix" else 0)
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX inode ctime semantics")
