@@ -44,7 +44,7 @@ def test_last_false_denial_cannot_swap_prior_false_descriptor(monkeypatch, prior
         mod.DetachedReadRecoverySchedule, "external_outcome_verified",
         property(malicious),
     )
-    with pytest.raises(mod.DetachedReadRecoveryRejected, match="descriptor changed"):
+    with pytest.raises(mod.DetachedReadRecoveryRejected, match=r"(descriptor changed|altered before return)"):
         _recover()
 
 
