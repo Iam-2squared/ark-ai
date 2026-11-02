@@ -143,3 +143,55 @@ def test_forged_report_authority_is_denied(case, monkeypatch, field):
     with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="report"):
         _review(args)
     assert backend.calls == 0
+
+
+@pytest.mark.parametrize(
+    ("type_", "name", "reason"),
+    (
+        *((mod._SCHEMA_TYPE, n, "schema") for n in mod._SCHEMA_DENIALS),
+        *((mod._PREFLIGHT_TYPE, n, "receipt") for n in mod._PREFLIGHT_DENIALS),
+        *((mod._REPORT_TYPE, n, "report") for n in mod._REPORT_DENIALS),
+    ),
+)
+def test_original_startup_denial_is_required_even_if_replacement_returns_false(
+    case, monkeypatch, type_, name, reason,
+):
+    args, backend = case
+    monkeypatch.setattr(type_, name, property(lambda _self: False))
+    with pytest.raises(mod.DisconnectedLocalReadinessRejected, match=reason):
+        _review(args)
+    assert backend.calls == 0
+
+
+@pytest.mark.parametrize("stage", ("schema", "preflight"))
+def test_reentrant_read_cannot_replace_inert_startup_descriptor(
+    case, monkeypatch, stage,
+):
+    args, backend = case
+    if stage == "schema":
+        original = mod.review_disconnected_sqlite_schema
+
+        def swapped(*params):
+            result = original(*params)
+            monkeypatch.setattr(
+                mod._REPORT_TYPE, "dispatch_authorized",
+                property(lambda _self: False),
+            )
+            return result
+
+        monkeypatch.setattr(mod, "review_disconnected_sqlite_schema", swapped)
+    else:
+        original = mod.preview_registered_read_plan
+
+        def swapped(*params, **keywords):
+            result = original(*params, **keywords)
+            monkeypatch.setattr(
+                mod._PREFLIGHT_TYPE, "automatic_replay_authorized",
+                property(lambda _self: False),
+            )
+            return result
+
+        monkeypatch.setattr(mod, "preview_registered_read_plan", swapped)
+    with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="authority"):
+        _review(args)
+    assert backend.calls == 0
