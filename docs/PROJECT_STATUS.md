@@ -1,5 +1,54 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run549 / 2026-11-02 JST:** **THREE meaningful free-only source + regression-test work packages** and **two technical records** saved through the normal GitHub Contents API. **34 newly authored parameter-expanded pytest cases** (**PR #8: 20; PR #5: 14**), not an independent local pytest pass count. PR #5 latest note/test HEAD **6/6 GREEN**. PR #8 new READ 5/6 GREEN, Memory 3/6 GREEN, and latest JARVIS note 3/6 GREEN **with outstanding Windows jobs IN PROGRESS** as of the final pre-checkpoint inspection. **Never equate earlier CI GREEN with newest HEAD.** Overall ARK / JARVIS / V3 remains **NOT_PASSED**; PRs #5/#8 remain Draft/unmerged.
+
+**Saved at:** **2026-11-02T14:54:17.673+09:00 Asia/Tokyo/JST**, ordinary automation host wall-clock just before this ordinary GitHub Contents update, **not trusted-clock provenance, attested actor identity, authorization, human review or approval**.
+
+## LATEST — work basis, branch refs and checkpoint semantics
+
+- **PR #8** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. **Invocation work-basis HEAD** `07c105e834b86cd9ec274f106f35df9449afb7c1` (saved Run548, independently read at invocation start). **Checkpoint write-basis HEAD** `401eb503ddeb32261251f8129c0e977f97fb7087` (verified immediately before status update). **Checkpoint-result HEAD does not yet exist as this file is authored**; re-read the GitHub commit and blob SHA after writing, and do not embed a fabricated self-referential result SHA.
+- **PR #5** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`. **Invocation work-basis HEAD** `979bc0458b935cc40cf0ccae189fdd50575fae7f`; latest checked HEAD `f356c0811c0ca1e78c3a2c59ed3f36a17b01c7e4`.
+- **main** `7a843f17eb96ed13d66f23b58b06406b3002e405` remains unchanged. No force push, protected V2 evaluation opening, Candidate promotion, or main merge.
+
+## NEW — Run549 implementation, tests and evidence
+
+1. **Detached mock READ recovery / descriptor custody (PR #8, 13 authored pytest cases).** Source `src/ark/agency/disconnected_read_recovery_journal_bridge.py` at `1395efc3242fd50f4c292de14d6c62b2cf2df665`; test `tests/test_detached_read_recovery_descriptor_custody_run549.py` at `f1189e9546838a1aaad9fa8fa9c9fc01d0f44451`. Pin the twelve original deny-only class property descriptors across `ReadJournalSnapshot`, `ReadJournalWitness`, `ReadRecoveryJournalReview` **before** the reentrant synthetic scheduler runs. Reject swapped False-returning descriptors, which are still callbacks capable of modifying historical evidence. Include a normal inert result control test. No backend, replay, authenticated receipt, write, or permission is activated.
+2. **V3 passive packet delta path producer ↔ detached recheck (PR #5, 14 authored cases).** The producer `_leaf_bytes` preserves harmless printable ASCII U+0020 space in key paths; detached `_fields` had rejected that space, conflating it with control characters. Minimal source fix at `a3617a99d050fc70f3e2538c5f8f770ca255bf1b` accepts U+0020 while still rejecting ASCII controls U+0000..001F, DEL and raw non-ASCII. Tests `tests/v3/test_detached_packet_delta_ascii_spaces_run549.py` at `f270ee9af0713a52f1c029d4ab48e0e044f14601` cover six plain-space forms, seven forbidden raw paths and escaped nonbreaking-space behavior. This is **presentation/validation compatibility, not a payment, model or evaluation grant**. Evidence note `docs/v3/RUN549_DETACHED_PACKET_DELTA_ASCII_SPACE_RECHECK.md` at `f356c0811c0ca1e78c3a2c59ed3f36a17b01c7e4`.
+3. **Memory generation-fenced CAS post-COMMIT result integrity (PR #8, 7 authored cases).** Source `src/ark/memory/generation_fenced_cas.py` at `002c3800886ebf77ad47e17222ae74f99bc2ce4d`; tests `tests/test_memory_cas_postcommit_result_custody_run549.py` at `237183e9b9c3c6249d62d93d17da1eee84223fb9`. Independently pin returned MemoryRecord field carriers/metadata and generation token inside SQLite transaction, then verify them again **after successful COMMIT**. Six injected synthetic connection-exit callbacks tamper already-committed result/token fields; reject forged return with explicit **post-COMMIT uncertainty / manual review required**, while real SQLite row/event stays saved *once*. Normal control demonstrates unchanged successful update. No automatic retry, rollback claim, or authority relaxation.
+4. **Run549 technical note (PR #8)** `docs/JARVIS_RUN549_READ_DENIAL_MEMORY_COMMIT_RETURN_CUSTODY.md` at `401eb503ddeb32261251f8129c0e977f97fb7087`, detailing both denial mechanisms and their separate exact-HEAD CI evidence. No mixed cross-store atomicity or real-world effect is claimed.
+
+## CI / evidence at checkpoint preparation
+
+- **PR #8 initial exact Run548 checkpoint HEAD** `07c105e834b86cd9ec274f106f35df9449afb7c1`: [41391122098](https://github.com/Iam-2squared/ark-ai/actions/runs/41391122098), **6/6 GREEN**; old HEAD only.
+- **PR #8 detached READ test HEAD** `f1189e9546838a1aaad9fa8fa9c9fc01d0f44451`: [41395642789](https://github.com/Iam-2squared/ark-ai/actions/runs/41395642789), **5/6 GREEN, Windows 3.11 IN PROGRESS**, no latest-head GREEN claim.
+- **PR #8 Memory CAS source/test HEAD** `237183e9b9c3c6249d62d93d17da1eee84223fb9`: [41396032613](https://github.com/Iam-2squared/ark-ai/actions/runs/41396032613), **3/6 GREEN, three Windows jobs IN PROGRESS**, no latest-head GREEN claim.
+- **PR #8 latest technical-note HEAD** `401eb503ddeb32261251f8129c0e977f97fb7087`: [41396188359](https://github.com/Iam-2squared/ark-ai/actions/runs/41396188359), **3/6 GREEN and three Windows jobs IN PROGRESS**. The upcoming status-only checkpoint is a *distinct* HEAD; check its own six-job matrix separately.
+- **PR #5 V3 source/test HEAD** `f270ee9af0713a52f1c029d4ab48e0e044f14601`: [41395773259](https://github.com/Iam-2squared/ark-ai/actions/runs/41395773259), **6/6 GREEN**, all Ubuntu/Windows Python 3.11–3.13 jobs independently checked.
+- **PR #5 latest technical-note HEAD** `f356c0811c0ca1e78c3a2c59ed3f36a17b01c7e4`: [41396128283](https://github.com/Iam-2squared/ark-ai/actions/runs/41396128283), **6/6 GREEN**, all six independently checked; **latest PR #5 HEAD**.
+- No independent local pytest/Ruff execution or user-PC/hardware action. Authored case counts and completed GitHub Actions checks are kept distinct. No manual duplicate workflows were dispatched.
+
+## Frozen contracts / authorization boundaries / unresolved blockers
+
+**Frozen PR-branch blobs checked unchanged:** Memory v1 `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Frozen V1/V2/Local UI/Launcher+Gate Runner evidence and governing gates are unchanged. PRs #5 and #8 remain Draft/unmerged. These synthetic artifacts are not authenticated execution or a real-world permission source.
+
+**NOT performed / NOT authorized:** billable external GPU/API/subscription/service; actual model/adapter/Candidate creation; new secrets/account connections; protected V2 final evaluation; automatic Candidate promotion; any real ToolBackend or outside-world READ/WRITE, data export, notification, destructive erasure, target-PC intervention; frozen-contract changes, force push, irreversible architecture decisions or main merge.
+
+**Outstanding:** PR #8 newest exact-head CI matrix, real actor/clock/consent attestation, retained-witness independent custody, safe manual-only post-COMMIT attribution, durable Planner FAILED/BLOCKED + registered READ journal continuity and immutable registry identity across recovery, concurrency/expiry/privacy guarantees, legal/licensing review, immutable training identities/dataset/hardware/billing approval. Locally matched SHA-256 digests do not authenticate the outside world.
+
+## Next plan / 今後の方針
+
+1. **CI closure:** Check [READ 41395642789](https://github.com/Iam-2squared/ark-ai/actions/runs/41395642789), [Memory 41396032613](https://github.com/Iam-2squared/ark-ai/actions/runs/41396032613), [PR #8 technical-note 41396188359](https://github.com/Iam-2squared/ark-ai/actions/runs/41396188359), and this checkpoint's future distinct exact HEAD. If any job fails, inspect its log, do only the smallest semantics-preserving fix through the normal GitHub write path; continue a different independent lane while CI is in flight. No duplicated workflow runs or false GREEN claims.
+2. **Recovery integration:** On GREEN lower-layer evidence, connect Planner FAILED/BLOCKED recovery + synthetic READ journal to registry-bound receipt identity and exact-type PermissionGate **in a disconnected read-only manner**, with no dispatch, replay, auto-approval, or unsupported cross-store-atomicity claim.
+3. **Memory and scheduler:** Advance COMMIT-UNKNOWN manual reconciliation, generation-safe CAS, expiry/snapshot integrity, trusted-clock audit-before-action, reboot occurrence dedup/quarantine and safe startup readiness.
+4. **Privacy/observations:** Continue consent withdrawal, bounded private-context retention and local WAV/PNG/other fixture validation without real sensors, export, irreversible deletion or external calls.
+5. **V3 approval / data / identity:** Continue free passive guards, deterministic provenance and reproducibility checks; preserve all model/hardware/spend authorization, actual dataset human review, V2 opening, Candidate generation, promotion, frozen contracts and main merge as separate hard stops.
+
+---
+
+## Archived canonical checkpoint — Run548 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run548 / 2026-11-02 JST:** THREE meaningful zero-new-cost implementation + regression packages saved through the normal GitHub Contents API, including a later semantics-preserving CI regression correction. **32 new authored parameter-expanded pytest cases** (**PR #8: 21; PR #5: 11**) and **three source-grounded technical notes** saved. Authored cases are **NOT an independent local pytest/Ruff PASS**. The new PR #8 synthetic READ journal/recovery package has exact test HEAD **6/6 GREEN**. PR #5 latest note/test HEAD **6/6 GREEN**. PR #8 latest private-search fix HEAD CI is **IN PROGRESS, NOT certified GREEN**. ARK/JARVIS/V3 remain **NOT_PASSED** and PRs #5/#8 remain Draft/unmerged.
 
 **Saved at:** **2026-11-02T13:54:28.191+09:00 Asia/Tokyo/JST**, ordinary local container wall-clock reading before this Contents API checkpoint write. This is neither an attested/trusted timestamp nor actor identity, consent, authenticated provenance, approval, or a runtime authorization.
