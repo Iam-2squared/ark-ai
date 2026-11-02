@@ -67,6 +67,22 @@ class SyntheticClockWitness:
 
 EMPTY_CLOCK_WITNESS = SyntheticClockWitness(*_EMPTY_FIELDS)
 
+_DENIAL_NAMES = (
+    "trusted_clock_verified", "dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_DENIALS = tuple(
+    getattr(SyntheticClockWitness, name) for name in _DENIAL_NAMES
+)
+
+
+def _denials_original() -> None:
+    if any(
+        getattr(SyntheticClockWitness, name) is not original
+        for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+    ):
+        raise SyntheticClockRejected("synthetic clock denial descriptor changed")
+
 
 def _fields(value: SyntheticClockWitness) -> tuple[object, ...]:
     return (
@@ -76,6 +92,7 @@ def _fields(value: SyntheticClockWitness) -> tuple[object, ...]:
 
 
 def _check_witness(value: SyntheticClockWitness) -> None:
+    _denials_original()
     if (
         type(value.event_count) is not int
         or not 0 <= value.event_count <= _LIMIT
@@ -99,6 +116,7 @@ def _check_witness(value: SyntheticClockWitness) -> None:
         )
     ):
         raise SyntheticClockRejected("invalid synthetic clock witness")
+    _denials_original()
 
 
 def review_synthetic_clock_sequence(
@@ -116,6 +134,7 @@ def review_synthetic_clock_sequence(
         raise SyntheticClockRejected("invalid clock sample budget")
     if retained is not None and type(retained) is not SyntheticClockWitness:
         raise SyntheticClockRejected("retained clock witness requires exact type")
+    _denials_original()
     retained_epoch = _fields(retained) if retained is not None else None
     retained_carriers = _fields(retained) if retained is not None else None
     if retained is not None:
@@ -143,6 +162,7 @@ def review_synthetic_clock_sequence(
     result_carriers = (result.source_digest, result.chain_hash)
 
     def assert_result_epoch() -> None:
+        _denials_original()
         # A false-valued denial getter can be reentrant: it must not rewrite
         # the just-checked witness or silently replace the original SHA
         # carrier after the last field comparison.
@@ -167,6 +187,7 @@ def review_synthetic_clock_sequence(
                     "constructed clock witness gained authority"
                 )
             stable_result_fields()
+            _denials_original()
 
     def assert_epoch() -> None:
         if retained is not None and (
@@ -275,6 +296,7 @@ def review_synthetic_clock_sequence(
                 raise SyntheticClockRejected(
                     "constructed clock chain link changed after denial"
                 )
+            _denials_original()
             result = candidate
             result_epoch = _fields(candidate)
             result_carriers = (candidate.source_digest, candidate.chain_hash)
