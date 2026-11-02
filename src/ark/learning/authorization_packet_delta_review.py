@@ -52,6 +52,14 @@ class ReviewPacketDelta:
         return False
 
 
+# Preserve the original passive class contract before any reentrant caller
+# callback. A False-only replacement property may still execute arbitrary
+# callback code; it is not an acceptable new baseline.
+_ORIGINAL_DELTA_DENIAL_DESCRIPTORS = tuple(
+    getattr(ReviewPacketDelta, key) for key in _DENIALS
+)
+
+
 def _leaf_bytes(value: dict) -> dict[str, bytes]:
     """Bounded type-aware leaves with unambiguous, value-free field paths.
 
@@ -136,6 +144,13 @@ def review_unapproved_packet_delta(
         or _SHA.fullmatch(retained_new_file_sha256) is None
     ):
         raise ReviewPacketDeltaRejected("exact unapproved review inputs required")
+    if any(
+        getattr(ReviewPacketDelta, key) is not original
+        for key, original in zip(
+            _DENIALS, _ORIGINAL_DELTA_DENIAL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise ReviewPacketDeltaRejected("unapproved delta authority descriptor changed")
     try:
         old_epoch = _pin_json_tree(old_snapshot)
         new_epoch = _pin_json_tree(new_snapshot)
@@ -197,7 +212,7 @@ def review_unapproved_packet_delta(
             result.old_file_sha256, result.new_file_sha256,
             result.changed_paths, result.delta_sha256,
         )
-        descriptors = tuple(getattr(ReviewPacketDelta, flag) for flag in _DENIALS)
+        descriptors = _ORIGINAL_DELTA_DENIAL_DESCRIPTORS
 
         def stable_result() -> None:
             if (
