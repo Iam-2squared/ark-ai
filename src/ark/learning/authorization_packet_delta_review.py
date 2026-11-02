@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-import unicodedata
 from dataclasses import dataclass
 
 from .authorization import build_preflight_authorization_packet
@@ -65,16 +64,15 @@ def _leaf_bytes(value: dict) -> dict[str, bytes]:
 
     def escaped(key: str) -> str:
         # Preserve empty keys; reserved "~" always escapes before a marker.
-        # Render controls, bidi/format and combining marks (which can
-        # visually overlay prior characters) as unambiguous components.
+        # Render all non-ASCII keys as ASCII escapes for the independent
+        # detached receipt validator, including visually overlaying marks.
+        # Keep ordinary printable ASCII, including the space, unchanged.
         if key == "":
             return "~5"
         delimiters = {"~": "~0", ".": "~2", "[": "~3", "]": "~4", "\\": "~6"}
         pieces = []
         for char in key:
-            if (char != " " and not char.isprintable()) or (
-                unicodedata.category(char).startswith("M")
-            ):
+            if ord(char) > 126 or (char != " " and not char.isprintable()):
                 pieces.append(f"~u{{{ord(char):X}}}")
             else:
                 pieces.append(delimiters.get(char, char))
