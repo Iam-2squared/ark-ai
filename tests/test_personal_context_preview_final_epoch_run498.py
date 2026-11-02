@@ -32,13 +32,16 @@ def test_stable_preview_preserves_canonical_private_fixture():
 
 
 def test_last_authority_getter_cannot_mutate_returned_preview(monkeypatch):
-    def late_swap(self):
-        object.__setattr__(self, "canonical_local_json", "{}")
-        return False
+    original = mod.OfflineContextPreview.__getattribute__
 
-    monkeypatch.setattr(
-        mod.OfflineContextPreview, "retention_authorized", property(late_swap),
-    )
+    def late_swap(self, name):
+        result = original(self, name)
+        if name == "retention_authorized":
+            object.__setattr__(self, "canonical_local_json", "{}")
+        return result
+
+    # Preserve the import-pinned property; simulate the later accessor callback.
+    monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
     with pytest.raises(mod.OfflineContextPreviewRejected, match="after authority"):
         _preview(_fixture())
 
@@ -46,24 +49,28 @@ def test_last_authority_getter_cannot_mutate_returned_preview(monkeypatch):
 def test_last_authority_getter_cannot_mutate_original_record(monkeypatch):
     row = _fixture()
 
-    def late_swap(_self):
-        object.__setattr__(row, "content", "replaced after digest")
-        return False
+    original = mod.OfflineContextPreview.__getattribute__
 
-    monkeypatch.setattr(
-        mod.OfflineContextPreview, "retention_authorized", property(late_swap),
-    )
+    def late_swap(self, name):
+        result = original(self, name)
+        if name == "retention_authorized":
+            object.__setattr__(row, "content", "replaced after digest")
+        return result
+
+    monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
     with pytest.raises(mod.OfflineContextPreviewRejected, match="fixture changed"):
         _preview(row)
 
 
 def test_last_authority_getter_cannot_mutate_record_ids(monkeypatch):
-    def late_swap(self):
-        object.__setattr__(self, "record_ids", ("rec_" + "f" * 32,))
-        return False
+    original = mod.OfflineContextPreview.__getattribute__
 
-    monkeypatch.setattr(
-        mod.OfflineContextPreview, "retention_authorized", property(late_swap),
-    )
+    def late_swap(self, name):
+        result = original(self, name)
+        if name == "retention_authorized":
+            object.__setattr__(self, "record_ids", ("rec_" + "f" * 32,))
+        return result
+
+    monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
     with pytest.raises(mod.OfflineContextPreviewRejected, match="after authority"):
         _preview(_fixture())
