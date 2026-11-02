@@ -98,8 +98,11 @@ def test_false_denial_getter_cannot_replace_original_observation_carrier(monkeyp
         erasure.SyntheticErasureAssessment,
         "forensic_erasure_verified", property(rewrite_observation),
     )
-    with pytest.raises(erasure.SyntheticErasureRejected, match="observations changed"):
+    # The imported denial descriptor is now rejected BEFORE its callback
+    # can mutate the source. This is stronger than the prior late detection.
+    with pytest.raises(erasure.SyntheticErasureRejected, match="authority descriptor"):
         erasure.review_synthetic_erasure_evidence(obs)
+    assert obs.row_state == "absent"
 
 
 def test_constructor_cannot_retarget_caller_claims(monkeypatch):
