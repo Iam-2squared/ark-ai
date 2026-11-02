@@ -73,9 +73,24 @@ proof of who performed a COMMIT. Matching data must never be treated as
 authorization for an automatic retry or as exactly-once external execution
 proof.
 
+## Package 4 — Planner partial SUCCESS/FAILED/BLOCKED result custody
+
+Source: `src/ark/agency/disconnected_partial_registered_failure_join.py`;
+tests: `tests/test_partial_failure_archive_epoch_run566.py`.
+
+The partial registered READ/failure archive join now retains the exact
+archive/fixture result carriers after initial plan and failure-mask
+validation. It rechecks them after each registered READ reviewer callback,
+after every denied-authority getter and before the final output. Three new
+cases cover two False-only denial-getter mutations (archive file hash or
+hypothetical terminal states) plus the stable, no-dispatch baseline.
+The local failure mask remains a caller assertion; archive/SQLite are not
+one atomic transaction. There is no proof that a tool ran or that a later
+automatic retry is safe.
+
 ## Validation and pending gates
 
-These are **12 newly authored parameter-expanded pytest cases** in three
+These are **15 newly authored parameter-expanded pytest cases** in four
 independent source+test packages, not a claim that 12 tests were run locally.
 The repository's Python 3.11–3.13 Ubuntu/Windows CI matrix must establish
 the exact final-head result. Earlier GREEN evidence belongs only to its
