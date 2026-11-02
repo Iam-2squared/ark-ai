@@ -73,6 +73,14 @@ class OfflineScheduleResumeReview:
         return False
 
 
+# Import-time denial descriptors: capturing them after a ledger/preview
+# callback would legitimize a replacement False getter as a new baseline.
+_ORIGINAL_QUARANTINE_DENIAL = QuarantineWitness.independently_authenticated
+_ORIGINAL_PREVIEW_DENIALS = tuple(
+    getattr(DisconnectedDuePreview, name) for name in _DENIALS
+)
+
+
 def review_offline_schedule_resume(
     ledger: DisconnectedScheduleQuarantineLedger,
     policy: DisconnectedSchedulePolicy,
@@ -107,7 +115,7 @@ def review_offline_schedule_resume(
     # Quarantine reports are diagnostic only. A late ledger.inspect callback
     # must not rebind their False-only authority property, even to another
     # getter returning False; the final read has no authenticated actor.
-    quarantine_denial = QuarantineWitness.independently_authenticated
+    quarantine_denial = _ORIGINAL_QUARANTINE_DENIAL
 
     def denied_quarantine(candidate: QuarantineWitness) -> None:
         if type(candidate) is not QuarantineWitness:
@@ -144,6 +152,19 @@ def review_offline_schedule_resume(
             ), witness_epoch, strict=True))
         ):
             raise ScheduleResumeRejected("offline schedule resume carrier changed")
+        if QuarantineWitness.independently_authenticated is not quarantine_denial:
+            raise ScheduleResumeRejected(
+                "quarantine witness authority descriptor changed"
+            )
+        if any(
+            getattr(DisconnectedDuePreview, name) is not original
+            for name, original in zip(
+                _DENIALS, _ORIGINAL_PREVIEW_DENIALS, strict=True,
+            )
+        ):
+            raise ScheduleResumeRejected(
+                "offline preview denial descriptor changed"
+            )
 
     # Never use the replaceable dataclass __eq__ when determining whether
     # the three independently read quarantine witnesses match the retained
@@ -270,8 +291,7 @@ def review_offline_schedule_resume(
             preview.state, preview.next_index, preview.occurrence_id,
             preview.due_at_ms, preview.fingerprint,
         )
-        preview_descriptors = tuple(getattr(DisconnectedDuePreview, key)
-                                    for key in _DENIALS)
+        preview_descriptors = _ORIGINAL_PREVIEW_DENIALS
 
         def stable_preview() -> None:
             if (
