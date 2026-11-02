@@ -62,6 +62,21 @@ _DENIAL_NAMES = (
     "consent_verified", "privacy_erasure_proven",
     "external_export_authorized", "tool_dispatch_authorized",
 )
+_ORIGINAL_DENIAL_DESCRIPTORS = tuple(
+    getattr(_REDACTED_RESULT_TYPE, name) for name in _DENIAL_NAMES
+)
+
+
+def _require_original_denials() -> None:
+    if any(
+        getattr(_REDACTED_RESULT_TYPE, name) is not original
+        for name, original in zip(
+            _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise OfflineRedactionRejected(
+            "masked preview authority definition changed"
+        )
 
 
 def preview_offline_redaction(
@@ -90,20 +105,19 @@ def preview_offline_redaction(
         or type(require_complete) is not bool
     ):
         raise OfflineRedactionRejected("invalid redaction fixture or identity")
+    # Before touching even synthetic private source bytes, reject a
+    # substituted denial getter, including an always-False callback.
+    # Re-check around all subsequent callbacks instead of re-baselining.
+    _require_original_denials()
     roots = (
         text, owner_digest, scope_digest, retained_source_sha256,
         spans, require_complete,
-    )
-    # The constructor and each denied-authority getter are callback boundaries.
-    # Do not accept a reentrant swap of an earlier authority getter after it
-    # already returned False. This passive preview cannot grant disclosure.
-    denial_descriptors = tuple(
-        getattr(_REDACTED_RESULT_TYPE, name) for name in _DENIAL_NAMES
     )
     originals = tuple(spans)
     pinned = tuple((s.start, s.end, s.label) for s in originals)
 
     def assert_epoch() -> None:
+        _require_original_denials()
         if (
             any(actual is not original for actual, original in zip(
                 (text, owner_digest, scope_digest, retained_source_sha256,
@@ -202,7 +216,7 @@ def preview_offline_redaction(
         or any(
             getattr(_REDACTED_RESULT_TYPE, name) is not original
             for name, original in zip(
-                _DENIAL_NAMES, denial_descriptors, strict=True,
+                _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
             )
         )
     ):
