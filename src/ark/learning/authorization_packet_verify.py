@@ -51,6 +51,11 @@ _DENIAL_FLAGS = (
     "protected_evaluation_authorized",
     "main_merge_authorized",
 )
+# The original denial method itself is part of the permission boundary:
+# a different callback returning False is not an equivalent authority proof.
+_ORIGINAL_DENIAL_DESCRIPTORS = tuple(
+    getattr(_WITNESS_TYPE, name) for name in _DENIAL_FLAGS
+)
 
 
 def verify_detached_authorization_packet(
@@ -147,6 +152,15 @@ def verify_detached_authorization_packet(
             raise LocalPacketBindingRejected("packet witness changed after final denial")
         # Field reads and denial getters are reflective callback boundaries.
         unchanged()
+        if any(
+            getattr(_WITNESS_TYPE, name) is not original
+            for name, original in zip(
+                _DENIAL_FLAGS, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+            )
+        ):
+            raise LocalPacketBindingRejected(
+                "packet witness denial descriptor changed"
+            )
         return witness
     except (TypeError, KeyError, OverflowError, UnicodeError, RecursionError) as exc:
         raise LocalPacketBindingRejected("unreadable detached review packet") from exc
