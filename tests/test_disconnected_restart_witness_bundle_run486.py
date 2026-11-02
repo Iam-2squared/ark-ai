@@ -159,7 +159,7 @@ def test_store_path_replacement_during_read_is_detected(tmp_path, monkeypatch):
 def test_injected_startup_report_cannot_grant_dispatch(tmp_path, monkeypatch):
     stores, retained = _setup(tmp_path)
     monkeypatch.setattr(bundle, "OfflineRestartWitnessReport", lambda *a: object())
-    with pytest.raises(bundle.OfflineRestartWitnessRejected, match="report authority"):
+    with pytest.raises(bundle.OfflineRestartWitnessRejected, match="authority definition changed"):
         _review(stores, retained)
 
 
