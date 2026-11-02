@@ -46,7 +46,7 @@ def test_last_false_denial_cannot_replace_earlier_authority_getter(
             property(malicious),
         )
         with pytest.raises(
-            redaction.OfflineRedactionRejected, match="after authority review",
+            redaction.OfflineRedactionRejected, match="authority definition changed",
         ):
             _preview()
 
