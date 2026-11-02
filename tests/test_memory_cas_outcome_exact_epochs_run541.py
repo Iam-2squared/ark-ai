@@ -29,7 +29,7 @@ def _case(tmp_path):
 
 
 @pytest.mark.parametrize("new_value", ("matching", "different"))
-def test_replaced_token_equality_cannot_mask_post_denial_writer(
+def test_replaced_token_equality_and_preinstalled_denial_block_writer(
     tmp_path, monkeypatch, new_value,
 ):
     path, scope, store, retained, proposed = _case(tmp_path)
@@ -56,16 +56,16 @@ def test_replaced_token_equality_cannot_mask_post_denial_writer(
         outcome.MemoryCASOutcomeReview, "automatic_retry_authorized",
         property(write_and_deny),
     )
-    with pytest.raises(outcome.MemoryCASOutcomeRejected, match="drifted"):
+    with pytest.raises(outcome.MemoryCASOutcomeRejected, match="authority definition changed"):
         outcome.review_memory_generation_cas_outcome(
             store, proposed, retained=retained,
         )
-    assert calls == [new_value]
-    assert len(writer.events(scope)) == 2
+    assert calls == []  # Preinstalled malicious getter quarantined before DB read.
+    assert len(writer.events(scope)) == 1
 
 
 @pytest.mark.parametrize("field", ("review_sha256", "observed_row_sha256"))
-def test_equal_text_replacement_after_denial_is_not_same_report_epoch(
+def test_preinstalled_equal_text_mutation_callback_is_rejected(
     tmp_path, monkeypatch, field,
 ):
     _, _, store, retained, proposed = _case(tmp_path)
@@ -81,13 +81,13 @@ def test_equal_text_replacement_after_denial_is_not_same_report_epoch(
         outcome.MemoryCASOutcomeReview, "external_action_authorized",
         property(replace_equal),
     )
-    with pytest.raises(outcome.MemoryCASOutcomeRejected, match="report changed"):
+    with pytest.raises(outcome.MemoryCASOutcomeRejected, match="authority definition changed"):
         outcome.review_memory_generation_cas_outcome(
             store, proposed, retained=retained,
         )
 
 
-def test_false_getter_cannot_replace_original_observed_token(
+def test_preinstalled_getter_cannot_reach_observed_token(
     tmp_path, monkeypatch,
 ):
     _, _, store, retained, proposed = _case(tmp_path)
@@ -112,10 +112,11 @@ def test_false_getter_cannot_replace_original_observed_token(
         outcome.MemoryCASOutcomeReview, "external_action_authorized",
         property(mutate_observation),
     )
-    with pytest.raises(outcome.MemoryCASOutcomeRejected, match="observed row"):
+    with pytest.raises(outcome.MemoryCASOutcomeRejected, match="authority definition changed"):
         outcome.review_memory_generation_cas_outcome(
             store, proposed, retained=retained,
         )
+    assert tokens == []
 
 
 def test_unmodified_outcome_remains_non_authorizing(tmp_path):
