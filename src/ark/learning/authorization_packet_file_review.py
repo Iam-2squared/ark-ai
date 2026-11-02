@@ -54,11 +54,18 @@ def _assert_original_denials() -> None:
         )
 
 
-def _file_epoch(info: os.stat_result) -> tuple[int, int, int, int]:
-    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
+def _file_epoch(info: os.stat_result) -> tuple[int, int, int, int, int]:
+    # mtime alone is caller-restorable with os.utime(). Include ctime, which
+    # records inode metadata changes on POSIX, to flag same-size, same-byte
+    # rewrites that restore mtime between our two passive reads. On Windows,
+    # ctime has different semantics; this remains only local custody evidence.
+    return (
+        info.st_dev, info.st_ino, info.st_size,
+        info.st_mtime_ns, info.st_ctime_ns,
+    )
 
 
-def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, int]]:
+def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, int, int]]:
     """Read the same local regular, non-aliased file twice without creating it."""
     try:
         before = path.lstat()
