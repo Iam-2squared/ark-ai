@@ -72,7 +72,7 @@ def _leaf_bytes(value: dict) -> dict[str, bytes]:
         delimiters = {"~": "~0", ".": "~2", "[": "~3", "]": "~4", "\\": "~6"}
         pieces = []
         for char in key:
-            if unicodedata.category(char) in ("Cc", "Cf", "Cs", "Zl", "Zp"):
+            if (char != " " and not char.isprintable()):
                 pieces.append(f"~u{{{ord(char):X}}}")
             else:
                 pieces.append(delimiters.get(char, char))
