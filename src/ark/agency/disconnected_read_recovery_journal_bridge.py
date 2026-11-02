@@ -65,6 +65,26 @@ class ReadRecoveryJournalReview:
 
 _REPORT = ReadRecoveryJournalReview
 
+# Import-time custody is required: a preinstalled False-only descriptor is
+# still an arbitrary callback, not the denial definition shipped by ARK.
+_SNAPSHOT_DENIALS = (
+    "dispatch_authorized", "effect_proven",
+    "automatic_replay_authorized", "independent_custody_proven",
+)
+_WITNESS_DENIALS = (
+    "dispatch_authorized", "effect_proven",
+    "replay_authorized", "independent_custody_proven",
+)
+_ORIGINAL_SNAPSHOT_DENIALS = tuple(
+    getattr(ReadJournalSnapshot, name) for name in _SNAPSHOT_DENIALS
+)
+_ORIGINAL_WITNESS_DENIALS = tuple(
+    getattr(ReadJournalWitness, name) for name in _WITNESS_DENIALS
+)
+_ORIGINAL_REPORT_DENIALS = tuple(
+    getattr(_REPORT, name) for name in _DENIALS
+)
+
 
 def review_detached_read_journal_recovery(
     request_id: str,
@@ -96,21 +116,11 @@ def review_detached_read_journal_recovery(
     # Capture the original deny-only descriptors BEFORE invoking the mutable
     # schedule callback. A replacement getter returning False is still a
     # different authority surface and must not be silently accepted.
-    snapshot_denials = (
-        "dispatch_authorized", "effect_proven",
-        "automatic_replay_authorized", "independent_custody_proven",
-    )
-    witness_denials = (
-        "dispatch_authorized", "effect_proven",
-        "replay_authorized", "independent_custody_proven",
-    )
-    snapshot_descriptors = tuple(
-        getattr(ReadJournalSnapshot, key) for key in snapshot_denials
-    )
-    witness_descriptors = tuple(
-        getattr(ReadJournalWitness, key) for key in witness_denials
-    )
-    report_descriptors = tuple(getattr(_REPORT, key) for key in _DENIALS)
+    snapshot_denials = _SNAPSHOT_DENIALS
+    witness_denials = _WITNESS_DENIALS
+    snapshot_descriptors = _ORIGINAL_SNAPSHOT_DENIALS
+    witness_descriptors = _ORIGINAL_WITNESS_DENIALS
+    report_descriptors = _ORIGINAL_REPORT_DENIALS
     original_steps = tuple(steps)
     step_fields = tuple(
         (row.step_id, row.operation, row.depends_on, row.state, row.result_sha256)
