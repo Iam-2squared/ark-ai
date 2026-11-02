@@ -60,8 +60,10 @@ def test_late_descriptor_replacement_is_quarantined_during_first_snapshot(
         return row, token
 
     monkeypatch.setattr(outcome, "_snapshot", swap_after_snapshot)
+    # Inside the read-only snapshot transaction, the precise denial is
+    # normalized to the manual-inspection blocker; no output is returned.
     with pytest.raises(
-        outcome.MemoryCASOutcomeRejected, match="authority definition changed",
+        outcome.MemoryCASOutcomeRejected, match="manual inspection required",
     ):
         outcome.review_memory_generation_cas_outcome(
             store, proposed, retained=retained,
