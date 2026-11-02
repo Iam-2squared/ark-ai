@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-import unicodedata
 from dataclasses import dataclass
 
 from .authorization import build_preflight_authorization_packet
