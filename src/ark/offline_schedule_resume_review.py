@@ -79,6 +79,9 @@ _ORIGINAL_QUARANTINE_DENIAL = QuarantineWitness.independently_authenticated
 _ORIGINAL_PREVIEW_DENIALS = tuple(
     getattr(DisconnectedDuePreview, name) for name in _DENIALS
 )
+_ORIGINAL_RESUME_DENIALS = tuple(
+    getattr(OfflineScheduleResumeReview, name) for name in _DENIALS
+)
 
 
 def review_offline_schedule_resume(
@@ -134,6 +137,17 @@ def review_offline_schedule_resume(
             raise ScheduleResumeRejected("quarantine witness gained authority or changed")
 
     def stable() -> None:
+        # The final diagnostic result is denial-only. Pin original class
+        # descriptors at import time, before any SQLite/preview callbacks.
+        if any(
+            getattr(OfflineScheduleResumeReview, name) is not original
+            for name, original in zip(
+                _DENIALS, _ORIGINAL_RESUME_DENIALS, strict=True,
+            )
+        ):
+            raise ScheduleResumeRejected(
+                "offline resume witness changed: denial descriptor replaced"
+            )
         if (
             type(ledger) is not DisconnectedScheduleQuarantineLedger
             or ledger._path is not path_epoch or ledger._epoch is not ledger_epoch
@@ -326,7 +340,7 @@ def review_offline_schedule_resume(
             output.next_occurrence_id, output.next_state,
             output.preview_sha256, output.review_sha256,
         )
-        descriptors = tuple(getattr(OfflineScheduleResumeReview, key) for key in _DENIALS)
+        descriptors = _ORIGINAL_RESUME_DENIALS
 
         def stable_output() -> None:
             stable_preview()
