@@ -20,8 +20,8 @@ from .disconnected_batch_failure_archive import (
     review_disconnected_failure_archive,
 )
 from .disconnected_batch_failure_fixture import (
-    DisconnectedFailureFixtureRejected,
     DisconnectedFailureFixtureReceipt,
+    DisconnectedFailureFixtureRejected,
     simulate_disconnected_failure_fixture,
 )
 from .disconnected_batch_plan import (
