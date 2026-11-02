@@ -59,6 +59,30 @@ _RESULT = DisconnectedDuePrefixReview
 _WITNESS = due.DueReservationWitness
 _LEDGER = due.DisconnectedDueReservations
 
+# Original descriptors, not just False-valued callbacks, are part of the
+# passive review boundary. A substituted property can return False while
+# changing the SQLite source, retained witness, or displayed result.
+_DENIAL_FLAGS = (
+    "independently_authenticated", "historical_writer_proven",
+    "trusted_clock_verified", "notification_authorized",
+    "tool_dispatch_authorized", "automatic_replay_authorized",
+)
+_ORIGINAL_DENIALS = tuple(getattr(_RESULT, flag) for flag in _DENIAL_FLAGS)
+_ORIGINAL_WITNESS_DENIAL = _WITNESS.independent_custody_proven
+
+
+def _require_original_denials() -> None:
+    if (
+        any(
+            getattr(_RESULT, flag) is not original
+            for flag, original in zip(_DENIAL_FLAGS, _ORIGINAL_DENIALS, strict=True)
+        )
+        or _WITNESS.independent_custody_proven is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise DisconnectedDuePrefixRejected(
+            "due prefix authority definition changed; source/witness untrusted"
+        )
+
 
 def review_retained_due_prefix(
     ledger: due.DisconnectedDueReservations,
@@ -72,6 +96,7 @@ def review_retained_due_prefix(
     """
     if type(ledger) is not _LEDGER:
         raise DisconnectedDuePrefixRejected("exact local due ledger required")
+    _require_original_denials()
     try:
         due._check_witness(retained)
     except due.DueReservationRejected as exc:
@@ -80,6 +105,7 @@ def review_retained_due_prefix(
     source_path = ledger._path
 
     def stable() -> None:
+        _require_original_denials()
         if (
             type(ledger) is not _LEDGER
             or ledger._path is not source_path
@@ -172,6 +198,7 @@ def review_retained_due_prefix(
     pinned_result = (old_count, current_epoch[0], current_epoch[1], status, digest)
 
     def stable_result() -> None:
+        _require_original_denials()
         attributes = (
             "previous_count", "current_count", "current_fingerprint",
             "status", "review_sha256",
