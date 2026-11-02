@@ -70,6 +70,16 @@ class SyntheticRetentionInventory:
         return False
 
 
+# Pin original denial-only property descriptors at import time. A synthetic
+# False-valued replacement installed before review is still a changed surface.
+_RETENTION_DENIAL_KEYS = (
+    "erasure_completed", "deletion_authorized", "context_use_authorized",
+)
+_RETENTION_DENIAL_DESCRIPTORS = tuple(
+    getattr(SyntheticRetentionInventory, key) for key in _RETENTION_DENIAL_KEYS
+)
+
+
 def review_synthetic_retention_inventory(
     memory: SQLiteMemoryStore,
     scope: MemoryScope,
@@ -277,8 +287,21 @@ def review_synthetic_retention_inventory(
                 "retention inventory changed after authority denial"
             )
 
+    def assert_denial_descriptors() -> None:
+        if any(
+            getattr(SyntheticRetentionInventory, key) is not original
+            for key, original in zip(
+                _RETENTION_DENIAL_KEYS, _RETENTION_DENIAL_DESCRIPTORS,
+                strict=True,
+            )
+        ):
+            raise SyntheticRetentionRejected(
+                "retention inventory authority descriptor changed"
+            )
+
     assert_result_fields()
     assert_sources()
     assert_item_epoch()
+    assert_denial_descriptors()
     assert_result_fields()
     return result
