@@ -177,7 +177,8 @@ def test_preflight_authority_forged_only_after_first_check(
         return result
 
     monkeypatch.setattr(mod, "review_disconnected_sqlite_schema", probe)
-    with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="receipt epoch"):
+    # Original denial descriptors are now checked before the old epoch path.
+    with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="receipt authority"):
         _run(args)
     assert backend.calls == 0
 
