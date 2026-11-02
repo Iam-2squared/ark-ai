@@ -61,7 +61,7 @@ def test_false_denial_callback_cannot_retarget_final_report(
     )
     with pytest.raises(
         restart.OfflineRestartWitnessRejected,
-        match="restart report or denial epoch changed",
+        match="authority definition changed",
     ):
         _review(stores, retained)
 
@@ -82,7 +82,7 @@ def test_last_denial_callback_cannot_rewrite_earlier_denial(
     monkeypatch.setattr(report_type, "trusted_clock_verified", property(mutate))
     with pytest.raises(
         restart.OfflineRestartWitnessRejected,
-        match="restart report or denial epoch changed",
+        match="authority definition changed",
     ):
         _review(stores, retained)
 
@@ -102,7 +102,7 @@ def test_last_denial_callback_cannot_rewrite_retained_sqlite_tip(
     )
     with pytest.raises(
         restart.OfflineRestartWitnessRejected,
-        match="retained restart witness changed",
+        match="authority definition changed",
     ):
         _review(stores, retained)
 
