@@ -62,6 +62,66 @@ class DisconnectedLocalReadiness:
 
 _REPORT_TYPE = DisconnectedLocalReadiness
 _PREFLIGHT_TYPE = DisconnectedReadPreflight
+_SCHEMA_TYPE = DisconnectedSQLiteSchemaSeal
+_SCHEMA_DENIALS = (
+    "source_authenticated", "independent_custody_proven",
+    "wal_snapshot_verified", "cross_store_atomicity_proven",
+    "application_data_disclosure_authorized",
+)
+_PREFLIGHT_DENIALS = (
+    "dispatch_authorized", "external_result_verified",
+    "authenticated_clock_or_consent", "automatic_replay_authorized",
+)
+_REPORT_DENIALS = (
+    "startup_authorized", "dispatch_authorized",
+    "source_authenticated", "cross_store_atomicity_proven",
+)
+# Snapshot descriptors before any SQLite or registered-READ callback. A
+# substituted False-returning property must never become the new baseline.
+_ORIGINAL_SCHEMA_DENIALS = tuple(vars(_SCHEMA_TYPE)[n] for n in _SCHEMA_DENIALS)
+_ORIGINAL_PREFLIGHT_DENIALS = tuple(
+    vars(_PREFLIGHT_TYPE)[n] for n in _PREFLIGHT_DENIALS
+)
+_ORIGINAL_REPORT_DENIALS = tuple(vars(_REPORT_TYPE)[n] for n in _REPORT_DENIALS)
+
+
+def _require_original_denials() -> None:
+    if (
+        DisconnectedSQLiteSchemaSeal is not _SCHEMA_TYPE
+        or any(
+            vars(_SCHEMA_TYPE).get(n) is not old
+            for n, old in zip(
+                _SCHEMA_DENIALS, _ORIGINAL_SCHEMA_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup schema authority definition changed"
+        )
+    if (
+        DisconnectedReadPreflight is not _PREFLIGHT_TYPE
+        or any(
+            vars(_PREFLIGHT_TYPE).get(n) is not old
+            for n, old in zip(
+                _PREFLIGHT_DENIALS, _ORIGINAL_PREFLIGHT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup READ receipt authority definition changed"
+        )
+    if (
+        DisconnectedLocalReadiness is not _REPORT_TYPE
+        or any(
+            vars(_REPORT_TYPE).get(n) is not old
+            for n, old in zip(
+                _REPORT_DENIALS, _ORIGINAL_REPORT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup report authority definition changed"
+        )
 
 
 def review_disconnected_local_readiness(
@@ -75,6 +135,7 @@ def review_disconnected_local_readiness(
     observed_at_ms: int,
 ) -> DisconnectedLocalReadiness:
     """Review metadata and exact registered READ grants without execution."""
+    _require_original_denials()
     if (
         type(connection) is not sqlite3.Connection
         or type(retained_schema) is not DisconnectedSQLiteSchemaSeal
@@ -105,6 +166,7 @@ def review_disconnected_local_readiness(
         raise DisconnectedLocalReadinessRejected("invalid plan or registry") from exc
 
     def assert_epoch() -> None:
+        _require_original_denials()
         try:
             stable = (
                 type(retained_schema) is DisconnectedSQLiteSchemaSeal
@@ -133,12 +195,14 @@ def review_disconnected_local_readiness(
             raise DisconnectedLocalReadinessRejected("startup epoch changed") from exc
         if not stable:
             raise DisconnectedLocalReadinessRejected("startup epoch changed")
+        _require_original_denials()
 
     def checked_seal_epoch(
         value: object, *, phase: str,
     ) -> tuple[object, ...]:
         # An equal-valued but replaced seal, a duck-typed result, or a
         # source-authorizing descriptor is not a stable startup witness.
+        _require_original_denials()
         try:
             if (
                 type(value) is not DisconnectedSQLiteSchemaSeal
@@ -263,6 +327,7 @@ def review_disconnected_local_readiness(
     )
 
     def assert_preview_epoch() -> None:
+        _require_original_denials()
         try:
             current = (
                 preview.topology_digest, preview.status_digest,
