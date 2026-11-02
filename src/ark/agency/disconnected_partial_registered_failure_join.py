@@ -263,6 +263,38 @@ def review_partial_registered_failure_archive(
             or tuple(entry[0] for entry in evidence) != successes
         ):
             raise PartialFailureJoinRejected("failure mask or successful subset disagrees")
+        # Archive/fixture receipts are caller-held objects with overridable
+        # safety getters. Retain their exact carriers BEFORE registered READ
+        # callbacks and denial checks so a reentrant False-only getter cannot
+        # revise the terminal mask or file identity after initial validation.
+        archive_epoch = (
+            archive.file_sha256, archive.fixture_digest,
+            archive.projection_digest, archive.failed_step_ids,
+            archive.terminal_counts,
+        )
+        fixture_epoch = (
+            fixture.fixture_digest, fixture.projection_digest,
+            fixture.terminal_states, fixture.result_digests,
+        )
+
+        def stable_failure_reports() -> None:
+            if (
+                type(archive) is not ArchivedDisconnectedFailure
+                or type(fixture) is not DisconnectedFailureFixtureReceipt
+                or any(now is not old for now, old in zip((
+                    archive.file_sha256, archive.fixture_digest,
+                    archive.projection_digest, archive.failed_step_ids,
+                    archive.terminal_counts,
+                ), archive_epoch, strict=True))
+                or any(now is not old for now, old in zip((
+                    fixture.fixture_digest, fixture.projection_digest,
+                    fixture.terminal_states, fixture.result_digests,
+                ), fixture_epoch, strict=True))
+            ):
+                raise PartialFailureJoinRejected(
+                    "failure archive or fixture changed during receipt review"
+                )
+
         expected_binding = dict(fixture.result_digests)
         rows: list[tuple[str, str, str]] = []
         for (step_id, item) in evidence:
@@ -283,6 +315,7 @@ def review_partial_registered_failure_archive(
                 observed_at_ms=observed_at_ms,
             )
             stable()
+            stable_failure_reports()
             fields = (
                 child.step_id, child.plan_digest, child.schedule_digest,
                 child.wave_index, child.action_request_id,
@@ -331,7 +364,9 @@ def review_partial_registered_failure_archive(
                 if getattr(item, name) is not False:
                     raise PartialFailureJoinRejected("synthetic failure granted authority")
                 stable()
+                stable_failure_reports()
         stable()
+        stable_failure_reports()
         return (
             archive.file_sha256, fixture.fixture_digest, terminal, tuple(rows),
         )
