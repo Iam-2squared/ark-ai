@@ -44,7 +44,9 @@ def _fields(receipt: ReviewPacketDelta) -> tuple[object, ...]:
         or any(
             type(path) is not str
             or not path or len(path) > _MAX_PATH_CHARS
-            or any(ord(ch) < 33 or ord(ch) > 126 for ch in path)
+            # The producer deliberately preserves ordinary ASCII spaces in
+            # JSON field keys. Reject controls (0..31), not space (32).
+            or any(ord(ch) < 32 or ord(ch) > 126 for ch in path)
             for path in paths
         )
         or tuple(sorted(set(paths))) != paths
