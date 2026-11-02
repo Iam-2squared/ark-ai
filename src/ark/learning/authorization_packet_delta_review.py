@@ -63,6 +63,11 @@ def _leaf_bytes(value: dict) -> dict[str, bytes]:
     leaves: dict[str, bytes] = {}
 
     def escaped(key: str) -> str:
+        # Preserve empty mapping keys as a real path component. Otherwise
+        # {"": {"a": 1}} aliases {"a": 1} when joining from the root.
+        # A literal "~5" key escapes to "~05", so the marker is unique.
+        if key == "":
+            return "~5"
         return (
             key.replace("~", "~0").replace(".", "~2")
             .replace("[", "~3").replace("]", "~4")
