@@ -58,6 +58,11 @@ class DisconnectedBatchTerminalReceipt:
 
 
 _RECEIPT_TYPE = DisconnectedBatchTerminalReceipt
+# Capture originals when this module loads: a preinstalled False-only
+# replacement cannot become the verifier's authoritative baseline.
+_ORIGINAL_TERMINAL_DENIALS = tuple(
+    getattr(_RECEIPT_TYPE, name) for name in _FLAGS
+)
 
 
 def _digest(payload: object) -> str:
@@ -166,7 +171,7 @@ def project_disconnected_batch_terminals(
         report.request_id, report.plan_digest, report.schedule_digest,
         report.failed_step_ids, report.terminal_states, report.projection_digest,
     )
-    descriptors = tuple(getattr(_RECEIPT_TYPE, flag) for flag in _FLAGS)
+    descriptors = _ORIGINAL_TERMINAL_DENIALS
 
     def stable_report() -> None:
         if (
@@ -231,7 +236,7 @@ def verify_disconnected_batch_terminals(
         receipt.failed_step_ids, receipt.terminal_states,
         receipt.projection_digest,
     )
-    descriptors = tuple(getattr(_RECEIPT_TYPE, name) for name in _FLAGS)
+    descriptors = _ORIGINAL_TERMINAL_DENIALS
 
     def stable_receipt() -> bool:
         return (
