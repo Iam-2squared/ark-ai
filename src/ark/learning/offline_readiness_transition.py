@@ -284,8 +284,19 @@ def review_passive_readiness_transition(
                 raise PassiveTransitionRejected("passive transition gained authority")
             stable_report()
         # Re-run both source reviews after reflective denial callbacks.
-        if inspect(before) != initial_before or inspect(after) != initial_after:
-            raise PassiveTransitionRejected("snapshot transition drifted")
+        # The dataclass __eq__ method is replaceable. Compare the independently
+        # validated final reports' exact primitive path/digest fields instead.
+        last_before, last_after = inspect(before), inspect(after)
+        for later, original_fields in zip(
+            (last_before, last_after), source_epochs, strict=True,
+        ):
+            if any(
+                getattr(later, name) != original_value
+                for name, original_value in zip(
+                    report_fields, original_fields, strict=True,
+                )
+            ):
+                raise PassiveTransitionRejected("snapshot transition drifted")
         stable_report()
         return report
     except (
