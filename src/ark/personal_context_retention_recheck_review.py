@@ -59,6 +59,31 @@ class SyntheticRetentionRecheck:
 
 
 _RESULT_TYPE = SyntheticRetentionRecheck
+_DENIAL_NAMES = (
+    "deletion_authorized", "erasure_completed",
+    "context_use_authorized", "external_disclosure_authorized",
+)
+# Pin the ORIGINAL definitions at import, before an untrusted caller can
+# install a False-only stand-in. Capturing them only after four SQLite reads
+# would wrongly bless a preinstalled substitute as the expected descriptor.
+_ORIGINAL_DENIAL_DESCRIPTORS = tuple(
+    getattr(_RESULT_TYPE, key) for key in _DENIAL_NAMES
+)
+
+
+def _assert_original_denials() -> None:
+    if (
+        SyntheticRetentionRecheck is not _RESULT_TYPE
+        or any(
+            getattr(_RESULT_TYPE, key) is not descriptor
+            for key, descriptor in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticRetentionRecheckRejected(
+            "retention recheck returned result changed: original denial implementation"
+        )
 
 
 def _epoch(value: SyntheticRetentionInventory) -> tuple[object, ...]:
@@ -98,6 +123,7 @@ def review_synthetic_retention_recheck(
     They do NOT create a global atomic snapshot; a deletion or revocation can
     occur immediately after the last check. Neither local clock is trusted.
     """
+    _assert_original_denials()
     if (
         type(memory) is not SQLiteMemoryStore
         or type(scope) is not MemoryScope
@@ -145,6 +171,7 @@ def review_synthetic_retention_recheck(
     )
 
     def assert_epoch() -> None:
+        _assert_original_denials()
         if (
             memory.path is not memory_source
             or revocations.path is not revocation_source
@@ -270,12 +297,6 @@ def review_synthetic_retention_recheck(
     # A False return can still mutate already-checked cached/current evidence,
     # result fields or an earlier authority descriptor. Validate the original
     # carriers after EACH callback, including the last one.
-    denial_names = (
-        "deletion_authorized", "erasure_completed",
-        "context_use_authorized", "external_disclosure_authorized",
-    )
-    denial_descriptors = tuple(getattr(_RESULT_TYPE, key) for key in denial_names)
-
     def assert_result_epoch() -> None:
         assert_epoch()
         if (
@@ -306,7 +327,7 @@ def review_synthetic_retention_recheck(
             or any(
                 getattr(_RESULT_TYPE, key) is not descriptor
                 for key, descriptor in zip(
-                    denial_names, denial_descriptors, strict=True,
+                    _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
                 )
             )
         ):
@@ -315,7 +336,7 @@ def review_synthetic_retention_recheck(
             )
 
     assert_result_epoch()
-    for authority in denial_names:
+    for authority in _DENIAL_NAMES:
         if getattr(result, authority) is not False:
             raise SyntheticRetentionRecheckRejected(
                 "retention recheck returned result changed during construction"
