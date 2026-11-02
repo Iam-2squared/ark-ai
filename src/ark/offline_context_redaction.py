@@ -58,6 +58,10 @@ class RedactedOfflinePreview:
 
 
 _REDACTED_RESULT_TYPE = RedactedOfflinePreview
+_DENIAL_NAMES = (
+    "consent_verified", "privacy_erasure_proven",
+    "external_export_authorized", "tool_dispatch_authorized",
+)
 
 
 def preview_offline_redaction(
@@ -89,6 +93,12 @@ def preview_offline_redaction(
     roots = (
         text, owner_digest, scope_digest, retained_source_sha256,
         spans, require_complete,
+    )
+    # The constructor and each denied-authority getter are callback boundaries.
+    # Do not accept a reentrant swap of an earlier authority getter after it
+    # already returned False. This passive preview cannot grant disclosure.
+    denial_descriptors = tuple(
+        getattr(_REDACTED_RESULT_TYPE, name) for name in _DENIAL_NAMES
     )
     originals = tuple(spans)
     pinned = tuple((s.start, s.end, s.label) for s in originals)
@@ -189,6 +199,12 @@ def preview_offline_redaction(
         or type(result.complete_masking) is not bool
         or result.complete_masking is not require_complete
         or result.local_digest is not digest
+        or any(
+            getattr(_REDACTED_RESULT_TYPE, name) is not original
+            for name, original in zip(
+                _DENIAL_NAMES, denial_descriptors, strict=True,
+            )
+        )
     ):
         raise OfflineRedactionRejected(
             "masked preview changed after authority review"
