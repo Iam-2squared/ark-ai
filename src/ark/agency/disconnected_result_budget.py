@@ -54,6 +54,16 @@ class CompleteDetachedReadResults:
         return False
 
 
+_SEALED_TYPE = CompleteDetachedReadResults
+_NONAUTHORITY_FLAGS = (
+    "external_result_verified", "dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_NONAUTHORITY_DESCRIPTORS = tuple(
+    getattr(_SEALED_TYPE, name) for name in _NONAUTHORITY_FLAGS
+)
+
+
 def _pairs_unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
     output: dict[str, object] = {}
     for key, value in pairs:
@@ -210,13 +220,49 @@ def seal_detached_read_results(
     digest = hashlib.sha256(_DOMAIN + manifest.encode("ascii")).hexdigest()
     epoch()
     ids = tuple(row[0] for row in validated)
-    sealed = CompleteDetachedReadResults(request_id, ids, len(ids), total, digest)
+    sealed = _SEALED_TYPE(request_id, ids, len(ids), total, digest)
+    pinned_sealed = (
+        sealed.request_id, sealed.step_ids, sealed.result_count,
+        sealed.result_bytes, sealed.membership_digest,
+    )
+
+    def sealed_epoch() -> None:
+        # A False-valued authority property is still a user-replaceable
+        # callback. Check fields and original descriptors after EACH read.
+        current = (
+            sealed.request_id, sealed.step_ids, sealed.result_count,
+            sealed.result_bytes, sealed.membership_digest,
+        )
+        if (
+            type(sealed) is not _SEALED_TYPE
+            or sealed.request_id is not request_id
+            or sealed.step_ids is not ids
+            or type(sealed.result_count) is not int
+            or sealed.result_count != len(ids)
+            or type(sealed.result_bytes) is not int
+            or sealed.result_bytes != total
+            or sealed.membership_digest is not digest
+            or any(now is not before for now, before in zip(
+                current, pinned_sealed, strict=True,
+            ))
+            or any(
+                getattr(_SEALED_TYPE, name) is not original
+                for name, original in zip(
+                    _NONAUTHORITY_FLAGS, _NONAUTHORITY_DESCRIPTORS, strict=True,
+                )
+            )
+        ):
+            raise DisconnectedResultsRejected(
+                "sealed READ result carrier or authority descriptor changed"
+            )
+
     epoch()
-    if (
-        type(sealed) is not CompleteDetachedReadResults
-        or sealed.request_id is not request_id or sealed.step_ids is not ids
-        or sealed.result_count != len(ids) or sealed.result_bytes != total
-        or sealed.membership_digest is not digest
-    ):
-        raise DisconnectedResultsRejected("result was mutated before return")
+    sealed_epoch()
+    for flag in _NONAUTHORITY_FLAGS:
+        if getattr(sealed, flag) is not False:
+            raise DisconnectedResultsRejected("sealed READ result gained authority")
+        sealed_epoch()
+        epoch()
+    sealed_epoch()
+    epoch()
     return sealed
