@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 from dataclasses import dataclass
 
 from .authorization import build_preflight_authorization_packet
@@ -63,15 +64,19 @@ def _leaf_bytes(value: dict) -> dict[str, bytes]:
     leaves: dict[str, bytes] = {}
 
     def escaped(key: str) -> str:
-        # Preserve empty mapping keys as a real path component. Otherwise
-        # {"": {"a": 1}} aliases {"a": 1} when joining from the root.
-        # A literal "~5" key escapes to "~05", so the marker is unique.
+        # Preserve empty keys; reserved "~" always escapes before a marker.
+        # Also render controls, bidi/format characters and backslashes as
+        # unambiguous printable components, not spoofable display text.
         if key == "":
             return "~5"
-        return (
-            key.replace("~", "~0").replace(".", "~2")
-            .replace("[", "~3").replace("]", "~4")
-        )
+        delimiters = {"~": "~0", ".": "~2", "[": "~3", "]": "~4", "\\": "~6"}
+        pieces = []
+        for char in key:
+            if unicodedata.category(char) in ("Cc", "Cf", "Cs", "Zl", "Zp"):
+                pieces.append(f"~u{{{ord(char):X}}}")
+            else:
+                pieces.append(delimiters.get(char, char))
+        return "".join(pieces)
 
     def add(path: str, node: object) -> None:
         if path in leaves or len(path) > 512 or len(leaves) >= 512:
