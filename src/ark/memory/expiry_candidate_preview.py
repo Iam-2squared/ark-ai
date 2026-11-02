@@ -66,6 +66,37 @@ _RECEIPT_TYPE = MemoryExpiryPreview
 _STORE_TYPE = SQLiteMemoryStore
 _SCOPE_TYPE = MemoryScope
 
+_AUTHORITY_DESCRIPTORS = tuple(
+    getattr(_RECEIPT_TYPE, flag) for flag in _FLAGS
+)
+
+
+def _all_non_authorizing(report: MemoryExpiryPreview) -> bool:
+    """Verify denial values AND original descriptors across every getter.
+
+    A replaced False-valued property is not a stable privacy boundary.
+    This cannot authenticate a clock, consent, physical erasure or owner.
+    """
+    if type(report) is not _RECEIPT_TYPE:
+        return False
+
+    def stable_descriptors() -> None:
+        if any(
+            getattr(_RECEIPT_TYPE, flag) is not original
+            for flag, original in zip(
+                _FLAGS, _AUTHORITY_DESCRIPTORS, strict=True,
+            )
+        ):
+            raise MemoryExpiryPreviewRejected("expiry authority descriptor changed")
+
+    stable_descriptors()
+    for flag in _FLAGS:
+        if getattr(report, flag) is not False:
+            return False
+        stable_descriptors()
+    return True
+
+
 
 def _hash(tag: str, payload: object) -> str:
     encoded = json.dumps(
@@ -262,9 +293,7 @@ def review_memory_expiry_candidates(
             and report.preview_sha256 is fingerprint
         )
 
-    if not same_report() or any(
-        getattr(report, flag) is not False for flag in _FLAGS
-    ):
+    if not same_report() or not _all_non_authorizing(report):
         raise MemoryExpiryPreviewRejected("expiry report gained authority or changed")
     # Authority getters are callbacks: a False result may conceal mutation
     # of the frozen receipt or original source scope.
@@ -352,9 +381,8 @@ def verify_memory_expiry_preview(
 
     if not exact_fields():
         raise MemoryExpiryPreviewRejected("retained expiry preview mismatch")
-    for flag in _FLAGS:
-        if getattr(report, flag) is not False:
-            raise MemoryExpiryPreviewRejected("retained expiry preview gained authority")
+    if not _all_non_authorizing(report):
+        raise MemoryExpiryPreviewRejected("retained expiry preview gained authority")
     # Even the final denial getter may mutate a frozen report, scope, or
     # SQLite page. Check those after all callbacks, and recompute the page
     # without granting a future TOCTOU-free deletion guarantee.
@@ -369,16 +397,14 @@ def verify_memory_expiry_preview(
         not exact_fields()
         or type(latest) is not _RECEIPT_TYPE
         or latest.preview_sha256 != expected.preview_sha256
-        or any(getattr(report, flag) is not False for flag in _FLAGS)
-        or any(getattr(latest, flag) is not False for flag in _FLAGS)
+        or not _all_non_authorizing(report)
+        or not _all_non_authorizing(latest)
     ):
         raise MemoryExpiryPreviewRejected("retained expiry page changed during review")
     # An authority getter itself may mutate this retained receipt, or return
     # False only until the final SQLite scan. Recheck after those callbacks.
     stable_sources()
-    if not exact_fields() or any(
-        getattr(report, flag) is not False for flag in _FLAGS
-    ):
+    if not exact_fields() or not _all_non_authorizing(report):
         raise MemoryExpiryPreviewRejected(
             "retained expiry report changed after final denial"
         )
