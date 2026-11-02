@@ -175,3 +175,66 @@ def test_same_count_context_witness_rewrite_denied(tmp_path):
     forged = replace(retained[1], chain_sha256="f" * 64)
     with pytest.raises(bundle.OfflineRestartWitnessRejected, match="tip differs"):
         _review(stores, (retained[0], forged, retained[2]))
+
+
+@pytest.mark.parametrize("name", bundle._REPORT_DENIALS)
+def test_original_restart_denial_getter_must_be_preserved(
+    tmp_path, monkeypatch, name,
+):
+    stores, retained = _setup(tmp_path)
+    monkeypatch.setattr(
+        bundle.OfflineRestartWitnessReport,
+        name,
+        property(lambda _self: False),
+    )
+    with pytest.raises(bundle.OfflineRestartWitnessRejected, match="authority"):
+        _review(stores, retained)
+    # False remains a denial; mutating it is never sufficient evidence.
+    assert stores[0].inspect(retained=retained[0]) == retained[0]
+    assert stores[1].witness() == retained[1]
+    assert stores[2].witness() == retained[2]
+
+
+@pytest.mark.parametrize(
+    ("type_", "name"),
+    (
+        (bundle._MEMORY_WITNESS, "custody_authenticated"),
+        (bundle._CONTEXT_WITNESS, "independent_custody_proven"),
+        (bundle._DUE_WITNESS, "independent_custody_proven"),
+    ),
+)
+def test_original_retained_witness_denial_getter_is_required(
+    tmp_path, monkeypatch, type_, name,
+):
+    stores, retained = _setup(tmp_path)
+    monkeypatch.setattr(type_, name, property(lambda _self: False))
+    with pytest.raises(bundle.OfflineRestartWitnessRejected, match="authority"):
+        _review(stores, retained)
+
+
+@pytest.mark.parametrize("target", ("report", "witness"))
+def test_reentrant_source_read_cannot_replace_a_false_only_authority(
+    tmp_path, monkeypatch, target,
+):
+    stores, retained = _setup(tmp_path)
+    original = stores[1].witness
+
+    def replace_after_read():
+        observed = original()
+        if target == "report":
+            monkeypatch.setattr(
+                bundle.OfflineRestartWitnessReport,
+                "startup_authorized",
+                property(lambda _self: False),
+            )
+        else:
+            monkeypatch.setattr(
+                bundle._DUE_WITNESS,
+                "independent_custody_proven",
+                property(lambda _self: False),
+            )
+        return observed
+
+    monkeypatch.setattr(stores[1], "witness", replace_after_read)
+    with pytest.raises(bundle.OfflineRestartWitnessRejected, match="authority"):
+        _review(stores, retained)
