@@ -10,13 +10,20 @@ import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 
-from .contracts import MemoryConflictError, MemorySchemaError, MemoryScope, MemoryWrite
+from .contracts import (
+    MemoryConflictError,
+    MemoryRecord,
+    MemorySchemaError,
+    MemoryScope,
+    MemoryWrite,
+)
 from .generation_fenced_cas import (
     _EVENT_DOMAIN,
     _MAX_EVENTS,
     MemoryGenerationCASRejected,
     MemoryGenerationCASToken,
     _digest,
+    _row_hash,
     _snapshot,
     _token_fields,
 )
@@ -125,6 +132,22 @@ def review_uncertain_memory_commit(
             stable()
             record, observed = _snapshot(conn, memory_id, scope, source)
             after = _token_fields(observed)
+            # The SQLite generation snapshot pins the row SHA at observation
+            # time. The local record object can still be reflectively changed
+            # by later synthetic callbacks; it must not become a forged match.
+            if type(record) is not MemoryRecord:
+                raise MemoryCommitTriageRejected("Memory triage row type changed")
+
+            def stable_row() -> None:
+                if (
+                    type(record) is not MemoryRecord
+                    or _row_hash(record) != after[5]
+                ):
+                    raise MemoryCommitTriageRejected(
+                        "Memory triage row image changed after snapshot"
+                    )
+
+            stable_row()
             rows = conn.execute(
                 "SELECT event_id,owner_id,namespace,operation,revision,occurred_at_ms "
                 "FROM memory_events WHERE memory_id=? ORDER BY event_id LIMIT ?",
@@ -136,6 +159,7 @@ def review_uncertain_memory_commit(
                 raise MemoryCommitTriageRejected("Memory events unavailable")
             if _digest(_EVENT_DOMAIN, events) != after[4]:
                 raise MemoryCommitTriageRejected("Memory event scan changed")
+            stable_row()
             prefix = tuple(row for row in events if row[0] <= before[2])
             if (
                 not prefix or prefix[-1][0] != before[2]
@@ -159,6 +183,7 @@ def review_uncertain_memory_commit(
             else:
                 disposition = "INDETERMINATE"
             stable()
+            stable_row()
     except (
         sqlite3.Error, MemoryConflictError, MemoryGenerationCASRejected,
         MemorySchemaError, ValueError, TypeError, AttributeError,
@@ -167,6 +192,9 @@ def review_uncertain_memory_commit(
             "Memory triage unavailable; manual review required"
         ) from exc
 
+    # Connection teardown may also be a callback boundary. Never report a
+    # matching row image after losing the previously observed row digest.
+    stable_row()
     payload = (
         memory_id, before[2], after[2], before[4], after[4], disposition,
     )
@@ -175,6 +203,7 @@ def review_uncertain_memory_commit(
 
     def stable_report() -> None:
         stable()
+        stable_row()
         if (
             type(report) is not _REPORT
             or any(now is not old for now, old in zip(
