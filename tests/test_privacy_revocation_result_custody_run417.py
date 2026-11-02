@@ -49,9 +49,10 @@ def test_final_integrity_callback_cannot_retarget_returned_witness(
     monkeypatch.setattr(
         module.SyntheticRevocationWitness, "assert_integrity", malicious_integrity,
     )
+    # Modified integrity methods never run: the original validator is pinned.
     with pytest.raises(
         SyntheticContextRevocationRejected,
-        match="revocation result witness changed",
+        match="revocation integrity validator changed",
     ):
         module.review_revocation_continuity(ledger)
 
@@ -92,7 +93,7 @@ def test_commit_callback_cannot_retarget_returned_witness(
     )
     with pytest.raises(
         SyntheticContextRevocationRejected,
-        match="revocation result witness changed",
+        match="revocation integrity validator changed",
     ):
         module.review_revocation_continuity(ledger)
     # The read-only connection committed its snapshot; no veto is removed.
