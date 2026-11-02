@@ -93,6 +93,24 @@ def review_detached_read_journal_recovery(
     ):
         raise ReadRecoveryJournalRejected("exact bounded recovery evidence required")
 
+    # Capture the original deny-only descriptors BEFORE invoking the mutable
+    # schedule callback. A replacement getter returning False is still a
+    # different authority surface and must not be silently accepted.
+    snapshot_denials = (
+        "dispatch_authorized", "effect_proven",
+        "automatic_replay_authorized", "independent_custody_proven",
+    )
+    witness_denials = (
+        "dispatch_authorized", "effect_proven",
+        "replay_authorized", "independent_custody_proven",
+    )
+    snapshot_descriptors = tuple(
+        getattr(ReadJournalSnapshot, key) for key in snapshot_denials
+    )
+    witness_descriptors = tuple(
+        getattr(ReadJournalWitness, key) for key in witness_denials
+    )
+    report_descriptors = tuple(getattr(_REPORT, key) for key in _DENIALS)
     original_steps = tuple(steps)
     step_fields = tuple(
         (row.step_id, row.operation, row.depends_on, row.state, row.result_sha256)
@@ -121,6 +139,24 @@ def review_detached_read_journal_recovery(
             or len(rows) != len(row_fields)
             or type(witness) is not ReadJournalWitness
             or type(retained) is not ReadJournalWitness
+            or any(
+                getattr(ReadJournalSnapshot, key) is not original
+                for key, original in zip(
+                    snapshot_denials, snapshot_descriptors, strict=True,
+                )
+            )
+            or any(
+                getattr(ReadJournalWitness, key) is not original
+                for key, original in zip(
+                    witness_denials, witness_descriptors, strict=True,
+                )
+            )
+            or any(
+                getattr(_REPORT, key) is not original
+                for key, original in zip(
+                    _DENIALS, report_descriptors, strict=True,
+                )
+            )
             or type(witness.count) is not int
             or type(retained.count) is not int
             or type(witness.tip_sha256) is not str
@@ -221,7 +257,7 @@ def review_detached_read_journal_recovery(
             review.journal_tip_sha256, review.successful_step_ids,
             review.review_sha256,
         )
-        descriptors = tuple(getattr(_REPORT, key) for key in _DENIALS)
+        descriptors = report_descriptors
 
         def stable_review() -> None:
             if (
