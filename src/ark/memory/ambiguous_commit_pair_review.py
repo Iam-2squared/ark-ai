@@ -53,6 +53,8 @@ class MemoryAmbiguityPair:
     retained_prefix_sha256: str
     observed_prefix_sha256: str
     observed_row_sha256: str
+    triage_receipt_sha256: str
+    outcome_receipt_sha256: str
     reconciliation_sha256: str
 
     @property
@@ -195,8 +197,11 @@ def review_memory_ambiguous_commit_pair(
     payload = json.dumps(first, ensure_ascii=True, separators=(",", ":")).encode("ascii")
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     stable()
-    result = _RESULT(*first[:4], digest)
-    expected = (*first[:4], digest)
+    # Expose both local reviewers' digests so a read-only investigator can
+    # reconstruct the reconciliation hash without guessing hidden inputs.
+    # These are not authenticated writer receipts or retry permission.
+    result = _RESULT(*first, digest)
+    expected = (*first, digest)
     for name in _DENIALS:
         if (
             type(result) is not _RESULT
@@ -204,6 +209,7 @@ def review_memory_ambiguous_commit_pair(
                 (
                     result.disposition, result.retained_prefix_sha256,
                     result.observed_prefix_sha256, result.observed_row_sha256,
+                    result.triage_receipt_sha256, result.outcome_receipt_sha256,
                     result.reconciliation_sha256,
                 ), expected, strict=True,
             ))
