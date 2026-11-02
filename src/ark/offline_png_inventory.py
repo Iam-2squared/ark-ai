@@ -173,6 +173,18 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
                 width, height, color, depth, idat_count, idat_bytes,
             )
             assert_epoch()
+            # A False-valued denial getter is executable code. Pin every
+            # descriptor before calling any getter and recheck at return.
+            denial_names = (
+                "decoded_pixels_verified", "capture_provenance_verified",
+                "consent_verified", "context_release_authorized",
+            )
+            denial_descriptors = tuple(
+                getattr(_INVENTORY_TYPE, name) for name in denial_names
+            )
+            if any(type(descriptor) is not property
+                   for descriptor in denial_descriptors):
+                raise OfflinePngRejected("PNG denial descriptor invalid")
             if (
                 type(result) is not _INVENTORY_TYPE
                 or result.owner_sha256 is not owner
@@ -213,6 +225,15 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
                     )
             ):
                 raise OfflinePngRejected("constructed PNG inventory changed")
+            if any(
+                getattr(_INVENTORY_TYPE, name) is not original
+                for name, original in zip(
+                    denial_names, denial_descriptors, strict=True,
+                )
+            ):
+                raise OfflinePngRejected(
+                    "PNG denial descriptor changed during authority review"
+                )
             return result
         else:
             raise OfflinePngRejected("unknown, private, or reordered PNG chunk")
