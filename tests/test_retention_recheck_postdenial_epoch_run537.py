@@ -76,10 +76,19 @@ def test_last_false_denial_cannot_mutate_checked_privacy_epoch(
             )
         return False
 
+    # Keep the original import-pinned denial descriptor intact; intercept
+    # instance lookup to simulate a reentrant callback at the final getter.
+    # Installing a replacement descriptor before the call must now be
+    # rejected before SQLite reads, which has separate regression coverage.
+    original_getattribute = recheck.SyntheticRetentionRecheck.__getattribute__
+
+    def final_getter(self, name):
+        if name == "external_disclosure_authorized":
+            return mutate(self)
+        return original_getattribute(self, name)
+
     monkeypatch.setattr(
-        recheck.SyntheticRetentionRecheck,
-        "external_disclosure_authorized",
-        property(mutate),
+        recheck.SyntheticRetentionRecheck, "__getattribute__", final_getter,
     )
     with pytest.raises(recheck.SyntheticRetentionRecheckRejected, match="changed"):
         recheck.review_synthetic_retention_recheck(
