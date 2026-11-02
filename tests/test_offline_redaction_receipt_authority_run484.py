@@ -57,13 +57,13 @@ def test_boolean_masked_character_count_is_not_an_integer_receipt(monkeypatch):
         return replace(original(*fields), masked_characters=True)
 
     monkeypatch.setattr(mod, "RedactedOfflinePreview", forged)
-    with pytest.raises(mod.OfflineRedactionRejected, match="authority definition changed"):
+    with pytest.raises(mod.OfflineRedactionRejected, match="construction"):
         _mask("x")
 
 
 def test_constructor_returning_unexpected_result_is_refused(monkeypatch):
     monkeypatch.setattr(mod, "RedactedOfflinePreview", lambda *_args: object())
-    with pytest.raises(mod.OfflineRedactionRejected, match="authority definition changed"):
+    with pytest.raises(mod.OfflineRedactionRejected, match="construction"):
         _mask()
 
 
