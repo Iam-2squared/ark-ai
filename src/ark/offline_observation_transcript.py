@@ -18,8 +18,8 @@ from .offline_pcm_wav import OfflineWaveRequest
 from .offline_png_inventory import OfflinePngRequest
 from .offline_transcript_binding import TranscriptSegmentClaim
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-offline-observation-transcript-v1\\0"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-offline-observation-transcript-v1\0"
 _PAIR_FN = pair_module.inspect_disconnected_observation_pair
 _TRANSCRIPT_FN = transcript_module.review_audio_transcript_binding
 _PAIR_DENIALS = (
