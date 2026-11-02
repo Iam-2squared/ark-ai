@@ -37,7 +37,7 @@ def test_false_denial_getter_cannot_retarget_observed_token(
         match="generation token or denial epoch changed",
     ):
         cas.observe_memory_generation_for_cas(store, scope, "source")
-    assert store.get(store.list(scope)[0].memory_id, scope).revision == 1
+    assert len(store.events(scope)) == 1
 
 
 @pytest.mark.parametrize("replacement", (True, False))
