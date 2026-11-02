@@ -151,6 +151,17 @@ def _receipt_fields(receipt: DisconnectedBatchCycleReceipt) -> tuple[object, ...
     return fields
 
 
+def _same_receipt_carriers(
+    receipt: DisconnectedBatchCycleReceipt,
+    pinned: tuple[object, ...],
+) -> bool:
+    """Reject even equal-valued carrier replacements across callbacks."""
+    return all(
+        current is original
+        for current, original in zip(_receipt_fields(receipt), pinned, strict=True)
+    )
+
+
 def _raw(receipt: DisconnectedBatchCycleReceipt) -> bytes:
     request, plan_hash, schedule_hash, waves, cycle_hash = _receipt_fields(receipt)
     obj = {
@@ -220,11 +231,11 @@ def archive_disconnected_batch_fixture_cycle(
     verify_disconnected_batch_fixture_cycle(
         receipt, plan, schedule, retained_digest=retained_plan_digest,
     )
-    if _receipt_fields(receipt) != initial:
+    if not _same_receipt_carriers(receipt, initial):
         raise DisconnectedBatchArchiveRejected("fixture receipt changed before archive")
     raw = _raw(receipt)
     file_hash = hashlib.sha256(raw).hexdigest()
-    if _receipt_fields(receipt) != initial:
+    if not _same_receipt_carriers(receipt, initial):
         raise DisconnectedBatchArchiveRejected("fixture receipt changed before write")
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
     flags |= getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -242,7 +253,7 @@ def archive_disconnected_batch_fixture_cycle(
         path=path, retained_file_sha256=file_hash,
     )
     if (
-        _receipt_fields(receipt) != initial
+        not _same_receipt_carriers(receipt, initial)
         or reviewed.cycle_digest != receipt.cycle_digest
     ):
         raise DisconnectedBatchArchiveRejected("fixture changed after archive commit")
@@ -269,6 +280,7 @@ def review_disconnected_batch_fixture_cycle_archive(
         plan, schedule, retained_digest=retained_plan_digest,
     )
     expected_raw = _raw(expected)
+    expected_carriers = _receipt_fields(expected)
     first, first_epoch = _read_once(path)
     if (
         first != expected_raw
@@ -287,8 +299,35 @@ def review_disconnected_batch_fixture_cycle_archive(
     )
     if _raw(again) != expected_raw:
         raise DisconnectedBatchArchiveRejected("fixture changed during archive review")
+    again_carriers = _receipt_fields(again)
     witness = _result(retained_file_sha256, expected)
+    witness_carriers = (
+        witness.file_sha256, witness.request_id,
+        witness.plan_digest, witness.cycle_digest,
+    )
+    denial_descriptors = tuple(
+        getattr(ArchivedDisconnectedBatchCycle, name) for name in _DENIALS
+    )
+    if witness_carriers != (
+        retained_file_sha256, expected_carriers[0],
+        expected_carriers[1], expected_carriers[4],
+    ):
+        raise DisconnectedBatchArchiveRejected("archive witness content mismatch")
     final, final_epoch = _read_once(path)
     if final != first or final_epoch != first_epoch:
         raise DisconnectedBatchArchiveRejected("archive changed after witness review")
+    # The last file read is an injectable callback boundary. It must not
+    # invalidate a previously checked receipt or the non-authorizing result.
+    if (
+        not _same_receipt_carriers(expected, expected_carriers)
+        or not _same_receipt_carriers(again, again_carriers)
+        or type(witness) is not ArchivedDisconnectedBatchCycle
+        or any(now is not pinned for now, pinned in zip((
+            witness.file_sha256, witness.request_id,
+            witness.plan_digest, witness.cycle_digest,
+        ), witness_carriers, strict=True))
+        or any(getattr(ArchivedDisconnectedBatchCycle, name) is not descriptor
+               for name, descriptor in zip(_DENIALS, denial_descriptors, strict=True))
+    ):
+        raise DisconnectedBatchArchiveRejected("archive final witness/source changed")
     return witness
