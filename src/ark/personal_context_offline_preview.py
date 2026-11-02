@@ -62,6 +62,29 @@ class OfflineContextPreview:
 
 
 _PREVIEW_RESULT_TYPE = OfflineContextPreview
+_PREVIEW_DENIAL_NAMES = (
+    "consent_verified", "external_export_authorized",
+    "tool_dispatch_authorized", "retention_authorized",
+)
+_PREVIEW_ORIGINAL_DENIALS = tuple(
+    vars(_PREVIEW_RESULT_TYPE)[name] for name in _PREVIEW_DENIAL_NAMES
+)
+
+
+def _assert_original_preview_denials() -> None:
+    """Reject False-only authority substitutions before private fixture bytes."""
+    if (
+        OfflineContextPreview is not _PREVIEW_RESULT_TYPE
+        or any(
+            vars(_PREVIEW_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _PREVIEW_DENIAL_NAMES, _PREVIEW_ORIGINAL_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflineContextPreviewRejected(
+            "context preview authority definition changed"
+        )
 
 
 def build_offline_context_preview(
@@ -77,6 +100,7 @@ def build_offline_context_preview(
     check. All fixtures must be validated; never silently accept only the
     seemingly safe subset of a mixed-owner or stale batch.
     """
+    _assert_original_preview_denials()
     original = (fixtures, owner_digest, allowed_scope_digests, observed_at_ms)
     if (
         type(fixtures) is not tuple or not 1 <= len(fixtures) <= _MAX_RECORDS
@@ -96,6 +120,7 @@ def build_offline_context_preview(
     )) for entry in fixtures)
 
     def assert_epoch() -> None:
+        _assert_original_preview_denials()
         if any(
             current is not prior
             for current, prior in zip(
@@ -224,6 +249,7 @@ def verify_offline_context_preview(
     the detached receipt. It does not authenticate user consent, ownership,
     live Memory rows, current time, or permission to export these contents.
     """
+    _assert_original_preview_denials()
     if (
         type(report) is not _PREVIEW_RESULT_TYPE
         or type(retained_local_digest) is not str
@@ -239,6 +265,7 @@ def verify_offline_context_preview(
     )
 
     def stable_sources() -> None:
+        _assert_original_preview_denials()
         if (
             type(fixtures) is not tuple
             or len(originals) != len(fixtures)
