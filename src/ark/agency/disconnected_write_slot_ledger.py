@@ -235,7 +235,12 @@ class DisconnectedWriteSlotLedger:
                 actual = _inspect(conn)
                 _check_witness(actual)
                 stable()
-                if actual != retained or original != (retained.count, retained.chain_sha256):
+                # Compare independent scalar custody, never patchable dataclass __eq__.
+                if (
+                    actual.count != original[0]
+                    or actual.chain_sha256 != original[1]
+                    or original != (retained.count, retained.chain_sha256)
+                ):
                     raise WriteSlotLedgerRejected("stale or changed retained history")
                 conn.commit()
             except BaseException:
@@ -297,7 +302,12 @@ class DisconnectedWriteSlotLedger:
                 current = _inspect(conn)
                 _check_witness(current)
                 stable()
-                if current != retained:
+                # A synthetic retained witness must match persisted history.
+                # Patched witness equality is not an integrity check.
+                if (
+                    current.count != old_witness[0]
+                    or current.chain_sha256 != old_witness[1]
+                ):
                     raise WriteSlotLedgerRejected("stale or rolled-back reservation witness")
                 if current.count + len(saved) > _MAX_ROWS:
                     raise WriteSlotLedgerRejected("reservation history capacity exceeded")
@@ -310,7 +320,11 @@ class DisconnectedWriteSlotLedger:
                 stable()
                 inspected = _inspect(conn)
                 _check_witness(inspected)
-                if inspected != current:
+                # Recompute the appended tip: object equality is replaceable.
+                if (
+                    inspected.count != current.count
+                    or inspected.chain_sha256 != current.chain_sha256
+                ):
                     raise WriteSlotLedgerRejected("reservation append lost integrity")
                 stable()
                 committed_witness = (current.count, current.chain_sha256)
