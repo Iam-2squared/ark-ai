@@ -102,6 +102,10 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
                     "review packet file changed during read"
                 )
             content = handle.read(_MAX_PACKET_BYTES + 1)
+            # Recheck the OPEN HANDLE after reading, not merely its former
+            # path. A forged or restored path stat is not proof that the
+            # already-open file stayed in the same metadata epoch.
+            after_handle = os.fstat(handle.fileno())
         after = path.lstat()
     except OSError as exc:
         raise LocalPacketBindingRejected("review packet file cannot be read") from exc
@@ -112,6 +116,9 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
         or opened.st_nlink != 1
         or after.st_nlink != 1
         or _file_epoch(opened) != identity
+        or not stat.S_ISREG(after_handle.st_mode)
+        or after_handle.st_nlink != 1
+        or _file_epoch(after_handle) != identity
         or _file_epoch(after) != identity
         or len(content) != before.st_size
         or path.is_symlink()
