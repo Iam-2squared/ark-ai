@@ -7,6 +7,7 @@ payment, Candidate output, protected V2 evaluation, promotion, or main merge.
 
 from __future__ import annotations
 
+import hashlib
 import re
 
 from .authorization_packet_delta_review import (
@@ -14,7 +15,9 @@ from .authorization_packet_delta_review import (
     ReviewPacketDeltaRejected,
     review_unapproved_packet_delta,
 )
+from .execution import canonical_json
 
+_DOMAIN = b"ARK-v3-unapproved-packet-delta-review-v1\0"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DENIALS = (
     "external_compute_authorized", "candidate_generation_authorized",
@@ -106,6 +109,13 @@ def verify_detached_unapproved_packet_delta(
             )
 
     stable()
+    # Independently recompute the domain-separated digest before trusting a
+    # freshly supplied callback. Matching forged receipts are not evidence.
+    expected_digest = hashlib.sha256(
+        _DOMAIN + canonical_json((pinned[0], pinned[1], pinned[2]))
+    ).hexdigest()
+    if pinned[3] != expected_digest:
+        raise DetachedPacketDeltaRejected("retained packet delta digest disagrees")
     for flag in _DENIALS:
         if getattr(retained, flag) is not False:
             raise DetachedPacketDeltaRejected("retained delta gained authority")
