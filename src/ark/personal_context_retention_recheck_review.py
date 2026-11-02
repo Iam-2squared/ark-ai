@@ -195,7 +195,10 @@ def review_synthetic_retention_recheck(
         memory, scope, revocations, now_ms=captured, **kwargs,
     )
     assert_epoch()
-    if before != cached:
+    # Dataclass equality is replaceable and is not an integrity check.
+    # Compare the independently re-read value fields against the pinned
+    # cached epoch, without trusting SyntheticRetentionInventory.__eq__.
+    if _epoch(before) != pinned:
         raise SyntheticRetentionRecheckRejected("cached retention inventory changed")
     current = review_synthetic_retention_inventory(
         memory, scope, revocations, now_ms=now_ms, **kwargs,
@@ -213,7 +216,7 @@ def review_synthetic_retention_recheck(
     )
     assert_epoch()
     if (
-        after != before or last != current
+        _epoch(after) != pinned or _epoch(last) != current_epoch
         or _epoch(current) != current_epoch
         or current.items is not current_items
         or any(
