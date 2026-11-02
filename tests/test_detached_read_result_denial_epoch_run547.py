@@ -6,8 +6,7 @@ import hashlib
 
 import pytest
 
-import ark.agency.disconnected_result_budget as mod
-
+from ark.agency import disconnected_result_budget as mod
 
 REQUEST = "req_" + "c" * 32
 STEP = "step_" + "d" * 16
