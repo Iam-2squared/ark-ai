@@ -152,6 +152,13 @@ def review_memory_revision_reuse(
                         raise MemoryGenerationReviewRejected(
                             "Memory generation event identity invalid"
                         )
+                    # A row-aligned final update can conceal an earlier
+                    # backdated event. Keep restart diagnostics consistent
+                    # with generation_fenced_cas._snapshot's clock floor.
+                    if updated_at is not None and at < updated_at:
+                        raise MemoryGenerationReviewRejected(
+                            "Memory generation event clock regressed"
+                        )
                     if operation == "create":
                         if active or rev != 1:
                             raise MemoryGenerationReviewRejected(
