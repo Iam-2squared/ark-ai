@@ -16,6 +16,7 @@ from .authorization_packet_delta_review import (
     review_unapproved_packet_delta,
 )
 from .execution import canonical_json
+from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _DOMAIN = b"ARK-v3-unapproved-packet-delta-review-v1\0"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -80,6 +81,26 @@ def verify_detached_unapproved_packet_delta(
     Local file/hash comparison does not grant historical custody or attest
     anything about an execution identity, human decision or billing permission.
     """
+    if type(old_snapshot) is not dict or type(new_snapshot) is not dict:
+        raise DetachedPacketDeltaRejected("exact detached packet snapshots required")
+    try:
+        old_epoch = _pin_json_tree(old_snapshot)
+        new_epoch = _pin_json_tree(new_snapshot)
+    except (ValueError, TypeError, RecursionError) as exc:
+        raise DetachedPacketDeltaRejected(
+            "detached packet snapshots cannot be pinned"
+        ) from exc
+
+    def stable_inputs() -> None:
+        try:
+            _assert_json_tree_epoch(old_snapshot, old_epoch)
+            _assert_json_tree_epoch(new_snapshot, new_epoch)
+        except (ValueError, TypeError, RecursionError) as exc:
+            raise DetachedPacketDeltaRejected(
+                "detached packet snapshot changed during recheck"
+            ) from exc
+
+    stable_inputs()
     pinned = _fields(retained)
     if (
         type(retained_old_file_sha256) is not str
@@ -91,6 +112,7 @@ def verify_detached_unapproved_packet_delta(
     descriptors = _ORIGINAL_DENIAL_DESCRIPTORS
 
     def stable() -> None:
+        stable_inputs()
         if (
             any(
                 now is not old
