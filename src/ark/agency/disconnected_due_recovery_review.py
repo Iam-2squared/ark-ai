@@ -12,6 +12,11 @@ import json
 import re
 from dataclasses import dataclass
 
+from .disconnected_due_prefix_review import (
+    DisconnectedDuePrefixRejected,
+    DisconnectedDuePrefixReview,
+    review_retained_due_prefix,
+)
 from .disconnected_due_reservation import (
     DisconnectedDueReservations,
     DueReservationWitness,
@@ -121,6 +126,43 @@ def review_restarted_due_reservations(
         raise DisconnectedDueRecoveryRejected("retained due reservation count regressed")
     if current[0] == prior[0] and current[1] != prior[1]:
         raise DisconnectedDueRecoveryRejected("retained due history rewritten at same count")
+
+    # A later, locally well-formed append cannot justify changing a reserved
+    # occurrence from the independently retained prefix. Reconcile that prefix
+    # against ONE SQLite read transaction in the companion passive reviewer.
+    # This second read must also agree with our earlier observation: concurrent
+    # appends between reads are an ambiguity, not permission to continue.
+    try:
+        prefix = review_retained_due_prefix(ledger, retained)
+    except DisconnectedDuePrefixRejected as exc:
+        raise DisconnectedDueRecoveryRejected(
+            "retained due reservation prefix rejected"
+        ) from exc
+    observed_epoch()
+    expected_prefix_status = (
+        "ADVANCED_PREFIX_UNAUTHENTICATED"
+        if current[0] > prior[0] else "UNCHANGED_LOCAL_HISTORY"
+    )
+    if (
+        type(prefix) is not DisconnectedDuePrefixReview
+        or type(prefix.previous_count) is not int
+        or prefix.previous_count != prior[0]
+        or type(prefix.current_count) is not int
+        or prefix.current_count != current[0]
+        or type(prefix.current_fingerprint) is not str
+        or prefix.current_fingerprint != current[1]
+        or prefix.status != expected_prefix_status
+        or prefix.independently_authenticated is not False
+        or prefix.historical_writer_proven is not False
+        or prefix.trusted_clock_verified is not False
+        or prefix.notification_authorized is not False
+        or prefix.tool_dispatch_authorized is not False
+        or prefix.automatic_replay_authorized is not False
+    ):
+        raise DisconnectedDueRecoveryRejected(
+            "due restart observation drifted or prefix gained authority"
+        )
+    observed_epoch()
     status = (
         "ADVANCED_HISTORY_UNVERIFIED"
         if current[0] > prior[0] else "UNCHANGED_LOCAL_HISTORY"
