@@ -72,6 +72,24 @@ class DisconnectedDuePreview:
 # A reentrant synthetic constructor must not replace an inert result class
 # with a compatible-looking object that advertises authority.
 _RESULT_TYPE = DisconnectedDuePreview
+_DENIAL_NAMES = (
+    "trusted_clock_verified", "notification_authorized",
+    "tool_execution_authorized", "automatic_replay_authorized",
+    "consent_verified",
+)
+_ORIGINAL_DENIAL_DESCRIPTORS = tuple(
+    getattr(_RESULT_TYPE, key) for key in _DENIAL_NAMES
+)
+
+
+def _require_original_denials() -> None:
+    if any(
+        getattr(_RESULT_TYPE, key) is not original
+        for key, original in zip(
+            _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise SchedulePreviewRejected("constructed preview carrier changed")
 
 
 def _valid_policy(policy: object) -> None:
@@ -114,6 +132,9 @@ def preview_disconnected_schedule(
     previous occurrence identity only checks internal consistency of a
     caller-owned cursor, not durable custody or authenticated completion.
     """
+    # Denial getters are executable callbacks; reject substitutions before
+    # processing any synthetic recurrence or caller clock.
+    _require_original_denials()
     _valid_policy(policy)
     if type(cursor) is not DisconnectedScheduleCursor:
         raise SchedulePreviewRejected("exact synthetic schedule cursor required")
@@ -127,6 +148,7 @@ def preview_disconnected_schedule(
     carriers = original_policy + original_cursor
 
     def assert_epoch() -> None:
+        _require_original_denials()
         if (
             type(policy) is not DisconnectedSchedulePolicy
             or type(cursor) is not DisconnectedScheduleCursor
@@ -175,14 +197,6 @@ def preview_disconnected_schedule(
     ).encode("ascii")
     fingerprint = hashlib.sha256(_DOMAIN + b"preview\0" + packed).hexdigest()
     assert_epoch()
-    denial_names = (
-        "trusted_clock_verified", "notification_authorized",
-        "tool_execution_authorized", "automatic_replay_authorized",
-        "consent_verified",
-    )
-    denial_descriptors = tuple(
-        getattr(_RESULT_TYPE, name) for name in denial_names
-    )
     result = DisconnectedDuePreview(state, index, occurrence, due, fingerprint)
 
     def stable_result() -> None:
@@ -205,7 +219,7 @@ def preview_disconnected_schedule(
             or any(
                 getattr(_RESULT_TYPE, name) is not descriptor
                 for name, descriptor in zip(
-                    denial_names, denial_descriptors, strict=True,
+                    _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
                 )
             )
         ):
@@ -213,7 +227,7 @@ def preview_disconnected_schedule(
 
     assert_epoch()
     stable_result()
-    for name in denial_names:
+    for name in _DENIAL_NAMES:
         if getattr(result, name) is not False:
             raise SchedulePreviewRejected("constructed preview carrier changed")
         assert_epoch()
