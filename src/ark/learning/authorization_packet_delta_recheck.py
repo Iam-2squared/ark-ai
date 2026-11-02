@@ -108,17 +108,32 @@ def verify_detached_unapproved_packet_delta(
     except ReviewPacketDeltaRejected as exc:
         raise DetachedPacketDeltaRejected("local packet files cannot be rechecked") from exc
     stable()
-    if _fields(expected) != pinned:
+    expected_fields = _fields(expected)
+    if expected_fields != pinned:
         raise DetachedPacketDeltaRejected("retained packet delta no longer matches")
-    for flag in _DENIALS:
-        if getattr(expected, flag) is not False:
-            raise DetachedPacketDeltaRejected("fresh packet delta gained authority")
-        stable()
-        if _fields(expected) != pinned:
+
+    def stable_expected() -> None:
+        # The fresh reviewer is a callback. Its result is an exact-class
+        # passive receipt, but even equal-valued replacement of its original
+        # field carriers must not pass an authority-denial callback.
+        if any(
+            now is not prior
+            for now, prior in zip(_fields(expected), expected_fields, strict=True)
+        ):
             raise DetachedPacketDeltaRejected(
                 "fresh packet delta changed during denial"
             )
-    stable()
-    if _fields(expected) != pinned:
-        raise DetachedPacketDeltaRejected("fresh packet delta changed at return")
+        stable()
+
+    stable_expected()
+    for flag in _DENIALS:
+        if getattr(expected, flag) is not False:
+            raise DetachedPacketDeltaRejected("fresh packet delta gained authority")
+        stable_expected()
+        # Do not allow a fresh callback to invalidate the previously denied
+        # retained receipt without ever rechecking its flags.
+        if any(getattr(retained, name) is not False for name in _DENIALS):
+            raise DetachedPacketDeltaRejected("retained delta gained authority")
+        stable_expected()
+    stable_expected()
     return None
