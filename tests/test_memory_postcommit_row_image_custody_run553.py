@@ -7,11 +7,11 @@ ToolBackend. A matching row cannot prove which caller committed it.
 from __future__ import annotations
 
 import pytest
+from test_memory_postcommit_triage_run552 import make_case
 
 from ark.memory import MemoryWrite
 from ark.memory import postcommit_uncertainty_review as triage
 from ark.memory.generation_fenced_cas import generation_fenced_memory_update
-from test_memory_postcommit_triage_run552 import make_case
 
 
 @pytest.mark.parametrize("changed_field", ("content", "metadata", "expires_at_ms"))
