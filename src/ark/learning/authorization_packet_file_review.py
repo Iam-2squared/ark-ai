@@ -57,11 +57,13 @@ def _assert_original_denials() -> None:
 def _file_epoch(info: os.stat_result) -> tuple[int, int, int, int, int]:
     # mtime alone is caller-restorable with os.utime(). Include ctime, which
     # records inode metadata changes on POSIX, to flag same-size, same-byte
-    # rewrites that restore mtime between our two passive reads. On Windows,
-    # ctime has different semantics; this remains only local custody evidence.
+    # rewrites that restore mtime between our two passive reads. Windows
+    # path.stat and fstat may disagree on ctime even for an unchanged file;
+    # preserve the original Windows epoch behavior instead of false rejection.
+    # This remains unauthenticated local custody, never approval or provenance.
     return (
         info.st_dev, info.st_ino, info.st_size,
-        info.st_mtime_ns, info.st_ctime_ns,
+        info.st_mtime_ns, info.st_ctime_ns if os.name == "posix" else 0,
     )
 
 
