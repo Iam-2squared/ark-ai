@@ -91,9 +91,13 @@ def test_retained_receipt_cannot_gain_authority_at_final_scan(
         preview.MemoryExpiryPreview, flag,
         property(lambda self: bool(armed and self is receipt)),
     )
-    with pytest.raises(preview.MemoryExpiryPreviewRejected, match="changed"):
+    # Replacing a denial descriptor is now refused before either page scan.
+    with pytest.raises(
+        preview.MemoryExpiryPreviewRejected,
+        match="authority descriptor changed",
+    ):
         _check(state)
-    assert scans == 2
+    assert scans == 0
 
 
 @pytest.mark.parametrize("flag", (
@@ -120,9 +124,13 @@ def test_latest_page_receipt_cannot_gain_new_authority(
         preview.MemoryExpiryPreview, flag,
         property(lambda self: bool(self is latest)),
     )
-    with pytest.raises(preview.MemoryExpiryPreviewRejected, match="changed"):
+    # Replacing a denial descriptor is now refused before either page scan.
+    with pytest.raises(
+        preview.MemoryExpiryPreviewRejected,
+        match="authority descriptor changed",
+    ):
         _check(state)
-    assert scans == 2
+    assert scans == 0
 
 
 def test_retained_receipt_denial_getter_cannot_replace_equal_carrier(
@@ -146,9 +154,13 @@ def test_retained_receipt_denial_getter_cannot_replace_equal_carrier(
     monkeypatch.setattr(
         preview.MemoryExpiryPreview, "deletion_authorized", property(late_false),
     )
-    with pytest.raises(preview.MemoryExpiryPreviewRejected):
+    # Even a False-valued replacement is now rejected before a getter runs.
+    with pytest.raises(
+        preview.MemoryExpiryPreviewRejected,
+        match="authority descriptor changed",
+    ):
         _check(state)
-    assert calls >= 2
+    assert calls == 0
 
 
 def test_valid_review_is_read_only_and_non_authorizing(tmp_path):
