@@ -13,12 +13,14 @@ import re
 from dataclasses import dataclass
 
 from .offline_pcm_wav import (
+    OfflineWaveRejected,
     OfflineWaveRequest,
     OfflineWaveReview,
     inspect_local_pcm_wav,
 )
 from .offline_png_inventory import (
     OfflinePngInventory,
+    OfflinePngRejected,
     OfflinePngRequest,
     inspect_disconnected_png,
 )
@@ -108,7 +110,9 @@ def inspect_disconnected_observation_pair(
         retained_png_sha256, retained_wav_sha256,
     )
     if any(type(x) is not str or _SHA.fullmatch(x) is None for x in retained):
-        raise OfflineObservationPairRejected("exact retained observation hashes required")
+        raise OfflineObservationPairRejected(
+            "exact retained observation hashes required"
+        )
     pinned_image = (
         image.owner_sha256, image.privacy_sha256,
         image.source_sha256, image.png_bytes,
@@ -146,9 +150,14 @@ def inspect_disconnected_observation_pair(
 
     def measure() -> tuple[object, ...]:
         stable()
-        png = inspect_disconnected_png(image)
-        stable()
-        wav = inspect_local_pcm_wav(audio)
+        try:
+            png = inspect_disconnected_png(image)
+            stable()
+            wav = inspect_local_pcm_wav(audio)
+        except (OfflinePngRejected, OfflineWaveRejected) as exc:
+            raise OfflineObservationPairRejected(
+                "untrusted media inventory rejected"
+            ) from exc
         stable()
         if (
             type(png) is not OfflinePngInventory
