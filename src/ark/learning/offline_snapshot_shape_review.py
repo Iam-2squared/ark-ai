@@ -44,6 +44,15 @@ _DENIED = (
     "real_training_authorized", "candidate_generation_authorized",
     "v2_opening_authorized", "promotion_authorized",
 )
+_INVENTORY_DENIALS = (
+    "external_compute_authorized", "candidate_generation_authorized",
+    "protected_evaluation_authorized", "promotion_authorized",
+)
+# Retain the denial descriptors at module import, not after a replaceable
+# inventory/shape callback has installed a False-only substitute.
+_ORIGINAL_INVENTORY_DENIALS = tuple(
+    getattr(OfflineReadinessInventory, name) for name in _INVENTORY_DENIALS
+)
 
 
 class OfflineShapeRejected(ValueError):
@@ -80,6 +89,11 @@ class UnapprovedSnapshotShapeReview:
     @property
     def promotion_authorized(self) -> bool:
         return False
+
+
+_ORIGINAL_SHAPE_DENIALS = tuple(
+    getattr(UnapprovedSnapshotShapeReview, name) for name in _DENIED
+)
 
 
 def _plausible_shape(path: str, value: object) -> bool:
@@ -164,17 +178,12 @@ def review_unapproved_v3_snapshot_shapes(
         stable()
         # The inventory's non-authority properties are also checked here,
         # independently of how its replaceable callable constructed it.
-        inventory_denials = (
-            "external_compute_authorized", "candidate_generation_authorized",
-            "protected_evaluation_authorized", "promotion_authorized",
-        )
+        inventory_denials = _INVENTORY_DENIALS
         inventory_epoch = (
             inventory.snapshot_sha256, inventory.unresolved_paths,
             inventory.unresolved_count,
         )
-        inventory_descriptors = tuple(
-            getattr(OfflineReadinessInventory, key) for key in inventory_denials
-        )
+        inventory_descriptors = _ORIGINAL_INVENTORY_DENIALS
 
         def assert_inventory_epoch() -> None:
             if (
@@ -248,9 +257,7 @@ def review_unapproved_v3_snapshot_shapes(
             result.snapshot_sha256, result.unresolved_paths,
             result.invalid_shape_paths, result.checked_path_count,
         )
-        descriptors = tuple(
-            getattr(UnapprovedSnapshotShapeReview, name) for name in _DENIED
-        )
+        descriptors = _ORIGINAL_SHAPE_DENIALS
 
         def stable_result() -> None:
             if (
