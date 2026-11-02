@@ -70,12 +70,13 @@ def test_continuity_rejects_equal_witness_id_replacement(
 
     with pytest.raises(
         continuity.SyntheticContextRevocationRejected,
-        match="retained revocation evidence changed",
+        match="retained revocation evidence changed|revocation integrity validator changed",
     ):
         continuity.review_revocation_continuity(
             revocations, retained=retained,
         )
-    assert injections == [True]
+    # A substituted witness validator is rejected before its callback runs.
+    assert injections == ([] if callback == "integrity" else [True])
 
 
 @pytest.mark.parametrize("phase", (1, 3))
