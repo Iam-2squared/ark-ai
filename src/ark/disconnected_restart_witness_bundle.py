@@ -75,6 +75,44 @@ class OfflineRestartWitnessReport:
 
 
 _REPORT = OfflineRestartWitnessReport
+_REPORT_DENIALS = (
+    "cross_store_atomicity_proven", "independent_custody_proven",
+    "startup_authorized", "dispatch_authorized",
+    "automatic_replay_authorized", "personal_context_use_authorized",
+    "trusted_clock_verified",
+)
+# Capture authoritative descriptors at module import, before any store's
+# read callback could replace them with other False-returning properties.
+_ORIGINAL_REPORT_DENIALS = tuple(
+    vars(_REPORT)[name] for name in _REPORT_DENIALS
+)
+_ORIGINAL_WITNESS_DENIALS = (
+    vars(_MEMORY_WITNESS)["custody_authenticated"],
+    vars(_CONTEXT_WITNESS)["independent_custody_proven"],
+    vars(_DUE_WITNESS)["independent_custody_proven"],
+)
+
+
+def _assert_original_authority() -> None:
+    if (
+        OfflineRestartWitnessReport is not _REPORT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_DENIALS, _ORIGINAL_REPORT_DENIALS, strict=True,
+            )
+        )
+        or vars(_MEMORY_WITNESS).get("custody_authenticated")
+        is not _ORIGINAL_WITNESS_DENIALS[0]
+        or vars(_CONTEXT_WITNESS).get("independent_custody_proven")
+        is not _ORIGINAL_WITNESS_DENIALS[1]
+        or vars(_DUE_WITNESS).get("independent_custody_proven")
+        is not _ORIGINAL_WITNESS_DENIALS[2]
+    ):
+        raise OfflineRestartWitnessRejected(
+            "restart report or retained witness authority definition changed"
+        )
+
 
 
 def _checked(value: object, witness_type: type, count_name: str, hash_name: str,
@@ -112,6 +150,7 @@ def review_disconnected_restart_witnesses(
     cross-store snapshot or guarantee that stores will not change afterward.
     Increased histories require separate reconciliation, not automatic replay.
     """
+    _assert_original_authority()
     if (
         type(memory) is not _MEMORY_LEDGER
         or type(context) is not _CONTEXT_LEDGER
@@ -132,6 +171,7 @@ def review_disconnected_restart_witnesses(
     )
 
     def stable() -> None:
+        _assert_original_authority()
         if (memory._path, context._path, due._path) != original_paths or any(
             source._path is not original
             for source, original in zip(
@@ -185,13 +225,9 @@ def review_disconnected_restart_witnesses(
     # The final denial getters are callbacks. Capture the property identities
     # *before* invoking any of them; a False-returning getter can mutate an
     # earlier denial descriptor, a retained SQLite witness or the report.
-    denial_names = (
-        "cross_store_atomicity_proven", "independent_custody_proven",
-        "startup_authorized", "dispatch_authorized",
-        "automatic_replay_authorized", "personal_context_use_authorized",
-        "trusted_clock_verified",
-    )
-    descriptors = tuple(getattr(_REPORT, name) for name in denial_names)
+    denial_names = _REPORT_DENIALS
+    descriptors = _ORIGINAL_REPORT_DENIALS
+    _assert_original_authority()
     if any(type(descriptor) is not property for descriptor in descriptors):
         raise OfflineRestartWitnessRejected("restart denial property changed")
     report_epoch = (
