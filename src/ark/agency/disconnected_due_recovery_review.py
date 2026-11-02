@@ -24,7 +24,7 @@ from .disconnected_due_reservation import (
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_ROWS = 512
-_DOMAIN = b"ARK-due-restart-triage-v1\0"
+_DOMAIN = b"ARK-due-restart-triage-v2\0"
 _LEDGER_TYPE = DisconnectedDueReservations
 _WITNESS_TYPE = DueReservationWitness
 
@@ -196,6 +196,8 @@ def review_restarted_due_reservations(
     def stable_prefix() -> None:
         if (
             type(prefix) is not DisconnectedDuePrefixReview
+            or type(prefix.review_sha256) is not str
+            or _SHA.fullmatch(prefix.review_sha256) is None
             or any(now is not original for now, original in zip(
                 (
                     prefix.previous_count, prefix.current_count,
@@ -215,12 +217,20 @@ def review_restarted_due_reservations(
         "ADVANCED_HISTORY_UNVERIFIED"
         if current[0] > prior[0] else "UNCHANGED_LOCAL_HISTORY"
     )
+    # Commit the independently re-read prefix receipt into this recovery
+    # fingerprint. Counts and a tip hash omit the prefix review identity.
+    # This is still only a *local* claim, never authenticated history.
+    observed_epoch()
+    stable_prefix()
     payload = json.dumps(
-        (prior, current, status), separators=(",", ":"), ensure_ascii=True,
+        (prior, current, status, prefix_epoch[4]),
+        separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
     observed_epoch()
+    stable_prefix()
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     observed_epoch()
+    stable_prefix()
     result = DisconnectedDueRecoveryReview(prior[0], current[0], status, digest)
     result_epoch = (prior[0], current[0], status, digest)
 
