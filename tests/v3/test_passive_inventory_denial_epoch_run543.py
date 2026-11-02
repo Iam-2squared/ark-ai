@@ -47,10 +47,12 @@ def test_last_false_getter_cannot_replace_prior_denial(
         inv.inventory_unapproved_v3_readiness(_snapshot())
 
 
-def test_false_getter_cannot_replace_equal_valued_paths_tuple(monkeypatch):
+def test_preinstalled_mutating_getter_rejected_before_inventory(monkeypatch):
     report_type = inv.OfflineReadinessInventory
+    calls = []
 
     def mutate(self):
+        calls.append(1)
         object.__setattr__(
             self, "unresolved_paths", tuple(list(self.unresolved_paths)),
         )
@@ -59,11 +61,15 @@ def test_false_getter_cannot_replace_equal_valued_paths_tuple(monkeypatch):
     monkeypatch.setattr(
         report_type, "promotion_authorized", property(mutate),
     )
+    # The earlier failure was a later output-carrier rebind. Original
+    # descriptor custody now refuses this preinstalled callback *before* it
+    # runs, without accepting any substituted False-returning implementation.
     with pytest.raises(
         inv.OfflineReadinessRejected,
-        match="readiness inventory changed",
+        match="readiness authority descriptor changed",
     ):
         inv.inventory_unapproved_v3_readiness(_snapshot())
+    assert calls == []
 
 
 def test_passive_inventory_remains_unapproved_without_callbacks():
