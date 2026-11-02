@@ -81,6 +81,39 @@ class OfflinePrivacyVetoReceipt:
         return False
 
 
+_REVIEW_TYPE = OfflinePrivacyVetoReview
+_REVIEW_DENIALS = (
+    "consent_verified", "context_release_authorized",
+    "user_identity_authenticated",
+)
+_ORIGINAL_REVIEW_DENIALS = tuple(
+    getattr(_REVIEW_TYPE, key) for key in _REVIEW_DENIALS
+)
+
+
+def _assert_review_denied(review: OfflinePrivacyVetoReview) -> None:
+    if type(review) is not _REVIEW_TYPE:
+        raise OfflinePrivacyVetoRejected("privacy veto review acquired authority")
+    original = (review.local_veto_seen, review.witness)
+    for key, descriptor in zip(
+        _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+    ):
+        if (
+            getattr(_REVIEW_TYPE, key) is not descriptor
+            or getattr(review, key) is not False
+            or review.local_veto_seen is not original[0]
+            or review.witness is not original[1]
+        ):
+            raise OfflinePrivacyVetoRejected("privacy veto review acquired authority")
+    if any(
+        getattr(_REVIEW_TYPE, key) is not descriptor
+        for key, descriptor in zip(
+            _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+        )
+    ) or (review.local_veto_seen, review.witness) != original:
+        raise OfflinePrivacyVetoRejected("privacy veto review changed")
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -226,7 +259,10 @@ class DisconnectedPrivacyVetoLedger:
             conn.execute("BEGIN")
             try:
                 current = _inspect(conn)
-                if current != retained or (retained.count, retained.fingerprint) != epoch:
+                if (
+                    (current.count, current.fingerprint) != epoch
+                    or (retained.count, retained.fingerprint) != epoch
+                ):
                     raise OfflinePrivacyVetoRejected("stale or rewritten veto evidence")
                 rows = tuple(conn.execute(
                     "SELECT seq FROM synthetic_privacy_veto "
@@ -234,10 +270,21 @@ class DisconnectedPrivacyVetoLedger:
                 ))
                 if len(rows) > 1 or self._path is not source:
                     raise OfflinePrivacyVetoRejected("veto source changed during review")
-                if _inspect(conn) != current:
+                second = _inspect(conn)
+                if (
+                    (second.count, second.fingerprint)
+                    != (current.count, current.fingerprint)
+                ):
                     raise OfflinePrivacyVetoRejected("veto history changed during review")
                 conn.commit()
-                return OfflinePrivacyVetoReview(bool(rows), current)
+                result = OfflinePrivacyVetoReview(bool(rows), current)
+                _assert_review_denied(result)
+                if (
+                    result.local_veto_seen is not bool(rows)
+                    or result.witness is not current
+                ):
+                    raise OfflinePrivacyVetoRejected("privacy veto review changed")
+                return result
             except BaseException:
                 conn.rollback()
                 raise
@@ -258,7 +305,10 @@ class DisconnectedPrivacyVetoLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 current = _inspect(conn)
-                if current != retained or (retained.count, retained.fingerprint) != epoch:
+                if (
+                    (current.count, current.fingerprint) != epoch
+                    or (retained.count, retained.fingerprint) != epoch
+                ):
                     raise OfflinePrivacyVetoRejected("stale or rewritten veto evidence")
                 if current.count >= _MAX_ROWS:
                     raise OfflinePrivacyVetoRejected("veto ledger full")
