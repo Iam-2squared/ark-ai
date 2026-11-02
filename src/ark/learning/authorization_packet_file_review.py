@@ -70,17 +70,28 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
             or any(parent.is_symlink() for parent in path.parents)
         ):
             raise LocalPacketBindingRejected("review packet file path or byte budget denied")
-        # Opening the path again after lstat() has a symlink-swap window.
-        # Where supported, O_NOFOLLOW denies a swapped final-component link
-        # at the kernel open boundary. Windows still relies on the existing
-        # lstat/fstat/second-read checks; none of these authenticate custody.
+        # lstat()/open() is a race. O_NOFOLLOW denies a final symlink on
+        # supported POSIX platforms. O_NONBLOCK also prevents a swapped FIFO
+        # from hanging in open() before fstat can reject a nonregular inode.
+        # Neither flag authenticates custody or closes ancestor-path races.
         flags = (
             os.O_RDONLY | getattr(os, "O_BINARY", 0)
             | getattr(os, "O_CLOEXEC", 0)
             | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0)
         )
         with os.fdopen(os.open(path, flags), "rb") as handle:
             opened = os.fstat(handle.fileno())
+            # A race may substitute a FIFO, device, or socket. Never read
+            # unverified nonregular bytes merely because lstat saw a file.
+            if (
+                not stat.S_ISREG(opened.st_mode)
+                or opened.st_nlink != 1
+                or _file_epoch(opened) != _file_epoch(before)
+            ):
+                raise LocalPacketBindingRejected(
+                    "review packet file changed during read"
+                )
             content = handle.read(_MAX_PACKET_BYTES + 1)
         after = path.lstat()
     except OSError as exc:
