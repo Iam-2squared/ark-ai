@@ -66,6 +66,23 @@ class DisconnectedDueRecoveryReview:
 
 
 _RESULT_TYPE = DisconnectedDueRecoveryReview
+_RESULT_DENIALS = (
+    "historical_prefix_proven", "independently_custodied",
+    "trusted_clock_verified", "notification_authorized",
+    "tool_dispatch_authorized", "automatic_replay_authorized",
+)
+_PREFIX_DENIALS = (
+    "independently_authenticated", "historical_writer_proven",
+    "trusted_clock_verified", "notification_authorized",
+    "tool_dispatch_authorized", "automatic_replay_authorized",
+)
+_ORIGINAL_RESULT_DENIALS = tuple(
+    getattr(_RESULT_TYPE, name) for name in _RESULT_DENIALS
+)
+_ORIGINAL_PREFIX_DENIALS = tuple(
+    getattr(DisconnectedDuePrefixReview, name) for name in _PREFIX_DENIALS
+)
+_ORIGINAL_WITNESS_DENIAL = getattr(_WITNESS_TYPE, "independent_custody_proven")
 
 
 def _checked(value: object) -> tuple[int, str]:
@@ -75,6 +92,8 @@ def _checked(value: object) -> tuple[int, str]:
         or not 0 <= value.count <= _MAX_ROWS
         or type(value.fingerprint) is not str
         or _SHA.fullmatch(value.fingerprint) is None
+        or getattr(_WITNESS_TYPE, "independent_custody_proven")
+        is not _ORIGINAL_WITNESS_DENIAL
         or value.independent_custody_proven is not False
     ):
         raise DisconnectedDueRecoveryRejected("invalid exact due witness")
@@ -158,11 +177,40 @@ def review_restarted_due_reservations(
         or prefix.notification_authorized is not False
         or prefix.tool_dispatch_authorized is not False
         or prefix.automatic_replay_authorized is not False
+        or any(
+            getattr(DisconnectedDuePrefixReview, name) is not original
+            for name, original in zip(
+                _PREFIX_DENIALS, _ORIGINAL_PREFIX_DENIALS, strict=True,
+            )
+        )
     ):
         raise DisconnectedDueRecoveryRejected(
             "due restart observation drifted or prefix gained authority"
         )
     observed_epoch()
+    prefix_epoch = (
+        prefix.previous_count, prefix.current_count,
+        prefix.current_fingerprint, prefix.status, prefix.review_sha256,
+    )
+
+    def stable_prefix() -> None:
+        if (
+            type(prefix) is not DisconnectedDuePrefixReview
+            or any(now is not original for now, original in zip(
+                (
+                    prefix.previous_count, prefix.current_count,
+                    prefix.current_fingerprint, prefix.status, prefix.review_sha256,
+                ), prefix_epoch, strict=True,
+            ))
+            or any(
+                getattr(DisconnectedDuePrefixReview, name) is not original
+                for name, original in zip(
+                    _PREFIX_DENIALS, _ORIGINAL_PREFIX_DENIALS, strict=True,
+                )
+            )
+        ):
+            raise DisconnectedDueRecoveryRejected("retained prefix result changed")
+
     status = (
         "ADVANCED_HISTORY_UNVERIFIED"
         if current[0] > prior[0] else "UNCHANGED_LOCAL_HISTORY"
@@ -174,20 +222,33 @@ def review_restarted_due_reservations(
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     observed_epoch()
     result = DisconnectedDueRecoveryReview(prior[0], current[0], status, digest)
-    observed_epoch()
-    if (
-        type(result) is not _RESULT_TYPE
-        or result.previous_count is not prior[0]
-        or result.observed_count is not current[0]
-        or result.status is not status
-        or result.digest is not digest
-        or result.historical_prefix_proven is not False
-        or result.independently_custodied is not False
-        or result.trusted_clock_verified is not False
-        or result.notification_authorized is not False
-        or result.tool_dispatch_authorized is not False
-        or result.automatic_replay_authorized is not False
-    ):
-        raise DisconnectedDueRecoveryRejected("due recovery result changed")
-    observed_epoch()
+    result_epoch = (prior[0], current[0], status, digest)
+
+    def stable_result() -> None:
+        observed_epoch()
+        stable_prefix()
+        if (
+            type(result) is not _RESULT_TYPE
+            or any(now is not original for now, original in zip(
+                (result.previous_count, result.observed_count,
+                 result.status, result.digest), result_epoch, strict=True,
+            ))
+            or any(
+                getattr(_RESULT_TYPE, name) is not original
+                for name, original in zip(
+                    _RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS, strict=True,
+                )
+            )
+        ):
+            raise DisconnectedDueRecoveryRejected("due recovery result changed")
+
+    stable_result()
+    for name in _RESULT_DENIALS:
+        if getattr(result, name) is not False:
+            raise DisconnectedDueRecoveryRejected("due recovery result changed")
+        # Each denial getter is a callback boundary. A late False result
+        # cannot conceal mutated fields, swapped descriptors, or changed
+        # retained/reobserved SQLite witnesses.
+        stable_result()
+    stable_result()
     return result
