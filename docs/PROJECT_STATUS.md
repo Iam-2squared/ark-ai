@@ -1,5 +1,58 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run543 / 2026-11-02 JST:** FIVE coherent free-only, nonexecuting source+test packages (PR #8: 4, PR #5: 1), **38 newly authored parameter-expanded pytest cases** (PR #8: 30; PR #5: 8) and TWO grounded technical notes were saved through the ordinary GitHub Contents API. Authored cases are **NOT** independently executed local pytest PASS. The PR #5 current note HEAD has **6/6 GREEN** independently inspected; the PR #8 latest source/test and this new checkpoint are **NOT YET exact-head ALL-SIX GREEN**. One pre-checkpoint PR #8 startup fixture CI failure was traced to an injected constructor causing an unhandled AttributeError; an exact-type fail-closed guard was applied and awaits CI. ARK/JARVIS/V3 overall **NOT_PASSED**. Both PRs Draft/unmerged. No real ToolBackend, spending, Candidate, protected evaluation, irreversible deletion, or frozen-contract change.
+
+**Saved at:** **2026-11-02T09:56:49.876+09:00 Asia/Tokyo/JST**, sampled from the automation host's ordinary wall clock just before this normal checkpoint write, **NOT** signed/trusted time, consent, source provenance, authenticated identity, or human approval.
+
+## LATEST — exact refs, work-basis and checkpoint-result semantics
+
+- **PR #8:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`; exact **invocation work-basis HEAD** `d4a91f9448bae232d3b692501e68267d663b415a`; exact **checkpoint write-basis HEAD** `2ff92af10d93d2e8f840c127d3f42580aadec120`. The checkpoint-result commit will be created by GitHub when this file is saved, and cannot truthfully be embedded within its own contents. The result SHA must be obtained by **independent post-write PR HEAD read** and checked against this document blob.
+- **PR #5:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`; invocation work-basis `75c5ce54962c61acd40cf52a0b4bd94b859dcec8`; latest inspected technical-note HEAD `1ed8036ad45c98463d05bce76fdabb5d488b95b0`.
+- **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (independently read this invocation). No main merge or draft promotion.
+
+## NEW — five verified-saved source/test packages, 38 authored cases
+
+1. **Restart witness final-authority and retained-tip custody (PR #8, 10 authored tests):** source commit `bba9a2bc08337746906865d1c9b1e9173e193046`, tests `7dbda5efc7b48093fbaf6d72bdd787b37801bc06`. Keep all seven result veto property descriptor identities and report/tip scalar carriers across False-valued callbacks. Existing injected-constructor regression exposed an unhandled AttributeError; **smallest semantics-preserving fail-closed exact-type guard** saved at `2ff92af10d93d2e8f840c127d3f42580aadec120`. Source never proves cross-store atomicity, startup approval or dispatch.
+2. **PNG inventory late-consent descriptor custody (PR #8, 5 authored tests):** source `1181f41b4baf9bd29f85552c2d2be3012cf8cb83`, tests `d0e094eb6ca1793710915b8d3725b90aca7d03d1`. A last False getter cannot replace previously checked source/capture/consent/disclosure veto descriptors, even with another False-valued property. No camera, provenance authentication, pixel release or consent proof.
+3. **Memory generation CAS observation-token denial epoch (PR #8, 5 authored tests):** source `2e795b661ca48ee3150b3aa6817775e252a08d4c`, tests `c26b6b283ab81fbd7988f88916cf60b93e5cc4fc`, test-only API assertion correction `82ec93c756895677220b3188b6fe5a1099f1b39a`. Pin original token carrier identities, store/scope and exact False descriptor definitions; prevent late replacement. The opt-in Memory v1 generation CAS remains non-authorizing; no frozen schema/API change or automatic COMMIT-UNKNOWN retry.
+4. **WAV-to-mono16 content binding (PR #8, 10 authored tests):** source `cf146fca97d4b99d67be77c1338e5ca07fa399f2`, tests `08683073dcbaeb9a4262714da40439de244014ac`. Independent bounded integer sample projection and converter manifest recomputation reject digest-consistent forged output and duck-typed converters before resampling. Fixture-only, no microphone, speech recognition, media disclosure or real action.
+5. **Passive V3 unresolved-identity denial custody (PR #5, 8 authored tests):** source `6e809d2c74fe008317767312e243ef87a67f0664`, tests `66f8fbbbcfee48832ce4e8ceffe80cd44391fa2f`. Pin non-authority property descriptors and output carriers across reflective callbacks. Resolved-looking hashes are still unverified; no full training/preflight, real Candidate, protected V2 evaluation or approval minted.
+
+**Saved technical notes:** [Run543 JARVIS restart/PNG/Memory/WAV](https://github.com/Iam-2squared/ark-ai/blob/69420335347446023a81f13af09910fe51a7437c/docs/JARVIS_RUN543_RESTART_PNG_MEMORY_DENIAL_EPOCHS.md); [Run543 passive V3 inventory](https://github.com/Iam-2squared/ark-ai/blob/1ed8036ad45c98463d05bce76fdabb5d488b95b0/docs/v3/RUN543_PASSIVE_INVENTORY_DENIAL_EPOCH.md). Corrective code commit after the JARVIS note above: `2ff92af10d93d2e8f840c127d3f42580aadec120`.
+
+## Exact-commit CI and regression evidence
+
+- Inherited PR #8 Run542 checkpoint `d4a91f9448bae232d3b692501e68267d663b415a`, [41364700533](https://github.com/Iam-2squared/ark-ai/actions/runs/41364700533), **6/6 GREEN**, independently inspected; older HEAD only.
+- Inherited PR #5 Run542 `75c5ce54962c61acd40cf52a0b4bd94b859dcec8`, [41364517347](https://github.com/Iam-2squared/ark-ai/actions/runs/41364517347), **6/6 GREEN**, independently inspected; older HEAD only.
+- PR #8 restart tests `7dbda5efc7b48093fbaf6d72bdd787b37801bc06`, [41368904295](https://github.com/Iam-2squared/ark-ai/actions/runs/41368904295): **6/6 FAIL** due to an already-existing injected-constructor regression: exact report factory returned `object` and source raised `AttributeError` instead of established `OfflineRestartWitnessRejected`. Real Ubuntu CI log examined: **1 failed, 6648 passed, 1 skipped**. Fixed at `2ff92af10d93d2e8f840c127d3f42580aadec120`, **new exact-HEAD CI PENDING**; never label prior failure GREEN.
+- PR #8 PNG tests `d0e094eb6ca1793710915b8d3725b90aca7d03d1`, [41368998386](https://github.com/Iam-2squared/ark-ai/actions/runs/41368998386): **6/6 FAIL**, attributable to same inherited restart-constructor regression; inspected Ubuntu 3.12 log: **1 failed, 6653 passed, 1 skipped**. Fixed later; no safety downgrade.
+- PR #8 Memory test correction `82ec93c756895677220b3188b6fe5a1099f1b39a`, [41369273023](https://github.com/Iam-2squared/ark-ai/actions/runs/41369273023): first Ubuntu environment **FAIL** from same restart constructor regression, other environments IN PROGRESS at last inspection; fixed in a later commit.
+- PR #8 WAV tests `08683073dcbaeb9a4262714da40439de244014ac`, [41369620497](https://github.com/Iam-2squared/ark-ai/actions/runs/41369620497): **QUEUED** at last inspection.
+- PR #8 technical-note pre-fix HEAD `69420335347446023a81f13af09910fe51a7437c`, [41369674799](https://github.com/Iam-2squared/ark-ai/actions/runs/41369674799): **QUEUED**. Latest corrected HEAD and this checkpoint require their **own exact-commit CI**, no inherited PASS.
+- PR #5 source+tests `66f8fbbbcfee48832ce4e8ceffe80cd44391fa2f`, [41369143195](https://github.com/Iam-2squared/ark-ai/actions/runs/41369143195), **6/6 GREEN**, independently inspected Ubuntu and Windows Python 3.11–3.13.
+- PR #5 latest technical-note HEAD `1ed8036ad45c98463d05bce76fdabb5d488b95b0`, [41369398967](https://github.com/Iam-2squared/ark-ai/actions/runs/41369398967), **6/6 GREEN**, independently inspected Ubuntu and Windows Python 3.11–3.13.
+- All Actions are existing public-repository CPU GitHub CI. No duplicate manual workflow dispatch, paid service, or standalone comprehensive local pytest/Ruff PASS claimed. Authoring 38 test cases is NOT 38 local execution successes.
+
+## Frozen boundaries, blockers and authorization limits
+
+**Independently rechecked frozen blob SHAs:** Memory v1 `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher frozen evidence and protected V2 final gate untouched.
+
+**No paid/external compute, billable API, external GPU, real Candidate adapter/weight generation, protected V2 evaluation, automatic promotion, real tool dispatch, sensor capture, notification, secret/account connection, destructive privacy erasure, automatic ambiguous replay, human consent simulation, force push/hidden route, contract edits, or main merge.** Both PRs Draft/unmerged. Real data/model/tokenizer identities/hashes, independently reviewed provenance/licensing, trusted clock/actor identity, data-use consent, physical hardware and provider cost caps remain explicitly unresolved, not permissions.
+
+## Next plan / 今後の方針
+
+1. **Exact-head CI closure:** inspect all six existing jobs on PR #8 corrective source HEAD and checkpoint; if FAIL, read actual job logs, make only minimal normal GitHub Contents fix, preserve fail-closed behavior; do independent lanes while CI runs, avoid duplicate equivalent runs.
+2. **Memory and Planner integration:** generation-scoped SQLite CAS, expiry/revocation, COMMIT-UNKNOWN manual-only recovery, persistent FAILED/BLOCKED DAG archives joined to immutable ToolRegistry, exact-type PermissionGate and registered READ journal receipts only after lower-level exact-head GREEN.
+3. **Trusted Clock, audit and Scheduler:** occurrence/replay identities, restart-safe pre-action audit, coherent snapshot/recovery. Synthetic hashes or caller clocks never authorize real actions.
+4. **Privacy-first Personal Context and Observations:** consent revocation, retention/redaction, disconnected startup/observation fixtures, bounded WAV/PNG content validation. No automatic disclosure.
+5. **Free V3:** passive provenance/identity/path/reproducibility checks; no model download, paid compute, Candidate generation, protected V2 final-evaluation opening, promotion or main merge absent explicit separate authorization.
+
+---
+
+## Historical canonical checkpoint — Run542 and earlier (preserved verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run542 / 2026-11-02 JST:** FOUR coherent zero-new-cost, local-first, disconnected **source + regression-test packages** saved normally across PR #8 and PR #5; TWO grounded technical notes. **24 newly authored parameter-expanded pytest cases** (PR #8: 13; PR #5: 11), **not** 24 individually executed local pytest PASS. PR #5 source+test exact commit **6/6 GREEN**; the newer PR #5 note commit CI has not yet been certified. PR #8 newer source/test and note commits are **NOT YET EXACT-HEAD ALL-SIX GREEN**. ARK/JARVIS/V3 overall **NOT_PASSED**; both PRs Draft/unmerged, no real action, Candidate, protected evaluation, paid compute, irreversible deletion or frozen-contract change.
 
 **Saved at:** **2026-11-02T08:58:32.162+09:00 Asia/Tokyo/JST**, sampled from ordinary automation-host wall time directly before this normal GitHub Contents checkpoint write; this is NOT trusted time, attested custody, human approval, authenticated identity, consent or authorization.
