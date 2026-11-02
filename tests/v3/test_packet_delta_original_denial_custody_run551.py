@@ -72,7 +72,9 @@ def test_reentrant_leaf_comparison_cannot_replace_last_denial(monkeypatch):
         return leaves
 
     monkeypatch.setattr(mod, "_leaf_bytes", altered)
-    with pytest.raises(mod.ReviewPacketDeltaRejected, match="changed"):
+    # The public producer deliberately wraps internal ValueError subclasses
+    # in a generic fail-closed message; do not demand an internal diagnostic.
+    with pytest.raises(mod.ReviewPacketDeltaRejected, match="denied"):
         _review()
     assert len(calls) == 2
 
