@@ -21,7 +21,7 @@ _JOIN = transcript_module.review_disconnected_observation_transcript
 _PAIR = pair_module.inspect_disconnected_observation_pair
 _PAIR_TYPE = pair_module.OfflineObservationPair
 _JOIN_TYPE = transcript_module.OfflineObservationTranscript
-_DOMAIN = b"ARK-disconnected-transcript-coverage-v1\0"
+_DOMAIN = b"ARK-disconnected-transcript-coverage-v2\0"
 _DENIALS = (
     "speech_verified", "user_consent_verified", "camera_authenticated",
     "microphone_authenticated", "external_disclosure_authorized",
@@ -43,6 +43,8 @@ class OfflineTranscriptCoverage:
     interior_gap_frames: int
     trailing_gap_frames: int
     coverage_ppm: int
+    uncovered_run_count: int
+    longest_uncovered_run_frames: int
     coverage_sha256: str
 
     @property
@@ -168,7 +170,7 @@ def review_disconnected_transcript_coverage(
         ):
             raise OfflineCoverageRejected("coverage fixture changed during review")
 
-    def measure() -> tuple[str, str, int, int, int, int, int, int]:
+    def measure() -> tuple[str, str, int, int, int, int, int, int, int, int]:
         stable()
         try:
             joined = _JOIN(
@@ -240,12 +242,17 @@ def review_disconnected_transcript_coverage(
         leading = starts[0]
         interior = sum(starts[i] - ends[i - 1] for i in range(1, len(spans)))
         trailing = total - ends[-1]
+        gaps = (leading, *(starts[i] - ends[i - 1]
+                           for i in range(1, len(spans))), trailing)
+        uncovered_runs = sum(gap > 0 for gap in gaps)
+        longest_gap = max(gaps)
         if covered + leading + interior + trailing != total:
             raise OfflineCoverageRejected("inconsistent frame accounting")
         stable()
         return (
             join_values[5], join_values[1], total, covered, leading,
             interior, trailing, covered * 1_000_000 // total,
+            uncovered_runs, longest_gap,
         )
 
     first = measure()
@@ -262,7 +269,8 @@ def review_disconnected_transcript_coverage(
     names = (
         "observation_sha256", "transcript_fingerprint", "audio_frames",
         "covered_frames", "leading_gap_frames", "interior_gap_frames",
-        "trailing_gap_frames", "coverage_ppm", "coverage_sha256",
+        "trailing_gap_frames", "coverage_ppm", "uncovered_run_count",
+        "longest_uncovered_run_frames", "coverage_sha256",
     )
     for denial in _DENIALS:
         if (
