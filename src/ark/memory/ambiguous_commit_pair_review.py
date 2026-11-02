@@ -139,7 +139,7 @@ def review_memory_ambiguous_commit_pair(
         ):
             raise MemoryAmbiguityPairRejected("Memory triage input epoch changed")
 
-    def read_once() -> tuple[str, str, str, str, str]:
+    def read_once() -> tuple[str, str, str, str, str, str]:
         stable()
         try:
             first = _TRIAGE_FN(store, proposed, retained_before=retained)
@@ -173,10 +173,13 @@ def review_memory_ambiguous_commit_pair(
             or first.observed_prefix_sha256 != second.observed_prefix_sha256
         ):
             raise MemoryAmbiguityPairRejected("Memory event prefixes disagree")
+        # Both local reviewers have distinct receipt fingerprints. A second
+        # pass must bind *both* receipts; otherwise the Outcome receipt could
+        # change without affecting the pair's final reconciliation digest.
         values = (
             _DISPOSITIONS[pair], first.retained_prefix_sha256,
             first.observed_prefix_sha256, second.observed_row_sha256,
-            first.report_sha256,
+            first.report_sha256, second.review_sha256,
         )
         if any(
             type(value) is not str or _SHA.fullmatch(value) is None
