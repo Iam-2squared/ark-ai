@@ -70,6 +70,11 @@ class OfflineContextSearchPreview:
 # Pin the original inert carrier classes against synthetic constructor injection.
 _RESULT_TYPE = OfflineContextSearchPreview
 _HIT_TYPE = OfflineContextSearchHit
+_DENIALS = (
+    "consent_verified", "external_export_authorized",
+    "tool_dispatch_authorized", "retention_authorized",
+)
+_DENIAL_DESCRIPTORS = tuple(getattr(_RESULT_TYPE, key) for key in _DENIALS)
 
 
 def _utf8(value: str) -> bytes:
@@ -217,14 +222,21 @@ def search_offline_context(
             raise OfflineContextSearchRejected("search preview result changed")
 
     assert_result()
-    # These synthetic search results cannot prove consent, disclosure,
-    # retention or Tool authority. Descriptors may mutate inputs/results.
-    if (
-        result.consent_verified is not False
-        or result.external_export_authorized is not False
-        or result.tool_dispatch_authorized is not False
-        or result.retention_authorized is not False
-    ):
-        raise OfflineContextSearchRejected("search preview authority changed")
-    assert_result()
+    # False-only authority getters are arbitrary callbacks. Recheck original
+    # descriptors and result/source carriers after EACH getter, including the
+    # last, so a swapped False-valued descriptor never becomes a silent grant.
+    for key in _DENIALS:
+        if getattr(result, key) is not False:
+            raise OfflineContextSearchRejected("search preview authority changed")
+        assert_result()
+        if any(
+            getattr(_RESULT_TYPE, name) is not original
+            for name, original in zip(
+                _DENIALS, _DENIAL_DESCRIPTORS, strict=True,
+            )
+        ):
+            raise OfflineContextSearchRejected(
+                "search preview authority descriptor changed"
+            )
+        assert_result()
     return result
