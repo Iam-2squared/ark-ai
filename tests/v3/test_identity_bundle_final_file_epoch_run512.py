@@ -98,8 +98,14 @@ def test_late_same_size_timestamp_restored_rewrite_is_rejected(
             property(alter_during_authority_check),
         )
 
-    with pytest.raises(bundle.LocalIdentityBundleRejected, match="after report"):
+    diagnostic = (
+        "after report" if replacement == "constructor"
+        else "authority definition changed"
+    )
+    with pytest.raises(bundle.LocalIdentityBundleRejected, match=diagnostic):
         bundle.inspect_local_identity_bundle(pins)
+    if replacement == "denial_getter":
+        assert path.read_bytes() == data
 
 
 def test_late_removal_is_not_reported_as_pinned_identity(tmp_path, monkeypatch):
