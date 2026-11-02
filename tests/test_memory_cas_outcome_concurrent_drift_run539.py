@@ -16,7 +16,7 @@ from ark.memory import generation_fenced_cas as cas
 
 
 @pytest.mark.parametrize("interleaving", ("identical_update", "divergent_update", "delete"))
-def test_concurrent_writer_during_false_authority_getter_denies_stale_report(
+def test_concurrent_writer_during_second_snapshot_denies_stale_report(
     tmp_path, monkeypatch, interleaving,
 ):
     path = tmp_path / "ambiguity.sqlite"
@@ -31,7 +31,7 @@ def test_concurrent_writer_during_false_authority_getter_denies_stale_report(
     writer = SQLiteMemoryStore(path, clock_ms=lambda: 1100)
     triggered = []
 
-    def interleave_once(self):
+    def interleave_once():
         if not triggered:
             triggered.append(interleaving)
             if interleaving == "delete":
@@ -44,11 +44,17 @@ def test_concurrent_writer_during_false_authority_getter_denies_stale_report(
                 )
         return False
 
-    monkeypatch.setattr(
-        review.MemoryCASOutcomeReview,
-        "automatic_retry_authorized",
-        property(interleave_once),
-    )
+    native_snapshot = review._snapshot
+    observations = []
+
+    def interleave_during_snapshot(*args):
+        observed = native_snapshot(*args)
+        observations.append(True)
+        if len(observations) == 2:
+            interleave_once()
+        return observed
+
+    monkeypatch.setattr(review, "_snapshot", interleave_during_snapshot)
     with pytest.raises(review.MemoryCASOutcomeRejected):
         review.review_memory_generation_cas_outcome(
             observer, desired, retained=token,
@@ -72,7 +78,7 @@ def test_concurrent_writer_during_false_authority_getter_denies_stale_report(
     ("operation", "delete"),
     ("revision", 3),
 ))
-def test_event_history_tamper_during_final_denial_cannot_yield_outcome(
+def test_event_history_tamper_during_second_snapshot_cannot_yield_outcome(
     tmp_path, monkeypatch, column, value,
 ):
     path = tmp_path / "events.sqlite"
@@ -83,7 +89,7 @@ def test_event_history_tamper_during_final_denial_cannot_yield_outcome(
     desired = MemoryWrite(scope, "fixture", "new")
     triggered = []
 
-    def tamper_once(self):
+    def tamper_once():
         if not triggered:
             triggered.append(column)
             with sqlite3.connect(path) as conn:
@@ -93,10 +99,17 @@ def test_event_history_tamper_during_final_denial_cannot_yield_outcome(
                 )
         return False
 
-    monkeypatch.setattr(
-        review.MemoryCASOutcomeReview, "automatic_retry_authorized",
-        property(tamper_once),
-    )
+    native_snapshot = review._snapshot
+    observations = []
+
+    def tamper_during_snapshot(*args):
+        observed = native_snapshot(*args)
+        observations.append(True)
+        if len(observations) == 2:
+            tamper_once()
+        return observed
+
+    monkeypatch.setattr(review, "_snapshot", tamper_during_snapshot)
     with pytest.raises(review.MemoryCASOutcomeRejected):
         review.review_memory_generation_cas_outcome(
             store, desired, retained=token,
