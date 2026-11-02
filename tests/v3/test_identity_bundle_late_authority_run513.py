@@ -49,13 +49,13 @@ def test_retained_report_cannot_gain_flag_during_final_disk_read(
         checks += 1
         if checks == 2:
             armed = True
+            monkeypatch.setattr(
+                bundle.LocalIdentityBundleWitness, flag,
+                property(lambda self: bool(armed and self is report)),
+            )
         return latest
 
     monkeypatch.setattr(bundle, "inspect_local_identity_bundle", late_inspect)
-    monkeypatch.setattr(
-        bundle.LocalIdentityBundleWitness, flag,
-        property(lambda self: bool(armed and self is report)),
-    )
     with pytest.raises(bundle.LocalIdentityBundleRejected, match="changed"):
         _review(report, pins)
     assert checks == 2
@@ -79,13 +79,13 @@ def test_newly_rechecked_local_report_must_also_have_no_authority(
         calls += 1
         if calls == 2:
             latest_report = result
+            monkeypatch.setattr(
+                bundle.LocalIdentityBundleWitness, flag,
+                property(lambda self: bool(self is latest_report)),
+            )
         return result
 
     monkeypatch.setattr(bundle, "inspect_local_identity_bundle", late_inspect)
-    monkeypatch.setattr(
-        bundle.LocalIdentityBundleWitness, flag,
-        property(lambda self: bool(self is latest_report)),
-    )
     with pytest.raises(bundle.LocalIdentityBundleRejected, match="changed"):
         _review(report, pins)
     assert calls == 2
@@ -96,6 +96,7 @@ def test_late_denial_getter_may_not_replace_retained_report_carrier(
     tmp_path, monkeypatch,
 ):
     pins, report, data = _state(tmp_path)
+    original_digest = report.bundle_sha256
     accesses = 0
 
     def late_false(self):
@@ -116,7 +117,9 @@ def test_late_denial_getter_may_not_replace_retained_report_carrier(
     )
     with pytest.raises(bundle.LocalIdentityBundleRejected):
         _review(report, pins)
-    assert accesses >= 2
+    # A substituted getter is rejected before the first reflective read.
+    assert accesses == 0
+    assert report.bundle_sha256 is original_digest
     assert pins[0].path.read_bytes() == data
 
 
