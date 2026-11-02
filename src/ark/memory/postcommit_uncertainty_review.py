@@ -14,11 +14,11 @@ from .contracts import MemoryConflictError, MemorySchemaError, MemoryScope, Memo
 from .generation_fenced_cas import (
     _EVENT_DOMAIN,
     _MAX_EVENTS,
+    MemoryGenerationCASRejected,
+    MemoryGenerationCASToken,
     _digest,
     _snapshot,
     _token_fields,
-    MemoryGenerationCASRejected,
-    MemoryGenerationCASToken,
 )
 from .sqlite_store import SQLiteMemoryStore, deterministic_memory_id
 
