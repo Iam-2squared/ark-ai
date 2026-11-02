@@ -70,6 +70,11 @@ class OfflineReadinessInventory:
         return False
 
 
+_ORIGINAL_INVENTORY_DENIALS = tuple(
+    getattr(OfflineReadinessInventory, name) for name in _AUTHORITY
+)
+
+
 def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInventory:
     """List literal unfinished identities/budget fields without opening gates.
 
@@ -79,6 +84,16 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
     """
     if type(snapshot) is not dict:
         raise OfflineReadinessRejected("exact snapshot mapping required")
+    # The denial definitions were fixed when this module was imported.
+    # A preinstalled False-only property is not an original denial: capturing
+    # it as the baseline at call time would launder a replaced callback.
+    if any(
+        getattr(OfflineReadinessInventory, key, None) is not original
+        for key, original in zip(
+            _AUTHORITY, _ORIGINAL_INVENTORY_DENIALS, strict=True,
+        )
+    ):
+        raise OfflineReadinessRejected("readiness authority descriptor changed")
     try:
         epoch = _pin_json_tree(snapshot)
 
@@ -157,7 +172,7 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
             stable()
 
         stable_output()
-        descriptors = tuple(getattr(OfflineReadinessInventory, key) for key in _AUTHORITY)
+        descriptors = _ORIGINAL_INVENTORY_DENIALS
         if any(type(descriptor) is not property for descriptor in descriptors):
             raise OfflineReadinessRejected("readiness denial descriptor invalid")
 
