@@ -7,9 +7,9 @@ separately observed and cannot establish real execution or atomicity.
 from __future__ import annotations
 
 import pytest
+from test_registered_cycle_archive_bridge_run535 import _fixture, _review
 
 from ark.agency import disconnected_registered_archive_bridge as bridge
-from test_registered_cycle_archive_bridge_run535 import _fixture, _review
 
 
 @pytest.mark.parametrize(
