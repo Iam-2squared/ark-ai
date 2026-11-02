@@ -31,6 +31,29 @@ _MAX_PACKET_BYTES = 65_536
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
+# An always-False replacement property remains an arbitrary callback.
+# Bind the original denial descriptors before any packet read or verifier.
+_WITNESS_TYPE = LocalPacketBindingWitness
+_DENIAL_NAMES = (
+    "external_compute_authorized", "candidate_generation_authorized",
+    "protected_evaluation_authorized", "main_merge_authorized",
+)
+_ORIGINAL_DENIALS = tuple(getattr(_WITNESS_TYPE, key) for key in _DENIAL_NAMES)
+
+
+def _assert_original_denials() -> None:
+    if (
+        LocalPacketBindingWitness is not _WITNESS_TYPE
+        or any(
+            getattr(_WITNESS_TYPE, name) is not original
+            for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise LocalPacketBindingRejected(
+            "review packet witness changed: authority denial descriptor changed during binding"
+        )
+
+
 def _file_epoch(info: os.stat_result) -> tuple[int, int, int, int]:
     return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
 
@@ -90,6 +113,7 @@ def verify_local_authorization_packet_file(
         or _SHA.fullmatch(retained_packet_file_sha256) is None
     ):
         raise LocalPacketBindingRejected("exact local packet review inputs required")
+    _assert_original_denials()
     try:
         snapshot_epoch = _pin_json_tree(snapshot)
 
@@ -126,10 +150,11 @@ def verify_local_authorization_packet_file(
         )
 
         def stable_review() -> None:
+            _assert_original_denials()
             stable_snapshot()
             _assert_json_tree_epoch(packet, packet_epoch)
             if (
-                type(witness) is not LocalPacketBindingWitness
+                type(witness) is not _WITNESS_TYPE
                 or type(witness.snapshot_sha256) is not str
                 or witness.snapshot_sha256 != expected_snapshot_sha
                 or type(witness.packet_file_sha256) is not str
@@ -140,16 +165,15 @@ def verify_local_authorization_packet_file(
                 raise LocalPacketBindingRejected("review packet witness changed after binding")
 
         def denied() -> None:
-            if (
-                witness.external_compute_authorized is not False
-                or witness.candidate_generation_authorized is not False
-                or witness.protected_evaluation_authorized is not False
-                or witness.main_merge_authorized is not False
-            ):
-                raise LocalPacketBindingRejected("review packet witness gained authority")
-            # Each denial property is a callback boundary. A false-valued
-            # property must not be able to rewrite earlier identity fields.
+            # A false getter may mutate another descriptor or witness field.
+            # Check all original boundaries after each individual callback.
             stable_review()
+            for flag in _DENIAL_NAMES:
+                if getattr(witness, flag) is not False:
+                    raise LocalPacketBindingRejected(
+                        "review packet witness gained authority"
+                    )
+                stable_review()
 
         stable_review()
         denied()
