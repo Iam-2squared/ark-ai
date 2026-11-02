@@ -14,3 +14,13 @@
 Packet paths are display-only evidence, never authorization or certified human approval. Existing execution snapshot integrity gates, independently retained packet file hashes and strict local-file-only checks still control the V3 preflight package. No heavy dependencies, external GPU or API, frozen contract, V2 final evaluation, Candidate weights, auto-promotion, main merge, or spending is authorized by this change.
 
 **Next:** Continue passive local identity/path/provenance guards only. Actual immutable model revision and byte identities, approved data and human review, pinned runtime/tool hashes, cost-cap evidence and explicit user authorization remain unresolved.
+
+
+## Additional Run550 producer ↔ detached verifier closure
+
+Read-only audit found a mismatch: previously, `_leaf_bytes` emitted **raw printable non-ASCII** keys (such as `é` or `漢`) while `authorization_packet_delta_recheck._fields` correctly accepted only printable ASCII paths. Under an otherwise legitimate local packet, such paths would make the detached receipt fail verification even though the producer had returned it.
+
+- New producer fix `src/ark/learning/authorization_packet_delta_review.py` at `85d7ab1a440f81b09026b8a004a87e017b548401`: escape *every* non-ASCII key character as unambiguous `~u{HEX}`, retaining ordinary ASCII space, punctuation/path separators and literal-escape collision defenses. This subsumes the combining-mark special case without modifying the passive detached verifier or frozen approval contracts.
+- Existing combining-mark tests adjusted for the ASCII-safe composed spelling at `4298de8777532c866efe396ab98eaba6b490c5c0`. New `tests/v3/test_packet_delta_unicode_ascii_recheck_run550.py` at `41c0464860347de4b1f0c3c87ffa57ad80fd01f5` adds **11 authored parameter-expanded cases** for Unicode keys, ASCII-only receipts, literal marker separation, nested arrays and refusing raw non-ASCII detached receipts.
+- This is a compatibility and display-path integrity boundary, not authorization for data/model input, consent, training, spending, protected scoring or external execution. The new exact-head CI [41403420668](https://github.com/Iam-2squared/ark-ai/actions/runs/41403420668) was **QUEUED** when this addendum was prepared; do not claim it GREEN without checking the six jobs.
+
