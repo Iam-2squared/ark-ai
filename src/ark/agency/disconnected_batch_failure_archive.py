@@ -81,6 +81,17 @@ def _receipt_epoch(receipt: DisconnectedFailureFixtureReceipt) -> tuple[object, 
     )
 
 
+def _same_receipt_carriers(
+    receipt: DisconnectedFailureFixtureReceipt,
+    pinned: tuple[object, ...],
+) -> bool:
+    """Detect even equal-valued replacement across a verifier callback."""
+    return all(
+        current is prior
+        for current, prior in zip(_receipt_epoch(receipt), pinned, strict=True)
+    )
+
+
 def _encode(receipt: DisconnectedFailureFixtureReceipt) -> bytes:
     values = _receipt_epoch(receipt)
     payload = {
@@ -133,7 +144,7 @@ def _witness(sha256: str, receipt: DisconnectedFailureFixtureReceipt):
                  output.failed_step_ids, output.terminal_counts),
                 original, strict=True,
             ))
-            or _receipt_epoch(receipt) != epoch
+            or not _same_receipt_carriers(receipt, epoch)
             or any(getattr(ArchivedDisconnectedFailure, key) is not descriptor
                    for key, descriptor in zip(_DENIALS, descriptors, strict=True))
         ):
@@ -190,6 +201,7 @@ def review_disconnected_failure_archive(
         )
         if _encode(again) != raw:
             raise DisconnectedFailureArchiveRejected("failure fixture changed on replay")
+        again_epoch = _receipt_epoch(again)
         # The final file read is a callback boundary. A custom read adapter
         # may mutate a frozen witness by reflection *after* _witness() has
         # checked it. Pin fields, receipt carriers and denial descriptors
@@ -235,7 +247,10 @@ def review_disconnected_failure_archive(
         final, final_epoch = _read_once(path)
         if final != first or final_epoch != first_epoch:
             raise DisconnectedFailureArchiveRejected("failure archive changed after review")
-        if _receipt_epoch(expected) != _receipt_epoch(again):
+        if (
+            _receipt_epoch(expected) != _receipt_epoch(again)
+            or not _same_receipt_carriers(again, again_epoch)
+        ):
             raise DisconnectedFailureArchiveRejected("failure receipt changed after review")
         assert_final_epoch()
         return witness
@@ -264,11 +279,11 @@ def archive_disconnected_failure_fixture(
         verify_disconnected_failure_fixture(
             receipt, plan, schedule, retained_digest=retained_plan_digest,
         )
-        if _receipt_epoch(receipt) != original:
+        if not _same_receipt_carriers(receipt, original):
             raise DisconnectedFailureArchiveRejected("failure receipt changed before write")
         raw = _encode(receipt)
         sha256 = hashlib.sha256(raw).hexdigest()
-        if _receipt_epoch(receipt) != original:
+        if not _same_receipt_carriers(receipt, original):
             raise DisconnectedFailureArchiveRejected("failure receipt changed before create")
     except DisconnectedBatchArchiveRejected as exc:
         raise DisconnectedFailureArchiveRejected("failure archive path denied") from exc
@@ -291,6 +306,6 @@ def archive_disconnected_failure_fixture(
         plan, schedule, retained_plan_digest=retained_plan_digest,
         retained_failed_step_ids=original[4], path=path, retained_file_sha256=sha256,
     )
-    if _receipt_epoch(receipt) != original or witness.fixture_digest != original[7]:
+    if not _same_receipt_carriers(receipt, original) or witness.fixture_digest != original[7]:
         raise DisconnectedFailureArchiveRejected("failure receipt changed after commit")
     return witness
