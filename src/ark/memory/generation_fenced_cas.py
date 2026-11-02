@@ -350,8 +350,45 @@ def generation_fenced_memory_update(
             ):
                 raise MemoryGenerationCASRejected("generation CAS postwrite invariant failed")
             stable()
+            # Pin the *result* as well as caller inputs before connection
+            # __exit__ can durably COMMIT and invoke synthetic callbacks.
+            # A post-COMMIT result rewrite must never be returned as truth.
+            updated_epoch = (
+                updated.memory_id, updated.scope, updated.source_id,
+                updated.content, updated.created_at_ms, updated.updated_at_ms,
+                updated.expires_at_ms, updated.revision, updated.content_sha256,
+                updated.metadata,
+            )
+            updated_metadata = dict(updated.metadata)
+            updated_token_epoch = _token_fields(updated_token)
     except sqlite3.Error as exc:
         raise MemoryGenerationCASRejected("generation CAS SQLite outcome uncertain") from exc
     # COMMIT happened. A later rejection never proves rollback or permits retry.
+    stable()
+    try:
+        result_intact = (
+            type(updated) is MemoryRecord
+            and all(now is prior for now, prior in zip(
+                (
+                    updated.memory_id, updated.scope, updated.source_id,
+                    updated.content, updated.created_at_ms, updated.updated_at_ms,
+                    updated.expires_at_ms, updated.revision, updated.content_sha256,
+                    updated.metadata,
+                ), updated_epoch, strict=True,
+            ))
+            and dict(updated.metadata) == updated_metadata
+            and all(now is prior for now, prior in zip(
+                _token_fields(updated_token), updated_token_epoch, strict=True,
+            ))
+            and _row_hash(updated) == updated_token_epoch[5]
+        )
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise MemoryGenerationCASRejected(
+            "generation CAS post-COMMIT result uncertain; manual review required"
+        ) from exc
+    if not result_intact:
+        raise MemoryGenerationCASRejected(
+            "generation CAS post-COMMIT result uncertain; manual review required"
+        )
     stable()
     return updated
