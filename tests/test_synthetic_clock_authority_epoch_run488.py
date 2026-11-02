@@ -33,7 +33,10 @@ def test_generator_completion_cannot_upgrade_last_witness_authority(
 
     with pytest.raises(
         clock.SyntheticClockRejected,
-        match=r"(constructed clock witness (changed|gained authority)|synthetic clock denial descriptor changed)",
+        match=(
+            r"constructed clock witness (changed|gained authority)"
+            r"|synthetic clock denial descriptor changed"
+        ),
     ):
         clock.review_synthetic_clock_sequence(samples())
 
