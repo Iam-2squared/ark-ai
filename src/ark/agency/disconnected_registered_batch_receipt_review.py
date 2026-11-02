@@ -79,6 +79,19 @@ class RegisteredBatchReceiptReview:
 
 
 _RESULT = RegisteredBatchReceiptReview
+# Original denial properties are captured at import, before any verifier may
+# read an SQLite journal or invoke a caller-held registry/grant callback.
+_ORIGINAL_DENIALS = tuple(getattr(_RESULT, name) for name in _DENIALS)
+
+
+def _require_original_denials() -> None:
+    if any(
+        getattr(_RESULT, name) is not original
+        for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+    ):
+        raise RegisteredBatchReceiptRejected(
+            "registered batch review changed after denial: descriptor replaced"
+        )
 
 
 def review_registered_batch_receipt(
@@ -100,6 +113,7 @@ def review_registered_batch_receipt(
     observed_at_ms: int,
 ) -> RegisteredBatchReceiptReview:
     """Correlate immutable diagnostic carriers without dispatching any tool."""
+    _require_original_denials()
     if (
         type(plan) is not DisconnectedBatchPlan
         or type(schedule) is not DisconnectedBatchSchedule
@@ -124,6 +138,7 @@ def review_registered_batch_receipt(
         raise RegisteredBatchReceiptRejected("invalid batch steps") from exc
 
     def stable() -> None:
+        _require_original_denials()
         if (
             type(plan) is not DisconnectedBatchPlan
             or type(schedule) is not DisconnectedBatchSchedule
@@ -203,31 +218,41 @@ def review_registered_batch_receipt(
         reviewed = _RESULT(*fields, digest)
         expected = (*fields, digest)
 
-        def stable_output() -> None:
-            if (
-                type(reviewed) is not _RESULT
-                or any(a is not b for a, b in zip((
-                    reviewed.step_id, reviewed.plan_digest, reviewed.schedule_digest,
-                    reviewed.wave_index, reviewed.action_request_id,
-                    reviewed.fixture_request_id, reviewed.link_sha256,
-                    reviewed.journal_count, reviewed.journal_tip_sha256,
-                    reviewed.review_sha256,
-                ), expected, strict=True))
-                or any(getattr(reviewed, key) is not False for key in _DENIALS)
-            ):
-                raise RegisteredBatchReceiptRejected(
-                    "registered batch review gained authority or changed"
-                )
-            if any(a is not b for a, b in zip((
+        def output_fields() -> tuple[object, ...]:
+            return (
                 reviewed.step_id, reviewed.plan_digest, reviewed.schedule_digest,
                 reviewed.wave_index, reviewed.action_request_id,
                 reviewed.fixture_request_id, reviewed.link_sha256,
                 reviewed.journal_count, reviewed.journal_tip_sha256,
                 reviewed.review_sha256,
-            ), expected, strict=True)):
+            )
+
+        def stable_output() -> None:
+            _require_original_denials()
+            if (
+                type(reviewed) is not _RESULT
+                or any(a is not b for a, b in zip(
+                    output_fields(), expected, strict=True,
+                ))
+            ):
                 raise RegisteredBatchReceiptRejected(
-                    "registered batch review changed after denial"
+                    "registered batch review gained authority or changed"
                 )
+            for key in _DENIALS:
+                if getattr(reviewed, key) is not False:
+                    raise RegisteredBatchReceiptRejected(
+                        "registered batch review gained authority or changed"
+                    )
+                # A denial getter is a callback boundary. Recheck both the
+                # original method object and every identity-bound result field
+                # after *each* getter, including the final one.
+                _require_original_denials()
+                if any(a is not b for a, b in zip(
+                    output_fields(), expected, strict=True,
+                )):
+                    raise RegisteredBatchReceiptRejected(
+                        "registered batch review changed after denial"
+                    )
 
         stable_output()
         verify_plan()
