@@ -210,9 +210,32 @@ def observe_memory_generation_for_cas(
         raise MemoryGenerationCASRejected("generation observation SQLite unavailable") from exc
     stable()
     fields = _token_fields(token)
-    for denied in ("external_action_authorized", "consent_authenticated"):
-        if getattr(token, denied) is not False or _token_fields(token) != fields:
+    denied = ("external_action_authorized", "consent_authenticated")
+    descriptors = tuple(getattr(MemoryGenerationCASToken, key) for key in denied)
+    if any(type(descriptor) is not property for descriptor in descriptors):
+        raise MemoryGenerationCASRejected("generation token denial property changed")
+
+    def stable_token() -> None:
+        stable()
+        if (
+            type(token) is not MemoryGenerationCASToken
+            or any(now is not original for now, original in zip(
+                _token_fields(token), fields, strict=True,
+            ))
+            or any(getattr(MemoryGenerationCASToken, key) is not descriptor
+                   for key, descriptor in zip(
+                       denied, descriptors, strict=True,
+                   ))
+        ):
+            raise MemoryGenerationCASRejected("generation token or denial epoch changed")
+
+    stable_token()
+    for name in denied:
+        if getattr(token, name) is not False:
             raise MemoryGenerationCASRejected("generation token gained authority")
+        # False-valued properties can still mutate the token or replace
+        # previously inspected vetoes. A CAS token never becomes permission.
+        stable_token()
     return token
 
 
