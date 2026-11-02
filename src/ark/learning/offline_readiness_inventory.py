@@ -146,8 +146,10 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
         def stable_output() -> None:
             if (
                 type(output) is not OfflineReadinessInventory
-                or (output.snapshot_sha256, output.unresolved_paths,
-                    output.unresolved_count) != saved
+                or any(now is not old for now, old in zip(
+                    (output.snapshot_sha256, output.unresolved_paths,
+                     output.unresolved_count), saved, strict=True,
+                ))
                 or type(output.unresolved_paths) is not tuple
                 or type(output.unresolved_count) is not int
             ):
@@ -156,12 +158,25 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
 
         stable_output()
         descriptors = tuple(getattr(OfflineReadinessInventory, key) for key in _AUTHORITY)
-        for name, original in zip(_AUTHORITY, descriptors, strict=True):
+        if any(type(descriptor) is not property for descriptor in descriptors):
+            raise OfflineReadinessRejected("readiness denial descriptor invalid")
+
+        def stable_denials() -> None:
+            if any(
+                getattr(OfflineReadinessInventory, name) is not original
+                for name, original in zip(_AUTHORITY, descriptors, strict=True)
+            ):
+                raise OfflineReadinessRejected("readiness authority descriptor changed")
+
+        stable_denials()
+        for name in _AUTHORITY:
             if getattr(output, name) is not False:
                 raise OfflineReadinessRejected("readiness inventory gained authority")
+            # Any False-returning getter may retarget an EARLIER authority
+            # descriptor or replace an equal-valued result carrier.
+            stable_denials()
             stable_output()
-            if getattr(OfflineReadinessInventory, name) is not original:
-                raise OfflineReadinessRejected("readiness authority descriptor changed")
+        stable_denials()
         stable_output()
         return output
     except (KeyError, TypeError, OverflowError, RecursionError, UnicodeError) as exc:
