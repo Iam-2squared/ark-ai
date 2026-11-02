@@ -71,29 +71,26 @@ _AUTHORITY_DESCRIPTORS = tuple(
 )
 
 
-def _all_non_authorizing(report: MemoryExpiryPreview) -> bool:
-    """Verify denial values AND original descriptors across every getter.
+def _assert_original_authority() -> None:
+    """Deny substituted authority callbacks before touching Memory SQLite."""
+    if any(
+        getattr(_RECEIPT_TYPE, flag) is not original
+        for flag, original in zip(
+            _FLAGS, _AUTHORITY_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise MemoryExpiryPreviewRejected("expiry authority descriptor changed")
 
-    A replaced False-valued property is not a stable privacy boundary.
-    This cannot authenticate a clock, consent, physical erasure or owner.
-    """
+
+def _all_non_authorizing(report: MemoryExpiryPreview) -> bool:
+    """Check exact False flags and original descriptors after each callback."""
+    _assert_original_authority()
     if type(report) is not _RECEIPT_TYPE:
         return False
-
-    def stable_descriptors() -> None:
-        if any(
-            getattr(_RECEIPT_TYPE, flag) is not original
-            for flag, original in zip(
-                _FLAGS, _AUTHORITY_DESCRIPTORS, strict=True,
-            )
-        ):
-            raise MemoryExpiryPreviewRejected("expiry authority descriptor changed")
-
-    stable_descriptors()
     for flag in _FLAGS:
         if getattr(report, flag) is not False:
             return False
-        stable_descriptors()
+        _assert_original_authority()
     return True
 
 
@@ -202,6 +199,7 @@ def review_memory_expiry_candidates(
         or not 1 <= limit <= _MAX_ROWS
     ):
         raise MemoryExpiryPreviewRejected("exact bounded expiry preview inputs required")
+    _assert_original_authority()
     path = store.path
     owner, namespace = scope.owner_id, scope.namespace
     if not isinstance(path, Path):
@@ -210,6 +208,7 @@ def review_memory_expiry_candidates(
     MemoryScope(owner, namespace)
 
     def stable() -> None:
+        _assert_original_authority()
         if (
             type(store) is not _STORE_TYPE
             or store.path is not path
@@ -324,6 +323,7 @@ def verify_memory_expiry_preview(
         or any(c not in "0123456789abcdef" for c in retained_preview_sha256)
     ):
         raise MemoryExpiryPreviewRejected("exact retained expiry fingerprint required")
+    _assert_original_authority()
 
     # The retained receipt has identity-bearing scalar carriers. Re-reading
     # a mutable SQLite page must not silently accept a value-equal replacement
