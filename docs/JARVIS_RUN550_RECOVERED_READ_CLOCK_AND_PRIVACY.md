@@ -29,3 +29,14 @@
 2. After the initial join's exact-head CI is GREEN, require exact plan-request ↔ recovered-journal-request binding with synthetic mismatch regression tests; independently inspect recovered step result scope, registry identity and retained custody.
 3. Continue Planner FAILED/BLOCKED persistence, COMMIT-UNKNOWN manual Memory reconciliation, restart-safe occurrence uniqueness and trusted-clock audit-before-action. No automatic retries or live execution.
 4. Maintain frozen Memory/Planner/V3 contracts, V1/V2/Local UI/Launcher evidence, Draft PR #5/#8 gates, protected V2 final evaluation, and all user-approval and free-only boundaries.
+
+
+## Run550 follow-on — Cross-plan recovered request binding
+
+The initial join's exact test-head [CI 41401799686](https://github.com/Iam-2squared/ark-ai/actions/runs/41401799686) subsequently completed **6/6 GREEN** across Windows/Ubuntu Python 3.11–3.13. Its isolated review revealed a remaining local-custody gap: an otherwise valid registered receipt could be correlated with an unrelated DAG plan's `req_` request, since steps and operations were identical and the two independently valid plans had distinct plan IDs.
+
+- Source `src/ark/agency/disconnected_recovered_registered_read_join.py` at `424d644c8a4a7d0a4d6503d2ef004b6d5f275e7a` now requires the recovered journal's `request_id` to exactly match the detached plan's `request_id` before accepting the report.
+- `tests/test_recovered_registered_read_join_run550.py` appended **two parameter-expanded cross-plan replay rejection cases** at `139d5dbea1f1a8434e92fae1fca9b72919666a38` for complete and partially failed recovery. The joining tool still cannot dispatch or attribute real-world execution.
+- Later exact-head [CI 41403083913](https://github.com/Iam-2squared/ark-ai/actions/runs/41403083913) was **QUEUED** when this addendum was prepared. Do not infer its GREEN outcome from the earlier successful initial-head CI.
+
+This is local-only identity continuity, not a proof of actor authenticity, transactional read across databases, trusted time or permission to retry.
