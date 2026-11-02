@@ -66,6 +66,29 @@ _PIN_TYPE = LocalIdentityComponentPin
 _WITNESS_TYPE = LocalIdentityBundleWitness
 _ARTIFACT_WITNESS_TYPE = LocalIdentityArtifactWitness
 
+# A witness getter replaced before the first file read is not original
+# authority-denial code, even if the replacement also returns False.
+_ORIGINAL_BUNDLE_DENIALS = tuple(
+    getattr(_WITNESS_TYPE, flag) for flag in _FLAGS
+)
+_ORIGINAL_ARTIFACT_DENIALS = tuple(
+    getattr(_ARTIFACT_WITNESS_TYPE, flag) for flag in _FLAGS
+)
+
+
+def _require_original_denials() -> None:
+    for cls, originals in (
+        (_WITNESS_TYPE, _ORIGINAL_BUNDLE_DENIALS),
+        (_ARTIFACT_WITNESS_TYPE, _ORIGINAL_ARTIFACT_DENIALS),
+    ):
+        if any(
+            getattr(cls, flag) is not original
+            for flag, original in zip(_FLAGS, originals, strict=True)
+        ):
+            raise LocalIdentityBundleRejected(
+                "identity bundle authority definition changed"
+            )
+
 
 def _hash(components: tuple[tuple[str, str, int, tuple[str, ...]], ...]) -> str:
     payload = json.dumps(
@@ -83,6 +106,7 @@ def inspect_local_identity_bundle(
     Only the independent per-component retained hashes can reject a
     same-process rewrite of byte content. No real model or GPU is accessed.
     """
+    _require_original_denials()
     if (
         type(pins) is not tuple
         or not 1 <= len(pins) <= _MAX_COMPONENTS
@@ -93,6 +117,7 @@ def inspect_local_identity_bundle(
     captured = tuple((p.name, p.path, p.retained_sha256) for p in original)
 
     def stable() -> None:
+        _require_original_denials()
         if (
             type(pins) is not tuple
             or len(pins) != len(original)
@@ -155,6 +180,7 @@ def inspect_local_identity_bundle(
     ) for witness in first_pass)
 
     def stable_first_pass() -> None:
+        _require_original_denials()
         for witness, digest, size, keys in first_pass_epochs:
             if (
                 type(witness) is not _ARTIFACT_WITNESS_TYPE
@@ -279,6 +305,7 @@ def verify_local_identity_bundle(
     retained_bundle_sha256: str,
 ) -> None:
     """Re-read independently pinned local JSON; never issue training approval."""
+    _require_original_denials()
     if (
         type(report) is not _WITNESS_TYPE
         or type(retained_bundle_sha256) is not str
@@ -297,6 +324,7 @@ def verify_local_identity_bundle(
     )
 
     def stable_pins() -> None:
+        _require_original_denials()
         if (
             type(pins) is not tuple
             or len(pins) != len(original_pins)
