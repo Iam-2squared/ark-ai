@@ -197,7 +197,9 @@ def review_unapproved_v3_snapshot_shapes(
                            inventory_denials, inventory_descriptors, strict=True,
                        ))
             ):
-                raise OfflineShapeRejected("inventory source changed after review (authority descriptor)")
+                raise OfflineShapeRejected(
+                    "inventory source changed after review (authority descriptor)"
+                )
             for key in inventory_denials:
                 if getattr(inventory, key) is not False:
                     raise OfflineShapeRejected("inventory gained authority")
