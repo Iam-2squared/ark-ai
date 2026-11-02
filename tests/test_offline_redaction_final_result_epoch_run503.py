@@ -42,20 +42,15 @@ def test_last_authority_callback_cannot_change_redacted_receipt(
         "tool_dispatch_authorized",
         property(mutate),
     )
-    with pytest.raises(mod.OfflineRedactionRejected, match="after authority review"):
+    with pytest.raises(mod.OfflineRedactionRejected, match="authority definition changed"):
         _redact()
 
 
-def test_denial_only_callback_without_mutation_preserves_local_preview(monkeypatch):
+def test_denial_only_callback_without_mutation_is_not_the_original(monkeypatch):
     monkeypatch.setattr(
         mod.RedactedOfflinePreview,
         "tool_dispatch_authorized",
         property(lambda _self: False),
     )
-    receipt = _redact()
-    assert receipt.masked_text == "[MASK:SECRET]"
-    assert receipt.complete_masking is True
-    assert receipt.consent_verified is False
-    assert receipt.privacy_erasure_proven is False
-    assert receipt.external_export_authorized is False
-    assert receipt.tool_dispatch_authorized is False
+    with pytest.raises(mod.OfflineRedactionRejected, match="authority definition changed"):
+        _redact()
