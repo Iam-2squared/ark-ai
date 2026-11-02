@@ -48,8 +48,25 @@ class LocalIdentityArtifactWitness:
         return False
 
 
-# Bind to the original inert witness class, not a replaced module constructor.
+# Bind to the original inert witness class AND its initial deny-only methods.
+# A substitute property that returns False can still perform I/O or mutate
+# evidence; refusing it before any filesystem access avoids re-baselining.
 _WITNESS_TYPE = LocalIdentityArtifactWitness
+_DENIAL_NAMES = (
+    "source_authenticated", "training_authorized",
+    "candidate_generation_authorized", "protected_evaluation_authorized",
+)
+_ORIGINAL_DENIALS = tuple(getattr(_WITNESS_TYPE, key) for key in _DENIAL_NAMES)
+
+
+def _require_original_denials() -> None:
+    if any(
+        getattr(_WITNESS_TYPE, key) is not original
+        for key, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+    ):
+        raise LocalIdentityArtifactRejected(
+            "identity artifact authority definition changed"
+        )
 
 
 def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -82,6 +99,7 @@ def verify_local_identity_artifact(
         or _SHA.fullmatch(retained_sha256) is None
     ):
         raise LocalIdentityArtifactRejected("exact local path and retained digest required")
+    _require_original_denials()
     try:
         if (
             path.is_symlink()
@@ -160,6 +178,7 @@ def verify_local_identity_artifact(
             ) from exc
 
     assert_retained_path()
+    _require_original_denials()
     result = LocalIdentityArtifactWitness(
         digest, len(raw), tuple(sorted(parsed)),
     )
@@ -239,4 +258,5 @@ def verify_local_identity_artifact(
             "identity witness changed during final byte recheck"
         )
     assert_retained_path()
+    _require_original_denials()
     return result
