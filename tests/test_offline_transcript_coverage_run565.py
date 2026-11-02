@@ -9,8 +9,8 @@ from dataclasses import replace
 
 import pytest
 
-from ark import offline_transcript_coverage as mod
 from ark import offline_transcript_binding as transcript
+from ark import offline_transcript_coverage as mod
 from ark.offline_pcm_wav import OfflineWaveRequest
 from ark.offline_png_inventory import OfflinePngRequest
 
