@@ -29,13 +29,13 @@ def _chunk(kind: bytes, payload: bytes) -> bytes:
 def _case():
     ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
     png = (
-        b"\\x89PNG\\r\\n\\x1a\\n"
+        b"\x89PNG\r\n\x1a\n"
         + _chunk(b"IHDR", ihdr)
-        + _chunk(b"IDAT", zlib.compress(b"\\x00\\x00\\x00\\x00"))
+        + _chunk(b"IDAT", zlib.compress(b"\x00\x00\x00\x00"))
         + _chunk(b"IEND", b"")
     )
     fmt = struct.pack("<HHIIHH", 1, 1, 16000, 32000, 2, 16)
-    pcm = b"\\x00\\x00" * 16
+    pcm = b"\x00\x00" * 16
     wave_data = (
         b"fmt " + struct.pack("<I", len(fmt)) + fmt
         + b"data" + struct.pack("<I", len(pcm)) + pcm
@@ -104,7 +104,7 @@ def test_invalid_or_undeclared_carriers_rejected(kind):
     elif kind == "bad_text":
         segments = (replace(segments[0], text="other"),)
     else:
-        audio = replace(audio, wav_bytes=audio.wav_bytes[:-1] + b"\\x01")
+        audio = replace(audio, wav_bytes=audio.wav_bytes[:-1] + b"\x01")
     with pytest.raises(mod.OfflineObservationTranscriptRejected):
         _join(image, audio, segments, retained)
 
