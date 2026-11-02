@@ -75,6 +75,7 @@ def test_interval_accounting_and_private_inert_report():
         first.audio_frames, first.covered_frames, first.leading_gap_frames,
         first.interior_gap_frames, first.trailing_gap_frames, first.coverage_ppm,
     ) == (16, 8, 0, 4, 4, 500_000)
+    assert (first.uncovered_run_count, first.longest_uncovered_run_frames) == (2, 4)
     assert len(first.coverage_sha256) == 64
     assert first == _review(image, audio, segments, pins)
     assert "hello" not in repr(first) and "world" not in repr(first)
@@ -98,6 +99,7 @@ def test_leading_and_trailing_gaps_are_accounted_without_inference():
         report.interior_gap_frames, report.trailing_gap_frames,
     ) == (7, 3, 0, 6)
     assert report.coverage_ppm == 437_500
+    assert (report.uncovered_run_count, report.longest_uncovered_run_frames) == (2, 6)
 
 
 @pytest.mark.parametrize("field", (
@@ -152,3 +154,37 @@ def test_reentrant_input_mutation_during_pair_reinspection_is_rejected(monkeypat
     monkeypatch.setattr(mod, "_PAIR", mutate)
     with pytest.raises(mod.OfflineCoverageRejected, match="implementation changed"):
         _review(image, audio, segments, pins)
+
+
+@pytest.mark.parametrize(
+    ("ranges", "run_count", "longest"),
+    (
+        (((0, 16),), 0, 0),
+        (((0, 4), (5, 6), (10, 16)), 2, 4),
+        (((2, 5), (7, 9), (12, 14)), 4, 3),
+    ),
+)
+def test_uncovered_run_counts_are_disjoint_and_receipt_bound(
+    ranges, run_count, longest,
+):
+    image, audio, _, pins = _case()
+    spans = tuple(
+        transcript.TranscriptSegmentClaim(
+            start, end, "en", hashlib.sha256(f"span{i}".encode()).hexdigest(),
+            f"span{i}",
+        )
+        for i, (start, end) in enumerate(ranges)
+    )
+    pins["retained_transcript_fingerprint"] = transcript.review_audio_transcript_binding(
+        transcript.AudioMetadataClaim(OWNER, PRIVACY, audio.wav_sha256, 16000, 16),
+        spans,
+    ).fingerprint
+    report = _review(image, audio, spans, pins)
+    assert report.uncovered_run_count == run_count
+    assert report.longest_uncovered_run_frames == longest
+    assert (
+        report.covered_frames + report.leading_gap_frames
+        + report.interior_gap_frames + report.trailing_gap_frames
+    ) == report.audio_frames == 16
+    assert report.coverage_sha256 == _review(image, audio, spans, pins).coverage_sha256
+    assert report.tool_execution_authorized is False
