@@ -225,18 +225,29 @@ def search_offline_context(
     # False-only authority getters are arbitrary callbacks. Recheck original
     # descriptors and result/source carriers after EACH getter, including the
     # last, so a swapped False-valued descriptor never becomes a silent grant.
-    for key in _DENIALS:
+    for index, key in enumerate(_DENIALS):
         if getattr(result, key) is not False:
             raise OfflineContextSearchRejected("search preview authority changed")
         assert_result()
+        # Check inspected descriptors now, but do not preempt a later getter:
+        # a later callback may itself mutate the source/result, which must be
+        # reported by the original post-callback integrity diagnostic.
         if any(
             getattr(_RESULT_TYPE, name) is not original
             for name, original in zip(
-                _DENIALS, _DENIAL_DESCRIPTORS, strict=True,
+                _DENIALS[:index + 1],
+                _DENIAL_DESCRIPTORS[:index + 1],
+                strict=True,
             )
         ):
             raise OfflineContextSearchRejected(
                 "search preview authority descriptor changed"
             )
         assert_result()
+    if any(
+        getattr(_RESULT_TYPE, name) is not original
+        for name, original in zip(_DENIALS, _DENIAL_DESCRIPTORS, strict=True)
+    ):
+        raise OfflineContextSearchRejected("search preview authority descriptor changed")
+    assert_result()
     return result
