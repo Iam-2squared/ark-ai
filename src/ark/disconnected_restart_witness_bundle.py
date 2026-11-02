@@ -178,6 +178,10 @@ def review_disconnected_restart_witnesses(
     report = OfflineRestartWitnessReport(
         originals[0][0], originals[1][0], originals[2][0], digest,
     )
+    # A constructor is a replaceable callback: reject wrong-class returns
+    # *before* accessing any report fields, including the pinned epoch.
+    if type(report) is not _REPORT:
+        raise OfflineRestartWitnessRejected("restart report authority changed")
     # The final denial getters are callbacks. Capture the property identities
     # *before* invoking any of them; a False-returning getter can mutate an
     # earlier denial descriptor, a retained SQLite witness or the report.
