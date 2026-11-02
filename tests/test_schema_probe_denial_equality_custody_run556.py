@@ -1,8 +1,8 @@
 """Schema-only SQLite observations cannot gain custody via monkeypatches."""
 
+import sqlite3
 from contextlib import closing
 from dataclasses import replace
-import sqlite3
 
 import pytest
 
