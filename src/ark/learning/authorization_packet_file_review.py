@@ -122,6 +122,7 @@ def verify_local_authorization_packet_file(
 
         stable_snapshot()
         raw, file_epoch = _read_exact_local_packet(packet_path)
+        _assert_original_denials()
         stable_snapshot()
         if sha256_bytes(raw) != retained_packet_file_sha256:
             raise LocalPacketBindingRejected("retained packet file bytes mismatch")
@@ -134,6 +135,7 @@ def verify_local_authorization_packet_file(
             )
         except (ValueError, RecursionError, OverflowError, UnicodeError) as exc:
             raise LocalPacketBindingRejected("review packet JSON is invalid") from exc
+        _assert_original_denials()
         stable_snapshot()
         if type(packet) is not dict or canonical_json(packet) != raw:
             raise LocalPacketBindingRejected("review packet is not canonical JSON")
@@ -144,10 +146,12 @@ def verify_local_authorization_packet_file(
         packet_epoch = _pin_json_tree(packet)
         expected_snapshot_sha = packet["execution_snapshot_sha256"]
         expected_internal_sha = packet["packet_sha256"]
+        _assert_original_denials()
         witness = verify_detached_authorization_packet(
             snapshot, packet,
             retained_packet_file_sha256=retained_packet_file_sha256,
         )
+        _assert_original_denials()
 
         def stable_review() -> None:
             _assert_original_denials()
@@ -180,6 +184,7 @@ def verify_local_authorization_packet_file(
         # The detached review and denial callbacks may mutate the file.
         # Reopen after the callbacks, then repeat the identity/denial fences.
         final_raw, final_epoch = _read_exact_local_packet(packet_path)
+        _assert_original_denials()
         stable_review()
         if final_epoch != file_epoch or final_raw != raw:
             raise LocalPacketBindingRejected("review packet file changed during binding")
