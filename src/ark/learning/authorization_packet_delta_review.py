@@ -53,28 +53,51 @@ class ReviewPacketDelta:
 
 
 def _leaf_bytes(value: dict) -> dict[str, bytes]:
-    """Bounded and exact-type canonical leaves, without exposing values."""
+    """Bounded type-aware leaves with unambiguous, value-free field paths.
+
+    Literal key delimiters are escaped before joining, so a key named
+    "a.b" cannot impersonate the nested path a.b. Empty containers are
+    leaves too; changing {} into [] must not disappear from the delta.
+    Ordinary alphanumeric dotted paths retain their existing spelling.
+    """
     leaves: dict[str, bytes] = {}
 
+    def escaped(key: str) -> str:
+        return (
+            key.replace("~", "~0").replace(".", "~2")
+            .replace("[", "~3").replace("]", "~4")
+        )
+
+    def add(path: str, node: object) -> None:
+        if path in leaves or len(path) > 512 or len(leaves) >= 512:
+            raise ReviewPacketDeltaRejected("ambiguous or oversized review field path")
+        leaves[path] = canonical_json(node)
+
     def descend(node: object, path: str, depth: int) -> None:
-        if depth > 16 or len(leaves) > 512:
+        if depth > 16 or len(leaves) > 512 or len(path) > 512:
             raise ReviewPacketDeltaRejected("review change-set budget exceeded")
         if type(node) is dict:
             if len(node) > 128 or any(type(key) is not str for key in node):
                 raise ReviewPacketDeltaRejected("review contains invalid field keys")
+            if not node:
+                add(path, node)
             for key in sorted(node):
-                descend(node[key], path + "." + key if path else key, depth + 1)
+                segment = escaped(key)
+                descend(
+                    node[key], path + "." + segment if path else segment,
+                    depth + 1,
+                )
         elif type(node) is list:
             if len(node) > 128:
                 raise ReviewPacketDeltaRejected("review array budget exceeded")
+            if not node:
+                add(path, node)
             for index, item in enumerate(node):
                 descend(item, path + "[" + str(index) + "]", depth + 1)
         else:
             # Canonical bytes are type-aware: True and 1 must not compare
             # equal just because Python's bool subclasses int.
-            leaves[path] = canonical_json(node)
-            if len(leaves) > 512:
-                raise ReviewPacketDeltaRejected("review change-set budget exceeded")
+            add(path, node)
 
     descend(value, "", 0)
     return leaves
