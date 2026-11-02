@@ -22,6 +22,7 @@ from .offline_pcm_activity_regions import (
 from .offline_pcm_mono16 import (
     OfflinePcmConvertRejected,
     OfflinePcmConvertRequest,
+    OfflinePcmMono16,
     convert_offline_pcm_mono16,
 )
 from .offline_pcm_resample16 import OfflineResampleRejected, resample_pcm16
@@ -34,6 +35,8 @@ from .offline_pcm_wav import (
 
 _TARGET_RATE = 16_000
 _DOMAIN = b"ARK-offline-wave-energy-pipeline-v1\0"
+_MONO_DOMAIN = b"ARK-offline-pcm-mono16-v1\0"
+_MAX_MONO_INPUT_BYTES = 2 * 1024 * 1024
 
 
 class OfflineWavePipelineRejected(ValueError):
@@ -78,6 +81,46 @@ _FLAGS = (
     "microphone_authorized", "speaker_authenticated", "speech_recognized",
     "audio_disclosure_authorized", "tool_execution_authorized",
 )
+
+
+def _verify_mono_projection(
+    raw: bytes, channels: int, bits: int, claimed: bytes,
+) -> bool:
+    """Independently bind claimed normalized samples to original PCM bytes.
+
+    The source converter is a replaceable Python callback. A correct-looking
+    digest over substituted output bytes cannot prove that a WAV was actually
+    converted according to the fixed integer PCM rules.
+    """
+    width = bits // 8
+    frame_width = channels * width
+    if (
+        type(claimed) is not bytes
+        or not raw or len(raw) > _MAX_MONO_INPUT_BYTES
+        or len(raw) % frame_width
+        or len(claimed) != (len(raw) // frame_width) * 2
+    ):
+        return False
+    independent = bytearray(len(claimed))
+    cursor = 0
+    for frame in range(len(raw) // frame_width):
+        total = 0
+        for _ in range(channels):
+            value = int.from_bytes(
+                raw[cursor:cursor + width], "little", signed=bits != 8,
+            )
+            cursor += width
+            if bits == 8:
+                normalized = (value - 128) << 8
+            elif bits == 16:
+                normalized = value
+            else:
+                normalized = value >> (bits - 16)
+            total += normalized
+        independent[frame * 2:frame * 2 + 2] = (
+            total // channels
+        ).to_bytes(2, "little", signed=True)
+    return bytes(independent) == claimed
 
 
 def preview_offline_wav_energy(
@@ -186,15 +229,34 @@ def preview_offline_wav_energy(
         ))
         stable_request()
         if (
-            converted.owner_sha256 != owner
+            type(converted) is not OfflinePcmMono16
+            or converted.owner_sha256 != owner
             or converted.privacy_sha256 != privacy
             or converted.source_sha256 != wave.pcm_sha256
             or converted.frame_count != wave.frame_count
             or converted.sample_rate_hz != wave.sample_rate_hz
+            or converted.source_channels != channels
+            or converted.source_bits_per_sample != bits
+            or not _verify_mono_projection(
+                raw, channels, bits, converted.pcm16_mono,
+            )
             or hashlib.sha256(converted.pcm16_mono).hexdigest()
             != converted.output_sha256
         ):
             raise OfflineWavePipelineRejected("mono PCM conversion inconsistent")
+        mono_manifest = {
+            "owner": owner, "privacy": privacy, "source": wave.pcm_sha256,
+            "output": converted.output_sha256, "frames": frames,
+            "channels": channels, "rate": rate, "bits": bits,
+        }
+        mono_canonical = json.dumps(
+            mono_manifest, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+        if converted.inventory_sha256 != hashlib.sha256(
+            _MONO_DOMAIN + mono_canonical
+        ).hexdigest():
+            raise OfflineWavePipelineRejected("mono PCM inventory identity mismatch")
         normalized = resample_pcm16(
             converted.pcm16_mono, converted.output_sha256,
             wave.sample_rate_hz, _TARGET_RATE,
