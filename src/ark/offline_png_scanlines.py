@@ -192,20 +192,40 @@ def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineSca
 
 
 
+_SCANLINE_DENIALS = (
+    "png_container_verified", "capture_provenance_verified",
+    "user_consent_verified", "raw_pixels_released",
+    "observation_or_tool_authorized",
+)
+# Original denial-only descriptors are independent of a caller's later
+# false-valued replacement. Neither a false getter nor a local digest grants
+# consent, capture provenance, or permission to disclose pixels.
+_SCANLINE_DENIAL_DESCRIPTORS = tuple(
+    getattr(OfflineScanlineAudit, name) for name in _SCANLINE_DENIALS
+)
+
+
 def verify_offline_png_scanlines(
     audit: OfflineScanlineAudit, request: OfflineScanlineRequest,
 ) -> None:
-    """Recalculate one detached scanline report from independently retained IDAT.
+    """Recheck a detached private report against retained synthetic IDAT.
 
-    This proves only bounded *local consistency* between the supplied report
-    and bytes in the caller's request; it cannot authenticate a PNG container,
-    camera, consent, issuer, or future file contents. It emits no raw pixels.
+    Both request bytes and the returned report remain pinned across *all*
+    potentially reentrant denial getters. This is still local consistency,
+    not camera provenance, authentic consent, or filesystem race immunity.
     """
     if type(audit) is not OfflineScanlineAudit:
         raise OfflineScanlineRejected("exact detached scanline audit required")
+    if type(request) is not OfflineScanlineRequest:
+        raise OfflineScanlineRejected("exact detached scanline request required")
     fields = (
         audit.idat_sha256, audit.reconstructed_sha256, audit.width,
         audit.height, audit.inflated_bytes, audit.filters_used,
+    )
+    request_fields = (
+        request.owner_sha256, request.privacy_sha256, request.idat_sha256,
+        request.idat_bytes, request.width, request.height,
+        request.color_type, request.bit_depth, request.palette_entries,
     )
     if (
         not _sha(fields[0]) or not _sha(fields[1])
@@ -215,33 +235,70 @@ def verify_offline_png_scanlines(
         or any(type(v) is not int or v < 0 for v in fields[5])
     ):
         raise OfflineScanlineRejected("detached scanline audit shape invalid")
+
+    def stable_report() -> None:
+        if (
+            type(audit) is not OfflineScanlineAudit
+            or any(
+                now is not old for now, old in zip(
+                    (audit.idat_sha256, audit.reconstructed_sha256, audit.width,
+                     audit.height, audit.inflated_bytes, audit.filters_used),
+                    fields, strict=True,
+                )
+            )
+        ):
+            raise OfflineScanlineRejected(
+                "detached scanline audit changed during verification"
+            )
+
+    def stable_request() -> None:
+        if (
+            type(request) is not OfflineScanlineRequest
+            or any(
+                now is not old for now, old in zip(
+                    (request.owner_sha256, request.privacy_sha256,
+                     request.idat_sha256, request.idat_bytes,
+                     request.width, request.height, request.color_type,
+                     request.bit_depth, request.palette_entries),
+                    request_fields, strict=True,
+                )
+            )
+        ):
+            raise OfflineScanlineRejected(
+                "detached scanline source changed during verification"
+            )
+
+    def stable_denials() -> None:
+        if any(
+            getattr(OfflineScanlineAudit, name) is not original
+            for name, original in zip(
+                _SCANLINE_DENIALS, _SCANLINE_DENIAL_DESCRIPTORS, strict=True,
+            )
+        ):
+            raise OfflineScanlineRejected(
+                "detached scanline denial descriptor changed"
+            )
+
+    stable_report()
+    stable_request()
+    stable_denials()
     expected = inspect_offline_png_scanlines(request)
-    current = (
-        audit.idat_sha256, audit.reconstructed_sha256, audit.width,
-        audit.height, audit.inflated_bytes, audit.filters_used,
-    )
-    if any(now is not old for now, old in zip(current, fields, strict=True)):
-        raise OfflineScanlineRejected("detached scanline audit changed during verification")
+    stable_request()
+    stable_report()
+    stable_denials()
     truth = (
         expected.idat_sha256, expected.reconstructed_sha256, expected.width,
         expected.height, expected.inflated_bytes, expected.filters_used,
     )
-    if current != truth:
+    if fields != truth:
         raise OfflineScanlineRejected("detached scanline audit differs from source bytes")
-    for name in (
-        "png_container_verified", "capture_provenance_verified",
-        "user_consent_verified", "raw_pixels_released",
-        "observation_or_tool_authorized",
-    ):
-        denial = getattr(audit, name)
-        if type(denial) is not bool or denial:
+    for name in _SCANLINE_DENIALS:
+        stable_denials()
+        if getattr(audit, name) is not False:
             raise OfflineScanlineRejected("detached scanline report claimed authority")
-    if any(
-        now is not old for now, old in zip(
-            (
-                audit.idat_sha256, audit.reconstructed_sha256, audit.width,
-                audit.height, audit.inflated_bytes, audit.filters_used,
-            ), fields, strict=True,
-        )
-    ):
-        raise OfflineScanlineRejected("detached scanline audit changed during verification")
+        stable_report()
+        stable_request()
+        stable_denials()
+    stable_report()
+    stable_request()
+    stable_denials()
