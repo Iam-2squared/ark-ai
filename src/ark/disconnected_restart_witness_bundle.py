@@ -178,7 +178,44 @@ def review_disconnected_restart_witnesses(
     report = OfflineRestartWitnessReport(
         originals[0][0], originals[1][0], originals[2][0], digest,
     )
-    stable()
+    # The final denial getters are callbacks. Capture the property identities
+    # *before* invoking any of them; a False-returning getter can mutate an
+    # earlier denial descriptor, a retained SQLite witness or the report.
+    denial_names = (
+        "cross_store_atomicity_proven", "independent_custody_proven",
+        "startup_authorized", "dispatch_authorized",
+        "automatic_replay_authorized", "personal_context_use_authorized",
+        "trusted_clock_verified",
+    )
+    descriptors = tuple(getattr(_REPORT, name) for name in denial_names)
+    if any(type(descriptor) is not property for descriptor in descriptors):
+        raise OfflineRestartWitnessRejected("restart denial property changed")
+    report_epoch = (
+        report.memory_epochs, report.context_requests,
+        report.due_occurrences, report.fingerprint,
+    )
+
+    def stable_report() -> None:
+        stable()
+        if (
+            type(report) is not _REPORT
+            or any(now is not previous for now, previous in zip(
+                (
+                    report.memory_epochs, report.context_requests,
+                    report.due_occurrences, report.fingerprint,
+                ),
+                report_epoch, strict=True,
+            ))
+            or any(getattr(_REPORT, name) is not descriptor
+                   for name, descriptor in zip(
+                       denial_names, descriptors, strict=True,
+                   ))
+        ):
+            raise OfflineRestartWitnessRejected(
+                "restart report or denial epoch changed"
+            )
+
+    stable_report()
     if (
         type(report) is not _REPORT
         or report.memory_epochs is not originals[0][0]
@@ -194,4 +231,13 @@ def review_disconnected_restart_witnesses(
         or report.trusted_clock_verified is not False
     ):
         raise OfflineRestartWitnessRejected("restart report authority changed")
+    # Recheck after every getter: no last-step mutation may escape as
+    # apparent startup readiness. This does NOT authenticate any store.
+    stable_report()
+    for name in denial_names:
+        if getattr(report, name) is not False:
+            raise OfflineRestartWitnessRejected(
+                "restart report gained authority after review"
+            )
+        stable_report()
     return report
