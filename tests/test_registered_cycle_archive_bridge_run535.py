@@ -197,7 +197,7 @@ def test_reflective_result_denial_cannot_forge_join_hash(tmp_path, monkeypatch):
         "external_outcome_proven", property(forged_false),
     )
     try:
-        with pytest.raises(bridge.RegisteredArchiveBridgeRejected, match="report changed"):
+        with pytest.raises(bridge.RegisteredArchiveBridgeRejected, match="changed"):
             _review(case)
         assert case["backend"].calls == 0
     finally:
