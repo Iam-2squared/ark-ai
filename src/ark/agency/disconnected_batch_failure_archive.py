@@ -71,6 +71,25 @@ class ArchivedDisconnectedFailure:
         return False
 
 
+# The class denial methods must be the original definitions, not merely any
+# callback returning False. Retain them before review/creation callbacks run.
+_ORIGINAL_ARCHIVE_DENIALS = tuple(
+    getattr(ArchivedDisconnectedFailure, key) for key in _DENIALS
+)
+
+
+def _require_original_archive_denials() -> None:
+    if any(
+        getattr(ArchivedDisconnectedFailure, key) is not original
+        for key, original in zip(
+            _DENIALS, _ORIGINAL_ARCHIVE_DENIALS, strict=True,
+        )
+    ):
+        raise DisconnectedFailureArchiveRejected(
+            "failure archive authority definition changed"
+        )
+
+
 def _receipt_epoch(receipt: DisconnectedFailureFixtureReceipt) -> tuple[object, ...]:
     if type(receipt) is not DisconnectedFailureFixtureReceipt:
         raise DisconnectedFailureArchiveRejected("exact hypothetical receipt required")
@@ -118,6 +137,7 @@ def _encode(receipt: DisconnectedFailureFixtureReceipt) -> bytes:
 
 
 def _witness(sha256: str, receipt: DisconnectedFailureFixtureReceipt):
+    _require_original_archive_denials()
     epoch = _receipt_epoch(receipt)
     counts = tuple(
         sum(state == target for _, state in receipt.terminal_states)
@@ -133,7 +153,7 @@ def _witness(sha256: str, receipt: DisconnectedFailureFixtureReceipt):
         output.projection_digest, output.fixture_digest,
         output.failed_step_ids, output.terminal_counts,
     )
-    descriptors = tuple(getattr(ArchivedDisconnectedFailure, key) for key in _DENIALS)
+    descriptors = _ORIGINAL_ARCHIVE_DENIALS
 
     def stable() -> None:
         if (
@@ -179,6 +199,7 @@ def review_disconnected_failure_archive(
         or type(retained_failed_step_ids) is not tuple
     ):
         raise DisconnectedFailureArchiveRejected("independent archive pins required")
+    _require_original_archive_denials()
     try:
         _path(path)
         expected = simulate_disconnected_failure_fixture(
@@ -207,9 +228,7 @@ def review_disconnected_failure_archive(
         # checked it. Pin fields, receipt carriers and denial descriptors
         # across that last read, including equal-but-replaced carriers.
         source_epoch = _receipt_epoch(expected)
-        descriptors = tuple(
-            getattr(ArchivedDisconnectedFailure, key) for key in _DENIALS
-        )
+        descriptors = _ORIGINAL_ARCHIVE_DENIALS
         witness = _witness(retained_file_sha256, expected)
         witness_epoch = (
             witness.file_sha256, witness.request_id, witness.plan_digest,
@@ -274,6 +293,7 @@ def archive_disconnected_failure_fixture(
     artifact for manual review. Never auto-delete, retry or treat as consent.
     """
     original = _receipt_epoch(receipt)
+    _require_original_archive_denials()
     try:
         _path(path)
         verify_disconnected_failure_fixture(
@@ -283,6 +303,7 @@ def archive_disconnected_failure_fixture(
             raise DisconnectedFailureArchiveRejected("failure receipt changed before write")
         raw = _encode(receipt)
         sha256 = hashlib.sha256(raw).hexdigest()
+        _require_original_archive_denials()
         if not _same_receipt_carriers(receipt, original):
             raise DisconnectedFailureArchiveRejected("failure receipt changed before create")
     except DisconnectedBatchArchiveRejected as exc:
