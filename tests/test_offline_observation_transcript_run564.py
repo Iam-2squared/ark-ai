@@ -136,7 +136,7 @@ def test_transcript_false_only_authority_replacement_is_rejected(
         _join(image, audio, segments, retained)
 
 
-def test_transcript_callback_mutating_video_scope_is_rejected(monkeypatch):
+def test_transcript_callable_replacement_rejected_before_media_callback(monkeypatch):
     image, audio, segments, retained = _case()
     original = mod._TRANSCRIPT_FN
 
@@ -146,13 +146,12 @@ def test_transcript_callback_mutating_video_scope_is_rejected(monkeypatch):
         return result
 
     monkeypatch.setattr(mod, "_TRANSCRIPT_FN", mutate)
-    # A rebound module-global callable is a separate trust boundary; the
-    # checked input epoch must still reject a callback mutation.
-    with pytest.raises(mod.OfflineObservationTranscriptRejected, match="epoch changed"):
+    # Rebinding this function is rejected *before* it may mutate the image.
+    with pytest.raises(mod.OfflineObservationTranscriptRejected, match="replaced"):
         _join(image, audio, segments, retained)
 
 
-def test_second_transcript_result_drift_is_rejected(monkeypatch):
+def test_transcript_callable_swap_rejects_before_any_second_pass(monkeypatch):
     image, audio, segments, retained = _case()
     original = mod._TRANSCRIPT_FN
     calls = 0
@@ -166,9 +165,9 @@ def test_second_transcript_result_drift_is_rejected(monkeypatch):
         return result
 
     monkeypatch.setattr(mod, "_TRANSCRIPT_FN", drift)
-    with pytest.raises(mod.OfflineObservationTranscriptRejected, match="drifted"):
+    with pytest.raises(mod.OfflineObservationTranscriptRejected, match="replaced"):
         _join(image, audio, segments, retained)
-    assert calls == 2
+    assert calls == 0
 
 
 def test_original_pair_inspector_swap_is_rejected(monkeypatch):
