@@ -82,7 +82,7 @@ _ORIGINAL_RESULT_DENIALS = tuple(
 _ORIGINAL_PREFIX_DENIALS = tuple(
     getattr(DisconnectedDuePrefixReview, name) for name in _PREFIX_DENIALS
 )
-_ORIGINAL_WITNESS_DENIAL = getattr(_WITNESS_TYPE, "independent_custody_proven")
+_ORIGINAL_WITNESS_DENIAL = _WITNESS_TYPE.independent_custody_proven
 
 
 def _checked(value: object) -> tuple[int, str]:
@@ -92,7 +92,7 @@ def _checked(value: object) -> tuple[int, str]:
         or not 0 <= value.count <= _MAX_ROWS
         or type(value.fingerprint) is not str
         or _SHA.fullmatch(value.fingerprint) is None
-        or getattr(_WITNESS_TYPE, "independent_custody_proven")
+        or _WITNESS_TYPE.independent_custody_proven
         is not _ORIGINAL_WITNESS_DENIAL
         or value.independent_custody_proven is not False
     ):
