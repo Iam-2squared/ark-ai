@@ -58,12 +58,40 @@ class SyntheticErasureAssessment:
         return False
 
 
+# Preserve the denial implementation observed at module import. Capturing it
+# inside review() would trust a preinstalled always-False replacement callback.
+_ASSESSMENT_TYPE = SyntheticErasureAssessment
+_AUTHORITY_NAMES = (
+    "row_deletion_proven", "wal_reclamation_proven",
+    "forensic_erasure_verified", "cleanup_authorized",
+)
+_ORIGINAL_AUTHORITY = tuple(
+    vars(_ASSESSMENT_TYPE)[name] for name in _AUTHORITY_NAMES
+)
+
+
+def _assert_original_authority() -> None:
+    if (
+        SyntheticErasureAssessment is not _ASSESSMENT_TYPE
+        or any(
+            vars(_ASSESSMENT_TYPE).get(name) is not original
+            for name, original in zip(
+                _AUTHORITY_NAMES, _ORIGINAL_AUTHORITY, strict=True,
+            )
+        )
+    ):
+        raise SyntheticErasureRejected(
+            "erasure assessment authority descriptor changed"
+        )
+
+
 def review_synthetic_erasure_evidence(
     observations: SyntheticErasureObservations,
 ) -> SyntheticErasureAssessment:
     """Bounded diagnostic; neither row deletion nor data reclamation occurs."""
     if type(observations) is not SyntheticErasureObservations:
         raise SyntheticErasureRejected("exact erasure observations required")
+    _assert_original_authority()
     names = (
         "owner_scope_digest", "row_state", "reader_state", "checkpoint_state",
         "secure_delete_state", "backup_state", "wal_bytes_claimed",
@@ -81,6 +109,7 @@ def review_synthetic_erasure_evidence(
         raise SyntheticErasureRejected("malformed erasure observations")
 
     def assert_epoch() -> None:
+        _assert_original_authority()
         if type(observations) is not SyntheticErasureObservations or any(
             getattr(observations, name) is not prior
             for name, prior in zip(names, epoch, strict=True)
@@ -112,15 +141,8 @@ def review_synthetic_erasure_evidence(
     original_absence = epoch[1] == "absent"
     # Property getters are arbitrary Python callbacks, even if they return
     # False. A late getter must not replace an earlier authority descriptor.
-    authority_names = (
-        "row_deletion_proven", "wal_reclamation_proven",
-        "forensic_erasure_verified", "cleanup_authorized",
-    )
-    authority_descriptors = tuple(
-        getattr(SyntheticErasureAssessment, name) for name in authority_names
-    )
-
     def assert_inert_result() -> None:
+        _assert_original_authority()
         # A logical absence claim is NOT a deletion/forensic erasure proof.
         # Properties are callbacks and may reflectively mutate a frozen
         # result or the source even while returning the exact False value.
@@ -140,7 +162,7 @@ def review_synthetic_erasure_evidence(
             or any(
                 getattr(SyntheticErasureAssessment, name) is not descriptor
                 for name, descriptor in zip(
-                    authority_names, authority_descriptors, strict=True,
+                    _AUTHORITY_NAMES, _ORIGINAL_AUTHORITY, strict=True,
                 )
             )
         ):
