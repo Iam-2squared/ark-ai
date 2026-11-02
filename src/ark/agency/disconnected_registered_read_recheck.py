@@ -69,6 +69,7 @@ def verify_disconnected_registered_read_receipt(
         receipt.capability,
     )
     call_epoch = (call.tool, call.capability, call.scope, call.arguments)
+    denial_descriptors = tuple(getattr(_RECEIPT, flag) for flag in _FLAGS)
     request_id = call.request_id  # computed: compare VALUE, not string identity
     grant_epochs = tuple(
         (grant, grant.capability, grant.scope, grant.expires_at_ms)
@@ -114,6 +115,12 @@ def verify_disconnected_registered_read_receipt(
                     )
                 )
                 or registry.revision != revision
+                or any(
+                    getattr(_RECEIPT, flag) is not original
+                    for flag, original in zip(
+                        _FLAGS, denial_descriptors, strict=True,
+                    )
+                )
                 or any(getattr(receipt, flag) is not False for flag in _FLAGS)
             ):
                 raise DisconnectedReadReceiptRejected("READ receipt or input epoch changed")
@@ -141,6 +148,12 @@ def verify_disconnected_registered_read_receipt(
                     )
                 )
                 or registry.revision != revision
+                or any(
+                    getattr(_RECEIPT, flag) is not original
+                    for flag, original in zip(
+                        _FLAGS, denial_descriptors, strict=True,
+                    )
+                )
             ):
                 raise DisconnectedReadReceiptRejected("READ receipt or input epoch changed")
         except DisconnectedReadReceiptRejected:
@@ -177,6 +190,12 @@ def verify_disconnected_registered_read_receipt(
                 fields, expected_epoch, strict=True,
             ))
             or any(getattr(expected, flag) is not False for flag in _FLAGS)
+            or any(
+                getattr(_RECEIPT, flag) is not original
+                for flag, original in zip(
+                    _FLAGS, denial_descriptors, strict=True,
+                )
+            )
             # Re-read after the LAST descriptor: a getter may have altered
             # the previously examined ID but returned the exact False.
             or any(current is not initial for current, initial in zip(
@@ -185,6 +204,12 @@ def verify_disconnected_registered_read_receipt(
                     expected.request_id, expected.tool_name, expected.capability,
                 ), expected_epoch, strict=True,
             ))
+            or any(
+                getattr(_RECEIPT, flag) is not original
+                for flag, original in zip(
+                    _FLAGS, denial_descriptors, strict=True,
+                )
+            )
         ):
             raise DisconnectedReadReceiptRejected("retained READ binding differs")
 
