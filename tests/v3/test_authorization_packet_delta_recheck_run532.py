@@ -168,3 +168,74 @@ def test_arbitrary_object_is_not_detached_review_receipt(tmp_path):
     fixture[4] = object()
     with pytest.raises(mod.DetachedPacketDeltaRejected, match="exact"):
         _check(fixture)
+
+
+def _equal_new_string(value):
+    copy = (value + "x")[:-1]
+    assert copy == value and copy is not value
+    return copy
+
+
+@pytest.mark.parametrize("field", ("delta_sha256", "old_file_sha256", "changed_paths"))
+def test_fresh_delta_false_getter_cannot_replace_equal_valued_carrier(
+    tmp_path, monkeypatch, field,
+):
+    fixture = _fixture(tmp_path)
+    seen = {}
+    original = mod.review_unapproved_packet_delta
+
+    def track_fresh(*args, **kwargs):
+        result = original(*args, **kwargs)
+        seen["fresh"] = result
+        return result
+
+    def reentrant_false(self):
+        if self is seen.get("fresh"):
+            value = getattr(self, field)
+            replacement = (
+                tuple(list(value)) if field == "changed_paths"
+                else _equal_new_string(value)
+            )
+            assert replacement == value
+            assert replacement is not value
+            object.__setattr__(self, field, replacement)
+        return False
+
+    monkeypatch.setattr(mod, "review_unapproved_packet_delta", track_fresh)
+    monkeypatch.setattr(
+        base.ReviewPacketDelta, "main_merge_authorized",
+        property(reentrant_false),
+    )
+    with pytest.raises(mod.DetachedPacketDeltaRejected, match="changed"):
+        _check(fixture)
+
+
+def test_fresh_review_callbacks_cannot_later_grant_retained_authority(
+    tmp_path, monkeypatch,
+):
+    fixture = _fixture(tmp_path)
+    retained = fixture[4]
+    seen = {"armed": False}
+
+    def reentrant_false(self):
+        if self is retained:
+            return seen["armed"]
+        seen["armed"] = True
+        return False
+
+    monkeypatch.setattr(
+        base.ReviewPacketDelta, "main_merge_authorized",
+        property(reentrant_false),
+    )
+    with pytest.raises(mod.DetachedPacketDeltaRejected, match="authority"):
+        _check(fixture)
+
+
+def test_false_dataclass_equality_does_not_block_valid_passive_recheck(
+    tmp_path, monkeypatch,
+):
+    fixture = _fixture(tmp_path)
+    monkeypatch.setattr(
+        base.ReviewPacketDelta, "__eq__", lambda self, other: False,
+    )
+    assert _check(fixture) is None
