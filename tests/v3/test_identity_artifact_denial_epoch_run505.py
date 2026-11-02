@@ -23,7 +23,7 @@ def fixture(tmp_path: Path):
     ("top_level_keys", ("forged",)),
     ("top_level_keys", ["revision"]),
 ])
-def test_final_denial_cannot_change_witness_fields(
+def test_preinstalled_denial_mutator_is_quarantined_before_witness(
     tmp_path, monkeypatch, field, value,
 ):
     path, digest = fixture(tmp_path)
@@ -36,11 +36,11 @@ def test_final_denial_cannot_change_witness_fields(
         mod.LocalIdentityArtifactWitness,
         "protected_evaluation_authorized", property(denial),
     )
-    with pytest.raises(mod.LocalIdentityArtifactRejected, match="after authority"):
+    with pytest.raises(mod.LocalIdentityArtifactRejected, match="authority definition changed"):
         mod.verify_local_identity_artifact(path, retained_sha256=digest)
 
 
-def test_final_denial_cannot_change_file_after_custody_read(tmp_path, monkeypatch):
+def test_preinstalled_denial_mutator_cannot_change_artifact_bytes(tmp_path, monkeypatch):
     path, digest = fixture(tmp_path)
 
     def denial(_self):
@@ -51,8 +51,9 @@ def test_final_denial_cannot_change_file_after_custody_read(tmp_path, monkeypatc
         mod.LocalIdentityArtifactWitness,
         "protected_evaluation_authorized", property(denial),
     )
-    with pytest.raises(mod.LocalIdentityArtifactRejected, match="changed after"):
+    with pytest.raises(mod.LocalIdentityArtifactRejected, match="authority definition changed"):
         mod.verify_local_identity_artifact(path, retained_sha256=digest)
+    assert path.read_bytes() == canonical_json({"revision": "local-only"})
 
 
 def test_unchanged_artifact_witness_has_no_training_grant(tmp_path):
