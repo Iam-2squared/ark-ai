@@ -89,6 +89,9 @@ class RecoveredRegisteredReadReview:
 _REPORT = RecoveredRegisteredReadReview
 _CHILD = RegisteredBatchReceiptReview
 _RECOVERY = ReadRecoveryJournalReview
+# Denied-only flags must preserve their import-time implementation, not an
+# arbitrary preinstalled callback which happens to return False.
+_ORIGINAL_REPORT_DENIALS = tuple(getattr(_REPORT, key) for key in _DENIED)
 
 
 def _digest(domain: bytes, value: object) -> str:
@@ -211,6 +214,12 @@ def review_recovered_registered_reads(
                 ))
                 for item, original, fields in zip(
                     evidence, evidence_carriers, evidence_rows, strict=True,
+                )
+            )
+            or any(
+                getattr(_REPORT, name) is not original
+                for name, original in zip(
+                    _DENIED, _ORIGINAL_REPORT_DENIALS, strict=True,
                 )
             )
             or type(snapshot) is not ReadJournalSnapshot
@@ -340,7 +349,7 @@ def review_recovered_registered_reads(
         digest = _digest(_DOMAIN, first)
         review = _REPORT(*first, digest)
         pinned = (*first, digest)
-        descriptors = tuple(getattr(_REPORT, key) for key in _DENIED)
+        descriptors = _ORIGINAL_REPORT_DENIALS
 
         def stable_result() -> None:
             stable()
