@@ -50,6 +50,39 @@ class DisconnectedSourcePin:
         return False
 
 
+_PIN_TYPE = DisconnectedSourcePin
+_PIN_FIELDS = tuple(field.name for field in fields(_PIN_TYPE))
+_DENIALS = (
+    "independently_attested", "contents_verified",
+    "memory_release_authorized", "file_mutation_authorized",
+)
+_ORIGINAL_DENIALS = tuple(getattr(_PIN_TYPE, key) for key in _DENIALS)
+
+
+def _pin_values(pin: DisconnectedSourcePin) -> tuple[object, ...]:
+    if type(pin) is not _PIN_TYPE:
+        raise DisconnectedSourceRejected("exact source pin required")
+    return tuple(getattr(pin, name) for name in _PIN_FIELDS)
+
+
+def _assert_denied(pin: DisconnectedSourcePin, original: tuple[object, ...]) -> None:
+    """Deny-only properties are callbacks; verify each surviving field epoch."""
+    if _pin_values(pin) != original:
+        raise DisconnectedSourceRejected("source pin changed during denial")
+    for key, descriptor in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True):
+        if (
+            getattr(_PIN_TYPE, key) is not descriptor
+            or getattr(pin, key) is not False
+            or _pin_values(pin) != original
+        ):
+            raise DisconnectedSourceRejected("source pin acquired authority")
+    if any(
+        getattr(_PIN_TYPE, key) is not descriptor
+        for key, descriptor in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+    ) or _pin_values(pin) != original:
+        raise DisconnectedSourceRejected("source pin changed during denial")
+
+
 def _digest(value: object) -> str:
     data = json.dumps(value, separators=(",", ":"), ensure_ascii=True).encode("ascii")
     return hashlib.sha256(_DOMAIN + data).hexdigest()
@@ -106,9 +139,14 @@ def capture_disconnected_source(path: Path) -> DisconnectedSourcePin:
     """
     path = _validated_path(path)
     first = _scan(path)
+    first_values = _pin_values(first)
+    _assert_denied(first, first_values)
     second = _scan(path)
-    if first != second:
+    second_values = _pin_values(second)
+    if second_values != first_values or _pin_values(first) != first_values:
         raise DisconnectedSourceRejected("file identity changed during capture")
+    _assert_denied(second, second_values)
+    _assert_denied(first, first_values)
     return first
 
 
@@ -119,7 +157,7 @@ def review_disconnected_source(
     path = _validated_path(path)
     if type(retained) is not DisconnectedSourcePin:
         raise DisconnectedSourceRejected("exact retained source pin required")
-    pinned = tuple(getattr(retained, field.name) for field in fields(retained))
+    pinned = _pin_values(retained)
     if (
         any(type(value) is not str for value in pinned[:2])
         or any(len(value) != 64 for value in pinned[:2])
@@ -130,18 +168,27 @@ def review_disconnected_source(
 
     def assert_retained_epoch() -> None:
         if any(
-            getattr(retained, field.name) is not value
-            for field, value in zip(fields(retained), pinned, strict=True)
+            getattr(retained, name) is not value
+            for name, value in zip(_PIN_FIELDS, pinned, strict=True)
         ):
             raise DisconnectedSourceRejected("retained file identity changed during review")
 
     assert_retained_epoch()
+    _assert_denied(retained, pinned)
     first = _scan(path)
     assert_retained_epoch()
-    if first != retained:
+    first_values = _pin_values(first)
+    if first_values != pinned:
         raise DisconnectedSourceRejected("file or ancestor identity no longer matches")
+    _assert_denied(first, first_values)
+    assert_retained_epoch()
     second = _scan(path)
     assert_retained_epoch()
-    if second != first:
+    second_values = _pin_values(second)
+    if second_values != first_values:
         raise DisconnectedSourceRejected("file identity changed during repeat scan")
+    _assert_denied(second, second_values)
+    _assert_denied(first, first_values)
+    assert_retained_epoch()
+    _assert_denied(retained, pinned)
     return second
