@@ -84,6 +84,39 @@ class RegisteredArchiveBridgeReview:
 _REPORT = RegisteredArchiveBridgeReview
 _ARCHIVE = ArchivedDisconnectedBatchCycle
 _REGISTERED = RegisteredBatchSetReview
+_ARCHIVE_DENIED = (
+    "external_dispatch_authorized", "write_authorized",
+    "automatic_replay_authorized", "real_outcome_proven",
+)
+_REGISTERED_DENIED = (
+    "backend_dispatched", "write_authorized",
+    "automatic_replay_authorized", "dependencies_completed_proven",
+    "independent_custody_proven",
+)
+# Retain imported property definitions, not an arbitrary False-only callback
+# substituted before this composite review begins.
+_ORIGINAL_REPORT_DENIALS = tuple(getattr(_REPORT, key) for key in _DENIED)
+_ORIGINAL_ARCHIVE_DENIALS = tuple(
+    getattr(_ARCHIVE, key) for key in _ARCHIVE_DENIED
+)
+_ORIGINAL_REGISTERED_DENIALS = tuple(
+    getattr(_REGISTERED, key) for key in _REGISTERED_DENIED
+)
+
+
+def _check_original_denials() -> None:
+    for cls, names, originals in (
+        (_REPORT, _DENIED, _ORIGINAL_REPORT_DENIALS),
+        (_ARCHIVE, _ARCHIVE_DENIED, _ORIGINAL_ARCHIVE_DENIALS),
+        (_REGISTERED, _REGISTERED_DENIED, _ORIGINAL_REGISTERED_DENIALS),
+    ):
+        if any(
+            getattr(cls, name) is not original
+            for name, original in zip(names, originals, strict=True)
+        ):
+            raise RegisteredArchiveBridgeRejected(
+                "detached registered archive authority definition changed"
+            )
 
 
 def review_registered_cycle_archive_bridge(
@@ -116,6 +149,7 @@ def review_registered_cycle_archive_bridge(
     ):
         raise RegisteredArchiveBridgeRejected("exact bounded detached join inputs required")
 
+    _check_original_denials()
     plan_epoch = (plan.request_id, plan.steps, plan.canonical_plan_json, plan.plan_digest)
     schedule_epoch = (
         schedule.request_id, schedule.plan_digest, schedule.waves,
@@ -138,6 +172,7 @@ def review_registered_cycle_archive_bridge(
     waves = tuple(schedule.waves)
 
     def stable() -> None:
+        _check_original_denials()
         if (
             type(plan) is not DisconnectedBatchPlan
             or type(schedule) is not DisconnectedBatchSchedule
@@ -210,15 +245,8 @@ def review_registered_cycle_archive_bridge(
             or _SHA.fullmatch(registered.review_sha256) is None
             or type(registered.step_receipts) is not tuple
             or len(registered.step_receipts) != len(plan_epoch[1])
-            or any(getattr(archived, key) is not False for key in (
-                "external_dispatch_authorized", "write_authorized",
-                "automatic_replay_authorized", "real_outcome_proven",
-            ))
-            or any(getattr(registered, key) is not False for key in (
-                "backend_dispatched", "write_authorized",
-                "automatic_replay_authorized", "dependencies_completed_proven",
-                "independent_custody_proven",
-            ))
+            or any(getattr(archived, key) is not False for key in _ARCHIVE_DENIED)
+            or any(getattr(registered, key) is not False for key in _REGISTERED_DENIED)
         ):
             raise RegisteredArchiveBridgeRejected("detached evidence gained authority")
         stable()
@@ -237,7 +265,7 @@ def review_registered_cycle_archive_bridge(
         ).hexdigest()
         report = _REPORT(*fields, digest)
         pinned = (*fields, digest)
-        descriptors = tuple(getattr(_REPORT, key) for key in _DENIED)
+        descriptors = _ORIGINAL_REPORT_DENIALS
 
         def stable_report() -> None:
             if (
