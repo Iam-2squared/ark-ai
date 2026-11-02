@@ -65,13 +65,16 @@ def _leaf_bytes(value: dict) -> dict[str, bytes]:
 
     def escaped(key: str) -> str:
         # Preserve empty keys; reserved "~" always escapes before a marker.
-        # Render controls, bidi/format and combining marks (which can\n        # visually overlay prior characters) as unambiguous components.
+        # Render controls, bidi/format and combining marks (which can
+        # visually overlay prior characters) as unambiguous components.
         if key == "":
             return "~5"
         delimiters = {"~": "~0", ".": "~2", "[": "~3", "]": "~4", "\\": "~6"}
         pieces = []
         for char in key:
-            if (char != " " and not char.isprintable()) or (\n                unicodedata.category(char).startswith("M")\n            ):
+            if (char != " " and not char.isprintable()) or (
+                unicodedata.category(char).startswith("M")
+            ):
                 pieces.append(f"~u{{{ord(char):X}}}")
             else:
                 pieces.append(delimiters.get(char, char))
