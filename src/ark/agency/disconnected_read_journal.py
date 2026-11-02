@@ -74,6 +74,37 @@ _RECEIPT_TYPE = ReadReceipt
 _WITNESS_TYPE = ReadJournalWitness
 
 
+@dataclass(frozen=True, slots=True)
+class ReadJournalSnapshot:
+    """Digest-only, non-authorizing recovery view of one local SQLite snapshot."""
+
+    witness: ReadJournalWitness
+    receipts: tuple[ReadReceipt, ...]
+
+    @property
+    def dispatch_authorized(self) -> bool:
+        return False
+
+    @property
+    def effect_proven(self) -> bool:
+        return False
+
+    @property
+    def automatic_replay_authorized(self) -> bool:
+        return False
+
+    @property
+    def independent_custody_proven(self) -> bool:
+        return False
+
+
+_SNAPSHOT_TYPE = ReadJournalSnapshot
+_SNAPSHOT_DENIALS = (
+    "dispatch_authorized", "effect_proven",
+    "automatic_replay_authorized", "independent_custody_proven",
+)
+
+
 def genesis_witness() -> ReadJournalWitness:
     """The single valid starting witness for a new, empty local journal."""
     return ReadJournalWitness(0, _GENESIS)
@@ -287,6 +318,117 @@ class DisconnectedReadJournal:
             if self._connection.in_transaction:
                 self._connection.execute("ROLLBACK")
             raise
+
+    def recover_receipts(self, retained: ReadJournalWitness) -> ReadJournalSnapshot:
+        """Read bounded digest-only receipts under an independently pinned tip.
+
+        This is a fixture recovery bridge, not evidence that a READ operation
+        executed, not a live Planner state, and never authorization to replay.
+        The caller must retain the tip outside this local SQLite database.
+        """
+        retained_fields = (retained.count, retained.tip_sha256)
+        _check_witness(retained)
+        connection = self._connection
+
+        def stable() -> None:
+            _check_witness(retained)
+            if (
+                type(retained) is not _WITNESS_TYPE
+                or retained.count is not retained_fields[0]
+                or retained.tip_sha256 is not retained_fields[1]
+                or self._connection is not connection
+            ):
+                raise ReadJournalRejected("READ recovery witness or handle changed")
+
+        stable()
+        try:
+            connection.execute("BEGIN")
+            stable()
+            actual = self._scan()
+            stable()
+            if (
+                type(actual) is not _WITNESS_TYPE
+                or actual.count != retained_fields[0]
+                or actual.tip_sha256 != retained_fields[1]
+            ):
+                raise ReadJournalRejected("READ recovery retained tip mismatch")
+            saved = connection.execute(
+                "SELECT request_id,step_id,operation,input_digest,result_digest "
+                "FROM receipts ORDER BY seq"
+            ).fetchall()
+            rows = tuple(ReadReceipt(*item) for item in saved)
+            if len(rows) != actual.count:
+                raise ReadJournalRejected("READ recovery row count changed")
+            running_tip = _GENESIS
+            for index, row in enumerate(rows, 1):
+                _check_receipt(row)
+                running_tip = _chain(running_tip, index, row)
+            if running_tip != actual.tip_sha256:
+                raise ReadJournalRejected("READ recovery receipt chain changed")
+            stable()
+            next_scan = self._scan()
+            if (
+                type(next_scan) is not _WITNESS_TYPE
+                or next_scan.count != actual.count
+                or next_scan.tip_sha256 != actual.tip_sha256
+            ):
+                raise ReadJournalRejected("READ recovery snapshot changed")
+            stable()
+            connection.execute("COMMIT")
+        except BaseException:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+
+        # Read-only COMMIT, result construction and denial properties may
+        # invoke synthetic callbacks. Never silently rebase saved row epochs.
+        stable()
+        result = ReadJournalSnapshot(actual, rows)
+        descriptors = tuple(
+            getattr(_SNAPSHOT_TYPE, name) for name in _SNAPSHOT_DENIALS
+        )
+        row_fields = tuple(
+            (row.request_id, row.step_id, row.operation,
+             row.input_digest, row.result_digest)
+            for row in rows
+        )
+
+        def stable_result() -> None:
+            if (
+                type(result) is not _SNAPSHOT_TYPE
+                or result.witness is not actual
+                or result.receipts is not rows
+                or type(result.receipts) is not tuple
+                or len(result.receipts) != len(rows)
+                or any(
+                    current is not original or type(current) is not _RECEIPT_TYPE
+                    or any(now is not earlier for now, earlier in zip(
+                        (current.request_id, current.step_id, current.operation,
+                         current.input_digest, current.result_digest),
+                        fields, strict=True,
+                    ))
+                    for current, original, fields in zip(
+                        result.receipts, rows, row_fields, strict=True,
+                    )
+                )
+                or any(
+                    getattr(_SNAPSHOT_TYPE, name) is not descriptor
+                    for name, descriptor in zip(
+                        _SNAPSHOT_DENIALS, descriptors, strict=True,
+                    )
+                )
+                or actual.count != retained_fields[0]
+                or actual.tip_sha256 != retained_fields[1]
+            ):
+                raise ReadJournalRejected("READ recovery result changed")
+            stable()
+
+        stable_result()
+        for flag in _SNAPSHOT_DENIALS:
+            if getattr(result, flag) is not False:
+                raise ReadJournalRejected("READ recovery gained authority")
+            stable_result()
+        return result
 
     def append(self, row: ReadReceipt, retained: ReadJournalWitness) -> ReadJournalWitness:
         """Append one synthetic READ digest with transaction-scoped CAS.
