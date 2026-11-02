@@ -179,12 +179,20 @@ def search_offline_context(
         normalized = "".join(folded_parts)
         if all(term in normalized for term in terms):
             score = sum(normalized.count(term) for term in terms)
-            first_folded = min(normalized.find(term) for term in terms)
+            first_folded, first_term = min(
+                (normalized.find(term), term) for term in terms
+            )
             first_source = original_positions[first_folded]
-            # The excerpt is always sliced at ORIGINAL Unicode codepoint
-            # offsets; never accidentally omit the matched text after folds.
+            last_folded = first_folded + len(first_term) - 1
+            last_source = original_positions[last_folded] + 1
+            # Each query token is accepted up to 128 UTF-8 bytes. A fixed
+            # first_source+96 excerpt could truncate a longer matching token,
+            # and casefold-expanded offsets cannot index the source directly.
+            # Include the entire earliest matched term with bounded context:
+            # at most 64 preceding + 128 matched + 64 following codepoints.
             begin = max(0, first_source - 64)
-            excerpt = content[begin:first_source + 96]
+            end = min(len(content), max(first_source + 96, last_source + 64))
+            excerpt = content[begin:end]
             scored.append((score, record_id, excerpt))
         assert_epoch()
     scored.sort(key=lambda item: (-item[0], item[1]))
