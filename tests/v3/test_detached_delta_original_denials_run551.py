@@ -14,7 +14,7 @@ from ark.learning.execution import canonical_json
 def _receipt():
     old, new, paths = "a" * 64, "b" * 64, ("unapproved.path",)
     digest = hashlib.sha256(
-        b"ARK-v3-unapproved-packet-delta-review-v1\\0"
+        b"ARK-v3-unapproved-packet-delta-review-v1\0"
         + canonical_json((old, new, paths))
     ).hexdigest()
     return base.ReviewPacketDelta(old, new, paths, digest)
