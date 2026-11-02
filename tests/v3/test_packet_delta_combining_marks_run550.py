@@ -37,7 +37,7 @@ def test_composed_decomposed_and_literal_markers_have_distinct_paths():
         "e~u{301}": 3,
         "e": 4,
     }) == {
-        "é": canonical_json(1),
+        "~u{E9}": canonical_json(1),
         "e~u{301}": canonical_json(2),
         "e~0u{301}": canonical_json(3),
         "e": canonical_json(4),
