@@ -23,6 +23,13 @@ _DENIALS = (
 _MAX_CHANGED_PATHS = 512
 _MAX_PATH_CHARS = 512
 
+# Import-time baseline: a caller can swap an always-False property *before*
+# the first detached recheck, not just during an individual getter.
+# Capturing descriptors at call time would legitimize that replacement.
+_ORIGINAL_DENIAL_DESCRIPTORS = tuple(
+    getattr(ReviewPacketDelta, name) for name in _DENIALS
+)
+
 
 class DetachedPacketDeltaRejected(ValueError):
     """The retained V3 delta receipt no longer matches the local packets."""
@@ -78,7 +85,7 @@ def verify_detached_unapproved_packet_delta(
         or pinned[1] != retained_new_file_sha256
     ):
         raise DetachedPacketDeltaRejected("retained packet SHA mismatch")
-    descriptors = tuple(getattr(ReviewPacketDelta, name) for name in _DENIALS)
+    descriptors = _ORIGINAL_DENIAL_DESCRIPTORS
 
     def stable() -> None:
         if (
@@ -86,13 +93,16 @@ def verify_detached_unapproved_packet_delta(
                 now is not old
                 for now, old in zip(_fields(retained), pinned, strict=True)
             )
-            or any(
-                getattr(ReviewPacketDelta, name) is not desc
-                for name, desc in zip(_DENIALS, descriptors, strict=True)
-            )
         ):
             raise DetachedPacketDeltaRejected(
                 "retained packet delta changed during recheck"
+            )
+        if any(
+            getattr(ReviewPacketDelta, name) is not desc
+            for name, desc in zip(_DENIALS, descriptors, strict=True)
+        ):
+            raise DetachedPacketDeltaRejected(
+                "retained packet delta authority descriptor changed"
             )
 
     stable()
