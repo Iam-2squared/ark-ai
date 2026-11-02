@@ -42,11 +42,14 @@ def test_false_only_denial_cannot_rewrite_retained_failure_evidence(
                 )
         return result
 
+    # The nested archive validator rejects this __getattribute__ interception
+    # before the outer cross-receipt mutation check. That is a valid earlier
+    # fail-closed boundary; it must never progress to backend dispatch.
     monkeypatch.setattr(cls, "__getattribute__", mutate_on_denial)
     try:
         with pytest.raises(
             mod.PartialFailureJoinRejected,
-            match="failure archive or fixture changed",
+            match="partial registered failure archive reconciliation denied",
         ):
             invoke(case)
         assert case["backend"].calls == 0
