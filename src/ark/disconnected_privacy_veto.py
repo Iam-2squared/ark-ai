@@ -90,6 +90,32 @@ _ORIGINAL_REVIEW_DENIALS = tuple(
     getattr(_REVIEW_TYPE, key) for key in _REVIEW_DENIALS
 )
 
+_RECEIPT_TYPE = OfflinePrivacyVetoReceipt
+_RECEIPT_DENIALS = (
+    "consent_verified", "deletion_proven", "context_release_authorized",
+)
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
+)
+_WITNESS_TYPE = OfflinePrivacyVetoWitness
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_verified"]
+
+
+def _assert_receipt_denials() -> None:
+    if (
+        OfflinePrivacyVetoReceipt is not _RECEIPT_TYPE
+        or OfflinePrivacyVetoWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("independent_custody_verified")
+        is not _ORIGINAL_WITNESS_DENIAL
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not descriptor
+            for name, descriptor in zip(
+                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflinePrivacyVetoRejected("privacy veto receipt authority changed")
+
 
 def _assert_review_denied(review: OfflinePrivacyVetoReview) -> None:
     if type(review) is not _REVIEW_TYPE:
@@ -297,6 +323,9 @@ class DisconnectedPrivacyVetoLedger:
             or not _ms(observed_now_ms) or not _valid_witness(retained)
         ):
             raise OfflinePrivacyVetoRejected("invalid veto append inputs")
+        # Reject already-replaced False-only receipt callbacks before any
+        # potentially committed local denial marker. This never grants consent.
+        _assert_receipt_denials()
         epoch = (retained.count, retained.fingerprint)
         source = self._path
         with closing(self._open(read_only=False)) as conn:
@@ -322,8 +351,14 @@ class DisconnectedPrivacyVetoLedger:
                     (current.count + 1, owner_sha256, scope_sha256, observed_now_ms),
                 )
                 after = _inspect(conn)
-                if self._path is not source or (retained.count, retained.fingerprint) != epoch:
+                after_epoch = (after.count, after.fingerprint)
+                if (
+                    self._path is not source
+                    or (retained.count, retained.fingerprint) != epoch
+                    or after.count != current.count + 1
+                ):
                     raise OfflinePrivacyVetoRejected("veto carrier changed before commit")
+                _assert_receipt_denials()
                 conn.commit()
             except sqlite3.IntegrityError as exc:
                 conn.rollback()
@@ -331,4 +366,44 @@ class DisconnectedPrivacyVetoLedger:
             except BaseException:
                 conn.rollback()
                 raise
-        return OfflinePrivacyVetoReceipt(owner_sha256, scope_sha256, observed_now_ms, after)
+        # COMMIT may already be durable even if the receipt is rejected.
+        # Never retry automatically after a post-COMMIT custody exception.
+        def verify_postcommit() -> None:
+            _assert_receipt_denials()
+            if (
+                self._path is not source
+                or type(retained) is not _WITNESS_TYPE
+                or retained.count is not epoch[0]
+                or retained.fingerprint is not epoch[1]
+                or type(after) is not _WITNESS_TYPE
+                or after.count is not after_epoch[0]
+                or after.fingerprint is not after_epoch[1]
+                or after.independent_custody_verified is not False
+            ):
+                raise OfflinePrivacyVetoRejected(
+                    "veto post-COMMIT custody uncertain; manual review required"
+                )
+
+        verify_postcommit()
+        receipt = _RECEIPT_TYPE(owner_sha256, scope_sha256, observed_now_ms, after)
+
+        def verify_receipt() -> None:
+            verify_postcommit()
+            if (
+                type(receipt) is not _RECEIPT_TYPE
+                or receipt.owner_sha256 is not owner_sha256
+                or receipt.scope_sha256 is not scope_sha256
+                or type(receipt.recorded_at_ms) is not int
+                or receipt.recorded_at_ms is not observed_now_ms
+                or receipt.witness is not after
+            ):
+                raise OfflinePrivacyVetoRejected(
+                    "veto post-COMMIT receipt uncertain; manual review required"
+                )
+
+        verify_receipt()
+        for name in _RECEIPT_DENIALS:
+            if getattr(receipt, name) is not False:
+                raise OfflinePrivacyVetoRejected("veto receipt acquired authority")
+            verify_receipt()
+        return receipt
