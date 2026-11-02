@@ -1,9 +1,9 @@
 """Passive V3 packet binding cannot inherit substituted false-only authority."""
 
 import pytest
+from test_authorization_packet_verify_run503 import _inputs
 
 from ark.learning import authorization_packet_verify as verifier
-from test_authorization_packet_verify_run503 import _inputs
 
 
 @pytest.mark.parametrize("name", verifier._DENIAL_FLAGS)
