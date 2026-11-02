@@ -121,9 +121,12 @@ def test_denial_callback_cannot_rewrite_previously_verified_preview(tmp_path, mo
         "trusted_clock_verified",
         property(denied_and_mutate),
     )
-    with pytest.raises(resume.ScheduleResumeRejected, match="preview changed"):
+    # Original result authority is now checked before the preview callback;
+    # a preinstalled False-only substitute never gets to mutate the preview.
+    with pytest.raises(resume.ScheduleResumeRejected, match="witness changed"):
         resume.review_offline_schedule_resume(
             ledger, policy, cursor,
             retained_quarantine=retained, observed_now_ms=1000,
         )
+    assert preview_holder == {}
     assert ledger.inspect(retained=retained) == retained
