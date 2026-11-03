@@ -44,9 +44,10 @@ def test_sibling_tails_with_equal_counts_have_different_review_digest(
 ):
     retained, (left, right), _ = _seed_and_fork(tmp_path, contents, timestamps)
     assert retained.event_count == 1
-    assert (left.retained_rows, left.current_rows, left.appended_events, left.explained_changes) == (
-        1, 1, 1, 1,
-    )
+    assert (
+        left.retained_rows, left.current_rows,
+        left.appended_events, left.explained_changes,
+    ) == (1, 1, 1, 1)
     assert (
         left.retained_rows, left.current_rows,
         left.appended_events, left.explained_changes,
