@@ -50,7 +50,7 @@ def test_authority_getter_mutation_of_result_rejected(monkeypatch):
     monkeypatch.setattr(
         mod.OfflineIndexResult, "revocation_verified", property(change_result),
     )
-    with pytest.raises(mod.OfflineIndexRejected, match="result carrier"):
+    with pytest.raises(mod.OfflineIndexRejected, match="original index authority"):
         mod.search_offline_text(_request())
 
 
@@ -62,7 +62,7 @@ def test_authority_getter_mutation_of_nested_hit_rejected(monkeypatch):
     monkeypatch.setattr(
         mod.OfflineIndexResult, "revocation_verified", property(change_hit),
     )
-    with pytest.raises(mod.OfflineIndexRejected, match="result carrier"):
+    with pytest.raises(mod.OfflineIndexRejected, match="original index authority"):
         mod.search_offline_text(_request())
 
 
@@ -76,7 +76,7 @@ def test_authority_getter_mutation_of_source_carrier_rejected(monkeypatch):
     monkeypatch.setattr(
         mod.OfflineIndexResult, "revocation_verified", property(change_source),
     )
-    with pytest.raises(mod.OfflineIndexRejected, match="carriers"):
+    with pytest.raises(mod.OfflineIndexRejected, match="original index authority"):
         mod.search_offline_text(request)
 
 
@@ -85,5 +85,5 @@ def test_injected_result_constructor_class_rejected(monkeypatch):
         pass
 
     monkeypatch.setattr(mod, "OfflineIndexResult", DerivedResult)
-    with pytest.raises(mod.OfflineIndexRejected, match="result carrier"):
+    with pytest.raises(mod.OfflineIndexRejected, match="original index authority"):
         mod.search_offline_text(_request())
