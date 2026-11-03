@@ -90,11 +90,12 @@ def _validate_tail_identity(row: sqlite3.Row) -> int:
     """
     event_id = row["event_id"]
     occurred = row["occurred_at_ms"]
-    if (
-        type(event_id) is not int or event_id < 1
-        or type(occurred) is not int or occurred < 0
-    ):
-        raise ActionAuditSchemaError("audit persisted tail has invalid event or clock")
+    if type(event_id) is not int or event_id < 1:
+        raise ActionAuditSchemaError("audit persisted tail has invalid event")
+    if type(occurred) is not int or occurred < 0:
+        raise ActionAuditSchemaError(
+            "audit clock regressed or persisted tail clock is malformed"
+        )
     fields = (
         "request_id", "tool", "capability", "scope",
         "arguments_sha256", "outcome",
