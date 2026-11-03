@@ -73,6 +73,41 @@ class RegisteredReceiptReview:
         return False
 
 
+_REVIEW_TYPE = RegisteredReceiptReview
+_REVIEW_DENIALS = (
+    "backend_dispatched", "external_effect_proven",
+    "replay_authorized", "independent_custody_proven",
+)
+_ORIGINAL_REVIEW_DENIALS = tuple(
+    vars(_REVIEW_TYPE)[name] for name in _REVIEW_DENIALS
+)
+_LINK_TYPE = RegisteredFixtureLink
+_ORIGINAL_LINK_DENIALS = tuple(
+    vars(_LINK_TYPE)[name] for name in _LINK_DENIALS
+)
+
+
+def _assert_original_denial_definitions() -> None:
+    if (
+        RegisteredReceiptReview is not _REVIEW_TYPE
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not descriptor
+            for name, descriptor in zip(
+                _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+            )
+        )
+        or any(
+            vars(_LINK_TYPE).get(name) is not descriptor
+            for name, descriptor in zip(
+                _LINK_DENIALS, _ORIGINAL_LINK_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise RegisteredReceiptReviewRejected(
+            "read-only reconciliation authority definition changed"
+        )
+
+
 def review_retained_registered_receipt(
     journal: DisconnectedReadJournal,
     retained: ReadJournalWitness,
@@ -95,6 +130,7 @@ def review_retained_registered_receipt(
     The original retained witness/link must come from independently retained
     evidence for historical tamper detection; this function cannot certify it.
     """
+    _assert_original_denial_definitions()
     if (
         type(journal) is not DisconnectedReadJournal
         or type(retained) is not ReadJournalWitness
@@ -108,6 +144,7 @@ def review_retained_registered_receipt(
         witness_epoch = (retained.count, retained.tip_sha256)
 
         def stable() -> None:
+            _assert_original_denial_definitions()
             _check_witness(retained)
             if (
                 type(link) is not RegisteredFixtureLink
@@ -195,6 +232,7 @@ def review_retained_registered_receipt(
             *link_epoch[:3], link_epoch[7], *witness_epoch,
         )
         def stable_review() -> None:
+            _assert_original_denial_definitions()
             fields = (
                 reviewed.step_id, reviewed.action_request_id,
                 reviewed.fixture_request_id, reviewed.link_sha256,
@@ -219,6 +257,7 @@ def review_retained_registered_receipt(
                 reviewed.fixture_request_id, reviewed.link_sha256,
                 reviewed.journal_count, reviewed.journal_tip_sha256,
             )
+            _assert_original_denial_definitions()
             if any(a is not b for a, b in zip(after, expected, strict=True)):
                 raise RegisteredReceiptReviewRejected(
                     "read-only reconciliation changed after authority denial"
