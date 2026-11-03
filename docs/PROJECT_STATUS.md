@@ -1,5 +1,41 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run581 / 2026-11-03 JST: THREE coherent free-only NON-UI foundation packages; 12 newly authored pytest cases (Action Audit 4 + Planner 5 + Memory 3); normal GitHub Contents API writes, source/tests/technical evidence saved. Previous PR #8 exact checkpoint CI 6/6 GREEN. New package CI not yet final: audit and Planner 3/6 Ubuntu GREEN, Memory IN PROGRESS/QUEUED at last separate sample. UI remains strictly PAUSED, PR #5/#8/#9 Draft/unmerged, main unchanged. ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-03T21:54:01.901+09:00 Asia/Tokyo/JST**, ordinary host wall-clock sample immediately before this checkpoint update (not a trusted security clock, independent review, or spending authorization).
+
+## LATEST — branch HEAD, changes, CI and checkpoint custody
+
+- **PR #8:** [JARVIS foundations — Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. **Invocation work-basis HEAD:** `986b4950c405839edeab772ab4c71f46dcddb82d`. New source and tests: audit `661f49d13478a357aadc3704b57fd2b33d86dec5` / `cd62325497cef338ee39b0210078231f371bc711`; Planner `5218026fc96fec5451b8d755233cc8d2cf1a10ff` / `d56cb1357e2b7b404b4d90372d7beb54e38bbcb4`; Memory `5f803606d10f50e60053614561f35765d1e01f5d` / `0414fadf38e6e74be02a4bf1e8ea7668dcc25bd2`; [technical evidence note](https://github.com/Iam-2squared/ark-ai/blob/80c43513d0de7a2c9e75fa70e25f61ecdb67ba1f/docs/JARVIS_RUN581_NON_UI_AUDIT_PLANNER_MEMORY_CUSTODY.md) commit `80c43513d0de7a2c9e75fa70e25f61ecdb67ba1f`. **Checkpoint write-basis HEAD:** `80c43513d0de7a2c9e75fa70e25f61ecdb67ba1f`. The checkpoint-result HEAD **cannot be embedded in its own file content**; it must be obtained from the normal Contents API response and independently checked against branch HEAD/status blob SHA afterwards. No concurrent work was force-overwritten.
+- **PR #5:** [V3 Learning — Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), `research/v3-learning-evaluation`, confirmed HEAD `805b377697472268db02650a89c7a94b1c5337c8`, **untouched this invocation**. Its exact-head [CI #41634014158](https://github.com/Iam-2squared/ark-ai/actions/runs/41634014158) **6/6 GREEN**, but training authorization and V3 completion are NOT granted.
+- **PR #9:** [Command Center UI — Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/9), untouched `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **ALL new UI/frontend development, tests, integration and branch writes remain paused.** Main unchanged `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+- **Prior PR #8 exact checkpoint:** [CI #41635105734](https://github.com/Iam-2squared/ark-ai/actions/runs/41635105734) **6/6 GREEN** on HEAD `986b4950c405839edeab772ab4c71f46dcddb82d`. This does **not** verify new Run581 changes.
+- **New CI at last explicit sample:** audit test HEAD `cd623254...` [#41638433803](https://github.com/Iam-2squared/ark-ai/actions/runs/41638433803) **Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS**; Planner test HEAD `d56cb135...` [#41638803511](https://github.com/Iam-2squared/ark-ai/actions/runs/41638803511) **Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS**; Memory test HEAD `0414fad...` [#41639073112](https://github.com/Iam-2squared/ark-ai/actions/runs/41639073112) **IN PROGRESS / QUEUED**; technical note HEAD `80c435...` [#41639366576](https://github.com/Iam-2squared/ark-ai/actions/runs/41639366576) **QUEUED**. This status-file commit will trigger its own CI; **no exact checkpoint-result 6/6 GREEN claim** until independently verified. All 12 test counts are authored definitions, **not independently run local pytest PASS results**.
+
+## NEW — Run581 non-UI implementation
+
+1. **Audit:** `src/ark/agency/audit.py` now checks local persisted timestamp continuity inside `events()` and across an adjacent page boundary using the prior timestamp from the same SQLite read snapshot. Regression, bad predecessor and equal-timestamp behavior have four synthetic regression cases. No frozen audit schema change, trust-attested clock or external action.
+2. **Planner:** `src/ark/agency/planner_journal_review.py` now rejects even value-equal carrier replacement of a retained synthetic tail at replay/append callback boundaries, including post-COMMIT result checks. Five fixture cases cover topology/snapshot reentrancy and normal FAILED-state restart recovery. Local journal remains **non-dispatching**; post-COMMIT rejection is not rollback/retry proof.
+3. **Memory:** `src/ark/memory/ambiguous_commit_pair_review.py` now retains exact token field carriers across dual no-write reconciliation callbacks. Three cases test swapped-but-equal SHA carriers and unaffected manual-only evidence. No caller attribution, privacy consent, reliable COMMIT outcome or automatic retry authority.
+4. **Technical custody:** [Run581 evidence note](https://github.com/Iam-2squared/ark-ai/blob/80c43513d0de7a2c9e75fa70e25f61ecdb67ba1f/docs/JARVIS_RUN581_NON_UI_AUDIT_PLANNER_MEMORY_CUSTODY.md) records source, test, limitation and CI identities.
+
+## Frozen, privacy and free-only boundaries
+
+- Independently re-read **unchanged frozen blobs**: PR #8 Memory `src/ark/memory/contracts.py` = `b6e93821ecd69270a7634aceb20775dc36e9953c`; PR #8 Planner `src/ark/agency/contracts.py` = `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 `docs/v3/CONTRACT.md` = `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher frozen contracts/evidence not edited; protected V2 final evaluation remains unopened.
+- **No** paid/potentially billable API/service, external GPU, real Candidate adapter/weight generation, preflight/training run, promotion, new account/credential/secret connection, physical-PC action, live ToolBackend, actual notifications, irreversible data operation, main merge or UI work. Draft PRs and official PASS gates unchanged.
+- Mock/SQLite receipts and hashes do not prove consent, independent writer identity, trusted clock, real-world exactly-once, independent cross-database atomicity, or permission to retry an UNKNOWN WRITE. **ARK JARVIS and V3 NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Confirm exact-head Ubuntu/Windows CI for the Run581 source+tests, note and checkpoint. If a job FAILS, inspect the real job log, apply only the smallest semantics-preserving correction by the normal safety path, and work a different independent non-UI lane while CI runs.
+2. Advance restart-safe audit-before-action occurrence/replay protection and registry-bound permission identity, independent Planner FAILED/BLOCKED recovery and Registered READ evidence. Connect to mock/disconnected executor only after matching lower-level exact-HEAD GREEN evidence.
+3. Extend Memory CAS ABA/delete-recreate/expiry/COMMIT-UNKNOWN independent-observer review and privacy-safe Personal Context consent/withdrawal coherence, without treating hashes as consent.
+4. Continue proactive Scheduler restart duplicate prevention, Observation fixture contract guards and V3 free-only identity/approval/reproducibility without protected evaluation/training. **No UI/frontend work until explicitly resumed; do not merge Draft PRs or change frozen contracts.**
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run580 / 2026-11-03 JST: TWO free-only NON-UI core packages, 10 newly authored pytest cases (V3 passive syntax 6 + audit restart clock 4). PR #5 exact source/test HEAD CI 6/6 GREEN; PR #8 source/test HEAD 3/6 Ubuntu GREEN, Windows 3 IN PROGRESS at latest sample. No UI. PR #5/#8/#9 Draft/unmerged. JARVIS and V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-03T21:20:57.738+09:00 Asia/Tokyo/JST** (ordinary runtime clock sampled immediately before preparing this checkpoint; NOT an authenticated trusted clock, human authorization or CI completion).
