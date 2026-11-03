@@ -50,7 +50,8 @@ class PermissionGate:
 
         def ensure_original_implementations() -> None:
             if (
-                vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND
+                (one_shot is not None and
+                 vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND)
                 or vars(ToolRegistry).get("resolve") is not _ORIGINAL_REGISTRY_RESOLVE
                 or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
                 or vars(PermissionGate).get("authorize") is not _ORIGINAL_AUTHORIZE
@@ -220,14 +221,27 @@ class PermissionGate:
             ensure_grant_epoch()
 
         ensure_original_implementations()
-        # Ignore instance-level shadows of authorize(): only the exact-class
-        # policy implementation may consume the local one-shot token.
-        PermissionGate.authorize(
-            self, spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
+        # Preserve post-policy mutation detection in legacy caller-installed
+        # callbacks. They cannot mint a registered decision by skipping the
+        # original local policy: an independent exact-class READ check or
+        # a witnessed one-shot token spend is still required below.
+        self.authorize(
+            spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
             _registered_recheck=ensure_registered_binding,
         )
         ensure_entry_epoch()
         ensure_registered_binding()
+        if spec.effect is Effect.READ:
+            # An instance-level no-op must not bypass scope/expiry checks.
+            PermissionGate.authorize(
+                self, spec, call, grant_snapshot, now_ms=now_ms,
+                _registered_recheck=ensure_registered_binding,
+            )
+            ensure_entry_epoch()
+            ensure_registered_binding()
+        elif one_shot is None or one_shot.token_id not in self._consumed_tokens:
+            # Failure after an attempted WRITE does not imply rollback.
+            raise PermissionDenied("registered local one-shot spend not observed")
         return verified
 
     def authorize(
