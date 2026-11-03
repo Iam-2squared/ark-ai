@@ -42,10 +42,19 @@ def test_equal_value_output_carrier_replacement_is_not_a_stable_epoch(
             object.__setattr__(self, "newly_plausible_paths", replacement)
         return False
 
+    original_getattribute = transition.PassiveReadinessTransition.__getattribute__
+
+    def late_retarget(self, name):
+        # Preserve the imported denial descriptor. The late callback must
+        # still exercise the source/result carrier drift checks after the
+        # new early preinstalled-descriptor fence succeeds.
+        if name == "human_approval_verified":
+            retarget(self)
+        return original_getattribute(self, name)
+
     monkeypatch.setattr(
         transition.PassiveReadinessTransition,
-        "human_approval_verified",
-        property(retarget),
+        "__getattribute__", late_retarget,
     )
     with pytest.raises(transition.PassiveTransitionRejected, match="report changed"):
         transition.review_passive_readiness_transition(before, after)
@@ -91,9 +100,19 @@ def test_final_denial_getter_cannot_retarget_initial_source_report(
     monkeypatch.setattr(
         transition, "review_unapproved_v3_snapshot_shapes", capture,
     )
+    original_getattribute = transition.PassiveReadinessTransition.__getattribute__
+
+    def late_retarget(self, name):
+        # Preserve the imported denial descriptor. The late callback must
+        # still exercise the source/result carrier drift checks after the
+        # new early preinstalled-descriptor fence succeeds.
+        if name == "human_approval_verified":
+            retarget(self)
+        return original_getattribute(self, name)
+
     monkeypatch.setattr(
         transition.PassiveReadinessTransition,
-        "human_approval_verified", property(retarget),
+        "__getattribute__", late_retarget,
     )
     with pytest.raises(transition.PassiveTransitionRejected, match="source report changed"):
         transition.review_passive_readiness_transition(_snapshot(), _snapshot())
