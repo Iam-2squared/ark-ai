@@ -144,6 +144,26 @@ def _snapshot(graph: PlanGraph, tail: SyntheticPlanTail) -> SyntheticPlanRecover
 # This recovery object is an inert witness, never an authorization. Pin its
 # original class even if a synthetic test hook later replaces the constructor.
 _RECOVERY_RESULT_TYPE = SyntheticPlanRecovery
+_RECOVERY_DENIAL_NAMES = ("dispatch_authorized", "automatic_replay_authorized")
+_ORIGINAL_RECOVERY_DENIALS = tuple(
+    vars(_RECOVERY_RESULT_TYPE)[name] for name in _RECOVERY_DENIAL_NAMES
+)
+
+
+def _require_original_recovery_denials() -> None:
+    if (
+        SyntheticPlanRecovery is not _RECOVERY_RESULT_TYPE
+        or any(
+            vars(_RECOVERY_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECOVERY_DENIAL_NAMES, _ORIGINAL_RECOVERY_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticPlanJournalRejected(
+            "synthetic recovery authority epoch changed"
+        )
+
 
 
 def _checked_snapshot(
@@ -171,6 +191,7 @@ def _checked_snapshot(
         name for name, state, _revision in expected_statuses
         if state == StepState.RUNNING.value
     )
+    _require_original_recovery_denials()
     result = _snapshot(graph, tail)
     carriers = (
         (result.tail, result.step_statuses, result.ambiguous_running_steps)
@@ -178,6 +199,7 @@ def _checked_snapshot(
     )
 
     def assert_result() -> None:
+        _require_original_recovery_denials()
         current_tail = (
             tail.topology_digest, tail.event_count, tail.event_hash,
             tail.status_digest, tail.last_at_ms,
@@ -207,6 +229,14 @@ def _checked_snapshot(
             )
         # Status hashing is itself a synthetic callback boundary. Recheck
         # the exact carriers and values again after that callback.
+        # A denial property may itself be reentrant. Check each False-only
+        # getter before hashing, then verify all result carriers after hashing.
+        for name in _RECOVERY_DENIAL_NAMES:
+            if getattr(result, name) is not False:
+                raise SyntheticPlanJournalRejected(
+                    "synthetic recovery result gained authority"
+                )
+            _require_original_recovery_denials()
         try:
             digest = graph.status_digest()
         except PlanConflictError as exc:
@@ -463,6 +493,7 @@ class SyntheticPlanJournal:
         A locally regenerated earlier witness provides no tamper resistance.
         No step is dispatched, and RUNNING is ambiguous rather than retried.
         """
+        _require_original_recovery_denials()
         path_epoch = self._path
         self._assert_source_path()
         # Pin an independent witness before the first reentrant topology
@@ -527,6 +558,7 @@ class SyntheticPlanJournal:
         retained: SyntheticPlanTail | None = None,
     ) -> SyntheticPlanRecovery:
         """CAS and journal append in one local transaction, without effects."""
+        _require_original_recovery_denials()
         if type(at_ms) is not int or not 0 <= at_ms <= _MAX_INT:
             raise SyntheticPlanJournalRejected("invalid synthetic plan timestamp")
         if type(to_state) is not StepState:
@@ -534,6 +566,7 @@ class SyntheticPlanJournal:
         # An earlier, independently retained tail must match inside the same
         # write transaction as the new transition. Never use a separate
         # preflight read as an authority for this append.
+        _require_original_recovery_denials()
         path_epoch = self._path
         self._assert_source_path()
         # Capture original retained evidence before any topology/shape
