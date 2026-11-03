@@ -15,6 +15,7 @@ from pathlib import Path
 from .proactive_synthetic_continuity_review import (
     _ROWS,
     SyntheticTriggerWitness,
+    _ORIGINAL_WITNESS_VALIDATOR,
     _digest,
     assert_proactive_history_continues,
 )
@@ -81,10 +82,8 @@ def review_prepared_trigger_freshness(
         or not _HEX.fullmatch(observation_digest)
     ):
         raise SyntheticTriggerRejected("exact synthetic freshness inputs required")
-    if retained is not None:
-        if type(retained) is not SyntheticTriggerWitness:
-            raise SyntheticTriggerRejected("exact retained proactive witness required")
-        retained.assert_integrity()
+    if retained is not None and type(retained) is not SyntheticTriggerWitness:
+        raise SyntheticTriggerRejected("exact retained proactive witness required")
     # Frozen carriers remain reflectively mutable: pin the exact inputs
     # before the read transaction and fail closed on an observed edit.
     receipt_epoch = (receipt.trigger_id, receipt.prepared_at_ms)
@@ -130,6 +129,17 @@ def review_prepared_trigger_freshness(
             raise SyntheticTriggerRejected(
                 "freshness evidence changed during read-only review"
             )
+
+    # The first caller-supplied integrity hook is reentrant. Pin path,
+    # receipt, policy and retained witness BEFORE calling it, then run the
+    # original validator too: substituting a no-op hook cannot bless an
+    # invalid retained digest or a newly retargeted SQLite source.
+    if retained is not None:
+        assert_epoch()
+        retained.assert_integrity()
+        assert_epoch()
+        _ORIGINAL_WITNESS_VALIDATOR(retained)
+        assert_epoch()
 
     pinned = policy.identity()
     assert_epoch()
