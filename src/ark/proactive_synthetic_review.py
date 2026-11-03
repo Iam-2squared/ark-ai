@@ -130,6 +130,32 @@ class SyntheticTriggerReceipt:
         return False
 
 
+# This marker is a local deduplication receipt, never a permission or outcome.
+# Its class and False-only descriptors must be the ORIGINAL declarations;
+# replacing one with a new property returning False is also authority drift.
+_RECEIPT_TYPE = SyntheticTriggerReceipt
+_RECEIPT_DENIALS = (
+    "notification_authorized", "dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
+)
+
+
+def _require_original_receipt_authority() -> None:
+    if (
+        SyntheticTriggerReceipt is not _RECEIPT_TYPE
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticTriggerRejected("trigger receipt authority epoch changed")
+
+
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
     return tuple(map(tuple, conn.execute(
         "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
@@ -408,11 +434,27 @@ class SyntheticProactiveLedger:
                 receipt = SyntheticTriggerReceipt(trigger, now_ms)
                 assert_policy_epoch("after trigger receipt")
                 if (
-                    type(receipt) is not SyntheticTriggerReceipt
-                    or receipt.trigger_id != trigger
-                    or receipt.prepared_at_ms != now_ms
+                    type(receipt) is not _RECEIPT_TYPE
+                    or receipt.trigger_id is not trigger
+                    or receipt.prepared_at_ms is not now_ms
                 ):
                     raise SyntheticTriggerRejected("trigger receipt changed")
+                # A post-COMMIT getter can be reentrant. Recheck the exact
+                # receipt, policy and original denial definitions after EACH
+                # query. If this fails, the preparation marker may already
+                # be durable; callers must inspect it, not blindly retry.
+                for name in _RECEIPT_DENIALS:
+                    if getattr(receipt, name) is not False:
+                        raise SyntheticTriggerRejected("trigger receipt gained authority")
+                    _require_original_receipt_authority()
+                    assert_policy_epoch("after trigger receipt authority")
+                    if (
+                        type(receipt) is not _RECEIPT_TYPE
+                        or receipt.trigger_id is not trigger
+                        or receipt.prepared_at_ms is not now_ms
+                    ):
+                        raise SyntheticTriggerRejected("trigger receipt changed")
+                _require_original_receipt_authority()
                 return receipt
             except BaseException:
                 conn.rollback()
