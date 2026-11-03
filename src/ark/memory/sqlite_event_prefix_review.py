@@ -154,6 +154,13 @@ def _scan(
                         or type(at) is not int or not 0 <= at <= SQLITE_INT_MAX
                     ):
                         raise MemoryEventPrefixRejected("invalid stored event prefix row")
+                    # The v1 event journal has no compaction/deletion API.
+                    # A missing genesis/middle ID must not pass even when
+                    # the independently retained prefix predates the gap.
+                    if event_id != last + 1:
+                        raise MemoryEventPrefixRejected(
+                            "Memory event ID gap in append-only prefix history"
+                        )
                     try:
                         MemoryScope(owner, namespace)
                     except (TypeError, ValueError) as exc:
