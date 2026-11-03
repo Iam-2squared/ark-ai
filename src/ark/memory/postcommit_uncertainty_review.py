@@ -117,7 +117,16 @@ def review_uncertain_memory_commit(
             or proposed.expires_at_ms is not expiry
             or proposed.metadata is not carrier
             or dict(proposed.metadata) != metadata
-            or _token_fields(retained_before) != before
+            # A frozen, caller-retained token can still be reflectively
+            # replaced with equal-valued digest strings during _snapshot or
+            # a SQLite callback. Such a new carrier is NOT the original
+            # pre-COMMIT witness and must never be used for manual triage.
+            or any(
+                now is not original
+                for now, original in zip(
+                    _token_fields(retained_before), before, strict=True,
+                )
+            )
             or any(
                 getattr(_REPORT, name) is not original
                 for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
