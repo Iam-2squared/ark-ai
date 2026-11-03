@@ -76,6 +76,26 @@ class PassiveReadinessTransition:
         return False
 
 
+# Keep the original passive authority surface across independently supplied
+# snapshots. A false-only callback patched before a review starts is still a
+# substituted implementation and must not become the late-call baseline.
+_TRANSITION_TYPE = PassiveReadinessTransition
+_ORIGINAL_TRANSITION_DENIALS = tuple(vars(_TRANSITION_TYPE)[key] for key in _DENIED)
+
+
+def _assert_original_passive_authority() -> None:
+    if (
+        PassiveReadinessTransition is not _TRANSITION_TYPE
+        or any(
+            vars(_TRANSITION_TYPE).get(key) is not original
+            for key, original in zip(
+                _DENIED, _ORIGINAL_TRANSITION_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise PassiveTransitionRejected("original passive authority changed")
+
+
 def _independent_shape_paths(mapping: dict) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Derive visible syntax categories from input, never from the shape callback.
 
@@ -120,6 +140,7 @@ def review_passive_readiness_transition(
     """
     if type(before) is not dict or type(after) is not dict:
         raise PassiveTransitionRejected("exact unapproved snapshot dictionaries required")
+    _assert_original_passive_authority()
     try:
         old_epoch = _pin_json_tree(before)
         new_epoch = _pin_json_tree(after)
@@ -256,9 +277,10 @@ def review_passive_readiness_transition(
             "became_unresolved_paths", "newly_malformed_paths",
             "syntax_repaired_paths", "transition_sha256",
         ))
-        descriptors = tuple(getattr(PassiveReadinessTransition, n) for n in _DENIED)
+        descriptors = _ORIGINAL_TRANSITION_DENIALS
 
         def stable_report() -> None:
+            _assert_original_passive_authority()
             if (
                 type(report) is not PassiveReadinessTransition
                 or any(
