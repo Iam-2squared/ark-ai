@@ -7,8 +7,8 @@ trusted-clock, owner-consent or automatic replay authority.
 from __future__ import annotations
 
 import pytest
-from ark.agency import disconnected_batch_plan as batch
 
+from ark.agency import disconnected_batch_plan as batch
 
 _REQUEST = "req_" + "b" * 32
 
