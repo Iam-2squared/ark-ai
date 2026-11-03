@@ -17,6 +17,9 @@ _LABEL = re.compile(r"[A-Z][A-Z0-9_]{0,19}\Z")
 _DOMAIN = b"ARK-detached-local-context-redaction-v1\0"
 _MAX_TEXT = 8_192
 _MAX_SPANS = 64
+# Pin canonical JSON encoding at import; digesting injected JSON is not proof
+# that the reviewed owner/scope and masked result actually reached the digest.
+_ORIGINAL_JSON_DUMPS = json.dumps
 
 
 class OfflineRedactionRejected(ValueError):
@@ -166,12 +169,39 @@ def preview_offline_redaction(
     if len(result_text.encode("utf-8")) > 16_384:
         raise OfflineRedactionRejected("masked preview budget exceeded")
     assert_epoch()
+    expected_payload = {
+        "owner": owner_digest, "scope": scope_digest, "source": observed,
+        "mask": [list(item) for item in index],
+        "complete": require_complete, "result": result_text,
+    }
     serialized = json.dumps(
-        {"owner": owner_digest, "scope": scope_digest, "source": observed,
-         "mask": index, "complete": require_complete, "result": result_text},
+        expected_payload,
         ensure_ascii=True, sort_keys=True, separators=(",", ":"),
     )
-    digest = hashlib.sha256(_DOMAIN + serialized.encode("ascii")).hexdigest()
+    assert_epoch()
+    # A substituted serializer can emit plausible JSON that describes a
+    # different private source, owner or masking boundary. Round-trip the
+    # exact expected object and compare with import-pinned canonical bytes
+    # BEFORE using it as digest evidence. No raw source is logged.
+    try:
+        if type(serialized) is not str:
+            raise ValueError("non-string serializer output")
+        decoded = json.loads(serialized)
+        canonical = _ORIGINAL_JSON_DUMPS(
+            expected_payload, ensure_ascii=True, sort_keys=True,
+            separators=(",", ":"),
+        )
+        encoded = serialized.encode("ascii", errors="strict")
+    except (TypeError, ValueError, UnicodeError) as exc:
+        raise OfflineRedactionRejected(
+            "masked preview serialization invalid"
+        ) from exc
+    assert_epoch()
+    if decoded != expected_payload or serialized != canonical:
+        raise OfflineRedactionRejected(
+            "masked preview serialization differs from reviewed source"
+        )
+    digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     assert_epoch()
     result = RedactedOfflinePreview(
         owner_digest, scope_digest, observed, result_text, masked,
