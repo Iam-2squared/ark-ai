@@ -16,6 +16,11 @@ from .contracts import (
 from .registry import BoundAction, ToolRegistry
 
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
+# Capture registry class-level interfaces before caller-controlled callbacks.
+# Original identity is checked before and during registered authorization.
+_ORIGINAL_REGISTRY_BIND = vars(ToolRegistry)["bind"]
+_ORIGINAL_REGISTRY_RESOLVE = vars(ToolRegistry)["resolve"]
+_ORIGINAL_REGISTRY_REVISION = vars(ToolRegistry)["revision"]
 
 
 class PermissionGate:
@@ -42,6 +47,19 @@ class PermissionGate:
         """
         if type(registry) is not ToolRegistry or type(call) is not ToolCall:
             raise PermissionDenied("registered authorization requires exact registry and call")
+
+        def ensure_original_implementations() -> None:
+            if (
+                vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND
+                or vars(ToolRegistry).get("resolve") is not _ORIGINAL_REGISTRY_RESOLVE
+                or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
+                or vars(PermissionGate).get("authorize") is not _ORIGINAL_AUTHORIZE
+            ):
+                raise PermissionDenied(
+                    "registered authorization implementation identity changed"
+                )
+
+        ensure_original_implementations()
         # The first registry.bind() itself is a caller-controlled callback:
         # pin the original action and token BEFORE entering it. Rebinding
         # twice only establishes consistency with a substituted first input.
@@ -60,6 +78,7 @@ class PermissionGate:
             raise PermissionDenied("registered input identity is invalid") from exc
 
         def ensure_entry_epoch() -> None:
+            ensure_original_implementations()
             try:
                 stable = (
                     (call.tool, call.capability, call.scope,
@@ -200,8 +219,11 @@ class PermissionGate:
             # the reentrant registry callback, before token admission.
             ensure_grant_epoch()
 
-        self.authorize(
-            spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
+        ensure_original_implementations()
+        # Ignore instance-level shadows of authorize(): only the exact-class
+        # policy implementation may consume the local one-shot token.
+        PermissionGate.authorize(
+            self, spec, call, grant_snapshot, now_ms=now_ms, one_shot=one_shot,
             _registered_recheck=ensure_registered_binding,
         )
         ensure_entry_epoch()
@@ -416,3 +438,7 @@ class PermissionGate:
                 if one_shot.expires_at_ms <= now_ms:
                     raise PermissionDenied("one-shot authorization expired")
                 self._consumed_tokens.add(one_shot.token_id)
+
+
+# Captured after class construction for registered authorization only.
+_ORIGINAL_AUTHORIZE = PermissionGate.authorize
