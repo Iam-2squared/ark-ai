@@ -23,6 +23,7 @@ from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
 _MAX_ROWS = 10_000
 _MAX_EVENTS = 40_000
 _DOMAIN = b"ARK-retained-memory-row-delta-v1\0"
+_REVIEW_DOMAIN = b"ARK-retained-memory-row-delta-review-v2\0"
 
 
 class MemoryRowDeltaRejected(MemorySchemaError):
@@ -317,11 +318,18 @@ def review_retained_memory_row_delta(
                     "Memory row changed without its own appended event"
                 )
             changes += 1
+    # A count-only review digest can collide for two valid sibling event
+    # tails with identical counts but different row contents or timestamps.
+    # Bind the *actual* live row commitments, retained baseline and complete
+    # verified event chain. Retained witnesses remain compatible (v1 rows).
+    full_event_root = _prefix_hash(events, len(events))
+    stable()
     encoded = json.dumps(
-        (epoch[:3], len(old_rows), len(rows), len(events), changes),
+        (epoch, old_rows, rows, len(events) - old_count,
+         full_event_root, tuple(sorted(changed_ids)), changes),
         separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
-    root = hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    root = hashlib.sha256(_REVIEW_DOMAIN + encoded).hexdigest()
     stable()
     report = _REPORT(len(old_rows), len(rows), len(events) - old_count, changes, root)
 
