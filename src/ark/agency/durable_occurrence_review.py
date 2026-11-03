@@ -272,6 +272,23 @@ class SyntheticOccurrenceStore:
                     raise SyntheticReplayRejected(
                         "synthetic reservation clock regressed"
                     )
+                # The read-side validator permits exactly _MAX_FIXTURE_ROWS
+                # entries, but adding one more would strand the ledger in
+                # an unreadable state on the next open. Check capacity under
+                # the SAME SQLite writer transaction as the INSERT. Concurrent
+                # processes cannot both cross the bound.
+                existing_rows = conn.execute(
+                    "SELECT COUNT(*) FROM synthetic_occurrence_reservations"
+                ).fetchone()[0]
+                assert_input_epoch()
+                if (
+                    type(existing_rows) is not int
+                    or existing_rows < 0
+                    or existing_rows >= _MAX_FIXTURE_ROWS
+                ):
+                    raise SyntheticReplayRejected(
+                        "synthetic reservation ledger capacity exhausted"
+                    )
                 again = registry.bind(call)
                 assert_input_epoch()
                 if (
