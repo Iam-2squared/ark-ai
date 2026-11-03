@@ -310,7 +310,11 @@ def generation_fenced_memory_update(
             or original_scope.owner_id is not original_owner
             or original_scope.namespace is not original_namespace
             or dict(write.metadata) != metadata
-            or _token_fields(retained) != pinned_token
+            or any(
+                current is not original for current, original in zip(
+                    _token_fields(retained), pinned_token, strict=True,
+                )
+            )
         ):
             raise MemoryGenerationCASRejected("generation CAS inputs changed")
 
