@@ -51,6 +51,28 @@ class DisconnectedReadPreflight:
 
 
 _REPORT = DisconnectedReadPreflight
+_REPORT_DENIALS = (
+    "backend_dispatched", "external_read_authorized", "write_authorized",
+    "trusted_clock_verified", "durable_permission_proven",
+)
+_ORIGINAL_REPORT_DENIALS = tuple(
+    vars(_REPORT)[name] for name in _REPORT_DENIALS
+)
+
+
+def _assert_original_report_denials() -> None:
+    if (
+        DisconnectedReadPreflight is not _REPORT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_DENIALS, _ORIGINAL_REPORT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedReadPreflightRejected(
+            "preflight report authority definition changed"
+        )
 
 
 def review_disconnected_registered_read(
@@ -67,6 +89,7 @@ def review_disconnected_registered_read(
     consume a one-shot token, persist approval, or call a backend. This
     deliberately rejects all WRITE registrations *before* PermissionGate.
     """
+    _assert_original_report_denials()
     if (
         type(registry) is not ToolRegistry
         or type(gate) is not PermissionGate
@@ -145,11 +168,12 @@ def review_disconnected_registered_read(
     report = _REPORT(*report_epoch)
 
     def stable_report() -> None:
-        # Authority descriptors are callbacks, not plain stored booleans.
-        # Recheck the ORIGINAL field carriers *after* the final callback;
-        # a frozen dataclass may still be reflectively rewritten.
+        # A false-looking getter may change a frozen report, or install a new
+        # getter for a later denial flag. Refuse both within the same review.
+        _assert_original_report_denials()
         if type(report) is not _REPORT:
             raise DisconnectedReadPreflightRejected("preflight report gained authority")
+
         def same_fields() -> bool:
             return all(
                 value is initial for value, initial in zip(
@@ -159,16 +183,20 @@ def review_disconnected_registered_read(
                     ), report_epoch, strict=True,
                 )
             )
-        if (
-            not same_fields()
-            or report.backend_dispatched is not False
-            or report.external_read_authorized is not False
-            or report.write_authorized is not False
-            or report.trusted_clock_verified is not False
-            or report.durable_permission_proven is not False
-            or not same_fields()
-        ):
+
+        if not same_fields():
             raise DisconnectedReadPreflightRejected("preflight report gained authority")
+        for flag in _REPORT_DENIALS:
+            _assert_original_report_denials()
+            if getattr(report, flag) is not False:
+                raise DisconnectedReadPreflightRejected(
+                    "preflight report gained authority"
+                )
+            _assert_original_report_denials()
+            if not same_fields():
+                raise DisconnectedReadPreflightRejected(
+                    "preflight report changed during denial check"
+                )
 
     stable_inputs()
     stable_report()
