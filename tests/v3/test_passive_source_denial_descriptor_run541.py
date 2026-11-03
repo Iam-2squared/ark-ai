@@ -37,9 +37,18 @@ def test_final_false_transition_getter_cannot_rebind_shape_authority(
         )
         return False
 
+    # Preserve the ORIGINAL denial descriptor; inject the mutation only
+    # while its getter is being invoked so the late source-drift fence
+    # remains independently tested alongside the new preinstalled guard.
+    original_getattribute = transition.PassiveReadinessTransition.__getattribute__
+
+    def late_rebind(self, name):
+        if name == "human_approval_verified":
+            rebind(self)
+        return original_getattribute(self, name)
+
     monkeypatch.setattr(
-        transition.PassiveReadinessTransition,
-        "human_approval_verified", property(rebind),
+        transition.PassiveReadinessTransition, "__getattribute__", late_rebind,
     )
     with pytest.raises(
         transition.PassiveTransitionRejected, match="source report authority changed",
