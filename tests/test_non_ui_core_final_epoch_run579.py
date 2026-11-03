@@ -183,12 +183,13 @@ def test_instance_shadow_cannot_bypass_exact_class_authorization(monkeypatch):
     registry, call, token, grants = _policy_inputs()
     gate = PermissionGate()
 
-    def forbidden(*args, **kwargs):
-        raise AssertionError("instance override must not authorize WRITE")
+    def no_op(*args, **kwargs):
+        # Deliberately skips all grant and local token checks.
+        return None
 
-    monkeypatch.setattr(gate, "authorize", forbidden)
-    result = gate.authorize_registered(
-        registry, call, grants, now_ms=10, one_shot=token,
-    )
-    assert result.registration.effect is Effect.WRITE
-    assert token.token_id in gate._consumed_tokens
+    monkeypatch.setattr(gate, "authorize", no_op)
+    with pytest.raises(PermissionDenied, match="local one-shot spend not observed"):
+        gate.authorize_registered(
+            registry, call, grants, now_ms=10, one_shot=token,
+        )
+    assert gate._consumed_tokens == set()
