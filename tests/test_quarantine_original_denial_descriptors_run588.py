@@ -9,7 +9,7 @@ import sqlite3
 
 import pytest
 
-import ark.disconnected_schedule_quarantine_ledger as schedule
+from ark import disconnected_schedule_quarantine_ledger as schedule
 
 
 _FLAGS = (
