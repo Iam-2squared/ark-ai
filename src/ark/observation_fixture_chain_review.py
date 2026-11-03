@@ -177,29 +177,37 @@ def review_disconnected_fixture_chain(
         + privacy_scope.encode("utf-8") + b"\0" + encoded
     ).hexdigest()
     assert_epoch()
-    result = _RESULT(
+    # Expected output is derived from validated INPUTS, never read back from
+    # a reflected-mutable constructor result. Otherwise a constructor hook
+    # can quietly rebase all later comparisons onto forged output values.
+    expected = (
         source_id, privacy_scope, len(envelopes),
         observation_ids[0], observation_ids[-1], chain_sha,
     )
-    expected = (
-        result.source_id, result.privacy_scope, result.envelope_count,
-        result.first_observation_id, result.last_observation_id,
-        result.chain_sha256,
-    )
-    for denial in _DENIALS:
-        assert_epoch()
-        if getattr(result, denial) is not False:
-            raise ObservationFixtureChainRejected("fixture review gained authority")
-        if any(
-            now is not original
+    result = _RESULT(*expected)
+
+    def assert_result_epoch() -> None:
+        if type(result) is not _RESULT or any(
+            type(now) is not type(original)
+            or now != original
+            or now is not original
             for now, original in zip((
                 result.source_id, result.privacy_scope, result.envelope_count,
                 result.first_observation_id, result.last_observation_id,
                 result.chain_sha256,
             ), expected, strict=True)
         ):
-            raise ObservationFixtureChainRejected(
-                "fixture review result changed"
-            )
+            raise ObservationFixtureChainRejected("fixture review result changed")
+
     assert_epoch()
+    assert_result_epoch()
+    for denial in _DENIALS:
+        assert_epoch()
+        assert_result_epoch()
+        if getattr(result, denial) is not False:
+            raise ObservationFixtureChainRejected("fixture review gained authority")
+        # Denial getters can be reentrant in synthetic tests.
+        assert_result_epoch()
+    assert_epoch()
+    assert_result_epoch()
     return result
