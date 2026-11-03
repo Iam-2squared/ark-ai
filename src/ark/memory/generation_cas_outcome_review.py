@@ -130,7 +130,15 @@ def review_memory_generation_cas_outcome(
             or proposed.metadata is not metadata
             or proposed.expires_at_ms is not expiry
             or dict(proposed.metadata) != expected_metadata
-            or _token_fields(retained) != prior
+            # Equal-value carrier replacement is still a different custody
+            # epoch. Callback-driven evidence reattachment must not silently
+            # become the original retained CAS witness.
+            or any(
+                current is not original
+                for current, original in zip(
+                    _token_fields(retained), prior, strict=True,
+                )
+            )
         ):
             raise MemoryCASOutcomeRejected("CAS observation inputs changed")
 
