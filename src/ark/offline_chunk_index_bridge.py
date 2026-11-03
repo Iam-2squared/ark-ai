@@ -118,7 +118,7 @@ def search_detached_local_chunks(
     original()
     if (
         type(bundle) is not _CHUNK_BUNDLE
-        or type(query) is not str or not query
+        or type(query) is not str or not query or len(query) > 512
         or type(query_sha256) is not str
         or _SHA.fullmatch(query_sha256) is None
         or type(retained_bundle_sha256) is not str
@@ -168,6 +168,8 @@ def search_detached_local_chunks(
         query_bytes = query.encode("utf-8", errors="strict")
     except UnicodeError as exc:
         raise OfflineChunkIndexRejected("query has invalid Unicode") from exc
+    if len(query_bytes) > 512:
+        raise OfflineChunkIndexRejected("query byte budget exceeded")
     actual_query_sha = hashlib.sha256(query_bytes).hexdigest()
     stable()
     if actual_query_sha != query_sha256:
