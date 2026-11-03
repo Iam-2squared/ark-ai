@@ -146,6 +146,13 @@ def _check_due_event_chain(
             raise MemoryExpiryPreviewRejected(
                 "expiry candidate lacks matching live Memory event"
             )
+        # A row can be coherent with a forged latest event while its earlier
+        # per-memory timestamps move backward. Reject the entire lifecycle,
+        # including delete/recreate epochs, before naming an expiry candidate.
+        if last_at is not None and at < last_at:
+            raise MemoryExpiryPreviewRejected(
+                "expiry candidate event clock regressed"
+            )
         previous_event_id = event_id
         if operation == "create":
             if active or event_revision != 1:
