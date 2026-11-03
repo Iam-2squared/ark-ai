@@ -168,9 +168,10 @@ def search_detached_local_chunks(
         query_bytes = query.encode("utf-8", errors="strict")
     except UnicodeError as exc:
         raise OfflineChunkIndexRejected("query has invalid Unicode") from exc
-    if hashlib.sha256(query_bytes).hexdigest() != query_sha256:
-        raise OfflineChunkIndexRejected("query source digest mismatch")
+    actual_query_sha = hashlib.sha256(query_bytes).hexdigest()
     stable()
+    if actual_query_sha != query_sha256:
+        raise OfflineChunkIndexRejected("query source digest mismatch")
     try:
         source = _VERIFY(bundle)
     except chunk_mod.LocalChunkRejected as exc:
@@ -277,6 +278,10 @@ def search_detached_local_chunks(
                      epoch[3], digest)
     final = (result.hits, result.scanned_count, result.source_sha256,
              result.index_inventory_sha256, result.evidence_sha256)
+    final_hits = tuple((
+        hit, hit.chunk_index, hit.start, hit.end, hit.document_id,
+        hit.score, hit.chunk_sha256,
+    ) for hit in hits)
     for flag in _RESULT_DENIAL_NAMES:
         if getattr(result, flag) is not False:
             raise OfflineChunkIndexRejected("chunk index result gained authority")
@@ -285,7 +290,16 @@ def search_detached_local_chunks(
             (result.hits, result.scanned_count, result.source_sha256,
              result.index_inventory_sha256, result.evidence_sha256),
             final, strict=True,
-        )):
+        )) or any(
+            type(row) is not _RESULT_HIT or row is not before
+            or any(a is not b for a, b in zip(
+                (row.chunk_index, row.start, row.end, row.document_id,
+                 row.score, row.chunk_sha256), fields, strict=True,
+            ))
+            for row, (before, *fields) in zip(
+                result.hits, final_hits, strict=True,
+            )
+        ):
             raise OfflineChunkIndexRejected("chunk index receipt changed")
     return result
 
