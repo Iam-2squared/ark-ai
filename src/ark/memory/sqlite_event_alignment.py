@@ -149,6 +149,16 @@ def review_memory_event_alignment(
                         or operation not in {"create", "update", "delete", "expire"}
                     ):
                         raise MemoryEventAlignmentRejected("invalid stored Memory event")
+                    # Event IDs are global AUTOINCREMENT values in the
+                    # append-only v1 journal. Reviewing every scope from
+                    # genesis must not silently accept a missing first or
+                    # middle event after both a row and its history were
+                    # removed. A retained independent witness is still
+                    # needed to detect a truncated suffix or valid rewrite.
+                    if event_id != last_id + 1:
+                        raise MemoryEventAlignmentRejected(
+                            "Memory event ID gap in append-only history"
+                        )
                     try:
                         scoped = MemoryScope(owner, namespace)
                     except (ValueError, TypeError) as exc:
