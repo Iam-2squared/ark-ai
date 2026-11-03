@@ -44,6 +44,13 @@ def _row_payload(row: sqlite3.Row, *, previous_id: int) -> tuple[int, bytes]:
     occurred = row["occurred_at_ms"]
     if type(event_id) is not int or event_id <= previous_id:
         raise ActionAuditSchemaError("audit event ID must be increasing SQLite INTEGER")
+    # The v1 event ledger is append-only: this review starts at genesis,
+    # with no legitimate deletion/compaction API. A lost first or middle
+    # event must not become a plausible new history merely because later
+    # event IDs remain increasing. Independently retained witnesses are
+    # still required to catch suffix truncation or rewritten valid rows.
+    if event_id != previous_id + 1:
+        raise ActionAuditSchemaError("audit event ID gap in append-only history")
     if type(occurred) is not int or occurred < 0:
         raise ActionAuditSchemaError("audit timestamp must be nonnegative SQLite INTEGER")
     values: dict[str, str] = {}
