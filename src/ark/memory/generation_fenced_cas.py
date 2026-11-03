@@ -61,6 +61,31 @@ class MemoryGenerationCASToken:
         return False
 
 
+# Bind deny-only token authority to its import-time implementation. Capturing
+# descriptors only after a caller has entered the SQLite path would accept a
+# preinstalled False-returning replacement as the trusted baseline.
+_TOKEN_DENIALS = ("external_action_authorized", "consent_authenticated")
+_TOKEN_TYPE = MemoryGenerationCASToken
+_ORIGINAL_TOKEN_DENIALS = tuple(
+    vars(_TOKEN_TYPE)[name] for name in _TOKEN_DENIALS
+)
+
+
+def _require_original_token_denials() -> None:
+    if (
+        MemoryGenerationCASToken is not _TOKEN_TYPE
+        or any(
+            vars(_TOKEN_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOKEN_DENIALS, _ORIGINAL_TOKEN_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation token or denial epoch changed"
+        )
+
+
 def _digest(domain: bytes, fields: object) -> str:
     return hashlib.sha256(
         domain + json.dumps(
@@ -189,10 +214,12 @@ def observe_memory_generation_for_cas(
         or type(source_id) is not str or not source_id.strip() or len(source_id) > 512
     ):
         raise MemoryGenerationCASRejected("exact generation observation inputs required")
+    _require_original_token_denials()
     owner, namespace, path = scope.owner_id, scope.namespace, store.path
     memory_id = deterministic_memory_id(scope, source_id)
 
     def stable() -> None:
+        _require_original_token_denials()
         if (
             store.path is not path or scope.owner_id is not owner
             or scope.namespace is not namespace
@@ -210,10 +237,9 @@ def observe_memory_generation_for_cas(
         raise MemoryGenerationCASRejected("generation observation SQLite unavailable") from exc
     stable()
     fields = _token_fields(token)
-    denied = ("external_action_authorized", "consent_authenticated")
-    descriptors = tuple(getattr(MemoryGenerationCASToken, key) for key in denied)
-    if any(type(descriptor) is not property for descriptor in descriptors):
-        raise MemoryGenerationCASRejected("generation token denial property changed")
+    denied = _TOKEN_DENIALS
+    descriptors = _ORIGINAL_TOKEN_DENIALS
+    _require_original_token_denials()
 
     def stable_token() -> None:
         stable()
@@ -256,6 +282,7 @@ def generation_fenced_memory_update(
         or type(write.scope) is not MemoryScope
     ):
         raise MemoryGenerationCASRejected("exact Memory generation write inputs required")
+    _require_original_token_denials()
     pinned_token = _token_fields(retained)
     original_scope = write.scope
     original_owner, original_namespace = write.scope.owner_id, write.scope.namespace
@@ -272,6 +299,7 @@ def generation_fenced_memory_update(
     content_hash = hashlib.sha256(original_content.encode()).hexdigest()
 
     def stable() -> None:
+        _require_original_token_denials()
         if (
             store.path is not original_path
             or write.scope is not original_scope
