@@ -52,6 +52,26 @@ class MemoryEventAlignmentReview:
 
 _REVIEW_TYPE = MemoryEventAlignmentReview
 _STORE_TYPE = SQLiteMemoryStore
+_DENIAL_NAMES = (
+    "independently_authenticated", "user_consent_verified",
+    "deletion_or_erasure_proven", "action_authorized",
+)
+_ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[name] for name in _DENIAL_NAMES)
+
+
+def _require_original_denials() -> None:
+    # A newly-installed False-only property is not the reviewed authority
+    # contract. Preserve the original descriptors across callbacks.
+    if (
+        MemoryEventAlignmentReview is not _REVIEW_TYPE
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise MemoryEventAlignmentRejected("Memory audit authority epoch changed")
 
 
 def _charge(digest: object, entry: tuple[object, ...]) -> None:
@@ -72,6 +92,7 @@ def review_memory_event_alignment(
     Hash-consistent rewriting of both tables remains undetectable without a
     separately authenticated history witness.
     """
+    _require_original_denials()
     if type(store) is not _STORE_TYPE:
         raise MemoryEventAlignmentRejected("exact local Memory store required")
     path = store.path
@@ -234,19 +255,35 @@ def review_memory_event_alignment(
     except sqlite3.Error as exc:
         raise MemoryEventAlignmentRejected("Memory SQLite audit unavailable") from exc
     stable_source()
-    review = MemoryEventAlignmentReview(rows, count, len(scopes), last_id, digest.hexdigest())
-    if (
-        type(review) is not _REVIEW_TYPE
-        or type(review.row_count) is not int or review.row_count != rows
-        or type(review.event_count) is not int or review.event_count != count
-        or type(review.scope_count) is not int or review.scope_count != len(scopes)
-        or type(review.last_event_id) is not int or review.last_event_id != last_id
-        or type(review.digest) is not str or review.digest != digest.hexdigest()
-        or review.independently_authenticated is not False
-        or review.user_consent_verified is not False
-        or review.deletion_or_erasure_proven is not False
-        or review.action_authorized is not False
-    ):
-        raise MemoryEventAlignmentRejected("Memory audit result acquired authority")
+    _require_original_denials()
+    expected = (rows, count, len(scopes), last_id, digest.hexdigest())
+    review = MemoryEventAlignmentReview(*expected)
+
+    def stable_report() -> bool:
+        fields = (
+            review.row_count, review.event_count, review.scope_count,
+            review.last_event_id, review.digest,
+        )
+        return (
+            type(review) is _REVIEW_TYPE
+            and all(
+                type(value) is type(original) and value == original
+                for value, original in zip(fields, expected, strict=True)
+            )
+        )
+
+    if not stable_report():
+        raise MemoryEventAlignmentRejected("Memory audit result changed")
+    for name in _DENIAL_NAMES:
+        _require_original_denials()
+        if not stable_report() or getattr(review, name) is not False:
+            raise MemoryEventAlignmentRejected("Memory audit result acquired authority")
+        # Original False-only getters must not conceal reentrant mutation of
+        # the returned row-count or fingerprint after the initial checks.
+        if not stable_report():
+            raise MemoryEventAlignmentRejected("Memory audit result changed")
+    _require_original_denials()
     stable_source()
+    if not stable_report():
+        raise MemoryEventAlignmentRejected("Memory audit result changed")
     return review
