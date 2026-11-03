@@ -168,11 +168,35 @@ def review_attention_retained_prefix(
     except attention.AttentionPreviewRejected as exc:
         raise AttentionPrefixRejected("attention source preview rejected") from exc
 
-    if (
-        type(prior) is not _PREVIEW_RESULT
-        or type(current) is not _PREVIEW_RESULT
-        or prior.history_sha256 != retained_history_sha256
-    ):
+    if type(prior) is not _PREVIEW_RESULT or type(current) is not _PREVIEW_RESULT:
+        raise AttentionPrefixRejected("retained attention preview carrier changed")
+    # Detached frozen preview fields can still be rewritten reflectively after
+    # the original delegate returns. Retain each individual scalar, not just
+    # the object identity, across JSON/hash callbacks and final construction.
+    preview_rows = (prior, current)
+    preview_epochs = tuple((
+        report.disposition, report.next_review_at_ms,
+        report.surfaced_count_in_window, report.history_sha256,
+        report.review_sha256,
+    ) for report in preview_rows)
+
+    def stable_previews() -> None:
+        stable()
+        for report, fields in zip(preview_rows, preview_epochs, strict=True):
+            if (
+                type(report) is not _PREVIEW_RESULT
+                or any(now is not first for now, first in zip((
+                    report.disposition, report.next_review_at_ms,
+                    report.surfaced_count_in_window, report.history_sha256,
+                    report.review_sha256,
+                ), fields, strict=True))
+                or any(getattr(report, name) is not False
+                       for name in _RESULT_DENIALS)
+            ):
+                raise AttentionPrefixRejected("retained attention preview changed")
+
+    stable_previews()
+    if prior.history_sha256 != retained_history_sha256:
         raise AttentionPrefixRejected("retained attention digest mismatch")
 
     encoded = json.dumps(
@@ -180,9 +204,9 @@ def review_attention_retained_prefix(
          retained_count, observed_count, retained_now_ms, observed_now_ms),
         ensure_ascii=True, separators=(",", ":"), allow_nan=False,
     ).encode("ascii")
-    stable()
+    stable_previews()
     evidence = hashlib.sha256(_DOMAIN + encoded).hexdigest()
-    stable()
+    stable_previews()
     outcome = _RESULT(
         "UNCHANGED" if retained_count == observed_count else "APPEND_ONLY",
         retained_count, observed_count, observed_count - retained_count,
@@ -196,7 +220,7 @@ def review_attention_retained_prefix(
     for name in _OUTPUT_DENIALS:
         if getattr(outcome, name) is not False:
             raise AttentionPrefixRejected("attention prefix gained authority")
-        stable()
+        stable_previews()
         if type(outcome) is not _RESULT or any(
             a is not b for a, b in zip(
                 (outcome.classification, outcome.retained_count,
