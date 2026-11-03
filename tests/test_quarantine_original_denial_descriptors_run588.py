@@ -11,7 +11,15 @@ import sqlite3
 
 import pytest
 
-from ark import disconnected_schedule_quarantine_ledger as mod
+from ark.disconnected_schedule_quarantine_ledger import (
+    DisconnectedScheduleQuarantineLedger,
+    QuarantinePolicy,
+    QuarantineReceipt,
+    QuarantineWitness,
+    ScheduleQuarantineRejected,
+    derive_quarantined_occurrence,
+    genesis_quarantine_witness,
+)
 
 
 _FLAGS = (
@@ -24,18 +32,18 @@ _FLAGS = (
 
 
 def _setup(tmp_path):
-    policy = mod.QuarantinePolicy("a" * 64, 10_000, 5_000, 3, 500)
+    policy = QuarantinePolicy("a" * 64, 10_000, 5_000, 3, 500)
     path = tmp_path / "quarantine.sqlite"
-    ledger = mod.DisconnectedScheduleQuarantineLedger(
+    ledger = DisconnectedScheduleQuarantineLedger(
         path, policy=policy, create=True,
     )
-    return ledger, policy, mod.genesis_quarantine_witness(policy), path
+    return ledger, policy, genesis_quarantine_witness(policy), path
 
 
 def _append(ledger, policy, prior):
     return ledger.quarantine_expired(
         index=0,
-        occurrence_id=mod.derive_quarantined_occurrence(policy, 0),
+        occurrence_id=derive_quarantined_occurrence(policy, 0),
         observed_ms=10_501,
         retained=prior,
     )
@@ -46,12 +54,12 @@ def test_preinstalled_false_receipt_descriptor_not_accepted(
     tmp_path, monkeypatch, flag,
 ):
     ledger, policy, prior, path = _setup(tmp_path)
-    monkeypatch.setattr(mod.QuarantineReceipt, flag, property(lambda _: False))
-    with pytest.raises(mod.ScheduleQuarantineRejected, match="original denial"):
+    monkeypatch.setattr(QuarantineReceipt, flag, property(lambda _: False))
+    with pytest.raises(ScheduleQuarantineRejected, match="original denial"):
         _append(ledger, policy, prior)
     with sqlite3.connect(path) as conn:
         assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
-    with pytest.raises(mod.ScheduleQuarantineRejected, match="stale"):
+    with pytest.raises(ScheduleQuarantineRejected, match="stale"):
         ledger.inspect(retained=prior)
 
 
@@ -60,10 +68,10 @@ def test_preinstalled_false_witness_authentication_descriptor_not_accepted(
 ):
     ledger, policy, prior, path = _setup(tmp_path)
     monkeypatch.setattr(
-        mod.QuarantineWitness, "independently_authenticated",
+        QuarantineWitness, "independently_authenticated",
         property(lambda _: False),
     )
-    with pytest.raises(mod.ScheduleQuarantineRejected, match="original denial"):
+    with pytest.raises(ScheduleQuarantineRejected, match="original denial"):
         _append(ledger, policy, prior)
     with sqlite3.connect(path) as conn:
         assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
@@ -75,5 +83,5 @@ def test_original_quarantine_receipt_remains_deny_only_after_restart(tmp_path):
     assert receipt.quarantined_index == 0
     assert receipt.witness.independently_authenticated is False
     assert all(getattr(receipt, flag) is False for flag in _FLAGS)
-    reopened = mod.DisconnectedScheduleQuarantineLedger(path, policy=policy)
+    reopened = DisconnectedScheduleQuarantineLedger(path, policy=policy)
     assert reopened.inspect(retained=receipt.witness) == receipt.witness
