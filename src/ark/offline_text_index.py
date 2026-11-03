@@ -83,6 +83,24 @@ class OfflineIndexResult:
 # reentrant synthetic constructor during evidence assembly.
 _RESULT_TYPE = OfflineIndexResult
 _HIT_TYPE = OfflineIndexHit
+_DENIAL_NAMES = (
+    "identity_authenticated", "disclosure_authorized", "revocation_verified",
+)
+_ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[name] for name in _DENIAL_NAMES)
+
+
+def _require_original_denials() -> None:
+    if (
+        OfflineIndexResult is not _RESULT_TYPE
+        or OfflineIndexHit is not _HIT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise OfflineIndexRejected("original index authority definition changed")
+
+
 
 
 def _sha(value: object) -> bool:
@@ -121,6 +139,7 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
     Scores are deterministic integers: 100 per distinct matched query token,
     plus at most 8 for each token's term frequency. Ties use document ID.
     """
+    _require_original_denials()
     if type(query) is not OfflineIndexQuery:
         raise OfflineIndexRejected("exact query object required")
     original = (
@@ -233,6 +252,7 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
     output = OfflineIndexResult(hits, len(rows), len(terms), inventory, result)
 
     def assert_output() -> None:
+        _require_original_denials()
         check_epoch()
         if (
             type(output) is not _RESULT_TYPE
@@ -262,12 +282,10 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
     assert_output()
     # A detached lexical hit is never authenticated source custody, live
     # consent, revocation freshness, or authority for content disclosure.
-    if (
-        output.identity_authenticated is not False
-        or output.disclosure_authorized is not False
-        or output.revocation_verified is not False
-    ):
-        raise OfflineIndexRejected("local index result authority changed")
-    # Authority descriptors may have altered nested hits or source carriers.
-    assert_output()
+    for name in _DENIAL_NAMES:
+        if getattr(output, name) is not False:
+            raise OfflineIndexRejected("local index result authority changed")
+        # Even a counterfeit False-valued property must not be trusted.
+        # Recheck all definitions and nested result/source after each callback.
+        assert_output()
     return output
