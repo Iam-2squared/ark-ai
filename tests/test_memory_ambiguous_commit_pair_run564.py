@@ -98,7 +98,7 @@ def test_dual_review_disagreement_rejected_without_retry(monkeypatch, tmp_path):
     monkeypatch.setattr(
         mod.outcome_module, "review_memory_generation_cas_outcome", inconsistent,
     )
-    with pytest.raises(mod.MemoryAmbiguityPairRejected, match="disagree"):
+    with pytest.raises(mod.MemoryAmbiguityPairRejected, match="child digest mismatch"):
         _review(store, proposed, retained)
 
 
@@ -119,6 +119,6 @@ def test_second_read_drift_rejected_without_attribution(monkeypatch, tmp_path):
     monkeypatch.setattr(
         mod.outcome_module, "review_memory_generation_cas_outcome", changed_second,
     )
-    with pytest.raises(mod.MemoryAmbiguityPairRejected, match="drifted"):
+    with pytest.raises(mod.MemoryAmbiguityPairRejected, match="child digest mismatch"):
         _review(store, proposed, retained)
     assert calls == 2
