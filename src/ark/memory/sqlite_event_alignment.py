@@ -205,6 +205,27 @@ def review_memory_event_alignment(
                         raise MemoryEventAlignmentRejected("terminal Memory still has a row")
                 if current:
                     raise MemoryEventAlignmentRejected("live Memory has no creation event")
+                # Dense surviving event IDs do not rule out deletion of the
+                # final event (and corresponding row). SQLite AUTOINCREMENT's
+                # committed high-water mark is an additional local signal,
+                # checked inside this same read snapshot. An attacker able to
+                # rewrite sqlite_sequence can still erase this indication;
+                # an independently retained witness remains essential.
+                sequence = conn.execute(
+                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                ).fetchone()
+                if count == 0:
+                    if sequence is not None:
+                        raise MemoryEventAlignmentRejected(
+                            "Memory append-only event tail was truncated"
+                        )
+                elif (
+                    sequence is None or type(sequence[0]) is not int
+                    or sequence[0] != last_id
+                ):
+                    raise MemoryEventAlignmentRejected(
+                        "Memory append-only event high-water mark differs"
+                    )
                 stable_source()
                 conn.commit()
             except BaseException:
