@@ -60,6 +60,29 @@ class DetachedReadRecoverySchedule:
 
 _DECISION_TYPE = ReadRecoveryDecision
 _SCHEDULE_TYPE = DetachedReadRecoverySchedule
+_DENIAL_NAMES = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_verified",
+)
+_ORIGINAL_DENIAL_DESCRIPTORS = tuple(
+    vars(_SCHEDULE_TYPE)[name] for name in _DENIAL_NAMES
+)
+
+
+def _assert_original_denials() -> None:
+    """Do not bless a preinstalled False-only replacement after processing."""
+    if (
+        DetachedReadRecoverySchedule is not _SCHEDULE_TYPE
+        or any(
+            vars(_SCHEDULE_TYPE).get(name) is not original
+            for name, original in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise DetachedReadRecoveryRejected(
+            "recovery schedule authority descriptor changed"
+        )
 
 
 def schedule_detached_read_recovery(
@@ -72,6 +95,7 @@ def schedule_detached_read_recovery(
     all pending descendants. Only unrelated NOT_STARTED branches are marked
     READY_MOCK_ONLY. A FAILED predecessor holds descendants terminally.
     """
+    _assert_original_denials()
     if (
         type(request_id) is not str or _REQUEST.fullmatch(request_id) is None
         or type(steps) is not tuple or not 1 <= len(steps) <= 24
@@ -86,6 +110,7 @@ def schedule_detached_read_recovery(
     )
 
     def epoch() -> None:
+        _assert_original_denials()
         if (
             request_id is not original_id or steps is not original_steps
             or any(row is not old or any(
@@ -193,13 +218,8 @@ def schedule_detached_read_recovery(
     stable_decisions()
     frozen_decisions = tuple(decisions)
     schedule = DetachedReadRecoverySchedule(request_id, frozen_decisions, digest)
-    denial_names = (
-        "dispatch_authorized", "automatic_replay_authorized",
-        "external_outcome_verified",
-    )
-    denial_descriptors = tuple(
-        getattr(_SCHEDULE_TYPE, name) for name in denial_names
-    )
+    denial_names = _DENIAL_NAMES
+    denial_descriptors = _ORIGINAL_DENIAL_DESCRIPTORS
     epoch()
     stable_decisions()
 
