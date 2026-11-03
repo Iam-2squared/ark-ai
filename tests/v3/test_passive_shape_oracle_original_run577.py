@@ -18,7 +18,6 @@ from ark.learning import (
     offline_snapshot_shape_review as shape,
 )
 
-
 _TEMPLATE = (
     Path(__file__).resolve().parents[2]
     / "docs/v3/EXPERIMENT_001_EXECUTION_SNAPSHOT.template.json"
