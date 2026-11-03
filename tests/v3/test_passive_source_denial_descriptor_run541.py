@@ -51,7 +51,7 @@ def test_final_false_transition_getter_cannot_rebind_shape_authority(
         transition.PassiveReadinessTransition, "__getattribute__", late_rebind,
     )
     with pytest.raises(
-        transition.PassiveTransitionRejected, match="source report authority changed",
+        transition.PassiveTransitionRejected, match="original passive authority changed",
     ):
         transition.review_passive_readiness_transition(_snapshot(), _snapshot())
 
@@ -78,7 +78,7 @@ def test_last_reinspection_callback_cannot_rebind_shape_authority(
         transition, "review_unapproved_v3_snapshot_shapes", rebind_after_valid_review,
     )
     with pytest.raises(
-        transition.PassiveTransitionRejected, match="source report authority changed",
+        transition.PassiveTransitionRejected, match="original passive authority changed",
     ):
         transition.review_passive_readiness_transition(_snapshot(), _snapshot())
     assert count == 4
