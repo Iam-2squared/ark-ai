@@ -1,5 +1,51 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run584 / 2026-11-03 JST: THREE meaningful, FREE-ONLY NON-UI packages (strictly inert durable occurrence receipts, exact retained Memory generation-CAS witnesses, and import-time original Personal Context denial descriptors). 33 newly authored pytest cases (10+13+10), six source/test components updated and technical custody note saved. Source-first CI showed Ubuntu 3/3 GREEN; pre-fix Memory test CI FAIL 12 expected-error-message assertions (7,608 PASS / 1 SKIP / 12 FAIL on Ubuntu 3.12), corrected without weakening source. Corrected/latest exact-head six-job CI NOT YET GREEN. PR #5/#8/#9 Draft/unmerged, UI PAUSED, main unchanged; ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-03T23:59:45.334+09:00 Asia/Tokyo/JST**, untrusted ordinary host wall-clock sample immediately before the normal GitHub Contents API checkpoint write. This is not clock attestation, a verified human identity, consent or spending authorization.
+
+## LATEST — branch, exact write custody, tests and CI
+
+- **PR #8:** [JARVIS foundations — Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. **Invocation work-basis HEAD** `168ebd360679e2ddf3c565c5de5f098f43e7f19a` (previous Run583 checkpoint). **Checkpoint write-basis HEAD** `39388e4366208b9b9e9c265996fe2c516c21773b` (just re-read before this write). The checkpoint-result commit SHA **cannot be embedded in its own contents**; read it from the Contents API response and independently confirm latest branch HEAD and file blob SHA. Never overwrite concurrent newer work.
+- **PR #5:** [V3 Learning — Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), unchanged exact HEAD `805b377697472268db02650a89c7a94b1c5337c8`, earlier [CI #41634014158](https://github.com/Iam-2squared/ark-ai/actions/runs/41634014158) **6/6 GREEN**. No real training, paid compute, Candidate or protected evaluation.
+- **PR #9:** [Command Center UI — Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/9) unchanged HEAD `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **No UI/frontend work, tests, polish, integration or branch write.** Main unchanged `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+- **Previous PR #8 exact checkpoint CI:** HEAD `168ebd360679e2ddf3c565c5de5f098f43e7f19a`, [#41653887845](https://github.com/Iam-2squared/ark-ai/actions/runs/41653887845) **6/6 GREEN** (Ubuntu and Windows Python 3.11–3.13). This predates all Run584 changes; it does NOT certify this run's commits.
+- **Run584 CI sampled immediately before checkpoint write:**
+  - [#41658767571](https://github.com/Iam-2squared/ark-ai/actions/runs/41658767571) HEAD `39388e4366208b9b9e9c265996fe2c516c21773b`: **QUEUED**
+  - [#41658517053](https://github.com/Iam-2squared/ark-ai/actions/runs/41658517053) HEAD `05f812145f8a70c45aacc03c6ef85341d3bf70b1`: **QUEUED**
+  - [#41658267180](https://github.com/Iam-2squared/ark-ai/actions/runs/41658267180) HEAD `9e4131d69d0c9667532641c1d682535b9dca7ea8`: **IN_PROGRESS**
+  - [#41658177092](https://github.com/Iam-2squared/ark-ai/actions/runs/41658177092) HEAD `d6229a167ab6635b5248e996d4a1e2ea62e341d8`: **IN_PROGRESS**
+  - [#41658002206](https://github.com/Iam-2squared/ark-ai/actions/runs/41658002206) HEAD `e87809fa5e84ef8878be2785e23e24bc6a528056`: **IN_PROGRESS**
+  - [#41657900026](https://github.com/Iam-2squared/ark-ai/actions/runs/41657900026) HEAD `450b96eabe201a979a00619cbf3be3e5f3b74f79`: **IN_PROGRESS**
+  - [#41657689834](https://github.com/Iam-2squared/ark-ai/actions/runs/41657689834) HEAD `7a7361cc3af9d0d1a3fc2775095a90498f193edd`: **IN_PROGRESS**
+  - [#41657584493](https://github.com/Iam-2squared/ark-ai/actions/runs/41657584493) HEAD `6858b7a7619f04144647338588f3758f83715851`: **IN_PROGRESS**
+- Source/test checks are not interchangeable: the earlier Memory test HEAD `e87809fa5e84ef8878be2785e23e24bc6a528056` [#41658002206](https://github.com/Iam-2squared/ark-ai/actions/runs/41658002206) **Ubuntu pytest FAIL: 12 test expected-error-message mismatches**; 7,608 PASS / 1 SKIP / 12 FAIL on Ubuntu 3.12. Its fail-closed rejection did occur, but the wrapped diagnostic is `CAS generation unavailable; manual inspection required`. Corrected only the test matcher at `05f812145f8a70c45aacc03c6ef85341d3bf70b1`; the fixed-HEAD CI is automatically queued. No duplicate equivalent workflows manually started.
+- **33 new authored pytest cases** are definitions saved to GitHub, **not** 33 independent local pytest PASS, real model inference, trusted custody or hardware evidence. Exact final latest-head 6/6 GREEN remains **UNVERIFIED** until completion.
+
+## NEW — Run584 non-UI code, tests and technical evidence
+
+1. **Synthetic WRITE reservation receipts:** `src/ark/agency/durable_occurrence_review.py` source commit `6858b7a7619f04144647338588f3758f83715851` pins original three denial-only receipt descriptors and verifies them before any fixture reservation and after receipt creation. A post-COMMIT mutation cannot authorize a mock action or reopen a spent token; no backend dispatch. Ten tests `tests/test_occurrence_receipt_authority_run584.py` commit `450b96eabe201a979a00619cbf3be3e5f3b74f79`.
+2. **Memory COMMIT-UNKNOWN retained carrier:** `src/ark/memory/generation_cas_outcome_review.py` commit `7a7361cc3af9d0d1a3fc2775095a90498f193edd` requires original retained token field object identities, rejecting equal-byte carrier replacement during independent SQLite snapshots. Thirteen tests `tests/test_memory_cas_retained_carrier_run584.py` source commit `e87809fa5e84ef8878be2785e23e24bc6a528056`; fail-closed diagnostic matcher-only repair commit `05f812145f8a70c45aacc03c6ef85341d3bf70b1`.
+3. **Privacy-safe request context:** `src/ark/personal_context_request_binding.py` commit `d6229a167ab6635b5248e996d4a1e2ea62e341d8` pins import-time original False-only preview/binding descriptors, rejects preinstalled False substitutions. Ten tests `tests/test_context_binding_original_denials_run584.py` commit `9e4131d69d0c9667532641c1d682535b9dca7ea8`. No private text exported, consent presumed or retention authorized.
+4. **Technical evidence:** [Run584 non-UI note](https://github.com/Iam-2squared/ark-ai/blob/39388e4366208b9b9e9c265996fe2c516c21773b/docs/JARVIS_RUN584_NON_UI_RECEIPT_MEMORY_CONTEXT_DENIAL.md) commit `39388e4366208b9b9e9c265996fe2c516c21773b`; includes test counts, changed files, limits and earlier CI references.
+
+## Frozen evidence, blockers and authorization boundaries
+
+- Frozen blobs independently re-read and **unchanged**: PR #8 Memory `src/ark/memory/contracts.py` SHA `b6e93821ecd69270a7634aceb20775dc36e9953c`; PR #8 Planner `src/ark/agency/contracts.py` SHA `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 V3 `docs/v3/CONTRACT.md` SHA `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Frozen V1/V2/Local UI/Launcher evidence and protected V2 final evaluation untouched.
+- No paid/potentially billable service, GPU, external model compute, real trainer/Candidate weight creation, new credential, account connection, physical user-PC action, real ToolBackend, real notification, irrevocable erasure, protected gate opening, main merge, or UI/frontend work. PR #5/#8/#9 remain Draft/unmerged.
+- Local SQLite, SHA-256 and mock/fixture witnesses do not authenticate clock, issuer, operator, privacy consent, external exactly-once success or attribution of an unknown COMMIT. **ARK JARVIS/V3 NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Confirm the fixed Memory test HEAD CI and latest checkpoint exact-head six jobs. If FAIL, inspect actual job logs and apply only minimal semantics-preserving correction using the normal GitHub Contents API; work independent non-UI lanes while CI runs.
+2. Continue registry-bound immutable ToolRegistry/PermissionGate, trusted-clock audit-before-action and durable occurrence/replay denial without real backend dispatch.
+3. Continue Memory generation CAS ABA/expiry/coherent snapshots, manual-only COMMIT-UNKNOWN evidence, Planner FAILED/BLOCKED recovery, registered READ receipts, Personal Context withdrawal/retained prefix.
+4. Scheduler restart duplicate quarantine, Observation offline fixture contracts, and separate V3 free-only provenance/identity/reproducibility guard review. No UI work or protected evaluation, training, Candidate promotion or main merge without explicit authorization.
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run583 / 2026-11-03 JST: THREE meaningful, FREE-ONLY NON-UI work packages: full-history Action Audit request-binding, original detached Planner schedule denial guards, and CI-observed PermissionGate test-expectation repair. 17 newly authored pytest cases (7 audit + 10 schedule), four existing policy cases corrected, technical evidence saved. CI for latest exact HEAD NOT YET GREEN/IN PROGRESS; older 4-case PermissionGate test failures diagnosed from logs and corrected without relaxing source policy. PR #5/#8/#9 Draft/unmerged, UI PAUSED, main unchanged; ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-03T23:26:22.581+09:00 Asia/Tokyo/JST**, ordinary host wall-clock sample immediately preceding the normal GitHub Contents API checkpoint operation; NOT an authenticated clock, reviewer, consent, or spending authorization.
