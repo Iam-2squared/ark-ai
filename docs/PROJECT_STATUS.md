@@ -1,5 +1,42 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run589 / 2026-11-04 JST: THREE FREE-ONLY NON-UI source+test packages on Draft PR #8: (1) reject missing global Memory event IDs during retained prefix review, (2) reject repeated digest ambiguity in optional closed Observation fixture chains, (3) prevent synthetic proactive SQLite ledger overflow under the writer lock. 3 source edits + 3 new test files, 11 authored parameter-expanded scenarios, 1 source-grounded technical note. Exact new-head six-job CI remains unverified until workflow completion. UI PAUSED; PR #5/#8/#9 Draft/unmerged; ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-04T04:55:09.115+09:00 Asia/Tokyo/JST** — ordinary untrusted host wall-clock sample directly before the normal GitHub Contents API write, not clock attestation, authenticated approval or billing authorization.
+
+## LATEST — branch custody / new work / validation
+
+- **PR #8:** [Draft JARVIS foundations](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`. Exact **invocation work-basis HEAD** `cf6b14fa9653501868076d239a6be28fdce89879`; **checkpoint write-basis HEAD** `a8f90e0ba259afd448c7da94012f62340cadb23a` (re-read immediately before this write). **Checkpoint-result HEAD is created by the Contents API update and cannot be embedded in the same file**. Use the API response commit SHA and independently confirm branch HEAD/file blob SHA after the write. Do not confuse prior work-basis CI with current result.
+- **Package 1 / Memory event-prefix gap fence:** source `43476a550d08447805ed58324b82bfd91814539c`, regression tests `38d24ad692c4f86ef2d7b433df9aa12b556def6b`; the retained-event-only scan now rejects first/middle/global ID gaps even when an older retained prefix matches. No frozen DDL/contract change.
+- **Package 2 / Observation closed-chain uniqueness:** source `5dd03669a3a3a83a9428ecaa966bf08ba358b184`, regression tests `10fee87379f80f22fa1f864eb0d2c3b727b7736f`; rejects adjacent/nonadjacent duplicate content digests in optional unique-digest chain review, keeps underlying envelope and general DAG contract unchanged.
+- **Package 3 / Proactive fixture capacity:** source `fc0b1e102a3f356b04c77189770a852725d08467`, tests `7589a2610156fe9376ad518cd1221d65dc667af3`; one shared 10,000-row bound for validation and `BEGIN IMMEDIATE` admission, preventing a committed 10,001st synthetic marker from stranding restart. Tests use an in-process lowered bound and include durable denial.
+- **Technical note:** [Run589 non-UI evidence](https://github.com/Iam-2squared/ark-ai/blob/a8f90e0ba259afd448c7da94012f62340cadb23a/docs/JARVIS_RUN589_NON_UI_MEMORY_PREFIX_OBSERVATION_PROACTIVE_CAPACITY.md), source+tests latest pre-note HEAD `7589a2610156fe9376ad518cd1221d65dc667af3`, note HEAD `a8f90e0ba259afd448c7da94012f62340cadb23a`.
+- **Authored tests:** Memory 5, Observation 3, Proactive 3 = **11 new parameter-expanded scenarios**, **NOT** 11 independent local pytest PASS. No local complete-repository test environment available; CI is the actual validation source.
+
+### Exact SHA CI evidence sampled before checkpoint
+
+- [Workflow #41707351396](https://github.com/Iam-2squared/ark-ai/actions/runs/41707351396) at `a8f90e0ba259afd448c7da94012f62340cadb23a`: **QUEUED / NOT FINAL**.
+- [Workflow #41707119935](https://github.com/Iam-2squared/ark-ai/actions/runs/41707119935) at `7589a2610156fe9376ad518cd1221d65dc667af3`: **QUEUED / NOT FINAL**.
+- [Workflow #41698311382](https://github.com/Iam-2squared/ark-ai/actions/runs/41698311382) at `cf6b14fa9653501868076d239a6be28fdce89879`: **COMPLETED / SUCCESS** (prior work-basis).
+
+No equivalent manual workflow reruns launched. An in-flight or queued matrix is **NOT** exact-head GREEN; if any job FAILS, inspect its logs and make the smallest semantics-preserving fix before claiming PASS.
+
+- **PR #5:** [V3 Learning Draft](https://github.com/Iam-2squared/ark-ai/pull/5), HEAD `805b377697472268db02650a89c7a94b1c5337c8` unchanged, earlier [CI #41634014158](https://github.com/Iam-2squared/ark-ai/actions/runs/41634014158) 6/6 GREEN; Candidate, V2 final opening, real training, GPU/spend and promotion blocked. **PR #9:** [UI Draft, PAUSED](https://github.com/Iam-2squared/ark-ai/pull/9) HEAD `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` untouched. **main** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged.
+- **Frozen evidence:** PR #8 Memory contract blob `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner contract blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 V3 contract blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23` independently confirmed unchanged. V1/V2/Local UI/Launcher evidence untouched.
+
+## Boundaries / risk / Next plan / 今後の方針
+
+- **NO** paid/potentially billable compute or services, external GPU, new credentials/account connections, real Candidate/adapter/weight generation, protected V2 final-evaluation opening, automatic promotion, frozen contract changes, user-PC hardware actions, live ToolBackend execution, notifications, consent assertions, irreversible changes or main merge. No UI/frontend source/tests/integration/polish; UI branch untouched.
+- SQLite row/event IDs and local SHA values are unauthenticated consistency evidence, not independent source custody, trusted actor/clock, unforgeable history, or external exactly-once effects. A coherent rewrite or unanchored tail deletion may escape local review. The closed fixture reviewer intentionally rejects duplicate content digests only in its optional *unambiguous linear chain* mode. Proactive markers never authorize dispatch.
+- **1.** Confirm PR #8 newest exact-head 6/6 Ubuntu/Windows Python 3.11–3.13 CI. On FAIL, diagnose actual logs, repair without weakening fail-closed semantics; work an independent non-UI lane during CI.
+- **2.** Bind immutable ToolRegistry/PermissionGate subjects to restart-safe, audit-before-action occurrence/replay fencing; keep all executors disconnected until integration proof and authorization.
+- **3.** Continue independently retained Memory CAS/expiry/COMMIT-UNKNOWN row/event verification, Planner persisted FAILED/BLOCKED recovery, Personal Context revocation/retention, proactive deduplication and observation fixture contract checks.
+- **4.** Harden strictly-free V3 provenance/path/identity/approval guards only, preserve all frozen evidence and protected evaluation boundaries. **ARK/JARVIS/V3: NOT_PASSED.**
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run588 / 2026-11-04 JST: FREE-ONLY NON-UI development saved on Draft PR #8. Three coherent work packages: (1) repair a stronger Memory append-only gap rejection's historical test expectation; (2) retain ORIGINAL false-only authority descriptors through synthetic overdue-quarantine post-COMMIT return and add 7 parameter-expanded regression cases; (3) record reversible disconnected ToolRegistry/PermissionGate/audit-before-action/UNKNOWN-recovery integration acceptance gates. Current exact-head six-job CI is IN PROGRESS / NOT GREEN. UI PAUSED. PR #5/#8/#9 Draft/unmerged. JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-04T03:54:45.401+09:00 Asia/Tokyo/JST** — ordinary untrusted host clock sample immediately preceding the normal GitHub Contents API write, not an attested trusted time or human/spending approval.
