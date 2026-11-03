@@ -54,6 +54,31 @@ class DisconnectedToolResult:
         return False
 
 
+# A disconnected result must never turn into a capability/dispatch receipt,
+# even when a result property is monkeypatched to return False until queried.
+_RESULT_TYPE = DisconnectedToolResult
+_DENIAL_NAMES = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_known",
+)
+_ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
+
+
+def _require_original_result_denials() -> None:
+    if (
+        DisconnectedToolResult is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(key) is not expected
+            for key, expected in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedToolRejected(
+            "disconnected fixture authority definition changed"
+        )
+
+
 def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for key, value in pairs:
@@ -181,11 +206,13 @@ def execute_disconnected_fixture_tool(
     executed or that a real-world action occurred. Inputs are exact canonical
     JSON to avoid implicit coercions, duplicate keys and ambiguous identity.
     """
+    _require_original_result_denials()
     if type(request) is not DisconnectedToolRequest:
         raise DisconnectedToolRejected("exact request type required")
     pinned = (request.request_id, request.operation, request.canonical_args_json)
 
     def assert_epoch() -> None:
+        _require_original_result_denials()
         if any(
             current is not original
             for current, original in zip(
@@ -228,7 +255,7 @@ def execute_disconnected_fixture_tool(
     )
     assert_epoch()
     if (
-        type(result) is not DisconnectedToolResult
+        type(result) is not _RESULT_TYPE
         or result.request_id is not request_id
         or result.operation is not operation
         or result.input_digest is not input_digest
@@ -236,4 +263,22 @@ def execute_disconnected_fixture_tool(
         or result.result_digest is not result_digest
     ):
         raise DisconnectedToolRejected("constructed fixture result changed")
+    # A false-looking property can itself be a caller-controlled callback
+    # that rewrites a frozen receipt or replaces another authority property.
+    for denial in _DENIAL_NAMES:
+        assert_epoch()
+        if getattr(result, denial) is not False:
+            raise DisconnectedToolRejected("disconnected fixture gained authority")
+        assert_epoch()
+        if (
+            type(result) is not _RESULT_TYPE
+            or result.request_id is not request_id
+            or result.operation is not operation
+            or result.input_digest is not input_digest
+            or result.canonical_result_json is not data
+            or result.result_digest is not result_digest
+        ):
+            raise DisconnectedToolRejected(
+                "disconnected fixture result changed during denial check"
+            )
     return result
