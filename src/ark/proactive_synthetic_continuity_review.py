@@ -58,6 +58,12 @@ class SyntheticTriggerWitness:
             raise SyntheticTriggerRejected("synthetic trigger witness integrity failed")
 
 
+# Keep the original integrity validator when a synthetic callback substitutes
+# the public method. We still call the public method for reentrant fault
+# coverage, but it may not silently skip the actual local digest validation.
+_ORIGINAL_WITNESS_VALIDATOR = SyntheticTriggerWitness.assert_integrity
+
+
 def assert_proactive_history_continues(
     retained: SyntheticTriggerWitness,
     current: SyntheticTriggerWitness,
@@ -96,7 +102,11 @@ def assert_proactive_history_continues(
     assert_epoch()
     retained.assert_integrity()
     assert_epoch()
+    _ORIGINAL_WITNESS_VALIDATOR(retained)
+    assert_epoch()
     current.assert_integrity()
+    assert_epoch()
+    _ORIGINAL_WITNESS_VALIDATOR(current)
     assert_epoch()
     if not set(retained.row_hashes).issubset(current.row_hashes):
         raise SyntheticTriggerRejected("retained proactive trigger history changed")
@@ -141,6 +151,8 @@ def read_proactive_witness(
     assert_epoch()
     if retained is not None:
         retained.assert_integrity()
+        assert_epoch()
+        _ORIGINAL_WITNESS_VALIDATOR(retained)
         assert_epoch()
 
     # Path resolution, URI construction, SQLite handle creation and BEGIN
@@ -196,6 +208,9 @@ def read_proactive_witness(
             assert_epoch()
             assert_witness_epoch()
             witness.assert_integrity()
+            assert_epoch()
+            assert_witness_epoch()
+            _ORIGINAL_WITNESS_VALIDATOR(witness)
             assert_epoch()
             assert_witness_epoch()
             if retained is not None:
