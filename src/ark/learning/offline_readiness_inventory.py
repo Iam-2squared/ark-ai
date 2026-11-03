@@ -139,7 +139,8 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
         if (
             (type(tokenizer_revision) is str and tokenizer_revision in _PLACEHOLDERS)
             or (
-                tokenizer_revision == "SAME_AS_BASE"
+                type(tokenizer_revision) is str
+                and tokenizer_revision == "SAME_AS_BASE"
                 and type(base_revision) is str and base_revision in _PLACEHOLDERS
             )
         ):
