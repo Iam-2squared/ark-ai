@@ -66,7 +66,7 @@ def test_noncanonical_whitespace_is_refused_even_when_payload_agrees(
         _preview()
 
 
-@pytest.mark.parametrize("forgery", ["not-json", 1, "{\\"x\\":"])
+@pytest.mark.parametrize("forgery", ["not-json", 1, "{"])
 def test_non_json_and_wrong_serializer_types_are_refused(monkeypatch, forgery):
     monkeypatch.setattr(
         redaction.json, "dumps", lambda *_args, **_kwargs: forgery,
