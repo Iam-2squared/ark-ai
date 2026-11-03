@@ -300,6 +300,11 @@ class SQLiteActionAudit:
             if type(version) is not int or version != SCHEMA_VERSION:
                 raise ActionAuditSchemaError("action audit schema version changed before read")
             _validate_v1_schema(conn)
+            # A valid-looking page cannot certify a locally truncated audit.
+            # Check the entire append-only ID extent and AUTOINCREMENT tip
+            # inside this SAME read snapshot before returning any evidence.
+            # This is only local consistency, not authenticated custody.
+            _require_dense_committed_audit_sequence(conn)
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit source changed during read")
             rows = conn.execute(
