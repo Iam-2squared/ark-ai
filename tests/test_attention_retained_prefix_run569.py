@@ -9,6 +9,7 @@ import pytest
 from ark import attention_retained_prefix_review as prefix
 from ark import proactive_attention_preview as attention
 
+_MISSING = object()
 SCOPE = "a" * 64
 TRIGGER = "b" * 64
 
@@ -30,12 +31,12 @@ def digest(p, rows, now):
     ).history_sha256
 
 
-def check(old=(), new=(), old_now=100, now=200, *, p=None, old_digest=None):
+def check(old=(), new=(), old_now=100, now=200, *, p=None, old_digest=_MISSING):
     p = policy() if p is None else p
     return prefix.review_attention_retained_prefix(
         p, tuple(old), tuple(new),
         retained_history_sha256=(
-            digest(p, tuple(old), old_now) if old_digest is None else old_digest
+            digest(p, tuple(old), old_now) if old_digest is _MISSING else old_digest
         ),
         retained_now_ms=old_now, observed_now_ms=now,
     )
