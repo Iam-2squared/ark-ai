@@ -155,7 +155,11 @@ def review_disconnected_recovery_fence(
             if reservation in reservations_seen:
                 raise OfflineRecoveryFenceRejected("WRITE reservation reused across steps")
             reservations_seen.add(reservation)
-        if state in ("SUCCEEDED", "RUNNING") and any(
+        # FAILED is a terminal *started* claim, not an alternative to
+        # BLOCKED: a failed child cannot have run before its prerequisites
+        # succeeded. Keep CANCELLED/BLOCKED admissible as non-execution
+        # terminal diagnostics when ancestors are unresolved.
+        if state in ("SUCCEEDED", "FAILED", "RUNNING") and any(
             states[dep] != "SUCCEEDED" for dep in deps
         ):
             raise OfflineRecoveryFenceRejected("step became active before prerequisites")
