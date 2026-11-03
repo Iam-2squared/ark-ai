@@ -11,6 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+from . import offline_snapshot_shape_review as _shape_module
 from .offline_readiness_inventory import _PLACEHOLDERS, _SECTIONS
 from .offline_snapshot_shape_review import (
     OfflineShapeRejected,
@@ -90,12 +91,18 @@ _SOURCE_DENIALS = (
     "v2_opening_authorized", "promotion_authorized",
 )
 _ORIGINAL_SOURCE_DENIALS = tuple(vars(_SOURCE_TYPE)[key] for key in _SOURCE_DENIALS)
+# Both the independent classification path and the child shape reviewer must
+# use the original plausibility predicate, not a shared forged permissive
+# callback. This is a syntax guard only, never execution authorization.
+_ORIGINAL_SHAPE_PREDICATE = _plausible_shape
 
 
 def _assert_original_passive_authority() -> None:
     if (
         PassiveReadinessTransition is not _TRANSITION_TYPE
         or UnapprovedSnapshotShapeReview is not _SOURCE_TYPE
+        or _plausible_shape is not _ORIGINAL_SHAPE_PREDICATE
+        or _shape_module._plausible_shape is not _ORIGINAL_SHAPE_PREDICATE
         or any(
             vars(_TRANSITION_TYPE).get(key) is not original
             for key, original in zip(
@@ -162,6 +169,7 @@ def review_passive_readiness_transition(
         new_epoch = _pin_json_tree(after)
 
         def stable() -> None:
+            _assert_original_passive_authority()
             _assert_json_tree_epoch(before, old_epoch)
             _assert_json_tree_epoch(after, new_epoch)
 
