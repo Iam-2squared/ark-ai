@@ -15,8 +15,8 @@ from . import local_text_chunking as chunks
 from . import offline_chunk_index_bridge as lexical
 from . import offline_context_membership_guard as context
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-context-lexical-membership-v1\\0"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-context-lexical-membership-v1\0"
 _RECORD = context.ContextRecordClaim
 _VETO = context.ContextScopeVetoClaim
 _MEMBER = context.OfflineContextMembershipReview
@@ -152,7 +152,7 @@ def review_context_chunk_index(
         if (
             any(type(row) is not _RECORD or row is not old
                 or (row.record_id, row.owner_digest, row.scope_digest,
-                    row.content_sha256, row.captured_at_ms, row.expires_at_ms) != fields
+                    row.content_sha256, row.captured_at_ms, row.expires_at_ms) != tuple(fields)
                 for row, (old, *fields) in zip(records, record_epoch, strict=True))
             or any(type(row) is not _VETO or row is not old
                 or (row.scope_digest, row.revoked, row.observed_at_ms,
