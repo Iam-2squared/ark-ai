@@ -57,6 +57,44 @@ class OfflineContextRequestBinding:
 
 
 _BINDING_TYPE = OfflineContextRequestBinding
+_PREVIEW_DENIALS = (
+    "consent_verified", "external_export_authorized",
+    "tool_dispatch_authorized", "retention_authorized",
+)
+_BINDING_DENIALS = (
+    "consent_verified", "revocation_freshness_verified",
+    "external_export_authorized", "tool_dispatch_authorized",
+    "retention_authorized",
+)
+# A callback must never establish the baseline for a False-only authority
+# descriptor: retain the original class implementations at module import.
+_ORIGINAL_PREVIEW_DENIALS = tuple(
+    vars(_PREVIEW_TYPE)[name] for name in _PREVIEW_DENIALS
+)
+_ORIGINAL_BINDING_DENIALS = tuple(
+    vars(_BINDING_TYPE)[name] for name in _BINDING_DENIALS
+)
+
+
+def _assert_original_denials() -> None:
+    if any(
+        vars(_PREVIEW_TYPE).get(name) is not original
+        for name, original in zip(
+            _PREVIEW_DENIALS, _ORIGINAL_PREVIEW_DENIALS, strict=True,
+        )
+    ):
+        raise OfflineContextBindingRejected("context preview carrier changed")
+    if (
+        OfflineContextRequestBinding is not _BINDING_TYPE
+        or any(
+            vars(_BINDING_TYPE).get(name) is not original
+            for name, original in zip(
+                _BINDING_DENIALS, _ORIGINAL_BINDING_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflineContextBindingRejected("constructed context binding changed")
+
 
 
 def bind_offline_context_request(
@@ -71,27 +109,18 @@ def bind_offline_context_request(
         raise OfflineContextBindingRejected("exact local context request ID required")
     if type(preview) is not _PREVIEW_TYPE:
         raise OfflineContextBindingRejected("exact local context preview required")
+    _assert_original_denials()
     pinned = (
         preview.owner_digest, preview.record_ids,
         preview.canonical_local_json, preview.local_digest,
     )
-    preview_permissions = (
-        "consent_verified", "external_export_authorized",
-        "tool_dispatch_authorized", "retention_authorized",
-    )
-    binding_permissions = (
-        "consent_verified", "revocation_freshness_verified",
-        "external_export_authorized", "tool_dispatch_authorized",
-        "retention_authorized",
-    )
-    preview_descriptors = tuple(
-        getattr(_PREVIEW_TYPE, name) for name in preview_permissions
-    )
-    binding_descriptors = tuple(
-        getattr(_BINDING_TYPE, name) for name in binding_permissions
-    )
+    preview_permissions = _PREVIEW_DENIALS
+    binding_permissions = _BINDING_DENIALS
+    preview_descriptors = _ORIGINAL_PREVIEW_DENIALS
+    binding_descriptors = _ORIGINAL_BINDING_DENIALS
 
     def unchanged() -> None:
+        _assert_original_denials()
         try:
             if (
                 type(preview) is not _PREVIEW_TYPE
@@ -195,6 +224,7 @@ def bind_offline_context_request(
         request_id, owner, digest, len(ids), binding_digest,
     )
     def stable_result() -> None:
+        _assert_original_denials()
         # Preview permission getters and constructed-result permission getters
         # are reentrant callbacks. Neither may silently grant authority by
         # rebinding a previously checked descriptor or replacing its evidence.
