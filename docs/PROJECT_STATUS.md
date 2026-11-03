@@ -1,5 +1,42 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run590 / 2026-11-04 JST: THREE FREE-ONLY NON-UI source+test work packages saved on Draft PR #8: (1) proactive retained-witness preflight pinning against reentrant source/receipt/policy drift; (2) closed Observation result fields bound to validated inputs rather than mutable constructor outputs; (3) privacy revocation SQLite capacity admission under BEGIN IMMEDIATE. 3 source modules, 3 new regression files with 17 authored parameter-expanded cases, Ruff import-order repair following observed CI FAIL, and one source-grounded technical note. Latest exact-head full six-job CI is NOT YET CONFIRMED GREEN. UI PAUSED; PR #5/#8/#9 Draft/unmerged; ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-04T05:53:45.231+09:00 Asia/Tokyo/JST**, ordinary host wall-clock sampling immediately before the normal GitHub Contents API write; NOT an attested trusted time, human approval or billing authorization.
+
+## LATEST — exact branch custody, saved work and evidence
+
+- **PR #8:** [Draft JARVIS foundations](https://github.com/Iam-2squared/ark-ai/pull/8), `research/jarvis-foundations`. **Invocation work-basis HEAD** `6a7366ce9efa4de2c9532c0c4eb1764b1cedb038`; **checkpoint write-basis HEAD** `c1ed5c6898910c943adf6954ea6d0c3446060dde` (re-read before update). **Checkpoint-result HEAD is minted by the GitHub Contents API update and cannot be truthfully embedded in the same file**; read that response and verify the post-write branch head and blob SHA. Do not confuse new-head CI with old green.
+- **Package 1 — Proactive freshness custody:** `src/ark/proactive_synthetic_freshness_review.py` source HEAD `8a0f6ba41348b767f7b9cf763a30d341434c1882`. Exact input carriers are now pinned before the first reentrant retained-witness validator; the saved original digest validator also runs. Tests `tests/test_proactive_freshness_retained_preflight_run590.py` HEAD `dbf6ac084da2e6a2467964db48e08feeacc86a03`, 7 authored parameter-expanded offline scenarios. The first CI exposed **Ruff I001** on import ordering; normal-path fix HEAD `bc72169fadbd695e11413c1c137ad77042168e2e`; no source semantics weakened and no duplicate manual workflow rerun.
+- **Package 2 — Observation result provenance:** `src/ark/observation_fixture_chain_review.py` HEAD `edb9d4a90c5f554bfdc0f94b263edc66ff95bb32`; `tests/test_observation_chain_input_anchored_result_run590.py` HEAD `f8f25c4f1eec9c99f405381684751a1a2528aa88`, 7 authored scenarios. Returned digest/identity/size/source/scope now checked against validated original inputs, including constructor and deny-only getter epochs; no real observation device activated.
+- **Package 3 — Privacy veto SQLite capacity:** `src/ark/personal_context_revocation_review.py` HEAD `e9628b0fac1a16e60fccaf2a01e13b2c95b41c5e`; `tests/test_personal_context_revocation_capacity_run590.py` HEAD `1e3f429d38b1260eef61a2e4bcc81fddb27dc4fd`, 3 authored scenarios. The same bound controls validation and pre-INSERT admission under the existing SQLite writer transaction; a rejected synthetic revocation does not imply consent or an approved disclosure.
+- **Evidence note:** [Run590 source/test/CI risks](https://github.com/Iam-2squared/ark-ai/blob/c1ed5c6898910c943adf6954ea6d0c3446060dde/docs/JARVIS_RUN590_NON_UI_PROACTIVE_OBSERVATION_REVOCATION_CUSTODY.md), saved at `c1ed5c6898910c943adf6954ea6d0c3446060dde`. **17** refers to authored parameter-expanded test cases, **not** independently confirmed local pytest passes. No full local-repository test environment was available; remote CI is the actual gate.
+
+### CI sampled before the checkpoint write
+
+- [CI #41716484467](https://github.com/Iam-2squared/ark-ai/actions/runs/41716484467), exact HEAD `c1ed5c6898910c943adf6954ea6d0c3446060dde`: **IN_PROGRESS / NOT FINAL**.
+- [CI #41716234424](https://github.com/Iam-2squared/ark-ai/actions/runs/41716234424), exact HEAD `1e3f429d38b1260eef61a2e4bcc81fddb27dc4fd`: **IN_PROGRESS / NOT FINAL**.
+- [CI #41716169571](https://github.com/Iam-2squared/ark-ai/actions/runs/41716169571), exact HEAD `e9628b0fac1a16e60fccaf2a01e13b2c95b41c5e`: **IN_PROGRESS / NOT FINAL**.
+- [CI #41715945371](https://github.com/Iam-2squared/ark-ai/actions/runs/41715945371), exact HEAD `bc72169fadbd695e11413c1c137ad77042168e2e`: **IN_PROGRESS / NOT FINAL**.
+- [CI #41707766890](https://github.com/Iam-2squared/ark-ai/actions/runs/41707766890), exact HEAD `6a7366ce9efa4de2c9532c0c4eb1764b1cedb038`: **COMPLETED / SUCCESS**.
+
+- Earlier CI [#41715585849](https://github.com/Iam-2squared/ark-ai/actions/runs/41715585849) and [#41715687310](https://github.com/Iam-2squared/ark-ai/actions/runs/41715687310) did **FAIL** on Ruff I001; import ordering was corrected at `bc72169f`. The earlier baseline [#41707766890](https://github.com/Iam-2squared/ark-ai/actions/runs/41707766890) success **cannot** serve as a PASS for new changes. Check newer exact-head matrix jobs before claiming GREEN.
+- **PR #5:** [V3 Learning Draft](https://github.com/Iam-2squared/ark-ai/pull/5), HEAD `805b377697472268db02650a89c7a94b1c5337c8` unchanged. **PR #9:** [UI Draft, PAUSED](https://github.com/Iam-2squared/ark-ai/pull/9), HEAD `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` untouched. **main** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. No merging/approval or UI code/test/integration work.
+- **Frozen blobs checked unchanged:** PR #8 Memory contract `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner contract `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 V3 Contract 1 `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. Existing V1/V2/Local UI/Launcher freezes remain outside these changes.
+
+## Boundaries / risks / Next plan / 今後の方針
+
+- No paid/potentially billable external compute/API/GPU/subscription, no credential/account connection, real Candidate/weight generation, protected V2 final-evaluation opening, Candidate promotion, physical-PC work, real ToolBackend execution, notification or automatic replay, destructive action, frozen-contract edit or main merge. No UI/frontend changes.
+- SQLite synthetic markers, hashes and caller-supplied timestamps prove only local consistency, **not** independent custody, source authentication, valid consent, trusted time, complete erasure, actor identity or real-world exactly-once effects. Cross-store atomicity and unknown COMMIT effects remain unresolved; do not silently retry unknown results.
+- **1.** Resolve latest exact-head Ubuntu/Windows Python 3.11–3.13 CI; on FAIL inspect actual logs, apply minimal fail-closed repair. Do not rerun equivalent workflows manually.
+- **2.** Memory independently retained CAS/COMMIT-UNKNOWN and Planner persisted FAILED/BLOCKED crash recovery, each backed by source+tests and exact-head GREEN.
+- **3.** Immutable ToolRegistry identity + exact-type PermissionGate + durable audit-before-action occurrence/replay fencing; keep executor disconnected/mock until authorization and integration proof.
+- **4.** Personal Context consent revocation/retention, proactive duplicate prevention, offline Observation fixtures and strictly free V3 identity/path/provenance guards, without UI or protected evaluation changes. **ARK/JARVIS/V3: NOT_PASSED.**
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run589 / 2026-11-04 JST: THREE FREE-ONLY NON-UI source+test packages on Draft PR #8: (1) reject missing global Memory event IDs during retained prefix review, (2) reject repeated digest ambiguity in optional closed Observation fixture chains, (3) prevent synthetic proactive SQLite ledger overflow under the writer lock. 3 source edits + 3 new test files, 11 authored parameter-expanded scenarios, 1 source-grounded technical note. Exact new-head six-job CI remains unverified until workflow completion. UI PAUSED; PR #5/#8/#9 Draft/unmerged; ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-04T04:55:09.115+09:00 Asia/Tokyo/JST** — ordinary untrusted host wall-clock sample directly before the normal GitHub Contents API write, not clock attestation, authenticated approval or billing authorization.
