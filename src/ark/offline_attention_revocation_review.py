@@ -216,6 +216,28 @@ def review_offline_attention_revocation(
     stable()
     if observed.rows is not witness_epoch[0] or observed.witness_id is not witness_epoch[1]:
         raise AttentionRevocationRejected("observed veto witness changed")
+    if not vetoed:
+        # A revocation can be appended while an otherwise valid detached
+        # attention preview runs. A second, retained-prefix-fenced local read
+        # refuses to return the earlier REVIEW_ONLY conclusion under a newly
+        # observed veto. This is NOT an atomic cross-store consent check.
+        try:
+            final_veto = _REVOCATION_REVIEW(ledger, retained=observed)
+        except Exception as exc:
+            raise AttentionRevocationRejected(
+                "local revocation changed during attention review"
+            ) from exc
+        stable()
+        if (
+            type(final_veto) is not _WITNESS
+            or final_veto.rows != witness_epoch[0]
+            or final_veto.witness_id != witness_epoch[1]
+            or observed.rows is not witness_epoch[0]
+            or observed.witness_id is not witness_epoch[1]
+        ):
+            raise AttentionRevocationRejected(
+                "local revocation changed during attention review"
+            )
     payload = (
         policy_epoch[:2], occurrence_sha256, observation_sha256, observed_now_ms,
         observed.witness_id, len(observed.rows), vetoed,
