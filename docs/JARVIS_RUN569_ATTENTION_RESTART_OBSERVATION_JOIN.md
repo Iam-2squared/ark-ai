@@ -1,6 +1,6 @@
 # ARK AI — Run569 Detached Attention Restart and Observation Integration
 
-**Scope:** two independent, reversible, zero-cost, deny-only source/test work packages on Draft PR #8. This note is documentation of real source changes, not a PASS declaration or authenticated execution proof. All times, surface markers, transcript coverage, retained hashes and policy decisions are *synthetic caller fixtures*.
+**Scope:** three independent, reversible, zero-cost, deny-only source/test work packages on Draft PR #8. This note is documentation of real source changes, not a PASS declaration or authenticated execution proof. All times, surface markers, transcript coverage, retained hashes and policy decisions are *synthetic caller fixtures*.
 
 ## Package A — retained proactive attention prefix
 
@@ -13,6 +13,12 @@
 - Added `src/ark/offline_coverage_attention_join.py`: composes caller-provided local transcript-frame coverage accounting with a *recomputed* detached attention budget. Checks exact types, bounded frame counts and gap identity, floor-divided ppm accuracy, retained coverage SHA equality, original deny-only properties and reentrant receipt integrity. A configurable `required_coverage_ppm` can turn otherwise `REVIEW_ONLY` into **`INSUFFICIENT_COVERAGE_HOLD`**. Duplicate, cooldown and budget holds are never upgraded. Binds source and attention receipt SHA into a separate versioned output digest.
 - Added `tests/test_coverage_attention_join_run569.py`: **29 authored parameter-expanded cases**, including threshold boundaries, duplicate/cooldown precedence, forged frame accounting, invalid types, retained-SHA mismatch, False-only authority spoofing and in-flight mutation.
 - This is a **synthetic metadata gate, NOT camera/microphone processing, ASR quality validation, consent, a verified sensor identity, notification scheduling or ToolBackend dispatch**. Since the upstream coverage instance is caller-provided and is not reconstructed from independently preserved raw fixtures at this join, its claimed SHA is not evidence of an authenticated measurement.
+
+## Package C — bounded text chunks → offline lexical search
+
+- Added `src/ark/offline_chunk_index_bridge.py` and `tests/test_offline_chunk_index_bridge_run569.py` (**27 authored parameter-expanded cases**). This connects the existing local UTF-8 chunk bundle verifier with the detached lexical index, deriving deterministic `doc_[0-9a-f]{16}` identifiers per complete chunk and returning only chunk positions, scores and digests — **no text, snippet, actual Memory read, file write or model call**. It explicitly rejects more than 32 chunks instead of silently truncating a source, and uses exact per-call owner/scope and full expected membership.
+- Requires caller-retained bundle SHA agreement, reconstructs and verifies every chunk, pins the original verifier/index and deny-only result types, validates normalized UTF-8 query byte budgets and exact query SHA before search, rechecks source and nested result-hit epochs after callbacks and binds all returned identifiers into a versioned local evidence digest.
+- These hashes are deterministic consistency evidence only, not authenticated ownership, revocation or consent. It cannot promote an offline lexical hit to tool permission, disclose private text, or infer new model capability. The join is reversible, independent of scheduler or training, and remains explicitly disconnected.
 
 ## Validation and restrictions
 
