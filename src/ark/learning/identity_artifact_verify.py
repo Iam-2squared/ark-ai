@@ -60,9 +60,12 @@ _ORIGINAL_DENIALS = tuple(getattr(_WITNESS_TYPE, key) for key in _DENIAL_NAMES)
 
 
 def _require_original_denials() -> None:
-    if any(
-        getattr(_WITNESS_TYPE, key) is not original
-        for key, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+    if (
+        LocalIdentityArtifactWitness is not _WITNESS_TYPE
+        or any(
+            getattr(_WITNESS_TYPE, key) is not original
+            for key, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
     ):
         raise LocalIdentityArtifactRejected(
             "identity artifact authority definition changed"
