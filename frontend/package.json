@@ -1,0 +1,42 @@
+{
+  "name": "@ark-ai/command-center",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:local-api": "node scripts/local-api-smoke.mjs",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "lucide-react": "1.31.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.4",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "@vitejs/plugin-react": "6.0.5",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "eslint": "9.39.4",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "eslint-plugin-react-refresh": "0.4.24",
+    "globals": "16.5.0",
+    "jsdom": "26.1.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.48.1",
+    "vite": "8.2.1",
+    "vitest": "4.1.0"
+  }
+}
