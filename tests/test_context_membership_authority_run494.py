@@ -43,7 +43,7 @@ def test_reflective_permission_on_exact_result_is_denied(monkeypatch, flag):
         OfflineContextMembershipReview, flag, property(lambda self: True),
     )
     with pytest.raises(
-        OfflineContextAdmissionRejected, match="admission review mutated",
+        OfflineContextAdmissionRejected, match="original Context authority",
     ):
         _review()
 
@@ -89,7 +89,7 @@ def test_reflected_false_authority_cannot_revive_stale_context(monkeypatch, muta
         OfflineContextMembershipReview, "trusted_clock_verified",
         property(adversarial),
     )
-    with pytest.raises(OfflineContextAdmissionRejected, match="carrier replaced"):
+    with pytest.raises(OfflineContextAdmissionRejected, match="original Context authority"):
         _retained_review(record, veto)
 
 
@@ -107,5 +107,5 @@ def test_reflected_false_authority_cannot_rewrite_result_digest(monkeypatch):
         OfflineContextMembershipReview, "trusted_clock_verified",
         property(adversarial),
     )
-    with pytest.raises(OfflineContextAdmissionRejected, match="review mutated"):
+    with pytest.raises(OfflineContextAdmissionRejected, match="original Context authority"):
         _retained_review(record, veto)
