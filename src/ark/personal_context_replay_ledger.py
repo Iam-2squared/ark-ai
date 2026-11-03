@@ -247,6 +247,72 @@ class DisconnectedContextReplayLedger:
                 conn.rollback()
                 raise
 
+    def verify_retained_prefix(
+        self, retained: OfflineContextReplayWitness,
+    ) -> OfflineContextReplayWitness:
+        """Review a retained checkpoint against one complete local read snapshot.
+
+        Unlike comparing only the latest tip, a retained prefix may remain
+        valid after later reservations. No request is reserved, disclosed,
+        authorized or automatically replayed. The retained checkpoint must
+        come from outside this SQLite database to detect rewritten history.
+        """
+        prior = _check_witness(retained)
+        retained_epoch = (retained.count, retained.chain_sha256)
+        path_epoch = self._path
+
+        def stable() -> None:
+            if (
+                self._path is not path_epoch
+                or type(retained) is not _WITNESS_TYPE
+                or retained.count is not retained_epoch[0]
+                or retained.chain_sha256 is not retained_epoch[1]
+                or _check_witness(retained) != prior
+            ):
+                raise OfflineContextReplayRejected(
+                    "retained context prefix changed during review"
+                )
+
+        stable()
+        with closing(self._open(read_only=True)) as conn:
+            conn.execute("BEGIN")
+            try:
+                stable()
+                # _inspect verifies every row, exact schema, sequence and
+                # chained digest before any prefix comparison.
+                current = _inspect(conn)
+                _check_witness(current)
+                stable()
+                if prior[0] > current.count:
+                    raise OfflineContextReplayRejected(
+                        "retained context prefix is beyond durable history"
+                    )
+                if prior[0] == 0:
+                    recorded = genesis_offline_context_replay_witness().chain_sha256
+                else:
+                    row = conn.execute(
+                        "SELECT chain_sha256 FROM context_requests WHERE seq=?",
+                        (prior[0],),
+                    ).fetchone()
+                    if row is None or type(row[0]) is not str:
+                        raise OfflineContextReplayRejected(
+                            "retained context prefix row is missing"
+                        )
+                    recorded = row[0]
+                stable()
+                if recorded != prior[1]:
+                    raise OfflineContextReplayRejected(
+                        "retained context prefix diverged from durable history"
+                    )
+                conn.commit()
+                stable()
+                _check_witness(current)
+            except BaseException:
+                conn.rollback()
+                raise
+        stable()
+        return current
+
     def reserve(
         self, binding: OfflineContextRequestBinding,
         *, retained: OfflineContextReplayWitness,
