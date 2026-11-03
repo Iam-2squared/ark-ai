@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 _MAX = 2**63 - 1
+_MAX_PREPARATIONS = 10_000
 _HEX = re.compile(r"[0-9a-f]{64}\Z")
 _TRIGGER = re.compile(r"trigger_[0-9a-f]{64}\Z")
 _TABLE = """CREATE TABLE synthetic_prepared_triggers(
@@ -150,7 +151,7 @@ def _validate(conn: sqlite3.Connection) -> None:
            FROM synthetic_prepared_triggers"""
     )
     for index, row in enumerate(rows):
-        if index >= 10_000:
+        if index >= _MAX_PREPARATIONS:
             raise SyntheticTriggerRejected("trigger fixture review budget exceeded")
         identity, scope, policy, source, observation, observed, prepared = row
         if (
@@ -363,6 +364,15 @@ class SyntheticProactiveLedger:
                 )
                 if count >= policy.max_preparations_per_window:
                     raise SyntheticTriggerRejected("rolling preparation budget")
+                # A valid fixture must remain readable on its next open.
+                # Count within this SAME BEGIN IMMEDIATE transaction as the
+                # insertion, so competing writers cannot cross the bound.
+                existing_rows = conn.execute(
+                    "SELECT COUNT(*) FROM synthetic_prepared_triggers"
+                ).fetchone()[0]
+                assert_policy_epoch("before fixture capacity fence")
+                if type(existing_rows) is not int or existing_rows >= _MAX_PREPARATIONS:
+                    raise SyntheticTriggerRejected("synthetic trigger ledger capacity reached")
                 try:
                     conn.execute(
                         """INSERT INTO synthetic_prepared_triggers
