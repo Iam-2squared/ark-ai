@@ -188,7 +188,7 @@ def test_instance_shadow_cannot_bypass_exact_class_authorization(monkeypatch):
         return None
 
     monkeypatch.setattr(gate, "authorize", no_op)
-    with pytest.raises(PermissionDenied, match="local one-shot spend not observed"):
+    with pytest.raises(PermissionDenied, match="implementation identity changed"):
         gate.authorize_registered(
             registry, call, grants, now_ms=10, one_shot=token,
         )
