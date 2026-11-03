@@ -119,13 +119,13 @@ def test_underlying_attention_denial_substitutions_are_rejected(monkeypatch, fla
 
 def test_inflight_coverage_mutation_refused(monkeypatch):
     c = fixture_coverage()
-    original = attention.preview_proactive_attention
-    # The module's pinned delegate is used for the join; simulate a callback
-    # that mutates the immutable supplied coverage receipt before returning.
-    def change(*args, **kwargs):
+    original = join.hashlib.sha256
+    # The original dependency remains pinned. Simulate a hash callback
+    # mutating a caller-supplied receipt after validation.
+    def change(data):
         object.__setattr__(c, "coverage_sha256", "9" * 64)
-        return original(*args, **kwargs)
+        return original(data)
 
-    monkeypatch.setattr(join, "_PREVIEW", change)
+    monkeypatch.setattr(join.hashlib, "sha256", change)
     with pytest.raises(join.DetachedCoverageAttentionRejected, match="evidence changed"):
         check(c)
