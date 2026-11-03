@@ -89,7 +89,7 @@ def test_retained_digest_must_match_recomputed_history(bad):
                                           (100, 2**63), (True, 200)))
 def test_untrusted_clock_and_nonexact_carriers_rejected(old_now, now):
     with pytest.raises(prefix.AttentionPrefixRejected):
-        check((), (), old_now, now)
+        check((), (), old_now, now, old_digest="0" * 64)
 
 
 def test_future_or_duplicate_appended_occurrence_rejected():
