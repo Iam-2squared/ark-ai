@@ -18,7 +18,7 @@ from .audit_continuity_review import (
     AuditContinuityWitness,
     review_audit_continuity,
 )
-from .contracts import Effect, ToolCall
+from .contracts import ActionAuditSchemaError, Effect, ToolCall
 from .durable_occurrence_review import _validate
 from .planner import PlanGraph
 from .planner_journal_review import (
@@ -369,7 +369,17 @@ def review_synthetic_write_recovery(
                             raise SyntheticRecoveryRejected(
                                 "sidecar link has no matching stored reservation"
                             )
-                        events = audit.events(after_event_id=event_id - 1, limit=1)
+                        try:
+                            events = audit.events(after_event_id=event_id - 1, limit=1)
+                        except ActionAuditSchemaError as exc:
+                            # Preserve this recovery API's fail-closed denial
+                            # type if the audit read now detects deleted history.
+                            # A corrupt local ledger can never establish a
+                            # matching preaction event or justify a retry.
+                            raise SyntheticRecoveryRejected(
+                                "sidecar link has no matching audit event "
+                                "(audit history incomplete)"
+                            ) from exc
                         assert_epoch()
                         if len(events) != 1 or events[0].event_id != event_id:
                             raise SyntheticRecoveryRejected(
