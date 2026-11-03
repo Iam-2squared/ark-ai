@@ -72,7 +72,9 @@ def test_false_looking_result_getter_substitution_rejected(tmp_path, monkeypatch
     case = _case(tmp_path)
     monkeypatch.setattr(review.RegisteredReceiptReview, name, property(lambda _: False))
     try:
-        with pytest.raises(review.RegisteredReceiptReviewRejected, match="authority definition changed"):
+        with pytest.raises(
+            review.RegisteredReceiptReviewRejected, match="authority definition changed",
+        ):
             _review(case)
         assert case[-1].calls == 0
     finally:
@@ -86,7 +88,9 @@ def test_false_looking_retained_link_getter_substitution_rejected(
     case = _case(tmp_path)
     monkeypatch.setattr(review.RegisteredFixtureLink, name, property(lambda _: False))
     try:
-        with pytest.raises(review.RegisteredReceiptReviewRejected, match="authority definition changed"):
+        with pytest.raises(
+            review.RegisteredReceiptReviewRejected, match="authority definition changed",
+        ):
             _review(case)
         assert case[-1].calls == 0
     finally:
@@ -110,7 +114,9 @@ def test_result_getter_cannot_replace_another_denial_after_sqlite_commit(
 
     monkeypatch.setattr(review.RegisteredReceiptReview, "__getattribute__", mutate)
     try:
-        with pytest.raises(review.RegisteredReceiptReviewRejected, match="authority definition changed"):
+        with pytest.raises(
+            review.RegisteredReceiptReviewRejected, match="authority definition changed",
+        ):
             _review(case)
         assert case[-1].calls == 0
     finally:
