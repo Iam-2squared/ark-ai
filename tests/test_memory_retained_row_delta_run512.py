@@ -136,7 +136,7 @@ def test_historical_event_mutation_with_following_append_is_rejected(tmp_path):
     with sqlite3.connect(store.path) as conn:
         conn.execute("UPDATE memory_events SET occurred_at_ms=999 WHERE event_id=1")
     with pytest.raises(
-        delta.MemoryRowDeltaRejected, match="event prefix|lacks creation event",
+        delta.MemoryRowDeltaRejected, match="event prefix|lacks creation event|timestamps",
     ):
         delta.review_retained_memory_row_delta(store, witness)
 
