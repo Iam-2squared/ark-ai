@@ -30,6 +30,7 @@ from .personal_context_review import (
 )
 
 _MAX = 2**63 - 1
+_MAX_REVOCATION_ROWS = 10_000
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _TABLE = """CREATE TABLE synthetic_context_revocations(
     scope_digest TEXT PRIMARY KEY NOT NULL,
@@ -69,7 +70,7 @@ def _validate(conn: sqlite3.Connection) -> None:
         "SELECT scope_digest,revoked_at_ms FROM synthetic_context_revocations"
     )
     for index, (digest, when) in enumerate(rows):
-        if index >= 10_000:
+        if index >= _MAX_REVOCATION_ROWS:
             raise SyntheticContextRevocationRejected("revocation review budget exceeded")
         if (
             type(digest) is not str or not _SHA.fullmatch(digest)
@@ -218,6 +219,18 @@ class SyntheticContextRevocationLedger:
                 if _scope_digest(scope) != digest:
                     raise SyntheticContextRevocationRejected("scope changed during revocation")
                 assert_scope_epoch()
+                # The next restart/read accepts at most this many rows.
+                # Check the bound inside the same BEGIN IMMEDIATE writer slot
+                # as INSERT so concurrent revocations cannot strand the store.
+                row_count = conn.execute(
+                    "SELECT COUNT(*) FROM synthetic_context_revocations"
+                ).fetchone()[0]
+                self._assert_source_path(source_path)
+                assert_scope_epoch()
+                if type(row_count) is not int or row_count >= _MAX_REVOCATION_ROWS:
+                    raise SyntheticContextRevocationRejected(
+                        "revocation ledger capacity exhausted"
+                    )
                 conn.execute(
                     "INSERT INTO synthetic_context_revocations VALUES(?,?)",
                     (digest, at_ms),
