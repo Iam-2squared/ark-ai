@@ -285,6 +285,13 @@ class SyntheticPlanJournal:
                 raise
 
     def _assert_source_path(self) -> None:
+        # Preserve the established wrong-type diagnostic for callers holding
+        # a corrupted instance, while still rejecting value-equal replacement
+        # of an otherwise correctly typed source path before any DB access.
+        if not isinstance(self._path, Path):
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan source must be a Path"
+            )
         if (
             type(self._path) is not type(Path())
             or self._path is not self._source_path_epoch
