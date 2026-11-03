@@ -61,17 +61,46 @@ class DisconnectedEpochVector:
         return False
 
 
+# A result property is executable code, not a harmless stored Boolean.
+# Pin deny-only definitions before callers can install False-looking substitutes.
+_VECTOR_TYPE = DisconnectedEpochVector
+_DENIAL_NAMES = (
+    "coherent_snapshot_proven", "trusted_time_proven",
+    "independent_custody_proven", "memory_disclosure_authorized",
+    "dispatch_authorized",
+)
+_ORIGINAL_DENIALS = tuple(vars(_VECTOR_TYPE)[name] for name in _DENIAL_NAMES)
+
+
 def _assert_non_authorizing(vector: object) -> None:
-    """An epoch-vector hash never becomes permission, consent or trusted time."""
+    """Reject substituted authority getters and reflective result mutation."""
     if (
-        type(vector) is not DisconnectedEpochVector
-        or vector.coherent_snapshot_proven is not False
-        or vector.trusted_time_proven is not False
-        or vector.independent_custody_proven is not False
-        or vector.memory_disclosure_authorized is not False
-        or vector.dispatch_authorized is not False
+        DisconnectedEpochVector is not _VECTOR_TYPE
+        or type(vector) is not _VECTOR_TYPE
+        or any(
+            vars(_VECTOR_TYPE).get(name) is not original
+            for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
     ):
         raise EpochVectorRejected("store vector acquired authority")
+    retained_stores = vector.stores
+    retained_digest = vector.digest
+    for name in _DENIAL_NAMES:
+        if getattr(vector, name) is not False:
+            raise EpochVectorRejected("store vector acquired authority")
+        # A getter can mutate frozen dataclass fields or change a later getter.
+        # Equal-value replacement is also a new, unreviewed carrier epoch.
+        if (
+            vector.stores is not retained_stores
+            or vector.digest is not retained_digest
+            or any(
+                vars(_VECTOR_TYPE).get(key) is not original
+                for key, original in zip(
+                    _DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True,
+                )
+            )
+        ):
+            raise EpochVectorRejected("store vector changed during denial check")
 
 
 def _carrier_values(stores: tuple[DisconnectedStoreEpoch, ...]) -> tuple[tuple[object, ...], ...]:
