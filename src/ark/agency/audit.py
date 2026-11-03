@@ -82,6 +82,46 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
 
 
 
+def _validate_tail_identity(row: sqlite3.Row) -> int:
+    """Fail closed on a malformed persisted tail before appending evidence.
+
+    The original v1 schema is unchanged. This is a local consistency check,
+    not an authenticated event hash chain or a full historical audit.
+    """
+    event_id = row["event_id"]
+    occurred = row["occurred_at_ms"]
+    if (
+        type(event_id) is not int or event_id < 1
+        or type(occurred) is not int or occurred < 0
+    ):
+        raise ActionAuditSchemaError("audit persisted tail has invalid event or clock")
+    fields = (
+        "request_id", "tool", "capability", "scope",
+        "arguments_sha256", "outcome",
+    )
+    values = tuple(row[column] for column in fields)
+    if any(type(value) is not str or not value.strip() for value in values):
+        raise ActionAuditSchemaError("audit persisted tail identity is malformed")
+    request_id, tool, capability, scope, args_hash, _outcome = values
+    if (
+        len(request_id) != 68 or not request_id.startswith("act_")
+        or any(char not in "0123456789abcdef" for char in request_id[4:])
+        or len(args_hash) != 64
+        or any(char not in "0123456789abcdef" for char in args_hash)
+    ):
+        raise ActionAuditSchemaError("audit persisted tail digest is malformed")
+    expected = "act_" + hashlib.sha256(_canonical_json({
+        "arguments_sha256": args_hash,
+        "capability": capability,
+        "scope": scope,
+        "tool": tool,
+    })).hexdigest()
+    if expected != request_id:
+        raise ActionAuditSchemaError("audit persisted tail request identity is inconsistent")
+    return occurred
+
+
+
 class SQLiteActionAudit:
     def __init__(self, path: str | Path, *, clock_ms: Callable[[], int] | None = None) -> None:
         self.path = Path(path)
@@ -154,18 +194,15 @@ class SQLiteActionAudit:
             # Read the last committed clock inside the SAME SQLite writer
             # transaction; an earlier, newer timestamp must never be
             # silently followed by a rollback in the evidence chain.
-            previous_clock = conn.execute(
-                "SELECT occurred_at_ms FROM action_events "
-                "ORDER BY event_id DESC LIMIT 1"
+            previous_tail = conn.execute(
+                "SELECT * FROM action_events ORDER BY event_id DESC LIMIT 1"
             ).fetchone()
-            if previous_clock is not None and (
-                type(previous_clock[0]) is not int
-                or previous_clock[0] < 0
-                or now < previous_clock[0]
-            ):
-                raise ActionAuditSchemaError(
-                    "audit clock regressed relative to persisted events"
-                )
+            if previous_tail is not None:
+                previous_clock = _validate_tail_identity(previous_tail)
+                if now < previous_clock:
+                    raise ActionAuditSchemaError(
+                        "audit clock regressed relative to persisted events"
+                    )
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed during clock review")
             assert_action_epoch("after clock review")
