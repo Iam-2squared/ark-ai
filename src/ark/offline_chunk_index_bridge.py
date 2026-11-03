@@ -102,6 +102,7 @@ def search_detached_local_chunks(
             or index_mod.OfflineIndexHit is not _HIT
             or index_mod.search_offline_text is not _SEARCH
             or OfflineChunkIndexReview is not _RESULT
+            or OfflineChunkIndexHit is not _RESULT_HIT
             or any(vars(_CHUNK_BUNDLE).get(k) is not v for k, v in zip(
                 _BUNDLE_DENIAL_NAMES, _BUNDLE_DENIALS, strict=True,
             ))
@@ -163,7 +164,11 @@ def search_detached_local_chunks(
     stable()
     if bundle.bundle_sha256 != retained_bundle_sha256:
         raise OfflineChunkIndexRejected("retained chunk digest mismatch")
-    if hashlib.sha256(query.encode("utf-8", errors="strict")).hexdigest() != query_sha256:
+    try:
+        query_bytes = query.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise OfflineChunkIndexRejected("query has invalid Unicode") from exc
+    if hashlib.sha256(query_bytes).hexdigest() != query_sha256:
         raise OfflineChunkIndexRejected("query source digest mismatch")
     stable()
     try:
@@ -215,20 +220,43 @@ def search_detached_local_chunks(
     )
     if type(indexed.hits) is not tuple or len(indexed.hits) > limit:
         raise OfflineChunkIndexRejected("index returned unbounded hits")
+    hit_epoch = tuple((
+        row, row.document_id, row.distinct_matches, row.score,
+        row.document_sha256,
+    ) for row in indexed.hits)
+
+    def stable_index() -> None:
+        stable()
+        if (
+            type(indexed) is not _INDEX_RESULT
+            or any(a is not b for a, b in zip(
+                (indexed.hits, indexed.scanned_count,
+                 indexed.query_token_count, indexed.inventory_sha256,
+                 indexed.result_sha256), epoch, strict=True,
+            ))
+            or len(indexed.hits) != len(hit_epoch)
+            or any(
+                type(row) is not _HIT or row is not before
+                or any(a is not b for a, b in zip(
+                    (row.document_id, row.distinct_matches, row.score,
+                     row.document_sha256), fields, strict=True,
+                ))
+                for row, (before, *fields) in zip(
+                    indexed.hits, hit_epoch, strict=True,
+                )
+            )
+        ):
+            raise OfflineChunkIndexRejected("index report changed")
+
+    stable_index()
     for name in _INDEX_DENIAL_NAMES:
         if getattr(indexed, name) is not False:
             raise OfflineChunkIndexRejected("index gained authority")
-        stable()
-        if any(a is not b for a, b in zip(
-            (indexed.hits, indexed.scanned_count, indexed.query_token_count,
-             indexed.inventory_sha256, indexed.result_sha256),
-            epoch, strict=True,
-        )):
-            raise OfflineChunkIndexRejected("index report changed")
+        stable_index()
 
     hits = []
     for hit in indexed.hits:
-        stable()
+        stable_index()
         if type(hit) is not _HIT or hit.document_id not in mapping:
             raise OfflineChunkIndexRejected("unknown index hit")
         chunk = mapping[hit.document_id]
@@ -242,9 +270,9 @@ def search_detached_local_chunks(
            h.chunk_sha256) for h in hits]),
         separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
-    stable()
+    stable_index()
     digest = hashlib.sha256(_DOMAIN + b"receipt\0" + encoded).hexdigest()
-    stable()
+    stable_index()
     result = _RESULT(tuple(hits), len(originals), bundle.source_sha256,
                      epoch[3], digest)
     final = (result.hits, result.scanned_count, result.source_sha256,
@@ -252,7 +280,7 @@ def search_detached_local_chunks(
     for flag in _RESULT_DENIAL_NAMES:
         if getattr(result, flag) is not False:
             raise OfflineChunkIndexRejected("chunk index result gained authority")
-        stable()
+        stable_index()
         if type(result) is not _RESULT or any(a is not b for a, b in zip(
             (result.hits, result.scanned_count, result.source_sha256,
              result.index_inventory_sha256, result.evidence_sha256),
