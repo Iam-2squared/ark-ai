@@ -51,6 +51,28 @@ class SyntheticProactiveFreshnessReview:
         return False
 
 
+# Results are inert witnesses, not approval tokens. Preserve the original
+# denial descriptors even if an equally False-valued property is substituted
+# by a fixture hook; that would be a different (unreviewed) authority epoch.
+_FRESHNESS_RESULT = SyntheticProactiveFreshnessReview
+_FRESHNESS_DENIALS = (
+    "notification_authorized", "dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_FRESHNESS_ORIGINAL_DENIALS = tuple(
+    vars(_FRESHNESS_RESULT)[name] for name in _FRESHNESS_DENIALS
+)
+
+
+def _assert_original_freshness_denial(name: str) -> None:
+    index = _FRESHNESS_DENIALS.index(name)
+    if (
+        SyntheticProactiveFreshnessReview is not _FRESHNESS_RESULT
+        or vars(_FRESHNESS_RESULT).get(name) is not _FRESHNESS_ORIGINAL_DENIALS[index]
+    ):
+        raise SyntheticTriggerRejected("freshness review output changed authority epoch")
+
+
 def review_prepared_trigger_freshness(
     ledger: SyntheticProactiveLedger,
     receipt: SyntheticTriggerReceipt,
@@ -235,28 +257,37 @@ def review_prepared_trigger_freshness(
                 or type(review.checked_at_ms) is not int
                 or review.checked_at_ms != now_ms
                 or review.history is not current
-                or review.notification_authorized is not False
-                or review.dispatch_authorized is not False
-                or review.automatic_replay_authorized is not False
             ):
                 raise SyntheticTriggerRejected(
                     "freshness review output changed during construction"
                 )
-            # Denial-only properties can be reentrant synthetic callbacks.
-            # A false result must not hide a modified output, witness,
-            # policy, receipt or ledger source after the earlier comparisons.
+            # A deny-only getter is a synthetic callback: check its exact
+            # original descriptor, then revalidate every result/source carrier
+            # before proceeding to the next getter. A False-valued replacement
+            # must not turn an otherwise valid review into unreviewed authority.
+            for name in _FRESHNESS_DENIALS:
+                if getattr(review, name) is not False:
+                    raise SyntheticTriggerRejected(
+                        "freshness review output changed authority"
+                    )
+                _assert_original_freshness_denial(name)
+                assert_current_epoch()
+                assert_epoch()
+                if (
+                    type(review) is not _FRESHNESS_RESULT
+                    or review.trigger_id is not expected
+                    or review.prepared_at_ms != prepared
+                    or review.checked_at_ms != now_ms
+                    or review.history is not current
+                ):
+                    raise SyntheticTriggerRejected(
+                        "freshness review output changed after authority checks"
+                    )
+            # A later getter can also replace a *previous* descriptor.
+            for name in _FRESHNESS_DENIALS:
+                _assert_original_freshness_denial(name)
             assert_current_epoch()
             assert_epoch()
-            if (
-                type(review) is not SyntheticProactiveFreshnessReview
-                or review.trigger_id is not expected
-                or review.prepared_at_ms != prepared
-                or review.checked_at_ms != now_ms
-                or review.history is not current
-            ):
-                raise SyntheticTriggerRejected(
-                    "freshness review output changed after authority checks"
-                )
             return review
         except BaseException:
             conn.rollback()
