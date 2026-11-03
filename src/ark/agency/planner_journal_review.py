@@ -129,6 +129,25 @@ class SyntheticPlanRecovery:
         return False
 
 
+def _retained_tail_epoch_stable(
+    tail: SyntheticPlanTail, original: tuple[object, ...],
+) -> bool:
+    """Reject equal-valued substitution of a retained evidence carrier.
+
+    These synthetic witnesses are never permission to dispatch or retry.
+    """
+    current = (
+        tail.topology_digest, tail.event_count, tail.event_hash,
+        tail.status_digest, tail.last_at_ms,
+    )
+    return (
+        current == original
+        and all(
+            value is prior for value, prior in zip(current, original, strict=True)
+        )
+    )
+
+
 def _snapshot(graph: PlanGraph, tail: SyntheticPlanTail) -> SyntheticPlanRecovery:
     states = graph.statuses()
     statuses = tuple(
@@ -512,7 +531,7 @@ class SyntheticPlanJournal:
             if (
                 retained.topology_digest, retained.event_count,
                 retained.event_hash, retained.status_digest, retained.last_at_ms,
-            ) != pinned:
+            ) != pinned or not _retained_tail_epoch_stable(retained, pinned):
                 raise SyntheticPlanJournalRejected(
                     "retained synthetic plan witness changed before recovery"
                 )
@@ -536,7 +555,9 @@ class SyntheticPlanJournal:
                         retained.topology_digest, retained.event_count,
                         retained.event_hash, retained.status_digest, retained.last_at_ms,
                     )
-                    if current != pinned:
+                    if current != pinned or not _retained_tail_epoch_stable(
+                        retained, pinned,
+                    ):
                         raise SyntheticPlanJournalRejected(
                             "retained synthetic plan witness changed during recovery"
                         )
@@ -547,6 +568,12 @@ class SyntheticPlanJournal:
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 conn.commit()
                 check_result()
+                if retained is not None and not _retained_tail_epoch_stable(
+                    retained, pinned,
+                ):
+                    raise SyntheticPlanJournalRejected(
+                        "retained synthetic plan witness changed after recovery"
+                    )
                 return result
             except BaseException:
                 conn.rollback()
@@ -585,7 +612,7 @@ class SyntheticPlanJournal:
             if (
                 retained.topology_digest, retained.event_count,
                 retained.event_hash, retained.status_digest, retained.last_at_ms,
-            ) != pinned:
+            ) != pinned or not _retained_tail_epoch_stable(retained, pinned):
                 raise SyntheticPlanJournalRejected(
                     "retained synthetic plan witness changed before append"
                 )
@@ -604,6 +631,7 @@ class SyntheticPlanJournal:
                     )
                     if (
                         current_retained != pinned
+                        or not _retained_tail_epoch_stable(retained, pinned)
                         or retained.event_count >= len(prefixes)
                         or prefixes[retained.event_count] != retained
                     ):
@@ -650,7 +678,7 @@ class SyntheticPlanJournal:
                     if (
                         retained.topology_digest, retained.event_count,
                         retained.event_hash, retained.status_digest, retained.last_at_ms,
-                    ) != pinned:
+                    ) != pinned or not _retained_tail_epoch_stable(retained, pinned):
                         raise SyntheticPlanJournalRejected(
                             "retained synthetic plan witness changed during append"
                         )
@@ -661,6 +689,13 @@ class SyntheticPlanJournal:
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 conn.commit()
                 check_result()
+                if retained is not None and not _retained_tail_epoch_stable(
+                    retained, pinned,
+                ):
+                    # A local event may already be durable; never auto-retry it.
+                    raise SyntheticPlanJournalRejected(
+                        "retained synthetic plan witness changed after append commit"
+                    )
                 return result
             except BaseException:
                 conn.rollback()
