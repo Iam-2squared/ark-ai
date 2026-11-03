@@ -86,7 +86,9 @@ def test_orphan_terminal_event_is_rejected(tmp_path):
     assert store.delete(record.memory_id, scope, expected_revision=1)
     with sqlite3.connect(store.path) as conn:
         conn.execute("DELETE FROM memory_events WHERE operation='create'")
-    with pytest.raises(MemoryEventAlignmentRejected, match="without active"):
+    # Both lifecycle and global append-only gap detection must fail closed.
+    # The earlier gap diagnostic may run before orphan lifecycle inspection.
+    with pytest.raises(MemoryEventAlignmentRejected, match="event ID gap|without active"):
         review_memory_event_alignment(store)
 
 
