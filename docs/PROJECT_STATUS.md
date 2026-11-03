@@ -1,5 +1,43 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run578 / 2026-11-03 JST: NON-UI ONLY. Three coherent packages: Memory generation CAS carrier-epoch validation, synthetic Planner recovery original-denial guard, and CI-observed V3 import-only regression correction. Ten newly authored pytest cases (Memory 3 + Planner 7), NOT independent local PASS. PR #5/#8/#9 Draft/unmerged, UI strictly paused, main unchanged; ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-03T19:58:05.686+09:00 Asia/Tokyo/JST**; untrusted wall-clock sample immediately before the normal GitHub Contents API checkpoint write. Not authenticated time, consent, human review, or spending authorization.
+
+## LATEST — authoritative branch/CI/checkpoint custody
+
+- **PR #8** [JARVIS foundations Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`: **invocation work-basis HEAD** `431bfda41d382264c240b801bc3991699fbdfc77`; CAS source `78465a7a556352aee819a6bab828b819f6583ca2`; CAS tests `4e02bb233155def9794cd618cabab56d75426c3b`; Planner recovery source `b80a77dd08615ceda92aa3abeff1daaeb3b83c77`; Planner tests `76785227cf0da1ff4cda8bacd8a93405e2bccc7e`, scoped callback test fix `64c89a9594ca1ca9b4691277805254abcf3bbae6`; evidence note `2bb07c3c4f6179a08adf473082a4d38c200db24d`; actual CI-observed test-import correction `87099eec5880f03805b2cf876db7d6581ba18085`. **Checkpoint write-basis HEAD** = `87099eec5880f03805b2cf876db7d6581ba18085`. A checkpoint cannot include its own result-commit SHA; record that from the normal Contents API write response and separately verify the branch HEAD/blob SHA.
+- **PR #5** [V3 Learning Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), branch `research/v3-learning-evaluation`: **invocation work-basis HEAD** `c9918484ba8917909c44d0749d1cea88c7d1f5bc`. Four correction-only commits `2c3941488cb26b78bf8d1b7aee888c983fa77343`, `b502675cfe0e38d77a2f5526fdb48d09ff142fe1`, `73033a20e84fe55912ad5e36ddc24214d1363840`, **current HEAD** `b5f62816e341ca13d434fbb5ee7099db6eb13a48` repair `tests/v3/test_passive_shape_oracle_original_run577.py` imports and blank separation to match Ruff I001's actual CI diffs; all protected V3 logic/Contract remains unchanged.
+- **PR #9** [completed UI foundation Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/9) **untouched** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **NO new UI/frontend source, tests, integration, or branch work**; existing Local UI freeze preserved. **main unchanged** `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+- **CI observed prior-head:** PR #8 checkpoint `431bfda...` [#41614983874](https://github.com/Iam-2squared/ark-ai/actions/runs/41614983874) **6/6 GREEN**. It does not prove the new source/tests.
+- **PR #8 new exact source/test HEAD** [#41623096862](https://github.com/Iam-2squared/ark-ai/actions/runs/41623096862) sampled **3/6 GREEN; 0/6 FAIL; 3/6 outstanding**; prior note-head [#41622893849](https://github.com/Iam-2squared/ark-ai/actions/runs/41622893849) **6/6 FAIL on test import Ruff I001**, repaired without changing tests' assertions. The checkpoint write will start another normal CI, whose exact-head result is not yet proven.
+- **PR #5 latest exact HEAD** [#41623278933](https://github.com/Iam-2squared/ark-ai/actions/runs/41623278933) sampled **4/6 GREEN; 0/6 FAIL; 2/6 outstanding**. Previous [#41615111987](https://github.com/Iam-2squared/ark-ai/actions/runs/41615111987), [#41622081901](https://github.com/Iam-2squared/ark-ai/actions/runs/41622081901), [#41622776020](https://github.com/Iam-2squared/ark-ai/actions/runs/41622776020), [#41622981876](https://github.com/Iam-2squared/ark-ai/actions/runs/41622981876) were **6/6 FAIL on Ruff I001**; the newest correction uses the last CI-suggested blank-line change. No test logic or frozen evaluation modified.
+- Counts **3 + 7 = 10** are authored pytest cases, **not** independent local pytest PASS. No physical PC, heavyweight model verification or external authorization performed.
+
+## NEW — Run578 evidence and limits
+
+1. **Memory** `src/ark/memory/generation_fenced_cas.py` rejects a reentrant synthetic-clock modification that substitutes a different-but-equal string carrier in an observed `MemoryGenerationCASToken`. The retained fields are now identity-checked through the local CAS write epoch; two negative rollback probes and one intact local update are written. This is not consent, source/writer authentication, trusted time or safe automatic retry after ambiguous COMMIT.
+2. **Planner** `src/ark/agency/planner_journal_review.py` pins the original result class and `dispatch_authorized`/`automatic_replay_authorized` False-only descriptor identities, refuses preinstalled substitutes before SQLite access, and rechecks during recovery receipt assembly. Four preinstalled, two reentrant, and one intact FAILED-state recovery cases. Synthetic journal remains disconnected/mock and non-authorizing.
+3. **V3** protected Contract and evaluation remain frozen. Only I001 import formatting was corrected in existing negative tests with actual CI failure evidence. No approval, training, model weight generation, Candidate, promotion, paid compute or protected V2 opening.
+4. [Run578 detailed technical note](https://github.com/Iam-2squared/ark-ai/blob/2bb07c3c4f6179a08adf473082a4d38c200db24d/docs/JARVIS_RUN578_NON_UI_CARRIER_RECOVERY_CI.md) records exact source/test commits, safety limits, and pre-fix evidence.
+
+## Frozen boundaries and authorization
+
+- **Verified unchanged blobs**: PR #8 Memory `src/ark/memory/contracts.py` = `b6e93821ecd69270a7634aceb20775dc36e9953c`; PR #8 Planner `src/ark/agency/contracts.py` = `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 `docs/v3/CONTRACT.md` = `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher freezes unchanged.
+- **No** paid or potentially billable API, external GPU/compute, new credentials or connections, real training/adapter/Candidate, protected V2 final evaluation, automatic promotion, live sensor/notifications/ToolBackend dispatch, irreversible effect, physical-PC action, or main merge. No duplicate workflows manually launched; only ordinary branch-commit CI.
+- Mock clocks/receipts and local hashes do not prove authentic consent, independent source identity, trusted time, privacy erasure, cross-store atomicity, real completion or permission to retry unknown WRITE. JARVIS and V3 remain **NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. **Complete exact-head CI** for PR #8 and #5 including this checkpoint; on FAIL inspect actual affected job logs and apply the smallest non-weakening correction through normal GitHub Contents API, then immediately use an independent non-UI lane while CI runs.
+2. **Memory:** extend generation CAS and delete/recreate ABA with independent retention, ambiguous COMMIT second-observer review, coherent expiry/revocation snapshots and privacy-safe deletion; preserve v1 schema and manual UNKNOWN quarantine.
+3. **Planner + authorization:** broaden restart-safe FAILED/BLOCKED chains, Registered READ evidence and immutable ToolRegistry identity; prove exact-type PermissionGate, durable audit-before-action, occurrence/replay guard and disconnected executor only after matching lower-level CI GREEN.
+4. Personal Context consent/retention, proactive scheduler duplicate prevention, observation/multimodal mock contracts, and V3 local-only identity/approval guard. **No UI work** until explicit user resumption; keep PR #5/#8/#9 Draft and main unchanged.
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run577 / 2026-11-03 JST: FOUR non-UI packages (Memory CAS, Planner crash-journal source identity, privacy-veto receipt custody, V3 unapproved syntax guard); 19 authored pytest cases (5 + 6 + 4 + 4). Normal GitHub safety-path writes only. CI-observed Planner legacy error-message regression and V3 Ruff I001 failures corrected; NEW final exact-head six-job GREEN NOT YET PROVEN. PR #5/#8/#9 remain Draft/unmerged; UI paused and PR #9 untouched; main unchanged. ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-03T18:55:35.137+09:00 Asia/Tokyo/JST**, untrusted wall-clock sample immediately before this checkpoint write; NOT authenticated trusted time or external service/spend authorization.
