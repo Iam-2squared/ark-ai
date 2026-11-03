@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency import planner_journal_review as journal_mod
+from ark.agency.contracts import PlanStep, StepState, ToolCall
 
 
 def _steps():
