@@ -42,16 +42,13 @@ def test_fresh_instance_noop_policy_cannot_authorize_registered_action(effect):
     registry, call, grants, token, backend = _case(effect)
     gate = PermissionGate()
     gate.authorize = lambda *_args, **_kwargs: None
-    if effect is Effect.READ:
-        # READ still executes the original exact-class policy independently.
-        allowed = gate.authorize_registered(registry, call, grants, now_ms=10)
-        assert allowed.call is call
-    else:
-        # A fresh WRITE cannot invent a newly consumed token.
-        with pytest.raises(PermissionDenied, match="local one-shot spend not observed"):
-            gate.authorize_registered(
-                registry, call, grants, now_ms=10, one_shot=token,
-            )
+    # Both READ and WRITE reject the instance shadow before even a
+    # synthetic registry authorization result is returned. No token spends.
+    with pytest.raises(PermissionDenied, match="implementation identity changed"):
+        gate.authorize_registered(
+            registry, call, grants, now_ms=10,
+            one_shot=token if effect is Effect.WRITE else None,
+        )
     assert gate._consumed_tokens == set()
     assert backend.calls == 0
 
@@ -78,7 +75,7 @@ def test_policy_shadow_installed_by_grant_iterator_is_rejected_before_spend():
         yield grants[0]
         gate.authorize = lambda *_args, **_kwargs: None
 
-    with pytest.raises(PermissionDenied, match="local one-shot spend not observed"):
+    with pytest.raises(PermissionDenied, match="implementation identity changed"):
         gate.authorize_registered(
             registry, call, redirecting_grants(), now_ms=10,
             one_shot=token,
@@ -91,7 +88,7 @@ def test_removing_instance_shadow_restores_original_policy_not_replay():
     registry, call, grants, token, backend = _case(Effect.WRITE)
     gate = PermissionGate()
     gate.authorize = lambda *_args, **_kwargs: None
-    with pytest.raises(PermissionDenied, match="local one-shot spend not observed"):
+    with pytest.raises(PermissionDenied, match="implementation identity changed"):
         gate.authorize_registered(
             registry, call, grants, now_ms=10, one_shot=token,
         )
