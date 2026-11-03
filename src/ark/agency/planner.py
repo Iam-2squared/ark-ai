@@ -321,8 +321,26 @@ class PlanGraph:
         # Advance the detached state epoch only after all affected statuses
         # have been committed in memory, including a terminal BLOCKED cascade.
         self._status_epoch = self._capture_status_epoch()
-        # Never expose the in-map status value to callers.
-        return replace(updated)
+        # Detaching the return value invokes a replace() callback after the
+        # in-memory state epoch was published. Recheck the authoritative
+        # graph and the returned carrier: no caller may observe a forged
+        # success while a reflected callback corrupted another step or
+        # changed the transition result. A rejection is NOT a rollback.
+        detached = replace(updated)
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        if (
+            type(detached) is not PlanStepStatus
+            or detached is updated
+            or detached.step_id != step_id
+            or detached.state is not to_state
+            or type(detached.revision) is not int
+            or detached.revision != expected_revision + 1
+        ):
+            raise PlanConflictError(
+                "plan transition result changed during final snapshot"
+            )
+        return detached
 
     def _pending_descendants(self, failed_step_id: str) -> tuple[str, ...]:
         """Preflight pending descendants in O(steps + edges), without mutation.
