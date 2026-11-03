@@ -73,6 +73,10 @@ class OfflineScheduleResumeReview:
         return False
 
 
+# Rebound result constructors are executable, so reject a substituted class
+# before any ledger read instead of trusting only denial-property identities.
+_RESULT_TYPE = OfflineScheduleResumeReview
+
 # Import-time denial descriptors: capturing them after a ledger/preview
 # callback would legitimize a replacement False getter as a new baseline.
 _ORIGINAL_QUARANTINE_DENIAL = QuarantineWitness.independently_authenticated
@@ -139,8 +143,8 @@ def review_offline_schedule_resume(
     def stable() -> None:
         # The final diagnostic result is denial-only. Pin original class
         # descriptors at import time, before any SQLite/preview callbacks.
-        if any(
-            getattr(OfflineScheduleResumeReview, name) is not original
+        if OfflineScheduleResumeReview is not _RESULT_TYPE or any(
+            getattr(_RESULT_TYPE, name) is not original
             for name, original in zip(
                 _DENIALS, _ORIGINAL_RESUME_DENIALS, strict=True,
             )
