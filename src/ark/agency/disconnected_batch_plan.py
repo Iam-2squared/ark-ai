@@ -57,6 +57,26 @@ class DisconnectedBatchPlan:
         return False
 
 
+_RESULT_TYPE = DisconnectedBatchPlan
+_DENIAL_FLAGS = (
+    "dispatch_authorized", "write_authorized",
+    "replay_authorized", "execution_proven",
+)
+_ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[flag] for flag in _DENIAL_FLAGS)
+
+
+def _assert_original_denials() -> None:
+    """Reject authority rebinding before parsing or verifying a detached plan."""
+    if (
+        DisconnectedBatchPlan is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(flag) is not original
+            for flag, original in zip(_DENIAL_FLAGS, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise DisconnectedBatchRejected("detached batch authority definition changed")
+
+
 def _unique_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
     output: dict[str, object] = {}
     for key, value in pairs:
@@ -200,6 +220,7 @@ def build_disconnected_batch_plan(
     request_id: str, steps: tuple[DisconnectedBatchStep, ...],
 ) -> DisconnectedBatchPlan:
     """Construct a bounded immutable PLAN, never execute any of its steps."""
+    _assert_original_denials()
     original_id = request_id
     original_steps = steps
     if type(steps) is not tuple:
@@ -224,6 +245,25 @@ def build_disconnected_batch_plan(
     ):
         raise DisconnectedBatchRejected("batch identity changed during construction")
     _epoch(steps, pinned, original_records)
+    # A false-valued property can still be a swapped callback; the exact
+    # original descriptors must remain installed before/after every read.
+    def stable_result() -> None:
+        _assert_original_denials()
+        if (
+            type(result) is not _RESULT_TYPE
+            or result.request_id is not original_id
+            or result.steps is not original_steps
+            or result.canonical_plan_json is not payload
+            or result.plan_digest is not digest
+        ):
+            raise DisconnectedBatchRejected("detached batch result changed")
+        _epoch(steps, pinned, original_records)
+
+    stable_result()
+    for flag in _DENIAL_FLAGS:
+        if getattr(result, flag) is not False:
+            raise DisconnectedBatchRejected("detached batch gained authority")
+        stable_result()
     return result
 
 
@@ -235,8 +275,9 @@ def verify_disconnected_batch_plan(
     An attacker able to rewrite both the plan and retained digest can still
     forge this check; the digest is not signed authorization or trusted storage.
     """
+    _assert_original_denials()
     if (
-        type(plan) is not DisconnectedBatchPlan
+        type(plan) is not _RESULT_TYPE
         or type(retained_digest) is not str or _SHA.fullmatch(retained_digest) is None
     ):
         raise DisconnectedBatchRejected("exact plan and retained digest required")
@@ -246,6 +287,7 @@ def verify_disconnected_batch_plan(
                    for s in original_records if type(s) is DisconnectedBatchStep)
 
     def check_epoch() -> None:
+        _assert_original_denials()
         if any(
             actual is not prior for actual, prior in zip(
                 (plan.request_id, plan.steps, plan.canonical_plan_json, plan.plan_digest),
@@ -267,3 +309,7 @@ def verify_disconnected_batch_plan(
     ):
         raise DisconnectedBatchRejected("detached batch integrity mismatch")
     check_epoch()
+    for flag in _DENIAL_FLAGS:
+        if getattr(plan, flag) is not False:
+            raise DisconnectedBatchRejected("detached batch gained authority")
+        check_epoch()
