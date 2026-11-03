@@ -134,5 +134,13 @@ def test_retained_source_carriers_cannot_mutate_inside_sha_callback(monkeypatch)
         return real(data)
 
     monkeypatch.setattr(bridge.hashlib, "sha256", mutate)
-    with pytest.raises(bridge.OfflineChunkIndexRejected):
-        search(b, query_digest="0" * 64)
+    with pytest.raises(
+        bridge.OfflineChunkIndexRejected, match="source evidence changed",
+    ):
+        search(b, query_digest=real(b"apple").hexdigest())
+
+
+@pytest.mark.parametrize("query", ("x" * 513, "🙂" * 129))
+def test_query_codepoint_and_utf8_byte_caps_precede_hashing(query):
+    with pytest.raises(bridge.OfflineChunkIndexRejected, match="bounded|byte budget"):
+        search(query=query)
