@@ -66,7 +66,7 @@ def test_reentrant_snapshot_replacement_refused_without_new_event(
 
     def changed_snapshot(graph, tail):
         result = original(graph, tail)
-        monkeypatch.setattr(
+        changes.setattr(
             journal_mod.SyntheticPlanRecovery,
             "automatic_replay_authorized", property(lambda _self: False),
         )
