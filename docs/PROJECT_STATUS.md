@@ -1,5 +1,42 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run583 / 2026-11-03 JST: THREE meaningful, FREE-ONLY NON-UI work packages: full-history Action Audit request-binding, original detached Planner schedule denial guards, and CI-observed PermissionGate test-expectation repair. 17 newly authored pytest cases (7 audit + 10 schedule), four existing policy cases corrected, technical evidence saved. CI for latest exact HEAD NOT YET GREEN/IN PROGRESS; older 4-case PermissionGate test failures diagnosed from logs and corrected without relaxing source policy. PR #5/#8/#9 Draft/unmerged, UI PAUSED, main unchanged; ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-03T23:26:22.581+09:00 Asia/Tokyo/JST**, ordinary host wall-clock sample immediately preceding the normal GitHub Contents API checkpoint operation; NOT an authenticated clock, reviewer, consent, or spending authorization.
+
+## LATEST — exact branch, custody, CI
+
+- **PR #8:** [JARVIS foundations Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. **Invocation work-basis HEAD** `726b3851210ba8231c04e39d015a96c63003415d`. **Checkpoint write-basis HEAD** `01df1f03504699a5e247cac1d0d8b4e7244fef61` (re-read before write, subject to a final concurrent HEAD check). The **checkpoint-result HEAD cannot be inserted in its own file**; obtain from the Contents API result and independently compare against latest branch HEAD and this file's blob SHA after writing. No force-push, raw Git write, or concurrent work overwrite.
+- **PR #5:** [V3 Learning Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5) head `805b377697472268db02650a89c7a94b1c5337c8`, unchanged this invocation; exact-head [CI #41634014158](https://github.com/Iam-2squared/ark-ai/actions/runs/41634014158) **6/6 GREEN**. Protected evaluation, training, Candidate and promotion remain blocked.
+- **PR #9:** [Command Center UI Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/9) unchanged `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **No UI/frontend source, test, polish, integration, branch write or merge.** Main unchanged `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+- **Earlier exact-head evidence:** PR #8 `5590b837a3664c03bf2d9b856392d87415820837` [CI #41639618730](https://github.com/Iam-2squared/ark-ai/actions/runs/41639618730) **all six Ubuntu/Windows Python 3.11–3.13 GREEN**; not a verdict on new Run583 code.
+- **This invocation:** [audit source #41652232702](https://github.com/Iam-2squared/ark-ai/actions/runs/41652232702), [audit tests #41652339873](https://github.com/Iam-2squared/ark-ai/actions/runs/41652339873); [schedule source #41652604759](https://github.com/Iam-2squared/ark-ai/actions/runs/41652604759), [schedule tests #41652719740](https://github.com/Iam-2squared/ark-ai/actions/runs/41652719740). Exact audit/schedule test HEADs reached pytest with Ruff success, but Ubuntu test jobs **FAIL** owing to the same four *existing* policy expected-denial assertions; source security rejection remained active. E.g. schedule-test HEAD Ubuntu 3.11/3.12: **7,593 PASS, 1 SKIP, 4 FAIL**. Repaired those expectations at `ff99f07984e597cd146af3b8fa273aa34a5ade88`; its [CI #41653031541](https://github.com/Iam-2squared/ark-ai/actions/runs/41653031541) **IN PROGRESS**, documentation [#41653310662](https://github.com/Iam-2squared/ark-ai/actions/runs/41653310662) **IN PROGRESS** at last independent six-job samples; the new checkpoint will trigger its own automatic CI. **Do not report latest exact-HEAD six-job GREEN before completion.** No manual duplicate workflow runs.
+- **17 newly authored cases** means Python pytest definitions committed to PR #8, **NOT independently executed local pytest PASS** or physical-PC measurements.
+
+## NEW — Run583 saved work
+
+1. **Audit full-history identity:** `src/ark/agency/audit_continuity_review.py` `31674af373fa2ecb4f9ade181feebd0587a7718e` now rejects individually well-shaped but mutually inconsistent historical `request_id`/tool/capability/scope/argument-digest rows, not just invalid latest tails. Recomputes original ToolCall v1 request ID. Seven new tests in `tests/test_audit_continuity_request_identity_run583.py` `df97a2f3581ee9eee727b543a8f4acb3e9ae44a1`. Does not authenticate a writer or raw argument content.
+2. **Detached schedule original denial descriptors:** `src/ark/agency/disconnected_batch_schedule.py` `17ea8981887342778307bc5377387655ee8dac9e` pins original class and all four denial descriptors at build/verification boundaries; preinstalled always-False substitutes are refused. Ten cases `tests/test_disconnected_schedule_original_denials_run583.py` `08515ab9a7951462659d5a602d525e25474fb162`. Pure DAG preview; no parallel tool actions, permission, or replay.
+3. **CI-log-rooted PermissionGate regression repair:** `tests/test_permission_instance_shadow_run582.py` `ff99f07984e597cd146af3b8fa273aa34a5ade88` aligns four old assertions with the original earlier fail-closed rejection of a shadowed `authorize` method. **No `policy.py` source/authorization weakening**.
+4. **Technical custody:** [Run583 evidence note](https://github.com/Iam-2squared/ark-ai/blob/01df1f03504699a5e247cac1d0d8b4e7244fef61/docs/JARVIS_RUN583_AUDIT_CONTINUITY_SCHEDULE_POLICY_CI.md), commit `01df1f03504699a5e247cac1d0d8b4e7244fef61`; includes hashes, CI sources and limitations.
+
+## Frozen evidence, blockers, and hard boundaries
+
+- Frozen blobs independently checked and **unchanged**: PR #8 Memory `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; PR #8 Planner `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher freezes preserved; protected V2 final evaluation unopened.
+- No payment/potentially billable action, external GPU, paid API/service, external compute or real trainer, Candidate adapter/weights generation or promotion, credentials or account connection, physical user-PC action, actual ToolBackend/notification, unapproved erasure, destructive/irreversible operation, contract mutation, main merge, or UI work.
+- Local SHA/SQLite/fault-fixture receipts cannot prove independent custody, trusted clock, writer/identity authentication, privacy consent, external exactly-once effects, or retry safety for unknown COMMIT outcomes. **ARK/JARVIS/V3 NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Confirm six-job exact latest-head CI after policy assertion repair and checkpoint. If any new FAIL, inspect actual CI logs, correct only minimally through the normal safe Contents API, then shift to a non-conflicting independent non-UI lane while CI runs. Do not launch duplicate equivalent CI.
+2. Durable registry-bound PermissionGate and audit-before-action occurrence/replay guards; restart-safe authorization denial, independently retained witnesses, Planner FAILED/BLOCKED persisted recovery and registered READ receipts. Do not infer user approval or real dispatch.
+3. Memory CAS/ABA expiry, row/event integrity, coherent snapshots and COMMIT-UNKNOWN dual-observer manual-only triage; privacy-safe Personal Context withdrawal/retention.
+4. Scheduler restart duplicate suppression, Observation contracts and offline fixture adapters; separate V3 free-only provenance/identity/reproducibility guard hardening. Keep Draft PRs unmerged, UI fully paused, protected gates frozen.
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run582 / 2026-11-03 JST: THREE meaningful free-only NON-UI packages (Action Audit persisted-tail identity, Personal Context restart retained-prefix verification, and PermissionGate instance-shadow token replay guard). 18 newly authored pytest cases (7+6+5), two source lanes plus the CI-grounded audit diagnostic repair, and one technical evidence note. CI for the latest HEAD remains IN PROGRESS/QUEUED; prior Run581 exact HEAD 6/6 GREEN. UI remains PAUSED; PR #5/#8/#9 Draft/unmerged; ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-03T23:00:20.861+09:00 Asia/Tokyo/JST**, ordinary host wall-clock sample immediately preceding this checkpoint Contents API write; not an authenticated clock, reviewer, or spending authorization.
