@@ -187,7 +187,7 @@ def test_mock_result_cannot_gain_external_authority(monkeypatch):
         DisconnectedToolResult, "external_outcome_known",
         property(lambda self: True),
     )
-    with pytest.raises(mod.DisconnectedFailureFixtureRejected, match="authority"):
+    with pytest.raises(mod.DisconnectedFailureFixtureRejected, match="rejected"):
         run(plan, schedule)
 
 
