@@ -22,6 +22,14 @@
 - The prior witness **must be retained separately** to help detect history replacement; a ledger-created hash is not independent custody, authenticated consent, revocation freshness, trusted time, or real-world exactly-once.
 - Source [CI #41647831330](https://github.com/Iam-2squared/ark-ai/actions/runs/41647831330) and tests [#41647945431](https://github.com/Iam-2squared/ark-ai/actions/runs/41647945431) had not received an exact-head six-job GREEN verdict at note preparation.
 
+
+## Package C: registry-bound PermissionGate instance-authority pin
+
+- Source `src/ark/agency/policy.py`, commit `5d889665cc6c2d311a9d798a939cbc58671cefaf` adds `inspect.getattr_static(self, "authorize")` identity validation against the original `PermissionGate.authorize` implementation before and during registry-bound policy decisions.
+- Tests `tests/test_permission_instance_shadow_run582.py`, commit `9ae52e46dced9eb7663b2a11d96719bc0a7398e3` add **5 authored cases** for shadowed READ/WRITE, already-consumed token replay laundering, mutation during grant iteration, and restored original policy. The prior logic checked only the class implementation and a token's presence in the consumed set; an instance-level no-op shadow could reuse that already-consumed token as supposed proof of a new spend.
+- The fix prevents the diagnostic from treating a previously spent process-local token as a newly spent one when an instance-level method is monkeypatched. No real external execution or durable authorization is created; process-local consumed tokens are **not** restart-safe approval.
+- Source [CI #41649101572](https://github.com/Iam-2squared/ark-ai/actions/runs/41649101572) and tests [CI #41649190513](https://github.com/Iam-2squared/ark-ai/actions/runs/41649190513) were not yet verified all-six GREEN when prepared.
+
 ## Frozen and next
 
 - Independently fetched unchanged blobs: Memory `src/ark/memory/contracts.py` `b6e93821ecd69270a7634aceb20775dc36e9953c`; Agency `src/ark/agency/contracts.py` `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; V3 `docs/v3/CONTRACT.md` `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`.
