@@ -115,24 +115,22 @@ def test_equal_carrier_replacement_while_waiting_for_spend_lock_does_not_spend()
     assert gate._consumed_tokens == {"one-shot"}
 
 
-def test_equal_carrier_swap_after_local_spend_never_returns_registered_binding(
-    monkeypatch,
-):
+def test_equal_carrier_swap_after_local_spend_never_returns_registered_binding():
     gate, registry, _spec, call, grant, token = _fixture()
-    original = gate.authorize
 
-    def changed(*args, **kwargs):
-        result = original(*args, **kwargs)
-        object.__setattr__(grant, "scope", _clone(grant.scope))
-        return result
+    class MutateGrantAfterOriginalSpend(set):
+        def add(self, value):
+            # Fault injection occurs at the original policy's real token
+            # spend, not through an instance-shadowed authorize method.
+            super().add(value)
+            object.__setattr__(grant, "scope", _clone(grant.scope))
 
-    monkeypatch.setattr(gate, "authorize", changed)
+    gate._consumed_tokens = MutateGrantAfterOriginalSpend()
     with pytest.raises(PermissionDenied, match="registered grant identity changed"):
         gate.authorize_registered(
             registry, call, (grant,), now_ms=10, one_shot=token,
         )
-    # A process-local token already spent before a post-spend denial remains
-    # consumed. No failed action is retried automatically.
+    # The spend happened before post-spend carrier drift; never retry.
     assert gate._consumed_tokens == {"one-shot"}
 
 
