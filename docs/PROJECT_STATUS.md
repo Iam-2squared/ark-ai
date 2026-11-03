@@ -1,5 +1,48 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run587 / 2026-11-04 JST: THREE meaningful FREE-ONLY NON-UI implementation+test packages saved on Draft PR #8: (1) capacity fence preventing synthetic WRITE reservation overflow, (2) gap detection in append-only Action Audit history, and (3) global gap detection in Memory v1 row/event reconciliation. Three source edits, three new test files, 11 authored parameter-expanded pytest cases, one technical note. Last prior checkpoint CI 6/6 GREEN; Run587 exact-head six-job CI NOT YET GREEN/UNVERIFIED. PR #5/#8/#9 remain Draft/unmerged, UI PAUSED, main and frozen contracts unchanged. ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-04T02:55:54.729+09:00 Asia/Tokyo/JST**, ordinary untrusted host wall-clock sample before the normal GitHub Contents API write; not time attestation, human consent, or spending approval.
+
+## LATEST — exact branch custody and CI
+
+- **PR #8 [JARVIS foundations](https://github.com/Iam-2squared/ark-ai/pull/8):** Draft/unmerged branch `research/jarvis-foundations`. **Invocation work-basis HEAD** `6ec28349af19472fe1c9710bbaced47c802c8ee2`, exact-head [CI #41679111260](https://github.com/Iam-2squared/ark-ai/actions/runs/41679111260) **6/6 GREEN** on Ubuntu/Windows Python 3.11–3.13 *before* all Run587 changes. **Checkpoint write-basis HEAD** `e7ff17d6ea3903953fa8dbcd5cfc40cb4e43a1c8`, re-read immediately before this update. The **checkpoint-result commit SHA cannot be embedded in this same file**; take it from the normal Contents API response and independently confirm branch HEAD and saved file blob SHA. No force push or raw-object safety bypass.
+- **Run587 substantive source/test HEAD** `f3c47056c42e0b7c275bd09e5a4f77c2273c0f0d`; **technical note HEAD** `e7ff17d6ea3903953fa8dbcd5cfc40cb4e43a1c8`. This checkpoint is a necessary metadata addition to saved source and tests, not checkpoint-only work.
+- **Run587 automatic CI (as observed before checkpoint write):**
+  - [#41687671865](https://github.com/Iam-2squared/ark-ai/actions/runs/41687671865), HEAD `a2f620433605c1af02863499c3df118ee07ea169`: **IN_PROGRESS**, Ubuntu 3/3 GREEN at first job snapshot, Windows running.
+  - [#41687756389](https://github.com/Iam-2squared/ark-ai/actions/runs/41687756389), HEAD `9074ab2144edbfc7bec538874b61542f1c6f88bd`: **IN_PROGRESS**, Ubuntu 3/3 GREEN at first job snapshot, Windows running.
+  - [#41688161642](https://github.com/Iam-2squared/ark-ai/actions/runs/41688161642), HEAD `0af2850733eeeb5c58abf852a3bf1e2d8d82b041`: **IN_PROGRESS**, final result not sampled.
+  - [#41688205764](https://github.com/Iam-2squared/ark-ai/actions/runs/41688205764), HEAD `310ae5ea9cd08b22f794384806d38c321743a382`: **IN_PROGRESS**, final result not sampled.
+  - [#41688329175](https://github.com/Iam-2squared/ark-ai/actions/runs/41688329175), HEAD `d8452194754ab399a3575ef73c25699d2e1dda7f`: **IN_PROGRESS**, final result not sampled.
+  - [#41688388174](https://github.com/Iam-2squared/ark-ai/actions/runs/41688388174), HEAD `f3c47056c42e0b7c275bd09e5a4f77c2273c0f0d`: **QUEUED/NOT GREEN**, substantive latest source+test state.
+  - [#41688606346](https://github.com/Iam-2squared/ark-ai/actions/runs/41688606346), HEAD `e7ff17d6ea3903953fa8dbcd5cfc40cb4e43a1c8`: **QUEUED/NOT GREEN**, technical note head.
+- **PR #5 [V3 Learning](https://github.com/Iam-2squared/ark-ai/pull/5):** Draft/unmerged HEAD `805b377697472268db02650a89c7a94b1c5337c8` unchanged, earlier exact-head [CI #41634014158](https://github.com/Iam-2squared/ark-ai/actions/runs/41634014158) 6/6 GREEN. Protected V2 evaluation, Candidate creation, real training, external compute and promotion remain blocked.
+- **PR #9 [Next Generation UI](https://github.com/Iam-2squared/ark-ai/pull/9):** Draft/unmerged HEAD `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` unchanged. **All new frontend/UI features, tests, polish and integration remain paused.** Main HEAD `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged.
+
+## NEW — Run587 saved source/tests and engineering evidence
+
+1. **Atomic bound on synthetic occurrence ledger:** `src/ark/agency/durable_occurrence_review.py` blob `f855571a9ef1d381cef086a0495cb3ecba92d5c2`. Under SQLite `BEGIN IMMEDIATE`, reject inserts at `_MAX_FIXTURE_ROWS` before exceeding the bound accepted by the next read/startup validator. This prevents a valid reservation from stranding the ledger at row 10,001. `tests/test_synthetic_occurrence_capacity_run587.py` blob `c46324b5e549542e7de694eb069aa46eb37e5c05`: **3 authored tests**, including competing writers at the last capacity slot and restart-safe denial.
+2. **Audit event-ID gap diagnostic:** `src/ark/agency/audit_continuity_review.py` blob `92399ac82b69d882a1736c5ae8f21a4d52d6af70`. Full-genesis read-only continuity review requires exact consecutive IDs, rather than accepting a missing first/middle event absent a retained prefix. `tests/test_audit_history_gap_run587.py` blob `2f9b9e5fcfbe0013b97e301e2e9f7df6d93b8b5e`: **4 parameter-expanded tests**.
+3. **Memory global event-ID gap diagnostic:** `src/ark/memory/sqlite_event_alignment.py` blob `20b119c5d8024d596c6cda3aace625816459e3d2`. A row/event pair deleted from the middle of the complete multi-scope v1 history must not silently produce a plausible smaller archive. `tests/test_memory_global_event_gap_run587.py` blob `ddc9de903011ae8bd419cd8942bc5b77d3a5707e`: **4 parameter-expanded tests**. Frozen Memory DDL/contract unchanged.
+4. **Technical evidence:** [Run587 note](https://github.com/Iam-2squared/ark-ai/blob/e7ff17d6ea3903953fa8dbcd5cfc40cb4e43a1c8/docs/JARVIS_RUN587_NON_UI_LEDGER_CAPACITY_AUDIT_MEMORY_GAPS.md). All new tests are **authored definitions**, NOT 11 independent local pytest PASS. This invocation has no independent local full-repository test environment. The exact final six-job CI remains pending. No manual equivalent workflow runs launched.
+
+## Frozen contracts, blockers and safety
+
+- Independently verified PR #8 Memory `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`, Planner `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`, and PR #5 `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. All unchanged; V1/V2/Local UI/Launcher frozen evidence untouched.
+- **No** billable compute/API/service, external GPU, real Candidate/adapter generation, paid or local model training, protected V2 final evaluation opening, auto-promotion, new credential/account, physical-PC action, destructive modification, main merge, UI development, real notification, consent assertion, or live ToolBackend execution.
+- Gap checks detect missing IDs within an append-only prefix, but do not attest an external actor, trusted clock, whole-DB replacement, tamper that coherently renumbers IDs, or suffix truncation without a retained independent witness. The reservation ledger has no authenticated issuer and does NOT authorize effects or prove exactly-once external execution. **ARK/JARVIS/V3 NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Confirm PR #8 **exact-head** Ubuntu/Windows 6-job CI, including source+test HEAD and newest checkpoint. If any FAIL, inspect actual job logs, repair the smallest error without weakening fail-closed semantics, and switch to an independent non-UI lane while CI runs. No duplicate workflow launches.
+2. Bind restart-safe immutable ToolRegistry identity and exact PermissionGate subject to a durable audit-before-action occurrence/replay fence; reconcile interrupted/unknown outcome strictly manually; no live backend dispatch.
+3. Extend Memory row/event/CAS/expiry/COMMIT-UNKNOWN witness integrity and Planner persisted FAILED/BLOCKED recovery, with independently retained prefix and recheck to detect suffix deletion.
+4. Advance privacy-safe Personal Context revocation/retention, proactive scheduler durable deduplication, observation fixture contracts, and strictly free V3 provenance/authorization/identity guards. Keep frozen evidence, UI pause, and all Draft PRs unmerged.
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run586 / 2026-11-04 JST: THREE meaningful FREE-ONLY NON-UI packages protecting original deny-only authority descriptors and return-carrier identity for synthetic cross-store epoch vectors, registered READ preflight, and retained SQLite READ receipts. Three source modules and three new test files saved; 14 new pytest definitions / 37 parametrized cases. One older READ-recheck test expectation repaired after actual CI FAIL exposed stronger early fail-closed denial. Exact final six-job CI NOT YET GREEN; earlier Run585 checkpoint 6/6 GREEN. PR #5/#8/#9 Draft/unmerged, UI PAUSED, main unchanged; ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-04T01:55:22.375+09:00 Asia/Tokyo/JST**, ordinary untrusted host wall-clock sampling immediately before normal GitHub Contents API checkpoint write. Not trusted time, verified identity, consent or spending approval.
