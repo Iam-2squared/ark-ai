@@ -186,7 +186,7 @@ def test_fixture_result_cannot_gain_external_authority(monkeypatch):
     monkeypatch.setattr(DisconnectedToolResult, "external_outcome_known", property(
         lambda self: True,
     ))
-    with pytest.raises(mod.DisconnectedBatchCycleRejected, match="authority"):
+    with pytest.raises(mod.DisconnectedBatchCycleRejected, match="rejected"):
         cycle(plan, schedule)
 
 
