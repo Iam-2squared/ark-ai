@@ -17,6 +17,7 @@ from . import offline_transcript_binding as binding_module
 _ACTIVITY_VERIFY = activity_module.verify_activity_regions
 _TRANSCRIPT_REVIEW = binding_module.review_audio_transcript_binding
 _ACTIVITY_TYPE = activity_module.ActivityRegions
+_REGION_TYPE = activity_module.ActivityRegion
 _AUDIO_TYPE = binding_module.AudioMetadataClaim
 _SEGMENT_TYPE = binding_module.TranscriptSegmentClaim
 _PREVIEW_TYPE = binding_module.TranscriptBindingPreview
@@ -110,6 +111,17 @@ def review_offline_activity_transcript_overlap(
         audio.owner_sha256, audio.scope_sha256, audio.audio_sha256,
         audio.sample_rate_hz, audio.frame_count,
     )
+    # Retain every nested region's exact carrier and fields, not just the
+    # immutable outer tuple. Frozen dataclasses can be reflected through
+    # object.__setattr__, including during independent verifier callbacks.
+    if type(activity_fields[5]) is not tuple or any(
+        type(region) is not _REGION_TYPE for region in activity_fields[5]
+    ):
+        raise OfflineAlignmentRejected("exact activity region carriers required")
+    region_epoch = tuple((
+        region, region.start_frame, region.end_frame, region.start_sample,
+        region.end_sample, region.active_frames,
+    ) for region in activity_fields[5])
     segments_epoch = tuple((
         item, item.start_frame, item.end_frame, item.language,
         item.text_sha256, item.text,
@@ -124,6 +136,7 @@ def review_offline_activity_transcript_overlap(
             activity_module.verify_activity_regions is not _ACTIVITY_VERIFY
             or binding_module.review_audio_transcript_binding is not _TRANSCRIPT_REVIEW
             or activity_module.ActivityRegions is not _ACTIVITY_TYPE
+            or activity_module.ActivityRegion is not _REGION_TYPE
             or binding_module.AudioMetadataClaim is not _AUDIO_TYPE
             or binding_module.TranscriptSegmentClaim is not _SEGMENT_TYPE
             or binding_module.TranscriptBindingPreview is not _PREVIEW_TYPE
@@ -144,6 +157,18 @@ def review_offline_activity_transcript_overlap(
                 activity.source_sha256, activity.sample_rate, activity.frame_samples,
                 activity.total_samples, activity.active_frame_count, activity.regions,
             ), activity_fields, strict=True))
+            or type(activity.regions) is not tuple
+            or len(activity.regions) != len(region_epoch)
+            or any(
+                type(activity.regions[i]) is not _REGION_TYPE
+                or activity.regions[i] is not pinned[0]
+                or any(now is not old for now, old in zip((
+                    pinned[0].start_frame, pinned[0].end_frame,
+                    pinned[0].start_sample, pinned[0].end_sample,
+                    pinned[0].active_frames,
+                ), pinned[1:], strict=True))
+                for i, pinned in enumerate(region_epoch)
+            )
             or any(now is not old for now, old in zip((
                 audio.owner_sha256, audio.scope_sha256, audio.audio_sha256,
                 audio.sample_rate_hz, audio.frame_count,
