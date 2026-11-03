@@ -63,7 +63,7 @@ def test_same_value_record_ids_carrier_replacement_is_rejected(monkeypatch):
         return result
 
     monkeypatch.setattr(preview, "OfflineContextPreview", replace_ids)
-    with pytest.raises(preview.OfflineContextPreviewRejected, match="constructed"):
+    with pytest.raises(preview.OfflineContextPreviewRejected, match="authority definition changed"):
         _build((_item(1, "fixture"),))
 
 
@@ -79,5 +79,5 @@ def test_preview_can_never_claim_disclosure_or_retention_rights(
         preview.OfflineContextPreview, property_name,
         property(lambda self: True),
     )
-    with pytest.raises(preview.OfflineContextPreviewRejected, match="constructed"):
+    with pytest.raises(preview.OfflineContextPreviewRejected, match="authority definition changed"):
         _build((_item(1, "fixture"),))
