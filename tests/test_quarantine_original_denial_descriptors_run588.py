@@ -21,7 +21,6 @@ from ark.disconnected_schedule_quarantine_ledger import (
     genesis_quarantine_witness,
 )
 
-
 _FLAGS = (
     "execution_authorized",
     "notification_authorized",
