@@ -110,5 +110,5 @@ def test_local_context_cannot_return_forged_export_result(monkeypatch):
     monkeypatch.setattr(context, "OfflineContextPreview", fake_type(
         "owner_digest", "record_ids", "canonical_local_json", "local_digest",
     ))
-    with pytest.raises(context.OfflineContextPreviewRejected, match="constructed"):
+    with pytest.raises(context.OfflineContextPreviewRejected, match="authority definition changed"):
         preview()
