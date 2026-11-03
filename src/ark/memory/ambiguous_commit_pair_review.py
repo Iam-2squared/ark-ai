@@ -138,6 +138,12 @@ def review_memory_ambiguous_commit_pair(
             ))
             or dict(proposed.metadata) != metadata
             or _token_fields(retained) != token_fields
+            or any(
+                current is not original
+                for current, original in zip(
+                    _token_fields(retained), token_fields, strict=True,
+                )
+            )
         ):
             raise MemoryAmbiguityPairRejected("Memory triage input epoch changed")
 
