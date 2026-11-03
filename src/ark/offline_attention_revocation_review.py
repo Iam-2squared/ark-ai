@@ -14,8 +14,8 @@ import json
 import re
 from dataclasses import dataclass
 
-from . import proactive_attention_preview as attention
 from . import personal_context_revocation_continuity_review as continuity
+from . import proactive_attention_preview as attention
 from .personal_context_revocation_review import SyntheticContextRevocationLedger
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
