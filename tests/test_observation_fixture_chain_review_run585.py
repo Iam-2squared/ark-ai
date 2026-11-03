@@ -75,7 +75,9 @@ def test_batch_rejects_non_exact_or_unbounded_input():
         with pytest.raises(
             review.ObservationFixtureChainRejected, match="exact bounded",
         ):
-            _inspect(rows)
+            review.review_disconnected_fixture_chain(
+                rows, source_id="fixture", privacy_scope="local:private",
+            )
 
 
 def test_reflective_field_change_during_chain_digest_fails(monkeypatch):
@@ -98,6 +100,7 @@ def test_reflective_field_change_during_chain_digest_fails(monkeypatch):
 def test_premonkeypatched_authority_descriptor_fails_before_hash(
     monkeypatch, name,
 ):
+    fixtures = _chain()
     monkeypatch.setattr(
         review.DisconnectedObservationChainReview,
         name, property(lambda _: False),
@@ -110,7 +113,7 @@ def test_premonkeypatched_authority_descriptor_fails_before_hash(
     with pytest.raises(
         review.ObservationFixtureChainRejected, match="implementation changed",
     ):
-        _inspect(_chain())
+        _inspect(fixtures)
 
 
 def test_result_denial_callback_cannot_retarget_digest(monkeypatch):
