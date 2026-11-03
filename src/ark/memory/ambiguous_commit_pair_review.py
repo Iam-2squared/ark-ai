@@ -268,7 +268,9 @@ def review_memory_ambiguous_commit_pair(
     # These are not authenticated writer receipts or retry permission.
     result = _RESULT(*first, digest)
     expected = (*first, digest)
-    for name in _DENIALS:
+
+    def assert_result_epoch() -> None:
+        stable()
         if (
             type(result) is not _RESULT
             or any(now is not previous for now, previous in zip(
@@ -279,8 +281,17 @@ def review_memory_ambiguous_commit_pair(
                     result.reconciliation_sha256,
                 ), expected, strict=True,
             ))
-            or getattr(result, name) is not False
         ):
+            raise MemoryAmbiguityPairRejected(
+                "Memory reconciliation result changed during denial review"
+            )
+
+    assert_result_epoch()
+    for name in _DENIALS:
+        if getattr(result, name) is not False:
             raise MemoryAmbiguityPairRejected("Memory reconciliation gained authority")
-        stable()
+        # A False-only getter is another synthetic callback boundary. In
+        # particular the LAST getter must not retarget a detached receipt
+        # after its final precheck and silently return an invented witness.
+        assert_result_epoch()
     return result
