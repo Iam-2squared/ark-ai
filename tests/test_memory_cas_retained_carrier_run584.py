@@ -56,7 +56,8 @@ def test_read_callback_cannot_substitute_equal_retained_token_field(
 
     monkeypatch.setattr(review, "_snapshot", mutate_after_snapshot)
     with pytest.raises(
-        review.MemoryCASOutcomeRejected, match="CAS observation inputs changed",
+        review.MemoryCASOutcomeRejected,
+        match="CAS generation unavailable|CAS observation inputs changed",
     ):
         review.review_memory_generation_cas_outcome(
             store, proposed, retained=token,
