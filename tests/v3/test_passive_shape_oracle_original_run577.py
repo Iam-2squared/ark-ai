@@ -11,8 +11,10 @@ from pathlib import Path
 
 import pytest
 
-from ark.learning import offline_readiness_transition as transition
-from ark.learning import offline_snapshot_shape_review as shape
+from ark.learning import (
+    offline_readiness_transition as transition,
+    offline_snapshot_shape_review as shape,
+)
 
 
 _TEMPLATE = (
