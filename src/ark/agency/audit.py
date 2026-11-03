@@ -239,6 +239,17 @@ class SQLiteActionAudit:
                 ORDER BY event_id LIMIT ?""",
                 (after_event_id, limit),
             ).fetchall()
+            # A paged read must compare the first returned timestamp against
+            # its persisted predecessor, not only against later page entries.
+            # Keep both queries in the same SQLite read transaction.
+            predecessor = (
+                conn.execute(
+                    "SELECT occurred_at_ms FROM action_events "
+                    "WHERE event_id<=? ORDER BY event_id DESC LIMIT 1",
+                    (after_event_id,),
+                ).fetchone()
+                if after_event_id else None
+            )
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit source changed during read")
         # Read persisted rows without SQLite's permissive Python coercions.
@@ -246,6 +257,11 @@ class SQLiteActionAudit:
         # or bind back to plaintext arguments that are deliberately not stored.
         result: list[ActionAuditEvent] = []
         previous_id = after_event_id
+        previous_clock = predecessor[0] if predecessor is not None else None
+        if previous_clock is not None and (
+            type(previous_clock) is not int or previous_clock < 0
+        ):
+            raise ActionAuditSchemaError("audit preceding clock is malformed")
         for row in rows:
             event_id = row["event_id"]
             occurred = row["occurred_at_ms"]
@@ -254,6 +270,9 @@ class SQLiteActionAudit:
             previous_id = event_id
             if type(occurred) is not int or occurred < 0:
                 raise ActionAuditSchemaError("audit clock must be a non-negative INTEGER")
+            if previous_clock is not None and occurred < previous_clock:
+                raise ActionAuditSchemaError("audit stored clocks regressed")
+            previous_clock = occurred
             fields = ("request_id", "tool", "capability", "scope", "arguments_sha256", "outcome")
             values = [row[column] for column in fields]
             if any(type(value) is not str or not value.strip() for value in values):
