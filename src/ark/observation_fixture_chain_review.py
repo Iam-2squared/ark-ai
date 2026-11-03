@@ -2,8 +2,9 @@
 
 This optional reviewer does not acquire, persist, retain, or disclose media.
 It proves only in-memory structural consistency of a *closed* synthetic chain:
-the first envelope has no parent, and each subsequent envelope names the
-immediately previous content digest. Other DAGs are not rejected by the
+the first envelope has no parent, each subsequent envelope names the
+immediately previous content digest, and content digests are unique so parent
+references are unambiguous. Other DAGs are not rejected by the
 underlying ObservationEnvelope contract; they are outside this review mode.
 """
 
@@ -133,6 +134,7 @@ def review_disconnected_fixture_chain(
             )
 
     observation_ids: list[str] = []
+    seen_digests: set[str] = set()
     previous_digest: str | None = None
     previous_ms = -1
     for row, witness in zip(envelopes, fields, strict=True):
@@ -152,6 +154,14 @@ def review_disconnected_fixture_chain(
             raise ObservationFixtureChainRejected(
                 "fixture chain provenance, parent or chronology mismatch"
             )
+        # Each digest must resolve to precisely one position in the closed
+        # linear chain. Repeated content digests would make a later parent
+        # reference ambiguous (and can form a content-hash self-cycle).
+        if digest in seen_digests:
+            raise ObservationFixtureChainRejected(
+                "fixture chain repeats a content digest"
+            )
+        seen_digests.add(digest)
         identity = _ORIGINAL_ID.fget(row)
         assert_epoch()
         if type(identity) is not str or not identity.startswith("obs_"):
