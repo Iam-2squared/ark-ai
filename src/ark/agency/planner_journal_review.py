@@ -245,9 +245,13 @@ class SyntheticPlanJournal:
     """Bounded fixture journal: atomic event+tail, replay-only recovery."""
 
     def __init__(self, path: Path, steps: tuple[PlanStep, ...]) -> None:
-        if not isinstance(path, Path):
+        if type(path) is not type(Path()):
             raise TypeError("synthetic plan path must be an exact pathlib.Path")
         self._path = path
+        # An instance-held path may be replaced *before* recover/append starts.
+        # Keep the original carrier, not just a value-equal string, so a
+        # retargeted journal never opens or writes another SQLite database.
+        self._source_path_epoch = path
         self._steps = steps
         initial = PlanGraph(steps)
         with closing(self._connect(create=True)) as conn:
@@ -280,7 +284,17 @@ class SyntheticPlanJournal:
                 conn.rollback()
                 raise
 
+    def _assert_source_path(self) -> None:
+        if (
+            type(self._path) is not type(Path())
+            or self._path is not self._source_path_epoch
+        ):
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan source identity changed"
+            )
+
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        self._assert_source_path()
         # Only explicit journal initialization is allowed to create a file.
         # Appending to a missing/moved initialized journal must not silently
         # materialize a fresh empty SQLite database.
@@ -443,8 +457,7 @@ class SyntheticPlanJournal:
         No step is dispatched, and RUNNING is ambiguous rather than retried.
         """
         path_epoch = self._path
-        if not isinstance(path_epoch, Path):
-            raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
+        self._assert_source_path()
         # Pin an independent witness before the first reentrant topology
         # hash or witness-shape callback; never silently accept a new prefix.
         pinned = None
@@ -515,8 +528,7 @@ class SyntheticPlanJournal:
         # write transaction as the new transition. Never use a separate
         # preflight read as an authority for this append.
         path_epoch = self._path
-        if not isinstance(path_epoch, Path):
-            raise SyntheticPlanJournalRejected("synthetic plan source must be a Path")
+        self._assert_source_path()
         # Capture original retained evidence before any topology/shape
         # callback or tentative SQLite event append.
         pinned = None
