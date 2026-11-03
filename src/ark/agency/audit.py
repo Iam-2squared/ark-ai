@@ -123,6 +123,35 @@ def _validate_tail_identity(row: sqlite3.Row) -> int:
 
 
 
+def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
+    """Refuse append after local audit event loss, including deleted tails.
+
+    The AUTOINCREMENT high-water mark is only a local consistency signal:
+    it is not authenticated history and can itself be rewritten by an actor
+    with SQLite write access. No audit deletion/compaction is part of v1.
+    Keep this check in the SAME BEGIN IMMEDIATE transaction as the append.
+    """
+    count, first, last = conn.execute(
+        "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM action_events"
+    ).fetchone()
+    sequence = conn.execute(
+        "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
+    ).fetchone()
+    if type(count) is not int or count < 0:
+        raise ActionAuditSchemaError("audit persisted event sequence is malformed")
+    if count == 0:
+        if sequence is not None:
+            raise ActionAuditSchemaError("audit append-only history was truncated")
+    elif (
+        type(first) is not int or first != 1
+        or type(last) is not int or last != count
+        or sequence is None or type(sequence[0]) is not int
+        or sequence[0] != last
+    ):
+        raise ActionAuditSchemaError("audit append-only event ID gap or tail loss")
+
+
+
 class SQLiteActionAudit:
     def __init__(self, path: str | Path, *, clock_ms: Callable[[], int] | None = None) -> None:
         self.path = Path(path)
@@ -186,6 +215,7 @@ class SQLiteActionAudit:
             if type(version) is not int or version != SCHEMA_VERSION:
                 raise ActionAuditSchemaError("action audit schema version changed before append")
             _validate_v1_schema(conn)
+            _require_dense_committed_audit_sequence(conn)
             now = self._now()
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed during clock")
