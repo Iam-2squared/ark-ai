@@ -14,8 +14,8 @@ from dataclasses import dataclass
 
 from . import proactive_attention_preview as attention
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-detached-attention-prefix-v1\\0"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-detached-attention-prefix-v1\0"
 _PREVIEW = attention.preview_proactive_attention
 _POLICY = attention.AttentionBudgetPolicy
 _MARKER = attention.SyntheticSurfaceMarker
