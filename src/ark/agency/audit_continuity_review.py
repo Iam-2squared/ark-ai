@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .audit import SQLiteActionAudit, _validate_v1_schema
-from .contracts import ActionAuditSchemaError
+from .contracts import ActionAuditSchemaError, _canonical_json
 
 _GENESIS = hashlib.sha256(b"ark-synthetic-action-audit-v1").digest()
 _HEX = re.compile(r"[0-9a-f]{64}")
@@ -57,6 +57,20 @@ def _row_payload(row: sqlite3.Row, *, previous_id: int) -> tuple[int, bytes]:
         or _HEX.fullmatch(values["arguments_sha256"]) is None
     ):
         raise ActionAuditSchemaError("audit event digest identity is invalid")
+    # All stored identity fields must agree with the original ToolCall
+    # request digest, not merely have individually plausible syntax.
+    # The v1 audit schema retains no raw arguments, so this is an
+    # internal consistency check, never writer authentication or consent.
+    expected_id = "act_" + hashlib.sha256(_canonical_json({
+        "arguments_sha256": values["arguments_sha256"],
+        "capability": values["capability"],
+        "scope": values["scope"],
+        "tool": values["tool"],
+    })).hexdigest()
+    if values["request_id"] != expected_id:
+        raise ActionAuditSchemaError(
+            "audit continuity request identity is inconsistent"
+        )
     payload = {
         "event_id": event_id,
         "occurred_at_ms": occurred,
