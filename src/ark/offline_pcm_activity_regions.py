@@ -112,6 +112,21 @@ def detect_activity_regions(
     )
 
 
+# Exact original detector and DTO classes are essential: a swapped detector
+# can return the caller's forged report and make the comparison tautological.
+_ORIGINAL_DETECT_ACTIVITY_REGIONS = detect_activity_regions
+_ORIGINAL_ACTIVITY_REGIONS_TYPE = ActivityRegions
+_ORIGINAL_ACTIVITY_REGION_TYPE = ActivityRegion
+
+
+def _assert_original_activity_verifier() -> None:
+    if (
+        detect_activity_regions is not _ORIGINAL_DETECT_ACTIVITY_REGIONS
+        or ActivityRegions is not _ORIGINAL_ACTIVITY_REGIONS_TYPE
+        or ActivityRegion is not _ORIGINAL_ACTIVITY_REGION_TYPE
+    ):
+        raise OfflineActivityRejected("original activity verifier replaced")
+
 
 def verify_activity_regions(
     report: ActivityRegions,
@@ -132,6 +147,7 @@ def verify_activity_regions(
     Passing parameters copied from an untrusted report does NOT establish an
     independent identity or threshold boundary.
     """
+    _assert_original_activity_verifier()
     if type(report) is not ActivityRegions or type(report.regions) is not tuple:
         raise OfflineActivityRejected("exact detached activity report required")
     fields = (
@@ -156,6 +172,9 @@ def verify_activity_regions(
         rms_threshold=rms_threshold, bridge_silence_frames=bridge_silence_frames,
         min_active_frames=min_active_frames, max_regions=max_regions,
     )
+    _assert_original_activity_verifier()
+    if type(reference) is not _ORIGINAL_ACTIVITY_REGIONS_TYPE:
+        raise OfflineActivityRejected("detached detector result type changed")
     observed = (
         report.source_sha256, report.sample_rate, report.frame_samples,
         report.total_samples, report.active_frame_count, report.regions,
@@ -190,3 +209,4 @@ def verify_activity_regions(
         ), fields, strict=True,
     )):
         raise OfflineActivityRejected("detached activity report changed during verification")
+    _assert_original_activity_verifier()
