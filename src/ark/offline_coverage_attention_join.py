@@ -162,7 +162,8 @@ def review_detached_coverage_attention(
             raise DetachedCoverageAttentionRejected("detached join evidence changed")
 
     stable()
-    observation, transcript, total, covered, lead, middle, tail, ppm, runs, longest, digest = carrier
+    (observation, transcript, total, covered, lead, middle,
+     tail, ppm, runs, longest, digest) = carrier
     if (
         not all(type(x) is str and _SHA.fullmatch(x) is not None
                 for x in (observation, transcript, digest))
