@@ -1,5 +1,41 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run591 / 2026-11-04 JST: TWO FREE-ONLY NON-UI source+regression packages on Draft PR #8. The Action Audit append path now rejects SQLite event-first/middle/tail loss before extending a local audit ledger. The independent Memory v1 read-only reconciler now rejects suffix deletion or damaged AUTOINCREMENT high-water marks even when surviving rows and events are internally coherent. 2 source edits + 2 new regression files, 11 authored parameter-expanded cases, one technical evidence note. Full six-job exact-head CI remains subject to the job results below; no UI work. PR #5/#8/#9 Draft/unmerged; ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** **2026-11-04T06:52:13.262+09:00 Asia/Tokyo/JST** — ordinary current process wall-clock sampling before the normal GitHub Contents API write, NOT attested trusted time, consent, payment approval or human review.
+
+## LATEST — branch custody and new work
+
+- **PR #8:** [Draft JARVIS foundations](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. **Invocation work-basis HEAD** `8b8f37a8261b264448000dcf9d5beb31ec1146dd`. **Checkpoint write-basis HEAD** `7cc413bc50c2034c3638bc2e64977a348cc0dafc`, re-read before this write. **Checkpoint-result HEAD is minted by the API update and cannot truthfully be embedded within this same blob**; inspect the API response and independently re-read HEAD + file SHA afterward. No force push, raw-object bypass or main merge.
+- **Package A — Action Audit append-only admission:** source `src/ark/agency/audit.py` commit `554f6fc49753c0833d968481361c556a4a26d9a5`; `tests/test_action_audit_append_sequence_run591.py` commit `e25061a759b5402e34d88925dc84d31ed6b96db5` with **six authored cases**. A single `BEGIN IMMEDIATE` transaction now checks `COUNT/MIN/MAX(event_id)` against `sqlite_sequence` before a new event is appended. Missing first/middle/tail events or a wiped journal cannot be silently continued as a complete history. No external tool/backend operation.
+- **Package B — Memory v1 suffix-loss review:** source `src/ark/memory/sqlite_event_alignment.py` commit `6d8044c5af94a8ae196e00a98300ed4397e2c178`; `tests/test_memory_event_high_water_run591.py` commit `b57a076306d6c62428e781cce5f7385ba350dc1d` with **five authored cases**. Read-only row/event lifecycle reconciliation now detects locally deleted event suffixes or corrupted `sqlite_sequence` within the same SQLite snapshot. No frozen DDL changes, no deletion claims.
+- **Technical evidence:** [Run591 local event-loss guard and tests](https://github.com/Iam-2squared/ark-ai/blob/7cc413bc50c2034c3638bc2e64977a348cc0dafc/docs/JARVIS_RUN591_NON_UI_AUDIT_MEMORY_AUTOINCREMENT_CUSTODY.md), note commit `7cc413bc50c2034c3638bc2e64977a348cc0dafc`. **11** means authored parameter-expanded regression cases, not a claimed independent local pytest PASS. No complete local-repository Python test environment; GitHub Actions is the actual test gate.
+
+### Exact source/test/technical note CI sampled before checkpoint
+
+- [CI #41724289504](https://github.com/Iam-2squared/ark-ai/actions/runs/41724289504): **IN PROGRESS** (5/6 jobs SUCCESS as sampled; do not treat incomplete as exact-head GREEN).
+- [CI #41724375903](https://github.com/Iam-2squared/ark-ai/actions/runs/41724375903): **IN PROGRESS** (3/6 jobs SUCCESS as sampled; do not treat incomplete as exact-head GREEN).
+- [CI #41724520389](https://github.com/Iam-2squared/ark-ai/actions/runs/41724520389): **IN PROGRESS** (3/6 jobs SUCCESS as sampled; do not treat incomplete as exact-head GREEN).
+- [CI #41724604653](https://github.com/Iam-2squared/ark-ai/actions/runs/41724604653): **IN PROGRESS** (3/6 jobs SUCCESS as sampled; do not treat incomplete as exact-head GREEN).
+- [CI #41725241153](https://github.com/Iam-2squared/ark-ai/actions/runs/41725241153): **IN PROGRESS** (1/6 jobs SUCCESS as sampled; do not treat incomplete as exact-head GREEN).
+
+- [Earlier baseline CI #41716782114](https://github.com/Iam-2squared/ark-ai/actions/runs/41716782114) at pre-work HEAD `8b8f37a8261b264448000dcf9d5beb31ec1146dd`: **COMPLETED / six Ubuntu/Windows Python 3.11–3.13 jobs SUCCESS**, not proof of new changes. No equivalent manual workflow reruns.
+- **PR #5:** [V3 Learning Draft](https://github.com/Iam-2squared/ark-ai/pull/5) HEAD `805b377697472268db02650a89c7a94b1c5337c8` unchanged. **PR #9:** [Next UI Draft, PAUSED](https://github.com/Iam-2squared/ark-ai/pull/9) HEAD `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` untouched. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged.
+- **Frozen blobs verified unchanged:** PR #8 Memory contract `b6e93821ecd69270a7634aceb20775dc36e9953c`; Planner contract `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`; PR #5 V3 Contract 1 `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher freezes not edited.
+
+## Safety limits, blockers, Next plan / 今後の方針
+
+- SQLite `sqlite_sequence` is **mutable local metadata, not independent custody or authenticated history**. Coherent row/event/sequence rewriting, external actor identity, signed provenance, user consent, trusted wall-clock, cross-store atomicity, unknown COMMIT effects and real-world exactly-once execution remain unproven. Never automatically replay UNKNOWN actions.
+- **No** paid/potentially billable API/GPU/compute/subscription, external paid service, new credentials/accounts, Candidate/adapter/weight generation or promotion, protected V2 evaluation opening, real ToolBackend, notification, hardware PC actions, irreversible operation, frozen-contract change, PR merge or UI/frontend source/test/integration changes. PR #5/#8/#9 remain Draft.
+- **1.** Check latest exact-head six-matrix CI and correct real failures with minimal fail-closed source/test changes via the normal allowed GitHub path; do not duplicate run launches.
+- **2.** Advance independently retained Memory generation CAS/expiry/COMMIT-UNKNOWN recovery and Planner persisted FAILED/BLOCKED restart semantics under exact-head evidence.
+- **3.** Bind immutable ToolRegistry identities and exact-type PermissionGate to durable one-shot audit-before-action and occurrence/replay quarantine; executor stays disconnected/mock pending real integration proof.
+- **4.** Continue Personal Context privacy/revocation, proactive scheduler duplicate prevention, offline Observation contracts, and free-only V3 identity/path/provenance gates without UI or protected evaluation work. **ARK/JARVIS/V3: NOT_PASSED.**
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run590 / 2026-11-04 JST: THREE FREE-ONLY NON-UI source+test work packages saved on Draft PR #8: (1) proactive retained-witness preflight pinning against reentrant source/receipt/policy drift; (2) closed Observation result fields bound to validated inputs rather than mutable constructor outputs; (3) privacy revocation SQLite capacity admission under BEGIN IMMEDIATE. 3 source modules, 3 new regression files with 17 authored parameter-expanded cases, Ruff import-order repair following observed CI FAIL, and one source-grounded technical note. Latest exact-head full six-job CI is NOT YET CONFIRMED GREEN. UI PAUSED; PR #5/#8/#9 Draft/unmerged; ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-04T05:53:45.231+09:00 Asia/Tokyo/JST**, ordinary host wall-clock sampling immediately before the normal GitHub Contents API write; NOT an attested trusted time, human approval or billing authorization.
