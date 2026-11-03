@@ -149,6 +149,26 @@ class SQLiteActionAudit:
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed during clock")
             assert_action_epoch("during clock")
+            # Audit-before-action requires chronological continuity across
+            # process restarts, not merely a well-shaped current wall-time.
+            # Read the last committed clock inside the SAME SQLite writer
+            # transaction; an earlier, newer timestamp must never be
+            # silently followed by a rollback in the evidence chain.
+            previous_clock = conn.execute(
+                "SELECT occurred_at_ms FROM action_events "
+                "ORDER BY event_id DESC LIMIT 1"
+            ).fetchone()
+            if previous_clock is not None and (
+                type(previous_clock[0]) is not int
+                or previous_clock[0] < 0
+                or now < previous_clock[0]
+            ):
+                raise ActionAuditSchemaError(
+                    "audit clock regressed relative to persisted events"
+                )
+            if self.path is not path_epoch:
+                raise ActionAuditSchemaError("action audit path changed during clock review")
+            assert_action_epoch("after clock review")
             cursor = conn.execute(
                 """INSERT INTO action_events(
                     request_id,tool,capability,scope,arguments_sha256,outcome,occurred_at_ms
