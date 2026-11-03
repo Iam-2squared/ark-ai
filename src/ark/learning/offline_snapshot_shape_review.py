@@ -109,7 +109,7 @@ def _plausible_shape(path: str, value: object) -> bool:
     if path == "budget.max_cost_jpy":
         return (
             type(value) in (int, float) and math.isfinite(value)
-            and 0 <= value <= 1_000_000_000
+            and 0 < value <= 1_000_000_000
         )
     if path == "budget.wall_clock_timeout_minutes":
         return type(value) is int and 1 <= value <= 525_600
@@ -235,7 +235,7 @@ def review_unapproved_v3_snapshot_shapes(
         alias = snapshot["tokenizer"]["revision"]
         base = snapshot["base"]["revision"]
         count += 1
-        if alias == "SAME_AS_BASE":
+        if type(alias) is str and alias == "SAME_AS_BASE":
             if type(base) is str and base in _PLACEHOLDERS:
                 unresolved.add("tokenizer.revision")
             elif not _plausible_shape("base.revision", base):
