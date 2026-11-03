@@ -328,6 +328,24 @@ def review_recovered_registered_reads(
                     "registered child witness disagrees"
                 )
             stable()
+            # The child denial getters are callbacks. A callback returning
+            # False may still rewrite the receipt hash *after* its first
+            # digest comparison. Never commit that unverified value to the
+            # parent recovery join.
+            if (
+                type(child) is not _CHILD
+                or (
+                    child.step_id, child.plan_digest, child.schedule_digest,
+                    child.wave_index, child.action_request_id,
+                    child.fixture_request_id, child.link_sha256,
+                    child.journal_count, child.journal_tip_sha256,
+                ) != child_fields
+                or type(child.review_sha256) is not str
+                or child.review_sha256 != _digest(_CHILD_DOMAIN, child_fields)
+            ):
+                raise RecoveredRegisteredReadRejected(
+                    "registered child changed during denial callbacks"
+                )
             joined.append((
                 step_id, child.action_request_id,
                 child.fixture_request_id, child.review_sha256,
