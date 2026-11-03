@@ -38,7 +38,7 @@ def test_false_authority_callback_cannot_substitute_numeric_type(
         mod.OfflineContextMembershipReview, "trusted_clock_verified",
         property(mutate),
     )
-    with pytest.raises(mod.OfflineContextAdmissionRejected, match="review mutated"):
+    with pytest.raises(mod.OfflineContextAdmissionRejected, match="original Context authority"):
         _admission()
 
 
@@ -52,7 +52,7 @@ def test_constructor_must_not_return_bool_as_count(monkeypatch, field):
         return result
 
     monkeypatch.setattr(mod, "OfflineContextMembershipReview", forged_constructor)
-    with pytest.raises(mod.OfflineContextAdmissionRejected, match="review mutated"):
+    with pytest.raises(mod.OfflineContextAdmissionRejected, match="original Context authority"):
         _admission()
 
 
@@ -87,6 +87,6 @@ def test_last_false_denial_cannot_replace_an_earlier_authority_descriptor(
         original, "trusted_clock_verified", property(change_previous_descriptor),
     )
     with pytest.raises(
-        mod.OfflineContextAdmissionRejected, match="authority descriptor changed",
+        mod.OfflineContextAdmissionRejected, match="original Context authority",
     ):
         _admission()
