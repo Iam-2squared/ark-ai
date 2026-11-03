@@ -146,6 +146,16 @@ def review_memory_ambiguous_commit_pair(
         try:
             first = _TRIAGE_FN(store, proposed, retained_before=retained)
             stable()
+            if type(first) is not _TRIAGE:
+                raise MemoryAmbiguityPairRejected("invalid Memory triage result type")
+            # The second reviewer is a callback boundary. Retain the first
+            # child BEFORE invoking it, not after it may have rewritten the
+            # first (reflectively mutable) frozen dataclass.
+            triage_epoch = (
+                first.memory_id, first.retained_event_id, first.observed_event_id,
+                first.retained_prefix_sha256, first.observed_prefix_sha256,
+                first.disposition, first.report_sha256,
+            )
             second = _OUTCOME_FN(store, proposed, retained=retained)
             stable()
         except (
@@ -155,15 +165,71 @@ def review_memory_ambiguous_commit_pair(
             raise MemoryAmbiguityPairRejected(
                 "read-only Memory reviewers rejected an ambiguous generation"
             ) from exc
-        if type(first) is not _TRIAGE or type(second) is not _OUTCOME:
-            raise MemoryAmbiguityPairRejected("invalid Memory reviewer result type")
+        if type(second) is not _OUTCOME:
+            raise MemoryAmbiguityPairRejected("invalid Memory outcome result type")
+        outcome_epoch = (
+            second.observation, second.retained_prefix_sha256,
+            second.observed_prefix_sha256, second.observed_row_sha256,
+            second.expected_content_sha256, second.review_sha256,
+        )
+
+        def stable_children() -> None:
+            if (
+                type(first) is not _TRIAGE or type(second) is not _OUTCOME
+                or any(current is not original for current, original in zip(
+                    (
+                        first.memory_id, first.retained_event_id,
+                        first.observed_event_id, first.retained_prefix_sha256,
+                        first.observed_prefix_sha256, first.disposition,
+                        first.report_sha256,
+                    ), triage_epoch, strict=True,
+                ))
+                or any(current is not original for current, original in zip(
+                    (
+                        second.observation, second.retained_prefix_sha256,
+                        second.observed_prefix_sha256, second.observed_row_sha256,
+                        second.expected_content_sha256, second.review_sha256,
+                    ), outcome_epoch, strict=True,
+                ))
+            ):
+                raise MemoryAmbiguityPairRejected(
+                    "Memory child receipt changed across review callbacks"
+                )
+            stable()
+
+        stable_children()
+        # Independent receipt recomputation rejects a syntactically valid
+        # but invented child SHA, even if a wrapper replaced it BEFORE return.
+        # These are untrusted local hashes, NOT authenticated writer receipts.
+        triage_payload = triage_epoch[:-1]
+        if (
+            triage_epoch[0] != token_fields[0]
+            or type(triage_epoch[1]) is not int
+            or type(triage_epoch[2]) is not int
+            or triage_epoch[1] != token_fields[2]
+            or triage_epoch[2] < triage_epoch[1]
+            or triage_epoch[-1] != triage_module._digest(
+                triage_module._DOMAIN, triage_payload,
+            )
+        ):
+            raise MemoryAmbiguityPairRejected("Memory triage child digest mismatch")
+        outcome_payload = outcome_epoch[:-1]
+        expected_outcome_sha = hashlib.sha256(
+            outcome_module._DOMAIN + json.dumps(
+                outcome_payload, separators=(",", ":"),
+                ensure_ascii=True, allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest()
+        if outcome_epoch[-1] != expected_outcome_sha:
+            raise MemoryAmbiguityPairRejected("Memory outcome child digest mismatch")
+        stable_children()
         for report, names in (
             (first, _TRIAGE_DENIALS), (second, _OUTCOME_DENIALS),
         ):
             for name in names:
                 if getattr(report, name) is not False:
                     raise MemoryAmbiguityPairRejected("Memory reviewer gained authority")
-                stable()
+                stable_children()
         pair = (first.disposition, second.observation)
         if pair not in _DISPOSITIONS:
             raise MemoryAmbiguityPairRejected(
@@ -188,7 +254,7 @@ def review_memory_ambiguous_commit_pair(
             for value in values[1:]
         ):
             raise MemoryAmbiguityPairRejected("invalid Memory evidence digest")
-        stable()
+        stable_children()
         return values
 
     first = read_once()
