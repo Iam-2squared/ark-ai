@@ -81,6 +81,19 @@ class QuarantineReceipt:
         return False
 
 
+# Capture denial-only descriptors before any caller-supplied callback can
+# replace them with plausible False-returning getters. An unchanged False
+# return value alone is not proof of original authority semantics.
+_ORIGINAL_RECEIPT_DENIALS = (
+    ("execution_authorized", QuarantineReceipt.execution_authorized),
+    ("notification_authorized", QuarantineReceipt.notification_authorized),
+    ("automatic_replay_authorized", QuarantineReceipt.automatic_replay_authorized),
+    ("trusted_clock_verified", QuarantineReceipt.trusted_clock_verified),
+    ("consent_verified", QuarantineReceipt.consent_verified),
+)
+_ORIGINAL_WITNESS_DENIAL = QuarantineWitness.independently_authenticated
+
+
 def _digest(payload: tuple[object, ...]) -> str:
     data = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("ascii")
     return hashlib.sha256(_DOMAIN + data).hexdigest()
@@ -432,4 +445,26 @@ class DisconnectedScheduleQuarantineLedger:
             )
         ):
             raise ScheduleQuarantineRejected("post-commit quarantine changed at return")
+        # A preinstalled false-valued property replacement would survive the
+        # snapshot of descriptors above; compare with import-time originals.
+        # The ledger records quarantine only and must never return an
+        # authenticated witness or grant dispatch/notification authority.
+        if (
+            type(receipt) is not QuarantineReceipt
+            or type(receipt.witness) is not QuarantineWitness
+            or any(
+                getattr(QuarantineReceipt, key) is not original
+                for key, original in _ORIGINAL_RECEIPT_DENIALS
+            )
+            or QuarantineWitness.independently_authenticated
+            is not _ORIGINAL_WITNESS_DENIAL
+        ):
+            raise ScheduleQuarantineRejected(
+                "post-commit quarantine original denial descriptor changed"
+            )
+        if receipt.witness.independently_authenticated is not False:
+            raise ScheduleQuarantineRejected(
+                "post-commit quarantine witness gained authentication"
+            )
+        stable()
         return receipt
