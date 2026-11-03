@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ARK — JARVIS Workspace Preview</title>
+<style>
+:root{font-family:Inter,"Segoe UI","Yu Gothic UI",system-ui,sans-serif;color:#e6edf4;background:#080e18;--line:#263344;--muted:#9aabc0;--a:#63c9ef}
+*{box-sizing:border-box}body{margin:0}button,textarea{font:inherit}button{cursor:pointer}button:focus-visible,textarea:focus-visible{outline:2px solid var(--a);outline-offset:3px}
+.shell{min-height:100vh;display:grid;grid-template-columns:238px minmax(0,1fr) 285px}
+aside{padding:24px 18px;background:#0b1522;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
+.brand{font-size:25px;font-weight:750;letter-spacing:.18em}.brand small{display:block;font-size:9px;letter-spacing:.22em;color:var(--muted);margin-top:3px}
+.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid #365066;border-radius:50px;padding:6px 10px;color:#9ed9ef;font-size:11px;width:max-content}
+.dot{width:7px;height:7px;border-radius:50%;background:#70c9a5}.nav{display:grid;gap:7px;margin-top:20px}
+.nav button{border:1px solid transparent;border-radius:9px;background:transparent;color:#a9bacb;padding:12px;text-align:left}
+.nav button.active{background:#152b40;color:#f0f8ff;border-color:#284e69}
+.sidebar-bottom{margin-top:auto;color:var(--muted);font-size:11px;line-height:1.8}
+main{min-width:0;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 0%,#15283e 0%,#0a111c 52%,#080e18 100%)}
+header{padding:22px 30px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);gap:12px}
+header strong{font-size:17px}header span{font-size:11px;color:var(--muted)}
+.view{padding:26px 32px;max-width:1100px;width:100%;margin:0 auto;flex:1}
+.eyebrow{font-size:10px;letter-spacing:.22em;color:#6fb8d5;text-transform:uppercase}
+h1{font-size:clamp(26px,4vw,43px);letter-spacing:-.04em;margin:8px 0 8px;font-weight:650}
+.sub{color:var(--muted);line-height:1.7;margin:0 0 25px;font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:22px 0}
+.card{border:1px solid var(--line);border-radius:13px;background:#111e2eaf;padding:18px}
+.card small{display:block;color:var(--muted);font-size:11px}.card strong{font-size:23px;display:block;margin:8px 0}
+.card p{font-size:11px;color:#a4b5c7;margin:0;line-height:1.6}
+.chat{border:1px solid var(--line);border-radius:15px;background:#0d1826;min-height:280px;display:flex;flex-direction:column;overflow:hidden}
+.chat-head{padding:15px 19px;border-bottom:1px solid var(--line);font-size:12px;color:#b9d8ea}
+.messages{padding:20px;display:flex;flex-direction:column;gap:13px;flex:1;min-height:160px;max-height:360px;overflow-y:auto}
+.msg{max-width:85%;padding:12px 15px;border-radius:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.ark{background:#162a3c;align-self:flex-start}.msg.user{background:#214b61;align-self:flex-end}
+.compose{padding:14px;border-top:1px solid var(--line);display:flex;gap:10px}
+textarea{resize:vertical;min-height:44px;max-height:140px;flex:1;background:#111f30;border:1px solid #32475b;border-radius:9px;padding:11px;color:#f3f8fc}
+.primary{border:0;background:#74d2ee;color:#06202e;border-radius:9px;padding:0 19px;font-weight:700}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.right{border-left:1px solid var(--line);background:#0c1624;padding:24px 19px;display:flex;flex-direction:column;gap:15px}
+.right h2{font-size:13px;margin:4px 0 0}.metric{border:1px solid var(--line);border-radius:12px;padding:14px;background:#101d2c}
+.metric b{display:block;font-size:12px;margin-bottom:7px}.metric p{font-size:11px;color:var(--muted);line-height:1.65;margin:0}
+.tag{font-size:10px;color:#e6b876}.divider{height:1px;background:var(--line);margin:4px 0}
+.section{display:none}.section.active{display:block}.hint{font-size:11px;color:var(--muted);margin-top:12px}
+.demo{color:#e9bd79;border-color:#665032}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.secondary{background:#13283a;border:1px solid #36516b;color:#cbe7f7;border-radius:8px;padding:10px 13px;font-size:12px}
+ul{padding-left:19px;color:#b4c3d2;line-height:2;font-size:13px}
+@media(max-width:1100px){.shell{grid-template-columns:205px minmax(0,1fr)}.right{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr)}} 
+@media(max-width:650px){.shell{display:block}aside{padding:16px;gap:10px}.brand{font-size:20px}.nav{display:flex;overflow-x:auto;margin:0}.nav button{white-space:nowrap;padding:9px}.sidebar-bottom{display:none}.view{padding:19px 15px}header{padding:15px}.cards{grid-template-columns:1fr}.right{display:block}.right .metric{margin:10px 0}.compose{flex-wrap:wrap}.primary{min-height:42px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand">ARK <small>PERSONAL INTELLIGENCE</small></div>
+<div class="pill demo">● UI PROTOTYPE / DEMO</div>
+<nav class="nav" aria-label="ワークスペース">
+<button class="active" data-view="home">⌂　Overview</button>
+<button data-view="conversation">◉　Conversation</button>
+<button data-view="memory">▤　Memory</button>
+<button data-view="tasks">◇　Tasks</button>
+<button data-view="tools">⚙　Tools</button>
+<button data-view="settings">☷　Settings</button>
+</nav>
+<div class="sidebar-bottom">ARK WORKSPACE / CONCEPT 01<br>Offline preview · no backend connection</div>
+</aside>
+<main>
+<header><strong id="heading">Overview</strong><span>LOCAL-FIRST INTERFACE · DEMO ONLY</span></header>
+<div class="view">
+<section class="section active" id="home">
+<div class="eyebrow">ARK / Command Center</div><h1>あなたのAIを、ひとつの場所に。</h1>
+<p class="sub">会話、記憶、計画、ツールを統合する将来のARK操作画面。現在はUI操作のみを確認する独立プレビューです。</p>
+<div class="cards"><div class="card"><small>CORE</small><strong>READY*</strong><p>V1/V2の正式PASSを示す開発上の参考表示。実行状態は未取得。</p></div><div class="card"><small>MEMORY</small><strong>PREVIEW</strong><p>記憶の検索・整理画面を先行設計。</p></div><div class="card"><small>AGENT</small><strong>MOCK</strong><p>計画・権限・監査の実行UIを準備。</p></div></div>
+<div class="chat"><div class="chat-head">◉ ARK CONVERSATION <span class="tag"> · DEMO MODE</span></div><div class="messages" id="messages" aria-live="polite"><div class="msg ark">ARK UIプレビューへようこそ。ここで送信した文章はローカル画面上に表示されるだけで、AIモデルには送信されません。</div></div><form class="compose" id="chat-form"><textarea id="prompt" aria-label="メッセージ" placeholder="ARKに話しかける…（デモ）"></textarea><button class="primary" type="submit">送信</button></form></div>
+<div class="hint">* READYは実モデルの起動確認ではありません。会話・メモリ・実行結果は保存も外部送信もしません。</div>
+</section>
+<section class="section" id="conversation"><div class="eyebrow">Conversation</div><h1>会話</h1><p class="sub">チャットUIはOverviewのデモで操作できます。実際の会話には既存のARK Local UIを使用します。</p><button class="secondary" data-go="home">チャットプレビューを開く</button></section>
+<section class="section" id="memory"><div class="eyebrow">Knowledge</div><h1>Memory</h1><p class="sub">記憶の検索・カテゴリ・削除確認のための画面。実データは読み込みません。</p><div class="card"><small>COMING IN INTEGRATION</small><strong>0 items</strong><p>未接続。記憶の件数ではなく、画面に読み込まれた件数です。</p></div></section>
+<section class="section" id="tasks"><div class="eyebrow">Agent Planning</div><h1>Tasks</h1><p class="sub">計画、進行状況、失敗時の確認を一覧する将来のワークスペース。</p><div class="card"><small>NO ACTIVE TASKS IN PREVIEW</small><strong>—</strong><p>実行・再試行・スケジュール登録は行いません。</p></div></section>
+<section class="section" id="tools"><div class="eyebrow">Capabilities</div><h1>Tools & Permissions</h1><p class="sub">登録Tool、READ/WRITE権限、操作監査を可視化するためのUI。</p><div class="card"><small>SAFETY FIRST</small><strong>LOCKED</strong><p>このプレビューから外部ToolやPCを操作することはできません。</p></div></section>
+<section class="section" id="settings"><div class="eyebrow">Preferences</div><h1>Settings</h1><p class="sub">実バックエンド接続前のUI設定。</p><div class="actions"><button class="secondary" id="clear-chat">デモ会話をリセット</button></div><p class="hint">設定変更はこのページ内だけに適用されます。ブラウザを更新するとデモ会話は初期化されます。</p></section>
+</div>
+</main>
+<div class="right">
+<h2>SYSTEM OVERVIEW</h2>
+<div class="metric"><b>Runtime</b><p>Not connected<br><span class="tag">● DEMO / NO MODEL</span></p></div>
+<div class="metric"><b>Capabilities</b><p>Local Core · PASS (project record)<br>Memory · UI only<br>Planner · UI only<br>Actions · disabled</p></div>
+<div class="metric"><b>Privacy & Security</b><p>No network requests, no storage, no microphone/camera, no tool dispatch.</p></div>
+<div class="divider"></div><div class="hint">将来はここにモデル名、Context、実際の推論状態、Tool許可履歴、CPU/RAMなどを表示する設計。</div>
+</div>
+</div>
+<script>
+"use strict";
+const buttons=[...document.querySelectorAll("[data-view]")];
+function show(id){if(!document.getElementById(id))return;document.querySelectorAll(".section").forEach(s=>s.classList.toggle("active",s.id===id));buttons.forEach(b=>b.classList.toggle("active",b.dataset.view===id));document.getElementById("heading").textContent=({home:"Overview",conversation:"Conversation",memory:"Memory",tasks:"Tasks",tools:"Tools",settings:"Settings"})[id];}
+buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
+const messages=document.getElementById("messages"),prompt=document.getElementById("prompt");
+function addMessage(text,who){const el=document.createElement("div");el.className="msg "+who;el.textContent=text;messages.append(el);messages.scrollTop=messages.scrollHeight;}
+document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const value=prompt.value.trim();if(!value)return;addMessage(value,"user");prompt.value="";addMessage("これはUIデモです。実際のARKモデルには接続されていません。","ark");});
+prompt.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();document.getElementById("chat-form").requestSubmit();}});
+document.getElementById("clear-chat").addEventListener("click",()=>{messages.replaceChildren();addMessage("デモ会話をリセットしました。","ark");show("home");});
+</script>
+</body></html>
