@@ -140,7 +140,7 @@ def _independent_shape_paths(mapping: dict) -> tuple[tuple[str, ...], tuple[str,
                 invalid.add(path)
     alias = mapping["tokenizer"]["revision"]
     base = mapping["base"]["revision"]
-    if alias == "SAME_AS_BASE":
+    if type(alias) is str and alias == "SAME_AS_BASE":
         if type(base) is str and base in _PLACEHOLDERS:
             unresolved.add("tokenizer.revision")
         elif not _plausible_shape("base.revision", base):
