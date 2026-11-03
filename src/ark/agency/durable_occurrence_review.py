@@ -64,6 +64,20 @@ class SyntheticReservationReceipt:
 # Preserve the exact inert receipt class even if a synthetic fault fixture
 # replaces the exported constructor after the SQLite reservation has committed.
 _RECEIPT_CLASS = SyntheticReservationReceipt
+_RECEIPT_DENIALS = ("dispatch_authorized", "outcome_known", "automatic_replay_authorized")
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_CLASS)[name] for name in _RECEIPT_DENIALS
+)
+
+
+def _assert_receipt_denials() -> None:
+    """Never treat a mutable diagnostic property as real action authority."""
+    if any(
+        vars(_RECEIPT_CLASS).get(name) is not original
+        for name, original in zip(_RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True)
+    ):
+        raise SyntheticReplayRejected("synthetic receipt authority descriptor changed")
+
 
 
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
@@ -169,6 +183,9 @@ class SyntheticOccurrenceStore:
             raise SyntheticReplayRejected("invalid synthetic reservation timestamp")
         if type(occurrence_id) is not str or not _OCCURRENCE.fullmatch(occurrence_id):
             raise SyntheticReplayRejected("invalid synthetic occurrence identity")
+        # Denial properties are import-time invariants, not callbacks that a
+        # registry/SQLite fixture may replace with even an always-False getter.
+        _assert_receipt_denials()
         # Pin the initialized source before any caller-supplied registry work.
         # A reflected equal-value Path replacement is a different review epoch.
         path_epoch = self._path
@@ -188,6 +205,7 @@ class SyntheticOccurrenceStore:
         )
 
         def assert_input_epoch() -> None:
+            _assert_receipt_denials()
             # Preserve established fail-closed provenance diagnostics, so
             # source vs token changes remain distinguishable in durable tests.
             if self._path is not path_epoch:
@@ -316,6 +334,27 @@ class SyntheticOccurrenceStore:
             raise SyntheticReplayRejected(
                 "synthetic receipt identity changed after reservation commit"
             )
+        # A frozen receipt can still expose patched class properties. Never
+        # hand a caller an apparently authorized synthetic reservation. Check
+        # after each getter because any getter may alter an earlier descriptor
+        # or mutate a frozen result by reflection after the SQLite COMMIT.
+        for name in _RECEIPT_DENIALS:
+            if getattr(receipt, name) is not False:
+                raise SyntheticReplayRejected("synthetic receipt acquired authority")
+            assert_input_epoch()
+            if (
+                type(receipt) is not _RECEIPT_CLASS
+                or any(
+                    getattr(receipt, field) is not original
+                    for field, original in zip((
+                        "occurrence_id", "registry_revision", "bound_action_id",
+                        "request_id", "reserved_at_ms",
+                    ), receipt_fields, strict=True)
+                )
+            ):
+                raise SyntheticReplayRejected(
+                    "synthetic receipt identity changed after authority review"
+                )
         return receipt
 
     def count_synthetic(self) -> int:
