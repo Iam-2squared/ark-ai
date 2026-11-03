@@ -67,6 +67,30 @@ class OfflineContextMembershipReview:
 
 _MEMBERSHIP_RESULT_TYPE = OfflineContextMembershipReview
 
+_DENIAL_NAMES = (
+    "consent_verified", "disclosure_authorized",
+    "retention_authorized", "trusted_clock_verified",
+)
+_ORIGINAL_DENIALS = tuple(
+    vars(_MEMBERSHIP_RESULT_TYPE)[name] for name in _DENIAL_NAMES
+)
+
+
+def _require_original_denials() -> None:
+    if (
+        OfflineContextMembershipReview is not _MEMBERSHIP_RESULT_TYPE
+        or any(
+            vars(_MEMBERSHIP_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflineContextAdmissionRejected(
+            "original Context authority definition changed"
+        )
+
+
 
 def review_offline_context_membership(
     records: tuple[ContextRecordClaim, ...],
@@ -84,6 +108,7 @@ def review_offline_context_membership(
     independent sources in any future trusted integration. This *standalone*
     review does not fetch or authenticate them and never releases content.
     """
+    _require_original_denials()
     if (
         type(records) is not tuple or not 1 <= len(records) <= 32
         or any(type(row) is not ContextRecordClaim for row in records)
@@ -109,6 +134,7 @@ def review_offline_context_membership(
                          row.continuity_sha256) for row in scope_vetoes)
 
     def epoch() -> None:
+        _require_original_denials()
         if (
             any(now is not before for now, before in zip(
                 (records, expected_record_ids, owner_digest, allowed_scope_digests,
@@ -188,13 +214,6 @@ def review_offline_context_membership(
     # causing the returned object to appear authorized after its first read.
     # Pin the original descriptor identities before any result constructor or
     # property callback and reject swaps without invoking additional getters.
-    denial_names = (
-        "consent_verified", "disclosure_authorized",
-        "retention_authorized", "trusted_clock_verified",
-    )
-    denial_descriptors = tuple(
-        vars(_MEMBERSHIP_RESULT_TYPE)[name] for name in denial_names
-    )
     result = OfflineContextMembershipReview(
         owner_digest, len(records), len(scope_vetoes), digest,
     )
@@ -233,13 +252,5 @@ def review_offline_context_membership(
         or result.membership_sha256 is not digest
     ):
         raise OfflineContextAdmissionRejected("constructed admission review mutated")
-    if any(
-        vars(_MEMBERSHIP_RESULT_TYPE).get(name) is not original
-        for name, original in zip(
-            denial_names, denial_descriptors, strict=True,
-        )
-    ):
-        raise OfflineContextAdmissionRejected(
-            "Context authority descriptor changed during review"
-        )
+    _require_original_denials()
     return result
