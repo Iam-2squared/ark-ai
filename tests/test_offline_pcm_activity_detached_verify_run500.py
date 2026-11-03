@@ -64,7 +64,7 @@ def test_reference_digest_and_threshold_must_be_independently_pinned():
         verify_activity_regions(report, pcm, digest, 8000, rms_threshold=1000)
 
 
-def test_reflected_mutation_during_recompute_is_denied(monkeypatch):
+def test_replaced_recompute_hook_is_denied_before_reflection(monkeypatch):
     import ark.offline_pcm_activity_regions as module
 
     pcm, digest, report = source()
@@ -75,8 +75,9 @@ def test_reflected_mutation_during_recompute_is_denied(monkeypatch):
         return original(*args, **kwargs)
 
     monkeypatch.setattr(module, "detect_activity_regions", altered)
-    with pytest.raises(OfflineActivityRejected, match="changed"):
+    with pytest.raises(OfflineActivityRejected, match="original activity verifier"):
         verify_activity_regions(report, pcm, digest, 8000)
+    assert report.active_frame_count == 2  # original detector hook was never run
 
 
 class ForgedActivityRegions(ActivityRegions):
