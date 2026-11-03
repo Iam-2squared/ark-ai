@@ -43,6 +43,32 @@ class DisconnectedBatchSchedule:
         return False
 
 
+_SCHEDULE_TYPE = DisconnectedBatchSchedule
+_SCHEDULE_FLAGS = (
+    "dispatch_authorized", "parallel_execution_authorized",
+    "write_authorized", "replay_authorized",
+)
+_ORIGINAL_DENIALS = tuple(
+    vars(_SCHEDULE_TYPE)[name] for name in _SCHEDULE_FLAGS
+)
+
+
+def _assert_original_schedule_denials() -> None:
+    """Prevent patched False-only descriptors from becoming schedule authority."""
+    if (
+        DisconnectedBatchSchedule is not _SCHEDULE_TYPE
+        or any(
+            vars(_SCHEDULE_TYPE).get(name) is not descriptor
+            for name, descriptor in zip(
+                _SCHEDULE_FLAGS, _ORIGINAL_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedBatchRejected(
+            "detached batch schedule changed after denial"
+        )
+
+
 def _wavefronts(plan: DisconnectedBatchPlan) -> tuple[tuple[str, ...], ...]:
     remaining = list(plan.steps)
     completed: set[str] = set()
@@ -79,7 +105,9 @@ def build_disconnected_batch_schedule(
     Waves contain step IDs, not executable calls. Steps in one wave have no
     dependencies on another step in that wave. No concurrency is launched.
     """
+    _assert_original_schedule_denials()
     verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    _assert_original_schedule_denials()
     request_id, plan_digest, steps = plan.request_id, plan.plan_digest, plan.steps
     waves = _wavefronts(plan)
     # A compromised local caller can reflectively mutate a frozen plan while
@@ -92,8 +120,9 @@ def build_disconnected_batch_schedule(
         raise DisconnectedBatchRejected("batch changed during wavefront construction")
     digest = _digest(request_id, plan_digest, waves)
     report = DisconnectedBatchSchedule(request_id, plan_digest, waves, digest)
+    _assert_original_schedule_denials()
     if (
-        type(report) is not DisconnectedBatchSchedule
+        type(report) is not _SCHEDULE_TYPE
         or report.request_id is not request_id
         or report.plan_digest is not plan_digest
         or report.waves is not waves
@@ -105,7 +134,9 @@ def build_disconnected_batch_schedule(
                ))
     ):
         raise DisconnectedBatchRejected("batch schedule cannot authorize actions")
+    _assert_original_schedule_denials()
     verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    _assert_original_schedule_denials()
     return report
 
 
@@ -116,9 +147,11 @@ def verify_disconnected_batch_schedule(
     retained_digest: str,
 ) -> None:
     """Check a detached schedule against an independently retained plan digest."""
-    if type(schedule) is not DisconnectedBatchSchedule:
+    _assert_original_schedule_denials()
+    if type(schedule) is not _SCHEDULE_TYPE:
         raise DisconnectedBatchRejected("exact detached schedule type required")
     expected = build_disconnected_batch_schedule(plan, retained_digest=retained_digest)
+    _assert_original_schedule_denials()
 
     def exact_fields() -> bool:
         # Do not delegate integrity to a dataclass __eq__ that can be replaced
@@ -149,11 +182,13 @@ def verify_disconnected_batch_schedule(
     ):
         if getattr(schedule, name) is not False:
             raise DisconnectedBatchRejected("detached batch schedule integrity mismatch")
+        _assert_original_schedule_denials()
     # Denial-only properties are callbacks: a False result can still mutate a
     # frozen dataclass reflectively. Recheck after the final getter and after
     # the independently retained plan is revalidated.
     if not exact_fields():
         raise DisconnectedBatchRejected("detached batch schedule changed after denial")
     verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
+    _assert_original_schedule_denials()
     if not exact_fields():
         raise DisconnectedBatchRejected("detached batch schedule changed during review")
