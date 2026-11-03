@@ -156,7 +156,7 @@ def review_context_chunk_index(
                 for row, (old, *fields) in zip(records, record_epoch, strict=True))
             or any(type(row) is not _VETO or row is not old
                 or (row.scope_digest, row.revoked, row.observed_at_ms,
-                    row.continuity_sha256) != fields
+                    row.continuity_sha256) != tuple(fields)
                 for row, (old, *fields) in zip(scope_vetoes, veto_epoch, strict=True))
             or (bundle.owner_sha256, bundle.scope_sha256, bundle.source_sha256,
                 bundle.chunk_byte_limit, bundle.chunks, bundle.bundle_sha256) != bundle_epoch
@@ -240,7 +240,7 @@ def review_context_chunk_index(
             or len(indexed.hits) != len(hit_epoch)
             or any(type(hit) is not lexical.OfflineChunkIndexHit or hit is not old
                    or (hit.chunk_index, hit.start, hit.end, hit.document_id,
-                       hit.score, hit.chunk_sha256) != fields
+                       hit.score, hit.chunk_sha256) != tuple(fields)
                    for hit, (old, *fields) in zip(
                        indexed.hits, hit_epoch, strict=True,
                    ))
