@@ -42,7 +42,7 @@ def test_outcome_receipt_drift_between_read_only_passes_fails_closed(
         )
 
     _replace_outcome(monkeypatch, drifting)
-    with pytest.raises(mod.MemoryAmbiguityPairRejected, match="drifted"):
+    with pytest.raises(mod.MemoryAmbiguityPairRejected, match="child digest mismatch"):
         _review(store, proposed, retained)
     assert calls == 2
 
