@@ -90,13 +90,20 @@ def test_decision_changed_during_digest_is_rejected(monkeypatch, replacement):
 
 
 def test_result_constructor_cannot_rewrite_nested_decision(monkeypatch):
-    original = recovery.DetachedReadRecoverySchedule
+    # Retain original class identity. A late authorization getter callback
+    # can still mutate a previously constructed nested decision.
+    original_getattribute = recovery.DetachedReadRecoverySchedule.__getattribute__
 
-    def rewrite(request_id, decisions, digest):
-        object.__setattr__(decisions[0], "disposition", "QUARANTINE_UNCERTAIN")
-        return original(request_id, decisions, digest)
+    def rewrite(self, name):
+        if name == "dispatch_authorized":
+            decisions = original_getattribute(self, "decisions")
+            object.__setattr__(decisions[0], "disposition", "QUARANTINE_UNCERTAIN")
+            return False
+        return original_getattribute(self, name)
 
-    monkeypatch.setattr(recovery, "DetachedReadRecoverySchedule", rewrite)
+    monkeypatch.setattr(
+        recovery.DetachedReadRecoverySchedule, "__getattribute__", rewrite,
+    )
     with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
         _review()
 
@@ -110,5 +117,5 @@ def test_forged_review_result_is_rejected(monkeypatch):
             automatic_replay_authorized=True, external_outcome_verified=True,
         ),
     )
-    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="schedule altered"):
+    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="descriptor changed"):
         _review()
