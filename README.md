@@ -83,6 +83,36 @@ for non-overwriting target-PC evidence collection. These tools reuse the existin
 Local UI, V1 benchmark and V2 evaluation; they do not alter model behavior or
 declare an official PASS. See [Usability Infrastructure](docs/USABILITY.md).
 
+## Next-generation Command Center (preview)
+
+The separate React/TypeScript frontend adds seven screens: Command Center,
+Conversation, Memory, Agent Workspace, Tools & Permissions, Vision & Voice, and
+Settings. It connects conversation/status/reset to the existing V2 API. Other
+backend integrations remain explicitly Demo or unavailable; Demo confirmations
+never approve real actions. This preview does not change an official milestone
+or the reviewed Local UI.
+
+Requires Node.js 22.13+ for development/build and the existing Python environment:
+
+```bash
+python -m pip install -e . --no-deps
+cd frontend
+npm ci
+npm run build
+cd ..
+python -m ark.command_center --config config.toml
+```
+
+Open **http://127.0.0.1:8766** and select the local connection. For a deterministic
+Echo demonstration without model weights, start with
+`python -m ark.command_center --mock` instead; this remains visibly mock/no model.
+The standalone Demo adapter needs no backend. Normal local startup after the
+build needs no Node server or cloud API. Stop any existing ARK model process
+before starting another to avoid loading duplicate models.
+
+See [architecture, API boundaries and startup details](docs/NEXT_UI_ARCHITECTURE.md),
+the [frontend guide](frontend/README.md), and [browser screenshots](docs/next-ui/).
+
 ## Development and benchmark
 
 ```bash
