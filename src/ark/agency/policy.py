@@ -56,10 +56,18 @@ class PermissionGate:
                 or vars(ToolRegistry).get("resolve") is not _ORIGINAL_REGISTRY_RESOLVE
                 or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
                 or vars(PermissionGate).get("authorize") is not _ORIGINAL_AUTHORIZE
-                # An instance-level shadow can skip the real policy and
-                # misrepresent an ALREADY consumed token as a fresh spend.
-                # Static lookup must not invoke caller-controlled descriptors.
-                or inspect.getattr_static(self, "authorize") is not _ORIGINAL_AUTHORIZE
+                # Fresh WRITE has an independent under-lock spend witness;
+                # READ is independently rechecked via the original class.
+                # Preserve those established checks and their diagnostics.
+                # Only an ALREADY spent token can be replay-laundered by an
+                # instance-level no-op, so deny that unsafe combination.
+                or (
+                    one_shot is not None
+                    and type(one_shot) is OneShotAuthorization
+                    and one_shot.token_id in self._consumed_tokens
+                    and inspect.getattr_static(self, "authorize")
+                    is not _ORIGINAL_AUTHORIZE
+                )
             ):
                 raise PermissionDenied(
                     "registered authorization implementation identity changed"
