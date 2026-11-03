@@ -258,7 +258,7 @@ def review_offline_attention_revocation(
         result.revocation_count, result.vetoed, result.attention_disposition,
         result.attention_review_sha256, result.review_sha256,
     )
-    for denial in _DENIALS:
+    def stable_result() -> None:
         stable()
         if (
             type(result) is not _RESULT
@@ -268,8 +268,16 @@ def review_offline_attention_revocation(
                 result.attention_disposition, result.attention_review_sha256,
                 result.review_sha256,
             ), result_epoch, strict=True))
-            or getattr(result, denial) is not False
         ):
             raise AttentionRevocationRejected("attention/veto report gained authority")
-    stable()
+
+    for denial in _DENIALS:
+        stable_result()
+        if getattr(result, denial) is not False:
+            raise AttentionRevocationRejected("attention/veto report gained authority")
+        # Even the LAST denied-authority getter may reflectively rewrite its
+        # own report. Revalidate result fields after every callback, not just
+        # the original inputs / revocation ledger.
+        stable_result()
+    stable_result()
     return result
