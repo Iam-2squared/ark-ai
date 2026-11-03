@@ -1,5 +1,42 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run571 / 2026-11-03 JST:** THREE meaningful free-only packages saved: import-pinned original PCM activity verification, disconnected PCM-activity-region-span ↔ claimed transcript overlap, and independent Planner DAG ready/terminal-state oracles. **60 newly authored parameter-expanded pytest cases** (8+11+41), plus one inherited test corrected from actual logged CI failure. These are authored cases, NOT independently run local PASS claims. Latest six-job exact-head GREEN is **NOT VERIFIED**; **ARK/JARVIS/V3 NOT_PASSED**.
+
+**Saved at:** **2026-11-03T13:04:36.477+09:00 Asia/Tokyo/JST**. This is an ordinary untrusted runtime wall-clock sample just before a normal GitHub Contents API write; not trusted-clock, user consent, human review or financial approval.
+
+## LATEST — exact work basis, branch and CI evidence
+
+- **PR #8:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`. Invocation work-basis HEAD `415893a8b0cb2776b689ad1c385cc841e3497685`. After three implementation/test packages, inherited failure correction and grounded technical note, **checkpoint-write-basis HEAD** `861f561beb73bf4119dffa4e7bff67a7c58a3e51`. The status file cannot know its own checkpoint-result commit before creation: use the normal Contents API response, then independently fetch the branch HEAD and blob. No forced ref, hidden Git object, main merge or contract edit.
+- Earlier PR #8 basis [CI #41574308797](https://github.com/Iam-2squared/ark-ai/actions/runs/41574308797) had Ubuntu 3/3 GREEN at the earlier inspection, Windows pending then; it is not evidence for this HEAD.
+- The first complete verifier-test HEAD `e2c87b51f0b9fe4419583c02876c19080ccb690a`, [CI #41575059852](https://github.com/Iam-2squared/ark-ai/actions/runs/41575059852): **FAIL** in Ubuntu Python 3.12 from one inherited test expecting the old delayed error string (7,361 passed, 1 skipped, 1 failed). Source correctly rejected the replaced detector **before** the attempted reflective mutation. We changed the inherited test only, preserving early rejection, in commit `9446430c47e46040fcb6819c7022422786a77f58`.
+- Earlier complete PCM/transcript test HEAD `60bd79b484b0e0b7c347e8f12bd501d0d61af62b`, [CI #41575307546](https://github.com/Iam-2squared/ark-ai/actions/runs/41575307546): earlier Ubuntu 3.11 **FAIL** on that same inherited error-string mismatch (no source weakening). Corrected [CI #41575518286](https://github.com/Iam-2squared/ark-ai/actions/runs/41575518286) on `9446430c`: **IN PROGRESS / NOT FINAL**. Last per-job sample: test (ubuntu-latest, 3.13): success; test (windows-latest, 3.12): in_progress; test (ubuntu-latest, 3.12): success; test (windows-latest, 3.13): in_progress; test (windows-latest, 3.11): in_progress; test (ubuntu-latest, 3.11): in_progress.
+- Planner oracle test HEAD `be123407e19ed2545a43898789d25c6a5af2992b`, [CI #41575436084](https://github.com/Iam-2squared/ark-ai/actions/runs/41575436084): previously in progress; the corrected test/grounded-note commits came later. Latest source/test/note HEAD `861f561beb73bf4119dffa4e7bff67a7c58a3e51`, [CI #41575706789](https://github.com/Iam-2squared/ark-ai/actions/runs/41575706789): **QUEUED when inspected**, no exact-head six-job GREEN claim. Automatic push CI only; no manually duplicated workflow run.
+- **PR #5:** [Draft/unmerged](https://github.com/Iam-2squared/ark-ai/pull/5), HEAD `29f222fad0f895796c76c26018d865674723621d`, prior [CI #41503868681](https://github.com/Iam-2squared/ark-ai/actions/runs/41503868681) **SUCCESS 6/6**, not modified this invocation. **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+
+## NEW — Run571 work packages and boundaries
+
+1. **PCM verifier integrity:** `src/ark/offline_pcm_activity_regions.py` pins its original detector and exact activity carrier class references at module import and checks them before and after a detached report recheck. A swapped compare function cannot validate itself. New `tests/test_offline_pcm_activity_verifier_pin_run571.py` adds **8 cases** (normal, original function/type substitution, reflected report corruption, forged detector result). Existing Run500 test expectation corrected from actual CI evidence; the substituted callback is now proved not to run.
+2. **PCM ↔ transcript region-span overlap:** new `src/ark/offline_activity_transcript_overlap.py` and `tests/test_offline_activity_transcript_overlap_run571.py` (**11 cases**). Rechecks synthetic mono PCM bytes and activity metadata and bounded transcript fingerprint, computes region span overlap in sample frames, uncovered spans, ratio in ppm and SHA-256, returns no text/media and permanently denies source/consent/speech/tool authority. **Bridged silent frames are included in region spans**: this is not ASR accuracy, verified speech or genuine device provenance.
+3. **Planner DAG independent oracles:** `tests/test_planner_dag_metamorphic_run571.py` adds **41 deterministic cases** for DAG ready frontiers, terminal descendant propagation, input-order-insensitive hashes, cycle rejection. No Planner contract change or backend action. See [Run571 grounded technical note](https://github.com/Iam-2squared/ark-ai/blob/861f561beb73bf4119dffa4e7bff67a7c58a3e51/docs/JARVIS_RUN571_PCM_ALIGNMENT_PLANNER_DAG.md).
+4. Read-only review of existing free-only V3 identity artifact file guard noted that path substitution/open-handle races deserve a separate evidence/test-backed pass; **no V3 source or Contract changes** this invocation. No new trust or licensing assertion was inferred.
+
+## Preserved contracts and hard stops
+
+Independently re-read unchanged Memory `src/ark/memory/contracts.py` blob `b6e93821ecd69270a7634aceb20775dc36e9953c`, Planner `src/ark/agency/contracts.py` blob `13f1bb725f9c2c783e29402ca4a6e0f86b850ef9`, and protected V3 Contract `docs/v3/CONTRACT.md` blob `b44f7b0e7e619c225ab662ed9c1fc8deae2b1e23`. V1/V2/Local UI/Launcher frozen evidence and protected V2 final evaluation remain unchanged/unopened. Local hashes do not prove genuine review, privacy consent, independence, physical erasure or exactly-once external effect.
+
+**No paid/potentially billable API, GPU or compute; no real Candidate/adapter/weights, protected V2 final evaluation opening, automatic promotion, frozen-contract edit, new credential/account, real sensor or ToolBackend operation, user-PC action, irreversible write or main merge. PR #5 and PR #8 Draft/unmerged. ARK/JARVIS/V3 NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Confirm corrected CI and exact post-checkpoint HEAD on all six Ubuntu/Windows Python 3.11–3.13 jobs. If CI fails, inspect actual job logs; correct only the offending source/test via permitted Contents API writes, switch to independent lane while rerun is automatic; do not duplicate dispatch.
+2. Strengthen the new PCM overlap's nested reflected activity-region epoch and independent retained evidence, preserving its claim-only semantics; then consider coverage/attention integration only after exact-head GREEN.
+3. Progress Planner FAILED/BLOCKED durable recovery, Registered READ journal receipts, Memory CAS/event/expiry and ambiguous-COMMIT manual evidence, proactive scheduler restart occurrence protection, private Context revocation, and startup readiness in independent reversible lanes.
+4. Audit the separate V3 identity artifact path/open-handle custody using no external GPU/network and protected immutable Contract untouched. Real GPU training/Candidate, protected V2 opening, promotion and main merge remain blocked by explicit authorization gates.
+
+---
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run570 / 2026-11-03 JST:** THREE reversible free-only source/test work packages: lexical-index import-pinned denial semantics; synthetic Context membership import-pinned denial semantics; and Context membership/veto/expiry ↔ no-text local chunk-index binding. **34 newly authored parameter-expanded pytest cases** (11 + 23), NOT independently executed local PASS claims. Existing earlier-denial regression expectations corrected after reading actual CI logs. **Latest exact HEAD six-job GREEN is NOT VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
 
 **Saved at:** **2026-11-03T11:56:50.530+09:00 Asia/Tokyo/JST** — ordinary untrusted session wall-clock sampled immediately before the normal GitHub Contents API checkpoint write, not authenticated time/consent/human review, physical-PC observation or financial authorization.
