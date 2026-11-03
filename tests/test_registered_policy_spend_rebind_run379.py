@@ -111,13 +111,20 @@ def test_read_registry_drift_before_return_is_rejected(monkeypatch):
     # A fresh registry must be created after changing the registration.
     registry = ToolRegistry((registration,))
     gate = PermissionGate()
-    original = gate.authorize
+    original_bind = registry.bind
+    bind_count = 0
 
-    def mutate_after_policy(*args, **kwargs):
-        result = original(*args, **kwargs)
-        object.__setattr__(registration, "backend_id", "other")
-        return result
+    def mutate_during_final_registry_recheck(current):
+        nonlocal bind_count
+        bind_count += 1
+        resolved = original_bind(current)
+        if bind_count == 3:
+            # The unmodified original READ policy has already run by this
+            # phase. Drift after binding is rejected on the next recheck.
+            object.__setattr__(registration, "backend_id", "other")
+        return resolved
 
-    monkeypatch.setattr(gate, "authorize", mutate_after_policy)
+    monkeypatch.setattr(registry, "bind", mutate_during_final_registry_recheck)
     with pytest.raises(PermissionDenied, match="registered identity changed"):
         gate.authorize_registered(registry, call, (grant,), now_ms=10)
+    assert bind_count >= 3
