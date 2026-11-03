@@ -13,9 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .proactive_synthetic_continuity_review import (
+    _ORIGINAL_WITNESS_VALIDATOR,
     _ROWS,
     SyntheticTriggerWitness,
-    _ORIGINAL_WITNESS_VALIDATOR,
     _digest,
     assert_proactive_history_continues,
 )
