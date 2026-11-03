@@ -57,6 +57,8 @@ def test_last_false_binding_getter_cannot_rebind_earlier_denial(
 def test_last_false_preview_getter_cannot_rebind_earlier_denial(
     monkeypatch, earlier,
 ):
+    preview_receipt = _preview()  # Construct before monkeypatching a preview denial.
+
     def rebind(_self):
         monkeypatch.setattr(
             binding._PREVIEW_TYPE, earlier, property(lambda _other: False),
@@ -67,7 +69,7 @@ def test_last_false_preview_getter_cannot_rebind_earlier_denial(
         binding._PREVIEW_TYPE, "retention_authorized", property(rebind),
     )
     with pytest.raises(binding.OfflineContextBindingRejected, match="changed"):
-        binding.bind_offline_context_request(_REQUEST, _preview())
+        binding.bind_offline_context_request(_REQUEST, preview_receipt)
 
 
 def test_last_false_binding_getter_cannot_replace_equal_receipt_digest(
