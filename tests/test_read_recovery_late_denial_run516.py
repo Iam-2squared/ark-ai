@@ -83,6 +83,6 @@ def test_last_denial_getter_cannot_enable_earlier_dispatch_flag(
             module.DetachedReadRecoverySchedule, "__getattribute__", intercept,
         )
         with pytest.raises(
-            module.DetachedReadRecoveryRejected, match="descriptor changed",
+            module.DetachedReadRecoveryRejected, match="altered before return",
         ):
             module.schedule_detached_read_recovery(_REQ, (_row(),))
