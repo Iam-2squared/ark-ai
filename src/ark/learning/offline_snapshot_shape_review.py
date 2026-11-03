@@ -168,7 +168,8 @@ def review_unapproved_v3_snapshot_shapes(
         if (
             (type(tokenizer_revision) is str
              and tokenizer_revision in _PLACEHOLDERS)
-            or (tokenizer_revision == "SAME_AS_BASE"
+            or (type(tokenizer_revision) is str
+                and tokenizer_revision == "SAME_AS_BASE"
                 and type(base_revision) is str
                 and base_revision in _PLACEHOLDERS)
         ):
