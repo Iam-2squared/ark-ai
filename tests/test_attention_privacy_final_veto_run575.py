@@ -7,10 +7,10 @@ user data. The two reads still cannot provide a trusted atomic consent gate.
 from __future__ import annotations
 
 import pytest
+from test_offline_attention_revocation_gate_run574 import _fixture, _review
 
 import ark.offline_attention_revocation_review as join
 from ark.memory.contracts import MemoryScope
-from test_offline_attention_revocation_gate_run574 import _fixture, _review
 
 
 @pytest.mark.parametrize("same_scope", (True, False))
