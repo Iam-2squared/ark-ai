@@ -43,15 +43,16 @@ def test_intermediate_update_regression_rejected_even_when_latest_row_matches(
     )
     with sqlite3.connect(store.path) as conn:
         conn.execute(
-            "UPDATE memory_events SET occurred_at_ms=900 "
+            "UPDATE memory_events SET occurred_at_ms=? "
             "WHERE memory_id=? AND operation='update' AND revision=?",
-            (first.memory_id, tamper_revision),
+            (900 if tamper_revision == 2 else 1200,
+             first.memory_id, tamper_revision),
         )
         if tamper_revision == 3:
             # Make the final row agree with the forged last event: it is
             # still invalid because it predates the earlier create event.
             conn.execute(
-                "UPDATE memories SET updated_at_ms=900 WHERE memory_id=?",
+                "UPDATE memories SET updated_at_ms=1200 WHERE memory_id=?",
                 (first.memory_id,),
             )
     with pytest.raises(MemoryExpiryPreviewRejected, match="clock regressed"):
