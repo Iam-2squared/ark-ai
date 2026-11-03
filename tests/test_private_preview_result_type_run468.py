@@ -102,7 +102,9 @@ def test_membership_cannot_return_forged_authorized_result(monkeypatch):
     monkeypatch.setattr(membership, "OfflineContextMembershipReview", fake_type(
         "owner_digest", "record_count", "scope_count", "membership_sha256",
     ))
-    with pytest.raises(membership.OfflineContextAdmissionRejected, match="original Context authority"):
+    with pytest.raises(
+        membership.OfflineContextAdmissionRejected, match="original Context authority"
+    ):
         admit()
 
 
