@@ -1,6 +1,6 @@
 # ARK AI — Run593 non-UI proactive authority custody (free-only)
 
-This note documents **two isolated local-fixture hardening packages** on Draft PR #8. The source remains disconnected from real notifications, tools, accounts, clocks, user permissions and external side effects. It does not make proactive scheduling operational.
+This note documents **three isolated local-fixture hardening packages** on Draft PR #8. The source remains disconnected from real notifications, tools, accounts, clocks, user permissions and external side effects. It does not make proactive scheduling operational.
 
 ## A. Read-only prepared-trigger freshness result
 
@@ -16,11 +16,18 @@ This note documents **two isolated local-fixture hardening packages** on Draft P
 - After the **local SQLite COMMIT**, the returned receipt must have exactly the original result type, field carriers and three original deny-only descriptors. Each getter may be reentrant, so the receipt and policy are checked again after every call. A forged output is rejected rather than returned as a permission token.
 - **Critical crash/COMMIT caveat:** an exception from these checks occurs after the marker may already be durable. It does not roll back that marker, prove that any external action occurred, or permit automatically retrying the preparation. The tests verify the local row count remains one following post-COMMIT denial.
 
+## C. Manual-only Memory post-COMMIT CAS triage
+
+- Source: `src/ark/memory/postcommit_uncertainty_review.py`, source commit `06920c17c04e7ddedaa7bbfa13340422870026ad`.
+- Tests: `tests/test_memory_triage_retained_carrier_run593.py`, test commit `0a031a2711113f66a2c79c24b7bf752be8e9b8d8` (4 authored pytest cases, including three field-carrier substitution scenarios).
+- The independently retained generation-CAS token is captured before the first SQLite snapshot. Manual triage now checks the **original identity** of every token field after snapshot/reentrant callbacks rather than accepting a newly substituted but equal-valued digest. This rejects an unreviewed change of retained evidence with no database mutation, retry or claimed writer attribution.
+- The caller must still retain the original token independently; local matching digests cannot authenticate which process, person or event caused a visible row update.
+
 ## CI / verification boundaries
 
 - Pre-work basis PR #8 HEAD `b9f6751f350ed35f40f116f73ba9f8f45c698ad9`: [CI #41735070871](https://github.com/Iam-2squared/ark-ai/actions/runs/41735070871) **six jobs GREEN**; this only attests the earlier baseline.
 - New source/test CI runs [#41741792918](https://github.com/Iam-2squared/ark-ai/actions/runs/41741792918), [#41741846186](https://github.com/Iam-2squared/ark-ai/actions/runs/41741846186), [#41741970285](https://github.com/Iam-2squared/ark-ai/actions/runs/41741970285), and [#41742027790](https://github.com/Iam-2squared/ark-ai/actions/runs/41742027790) were **IN PROGRESS / QUEUED** when initially inspected. These must be checked against exact commit HEADs before asserting a six-job pass.
-- The 14 authored cases are not claimed as independently run local pytest successes: direct public-repository cloning was unavailable in the local execution container owing to DNS resolution failure. GitHub Actions remains the validation gate. No equivalent manual workflow was triggered.
+- The 18 authored cases across the three packages are not claimed as independently run local pytest successes: direct public-repository cloning was unavailable in the local execution container owing to DNS resolution failure. GitHub Actions remains the validation gate. No equivalent manual workflow was triggered.
 
 ## Still blocked / unchanged
 
