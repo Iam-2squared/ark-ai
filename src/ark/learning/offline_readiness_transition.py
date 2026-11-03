@@ -81,15 +81,31 @@ class PassiveReadinessTransition:
 # substituted implementation and must not become the late-call baseline.
 _TRANSITION_TYPE = PassiveReadinessTransition
 _ORIGINAL_TRANSITION_DENIALS = tuple(vars(_TRANSITION_TYPE)[key] for key in _DENIED)
+# The child shape report is another authority-bearing callback surface.
+# Pin it at import, not after the two unapproved snapshots have been parsed.
+_SOURCE_TYPE = UnapprovedSnapshotShapeReview
+_SOURCE_DENIALS = (
+    "external_compute_authorized", "preflight_authorized",
+    "real_training_authorized", "candidate_generation_authorized",
+    "v2_opening_authorized", "promotion_authorized",
+)
+_ORIGINAL_SOURCE_DENIALS = tuple(vars(_SOURCE_TYPE)[key] for key in _SOURCE_DENIALS)
 
 
 def _assert_original_passive_authority() -> None:
     if (
         PassiveReadinessTransition is not _TRANSITION_TYPE
+        or UnapprovedSnapshotShapeReview is not _SOURCE_TYPE
         or any(
             vars(_TRANSITION_TYPE).get(key) is not original
             for key, original in zip(
                 _DENIED, _ORIGINAL_TRANSITION_DENIALS, strict=True,
+            )
+        )
+        or any(
+            vars(_SOURCE_TYPE).get(key) is not original
+            for key, original in zip(
+                _SOURCE_DENIALS, _ORIGINAL_SOURCE_DENIALS, strict=True,
             )
         )
     ):
@@ -208,14 +224,8 @@ def review_passive_readiness_transition(
         # False-valued authority descriptor. Retain exact original class
         # descriptors through the *last* independent reinspection; neither
         # source report is an approval or an authenticated material identity.
-        source_denials = (
-            "external_compute_authorized", "preflight_authorized",
-            "real_training_authorized", "candidate_generation_authorized",
-            "v2_opening_authorized", "promotion_authorized",
-        )
-        source_descriptors = tuple(
-            getattr(UnapprovedSnapshotShapeReview, name) for name in source_denials
-        )
+        source_denials = _SOURCE_DENIALS
+        source_descriptors = _ORIGINAL_SOURCE_DENIALS
 
         def stable_source_reports() -> None:
             if any(
