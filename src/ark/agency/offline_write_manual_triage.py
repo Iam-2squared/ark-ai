@@ -72,7 +72,46 @@ class OfflineWriteTriagePacket:
 _ITEM_TYPE = OfflineWriteTriageItem
 _PACKET_TYPE = OfflineWriteTriagePacket
 _RESTART_TYPE = OfflineWriteRestartReport
+_FENCE_TYPE = OfflineRecoveryFence
 _STEP_TYPE = OfflineRecoveryStepClaim
+_PACKET_DENIALS = (
+    "human_review_completed", "external_outcome_verified",
+    "dispatch_authorized", "automatic_replay_authorized",
+)
+_RESTART_DENIALS = (
+    "tool_dispatch_authorized", "write_replay_authorized",
+    "external_outcome_verified", "trusted_clock_verified",
+    "consent_verified", "cross_store_atomicity_proven",
+)
+_FENCE_DENIALS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "write_authorized", "external_outcome_verified",
+)
+_ORIGINAL_DENIALS = tuple(
+    (cls, names, tuple(vars(cls)[name] for name in names))
+    for cls, names in (
+        (_PACKET_TYPE, _PACKET_DENIALS),
+        (_RESTART_TYPE, _RESTART_DENIALS),
+        (_FENCE_TYPE, _FENCE_DENIALS),
+    )
+)
+
+
+def _require_original_denial_descriptors() -> None:
+    """Never invoke a replaced False-valued diagnostic authority getter."""
+    if (
+        OfflineWriteTriagePacket is not _PACKET_TYPE
+        or OfflineWriteRestartReport is not _RESTART_TYPE
+        or OfflineRecoveryFence is not _FENCE_TYPE
+        or any(
+            vars(cls).get(name) is not descriptor
+            for cls, names, descriptors in _ORIGINAL_DENIALS
+            for name, descriptor in zip(names, descriptors, strict=True)
+        )
+    ):
+        raise OfflineWriteTriageRejected(
+            "manual WRITE triage authority descriptor changed"
+        )
 
 
 def build_offline_write_triage_packet(
@@ -106,6 +145,7 @@ def build_offline_write_triage_packet(
     previous_count, previous_chain = retained.count, retained.chain_sha256
 
     def stable() -> None:
+        _require_original_denial_descriptors()
         if (
             ledger._path is not original_path
             or plan_id is not original_plan
@@ -249,6 +289,8 @@ def build_offline_write_triage_packet(
     fingerprint = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     stable()
     packet = _PACKET_TYPE(plan_id, pinned, previous_chain, recovery.fingerprint, fingerprint)
+    # Packet construction itself is a callback boundary in synthetic faults.
+    _require_original_denial_descriptors()
     if (
         type(packet) is not _PACKET_TYPE
         or packet.plan_id is not plan_id
