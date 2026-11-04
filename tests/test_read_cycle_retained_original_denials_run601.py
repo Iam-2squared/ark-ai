@@ -3,6 +3,8 @@
 Only disconnected mock simulation is used: no backend, consent proof or replay.
 """
 
+from __future__ import annotations
+
 import pytest
 
 import ark.agency.disconnected_read_cycle_receipt_recheck as recheck
