@@ -132,6 +132,9 @@ def preview_registered_read_plan(
     if not 1 <= len(plan.steps) <= _MAX_STEPS:
         raise DisconnectedReadPreflightRejected("plan exceeds disconnected preflight budget")
     _assert_original_result_denials()
+    # Validate the real registered permission method BEFORE any registry or
+    # planner callback. A counterfeit method must never be executed first.
+    _assert_original_gate(gate)
 
     # Hold original carriers, not merely equal-valued mutable dataclass fields.
     grant_epoch = tuple(
@@ -147,6 +150,7 @@ def preview_registered_read_plan(
         raise DisconnectedReadPreflightRejected("unstable plan or registry") from exc
 
     def stable() -> None:
+        _assert_original_gate(gate)
         try:
             if grants is not original_grants or any(
                 type(item) is not CapabilityGrant
@@ -169,6 +173,9 @@ def preview_registered_read_plan(
             if type(exc) is DisconnectedReadPreflightRejected:
                 raise
             raise DisconnectedReadPreflightRejected("unstable preflight epoch") from exc
+        # A digest/revision callback can replace the policy method. Validate
+        # again before the next gate call; no fabricated grant may run.
+        _assert_original_gate(gate)
 
     stable()
     # Bind all graph actions before reviewing any grants: a non-ready WRITE
@@ -259,6 +266,7 @@ def preview_registered_read_plan(
         stable()
         assert_bound_epochs()
         bound = bindings[step.step_id]
+        _assert_original_gate(gate)
         try:
             verified = gate.authorize_registered(
                 registry, step.call, grants, now_ms=observed_at_ms,
