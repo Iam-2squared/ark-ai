@@ -129,7 +129,7 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
                     event_id, memory_id, owner, namespace, operation, revision, at = entry
                     if (
                         type(event_id) is not int
-                        or not previous_id < event_id
+                        or event_id != previous_id + 1
                         or type(memory_id) is not str
                         or prefix._ID.fullmatch(memory_id) is None
                         or type(operation) is not str
@@ -198,6 +198,26 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
                 if current:
                     raise MemoryRowDeltaRejected(
                         "live Memory row lacks creation event"
+                    )
+                # Event IDs are global AUTOINCREMENT; a complete local
+                # snapshot must not accept a removed final append when its
+                # live row was also erased. This local high-water mark cannot
+                # attest a deliberately rewritten sqlite_sequence or an
+                # independent writer, so retained external custody is still
+                # required.
+                sequence = conn.execute(
+                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                ).fetchone()
+                if (
+                    (not events and sequence is not None)
+                    or (events and (
+                        sequence is None
+                        or type(sequence[0]) is not int
+                        or sequence[0] != previous_id
+                    ))
+                ):
+                    raise MemoryRowDeltaRejected(
+                        "Memory append-only event high-water mark differs"
                     )
                 conn.rollback()
             except BaseException:
