@@ -197,7 +197,17 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
             assert_epoch()
             # Fail closed before a forged False getter runs; module import
             # captured the only non-authorizing descriptor definitions.
-            def assert_result() -> None:
+            def assert_result(
+                *,
+                result: OfflinePngInventory = result,
+                hashed_idat: str = hashed_idat,
+                width: int = width,
+                height: int = height,
+                color: int = color,
+                depth: int = depth,
+                idat_count: int = idat_count,
+                idat_bytes: int = idat_bytes,
+            ) -> None:
                 _require_original_png_authority()
                 assert_epoch()
                 if (
