@@ -84,9 +84,10 @@ def test_false_authority_getter_cannot_hide_mutated_result_or_source(
         "automatic_replay_authorized",
         property(denial),
     )
-    with pytest.raises(SyntheticTriggerRejected):
+    with pytest.raises(SyntheticTriggerRejected, match="review output changed"):
         _review(state)
-    assert calls == 1
+    # Original descriptor validation rejects the injected getter before calling it.
+    assert calls == 0
 
 
 def test_untouched_due_fixture_stays_read_only_and_inert(tmp_path):
