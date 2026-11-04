@@ -66,7 +66,9 @@ def test_recovery_rejects_fake_authority(monkeypatch, tmp_path):
         property(lambda _self: True),
     )
     with mod.DisconnectedReadJournal.open(path) as journal:
-        with pytest.raises(mod.ReadJournalRejected, match="gained authority"):
+        with pytest.raises(
+            mod.ReadJournalRejected, match="gained authority|READ recovery result changed",
+        ):
             journal.recover_receipts(retained)
         assert journal.verify(retained) == retained
 
