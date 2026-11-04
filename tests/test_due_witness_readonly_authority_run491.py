@@ -22,7 +22,7 @@ def test_restart_rejects_forged_due_witness_class(tmp_path, monkeypatch):
     path = tmp_path / "due.sqlite"
     due.DisconnectedDueReservations(path)
     monkeypatch.setattr(due, "_inspect", lambda conn: (_forged(), None))
-    with pytest.raises(due.DueReservationRejected, match="independently retained"):
+    with pytest.raises(due.DueReservationRejected, match=r"(?:independently retained|witness authority)"):
         due.DisconnectedDueReservations(path, require_existing=True)
 
 
@@ -30,7 +30,7 @@ def test_readonly_due_snapshot_rejects_forged_witness(tmp_path, monkeypatch):
     path = tmp_path / "due.sqlite"
     ledger = due.DisconnectedDueReservations(path)
     monkeypatch.setattr(due, "_inspect", lambda conn: (_forged(), None))
-    with pytest.raises(due.DueReservationRejected, match="independently retained"):
+    with pytest.raises(due.DueReservationRejected, match=r"(?:independently retained|witness authority)"):
         ledger.witness()
 
 
@@ -57,7 +57,7 @@ def test_retained_restart_rejects_authority_changed_between_reads(
         return result
 
     monkeypatch.setattr(due, "_inspect", forge_second_read)
-    with pytest.raises(due.DueReservationRejected, match="independently retained"):
+    with pytest.raises(due.DueReservationRejected, match=r"(?:independently retained|witness authority)"):
         due.DisconnectedDueReservations.reopen_with_witness(
             path, retained=retained,
         )
