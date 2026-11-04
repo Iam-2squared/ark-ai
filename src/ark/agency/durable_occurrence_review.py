@@ -72,7 +72,7 @@ _ORIGINAL_RECEIPT_DENIALS = tuple(
 
 def _assert_receipt_denials() -> None:
     """Never treat a mutable diagnostic property as real action authority."""
-    if any(
+    if SyntheticReservationReceipt is not _RECEIPT_CLASS or any(
         vars(_RECEIPT_CLASS).get(name) is not original
         for name, original in zip(_RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True)
     ):
