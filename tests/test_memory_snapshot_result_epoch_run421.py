@@ -35,6 +35,7 @@ def test_result_constructor_cannot_retarget_original_snapshot(
     native_result = snapshot.CoherentSnapshotReview
     original_record = snapshot._record
     hydrated = []
+    invoked = []
 
     def hydrate(row):
         value = original_record(row)
@@ -42,6 +43,7 @@ def test_result_constructor_cannot_retarget_original_snapshot(
         return value
 
     def construct(*args):
+        invoked.append(True)
         value = native_result(*args)
         if target == "request":
             object.__setattr__(request, "text", "retargeted")
@@ -57,12 +59,12 @@ def test_result_constructor_cannot_retarget_original_snapshot(
 
     monkeypatch.setattr(snapshot, "_record", hydrate)
     monkeypatch.setattr(snapshot, "CoherentSnapshotReview", construct)
-    with pytest.raises(MemorySchemaError, match={
-        "request": "snapshot request changed",
-        "source": "memory snapshot source path changed",
-        "record": "memory snapshot record changed",
-    }[target]):
+    with pytest.raises(MemorySchemaError, match="result constructor changed"):
         snapshot.review_coherent_snapshot(store, request)
+    # The constructor is now rejected at entry, before any hydration or
+    # reflected retargeting. Old post-construction checks remain in source.
+    assert invoked == []
+    assert hydrated == []
 
 
 @pytest.mark.parametrize(
@@ -74,8 +76,10 @@ def test_result_constructor_cannot_forge_detached_witness(
 ):
     store, request = _fixture(tmp_path)
     native_result = snapshot.CoherentSnapshotReview
+    invoked = []
 
     def construct(*args):
+        invoked.append(True)
         if target == "type":
             return object()
         value = native_result(*args)
@@ -102,8 +106,9 @@ def test_result_constructor_cannot_forge_detached_witness(
         return value
 
     monkeypatch.setattr(snapshot, "CoherentSnapshotReview", construct)
-    with pytest.raises(MemorySchemaError, match="memory snapshot result changed"):
+    with pytest.raises(MemorySchemaError, match="result constructor changed"):
         snapshot.review_coherent_snapshot(store, request)
+    assert invoked == []
 
 
 def test_stable_snapshot_result_keeps_deterministic_witness(tmp_path):
