@@ -206,15 +206,19 @@ def review_disconnected_local_readiness(
         try:
             if (
                 type(value) is not DisconnectedSQLiteSchemaSeal
-                or value.source_authenticated is not False
-                or value.independent_custody_proven is not False
-                or value.wal_snapshot_verified is not False
-                or value.cross_store_atomicity_proven is not False
-                or value.application_data_disclosure_authorized is not False
             ):
                 raise DisconnectedLocalReadinessRejected(
                     f"startup {phase} schema authority invalid"
                 )
+            # An earlier authority read can rebind a later False-only getter.
+            # Inspect the original descriptor before EACH individual read.
+            for name in _SCHEMA_DENIALS:
+                _require_original_denials()
+                if getattr(value, name) is not False:
+                    raise DisconnectedLocalReadinessRejected(
+                        f"startup {phase} schema authority invalid"
+                    )
+                _require_original_denials()
             return (
                 value.schema_sha256, value.object_count,
                 value.user_version, value.schema_version,
@@ -252,12 +256,13 @@ def review_disconnected_local_readiness(
         or type(preview.ready_bound_ids) is not tuple
         or len(preview.ready_step_ids) != len(preview.ready_bound_ids)
         or not preview.ready_step_ids
-        or preview.dispatch_authorized is not False
-        or preview.external_result_verified is not False
-        or preview.authenticated_clock_or_consent is not False
-        or preview.automatic_replay_authorized is not False
     ):
         raise DisconnectedLocalReadinessRejected("startup READ receipt invalid")
+    for name in _PREFLIGHT_DENIALS:
+        _require_original_denials()
+        if getattr(preview, name) is not False:
+            raise DisconnectedLocalReadinessRejected("startup READ receipt invalid")
+        _require_original_denials()
     # A returned preflight receipt is a caller-observable Python object, not
     # an independently authenticated authority. Check exact READY membership
     # and registered identities instead of trusting a forged same-type preview.
@@ -342,10 +347,6 @@ def review_disconnected_local_readiness(
                         current, preview_epoch, strict=True,
                     )
                 )
-                and preview.dispatch_authorized is False
-                and preview.external_result_verified is False
-                and preview.authenticated_clock_or_consent is False
-                and preview.automatic_replay_authorized is False
             )
         except (AttributeError, TypeError, ValueError) as exc:
             raise DisconnectedLocalReadinessRejected(
@@ -355,6 +356,13 @@ def review_disconnected_local_readiness(
             raise DisconnectedLocalReadinessRejected(
                 "startup READ receipt epoch changed"
             )
+        for name in _PREFLIGHT_DENIALS:
+            _require_original_denials()
+            if getattr(preview, name) is not False:
+                raise DisconnectedLocalReadinessRejected(
+                    "startup READ receipt epoch changed"
+                )
+            _require_original_denials()
 
     assert_preview_epoch()
     try:
@@ -384,7 +392,10 @@ def review_disconnected_local_readiness(
     fingerprint = hashlib.sha256(_DOMAIN + packed).hexdigest()
     assert_epoch()
     assert_preview_epoch()
-    report = DisconnectedLocalReadiness(
+    # Never invoke a late-rebound global constructor even for a deny-only
+    # diagnostic report. The pinned import-time type is the sole constructor.
+    _require_original_denials()
+    report = _REPORT_TYPE(
         retained_schema.schema_sha256, topology, revision,
         preview.ready_step_ids, fingerprint,
     )
@@ -397,12 +408,13 @@ def review_disconnected_local_readiness(
         or report.registry_revision is not revision
         or report.ready_step_ids is not preview.ready_step_ids
         or report.review_digest is not fingerprint
-        or report.startup_authorized is not False
-        or report.dispatch_authorized is not False
-        or report.source_authenticated is not False
-        or report.cross_store_atomicity_proven is not False
     ):
         raise DisconnectedLocalReadinessRejected("startup report changed")
+    for name in _REPORT_DENIALS:
+        _require_original_denials()
+        if getattr(report, name) is not False:
+            raise DisconnectedLocalReadinessRejected("startup report changed")
+        _require_original_denials()
     # The report's False-returning authority getters above can mutate
     # reflected startup inputs or the report itself. Close both epochs after
     # the last authority inspection; this remains diagnostic-only.
