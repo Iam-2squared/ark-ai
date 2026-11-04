@@ -423,4 +423,60 @@ def generation_fenced_memory_update(
             "generation CAS post-COMMIT result uncertain; manual review required"
         )
     stable()
+
+    # The post-COMMIT carrier may agree with its in-transaction snapshot even
+    # when a synthetic callback or concurrent writer has changed the actual
+    # persisted Memory row/event chain. Re-open a fresh READ transaction; do
+    # not claim this is an atomic cross-process or trusted custody proof.
+    # A failed verification is UNKNOWN/manual review, never a retry signal.
+    try:
+        with closing(store._connect_readonly()) as readonly:
+            readonly.execute("BEGIN")
+            stable()
+            observed, observed_token = _snapshot(
+                readonly, expected_id, original_scope, original_source,
+            )
+            stable()
+            if (
+                type(observed) is not MemoryRecord
+                or _token_fields(observed_token) != updated_token_epoch
+                or _row_hash(observed) != updated_token_epoch[5]
+            ):
+                raise MemoryGenerationCASRejected(
+                    "generation CAS post-COMMIT persisted state differs"
+                )
+            readonly.commit()
+    except (sqlite3.Error, MemoryConflictError, MemorySchemaError) as exc:
+        raise MemoryGenerationCASRejected(
+            "generation CAS post-COMMIT readback uncertain; manual review required"
+        ) from exc
+    stable()
+    # Readback itself is an untrusted callback boundary. Recheck exact
+    # result carriers (not just a value-equal row digest) before returning.
+    try:
+        still_intact = (
+            type(updated) is MemoryRecord
+            and all(now is prior for now, prior in zip(
+                (
+                    updated.memory_id, updated.scope, updated.source_id,
+                    updated.content, updated.created_at_ms, updated.updated_at_ms,
+                    updated.expires_at_ms, updated.revision, updated.content_sha256,
+                    updated.metadata,
+                ), updated_epoch, strict=True,
+            ))
+            and dict(updated.metadata) == updated_metadata
+            and _row_hash(updated) == updated_token_epoch[5]
+            and all(now is prior for now, prior in zip(
+                _token_fields(updated_token), updated_token_epoch, strict=True,
+            ))
+        )
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise MemoryGenerationCASRejected(
+            "generation CAS post-COMMIT readback result changed; manual review required"
+        ) from exc
+    if not still_intact:
+        raise MemoryGenerationCASRejected(
+            "generation CAS post-COMMIT readback result changed; manual review required"
+        )
+    stable()
     return updated
