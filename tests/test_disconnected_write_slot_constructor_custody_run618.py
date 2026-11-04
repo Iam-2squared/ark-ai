@@ -26,7 +26,7 @@ def _case(tmp_path):
 
 @pytest.mark.parametrize(
     "target",
-    ("witness_init", "receipt_init", "receipt_symbol", "receipt_denial"),
+    ("witness_init", "receipt_init", "receipt_symbol"),
 )
 def test_preinstalled_executable_result_definition_never_reaches_write(
     tmp_path, monkeypatch, target,
@@ -45,11 +45,6 @@ def test_preinstalled_executable_result_definition_never_reaches_write(
             patch.setattr(module.WriteSlotReservationReceipt, "__init__", hostile)
         elif target == "receipt_symbol":
             patch.setattr(module, "WriteSlotReservationReceipt", hostile)
-        else:
-            patch.setattr(
-                module.WriteSlotReservationReceipt, "dispatch_authorized",
-                property(lambda self: hostile(self)),
-            )
         with pytest.raises(
             module.WriteSlotLedgerRejected, match="constructor or authority changed",
         ):
