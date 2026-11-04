@@ -139,36 +139,36 @@ def review_synthetic_erasure_evidence(
     blocked = tuple(blockers)
     result = SyntheticErasureAssessment(digest, blocked, epoch[1] == "absent")
     original_absence = epoch[1] == "absent"
-    # Property getters are arbitrary Python callbacks, even if they return
-    # False. A late getter must not replace an earlier authority descriptor.
+    # Even an ORIGINAL property can become a callback boundary when hostile
+    # __getattribute__ is injected on a fixture result. Recheck the pinned
+    # denial descriptors BEFORE every subsequent getter; otherwise the first
+    # getter could replace the second with executable, False-looking code.
     def assert_inert_result() -> None:
-        _assert_original_authority()
-        # A logical absence claim is NOT a deletion/forensic erasure proof.
-        # Properties are callbacks and may reflectively mutate a frozen
-        # result or the source even while returning the exact False value.
-        if (
-            type(result) is not SyntheticErasureAssessment
-            or result.evidence_digest is not digest
-            or result.blockers is not blocked
-            or type(result.logical_absence_claimed) is not bool
-            or result.logical_absence_claimed is not original_absence
-            or result.row_deletion_proven is not False
-            or result.wal_reclamation_proven is not False
-            or result.forensic_erasure_verified is not False
-            or result.cleanup_authorized is not False
-            or result.evidence_digest is not digest
-            or result.blockers is not blocked
-            or result.logical_absence_claimed is not original_absence
-            or any(
-                getattr(SyntheticErasureAssessment, name) is not descriptor
-                for name, descriptor in zip(
-                    _AUTHORITY_NAMES, _ORIGINAL_AUTHORITY, strict=True,
+        def assert_result_carriers() -> None:
+            if (
+                type(result) is not SyntheticErasureAssessment
+                or result.evidence_digest is not digest
+                or result.blockers is not blocked
+                or type(result.logical_absence_claimed) is not bool
+                or result.logical_absence_claimed is not original_absence
+            ):
+                raise SyntheticErasureRejected(
+                    "erasure assessment changed or acquired authority"
                 )
-            )
-        ):
-            raise SyntheticErasureRejected(
-                "erasure assessment changed or acquired authority"
-            )
+
+        _assert_original_authority()
+        assert_result_carriers()
+        for name in _AUTHORITY_NAMES:
+            _assert_original_authority()
+            if getattr(result, name) is not False:
+                raise SyntheticErasureRejected(
+                    "erasure assessment changed or acquired authority"
+                )
+            # A getter can reflectively change the next property or a source
+            # claim while still returning False. Stop before invoking another.
+            _assert_original_authority()
+            assert_epoch()
+            assert_result_carriers()
 
     assert_epoch()
     assert_inert_result()
