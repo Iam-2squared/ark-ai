@@ -91,6 +91,8 @@ _COMPARISON_DENIALS = (
     "historical_writer_authenticated", "independent_witness_custody_proven",
     "memory_disclosure_authorized", "action_authorized",
 )
+_WITNESS_ORIGINAL_INIT = vars(_WITNESS)["__init__"]
+_COMPARISON_ORIGINAL_INIT = vars(_COMPARISON)["__init__"]
 _WITNESS_ORIGINAL_FLAGS = tuple(vars(_WITNESS)[name] for name in _WITNESS_DENIALS)
 _COMPARISON_ORIGINAL_FLAGS = tuple(
     vars(_COMPARISON)[name] for name in _COMPARISON_DENIALS
@@ -98,20 +100,28 @@ _COMPARISON_ORIGINAL_FLAGS = tuple(
 
 
 def _original_witness_flags() -> None:
-    if MemoryEventPrefixWitness is not _WITNESS or any(
+    if (
+        MemoryEventPrefixWitness is not _WITNESS
+        or vars(_WITNESS).get("__init__") is not _WITNESS_ORIGINAL_INIT
+        or any(
         vars(_WITNESS).get(name) is not descriptor
         for name, descriptor in zip(
             _WITNESS_DENIALS, _WITNESS_ORIGINAL_FLAGS, strict=True,
+        )
         )
     ):
         raise MemoryEventPrefixRejected("retained event witness authority changed")
 
 
 def _original_comparison_flags() -> None:
-    if MemoryEventPrefixComparison is not _COMPARISON or any(
+    if (
+        MemoryEventPrefixComparison is not _COMPARISON
+        or vars(_COMPARISON).get("__init__") is not _COMPARISON_ORIGINAL_INIT
+        or any(
         vars(_COMPARISON).get(name) is not descriptor
         for name, descriptor in zip(
             _COMPARISON_DENIALS, _COMPARISON_ORIGINAL_FLAGS, strict=True,
+        )
         )
     ):
         raise MemoryEventPrefixRejected("event prefix comparison authority changed")
@@ -254,6 +264,9 @@ def _scan(
     except sqlite3.Error as exc:
         raise MemoryEventPrefixRejected("local Memory event prefix unavailable") from exc
     stable_source()
+    # Constructor custody is checked before invoking untrusted replacement
+    # code, including mutations performed by a reentrant event hash callback.
+    _original_witness_flags()
     witness = _WITNESS(count, last, full.hexdigest())
     if _witness_epoch(witness) != (count, last, full.hexdigest()):
         raise MemoryEventPrefixRejected("local event witness changed after scan")
@@ -302,6 +315,9 @@ def compare_local_memory_event_prefix(
     ).encode("ascii")
     stable_retained()
     digest = hashlib.sha256(_COMPARISON_DOMAIN + payload).hexdigest()
+    # The digest callback is another injection epoch: reject substituted
+    # result constructors before they can execute.
+    _original_comparison_flags()
     result = _COMPARISON(old[0], current.event_count, status, digest)
     if (
         type(result) is not _COMPARISON
