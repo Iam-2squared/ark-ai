@@ -83,7 +83,7 @@ def test_last_authority_getter_cannot_change_retained_privacy(monkeypatch):
     monkeypatch.setattr(
         png._INVENTORY_TYPE, "context_release_authorized", property(forged),
     )
-    with pytest.raises(png.OfflinePngRejected, match="carrier changed"):
+    with pytest.raises(png.OfflinePngRejected, match="denial descriptor changed"):
         png.inspect_disconnected_png(request)
 
 
