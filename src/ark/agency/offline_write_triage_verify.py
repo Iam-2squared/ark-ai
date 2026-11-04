@@ -70,6 +70,42 @@ _PACKET = OfflineWriteTriagePacket
 _ITEM = OfflineWriteTriageItem
 _WITNESS = WriteSlotLedgerWitness
 _RESULT = OfflineWriteTriageVerification
+_PACKET_DENIALS = (
+    "human_review_completed", "external_outcome_verified",
+    "dispatch_authorized", "automatic_replay_authorized",
+)
+_RESULT_DENIALS = (
+    "independently_authenticated", "human_review_completed",
+    "external_outcome_verified", "dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_PACKET_DENIALS = tuple(vars(_PACKET)[name] for name in _PACKET_DENIALS)
+_ORIGINAL_RESULT_DENIALS = tuple(vars(_RESULT)[name] for name in _RESULT_DENIALS)
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS)["independently_authenticated"]
+
+
+def _assert_original_denial_descriptors() -> None:
+    # Do not invoke class-level or instance-level counterfeit getters, even
+    # if they return a false-looking value or the original class property.
+    if (
+        any(
+            vars(_PACKET).get(name) is not original
+            for name, original in zip(
+                _PACKET_DENIALS, _ORIGINAL_PACKET_DENIALS, strict=True,
+            )
+        )
+        or any(
+            vars(_RESULT).get(name) is not original
+            for name, original in zip(
+                _RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS, strict=True,
+            )
+        )
+        or vars(_WITNESS).get("independently_authenticated")
+        is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise OfflineWriteTriageVerificationRejected(
+            "detached packet authority descriptor changed"
+        )
 
 
 def _exact_match(value: object, pattern: re.Pattern[str]) -> bool:
@@ -86,6 +122,7 @@ def verify_offline_write_triage_packet(
     human, or permit retries. A recomputed checksum can still be forged by a
     writer controlling both the packet and the separately supplied witness.
     """
+    _assert_original_denial_descriptors()
     if type(packet) is not _PACKET or type(retained) is not _WITNESS:
         raise OfflineWriteTriageVerificationRejected("exact detached packet required")
     try:
@@ -155,6 +192,7 @@ def verify_offline_write_triage_packet(
         saved.append((step, state, code, reservation, investigation))
 
     def stable() -> None:
+        _assert_original_denial_descriptors()
         if (
             type(packet) is not _PACKET or type(retained) is not _WITNESS
             or packet.plan_id is not plan or packet.items is not items
@@ -188,6 +226,7 @@ def verify_offline_write_triage_packet(
     if supplied_hash != expected_hash:
         raise OfflineWriteTriageVerificationRejected("detached packet hash differs")
     stable()
+    _assert_original_denial_descriptors()
     if (
         packet.human_review_completed is not False
         or packet.external_outcome_verified is not False
@@ -198,6 +237,7 @@ def verify_offline_write_triage_packet(
         raise OfflineWriteTriageVerificationRejected("detached packet acquired authority")
     stable()
     result = _RESULT(plan, len(items), supplied_hash, count)
+    _assert_original_denial_descriptors()
     if (
         type(result) is not _RESULT
         or result.plan_id is not plan
@@ -212,4 +252,5 @@ def verify_offline_write_triage_packet(
     ):
         raise OfflineWriteTriageVerificationRejected("detached verification acquired authority")
     stable()
+    _assert_original_denial_descriptors()
     return result
