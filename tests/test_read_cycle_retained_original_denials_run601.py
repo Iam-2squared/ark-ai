@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import pytest
 
-import ark.agency.disconnected_read_cycle as cycle
 import ark.agency.disconnected_read_cycle_receipt_recheck as recheck
 from ark.agency.contracts import (
     CapabilityGrant,
@@ -16,6 +15,7 @@ from ark.agency.contracts import (
     StepState,
     ToolCall,
 )
+from ark.agency.disconnected_read_cycle import simulate_registered_read_cycle
 from ark.agency.planner import PlanGraph
 from ark.agency.policy import PermissionGate
 from ark.agency.registry import ToolRegistration, ToolRegistry
@@ -51,7 +51,7 @@ def _inputs():
 
 
 def _receipt(plan, registry, gate, grants):
-    return cycle.simulate_registered_read_cycle(
+    return simulate_registered_read_cycle(
         plan, registry, gate, grants, observed_at_ms=100,
     )
 
@@ -72,7 +72,7 @@ def test_retained_verifier_never_invokes_false_looking_replacement(
 
     def substitute():
         monkeypatch.setattr(
-            cycle.DisconnectedReadCycleReceipt, flag, property(counterfeit),
+            recheck.DisconnectedReadCycleReceipt, flag, property(counterfeit),
         )
 
     if moment == "entry":
