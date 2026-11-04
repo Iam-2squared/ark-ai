@@ -104,10 +104,10 @@ def _original_witness_flags() -> None:
         MemoryEventPrefixWitness is not _WITNESS
         or vars(_WITNESS).get("__init__") is not _WITNESS_ORIGINAL_INIT
         or any(
-        vars(_WITNESS).get(name) is not descriptor
-        for name, descriptor in zip(
-            _WITNESS_DENIALS, _WITNESS_ORIGINAL_FLAGS, strict=True,
-        )
+            vars(_WITNESS).get(name) is not descriptor
+            for name, descriptor in zip(
+                _WITNESS_DENIALS, _WITNESS_ORIGINAL_FLAGS, strict=True,
+            )
         )
     ):
         raise MemoryEventPrefixRejected("retained event witness authority changed")
@@ -118,10 +118,10 @@ def _original_comparison_flags() -> None:
         MemoryEventPrefixComparison is not _COMPARISON
         or vars(_COMPARISON).get("__init__") is not _COMPARISON_ORIGINAL_INIT
         or any(
-        vars(_COMPARISON).get(name) is not descriptor
-        for name, descriptor in zip(
-            _COMPARISON_DENIALS, _COMPARISON_ORIGINAL_FLAGS, strict=True,
-        )
+            vars(_COMPARISON).get(name) is not descriptor
+            for name, descriptor in zip(
+                _COMPARISON_DENIALS, _COMPARISON_ORIGINAL_FLAGS, strict=True,
+            )
         )
     ):
         raise MemoryEventPrefixRejected("event prefix comparison authority changed")
