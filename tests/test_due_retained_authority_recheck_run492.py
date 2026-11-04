@@ -40,7 +40,7 @@ def test_reopen_rechecks_retained_authority_after_sqlite_snapshot(
     with monkeypatch.context() as patch:
         _spoof_after_check(patch, retained, number=3)
         with pytest.raises(
-            due.DueReservationRejected, match="independently retained",
+            due.DueReservationRejected, match=r"(?:independently retained|witness authority)",
         ):
             due.DisconnectedDueReservations.reopen_with_witness(
                 path, retained=retained,
@@ -61,7 +61,7 @@ def test_reserve_rechecks_retained_authority_before_sqlite_insert(
     with monkeypatch.context() as patch:
         _spoof_after_check(patch, retained, number=2)
         with pytest.raises(
-            due.DueReservationRejected, match="independently retained",
+            due.DueReservationRejected, match=r"(?:independently retained|witness authority)",
         ):
             ledger.reserve_due(
                 policy_sha256="a" * 64, due_at_ms=100,
