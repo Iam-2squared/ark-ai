@@ -63,6 +63,7 @@ _CYCLE_DENIALS = (
 _ORIGINAL_CYCLE_DENIALS = tuple(
     vars(_CYCLE_RECEIPT_TYPE)[name] for name in _CYCLE_DENIALS
 )
+_ORIGINAL_CYCLE_RECEIPT_INIT = vars(_CYCLE_RECEIPT_TYPE)["__init__"]
 
 
 def _assert_original_cycle_denials() -> None:
@@ -70,6 +71,8 @@ def _assert_original_cycle_denials() -> None:
     # The local success marker is not real authorization or outcome proof.
     if (
         SyntheticMockCycleReceipt is not _CYCLE_RECEIPT_TYPE
+        or vars(_CYCLE_RECEIPT_TYPE).get("__init__")
+        is not _ORIGINAL_CYCLE_RECEIPT_INIT
         or any(
             vars(_CYCLE_RECEIPT_TYPE).get(name) is not original
             for name, original in zip(
@@ -381,7 +384,7 @@ def run_synthetic_mock_cycle(
     assert_reservation_epoch()
     assert_audit_epoch()
     _assert_original_cycle_denials()
-    result = SyntheticMockCycleReceipt(
+    result = _CYCLE_RECEIPT_TYPE(
         step_id, reservation.occurrence_id, audit_event.event_id, marker,
     )
     _assert_original_cycle_denials()
