@@ -66,6 +66,8 @@ class AttentionBudgetPreview:
         return False
 
 
+_POLICY_TYPE = AttentionBudgetPolicy
+_MARKER_TYPE = SyntheticSurfaceMarker
 _RESULT_TYPE = AttentionBudgetPreview
 _DENIAL_NAMES = (
     "notification_authorized", "action_authorized",
@@ -76,7 +78,11 @@ _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
 
 def _assert_original_denials() -> None:
     if (
-        AttentionBudgetPreview is not _RESULT_TYPE
+        # The input class names are also module-level injection surfaces.
+        # A counterfeit policy/marker may expose executable field getters.
+        AttentionBudgetPolicy is not _POLICY_TYPE
+        or SyntheticSurfaceMarker is not _MARKER_TYPE
+        or AttentionBudgetPreview is not _RESULT_TYPE
         or any(
             vars(_RESULT_TYPE).get(key) is not expected
             for key, expected in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
