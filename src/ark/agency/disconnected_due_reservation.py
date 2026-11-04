@@ -72,6 +72,20 @@ class DueReservationReceipt:
 # authority-looking compatible objects or equal-valued carrier substitutions.
 _WITNESS_TYPE = DueReservationWitness
 _RECEIPT_TYPE = DueReservationReceipt
+# A False-looking replacement property is not the reviewed, inert witness
+# contract. Inspect the CLASS dictionary without running an untrusted getter.
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_proven"]
+
+
+def _require_original_witness_denial() -> None:
+    if (
+        DueReservationWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("independent_custody_proven")
+        is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise DueReservationRejected("due witness authority descriptor changed")
+
+
 # Keep the original fail-closed receipt descriptors, not merely their Boolean
 # values: a False-returning replacement is still an unreviewed authority epoch.
 _RECEIPT_DENIALS = (
@@ -84,7 +98,12 @@ _ORIGINAL_RECEIPT_DENIALS = tuple(
 
 
 def _checked_witness(count: int, fingerprint: str) -> DueReservationWitness:
+    # Reject constructor replacement before calling an unreviewed callable.
+    if DueReservationWitness is not _WITNESS_TYPE:
+        raise DueReservationRejected("constructed due witness changed")
+    _require_original_witness_denial()
     witness = DueReservationWitness(count, fingerprint)
+    _require_original_witness_denial()
     if (
         type(witness) is not _WITNESS_TYPE
         or witness.count is not count
@@ -92,6 +111,8 @@ def _checked_witness(count: int, fingerprint: str) -> DueReservationWitness:
         or witness.independent_custody_proven is not False
     ):
         raise DueReservationRejected("constructed due witness changed")
+    # A synthetic getter may rewrite its own class while returning False.
+    _require_original_witness_denial()
     return witness
 
 
@@ -105,6 +126,7 @@ def genesis_due_witness() -> DueReservationWitness:
 
 
 def _check_witness(witness: object) -> None:
+    _require_original_witness_denial()
     if (
         type(witness) is not _WITNESS_TYPE
         or type(witness.count) is not int
@@ -114,6 +136,7 @@ def _check_witness(witness: object) -> None:
         or witness.independent_custody_proven is not False
     ):
         raise DueReservationRejected("invalid independently retained due witness")
+    _require_original_witness_denial()
 
 
 def _check_path(path: object, *, exists: bool) -> Path:
@@ -366,6 +389,7 @@ class DisconnectedDueReservations:
                 conn.rollback()
                 raise
         def assert_committed_witness() -> None:
+            _require_original_witness_denial()
             if (
                 type(result) is not _WITNESS_TYPE
                 or result.count is not result_epoch[0]
@@ -373,6 +397,7 @@ class DisconnectedDueReservations:
                 or result.independent_custody_proven is not False
             ):
                 raise DueReservationRejected("post-commit due witness changed")
+            _require_original_witness_denial()
 
         assert_retained_epoch()
         assert_committed_witness()
