@@ -201,6 +201,10 @@ def review_synthetic_write_recovery(
     )
 
     def assert_epoch() -> None:
+        # Each store/replay callback is reentrant. A late False-looking
+        # recovery-authority property swap must be rejected before another
+        # callback or result getter observes the substituted descriptor.
+        _assert_original_recovery_denials()
         current_sources = (
             journal._path, audit.path,
             None if link_store is None else link_store._path,
