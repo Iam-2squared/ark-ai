@@ -55,6 +55,33 @@ class SyntheticMockCycleReceipt:
         return False
 
 
+_CYCLE_RECEIPT_TYPE = SyntheticMockCycleReceipt
+_CYCLE_DENIALS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_known",
+)
+_ORIGINAL_CYCLE_DENIALS = tuple(
+    vars(_CYCLE_RECEIPT_TYPE)[name] for name in _CYCLE_DENIALS
+)
+
+
+def _assert_original_cycle_denials() -> None:
+    # Reject False-looking counterfeit descriptors without invoking them.
+    # The local success marker is not real authorization or outcome proof.
+    if (
+        SyntheticMockCycleReceipt is not _CYCLE_RECEIPT_TYPE
+        or any(
+            vars(_CYCLE_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _CYCLE_DENIALS, _ORIGINAL_CYCLE_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticMockCycleRejected(
+            "synthetic mock receipt authority descriptor changed"
+        )
+
+
 def run_synthetic_mock_cycle(
     journal: SyntheticPlanJournal,
     ledger: SyntheticOccurrenceStore,
@@ -94,6 +121,7 @@ def run_synthetic_mock_cycle(
         raise SyntheticMockCycleRejected("exact synthetic mock inputs required")
     if fault_at == "after_audit_link" and link_store is None:
         raise SyntheticMockCycleRejected("audit-link stop requires a synthetic sidecar")
+    _assert_original_cycle_denials()
     # Pin exact, independently held fixture inputs before registry callbacks
     # and before the FIRST cross-SQLite durable transition. All stores remain
     # separate: a detected drift AFTER RUNNING leaves an UNKNOWN, not a retry.
@@ -209,6 +237,7 @@ def run_synthetic_mock_cycle(
             )
 
     assert_identity_epoch()
+    _assert_original_cycle_denials()
     if bound.registration.effect is not Effect.WRITE:
         raise SyntheticMockCycleRejected("only synthetic WRITE may enter a mock cycle")
     graph = PlanGraph(journal._steps)
@@ -255,10 +284,18 @@ def run_synthetic_mock_cycle(
 
     def assert_reservation_epoch() -> None:
         if (
-            reservation.occurrence_id, reservation.registry_revision,
-            reservation.bound_action_id, reservation.request_id,
-            reservation.reserved_at_ms,
-        ) != reservation_epoch:
+            type(reservation) is not SyntheticReservationReceipt
+            or any(
+                current is not original
+                for current, original in zip(
+                    (
+                        reservation.occurrence_id, reservation.registry_revision,
+                        reservation.bound_action_id, reservation.request_id,
+                        reservation.reserved_at_ms,
+                    ), reservation_epoch, strict=True,
+                )
+            )
+        ):
             raise SyntheticMockCycleRejected(
                 "synthetic reservation receipt changed between phases"
             )
@@ -284,6 +321,17 @@ def run_synthetic_mock_cycle(
                 audit_event.arguments_sha256, audit_event.outcome,
                 audit_event.occurred_at_ms,
             ) != audit_epoch
+            or any(
+                current is not original
+                for current, original in zip(
+                    (
+                        audit_event.event_id, audit_event.request_id,
+                        audit_event.tool, audit_event.capability,
+                        audit_event.scope, audit_event.arguments_sha256,
+                        audit_event.outcome, audit_event.occurred_at_ms,
+                    ), audit_epoch, strict=True,
+                )
+            )
             or type(audit_event.event_id) is not int
             or audit_event.event_id < 1
             or (
@@ -327,10 +375,24 @@ def run_synthetic_mock_cycle(
     assert_audit_epoch()
     if fault_at == "after_mock_marker":
         raise SyntheticMockCrashInjected("synthetic stop after in-memory mock marker")
+    _assert_original_cycle_denials()
     journal.append(step_id, StepState.SUCCEEDED, expected_revision=1, at_ms=now_ms)
     assert_identity_epoch()
     assert_reservation_epoch()
     assert_audit_epoch()
-    return SyntheticMockCycleReceipt(
+    _assert_original_cycle_denials()
+    result = SyntheticMockCycleReceipt(
         step_id, reservation.occurrence_id, audit_event.event_id, marker,
     )
+    _assert_original_cycle_denials()
+    if (
+        type(result) is not _CYCLE_RECEIPT_TYPE
+        or result.step_id is not step_id
+        or result.occurrence_id is not reservation.occurrence_id
+        or result.audit_event_id is not audit_event.event_id
+        or result.mock_marker is not marker
+        or any(getattr(result, flag) is not False for flag in _CYCLE_DENIALS)
+    ):
+        raise SyntheticMockCycleRejected("synthetic mock receipt changed")
+    _assert_original_cycle_denials()
+    return result
