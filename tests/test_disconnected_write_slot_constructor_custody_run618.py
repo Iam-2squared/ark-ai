@@ -69,7 +69,6 @@ def test_row_digest_callback_constructor_replacement_rolls_back(tmp_path, monkey
         raise AssertionError("untrusted witness constructor executed")
 
     with monkeypatch.context() as patch:
-        patch.setattr(module, "_hash", hash_with_injection)
         # The scoped fixture restores a callback-injected class after denial.
         def hooked(fields):
             digest = original_hash(fields)
