@@ -107,7 +107,6 @@ def review_disconnected_registered_read(
                 "registered READ policy implementation changed"
             )
 
-    stable_gate_method()
     if (
         type(registry) is not ToolRegistry
         or type(gate) is not PermissionGate
@@ -119,6 +118,7 @@ def review_disconnected_registered_read(
         or not 0 <= now_ms <= (1 << 63) - 1
     ):
         raise DisconnectedReadPreflightRejected("exact bounded preflight inputs required")
+    stable_gate_method()
 
     call_epoch = (call.tool, call.capability, call.scope, call.arguments)
     grant_epochs = tuple(
