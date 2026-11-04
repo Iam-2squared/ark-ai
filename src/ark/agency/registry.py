@@ -80,6 +80,20 @@ class BoundAction:
     bound_action_id: str
 
 
+_BOUND_TYPE = BoundAction
+_ORIGINAL_BOUND_INIT = vars(_BOUND_TYPE)["__init__"]
+
+
+def _require_original_bound_constructor() -> None:
+    # A class-level constructor can be monkeypatched even for frozen slots.
+    # Reject the replacement before any injected code can execute.
+    if (
+        BoundAction is not _BOUND_TYPE
+        or vars(_BOUND_TYPE).get("__init__") is not _ORIGINAL_BOUND_INIT
+    ):
+        raise ValueError("registry bound result constructor changed")
+
+
 class ToolRegistry:
     """Immutable exact-name registry with deterministic revision identity."""
 
@@ -257,6 +271,7 @@ class ToolRegistry:
         # This check is not an authorization grant or a concurrency primitive.
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
+        _require_original_bound_constructor()
         # Preserve the *original* argument carrier as well as its digest.
         # A callback can replace a frozen ToolCall's arguments with a new,
         # value-equal mapping after resolve() has finished its own checks.
@@ -300,7 +315,10 @@ class ToolRegistry:
         assert_call_unchanged()
         self._assert_registration_epoch()
         assert_call_unchanged()
-        bound = BoundAction(
+        # A reentrant hash or registry lookup can replace the frozen result
+        # constructor after the initial admission check.
+        _require_original_bound_constructor()
+        bound = _BOUND_TYPE(
             registry_revision=revision,
             call=call,
             registration=registration,
@@ -313,8 +331,9 @@ class ToolRegistry:
         assert_call_unchanged()
         self._assert_registration_epoch()
         assert_call_unchanged()
+        _require_original_bound_constructor()
         if (
-            type(bound) is not BoundAction
+            type(bound) is not _BOUND_TYPE
             or bound.registry_revision is not revision
             or bound.call is not call
             or bound.registration is not registration
