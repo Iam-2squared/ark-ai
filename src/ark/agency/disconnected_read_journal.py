@@ -103,6 +103,16 @@ _SNAPSHOT_DENIALS = (
     "dispatch_authorized", "effect_proven",
     "automatic_replay_authorized", "independent_custody_proven",
 )
+_WITNESS_DENIALS = (
+    "dispatch_authorized", "effect_proven",
+    "replay_authorized", "independent_custody_proven",
+)
+_ORIGINAL_WITNESS_DENIALS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_DENIALS
+)
+_ORIGINAL_SNAPSHOT_DENIALS = tuple(
+    vars(_SNAPSHOT_TYPE)[name] for name in _SNAPSHOT_DENIALS
+)
 
 
 def genesis_witness() -> ReadJournalWitness:
@@ -111,17 +121,33 @@ def genesis_witness() -> ReadJournalWitness:
 
 
 def _check_witness(witness: ReadJournalWitness) -> None:
+    if type(witness) is not _WITNESS_TYPE:
+        raise ReadJournalRejected("invalid retained witness")
+    original_count = witness.count
+    original_tip = witness.tip_sha256
     if (
-        type(witness) is not _WITNESS_TYPE
-        or type(witness.count) is not int or not 0 <= witness.count <= _MAX_ROWS
-        or type(witness.tip_sha256) is not str
-        or _SHA.fullmatch(witness.tip_sha256) is None
-        or witness.dispatch_authorized is not False
-        or witness.effect_proven is not False
-        or witness.replay_authorized is not False
-        or witness.independent_custody_proven is not False
+        type(original_count) is not int or not 0 <= original_count <= _MAX_ROWS
+        or type(original_tip) is not str or _SHA.fullmatch(original_tip) is None
     ):
         raise ReadJournalRejected("invalid retained witness")
+    # A False-valued substitute is still an unreviewed authority descriptor.
+    # A getter may also replace an already checked descriptor or frozen field.
+    for name, descriptor in zip(
+        _WITNESS_DENIALS, _ORIGINAL_WITNESS_DENIALS, strict=True,
+    ):
+        if (
+            vars(_WITNESS_TYPE).get(name) is not descriptor
+            or getattr(witness, name) is not False
+            or witness.count is not original_count
+            or witness.tip_sha256 is not original_tip
+            or any(
+                vars(_WITNESS_TYPE).get(flag) is not pinned
+                for flag, pinned in zip(
+                    _WITNESS_DENIALS, _ORIGINAL_WITNESS_DENIALS, strict=True,
+                )
+            )
+        ):
+            raise ReadJournalRejected("invalid retained witness")
 
 
 def _check_receipt(row: ReadReceipt) -> None:
@@ -384,9 +410,7 @@ class DisconnectedReadJournal:
         # invoke synthetic callbacks. Never silently rebase saved row epochs.
         stable()
         result = ReadJournalSnapshot(actual, rows)
-        descriptors = tuple(
-            getattr(_SNAPSHOT_TYPE, name) for name in _SNAPSHOT_DENIALS
-        )
+        descriptors = _ORIGINAL_SNAPSHOT_DENIALS
         row_fields = tuple(
             (row.request_id, row.step_id, row.operation,
              row.input_digest, row.result_digest)
@@ -490,14 +514,14 @@ class DisconnectedReadJournal:
         stable()
         result = ReadJournalWitness(next_index, next_tip)
         stable()
+        try:
+            _check_witness(result)
+        except ReadJournalRejected as exc:
+            raise ReadJournalRejected("post-commit READ witness changed") from exc
         if (
             type(result) is not _WITNESS_TYPE
             or type(result.count) is not int or result.count != next_index
             or type(result.tip_sha256) is not str or result.tip_sha256 != next_tip
-            or result.dispatch_authorized is not False
-            or result.effect_proven is not False
-            or result.replay_authorized is not False
-            or result.independent_custody_proven is not False
         ):
             raise ReadJournalRejected("post-commit READ witness changed")
         stable()
