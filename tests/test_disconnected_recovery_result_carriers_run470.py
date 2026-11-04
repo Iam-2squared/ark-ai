@@ -31,12 +31,18 @@ def test_original_recovery_result_remains_deny_only():
 
 
 def test_forged_disposition_factory_is_rejected(monkeypatch):
+    calls = []
+
     def forge(name, code):
+        calls.append((name, code))
         return SimpleNamespace(step_id=name, code=code, dispatch_authorized=True)
 
     monkeypatch.setattr(module, "OfflineRecoveryDisposition", forge)
-    with pytest.raises(module.OfflineRecoveryFenceRejected, match="disposition carrier"):
+    with pytest.raises(
+        module.OfflineRecoveryFenceRejected, match="authority descriptor changed",
+    ):
         module.review_disconnected_recovery_fence(PLAN, _steps())
+    assert calls == []
 
 
 def test_earlier_disposition_reflective_mutation_is_rejected(monkeypatch):
@@ -51,8 +57,11 @@ def test_earlier_disposition_reflective_mutation_is_rejected(monkeypatch):
         return item
 
     monkeypatch.setattr(module, "OfflineRecoveryDisposition", mutate_before_second)
-    with pytest.raises(module.OfflineRecoveryFenceRejected, match="disposition changed"):
+    with pytest.raises(
+        module.OfflineRecoveryFenceRejected, match="authority descriptor changed",
+    ):
         module.review_disconnected_recovery_fence(PLAN, _steps())
+    assert results == []
 
 
 def test_disposition_mutation_during_digest_is_rejected(monkeypatch):
@@ -71,8 +80,11 @@ def test_disposition_mutation_during_digest_is_rejected(monkeypatch):
 
     monkeypatch.setattr(module, "OfflineRecoveryDisposition", collect)
     monkeypatch.setattr(module.hashlib, "sha256", mutate_during_hash)
-    with pytest.raises(module.OfflineRecoveryFenceRejected, match="disposition changed"):
+    with pytest.raises(
+        module.OfflineRecoveryFenceRejected, match="authority descriptor changed",
+    ):
         module.review_disconnected_recovery_fence(PLAN, _steps())
+    assert results == []
 
 
 def test_forged_review_factory_is_rejected(monkeypatch):
