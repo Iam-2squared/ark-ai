@@ -70,6 +70,36 @@ class DetachedReservationOverlapReview:
     def issuer_or_consent_verified(self) -> bool:
         return False
 
+# Pin the deny-only DTO implementation before any adversarial hash or
+# constructor callback. A copied False-returning property is still new
+# executable code, not an original authority boundary.
+_REVIEW_TYPE = DetachedReservationOverlapReview
+_REVIEW_DENIALS = (
+    "durable_uniqueness_proven", "exact_once_effect_proven",
+    "automatic_retry_authorized", "write_dispatch_authorized",
+    "issuer_or_consent_verified",
+)
+_ORIGINAL_REVIEW_INIT = vars(_REVIEW_TYPE)["__init__"]
+_ORIGINAL_REVIEW_DENIALS = tuple(
+    vars(_REVIEW_TYPE)[name] for name in _REVIEW_DENIALS
+)
+
+
+def _assert_original_review_authority() -> None:
+    if (
+        DetachedReservationOverlapReview is not _REVIEW_TYPE
+        or vars(_REVIEW_TYPE).get("__init__") is not _ORIGINAL_REVIEW_INIT
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise ReservationOverlapRejected(
+            "reservation review authority implementation changed"
+        )
+
 
 def review_disconnected_reservation_overlap(
     plans: tuple[DetachedPlanReservationClaims, ...],
@@ -80,6 +110,7 @@ def review_disconnected_reservation_overlap(
     is only a bound diagnostic for these synthetic in-memory claims; it must
     never be interpreted as permission to execute, advance a cursor or replay.
     """
+    _assert_original_review_authority()
     if (
         type(plans) is not tuple or not 1 <= len(plans) <= _MAX_PLANS
         or any(type(plan) is not DetachedPlanReservationClaims for plan in plans)
@@ -95,6 +126,7 @@ def review_disconnected_reservation_overlap(
                         for steps in step_carriers)
 
     def epoch() -> None:
+        _assert_original_review_authority()
         if plans is not original_plans or len(plans) != len(plan_carriers):
             raise ReservationOverlapRejected("plan sequence changed during review")
         for plan, original_plan, original_values, steps, saved in zip(
@@ -160,10 +192,11 @@ def review_disconnected_reservation_overlap(
     epoch()
     fingerprint = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     epoch()
-    review = DetachedReservationOverlapReview(len(plans), write_count, uncertain, fingerprint)
+    _assert_original_review_authority()
+    review = _REVIEW_TYPE(len(plans), write_count, uncertain, fingerprint)
     epoch()
     if (
-        type(review) is not DetachedReservationOverlapReview
+        type(review) is not _REVIEW_TYPE
         or type(review.plan_count) is not int or review.plan_count != len(plans)
         or type(review.write_count) is not int or review.write_count != write_count
         or type(review.uncertain_write_count) is not int
@@ -171,4 +204,28 @@ def review_disconnected_reservation_overlap(
         or review.fingerprint is not fingerprint
     ):
         raise ReservationOverlapRejected("constructed reservation review changed")
+    # A successfully constructed diagnostic is never evidence of durable
+    # uniqueness, exactly-once effects, approval, consent or dispatch.
+    for name in _REVIEW_DENIALS:
+        epoch()
+        _assert_original_review_authority()
+        if getattr(review, name) is not False:
+            raise ReservationOverlapRejected(
+                "reservation review acquired external authority"
+            )
+        # Even a legitimate getter is a callback boundary: recheck exact
+        # result fields, caller claims and ALL original property descriptors.
+        epoch()
+        if (
+            type(review) is not _REVIEW_TYPE
+            or type(review.plan_count) is not int
+            or review.plan_count != len(plans)
+            or type(review.write_count) is not int
+            or review.write_count != write_count
+            or type(review.uncertain_write_count) is not int
+            or review.uncertain_write_count != uncertain
+            or review.fingerprint is not fingerprint
+        ):
+            raise ReservationOverlapRejected("reservation review result changed")
+    epoch()
     return review
