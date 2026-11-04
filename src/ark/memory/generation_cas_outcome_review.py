@@ -71,6 +71,7 @@ class MemoryCASOutcomeReview:
 
 
 _REPORT_TYPE = MemoryCASOutcomeReview
+_ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
 _ORIGINAL_DENIALS = tuple(vars(_REPORT_TYPE)[name] for name in _DENIED)
 
 
@@ -78,9 +79,13 @@ def _require_original_denials() -> None:
     # The properties alone do not authenticate their owning class: a caller
     # could attach the original False-valued descriptors to a counterfeit
     # report class with an executable constructor.
-    if MemoryCASOutcomeReview is not _REPORT_TYPE or any(
+    if (
+        MemoryCASOutcomeReview is not _REPORT_TYPE
+        or vars(_REPORT_TYPE).get("__init__") is not _ORIGINAL_REPORT_INIT
+        or any(
         vars(_REPORT_TYPE).get(name) is not original
         for name, original in zip(_DENIED, _ORIGINAL_DENIALS, strict=True)
+        )
     ):
         raise MemoryCASOutcomeRejected("CAS outcome authority definition changed")
 
@@ -252,7 +257,10 @@ def review_memory_generation_cas_outcome(
             fields, separators=(",", ":"), ensure_ascii=True, allow_nan=False,
         ).encode("ascii")
     ).hexdigest()
-    result = MemoryCASOutcomeReview(*fields, digest)
+    # Verify constructor identity immediately before invocation; a forged
+    # dataclass __init__ is executable even if all denial flags remain False.
+    _require_original_denials()
+    result = _REPORT_TYPE(*fields, digest)
     pinned = tuple(getattr(result, name) for name in (
         "observation", "retained_prefix_sha256", "observed_prefix_sha256",
         "observed_row_sha256", "expected_content_sha256", "review_sha256",
@@ -260,6 +268,7 @@ def review_memory_generation_cas_outcome(
     descriptors = _ORIGINAL_DENIALS
 
     def stable_result() -> None:
+        _require_original_denials()
         current = tuple(getattr(result, name) for name in (
             "observation", "retained_prefix_sha256", "observed_prefix_sha256",
             "observed_row_sha256", "expected_content_sha256", "review_sha256",
