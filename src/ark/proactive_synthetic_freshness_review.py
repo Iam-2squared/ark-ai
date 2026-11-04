@@ -241,7 +241,12 @@ def review_prepared_trigger_freshness(
             conn.commit()
             assert_current_epoch()
             assert_epoch()
-            review = SyntheticProactiveFreshnessReview(
+            # A reflected callback may replace the exported review class
+            # or its deny-only descriptors before construction. Do not run a
+            # counterfeit constructor even if it returns an inert-looking row.
+            for name in _FRESHNESS_DENIALS:
+                _assert_original_freshness_denial(name)
+            review = _FRESHNESS_RESULT(
                 expected, prepared, now_ms, current,
             )
             # A forged or reflectively edited result must not escape merely
@@ -266,6 +271,9 @@ def review_prepared_trigger_freshness(
             # before proceeding to the next getter. A False-valued replacement
             # must not turn an otherwise valid review into unreviewed authority.
             for name in _FRESHNESS_DENIALS:
+                # Prior result/source checks themselves can be reentrant.
+                # Validate the original property BEFORE invoking its getter.
+                _assert_original_freshness_denial(name)
                 if getattr(review, name) is not False:
                     raise SyntheticTriggerRejected(
                         "freshness review output changed authority"
