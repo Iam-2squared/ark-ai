@@ -83,6 +83,38 @@ class MemoryEventPrefixComparison:
 _WITNESS = MemoryEventPrefixWitness
 _COMPARISON = MemoryEventPrefixComparison
 _STORE = SQLiteMemoryStore
+_WITNESS_DENIALS = (
+    "independently_authenticated", "historical_writer_authenticated",
+    "memory_disclosure_authorized", "action_authorized",
+)
+_COMPARISON_DENIALS = (
+    "historical_writer_authenticated", "independent_witness_custody_proven",
+    "memory_disclosure_authorized", "action_authorized",
+)
+_WITNESS_ORIGINAL_FLAGS = tuple(vars(_WITNESS)[name] for name in _WITNESS_DENIALS)
+_COMPARISON_ORIGINAL_FLAGS = tuple(
+    vars(_COMPARISON)[name] for name in _COMPARISON_DENIALS
+)
+
+
+def _original_witness_flags() -> None:
+    if MemoryEventPrefixWitness is not _WITNESS or any(
+        vars(_WITNESS).get(name) is not descriptor
+        for name, descriptor in zip(
+            _WITNESS_DENIALS, _WITNESS_ORIGINAL_FLAGS, strict=True,
+        )
+    ):
+        raise MemoryEventPrefixRejected("retained event witness authority changed")
+
+
+def _original_comparison_flags() -> None:
+    if MemoryEventPrefixComparison is not _COMPARISON or any(
+        vars(_COMPARISON).get(name) is not descriptor
+        for name, descriptor in zip(
+            _COMPARISON_DENIALS, _COMPARISON_ORIGINAL_FLAGS, strict=True,
+        )
+    ):
+        raise MemoryEventPrefixRejected("event prefix comparison authority changed")
 
 
 def _witness_epoch(value: object) -> tuple[object, ...]:
@@ -96,12 +128,16 @@ def _witness_epoch(value: object) -> tuple[object, ...]:
         or (count == 0 and tail != 0)
         or (count > 0 and tail < count)
         or type(digest) is not str or _SHA.fullmatch(digest) is None
-        or value.independently_authenticated is not False
-        or value.historical_writer_authenticated is not False
-        or value.memory_disclosure_authorized is not False
-        or value.action_authorized is not False
     ):
         raise MemoryEventPrefixRejected("invalid event prefix shape or authority")
+    for name in _WITNESS_DENIALS:
+        # Verify the original class descriptor before any getter is invoked.
+        # Synthetic callbacks can install a False-valued executable getter.
+        _original_witness_flags()
+        if getattr(value, name) is not False:
+            raise MemoryEventPrefixRejected("invalid event prefix authority")
+        _original_witness_flags()
+    _original_witness_flags()
     return fields
 
 
@@ -273,11 +309,14 @@ def compare_local_memory_event_prefix(
         or result.current_event_count != current.event_count
         or result.status is not status
         or result.comparison_sha256 is not digest
-        or result.historical_writer_authenticated is not False
-        or result.independent_witness_custody_proven is not False
-        or result.memory_disclosure_authorized is not False
-        or result.action_authorized is not False
     ):
         raise MemoryEventPrefixRejected("event prefix comparison acquired authority")
+    for name in _COMPARISON_DENIALS:
+        _original_comparison_flags()
+        if getattr(result, name) is not False:
+            raise MemoryEventPrefixRejected("event prefix comparison acquired authority")
+        _original_comparison_flags()
+        stable_retained()
+    _original_comparison_flags()
     stable_retained()
     return result
