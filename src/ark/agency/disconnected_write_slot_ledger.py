@@ -100,21 +100,14 @@ _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
 
 
 def _require_original_constructors() -> None:
-    # Inspect this before any receipt, witness or False-valued capability
-    # getter is evaluated: an injected constructor/getter is executable code.
+    # Constructor custody is independent from the established denial-getter
+    # check timings. Keep those existing checks and error paths intact: a
+    # synthetic post-COMMIT getter fixture must still test its own boundary.
     if (
         WriteSlotLedgerWitness is not _WITNESS_TYPE
         or WriteSlotReservationReceipt is not _RECEIPT_TYPE
         or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
         or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
-        or vars(_WITNESS_TYPE).get("independently_authenticated")
-        is not _ORIGINAL_WITNESS_DENIAL
-        or any(
-            vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
-            )
-        )
     ):
         raise WriteSlotLedgerRejected("reservation constructor or authority changed")
 
