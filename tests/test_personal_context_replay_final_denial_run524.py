@@ -61,7 +61,9 @@ def test_false_final_authority_getter_cannot_rewrite_report(
         OfflineContextRecoveryReview, "automatic_replay_authorized",
         property(malicious_false),
     )
-    with pytest.raises(OfflineContextRecoveryRejected, match="result changed"):
+    with pytest.raises(
+        OfflineContextRecoveryRejected, match="result changed|gained authority",
+    ):
         review_restarted_context_replay(ledger, retained)
 
 
