@@ -84,6 +84,16 @@ class WriteSlotReservationReceipt:
 
 _RECEIPT_TYPE = WriteSlotReservationReceipt
 _WITNESS_TYPE = WriteSlotLedgerWitness
+_RECEIPT_DENIALS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "exact_once_external_effect_proven", "trusted_clock_verified",
+    "owner_or_consent_verified",
+)
+# Pin declarations from import time, not a potentially replaced set of
+# False-only getters collected only after a reservation was committed.
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
+)
 
 
 def _hash(value: tuple[object, ...]) -> str:
@@ -363,11 +373,7 @@ class DisconnectedWriteSlotLedger:
         # may replace another descriptor while processing the final callback.
         # The witness and SQLite write are already committed, so a failed
         # final review must NEVER be represented as a rolled-back reservation.
-        denial_names = (
-            "dispatch_authorized", "automatic_replay_authorized",
-            "exact_once_external_effect_proven", "trusted_clock_verified",
-            "owner_or_consent_verified",
-        )
+        denial_names = _RECEIPT_DENIALS
         denial_descriptors = tuple(
             getattr(_RECEIPT_TYPE, name) for name in denial_names
         )
@@ -391,6 +397,12 @@ class DisconnectedWriteSlotLedger:
                 getattr(_RECEIPT_TYPE, name) is not descriptor
                 for name, descriptor in zip(
                     denial_names, denial_descriptors, strict=True,
+                )
+            )
+            or any(
+                vars(_RECEIPT_TYPE).get(name) is not original
+                for name, original in zip(
+                    _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
                 )
             )
         ):
@@ -433,6 +445,12 @@ class DisconnectedWriteSlotLedger:
                 getattr(_RECEIPT_TYPE, name) is not descriptor
                 for name, descriptor in zip(
                     denial_names, denial_descriptors, strict=True,
+                )
+            )
+            or any(
+                vars(_RECEIPT_TYPE).get(name) is not original
+                for name, original in zip(
+                    _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
                 )
             )
         ):
