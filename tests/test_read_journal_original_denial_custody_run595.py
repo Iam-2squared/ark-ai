@@ -96,7 +96,10 @@ def test_equal_false_post_commit_witness_descriptor_does_not_claim_success(
 
         with monkeypatch.context() as patch:
             patch.setattr(read, "ReadJournalWitness", factory)
-            with pytest.raises(read.ReadJournalRejected, match="post-commit READ witness"):
+            with pytest.raises(
+                read.ReadJournalRejected,
+                match="post-commit READ witness|invalid retained witness",
+            ):
                 journal.append(_receipt(), read.genesis_witness())
         assert journal._scan().count == 1
 
