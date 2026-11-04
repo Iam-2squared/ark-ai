@@ -253,6 +253,11 @@ class SyntheticContextRevocationLedger:
         """Inspect one read-only snapshot; absence is not proof of consent."""
         if type(scopes) is not tuple or not 1 <= len(scopes) <= 16:
             raise SyntheticContextRevocationRejected("exact bounded scopes required")
+        # Reject foreign objects *before* inspecting owner_id/namespace.
+        # Those attributes may be executable descriptors; snapshotting
+        # their values before the exact-type guard is not a safe veto read.
+        if any(type(scope) is not MemoryScope for scope in scopes):
+            raise SyntheticContextRevocationRejected("exact MemoryScope required")
         source_path = self.path
         self._assert_source_path(source_path)
         # Pin each exact scope before the first potentially reentrant digest
