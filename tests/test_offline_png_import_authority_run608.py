@@ -20,7 +20,7 @@ def _chunk(kind: bytes, body: bytes) -> bytes:
 
 def _request() -> png.OfflinePngRequest:
     raw = (
-        b"\\x89PNG\\r\\n\\x1a\\n"
+        b"\x89PNG\r\n\x1a\n"
         + _chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0))
         + _chunk(b"IDAT", b"synthetic-fixture-not-decoded")
         + _chunk(b"IEND", b"")
