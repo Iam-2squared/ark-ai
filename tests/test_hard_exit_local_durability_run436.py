@@ -74,7 +74,22 @@ registry = ToolRegistry((ToolRegistration(
 ),))
 token = OneShotAuthorization("hard-exit-fixture-token", call.request_id, 1000)
 store = occurrence.SyntheticOccurrenceStore(pathlib.Path(sys.argv[1]))
-occurrence.SyntheticReservationReceipt = lambda *_args: os._exit(43)
+# Crash directly after the actual SQLite COMMIT, not through a forged
+# receipt constructor (which safe ingress must now reject before spending).
+connect = store._connect
+
+class CrashAfterCommit:
+    def __init__(self, inner):
+        self.inner = inner
+
+    def commit(self):
+        self.inner.commit()
+        os._exit(43)
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+store._connect = lambda **kwargs: CrashAfterCommit(connect(**kwargs))
 store.reserve_synthetic(
     registry, call, token, occurrence_id="occ_" + "a" * 64, now_ms=10,
 )
