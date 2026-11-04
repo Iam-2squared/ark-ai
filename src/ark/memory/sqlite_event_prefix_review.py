@@ -125,8 +125,10 @@ def _witness_epoch(value: object) -> tuple[object, ...]:
     if (
         type(count) is not int or not 0 <= count <= _MAX_EVENTS
         or type(tail) is not int or not 0 <= tail <= SQLITE_INT_MAX
-        or (count == 0 and tail != 0)
-        or (count > 0 and tail < count)
+        # This v1 journal uses dense AUTOINCREMENT IDs from genesis.
+        # A retained tip with tail > count is noncanonical even if its
+        # caller supplies a syntactically valid digest. Refuse it before I/O.
+        or tail != count
         or type(digest) is not str or _SHA.fullmatch(digest) is None
     ):
         raise MemoryEventPrefixRejected("invalid event prefix shape or authority")
