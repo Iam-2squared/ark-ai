@@ -112,6 +112,7 @@ _RECEIPT_DENIALS = (
 _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
 )
+_ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
 _WITNESS_TYPE = OfflinePrivacyVetoWitness
 _ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_verified"]
 
@@ -119,6 +120,7 @@ _ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_verified"]
 def _assert_receipt_denials() -> None:
     if (
         OfflinePrivacyVetoReceipt is not _RECEIPT_TYPE
+        or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
         or OfflinePrivacyVetoWitness is not _WITNESS_TYPE
         or vars(_WITNESS_TYPE).get("independent_custody_verified")
         is not _ORIGINAL_WITNESS_DENIAL
@@ -388,7 +390,14 @@ class DisconnectedPrivacyVetoLedger:
         # COMMIT may already be durable even if the receipt is rejected.
         # Never retry automatically after a post-COMMIT custody exception.
         def verify_postcommit() -> None:
-            _assert_receipt_denials()
+            try:
+                _assert_receipt_denials()
+            except OfflinePrivacyVetoRejected as exc:
+                # SQLite COMMIT already returned: this is an ambiguous local
+                # receipt outcome, not an invitation to replay the veto.
+                raise OfflinePrivacyVetoRejected(
+                    "veto post-COMMIT receipt authority changed; manual review required"
+                ) from exc
             if (
                 self._path is not source
                 or type(retained) is not _WITNESS_TYPE
