@@ -265,6 +265,10 @@ def _checked_snapshot(
             raise SyntheticPlanJournalRejected(
                 "synthetic plan topology changed during review"
             ) from exc
+        # A status_digest() callback runs AFTER the last deny-only getter.
+        # Detect a descriptor rebound at that boundary before exposing a
+        # recovered state or treating an appended local event as authority.
+        _require_original_recovery_denials()
         after_tail = (
             tail.topology_digest, tail.event_count, tail.event_hash,
             tail.status_digest, tail.last_at_ms,
