@@ -298,6 +298,7 @@ def test_postcommit_returned_receipt_mutation_is_denied_without_replay(tmp_path,
 
     db = ledger(tmp_path)
     retained = genesis_write_slot_witness()
+    original_receipt = module.WriteSlotReservationReceipt
     invoked = []
 
     def corrupt_receipt(*args, **kwargs):
@@ -315,6 +316,9 @@ def test_postcommit_returned_receipt_mutation_is_denied_without_replay(tmp_path,
     assert invoked == []
     with sqlite3.connect(tmp_path / "synthetic.db") as conn:
         assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
+    # The malicious symbol is still installed at this point; restore it
+    # before the separate retained-history/stale-witness diagnostic.
+    monkeypatch.setattr(module, "WriteSlotReservationReceipt", original_receipt)
     with pytest.raises(WriteSlotLedgerRejected, match="stale"):
         db.inspect(retained=retained)
 
