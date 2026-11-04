@@ -74,7 +74,21 @@ _DENIALS = (
     "consent_verified", "external_export_authorized",
     "tool_dispatch_authorized", "retention_authorized",
 )
-_DENIAL_DESCRIPTORS = tuple(getattr(_RESULT_TYPE, key) for key in _DENIALS)
+_DENIAL_DESCRIPTORS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIALS)
+
+
+def _require_original_denials() -> None:
+    # A forged descriptor may impersonate the original on class access.
+    # Never execute its __get__, including before reading private fixtures.
+    if any(
+        vars(_RESULT_TYPE).get(name) is not original
+        for name, original in zip(
+            _DENIALS, _DENIAL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise OfflineContextSearchRejected(
+            "search preview authority descriptor changed"
+        )
 
 
 def _utf8(value: str) -> bytes:
@@ -98,6 +112,7 @@ def search_offline_context(
     The literal query is retained locally in the return value. This never
     verifies consent, identity, revocation freshness or storage provenance.
     """
+    _require_original_denials()
     if (
         type(fixtures) is not tuple or not 1 <= len(fixtures) <= _MAX_RECORDS
         or any(type(row) is not OfflineContextSearchRecord for row in fixtures)
@@ -126,6 +141,7 @@ def search_offline_context(
                    for row in rows)
 
     def assert_epoch() -> None:
+        _require_original_denials()
         if (
             any(now is not before for now, before in zip(
                 (fixtures, owner_digest, allowed_scope_digests, observed_at_ms, query, max_hits),
@@ -234,6 +250,7 @@ def search_offline_context(
     # descriptors and result/source carriers after EACH getter, including the
     # last, so a swapped False-valued descriptor never becomes a silent grant.
     for index, key in enumerate(_DENIALS):
+        _require_original_denials()
         if getattr(result, key) is not False:
             raise OfflineContextSearchRejected("search preview authority changed")
         assert_result()
@@ -241,7 +258,7 @@ def search_offline_context(
         # a later callback may itself mutate the source/result, which must be
         # reported by the original post-callback integrity diagnostic.
         if any(
-            getattr(_RESULT_TYPE, name) is not original
+            vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
                 _DENIALS[:index + 1],
                 _DENIAL_DESCRIPTORS[:index + 1],
@@ -253,7 +270,7 @@ def search_offline_context(
             )
         assert_result()
     if any(
-        getattr(_RESULT_TYPE, name) is not original
+        vars(_RESULT_TYPE).get(name) is not original
         for name, original in zip(_DENIALS, _DENIAL_DESCRIPTORS, strict=True)
     ):
         raise OfflineContextSearchRejected("search preview authority descriptor changed")
