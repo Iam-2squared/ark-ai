@@ -46,7 +46,7 @@ def test_receipt_cannot_claim_real_notification_or_dispatch(
     monkeypatch.setattr(
         module.SyntheticTriggerReceipt, field, property(lambda _: True),
     )
-    with pytest.raises(module.SyntheticTriggerRejected, match="gained authority"):
+    with pytest.raises(module.SyntheticTriggerRejected, match="authority epoch changed"):
         submit()
     assert ledger.count() == 1
 
