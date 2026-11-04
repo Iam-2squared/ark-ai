@@ -73,16 +73,9 @@ def test_row_digest_callback_constructor_replacement_rolls_back(tmp_path, monkey
         executed.append((args, kwargs))
         raise AssertionError("untrusted witness constructor executed")
 
-    def hash_with_injection(fields):
-        result = original_hash(fields)
-        if fields[0] == "row":
-            triggered.append(fields[0])
-            monkeypatch.setattr(module.WriteSlotLedgerWitness, "__init__", hostile)
-        return result
-
     with monkeypatch.context() as patch:
         patch.setattr(module, "_hash", hash_with_injection)
-        # Use patch, not the outer fixture, to clean up the injection.
+        # The scoped fixture restores a callback-injected class after denial.
         def hooked(fields):
             digest = original_hash(fields)
             if fields[0] == "row":
