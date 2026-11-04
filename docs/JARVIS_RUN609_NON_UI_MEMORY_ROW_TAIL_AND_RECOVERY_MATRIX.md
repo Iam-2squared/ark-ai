@@ -53,9 +53,26 @@ Properties under test:
 This is model-based *synthetic* recovery verification, not an authorization
 policy, a real executor, or exactly-once physical action.
 
+## Finding 3 — privacy veto exact-type preflight
+
+`SyntheticContextRevocationLedger.assert_not_revoked` previously formed its
+input epoch by accessing `scope.owner_id` and `scope.namespace` **before**
+checking the input's concrete class. A foreign object could run an arbitrary
+getter during privacy checking, even though the code would later reject it.
+
+Source fix `d3de7bcda54d0f4981f4d7dadb645b39a6864a80` rejects each
+non-exact `MemoryScope` through `type(scope) is MemoryScope` before reading
+any potentially executable fields or opening the veto database. No grant,
+read of actual personal content, data deletion, or schema alteration occurs.
+`tests/test_personal_context_revocation_exact_type_run609.py` at
+`f31b7b9f2087f4340741c2dd302906f1192a0cfb` defines four
+parameter-expanded cases: direct and mixed foreign getters, subtype denial,
+and the unchanged valid read-then-local-veto flow. Temporary test SQLite
+is not an authenticated user revocation decision.
+
 ## Evidence, execution and gates
 
-- 2 independent packages, **205 newly authored parameter-expanded test
+- 3 independent packages, **209 newly authored parameter-expanded test
   cases**. Case count is **not** locally executed pytest PASS.
 - Local git checkout unavailable (GitHub DNS not resolvable from the working
   container); writes used only the ordinary GitHub Contents API and
@@ -70,6 +87,7 @@ policy, a real executor, or exactly-once physical action.
   [#41860682228](https://github.com/Iam-2squared/ark-ai/actions/runs/41860682228);
   Planner matrix CI
   [#41861011236](https://github.com/Iam-2squared/ark-ai/actions/runs/41861011236).
+  Privacy exact-type source/test CI starts from the referenced normal commits.
   These IDs are evidence references; consult live Actions status, do not
   assume green without independent readback.
 - Existing frozen V1/V2/Local UI/Launcher/Mem/Planner/V3 controlling evidence
