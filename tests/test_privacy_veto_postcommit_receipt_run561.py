@@ -49,31 +49,39 @@ def test_original_receipt_denial_required_before_sqlite_write(
 
 
 @pytest.mark.parametrize("forged", ("owner", "witness"))
-def test_postcommit_forged_receipt_refused_but_veto_remains(
+def test_preinstalled_forged_receipt_constructor_refused_before_commit(
     tmp_path, monkeypatch, forged,
 ):
     ledger, path = make_ledger(tmp_path)
     before = ledger.witness()
     original = mod.OfflinePrivacyVetoReceipt.__init__
+    invoked = []
 
     def tamper_receipt(self, *args):
+        invoked.append(True)
         original(self, *args)
         if forged == "owner":
             object.__setattr__(self, "owner_sha256", "c" * 64)
         else:
             object.__setattr__(self.witness, "fingerprint", "f" * 64)
 
+    # Original constructor preflight refuses a preinstalled counterfeit
+    # BEFORE the local veto is written. The separate Run617 regression
+    # exercises a constructor rebound from an actual post-COMMIT callback.
     with monkeypatch.context() as patch:
         patch.setattr(mod.OfflinePrivacyVetoReceipt, "__init__", tamper_receipt)
-        with pytest.raises(mod.OfflinePrivacyVetoRejected, match="post-COMMIT"):
+        with pytest.raises(
+            mod.OfflinePrivacyVetoRejected, match="receipt authority changed",
+        ):
             veto(ledger, before)
 
+    assert invoked == []
     reopened = mod.DisconnectedPrivacyVetoLedger(path)
     retained = reopened.witness()
-    assert retained.count == 1
+    assert retained.count == 0
     assert reopened.review(
         owner_sha256=OWNER, scope_sha256=SCOPE, retained=retained,
-    ).local_veto_seen is True
+    ).local_veto_seen is False
 
 
 def test_postcommit_path_retarget_requires_manual_reconciliation(
