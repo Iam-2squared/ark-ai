@@ -73,6 +73,9 @@ class OfflineContextReplayReceipt:
 
 
 _WITNESS_TYPE = OfflineContextReplayWitness
+# A False-looking replacement property may still execute code before returning.
+# Pin the exact descriptor at import, not at the moment of witness validation.
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_proven"]
 _RECEIPT_TYPE = OfflineContextReplayReceipt
 _RECEIPT_DENIALS = (
     "consent_verified", "revocation_freshness_verified",
@@ -100,6 +103,14 @@ def _valid(value: object, pattern: re.Pattern[str]) -> bool:
 
 
 def _check_witness(witness: object) -> tuple[int, str]:
+    # Reject static descriptor drift BEFORE accessing an executable property.
+    # Local replay witnesses are never permission or independent custody.
+    if (
+        OfflineContextReplayWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("independent_custody_proven")
+        is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise OfflineContextReplayRejected("invalid exact retained context witness")
     if (
         type(witness) is not _WITNESS_TYPE
         or type(witness.count) is not int
