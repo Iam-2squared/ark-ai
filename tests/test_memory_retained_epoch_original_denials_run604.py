@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
+from ark.memory import retained_epoch_review as retained
 from ark.memory.atomic_epoch_review import review_atomic_memory_epoch
 from ark.memory.contracts import MemorySchemaError, MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
-from ark.memory import retained_epoch_review as retained
 
 
 class Counterfeit:
