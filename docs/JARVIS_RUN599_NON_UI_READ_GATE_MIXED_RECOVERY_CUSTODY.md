@@ -18,12 +18,20 @@
 - Tests cover all four false-looking replacements, a late digest callback replacement, and a valid plan containing an UNKNOWN WRITE, held dependent READ and independent mockable READ. **READY_MOCK_ONLY never permits dispatch.** RUNNING/UNKNOWN WRITE remains quarantined and must not be blindly retried.
 - Limit: the final descriptor check is not a pre-invocation verification for this isolated diagnostic; no independent custody, real execution permission, or externally attested outcome is claimed.
 
+## Package C — Offline observation freshness denial integrity
+
+- Source: `src/ark/observation_reuse_review.py`, commit `cd68014a89ea557499d374106c92bf362c57d0ac`.
+- Regression: `tests/test_observation_reuse_false_denials_run599.py`, commit `a2f29cfe8ab9a86df2a23d03cef8096f275a6d91`; **6 authored parameter-expanded cases**.
+- After the existing two freshness reviews, double denial getter checks, and exact source/result epoch rechecks, the offline reuse receipt additionally compares the four deny-only property descriptors to their import-time identities. A replacement that still returns False must not masquerade as the original privacy/authorization contract.
+- Tests exercise four false-looking substitutions, a late substitution from the current-lineage callback, and a valid private transcript fixture. This is a **synthetic transcript descriptor**, not a microphone or media capture. No raw content or external disclosure is sent.
+- Limit: the final identity check runs after getters to preserve prior mutation diagnostics; it is not independently attested executable identity or pre-call prevention of in-process callbacks. The result never authorizes capture, disclosure, notification or dispatch.
+
 ## CI evidence / provenance at documentation time
 
 - Previous **exact Run598 checkpoint-head six-job GREEN:** [CI #41776237202](https://github.com/Iam-2squared/ark-ai/actions/runs/41776237202), Ubuntu and Windows, Python 3.11/3.12/3.13. This evidence **predates Run599 changes**.
 - For Package A test HEAD `3b82f9e72a4df23ff1de59918213bcdb2d605bb5`, [CI #41780985851](https://github.com/Iam-2squared/ark-ai/actions/runs/41780985851): Ubuntu 3/3 completed-success, Windows 3 in progress when sampled. **Not final-head GREEN.**
 - For Package B test HEAD `2008fdd889e2c45f300a17ca84d66fa4ce633f84`, [CI #41781253119](https://github.com/Iam-2squared/ark-ai/actions/runs/41781253119): in progress when sampled; exact six-job outcome pending.
-- New cases are **11 authored definitions**, not independently executed local pytest passes. Intermediate content writes each trigger normal CI; no manual duplicate workflow run was started.
+- New cases are **17 authored definitions**, not independently executed local pytest passes. Intermediate content writes each trigger normal CI; no manual duplicate workflow run was started.
 
 ## Boundaries and next work
 
