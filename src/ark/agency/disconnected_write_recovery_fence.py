@@ -70,6 +70,8 @@ class OfflineRecoveryFence:
 # replace an offline disposition with a fabricated dispatch-capable object.
 _DISPOSITION_TYPE = OfflineRecoveryDisposition
 _FENCE_TYPE = OfflineRecoveryFence
+_ORIGINAL_DISPOSITION_INIT = vars(_DISPOSITION_TYPE)["__init__"]
+_ORIGINAL_FENCE_INIT = vars(_FENCE_TYPE)["__init__"]
 _FENCE_DENIAL_NAMES = (
     "dispatch_authorized", "automatic_replay_authorized",
     "write_authorized", "external_outcome_verified",
@@ -82,10 +84,16 @@ def _require_original_fence_denials() -> None:
     # Do not run a substituted getter even if it returns False. Report type
     # identity matters: copied original descriptors do not authenticate an
     # arbitrary new report constructor.
-    if OfflineRecoveryFence is not _FENCE_TYPE or any(
+    if (
+        OfflineRecoveryFence is not _FENCE_TYPE
+        or OfflineRecoveryDisposition is not _DISPOSITION_TYPE
+        or vars(_DISPOSITION_TYPE).get("__init__") is not _ORIGINAL_DISPOSITION_INIT
+        or vars(_FENCE_TYPE).get("__init__") is not _ORIGINAL_FENCE_INIT
+        or any(
         vars(_FENCE_TYPE).get(name) is not original
         for name, original in zip(
             _FENCE_DENIAL_NAMES, _ORIGINAL_FENCE_DENIALS, strict=True,
+        )
         )
     ):
         raise OfflineRecoveryFenceRejected(
@@ -119,6 +127,7 @@ def review_disconnected_recovery_fence(
     )
 
     def epoch() -> None:
+        _require_original_fence_denials()
         if (
             plan_id is not original_plan or steps is not original_steps
             or len(steps) != len(carriers)
@@ -208,7 +217,8 @@ def review_disconnected_recovery_fence(
             code = "HELD_WRITE_APPROVAL"
         else:
             code = "READY_MOCK_ONLY"
-        decision = OfflineRecoveryDisposition(name, code)
+        _require_original_fence_denials()
+        decision = _DISPOSITION_TYPE(name, code)
         if (
             type(decision) is not _DISPOSITION_TYPE
             or decision.step_id is not name
@@ -234,7 +244,7 @@ def review_disconnected_recovery_fence(
     stable_decisions()
     frozen = tuple(decisions)
     _require_original_fence_denials()
-    review = OfflineRecoveryFence(plan_id, frozen, digest)
+    review = _FENCE_TYPE(plan_id, frozen, digest)
     epoch()
     stable_decisions()
     if (
