@@ -44,6 +44,18 @@ registry bind calls and **zero** backend dispatch calls. No production
 gate was relaxed, no test was skipped or removed. CI after this correction
 must be observed on its exact source head before any GREEN claim.
 
+- The corrected old-test HEAD `99731ca1315d2f036b384d0624aba4e0ce621161`,
+  workflow [#41810490156](https://github.com/Iam-2squared/ark-ai/actions/runs/41810490156),
+  reached Ubuntu 3.12 **8,002 PASS, 1 SKIP, 3 FAIL**. The three new
+  `test_recovery_deny_only_getters_run603.py` cases observed a substituted
+  recovery property `__get__` run after an audit continuity callback;
+  the call was denied, but the stricter **no-getter execution invariant
+  failed**. Commit `5236bba4d6e7e3712d7bfa0b05893bb5e489e7a9` adds the
+  original-descriptor recheck at each direct recovery `assert_epoch()`
+  boundary, immediately following SQLite and registry callbacks. This is a
+  production safety fix, **not** a relaxation of the test or denial rule.
+  Subsequent exact-head CI must verify that no hostile getter runs.
+
 ## Evidence interpretation
 
 - These **33 tests are authored test definitions, not 33 independently executed local pytest PASS**. CI for the exact post-change head must complete before a full GREEN claim. The preceding Run602 checkpoint failed on Ruff, not a validated pytest result.
