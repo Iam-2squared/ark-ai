@@ -66,15 +66,21 @@ _DENIAL_NAMES = (
     "external_export_authorized", "tool_dispatch_authorized",
 )
 _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
-    getattr(_REDACTED_RESULT_TYPE, name) for name in _DENIAL_NAMES
+    vars(_REDACTED_RESULT_TYPE)[name] for name in _DENIAL_NAMES
 )
 
 
 def _require_original_denials() -> None:
-    if any(
-        getattr(_REDACTED_RESULT_TYPE, name) is not original
-        for name, original in zip(
-            _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+    # A hostile descriptor may pretend to be the original when read through
+    # its class, while running arbitrary code as a side effect. Inspect the
+    # static class dictionary instead of invoking the replacement __get__.
+    if (
+        RedactedOfflinePreview is not _REDACTED_RESULT_TYPE
+        or any(
+            vars(_REDACTED_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+            )
         )
     ):
         raise OfflineRedactionRejected(
@@ -244,7 +250,7 @@ def preview_offline_redaction(
         or result.complete_masking is not require_complete
         or result.local_digest is not digest
         or any(
-            getattr(_REDACTED_RESULT_TYPE, name) is not original
+            vars(_REDACTED_RESULT_TYPE).get(name) is not original
             for name, original in zip(
                 _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
             )
