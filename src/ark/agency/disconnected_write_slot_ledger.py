@@ -84,6 +84,7 @@ class WriteSlotReservationReceipt:
 
 _RECEIPT_TYPE = WriteSlotReservationReceipt
 _WITNESS_TYPE = WriteSlotLedgerWitness
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independently_authenticated"]
 _RECEIPT_DENIALS = (
     "dispatch_authorized", "automatic_replay_authorized",
     "exact_once_external_effect_proven", "trusted_clock_verified",
@@ -120,11 +121,28 @@ def derive_disconnected_write_slot_id(
 
 
 def _check_witness(value: object) -> None:
-    if (type(value) is not _WITNESS_TYPE
-            or type(value.count) is not int or not 0 <= value.count <= _MAX_ROWS
-            or not _valid(value.chain_sha256, _SHA)
-            or value.independently_authenticated is not False):
+    # A property returning False can still be executable attacker code.
+    # Pin the import-time class and denial descriptor before every getter.
+    def original_denial() -> None:
+        if (
+            WriteSlotLedgerWitness is not _WITNESS_TYPE
+            or vars(_WITNESS_TYPE).get("independently_authenticated")
+            is not _ORIGINAL_WITNESS_DENIAL
+        ):
+            raise WriteSlotLedgerRejected("invalid retained witness")
+
+    original_denial()
+    if (
+        type(value) is not _WITNESS_TYPE
+        or type(value.count) is not int
+        or not 0 <= value.count <= _MAX_ROWS
+        or not _valid(value.chain_sha256, _SHA)
+    ):
         raise WriteSlotLedgerRejected("invalid retained witness")
+    original_denial()
+    if value.independently_authenticated is not False:
+        raise WriteSlotLedgerRejected("invalid retained witness")
+    original_denial()
 
 
 def _check_path(value: object, *, create: bool) -> Path:
