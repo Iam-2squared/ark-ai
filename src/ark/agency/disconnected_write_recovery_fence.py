@@ -78,6 +78,21 @@ _ORIGINAL_FENCE_DENIALS = tuple(
     vars(_FENCE_TYPE)[name] for name in _FENCE_DENIAL_NAMES
 )
 
+def _require_original_fence_denials() -> None:
+    # Do not run a substituted getter even if it returns False. Report type
+    # identity matters: copied original descriptors do not authenticate an
+    # arbitrary new report constructor.
+    if OfflineRecoveryFence is not _FENCE_TYPE or any(
+        vars(_FENCE_TYPE).get(name) is not original
+        for name, original in zip(
+            _FENCE_DENIAL_NAMES, _ORIGINAL_FENCE_DENIALS, strict=True,
+        )
+    ):
+        raise OfflineRecoveryFenceRejected(
+            "mixed-plan authority descriptor changed"
+        )
+
+
 
 def review_disconnected_recovery_fence(
     plan_id: str, steps: tuple[OfflineRecoveryStepClaim, ...],
@@ -94,6 +109,7 @@ def review_disconnected_recovery_fence(
         or any(type(step) is not OfflineRecoveryStepClaim for step in steps)
     ):
         raise OfflineRecoveryFenceRejected("invalid exact mixed-plan claim")
+    _require_original_fence_denials()
     original_plan = plan_id
     original_steps = steps
     carriers = tuple(steps)
@@ -217,44 +233,29 @@ def review_disconnected_recovery_fence(
     epoch()
     stable_decisions()
     frozen = tuple(decisions)
+    _require_original_fence_denials()
     review = OfflineRecoveryFence(plan_id, frozen, digest)
     epoch()
     stable_decisions()
     if (
         type(review) is not _FENCE_TYPE or review.plan_id is not plan_id
         or review.decisions is not frozen or review.digest is not digest
-        # A synthetic recovery disposition is not a signed action grant.
-        # Refuse an exact-type result whose descriptors were made to imply
-        # WRITE, dispatch, automatic replay, or external outcome authority.
-        or review.dispatch_authorized is not False
-        or review.automatic_replay_authorized is not False
-        or review.write_authorized is not False
-        or review.external_outcome_verified is not False
     ):
         raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
-    # Result descriptors are invoked code, not inert persisted evidence.
-    # A reflected property can return False while rewriting a claim,
-    # disposition, or even this frozen result in its getter. Recheck all
-    # original carriers *after* the final authority-property inspection.
-    epoch()
-    stable_decisions()
-    if (
-        type(review) is not _FENCE_TYPE
-        or review.plan_id is not plan_id
-        or review.decisions is not frozen
-        or review.digest is not digest
-    ):
-        raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
-    # Value-false getters are not proof that the original denial contract
-    # survived the callback chain. Check descriptor identities after the
-    # existing source/result mutation checks, preserving their diagnostics.
-    if any(
-        vars(_FENCE_TYPE).get(name) is not original
-        for name, original in zip(
-            _FENCE_DENIAL_NAMES, _ORIGINAL_FENCE_DENIALS, strict=True,
-        )
-    ):
-        raise OfflineRecoveryFenceRejected(
-            "mixed-plan authority descriptor changed"
-        )
+    # A deny-only getter is executable Python. Refuse a replaced descriptor
+    # before invoking it and verify every claim and decision after each call.
+    for name in _FENCE_DENIAL_NAMES:
+        _require_original_fence_denials()
+        if getattr(review, name) is not False:
+            raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
+        epoch()
+        stable_decisions()
+        if (
+            type(review) is not _FENCE_TYPE
+            or review.plan_id is not plan_id
+            or review.decisions is not frozen
+            or review.digest is not digest
+        ):
+            raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
+        _require_original_fence_denials()
     return review
