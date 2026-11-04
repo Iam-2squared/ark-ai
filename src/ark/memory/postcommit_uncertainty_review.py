@@ -26,6 +26,7 @@ from .generation_fenced_cas import (
     _row_hash,
     _snapshot,
     _token_fields,
+    _require_original_token_denials,
 )
 from .sqlite_store import SQLiteMemoryStore, deterministic_memory_id
 
@@ -93,6 +94,9 @@ def review_uncertain_memory_commit(
     ):
         raise MemoryCommitTriageRejected("exact Memory triage inputs required")
     try:
+        # The caller-retained witness is not consent or a tool capability.
+        # Reject a False-looking substituted getter before it can execute.
+        _require_original_token_denials()
         before = _token_fields(retained_before)
         memory_id = deterministic_memory_id(proposed.scope, proposed.source_id)
         if memory_id != before[0]:
@@ -106,6 +110,12 @@ def review_uncertain_memory_commit(
         raise MemoryCommitTriageRejected("invalid retained Memory triage inputs") from exc
 
     def stable() -> None:
+        try:
+            _require_original_token_denials()
+        except MemoryGenerationCASRejected as exc:
+            raise MemoryCommitTriageRejected(
+                "Memory triage token authority changed"
+            ) from exc
         if (
             type(store) is not SQLiteMemoryStore
             or store.path is not path
@@ -133,6 +143,15 @@ def review_uncertain_memory_commit(
             )
         ):
             raise MemoryCommitTriageRejected("Memory triage input or denial changed")
+        # Bracket every getter with the original class descriptor witness.
+        # This cannot authenticate who created the token.
+        for name in ("external_action_authorized", "consent_authenticated"):
+            _require_original_token_denials()
+            if getattr(retained_before, name) is not False:
+                raise MemoryCommitTriageRejected(
+                    "retained Memory CAS token claimed authority"
+                )
+            _require_original_token_denials()
 
     try:
         stable()
