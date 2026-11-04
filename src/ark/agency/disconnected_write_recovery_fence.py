@@ -70,6 +70,13 @@ class OfflineRecoveryFence:
 # replace an offline disposition with a fabricated dispatch-capable object.
 _DISPOSITION_TYPE = OfflineRecoveryDisposition
 _FENCE_TYPE = OfflineRecoveryFence
+_FENCE_DENIAL_NAMES = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "write_authorized", "external_outcome_verified",
+)
+_ORIGINAL_FENCE_DENIALS = tuple(
+    vars(_FENCE_TYPE)[name] for name in _FENCE_DENIAL_NAMES
+)
 
 
 def review_disconnected_recovery_fence(
@@ -238,4 +245,16 @@ def review_disconnected_recovery_fence(
         or review.digest is not digest
     ):
         raise OfflineRecoveryFenceRejected("mixed-plan result carrier changed")
+    # Value-false getters are not proof that the original denial contract
+    # survived the callback chain. Check descriptor identities after the
+    # existing source/result mutation checks, preserving their diagnostics.
+    if any(
+        vars(_FENCE_TYPE).get(name) is not original
+        for name, original in zip(
+            _FENCE_DENIAL_NAMES, _ORIGINAL_FENCE_DENIALS, strict=True,
+        )
+    ):
+        raise OfflineRecoveryFenceRejected(
+            "mixed-plan authority descriptor changed"
+        )
     return review
