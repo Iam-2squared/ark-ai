@@ -39,6 +39,20 @@ class AuditContinuityWitness:
             raise ValueError("empty audit witness must have zero tail identity")
 
 
+_WITNESS_TYPE = AuditContinuityWitness
+_ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+
+
+def _require_original_witness_constructor() -> None:
+    # Never invoke a substituted constructor while reporting audit evidence.
+    # A frozen dataclass does not prevent its class-level __init__ replacement.
+    if (
+        AuditContinuityWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
+    ):
+        raise ActionAuditSchemaError("audit continuity witness constructor changed")
+
+
 def _row_payload(row: sqlite3.Row, *, previous_id: int) -> tuple[int, bytes]:
     event_id = row["event_id"]
     occurred = row["occurred_at_ms"]
@@ -102,6 +116,7 @@ def review_audit_continuity(
     """
     if type(audit) is not SQLiteActionAudit:
         raise TypeError("audit must be an exact SQLiteActionAudit")
+    _require_original_witness_constructor()
     if type(max_events) is not int or not 1 <= max_events <= 10_000:
         raise ValueError("max_events must be an exact integer from 1 to 10000")
     if type(require_monotonic_time) is not bool:
@@ -119,6 +134,7 @@ def review_audit_continuity(
         raise ActionAuditSchemaError("audit continuity requires a Path source")
 
     def assert_epoch() -> None:
+        _require_original_witness_constructor()
         if audit.path is not path_epoch:
             raise ActionAuditSchemaError(
                 "audit SQLite source changed during continuity review"
@@ -201,7 +217,8 @@ def review_audit_continuity(
         raise ActionAuditSchemaError("audit history is shorter than retained witness")
     assert_epoch()
     digest = chain.hex()
-    witness = AuditContinuityWitness(count, tail, digest)
+    _require_original_witness_constructor()
+    witness = _WITNESS_TYPE(count, tail, digest)
     # Even a frozen dataclass may be reflectively edited inside a patched
     # constructor; neither its source nor returned witness may drift while
     # the final read-only diagnostic is being constructed.
