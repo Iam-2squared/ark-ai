@@ -32,14 +32,22 @@ def test_preview_scalar_mutated_during_prefix_hash_rejected(
     monkeypatch, which, field,
 ):
     retained_digest = unchanged_prior_digest()
-    original_init = attention.AttentionBudgetPreview.__init__
+    # Observe legitimate constructor results without replacing __init__.
+    # Preflight now rejects executable constructor substitutions earlier, so
+    # capture via a passive attribute hook and still test the later JSON drift.
+    original_getattribute = attention.AttentionBudgetPreview.__getattribute__
     captured = []
 
-    def capture(self, *args, **kwargs):
-        original_init(self, *args, **kwargs)
-        captured.append(self)
+    def capture(self, name):
+        if name == "notification_authorized" and not any(
+            item is self for item in captured
+        ):
+            captured.append(self)
+        return original_getattribute(self, name)
 
-    monkeypatch.setattr(attention.AttentionBudgetPreview, "__init__", capture)
+    monkeypatch.setattr(
+        attention.AttentionBudgetPreview, "__getattribute__", capture,
+    )
     original_json = prefix.json.dumps
     calls = []
     touched = []
