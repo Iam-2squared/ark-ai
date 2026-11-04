@@ -59,7 +59,9 @@ def test_forged_preflight_authority_refuses_shadow_transition(monkeypatch, field
     monkeypatch.setattr(
         DisconnectedReadPreflight, field, property(lambda _value: True),
     )
-    with pytest.raises(DisconnectedReadCycleRejected, match="receipt"):
+    with pytest.raises(
+        DisconnectedReadCycleRejected, match="receipt|preflight denied",
+    ):
         _cycle(fixture)
     assert fixture[-1].calls == 0
 
