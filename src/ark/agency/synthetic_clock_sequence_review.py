@@ -71,15 +71,22 @@ _DENIAL_NAMES = (
     "trusted_clock_verified", "dispatch_authorized",
     "automatic_replay_authorized",
 )
+# Resolve class properties without running a descriptor's __get__.  A
+# replacement can return the original property when accessed on the class,
+# while doing arbitrary work if the descriptor is invoked.
+_WITNESS_TYPE = SyntheticClockWitness
 _ORIGINAL_DENIALS = tuple(
-    getattr(SyntheticClockWitness, name) for name in _DENIAL_NAMES
+    vars(_WITNESS_TYPE)[name] for name in _DENIAL_NAMES
 )
 
 
 def _denials_original() -> None:
-    if any(
-        getattr(SyntheticClockWitness, name) is not original
-        for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+    if (
+        SyntheticClockWitness is not _WITNESS_TYPE
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
     ):
         raise SyntheticClockRejected("synthetic clock denial descriptor changed")
 
