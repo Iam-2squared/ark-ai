@@ -62,6 +62,28 @@ _DOMAIN = b"ARK-disconnected-context-retained-prefix-v1\0"
 _LEDGER = replay.DisconnectedContextReplayLedger
 _WITNESS = replay.OfflineContextReplayWitness
 _RESULT = OfflineContextPrefixReview
+_DENIAL_NAMES = (
+    "historical_writer_authenticated", "independent_custody_proven",
+    "consent_verified", "revocation_freshness_verified",
+    "context_disclosure_authorized", "tool_dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_DENIALS = tuple(vars(_RESULT)[key] for key in _DENIAL_NAMES)
+
+
+def _original_result_authority() -> None:
+    # Verify class descriptors without running any possibly replaced getter.
+    # A counterfeit False callback remains executable code, not a denial.
+    if (
+        OfflineContextPrefixReview is not _RESULT
+        or any(
+            vars(_RESULT).get(key) is not original
+            for key, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise OfflineContextPrefixRejected(
+            "context result authority changed after denial"
+        )
 
 
 def review_retained_context_replay_prefix(
@@ -75,6 +97,7 @@ def review_retained_context_replay_prefix(
     in one read transaction removes the two-snapshot race, but is not
     independent or cryptographically signed storage provenance.
     """
+    _original_result_authority()
     if type(ledger) is not _LEDGER:
         raise OfflineContextPrefixRejected("exact offline context ledger required")
     try:
@@ -85,13 +108,14 @@ def review_retained_context_replay_prefix(
     path = ledger._path
 
     def stable() -> None:
+        _original_result_authority()
         if (
             type(ledger) is not _LEDGER
             or ledger._path is not path
             or type(retained) is not _WITNESS
             or retained.count is not old_count
             or retained.chain_sha256 is not old_chain
-            or retained.independent_custody_proven is not False
+            or replay._check_witness(retained) != previous
         ):
             raise OfflineContextPrefixRejected("context source/witness changed during read")
 
@@ -146,7 +170,9 @@ def review_retained_context_replay_prefix(
     stable()
     digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
     stable()
+    _original_result_authority()
     result = _RESULT(old_count, current_epoch[0], status, current_epoch[1], digest)
+    _original_result_authority()
     if (
         type(result) is not _RESULT
         or type(result.retained_count) is not int
@@ -156,21 +182,20 @@ def review_retained_context_replay_prefix(
         or result.status is not status
         or result.current_chain_sha256 is not current_epoch[1]
         or result.review_sha256 is not digest
-        or result.historical_writer_authenticated is not False
-        or result.independent_custody_proven is not False
-        or result.consent_verified is not False
-        or result.revocation_freshness_verified is not False
-        or result.context_disclosure_authorized is not False
-        or result.tool_dispatch_authorized is not False
-        or result.automatic_replay_authorized is not False
     ):
         raise OfflineContextPrefixRejected("context replay result acquired authority")
+    for name in _DENIAL_NAMES:
+        _original_result_authority()
+        if getattr(result, name) is not False:
+            raise OfflineContextPrefixRejected("context replay result acquired authority")
+        _original_result_authority()
     stable()
     # The last denied-authority property is a callback. A False getter can
     # still rewrite a previously checked count, status or permission flag,
     # and the retained-witness getter in stable() may run afterward too.
     # Recheck ALL result fields and denied authorities after those callbacks.
     def result_stable() -> None:
+        _original_result_authority()
         if (
             type(result) is not _RESULT
             or type(result.retained_count) is not int
@@ -183,17 +208,15 @@ def review_retained_context_replay_prefix(
             or result.current_chain_sha256 is not current_epoch[1]
             or type(result.review_sha256) is not str
             or result.review_sha256 is not digest
-            or result.historical_writer_authenticated is not False
-            or result.independent_custody_proven is not False
-            or result.consent_verified is not False
-            or result.revocation_freshness_verified is not False
-            or result.context_disclosure_authorized is not False
-            or result.tool_dispatch_authorized is not False
-            or result.automatic_replay_authorized is not False
         ):
             raise OfflineContextPrefixRejected(
                 "context result changed after denial"
             )
+        for name in _DENIAL_NAMES:
+            _original_result_authority()
+            if getattr(result, name) is not False:
+                raise OfflineContextPrefixRejected("context result changed after denial")
+            _original_result_authority()
 
     result_stable()
     stable()
@@ -210,4 +233,6 @@ def review_retained_context_replay_prefix(
         or result.review_sha256 is not digest
     ):
         raise OfflineContextPrefixRejected("context result changed after final review")
+    _original_result_authority()
+    stable()
     return result
