@@ -41,10 +41,10 @@ Source commit `6133480a3450be1492f0e2e1bc10bece2870d367`; test commit `090c3b8a4
 
 - Pin the original `OfflinePrivacyVetoReceipt.__init__` alongside import-original class and denial descriptors. The pre-COMMIT authority check refuses an already-forged constructor before writing the denial marker.
 - Recheck in the post-COMMIT receipt verifier: a reentrant commit callback that replaces the constructor now raises an explicit **post-COMMIT/manual-reconciliation** error without invoking injected constructor code or claiming rollback. The durable local veto remains in SQLite.
-- Three new authored tests cover preinstalled refusal before write; simulated post-COMMIT constructor substitution with the veto surviving reopen; and a normal denial-only receipt. Two existing post-COMMIT mutation tests retain their `post-COMMIT` fail-closed expectation, even if the patched constructor never runs.
+- Three new authored tests cover preinstalled refusal before write; simulated post-COMMIT constructor substitution with the veto surviving reopen; and a normal denial-only receipt. Two legacy preinstalled-constructor mutation cases were corrected in test-only commit `1671e4d1215879f339c22a02a027652c6afc1233`: they now require early denial with **zero constructor calls and zero persisted veto rows**. The new Run617 post-COMMIT callback test separately requires a durable denial marker and manual-only uncertain receipt outcome. Neither path allows automatic retry.
 - A veto is one-way **denial** evidence, not consent/authentication/deletion proof. No live personal data or external action is handled.
 
-**Scope compare:** `51255c62…090c3b8a` contains **10 commits, exactly 9 changed non-UI paths** (4 source modules, 4 new test files, 1 technical report). **19 new parameter-expanded test cases authored (5 + 7 + 4 + 3); no local pytest PASS claim.**
+**Scope compare:** `51255c62…1671e4d1` contains **12 commits, exactly 10 changed non-UI paths** (4 source modules, 4 new test files, 1 corrected existing test file, 1 technical report). **19 new parameter-expanded test cases authored (5 + 7 + 4 + 3), plus 2 existing test cases corrected; no local pytest PASS claim.**
 
 ## CI observed and acceptance limits
 
@@ -52,7 +52,7 @@ Source commit `6133480a3450be1492f0e2e1bc10bece2870d367`; test commit `090c3b8a4
 - Memory test HEAD [#41927486845](https://github.com/Iam-2squared/ark-ai/actions/runs/41927486845): Ubuntu 3/3 GREEN; Windows 3 IN PROGRESS at first read.
 - Proactive test HEAD [#41927669911](https://github.com/Iam-2squared/ark-ai/actions/runs/41927669911): QUEUED at first read.
 - Registry test HEAD [#41927986197](https://github.com/Iam-2squared/ark-ai/actions/runs/41927986197): QUEUED at first read.
-- Privacy test HEAD [#41928707262](https://github.com/Iam-2squared/ark-ai/actions/runs/41928707262): QUEUED at first read.
+- Privacy test HEAD [#41928707262](https://github.com/Iam-2squared/ark-ai/actions/runs/41928707262): QUEUED at first read, with two legacy preinstalled-constructor expectations predictably outdated. A subsequent ordinary Contents test-only correction `1671e4d1…` preserves original rejection-before-execution and requires the separate actual COMMIT callback test for ambiguous durability. Do not count the old head as passing.
 - Later result HEADs and checkpoint HEAD **must not be called GREEN without direct six-job confirmation**. No duplicate equivalent workflow was manually dispatched.
 
 ## Independent V3 free-only blocker review
