@@ -5,6 +5,8 @@ Only disconnected mock simulation is used: no backend, consent proof or replay.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 import ark.agency.disconnected_read_cycle_receipt_recheck as recheck
@@ -104,7 +106,8 @@ def test_retained_verifier_never_invokes_false_looking_replacement(
 
 def test_original_retained_receipt_still_checks_both_inert_waves():
     plan, registry, gate, grants, backend = _inputs()
-    receipt = _receipt(plan, registry, gate, grants)
+    # Reconstructing an inert diagnostic is allowed; it confers no provenance.
+    receipt = replace(_receipt(plan, registry, gate, grants))
     assert len(receipt.wave_bound_step_hashes) == 2
     assert recheck.verify_disconnected_read_cycle_receipt(
         receipt, plan, registry, gate, grants, observed_at_ms=100,
