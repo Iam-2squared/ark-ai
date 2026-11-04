@@ -9,6 +9,7 @@ perform an external READ, nor a trusted-clock or durable authorization proof.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 
 from .contracts import CapabilityGrant, Effect, PermissionDenied, ToolCall
 from .policy import PermissionGate
@@ -58,6 +59,7 @@ _REPORT_DENIALS = (
 _ORIGINAL_REPORT_DENIALS = tuple(
     vars(_REPORT)[name] for name in _REPORT_DENIALS
 )
+_ORIGINAL_REGISTERED_POLICY = vars(PermissionGate)["authorize_registered"]
 
 
 def _assert_original_report_denials() -> None:
@@ -90,6 +92,22 @@ def review_disconnected_registered_read(
     deliberately rejects all WRITE registrations *before* PermissionGate.
     """
     _assert_original_report_denials()
+
+    def stable_gate_method() -> None:
+        # A class-level or instance-level replacement can forge a value-equal
+        # BoundAction without evaluating grants. Do not mistake such a return
+        # value for a PermissionGate decision, even in disconnected diagnostics.
+        if (
+            vars(PermissionGate).get("authorize_registered")
+            is not _ORIGINAL_REGISTERED_POLICY
+            or inspect.getattr_static(gate, "authorize_registered")
+            is not _ORIGINAL_REGISTERED_POLICY
+        ):
+            raise DisconnectedReadPreflightRejected(
+                "registered READ policy implementation changed"
+            )
+
+    stable_gate_method()
     if (
         type(registry) is not ToolRegistry
         or type(gate) is not PermissionGate
@@ -132,7 +150,9 @@ def review_disconnected_registered_read(
 
     stable_inputs()
     try:
+        stable_gate_method()
         before = registry.bind(call)
+        stable_gate_method()
         stable_inputs()
         if (
             type(before) is not BoundAction
@@ -141,9 +161,11 @@ def review_disconnected_registered_read(
             or before.registration.capability is not call_epoch[1]
         ):
             raise DisconnectedReadPreflightRejected("non-READ registration is forbidden")
+        stable_gate_method()
         verified = gate.authorize_registered(
             registry, call, grants, now_ms=now_ms,
         )
+        stable_gate_method()
         stable_inputs()
         if (
             type(verified) is not BoundAction
@@ -199,7 +221,9 @@ def review_disconnected_registered_read(
                 )
 
     stable_inputs()
+    stable_gate_method()
     stable_report()
     stable_inputs()
+    stable_gate_method()
     stable_report()
     return report
