@@ -69,7 +69,7 @@ class MemoryCommitTriage:
 
 
 _REPORT = MemoryCommitTriage
-_ORIGINAL_DENIALS = tuple(getattr(_REPORT, name) for name in _DENIALS)
+_ORIGINAL_DENIALS = tuple(vars(_REPORT)[name] for name in _DENIALS)
 
 
 def review_uncertain_memory_commit(
@@ -138,7 +138,7 @@ def review_uncertain_memory_commit(
                 )
             )
             or any(
-                getattr(_REPORT, name) is not original
+                vars(_REPORT).get(name) is not original
                 for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
             )
         ):
