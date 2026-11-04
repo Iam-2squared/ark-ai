@@ -1,0 +1,26 @@
+# Run608 — Non-UI fixture and Memory review authority custody
+
+**Scope:** disconnected synthetic PNG metadata, observation fixture adapters, and read-only dual-review Memory generation CAS. This is an isolated reversible PR #8 hardening iteration. It makes no claims of real camera capture, authenticated consent, or real action authorization.
+
+## Exact source work
+
+1. **PNG inventory class and denial getter custody.** Source commit `e2e9650d3062a079cd6abeb8611b5dbb813f6038` captures the import-original `OfflinePngInventory` class and its four False-valued descriptors, verifying exact static identity *before* any result constructor or getter. Post-callback checks reverify request and result carriers. A wrapped local per-IEND receipt checker is bound to loop values to satisfy Ruff B023 without relaxing checks in `ac06e2cc521f485d9de8ed80705bd003e9efa5e9`. The prior test expectation is aligned to earlier pregetter refusal in `7465afa5470f1d735595186bfbaae4f5577e4e90`. Test module `tests/test_offline_png_import_authority_run608.py` adds **7 parameter-expanded cases**: four forged False descriptor names, substituted copied-descriptor class, digest-time getter injection, and clean metadata-only result. No actual PNG pixel decoding.
+2. **Observation fixture constructor binding.** Source commit `568fa839a4eab98999257a8f1f1984afe8411754` rejects a substituted `ObservationEnvelope` constructor before invoking it and rechecks class identity after construction and the original validation hook. `tests/test_observation_fixture_constructor_custody_run608.py` adds **8 parameter-expanded cases**: preinstalled and digest-time impostors for text/image, postconstructor swap for both media kinds, and two honest content-hash-only fixtures. No capture devices or new permissions.
+3. **Memory dual CAS reviewer static class custody.** Source commit `0290537c6551b95b66c22a048f58ae2232318b7e` uses static original class dictionaries instead of `getattr` to compare denial-only descriptor identities. It checks the imported triage, outcome and pair classes before invoking either read-only reviewer, then across callbacks. `tests/test_memory_dual_cas_static_class_custody_run608.py` adds **18 parameter-expanded cases**: 13 forged False descriptors, three replaced class bindings, one between-reviewer injected descriptor, and one normal manual-only pair. No CAS write or automatic retry is authorized.
+
+**Total newly authored parameter-expanded regression cases: 33.** These are test definitions, not a claim of local pytest PASS.
+
+## CI evidence and corrective action
+
+- Prior exact checkpoint `7a8936ce44b25ee37bfc488525d1ab6ad7e09aaf`: [run 41842048078](https://github.com/Iam-2squared/ark-ai/actions/runs/41842048078) **GREEN across six Ubuntu/Windows Python 3.11–3.13 jobs**, verified independently at this invocation's start.
+- Early Run608 runs [41850378672](https://github.com/Iam-2squared/ark-ai/actions/runs/41850378672), [41850512559](https://github.com/Iam-2squared/ark-ai/actions/runs/41850512559), [41850607753](https://github.com/Iam-2squared/ark-ai/actions/runs/41850607753) failed Ruff **B023** due to closing over variables assigned in a PNG chunk loop. No pytest success was inferred from these failures. Fixed via snapshot-bound keyword default arguments at `ac06e2cc521f485d9de8ed80705bd003e9efa5e9`.
+- Follow-up [run 41851041405](https://github.com/Iam-2squared/ark-ai/actions/runs/41851041405) on `ac06e2cc521f485d9de8ed80705bd003e9efa5e9`: Ubuntu Python 3.11 and 3.12 independently GREEN at last read, other jobs **IN PROGRESS**. Separate later CI [41851384047](https://github.com/Iam-2squared/ark-ai/actions/runs/41851384047) and [41851481118](https://github.com/Iam-2squared/ark-ai/actions/runs/41851481118) on Memory source and tests respectively **IN PROGRESS** at last read. Do not extrapolate these findings to final checkpoint HEAD.
+- A local checkout could not be authenticated or tested through the supplied GitHub connector; no local pytest PASS or device experiment is claimed. Each write used the ordinary GitHub Contents/create-file action with a re-read branch HEAD and no forced ref changes. Never reran equivalent workflows manually.
+
+## Invariants, limitations, and follow-ups
+
+All new outputs remain synthetic, bounded, and non-authorizing. The PNG scanner verifies chunk metadata/CRC, not decompressed pixels or capture provenance; fixture SHA-256 does not prove origin, owner consent or availability. Memory pair results remain observational, not writer attribution; a matching row after uncertain COMMIT is **never** permission to retry. Reflection-hardening in a Python process is a local regression boundary, **not** a security sandbox against arbitrary code execution.
+
+No frozen V1/V2/Local UI/Launcher contracts/evidence or protected V2 evaluation opened. No edits to paused Draft PR #9 or gated Draft PR #5, no main merge, Candidate weights, real ToolBackend, external GPU, paid API, credentials or destructive data operations.
+
+**Next:** confirm all six jobs at the final source/test/checkpoint HEAD, resolve any log-supported failures narrowly, then connect Memory COMMIT-UNKNOWN, Planner terminal recovery, registered READ preflight, trusted-clock audit-before-mock-action and occurrence replay fencing only after exact-head evidence. ARK/JARVIS/V3 remains **NOT_PASSED**.
