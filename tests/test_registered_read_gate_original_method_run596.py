@@ -111,3 +111,15 @@ def test_unmodified_read_policy_stays_tokenless_and_no_dispatch():
     assert result.durable_permission_proven is False
     assert items[1]._consumed_tokens == set()
     assert items[-1].calls == 0
+
+
+@pytest.mark.parametrize("bad_gate", (None, object(), PermissionGate))
+def test_invalid_gate_shape_rejected_as_bounded_input(bad_gate):
+    registry, _gate, call, grants, backend = _inputs()
+    with pytest.raises(
+        DisconnectedReadPreflightRejected, match="exact bounded preflight inputs",
+    ):
+        review_disconnected_registered_read(
+            registry, bad_gate, call, grants, now_ms=10,
+        )
+    assert backend.calls == 0
