@@ -8,6 +8,7 @@ the caller's plan, persist actions, authenticate time/consent, or grant authorit
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 from dataclasses import dataclass
 
@@ -23,6 +24,23 @@ from .registry import BoundAction, ToolRegistry
 
 _MAX_STEPS = 24
 _REVIEW_TYPE = DisconnectedReadPreflight
+_ORIGINAL_REGISTERED_GATE = vars(PermissionGate)["authorize_registered"]
+
+
+def _assert_cycle_original_gate(gate: PermissionGate) -> None:
+    # The independent READ-wave recheck must not invoke a replacement gate
+    # even when an upstream preflight supplied a plausible receipt. Static
+    # inspection avoids executing a malicious descriptor in the check.
+    if (
+        vars(PermissionGate).get("authorize_registered")
+        is not _ORIGINAL_REGISTERED_GATE
+        or inspect.getattr_static(gate, "authorize_registered", None)
+        is not _ORIGINAL_REGISTERED_GATE
+    ):
+        raise DisconnectedReadCycleRejected(
+            "READ wave registered gate implementation changed"
+        )
+
 
 
 class DisconnectedReadCycleRejected(ValueError):
@@ -205,9 +223,11 @@ def simulate_registered_read_cycle(
                 ):
                     raise DisconnectedReadCycleRejected("READ wave registry drift")
                 if step_id in expected_ready:
+                    _assert_cycle_original_gate(gate)
                     permitted = gate.authorize_registered(
                         registry, call, grants, now_ms=observed_at_ms,
                     )
+                    _assert_cycle_original_gate(gate)
                     if (
                         type(permitted) is not BoundAction
                         or permitted.call is not call
