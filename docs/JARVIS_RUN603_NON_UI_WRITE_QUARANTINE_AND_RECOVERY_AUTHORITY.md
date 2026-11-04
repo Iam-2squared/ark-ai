@@ -10,9 +10,43 @@ Scope: Draft PR #8 `research/jarvis-foundations`; no UI, main, frozen-contract o
 
 3. **Direct synthetic WRITE restart triage.** `src/ark/agency/synthetic_recovery_triage.py` pins all three original denial descriptors of `SyntheticRecoveryReview`, refusing substituted properties before opening source data, after diagnostic callbacks and before returning its witness. Even a syntactically valid recovery report cannot authorize dispatch, replay or claim an externally verified outcome. Tests `tests/test_recovery_deny_only_getters_run603.py`: 3 properties × 2 mutation times (preinstalled / after audit continuity callback), plus one untouched positive (7 authored pytest cases). Source commit `24c89dfafb575d8e5449569be6c382dfba84f590`; test commit `b260705dda28261af3581a9fda5561f9954ace30`.
 
+## Memory retained alignment static authority (independent package)
+
+4. **Coherent local Memory retained comparison is diagnostic-only.** The existing
+   `src/ark/memory/sqlite_alignment_retained_review.py` comparison now validates
+   import-pinned deny-only class descriptors for the retained
+   `MemoryEventAlignmentReview` and returned
+   `RetainedMemoryAlignmentComparison` before a property getter can run.
+   It checks the same authority boundary before and after the source
+   reconciliation callback and report construction. This is not proof of
+   independent custody, historical writer identity or real consent.
+   Source commit `767a1fed04376effc0f871f30f4aee2490f3be28`.
+   `tests/test_memory_retained_alignment_original_denials_run603.py`
+   contains **16 parameterized negative** preinstalled/late-change scenarios
+   (8 properties x 2 times) plus **one normal nonauthorizing case**.
+   Test commit `bb500bb876f59db352fcbc2cb82e98f460c52f29`.
+   Total new authored Run603 regression cases: **33 (9 + 7 + 17)**;
+   this number is NOT local pytest PASS evidence.
+
+## Actual CI failure and response
+
+At early recovery-source HEAD `24c89dfafb575d8e5449569be6c382dfba84f590`,
+CI [#41810011869](https://github.com/Iam-2squared/ark-ai/actions/runs/41810011869)
+reached Ubuntu 3.12 pytest with **7,993 PASS, one SKIP, five FAIL**.
+All five failures were in existing
+`tests/test_triage_result_epoch_run428.py` and expected a substituted
+result constructor to be *called* before rejection. Static descriptor
+identity validation now intentionally rejects that substitution **before
+any constructor or registry callback**. Commit
+`99731ca1315d2f036b384d0624aba4e0ce621161` updates the five test
+assertions to require **zero** substituted constructor calls, **zero**
+registry bind calls and **zero** backend dispatch calls. No production
+gate was relaxed, no test was skipped or removed. CI after this correction
+must be observed on its exact source head before any GREEN claim.
+
 ## Evidence interpretation
 
-- These **16 tests are authored test definitions, not 16 independently executed local pytest PASS**. CI for the exact post-change head must complete before a full GREEN claim. The preceding Run602 checkpoint failed on Ruff, not a validated pytest result.
+- These **33 tests are authored test definitions, not 33 independently executed local pytest PASS**. CI for the exact post-change head must complete before a full GREEN claim. The preceding Run602 checkpoint failed on Ruff, not a validated pytest result.
 - The quarantine and restart modules remain disconnected, offline diagnostic-only reviews. They do not open or modify real external services, grant permissions, change planner state, call ToolBackend.execute, certify trusted time or consent, or prove that a physical action happened exactly once.
 - The four-database planner/reservation/audit/link observations are **separate local SQLite transactions**, not an atomic external-world snapshot. Even all-local-matching evidence cannot prove absence of a side effect, and there is no safe automatic retry of an unknown WRITE.
 - Frozen V1/V2/Local UI/Launcher evidence and V3 approval/evaluation boundaries are not modified. PR #5 and PR #9 remain Draft/unmerged; UI development remains paused. The entire ARK/JARVIS completion gate remains `NOT_PASSED`.
