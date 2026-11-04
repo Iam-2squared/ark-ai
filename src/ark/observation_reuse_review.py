@@ -48,6 +48,13 @@ class SyntheticObservationReuseReview:
 
 _LINEAGE_WITNESS_TYPE = SyntheticObservationLineageWitness
 _REUSE_RESULT_TYPE = SyntheticObservationReuseReview
+_REUSE_DENIAL_NAMES = (
+    "media_capture_authorized", "disclosure_authorized",
+    "notification_authorized", "dispatch_authorized",
+)
+_ORIGINAL_REUSE_DENIALS = tuple(
+    vars(_REUSE_RESULT_TYPE)[name] for name in _REUSE_DENIAL_NAMES
+)
 
 
 def review_synthetic_observation_reuse(
@@ -255,4 +262,17 @@ def review_synthetic_observation_reuse(
     assert_epoch()
     assert_witnesses()
     assert_result_epoch()
+    # A substituted getter that returns False still changes the inert
+    # receipt's authority contract. Verify original class descriptors after
+    # the existing callback mutation checks so earlier failures retain their
+    # explicit input/result diagnostics.
+    if any(
+        vars(_REUSE_RESULT_TYPE).get(name) is not original
+        for name, original in zip(
+            _REUSE_DENIAL_NAMES, _ORIGINAL_REUSE_DENIALS, strict=True,
+        )
+    ):
+        raise SyntheticObservationReuseRejected(
+            "observation reuse authority descriptor changed"
+        )
     return result
