@@ -71,6 +71,8 @@ class DisconnectedDuePreview:
 
 # A reentrant synthetic constructor must not replace an inert result class
 # with a compatible-looking object that advertises authority.
+_POLICY_TYPE = DisconnectedSchedulePolicy
+_CURSOR_TYPE = DisconnectedScheduleCursor
 _RESULT_TYPE = DisconnectedDuePreview
 _DENIAL_NAMES = (
     "trusted_clock_verified", "notification_authorized",
@@ -78,15 +80,23 @@ _DENIAL_NAMES = (
     "consent_verified",
 )
 _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
-    getattr(_RESULT_TYPE, key) for key in _DENIAL_NAMES
+    vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES
 )
 
 
 def _require_original_denials() -> None:
-    if any(
-        getattr(_RESULT_TYPE, key) is not original
-        for key, original in zip(
-            _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+    # Pin all three constructors, not only the result's False properties.
+    # A rebound input type may accept a counterfeit object, and a rebound
+    # result constructor can execute code before postconstruction validation.
+    if (
+        DisconnectedSchedulePolicy is not _POLICY_TYPE
+        or DisconnectedScheduleCursor is not _CURSOR_TYPE
+        or DisconnectedDuePreview is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(key) is not original
+            for key, original in zip(
+                _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+            )
         )
     ):
         raise SchedulePreviewRejected("constructed preview carrier changed")
@@ -197,9 +207,10 @@ def preview_disconnected_schedule(
     ).encode("ascii")
     fingerprint = hashlib.sha256(_DOMAIN + b"preview\0" + packed).hexdigest()
     assert_epoch()
-    result = DisconnectedDuePreview(state, index, occurrence, due, fingerprint)
+    result = _RESULT_TYPE(state, index, occurrence, due, fingerprint)
 
     def stable_result() -> None:
+        _require_original_denials()
         # Even a False property may rewrite an EARLIER authority descriptor.
         # Bind all descriptor objects as well as the exact returned fields.
         if (
@@ -217,7 +228,7 @@ def preview_disconnected_schedule(
             or result.due_at_ms is not due
             or result.fingerprint is not fingerprint
             or any(
-                getattr(_RESULT_TYPE, name) is not descriptor
+                vars(_RESULT_TYPE).get(name) is not descriptor
                 for name, descriptor in zip(
                     _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
                 )
