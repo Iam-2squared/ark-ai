@@ -8,6 +8,7 @@ content-free result never confers permission to dispatch a real action.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 from dataclasses import dataclass
 
@@ -53,6 +54,44 @@ class DisconnectedReadPreflight:
 
 
 _RESULT_TYPE = DisconnectedReadPreflight
+_RESULT_DENIALS = (
+    "dispatch_authorized", "external_result_verified",
+    "authenticated_clock_or_consent", "automatic_replay_authorized",
+)
+_ORIGINAL_RESULT_DENIALS = tuple(
+    vars(_RESULT_TYPE)[name] for name in _RESULT_DENIALS
+)
+_ORIGINAL_REGISTERED_GATE = vars(PermissionGate)["authorize_registered"]
+
+
+def _assert_original_result_denials() -> None:
+    # Even an equally False-looking replacement is not an authority witness.
+    if (
+        DisconnectedReadPreflight is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedReadPreflightRejected(
+            "READ plan preflight authority descriptor changed"
+        )
+
+
+def _assert_original_gate(gate: PermissionGate) -> None:
+    # A fake registry-bound decision may be value-equal to the real one.
+    # Inspect statically so a hostile descriptor is never invoked by the check.
+    if (
+        vars(PermissionGate).get("authorize_registered")
+        is not _ORIGINAL_REGISTERED_GATE
+        or inspect.getattr_static(gate, "authorize_registered")
+        is not _ORIGINAL_REGISTERED_GATE
+    ):
+        raise DisconnectedReadPreflightRejected(
+            "registered READ gate implementation changed"
+        )
 
 
 def _digest(payload: object) -> str:
@@ -92,6 +131,7 @@ def preview_registered_read_plan(
         raise DisconnectedReadPreflightRejected("grants require exact CapabilityGrant")
     if not 1 <= len(plan.steps) <= _MAX_STEPS:
         raise DisconnectedReadPreflightRejected("plan exceeds disconnected preflight budget")
+    _assert_original_result_denials()
 
     # Hold original carriers, not merely equal-valued mutable dataclass fields.
     grant_epoch = tuple(
@@ -227,6 +267,10 @@ def preview_registered_read_plan(
             raise DisconnectedReadPreflightRejected("READ grant preflight denied") from exc
         stable()
         assert_bound_epochs()
+        # Reentrant legacy diagnostics may legitimately change the plan or
+        # grant first; preserve their specific denial, then reject a forged
+        # gate method even if it returned a value-equal registry binding.
+        _assert_original_gate(gate)
         if (
             type(verified) is not BoundAction
             or verified.call is not step.call
@@ -275,4 +319,42 @@ def preview_registered_read_plan(
     ):
         raise DisconnectedReadPreflightRejected("detached preflight result changed")
     assert_bound_epochs()
+
+    def same_result() -> bool:
+        return (
+            type(result) is _RESULT_TYPE
+            and result.topology_digest is topology
+            and result.status_digest is status
+            and result.registry_revision is revision
+            and result.grant_fingerprint is grant_fingerprint
+            and result.ready_step_ids is entries
+            and result.ready_bound_ids is bound_ids
+            and result.fingerprint is fingerprint
+        )
+
+    # Denial properties are callback surfaces; check original descriptors
+    # and all result carriers again after EACH getter and at return.
+    _assert_original_result_denials()
+    for flag in _RESULT_DENIALS:
+        _assert_original_result_denials()
+        if getattr(result, flag) is not False:
+            raise DisconnectedReadPreflightRejected(
+                "READ plan preflight gained authority"
+            )
+        _assert_original_result_denials()
+        stable()
+        assert_bound_epochs()
+        _assert_original_gate(gate)
+        if not same_result():
+            raise DisconnectedReadPreflightRejected(
+                "READ plan preflight result changed during authority review"
+            )
+    _assert_original_result_denials()
+    stable()
+    assert_bound_epochs()
+    _assert_original_gate(gate)
+    if not same_result():
+        raise DisconnectedReadPreflightRejected(
+            "READ plan preflight result changed at return"
+        )
     return result
