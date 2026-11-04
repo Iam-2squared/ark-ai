@@ -73,6 +73,31 @@ class DisconnectedReadCycleReceipt:
 
 
 _RECEIPT_TYPE = DisconnectedReadCycleReceipt
+_RECEIPT_DENIAL_FLAGS = (
+    "dispatch_authorized", "external_result_verified",
+    "automatic_replay_authorized", "authenticated_clock_or_consent",
+)
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIAL_FLAGS
+)
+
+
+def _assert_original_receipt_denials() -> None:
+    # False-looking replacement descriptors are not the original denial
+    # contract. Inspect the class dictionary without executing a getter.
+    if (
+        DisconnectedReadCycleReceipt is not _RECEIPT_TYPE
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_DENIAL_FLAGS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedReadCycleRejected(
+            "simulation receipt changed: denial descriptor substituted"
+        )
+
 
 
 def _digest(payload: object) -> str:
@@ -121,6 +146,7 @@ def simulate_registered_read_cycle(
         or any(type(grant) is not CapabilityGrant for grant in grants)
     ):
         raise DisconnectedReadCycleRejected("exact bounded read-cycle inputs required")
+    _assert_original_receipt_denials()
     try:
         topology = plan.topology_digest()
         status = plan.status_digest()
@@ -321,10 +347,12 @@ def simulate_registered_read_cycle(
     frozen_waves = tuple(waves)
     fingerprint = _digest((topology, status, revision, frozen_waves, final, observed_at_ms))
     source_stable()
+    _assert_original_receipt_denials()
     result = DisconnectedReadCycleReceipt(
         topology, revision, frozen_waves, final, fingerprint,
     )
     source_stable()
+    _assert_original_receipt_denials()
     if (
         type(result) is not _RECEIPT_TYPE
         or result.topology_digest is not topology
@@ -340,4 +368,5 @@ def simulate_registered_read_cycle(
         or result.authenticated_clock_or_consent is not False
     ):
         raise DisconnectedReadCycleRejected("simulation receipt changed")
+    _assert_original_receipt_denials()
     return result
