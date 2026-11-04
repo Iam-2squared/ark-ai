@@ -269,21 +269,50 @@ def test_reflective_claim_mutation_during_commit_precheck_denied(tmp_path, monke
     assert db.inspect(retained=genesis_write_slot_witness()) == genesis_write_slot_witness()
 
 
+def _inject_after_actual_commit(monkeypatch, module, after_commit):
+    """Inject after SQLite COMMIT; never confuse this with pre-COMMIT drift."""
+    real_connect = module.sqlite3.connect
+
+    class CommitWrapper:
+        def __init__(self, connection):
+            self.connection = connection
+
+        def __getattr__(self, name):
+            return getattr(self.connection, name)
+
+        def commit(self):
+            self.connection.commit()
+            after_commit()
+
+    def connect(*args, **kwargs):
+        connection = real_connect(*args, **kwargs)
+        if args and "?mode=rw" in str(args[0]):
+            return CommitWrapper(connection)
+        return connection
+
+    monkeypatch.setattr(module.sqlite3, "connect", connect)
+
+
 def test_postcommit_returned_receipt_mutation_is_denied_without_replay(tmp_path, monkeypatch):
     from ark.agency import disconnected_write_slot_ledger as module
 
     db = ledger(tmp_path)
     retained = genesis_write_slot_witness()
-    real_receipt = module.WriteSlotReservationReceipt
+    invoked = []
 
-    def corrupt_receipt(count, witness):
-        receipt = real_receipt(count, witness)
-        object.__setattr__(receipt, "added_count", count + 1)
-        return receipt
+    def corrupt_receipt(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise AssertionError("replaced receipt constructor executed")
 
-    monkeypatch.setattr(module, "WriteSlotReservationReceipt", corrupt_receipt)
-    with pytest.raises(WriteSlotLedgerRejected, match="post-commit"):
+    _inject_after_actual_commit(
+        monkeypatch, module,
+        lambda: monkeypatch.setattr(
+            module, "WriteSlotReservationReceipt", corrupt_receipt,
+        ),
+    )
+    with pytest.raises(WriteSlotLedgerRejected, match="constructor or authority changed"):
         db.reserve_many((claim(1),), retained=retained)
+    assert invoked == []
     with sqlite3.connect(tmp_path / "synthetic.db") as conn:
         assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
     with pytest.raises(WriteSlotLedgerRejected, match="stale"):
@@ -296,14 +325,12 @@ def test_postcommit_claim_reflection_is_denied_and_not_rolled_back(tmp_path, mon
     db = ledger(tmp_path)
     retained = genesis_write_slot_witness()
     item = claim(1)
-    real_receipt = module.WriteSlotReservationReceipt
 
-    def tamper_claim(count, witness):
+    def mutate_claim():
         old_plan = item.plan_id
         object.__setattr__(item, "plan_id", ("x" + old_plan)[1:])
-        return real_receipt(count, witness)
 
-    monkeypatch.setattr(module, "WriteSlotReservationReceipt", tamper_claim)
+    _inject_after_actual_commit(monkeypatch, module, mutate_claim)
     with pytest.raises(WriteSlotLedgerRejected, match="carriers changed"):
         db.reserve_many((item,), retained=retained)
     with sqlite3.connect(tmp_path / "synthetic.db") as conn:
