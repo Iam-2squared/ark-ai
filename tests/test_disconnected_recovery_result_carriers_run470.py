@@ -83,7 +83,9 @@ def test_forged_review_factory_is_rejected(monkeypatch):
         )
 
     monkeypatch.setattr(module, "OfflineRecoveryFence", forge)
-    with pytest.raises(module.OfflineRecoveryFenceRejected, match="result carrier"):
+    with pytest.raises(
+        module.OfflineRecoveryFenceRejected, match="mixed-plan authority descriptor changed"
+    ):
         module.review_disconnected_recovery_fence(PLAN, _steps())
 
 
@@ -95,5 +97,7 @@ def test_review_constructor_cannot_rewrite_nested_dispositions(monkeypatch):
         return original(plan_id, decisions, digest)
 
     monkeypatch.setattr(module, "OfflineRecoveryFence", mutate_before_return)
-    with pytest.raises(module.OfflineRecoveryFenceRejected, match="disposition changed"):
+    with pytest.raises(
+        module.OfflineRecoveryFenceRejected, match="mixed-plan authority descriptor changed"
+    ):
         module.review_disconnected_recovery_fence(PLAN, _steps())
