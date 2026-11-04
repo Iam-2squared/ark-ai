@@ -95,6 +95,28 @@ _RECEIPT_DENIALS = (
 _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
 )
+_ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+_ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
+
+
+def _require_original_constructors() -> None:
+    # Inspect this before any receipt, witness or False-valued capability
+    # getter is evaluated: an injected constructor/getter is executable code.
+    if (
+        WriteSlotLedgerWitness is not _WITNESS_TYPE
+        or WriteSlotReservationReceipt is not _RECEIPT_TYPE
+        or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
+        or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
+        or vars(_WITNESS_TYPE).get("independently_authenticated")
+        is not _ORIGINAL_WITNESS_DENIAL
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise WriteSlotLedgerRejected("reservation constructor or authority changed")
 
 
 def _hash(value: tuple[object, ...]) -> str:
@@ -103,7 +125,10 @@ def _hash(value: tuple[object, ...]) -> str:
 
 
 def genesis_write_slot_witness() -> WriteSlotLedgerWitness:
-    return WriteSlotLedgerWitness(0, _hash(("genesis",)))
+    _require_original_constructors()
+    chain = _hash(("genesis",))
+    _require_original_constructors()
+    return _WITNESS_TYPE(0, chain)
 
 
 def _valid(value: object, pattern: re.Pattern[str]) -> bool:
@@ -124,6 +149,7 @@ def _check_witness(value: object) -> None:
     # A property returning False can still be executable attacker code.
     # Pin the import-time class and denial descriptor before every getter.
     def original_denial() -> None:
+        _require_original_constructors()
         if (
             WriteSlotLedgerWitness is not _WITNESS_TYPE
             or vars(_WITNESS_TYPE).get("independently_authenticated")
@@ -181,7 +207,9 @@ def _schema(conn: sqlite3.Connection) -> None:
 
 
 def _inspect(conn: sqlite3.Connection) -> WriteSlotLedgerWitness:
+    _require_original_constructors()
     _schema(conn)
+    _require_original_constructors()
     witness = genesis_write_slot_witness()
     seen: set[tuple[str, str]] = set()
     for seq, slot, plan, step, request, chain in conn.execute(
@@ -199,7 +227,9 @@ def _inspect(conn: sqlite3.Connection) -> WriteSlotLedgerWitness:
         if chain != wanted:
             raise WriteSlotLedgerRejected("reservation history changed")
         seen.add((plan, step))
-        witness = WriteSlotLedgerWitness(seq, chain)
+        _require_original_constructors()
+        witness = _WITNESS_TYPE(seq, chain)
+        _require_original_constructors()
     return witness
 
 
@@ -207,6 +237,7 @@ class DisconnectedWriteSlotLedger:
     """A synthetic local uniqueness ledger, never a WRITE execution gate."""
 
     def __init__(self, path: Path, *, create: bool = False) -> None:
+        _require_original_constructors()
         if type(create) is not bool:
             raise WriteSlotLedgerRejected("explicit exact create flag required")
         self._path = _check_path(path, create=create)
@@ -282,6 +313,7 @@ class DisconnectedWriteSlotLedger:
         self, claims: tuple[DetachedWriteSlotClaim, ...], *, retained: WriteSlotLedgerWitness,
     ) -> WriteSlotReservationReceipt:
         """Atomically record 1-16 synthetic identities, without executing any action."""
+        _require_original_constructors()
         if (type(claims) is not tuple or not 1 <= len(claims) <= _MAX_BATCH
                 or any(type(claim) is not DetachedWriteSlotClaim for claim in claims)):
             raise WriteSlotLedgerRejected("exact bounded synthetic claim tuple required")
@@ -344,7 +376,9 @@ class DisconnectedWriteSlotLedger:
                     chain = _hash(("row", current.chain_sha256, seq, slot, plan, step, request))
                     conn.execute("INSERT INTO synthetic_write_slots VALUES(?,?,?,?,?,?)",
                                  (seq, slot, plan, step, request, chain))
-                    current = WriteSlotLedgerWitness(seq, chain)
+                    _require_original_constructors()
+                    current = _WITNESS_TYPE(seq, chain)
+                    _require_original_constructors()
                 stable()
                 inspected = _inspect(conn)
                 _check_witness(inspected)
@@ -368,7 +402,9 @@ class DisconnectedWriteSlotLedger:
         # fail closed without pretending that rolling back is still possible.
         stable()
         _check_witness(current)
-        receipt = WriteSlotReservationReceipt(len(saved), current)
+        _require_original_constructors()
+        receipt = _RECEIPT_TYPE(len(saved), current)
+        _require_original_constructors()
         stable()
         if (
             type(receipt) is not _RECEIPT_TYPE
