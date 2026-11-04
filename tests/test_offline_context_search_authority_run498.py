@@ -53,7 +53,10 @@ def test_authority_getter_cannot_replace_result_after_validation(monkeypatch):
         mod.OfflineContextSearchPreview, "retention_authorized",
         property(change_result),
     )
-    with pytest.raises(mod.OfflineContextSearchRejected, match="authority descriptor changed|result changed"):
+    with pytest.raises(
+        mod.OfflineContextSearchRejected,
+        match="authority descriptor changed|result changed",
+    ):
         _search(_record())
 
 
@@ -66,7 +69,10 @@ def test_authority_getter_cannot_replace_nested_hit_after_validation(monkeypatch
         mod.OfflineContextSearchPreview, "tool_dispatch_authorized",
         property(change_hit),
     )
-    with pytest.raises(mod.OfflineContextSearchRejected, match="authority descriptor changed|result changed"):
+    with pytest.raises(
+        mod.OfflineContextSearchRejected,
+        match="authority descriptor changed|result changed",
+    ):
         _search(_record())
 
 
@@ -81,7 +87,10 @@ def test_authority_getter_cannot_replace_source_after_validation(monkeypatch):
         mod.OfflineContextSearchPreview, "retention_authorized",
         property(change_source),
     )
-    with pytest.raises(mod.OfflineContextSearchRejected, match="authority descriptor changed|carrier mutated"):
+    with pytest.raises(
+        mod.OfflineContextSearchRejected,
+        match="authority descriptor changed|carrier mutated",
+    ):
         _search(row)
 
 
