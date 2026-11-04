@@ -47,6 +47,19 @@ def _equal_new(value):
     return new
 
 
+class _AfterCommit:
+    def __init__(self, inner, callback):
+        self.inner = inner
+        self.callback = callback
+
+    def commit(self):
+        self.inner.commit()
+        self.callback()
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+
 @pytest.mark.parametrize("mutation", (
     "wrong_type",
     "wrong_request",
@@ -61,8 +74,10 @@ def test_receipt_constructor_fault_preserves_committed_reservation(
     store, _registry, _call, token, backend = state
     original_type = occurrence.SyntheticReservationReceipt
     original_token_id = token.token_id
+    forged_calls = []
 
     def injected_constructor(*args):
+        forged_calls.append(args)
         if mutation == "wrong_type":
             return object()
         receipt = original_type(*args)
@@ -80,14 +95,25 @@ def test_receipt_constructor_fault_preserves_committed_reservation(
             store._path = new_path
         return receipt
 
+    # Move the alias replacement to after SQLite's actual COMMIT; a forged
+    # constructor preinstalled at ingress must now be rejected before spend.
+    connect = store._connect
+
+    def swap_after_commit():
+        monkeypatch.setattr(
+            occurrence, "SyntheticReservationReceipt", injected_constructor,
+        )
+
     monkeypatch.setattr(
-        occurrence, "SyntheticReservationReceipt", injected_constructor,
+        store, "_connect",
+        lambda **kwargs: _AfterCommit(connect(**kwargs), swap_after_commit),
     )
     with pytest.raises(
         occurrence.SyntheticReplayRejected,
-        match="receipt identity changed|token changed|source changed",
+        match="synthetic receipt authority descriptor changed",
     ):
         _reserve(state)
+    assert forged_calls == []
     monkeypatch.undo()
     # A post-COMMIT rejection does NOT make the one-shot token available.
     assert store.count_synthetic() == 1
