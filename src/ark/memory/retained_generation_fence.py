@@ -22,14 +22,27 @@ _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _ID = re.compile(r"mem_[0-9a-f]{64}\Z")
 _MAX_EVENTS = 40_000
 _DENIALS = ("write_authorized", "erase_authorized", "generation_authenticated")
+_REVIEW_TYPE = MemoryGenerationReview
+_ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[name] for name in _DENIALS)
 
 
 class RetainedMemoryGenerationRejected(MemorySchemaError):
     """The retained observation does not match the current local generation."""
 
 
+def _assert_original_denials() -> None:
+    # Never invoke a counterfeit class descriptor while checking authority.
+    if any(
+        vars(_REVIEW_TYPE).get(name) is not original
+        for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+    ):
+        raise RetainedMemoryGenerationRejected(
+            "retained generation authority descriptor changed"
+        )
+
+
 def _fields(review: MemoryGenerationReview) -> tuple[object, ...]:
-    if type(review) is not MemoryGenerationReview:
+    if type(review) is not _REVIEW_TYPE:
         raise RetainedMemoryGenerationRejected("exact retained generation review required")
     fields = (
         review.memory_id, review.event_count, review.generation_count,
@@ -67,6 +80,7 @@ def verify_retained_memory_generation(
     write: an external writer can advance the database immediately afterward.
     A detached SHA cannot attest malicious replacement of BOTH observations.
     """
+    _assert_original_denials()
     pinned = _fields(retained)
     if (
         type(expected_revision) is not int
@@ -74,20 +88,14 @@ def verify_retained_memory_generation(
         or pinned[4] != expected_revision
     ):
         raise RetainedMemoryGenerationRejected("retained CAS revision mismatch")
-    descriptors = tuple(
-        getattr(MemoryGenerationReview, flag) for flag in _DENIALS
-    )
 
     def stable() -> None:
+        _assert_original_denials()
         latest = _fields(retained)
         if (
             any(now is not original for now, original in zip(
                 latest, pinned, strict=True,
             ))
-            or any(
-                getattr(MemoryGenerationReview, flag) is not descriptor
-                for flag, descriptor in zip(_DENIALS, descriptors, strict=True)
-            )
         ):
             raise RetainedMemoryGenerationRejected(
                 "retained generation changed during verification"
@@ -95,6 +103,7 @@ def verify_retained_memory_generation(
 
     stable()
     for flag in _DENIALS:
+        _assert_original_denials()
         if getattr(retained, flag) is not False:
             raise RetainedMemoryGenerationRejected(
                 "retained generation gained authority"
@@ -115,6 +124,7 @@ def verify_retained_memory_generation(
             "Memory generation changed since retained observation"
         )
     for flag in _DENIALS:
+        _assert_original_denials()
         if getattr(observed, flag) is not False:
             raise RetainedMemoryGenerationRejected(
                 "current generation report gained authority"
