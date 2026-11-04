@@ -189,6 +189,25 @@ def _scan(
                         prefix_tail = event_id
                     last = event_id
                     stable_source()
+                # A prefix alone cannot prove historical custody, but local
+                # AUTOINCREMENT state must agree with the complete event
+                # stream. Otherwise deleting the latest event (and possibly
+                # its row) can look like a valid earlier prefix. This is a
+                # read-only consistency check in the SAME snapshot.
+                sequence = conn.execute(
+                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                ).fetchone()
+                if (
+                    (count == 0 and sequence is not None)
+                    or (count > 0 and (
+                        sequence is None
+                        or type(sequence[0]) is not int
+                        or sequence[0] != last
+                    ))
+                ):
+                    raise MemoryEventPrefixRejected(
+                        "Memory event append high-water mark differs"
+                    )
                 stable_source()
                 conn.commit()
             except BaseException:
