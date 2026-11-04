@@ -28,7 +28,7 @@ def test_forged_authority_on_result_is_rejected(monkeypatch, field):
     monkeypatch.setattr(
         mod.OfflineRecoveryFence, field, property(lambda _receipt: True),
     )
-    with pytest.raises(mod.OfflineRecoveryFenceRejected, match="result carrier"):
+    with pytest.raises(mod.OfflineRecoveryFenceRejected, match="authority descriptor changed"):
         mod.review_disconnected_recovery_fence(PLAN, _claim())
 
 
@@ -44,7 +44,7 @@ def test_constructor_time_authority_injection_is_rejected(monkeypatch):
         return result
 
     monkeypatch.setattr(mod, "OfflineRecoveryFence", forged)
-    with pytest.raises(mod.OfflineRecoveryFenceRejected, match="result carrier"):
+    with pytest.raises(mod.OfflineRecoveryFenceRejected, match="authority descriptor changed"):
         mod.review_disconnected_recovery_fence(PLAN, _claim())
 
 
