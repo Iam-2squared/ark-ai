@@ -51,23 +51,22 @@ def test_forged_constructor_type_rejected_after_commit(tmp_path, monkeypatch):
     ledger = _db(tmp_path)
     retained = slots.genesis_write_slot_witness()
     original = slots.WriteSlotReservationReceipt
+    invoked = []
 
     class ForgedReceipt:
         def __init__(self, count, witness):
-            self.added_count = count
-            self.witness = witness
-            self.dispatch_authorized = False
-            self.automatic_replay_authorized = False
-            self.exact_once_external_effect_proven = False
-            self.trusted_clock_verified = False
-            self.owner_or_consent_verified = False
+            invoked.append((count, witness))
+            raise AssertionError("counterfeit receipt constructor executed")
 
     monkeypatch.setattr(slots, "WriteSlotReservationReceipt", ForgedReceipt)
-    with pytest.raises(slots.WriteSlotLedgerRejected, match="post-commit"):
+    with pytest.raises(slots.WriteSlotLedgerRejected, match="constructor"):
         ledger.reserve_many((_claim(),), retained=retained)
+    assert invoked == []
     monkeypatch.setattr(slots, "WriteSlotReservationReceipt", original)
+    # Early constructor custody now rejects before the local reservation;
+    # a separate test covers substitution after an actual SQLite COMMIT.
     with sqlite3.connect(ledger._path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
+        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (0,)
 
 
 def test_claimed_independent_witness_authority_is_rejected_before_write(tmp_path, monkeypatch):
