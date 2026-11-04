@@ -56,13 +56,14 @@ def test_late_denial_getter_cannot_retarget_read_receipt(
         property(mutating_denial_getter),
     )
     with pytest.raises(
-        bridge.DisconnectedReadBridgeRejected, match="receipt construction",
+        bridge.DisconnectedReadBridgeRejected, match="fixture rebinding failed",
     ):
         bridge.prepare_disconnected_read_receipt(
             "step_" + "b" * 16, req, res, binding,
         )
-    assert len(captured) == 1
-    assert calls_after_receipt >= 2
+    # A changed authority descriptor must be rejected before either side effect.
+    assert len(captured) == 0
+    assert calls_after_receipt == 0
 
 
 def test_intact_read_receipt_has_exact_identity():
