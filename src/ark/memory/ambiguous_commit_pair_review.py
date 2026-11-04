@@ -33,8 +33,8 @@ _OUTCOME_DENIALS = (
     "consent_authenticated", "trusted_clock_verified",
     "external_action_authorized",
 )
-_TRIAGE_ORIGINALS = tuple(getattr(_TRIAGE, name) for name in _TRIAGE_DENIALS)
-_OUTCOME_ORIGINALS = tuple(getattr(_OUTCOME, name) for name in _OUTCOME_DENIALS)
+_TRIAGE_ORIGINALS = tuple(vars(_TRIAGE)[name] for name in _TRIAGE_DENIALS)
+_OUTCOME_ORIGINALS = tuple(vars(_OUTCOME)[name] for name in _OUTCOME_DENIALS)
 _DISPOSITIONS = {
     ("LOCAL_UNCHANGED", "UNCHANGED_OBSERVED"): "LOCAL_UNCHANGED_REVIEW",
     ("ONE_MATCHING_UPDATE_VISIBLE", "ONE_MATCHING_UPDATE_OBSERVED"):
@@ -79,7 +79,30 @@ _DENIALS = (
     "caller_commit_authenticated", "automatic_retry_authorized",
     "write_authorized", "trusted_clock_verified",
 )
-_ORIGINALS = tuple(getattr(_RESULT, name) for name in _DENIALS)
+_ORIGINALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
+
+
+def _require_original_review_carriers() -> None:
+    # Class descriptors are executable code when accessed through getattr.
+    # Inspect the original class dicts without executing a forged __get__.
+    if (
+        triage_module.MemoryCommitTriage is not _TRIAGE
+        or outcome_module.MemoryCASOutcomeReview is not _OUTCOME
+        or MemoryAmbiguityPair is not _RESULT
+        or any(
+            vars(_TRIAGE).get(name) is not old
+            for name, old in zip(_TRIAGE_DENIALS, _TRIAGE_ORIGINALS, strict=True)
+        )
+        or any(
+            vars(_OUTCOME).get(name) is not old
+            for name, old in zip(_OUTCOME_DENIALS, _OUTCOME_ORIGINALS, strict=True)
+        )
+        or any(
+            vars(_RESULT).get(name) is not old
+            for name, old in zip(_DENIALS, _ORIGINALS, strict=True)
+        )
+    ):
+        raise MemoryAmbiguityPairRejected("Memory review authority changed")
 
 
 def review_memory_ambiguous_commit_pair(
@@ -96,6 +119,7 @@ def review_memory_ambiguous_commit_pair(
         or type(retained) is not MemoryGenerationCASToken
     ):
         raise MemoryAmbiguityPairRejected("exact Memory triage inputs required")
+    _require_original_review_carriers()
     source_fields = (
         proposed.scope, proposed.scope.owner_id, proposed.scope.namespace,
         proposed.source_id, proposed.content, proposed.metadata,
@@ -108,19 +132,10 @@ def review_memory_ambiguous_commit_pair(
         raise MemoryAmbiguityPairRejected("invalid retained generation token") from exc
 
     def stable() -> None:
+        _require_original_review_carriers()
         if (
             triage_module.review_uncertain_memory_commit is not _TRIAGE_FN
             or outcome_module.review_memory_generation_cas_outcome is not _OUTCOME_FN
-            or any(getattr(_TRIAGE, name) is not before
-                   for name, before in zip(
-                       _TRIAGE_DENIALS, _TRIAGE_ORIGINALS, strict=True,
-                   ))
-            or any(getattr(_OUTCOME, name) is not before
-                   for name, before in zip(
-                       _OUTCOME_DENIALS, _OUTCOME_ORIGINALS, strict=True,
-                   ))
-            or any(getattr(_RESULT, name) is not before
-                   for name, before in zip(_DENIALS, _ORIGINALS, strict=True))
         ):
             raise MemoryAmbiguityPairRejected("Memory review authority changed")
         if (
