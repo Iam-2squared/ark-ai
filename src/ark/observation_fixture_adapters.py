@@ -41,6 +41,10 @@ def _sealed_fixture(
         kind, source_id, adapter_id, privacy_scope, ingested_at_ms,
         content_sha256, parent_sha256, 1,
     )
+    # An imported constructor symbol can be swapped for an arbitrary callable.
+    # Reject it before any forged constructor can run or see fixture metadata.
+    if ObservationEnvelope is not _ENVELOPE_TYPE:
+        raise ValueError("fixture constructor returned a non-envelope result: class changed")
     envelope = ObservationEnvelope(
         kind=kind,
         source_id=source_id,
@@ -50,7 +54,7 @@ def _sealed_fixture(
         content_sha256=content_sha256,
         parent_sha256=parent_sha256,
     )
-    if type(envelope) is not _ENVELOPE_TYPE:
+    if ObservationEnvelope is not _ENVELOPE_TYPE or type(envelope) is not _ENVELOPE_TYPE:
         raise ValueError("fixture constructor returned a non-envelope result")
     actual = (
         envelope.kind, envelope.source_id, envelope.adapter_id,
@@ -64,6 +68,8 @@ def _sealed_fixture(
         raise ValueError("fixture envelope fields changed during construction")
     # Preserve legacy retargeting diagnostics before independently rejecting
     # invalid-but-unchanged metadata from a bypassed constructor validator.
+    if ObservationEnvelope is not _ENVELOPE_TYPE:
+        raise ValueError("fixture constructor class changed before validation")
     _VALIDATE_ENVELOPE(envelope)
     # The independent validator invokes local digest/metadata callbacks. Even
     # though this is a frozen carrier, a callback can reflectively replace its
@@ -76,7 +82,8 @@ def _sealed_fixture(
         envelope.schema_version,
     )
     if (
-        type(envelope) is not _ENVELOPE_TYPE
+        ObservationEnvelope is not _ENVELOPE_TYPE
+        or type(envelope) is not _ENVELOPE_TYPE
         or any(now is not old for now, old in zip(
             after_validation, expected, strict=True,
         ))
