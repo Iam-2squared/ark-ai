@@ -100,9 +100,9 @@ def test_gate_cannot_replace_any_earlier_bound_carrier(
         preview_registered_read_plan(
             plan, registry, gate, grants, observed_at_ms=100,
         )
-    # The original gate-identity fence may reject after the first callback,
-    # before a requested later tamper; either path stays fail-closed.
-    assert 1 <= len(calls) <= tamper_on_gate_number
+    # The original gate is now pinned before invocation. No counterfeit
+    # method is allowed to mutate even an earlier binding carrier.
+    assert calls == []
 
 
 def test_unchanged_independent_reads_pass_without_dispatch():
