@@ -71,11 +71,7 @@ def test_final_sqlite_callback_cannot_retire_result_validation(
         recovery.OfflineContextRecoveryRejected, match="review result (changed|gained authority)",
     ):
         recovery.review_restarted_context_replay(ledger, witness)
-    # A final authority-denial case now receives a second durable-tip read.
-    # The attack still occurs on read two and must be rejected; a third
-    # independent read is expected for those two later-property probes.
-    expected_reads = 3 if attack in {
-        "automatic_replay_authorized", "context_disclosure_authorized",
-    } else 2
-    assert calls == expected_reads
+    # All mutations are now rejected after the second durable read,
+    # before a substituted permission getter can be invoked again.
+    assert calls == 2
     assert ledger.witness() == witness
