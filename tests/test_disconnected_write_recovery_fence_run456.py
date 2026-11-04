@@ -160,7 +160,9 @@ def test_result_authority_getter_cannot_rewrite_original_step(monkeypatch):
     monkeypatch.setattr(
         OfflineRecoveryFence, "external_outcome_verified", property(forged),
     )
-    with pytest.raises(OfflineRecoveryFenceRejected, match="carrier mutated"):
+    with pytest.raises(
+        OfflineRecoveryFenceRejected, match="authority descriptor changed",
+    ):
         result(claim)
 
 
@@ -172,7 +174,9 @@ def test_result_authority_getter_cannot_rewrite_disposition(monkeypatch):
     monkeypatch.setattr(
         OfflineRecoveryFence, "external_outcome_verified", property(forged),
     )
-    with pytest.raises(OfflineRecoveryFenceRejected, match="disposition changed"):
+    with pytest.raises(
+        OfflineRecoveryFenceRejected, match="authority descriptor changed",
+    ):
         result(item(A))
 
 
@@ -184,5 +188,7 @@ def test_result_authority_getter_cannot_rewrite_digest(monkeypatch):
     monkeypatch.setattr(
         OfflineRecoveryFence, "external_outcome_verified", property(forged),
     )
-    with pytest.raises(OfflineRecoveryFenceRejected, match="result carrier changed"):
+    with pytest.raises(
+        OfflineRecoveryFenceRejected, match="authority descriptor changed",
+    ):
         result(item(A))
