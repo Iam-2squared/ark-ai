@@ -39,6 +39,19 @@ def _reserve(case, *, suffix="a"):
     )
 
 
+class _AfterCommit:
+    def __init__(self, inner, callback):
+        self.inner = inner
+        self.callback = callback
+
+    def commit(self):
+        self.inner.commit()
+        self.callback()
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+
 @pytest.mark.parametrize("property_name", (
     "dispatch_authorized", "outcome_known", "automatic_replay_authorized",
 ))
@@ -62,27 +75,34 @@ def test_preinstalled_receipt_property_replacement_denied_before_spend(
 @pytest.mark.parametrize("property_name", (
     "dispatch_authorized", "outcome_known", "automatic_replay_authorized",
 ))
-def test_constructor_phase_authority_rewrite_is_postcommit_denial(
+def test_postcommit_authority_rewrite_is_denied_before_getter(
     tmp_path, monkeypatch, property_name,
 ):
     case = _setup(tmp_path)
-    constructor = occurrence.SyntheticReservationReceipt
+    ledger = case[0]
+    original = occurrence.SyntheticReservationReceipt
+    called = []
 
-    def faulty_constructor(*args):
-        receipt = constructor(*args)
-        # The fake constructor executes after SQLite has committed.
-        monkeypatch.setattr(
-            constructor, property_name, property(lambda self: True),
+    def poisoned(_self):
+        called.append(property_name)
+        raise AssertionError("postcommit forged getter must not execute")
+
+    connect = ledger._connect
+
+    def with_postcommit_property_swap(**kwargs):
+        return _AfterCommit(
+            connect(**kwargs),
+            lambda: monkeypatch.setattr(original, property_name, property(poisoned)),
         )
-        return receipt
 
-    monkeypatch.setattr(occurrence, "SyntheticReservationReceipt", faulty_constructor)
+    monkeypatch.setattr(ledger, "_connect", with_postcommit_property_swap)
     with pytest.raises(
         occurrence.SyntheticReplayRejected, match="receipt authority descriptor changed",
     ):
         _reserve(case)
+    assert called == []
     monkeypatch.undo()
-    assert case[0].count_synthetic() == 1
+    assert ledger.count_synthetic() == 1
     with pytest.raises(occurrence.SyntheticReplayRejected, match="already reserved"):
         _reserve(case, suffix="b")
     assert case[4].calls == 0
