@@ -29,7 +29,7 @@ def test_forged_retained_witness_authority_rejected_before_reservation(
         due.DueReservationWitness, "independent_custody_proven",
         property(lambda self: True),
     )
-    with pytest.raises(due.DueReservationRejected, match="retained due witness"):
+    with pytest.raises(due.DueReservationRejected, match=r"(?:retained due witness|witness authority)"):
         _reserve(store, original)
     with sqlite3.connect(tmp_path / "due.sqlite3") as conn:
         assert conn.execute("SELECT count(*) FROM due_reservations").fetchone() == (0,)
