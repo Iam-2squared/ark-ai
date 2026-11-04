@@ -88,6 +88,30 @@ class SyntheticRecoveryReview:
 # Keep the original result type as a validator if an injected fixture replaces
 # the exported constructor. A successful local review never grants authority.
 _REVIEW_CLASS = SyntheticRecoveryReview
+_REVIEW_DENIAL_FIELDS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_known",
+)
+_ORIGINAL_REVIEW_DENIALS = tuple(
+    vars(_REVIEW_CLASS)[name] for name in _REVIEW_DENIAL_FIELDS
+)
+
+
+def _assert_original_recovery_denials() -> None:
+    # No caller-supplied False-looking descriptor may run its getter while
+    # a multi-store recovery is interpreted. There is NEVER replay authority.
+    if (
+        SyntheticRecoveryReview is not _REVIEW_CLASS
+        or any(
+            vars(_REVIEW_CLASS).get(name) is not original
+            for name, original in zip(
+                _REVIEW_DENIAL_FIELDS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticRecoveryRejected(
+            "synthetic recovery constructed result changed authority descriptor"
+        )
 
 
 def review_synthetic_write_recovery(
@@ -110,6 +134,7 @@ def review_synthetic_write_recovery(
     read transaction; there is deliberately NO global cross-store snapshot.
     Even all-matching receipts cannot resolve an external WRITE outcome.
     """
+    _assert_original_recovery_denials()
     if (
         type(journal) is not SyntheticPlanJournal
         or not isinstance(ledger_path, Path)
@@ -507,7 +532,9 @@ def review_synthetic_write_recovery(
             plan.tail, ledger, audit_witness, occurrences,
             link_witness, matching_links,
         )
+        _assert_original_recovery_denials()
         result = SyntheticRecoveryReview(*result_fields)
+        _assert_original_recovery_denials()
         # Result construction can itself run a substituted local test callback.
         # Do not return a forged diagnosis or reflected-mutable witnesses.
         assert_epoch()
@@ -521,6 +548,11 @@ def review_synthetic_write_recovery(
             raise SyntheticRecoveryRejected(
                 "synthetic recovery constructed result changed"
             )
+        if any(getattr(result, name) is not False for name in _REVIEW_DENIAL_FIELDS):
+            raise SyntheticRecoveryRejected(
+                "synthetic recovery constructed result changed authority"
+            )
+        _assert_original_recovery_denials()
         return result
     except (sqlite3.Error, KeyError, TypeError, ValueError, AttributeError) as exc:
         raise SyntheticRecoveryRejected(
