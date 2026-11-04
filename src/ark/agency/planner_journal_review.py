@@ -594,6 +594,19 @@ class SyntheticPlanJournal:
             raise SyntheticPlanJournalRejected("invalid synthetic plan timestamp")
         if type(to_state) is not StepState:
             raise SyntheticPlanJournalRejected("invalid synthetic plan target state")
+        # Fail closed before opening SQLite. PlanGraph.transition also checks
+        # these, but only AFTER replay, which is unnecessary for malformed or
+        # nonexistent caller-supplied step/revision identities.
+        if (
+            type(step_id) is not str or not step_id.strip()
+            or step_id not in (step.step_id for step in self._steps)
+        ):
+            raise SyntheticPlanJournalRejected("unknown or invalid synthetic plan step")
+        if (
+            type(expected_revision) is not int
+            or not 0 <= expected_revision <= _MAX_INT
+        ):
+            raise SyntheticPlanJournalRejected("invalid synthetic plan expected revision")
         # An earlier, independently retained tail must match inside the same
         # write transaction as the new transition. Never use a separate
         # preflight read as an authority for this append.
