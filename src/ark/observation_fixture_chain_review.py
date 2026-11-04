@@ -204,10 +204,16 @@ def review_disconnected_fixture_chain(
     for denial in _DENIALS:
         assert_epoch()
         assert_result_epoch()
+        # The preceding result-field inspection may invoke a reflected
+        # callback. Recheck the original descriptor immediately before the
+        # first potentially executable authority getter.
+        _assert_original_implementations()
         if getattr(result, denial) is not False:
             raise ObservationFixtureChainRejected("fixture review gained authority")
-        # Denial getters can be reentrant in synthetic tests.
+        # A getter can modify the descriptor of a later or earlier flag.
+        _assert_original_implementations()
         assert_result_epoch()
     assert_epoch()
     assert_result_epoch()
+    _assert_original_implementations()
     return result
