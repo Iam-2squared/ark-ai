@@ -23,10 +23,10 @@ from .generation_fenced_cas import (
     MemoryGenerationCASRejected,
     MemoryGenerationCASToken,
     _digest,
+    _require_original_token_denials,
     _row_hash,
     _snapshot,
     _token_fields,
-    _require_original_token_denials,
 )
 from .sqlite_store import SQLiteMemoryStore, deterministic_memory_id
 
