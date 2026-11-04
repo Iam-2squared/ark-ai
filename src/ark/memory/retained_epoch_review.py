@@ -52,9 +52,46 @@ class RetainedMemoryEpochComparison:
 
 
 _COMPARISON_TYPE = RetainedMemoryEpochComparison
+_REVIEW_DENIAL_NAMES = (
+    "independent_writer_proven", "cross_store_atomicity_proven",
+    "trusted_clock_proven", "memory_disclosure_authorized",
+    "dispatch_authorized",
+)
+_COMPARISON_DENIAL_NAMES = (
+    "historical_prefix_proven", "independent_writer_proven",
+    "custody_authenticated", "dispatch_authorized",
+    "memory_disclosure_authorized",
+)
+_ORIGINAL_REVIEW_DENIALS = tuple(
+    vars(_REVIEW_TYPE)[name] for name in _REVIEW_DENIAL_NAMES
+)
+_ORIGINAL_COMPARISON_DENIALS = tuple(
+    vars(_COMPARISON_TYPE)[name] for name in _COMPARISON_DENIAL_NAMES
+)
+
+
+def _assert_original_denial_descriptors() -> None:
+    # Class-level getattr can run an injected descriptor even if it returns
+    # the original property or a false-looking value. Compare raw entries.
+    if (
+        any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_DENIAL_NAMES, _ORIGINAL_REVIEW_DENIALS, strict=True,
+            )
+        )
+        or any(
+            vars(_COMPARISON_TYPE).get(name) is not original
+            for name, original in zip(
+                _COMPARISON_DENIAL_NAMES, _ORIGINAL_COMPARISON_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise MemorySchemaError("retained epoch authority descriptor changed")
 
 
 def _validate(review: object) -> tuple[object, ...]:
+    _assert_original_denial_descriptors()
     if type(review) is not _REVIEW_TYPE:
         raise MemorySchemaError("exact retained Memory review required")
     fields = (
@@ -148,6 +185,7 @@ def review_retained_memory_epoch(
     stable()
     result = RetainedMemoryEpochComparison(scopes_p, growth_tuple, status, fingerprint)
     stable()
+    _assert_original_denial_descriptors()
     if (
         type(result) is not _COMPARISON_TYPE
         or result.scope_fingerprints is not scopes_p
@@ -161,4 +199,6 @@ def review_retained_memory_epoch(
         or result.memory_disclosure_authorized is not False
     ):
         raise MemorySchemaError("retained Memory comparison result changed")
+    _assert_original_denial_descriptors()
+    stable()
     return result
