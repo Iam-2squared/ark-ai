@@ -131,6 +131,37 @@ def _snapshot(
     source_id: str,
 ) -> tuple[MemoryRecord, MemoryGenerationCASToken]:
     _validate_v1_schema(conn)
+    # The per-row CAS prefix cannot by itself detect deletion of events
+    # belonging to another row. Check the complete local append high-water
+    # in this SAME transaction before interpreting the row's generation.
+    # This is corruption detection, not authenticated event custody.
+    count, first, last = conn.execute(
+        "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
+    ).fetchone()
+    sequence = conn.execute(
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+    ).fetchone()
+    if (
+        type(count) is not int or count < 0
+        or (
+            count == 0 and (
+                first is not None or last is not None or sequence is not None
+            )
+        )
+        or (
+            count > 0 and (
+                type(first) is not int or first != 1
+                or type(last) is not int or last != count
+                or last > SQLITE_INT_MAX
+                or sequence is None
+                or type(sequence[0]) is not int
+                or sequence[0] != last
+            )
+        )
+    ):
+        raise MemoryGenerationCASRejected(
+            "Memory generation global event high-water mismatch"
+        )
     row = conn.execute("SELECT * FROM memories WHERE memory_id=?", (memory_id,)).fetchone()
     if row is None:
         raise MemoryConflictError("generation-fenced update requires an existing row")
