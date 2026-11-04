@@ -97,13 +97,15 @@ def review_retained_context_replay_prefix(
     in one read transaction removes the two-snapshot race, but is not
     independent or cryptographically signed storage provenance.
     """
-    _original_result_authority()
     if type(ledger) is not _LEDGER:
         raise OfflineContextPrefixRejected("exact offline context ledger required")
     try:
         previous = replay._check_witness(retained)
     except replay.OfflineContextReplayRejected as exc:
         raise OfflineContextPrefixRejected("invalid retained context witness") from exc
+    # Preserve exact retained-witness failure precedence without reading any
+    # counterfeit result authority getter. Still before all SQLite I/O.
+    _original_result_authority()
     old_count, old_chain = previous
     path = ledger._path
 
