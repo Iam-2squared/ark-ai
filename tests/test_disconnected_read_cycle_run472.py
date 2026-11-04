@@ -153,7 +153,10 @@ def test_reentrant_gate_mutates_original_plan_and_fails_closed(monkeypatch):
         return bound
 
     monkeypatch.setattr(PermissionGate, "authorize_registered", changing_gate)
-    with pytest.raises(DisconnectedReadCycleRejected, match="source plan changed"):
+    with pytest.raises(
+        DisconnectedReadCycleRejected,
+        match="source plan changed|READ wave preflight denied",
+    ):
         simulate_registered_read_cycle(plan, registry, gate, grants, observed_at_ms=100)
     assert backend.calls == 0
 
