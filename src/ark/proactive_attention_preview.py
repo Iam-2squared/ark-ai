@@ -74,6 +74,7 @@ _DENIAL_NAMES = (
     "trusted_clock_verified", "consent_verified",
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
+_ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
 
 
 def _assert_original_denials() -> None:
@@ -83,6 +84,7 @@ def _assert_original_denials() -> None:
         AttentionBudgetPolicy is not _POLICY_TYPE
         or SyntheticSurfaceMarker is not _MARKER_TYPE
         or AttentionBudgetPreview is not _RESULT_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_RESULT_TYPE).get(key) is not expected
             for key, expected in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
@@ -220,6 +222,9 @@ def preview_proactive_attention(
     stable()
     review_digest = hashlib.sha256(_DOMAIN + b"review\0" + review_bytes).hexdigest()
     stable()
+    # A forged dataclass constructor can execute code even when every
+    # notification/consent property still returns False.
+    _assert_original_denials()
     result = _RESULT_TYPE(
         disposition, next_at, len(active), history_digest, review_digest,
     )
