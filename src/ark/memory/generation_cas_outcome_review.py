@@ -70,12 +70,16 @@ class MemoryCASOutcomeReview:
         return False
 
 
-_ORIGINAL_DENIALS = tuple(vars(MemoryCASOutcomeReview)[name] for name in _DENIED)
+_REPORT_TYPE = MemoryCASOutcomeReview
+_ORIGINAL_DENIALS = tuple(vars(_REPORT_TYPE)[name] for name in _DENIED)
 
 
 def _require_original_denials() -> None:
-    if any(
-        vars(MemoryCASOutcomeReview).get(name) is not original
+    # The properties alone do not authenticate their owning class: a caller
+    # could attach the original False-valued descriptors to a counterfeit
+    # report class with an executable constructor.
+    if MemoryCASOutcomeReview is not _REPORT_TYPE or any(
+        vars(_REPORT_TYPE).get(name) is not original
         for name, original in zip(_DENIED, _ORIGINAL_DENIALS, strict=True)
     ):
         raise MemoryCASOutcomeRejected("CAS outcome authority definition changed")
