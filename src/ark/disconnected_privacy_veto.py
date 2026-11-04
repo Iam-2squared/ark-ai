@@ -87,8 +87,23 @@ _REVIEW_DENIALS = (
     "user_identity_authenticated",
 )
 _ORIGINAL_REVIEW_DENIALS = tuple(
-    getattr(_REVIEW_TYPE, key) for key in _REVIEW_DENIALS
+    vars(_REVIEW_TYPE)[key] for key in _REVIEW_DENIALS
 )
+
+
+def _assert_original_review_denials() -> None:
+    # Check import-original class identity and static descriptors before
+    # invoking any deny-only property or a replaceable report constructor.
+    if (
+        OfflinePrivacyVetoReview is not _REVIEW_TYPE
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflinePrivacyVetoRejected("privacy veto review acquired authority")
 
 _RECEIPT_TYPE = OfflinePrivacyVetoReceipt
 _RECEIPT_DENIALS = (
@@ -118,6 +133,7 @@ def _assert_receipt_denials() -> None:
 
 
 def _assert_review_denied(review: OfflinePrivacyVetoReview) -> None:
+    _assert_original_review_denials()
     if type(review) is not _REVIEW_TYPE:
         raise OfflinePrivacyVetoRejected("privacy veto review acquired authority")
     original = (review.local_veto_seen, review.witness)
@@ -125,14 +141,15 @@ def _assert_review_denied(review: OfflinePrivacyVetoReview) -> None:
         _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
     ):
         if (
-            getattr(_REVIEW_TYPE, key) is not descriptor
+            vars(_REVIEW_TYPE).get(key) is not descriptor
             or getattr(review, key) is not False
             or review.local_veto_seen is not original[0]
             or review.witness is not original[1]
         ):
             raise OfflinePrivacyVetoRejected("privacy veto review acquired authority")
+        _assert_original_review_denials()
     if any(
-        getattr(_REVIEW_TYPE, key) is not descriptor
+        vars(_REVIEW_TYPE).get(key) is not descriptor
         for key, descriptor in zip(
             _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
         )
@@ -279,6 +296,7 @@ class DisconnectedPrivacyVetoLedger:
         """Report local veto presence; missing veto never permits disclosure."""
         if not _sha(owner_sha256) or not _sha(scope_sha256) or not _valid_witness(retained):
             raise OfflinePrivacyVetoRejected("invalid veto review inputs")
+        _assert_original_review_denials()
         source = self._path
         epoch = (retained.count, retained.fingerprint)
         with closing(self._open(read_only=True)) as conn:
@@ -303,6 +321,7 @@ class DisconnectedPrivacyVetoLedger:
                 ):
                     raise OfflinePrivacyVetoRejected("veto history changed during review")
                 conn.commit()
+                _assert_original_review_denials()
                 result = OfflinePrivacyVetoReview(bool(rows), current)
                 _assert_review_denied(result)
                 if (
