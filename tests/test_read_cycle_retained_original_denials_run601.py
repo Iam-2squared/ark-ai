@@ -22,7 +22,6 @@ from ark.agency.planner import PlanGraph
 from ark.agency.policy import PermissionGate
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
-
 _FLAGS = (
     "dispatch_authorized", "external_result_verified",
     "automatic_replay_authorized", "authenticated_clock_or_consent",
