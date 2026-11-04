@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from ark.agency import offline_write_triage_verify as triage
 from ark.agency.disconnected_write_recovery_fence import OfflineRecoveryStepClaim
 from ark.agency.disconnected_write_slot_ledger import (
     DisconnectedWriteSlotLedger,
     genesis_write_slot_witness,
 )
 from ark.agency.offline_write_manual_triage import build_offline_write_triage_packet
-from ark.agency import offline_write_triage_verify as triage
 
 
 class Counterfeit:
