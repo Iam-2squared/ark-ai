@@ -71,6 +71,26 @@ class OfflinePngInventory:
 
 
 _INVENTORY_TYPE = OfflinePngInventory
+_DENIAL_NAMES = (
+    "decoded_pixels_verified", "capture_provenance_verified",
+    "consent_verified", "context_release_authorized",
+)
+_ORIGINAL_DENIALS = tuple(vars(_INVENTORY_TYPE)[name] for name in _DENIAL_NAMES)
+
+
+def _require_original_png_authority() -> None:
+    # Never run a replacement class constructor or a False-looking forged
+    # descriptor. Both can have side effects and can forge an inert receipt.
+    if (
+        OfflinePngInventory is not _INVENTORY_TYPE
+        or any(
+            vars(_INVENTORY_TYPE).get(name) is not original
+            for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise OfflinePngRejected(
+            "constructed PNG inventory denial descriptor changed or claims authority"
+        )
 
 
 def _sha(value: object) -> bool:
@@ -84,6 +104,7 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
     PNG ancillary chunks, unknown critical chunks, Adam7, and trailing bytes
     are rejected. CRC32 detects accidental chunk corruption, not authenticity.
     """
+    _require_original_png_authority()
     if type(request) is not OfflinePngRequest:
         raise OfflinePngRejected("exact PNG request required")
     epoch = (
@@ -168,72 +189,48 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
                 raise OfflinePngRejected("PNG requires final empty IEND")
             assert_epoch()
             hashed_idat = idat_digest.hexdigest()
+            _require_original_png_authority()
             result = OfflinePngInventory(
                 owner, privacy, declared_digest, hashed_idat,
                 width, height, color, depth, idat_count, idat_bytes,
             )
             assert_epoch()
-            # A False-valued denial getter is executable code. Pin every
-            # descriptor before calling any getter and recheck at return.
-            denial_names = (
-                "decoded_pixels_verified", "capture_provenance_verified",
-                "consent_verified", "context_release_authorized",
-            )
-            denial_descriptors = tuple(
-                getattr(_INVENTORY_TYPE, name) for name in denial_names
-            )
-            if any(type(descriptor) is not property
-                   for descriptor in denial_descriptors):
-                raise OfflinePngRejected("PNG denial descriptor invalid")
-            if (
-                type(result) is not _INVENTORY_TYPE
-                or result.owner_sha256 is not owner
-                or result.privacy_sha256 is not privacy
-                or result.source_sha256 is not declared_digest
-                or result.idat_sha256 is not hashed_idat
-                or any(
-                    type(value) is not int or value != expected
-                    for value, expected in zip(
-                        (result.width, result.height, result.color_type,
-                         result.bit_depth, result.idat_chunks,
-                         result.total_idat_bytes),
-                        (width, height, color, depth, idat_count, idat_bytes),
-                        strict=True,
+            # Fail closed before a forged False getter runs; module import
+            # captured the only non-authorizing descriptor definitions.
+            def assert_result() -> None:
+                _require_original_png_authority()
+                assert_epoch()
+                if (
+                    type(result) is not _INVENTORY_TYPE
+                    or result.owner_sha256 is not owner
+                    or result.privacy_sha256 is not privacy
+                    or result.source_sha256 is not declared_digest
+                    or result.idat_sha256 is not hashed_idat
+                    or any(
+                        type(value) is not int or value != expected
+                        for value, expected in zip(
+                            (
+                                result.width, result.height, result.color_type,
+                                result.bit_depth, result.idat_chunks,
+                                result.total_idat_bytes,
+                            ),
+                            (width, height, color, depth, idat_count, idat_bytes),
+                            strict=True,
+                        )
                     )
-                )
-                or result.decoded_pixels_verified is not False
-                or result.capture_provenance_verified is not False
-                or result.consent_verified is not False
-                or result.context_release_authorized is not False
-            ):
-                raise OfflinePngRejected(
-                    "constructed PNG inventory changed or claims authority"
-                )
-            # Authority getters may execute injected code before returning
-            # False; revalidate source and constructed fields afterwards.
-            assert_epoch()
-            if (
-                type(result) is not _INVENTORY_TYPE
-                or result.owner_sha256 is not owner
-                or result.privacy_sha256 is not privacy
-                or result.source_sha256 is not declared_digest
-                or result.idat_sha256 is not hashed_idat
-                or (result.width, result.height, result.color_type,
-                    result.bit_depth, result.idat_chunks,
-                    result.total_idat_bytes) != (
-                        width, height, color, depth, idat_count, idat_bytes
+                ):
+                    raise OfflinePngRejected("constructed PNG inventory changed")
+
+            assert_result()
+            for name in _DENIAL_NAMES:
+                _require_original_png_authority()
+                if getattr(result, name) is not False:
+                    raise OfflinePngRejected(
+                        "constructed PNG inventory claims authority"
                     )
-            ):
-                raise OfflinePngRejected("constructed PNG inventory changed")
-            if any(
-                getattr(_INVENTORY_TYPE, name) is not original
-                for name, original in zip(
-                    denial_names, denial_descriptors, strict=True,
-                )
-            ):
-                raise OfflinePngRejected(
-                    "PNG denial descriptor changed during authority review"
-                )
+                # Callbacks are not an authoritative record of custody.
+                # Recheck both the request and exact receipt fields after each.
+                assert_result()
             return result
         else:
             raise OfflinePngRejected("unknown, private, or reordered PNG chunk")
