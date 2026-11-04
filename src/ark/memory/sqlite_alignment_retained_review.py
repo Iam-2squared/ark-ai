@@ -16,7 +16,9 @@ from dataclasses import dataclass
 
 from .contracts import MemorySchemaError
 from .sqlite_event_alignment import (
+    MemoryEventAlignmentRejected,
     MemoryEventAlignmentReview,
+    _require_original_denials,
     review_memory_event_alignment,
 )
 from .sqlite_store import SQLiteMemoryStore
@@ -59,9 +61,43 @@ class RetainedMemoryAlignmentComparison:
 
 
 _RESULT = RetainedMemoryAlignmentComparison
+_COMPARISON_DENIALS = (
+    "historical_prefix_authenticated", "writer_authenticated",
+    "content_disclosure_authorized", "dispatch_authorized",
+)
+_ORIGINAL_COMPARISON_DENIALS = tuple(
+    vars(_RESULT)[name] for name in _COMPARISON_DENIALS
+)
+
+
+def _require_original_comparison_denials() -> None:
+    # A False-returning descriptor replacement is a different authority
+    # epoch. Read raw class dictionaries before invoking any property getter.
+    if (
+        RetainedMemoryAlignmentComparison is not _RESULT
+        or any(
+            vars(_RESULT).get(name) is not original
+            for name, original in zip(
+                _COMPARISON_DENIALS, _ORIGINAL_COMPARISON_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise MemoryAlignmentHistoryRejected(
+            "comparison result acquired authority descriptor"
+        )
+
+
+def _require_original_alignment_denials() -> None:
+    try:
+        _require_original_denials()
+    except MemoryEventAlignmentRejected as exc:
+        raise MemoryAlignmentHistoryRejected(
+            "invalid alignment shape or authority descriptor"
+        ) from exc
 
 
 def _epoch(value: object) -> tuple[object, ...]:
+    _require_original_alignment_denials()
     if type(value) is not _REVIEW:
         raise MemoryAlignmentHistoryRejected("exact retained local alignment required")
     epoch = (
@@ -91,12 +127,14 @@ def compare_retained_memory_alignment(
     retained: MemoryEventAlignmentReview,
 ) -> RetainedMemoryAlignmentComparison:
     """Reject local rollback or silent row changes, never attest a later append."""
+    _require_original_comparison_denials()
     if type(store) is not SQLiteMemoryStore:
         raise MemoryAlignmentHistoryRejected("exact local SQLite source required")
     path = store.path
     previous = _epoch(retained)
 
     def stable() -> None:
+        _require_original_comparison_denials()
         if (
             type(store) is not SQLiteMemoryStore or store.path is not path
             or type(retained) is not _REVIEW
@@ -138,7 +176,9 @@ def compare_retained_memory_alignment(
         _epoch(current_review), current, strict=True,
     )):
         raise MemoryAlignmentHistoryRejected("current alignment epoch changed")
+    _require_original_comparison_denials()
     result = _RESULT(old_count, new_count, appended, status, fingerprint)
+    _require_original_comparison_denials()
     if (
         type(result) is not _RESULT
         or result.previous_event_count is not old_count
@@ -154,4 +194,5 @@ def compare_retained_memory_alignment(
     ):
         raise MemoryAlignmentHistoryRejected("comparison result acquired authority")
     stable()
+    _require_original_comparison_denials()
     return result
