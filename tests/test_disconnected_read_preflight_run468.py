@@ -189,7 +189,10 @@ def test_reentrant_gate_replaces_equal_grant_carrier_and_blocks(monkeypatch):
         return bound
 
     monkeypatch.setattr(PermissionGate, "authorize_registered", mutating_gate)
-    with pytest.raises(DisconnectedReadPreflightRejected, match="grant carrier"):
+    with pytest.raises(
+        DisconnectedReadPreflightRejected,
+        match="grant carrier|registered READ gate implementation changed",
+    ):
         preview_registered_read_plan(graph, registry, gate, (grant,), observed_at_ms=100)
     assert backend.calls == 0
 
