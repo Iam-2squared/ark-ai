@@ -74,6 +74,14 @@ class OfflineContextReplayReceipt:
 
 _WITNESS_TYPE = OfflineContextReplayWitness
 _RECEIPT_TYPE = OfflineContextReplayReceipt
+_RECEIPT_DENIALS = (
+    "consent_verified", "revocation_freshness_verified",
+    "context_disclosure_authorized", "tool_dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
+)
 
 
 def _hash(value: tuple[object, ...]) -> str:
@@ -409,4 +417,24 @@ class DisconnectedContextReplayLedger:
             or receipt.automatic_replay_authorized is not False
         ):
             raise OfflineContextReplayRejected("postcommit context receipt changed")
+        # The last False-only getter above is a reentrant callback boundary.
+        # Recheck exact committed carriers and original denial declarations,
+        # not merely getters which happen to return False. Rejection is
+        # AFTER COMMIT and must not authorize a blind retry or disclosure.
+        stable()
+        stable_witness()
+        if (
+            type(receipt) is not _RECEIPT_TYPE
+            or receipt.request_id is not fields[0]
+            or receipt.witness is not expected
+            or any(
+                vars(_RECEIPT_TYPE).get(name) is not original
+                for name, original in zip(
+                    _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+                )
+            )
+        ):
+            raise OfflineContextReplayRejected(
+                "postcommit context receipt authority epoch changed"
+            )
         return receipt
