@@ -70,12 +70,12 @@ class MemoryCASOutcomeReview:
         return False
 
 
-_ORIGINAL_DENIALS = tuple(getattr(MemoryCASOutcomeReview, name) for name in _DENIED)
+_ORIGINAL_DENIALS = tuple(vars(MemoryCASOutcomeReview)[name] for name in _DENIED)
 
 
 def _require_original_denials() -> None:
     if any(
-        getattr(MemoryCASOutcomeReview, name) is not original
+        vars(MemoryCASOutcomeReview).get(name) is not original
         for name, original in zip(_DENIED, _ORIGINAL_DENIALS, strict=True)
     ):
         raise MemoryCASOutcomeRejected("CAS outcome authority definition changed")
@@ -265,7 +265,7 @@ def review_memory_generation_cas_outcome(
             or any(now is not old for now, old in zip(
                 current, pinned, strict=True,
             ))
-            or any(getattr(MemoryCASOutcomeReview, name) is not desc
+            or any(vars(MemoryCASOutcomeReview).get(name) is not desc
                    for name, desc in zip(_DENIED, descriptors, strict=True))
         ):
             raise MemoryCASOutcomeRejected("CAS observation report changed")
