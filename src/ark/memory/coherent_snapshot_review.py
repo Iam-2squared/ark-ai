@@ -66,6 +66,18 @@ class CoherentSnapshotReview:
 
 # Pin the result type independently of a reentrant synthetic constructor hook.
 _COHERENT_SNAPSHOT_RESULT_TYPE = CoherentSnapshotReview
+_ORIGINAL_COHERENT_SNAPSHOT_INIT = vars(_COHERENT_SNAPSHOT_RESULT_TYPE)["__init__"]
+
+
+def _require_original_snapshot_result_constructor() -> None:
+    # A counterfeit constructor can execute arbitrary Python before the
+    # postconstruction result-type/authority review ever runs.
+    if (
+        CoherentSnapshotReview is not _COHERENT_SNAPSHOT_RESULT_TYPE
+        or vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get("__init__")
+        is not _ORIGINAL_COHERENT_SNAPSHOT_INIT
+    ):
+        raise MemorySchemaError("memory snapshot result constructor changed")
 
 
 def review_coherent_snapshot(
@@ -73,6 +85,7 @@ def review_coherent_snapshot(
 ) -> CoherentSnapshotReview:
     if type(store) is not SQLiteMemoryStore or type(request) is not CoherentSnapshotRequest:
         raise TypeError("review requires exact SQLiteMemoryStore and CoherentSnapshotRequest")
+    _require_original_snapshot_result_constructor()
     # Copy validated request carriers before a potentially reentrant clock hook.
     original = (
         request.owner_id,
@@ -331,7 +344,9 @@ def review_coherent_snapshot(
     # mutate the original request, source or hydrated rows, or forge the
     # detached result itself after the content-free digest was computed.
     detached_records = tuple(results)
-    review = CoherentSnapshotReview(now, scopes, detached_records, digest)
+    _require_original_snapshot_result_constructor()
+    review = _COHERENT_SNAPSHOT_RESULT_TYPE(now, scopes, detached_records, digest)
+    _require_original_snapshot_result_constructor()
     assert_epoch()
     assert_record_epochs()
     if (
