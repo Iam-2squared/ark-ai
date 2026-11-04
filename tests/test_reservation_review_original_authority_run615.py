@@ -8,7 +8,6 @@ import pytest
 
 import ark.agency.disconnected_reservation_overlap as mod
 
-
 DENIALS = (
     "durable_uniqueness_proven", "exact_once_effect_proven",
     "automatic_retry_authorized", "write_dispatch_authorized",
