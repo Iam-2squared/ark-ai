@@ -67,6 +67,38 @@ class SyntheticQuarantineMatrix:
 
 _FINDING_TYPE = SyntheticQuarantineFinding
 _MATRIX_TYPE = SyntheticQuarantineMatrix
+_ORIGINAL_FINDING_DENIAL = vars(_FINDING_TYPE)["automatic_replay_authorized"]
+_MATRIX_DENIAL_FIELDS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_known",
+)
+_ORIGINAL_MATRIX_DENIALS = tuple(
+    vars(_MATRIX_TYPE)[name] for name in _MATRIX_DENIAL_FIELDS
+)
+
+
+def _assert_original_denials() -> None:
+    """Reject even False-returning counterfeit properties without calling them."""
+    if (
+        SyntheticQuarantineFinding is not _FINDING_TYPE
+        or vars(_FINDING_TYPE).get("automatic_replay_authorized")
+        is not _ORIGINAL_FINDING_DENIAL
+    ):
+        raise SyntheticQuarantineMatrixRejected(
+            "WRITE finding carrier changed: original denial descriptor"
+        )
+    if (
+        SyntheticQuarantineMatrix is not _MATRIX_TYPE
+        or any(
+            vars(_MATRIX_TYPE).get(name) is not original
+            for name, original in zip(
+                _MATRIX_DENIAL_FIELDS, _ORIGINAL_MATRIX_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticQuarantineMatrixRejected(
+            "WRITE diagnostic result changed: original denial descriptor"
+        )
 
 
 def _valid_id(value: object) -> bool:
@@ -95,6 +127,7 @@ def diagnose_disconnected_write_quarantine(
     Do not reconstruct it from the same archive being checked. Unknown states,
     missing evidence, and apparently clean PENDING rows all stay quarantined.
     """
+    _assert_original_denials()
     expected = independently_expected_step_ids
     observed = observations
     original_topology = topology_digest
@@ -117,6 +150,7 @@ def diagnose_disconnected_write_quarantine(
     )
 
     def assert_epoch() -> None:
+        _assert_original_denials()
         if (
             topology_digest is not original_topology
             or independently_expected_step_ids is not expected
@@ -141,6 +175,7 @@ def diagnose_disconnected_write_quarantine(
     finding_epoch: list[tuple[SyntheticQuarantineFinding, str, tuple[str, ...]]] = []
 
     def stable_findings() -> None:
+        _assert_original_denials()
         if len(findings) != len(finding_epoch) or any(
             type(item) is not _FINDING_TYPE
             or item is not original
@@ -216,6 +251,7 @@ def diagnose_disconnected_write_quarantine(
     )
     assert_epoch()
     stable_findings()
+    _assert_original_denials()
     if (
         type(result) is not _MATRIX_TYPE
         or result.topology_digest is not original_topology
@@ -227,4 +263,7 @@ def diagnose_disconnected_write_quarantine(
         or result.external_outcome_known is not False
     ):
         raise SyntheticQuarantineMatrixRejected("WRITE diagnostic result changed")
+    _assert_original_denials()
+    stable_findings()
+    assert_epoch()
     return result
