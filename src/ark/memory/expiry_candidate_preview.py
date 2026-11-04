@@ -8,6 +8,7 @@ authenticates a clock/owner, or grants permission to erase anything.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import sqlite3
 from contextlib import closing
@@ -73,10 +74,15 @@ _AUTHORITY_DESCRIPTORS = tuple(
 
 def _assert_original_authority() -> None:
     """Deny substituted authority callbacks before touching Memory SQLite."""
-    if any(
-        getattr(_RECEIPT_TYPE, flag) is not original
-        for flag, original in zip(
-            _FLAGS, _AUTHORITY_DESCRIPTORS, strict=True,
+    if (
+        MemoryExpiryPreview is not _RECEIPT_TYPE
+        or any(
+            # getattr() on a class can itself execute a hostile __get__.
+            # Identity inspection must never run a substituted descriptor.
+            vars(_RECEIPT_TYPE).get(flag) is not original
+            for flag, original in zip(
+                _FLAGS, _AUTHORITY_DESCRIPTORS, strict=True,
+            )
         )
     ):
         raise MemoryExpiryPreviewRejected("expiry authority descriptor changed")
@@ -87,7 +93,10 @@ def _all_non_authorizing(report: MemoryExpiryPreview) -> bool:
     _assert_original_authority()
     if type(report) is not _RECEIPT_TYPE:
         return False
-    for flag in _FLAGS:
+    for flag, original in zip(_FLAGS, _AUTHORITY_DESCRIPTORS, strict=True):
+        _assert_original_authority()
+        if inspect.getattr_static(report, flag, None) is not original:
+            return False
         if getattr(report, flag) is not False:
             return False
         _assert_original_authority()
