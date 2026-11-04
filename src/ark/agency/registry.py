@@ -63,9 +63,11 @@ class ToolRegistration:
         if type(self.effect) is not Effect:
             raise TypeError("effect must be an Effect")
         _text("backend_id", self.backend_id)
+        # The static check is the complete structural interface contract.
+        # isinstance(..., a runtime-checkable Protocol) can invoke a hostile
+        # backend's __getattribute__("execute") on Python 3.11. Registration
+        # must not call user code, even to validate an inert mock backend.
         _backend_execute_descriptor(self.backend)
-        if not isinstance(self.backend, ToolBackend):
-            raise TypeError("backend must implement ToolBackend")
 
 
 @dataclass(frozen=True, slots=True)
