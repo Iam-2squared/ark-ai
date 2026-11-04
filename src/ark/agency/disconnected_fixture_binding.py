@@ -49,6 +49,23 @@ class DisconnectedFixtureBinding:
 
 
 _BINDING_TYPE = DisconnectedFixtureBinding
+_BINDING_DENIALS = (
+    "dispatch_authorized", "external_outcome_verified",
+    "automatic_replay_authorized",
+)
+_BINDING_ORIGINAL_DENIALS = tuple(
+    vars(_BINDING_TYPE)[name] for name in _BINDING_DENIALS
+)
+
+
+def _assert_original_binding() -> None:
+    if DisconnectedFixtureBinding is not _BINDING_TYPE or any(
+        vars(_BINDING_TYPE).get(name) is not original
+        for name, original in zip(
+            _BINDING_DENIALS, _BINDING_ORIGINAL_DENIALS, strict=True,
+        )
+    ):
+        raise DisconnectedFixtureBindingRejected("constructed binding changed")
 
 
 def bind_disconnected_fixture_result(
@@ -134,7 +151,9 @@ def bind_disconnected_fixture_result(
     unchanged()
     fingerprint = hashlib.sha256(_DOMAIN + data).hexdigest()
     unchanged()
-    bound = DisconnectedFixtureBinding(
+    # Reentrant hash/fixture callbacks must not substitute the constructor.
+    _assert_original_binding()
+    bound = _BINDING_TYPE(
         request_epoch[0], request_epoch[1], result_epoch[2],
         result_epoch[4], fingerprint,
     )
@@ -146,9 +165,15 @@ def bind_disconnected_fixture_result(
         or bound.input_digest is not result_epoch[2]
         or bound.result_digest is not result_epoch[4]
         or bound.request_bound_digest is not fingerprint
-        or bound.dispatch_authorized is not False
-        or bound.external_outcome_verified is not False
-        or bound.automatic_replay_authorized is not False
     ):
         raise DisconnectedFixtureBindingRejected("constructed binding changed")
+    for name in _BINDING_DENIALS:
+        # Inspect the property definition before invoking any getter.
+        _assert_original_binding()
+        if getattr(bound, name) is not False:
+            raise DisconnectedFixtureBindingRejected("constructed binding changed")
+        _assert_original_binding()
+        unchanged()
+    _assert_original_binding()
+    unchanged()
     return bound
