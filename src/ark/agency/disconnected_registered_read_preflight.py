@@ -8,8 +8,8 @@ perform an external READ, nor a trusted-clock or durable authorization proof.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import inspect
+from dataclasses import dataclass
 
 from .contracts import CapabilityGrant, Effect, PermissionDenied, ToolCall
 from .policy import PermissionGate
