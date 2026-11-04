@@ -72,6 +72,15 @@ class DueReservationReceipt:
 # authority-looking compatible objects or equal-valued carrier substitutions.
 _WITNESS_TYPE = DueReservationWitness
 _RECEIPT_TYPE = DueReservationReceipt
+# Keep the original fail-closed receipt descriptors, not merely their Boolean
+# values: a False-returning replacement is still an unreviewed authority epoch.
+_RECEIPT_DENIALS = (
+    "execution_authorized", "notification_authorized",
+    "automatic_replay_authorized", "trusted_clock_verified",
+)
+_ORIGINAL_RECEIPT_DENIALS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
+)
 
 
 def _checked_witness(count: int, fingerprint: str) -> DueReservationWitness:
@@ -372,16 +381,30 @@ class DisconnectedDueReservations:
         receipt = DueReservationReceipt(identity, due_at_ms, observed_now_ms, result)
         assert_retained_epoch()
         assert_committed_witness()
-        if (
-            type(receipt) is not _RECEIPT_TYPE
-            or receipt.occurrence_id is not identity
-            or receipt.due_at_ms is not due_at_ms
-            or receipt.reserved_at_ms is not observed_now_ms
-            or receipt.witness is not result
-            or receipt.execution_authorized is not False
-            or receipt.notification_authorized is not False
-            or receipt.automatic_replay_authorized is not False
-            or receipt.trusted_clock_verified is not False
-        ):
-            raise DueReservationRejected("constructed due reservation receipt changed")
+        def assert_receipt() -> None:
+            if (
+                type(receipt) is not _RECEIPT_TYPE
+                or receipt.occurrence_id is not identity
+                or receipt.due_at_ms is not due_at_ms
+                or receipt.reserved_at_ms is not observed_now_ms
+                or receipt.witness is not result
+                or any(
+                    vars(_RECEIPT_TYPE).get(name) is not original
+                    for name, original in zip(
+                        _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+                    )
+                )
+            ):
+                raise DueReservationRejected("constructed due reservation receipt changed")
+
+        assert_receipt()
+        for name in _RECEIPT_DENIALS:
+            if getattr(receipt, name) is not False:
+                raise DueReservationRejected("constructed due reservation receipt changed")
+            # A malicious property can swap a previously checked descriptor or
+            # replace a frozen receipt scalar while returning a plausible False.
+            assert_receipt()
+            assert_committed_witness()
+            assert_retained_epoch()
+        assert_receipt()
         return receipt
