@@ -98,7 +98,9 @@ def test_rollback_of_event_tail_is_rejected(tmp_path):
     retained = capture_local_memory_event_prefix(store)
     with sqlite3.connect(store.path) as conn:
         conn.execute("DELETE FROM memory_events WHERE event_id=2")
-    with pytest.raises(MemoryEventPrefixRejected, match="rolled back"):
+    # The scan now rejects the deleted local tail at the durable SQLite
+    # high-water check, before the retained-prefix rollback comparison.
+    with pytest.raises(MemoryEventPrefixRejected, match="high-water"):
         compare_local_memory_event_prefix(store, retained)
 
 
