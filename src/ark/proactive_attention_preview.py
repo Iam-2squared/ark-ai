@@ -75,6 +75,14 @@ _DENIAL_NAMES = (
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
 _ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
+# Inherited object.__getattribute__ is absent from the class dictionary.
+# Pin the exact original lookup implementation *before* reading any input
+# fields: a monkeypatched getter can otherwise execute while returning a
+# perfectly valid, False-only policy or history carrier.
+_ORIGINAL_INPUT_LOOKUPS = tuple(
+    (vars(kind).get("__getattribute__"), vars(kind).get("__getattr__"))
+    for kind in (_POLICY_TYPE, _MARKER_TYPE)
+)
 
 
 def _assert_original_denials() -> None:
@@ -85,6 +93,14 @@ def _assert_original_denials() -> None:
         or SyntheticSurfaceMarker is not _MARKER_TYPE
         or AttentionBudgetPreview is not _RESULT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(kind).get("__getattribute__") is not getters[0]
+            or vars(kind).get("__getattr__") is not getters[1]
+            for kind, getters in zip(
+                (_POLICY_TYPE, _MARKER_TYPE), _ORIGINAL_INPUT_LOOKUPS,
+                strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(key) is not expected
             for key, expected in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
