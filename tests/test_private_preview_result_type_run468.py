@@ -94,7 +94,10 @@ def test_redacted_preview_cannot_return_forged_authorized_result(monkeypatch):
         "owner_digest", "scope_digest", "source_sha256", "masked_text",
         "masked_characters", "complete_masking", "local_digest",
     ))
-    with pytest.raises(redaction.OfflineRedactionRejected, match="authority definition changed|construction mutated"):
+    with pytest.raises(
+        redaction.OfflineRedactionRejected,
+        match="authority definition changed|construction mutated",
+    ):
         redact()
 
 
