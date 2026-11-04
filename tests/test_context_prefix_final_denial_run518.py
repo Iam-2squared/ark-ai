@@ -55,17 +55,19 @@ def test_final_denial_callback_must_not_change_previous_report_fields(
             prefix.review_retained_context_replay_prefix(ledger, retained)
 
 
-def test_last_source_witness_getter_cannot_mutate_finished_report(
+def test_preinstalled_source_witness_getter_cannot_reach_report(
     tmp_path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ledger, retained = _first(tmp_path)
     observed: list[prefix.OfflineContextPrefixReview] = []
+    witness_calls = []
 
     def capture_and_deny(report: prefix.OfflineContextPrefixReview) -> bool:
         observed.append(report)
         return False
 
     def retained_getter(_witness: replay.OfflineContextReplayWitness) -> bool:
+        witness_calls.append(True)
         if observed:
             object.__setattr__(observed[-1], "current_count", 0)
         return False
@@ -80,10 +82,14 @@ def test_last_source_witness_getter_cannot_mutate_finished_report(
             "independent_custody_proven", property(retained_getter),
         )
         with pytest.raises(
-            prefix.OfflineContextPrefixRejected, match="changed after denial",
+            prefix.OfflineContextPrefixRejected,
+            match="invalid retained context witness",
         ):
             prefix.review_retained_context_replay_prefix(ledger, retained)
-    assert observed
+    # Rejection now occurs before either side-effecting getter or report
+    # constructor: the old test's late callback must be unreachable.
+    assert not observed
+    assert not witness_calls
 
 
 def test_stable_retained_prefix_report_is_still_inert(tmp_path) -> None:
