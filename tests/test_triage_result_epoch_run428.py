@@ -90,7 +90,11 @@ def test_result_constructor_must_not_change_original_recovery_evidence(
         triage.review_synthetic_write_recovery(
             journal, ledger, audit, registry, call, step_id="first",
         )
-    assert constructors == [variant]
+    # The original denial contract is now checked before calling any
+    # substituted constructor or registry callback. Rejecting earlier is
+    # stronger than exercising an already-untrusted constructor.
+    assert constructors == []
+    assert captured == []
     assert backend.calls == 0
 
 
