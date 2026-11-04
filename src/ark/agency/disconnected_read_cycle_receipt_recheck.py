@@ -6,6 +6,8 @@ the observer's clock nor grant provenance and NEVER authorizes dispatch/replay.
 
 from __future__ import annotations
 
+import inspect
+
 from .contracts import CapabilityGrant, PlanConflictError
 from .disconnected_read_cycle import (
     DisconnectedReadCycleReceipt,
@@ -28,6 +30,33 @@ _FLAGS = (
     "automatic_replay_authorized",
     "authenticated_clock_or_consent",
 )
+_ORIGINAL_DENIALS = tuple(vars(_RECEIPT)[name] for name in _FLAGS)
+
+
+def _require_original_denials(value: DisconnectedReadCycleReceipt) -> None:
+    # A local False-like replacement property is not the original inert
+    # receipt contract. Inspect without invoking any untrusted getter.
+    if (
+        DisconnectedReadCycleReceipt is not _RECEIPT
+        or type(value) is not _RECEIPT
+        or any(
+            vars(_RECEIPT).get(name) is not original
+            or inspect.getattr_static(value, name, None) is not original
+            for name, original in zip(_FLAGS, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise DisconnectedReadCycleReceiptRejected(
+            "READ receipt or inputs changed: denial descriptor substituted"
+        )
+
+
+def _denials_still_false(value: DisconnectedReadCycleReceipt) -> bool:
+    for name in _FLAGS:
+        _require_original_denials(value)
+        if getattr(value, name) is not False:
+            return False
+        _require_original_denials(value)
+    return True
 
 
 def verify_disconnected_read_cycle_receipt(
@@ -57,6 +86,7 @@ def verify_disconnected_read_cycle_receipt(
     ):
         raise DisconnectedReadCycleReceiptRejected("exact bounded receipt inputs required")
 
+    _require_original_denials(receipt)
     original = (
         receipt.topology_digest, receipt.registry_revision,
         receipt.wave_bound_step_hashes, receipt.final_status_digest,
@@ -87,6 +117,7 @@ def verify_disconnected_read_cycle_receipt(
         raise DisconnectedReadCycleReceiptRejected("invalid original READ inputs") from exc
 
     def stable() -> None:
+        _require_original_denials(receipt)
         try:
             fields = (
                 receipt.topology_digest, receipt.registry_revision,
@@ -110,7 +141,7 @@ def verify_disconnected_read_cycle_receipt(
                     for grant, capability, scope, expiry in grant_epoch
                     for carrier in (grant,)
                 )
-                or any(getattr(receipt, flag) is not False for flag in _FLAGS)
+                or not _denials_still_false(receipt)
                 or any(value is not first for value, first in zip(
                     (
                         receipt.topology_digest, receipt.registry_revision,
@@ -145,6 +176,7 @@ def verify_disconnected_read_cycle_receipt(
     )
 
     def fresh_stable() -> None:
+        _require_original_denials(fresh)
         if (
             type(fresh) is not _RECEIPT
             or fresh_epoch != original
@@ -155,7 +187,7 @@ def verify_disconnected_read_cycle_receipt(
                     fresh.fingerprint,
                 ), fresh_epoch, strict=True,
             ))
-            or any(getattr(fresh, flag) is not False for flag in _FLAGS)
+            or not _denials_still_false(fresh)
             or any(value is not first for value, first in zip(
                 (
                     fresh.topology_digest, fresh.registry_revision,
