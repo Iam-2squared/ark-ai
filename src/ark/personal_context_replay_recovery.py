@@ -69,9 +69,37 @@ class OfflineContextRecoveryReview:
 
 
 _RESULT_TYPE = OfflineContextRecoveryReview
+_RESULT_DENIALS = (
+    "historical_prefix_proven", "independent_custody_proven",
+    "consent_verified", "revocation_freshness_verified",
+    "context_disclosure_authorized", "tool_dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_RESULT_DENIALS = tuple(
+    vars(_RESULT_TYPE)[name] for name in _RESULT_DENIALS
+)
+_ORIGINAL_WITNESS_CUSTODY = vars(_WITNESS_TYPE)["independent_custody_proven"]
+
+
+def _assert_result_denials() -> None:
+    # No False-looking replacement may establish a new authority baseline.
+    if (
+        any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflineContextRecoveryRejected(
+            "context replay review result gained authority"
+        )
 
 
 def _witness_fields(value: object) -> tuple[int, str]:
+    # A swapped witness getter must not be invoked even once by triage.
+    if vars(_WITNESS_TYPE).get("independent_custody_proven") is not _ORIGINAL_WITNESS_CUSTODY:
+        raise OfflineContextRecoveryRejected("invalid exact context replay witness")
     if (
         type(value) is not _WITNESS_TYPE
         or type(value.count) is not int
@@ -80,6 +108,8 @@ def _witness_fields(value: object) -> tuple[int, str]:
         or _SHA.fullmatch(value.chain_sha256) is None
         or value.independent_custody_proven is not False
     ):
+        raise OfflineContextRecoveryRejected("invalid exact context replay witness")
+    if vars(_WITNESS_TYPE).get("independent_custody_proven") is not _ORIGINAL_WITNESS_CUSTODY:
         raise OfflineContextRecoveryRejected("invalid exact context replay witness")
     return value.count, value.chain_sha256
 
@@ -96,6 +126,7 @@ def review_restarted_context_replay(
     """
     if type(ledger) is not _LEDGER_TYPE:
         raise OfflineContextRecoveryRejected("exact disconnected context ledger required")
+    _assert_result_denials()
     pinned = _witness_fields(retained)
     pinned_path = ledger._path
     pinned_carrier = retained
@@ -180,6 +211,7 @@ def review_restarted_context_replay(
         # carriers after EACH getter and re-read the durable tip once more
         # after the LAST callback. None of this attests an external actor.
         def stable_result_carriers() -> None:
+            _assert_result_denials()
             stable_observed()
             if (
                 type(result) is not _RESULT_TYPE
@@ -197,12 +229,8 @@ def review_restarted_context_replay(
                 )
 
         stable_result_carriers()
-        for name in (
-            "historical_prefix_proven", "independent_custody_proven",
-            "consent_verified", "revocation_freshness_verified",
-            "context_disclosure_authorized", "tool_dispatch_authorized",
-            "automatic_replay_authorized",
-        ):
+        for name in _RESULT_DENIALS:
+            _assert_result_denials()
             if getattr(result, name) is not False:
                 raise OfflineContextRecoveryRejected(
                     "context replay review result gained authority"
