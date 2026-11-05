@@ -129,7 +129,8 @@ def test_result_denial_callback_cannot_retarget_digest(monkeypatch):
         review.DisconnectedObservationChainReview,
         "__getattribute__", retarget,
     )
+    # A changed result lookup hook is rejected before constructing output.
     with pytest.raises(
-        review.ObservationFixtureChainRejected, match="result changed",
+        review.ObservationFixtureChainRejected, match="implementation changed",
     ):
         _inspect(_chain())
