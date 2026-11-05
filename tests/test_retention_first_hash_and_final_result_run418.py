@@ -107,7 +107,7 @@ def test_final_hash_callback_cannot_retarget_inventory_inputs(
     assert callbacks == 1
 
 
-def test_constructed_inventory_does_not_escape_with_rewritten_item(
+def test_modified_inventory_constructor_is_rejected_without_running(
     tmp_path, monkeypatch,
 ):
     state = _state(tmp_path)
@@ -125,10 +125,10 @@ def test_constructed_inventory_does_not_escape_with_rewritten_item(
     )
     with pytest.raises(
         review.SyntheticRetentionRejected,
-        match="retention inventory items changed",
+        match="retention inventory authority denial descriptor changed",
     ):
         review.review_synthetic_retention_inventory(*state, now_ms=100)
-    assert constructions == 1
+    assert constructions == 0
 
 
 def test_stable_retention_digest_is_deterministic_and_inert(tmp_path):
