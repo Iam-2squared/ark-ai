@@ -47,7 +47,9 @@ def test_preinstalled_private_input_getter_never_executes(
     replacement = (
         hostile if descriptor.startswith("__") else property(hostile)
     )
-    monkeypatch.setattr(search.OfflineContextSearchRecord, descriptor, replacement)
+    monkeypatch.setattr(
+        search.OfflineContextSearchRecord, descriptor, replacement, raising=False,
+    )
     with pytest.raises(search.OfflineContextSearchRejected, match="constructor identity"):
         _review(rows)
     assert invoked == []
