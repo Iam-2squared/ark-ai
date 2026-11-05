@@ -28,9 +28,11 @@ def test_status_digest_cannot_rebind_false_denial_after_last_getter(
     original_getattribute = receipt_type.__getattribute__
     original_digest = PlanGraph.status_digest
     last_getter_seen = []
+    traced_calls = []
     substitutions = []
 
     def traced_getattribute(self, name):
+        traced_calls.append(name)
         result = original_getattribute(self, name)
         if name == "automatic_replay_authorized":
             last_getter_seen.append(name)
@@ -61,9 +63,13 @@ def test_status_digest_cannot_rebind_false_denial_after_last_getter(
                     retained=baseline.tail,
                 )
 
-    assert last_getter_seen
-    assert substitutions == ["dispatch_authorized"]
-    # Mutation occurred before COMMIT in append, so the tentative event
+    # Import-original descriptor custody now denies the forged attribute
+    # lookup hook before it runs, before the chained digest callback can
+    # install any false-looking authority descriptor, and before COMMIT.
+    assert traced_calls == []
+    assert last_getter_seen == []
+    assert substitutions == []
+    # Rejection occurred before COMMIT in append, so the tentative event
     # must not appear in the persistent replay-only journal.
     restored = journal.recover()
     assert restored == baseline
