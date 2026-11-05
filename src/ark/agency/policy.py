@@ -451,6 +451,11 @@ class PermissionGate:
                     raise PermissionDenied("authorization input changed during token spend")
                 if _registered_recheck is not None:
                     _registered_recheck()
+                    # This internal hook is still callable Python and can
+                    # reflectively invalidate a grant, spec or token after
+                    # the first under-lock check. Revalidate the original
+                    # admission epoch before spending even a local token.
+                    assert_iteration_epoch()
                 if one_shot.token_id in self._consumed_tokens:
                     raise PermissionDenied("one-shot authorization was already consumed")
                 if one_shot.request_id != call.request_id:
