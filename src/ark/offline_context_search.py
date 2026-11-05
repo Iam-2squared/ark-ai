@@ -100,10 +100,8 @@ def _require_original_constructors() -> None:
                 _RECORD_FIELDS, _ORIGINAL_RECORD_FIELDS, strict=True,
             )
         )
-        or (
-            vars(_RECORD_TYPE).get("__getattribute__"),
-            vars(_RECORD_TYPE).get("__getattr__"),
-        ) != _ORIGINAL_RECORD_LOOKUPS
+        or vars(_RECORD_TYPE).get("__getattribute__") is not _ORIGINAL_RECORD_LOOKUPS[0]
+        or vars(_RECORD_TYPE).get("__getattr__") is not _ORIGINAL_RECORD_LOOKUPS[1]
         or OfflineContextSearchPreview is not _RESULT_TYPE
         or OfflineContextSearchHit is not _HIT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
