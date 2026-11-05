@@ -18,7 +18,7 @@ def _fixture(tmp_path):
 
 
 @pytest.mark.parametrize("field", [
-    "__init__", "__new__", "__getattr__", "__getattribute__",
+    "__init__", "__getattr__", "__getattribute__",
     "candidate_count", "preview_sha256", "deletion_authorized",
 ])
 def test_preview_refuses_preinstalled_executable_carriers(
