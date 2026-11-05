@@ -456,6 +456,7 @@ class SyntheticPlanJournal:
             carriers = tuple(
                 (
                     step, step.step_id, step.call, step.depends_on,
+                    step.call.tool, step.call.capability, step.call.scope,
                     step.call.arguments, step.call.request_id,
                 )
                 for step in steps_epoch
@@ -478,13 +479,21 @@ class SyntheticPlanJournal:
                 and len(steps_epoch) == len(carriers)
                 and all(
                     step is original
-                    and step.step_id == old_step_id
+                    and step.step_id is old_step_id
                     and step.call is old_call
                     and step.depends_on is old_dependencies
+                    # A frozen ToolCall can be reflectively mutated in-place
+                    # without changing its canonical request digest (e.g.,
+                    # replacement by a distinct but equal string object).
+                    # Pin original nested identities, not only digest values.
+                    and step.call.tool is old_tool
+                    and step.call.capability is old_capability
+                    and step.call.scope is old_scope
                     and step.call.arguments is old_arguments
                     and step.call.request_id == old_request
                     for step, (
                         original, old_step_id, old_call, old_dependencies,
+                        old_tool, old_capability, old_scope,
                         old_arguments, old_request,
                     ) in zip(steps_epoch, carriers, strict=True)
                 )
