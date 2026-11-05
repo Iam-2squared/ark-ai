@@ -91,6 +91,22 @@ _COMPARISON_DENIALS = (
     "historical_writer_authenticated", "independent_witness_custody_proven",
     "memory_disclosure_authorized", "action_authorized",
 )
+_WITNESS_FIELDS = ("event_count", "last_event_id", "prefix_sha256")
+_COMPARISON_FIELDS = (
+    "previous_event_count", "current_event_count", "status",
+    "comparison_sha256",
+)
+_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_WITNESS_ORIGINAL_FIELDS = tuple(vars(_WITNESS)[name] for name in _WITNESS_FIELDS)
+_COMPARISON_ORIGINAL_FIELDS = tuple(
+    vars(_COMPARISON)[name] for name in _COMPARISON_FIELDS
+)
+_WITNESS_ORIGINAL_HOOKS = tuple(
+    vars(_WITNESS).get(name) for name in _CARRIER_HOOKS
+)
+_COMPARISON_ORIGINAL_HOOKS = tuple(
+    vars(_COMPARISON).get(name) for name in _CARRIER_HOOKS
+)
 _WITNESS_ORIGINAL_INIT = vars(_WITNESS)["__init__"]
 _COMPARISON_ORIGINAL_INIT = vars(_COMPARISON)["__init__"]
 _WITNESS_ORIGINAL_FLAGS = tuple(vars(_WITNESS)[name] for name in _WITNESS_DENIALS)
@@ -103,6 +119,18 @@ def _original_witness_flags() -> None:
     if (
         MemoryEventPrefixWitness is not _WITNESS
         or vars(_WITNESS).get("__init__") is not _WITNESS_ORIGINAL_INIT
+        or any(
+            vars(_WITNESS).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _WITNESS_ORIGINAL_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS).get(name) is not original
+            for name, original in zip(
+                _CARRIER_HOOKS, _WITNESS_ORIGINAL_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_WITNESS).get(name) is not descriptor
             for name, descriptor in zip(
@@ -118,6 +146,18 @@ def _original_comparison_flags() -> None:
         MemoryEventPrefixComparison is not _COMPARISON
         or vars(_COMPARISON).get("__init__") is not _COMPARISON_ORIGINAL_INIT
         or any(
+            vars(_COMPARISON).get(name) is not original
+            for name, original in zip(
+                _COMPARISON_FIELDS, _COMPARISON_ORIGINAL_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_COMPARISON).get(name) is not original
+            for name, original in zip(
+                _CARRIER_HOOKS, _COMPARISON_ORIGINAL_HOOKS, strict=True,
+            )
+        )
+        or any(
             vars(_COMPARISON).get(name) is not descriptor
             for name, descriptor in zip(
                 _COMPARISON_DENIALS, _COMPARISON_ORIGINAL_FLAGS, strict=True,
@@ -130,6 +170,10 @@ def _original_comparison_flags() -> None:
 def _witness_epoch(value: object) -> tuple[object, ...]:
     if type(value) is not _WITNESS:
         raise MemoryEventPrefixRejected("exact retained event witness required")
+    # Descriptor reads can execute caller-installed code. Check the original
+    # class before touching any retained witness slot, not only at the
+    # later deny-only property checks.
+    _original_witness_flags()
     fields = (value.event_count, value.last_event_id, value.prefix_sha256)
     count, tail, digest = fields
     if (
@@ -319,6 +363,9 @@ def compare_local_memory_event_prefix(
     # result constructors before they can execute.
     _original_comparison_flags()
     result = _COMPARISON(old[0], current.event_count, status, digest)
+    # An injected constructor can rebind a field after the preceding check.
+    # Refuse it before reading any return carrier attribute.
+    _original_comparison_flags()
     if (
         type(result) is not _COMPARISON
         or type(result.previous_event_count) is not int
