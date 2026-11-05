@@ -14,6 +14,7 @@ from .observations import ObservationEnvelope, ObservationKind
 
 _MAX_FIXTURE_BYTES = 4 * 1024 * 1024
 _ENVELOPE_TYPE = ObservationEnvelope
+_ORIGINAL_ENVELOPE_INIT = vars(_ENVELOPE_TYPE)["__init__"]
 # Keep a stable copy of the frozen v1 validator. An injected constructor or
 # __post_init__ replacement must not turn invalid fixture metadata into a
 # seemingly valid envelope by skipping the original validation hook.
@@ -45,6 +46,11 @@ def _sealed_fixture(
     # Reject it before any forged constructor can run or see fixture metadata.
     if ObservationEnvelope is not _ENVELOPE_TYPE:
         raise ValueError("fixture constructor returned a non-envelope result: class changed")
+    # The original dataclass initializer is executable. A forged initializer
+    # must not run merely because the imported class symbol is still correct.
+    # Hashing the fixture may be reentrant; inspect just before construction.
+    if vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT:
+        raise ValueError("fixture constructor returned a non-envelope result: init changed")
     envelope = ObservationEnvelope(
         kind=kind,
         source_id=source_id,
@@ -56,6 +62,8 @@ def _sealed_fixture(
     )
     if ObservationEnvelope is not _ENVELOPE_TYPE or type(envelope) is not _ENVELOPE_TYPE:
         raise ValueError("fixture constructor returned a non-envelope result")
+    if vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT:
+        raise ValueError("fixture constructor changed during construction")
     actual = (
         envelope.kind, envelope.source_id, envelope.adapter_id,
         envelope.privacy_scope, envelope.ingested_at_ms,
