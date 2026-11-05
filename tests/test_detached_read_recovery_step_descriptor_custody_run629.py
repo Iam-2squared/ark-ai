@@ -11,11 +11,12 @@ _REQUEST = "req_" + "b" * 32
 _STEP = "step_" + "1" * 16
 
 
-def _run():
-    return recovery.schedule_detached_read_recovery(
-        _REQUEST,
-        (recovery.ReadRecoveryStep(_STEP, "math.sum", (), "NOT_STARTED"),),
-    )
+def _step():
+    return recovery.ReadRecoveryStep(_STEP, "math.sum", (), "NOT_STARTED")
+
+
+def _run(row):
+    return recovery.schedule_detached_read_recovery(_REQUEST, (row,))
 
 
 class _Trap:
@@ -31,18 +32,20 @@ class _Trap:
     "step_id", "operation", "depends_on", "state", "result_sha256",
 ))
 def test_preinstalled_step_slot_trap_is_rejected_before_execution(monkeypatch, field):
+    row = _step()
     hits = []
     monkeypatch.setattr(recovery.ReadRecoveryStep, field, _Trap(hits))
     with pytest.raises(
         recovery.DetachedReadRecoveryRejected,
         match="authority descriptor changed",
     ):
-        _run()
+        _run(row)
     assert hits == []
 
 
 @pytest.mark.parametrize("hook", ("__getattribute__", "__getattr__"))
 def test_preinstalled_lookup_hook_is_rejected_before_execution(monkeypatch, hook):
+    row = _step()
     hits = []
 
     def hostile(*args):
@@ -54,12 +57,13 @@ def test_preinstalled_lookup_hook_is_rejected_before_execution(monkeypatch, hook
         recovery.DetachedReadRecoveryRejected,
         match="authority descriptor changed",
     ):
-        _run()
+        _run(row)
     assert hits == []
 
 
 @pytest.mark.parametrize("field", ("step_id", "state"))
 def test_digest_hook_cannot_install_late_step_slot_trap(monkeypatch, field):
+    row = _step()
     hits = []
     injected = []
     native_sha = recovery.hashlib.sha256
@@ -75,7 +79,7 @@ def test_digest_hook_cannot_install_late_step_slot_trap(monkeypatch, field):
         recovery.DetachedReadRecoveryRejected,
         match="authority descriptor changed",
     ):
-        _run()
+        _run(row)
     assert injected == [True]
     assert hits == []
 
