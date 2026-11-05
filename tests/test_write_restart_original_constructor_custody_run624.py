@@ -7,7 +7,8 @@ import pytest
 import ark.agency.disconnected_write_restart_binding as restart
 from ark.agency.disconnected_write_recovery_fence import OfflineRecoveryStepClaim
 from ark.agency.disconnected_write_slot_ledger import (
-    DisconnectedWriteSlotLedger, genesis_write_slot_witness,
+    DisconnectedWriteSlotLedger,
+    genesis_write_slot_witness,
 )
 
 PLAN = "plan_" + "a" * 64
