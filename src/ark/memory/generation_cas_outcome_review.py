@@ -80,6 +80,13 @@ class MemoryCASOutcomeReview:
 _REPORT_TYPE = MemoryCASOutcomeReview
 _ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
 _ORIGINAL_DENIALS = tuple(vars(_REPORT_TYPE)[name] for name in _DENIED)
+_REPORT_FIELDS = (
+    "observation", "retained_prefix_sha256", "observed_prefix_sha256",
+    "observed_row_sha256", "expected_content_sha256", "review_sha256",
+)
+_REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT_TYPE)[name] for name in _REPORT_FIELDS)
+_ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT_TYPE).get(name) for name in _REPORT_HOOKS)
 
 
 def _require_original_denials() -> None:
@@ -89,9 +96,24 @@ def _require_original_denials() -> None:
     if (
         MemoryCASOutcomeReview is not _REPORT_TYPE
         or vars(_REPORT_TYPE).get("__init__") is not _ORIGINAL_REPORT_INIT
+        # A frozen, slotted dataclass can still have its field descriptors or
+        # attribute lookup hooks replaced. Inspect class dictionaries BEFORE
+        # touching a result instance or reading private SQLite content.
         or any(
-        vars(_REPORT_TYPE).get(name) is not original
-        for name, original in zip(_DENIED, _ORIGINAL_DENIALS, strict=True)
+            vars(_REPORT_TYPE).get(name) is not original
+            for name, original in zip(
+                _REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT_TYPE).get(name) is not original
+            for name, original in zip(
+                _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT_TYPE).get(name) is not original
+            for name, original in zip(_DENIED, _ORIGINAL_DENIALS, strict=True)
         )
     ):
         raise MemoryCASOutcomeRejected("CAS outcome authority definition changed")
