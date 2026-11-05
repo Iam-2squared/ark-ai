@@ -64,6 +64,23 @@ class CoherentSnapshotReview:
     provenance_sha256: str
 
 
+# Request reconstruction is a validation step, but a monkeypatched dataclass
+# initializer/post-init is executable code. Keep its import-original identity
+# before calling it; an exact request instance is not sufficient protection.
+_REQUEST_TYPE = CoherentSnapshotRequest
+_ORIGINAL_REQUEST_INIT = vars(_REQUEST_TYPE)["__init__"]
+_ORIGINAL_REQUEST_POST_INIT = vars(_REQUEST_TYPE)["__post_init__"]
+
+
+def _require_original_request_validator() -> None:
+    if (
+        CoherentSnapshotRequest is not _REQUEST_TYPE
+        or vars(_REQUEST_TYPE).get("__init__") is not _ORIGINAL_REQUEST_INIT
+        or vars(_REQUEST_TYPE).get("__post_init__") is not _ORIGINAL_REQUEST_POST_INIT
+    ):
+        raise MemorySchemaError("memory snapshot request validator changed")
+
+
 # Pin the result type independently of a reentrant synthetic constructor hook.
 _COHERENT_SNAPSHOT_RESULT_TYPE = CoherentSnapshotReview
 _ORIGINAL_COHERENT_SNAPSHOT_INIT = vars(_COHERENT_SNAPSHOT_RESULT_TYPE)["__init__"]
@@ -86,6 +103,7 @@ def review_coherent_snapshot(
     if type(store) is not SQLiteMemoryStore or type(request) is not CoherentSnapshotRequest:
         raise TypeError("review requires exact SQLiteMemoryStore and CoherentSnapshotRequest")
     _require_original_snapshot_result_constructor()
+    _require_original_request_validator()
     # Copy validated request carriers before a potentially reentrant clock hook.
     original = (
         request.owner_id,
@@ -94,7 +112,9 @@ def review_coherent_snapshot(
         request.per_namespace_limit,
         request.include_expired,
     )
-    CoherentSnapshotRequest(*original)
+    _require_original_request_validator()
+    _REQUEST_TYPE(*original)
+    _require_original_request_validator()
     owner_id, namespaces, text, limit, include_expired = original
     scopes = tuple(MemoryScope(owner_id, name) for name in namespaces)
     results: list[tuple[MemoryRecord, ...]] = []
