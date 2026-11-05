@@ -68,7 +68,18 @@ _WITNESS = WriteSlotLedgerWitness
 _STEP = OfflineRecoveryStepClaim
 _FENCE = OfflineRecoveryFence
 _REPORT = OfflineWriteRestartReport
-_DOMAIN = b"ARK-disconnected-write-restart-binding-v1\0"
+_ORIGINAL_REPORT_INIT = vars(_REPORT)["__init__"]
+_DOMAIN = b"ARK-disconnected-write-restart-binding-v1\\0"
+
+
+def _assert_original_report_constructor() -> None:
+    # Report construction is an executable boundary. A class rebinding or
+    # forged initializer is never a valid witness, even when it returns False.
+    if (
+        OfflineWriteRestartReport is not _REPORT
+        or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
+    ):
+        raise OfflineWriteRestartRejected("WRITE restart report constructor changed")
 
 
 def review_disconnected_write_restart(
@@ -92,6 +103,7 @@ def review_disconnected_write_restart(
         or any(type(step) is not _STEP for step in steps)
     ):
         raise OfflineWriteRestartRejected("exact bounded WRITE restart inputs required")
+    _assert_original_report_constructor()
     _check_witness(retained)
     path = ledger._path
     prior_count, prior_hash = retained.count, retained.chain_sha256
@@ -104,6 +116,7 @@ def review_disconnected_write_restart(
     original_steps = steps
 
     def stable() -> None:
+        _assert_original_report_constructor()
         if (
             type(ledger) is not _LEDGER
             or ledger._path is not path
@@ -284,7 +297,8 @@ def review_disconnected_write_restart(
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     stable()
     assert_fence()
-    report = OfflineWriteRestartReport(plan_id, len(steps), len(matched), count, digest)
+    _assert_original_report_constructor()
+    report = _REPORT(plan_id, len(steps), len(matched), count, digest)
     stable()
     assert_fence()
     # A false-valued authority getter is still a reentrant callback.
