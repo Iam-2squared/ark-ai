@@ -52,6 +52,12 @@ class MemoryEventAlignmentReview:
 
 _REVIEW_TYPE = MemoryEventAlignmentReview
 _ORIGINAL_REVIEW_INIT = vars(_REVIEW_TYPE)["__init__"]
+# The review is an inert carrier. Never run substituted slot descriptors or
+# lookup/constructor hooks while constructing or reading its audit digest.
+_REVIEW_FIELDS = ("row_count", "event_count", "scope_count", "last_event_id", "digest")
+_REVIEW_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REVIEW_FIELDS = tuple(vars(_REVIEW_TYPE)[name] for name in _REVIEW_FIELDS)
+_ORIGINAL_REVIEW_HOOKS = tuple(vars(_REVIEW_TYPE).get(name) for name in _REVIEW_HOOKS)
 _STORE_TYPE = SQLiteMemoryStore
 _DENIAL_NAMES = (
     "independently_authenticated", "user_consent_verified",
@@ -66,6 +72,18 @@ def _require_original_denials() -> None:
     if (
         MemoryEventAlignmentReview is not _REVIEW_TYPE
         or vars(_REVIEW_TYPE).get("__init__") is not _ORIGINAL_REVIEW_INIT
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_FIELDS, _ORIGINAL_REVIEW_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_HOOKS, _ORIGINAL_REVIEW_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_REVIEW_TYPE).get(name) is not original
             for name, original in zip(
