@@ -168,12 +168,35 @@ _RECOVERY_DENIAL_NAMES = ("dispatch_authorized", "automatic_replay_authorized")
 _ORIGINAL_RECOVERY_DENIALS = tuple(
     vars(_RECOVERY_RESULT_TYPE)[name] for name in _RECOVERY_DENIAL_NAMES
 )
+# A frozen dataclass still permits class-level replacement of a member slot,
+# __getattribute__, __getattr__, or constructor. Those are executable before
+# a post-hoc False-only getter or digest would reject the resulting witness.
+_RECOVERY_FIELDS = ("tail", "step_statuses", "ambiguous_running_steps")
+_RECOVERY_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECOVERY_FIELDS = tuple(
+    vars(_RECOVERY_RESULT_TYPE)[name] for name in _RECOVERY_FIELDS
+)
+_ORIGINAL_RECOVERY_HOOKS = tuple(
+    vars(_RECOVERY_RESULT_TYPE).get(name) for name in _RECOVERY_HOOKS
+)
 
 
 def _require_original_recovery_denials() -> None:
     if (
         SyntheticPlanRecovery is not _RECOVERY_RESULT_TYPE
         or vars(_RECOVERY_RESULT_TYPE).get("__init__") is not _ORIGINAL_RECOVERY_INIT
+        or any(
+            vars(_RECOVERY_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECOVERY_FIELDS, _ORIGINAL_RECOVERY_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RECOVERY_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECOVERY_HOOKS, _ORIGINAL_RECOVERY_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_RECOVERY_RESULT_TYPE).get(name) is not original
             for name, original in zip(
