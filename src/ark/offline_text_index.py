@@ -87,12 +87,16 @@ _DENIAL_NAMES = (
     "identity_authenticated", "disclosure_authorized", "revocation_verified",
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[name] for name in _DENIAL_NAMES)
+_ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
+_ORIGINAL_HIT_INIT = vars(_HIT_TYPE)["__init__"]
 
 
 def _require_original_denials() -> None:
     if (
         OfflineIndexResult is not _RESULT_TYPE
         or OfflineIndexHit is not _HIT_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or vars(_HIT_TYPE).get("__init__") is not _ORIGINAL_HIT_INIT
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
@@ -162,6 +166,8 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
     )
 
     def check_epoch() -> None:
+        # Deny forged constructors before untrusted text/normalization callbacks.
+        _require_original_denials()
         current = (
             query.owner_sha256, query.scope_sha256, query.query_sha256, query.query,
             query.documents, query.expected_document_ids, query.limit,
@@ -227,6 +233,7 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
         frequencies = Counter(token_list)
         matching = tuple(term for term in distinct_terms if term in frequencies)
         if matching:
+            _require_original_denials()
             score = 100 * len(matching) + sum(min(frequencies[term], 8) for term in matching)
             candidates.append(OfflineIndexHit(doc_id, len(matching), score, declared_text_sha))
         manifest.append((doc_id, declared_text_sha))
@@ -249,7 +256,9 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
     hit_epochs = tuple((
         hit, hit.document_id, hit.distinct_matches, hit.score, hit.document_sha256,
     ) for hit in hits)
+    _require_original_denials()
     output = OfflineIndexResult(hits, len(rows), len(terms), inventory, result)
+    _require_original_denials()
 
     def assert_output() -> None:
         _require_original_denials()
