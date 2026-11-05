@@ -24,8 +24,10 @@ def _fixture():
 def test_constructor_cannot_retarget_original_probe(monkeypatch, target):
     blocked, dependent = _fixture()
     native_result = startup.StartupSnapshot
+    invoked = []
 
     def construct(*args):
+        invoked.append(True)
         result = native_result(*args)
         if target == "component_id":
             object.__setattr__(blocked, "component_id", "other-storage")
@@ -38,8 +40,9 @@ def test_constructor_cannot_retarget_original_probe(monkeypatch, target):
         return result
 
     monkeypatch.setattr(startup, "StartupSnapshot", construct)
-    with pytest.raises(ValueError, match="startup input changed"):
+    with pytest.raises(ValueError, match="startup constructor authority changed"):
         startup.evaluate_startup_readiness((blocked, dependent))
+    assert invoked == []
 
 
 @pytest.mark.parametrize(
@@ -73,8 +76,9 @@ def test_constructor_cannot_forge_detached_readiness(monkeypatch, target):
         return result
 
     monkeypatch.setattr(startup, "StartupSnapshot", construct)
-    with pytest.raises(ValueError, match="startup result changed"):
+    with pytest.raises(ValueError, match="startup constructor authority changed"):
         startup.evaluate_startup_readiness((blocked, dependent))
+    assert invoked == []
 
 
 def test_untampered_result_keeps_blocked_dependencies():
