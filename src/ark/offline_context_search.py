@@ -67,6 +67,18 @@ class OfflineContextSearchPreview:
         return False
 
 
+# The private input record's frozen slot descriptors are executable if
+# replaced with properties; pin them before reading any fixture content.
+_RECORD_TYPE = OfflineContextSearchRecord
+_RECORD_FIELDS = (
+    "record_id", "owner_digest", "scope_digest", "content",
+    "content_sha256", "expires_at_ms",
+)
+_ORIGINAL_RECORD_FIELDS = tuple(vars(_RECORD_TYPE)[name] for name in _RECORD_FIELDS)
+_ORIGINAL_RECORD_LOOKUPS = (
+    vars(_RECORD_TYPE).get("__getattribute__"),
+    vars(_RECORD_TYPE).get("__getattr__"),
+)
 # Pin the original inert carrier classes against synthetic constructor injection.
 _RESULT_TYPE = OfflineContextSearchPreview
 _HIT_TYPE = OfflineContextSearchHit
@@ -81,7 +93,18 @@ _ORIGINAL_HIT_INIT = vars(_HIT_TYPE)["__init__"]
 
 def _require_original_constructors() -> None:
     if (
-        OfflineContextSearchPreview is not _RESULT_TYPE
+        OfflineContextSearchRecord is not _RECORD_TYPE
+        or any(
+            vars(_RECORD_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECORD_FIELDS, _ORIGINAL_RECORD_FIELDS, strict=True,
+            )
+        )
+        or (
+            vars(_RECORD_TYPE).get("__getattribute__"),
+            vars(_RECORD_TYPE).get("__getattr__"),
+        ) != _ORIGINAL_RECORD_LOOKUPS
+        or OfflineContextSearchPreview is not _RESULT_TYPE
         or OfflineContextSearchHit is not _HIT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or vars(_HIT_TYPE).get("__init__") is not _ORIGINAL_HIT_INIT
