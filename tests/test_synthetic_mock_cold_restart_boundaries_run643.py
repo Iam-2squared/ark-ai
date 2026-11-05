@@ -40,7 +40,7 @@ def _cold_reopen(state):
         ("after_running", 0, 0, 0),
         ("after_reservation", 1, 0, 0),
         ("after_pre_action_audit", 1, 1, 0),
-        ("after_mock_marker", 1, 1, 0),
+        ("after_mock_marker", 1, 1, 1),
         ("after_audit_link", 1, 1, 1),
     ),
 )
