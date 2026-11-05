@@ -28,7 +28,7 @@ V3, external-execution, user-consent, or hardware PASS. No UI changes.
 - **Slot pre-access regressions**, commit
   `d832bb8b1ab516f6c9df400768d31581138e32ab`;
   `tests/test_write_slot_preaccess_carriers_run643.py`.
-  Nineteen cases require untrusted field/lookup/constructor replacements to
+  Thirteen cases require untrusted field and directly defined lookup replacements to
   be refused without executing injected getters or inserting reservation rows,
   including a mutation triggered inside row hashing; intact original carriers
   still permit only a synthetic local reservation.
@@ -40,8 +40,9 @@ V3, external-execution, user-consent, or hardware PASS. No UI changes.
   Recovery must preserve UNKNOWN/non-retry and the observed durable sidecar
   tips. It never calls a ToolBackend.
 
-**Newly authored test cases:** 30 (5 Memory + 19 slot custody +
-6 mock cold restart). These are counts of new cases, **not evidence of 30 PASS**.
+**Newly authored test cases:** 27 (5 Memory + 13 slot custody +
+6 mock cold restart + 3 registry/policy replay).
+These are counts of test cases, **not evidence of 27 PASS**.
 
 ## CI evidence at report preparation
 
@@ -52,10 +53,26 @@ V3, external-execution, user-consent, or hardware PASS. No UI changes.
   on WRITE-slot source commit: Ubuntu **3/3 GREEN**;
   Windows jobs were IN PROGRESS.
 - [#42115529509](https://github.com/Iam-2squared/ark-ai/actions/runs/42115529509)
-  on WRITE-slot test commit: IN PROGRESS.
+  on WRITE-slot tests: Ubuntu Python 3.11 **9,156 PASS, 33 FAIL,
+  1 SKIP**. The test's temporary patch to an inherited
+  `__new__` method was restored as a class-local `object.__new__`,
+  which polluted subsequent tests and triggered constructor TypeErrors.
+  We removed inherited special-method patch cases through the normal
+  test-only fix `ffa4a7645b4885dfa04cb738887bdc2fde138306`,
+  preserving source preflight checks. This is not evidence of code PASS.
 - [#42115777989](https://github.com/Iam-2squared/ark-ai/actions/runs/42115777989)
-  on latest mock restart source/test HEAD: QUEUED then IN PROGRESS
-  at observation; **exact-head six-job GREEN not yet claimed**.
+  inherited the same test pollution; Ubuntu 3/3 FAIL.
+- **Fourth package — registry/policy restart replay separation**:
+  `tests/test_registry_policy_durable_occurrence_restart_run643.py`
+  at `95eff519f15e6c638b1be54f3389c153335e1f10`.
+  Three test cases model process-local grants, durable SQLite uniqueness
+  across reopened handles, and denied exact-scope admission without backend
+  execution. [#42116418782](https://github.com/Iam-2squared/ark-ai/actions/runs/42116418782)
+  initially failed Ruff **E501** on a single too-long parametrization line;
+  fixed with a formatting-only edit at
+  `e1f9981a7e95475de144ee6f7dc1572bed770a38`.
+- Latest corrected source/test CI is newly pending; **exact-head 6/6
+  GREEN is not yet claimed**.
 - Local `git` access failed DNS resolution for `github.com`; therefore no
   local pytest or Ruff claim. CI logs must be inspected if the new head fails.
   Do not rerun equivalent GitHub workflows unnecessarily.
