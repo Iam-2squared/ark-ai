@@ -69,6 +69,7 @@ class OfflineContextRecoveryReview:
 
 
 _RESULT_TYPE = OfflineContextRecoveryReview
+_ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
 _RESULT_DENIALS = (
     "historical_prefix_proven", "independent_custody_proven",
     "consent_verified", "revocation_freshness_verified",
@@ -84,7 +85,9 @@ _ORIGINAL_WITNESS_CUSTODY = vars(_WITNESS_TYPE)["independent_custody_proven"]
 def _assert_result_denials() -> None:
     # No False-looking replacement may establish a new authority baseline.
     if (
-        any(
+        OfflineContextRecoveryReview is not _RESULT_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
                 _RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS, strict=True,
@@ -133,6 +136,7 @@ def review_restarted_context_replay(
     pinned_count, pinned_digest = retained.count, retained.chain_sha256
 
     def stable() -> None:
+        _assert_result_denials()
         if (
             type(ledger) is not _LEDGER_TYPE
             or ledger._path is not pinned_path
@@ -203,7 +207,12 @@ def review_restarted_context_replay(
     stable_observed()
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
     stable_observed()
-    result = OfflineContextRecoveryReview(pinned[0], current[0], status, digest)
+    # Durable inspection and digest callbacks can replace a class initializer.
+    # Never invoke a newly installed constructor on sensitive local metadata.
+    _assert_result_denials()
+    result = _RESULT_TYPE(pinned[0], current[0], status, digest)
+    _assert_result_denials()
+
     def verify_result() -> None:
         # Denial-only properties are arbitrary Python callbacks in synthetic
         # fixtures: a False getter can still rewrite an earlier checked result
