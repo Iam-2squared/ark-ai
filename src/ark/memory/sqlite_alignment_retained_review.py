@@ -61,6 +61,7 @@ class RetainedMemoryAlignmentComparison:
 
 
 _RESULT = RetainedMemoryAlignmentComparison
+_ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
 _COMPARISON_DENIALS = (
     "historical_prefix_authenticated", "writer_authenticated",
     "content_disclosure_authorized", "dispatch_authorized",
@@ -75,6 +76,7 @@ def _require_original_comparison_denials() -> None:
     # epoch. Read raw class dictionaries before invoking any property getter.
     if (
         RetainedMemoryAlignmentComparison is not _RESULT
+        or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_RESULT).get(name) is not original
             for name, original in zip(
