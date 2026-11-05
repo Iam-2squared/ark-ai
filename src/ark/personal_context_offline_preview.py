@@ -293,6 +293,13 @@ def verify_offline_context_preview(
         or type(fixtures) is not tuple
     ):
         raise OfflineContextPreviewRejected("exact retained context preview required")
+    # Pin the caller-retained report BEFORE rebuilding from private fixtures.
+    # A serializer/hash callback must not repair a forged report, or replace
+    # an equal-valued field carrier, after verification has already begun.
+    report_epoch = (
+        report.owner_digest, report.record_ids,
+        report.canonical_local_json, report.local_digest,
+    )
     originals = tuple(fixtures)
     captured = tuple(
         (item, item.record_id, item.owner_digest, item.scope_digest,
@@ -318,6 +325,18 @@ def verify_offline_context_preview(
             )
         ):
             raise OfflineContextPreviewRejected("retained fixture changed during review")
+        if (
+            type(report) is not _PREVIEW_RESULT_TYPE
+            or any(current is not original for current, original in zip(
+                (
+                    report.owner_digest, report.record_ids,
+                    report.canonical_local_json, report.local_digest,
+                ), report_epoch, strict=True,
+            ))
+        ):
+            raise OfflineContextPreviewRejected(
+                "retained context report changed during review"
+            )
 
     expected = build_offline_context_preview(
         fixtures, owner_digest=owner_digest,
