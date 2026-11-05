@@ -61,6 +61,31 @@ class OfflineWaveReview:
 
 _REVIEW_TYPE = OfflineWaveReview
 _ORIGINAL_REVIEW_INIT = vars(_REVIEW_TYPE)["__init__"]
+
+# The WAV request contains untrusted private audio bytes. Verify its
+# import-original dataclass field and lookup machinery before ANY access,
+# including the initial four-field capture ahead of digest validation.
+_REQUEST_TYPE = OfflineWaveRequest
+_ORIGINAL_REQUEST_INIT = vars(_REQUEST_TYPE)["__init__"]
+_REQUEST_FIELDS = ("owner_sha256", "privacy_sha256", "wav_sha256", "wav_bytes")
+_REVIEW_FIELDS = (
+    "owner_sha256", "privacy_sha256", "wav_sha256", "pcm_sha256",
+    "channel_count", "sample_rate_hz", "bits_per_sample", "frame_count",
+    "duration_ms_floor", "duration_ms_remainder",
+)
+_WAVE_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REQUEST_FIELDS = tuple(
+    vars(_REQUEST_TYPE)[name] for name in _REQUEST_FIELDS
+)
+_ORIGINAL_REVIEW_FIELDS = tuple(
+    vars(_REVIEW_TYPE)[name] for name in _REVIEW_FIELDS
+)
+_ORIGINAL_REQUEST_HOOKS = tuple(
+    vars(_REQUEST_TYPE).get(name) for name in _WAVE_HOOKS
+)
+_ORIGINAL_REVIEW_HOOKS = tuple(
+    vars(_REVIEW_TYPE).get(name) for name in _WAVE_HOOKS
+)
 _DENIAL_NAMES = (
     "microphone_provenance_verified", "consent_verified",
     "speech_recognized", "authorized_to_disclose",
@@ -69,6 +94,38 @@ _ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[key] for key in _DENIAL_NAMES)
 
 
 def _require_original_wave_authority() -> None:
+    if (
+        OfflineWaveRequest is not _REQUEST_TYPE
+        or vars(_REQUEST_TYPE).get("__init__") is not _ORIGINAL_REQUEST_INIT
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(
+                _REQUEST_FIELDS, _ORIGINAL_REQUEST_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(
+                _WAVE_HOOKS, _ORIGINAL_REQUEST_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise OfflineWaveRejected("WAV request identity descriptor changed")
+    if (
+        any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_FIELDS, _ORIGINAL_REVIEW_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _WAVE_HOOKS, _ORIGINAL_REVIEW_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise OfflineWaveRejected("constructed WAV review changed: field epoch")
     if (
         OfflineWaveReview is not _REVIEW_TYPE
         or vars(_REVIEW_TYPE).get("__init__") is not _ORIGINAL_REVIEW_INIT
