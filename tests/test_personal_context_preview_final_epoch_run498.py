@@ -1,4 +1,4 @@
-"""Context preview denial-only getters must not mutate returned private fixtures."""
+"""Context preview forbids changed lookup machinery before private reads."""
 
 import hashlib
 
@@ -40,9 +40,9 @@ def test_last_authority_getter_cannot_mutate_returned_preview(monkeypatch):
             object.__setattr__(self, "canonical_local_json", "{}")
         return result
 
-    # Preserve the import-pinned property; simulate the later accessor callback.
+    # A substituted lookup hook is now refused BEFORE it executes; older\n    # postconstruction mutation expectations must not bypass that gate.
     monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="after authority"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="context preview authority definition changed"):
         _preview(_fixture())
 
 
@@ -58,7 +58,7 @@ def test_last_authority_getter_cannot_mutate_original_record(monkeypatch):
         return result
 
     monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="fixture changed"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="context preview authority definition changed"):
         _preview(row)
 
 
@@ -72,5 +72,5 @@ def test_last_authority_getter_cannot_mutate_record_ids(monkeypatch):
         return result
 
     monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="after authority"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="context preview authority definition changed"):
         _preview(_fixture())
