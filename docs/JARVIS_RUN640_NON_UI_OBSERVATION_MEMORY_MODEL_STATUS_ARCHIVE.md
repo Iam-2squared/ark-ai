@@ -29,6 +29,18 @@
 - A fresh GitHub fetch of **both saved archive parts** was concatenated and compared with the original full canonical text; the comparison was **exactly equal**, preserving every historical line and old result in order. The old blob remains in Git history, too.
 - The canonical status can now be reduced to a short latest index at the **single end-of-invocation checkpoint update**. Archive parts are only history; they do not replace the live LATEST pointer. No frozen contracts/evidence were edited.
 
+## Package D — Planner terminal and restart model
+
+- Regression: `tests/test_planner_multibranch_restart_model_run640.py`, commit `c795309ed789223e1bd4d99391570ca9aa75fae0` (**2 parameterized tests authored**).
+- Both FAILED and CANCELLED root outcomes block all pending descendants through restart, while an unrelated branch may finish normally. Every synthetic transition is replayed from a freshly constructed journal and compared with the saved receipt, retained-prefix integrity and ambiguous RUNNING witnesses are checked, and forbidden later transitions cannot append.
+- No real ToolBackend is called, no journal schema/frozen contract changed, and no stale RUNNING/WRITE is authorized for automatic replay.
+
+## Exact-head CI failure triage and corrections
+
+- The source-only [CI #42087444443](https://github.com/Iam-2squared/ark-ai/actions/runs/42087444443), observation-test [#42087533753](https://github.com/Iam-2squared/ark-ai/actions/runs/42087533753) and later Memory-test [#42087980817](https://github.com/Iam-2squared/ark-ai/actions/runs/42087980817) each showed Ubuntu 3.11/3.12/3.13 **FAIL**. The source-only Ubuntu 3.11 log reported **16 failed / 9,102 passed / 1 skipped**; the Memory-test Ubuntu 3.11 log reported **16 failed / 9,120 passed / 1 skipped**. The 16 existing observation tests expected late callbacks or older exception messages, while newly pinned class/descriptor identity fails safely before those callbacks.
+- Four normal GitHub Contents test corrections (no production safety checks relaxed): `tests/test_observation_chain_input_anchored_result_run590.py` commit `1b53daa1cdcca21639a253ace1dae658ab12fb14`; `tests/test_observation_chain_pregetter_denial_run611.py` `1f856e3bad012483ff2af22e9b9d5a485f64b3b7`; `tests/test_observation_fixture_chain_review_run585.py` `20fbdf67957511b968b53b0b364a3426448ae20f`; `tests/test_observation_fixture_label_ingress_run639.py` `5eafd1e73262a6ea068beaca745b169f9b888276`.
+- The revised tests now expect preaccess refusal of swapped constructors/getattribute hooks, and malformed-label tests keep the ORIGINAL guarded validator installed while checking the original UTF-8/budget errors. These are **CI-found failures, not claimed solved** until a post-correction exact-head 6/6 CI proves it. No duplicate manual workflow runs.
+
 ## Validation and unresolved boundaries
 
 - Local `git ls-remote` cannot resolve `github.com` in the execution container; no local Python pytest or Ruff PASS is asserted.
