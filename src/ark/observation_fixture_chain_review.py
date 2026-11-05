@@ -19,6 +19,20 @@ _MAX_ENVELOPES = 256
 _ORIGINAL_ENVELOPE = ObservationEnvelope
 _ORIGINAL_VALIDATE = ObservationEnvelope.__post_init__
 _ORIGINAL_ID = vars(ObservationEnvelope)["observation_id"]
+# A frozen envelope can have its slot or lookup descriptors replaced before
+# the first private fixture read. Reject those substitutions without calling
+# their getters or validators.
+_ENVELOPE_FIELDS = (
+    "kind", "source_id", "adapter_id", "privacy_scope",
+    "ingested_at_ms", "content_sha256", "parent_sha256", "schema_version",
+)
+_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_ENVELOPE_FIELDS = tuple(
+    vars(_ORIGINAL_ENVELOPE)[name] for name in _ENVELOPE_FIELDS
+)
+_ORIGINAL_ENVELOPE_HOOKS = tuple(
+    vars(_ORIGINAL_ENVELOPE).get(name) for name in _HOOKS
+)
 _DOMAIN = b"ark:disconnected-observation-fixture-chain:v1\0"
 
 
@@ -53,13 +67,42 @@ _DENIALS = (
     "source_authenticated", "consent_verified", "dispatch_authorized",
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
+_RESULT_FIELDS = (
+    "source_id", "privacy_scope", "envelope_count",
+    "first_observation_id", "last_observation_id", "chain_sha256",
+)
+_ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _HOOKS)
 
 
 def _assert_original_implementations() -> None:
     if (
         ObservationEnvelope is not _ORIGINAL_ENVELOPE
         or vars(_ORIGINAL_ENVELOPE).get("observation_id") is not _ORIGINAL_ID
+        or vars(_ORIGINAL_ENVELOPE).get("__post_init__") is not _ORIGINAL_VALIDATE
+        or any(
+            vars(_ORIGINAL_ENVELOPE).get(name) is not original
+            for name, original in zip(
+                _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_ORIGINAL_ENVELOPE).get(name) is not original
+            for name, original in zip(_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True)
+        )
         or DisconnectedObservationChainReview is not _RESULT
+        or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(_RESULT).get(name) is not original
+            for name, original in zip(
+                _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RESULT).get(name) is not original
+            for name, original in zip(_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True)
+        )
         or any(
             vars(_RESULT).get(name) is not original
             for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
