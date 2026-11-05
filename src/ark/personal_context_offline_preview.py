@@ -62,6 +62,25 @@ class OfflineContextPreview:
 
 
 _PREVIEW_RESULT_TYPE = OfflineContextPreview
+_FIXTURE_TYPE = OfflineContextFixture
+_FIXTURE_FIELDS = (
+    "record_id", "owner_digest", "scope_digest", "content",
+    "content_sha256", "expires_at_ms",
+)
+_RESULT_FIELDS = ("owner_digest", "record_ids", "canonical_local_json", "local_digest")
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_FIXTURE_FIELDS = tuple(
+    vars(_FIXTURE_TYPE)[name] for name in _FIXTURE_FIELDS
+)
+_ORIGINAL_RESULT_FIELDS = tuple(
+    vars(_PREVIEW_RESULT_TYPE)[name] for name in _RESULT_FIELDS
+)
+_ORIGINAL_FIXTURE_HOOKS = tuple(
+    vars(_FIXTURE_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_PREVIEW_RESULT_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 _PREVIEW_DENIAL_NAMES = (
     "consent_verified", "external_export_authorized",
     "tool_dispatch_authorized", "retention_authorized",
@@ -75,6 +94,23 @@ def _assert_original_preview_denials() -> None:
     """Reject False-only authority substitutions before private fixture bytes."""
     if (
         OfflineContextPreview is not _PREVIEW_RESULT_TYPE
+        or OfflineContextFixture is not _FIXTURE_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_FIXTURE_TYPE, _FIXTURE_FIELDS, _ORIGINAL_FIXTURE_FIELDS),
+                (_PREVIEW_RESULT_TYPE, _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            vars(cls).get(name) is not original
+            for cls, originals in (
+                (_FIXTURE_TYPE, _ORIGINAL_FIXTURE_HOOKS),
+                (_PREVIEW_RESULT_TYPE, _ORIGINAL_RESULT_HOOKS),
+            )
+            for name, original in zip(_CARRIER_HOOKS, originals, strict=True)
+        )
         or any(
             vars(_PREVIEW_RESULT_TYPE).get(name) is not original
             for name, original in zip(
