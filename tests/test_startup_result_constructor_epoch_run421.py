@@ -51,8 +51,10 @@ def test_constructor_cannot_retarget_original_probe(monkeypatch, target):
 def test_constructor_cannot_forge_detached_readiness(monkeypatch, target):
     blocked, dependent = _fixture()
     native_result = startup.StartupSnapshot
+    invoked = []
 
     def construct(*args):
+        invoked.append(True)
         if target == "type":
             return object()
         result = native_result(*args)
