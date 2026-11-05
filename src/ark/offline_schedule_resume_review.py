@@ -76,15 +76,16 @@ class OfflineScheduleResumeReview:
 # Rebound result constructors are executable, so reject a substituted class
 # before any ledger read instead of trusting only denial-property identities.
 _RESULT_TYPE = OfflineScheduleResumeReview
+_ORIGINAL_RESUME_INIT = vars(_RESULT_TYPE)["__init__"]
 
 # Import-time denial descriptors: capturing them after a ledger/preview
 # callback would legitimize a replacement False getter as a new baseline.
-_ORIGINAL_QUARANTINE_DENIAL = QuarantineWitness.independently_authenticated
+_ORIGINAL_QUARANTINE_DENIAL = vars(QuarantineWitness)["independently_authenticated"]
 _ORIGINAL_PREVIEW_DENIALS = tuple(
-    getattr(DisconnectedDuePreview, name) for name in _DENIALS
+    vars(DisconnectedDuePreview)[name] for name in _DENIALS
 )
 _ORIGINAL_RESUME_DENIALS = tuple(
-    getattr(OfflineScheduleResumeReview, name) for name in _DENIALS
+    vars(_RESULT_TYPE)[name] for name in _DENIALS
 )
 
 
@@ -129,13 +130,13 @@ def review_offline_schedule_resume(
             raise ScheduleResumeRejected("quarantine witness type changed")
         pinned = (candidate.count, candidate.chain_sha256)
         if (
-            QuarantineWitness.independently_authenticated
+            vars(QuarantineWitness).get("independently_authenticated")
             is not quarantine_denial
             or candidate.independently_authenticated is not False
             or any(current is not original for current, original in zip(
                 (candidate.count, candidate.chain_sha256), pinned, strict=True,
             ))
-            or QuarantineWitness.independently_authenticated
+            or vars(QuarantineWitness).get("independently_authenticated")
             is not quarantine_denial
         ):
             raise ScheduleResumeRejected("quarantine witness gained authority or changed")
@@ -143,10 +144,14 @@ def review_offline_schedule_resume(
     def stable() -> None:
         # The final diagnostic result is denial-only. Pin original class
         # descriptors at import time, before any SQLite/preview callbacks.
-        if OfflineScheduleResumeReview is not _RESULT_TYPE or any(
-            getattr(_RESULT_TYPE, name) is not original
-            for name, original in zip(
-                _DENIALS, _ORIGINAL_RESUME_DENIALS, strict=True,
+        if (
+            OfflineScheduleResumeReview is not _RESULT_TYPE
+            or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESUME_INIT
+            or any(
+                vars(_RESULT_TYPE).get(name) is not original
+                for name, original in zip(
+                    _DENIALS, _ORIGINAL_RESUME_DENIALS, strict=True,
+                )
             )
         ):
             raise ScheduleResumeRejected(
@@ -170,12 +175,12 @@ def review_offline_schedule_resume(
             ), witness_epoch, strict=True))
         ):
             raise ScheduleResumeRejected("offline schedule resume carrier changed")
-        if QuarantineWitness.independently_authenticated is not quarantine_denial:
+        if vars(QuarantineWitness).get("independently_authenticated") is not quarantine_denial:
             raise ScheduleResumeRejected(
                 "quarantine witness authority descriptor changed"
             )
         if any(
-            getattr(DisconnectedDuePreview, name) is not original
+            vars(DisconnectedDuePreview).get(name) is not original
             for name, original in zip(
                 _DENIALS, _ORIGINAL_PREVIEW_DENIALS, strict=True,
             )
@@ -318,7 +323,7 @@ def review_offline_schedule_resume(
                     preview.state, preview.next_index, preview.occurrence_id,
                     preview.due_at_ms, preview.fingerprint,
                 ), preview_epoch, strict=True))
-                or any(getattr(DisconnectedDuePreview, key) is not original
+                or any(vars(DisconnectedDuePreview).get(key) is not original
                        for key, original in zip(_DENIALS, preview_descriptors, strict=True))
             ):
                 raise ScheduleResumeRejected("offline preview changed after validation")
@@ -338,7 +343,11 @@ def review_offline_schedule_resume(
             "ascii"
         )
         digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
-        output = OfflineScheduleResumeReview(*fields, digest)
+        # Refuse an initializer replaced during preview/ledger/hash callbacks,
+        # before executing any injected result-construction code.
+        stable()
+        output = _RESULT_TYPE(*fields, digest)
+        stable()
         pinned = (
             output.quarantine_chain_sha256, output.quarantined_count,
             output.next_occurrence_id, output.next_state,
@@ -355,7 +364,7 @@ def review_offline_schedule_resume(
                     output.next_occurrence_id, output.next_state,
                     output.preview_sha256, output.review_sha256,
                 ), pinned, strict=True))
-                or any(getattr(OfflineScheduleResumeReview, key) is not descriptor
+                or any(vars(_RESULT_TYPE).get(key) is not descriptor
                        for key, descriptor in zip(_DENIALS, descriptors, strict=True))
             ):
                 raise ScheduleResumeRejected("offline resume witness changed")
