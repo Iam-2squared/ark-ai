@@ -28,11 +28,19 @@ def test_forged_post_commit_receipt_does_not_claim_authority(tmp_path, monkeypat
         automatic_replay_authorized = True
         trusted_clock_verified = True
 
-    monkeypatch.setattr(due, "DueReservationReceipt", lambda *args: Forged())
-    with pytest.raises(due.DueReservationRejected, match="constructed due reservation"):
+    invoked = []
+
+    def forged_factory(*args):
+        invoked.append(True)
+        return Forged()
+
+    monkeypatch.setattr(due, "DueReservationReceipt", forged_factory)
+    with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         _reserve(ledger, original)
-    # A failed post-commit diagnostic is not evidence of a rolled-back row.
-    assert ledger.witness().count == 1
+    assert invoked == []
+    # Rejection happened before insertion. A distinct post-COMMIT error
+    # cannot be assumed to mean rollback.
+    assert ledger.witness().count == 0
 
 
 @pytest.mark.parametrize("field", ("occurrence_id",))
@@ -41,8 +49,10 @@ def test_equal_valued_receipt_carrier_replacement_rejected(
 ):
     ledger, original_witness = _ledger(tmp_path)
     original_type = due.DueReservationReceipt
+    invoked = []
 
     def forged(*args):
+        invoked.append(True)
         receipt = original_type(*args)
         original = getattr(receipt, field)
         changed = "".join((original[:9], original[9:]))
@@ -51,9 +61,10 @@ def test_equal_valued_receipt_carrier_replacement_rejected(
         return receipt
 
     monkeypatch.setattr(due, "DueReservationReceipt", forged)
-    with pytest.raises(due.DueReservationRejected, match="constructed due reservation"):
+    with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         _reserve(ledger, original_witness)
-    assert ledger.witness().count == 1
+    assert invoked == []
+    assert ledger.witness().count == 0
 
 
 @pytest.mark.parametrize("mutation", ("equal_hash", "float_count"))
