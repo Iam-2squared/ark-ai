@@ -13,8 +13,8 @@ from ark.observations import ObservationKind
 @pytest.mark.parametrize(
     ("source_id", "privacy_scope", "diagnostic"),
     [
-        ("\\ud800", "local:private", "valid UTF-8"),
-        ("fixture", "\\udfff", "valid UTF-8"),
+        (chr(0xD800), "local:private", "valid UTF-8"),
+        ("fixture", chr(0xDFFF), "valid UTF-8"),
         ("s" * 1025, "local:private", "exact bounded"),
         ("fixture", "s" * 1025, "exact bounded"),
         (" ", "local:private", "exact bounded"),
@@ -22,9 +22,8 @@ from ark.observations import ObservationKind
     ],
 )
 def test_bad_fixture_labels_fail_before_reading_envelope(
-    tmp_path, monkeypatch, source_id, privacy_scope, diagnostic,
+    monkeypatch, source_id, privacy_scope, diagnostic,
 ):
-    del tmp_path
     envelope = fixture_text_observation(
         "synthetic private note", kind=ObservationKind.TEXT,
         source_id="fixture", privacy_scope="local:private",
