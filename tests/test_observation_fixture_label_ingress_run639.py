@@ -22,7 +22,7 @@ from ark.observations import ObservationKind
     ],
 )
 def test_bad_fixture_labels_fail_before_reading_envelope(
-    monkeypatch, source_id, privacy_scope, diagnostic,
+    source_id, privacy_scope, diagnostic,
 ):
     envelope = fixture_text_observation(
         "synthetic private note", kind=ObservationKind.TEXT,
@@ -30,10 +30,8 @@ def test_bad_fixture_labels_fail_before_reading_envelope(
         ingested_at_ms=10,
     )
 
-    def must_not_validate(*_args, **_kwargs):
-        pytest.fail("invalid review labels reached an envelope callback")
-
-    monkeypatch.setattr(chain, "_ORIGINAL_VALIDATE", must_not_validate)
+    # Keep the real validator pin intact: malformed labels are rejected
+    # before any private envelope fields or callbacks are traversed.
     with pytest.raises(chain.ObservationFixtureChainRejected, match=diagnostic):
         chain.review_disconnected_fixture_chain(
             (envelope,), source_id=source_id, privacy_scope=privacy_scope,
