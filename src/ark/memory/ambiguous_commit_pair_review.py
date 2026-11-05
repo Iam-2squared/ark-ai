@@ -75,6 +75,7 @@ class MemoryAmbiguityPair:
 
 
 _RESULT = MemoryAmbiguityPair
+_ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
 _DENIALS = (
     "caller_commit_authenticated", "automatic_retry_authorized",
     "write_authorized", "trusted_clock_verified",
@@ -89,6 +90,7 @@ def _require_original_review_carriers() -> None:
         triage_module.MemoryCommitTriage is not _TRIAGE
         or outcome_module.MemoryCASOutcomeReview is not _OUTCOME
         or MemoryAmbiguityPair is not _RESULT
+        or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_TRIAGE).get(name) is not old
             for name, old in zip(_TRIAGE_DENIALS, _TRIAGE_ORIGINALS, strict=True)
@@ -287,6 +289,10 @@ def review_memory_ambiguous_commit_pair(
     # Expose both local reviewers' digests so a read-only investigator can
     # reconstruct the reconciliation hash without guessing hidden inputs.
     # These are not authenticated writer receipts or retry permission.
+    # The read-only result is not authority, but its constructor is executable
+    # Python and may have been swapped during either child review or hashing.
+    # Refuse that code before invocation rather than relying on False getters.
+    _require_original_review_carriers()
     result = _RESULT(*first, digest)
     expected = (*first, digest)
 
