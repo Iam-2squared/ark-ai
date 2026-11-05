@@ -52,7 +52,8 @@ def test_reflected_result_field_read_cannot_inject_false_denial(
         chain.ObservationFixtureChainRejected, match="implementation changed",
     ):
         _inspect()
-    assert replaced == [True]
+    # The preaccess hook check now rejects before any result field callback.
+    assert replaced == [False]
     assert calls == []
 
 
