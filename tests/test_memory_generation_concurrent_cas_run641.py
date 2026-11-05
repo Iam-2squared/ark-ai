@@ -27,7 +27,8 @@ from ark.memory.sqlite_event_alignment import review_memory_event_alignment
 @pytest.mark.parametrize("owner", ("alice", "bob", "日本語"))
 def test_two_writers_with_same_generation_commit_exactly_once(tmp_path, owner):
     path = tmp_path / "cas competing writers #1.sqlite"
-    clock = lambda: 100
+    def clock():
+        return 100
     first = SQLiteMemoryStore(path, clock_ms=clock)
     second = SQLiteMemoryStore(path, clock_ms=clock)
     scope = MemoryScope(owner, "private")
