@@ -24,7 +24,6 @@ import os
 import pathlib
 import sys
 
-import ark.agency.audit as audit_module
 from ark.agency.audit import SQLiteActionAudit
 from ark.agency.contracts import ToolCall
 
@@ -44,14 +43,34 @@ class BeforeCommit:
     def __getattr__(self, name):
         return getattr(self.wrapped, name)
 
+class AfterCommit:
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+
+    def __enter__(self):
+        self.wrapped.__enter__()
+        return self
+
+    def __exit__(self, *args):
+        # Native sqlite3.Connection.__exit__ must complete its COMMIT before
+        # the child disappears. Do not replace the protected event class,
+        # which would now correctly reject before opening the database.
+        result = self.wrapped.__exit__(*args)
+        if args[0] is None:
+            os._exit(52)
+        return result
+
+    def __getattr__(self, name):
+        return getattr(self.wrapped, name)
+
 path = pathlib.Path(sys.argv[1])
 phase = sys.argv[2]
 audit = SQLiteActionAudit(path, clock_ms=lambda: 77)
+original_connect = audit._connect
 if phase == "before_commit":
-    original_connect = audit._connect
     audit._connect = lambda: BeforeCommit(original_connect())
 elif phase == "after_commit":
-    audit_module.ActionAuditEvent = lambda *_args: os._exit(52)
+    audit._connect = lambda: AfterCommit(original_connect())
 else:
     sys.exit("invalid audit phase")
 call = ToolCall("inert", "fixture.read", "disconnected", {"n": 1})
