@@ -82,6 +82,30 @@ class BoundAction:
 
 _BOUND_TYPE = BoundAction
 _ORIGINAL_BOUND_INIT = vars(_BOUND_TYPE)["__init__"]
+_TOOL_CALL_TYPE = ToolCall
+_TOOL_CALL_ORIGINALS = (
+    "__init__", "__post_init__", "request_id", "arguments_sha256",
+)
+_ORIGINAL_TOOL_CALL_DESCRIPTORS = tuple(
+    vars(_TOOL_CALL_TYPE)[name] for name in _TOOL_CALL_ORIGINALS
+)
+
+
+def _require_original_toolcall_contract() -> None:
+    # Dataclass initialization invokes __post_init__ dynamically. A patched
+    # constructor/property must not run before registry identity validation.
+    if (
+        ToolCall is not _TOOL_CALL_TYPE
+    ):
+        raise ValueError("ToolCall identity constructor changed")
+    if any(
+        vars(_TOOL_CALL_TYPE).get(name) is not original
+        for name, original in zip(
+            _TOOL_CALL_ORIGINALS, _ORIGINAL_TOOL_CALL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise ValueError("ToolCall identity constructor changed")
+
 
 
 def _require_original_bound_constructor() -> None:
@@ -224,6 +248,7 @@ class ToolRegistry:
     def resolve(self, call: ToolCall) -> ToolRegistration:
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
+        _require_original_toolcall_contract()
         # Direct resolution must obey the same original-input boundary as
         # bind(). A callback in get() may reflectively retarget a frozen call
         # or alter registered backend/effect identity after its first check.
@@ -231,10 +256,12 @@ class ToolRegistry:
         # construction, which may itself be a synthetic callback boundary.
         original = (call.tool, call.capability, call.scope, call.arguments)
         stable = ToolCall(*original)
+        _require_original_toolcall_contract()
         epoch = (stable.tool, stable.capability, stable.scope, stable.request_id)
 
 
         def assert_call_epoch() -> None:
+            _require_original_toolcall_contract()
             if (
                 type(call.tool) is not str
                 or type(call.capability) is not str
@@ -250,6 +277,7 @@ class ToolRegistry:
                 )
             ):
                 raise ValueError("ToolCall identity changed during registry resolution")
+            _require_original_toolcall_contract()
 
         assert_call_epoch()
         registration = self.get(stable.tool)
@@ -263,6 +291,7 @@ class ToolRegistry:
             raise ValueError("registry lookup returned unregistered identity")
         if registration.capability != stable.capability:
             raise ValueError("tool call capability does not match registry")
+        _require_original_toolcall_contract()
         return registration
 
     def bind(self, call: ToolCall) -> BoundAction:
@@ -272,15 +301,18 @@ class ToolRegistry:
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
         _require_original_bound_constructor()
+        _require_original_toolcall_contract()
         # Preserve the *original* argument carrier as well as its digest.
         # A callback can replace a frozen ToolCall's arguments with a new,
         # value-equal mapping after resolve() has finished its own checks.
         # That is a new caller input epoch even when request_id is unchanged.
         original = (call.tool, call.capability, call.scope, call.arguments)
         stable = ToolCall(*original)
+        _require_original_toolcall_contract()
         original_request_id = stable.request_id
 
         def assert_call_unchanged() -> None:
+            _require_original_toolcall_contract()
             if (
                 type(call.tool) is not str
                 or type(call.capability) is not str
@@ -297,6 +329,7 @@ class ToolRegistry:
                 )
             ):
                 raise ValueError("ToolCall identity changed during registry binding")
+            _require_original_toolcall_contract()
 
         assert_call_unchanged()
         registration = self.resolve(call)
