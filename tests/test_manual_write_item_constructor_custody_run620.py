@@ -69,7 +69,12 @@ def test_reentrant_child_cannot_install_item_constructor(
             return result
 
         patch.setattr(triage, "review_disconnected_recovery_fence", child_hook)
-        with pytest.raises(triage.OfflineWriteTriageRejected, match="descriptor changed"):
+        # Child validation wraps local pre-getter refusal without relaxing
+        # the no-constructor and no-replay invariants.
+        with pytest.raises(
+            triage.OfflineWriteTriageRejected,
+            match="local WRITE recovery validation denied",
+        ):
             triage.build_offline_write_triage_packet(*inputs)
 
     assert calls == []
