@@ -44,13 +44,15 @@ def test_sqlite_final_callbacks_cannot_swap_witness_carriers(
     SyntheticOccurrenceStore(path)
     old = module.read_synthetic_ledger_witness(path)
     original_connect = module.sqlite3.connect
-    original_integrity = module.SyntheticLedgerWitness.assert_integrity
+    original_getattribute = module.SyntheticLedgerWitness.__getattribute__
     current = []
 
-    def observed_integrity(self):
-        original_integrity(self)
-        if self is not old:
+    def observed_field(self, name):
+        # Passive observation, not a replaced integrity validator. Preserve
+        # the test's distinct COMMIT and connection-close drift injections.
+        if name == "row_hashes" and self is not old:
             current.append(self)
+        return original_getattribute(self, name)
 
     def retarget():
         witness = current[-1] if target == "current" else old
@@ -68,7 +70,7 @@ def test_sqlite_final_callbacks_cannot_swap_witness_carriers(
         )
 
     monkeypatch.setattr(
-        module.SyntheticLedgerWitness, "assert_integrity", observed_integrity,
+        module.SyntheticLedgerWitness, "__getattribute__", observed_field,
     )
     monkeypatch.setattr(module.sqlite3, "connect", connection)
     with pytest.raises(module.SyntheticReplayRejected, match="witness|retained"):
