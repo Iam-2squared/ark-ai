@@ -80,7 +80,7 @@ def test_cached_inventory_item_mutation_before_digest_return_is_refused(
             outcome = original(*args, **kwargs)
             calls += 1
             if calls == 2:
-                object.__setattr__(captured[0], field, value)
+                corrupt_retained_item()
             return outcome
 
         monkeypatch.setattr(
