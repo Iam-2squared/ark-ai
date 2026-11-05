@@ -36,11 +36,15 @@ def test_row_mutated_after_digest_is_not_a_commit_match(
         patch.setattr(triage, "_row_hash", reentrant_hash)
         with pytest.raises(
             triage.MemoryCommitTriageRejected,
-            match="row image changed after snapshot",
-        ):
+            match="manual review required",
+        ) as denial:
             triage.review_uncertain_memory_commit(
                 store, proposed, retained_before=retained,
             )
+    # The public API intentionally obscures the exact internal fault while
+    # retaining a cause for local testing. Neither error permits a retry.
+    assert isinstance(denial.value.__cause__, triage.MemoryCommitTriageRejected)
+    assert "row image changed after snapshot" in str(denial.value.__cause__)
     assert len(calls) >= digest_call
     assert store.get(original_record.memory_id, scope).content == "original"
     assert [event.operation for event in store.events(scope)] == ["create"]
