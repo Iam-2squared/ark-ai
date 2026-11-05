@@ -128,10 +128,12 @@ def review_memory_revision_reuse(
     ):
         raise MemoryGenerationReviewRejected("exact bounded Memory generation inputs required")
     _require_original_report()
+    # Preserve the FIRST caller-visible scope/path identities. Computing the
+    # deterministic ID may call a reentrant test hash; sampling the epoch only
+    # afterwards would silently adopt a substituted scope or SQLite source.
     owner, namespace = scope.owner_id, scope.namespace
     path = store.path
-    memory_id = deterministic_memory_id(scope, source_id)
-    original = (scope, scope.owner_id, scope.namespace, source_id, path)
+    original = (scope, owner, namespace, source_id, path)
 
     def stable() -> None:
         _require_original_report()
@@ -145,6 +147,12 @@ def review_memory_revision_reuse(
         ):
             raise MemoryGenerationReviewRejected("generation source changed during review")
 
+    # Recheck immediately after the first identity-hash boundary and before
+    # opening private Memory. An equal-valued new string/Path is still a new
+    # input epoch and must not be silently accepted.
+    stable()
+    memory_id = deterministic_memory_id(scope, source_id)
+    stable()
     try:
         stable()
         with closing(store._connect_readonly()) as conn:
