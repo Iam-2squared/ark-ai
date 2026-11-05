@@ -76,6 +76,56 @@ class SyntheticAuthorityGapReport:
         return False
 
 
+# These detached claim/observation/report dataclasses are reflection-mutable
+# even when frozen. Reject forged getters, initializers or authority-denial
+# properties before private claims are read or a report is constructed.
+_CLAIMS_TYPE = SyntheticAuthorityClaims
+_OBSERVATIONS_TYPE = SyntheticAuthorityObservations
+_REPORT_TYPE = SyntheticAuthorityGapReport
+_CLAIM_FIELDS = (
+    "issuer_claim", "subject_claim", "registry_revision", "bound_action_id",
+    "occurrence_digest", "issued_at_ms", "expires_at_ms",
+)
+_OBSERVATION_FIELDS = (
+    "issuer_signature", "trusted_clock", "human_consent",
+    "preaction_audit", "occurrence_replay_fence", "external_result",
+)
+_REPORT_FIELDS = ("claim_digest", "blockers")
+_REPORT_DENIALS = (
+    "issuer_authenticated", "clock_authenticated",
+    "human_consent_verified", "dispatch_authorized",
+    "automatic_replay_authorized", "external_outcome_known",
+)
+_LOOKUP_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_CONTRACTS = (
+    (_CLAIMS_TYPE, _CLAIM_FIELDS + _LOOKUP_HOOKS),
+    (_OBSERVATIONS_TYPE, _OBSERVATION_FIELDS + _LOOKUP_HOOKS),
+    (_REPORT_TYPE, _REPORT_FIELDS + _REPORT_DENIALS + _LOOKUP_HOOKS),
+)
+_ORIGINAL_CONTRACTS = tuple(
+    tuple(vars(cls).get(field) for field in names)
+    for cls, names in _CONTRACTS
+)
+
+
+def _require_original_authority_contracts() -> None:
+    if (
+        SyntheticAuthorityClaims is not _CLAIMS_TYPE
+        or SyntheticAuthorityObservations is not _OBSERVATIONS_TYPE
+        or SyntheticAuthorityGapReport is not _REPORT_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for (cls, names), originals in zip(
+                _CONTRACTS, _ORIGINAL_CONTRACTS, strict=True,
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticAuthorityRejected(
+            "synthetic authority constructor or field hooks changed"
+        )
+
+
 def review_synthetic_authority_gaps(
     claims: SyntheticAuthorityClaims,
     observations: SyntheticAuthorityObservations,
@@ -96,6 +146,7 @@ def review_synthetic_authority_gaps(
              or _HEX.fullmatch(retained_claim_digest) is None)
     ):
         raise SyntheticAuthorityRejected("exact synthetic authority types required")
+    _require_original_authority_contracts()
     epoch = (
         claims.issuer_claim, claims.subject_claim, claims.registry_revision,
         claims.bound_action_id, claims.occurrence_digest,
@@ -118,9 +169,10 @@ def review_synthetic_authority_gaps(
         raise SyntheticAuthorityRejected("malformed synthetic authority evidence")
 
     def assert_epoch() -> None:
+        _require_original_authority_contracts()
         if (
-            type(claims) is not SyntheticAuthorityClaims
-            or type(observations) is not SyntheticAuthorityObservations
+            type(claims) is not _CLAIMS_TYPE
+            or type(observations) is not _OBSERVATIONS_TYPE
         ):
             raise SyntheticAuthorityRejected("synthetic authority carrier changed")
         if any(
@@ -160,12 +212,20 @@ def review_synthetic_authority_gaps(
             probe, strict=True,
         )
     )
-    result = SyntheticAuthorityGapReport(digest, blockers)
+    _require_original_authority_contracts()
+    result = _REPORT_TYPE(digest, blockers)
+    _require_original_authority_contracts()
     assert_epoch()
     if (
-        type(result) is not SyntheticAuthorityGapReport
+        type(result) is not _REPORT_TYPE
         or result.claim_digest is not digest
         or result.blockers is not blockers
     ):
         raise SyntheticAuthorityRejected("constructed authority report changed")
+    for flag in _REPORT_DENIALS:
+        _require_original_authority_contracts()
+        if getattr(result, flag) is not False:
+            raise SyntheticAuthorityRejected("synthetic authority report gained power")
+        _require_original_authority_contracts()
+        assert_epoch()
     return result
