@@ -163,6 +163,7 @@ def _snapshot(graph: PlanGraph, tail: SyntheticPlanTail) -> SyntheticPlanRecover
 # This recovery object is an inert witness, never an authorization. Pin its
 # original class even if a synthetic test hook later replaces the constructor.
 _RECOVERY_RESULT_TYPE = SyntheticPlanRecovery
+_ORIGINAL_RECOVERY_INIT = vars(_RECOVERY_RESULT_TYPE)["__init__"]
 _RECOVERY_DENIAL_NAMES = ("dispatch_authorized", "automatic_replay_authorized")
 _ORIGINAL_RECOVERY_DENIALS = tuple(
     vars(_RECOVERY_RESULT_TYPE)[name] for name in _RECOVERY_DENIAL_NAMES
@@ -172,6 +173,7 @@ _ORIGINAL_RECOVERY_DENIALS = tuple(
 def _require_original_recovery_denials() -> None:
     if (
         SyntheticPlanRecovery is not _RECOVERY_RESULT_TYPE
+        or vars(_RECOVERY_RESULT_TYPE).get("__init__") is not _ORIGINAL_RECOVERY_INIT
         or any(
             vars(_RECOVERY_RESULT_TYPE).get(name) is not original
             for name, original in zip(
