@@ -12,7 +12,6 @@ from test_memory_generation_cas_outcome_run536 import _case
 
 from ark.memory import generation_cas_outcome_review as outcome
 
-
 _FIELDS = (
     "observation",
     "retained_prefix_sha256",
