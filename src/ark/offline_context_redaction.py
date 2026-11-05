@@ -61,6 +61,21 @@ class RedactedOfflinePreview:
 
 
 _REDACTED_RESULT_TYPE = RedactedOfflinePreview
+_REDACTION_SPAN_TYPE = OfflineRedactionSpan
+_SPAN_FIELDS = ("start", "end", "label")
+_RESULT_FIELDS = (
+    "owner_digest", "scope_digest", "source_sha256", "masked_text",
+    "masked_characters", "complete_masking", "local_digest",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SPAN_FIELDS = tuple(vars(_REDACTION_SPAN_TYPE)[name] for name in _SPAN_FIELDS)
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_REDACTED_RESULT_TYPE)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_SPAN_HOOKS = tuple(
+    vars(_REDACTION_SPAN_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_REDACTED_RESULT_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 _DENIAL_NAMES = (
     "consent_verified", "privacy_erasure_proven",
     "external_export_authorized", "tool_dispatch_authorized",
@@ -76,6 +91,23 @@ def _require_original_denials() -> None:
     # static class dictionary instead of invoking the replacement __get__.
     if (
         RedactedOfflinePreview is not _REDACTED_RESULT_TYPE
+        or OfflineRedactionSpan is not _REDACTION_SPAN_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_REDACTION_SPAN_TYPE, _SPAN_FIELDS, _ORIGINAL_SPAN_FIELDS),
+                (_REDACTED_RESULT_TYPE, _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            vars(cls).get(name) is not original
+            for cls, originals in (
+                (_REDACTION_SPAN_TYPE, _ORIGINAL_SPAN_HOOKS),
+                (_REDACTED_RESULT_TYPE, _ORIGINAL_RESULT_HOOKS),
+            )
+            for name, original in zip(_CARRIER_HOOKS, originals, strict=True)
+        )
         or any(
             vars(_REDACTED_RESULT_TYPE).get(name) is not original
             for name, original in zip(
