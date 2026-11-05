@@ -122,16 +122,22 @@ def test_direct_continuity_catches_other_witness_mutated_during_integrity(
     retained = module.read_synthetic_ledger_witness(path)
     current = module.read_synthetic_ledger_witness(path)
     assert module.assert_synthetic_history_continues(retained, current) is None
-    original = module.SyntheticLedgerWitness.assert_integrity
+    original_digest = module._digest
+    changed = []
 
-    def mutate_other(self):
-        original(self)
-        if self is retained:
+    def mutate_other(label, rows):
+        observed = original_digest(label, rows)
+        if label == "ARK-ledger-v1" and not changed:
+            changed.append(True)
             object.__setattr__(current, "row_hashes", _clone_rows(current.row_hashes))
+        return observed
 
-    monkeypatch.setattr(module.SyntheticLedgerWitness, "assert_integrity", mutate_other)
+    # Keep the production integrity method unchanged. Its hash callback
+    # remains an independent reentrancy boundary in this offline fixture.
+    monkeypatch.setattr(module, "_digest", mutate_other)
     with pytest.raises(SyntheticReplayRejected, match="witness changed"):
         module.assert_synthetic_history_continues(retained, current)
+    assert changed
 
 
 def test_oversize_retained_witness_is_rejected_before_disk_access(tmp_path):
