@@ -93,7 +93,7 @@ def test_restart_rejects_counterfeit_custody_getter_before_execution(
 
 
 @pytest.mark.parametrize("return_value", (False, True))
-def test_receipt_constructor_cannot_install_counterfeit_witness_after_commit(
+def test_receipt_constructor_cannot_install_counterfeit_witness_before_commit(
     tmp_path, monkeypatch, return_value,
 ):
     ledger, retained = _ledger(tmp_path)
@@ -114,11 +114,12 @@ def test_receipt_constructor_cannot_install_counterfeit_witness_after_commit(
             )
 
         patch.setattr(due.DueReservationReceipt, "__init__", altered_init)
-        with pytest.raises(due.DueReservationRejected, match="witness authority"):
+        with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
             _reserve(ledger, retained)
     assert called == []
-    # Detection is post-COMMIT. The reservation cannot be retried as new.
-    assert ledger.witness().count == 1
+    # A preinstalled forged initializer is refused before a SQLite INSERT.
+    # Other post-COMMIT uncertainties still prohibit blind replay.
+    assert ledger.witness().count == 0
 
 
 def test_witness_getter_cannot_rebind_its_class_on_last_access(
