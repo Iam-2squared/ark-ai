@@ -68,13 +68,35 @@ _RECEIPT_DENIALS = ("dispatch_authorized", "outcome_known", "automatic_replay_au
 _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_CLASS)[name] for name in _RECEIPT_DENIALS
 )
+# A frozen dataclass remains patchable at class level. Reject executable slot
+# descriptors and constructor/getter hooks before the FIRST returned field
+# lookup, including a substituted False-only receipt after durable COMMIT.
+_RECEIPT_FIELDS = (
+    "occurrence_id", "registry_revision", "bound_action_id",
+    "request_id", "reserved_at_ms",
+)
+_RECEIPT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_CLASS)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_CLASS).get(name) for name in _RECEIPT_HOOKS
+)
 
 
 def _assert_receipt_denials() -> None:
-    """Never treat a mutable diagnostic property as real action authority."""
-    if SyntheticReservationReceipt is not _RECEIPT_CLASS or any(
-        vars(_RECEIPT_CLASS).get(name) is not original
-        for name, original in zip(_RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True)
+    """Require the original inert receipt class before accessing its slots."""
+    if (
+        SyntheticReservationReceipt is not _RECEIPT_CLASS
+        or any(
+            vars(_RECEIPT_CLASS).get(name) is not original
+            for names, originals in (
+                (_RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS),
+                (_RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
+                (_RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
     ):
         raise SyntheticReplayRejected("synthetic receipt authority descriptor changed")
 
