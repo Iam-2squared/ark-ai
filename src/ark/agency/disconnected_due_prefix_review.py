@@ -56,6 +56,7 @@ class DisconnectedDuePrefixReview:
 
 _DOMAIN = b"ARK-disconnected-due-retained-prefix-v1\0"
 _RESULT = DisconnectedDuePrefixReview
+_ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
 _WITNESS = due.DueReservationWitness
 _LEDGER = due.DisconnectedDueReservations
 
@@ -67,17 +68,19 @@ _DENIAL_FLAGS = (
     "trusted_clock_verified", "notification_authorized",
     "tool_dispatch_authorized", "automatic_replay_authorized",
 )
-_ORIGINAL_DENIALS = tuple(getattr(_RESULT, flag) for flag in _DENIAL_FLAGS)
+_ORIGINAL_DENIALS = tuple(vars(_RESULT)[flag] for flag in _DENIAL_FLAGS)
 _ORIGINAL_WITNESS_DENIAL = _WITNESS.independent_custody_proven
 
 
 def _require_original_denials() -> None:
     if (
-        any(
-            getattr(_RESULT, flag) is not original
+        DisconnectedDuePrefixReview is not _RESULT
+        or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(_RESULT).get(flag) is not original
             for flag, original in zip(_DENIAL_FLAGS, _ORIGINAL_DENIALS, strict=True)
         )
-        or _WITNESS.independent_custody_proven is not _ORIGINAL_WITNESS_DENIAL
+        or vars(_WITNESS).get("independent_custody_proven") is not _ORIGINAL_WITNESS_DENIAL
     ):
         raise DisconnectedDuePrefixRejected(
             "due prefix authority definition changed; source/witness untrusted"
