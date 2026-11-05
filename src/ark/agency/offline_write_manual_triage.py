@@ -72,6 +72,7 @@ class OfflineWriteTriagePacket:
 _ITEM_TYPE = OfflineWriteTriageItem
 _ORIGINAL_ITEM_INIT = vars(_ITEM_TYPE)["__init__"]
 _PACKET_TYPE = OfflineWriteTriagePacket
+_ORIGINAL_PACKET_INIT = vars(_PACKET_TYPE)["__init__"]
 _RESTART_TYPE = OfflineWriteRestartReport
 _FENCE_TYPE = OfflineRecoveryFence
 _STEP_TYPE = OfflineRecoveryStepClaim
@@ -103,6 +104,7 @@ def _require_original_denial_descriptors() -> None:
     if (
         OfflineWriteTriagePacket is not _PACKET_TYPE
         or OfflineWriteTriageItem is not _ITEM_TYPE
+        or vars(_PACKET_TYPE).get("__init__") is not _ORIGINAL_PACKET_INIT
         or vars(_ITEM_TYPE).get("__init__") is not _ORIGINAL_ITEM_INIT
         or OfflineWriteRestartReport is not _RESTART_TYPE
         or OfflineRecoveryFence is not _FENCE_TYPE
