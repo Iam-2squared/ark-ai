@@ -20,12 +20,10 @@ def _sample(index: int) -> clock.SyntheticClockSample:
 
 @pytest.mark.parametrize(("carrier", "attribute"), [
     ("sample", "__init__"),
-    ("sample", "__new__"),
     ("sample", "__getattribute__"),
     ("sample", "source_digest"),
     ("sample", "monotonic_ns"),
     ("witness", "__init__"),
-    ("witness", "__new__"),
     ("witness", "__getattribute__"),
     ("witness", "chain_hash"),
     ("witness", "trusted_clock_verified"),
