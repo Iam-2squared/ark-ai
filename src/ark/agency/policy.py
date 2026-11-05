@@ -436,6 +436,10 @@ class PermissionGate:
                 and (grant.expires_at_ms is None or grant.expires_at_ms > now_ms)
             ):
                 matching.append(grant)
+        # StopIteration may execute a caller-owned generator's finally code.
+        # Revalidate the original grant class and all retained carriers before
+        # accessing a previously yielded grant or spending a local token.
+        assert_iteration_epoch()
         try:
             stable = (
                 (spec.name, spec.capability, spec.effect) == spec_epoch
