@@ -44,7 +44,7 @@ def test_last_false_authority_getter_cannot_rewrite_inventory(
         "authorized_to_disclose",
         property(mutate),
     )
-    with pytest.raises(wave.OfflineWaveRejected, match="after authority"):
+    with pytest.raises(wave.OfflineWaveRejected, match="denial authority descriptors changed"):
         wave.inspect_local_pcm_wav(_request())
 
 
