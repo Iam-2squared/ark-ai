@@ -70,6 +70,14 @@ class CoherentSnapshotReview:
 _REQUEST_TYPE = CoherentSnapshotRequest
 _ORIGINAL_REQUEST_INIT = vars(_REQUEST_TYPE)["__init__"]
 _ORIGINAL_REQUEST_POST_INIT = vars(_REQUEST_TYPE)["__post_init__"]
+_REQUEST_FIELDS = (
+    "owner_id", "namespaces", "text", "per_namespace_limit", "include_expired",
+)
+_ORIGINAL_REQUEST_FIELDS = tuple(vars(_REQUEST_TYPE)[name] for name in _REQUEST_FIELDS)
+_REQUEST_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REQUEST_HOOKS = tuple(
+    vars(_REQUEST_TYPE).get(name) for name in _REQUEST_HOOKS
+)
 
 
 def _require_original_request_validator() -> None:
@@ -77,6 +85,14 @@ def _require_original_request_validator() -> None:
         CoherentSnapshotRequest is not _REQUEST_TYPE
         or vars(_REQUEST_TYPE).get("__init__") is not _ORIGINAL_REQUEST_INIT
         or vars(_REQUEST_TYPE).get("__post_init__") is not _ORIGINAL_REQUEST_POST_INIT
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(_REQUEST_FIELDS, _ORIGINAL_REQUEST_FIELDS, strict=True)
+        )
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(_REQUEST_HOOKS, _ORIGINAL_REQUEST_HOOKS, strict=True)
+        )
     ):
         raise MemorySchemaError("memory snapshot request validator changed")
 
@@ -84,6 +100,14 @@ def _require_original_request_validator() -> None:
 # Pin the result type independently of a reentrant synthetic constructor hook.
 _COHERENT_SNAPSHOT_RESULT_TYPE = CoherentSnapshotReview
 _ORIGINAL_COHERENT_SNAPSHOT_INIT = vars(_COHERENT_SNAPSHOT_RESULT_TYPE)["__init__"]
+_RESULT_FIELDS = ("read_at_ms", "scopes", "records", "provenance_sha256")
+_ORIGINAL_RESULT_FIELDS = tuple(
+    vars(_COHERENT_SNAPSHOT_RESULT_TYPE)[name] for name in _RESULT_FIELDS
+)
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get(name) for name in _RESULT_HOOKS
+)
 
 
 def _require_original_snapshot_result_constructor() -> None:
@@ -93,6 +117,14 @@ def _require_original_snapshot_result_constructor() -> None:
         CoherentSnapshotReview is not _COHERENT_SNAPSHOT_RESULT_TYPE
         or vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get("__init__")
         is not _ORIGINAL_COHERENT_SNAPSHOT_INIT
+        or any(
+            vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get(name) is not original
+            for name, original in zip(_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True)
+        )
+        or any(
+            vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get(name) is not original
+            for name, original in zip(_RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True)
+        )
     ):
         raise MemorySchemaError("memory snapshot result constructor changed")
 
@@ -133,6 +165,9 @@ def review_coherent_snapshot(
     record_epochs: list[tuple[MemoryRecord, tuple[object, ...]]] = []
 
     def assert_epoch() -> None:
+        # Every database, clock and digest callback may rebind a request slot.
+        # Inspect class descriptors BEFORE reading any retained request field.
+        _require_original_request_validator()
         if store.path is not path_epoch:
             raise MemorySchemaError("memory snapshot source path changed during review")
         current = (
