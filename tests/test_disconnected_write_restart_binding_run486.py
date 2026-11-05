@@ -175,9 +175,17 @@ def test_result_constructor_cannot_claim_write_authority(tmp_path, monkeypatch):
     ledger, retained = _setup(tmp_path)
     plan, step, _, _ = _identities()
     claim = OfflineRecoveryStepClaim(step, "WRITE", (), "UNKNOWN")
-    monkeypatch.setattr(binding, "OfflineWriteRestartReport", lambda *a: object())
-    with pytest.raises(binding.OfflineWriteRestartRejected, match="changed after review"):
+    executed = []
+
+    def forged(*_args):
+        executed.append(True)
+        return object()
+
+    monkeypatch.setattr(binding, "OfflineWriteRestartReport", forged)
+    with pytest.raises(binding.OfflineWriteRestartRejected, match="constructor changed"):
         _review(ledger, retained, plan, (claim,))
+    assert executed == []
+    assert ledger.inspect(retained=retained) == retained
 
 
 def test_exact_type_witness_guard(tmp_path):
