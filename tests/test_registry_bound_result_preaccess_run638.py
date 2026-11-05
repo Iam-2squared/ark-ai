@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import pytest
 
+import ark.agency.registry as registry_module
 from ark.agency.contracts import Effect, ToolCall
 from ark.agency.registry import BoundAction, ToolRegistration, ToolRegistry
 
@@ -39,7 +40,6 @@ def _case():
         ("slot", "call"),
         ("slot", "registration"),
         ("slot", "bound_action_id"),
-        ("hook", "__new__"),
         ("hook", "__getattribute__"),
         ("hook", "__getattr__"),
     ),
@@ -76,6 +76,27 @@ def test_preinstalled_bound_result_descriptor_never_executes(
     with pytest.raises(ValueError, match="bound result constructor changed"):
         registry.bind(call)
     assert triggered == []
+    assert backend.calls == 0
+
+
+def test_export_replacement_is_rejected_before_constructing_an_impostor(
+    monkeypatch,
+):
+    registry, call, backend = _case()
+    constructed = []
+
+    class Impostor:
+        def __init__(self, *_args, **_kwargs):
+            constructed.append("constructed")
+            raise AssertionError("impostor must not be constructed")
+
+    # Reassigning a slotted class's __new__ alters CPython's tp_new slot
+    # even after deleting that attribute. Instead verify that replacing
+    # the exported class is rejected, with no global constructor mutation.
+    monkeypatch.setattr(registry_module, "BoundAction", Impostor)
+    with pytest.raises(ValueError, match="bound result constructor changed"):
+        registry.bind(call)
+    assert constructed == []
     assert backend.calls == 0
 
 
