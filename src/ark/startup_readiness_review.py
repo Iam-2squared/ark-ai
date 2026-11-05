@@ -281,8 +281,32 @@ class StartupSnapshot:
         return blockers
 
 
-# Preserve the canonical result type through a synthetic constructor callback.
+# Validation/receipt construction is executable Python, even for frozen slots.
+# Bind the original constructors before any caller-controlled iterator or hash
+# callback is allowed to replace them with a forged READY-producing function.
+_STARTUP_COMPONENT_TYPE = StartupComponent
+_COMPONENT_RESULT_TYPE = ComponentResult
 _STARTUP_SNAPSHOT_RESULT_TYPE = StartupSnapshot
+_ORIGINAL_COMPONENT_INIT = vars(_STARTUP_COMPONENT_TYPE)["__init__"]
+_ORIGINAL_COMPONENT_POST_INIT = vars(_STARTUP_COMPONENT_TYPE)["__post_init__"]
+_ORIGINAL_COMPONENT_RESULT_INIT = vars(_COMPONENT_RESULT_TYPE)["__init__"]
+_ORIGINAL_SNAPSHOT_INIT = vars(_STARTUP_SNAPSHOT_RESULT_TYPE)["__init__"]
+
+
+def _assert_original_startup_constructors() -> None:
+    if (
+        StartupComponent is not _STARTUP_COMPONENT_TYPE
+        or ComponentResult is not _COMPONENT_RESULT_TYPE
+        or StartupSnapshot is not _STARTUP_SNAPSHOT_RESULT_TYPE
+        or vars(_STARTUP_COMPONENT_TYPE).get("__init__") is not _ORIGINAL_COMPONENT_INIT
+        or vars(_STARTUP_COMPONENT_TYPE).get("__post_init__")
+        is not _ORIGINAL_COMPONENT_POST_INIT
+        or vars(_COMPONENT_RESULT_TYPE).get("__init__")
+        is not _ORIGINAL_COMPONENT_RESULT_INIT
+        or vars(_STARTUP_SNAPSHOT_RESULT_TYPE).get("__init__")
+        is not _ORIGINAL_SNAPSHOT_INIT
+    ):
+        raise ValueError("startup constructor authority changed")
 
 
 def evaluate_startup_readiness(
@@ -292,11 +316,13 @@ def evaluate_startup_readiness(
     # Bounded incremental hydration is necessary: tuple(probes) consumes a
     # caller-controlled iterable before we can pin an earlier yielded probe,
     # and an infinite generator would bypass the review budget altogether.
+    _assert_original_startup_constructors()
     snapshot_list: list[StartupComponent] = []
     source_epoch: list[tuple[object, ...]] = []
     edge_count = 0
 
     def assert_source_epoch() -> None:
+        _assert_original_startup_constructors()
         if any(
             type(entry) is not StartupComponent
             or entry.component_id is not component_id
@@ -336,6 +362,7 @@ def evaluate_startup_readiness(
 
     by_name: dict[str, StartupComponent] = {}
     for entry in snapshot:
+        _assert_original_startup_constructors()
         checked = StartupComponent(
             entry.component_id,
             entry.dependencies,
@@ -381,17 +408,19 @@ def evaluate_startup_readiness(
         raise ValueError("readiness dependency graph contains a cycle")
 
     assert_source_epoch()
-    components = tuple(
-        ComponentResult(
+    prepared_components = []
+    for name in sorted(by_name):
+        _assert_original_startup_constructors()
+        prepared_components.append(ComponentResult(
             name,
             tuple(sorted(by_name[name].dependencies)),
             by_name[name].local_state,
             effective[name],
             by_name[name].failure_code,
             by_name[name].schema_revision,
-        )
-        for name in sorted(by_name)
-    )
+        ))
+        assert_source_epoch()
+    components = tuple(prepared_components)
     payload = {
         "schema_version": 1,
         "components": [
@@ -421,7 +450,9 @@ def evaluate_startup_readiness(
         item, item.component_id, item.dependencies, item.local_state,
         item.effective_state, item.failure_code, item.schema_revision,
     ) for item in components)
+    _assert_original_startup_constructors()
     result = StartupSnapshot(components, digest)
+    _assert_original_startup_constructors()
     assert_source_epoch()
     if (
         type(result) is not _STARTUP_SNAPSHOT_RESULT_TYPE
