@@ -50,6 +50,23 @@ class SyntheticLedgerWitness:
             raise SyntheticReplayRejected("synthetic retained witness integrity failed")
 
 
+# Import-time method/constructor identity is part of the local witness check.
+# A caller-installed False-returning integrity method cannot be a new baseline.
+_ORIGINAL_WITNESS_TYPE = SyntheticLedgerWitness
+_ORIGINAL_WITNESS_INIT = vars(_ORIGINAL_WITNESS_TYPE)["__init__"]
+_ORIGINAL_WITNESS_INTEGRITY = vars(_ORIGINAL_WITNESS_TYPE)["assert_integrity"]
+
+
+def _require_original_witness_code() -> None:
+    if (
+        SyntheticLedgerWitness is not _ORIGINAL_WITNESS_TYPE
+        or vars(_ORIGINAL_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
+        or vars(_ORIGINAL_WITNESS_TYPE).get("assert_integrity")
+        is not _ORIGINAL_WITNESS_INTEGRITY
+    ):
+        raise SyntheticReplayRejected("synthetic witness implementation changed")
+
+
 def assert_synthetic_history_continues(
     retained: SyntheticLedgerWitness, current: SyntheticLedgerWitness,
 ) -> None:
@@ -59,6 +76,7 @@ def assert_synthetic_history_continues(
     retained outside the mutable DB; two locally recomputed witnesses are NOT
     an independent audit trail, and both can be forged by a storage adversary.
     """
+    _require_original_witness_code()
     if type(retained) is not SyntheticLedgerWitness or type(current) is not SyntheticLedgerWitness:
         raise SyntheticReplayRejected("synthetic continuity requires exact witnesses")
     # Integrity checks hash Python-held tuples: a reflected mutation of the
@@ -69,6 +87,7 @@ def assert_synthetic_history_continues(
     current_carriers = tuple(current_rows)
 
     def assert_epoch() -> None:
+        _require_original_witness_code()
         if (
             retained.row_hashes is not previous_rows
             or current.row_hashes is not current_rows
@@ -105,6 +124,7 @@ def read_synthetic_ledger_witness(
     A local digest cannot establish external authenticity, inode custody,
     real user permission, backend results or atomic multi-store consistency.
     """
+    _require_original_witness_code()
     if not isinstance(path, Path):
         raise TypeError("synthetic witness path must be a pathlib.Path")
     if retained is not None and type(retained) is not SyntheticLedgerWitness:
@@ -114,6 +134,7 @@ def read_synthetic_ledger_witness(
     retained_carriers = () if retained is None else tuple(retained_rows)
 
     def assert_epoch() -> None:
+        _require_original_witness_code()
         if retained is not None and (
             retained.row_hashes is not retained_rows
             or retained.digest is not retained_digest
@@ -148,7 +169,8 @@ def read_synthetic_ledger_witness(
                 assert_epoch()
             row_hashes = tuple(sorted(hashes))
             assert_epoch()
-            witness = SyntheticLedgerWitness(
+            _require_original_witness_code()
+            witness = _ORIGINAL_WITNESS_TYPE(
                 row_hashes, "synthetic_ledger_" + _digest("ARK-ledger-v1", row_hashes),
             )
             # A successful read-only COMMIT still runs an observable callback.
@@ -158,6 +180,7 @@ def read_synthetic_ledger_witness(
             witness_carriers = tuple(witness_rows)
 
             def assert_witness() -> None:
+                _require_original_witness_code()
                 if (
                     type(witness) is not SyntheticLedgerWitness
                     or witness.row_hashes is not witness_rows
