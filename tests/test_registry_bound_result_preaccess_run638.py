@@ -56,9 +56,22 @@ def test_preinstalled_bound_result_descriptor_never_executes(
 
     if kind == "slot":
         monkeypatch.setattr(BoundAction, name, property(rogue))
+    elif name in vars(BoundAction):
+        monkeypatch.setattr(BoundAction, name, rogue)
     else:
+        # __new__ / __getattribute__ are inherited. monkeypatch.setattr
+        # would restore them as new OWN attributes, contaminating later
+        # tests with an altered class dictionary and misleading failures.
         replacement = staticmethod(rogue) if name == "__new__" else rogue
-        monkeypatch.setattr(BoundAction, name, replacement, raising=False)
+        setattr(BoundAction, name, replacement)
+        try:
+            with pytest.raises(ValueError, match="bound result constructor changed"):
+                registry.bind(call)
+        finally:
+            delattr(BoundAction, name)
+        assert triggered == []
+        assert backend.calls == 0
+        return
 
     with pytest.raises(ValueError, match="bound result constructor changed"):
         registry.bind(call)
