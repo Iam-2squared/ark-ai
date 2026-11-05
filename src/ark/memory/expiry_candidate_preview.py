@@ -65,6 +65,17 @@ class MemoryExpiryPreview:
 
 _RECEIPT_TYPE = MemoryExpiryPreview
 _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
+_RECEIPT_FIELDS = (
+    "scope_sha256", "read_at_ms", "candidate_count", "has_more",
+    "candidate_sha256", "preview_sha256",
+)
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_RECEIPT_HOOKS = ("__new__", "__getattr__", "__getattribute__")
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+)
 _STORE_TYPE = SQLiteMemoryStore
 _SCOPE_TYPE = MemoryScope
 
@@ -78,6 +89,18 @@ def _assert_original_authority() -> None:
     if (
         MemoryExpiryPreview is not _RECEIPT_TYPE
         or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS, strict=True,
+            )
+        )
         or any(
             # getattr() on a class can itself execute a hostile __get__.
             # Identity inspection must never run a substituted descriptor.
