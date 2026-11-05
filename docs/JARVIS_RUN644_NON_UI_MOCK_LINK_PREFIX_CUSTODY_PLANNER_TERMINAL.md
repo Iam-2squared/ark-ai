@@ -63,7 +63,17 @@ failure corrected on the ordinary guarded write path.
 - [Memory field tests #42123928161](https://github.com/Iam-2squared/ark-ai/actions/runs/42123928161):
   **IN PROGRESS** at initial read.
 - [Latest source/test #42124289369](https://github.com/Iam-2squared/ark-ai/actions/runs/42124289369):
-  **QUEUED** at initial read. No latest-head GREEN is claimed.
+  **IN PROGRESS** at last pre-repair observation. No latest-head GREEN is claimed.
+- **CI regression correction:** Memory-source [#42123821795](https://github.com/Iam-2squared/ark-ai/actions/runs/42123821795)
+  and field-test [#42123928161](https://github.com/Iam-2squared/ark-ai/actions/runs/42123928161)
+  each showed Ubuntu Python 3.11 **2 FAIL** (source: 9,190 PASS / 1 SKIP;
+  tests: 9,199 PASS / 1 SKIP). Existing Run611 tests expected a forged
+  `__getattribute__` callback to execute once before refusal; the new
+  pre-access guard correctly rejects it **before** the callback executes.
+  Test-only semantics-alignment fix
+  `bcf4da3f3920881b440e3499403cb1a919b8dd8f`
+  updates those two asserted callback counts to zero. The hardened source
+  remains unchanged; this is not a claim of GREEN.
 
 The synthetic journals and witnesses offer *local* continuity only. They
 cannot prove independent custodianship, consent, trusted time, external
