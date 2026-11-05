@@ -75,11 +75,13 @@ _RECEIPT_TYPE = DueReservationReceipt
 # A False-looking replacement property is not the reviewed, inert witness
 # contract. Inspect the CLASS dictionary without running an untrusted getter.
 _ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_proven"]
+_ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
 
 
 def _require_original_witness_denial() -> None:
     if (
         DueReservationWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
         or vars(_WITNESS_TYPE).get("independent_custody_proven")
         is not _ORIGINAL_WITNESS_DENIAL
     ):
