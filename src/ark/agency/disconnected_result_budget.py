@@ -54,14 +54,57 @@ class CompleteDetachedReadResults:
         return False
 
 
+_RESULT_TYPE = DetachedReadResult
 _SEALED_TYPE = CompleteDetachedReadResults
+_RESULT_FIELDS = ("step_id", "operation", "canonical_result_json", "content_sha256")
+_SEALED_FIELDS = ("request_id", "step_ids", "result_count", "result_bytes", "membership_digest")
+_ORIGINAL_RESULT_DESCRIPTORS = tuple(vars(_RESULT_TYPE)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_SEALED_DESCRIPTORS = tuple(vars(_SEALED_TYPE)[name] for name in _SEALED_FIELDS)
+_ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
+_ORIGINAL_SEALED_INIT = vars(_SEALED_TYPE)["__init__"]
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in ("__new__", "__getattr__", "__getattribute__")
+)
+_ORIGINAL_SEALED_HOOKS = tuple(
+    vars(_SEALED_TYPE).get(name) for name in ("__new__", "__getattr__", "__getattribute__")
+)
 _NONAUTHORITY_FLAGS = (
     "external_result_verified", "dispatch_authorized",
     "automatic_replay_authorized",
 )
 _NONAUTHORITY_DESCRIPTORS = tuple(
-    getattr(_SEALED_TYPE, name) for name in _NONAUTHORITY_FLAGS
+    vars(_SEALED_TYPE)[name] for name in _NONAUTHORITY_FLAGS
 )
+
+
+def _require_original_result_carriers() -> None:
+    """Reject replaced constructors, fields and denial getters before invocation."""
+    if (
+        DetachedReadResult is not _RESULT_TYPE
+        or CompleteDetachedReadResults is not _SEALED_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or vars(_SEALED_TYPE).get("__init__") is not _ORIGINAL_SEALED_INIT
+        or any(vars(_RESULT_TYPE).get(name) is not original for name, original in zip(
+            _RESULT_FIELDS, _ORIGINAL_RESULT_DESCRIPTORS, strict=True,
+        ))
+        or any(vars(_SEALED_TYPE).get(name) is not original for name, original in zip(
+            _SEALED_FIELDS, _ORIGINAL_SEALED_DESCRIPTORS, strict=True,
+        ))
+        or any(vars(_RESULT_TYPE).get(name) is not original for name, original in zip(
+            ("__new__", "__getattr__", "__getattribute__"),
+            _ORIGINAL_RESULT_HOOKS, strict=True,
+        ))
+        or any(vars(_SEALED_TYPE).get(name) is not original for name, original in zip(
+            ("__new__", "__getattr__", "__getattribute__"),
+            _ORIGINAL_SEALED_HOOKS, strict=True,
+        ))
+        or any(vars(_SEALED_TYPE).get(name) is not original for name, original in zip(
+            _NONAUTHORITY_FLAGS, _NONAUTHORITY_DESCRIPTORS, strict=True,
+        ))
+    ):
+        raise DisconnectedResultsRejected(
+            "sealed READ result carrier or authority descriptor changed"
+        )
 
 
 def _pairs_unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -147,6 +190,7 @@ def seal_detached_read_results(
     This API returns no result contents and neither verifies execution nor
     automatically promotes a plan to a permission grant.
     """
+    _require_original_result_carriers()
     if (
         type(request_id) is not str or _REQ.fullmatch(request_id) is None
         or type(expected_steps) is not tuple or not 1 <= len(expected_steps) <= 24
@@ -165,6 +209,7 @@ def seal_detached_read_results(
     )
 
     def epoch() -> None:
+        _require_original_result_carriers()
         if (
             request_id is not original_request
             or expected_steps is not original_expected
@@ -227,6 +272,7 @@ def seal_detached_read_results(
     )
 
     def sealed_epoch() -> None:
+        _require_original_result_carriers()
         # A False-valued authority property is still a user-replaceable
         # callback. Check fields and original descriptors after EACH read.
         current = (
