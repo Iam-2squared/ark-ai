@@ -14,9 +14,27 @@ from .contracts import (
     ToolCall,
     ToolSpec,
 )
-from .registry import BoundAction, ToolRegistry
+from .registry import (
+    BoundAction, ToolRegistry, _require_original_toolcall_contract,
+)
 
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
+_ORIGINAL_POLICY_TOOL_CALL = ToolCall
+
+
+def _assert_original_call_contract() -> None:
+    """Reject a swapped request digest or constructor before policy reads it.
+
+    Registry binding already checks this; direct PermissionGate.authorize()
+    must not admit a counterfeit computed request_id independently.
+    """
+    if ToolCall is not _ORIGINAL_POLICY_TOOL_CALL:
+        raise PermissionDenied("ToolCall identity contract changed")
+    try:
+        _require_original_toolcall_contract()
+    except ValueError as exc:
+        raise PermissionDenied("ToolCall identity contract changed") from exc
+
 # Reconstructing a grant is validation, but it executes dataclass hooks.
 # Pin the validator at import time so a substituted initializer cannot run
 # merely because an exact pre-existing grant is presented to this gate.
@@ -61,10 +79,12 @@ class PermissionGate:
         supplying its own READ ToolSpec. This is a diagnostic authorization
         boundary, not durable one-shot approval or external execution authority.
         """
+        _assert_original_call_contract()
         if type(registry) is not ToolRegistry or type(call) is not ToolCall:
             raise PermissionDenied("registered authorization requires exact registry and call")
 
         def ensure_original_implementations() -> None:
+            _assert_original_call_contract()
             if (
                 (one_shot is not None and
                  vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND)
@@ -275,6 +295,7 @@ class PermissionGate:
         one_shot: OneShotAuthorization | None = None,
         _registered_recheck: Callable[[], None] | None = None,
     ) -> None:
+        _assert_original_call_contract()
         if _registered_recheck is not None and not callable(_registered_recheck):
             raise PermissionDenied("registered recheck must be callable")
         if type(spec) is not ToolSpec or type(call) is not ToolCall:
@@ -334,6 +355,7 @@ class PermissionGate:
         grant_epochs = []
 
         def assert_iteration_epoch() -> None:
+            _assert_original_call_contract()
             # A generator can temporarily retarget a previously yielded
             # grant, the action, or a WRITE token, then restore it before
             # StopIteration. The final-only check would miss that intermediate
@@ -431,6 +453,7 @@ class PermissionGate:
             # Recheck the token/call epoch after waiting for the lock: a
             # reflected mutation during contention must not spend a token.
             with self._token_lock:
+                _assert_original_call_contract()
                 # The lock may be contended after grant enumeration and the
                 # earlier epoch check. Revalidate every policy input before
                 # irreversibly spending a process-local token, not just the
@@ -473,6 +496,7 @@ class PermissionGate:
                     # the first under-lock check. Revalidate the original
                     # admission epoch before spending even a local token.
                     assert_iteration_epoch()
+                _assert_original_call_contract()
                 if one_shot.token_id in self._consumed_tokens:
                     raise PermissionDenied("one-shot authorization was already consumed")
                 if one_shot.request_id != call.request_id:
