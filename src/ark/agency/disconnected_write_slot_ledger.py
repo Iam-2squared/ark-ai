@@ -84,6 +84,26 @@ class WriteSlotReservationReceipt:
 
 _RECEIPT_TYPE = WriteSlotReservationReceipt
 _WITNESS_TYPE = WriteSlotLedgerWitness
+_CLAIM_TYPE = DetachedWriteSlotClaim
+# Frozen, slotted data carriers remain patchable at class level. Pin their
+# field descriptors and lookup hooks before reading a caller-owned witness
+# or claim, before any SQLite access, and at every callback boundary.
+_WITNESS_FIELDS = ("count", "chain_sha256")
+_CLAIM_FIELDS = ("slot_id", "plan_id", "step_id", "request_sha256")
+_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_CLAIM_FIELDS = tuple(
+    vars(_CLAIM_TYPE)[name] for name in _CLAIM_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_CLAIM_HOOKS = tuple(
+    vars(_CLAIM_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_CLAIM_INIT = vars(_CLAIM_TYPE)["__init__"]
 _ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independently_authenticated"]
 _RECEIPT_DENIALS = (
     "dispatch_authorized", "automatic_replay_authorized",
@@ -106,8 +126,20 @@ def _require_original_constructors() -> None:
     if (
         WriteSlotLedgerWitness is not _WITNESS_TYPE
         or WriteSlotReservationReceipt is not _RECEIPT_TYPE
+        or DetachedWriteSlotClaim is not _CLAIM_TYPE
         or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
         or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
+        or vars(_CLAIM_TYPE).get("__init__") is not _ORIGINAL_CLAIM_INIT
+        or any(
+            vars(cls).get(name) is not original
+            for cls, fields, originals in (
+                (_WITNESS_TYPE, _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+                (_CLAIM_TYPE, _CLAIM_FIELDS, _ORIGINAL_CLAIM_FIELDS),
+                (_WITNESS_TYPE, _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+                (_CLAIM_TYPE, _CARRIER_HOOKS, _ORIGINAL_CLAIM_HOOKS),
+            )
+            for name, original in zip(fields, originals, strict=True)
+        )
     ):
         raise WriteSlotLedgerRejected("reservation constructor or authority changed")
 
