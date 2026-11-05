@@ -168,12 +168,40 @@ def review_uncertain_memory_commit(
             # by later synthetic callbacks; it must not become a forged match.
             if type(record) is not MemoryRecord:
                 raise MemoryCommitTriageRejected("Memory triage row type changed")
+            # The hash calculator is a synthetic reentrant callback. Save
+            # exact row carriers before invoking it, and inspect them again
+            # after it returns: a digest computed *before* a mutation cannot
+            # prove that the returned object still represents the snapshot.
+            row_epoch = (
+                record.memory_id, record.scope, record.source_id,
+                record.content, record.created_at_ms, record.updated_at_ms,
+                record.expires_at_ms, record.revision, record.content_sha256,
+                record.metadata,
+            )
+            metadata_epoch = dict(record.metadata)
+
+            def row_carriers_intact() -> bool:
+                return (
+                    type(record) is MemoryRecord
+                    and all(now is prior for now, prior in zip(
+                        (
+                            record.memory_id, record.scope, record.source_id,
+                            record.content, record.created_at_ms,
+                            record.updated_at_ms, record.expires_at_ms,
+                            record.revision, record.content_sha256,
+                            record.metadata,
+                        ), row_epoch, strict=True,
+                    ))
+                    and dict(record.metadata) == metadata_epoch
+                )
 
             def stable_row() -> None:
-                if (
-                    type(record) is not MemoryRecord
-                    or _row_hash(record) != after[5]
-                ):
+                if not row_carriers_intact():
+                    raise MemoryCommitTriageRejected(
+                        "Memory triage row image changed after snapshot"
+                    )
+                calculated = _row_hash(record)
+                if calculated != after[5] or not row_carriers_intact():
                     raise MemoryCommitTriageRejected(
                         "Memory triage row image changed after snapshot"
                     )
