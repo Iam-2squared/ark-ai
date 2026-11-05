@@ -19,12 +19,22 @@
 - `src/ark/memory/postcommit_uncertainty_review.py`: pin the import-original `MemoryCommitTriage` class and its `__init__`. Include these identity checks in the existing retained-token/metadata/source epoch checks. Compute the detached digest, revalidate the complete epoch, then construct the read-only receipt and revalidate afterward. This closes the callback window after SQLite close or digest computation. It neither attributes an ambiguous COMMIT nor permits retry.
 - `tests/test_memory_commit_triage_constructor_custody_run622.py`: **five authored pytest cases**, including preinstalled constructor, reentrant snapshot, reentrant connection close, result-digest callback substitution, and normal manual-only receipt. All use disposable local SQLite data. A matching record is not a proof of who wrote it.
 
+## Package D — disconnected Observation PNG/WAV pair authority
+
+- `src/ark/offline_observation_pair.py`: the preexisting class-level denial check used `getattr` on the result class. A forged Python descriptor's `__get__` could therefore execute **during the authority check**. This now uses only `vars(_RESULT)` for static identity checks; the original class and its dataclass initializer are pinned as well. The guard runs before any PNG/WAV fixture inspection, across the two independent inventory passes, and immediately before and after receipt construction.
+- `tests/test_offline_observation_pair_static_constructor_custody_run622.py`: **ten authored pytest cases** (three substituted initializer phases, five malicious class descriptors, rebound result class, and a normal metadata-only/no-authorization baseline). The tests work solely on small synthetic 1×1 PNG and PCM WAV bytes. No camera/microphone access or external processing.
+- This independent package was saved after the earlier audit and Memory CI started; it does not modify their code paths.
+
 ## Validation and safety interpretation
 
-- **Ten authored pytest cases**, **eight legacy parameterized cases repaired** (seven receipt mutation cases and one child-process post-COMMIT case); these counts are *test definitions*, not a claim of a successful local run.
+- **Twenty authored pytest cases**, **eight legacy parameterized cases repaired** (seven receipt mutation cases and one child-process post-COMMIT case); these counts are *test definitions*, not a claim of a successful local run.
 - GitHub normal Contents API changes, observed branch HEAD before each write; no raw Git objects, force-push, workflow re-dispatch, or concurrent modification of PR #9.
 - No local pytest/Ruff evidence: the execution container could not resolve `github.com` when attempting `git ls-remote`. Use GitHub Actions exact-HEAD evidence as the decisive remote test result.
 - CI for pre-report corrected source/test HEAD `5edecbb6bfea2fb98aafddcc48e8ba1fc9ff0535`: [#41957950284](https://github.com/Iam-2squared/ark-ai/actions/runs/41957950284) **IN PROGRESS when the report was prepared**. A later CI outcome must not be inferred from earlier jobs.
 - **Boundaries:** frozen V1/V2/Local UI/Launcher evidence unchanged; PR #5/#8/#9 Draft/unmerged; UI paused; no paid/external GPU/API, real Candidate, V2 protected evaluation, ToolBackend, notifications, credential changes, main merge, or manual triage authorization. Local SQLite row/event/hash equality is never independently authenticated human consent, trusted clock, durable issuer custody, or exactly-once external side effects. All ambiguous Memory WRITE/COMMIT cases remain manual-only, never automatically replayed.
 
 **Next:** establish final exact-HEAD Ubuntu/Windows × Python 3.11–3.13 CI; fix any real regressions without loosening guards, then advance Planner durable crash recovery and registry-bound audit-before-*mock*-action once dependencies have exact-head GREEN.
+
+## Later head verification snapshot
+
+- Exact post-observation source/test HEAD `b7b92d7f10180a22f6fce45cf02ec0b6a43b3e4f` triggered [CI #41958337976](https://github.com/Iam-2squared/ark-ai/actions/runs/41958337976), still **IN PROGRESS** when this report update was prepared. Corrected audit-only HEAD `5edecbb6bfea2fb98aafddcc48e8ba1fc9ff0535` had Ubuntu 3/3 GREEN and Windows 3 IN PROGRESS at that observation. Neither constitutes exact later-head full GREEN.
