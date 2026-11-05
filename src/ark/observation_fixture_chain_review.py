@@ -85,11 +85,23 @@ def review_disconnected_fixture_chain(
     if (
         type(envelopes) is not tuple
         or not 1 <= len(envelopes) <= _MAX_ENVELOPES
-        or type(source_id) is not str or not source_id
-        or type(privacy_scope) is not str or not privacy_scope
+        or type(source_id) is not str or not source_id.strip()
+        or len(source_id) > 1024
+        or type(privacy_scope) is not str or not privacy_scope.strip()
+        or len(privacy_scope) > 1024
         or any(type(row) is not _ORIGINAL_ENVELOPE for row in envelopes)
     ):
         raise ObservationFixtureChainRejected("exact bounded fixture chain required")
+    # These caller-supplied labels are encoded into the final digest. Reject
+    # non-UTF-8 surrogate text before iterating potentially private fixture
+    # fields or invoking envelope identity/validation callbacks.
+    try:
+        source_id.encode("utf-8")
+        privacy_scope.encode("utf-8")
+    except UnicodeError as exc:
+        raise ObservationFixtureChainRejected(
+            "fixture chain labels must be valid UTF-8"
+        ) from exc
 
     fields = tuple((
         row.kind, row.source_id, row.adapter_id, row.privacy_scope,
