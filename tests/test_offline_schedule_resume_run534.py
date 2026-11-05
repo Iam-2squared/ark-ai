@@ -170,7 +170,11 @@ def test_final_false_authority_getter_cannot_rewrite_witness(monkeypatch, tmp_pa
         resume.OfflineScheduleResumeReview, "consent_verified",
         property(malicious_false),
     )
-    with pytest.raises(resume.ScheduleResumeRejected, match="witness changed"):
+    # Import-time descriptor custody now denies the forged callback before
+    # it can mutate a constructed result; a late result drift is also rejected.
+    with pytest.raises(
+        resume.ScheduleResumeRejected, match="witness changed|denial descriptor replaced",
+    ):
         _review(ledger, policy, DisconnectedScheduleCursor(0), genesis, 1000)
 
 
