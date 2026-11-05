@@ -44,6 +44,7 @@ def test_existing_receipt_verification_refuses_replaced_field_getter(
 ) -> None:
     store, scope = _fixture(tmp_path)
     receipt = mod.review_memory_expiry_candidates(store, scope, now_ms=1300)
+    retained_digest = receipt.preview_sha256
     invoked: list[str] = []
 
     def poisoned(*_args: object, **_kwargs: object) -> None:
@@ -56,7 +57,7 @@ def test_existing_receipt_verification_refuses_replaced_field_getter(
     with pytest.raises(mod.MemoryExpiryPreviewRejected, match="authority"):
         mod.verify_memory_expiry_preview(
             receipt, store, scope, now_ms=1300, limit=100,
-            retained_preview_sha256=receipt.preview_sha256,
+            retained_preview_sha256=retained_digest,
         )
     assert invoked == []
 
@@ -74,7 +75,7 @@ def test_digest_time_constructor_replacement_is_refused(
         raise AssertionError("substituted receipt initializer executed")
 
     def digest(raw: bytes = b""):
-        if raw.startswith(mod._DOMAIN + b"preview\\0"):
+        if raw.startswith(mod._DOMAIN + b"preview" + bytes((0,))):
             monkeypatch.setattr(mod.MemoryExpiryPreview, "__init__", poisoned)
         return original_digest(raw)
 
