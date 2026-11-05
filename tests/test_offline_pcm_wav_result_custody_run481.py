@@ -69,10 +69,15 @@ def test_original_source_mutation_during_receipt_construction_denied(monkeypatch
     request = _request()
     original = wave._REVIEW_TYPE
 
+    invoked = []
+
     def mutate(*args):
+        invoked.append(True)
         object.__setattr__(request, "privacy_sha256", "f" * 64)
         return original(*args)
 
     monkeypatch.setattr(wave, "OfflineWaveReview", mutate)
-    with pytest.raises(wave.OfflineWaveRejected, match="carrier changed"):
+    with pytest.raises(wave.OfflineWaveRejected, match="constructed WAV"):
         wave.inspect_local_pcm_wav(request)
+    assert invoked == []
+    assert request.privacy_sha256 == "b" * 64
