@@ -90,11 +90,67 @@ _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[name] for name in _DENIAL_NAMES)
 _ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
 _ORIGINAL_HIT_INIT = vars(_HIT_TYPE)["__init__"]
 
+# The exact query and document types are caller-provided and executable under
+# Python reflection even when the dataclasses are frozen. Capture their
+# original slot descriptors before any untrusted query/document field read.
+_QUERY_TYPE = OfflineIndexQuery
+_DOCUMENT_TYPE = OfflineIndexDocument
+_QUERY_FIELDS = (
+    "owner_sha256", "scope_sha256", "query_sha256", "query",
+    "documents", "expected_document_ids", "limit",
+)
+_DOCUMENT_FIELDS = (
+    "document_id", "owner_sha256", "scope_sha256", "text_sha256", "text",
+)
+_INPUT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_QUERY_INIT = vars(_QUERY_TYPE)["__init__"]
+_ORIGINAL_DOCUMENT_INIT = vars(_DOCUMENT_TYPE)["__init__"]
+_ORIGINAL_QUERY_FIELDS = tuple(
+    vars(_QUERY_TYPE)[name] for name in _QUERY_FIELDS
+)
+_ORIGINAL_DOCUMENT_FIELDS = tuple(
+    vars(_DOCUMENT_TYPE)[name] for name in _DOCUMENT_FIELDS
+)
+_ORIGINAL_QUERY_HOOKS = tuple(
+    vars(_QUERY_TYPE).get(name) for name in _INPUT_HOOKS
+)
+_ORIGINAL_DOCUMENT_HOOKS = tuple(
+    vars(_DOCUMENT_TYPE).get(name) for name in _INPUT_HOOKS
+)
+
 
 def _require_original_denials() -> None:
     if (
         OfflineIndexResult is not _RESULT_TYPE
         or OfflineIndexHit is not _HIT_TYPE
+        or OfflineIndexQuery is not _QUERY_TYPE
+        or OfflineIndexDocument is not _DOCUMENT_TYPE
+        or vars(_QUERY_TYPE).get("__init__") is not _ORIGINAL_QUERY_INIT
+        or vars(_DOCUMENT_TYPE).get("__init__") is not _ORIGINAL_DOCUMENT_INIT
+        or any(
+            vars(_QUERY_TYPE).get(name) is not original
+            for name, original in zip(
+                _QUERY_FIELDS, _ORIGINAL_QUERY_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_DOCUMENT_TYPE).get(name) is not original
+            for name, original in zip(
+                _DOCUMENT_FIELDS, _ORIGINAL_DOCUMENT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_QUERY_TYPE).get(name) is not original
+            for name, original in zip(
+                _INPUT_HOOKS, _ORIGINAL_QUERY_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_DOCUMENT_TYPE).get(name) is not original
+            for name, original in zip(
+                _INPUT_HOOKS, _ORIGINAL_DOCUMENT_HOOKS, strict=True,
+            )
+        )
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or vars(_HIT_TYPE).get("__init__") is not _ORIGINAL_HIT_INIT
         or any(
