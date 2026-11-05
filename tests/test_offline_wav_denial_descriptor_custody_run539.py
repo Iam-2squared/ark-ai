@@ -65,7 +65,7 @@ def test_late_false_denial_getter_cannot_rebind_earlier_authority(
         wave.OfflineWaveRejected, match="denial authority descriptors changed",
     ):
         wave.inspect_local_pcm_wav(_fixture())
-    assert read_count == [getter]
+    assert read_count == []  # Forged getter is rejected before any callback.
 
 
 def test_unchanged_denial_descriptors_allow_repeated_passive_review():
