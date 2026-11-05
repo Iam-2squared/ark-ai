@@ -75,6 +75,20 @@ _DENIALS = (
     "tool_dispatch_authorized", "retention_authorized",
 )
 _DENIAL_DESCRIPTORS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIALS)
+_ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
+_ORIGINAL_HIT_INIT = vars(_HIT_TYPE)["__init__"]
+
+
+def _require_original_constructors() -> None:
+    if (
+        OfflineContextSearchPreview is not _RESULT_TYPE
+        or OfflineContextSearchHit is not _HIT_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or vars(_HIT_TYPE).get("__init__") is not _ORIGINAL_HIT_INIT
+    ):
+        raise OfflineContextSearchRejected(
+            "search preview result changed: constructor identity mismatch"
+        )
 
 
 def _require_original_denials() -> None:
@@ -113,6 +127,7 @@ def search_offline_context(
     verifies consent, identity, revocation freshness or storage provenance.
     """
     _require_original_denials()
+    _require_original_constructors()
     if (
         type(fixtures) is not tuple or not 1 <= len(fixtures) <= _MAX_RECORDS
         or any(type(row) is not OfflineContextSearchRecord for row in fixtures)
@@ -142,6 +157,7 @@ def search_offline_context(
 
     def assert_epoch() -> None:
         _require_original_denials()
+        _require_original_constructors()
         if (
             any(now is not before for now, before in zip(
                 (fixtures, owner_digest, allowed_scope_digests, observed_at_ms, query, max_hits),
@@ -214,6 +230,7 @@ def search_offline_context(
     scored.sort(key=lambda item: (-item[0], item[1]))
     assert_epoch()
     selected = tuple(scored[:max_hits])
+    _require_original_constructors()
     hits = tuple(OfflineContextSearchHit(record_id, score, excerpt)
                  for score, record_id, excerpt in selected)
     payload = json.dumps(
@@ -224,7 +241,9 @@ def search_offline_context(
     assert_epoch()
     local_digest = hashlib.sha256(_DOMAIN + payload.encode("utf-8")).hexdigest()
     assert_epoch()
+    _require_original_constructors()
     result = OfflineContextSearchPreview(owner_digest, query, hits, local_digest)
+    _require_original_constructors()
     def assert_result() -> None:
         assert_epoch()
         if (
