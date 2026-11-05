@@ -46,7 +46,21 @@ GitHub evidence available at creation.
 - No connected personal data, live MemoryStore scan, external disclosure,
   consent proof or retention grant.
 
-**Total new authored pytest cases: 26; 3 source+test packages.**
+## D. Startup readiness constructor custody (independent CI lane)
+
+- `src/ark/startup_readiness_review.py` pins original `StartupComponent`
+  initializer/validator, `ComponentResult` initializer, and
+  `StartupSnapshot` initializer before synthetic probe intake, again after
+  every iterator callback, before each validation/result construction, and
+  after a potentially reentrant result-hash callback.
+- `tests/test_startup_constructor_authority_run628.py`: 4 preinstalled
+  constructor/hook attacks, 3 generator-timed constructor swaps, 1 hash-timed
+  snapshot constructor swap, 1 unchanged dependency-blocked state:
+  **9 new authored cases**.
+- Startup READY is still just an untrusted, disconnected probe, never a
+  backend activation permit.
+
+**Total new authored pytest cases: 35; 4 source+test packages.**
 
 ## CI and corrections (do not inflate verification)
 
@@ -64,6 +78,19 @@ GitHub evidence available at creation.
   [CI #41994595408](https://github.com/Iam-2squared/ark-ai/actions/runs/41994595408)
   **IN PROGRESS at initial report write**. All six final HEAD jobs and
   preexisting regressions remain **unverified** until their actual logs complete.
+- Repaired `tests/test_private_search_input_descriptor_custody_run628.py`
+  `__getattr__` fixture setup via `raising=False` in
+  `defc5f7de112b02aaf5ebd282177414a032f1d81`: the absent method is
+  intentionally injected for testing, and Python's monkeypatch refused its
+  creation with the default `raising=True`. The source behavior was already
+  fail-closed; [run #41994595408](https://github.com/Iam-2squared/ark-ai/actions/runs/41994595408)
+  Ubuntu Python 3.11 reported **1 FAIL / 8,810 PASS / 1 SKIP**, exactly this
+  fixture setup error. Repaired source/test
+  [run #41995100643](https://github.com/Iam-2squared/ark-ai/actions/runs/41995100643)
+  still awaits full six-platform confirmation.
+- Startup source `929df9022e8b2d1bd2d0f6d9c9c5eb00c8f3fb60`
+  and independent startup test `db6ba7876f30ed65213dbec18d27b9c1046f8c12`
+  are newer than that CI, and require their own full exact-head verification.
 - Local `git ls-remote` could not resolve github.com; **no local pytest/Ruff
   PASS is claimed**. Github Contents API writes were used, with PR HEAD
   checked before each write; no raw Git object or ref-update bypass.
