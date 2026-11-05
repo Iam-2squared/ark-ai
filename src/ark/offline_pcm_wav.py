@@ -190,8 +190,6 @@ def inspect_local_pcm_wav(request: OfflineWaveRequest) -> OfflineWaveReview:
     # property getter. A getter that returns False can still replace another
     # class property with a later authority-granting implementation.
     _require_original_wave_authority()
-    denied = _DENIAL_NAMES
-    denied_descriptors = _ORIGINAL_DENIALS
     if (
         type(result) is not _REVIEW_TYPE
         or result.owner_sha256 is not owner
