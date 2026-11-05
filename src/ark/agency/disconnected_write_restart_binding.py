@@ -69,7 +69,7 @@ _STEP = OfflineRecoveryStepClaim
 _FENCE = OfflineRecoveryFence
 _REPORT = OfflineWriteRestartReport
 _ORIGINAL_REPORT_INIT = vars(_REPORT)["__init__"]
-_DOMAIN = b"ARK-disconnected-write-restart-binding-v1\\0"
+_DOMAIN = b"ARK-disconnected-write-restart-binding-v1\0"
 
 
 def _assert_original_report_constructor() -> None:
