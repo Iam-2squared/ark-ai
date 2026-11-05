@@ -344,6 +344,41 @@ def run_synthetic_mock_cycle(
     assert_identity_epoch()
     if fault_at == "after_reservation":
         raise SyntheticMockCrashInjected("synthetic stop after reservation")
+    # A post-append receipt is not proof of persistence: snapshot the
+    # existing append tip first, then require precisely one NEW durable row.
+    # Bounded pagination is intentional for disconnected fixtures; reject an
+    # oversized history instead of silently accepting an unchecked prefix.
+    def observed_audit_tip() -> int:
+        last = 0
+        for _ in range(41):
+            page = audit.events(after_event_id=last, limit=1000)
+            assert_identity_epoch()
+            assert_reservation_epoch()
+            if (
+                type(page) is not list
+                or len(page) > 1000
+                or any(
+                    type(event) is not ActionAuditEvent
+                    or type(event.event_id) is not int
+                    or event.event_id != last + index + 1
+                    for index, event in enumerate(page)
+                )
+            ):
+                raise SyntheticMockCycleRejected(
+                    "synthetic audit preflight history changed"
+                )
+            if not page:
+                return last
+            last = page[-1].event_id
+            if len(page) < 1000:
+                return last
+        raise SyntheticMockCycleRejected(
+            "synthetic audit preflight history exceeds local fixture bound"
+        )
+
+    audit_prior_tip = observed_audit_tip()
+    assert_identity_epoch()
+    assert_reservation_epoch()
     audit_event = audit.append(call, outcome="synthetic_audit_before_mock")
     if type(audit_event) is not ActionAuditEvent:
         raise SyntheticMockCycleRejected("exact synthetic audit receipt required")
@@ -388,9 +423,35 @@ def run_synthetic_mock_cycle(
                 "synthetic audit receipt changed between durable phases"
             )
 
+    def assert_durable_audit_epoch() -> None:
+        # Never infer an audit-before-action boundary from an in-memory
+        # append return. A no-op/forged callback or a reused old row must
+        # leave the already-reserved mock WRITE UNKNOWN, not SUCCEEDED.
+        persisted = audit.events(after_event_id=audit_prior_tip, limit=2)
+        assert_identity_epoch()
+        assert_reservation_epoch()
+        assert_audit_epoch()
+        if (
+            type(persisted) is not list
+            or len(persisted) != 1
+            or type(persisted[0]) is not ActionAuditEvent
+            or type(persisted[0].event_id) is not int
+            or persisted[0].event_id != audit_prior_tip + 1
+            or (
+                persisted[0].event_id, persisted[0].request_id,
+                persisted[0].tool, persisted[0].capability,
+                persisted[0].scope, persisted[0].arguments_sha256,
+                persisted[0].outcome, persisted[0].occurred_at_ms,
+            ) != audit_epoch
+        ):
+            raise SyntheticMockCycleRejected(
+                "durable pre-action audit transition not confirmed"
+            )
+
     assert_identity_epoch()
     assert_audit_epoch()
     assert_reservation_epoch()
+    assert_durable_audit_epoch()
     if fault_at == "after_pre_action_audit":
         raise SyntheticMockCrashInjected("synthetic stop after pre-action audit")
     # This is a separately committed local link, never external proof. A
@@ -408,6 +469,7 @@ def run_synthetic_mock_cycle(
     assert_identity_epoch()
     assert_reservation_epoch()
     assert_audit_epoch()
+    assert_durable_audit_epoch()
     # Synthetic marker construction is pure and local: NOT a backend call.
     marker = "mock_" + hashlib.sha256(
         ("ARK-no-action-mock-v1\0" + reservation.occurrence_id
@@ -417,6 +479,7 @@ def run_synthetic_mock_cycle(
     if fault_at == "after_mock_marker":
         raise SyntheticMockCrashInjected("synthetic stop after in-memory mock marker")
     _assert_original_cycle_denials()
+    assert_durable_audit_epoch()
     journal.append(step_id, StepState.SUCCEEDED, expected_revision=1, at_ms=now_ms)
     assert_identity_epoch()
     assert_reservation_epoch()
