@@ -43,10 +43,11 @@ def test_constructor_cannot_replace_original_clock_witness_carrier(
         1, hashlib.sha256(b"offline-source").hexdigest(), 17, 20,
     )
     with pytest.raises(
-        clock.SyntheticClockRejected, match="constructed clock chain link changed",
+        clock.SyntheticClockRejected, match="denial descriptor changed",
     ):
         clock.review_synthetic_clock_sequence((sample,))
-    assert constructed == [1]
+    # A substituted initializer must be rejected BEFORE its first call.
+    assert constructed == []
 
 
 def test_ordinary_constructed_clock_witness_keeps_original_sample_carrier():
