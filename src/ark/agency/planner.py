@@ -311,13 +311,34 @@ class PlanGraph:
             ):
                 raise PlanConflictError("dependent revision exhausted SQLite INTEGER range")
 
+        # Stage every result before publishing any status. A Python-level
+        # replace callback (or a failure while constructing the Nth derived
+        # status) must not commit the first N-1 statuses and strand the plan
+        # with a half-published terminal cascade.
         updated = replace(current, state=to_state, revision=current.revision + 1)
-        self._status[step_id] = updated
+        staged = {step_id: updated}
         for item in descendants:
             status = self._status[item]
-            self._status[item] = replace(
+            staged[item] = replace(
                 status, state=StepState.BLOCKED, revision=status.revision + 1
             )
+        # Staging is still a callback boundary. In particular, a reflected
+        # change to the live plan while constructing a proposed status must
+        # be rejected BEFORE any staged result is published.
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        for item, candidate in staged.items():
+            prior = self._status[item]
+            wanted = to_state if item == step_id else StepState.BLOCKED
+            if (
+                type(candidate) is not PlanStepStatus
+                or candidate.step_id != item
+                or candidate.state is not wanted
+                or type(candidate.revision) is not int
+                or candidate.revision != prior.revision + 1
+            ):
+                raise PlanConflictError("invalid staged plan transition result")
+        self._status.update(staged)
         # Advance the detached state epoch only after all affected statuses
         # have been committed in memory, including a terminal BLOCKED cascade.
         self._status_epoch = self._capture_status_epoch()
