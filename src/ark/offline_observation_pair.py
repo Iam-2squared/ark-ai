@@ -74,13 +74,21 @@ class OfflineObservationPair:
 
 
 _RESULT = OfflineObservationPair
-_ORIGINAL_DENIALS = tuple(getattr(_RESULT, name) for name in _DENIALS)
+_ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
+_ORIGINAL_DENIALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
 
 
 def _original_denials() -> None:
-    if any(
-        getattr(_RESULT, name) is not old
-        for name, old in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+    # Static class-dict inspection never executes an injected __get__. A
+    # forged initializer or a rebound class is equally unauthorized, even
+    # if each returned property still appears to be False.
+    if (
+        OfflineObservationPair is not _RESULT
+        or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(_RESULT).get(name) is not old
+            for name, old in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+        )
     ):
         raise OfflineObservationPairRejected(
             "observation pair authority descriptor replaced"
