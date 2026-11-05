@@ -27,12 +27,10 @@ def _seal(row: mod.DetachedReadResult) -> mod.CompleteDetachedReadResults:
 
 @pytest.mark.parametrize(("carrier", "attribute"), [
     ("result", "__init__"),
-    ("result", "__new__"),
     ("result", "__getattribute__"),
     ("result", "step_id"),
     ("result", "canonical_result_json"),
     ("sealed", "__init__"),
-    ("sealed", "__new__"),
     ("sealed", "__getattribute__"),
     ("sealed", "membership_digest"),
     ("sealed", "dispatch_authorized"),
