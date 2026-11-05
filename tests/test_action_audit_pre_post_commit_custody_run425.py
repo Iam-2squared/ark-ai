@@ -98,7 +98,8 @@ def test_reentrant_receipt_constructor_refuses_clean_postcommit_result(
             elif mutation == "event_scope":
                 object.__setattr__(self, "scope", "retargeted-scope")
             elif mutation == "event_equal_scope":
-                object.__setattr__(self, "scope", _equal_text(object.__getattribute__(self, "scope")))
+                original_scope = object.__getattribute__(self, "scope")
+                object.__setattr__(self, "scope", _equal_text(original_scope))
             elif mutation == "event_outcome":
                 object.__setattr__(self, "outcome", "different-outcome")
             elif mutation == "event_timestamp":
