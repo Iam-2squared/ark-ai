@@ -75,9 +75,56 @@ class SyntheticRetentionInventory:
 _RETENTION_DENIAL_KEYS = (
     "erasure_completed", "deletion_authorized", "context_use_authorized",
 )
+_RETENTION_ITEM_TYPE = SyntheticRetentionItem
+_RETENTION_INVENTORY_TYPE = SyntheticRetentionInventory
 _RETENTION_DENIAL_DESCRIPTORS = tuple(
-    getattr(SyntheticRetentionInventory, key) for key in _RETENTION_DENIAL_KEYS
+    vars(_RETENTION_INVENTORY_TYPE)[key] for key in _RETENTION_DENIAL_KEYS
 )
+_RETENTION_ITEM_FIELDS = ("memory_id", "revision", "state")
+_RETENTION_INVENTORY_FIELDS = (
+    "scope_digest", "inventory_digest", "reviewed_at_ms", "revoked", "items",
+)
+_RETENTION_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_ITEM_DESCRIPTORS = tuple(
+    vars(_RETENTION_ITEM_TYPE).get(name)
+    for name in (*_RETENTION_ITEM_FIELDS, *_RETENTION_HOOKS)
+)
+_ORIGINAL_INVENTORY_DESCRIPTORS = tuple(
+    vars(_RETENTION_INVENTORY_TYPE).get(name)
+    for name in (*_RETENTION_INVENTORY_FIELDS, *_RETENTION_HOOKS)
+)
+
+
+def _require_original_retention_contract() -> None:
+    # Do not invoke a caller-installed False-valued property, executable slot
+    # or constructor while inspecting private Memory or returning its summary.
+    if (
+        SyntheticRetentionItem is not _RETENTION_ITEM_TYPE
+        or SyntheticRetentionInventory is not _RETENTION_INVENTORY_TYPE
+        or any(
+            vars(_RETENTION_ITEM_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_RETENTION_ITEM_FIELDS, *_RETENTION_HOOKS),
+                _ORIGINAL_ITEM_DESCRIPTORS, strict=True,
+            )
+        )
+        or any(
+            vars(_RETENTION_INVENTORY_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_RETENTION_INVENTORY_FIELDS, *_RETENTION_HOOKS),
+                _ORIGINAL_INVENTORY_DESCRIPTORS, strict=True,
+            )
+        )
+        or any(
+            vars(_RETENTION_INVENTORY_TYPE).get(name) is not original
+            for name, original in zip(
+                _RETENTION_DENIAL_KEYS, _RETENTION_DENIAL_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticRetentionRejected(
+            "retention inventory authority denial descriptor changed"
+        )
 
 
 def review_synthetic_retention_inventory(
@@ -103,6 +150,7 @@ def review_synthetic_retention_inventory(
         or type(max_records) is not int or not 1 <= max_records <= 1000
     ):
         raise SyntheticRetentionRejected("exact bounded retention inputs required")
+    _require_original_retention_contract()
     # The FIRST scope hashing callback can be reentrant. Pin the original
     # caller carriers and both independent SQLite sources before invoking it.
     original_owner = scope.owner_id
@@ -202,9 +250,11 @@ def review_synthetic_retention_inventory(
                     state = RetentionState.EXPIRED
                 else:
                     state = RetentionState.NOT_EXPIRED
-                item = SyntheticRetentionItem(
+                _require_original_retention_contract()
+                item = _RETENTION_ITEM_TYPE(
                     record.memory_id, record.revision, state,
                 )
+                _require_original_retention_contract()
                 selected.append(item)
                 item_epoch.append((item, item.memory_id, item.revision, item.state))
                 # Bind hidden row identity without exposing the content or metadata.
@@ -251,13 +301,16 @@ def review_synthetic_retention_inventory(
     # callback edges; neither may silently rebase previously reviewed rows.
     assert_sources()
     assert_item_epoch()
-    result = SyntheticRetentionInventory(
+    _require_original_retention_contract()
+    result = _RETENTION_INVENTORY_TYPE(
         scope_hash, digest, now_ms, revoked, items,
     )
+    _require_original_retention_contract()
     assert_sources()
     assert_item_epoch()
+    _require_original_retention_contract()
     if (
-        type(result) is not SyntheticRetentionInventory
+        type(result) is not _RETENTION_INVENTORY_TYPE
         or result.scope_digest != scope_hash
         or result.inventory_digest != digest
         or result.reviewed_at_ms != now_ms
@@ -275,8 +328,9 @@ def review_synthetic_retention_inventory(
     # its retained items, scope, or source path. Recheck AFTER the final
     # getter without treating this diagnostic as consent or erasure proof.
     def assert_result_fields() -> None:
+        _require_original_retention_contract()
         if (
-            type(result) is not SyntheticRetentionInventory
+            type(result) is not _RETENTION_INVENTORY_TYPE
             or result.scope_digest is not scope_hash
             or result.inventory_digest is not digest
             or result.reviewed_at_ms is not now_ms
@@ -288,16 +342,7 @@ def review_synthetic_retention_inventory(
             )
 
     def assert_denial_descriptors() -> None:
-        if any(
-            getattr(SyntheticRetentionInventory, key) is not original
-            for key, original in zip(
-                _RETENTION_DENIAL_KEYS, _RETENTION_DENIAL_DESCRIPTORS,
-                strict=True,
-            )
-        ):
-            raise SyntheticRetentionRejected(
-                "retention inventory authority descriptor changed"
-            )
+        _require_original_retention_contract()
 
     assert_result_fields()
     assert_sources()
