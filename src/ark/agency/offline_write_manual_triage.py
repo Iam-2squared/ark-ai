@@ -70,6 +70,7 @@ class OfflineWriteTriagePacket:
 
 
 _ITEM_TYPE = OfflineWriteTriageItem
+_ORIGINAL_ITEM_INIT = vars(_ITEM_TYPE)["__init__"]
 _PACKET_TYPE = OfflineWriteTriagePacket
 _RESTART_TYPE = OfflineWriteRestartReport
 _FENCE_TYPE = OfflineRecoveryFence
@@ -101,6 +102,8 @@ def _require_original_denial_descriptors() -> None:
     """Never invoke a replaced False-valued diagnostic authority getter."""
     if (
         OfflineWriteTriagePacket is not _PACKET_TYPE
+        or OfflineWriteTriageItem is not _ITEM_TYPE
+        or vars(_ITEM_TYPE).get("__init__") is not _ORIGINAL_ITEM_INIT
         or OfflineWriteRestartReport is not _RESTART_TYPE
         or OfflineRecoveryFence is not _FENCE_TYPE
         or any(
@@ -264,6 +267,10 @@ def build_offline_write_triage_packet(
             if state in {"RUNNING", "UNKNOWN"}
             else "CLAIMED_OUTCOME_REVIEW_ONLY"
         )
+        # Item initialization can run caller-modified code. Reconfirm the
+        # original constructor immediately before executing it, not only
+        # after constructing the complete operator packet.
+        _require_original_denial_descriptors()
         packet_items.append(_ITEM_TYPE(
             step_id, state, decision.code, reservation, investigation,
         ))
