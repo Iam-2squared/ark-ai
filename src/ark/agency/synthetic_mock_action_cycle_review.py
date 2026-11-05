@@ -277,6 +277,24 @@ def run_synthetic_mock_cycle(
     # happens before any mock marker, and cannot be rolled back across stores.
     journal.append(step_id, StepState.RUNNING, expected_revision=0, at_ms=now_ms)
     assert_identity_epoch()
+    # The journal append is an overridable callback, not proof of a durable
+    # RUNNING state. Reopen and replay the journal before touching the separate
+    # occurrence ledger: a no-op, forged receipt, or immediate terminal drift
+    # must not reserve a one-shot occurrence for a step that is not RUNNING.
+    running = journal.recover(retained=recovery.tail)
+    assert_identity_epoch()
+    running_states = {
+        name: (state, revision)
+        for name, state, revision in running.step_statuses
+    }
+    if (
+        running_states.get(step_id) != (StepState.RUNNING.value, 1)
+        or step_id not in running.ambiguous_running_steps
+        or running.tail.event_count != recovery.tail.event_count + 1
+    ):
+        raise SyntheticMockCycleRejected(
+            "durable RUNNING journal transition not confirmed"
+        )
     if fault_at == "after_running":
         raise SyntheticMockCrashInjected("synthetic stop after RUNNING")
     reservation = ledger.reserve_synthetic(
