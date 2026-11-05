@@ -93,18 +93,30 @@ def test_stale_callback_result_after_sqlite_append_is_rejected(
     assert DisconnectedContextReplayLedger(path).witness().count == 1
 
 
-def test_report_constructor_cannot_hide_intervening_append(tmp_path, monkeypatch):
+def test_comparison_digest_callback_cannot_hide_intervening_append(
+    tmp_path, monkeypatch,
+):
     ledger, retained, path = _setup(tmp_path)
-    original = recovery.OfflineContextRecoveryReview
+    original = recovery.hashlib.sha256
+    injected = []
 
-    def append_during_report(*args):
-        result = original(*args)
-        _append_valid_row(path)
-        return result
+    def append_during_report_digest(value):
+        # Simulate the same late durable append without replacing the now
+        # protected report constructor. The review digest is computed only
+        # after the first independent SQLite tip read.
+        if (
+            type(value) is bytes
+            and value.startswith(recovery._DOMAIN)
+            and not injected
+        ):
+            injected.append("appended")
+            _append_valid_row(path)
+        return original(value)
 
-    monkeypatch.setattr(recovery, "OfflineContextRecoveryReview", append_during_report)
+    monkeypatch.setattr(recovery.hashlib, "sha256", append_during_report_digest)
     with pytest.raises(recovery.OfflineContextRecoveryRejected, match="durable tip"):
         _review(ledger, retained)
+    assert injected == ["appended"]
 
 
 def test_callback_with_legitimate_new_durable_tip_still_unverified(
