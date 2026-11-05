@@ -481,10 +481,28 @@ def run_synthetic_mock_cycle(
     _assert_original_cycle_denials()
     assert_durable_audit_epoch()
     journal.append(step_id, StepState.SUCCEEDED, expected_revision=1, at_ms=now_ms)
+    # An append callback and its returned receipt do not prove the terminal
+    # journal row exists. Reopen the independent SQLite journal and require
+    # precisely one terminal event after the retained RUNNING watermark.
+    # If persistence is missing, changed, or ambiguous, keep the externally
+    # unverified mock WRITE in manual-only/UNKNOWN reconciliation.
+    finished = journal.recover(retained=running.tail)
     assert_identity_epoch()
     assert_reservation_epoch()
     assert_audit_epoch()
     _assert_original_cycle_denials()
+    finished_states = {
+        name: (state, revision)
+        for name, state, revision in finished.step_statuses
+    }
+    if (
+        finished_states.get(step_id) != (StepState.SUCCEEDED.value, 2)
+        or step_id in finished.ambiguous_running_steps
+        or finished.tail.event_count != running.tail.event_count + 1
+    ):
+        raise SyntheticMockCycleRejected(
+            "durable SUCCEEDED journal transition not confirmed"
+        )
     result = _CYCLE_RECEIPT_TYPE(
         step_id, reservation.occurrence_id, audit_event.event_id, marker,
     )
