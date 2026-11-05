@@ -16,7 +16,11 @@ from contextlib import closing
 from dataclasses import dataclass
 
 from .contracts import (
-    MemoryConflictError, MemoryRecord, MemorySchemaError, MemoryScope, MemoryWrite,
+    MemoryConflictError,
+    MemoryRecord,
+    MemorySchemaError,
+    MemoryScope,
+    MemoryWrite,
 )
 from .generation_fenced_cas import (
     _EVENT_DOMAIN,
