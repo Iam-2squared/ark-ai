@@ -312,6 +312,9 @@ def preview_registered_read_plan(
     })
     stable()
     assert_bound_epochs()
+    # The last digest/stability callbacks may replace this class initializer.
+    # Reject before invoking a potentially hostile result constructor.
+    _assert_original_result_denials()
     result = DisconnectedReadPreflight(
         topology, status, revision, grant_fingerprint, entries, bound_ids, fingerprint,
     )
