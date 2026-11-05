@@ -17,6 +17,21 @@ from .contracts import (
 from .registry import BoundAction, ToolRegistry
 
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
+# Reconstructing a grant is validation, but it executes dataclass hooks.
+# Pin the validator at import time so a substituted initializer cannot run
+# merely because an exact pre-existing grant is presented to this gate.
+_GRANT_TYPE = CapabilityGrant
+_ORIGINAL_GRANT_INIT = vars(_GRANT_TYPE)["__init__"]
+_ORIGINAL_GRANT_POST_INIT = vars(_GRANT_TYPE)["__post_init__"]
+
+
+def _require_original_grant_validator() -> None:
+    if (
+        CapabilityGrant is not _GRANT_TYPE
+        or vars(_GRANT_TYPE).get("__init__") is not _ORIGINAL_GRANT_INIT
+        or vars(_GRANT_TYPE).get("__post_init__") is not _ORIGINAL_GRANT_POST_INIT
+    ):
+        raise PermissionDenied("capability grant validator changed")
 # Capture registry class-level interfaces before caller-controlled callbacks.
 # Original identity is checked before and during registered authorization.
 _ORIGINAL_REGISTRY_BIND = vars(ToolRegistry)["bind"]
@@ -366,7 +381,9 @@ class PermissionGate:
                 raise PermissionDenied("capability grant must be an exact value")
             epoch = (grant.capability, grant.scope, grant.expires_at_ms)
             try:
-                CapabilityGrant(*epoch)
+                _require_original_grant_validator()
+                _GRANT_TYPE(*epoch)
+                _require_original_grant_validator()
             except (TypeError, ValueError) as exc:
                 raise PermissionDenied("capability grant identity is invalid") from exc
             grant_epochs.append((grant, epoch))
