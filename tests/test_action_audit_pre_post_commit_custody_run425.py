@@ -84,27 +84,66 @@ def test_reentrant_receipt_constructor_refuses_clean_postcommit_result(
     call = _call()
     original_path = audit.path
     original_tool = call.tool
-    original_init = audit_module.ActionAuditEvent.__init__
+    native_connect = audit._connect
+    native_getattribute = audit_module.ActionAuditEvent.__getattribute__
+    modified = [False]
 
-    def reentrant_init(self, *args, **kwargs):
-        original_init(self, *args, **kwargs)
-        if mutation == "source_path":
-            audit.path = Path(str(audit.path))
-        elif mutation == "caller_equal_tool":
-            object.__setattr__(call, "tool", _equal_text(call.tool))
-        elif mutation == "event_id":
-            object.__setattr__(self, "event_id", self.event_id + 1)
-        elif mutation == "event_scope":
-            object.__setattr__(self, "scope", "retargeted-scope")
-        elif mutation == "event_equal_scope":
-            object.__setattr__(self, "scope", _equal_text(self.scope))
-        elif mutation == "event_outcome":
-            object.__setattr__(self, "outcome", "different-outcome")
-        else:
-            object.__setattr__(self, "occurred_at_ms", self.occurred_at_ms + 1)
+    def read_after_construction(self, name):
+        # Change the newly constructed receipt on its first validation read,
+        # not by replacing its now-protected original initializer.
+        if name == "event_id" and not modified[0]:
+            modified[0] = True
+            if mutation == "event_id":
+                object.__setattr__(self, "event_id", object.__getattribute__(self, "event_id") + 1)
+            elif mutation == "event_scope":
+                object.__setattr__(self, "scope", "retargeted-scope")
+            elif mutation == "event_equal_scope":
+                object.__setattr__(self, "scope", _equal_text(object.__getattribute__(self, "scope")))
+            elif mutation == "event_outcome":
+                object.__setattr__(self, "outcome", "different-outcome")
+            elif mutation == "event_timestamp":
+                object.__setattr__(
+                    self, "occurred_at_ms",
+                    object.__getattribute__(self, "occurred_at_ms") + 1,
+                )
+        return native_getattribute(self, name)
+
+    class AfterActualCommit:
+        def __init__(self, wrapped, patch):
+            self.wrapped = wrapped
+            self.patch = patch
+
+        def __enter__(self):
+            self.wrapped.__enter__()
+            return self
+
+        def __exit__(self, *args):
+            # Native SQLite __exit__ commits first. Inject drift only after
+            # that boundary, while leaving ActionAuditEvent.__init__ intact.
+            result = self.wrapped.__exit__(*args)
+            if args[0] is None:
+                if mutation == "source_path":
+                    audit.path = Path(str(audit.path))
+                elif mutation == "caller_equal_tool":
+                    object.__setattr__(call, "tool", _equal_text(call.tool))
+                else:
+                    self.patch.setattr(
+                        audit_module.ActionAuditEvent, "__getattribute__",
+                        read_after_construction,
+                    )
+            return result
+
+        def close(self):
+            self.wrapped.close()
+
+        def __getattr__(self, name):
+            return getattr(self.wrapped, name)
 
     with monkeypatch.context() as patch:
-        patch.setattr(audit_module.ActionAuditEvent, "__init__", reentrant_init)
+        patch.setattr(
+            audit, "_connect",
+            lambda **kwargs: AfterActualCommit(native_connect(**kwargs), patch),
+        )
         with pytest.raises(ActionAuditSchemaError, match="after commit"):
             audit.append(call, outcome="synthetic_audit_before_mock")
     audit.path = original_path
