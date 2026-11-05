@@ -40,9 +40,13 @@ def test_last_authority_getter_cannot_mutate_returned_preview(monkeypatch):
             object.__setattr__(self, "canonical_local_json", "{}")
         return result
 
-    # A substituted lookup hook is now refused BEFORE it executes; older\n    # postconstruction mutation expectations must not bypass that gate.
+    # A substituted lookup hook is refused before it executes.
+    # Later mutation expectations must not bypass the original guard.
     monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="context preview authority definition changed"):
+    with pytest.raises(
+        mod.OfflineContextPreviewRejected,
+        match="context preview authority definition changed",
+    ):
         _preview(_fixture())
 
 
@@ -58,7 +62,10 @@ def test_last_authority_getter_cannot_mutate_original_record(monkeypatch):
         return result
 
     monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="context preview authority definition changed"):
+    with pytest.raises(
+        mod.OfflineContextPreviewRejected,
+        match="context preview authority definition changed",
+    ):
         _preview(row)
 
 
@@ -72,5 +79,8 @@ def test_last_authority_getter_cannot_mutate_record_ids(monkeypatch):
         return result
 
     monkeypatch.setattr(mod.OfflineContextPreview, "__getattribute__", late_swap)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="context preview authority definition changed"):
+    with pytest.raises(
+        mod.OfflineContextPreviewRejected,
+        match="context preview authority definition changed",
+    ):
         _preview(_fixture())
