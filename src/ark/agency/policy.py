@@ -43,6 +43,12 @@ def _assert_original_call_contract() -> None:
 _GRANT_TYPE = CapabilityGrant
 _ORIGINAL_GRANT_INIT = vars(_GRANT_TYPE)["__init__"]
 _ORIGINAL_GRANT_POST_INIT = vars(_GRANT_TYPE)["__post_init__"]
+_GRANT_FIELDS = ("capability", "scope", "expires_at_ms")
+_ORIGINAL_GRANT_FIELDS = tuple(vars(_GRANT_TYPE)[name] for name in _GRANT_FIELDS)
+_GRANT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_GRANT_HOOKS = tuple(
+    vars(_GRANT_TYPE).get(name) for name in _GRANT_HOOKS
+)
 
 
 def _require_original_grant_validator() -> None:
@@ -50,6 +56,14 @@ def _require_original_grant_validator() -> None:
         CapabilityGrant is not _GRANT_TYPE
         or vars(_GRANT_TYPE).get("__init__") is not _ORIGINAL_GRANT_INIT
         or vars(_GRANT_TYPE).get("__post_init__") is not _ORIGINAL_GRANT_POST_INIT
+        or any(
+            vars(_GRANT_TYPE).get(name) is not original
+            for name, original in zip(_GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS, strict=True)
+        )
+        or any(
+            vars(_GRANT_TYPE).get(name) is not original
+            for name, original in zip(_GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS, strict=True)
+        )
     ):
         raise PermissionDenied("capability grant validator changed")
 # Capture registry class-level interfaces before caller-controlled callbacks.
@@ -160,6 +174,7 @@ class PermissionGate:
             original_grants = []
 
             def ensure_grant_epoch() -> None:
+                _require_original_grant_validator()
                 # Separate grant custody from registry rebinding so a
                 # registry-drift error keeps its established diagnostic at
                 # the under-lock admission boundary.
@@ -358,6 +373,7 @@ class PermissionGate:
 
         def assert_iteration_epoch() -> None:
             _assert_original_call_contract()
+            _require_original_grant_validator()
             # A generator can temporarily retarget a previously yielded
             # grant, the action, or a WRITE token, then restore it before
             # StopIteration. The final-only check would miss that intermediate
@@ -403,6 +419,9 @@ class PermissionGate:
                 raise PermissionDenied("capability grant budget exceeded")
             if type(grant) is not CapabilityGrant:
                 raise PermissionDenied("capability grant must be an exact value")
+            # A forged frozen-dataclass slot/property can execute before the
+            # later _GRANT_TYPE(*epoch) validation. Refuse it first.
+            _require_original_grant_validator()
             epoch = (grant.capability, grant.scope, grant.expires_at_ms)
             try:
                 _require_original_grant_validator()
@@ -456,6 +475,7 @@ class PermissionGate:
             # reflected mutation during contention must not spend a token.
             with self._token_lock:
                 _assert_original_call_contract()
+                _require_original_grant_validator()
                 # The lock may be contended after grant enumeration and the
                 # earlier epoch check. Revalidate every policy input before
                 # irreversibly spending a process-local token, not just the
