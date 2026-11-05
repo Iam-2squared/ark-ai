@@ -73,35 +73,35 @@ def test_earlier_decision_modified_by_later_constructor_is_rejected(monkeypatch)
 
 @pytest.mark.parametrize("replacement", ["QUARANTINE_UNCERTAIN", "equal_value_copy"])
 def test_decision_changed_during_digest_is_rejected(monkeypatch, replacement):
-    old = recovery.ReadRecoveryDecision
+    # Capture genuine decisions through a read hook. Replacing the class with
+    # a factory is now rejected before constructing even the first decision.
+    original_getattribute = recovery.ReadRecoveryDecision.__getattribute__
     old_hash = recovery.hashlib.sha256
     created = []
 
-    def collect(name, code):
-        item = old(name, code)
-        created.append(item)
-        return item
+    def remember(self, name):
+        if name == "step_id" and all(row is not self for row in created):
+            created.append(self)
+        return original_getattribute(self, name)
 
     def change_then_hash(payload):
+        assert len(created) == 2
         previous = created[0].disposition
         changed = (
-            previous.encode("ascii").decode("ascii")
+            ("!" + previous)[1:]
             if replacement == "equal_value_copy" else replacement
         )
         assert changed is not previous
         object.__setattr__(created[0], "disposition", changed)
         return old_hash(payload)
 
-    monkeypatch.setattr(recovery, "ReadRecoveryDecision", collect)
+    monkeypatch.setattr(
+        recovery.ReadRecoveryDecision, "__getattribute__", remember,
+    )
     monkeypatch.setattr(recovery.hashlib, "sha256", change_then_hash)
-    with pytest.raises(
-        recovery.DetachedReadRecoveryRejected, match="authority descriptor changed",
-    ):
+    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
         _review()
-    # The substituted constructor is rejected before any SHA callback can
-    # obtain an injected decision. The original nested-carrier tests below
-    # retain coverage of postconstruction mutation through genuine getters.
-    assert created == []
+    assert len(created) == 2
 
 
 def test_result_constructor_cannot_rewrite_nested_decision(monkeypatch):
