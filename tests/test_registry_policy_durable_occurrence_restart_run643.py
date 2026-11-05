@@ -49,7 +49,9 @@ def _fixture(tmp_path):
     return registry, call, grant, token, ledger, occurrence, path, backend
 
 
-@pytest.mark.parametrize("replay_subject", ("same_token_new_occurrence", "new_token_same_occurrence"))
+@pytest.mark.parametrize(
+    "replay_subject", ("same_token_new_occurrence", "new_token_same_occurrence"),
+)
 def test_restart_fresh_local_gate_cannot_replay_sqlite_reservation(
     tmp_path, replay_subject,
 ):
