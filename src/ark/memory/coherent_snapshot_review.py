@@ -54,6 +54,18 @@ class CoherentSnapshotRequest:
             raise ValueError("per_namespace_limit must be an exact integer 1..100")
         if type(self.include_expired) is not bool:
             raise TypeError("include_expired must be an exact boolean")
+        # Reject ill-formed Unicode before opening Memory or reading private
+        # rows. Otherwise a lone surrogate can survive tokenization and fail
+        # much later in the query digest after a full SQLite snapshot scan.
+        try:
+            self.owner_id.encode("utf-8", errors="strict")
+            self.text.encode("utf-8", errors="strict")
+            for namespace in self.namespaces:
+                namespace.encode("utf-8", errors="strict")
+        except UnicodeError as exc:
+            raise ValueError(
+                "snapshot request text must be UTF-8 encodable"
+            ) from exc
 
 
 @dataclass(frozen=True, slots=True)
