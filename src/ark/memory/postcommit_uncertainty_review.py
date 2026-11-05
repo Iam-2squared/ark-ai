@@ -69,6 +69,7 @@ class MemoryCommitTriage:
 
 
 _REPORT = MemoryCommitTriage
+_ORIGINAL_REPORT_INIT = vars(_REPORT)["__init__"]
 _ORIGINAL_DENIALS = tuple(vars(_REPORT)[name] for name in _DENIALS)
 
 
@@ -137,6 +138,8 @@ def review_uncertain_memory_commit(
                     _token_fields(retained_before), before, strict=True,
                 )
             )
+            or MemoryCommitTriage is not _REPORT
+            or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
             or any(
                 vars(_REPORT).get(name) is not original
                 for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
@@ -226,7 +229,13 @@ def review_uncertain_memory_commit(
     payload = (
         memory_id, before[2], after[2], before[4], after[4], disposition,
     )
-    report = _REPORT(*payload, _digest(_DOMAIN, payload))
+    # A close hook or report-digest callback can install executable code
+    # into the result constructor after the last in-transaction check.
+    # Refuse before invoking it, even for a False-only report.
+    report_digest = _digest(_DOMAIN, payload)
+    stable()
+    report = _REPORT(*payload, report_digest)
+    stable()
     fields = (*payload, report.report_sha256)
 
     def stable_report() -> None:
