@@ -23,9 +23,17 @@
 
 **Tests:** `tests/test_private_context_retained_report_epoch_run634.py`, commit `fad16d409c04246eea640265fea5bb235c39145b`, Blob `439e685db29459940eda5e640d9900d6e33f8002`. Three authored cases: hash-time repair of a previously forged digest, equal-valued replacement of record-ID tuple, and unchanged local-only verification.
 
+## 3. Coherent Memory snapshot validates UTF-8 before private SQLite reads
+
+**Why:** a lone surrogate in a valid-looking Python `str` can pass the previous bounded request validator and then fail at UTF-8 query-digest encoding **after** scanning Memory rows. Reject malformed owner, namespace, or query text at the request boundary.
+
+**Change:** `src/ark/memory/coherent_snapshot_review.py`, commit `b120a967a1b2496a859dfbbaab2c9c63c1b6d3f0`, Blob `19b078638d2950cd19ec028115ce57a2768c708f`. Strict UTF-8 encoding validation in the **nonfrozen coherent-snapshot request only**, no Memory v1 schema or contract changes. No database access from request validation.
+
+**Tests:** `tests/test_coherent_memory_utf8_inputs_run634.py`, commit `45b7b0a686551aa797d6a779e9be4dc684546695`; three invalid surrogate positions and one valid Japanese/Arabic multilingual request. Four authored cases; no local PASS claim.
+
 ## Evidence and boundaries
 
-- Latest authored source/test HEAD before this document: `fad16d409c04246eea640265fea5bb235c39145b`. The exact source/test CI [#42030554587](https://github.com/Iam-2squared/ark-ai/actions/runs/42030554587) was **IN PROGRESS** at the last recorded check: Ubuntu Python 3.11 GREEN; five other jobs not yet completed. No 6/6 GREEN claim.
+- Latest source/test HEAD before this report update: `45b7b0a686551aa797d6a779e9be4dc684546695`. The exact source/test CI [#42030554587](https://github.com/Iam-2squared/ark-ai/actions/runs/42030554587) was **IN PROGRESS** at the last recorded check: Ubuntu Python 3.11 GREEN; five other jobs not yet completed. No 6/6 GREEN claim.
 - The two work packages are independent: the private-context changes did not touch the mock action cycle's code or its running CI path.
 - No UI/frontend changes; PR #9 stays untouched. PR #5 remains Draft/unmerged. No frozen V1/V2/Local UI/Launcher or V3 Contract 1 edits; no main merge, physical-PC actions, real ToolBackend, actual side-effect attestation, user consent, export, retention grant, authenticated clock, cross-database atomicity, paid API/GPU/compute, candidate training, promotion or protected final evaluation.
 - **Not a JARVIS PASS.** SQLite re-read can improve local persistence diagnosis but cannot prove external exactly-once delivery, authenticated identity, or user permission. UNKNOWN WRITE/COMMIT remains manual-only; never auto-retry.
