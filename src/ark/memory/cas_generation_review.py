@@ -55,6 +55,55 @@ class MemoryGenerationReview:
         return False
 
 
+# This optional report is constructed after private SQLite reads. Keep the
+# import-original Python constructor/field hooks and False-only authority
+# properties pinned across reentrant row hydration and hashing callbacks.
+_REPORT_TYPE = MemoryGenerationReview
+_ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
+_REPORT_FIELDS = (
+    "memory_id", "event_count", "generation_count", "live_revision",
+    "expected_revision", "revision_reuse_possible", "retained_history_sha256",
+)
+_ORIGINAL_REPORT_FIELDS = tuple(
+    vars(_REPORT_TYPE)[name] for name in _REPORT_FIELDS
+)
+_REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_HOOKS = tuple(
+    vars(_REPORT_TYPE).get(name) for name in _REPORT_HOOKS
+)
+_ORIGINAL_REPORT_DENIALS = tuple(
+    vars(_REPORT_TYPE)[name] for name in _FLAGS
+)
+
+
+def _require_original_report() -> None:
+    if (
+        MemoryGenerationReview is not _REPORT_TYPE
+        or vars(_REPORT_TYPE).get("__init__") is not _ORIGINAL_REPORT_INIT
+        or any(
+            vars(_REPORT_TYPE).get(name) is not original
+            for name, original in zip(
+                _REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT_TYPE).get(name) is not original
+            for name, original in zip(
+                _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT_TYPE).get(name) is not original
+            for name, original in zip(
+                _FLAGS, _ORIGINAL_REPORT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise MemoryGenerationReviewRejected(
+            "Memory generation report constructor or authority changed"
+        )
+
+
 def review_memory_revision_reuse(
     store: SQLiteMemoryStore,
     scope: MemoryScope,
@@ -78,12 +127,14 @@ def review_memory_revision_reuse(
         or not 0 <= expected_revision <= SQLITE_INT_MAX
     ):
         raise MemoryGenerationReviewRejected("exact bounded Memory generation inputs required")
+    _require_original_report()
     owner, namespace = scope.owner_id, scope.namespace
     path = store.path
     memory_id = deterministic_memory_id(scope, source_id)
     original = (scope, scope.owner_id, scope.namespace, source_id, path)
 
     def stable() -> None:
+        _require_original_report()
         if (
             type(store) is not SQLiteMemoryStore
             or type(scope) is not MemoryScope
@@ -213,7 +264,8 @@ def review_memory_revision_reuse(
         ).encode("ascii")
     ).hexdigest()
     live = None if record is None else record.revision
-    result = MemoryGenerationReview(
+    _require_original_report()
+    result = _REPORT_TYPE(
         memory_id, len(seen), generations, live, expected_revision,
         generations > 1 and live == expected_revision, fingerprint,
     )
@@ -223,8 +275,9 @@ def review_memory_revision_reuse(
     )
 
     def stable_result() -> None:
+        _require_original_report()
         if (
-            type(result) is not MemoryGenerationReview
+            type(result) is not _REPORT_TYPE
             or any(
                 current is not original
                 for current, original in zip(
@@ -244,4 +297,5 @@ def review_memory_revision_reuse(
             raise MemoryGenerationReviewRejected("Memory generation report gained authority")
         stable_result()
         stable()
+    stable_result()
     return result
