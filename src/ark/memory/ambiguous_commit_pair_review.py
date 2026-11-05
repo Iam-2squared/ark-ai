@@ -82,6 +82,32 @@ _DENIALS = (
 )
 _ORIGINALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
 
+# Each supposedly frozen, slotted receipt remains reflectively patchable at
+# class level. Check the original field descriptors and lookup/constructor
+# hooks without accessing them: forged descriptors can execute on first read,
+# before downstream digest and False-only authority checks.
+_RESULT_FIELDS = (
+    "disposition", "retained_prefix_sha256", "observed_prefix_sha256",
+    "observed_row_sha256", "triage_receipt_sha256",
+    "outcome_receipt_sha256", "reconciliation_sha256",
+)
+_TRIAGE_FIELDS = (
+    "memory_id", "retained_event_id", "observed_event_id",
+    "retained_prefix_sha256", "observed_prefix_sha256",
+    "disposition", "report_sha256",
+)
+_OUTCOME_FIELDS = (
+    "observation", "retained_prefix_sha256", "observed_prefix_sha256",
+    "observed_row_sha256", "expected_content_sha256", "review_sha256",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_TRIAGE_FIELDS = tuple(vars(_TRIAGE)[name] for name in _TRIAGE_FIELDS)
+_ORIGINAL_OUTCOME_FIELDS = tuple(vars(_OUTCOME)[name] for name in _OUTCOME_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _CARRIER_HOOKS)
+_ORIGINAL_TRIAGE_HOOKS = tuple(vars(_TRIAGE).get(name) for name in _CARRIER_HOOKS)
+_ORIGINAL_OUTCOME_HOOKS = tuple(vars(_OUTCOME).get(name) for name in _CARRIER_HOOKS)
+
 
 def _require_original_review_carriers() -> None:
     # Class descriptors are executable code when accessed through getattr.
@@ -91,6 +117,24 @@ def _require_original_review_carriers() -> None:
         or outcome_module.MemoryCASOutcomeReview is not _OUTCOME
         or MemoryAmbiguityPair is not _RESULT
         or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_RESULT, _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_TRIAGE, _TRIAGE_FIELDS, _ORIGINAL_TRIAGE_FIELDS),
+                (_OUTCOME, _OUTCOME_FIELDS, _ORIGINAL_OUTCOME_FIELDS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            vars(cls).get(name) is not original
+            for cls, originals in (
+                (_RESULT, _ORIGINAL_RESULT_HOOKS),
+                (_TRIAGE, _ORIGINAL_TRIAGE_HOOKS),
+                (_OUTCOME, _ORIGINAL_OUTCOME_HOOKS),
+            )
+            for name, original in zip(_CARRIER_HOOKS, originals, strict=True)
+        )
         or any(
             vars(_TRIAGE).get(name) is not old
             for name, old in zip(_TRIAGE_DENIALS, _TRIAGE_ORIGINALS, strict=True)
