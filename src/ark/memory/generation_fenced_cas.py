@@ -66,6 +66,7 @@ class MemoryGenerationCASToken:
 # preinstalled False-returning replacement as the trusted baseline.
 _TOKEN_DENIALS = ("external_action_authorized", "consent_authenticated")
 _TOKEN_TYPE = MemoryGenerationCASToken
+_ORIGINAL_TOKEN_INIT = vars(_TOKEN_TYPE)["__init__"]
 _ORIGINAL_TOKEN_DENIALS = tuple(
     vars(_TOKEN_TYPE)[name] for name in _TOKEN_DENIALS
 )
@@ -74,6 +75,7 @@ _ORIGINAL_TOKEN_DENIALS = tuple(
 def _require_original_token_denials() -> None:
     if (
         MemoryGenerationCASToken is not _TOKEN_TYPE
+        or vars(_TOKEN_TYPE).get("__init__") is not _ORIGINAL_TOKEN_INIT
         or any(
             vars(_TOKEN_TYPE).get(name) is not original
             for name, original in zip(
@@ -225,10 +227,15 @@ def _snapshot(
         or updated_at != record.updated_at_ms
     ):
         raise MemoryGenerationCASRejected("Memory generation row/event mismatch")
-    result = MemoryGenerationCASToken(
-        memory_id, create_id, previous_id, rev,
-        _digest(_EVENT_DOMAIN, exact_events), _row_hash(record),
+    # Both digest computations may invoke synthetic reentrant hooks. Do
+    # not execute a substituted dataclass constructor after those callbacks.
+    event_digest = _digest(_EVENT_DOMAIN, exact_events)
+    row_digest = _row_hash(record)
+    _require_original_token_denials()
+    result = _TOKEN_TYPE(
+        memory_id, create_id, previous_id, rev, event_digest, row_digest,
     )
+    _require_original_token_denials()
     _token_fields(result)
     return record, result
 
