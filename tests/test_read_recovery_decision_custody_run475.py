@@ -36,14 +36,20 @@ def test_unmodified_recovery_remains_inert_and_deterministic():
 
 
 def test_forged_first_decision_is_rejected(monkeypatch):
-    monkeypatch.setattr(
-        recovery, "ReadRecoveryDecision",
-        lambda name, code: SimpleNamespace(
+    invoked = []
+
+    def forged(name, code):
+        invoked.append((name, code))
+        return SimpleNamespace(
             step_id=name, disposition=code, dispatch_authorized=True,
-        ),
-    )
-    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
+        )
+
+    monkeypatch.setattr(recovery, "ReadRecoveryDecision", forged)
+    with pytest.raises(
+        recovery.DetachedReadRecoveryRejected, match="authority descriptor changed",
+    ):
         _review()
+    assert invoked == []
 
 
 def test_earlier_decision_modified_by_later_constructor_is_rejected(monkeypatch):
@@ -58,8 +64,11 @@ def test_earlier_decision_modified_by_later_constructor_is_rejected(monkeypatch)
         return item
 
     monkeypatch.setattr(recovery, "ReadRecoveryDecision", forged)
-    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
+    with pytest.raises(
+        recovery.DetachedReadRecoveryRejected, match="authority descriptor changed",
+    ):
         _review()
+    assert created == []
 
 
 @pytest.mark.parametrize("replacement", ["QUARANTINE_UNCERTAIN", "equal_value_copy"])
@@ -85,8 +94,14 @@ def test_decision_changed_during_digest_is_rejected(monkeypatch, replacement):
 
     monkeypatch.setattr(recovery, "ReadRecoveryDecision", collect)
     monkeypatch.setattr(recovery.hashlib, "sha256", change_then_hash)
-    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
+    with pytest.raises(
+        recovery.DetachedReadRecoveryRejected, match="authority descriptor changed",
+    ):
         _review()
+    # The substituted constructor is rejected before any SHA callback can
+    # obtain an injected decision. The original nested-carrier tests below
+    # retain coverage of postconstruction mutation through genuine getters.
+    assert created == []
 
 
 def test_result_constructor_cannot_rewrite_nested_decision(monkeypatch):
