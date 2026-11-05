@@ -56,7 +56,8 @@ def test_constructor_cannot_replace_validated_chain_result_carrier(
         object.__setattr__(self, field, replacement)
 
     monkeypatch.setattr(result_type, "__init__", altered)
-    with pytest.raises(module.ObservationFixtureChainRejected, match="result changed"):
+    # Original constructor identity is pinned before any caller hook can run.
+    with pytest.raises(module.ObservationFixtureChainRejected, match="implementation changed"):
         _review()
 
 
