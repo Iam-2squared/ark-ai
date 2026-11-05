@@ -74,7 +74,26 @@ _DENIAL_NAMES = (
 # Resolve class properties without running a descriptor's __get__.  A
 # replacement can return the original property when accessed on the class,
 # while doing arbitrary work if the descriptor is invoked.
+_SAMPLE_TYPE = SyntheticClockSample
 _WITNESS_TYPE = SyntheticClockWitness
+_SAMPLE_FIELDS = ("seq", "source_digest", "wall_ms", "monotonic_ns")
+_WITNESS_FIELDS = (
+    "event_count", "source_digest", "last_wall_ms",
+    "last_monotonic_ns", "chain_hash",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SAMPLE_FIELDS = tuple(
+    vars(_SAMPLE_TYPE)[name] for name in _SAMPLE_FIELDS
+)
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_SAMPLE_HOOKS = tuple(
+    vars(_SAMPLE_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 _ORIGINAL_DENIALS = tuple(
     vars(_WITNESS_TYPE)[name] for name in _DENIAL_NAMES
 )
@@ -83,6 +102,31 @@ _ORIGINAL_DENIALS = tuple(
 def _denials_original() -> None:
     if (
         SyntheticClockWitness is not _WITNESS_TYPE
+        or SyntheticClockSample is not _SAMPLE_TYPE
+        or any(
+            vars(_SAMPLE_TYPE).get(name) is not original
+            for name, original in zip(
+                _SAMPLE_FIELDS, _ORIGINAL_SAMPLE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_SAMPLE_TYPE).get(name) is not original
+            for name, original in zip(
+                _CARRIER_HOOKS, _ORIGINAL_SAMPLE_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_WITNESS_TYPE).get(name) is not original
             for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
@@ -92,6 +136,7 @@ def _denials_original() -> None:
 
 
 def _fields(value: SyntheticClockWitness) -> tuple[object, ...]:
+    _denials_original()
     return (
         value.event_count, value.source_digest, value.last_wall_ms,
         value.last_monotonic_ns, value.chain_hash,
@@ -197,6 +242,7 @@ def review_synthetic_clock_sequence(
             _denials_original()
 
     def assert_epoch() -> None:
+        _denials_original()
         if retained is not None and (
             _fields(retained) != retained_epoch
             or any(
@@ -271,6 +317,7 @@ def review_synthetic_clock_sequence(
                 raise SyntheticClockRejected("prior clock chain link changed")
             if type(next_hash) is not str or not _CHAIN.fullmatch(next_hash):
                 raise SyntheticClockRejected("invalid synthetic clock event digest")
+            _denials_original()
             candidate = SyntheticClockWitness(seq, source, wall, mono, next_hash)
             assert_epoch()
             if (
