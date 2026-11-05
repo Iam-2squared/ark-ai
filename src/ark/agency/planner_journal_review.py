@@ -237,6 +237,11 @@ def _checked_snapshot(
     )
     _require_original_recovery_denials()
     result = _snapshot(graph, tail)
+    # _snapshot may be a substituted/reentrant test callback. It can rewrite
+    # a recovery field slot or lookup hook AFTER our pre-call check; reading
+    # result.tail below would execute that forged descriptor before denial.
+    # Fail closed at the callback boundary, before ANY result field access.
+    _require_original_recovery_denials()
     carriers = (
         (result.tail, result.step_statuses, result.ambiguous_running_steps)
         if type(result) is _RECOVERY_RESULT_TYPE else None
