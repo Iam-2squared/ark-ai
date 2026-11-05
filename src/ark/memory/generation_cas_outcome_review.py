@@ -15,12 +15,15 @@ import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 
-from .contracts import MemoryConflictError, MemorySchemaError, MemoryScope, MemoryWrite
+from .contracts import (
+    MemoryConflictError, MemoryRecord, MemorySchemaError, MemoryScope, MemoryWrite,
+)
 from .generation_fenced_cas import (
     _EVENT_DOMAIN,
     _MAX_EVENTS,
     MemoryGenerationCASToken,
     _digest,
+    _row_hash,
     _snapshot,
     _token_fields,
 )
@@ -213,25 +216,53 @@ def review_memory_generation_cas_outcome(
         record.content_sha256,
     )
 
+    # Capture row and nested scope identity, not merely its current values.
+    # A synthetic second _snapshot callback can mutate the FIRST returned
+    # record after its token hash is calculated, even when token snapshots
+    # still agree. Never classify a forged row as an update.
+    record_scope = record.scope
+    record_scope_epoch = (record_scope.owner_id, record_scope.namespace)
+
+    def intact_record() -> bool:
+        return (
+            type(record) is MemoryRecord
+            and type(record.scope) is MemoryScope
+            and record.scope is record_scope
+            and record_scope.owner_id is record_scope_epoch[0]
+            and record_scope.namespace is record_scope_epoch[1]
+            and all(now is old for now, old in zip(
+                (
+                    record.memory_id, record.scope, record.source_id,
+                    record.content, record.metadata, record.created_at_ms,
+                    record.updated_at_ms, record.expires_at_ms, record.revision,
+                    record.content_sha256,
+                ),
+                (
+                    record_epoch[0], record_epoch[1], record_epoch[2],
+                    record_epoch[3], record_epoch[4], record_epoch[6],
+                    record_epoch[7], record_epoch[8], record_epoch[9],
+                    record_epoch[10],
+                ), strict=True,
+            ))
+            and dict(record.metadata) == record_epoch[5]
+        )
+
     def stable_observation() -> None:
         if (
             type(observed) is not MemoryGenerationCASToken
             or any(now is not old for now, old in zip(
                 _token_fields(observed), observed_epoch, strict=True,
             ))
-            or any(now is not old for now, old in zip((
-                record.memory_id, record.scope, record.source_id, record.content,
-                record.metadata, record.created_at_ms, record.updated_at_ms,
-                record.expires_at_ms, record.revision, record.content_sha256,
-            ), (
-                record_epoch[0], record_epoch[1], record_epoch[2],
-                record_epoch[3], record_epoch[4], record_epoch[6],
-                record_epoch[7], record_epoch[8], record_epoch[9],
-                record_epoch[10],
-            ), strict=True))
-            or dict(record.metadata) != record_epoch[5]
+            or not intact_record()
         ):
             raise MemoryCASOutcomeRejected("CAS observed row or event token changed")
+        stable()
+        # The observed row fingerprint was computed inside _snapshot. Rehash
+        # the returned object and bracket this callback with identity checks:
+        # a second synthetic snapshot or reentrant hash can otherwise rewrite
+        # content/metadata after that fingerprint was recorded.
+        if _row_hash(record) != observed.row_sha256 or not intact_record():
+            raise MemoryCASOutcomeRejected("CAS observed row image no longer matches token")
         stable()
 
     stable_observation()
