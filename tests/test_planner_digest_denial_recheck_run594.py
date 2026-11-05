@@ -24,6 +24,8 @@ def test_status_digest_cannot_rebind_false_denial_after_last_getter(
         tmp_path / "replay-denial-epoch.sqlite", _steps(),
     )
     baseline = journal.recover()
+    # Capture caller-owned fixture input BEFORE substituting the result lookup hook.
+    retained_tail = baseline.tail
     receipt_type = journal_mod.SyntheticPlanRecovery
     original_getattribute = receipt_type.__getattribute__
     original_digest = PlanGraph.status_digest
@@ -60,7 +62,7 @@ def test_status_digest_cannot_rebind_false_denial_after_last_getter(
                 journal.append(
                     "root", StepState.RUNNING,
                     expected_revision=0, at_ms=1,
-                    retained=baseline.tail,
+                    retained=retained_tail,
                 )
 
     # Import-original descriptor custody now denies the forged attribute
