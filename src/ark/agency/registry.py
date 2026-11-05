@@ -82,6 +82,17 @@ class BoundAction:
 
 _BOUND_TYPE = BoundAction
 _ORIGINAL_BOUND_INIT = vars(_BOUND_TYPE)["__init__"]
+# Binding a frozen dataclass still reads its slots after construction.
+# Replaced class descriptors/getters could execute caller-supplied code
+# before the returned identity is verified. Pin them at module import.
+_BOUND_FIELDS = ("registry_revision", "call", "registration", "bound_action_id")
+_BOUND_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_BOUND_FIELDS = tuple(
+    vars(_BOUND_TYPE)[name] for name in _BOUND_FIELDS
+)
+_ORIGINAL_BOUND_HOOKS = tuple(
+    vars(_BOUND_TYPE).get(name) for name in _BOUND_HOOKS
+)
 _TOOL_CALL_TYPE = ToolCall
 _TOOL_CALL_ORIGINALS = (
     "__init__", "__post_init__", "request_id", "arguments_sha256",
@@ -114,6 +125,18 @@ def _require_original_bound_constructor() -> None:
     if (
         BoundAction is not _BOUND_TYPE
         or vars(_BOUND_TYPE).get("__init__") is not _ORIGINAL_BOUND_INIT
+        or any(
+            vars(_BOUND_TYPE).get(name) is not original
+            for name, original in zip(
+                _BOUND_FIELDS, _ORIGINAL_BOUND_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_BOUND_TYPE).get(name) is not original
+            for name, original in zip(
+                _BOUND_HOOKS, _ORIGINAL_BOUND_HOOKS, strict=True,
+            )
+        )
     ):
         raise ValueError("registry bound result constructor changed")
 
