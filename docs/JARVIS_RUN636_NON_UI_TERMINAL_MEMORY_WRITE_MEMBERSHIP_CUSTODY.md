@@ -28,9 +28,15 @@
 - `tests/test_expected_write_membership_witness_hooks_run636.py`, commit `0d8b85a7fff1d301ea2d7fb37638e82150582483`, **6 authored cases**.
 - Pin original detached witness initializer, field slots, getter/constructor hooks and three denial descriptors before any retained field access, after reentrant digest callbacks and before witness construction. The locally claimed expected WRITE set remains independent of a recovered bundle; an untrusted digest does not certify completeness or authorize a replay.
 
+## Package D — disconnected trusted-authority-gap result guards
+
+- `src/ark/agency/synthetic_authority_boundary_review.py`, commit `4838db03331152667a8ca019d1b623d458b85ace`, blob `4f48f831b00e19ddc50e573210ccdba399a06faf`.
+- `tests/test_synthetic_authority_original_hooks_run636.py`, commit `d1be7d46371b8ba45d756b985ff15f4ff290d746`, **7 authored cases**.
+- Keep import-original claim, observation and denial-only report constructors, slots, reflection hooks and False properties unchanged from first input access through hash/JSON callbacks and result construction. A forged claim getter, human-consent field, report constructor or authority property is rejected *without executing* the counterfeit hook. These caller claims remain unauthenticated; no real grant, trusted clock or external dispatch is implied.
+
 ## CI evidence and limitations
 
-- **16 test cases authored**, not 16 locally executed passes. Latest new source/test CI runs were [#42048422928](https://github.com/Iam-2squared/ark-ai/actions/runs/42048422928) (terminal test), [#42048768658](https://github.com/Iam-2squared/ark-ai/actions/runs/42048768658) (Memory), [#42049042646](https://github.com/Iam-2squared/ark-ai/actions/runs/42049042646) (membership). All **IN_PROGRESS/QUEUED as last read**; latest exact-head all-six GREEN is **not yet asserted**. No duplicate equivalent workflow dispatch.
+- **23 test cases authored**, not 16 locally executed passes. New source/test CI runs were [#42048422928](https://github.com/Iam-2squared/ark-ai/actions/runs/42048422928) (terminal test), [#42048768658](https://github.com/Iam-2squared/ark-ai/actions/runs/42048768658) (Memory), [#42049042646](https://github.com/Iam-2squared/ark-ai/actions/runs/42049042646) (membership), plus the authority-gap package on the latest source/test HEAD. The first three were **IN_PROGRESS** at last read; the latest exact-head all-six GREEN remains **unconfirmed**; latest exact-head all-six GREEN is **not yet asserted**. No duplicate equivalent workflow dispatch.
 - Evidence is synthetic, local SQLite/metadata-only; neither an audit record nor a mock success authenticates a real action, clock, consent, legal provenance or underlying hardware. Separate SQLite stores lack cross-database atomicity. COMMIT-UNKNOWN must remain quarantined and manually reconciled.
 - Zero paid/external GPU compute, model APIs, new secrets/connections, protected V2 final evaluation, real Candidate/adapter/weights, actual tool dispatch, device capture, external disclosure, destructive operations or main merge. The complete ARK/JARVIS/V3 target remains **NOT_PASSED**.
 
