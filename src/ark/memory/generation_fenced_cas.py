@@ -67,6 +67,17 @@ class MemoryGenerationCASToken:
 _TOKEN_DENIALS = ("external_action_authorized", "consent_authenticated")
 _TOKEN_TYPE = MemoryGenerationCASToken
 _ORIGINAL_TOKEN_INIT = vars(_TOKEN_TYPE)["__init__"]
+_TOKEN_FIELDS = (
+    "memory_id", "create_event_id", "last_event_id", "revision",
+    "event_prefix_sha256", "row_sha256",
+)
+_ORIGINAL_TOKEN_FIELDS = tuple(
+    vars(_TOKEN_TYPE)[name] for name in _TOKEN_FIELDS
+)
+_TOKEN_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_TOKEN_HOOKS = tuple(
+    vars(_TOKEN_TYPE).get(name) for name in _TOKEN_HOOKS
+)
 _ORIGINAL_TOKEN_DENIALS = tuple(
     vars(_TOKEN_TYPE)[name] for name in _TOKEN_DENIALS
 )
@@ -76,6 +87,18 @@ def _require_original_token_denials() -> None:
     if (
         MemoryGenerationCASToken is not _TOKEN_TYPE
         or vars(_TOKEN_TYPE).get("__init__") is not _ORIGINAL_TOKEN_INIT
+        or any(
+            vars(_TOKEN_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOKEN_FIELDS, _ORIGINAL_TOKEN_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_TOKEN_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOKEN_HOOKS, _ORIGINAL_TOKEN_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_TOKEN_TYPE).get(name) is not original
             for name, original in zip(
@@ -107,6 +130,9 @@ def _row_hash(record: MemoryRecord) -> str:
 
 
 def _token_fields(token: MemoryGenerationCASToken) -> tuple[object, ...]:
+    # This helper is also consumed by independent read-only reconciliation.
+    # Inspect original slots before reading any caller-retained token field.
+    _require_original_token_denials()
     if type(token) is not MemoryGenerationCASToken:
         raise MemoryGenerationCASRejected("exact Memory generation token required")
     fields = (
