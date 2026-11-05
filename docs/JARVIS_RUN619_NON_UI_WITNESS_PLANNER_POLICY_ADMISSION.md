@@ -23,12 +23,18 @@
 - This closes the gap in which a caller-accessible callback could mutate a previously accepted grant/scope or token after the earlier under-lock validation but before local token consumption.
 - New offline tests: `tests/test_permission_recheck_final_custody_run619.py` (5 parameter-expanded cases), checking forged scope, expiry, effect, equal-value argument-carrier swap, and token expiry. A denied attempt leaves the local token unspent. No real tool dispatch and no durable authorization claim.
 
+## Package D — Memory expiry preview constructor custody
+
+- Source: `src/ark/memory/expiry_candidate_preview.py` at `783559649447a54f7bddc92386f84666e98d8387`.
+- Pin the import-original `MemoryExpiryPreview.__init__` in the existing non-authorizing authority check; recheck immediately before instantiating the content-free preview. A swapped constructor is refused before SQLite access when preinstalled and before any attacker constructor call when rebound during row hydration or final fingerprinting.
+- New offline tests: `tests/test_memory_expiry_constructor_custody_run619.py` (5 parameter-expanded cases): preinstalled preview/reverify refusal, row/final-hash reentrancy refusal, and a normal read-only no-erasure control. No automatic purge, physical erasure proof, owner consent, or trusted clock.
+
 ## Validation, limitations, and safety controls
 
-- **16 newly authored parameter-expanded pytest cases** across three files (5 + 6 + 5), plus two retained legacy fixture adaptations (five parametrized existing scenarios). This is not a local executed PASS count.
+- **21 newly authored parameter-expanded pytest cases** across four files (5 + 6 + 5 + 5), plus two retained legacy fixture adaptations (five parametrized existing scenarios). This is not a local executed PASS count.
 - Earlier checkpoint commit `243a47ef90eb5f6bb79a8572907fc1aef325fa9f`: GitHub Actions run [#41938198055](https://github.com/Iam-2squared/ark-ai/actions/runs/41938198055) **six-job GREEN** (Ubuntu/Windows, Python 3.11–3.13).
 - Intermediate occurrence/Planner source-head CI [#41944012381](https://github.com/Iam-2squared/ark-ai/actions/runs/41944012381) and [#41944165366](https://github.com/Iam-2squared/ark-ai/actions/runs/41944165366) exposed **five expected legacy fault-fixture failures** from the new validator pinning; repairs were saved through normal GitHub Contents writes. These **intermediate FAILs are not final-head PASS evidence**.
-- The latest source+test head as this document is drafted is `9000392eba0078c02a7df12821ab632af525fd80`; its [CI #41944668619](https://github.com/Iam-2squared/ark-ai/actions/runs/41944668619) was QUEUED at initial observation. Exact latest-head six-job success must be independently verified.
+- The earlier source+test head `9000392eba0078c02a7df12821ab632af525fd80` had [CI #41944668619](https://github.com/Iam-2squared/ark-ai/actions/runs/41944668619) QUEUED at initial observation; the new Memory source/test head `1b47dfec0392213b9fbd845f1434764230c81c64` is separately awaiting exact-head CI. Exact latest-head six-job success must be independently verified.
 - No local GitHub clone or pytest was executed: the available container could not resolve `github.com` DNS. GitHub Actions is the actual test source, and authored test counts are **not** PASS counts.
 - Frozen V1/V2/Local UI/Launcher contracts/evidence, protected evaluation, main, and Draft PR #5/#9 are untouched. Do not promote Candidate weights, dispatch real Tools, open V2 final evaluation, merge any protected PR, require credentials or create billable activity. UI remains paused.
 - PR #5 V3 learning remains gated and NOT_PASSED. ARK/JARVIS overall remains **NOT_PASSED**.
