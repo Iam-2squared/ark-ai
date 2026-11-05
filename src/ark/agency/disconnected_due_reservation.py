@@ -97,6 +97,25 @@ _RECEIPT_DENIALS = (
 _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
 )
+_ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
+_ORIGINAL_RECEIPT_POST_INIT = vars(_RECEIPT_TYPE).get("__post_init__")
+
+
+def _require_original_receipt_constructor() -> None:
+    # A forged dataclass initializer can execute arbitrary code BEFORE the
+    # later inert-receipt checks. Inspect the class dictionary statically.
+    if (
+        DueReservationReceipt is not _RECEIPT_TYPE
+        or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
+        or vars(_RECEIPT_TYPE).get("__post_init__") is not _ORIGINAL_RECEIPT_POST_INIT
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise DueReservationRejected("due receipt constructor authority changed")
 
 
 def _checked_witness(count: int, fingerprint: str) -> DueReservationWitness:
@@ -327,11 +346,13 @@ class DisconnectedDueReservations:
             or observed_now_ms - due_at_ms > _MAX_LATENESS_MS
         ):
             raise DueReservationRejected("invalid or stale caller-asserted due claim")
+        _require_original_receipt_constructor()
         _check_witness(retained)
         prior_epoch = (retained.count, retained.fingerprint)
         path_epoch = self._path
 
         def assert_retained_epoch() -> None:
+            _require_original_receipt_constructor()
             # The retained witness must remain non-authorizing throughout
             # every callback/transaction boundary, not just at entry.
             # Report a changed custody *carrier* before checking semantic
@@ -405,10 +426,12 @@ class DisconnectedDueReservations:
         assert_committed_witness()
         # This is post-COMMIT: a forged result is rejected, never silently
         # described as a rolled-back reservation or retried as a new WRITE.
-        receipt = DueReservationReceipt(identity, due_at_ms, observed_now_ms, result)
+        _require_original_receipt_constructor()
+        receipt = _RECEIPT_TYPE(identity, due_at_ms, observed_now_ms, result)
         assert_retained_epoch()
         assert_committed_witness()
         def assert_receipt() -> None:
+            _require_original_receipt_constructor()
             if (
                 type(receipt) is not _RECEIPT_TYPE
                 or receipt.occurrence_id is not identity
