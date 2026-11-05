@@ -83,6 +83,12 @@ _ORIGINAL_PREFLIGHT_DENIALS = tuple(
     vars(_PREFLIGHT_TYPE)[n] for n in _PREFLIGHT_DENIALS
 )
 _ORIGINAL_REPORT_DENIALS = tuple(vars(_REPORT_TYPE)[n] for n in _REPORT_DENIALS)
+_REPORT_FIELDS = (
+    "schema_sha256", "topology_digest", "registry_revision",
+    "ready_step_ids", "review_digest",
+)
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT_TYPE)[n] for n in _REPORT_FIELDS)
+_ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
 
 
 def _require_original_denials() -> None:
@@ -112,6 +118,13 @@ def _require_original_denials() -> None:
         )
     if (
         DisconnectedLocalReadiness is not _REPORT_TYPE
+        or vars(_REPORT_TYPE).get("__init__") is not _ORIGINAL_REPORT_INIT
+        or any(
+            vars(_REPORT_TYPE).get(n) is not old
+            for n, old in zip(
+                _REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS, strict=True,
+            )
+        )
         or any(
             vars(_REPORT_TYPE).get(n) is not old
             for n, old in zip(
