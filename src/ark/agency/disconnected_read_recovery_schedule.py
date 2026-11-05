@@ -58,6 +58,15 @@ class DetachedReadRecoverySchedule:
         return False
 
 
+# Inspect untrusted step carriers statically before touching any slot. A
+# replacement slot descriptor or __getattribute__ can execute when validating
+# a supplied frozen dataclass; it must not become the recovery authority.
+_STEP_TYPE = ReadRecoveryStep
+_STEP_FIELDS = ("step_id", "operation", "depends_on", "state", "result_sha256")
+_ORIGINAL_STEP_SLOTS = tuple(vars(_STEP_TYPE)[field] for field in _STEP_FIELDS)
+_STEP_HOOKS = ("__init__", "__getattribute__", "__getattr__")
+_ORIGINAL_STEP_HOOKS = tuple(vars(_STEP_TYPE).get(hook) for hook in _STEP_HOOKS)
+
 _DECISION_TYPE = ReadRecoveryDecision
 _SCHEDULE_TYPE = DetachedReadRecoverySchedule
 _ORIGINAL_DECISION_INIT = vars(_DECISION_TYPE)["__init__"]
@@ -74,7 +83,16 @@ _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
 def _assert_original_denials() -> None:
     """Do not bless a preinstalled False-only replacement after processing."""
     if (
-        DetachedReadRecoverySchedule is not _SCHEDULE_TYPE
+        ReadRecoveryStep is not _STEP_TYPE
+        or any(
+            vars(_STEP_TYPE).get(field) is not original
+            for field, original in zip(_STEP_FIELDS, _ORIGINAL_STEP_SLOTS, strict=True)
+        )
+        or any(
+            vars(_STEP_TYPE).get(hook) is not original
+            for hook, original in zip(_STEP_HOOKS, _ORIGINAL_STEP_HOOKS, strict=True)
+        )
+        or DetachedReadRecoverySchedule is not _SCHEDULE_TYPE
         or ReadRecoveryDecision is not _DECISION_TYPE
         or vars(_DECISION_TYPE).get("__init__") is not _ORIGINAL_DECISION_INIT
         or vars(_SCHEDULE_TYPE).get("__init__") is not _ORIGINAL_SCHEDULE_INIT
