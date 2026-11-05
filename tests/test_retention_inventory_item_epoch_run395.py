@@ -1,6 +1,7 @@
 """A privacy inventory must not return cached rows changed after hashing."""
 
 from pathlib import Path
+from sys import _getframe
 
 import pytest
 
@@ -45,14 +46,18 @@ def test_cached_inventory_item_mutation_before_digest_return_is_refused(
     tmp_path, monkeypatch, phase, field, value,
 ):
     state = _state(tmp_path)
-    captured: list[SyntheticRetentionItem] = []
-    original_init = SyntheticRetentionItem.__init__
+    mutations = 0
 
-    def capture_item(self, *args, **kwargs):
-        original_init(self, *args, **kwargs)
-        captured.append(self)
-
-    monkeypatch.setattr(SyntheticRetentionItem, "__init__", capture_item)
+    def corrupt_retained_item():
+        nonlocal mutations
+        # Reentrant row/veto callbacks can inspect their calling frame.
+        # Do not replace the pinned dataclass constructor: that is correctly
+        # rejected before any row is read by the newer pre-access contract.
+        selected = _getframe(2).f_locals["selected"]
+        assert len(selected) == 1
+        assert type(selected[0]) is SyntheticRetentionItem
+        object.__setattr__(selected[0], field, value)
+        mutations += 1
 
     if phase == "row":
         original = module._record
@@ -62,7 +67,7 @@ def test_cached_inventory_item_mutation_before_digest_return_is_refused(
             nonlocal calls
             calls += 1
             if calls == 2:
-                object.__setattr__(captured[0], field, value)
+                corrupt_retained_item()
             return original(row)
 
         monkeypatch.setattr(module, "_record", changed_second_record)
@@ -86,7 +91,7 @@ def test_cached_inventory_item_mutation_before_digest_return_is_refused(
         SyntheticRetentionRejected, match="retention inventory items changed",
     ):
         _review(state)
-    assert len(captured) >= 1
+    assert mutations == 1
 
 
 def test_stable_inventory_remains_content_free_and_non_authoritative(tmp_path):
