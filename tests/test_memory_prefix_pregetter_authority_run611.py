@@ -70,7 +70,8 @@ def test_witness_field_callback_cannot_install_denial_getter(tmp_path, monkeypat
     monkeypatch.setattr(prefix._WITNESS, "__getattribute__", intercept)
     with pytest.raises(prefix.MemoryEventPrefixRejected, match="authority changed"):
         prefix.capture_local_memory_event_prefix(store)
-    assert injected == [True]
+    # Rebound class hooks now fail before the injected field accessor runs.
+    assert injected == [False]
     assert calls == []
 
 
@@ -94,7 +95,8 @@ def test_comparison_field_callback_cannot_install_denial_getter(
     monkeypatch.setattr(prefix._COMPARISON, "__getattribute__", intercept)
     with pytest.raises(prefix.MemoryEventPrefixRejected, match="authority changed"):
         prefix.compare_local_memory_event_prefix(store, retained)
-    assert injected == [True]
+    # Rebound class hooks now fail before the injected field accessor runs.
+    assert injected == [False]
     assert calls == []
 
 
