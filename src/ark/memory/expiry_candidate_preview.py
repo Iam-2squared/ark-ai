@@ -64,6 +64,7 @@ class MemoryExpiryPreview:
 
 
 _RECEIPT_TYPE = MemoryExpiryPreview
+_ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
 _STORE_TYPE = SQLiteMemoryStore
 _SCOPE_TYPE = MemoryScope
 
@@ -76,6 +77,7 @@ def _assert_original_authority() -> None:
     """Deny substituted authority callbacks before touching Memory SQLite."""
     if (
         MemoryExpiryPreview is not _RECEIPT_TYPE
+        or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
         or any(
             # getattr() on a class can itself execute a hostile __get__.
             # Identity inspection must never run a substituted descriptor.
@@ -291,7 +293,11 @@ def review_memory_expiry_candidates(
     fingerprint = _hash(
         "preview", (scope_hash, now_ms, limit, len(selected), more, candidate_hash),
     )
-    report = MemoryExpiryPreview(
+    # A substituted dataclass constructor can execute untrusted code before
+    # the existing postconstruction deny-only checks. Reject such drift
+    # before constructing any read-only expiry preview receipt.
+    _assert_original_authority()
+    report = _RECEIPT_TYPE(
         scope_hash, now_ms, len(selected), more, candidate_hash, fingerprint,
     )
     stable()
