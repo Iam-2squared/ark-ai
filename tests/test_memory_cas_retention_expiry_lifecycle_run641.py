@@ -17,7 +17,7 @@ from ark.memory.generation_fenced_cas import (
 from ark.memory.sqlite_event_alignment import review_memory_event_alignment
 
 
-@pytest.mark.parametrize("proposed", [None, 201, 200])
+@pytest.mark.parametrize("proposed", [None, 201])
 def test_generation_cas_cannot_extend_or_clear_finite_expiry(tmp_path, proposed):
     now = {"ms": 100}
 
@@ -41,6 +41,23 @@ def test_generation_cas_cannot_extend_or_clear_finite_expiry(tmp_path, proposed)
     assert review_memory_event_alignment(store) == baseline
     assert retained.consent_authenticated is False
 
+
+
+def test_same_finite_deadline_is_allowed_without_relaxing_retention(tmp_path):
+    store = SQLiteMemoryStore(tmp_path / "same-deadline.sqlite", clock_ms=lambda: 100)
+    scope = MemoryScope("local-only-owner", "retained")
+    store.put(MemoryWrite(scope, "source", "before", expires_at_ms=200))
+    retained = observe_memory_generation_for_cas(store, scope, "source")
+    changed = generation_fenced_memory_update(
+        store,
+        MemoryWrite(scope, "source", "after", expires_at_ms=200),
+        retained=retained,
+    )
+    assert changed.revision == 2
+    assert changed.expires_at_ms == 200
+    assert changed.content == "after"
+    assert review_memory_event_alignment(store).event_count == 2
+    assert retained.consent_authenticated is False
 
 def test_shorter_expiry_then_expired_source_and_recreate_never_replay(tmp_path):
     now = {"ms": 100}
