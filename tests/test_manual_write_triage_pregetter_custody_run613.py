@@ -72,8 +72,10 @@ def test_constructor_injected_false_denial_rejected_before_getter(
     cls = triage._PACKET_TYPE
     initial = vars(cls)[flag]
     original_init = cls.__init__
+    constructor_calls = []
 
     def injected_init(self, *args, **kwargs):
+        constructor_calls.append("counterfeit packet initializer executed")
         original_init(self, *args, **kwargs)
         monkeypatch.setattr(cls, flag, ExecutableFalse(calls))
 
@@ -81,8 +83,9 @@ def test_constructor_injected_false_denial_rejected_before_getter(
     with pytest.raises(triage.OfflineWriteTriageRejected, match="descriptor changed"):
         triage.build_offline_write_triage_packet(ledger, retained, plan, steps)
     assert calls == []
-    # Ensure the injected descriptor was actually installed by the constructor.
-    assert vars(cls)[flag] is not initial
+    # The substituted initializer itself is now rejected before execution.
+    assert constructor_calls == []
+    assert vars(cls)[flag] is initial
 
 
 @pytest.mark.parametrize("effect", ("READ", "WRITE"))
