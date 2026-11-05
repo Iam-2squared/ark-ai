@@ -44,6 +44,56 @@ class SyntheticExpectedWriteMembership:
         return False
 
 
+# The independent local witness is not an authorization credential. Pin
+# every original dataclass constructor/field hook and False-only denial before
+# touching retained fields or invoking a possibly reentrant digest callback.
+_WITNESS_TYPE = SyntheticExpectedWriteMembership
+_ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+_WITNESS_FIELDS = ("topology_digest", "step_ids", "digest")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_WITNESS_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
+_WITNESS_DENIALS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_known",
+)
+_ORIGINAL_WITNESS_DENIALS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_DENIALS
+)
+
+
+def _require_original_witness() -> None:
+    if (
+        SyntheticExpectedWriteMembership is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_DENIALS, _ORIGINAL_WITNESS_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticExpectedWriteMembershipRejected(
+            "expected WRITE witness constructor or authority changed"
+        )
+
+
 def _validated_inputs(topology_digest: object, step_ids: object) -> bytes:
     if (
         type(topology_digest) is not str
@@ -92,6 +142,7 @@ def capture_expected_write_membership(
     the original plan. Never construct this from the untrusted archive being
     checked; a self-derived list cannot detect an omitted archive entry.
     """
+    _require_original_witness()
     original_topology, original_ids = topology_digest, step_ids
     canonical = _validated_inputs(original_topology, original_ids)
     if topology_digest is not original_topology or step_ids is not original_ids:
@@ -99,9 +150,11 @@ def capture_expected_write_membership(
     digest = _digest(canonical)
     if topology_digest is not original_topology or step_ids is not original_ids:
         raise SyntheticExpectedWriteMembershipRejected("expected membership changed")
-    witness = SyntheticExpectedWriteMembership(
+    _require_original_witness()
+    witness = _WITNESS_TYPE(
         original_topology, original_ids, digest,
     )
+    _require_original_witness()
     assert_expected_write_membership(
         witness, topology_digest=original_topology, recovered_step_ids=original_ids,
     )
@@ -122,12 +175,14 @@ def assert_expected_write_membership(
     topology header nor a locally recomputed bundle digest is proof of the
     original plan's total WRITE membership or of an external action outcome.
     """
-    if type(retained) is not SyntheticExpectedWriteMembership:
+    _require_original_witness()
+    if type(retained) is not _WITNESS_TYPE:
         raise SyntheticExpectedWriteMembershipRejected("exact retained witness required")
     original = (retained.topology_digest, retained.step_ids, retained.digest)
     observed = (topology_digest, recovered_step_ids)
 
     def assert_epoch() -> None:
+        _require_original_witness()
         if (
             retained.topology_digest is not original[0]
             or retained.step_ids is not original[1]
