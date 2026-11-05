@@ -53,7 +53,8 @@ def test_snapshot_callback_cannot_execute_rebound_recovery_carrier(
                     "tail", "step_statuses", "ambiguous_running_steps",
                 ) else attack
             )
-            changes.setattr(receipt_type, member, replacement)
+            # __getattr__ is absent on the original slotted dataclass.
+            changes.setattr(receipt_type, member, replacement, raising=False)
             return receipt
 
         changes.setattr(journal_mod, "_snapshot", malicious_snapshot)
