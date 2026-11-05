@@ -51,6 +51,7 @@ class MemoryEventAlignmentReview:
 
 
 _REVIEW_TYPE = MemoryEventAlignmentReview
+_ORIGINAL_REVIEW_INIT = vars(_REVIEW_TYPE)["__init__"]
 _STORE_TYPE = SQLiteMemoryStore
 _DENIAL_NAMES = (
     "independently_authenticated", "user_consent_verified",
@@ -64,6 +65,7 @@ def _require_original_denials() -> None:
     # contract. Preserve the original descriptors across callbacks.
     if (
         MemoryEventAlignmentReview is not _REVIEW_TYPE
+        or vars(_REVIEW_TYPE).get("__init__") is not _ORIGINAL_REVIEW_INIT
         or any(
             vars(_REVIEW_TYPE).get(name) is not original
             for name, original in zip(
