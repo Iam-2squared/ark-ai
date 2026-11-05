@@ -18,7 +18,11 @@ from .durable_occurrence_review import SyntheticOccurrenceStore, SyntheticReserv
 from .planner import PlanGraph
 from .planner_journal_review import SyntheticPlanJournal
 from .registry import BoundAction, ToolRegistry
-from .synthetic_occurrence_audit_link_review import SyntheticOccurrenceAuditLinkStore
+from .synthetic_occurrence_audit_link_review import (
+    SyntheticAuditLinkReceipt,
+    SyntheticAuditLinkWitness,
+    SyntheticOccurrenceAuditLinkStore,
+)
 
 _MAX = 2**63 - 1
 _FAULTS = frozenset((
@@ -456,14 +460,48 @@ def run_synthetic_mock_cycle(
         raise SyntheticMockCrashInjected("synthetic stop after pre-action audit")
     # This is a separately committed local link, never external proof. A
     # failure before or after it leaves RUNNING/UNKNOWN and forbids replay.
+    linked_witness = None
     if link_store is not None:
-        link_store.link_synthetic(
+        # A link callback receipt alone is not proof that its independent
+        # SQLite sidecar committed. Retain its pre-call high-water, then
+        # require exactly one new, identity-bound, persisted link.
+        before_link = link_store.read_witness()
+        assert_identity_epoch()
+        assert_reservation_epoch()
+        assert_audit_epoch()
+        assert_durable_audit_epoch()
+        link_receipt = link_store.link_synthetic(
             registry, call, ledger, reservation, audit, audit_event,
             at_ms=max(now_ms, audit_event.occurred_at_ms),
+            retained=before_link,
         )
         assert_identity_epoch()
         assert_reservation_epoch()
         assert_audit_epoch()
+        if (
+            type(link_receipt) is not SyntheticAuditLinkReceipt
+            or link_receipt.occurrence_id != reservation.occurrence_id
+            or link_receipt.audit_event_id != audit_event.event_id
+            or type(link_receipt.link_hash) is not str
+        ):
+            raise SyntheticMockCycleRejected(
+                "synthetic audit link receipt differs from requested WRITE"
+            )
+        linked_witness = link_store.read_witness(retained=before_link)
+        assert_identity_epoch()
+        assert_reservation_epoch()
+        assert_audit_epoch()
+        if (
+            type(linked_witness) is not SyntheticAuditLinkWitness
+            or linked_witness.event_count != before_link.event_count + 1
+            or linked_witness.tail_hash != link_receipt.link_hash
+            or linked_witness.last_link_at_ms != max(
+                now_ms, audit_event.occurred_at_ms,
+            )
+        ):
+            raise SyntheticMockCycleRejected(
+                "durable synthetic audit link transition not confirmed"
+            )
         if fault_at == "after_audit_link":
             raise SyntheticMockCrashInjected("synthetic stop after audit link")
     assert_identity_epoch()
@@ -491,6 +529,22 @@ def run_synthetic_mock_cycle(
     assert_reservation_epoch()
     assert_audit_epoch()
     _assert_original_cycle_denials()
+    # Terminal callbacks can mutate other SQLite databases after the earlier
+    # readbacks. A confirmed local SUCCEEDED row is insufficient if its
+    # pre-action audit or optional sidecar linkage has since disappeared.
+    assert_durable_audit_epoch()
+    if link_store is not None:
+        final_link = link_store.read_witness(retained=linked_witness)
+        assert_identity_epoch()
+        assert_reservation_epoch()
+        assert_audit_epoch()
+        if (
+            type(final_link) is not SyntheticAuditLinkWitness
+            or final_link != linked_witness
+        ):
+            raise SyntheticMockCycleRejected(
+                "synthetic audit link changed after journal terminal"
+            )
     finished_states = {
         name: (state, revision)
         for name, state, revision in finished.step_statuses
