@@ -1,4 +1,4 @@
-"""Post-COMMIT synthetic due receipts cannot acquire authority by monkeypatch.
+"""Synthetic due receipts cannot gain authority before or after COMMIT.
 
 Reservations are local deduplication markers, not dispatch or notifications.
 A failed post-COMMIT validation never implies rollback or safe automatic retry.
@@ -27,18 +27,18 @@ def _reserve(tmp_path):
 def test_false_only_replacement_is_not_original_receipt_authority(tmp_path, monkeypatch, name):
     ledger, submit = _reserve(tmp_path)
     monkeypatch.setattr(due.DueReservationReceipt, name, property(lambda _: False))
-    with pytest.raises(due.DueReservationRejected, match="constructed due reservation"):
+    with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         submit()
-    assert ledger.witness().count == 1
+    assert ledger.witness().count == 0
 
 
 @pytest.mark.parametrize("name", due._RECEIPT_DENIALS)
-def test_true_receipt_authority_is_rejected_after_local_commit(tmp_path, monkeypatch, name):
+def test_true_receipt_authority_is_rejected_before_local_commit(tmp_path, monkeypatch, name):
     ledger, submit = _reserve(tmp_path)
     monkeypatch.setattr(due.DueReservationReceipt, name, property(lambda _: True))
-    with pytest.raises(due.DueReservationRejected, match="constructed due reservation"):
+    with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         submit()
-    assert ledger.witness().count == 1
+    assert ledger.witness().count == 0
 
 
 def test_last_getter_cannot_replace_previously_checked_descriptor(tmp_path, monkeypatch):
@@ -55,7 +55,7 @@ def test_last_getter_cannot_replace_previously_checked_descriptor(tmp_path, monk
         return value
 
     monkeypatch.setattr(receipt_type, "__getattribute__", drift)
-    with pytest.raises(due.DueReservationRejected, match="constructed due reservation"):
+    with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         submit()
     assert ledger.witness().count == 1
 
