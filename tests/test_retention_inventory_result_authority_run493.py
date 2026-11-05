@@ -38,7 +38,10 @@ def test_inventory_reflective_authority_spoof_is_denied(tmp_path, monkeypatch, n
         name,
         property(lambda self: True),
     )
-    with pytest.raises(retention.SyntheticRetentionRejected, match="retention inventory authority denial descriptor changed"):
+    with pytest.raises(
+        retention.SyntheticRetentionRejected,
+        match="retention inventory authority denial descriptor changed",
+    ):
         _review(tmp_path)
 
 
