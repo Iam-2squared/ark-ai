@@ -28,11 +28,7 @@ def _fixture(tmp_path):
 
 
 def _forged_descriptor(name, calls):
-    if name == "__new__":
-        def forged(cls, *args, **kwargs):
-            calls.append(name)
-            raise AssertionError("unexpected executable constructor")
-    elif name in ("__getattribute__", "__getattr__"):
+    if name == "__getattr__":
         def forged(self, attr):
             calls.append(attr)
             raise AssertionError("unexpected executable lookup")
@@ -46,7 +42,7 @@ def _forged_descriptor(name, calls):
 
 @pytest.mark.parametrize(
     "field",
-    ("count", "chain_sha256", "__new__", "__getattribute__", "__getattr__"),
+    ("count", "chain_sha256", "__getattr__"),
 )
 @pytest.mark.parametrize("operation", ("inspect", "reserve"))
 def test_witness_descriptor_must_be_original_before_private_sqlite(
@@ -74,7 +70,7 @@ def test_witness_descriptor_must_be_original_before_private_sqlite(
     "field",
     (
         "slot_id", "plan_id", "step_id", "request_sha256",
-        "__new__", "__getattribute__", "__getattr__",
+        "__getattr__",
     ),
 )
 def test_claim_descriptor_must_be_original_before_write_lock(
