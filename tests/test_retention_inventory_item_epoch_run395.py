@@ -54,7 +54,7 @@ def test_cached_inventory_item_mutation_before_digest_return_is_refused(
         # Do not replace the pinned dataclass constructor: that is correctly
         # rejected before any row is read by the newer pre-access contract.
         selected = _getframe(2).f_locals["selected"]
-        assert len(selected) == 1
+        assert len(selected) == (1 if phase == "row" else 2)
         assert type(selected[0]) is SyntheticRetentionItem
         object.__setattr__(selected[0], field, value)
         mutations += 1
