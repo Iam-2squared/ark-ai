@@ -60,6 +60,8 @@ class DetachedReadRecoverySchedule:
 
 _DECISION_TYPE = ReadRecoveryDecision
 _SCHEDULE_TYPE = DetachedReadRecoverySchedule
+_ORIGINAL_DECISION_INIT = vars(_DECISION_TYPE)["__init__"]
+_ORIGINAL_SCHEDULE_INIT = vars(_SCHEDULE_TYPE)["__init__"]
 _DENIAL_NAMES = (
     "dispatch_authorized", "automatic_replay_authorized",
     "external_outcome_verified",
@@ -73,6 +75,9 @@ def _assert_original_denials() -> None:
     """Do not bless a preinstalled False-only replacement after processing."""
     if (
         DetachedReadRecoverySchedule is not _SCHEDULE_TYPE
+        or ReadRecoveryDecision is not _DECISION_TYPE
+        or vars(_DECISION_TYPE).get("__init__") is not _ORIGINAL_DECISION_INIT
+        or vars(_SCHEDULE_TYPE).get("__init__") is not _ORIGINAL_SCHEDULE_INIT
         or any(
             vars(_SCHEDULE_TYPE).get(name) is not original
             for name, original in zip(
@@ -187,7 +192,11 @@ def schedule_detached_read_recovery(
             disposition = "WAIT_DEPENDENCY"
         else:
             disposition = "READY_MOCK_ONLY"
-        decision = ReadRecoveryDecision(name, disposition)
+        # Do not invoke a substituted initializer even if it would return an
+        # apparently inert decision after executing arbitrary Python.
+        _assert_original_denials()
+        decision = _DECISION_TYPE(name, disposition)
+        _assert_original_denials()
         if (
             type(decision) is not _DECISION_TYPE
             or decision.step_id is not name
@@ -217,7 +226,9 @@ def schedule_detached_read_recovery(
     epoch()
     stable_decisions()
     frozen_decisions = tuple(decisions)
-    schedule = DetachedReadRecoverySchedule(request_id, frozen_decisions, digest)
+    _assert_original_denials()
+    schedule = _SCHEDULE_TYPE(request_id, frozen_decisions, digest)
+    _assert_original_denials()
     denial_names = _DENIAL_NAMES
     denial_descriptors = _ORIGINAL_DENIAL_DESCRIPTORS
     epoch()
