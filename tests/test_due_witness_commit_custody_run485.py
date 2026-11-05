@@ -43,26 +43,32 @@ def test_committed_reservation_rejects_witness_mutation_during_receipt(
     tmp_path, monkeypatch, tamper,
 ):
     store, retained = _new(tmp_path)
-    original = due.DueReservationReceipt
+    original_getattribute = due.DueReservationReceipt.__getattribute__
+    mutated = []
 
-    def changed(*args):
-        receipt = original(*args)
-        witness = receipt.witness
-        if tamper == "count":
-            object.__setattr__(witness, "count", witness.count + 1)
-        elif tamper == "digest":
-            object.__setattr__(witness, "fingerprint", "f" * 64)
-        else:
-            value = witness.fingerprint
-            replacement = "".join((value[:17], value[17:]))
-            assert replacement == value and replacement is not value
-            object.__setattr__(witness, "fingerprint", replacement)
-        return receipt
+    def changed(self, name):
+        value = original_getattribute(self, name)
+        # Inject only after the original constructor has run and the local
+        # SQLite COMMIT has completed, preserving the post-COMMIT test.
+        if name == "witness" and not mutated:
+            mutated.append(True)
+            witness = value
+            if tamper == "count":
+                object.__setattr__(witness, "count", witness.count + 1)
+            elif tamper == "digest":
+                object.__setattr__(witness, "fingerprint", "f" * 64)
+            else:
+                fingerprint = witness.fingerprint
+                replacement = "".join((fingerprint[:17], fingerprint[17:]))
+                assert replacement == fingerprint and replacement is not fingerprint
+                object.__setattr__(witness, "fingerprint", replacement)
+        return value
 
-    monkeypatch.setattr(due, "DueReservationReceipt", changed)
+    monkeypatch.setattr(due.DueReservationReceipt, "__getattribute__", changed)
     with pytest.raises(due.DueReservationRejected, match="post-commit due witness changed"):
         _reserve(store, retained)
-    # Row was already committed; a returned error does not mean rollback.
+    assert mutated == [True]
+    # Post-COMMIT denial never proves rollback or permission to retry.
     assert store.witness().count == 1
 
 
