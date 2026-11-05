@@ -54,6 +54,7 @@ class DisconnectedReadPreflight:
 
 
 _RESULT_TYPE = DisconnectedReadPreflight
+_ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
 _RESULT_DENIALS = (
     "dispatch_authorized", "external_result_verified",
     "authenticated_clock_or_consent", "automatic_replay_authorized",
@@ -68,6 +69,7 @@ def _assert_original_result_denials() -> None:
     # Even an equally False-looking replacement is not an authority witness.
     if (
         DisconnectedReadPreflight is not _RESULT_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
