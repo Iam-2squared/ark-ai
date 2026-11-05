@@ -61,8 +61,10 @@ def test_constructed_clock_link_cannot_replace_equal_numeric_carrier(
     monkeypatch, field,
 ):
     previous = clock.SyntheticClockWitness.__init__
+    invoked = []
 
     def mutate_after_construction(self, *args, **kwargs):
+        invoked.append(True)
         previous(self, *args, **kwargs)
         if self.event_count == 1:
             object.__setattr__(self, field, _clone_integer(getattr(self, field)))
@@ -70,8 +72,11 @@ def test_constructed_clock_link_cannot_replace_equal_numeric_carrier(
     monkeypatch.setattr(
         clock.SyntheticClockWitness, "__init__", mutate_after_construction,
     )
-    with pytest.raises(clock.SyntheticClockRejected, match="constructed clock chain link"):
+    # The new original-constructor gate must refuse the substitution before
+    # the forged initializer executes or can replace the numeric carrier.
+    with pytest.raises(clock.SyntheticClockRejected, match="denial descriptor changed"):
         clock.review_synthetic_clock_sequence(_samples())
+    assert invoked == []
 
 
 def test_unmodified_numeric_carriers_preserve_retained_prefix():
