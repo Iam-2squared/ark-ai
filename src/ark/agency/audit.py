@@ -15,6 +15,13 @@ from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall, _cano
 SCHEMA_VERSION = 1
 _EVENT_TYPE = ActionAuditEvent
 _ORIGINAL_EVENT_INIT = vars(_EVENT_TYPE)["__init__"]
+_EVENT_FIELDS = (
+    "event_id", "request_id", "tool", "capability", "scope",
+    "arguments_sha256", "outcome", "occurred_at_ms",
+)
+_ORIGINAL_EVENT_FIELDS = tuple(vars(_EVENT_TYPE)[name] for name in _EVENT_FIELDS)
+_EVENT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_EVENT_HOOKS = tuple(vars(_EVENT_TYPE).get(name) for name in _EVENT_HOOKS)
 _SQLITE_INT_MAX = 2**63 - 1
 _AUDIT_BOOTSTRAP_LOCK = Lock()  # process-local; SQLite owns cross-process locking
 
@@ -154,14 +161,29 @@ def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
 
 
 
-def _require_original_event_constructor() -> None:
+def _require_original_event_constructor(phase: str = "") -> None:
     # An audit receipt is data, not a place to execute new Python code.
-    # Check before opening SQLite and after reentrant clock/SQL callbacks.
+    # Reflectively replacing a slotted field can install an executable
+    # descriptor. Inspect the ORIGINAL class dictionary without getattr(),
+    # before opening SQLite, hydrating rows or constructing a receipt.
     if (
         ActionAuditEvent is not _EVENT_TYPE
         or vars(_EVENT_TYPE).get("__init__") is not _ORIGINAL_EVENT_INIT
+        or any(
+            vars(_EVENT_TYPE).get(name) is not original
+            for name, original in zip(
+                _EVENT_FIELDS, _ORIGINAL_EVENT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_EVENT_TYPE).get(name) is not original
+            for name, original in zip(
+                _EVENT_HOOKS, _ORIGINAL_EVENT_HOOKS, strict=True,
+            )
+        )
     ):
-        raise ActionAuditSchemaError("audit event constructor changed")
+        suffix = f" {phase}" if phase else ""
+        raise ActionAuditSchemaError(f"audit event constructor changed{suffix}")
 
 
 class SQLiteActionAudit:
@@ -273,9 +295,9 @@ class SQLiteActionAudit:
         if self.path is not path_epoch:
             raise ActionAuditSchemaError("action audit path changed after commit")
         assert_action_epoch("after commit")
-        _require_original_event_constructor()
+        _require_original_event_constructor("after commit")
         event = _EVENT_TYPE(event_id, *identity, outcome, now)
-        _require_original_event_constructor()
+        _require_original_event_constructor("after commit")
         if self.path is not path_epoch:
             raise ActionAuditSchemaError("action audit path changed after commit")
         assert_action_epoch("after commit")
