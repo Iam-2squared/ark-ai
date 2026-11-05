@@ -64,6 +64,14 @@ _ORIGINAL_CYCLE_DENIALS = tuple(
     vars(_CYCLE_RECEIPT_TYPE)[name] for name in _CYCLE_DENIALS
 )
 _ORIGINAL_CYCLE_RECEIPT_INIT = vars(_CYCLE_RECEIPT_TYPE)["__init__"]
+_CYCLE_FIELDS = ("step_id", "occurrence_id", "audit_event_id", "mock_marker")
+_ORIGINAL_CYCLE_FIELDS = tuple(
+    vars(_CYCLE_RECEIPT_TYPE)[name] for name in _CYCLE_FIELDS
+)
+_CYCLE_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_CYCLE_HOOKS = tuple(
+    vars(_CYCLE_RECEIPT_TYPE).get(name) for name in _CYCLE_HOOKS
+)
 
 
 def _assert_original_cycle_denials() -> None:
@@ -73,6 +81,18 @@ def _assert_original_cycle_denials() -> None:
         SyntheticMockCycleReceipt is not _CYCLE_RECEIPT_TYPE
         or vars(_CYCLE_RECEIPT_TYPE).get("__init__")
         is not _ORIGINAL_CYCLE_RECEIPT_INIT
+        or any(
+            vars(_CYCLE_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _CYCLE_FIELDS, _ORIGINAL_CYCLE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_CYCLE_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _CYCLE_HOOKS, _ORIGINAL_CYCLE_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_CYCLE_RECEIPT_TYPE).get(name) is not original
             for name, original in zip(
