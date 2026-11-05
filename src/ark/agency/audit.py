@@ -13,6 +13,8 @@ from threading import Lock
 from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall, _canonical_json
 
 SCHEMA_VERSION = 1
+_EVENT_TYPE = ActionAuditEvent
+_ORIGINAL_EVENT_INIT = vars(_EVENT_TYPE)["__init__"]
 _SQLITE_INT_MAX = 2**63 - 1
 _AUDIT_BOOTSTRAP_LOCK = Lock()  # process-local; SQLite owns cross-process locking
 
@@ -152,6 +154,16 @@ def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
 
 
 
+def _require_original_event_constructor() -> None:
+    # An audit receipt is data, not a place to execute new Python code.
+    # Check before opening SQLite and after reentrant clock/SQL callbacks.
+    if (
+        ActionAuditEvent is not _EVENT_TYPE
+        or vars(_EVENT_TYPE).get("__init__") is not _ORIGINAL_EVENT_INIT
+    ):
+        raise ActionAuditSchemaError("audit event constructor changed")
+
+
 class SQLiteActionAudit:
     def __init__(self, path: str | Path, *, clock_ms: Callable[[], int] | None = None) -> None:
         self.path = Path(path)
@@ -160,6 +172,7 @@ class SQLiteActionAudit:
         self._initialize()
 
     def append(self, call: ToolCall, *, outcome: str) -> ActionAuditEvent:
+        _require_original_event_constructor()
         if type(call) is not ToolCall:
             raise TypeError("audit call must be an exact ToolCall")
         if type(outcome) is not str or not outcome.strip():
@@ -237,6 +250,7 @@ class SQLiteActionAudit:
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed during clock review")
             assert_action_epoch("after clock review")
+            _require_original_event_constructor()
             cursor = conn.execute(
                 """INSERT INTO action_events(
                     request_id,tool,capability,scope,arguments_sha256,outcome,occurred_at_ms
@@ -253,12 +267,15 @@ class SQLiteActionAudit:
             # A reentrant INSERT callback must not change the original
             # action carrier after the SQL parameters were captured.
             assert_action_epoch("before commit")
+            _require_original_event_constructor()
         # COMMIT has already happened. Deny a clean result on late source or
         # input drift, but never claim rollback or automatically retry.
         if self.path is not path_epoch:
             raise ActionAuditSchemaError("action audit path changed after commit")
         assert_action_epoch("after commit")
-        event = ActionAuditEvent(event_id, *identity, outcome, now)
+        _require_original_event_constructor()
+        event = _EVENT_TYPE(event_id, *identity, outcome, now)
+        _require_original_event_constructor()
         if self.path is not path_epoch:
             raise ActionAuditSchemaError("action audit path changed after commit")
         assert_action_epoch("after commit")
@@ -279,6 +296,7 @@ class SQLiteActionAudit:
         return event
 
     def events(self, *, after_event_id: int = 0, limit: int = 100) -> list[ActionAuditEvent]:
+        _require_original_event_constructor()
         if (
             type(after_event_id) is not int
             or not 0 <= after_event_id <= _SQLITE_INT_MAX
@@ -370,11 +388,28 @@ class SQLiteActionAudit:
             })).hexdigest()
             if request_id != expected_request_id:
                 raise ActionAuditSchemaError("audit stored request identity is inconsistent")
-            result.append(ActionAuditEvent(
-                event_id, request_id, tool, capability, scope, arguments_sha256, outcome, occurred
-            ))
+            _require_original_event_constructor()
+            event = _EVENT_TYPE(
+                event_id, request_id, tool, capability, scope, arguments_sha256,
+                outcome, occurred,
+            )
+            _require_original_event_constructor()
+            if (
+                type(event) is not _EVENT_TYPE
+                or event.event_id is not event_id
+                or event.request_id is not request_id
+                or event.tool is not tool
+                or event.capability is not capability
+                or event.scope is not scope
+                or event.arguments_sha256 is not arguments_sha256
+                or event.outcome is not outcome
+                or event.occurred_at_ms is not occurred
+            ):
+                raise ActionAuditSchemaError("audit read event changed during hydration")
+            result.append(event)
         if self.path is not path_epoch:
             raise ActionAuditSchemaError("action audit source changed during hydration")
+        _require_original_event_constructor()
         return result
 
     def _initialize(self) -> None:
