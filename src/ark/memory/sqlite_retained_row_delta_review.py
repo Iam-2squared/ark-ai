@@ -78,6 +78,43 @@ class MemoryRowDeltaReview:
 _WITNESS = MemoryRowDeltaWitness
 _REPORT = MemoryRowDeltaReview
 _STORE = SQLiteMemoryStore
+_WITNESS_FIELDS = ("event_count", "last_event_id", "event_prefix_sha256", "rows")
+_REPORT_FIELDS = (
+    "retained_rows", "current_rows", "appended_events",
+    "explained_changes", "review_sha256",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_CARRIERS = tuple(
+    vars(_WITNESS).get(name) for name in (*_WITNESS_FIELDS, *_CARRIER_HOOKS)
+)
+_ORIGINAL_REPORT_CARRIERS = tuple(
+    vars(_REPORT).get(name) for name in (*_REPORT_FIELDS, *_CARRIER_HOOKS)
+)
+
+
+def _require_original_carriers() -> None:
+    # A frozen witness/report may still run injected slot descriptors or
+    # constructors. Reject substitutions before reading private SQLite rows
+    # or evaluating the first caller-held retained witness field.
+    if (
+        MemoryRowDeltaWitness is not _WITNESS
+        or MemoryRowDeltaReview is not _REPORT
+        or any(
+            vars(_WITNESS).get(name) is not original
+            for name, original in zip(
+                (*_WITNESS_FIELDS, *_CARRIER_HOOKS),
+                _ORIGINAL_WITNESS_CARRIERS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                (*_REPORT_FIELDS, *_CARRIER_HOOKS),
+                _ORIGINAL_REPORT_CARRIERS, strict=True,
+            )
+        )
+    ):
+        raise MemoryRowDeltaRejected("retained Memory row carrier descriptors changed")
 
 
 def _commitment(row: sqlite3.Row) -> tuple[str, int, str]:
@@ -242,6 +279,7 @@ def _prefix_hash(events: tuple[tuple[object, ...], ...], count: int) -> str:
 
 
 def _validate(value: MemoryRowDeltaWitness) -> tuple[object, ...]:
+    _require_original_carriers()
     if type(value) is not _WITNESS:
         raise MemoryRowDeltaRejected("exact retained Memory row witness required")
     epoch = (
@@ -280,8 +318,10 @@ def capture_local_memory_row_delta(store: SQLiteMemoryStore) -> MemoryRowDeltaWi
     """Capture hashes, revisions and local event prefix, never private text."""
     if type(store) is not _STORE:
         raise MemoryRowDeltaRejected("exact Memory source required")
+    _require_original_carriers()
     rows, events = _scan(store)
     root = _prefix_hash(events, len(events))
+    _require_original_carriers()
     result = _WITNESS(len(events), events[-1][0] if events else 0, root, rows)
     denial_fields = (
         "independently_authenticated", "historical_writer_authenticated",
@@ -315,6 +355,7 @@ def review_retained_memory_row_delta(
     """Require a matching prior event prefix and event-backed row changes."""
     if type(store) is not _STORE:
         raise MemoryRowDeltaRejected("exact Memory source required")
+    _require_original_carriers()
     epoch = _validate(retained)
     source = store.path
 
@@ -360,9 +401,11 @@ def review_retained_memory_row_delta(
     ).encode("ascii")
     root = hashlib.sha256(_REVIEW_DOMAIN + encoded).hexdigest()
     stable()
+    _require_original_carriers()
     report = _REPORT(len(old_rows), len(rows), len(events) - old_count, changes, root)
 
     def report_stable() -> None:
+        _require_original_carriers()
         if (
             type(report) is not _REPORT
             or type(report.retained_rows) is not int
