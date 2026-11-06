@@ -95,9 +95,10 @@ def test_second_denial_pass_rechecks_original_source(monkeypatch):
         "dispatch_authorized",
         property(last_denial),
     )
-    with pytest.raises(SyntheticObservationLineageRejected, match="epoch"):
+    # An unreviewed False-only class property is refused before invocation.
+    with pytest.raises(SyntheticObservationLineageRejected, match="authority"):
         _review(envelopes)
-    assert calls[0] == 2
+    assert calls[0] == 0
 
 
 def test_second_denial_pass_rechecks_result_digest(monkeypatch):
@@ -115,9 +116,9 @@ def test_second_denial_pass_rechecks_result_digest(monkeypatch):
         "dispatch_authorized",
         property(last_denial),
     )
-    with pytest.raises(SyntheticObservationLineageRejected, match="changed"):
+    with pytest.raises(SyntheticObservationLineageRejected, match="authority"):
         _review(envelopes)
-    assert calls[0] == 2
+    assert calls[0] == 0
 
 
 def test_clean_lineage_is_still_diagnostic_only():
