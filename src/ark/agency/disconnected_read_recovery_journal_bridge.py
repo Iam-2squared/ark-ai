@@ -84,6 +84,37 @@ _ORIGINAL_WITNESS_DENIALS = tuple(
 _ORIGINAL_REPORT_DENIALS = tuple(
     getattr(_REPORT, name) for name in _DENIALS
 )
+# The frozen, slotted report is not an immutable *class*. Verify the original
+# constructor, field slots and lookup machinery before executing user-reachable
+# callbacks or reading retained recovery carriers. False-valued properties
+# alone cannot certify that construction is inert.
+_REPORT_FIELDS = (
+    "request_id", "schedule_digest", "journal_tip_sha256",
+    "successful_step_ids", "review_sha256",
+)
+_REPORT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[name] for name in _REPORT_FIELDS)
+_ORIGINAL_REPORT_HOOKS = tuple(
+    vars(_REPORT).get(name) for name in _REPORT_HOOKS
+)
+
+
+def _require_original_report() -> None:
+    if (
+        ReadRecoveryJournalReview is not _REPORT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for names, originals in (
+                (_REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS),
+                (_REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS),
+                (_DENIALS, _ORIGINAL_REPORT_DENIALS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise ReadRecoveryJournalRejected(
+            "READ recovery report constructor or authority definition changed"
+        )
 
 
 def review_detached_read_journal_recovery(
@@ -99,6 +130,7 @@ def review_detached_read_journal_recovery(
     and failed/unstarted/uncertain steps must have none. The retained tip must
     have been preserved independently of the SQLite database by the caller.
     """
+    _require_original_report()
     if (
         type(request_id) is not str
         or type(steps) is not tuple
@@ -138,6 +170,7 @@ def review_detached_read_journal_recovery(
     original_request = request_id
 
     def stable() -> None:
+        _require_original_report()
         if (
             request_id is not original_request
             or type(steps) is not tuple
@@ -261,7 +294,9 @@ def review_detached_read_journal_recovery(
                 payload, separators=(",", ":"), ensure_ascii=True,
             ).encode("ascii")
         ).hexdigest()
+        _require_original_report()
         review = _REPORT(*payload, digest)
+        _require_original_report()
         fields = (
             review.request_id, review.schedule_digest,
             review.journal_tip_sha256, review.successful_step_ids,
@@ -270,6 +305,7 @@ def review_detached_read_journal_recovery(
         descriptors = report_descriptors
 
         def stable_review() -> None:
+            _require_original_report()
             if (
                 type(review) is not _REPORT
                 or any(now is not first for now, first in zip(
