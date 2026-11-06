@@ -30,29 +30,37 @@ def _fixture(tmp_path):
     return audit, review.review_audit_continuity(audit)
 
 
-def _inject(monkeypatch, field, calls):
+_MISSING = object()
+
+
+def _inject(field, calls):
+    original = vars(review.AuditContinuityWitness).get(field, _MISSING)
     if field in ("__init__", "__post_init__"):
         def bad_initializer(self, *args):
             calls.append(field)
             raise AssertionError("poisoned audit initializer executed")
 
-        monkeypatch.setattr(review.AuditContinuityWitness, field, bad_initializer)
+        setattr(review.AuditContinuityWitness, field, bad_initializer)
     elif field in ("__getattribute__", "__getattr__"):
         def bad_getattr(self, name):
             calls.append((field, name))
             raise AssertionError("poisoned audit lookup executed")
 
-        monkeypatch.setattr(
-            review.AuditContinuityWitness, field, bad_getattr, raising=False,
-        )
+        setattr(review.AuditContinuityWitness, field, bad_getattr)
     else:
         def bad_descriptor(self):
             calls.append(field)
             raise AssertionError("poisoned audit field executed")
 
-        monkeypatch.setattr(
-            review.AuditContinuityWitness, field, property(bad_descriptor),
-        )
+        setattr(review.AuditContinuityWitness, field, property(bad_descriptor))
+
+    def restore():
+        if original is _MISSING:
+            delattr(review.AuditContinuityWitness, field)
+        else:
+            setattr(review.AuditContinuityWitness, field, original)
+
+    return restore
 
 
 @pytest.mark.parametrize("field", _FIELDS_AND_HOOKS)
@@ -63,18 +71,21 @@ def test_witness_mutation_is_rejected_before_sqlite_or_retained_field_access(
     audit, retained = _fixture(tmp_path)
     calls = []
     opened = []
-    _inject(monkeypatch, field, calls)
+    restore = _inject(field, calls)
 
     def forbid_sqlite(*args, **kwargs):
         opened.append(True)
         raise AssertionError("poisoned witness must not open SQLite")
 
     monkeypatch.setattr(review.sqlite3, "connect", forbid_sqlite)
-    with pytest.raises(ActionAuditSchemaError, match="witness constructor changed"):
-        review.review_audit_continuity(
-            audit, retained=retained if with_retained else None,
-        )
-    assert calls == []
+    try:
+        with pytest.raises(ActionAuditSchemaError, match="witness constructor changed"):
+            review.review_audit_continuity(
+                audit, retained=retained if with_retained else None,
+            )
+        assert calls == []
+    finally:
+        restore()
     assert opened == []
 
 
@@ -87,16 +98,21 @@ def test_mid_scan_witness_substitution_is_rejected_without_poison_execution(
     audit, _ = _fixture(tmp_path)
     calls = []
     original = review._row_payload
+    restore_hooks = []
 
     def after_row(row, *, previous_id):
         result = original(row, previous_id=previous_id)
-        _inject(monkeypatch, field, calls)
+        restore_hooks.append(_inject(field, calls))
         return result
 
     monkeypatch.setattr(review, "_row_payload", after_row)
-    with pytest.raises(ActionAuditSchemaError, match="witness constructor changed"):
-        review.review_audit_continuity(audit)
-    assert calls == []
+    try:
+        with pytest.raises(ActionAuditSchemaError, match="witness constructor changed"):
+            review.review_audit_continuity(audit)
+        assert calls == []
+    finally:
+        for restore in reversed(restore_hooks):
+            restore()
 
 
 def test_original_witness_still_tracks_append_only_audit_prefix(tmp_path):
