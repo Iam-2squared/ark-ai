@@ -4,8 +4,8 @@ Only synthetic in-memory text and audio metadata are used; neither real ASR
 nor microphone/camera capture, consent, identity or tool dispatch is implied.
 """
 
-from contextlib import contextmanager
 import hashlib
+from contextlib import contextmanager
 
 import pytest
 
