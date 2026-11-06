@@ -1,5 +1,52 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run653 / 2026-11-06 JST:** **Three substantial non-UI work packages saved**: (1) hardened synthetic Personal Context replay witness original field/constructor/lookup custody, (2) new cross-handle WAL Memory row/event snapshot consistency tests, and (3) hardened direct ObservationEnvelope identity hashing plus regression tests. **34 authored new test cases** (12 Context + 3 Memory + 19 Observation). CI detected one **test-harness-only** Observation failure and its cause was fixed without changing source safety policy. **Latest corrected exact-head all-six GREEN NOT YET VERIFIED**. Overall ARK/JARVIS/V3 **NOT_PASSED**. **ALL NEW UI/FRONTEND WORK PAUSED.**
+
+**Saved at:** **2026-11-06T15:01:41.435+09:00 Asia/Tokyo/JST**, sampled shortly before this ordinary GitHub Contents checkpoint write. Administrative timestamp only; **not** a trusted action clock, model/file identity, real-world outcome, consent, reviewer approval, permission to replay or authorization for external execution.
+
+## LATEST — branch, work basis and checkpoint custody
+
+- Branch `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN, Draft, unmerged. **Initial exact work-basis HEAD**: `b6ba8c8ece0dcad4a9a5dc7c17b22a35930ff569` (Run652 checkpoint).
+- Source/test commits saved via **normal permitted Contents API**, with PR HEAD re-read before each write: `1daf3ec6f0834549ffa1d321fa9b0398ddd5a48a` (Personal Context witness), `f8ed4872c891a81f030dd11d3e35e2aa33e9327c` (3 Memory cases), `715975139b0add66d098467be42677ca84fcfad3` (12 Context cases), `6ccde10a574433af91063ea87b9858f6ccaf47a3` (Observation original identity guard), `35cebe8638e050a7f108227a336a528bfbbb8481` (19 Observation cases), `4c6ae904f32ecbcb1611428c9adbf9a90a36c4ab` (first test-refinement), `15e5c0de8b9a2530ea88ec8593b1189fd42a3ad5` (fix actual CI-detected test harness failure).
+- Technical source-grounded report commit: `e51fcf99fcb8ad91547f7e8b214bcc5ad2a68da7`, [Run653 Memory / Context evidence](https://github.com/Iam-2squared/ark-ai/blob/e51fcf99fcb8ad91547f7e8b214bcc5ad2a68da7/docs/JARVIS_RUN653_NON_UI_CONTEXT_WITNESS_MEMORY_SNAPSHOT.md). Subsequent separate Observation work and CI correction documented in this canonical checkpoint.
+- **Checkpoint-write-basis HEAD:** `15e5c0de8b9a2530ea88ec8593b1189fd42a3ad5` re-read immediately before this save. **Checkpoint-result HEAD is assigned by GitHub after this commit and cannot be accurately embedded within its own contents beforehand.** Postwrite PR HEAD and status Blob SHA must be retrieved and matched. Prewrite status Blob SHA: `a5306a9397b40cf329fc2e63054fb5f9f374fa6a`.
+
+## NEW work this invocation — non-UI only
+
+1. **Personal Context witness input custody:** `src/ark/personal_context_replay_ledger.py` now checks original exact slotted `count` / `chain_sha256` field descriptors and class `__init__` / `__new__` / `__getattribute__` / `__getattr__` before synthetic genesis construction, event inspection or retained witness field reads. Re-check after non-authorizing False-only denial getter. New `tests/test_context_replay_witness_original_slots_run653.py` contains **12 authored cases**, including a child-Python-only inherited `__new__` poison case to avoid contaminating pytest's CPython allocation slots. No Context content disclosed or replay authorization introduced.
+2. **Memory coherent WAL audit regression:** `tests/test_memory_event_alignment_interleaved_writer_run653.py` adds **3 authored cases**, using a separate `SQLiteMemoryStore` connection to commit CREATE (other scope), UPDATE (same key), and DELETE+RECREATE between the read-only audit's row scan and event scan. Old reader must return one coherent prewrite row+event snapshot; subsequent fresh audit must see committed change. Existing Memory v1 DDL and production code unchanged; digest is diagnostic, not authenticated historical proof.
+3. **Direct Observation identity guard:** `src/ark/observations.py` now pins import-original eight field descriptors and original constructor, lookup, validator, property hooks before `ObservationEnvelope.observation_id` reads source/privacy metadata and around hash/JSON callback epochs; also pre-checks original validator's descriptor. `tests/test_observation_direct_identity_slot_custody_run653.py` has **19 authored cases**, including preinstalled and reentrant hook substitution, child-process-only `__new__`, and normal identity determinism. No cameras, microphones, media capture or network sources.
+4. **Actual CI failure diagnosis / smallest safe test fix:** [CI #42171189655](https://github.com/Iam-2squared/ark-ai/actions/runs/42171189655) Ubuntu 3.11 **1 FAIL, 9,503 PASS, 1 SKIP**, Ruff GREEN. The new test itself used `envelope.observation_id` after replacing `__getattribute__`, causing the malicious hook to execute at Python attribute-resolution time **before the reviewed property getter could run**. Fix in `15e5c0de...`: call the original import-pinned property `.fget(envelope)` in this poison experiment. Observations production guard NOT weakened and no class allocation hook poisoned in the parent pytest process.
+
+## CI and evidence — accurate as of checkpoint drafting
+
+- Previous Run652 exact-head [#42165085750](https://github.com/Iam-2squared/ark-ai/actions/runs/42165085750) **6/6 GREEN**, confirmed at start of Run653.
+- Context source [CI #42170183665](https://github.com/Iam-2squared/ark-ai/actions/runs/42170183665) **6/6 GREEN, 0 FAIL, 0 IN PROGRESS**.
+- Memory WAL regression [CI #42170416676](https://github.com/Iam-2squared/ark-ai/actions/runs/42170416676) **6/6 GREEN, 0 FAIL, 0 IN PROGRESS**.
+- Context witness regression [CI #42170569112](https://github.com/Iam-2squared/ark-ai/actions/runs/42170569112) **6/6 GREEN, 0 FAIL, 0 IN PROGRESS**.
+- Observation source [CI #42171061158](https://github.com/Iam-2squared/ark-ai/actions/runs/42171061158) **5/6 GREEN, 0 FAIL, 1 IN PROGRESS**.
+- **Superseded intermediate Observation test** [CI #42171189655](https://github.com/Iam-2squared/ark-ai/actions/runs/42171189655) **0/6 GREEN, 3 FAIL, 3 IN PROGRESS**. Do not label this GREEN; the source semantics were not relaxed.
+- **Latest corrected source+tests HEAD `15e5c0de...`** [CI #42171758398](https://github.com/Iam-2squared/ark-ai/actions/runs/42171758398) **0/6 GREEN, 0 FAIL, 6 IN PROGRESS**. Full matrix on corrected exact HEAD **NOT VERIFIED GREEN**. Documentation and checkpoint commits start ordinary CI automatically; no manually triggered duplicate workflow runs.
+- **34 authored new test cases, not 34 measured pytest passes.** Full local pytest/Ruff on this exact repo tree and target-PC GGUF are NOT claimed; public clone DNS did not resolve in this environment. Synthetic SQLite/child-Python assertions do not prove consent, authenticated writer, secure deletion, real ToolBackend outcome or training capability.
+
+## Frozen boundaries, blocker status, authorization
+
+- `main` last evidenced `7a843f17eb96ed13d66f23b58b06406b3002e405`, NOT modified/merged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remained Draft/unmerged/untouched; PR #8 Draft/unmerged. Frozen V1/V2/Local UI/Launcher evidence, protected V2 evaluation and V3 contract boundaries unchanged. **UI/frontend development fully paused.**
+- **No paid/new service, external GPU, billable action, Candidate adapter/weights, protected evaluation opening, automatic promotion/replay, credentials/secret or new account connection, target physical-PC action, live tools, notification/camera/microphone, irreversible operation, or main merge.** V3 immutable model and tokenizer snapshot identities, data provenance/rights/human review, hardware/runtime cost ceiling and separate preflight/full-training approvals remain blocked.
+
+## Next plan / 今後の方針
+
+1. Confirm complete six jobs on latest corrected source/test exact HEAD, inspect actual failure logs if any and fix narrowly via ordinary GitHub Contents API; avoid stale/failing interim CI claims. Do not re-run equivalent workflows.
+2. Once source and lower-level tests have exact-head GREEN, harden `personal_context_replay_recovery._witness_fields` to consult original early witness descriptors and detect reentrancy without introducing consent or automatic replay semantics. Test restart/COMMIT UNKNOWN under two SQLite handles.
+3. Extend Planner UNKNOWN/terminal crash recovery and immutable Registry/PermissionGate/occurrence/audit-before-action disconnected mock integration only after prerequisite GREEN; preserve writer ambiguity and no automatic external retry.
+4. Independent non-UI privacy, proactive scheduler, observation back-end fixture evidence and V3 **free-only** approval/identity/reproducibility guards; never touch PR #9 UI while paused or PR #5's protected/frozen gates.
+
+---
+
+## Prior checkpoint — Run652 (full historical text follows)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run652 / 2026-11-06 JST:** **Two non-UI regression packages and one rooted technical evidence report saved**, recovering an inherited CPython allocation-slot poisoning defect in Run651 tests and testing detached READ carrier hooks in isolated child interpreters. **Prior latest Run651 CI #42159582101 6/6 FAIL; latest Run652 exact-head 6/6 GREEN NOT VERIFIED; jobs IN PROGRESS.** ARK/JARVIS/V3 = **NOT_PASSED**. All new UI/frontend development PAUSED.
 
 **Saved at:** **2026-11-06T13:52:44.178+09:00 Asia/Tokyo/JST**, sampled immediately before this safeguarded ordinary GitHub Contents checkpoint write. Administrative timestamp, **not** trusted action clock, human approval, weight identity, evaluation evidence or permission for external execution.
