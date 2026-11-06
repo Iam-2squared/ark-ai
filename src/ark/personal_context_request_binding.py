@@ -74,13 +74,50 @@ _ORIGINAL_PREVIEW_DENIALS = tuple(
 _ORIGINAL_BINDING_DENIALS = tuple(
     vars(_BINDING_TYPE)[name] for name in _BINDING_DENIALS
 )
+# The context JSON remains private fixture text even though the receipt is
+# content-free. Frozen slotted classes can acquire executable replacement
+# fields or hooks; check static identities before reading private preview
+# data or constructing the binding's denial-only result.
+_PREVIEW_FIELDS = (
+    "owner_digest", "record_ids", "canonical_local_json", "local_digest",
+)
+_BINDING_FIELDS = (
+    "request_id", "owner_digest", "context_digest", "record_count",
+    "binding_digest",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_PREVIEW_FIELDS = tuple(
+    vars(_PREVIEW_TYPE)[name] for name in _PREVIEW_FIELDS
+)
+_ORIGINAL_BINDING_FIELDS = tuple(
+    vars(_BINDING_TYPE)[name] for name in _BINDING_FIELDS
+)
+_ORIGINAL_PREVIEW_HOOKS = tuple(
+    vars(_PREVIEW_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_BINDING_HOOKS = tuple(
+    vars(_BINDING_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 
 
 def _assert_original_denials() -> None:
-    if any(
-        vars(_PREVIEW_TYPE).get(name) is not original
-        for name, original in zip(
-            _PREVIEW_DENIALS, _ORIGINAL_PREVIEW_DENIALS, strict=True,
+    if (
+        OfflineContextPreview is not _PREVIEW_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_PREVIEW_TYPE, _PREVIEW_FIELDS, _ORIGINAL_PREVIEW_FIELDS),
+                (_BINDING_TYPE, _BINDING_FIELDS, _ORIGINAL_BINDING_FIELDS),
+                (_PREVIEW_TYPE, _CARRIER_HOOKS, _ORIGINAL_PREVIEW_HOOKS),
+                (_BINDING_TYPE, _CARRIER_HOOKS, _ORIGINAL_BINDING_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            vars(_PREVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _PREVIEW_DENIALS, _ORIGINAL_PREVIEW_DENIALS, strict=True,
+            )
         )
     ):
         raise OfflineContextBindingRejected("context preview carrier changed")
@@ -144,7 +181,7 @@ def bind_offline_context_request(
                     ), pinned, strict=True)
                 )
                 or any(
-                    getattr(_PREVIEW_TYPE, name) is not original
+                    vars(_PREVIEW_TYPE).get(name) is not original
                     for name, original in zip(
                         preview_permissions, preview_descriptors, strict=True,
                     )
@@ -238,7 +275,7 @@ def bind_offline_context_request(
             or result.record_count != len(ids)
             or result.binding_digest is not binding_digest
             or any(
-                getattr(_BINDING_TYPE, name) is not original
+                vars(_BINDING_TYPE).get(name) is not original
                 for name, original in zip(
                     binding_permissions, binding_descriptors, strict=True,
                 )
