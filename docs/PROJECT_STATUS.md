@@ -1,5 +1,49 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run652 / 2026-11-06 JST:** **Two non-UI regression packages and one rooted technical evidence report saved**, recovering an inherited CPython allocation-slot poisoning defect in Run651 tests and testing detached READ carrier hooks in isolated child interpreters. **Prior latest Run651 CI #42159582101 6/6 FAIL; latest Run652 exact-head 6/6 GREEN NOT VERIFIED; jobs IN PROGRESS.** ARK/JARVIS/V3 = **NOT_PASSED**. All new UI/frontend development PAUSED.
+
+**Saved at:** **2026-11-06T13:52:44.178+09:00 Asia/Tokyo/JST**, sampled immediately before this safeguarded ordinary GitHub Contents checkpoint write. Administrative timestamp, **not** trusted action clock, human approval, weight identity, evaluation evidence or permission for external execution.
+
+## LATEST — branch, work basis and checkpoint custody
+
+- Branch `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN, Draft, unmerged. Initial exact work-basis HEAD: **`7fda6994b94377f7c9b3999f6fed50509787cc4d`** (Run651 checkpoint).
+- Source/test fix commits: `3c00acdedbc7d4f45a36a2c0bdd05bd38f7a53df` (move unsafe `__new__` test out of parent process), `12be2ffbaf376e16a6ae2b7c9cc512477d7ebeeb` (correct child Python script literal), `cb9cc7ea320a266852f8583270142a6a341f9c8b` (2 independent READ allocation-hook isolation tests). All normal Contents API commits, no force push or raw Git object bypass.
+- Detailed technical evidence report HEAD: **`7f6c7d7bf20b9d3c487aa3466e45f5f30a94f800`**, [Run652 report](https://github.com/Iam-2squared/ark-ai/blob/7f6c7d7bf20b9d3c487aa3466e45f5f30a94f800/docs/JARVIS_RUN652_NON_UI_PYTHON_ALLOCATION_ISOLATION_AND_V3_AUDIT.md).
+- **Checkpoint-write-basis HEAD:** `7f6c7d7bf20b9d3c487aa3466e45f5f30a94f800`; re-read before this write. **Checkpoint-result HEAD is assigned by GitHub after this commit and cannot be truthfully embedded into the same commit beforehand.** Postwrite PR HEAD and status Blob SHA must be re-read and verified. Prewrite status blob SHA: `58850a0c2f58799c8c0d586e0bcd3380df4a9db5`.
+
+## NEW work in this invocation
+
+1. **Actual CI diagnosis:** [Run651 exact-head CI #42159582101](https://github.com/Iam-2squared/ark-ai/actions/runs/42159582101) **6/6 FAIL**. Ubuntu 3.11 job `127701786674`: `DisconnectedToolResult` constructor failed with `TypeError: object.__new__() takes exactly one argument`, cascading across hundreds of tests. Run651's parameterized test reassigns inherited `__new__` within parent pytest and deletes it at teardown; CPython `tp_new` slot can remain changed after deletion. No basis to call prior Run651 GREEN.
+2. **Security assertion preserved, process isolated:** `tests/test_disconnected_toolbox_preaccess_carrier_custody_run651.py` no longer mutates inherited allocation hooks in pytest. An isolated local child interpreter checks that a substituted result constructor is refused before callback execution, without contaminating later tests. Both the test isolation change and a found child-script escaping typo were corrected by normal GitHub writes. No source safety guard weakened.
+3. **Independent detached READ regression:** new `tests/test_disconnected_reference_new_hook_process_isolation_run652.py` adds **2 subprocess-isolated tests** for `SyntheticReadResult` and `SyntheticBoundArguments` inherited `__new__` poisoning. Both require denial before callback execution; a child-process exit is not authorization or backend evidence.
+4. **Read-only V3 hard-stop audit:** checked PR #5's frozen [V3 CONTRACT](https://github.com/Iam-2squared/ark-ai/blob/805b377697472268db02650a89c7a94b1c5337c8/docs/v3/CONTRACT.md), [PRE_PAID_COMPUTE_GATE](https://github.com/Iam-2squared/ark-ai/blob/805b377697472268db02650a89c7a94b1c5337c8/docs/v3/PRE_PAID_COMPUTE_GATE.md), and HF identity review. Immutable Hub revision/file identities, provenance-reviewed 120/30 data, runtime/hardware pins, reviewed cost ceiling, human authorizations remain blockers. No V3 change, Candidate, protected evaluation or payment.
+
+## CI/tests / exact evidence at checkpoint
+
+- Prior source/test HEAD `7fda6994...`: [CI #42159582101](https://github.com/Iam-2squared/ark-ai/actions/runs/42159582101), **FAIL on all 6 jobs** (Ubuntu/Windows × 3.11/3.12/3.13). Root cause independently reproduced locally using a minimal Python dataclass allocation experiment.
+- Intermediate `3c00acde...`: [CI #42164567476](https://github.com/Iam-2squared/ark-ai/actions/runs/42164567476), Ubuntu 3 jobs **FAIL** at last read and Windows still running; a child-script escaped backslash was corrected before latest HEAD. Do not claim this intermediate is GREEN.
+- Corrected child-script HEAD `12be2ffb...`: [CI #42164693743](https://github.com/Iam-2squared/ark-ai/actions/runs/42164693743), **IN PROGRESS** at last read.
+- Latest new-test HEAD `cb9cc7ea...`: [CI #42164800792](https://github.com/Iam-2squared/ark-ai/actions/runs/42164800792), **6 jobs IN PROGRESS** at last read; **latest corrected source/test all-six GREEN NOT YET VERIFIED**. Documentation/checkpoint commits also trigger ordinary CI; do not launch duplicate equivalent workflow runs.
+- **3 isolated child-process cases authored/retained**: one migrated toolbox case plus two new detached READ cases; NOT a measured pytest pass count. Parent-process descriptor tests retained. A public GitHub clone for full local pytest was unavailable due DNS resolution in this environment; no local full-suite or target-PC GGUF result claimed.
+
+## Frozen contracts, PR status, blockers and authorization boundaries
+
+- `main` last observed `7a843f17eb96ed13d66f23b58b06406b3002e405`; no changes or merges. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) Draft/unmerged `805b377697472268db02650a89c7a94b1c5337c8`; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/unmerged `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. V1/V2/Local UI/Launcher freeze and all protected evaluation contracts unchanged. PR #8 remains Draft/unmerged.
+- **No paid service, GPU, external compute, credentials/secrets/new connection, physical-PC operation, real ToolBackend action, camera/microphone, notifications, personal data export, candidate weights, consent inference, automatic replay/promotion, protected V2 opening, main merge or destructive action.** Mock hashes and receipts do not attest real-world effects or trusted identity.
+
+## Next plan / 今後の方針
+
+1. Confirm all six jobs at latest exact head, diagnose actual failures and fix through permitted GitHub Contents operations only; no inherited `__new__` poisoning inside long-lived pytest. No weakening safety expectations.
+2. After lower-level exact-head GREEN, extend Memory COMMIT-UNKNOWN / retained event alignment / CAS expiry ABA race verification while preserving writer ambiguity and no automatic replay.
+3. Verify Planner terminal propagation and UNKNOWN after crash; then connect immutable Registry, exact PermissionGate, durable occurrence and audit-before-action exclusively with a disconnected mock executor and dedicated safety tests.
+4. Advance privacy-safe Personal Context, proactive scheduler and observation back-end contracts independently; leave UI paused and V3 paid/frozen/approval gates closed.
+
+---
+
+## Prior checkpoint — Run651 (full history follows)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run651 / 2026-11-06 JST:** **Three substantial non-UI work packages saved**: (1) repair actual Run650 CI failures without loosening startup guards; (2) strengthen original request/result carrier safety in deterministic disconnected toolbox; (3) strengthen original READ reference and deny-only receipt carriers. **36 new test cases authored after removing interpreter-contaminating inherited-\`__new__\` tests**; corrected exact-head all-six CI **QUEUED / NOT GREEN VERIFIED**. ARK/JARVIS/V3 = **NOT_PASSED**. **NEW UI/FRONTEND DEVELOPMENT PAUSED.**
 
 **Saved at:** **2026-11-06T12:57:04.981+09:00 Asia/Tokyo/JST**, sampled from this invocation immediately before the ordinary GitHub Contents checkpoint update. This is administrative time, **not** trusted action time, human approval, model/runtime attestation, or proof of external action.
