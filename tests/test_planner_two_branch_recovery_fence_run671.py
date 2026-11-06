@@ -9,7 +9,10 @@ from __future__ import annotations
 import pytest
 
 from ark.agency.contracts import PlanStep, StepState, ToolCall
-from ark.agency.disconnected_planner_fence_projection import project_disconnected_planner_fence
+from ark.agency.disconnected_planner_fence_projection import (
+    DisconnectedPlannerProjectionRejected,
+    project_disconnected_planner_fence,
+)
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
 
@@ -94,3 +97,21 @@ def test_recovered_branches_keep_terminal_uncertain_and_write_hold_isolated(
     assert fence.write_authorized is False
     assert fence.external_outcome_verified is False
     assert restarted.recover() == before
+
+
+def test_forged_cancellation_cannot_rewrite_recovered_status_digest(tmp_path):
+    journal, steps, effects = _fixture(tmp_path)
+    authentic = journal.recover()
+    forged = journal.recover()
+    object.__setattr__(
+        forged, "step_statuses",
+        tuple(
+            (name, "cancelled" if name == _ROOT_A else status, revision)
+            for name, status, revision in forged.step_statuses
+        ),
+    )
+    with pytest.raises(
+        DisconnectedPlannerProjectionRejected, match="statuses differ",
+    ):
+        project_disconnected_planner_fence(forged, steps, effects)
+    assert journal.recover() == authentic
