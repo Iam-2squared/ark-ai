@@ -39,12 +39,15 @@ class ObservationEnvelope:
                 )
             # Inert fixture metadata must not carry unbounded raw media or
             # arbitrary-sized identifiers into hashes and downstream reviewers.
-            if len(value) > 1024:
-                raise ValueError(f"{name} exceeds observation identifier budget")
+            # The envelope crosses digest/serialization boundaries in UTF-8.
+            # A 1024-character label can occupy 4096 bytes. Enforce the
+            # allocation budget on encoded bytes, not Python code points.
             try:
-                value.encode("utf-8")
+                encoded_label = value.encode("utf-8", errors="strict")
             except UnicodeError as exc:
                 raise ValueError(f"{name} is not valid UTF-8 text") from exc
+            if len(encoded_label) > 1024:
+                raise ValueError(f"{name} exceeds observation identifier budget")
         if (
             type(self.ingested_at_ms) is not int
             or not 0 <= self.ingested_at_ms <= 2**63 - 1
