@@ -64,7 +64,7 @@ def test_false_denial_callback_cannot_change_result_fingerprint():
     # class attribute, rather than monkeypatching back object.__getattribute__.
     assert "__getattribute__" not in vars(mod.TranscriptBindingPreview)
     try:
-        setattr(mod.TranscriptBindingPreview, "__getattribute__", change_on_denial)
+        mod.TranscriptBindingPreview.__getattribute__ = change_on_denial
         with pytest.raises(
             mod.TranscriptBindingRejected,
             match="transcript carrier definition changed",
