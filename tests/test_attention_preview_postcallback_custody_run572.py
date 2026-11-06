@@ -33,8 +33,8 @@ def test_preview_scalar_mutated_during_prefix_hash_rejected(
 ):
     retained_digest = unchanged_prior_digest()
     # Observe legitimate constructor results without replacing __init__.
-    # Preflight now rejects executable constructor substitutions earlier, so
-    # capture via a passive attribute hook and still test the later JSON drift.
+    # The stronger output-lookup preflight now vetoes even a passive hook.
+    # No preview is constructed, and the later JSON mutation is unreachable.
     original_getattribute = attention.AttentionBudgetPreview.__getattribute__
     captured = []
 
@@ -72,13 +72,15 @@ def test_preview_scalar_mutated_during_prefix_hash_rejected(
         return original_json(*args, **kwargs)
 
     monkeypatch.setattr(prefix.json, "dumps", mutate)
-    with pytest.raises(prefix.AttentionPrefixRejected, match="preview changed"):
+    with pytest.raises(prefix.AttentionPrefixRejected, match="attention source preview rejected"):
         prefix.review_attention_retained_prefix(
             policy(), (), (marker(),),
             retained_history_sha256=retained_digest,
             retained_now_ms=10, observed_now_ms=30,
         )
-    assert touched == [field]
+    assert touched == []
+    assert captured == []
+    assert calls == []
 
 
 def test_unchanged_preview_evidence_remains_no_authority():
