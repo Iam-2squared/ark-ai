@@ -107,7 +107,28 @@ policy = proactive.SyntheticTriggerPolicy(
     "fixture-owner", "notes", "fixture-event", 1, "fixture-v1", 100, 1000, 1,
 )
 ledger = proactive.SyntheticProactiveLedger(pathlib.Path(sys.argv[1]))
-proactive.SyntheticTriggerReceipt = lambda *_args: os._exit(44)
+# Terminate at the actual durable COMMIT, rather than replacing the
+# receipt constructor (which correctly fails at safe ingress now).
+original_connect = proactive.sqlite3.connect
+
+class HardExitAfterCommit:
+    def __init__(self, raw):
+        self.raw = raw
+
+    def __getattr__(self, name):
+        return getattr(self.raw, name)
+
+    def commit(self):
+        self.raw.commit()
+        os._exit(44)
+
+def connect(*args, **kwargs):
+    raw = original_connect(*args, **kwargs)
+    if args and "mode=rw" in str(args[0]) and kwargs.get("uri"):
+        return HardExitAfterCommit(raw)
+    return raw
+
+proactive.sqlite3.connect = connect
 ledger.prepare(
     policy, source_digest="a" * 64, observation_digest="b" * 64,
     observed_at_ms=1000, now_ms=1001,
