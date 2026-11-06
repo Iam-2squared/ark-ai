@@ -9,10 +9,14 @@ from __future__ import annotations
 import pytest
 
 from ark.agency.contracts import (
-    PlanConflictError, PlanStep, StepState, ToolCall,
+    PlanConflictError,
+    PlanStep,
+    StepState,
+    ToolCall,
 )
 from ark.agency.disconnected_write_recovery_fence import (
-    OfflineRecoveryStepClaim, review_disconnected_recovery_fence,
+    OfflineRecoveryStepClaim,
+    review_disconnected_recovery_fence,
 )
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
