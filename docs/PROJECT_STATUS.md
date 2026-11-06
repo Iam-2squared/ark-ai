@@ -1,5 +1,51 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run651 / 2026-11-06 JST:** **Three substantial non-UI work packages saved**: (1) repair actual Run650 CI failures without loosening startup guards; (2) strengthen original request/result carrier safety in deterministic disconnected toolbox; (3) strengthen original READ reference and deny-only receipt carriers. **36 new test cases authored after removing interpreter-contaminating inherited-\`__new__\` tests**; corrected exact-head all-six CI **QUEUED / NOT GREEN VERIFIED**. ARK/JARVIS/V3 = **NOT_PASSED**. **NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Saved at:** **2026-11-06T12:57:04.981+09:00 Asia/Tokyo/JST**, sampled from this invocation immediately before the ordinary GitHub Contents checkpoint update. This is administrative time, **not** trusted action time, human approval, model/runtime attestation, or proof of external action.
+
+## LATEST — branch, exact work basis, save custody
+
+- Branch `research/jarvis-foundations`; [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN, Draft, unmerged.
+- **Initial exact work-basis HEAD:** `b97875efc81214659491471d7a3d5d6291a7ec0e` (Run650 checkpoint; its CI [#42156343240](https://github.com/Iam-2squared/ark-ai/actions/runs/42156343240) later observed six FAIL).
+- **Final source/test repair HEAD:** `1fb1ab16aca74a358ca19b91db7bd06c27c8f270`. GitHub compare `b97875efc81214659491471d7a3d5d6291a7ec0e...1fb1ab16aca74a358ca19b91db7bd06c27c8f270`: **9 fast-forward commits, exactly 6 paths** (2 non-UI sources, 2 new test files, 2 updated legacy test files; no frozen or UI paths).
+- **Technical report HEAD:** `c619c975aaceed9193e9246d3332012c0266ace4`, [Run651 detailed evidence](https://github.com/Iam-2squared/ark-ai/blob/c619c975aaceed9193e9246d3332012c0266ace4/docs/JARVIS_RUN651_NON_UI_STARTUP_MOCK_READ_CARRIER_CUSTODY.md).
+- **Checkpoint write-basis HEAD:** `c619c975aaceed9193e9246d3332012c0266ace4`; re-read immediately before this write. **Checkpoint-result HEAD will be assigned by GitHub only AFTER this commit**, and cannot accurately be embedded into its own contents. Re-fetch PR #8 HEAD and status blob SHA to verify after save. **Pre-write status blob SHA:** `393f047d0ffeb51388277dda61db45f8536a7413`.
+
+## NEW work this invocation
+
+1. **Run650 CI recovery:** [commit ec35feae](https://github.com/Iam-2squared/ark-ai/commit/ec35feaea02e9cc49954793568b305a0d0fbf122) updates the 3 outdated Run419 startup test assertions to reflect earlier fail-closed descriptor rejection; asserts poisoned callbacks never execute. Source security guards unchanged.
+2. **Disconnected toolbox:** [source commit b36ab9e1](https://github.com/Iam-2squared/ark-ai/commit/b36ab9e1da8f26a6fcaa45b8746d3c23f3be5cfa) pins original exact request/result slotted field descriptors, constructor/lookup hooks and denial properties before private synthetic JSON or result access, bracketing reentrant callbacks. New `tests/test_disconnected_toolbox_preaccess_carrier_custody_run651.py` now has **17** authored synthetic cases. Legacy Run585 test updated to assert earlier safe rejection before poisoned callback.
+3. **Disconnected READ reference binding:** [source commit ce42e52d](https://github.com/Iam-2squared/ark-ai/commit/ce42e52df6d94705da517e0c2f20824fb09cb519) checks the import-original exact `SyntheticReadResult` and `SyntheticBoundArguments` field/lookup/constructor/denial descriptors prior to reading caller-provided JSON and after callbacks. New `tests/test_disconnected_reference_carriers_run651.py` now has **19** authored no-dispatch cases. Local fixture outputs remain deny-only and do not establish provenance, consent, real ToolBackend execution or external result.
+4. **CI-detected test isolation repair:** first new-test CI [#42158581841](https://github.com/Iam-2squared/ark-ai/actions/runs/42158581841) failed all six due Ruff B010 (four test lines); fixed in `2727cdff8747192b15cd67b3aebab14013064580`. Intermediate CI [#42158700673](https://github.com/Iam-2squared/ark-ai/actions/runs/42158700673) showed **297 FAIL** on Ubuntu 3.11 after a new test monkeypatched inherited Python `__new__` and corrupted later test allocation. Removed both unsafe `__new__` test parameterizations (commits `6a1cdd1690e3ed9df4986a8e5d725cddefdcba44`, `03a34a1df797dca5b009b67cc91875c6fc29f15d`); original source `__new__` safeguards remain. No force push, raw Git object write, test deletion of established coverage, or disabling failure checks.
+
+## CI / tests / evidence at checkpoint
+
+- Run650 `b97875efc81214659491471d7a3d5d6291a7ec0e`: [CI #42156343240](https://github.com/Iam-2squared/ark-ai/actions/runs/42156343240) **6/6 FAIL**, from three old startup expected-error assertions (Ubuntu 3.11 **9,428 PASS / 3 FAIL / 1 SKIP**). Fixed in Run651.
+- Intermediate `55c1132589fdd37995b58cc3c05bb480155876f6`: [CI #42158581841](https://github.com/Iam-2squared/ark-ai/actions/runs/42158581841) **6/6 FAIL (Ruff B010)**, repaired.
+- Intermediate `2727cdff8747192b15cd67b3aebab14013064580`: [CI #42158700673](https://github.com/Iam-2squared/ark-ai/actions/runs/42158700673) **Ubuntu 3.11 297 FAIL**, contaminated inherited `__new__`; repaired by removing unsafe test cases. Do not claim this intermediate CI green.
+- **Corrected source/test HEAD `1fb1ab16aca74a358ca19b91db7bd06c27c8f270`:** [CI #42159188548](https://github.com/Iam-2squared/ark-ai/actions/runs/42159188548) **QUEUED** at last read; all 6/6 GREEN **NOT VERIFIED**. Report-head [CI #42159425827](https://github.com/Iam-2squared/ark-ai/actions/runs/42159425827) **QUEUED** at last read. This checkpoint also triggers ordinary CI. No equivalent workflows manually re-ran.
+- **36 authored cases (17+19), not measured pytest PASS**. No local full pytest/Ruff on this exact HEAD or actual target-PC GGUF test is claimed.
+
+## Frozen contracts, blockers and free-only boundary
+
+- No writes to `main` (last observed `7a843f17eb96ed13d66f23b58b06406b3002e405`); V1/V2/Local UI/Launcher contracts/evidence unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) Draft/unmerged (observed `805b377697472268db02650a89c7a94b1c5337c8`); protected historical V2 final evaluation unopened, no real V3 Candidate, immutable HF/package/rights/human review/budget blockers unresolved. [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/unmerged `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, no UI/Frontend changes.
+- No billable compute, external GPU, paid API, subscription, credentials/secret connection, physical PC, real ToolBackend call, notification, camera/microphone, human consent, candidate promotion, main merge, destructive operation or evaluation gate opening. These are reversible disconnected local input/output checks, not a trusted sandbox, durable external proof or authorization.
+
+## Next plan / 今後の方針
+
+1. **Latest exact-head CI:** inspect all 6 jobs at the corrected source/test HEAD; diagnose genuine failures from logs and repair minimally. Avoid inherited CPython class-allocation hook poisoning in tests; never label a queued/in-progress run GREEN.
+2. **Memory:** extend read-only COMMIT-UNKNOWN reconciliation, CAS revision/expiry and retained row/event prefix coherence. Matching digests never attribute writer or authorize retry.
+3. **Planner:** verify restart UNKNOWN and independent terminal/dependency progression; no automatic WRITE replay or inference of external results from local records.
+4. **ToolRegistry/PermissionGate:** only after independently validated lower-level exact-head GREEN, connect mock exact-type grants, durable occurrence and audit-before-action into a disconnected integration fixture. No live tool authority.
+5. Continue privacy-safe Personal Context, proactive/observation back-end, free-only V3 guard reviews; UI work stays paused, PR #5/#9 Draft and frozen approvals/evaluation gates closed.
+
+---
+
+## Prior checkpoint — Run650 (verbatim history below)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run650 / 2026-11-06 JST:** **Three non-UI, disconnected core custody packages saved**: privacy-veto witness/review/receipt pre-access checks, append-only local audit continuity witness checks, and startup-readiness requirement/receipt original descriptor checks. **55 authored regression cases** plus one old-test compatibility repair after actual CI FAIL. **Latest six-job CI still IN PROGRESS / NOT VERIFIED GREEN.** ARK/JARVIS/V3 = **NOT_PASSED**. **ALL NEW UI DEVELOPMENT PAUSED.**
 
 **Saved at:** **2026-11-06T12:24:10.427+09:00 Asia/Tokyo/JST**, sampled from the current runtime immediately before the ordinary safeguarded GitHub Contents update. This is administrative checkpoint time, **not** a trusted action clock, authorization, training approval, model/runtime identity, or independent evidence.
