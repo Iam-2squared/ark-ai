@@ -72,7 +72,62 @@ class TranscriptBindingPreview:
         return False
 
 
+# Import-original frozen carriers must be checked before their first field
+# read. Frozen instance slots can still be replaced at the class level by a
+# property or a hostile lookup hook; checking values afterwards is too late.
+_AUDIO_TYPE = AudioMetadataClaim
+_SEGMENT_TYPE = TranscriptSegmentClaim
 _PREVIEW_TYPE = TranscriptBindingPreview
+_CARRIER_FIELDS = (
+    ("owner_sha256", "scope_sha256", "audio_sha256",
+     "sample_rate_hz", "frame_count"),
+    ("start_frame", "end_frame", "language", "text_sha256", "text"),
+    ("fingerprint", "segment_count", "total_text_bytes",
+     "first_frame", "final_frame", "audio_sha256"),
+)
+_CARRIER_TYPES = (_AUDIO_TYPE, _SEGMENT_TYPE, _PREVIEW_TYPE)
+_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_CARRIER_FIELDS = tuple(
+    tuple(vars(cls)[name] for name in fields)
+    for cls, fields in zip(_CARRIER_TYPES, _CARRIER_FIELDS, strict=True)
+)
+_ORIGINAL_CARRIER_INITS = tuple(
+    vars(cls)["__init__"] for cls in _CARRIER_TYPES
+)
+_ORIGINAL_CARRIER_HOOKS = tuple(
+    tuple(vars(cls).get(name) for name in _CARRIER_HOOKS)
+    for cls in _CARRIER_TYPES
+)
+
+
+def _assert_original_binding_carriers() -> None:
+    if (
+        (AudioMetadataClaim, TranscriptSegmentClaim, TranscriptBindingPreview)
+        != _CARRIER_TYPES
+    ):
+        raise TranscriptBindingRejected("transcript carrier class changed")
+    for cls, names, original_fields, original_init, original_hooks in zip(
+        _CARRIER_TYPES, _CARRIER_FIELDS, _ORIGINAL_CARRIER_FIELDS,
+        _ORIGINAL_CARRIER_INITS, _ORIGINAL_CARRIER_HOOKS, strict=True,
+    ):
+        if (
+            vars(cls).get("__init__") is not original_init
+            or any(
+                vars(cls).get(name) is not original
+                for name, original in zip(
+                    names, original_fields, strict=True,
+                )
+            )
+            or any(
+                vars(cls).get(name) is not original
+                for name, original in zip(
+                    _CARRIER_HOOKS, original_hooks, strict=True,
+                )
+            )
+        ):
+            raise TranscriptBindingRejected("transcript carrier definition changed")
+
+
 _PREVIEW_DENIAL_NAMES = (
     "audio_or_transcript_authenticated", "user_consent_proven",
     "asr_verified", "tool_execution_authorized",
@@ -83,7 +138,8 @@ _ORIGINAL_PREVIEW_DENIALS = tuple(
 
 
 def _assert_preview_denials() -> None:
-    """Reject even False-only authority replacements before reviewing text."""
+    """Reject forged input/output slots before reviewing private text."""
+    _assert_original_binding_carriers()
     if (
         TranscriptBindingPreview is not _PREVIEW_TYPE
         or any(
