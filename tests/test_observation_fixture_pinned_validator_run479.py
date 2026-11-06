@@ -54,7 +54,9 @@ def test_injected_noop_post_init_cannot_admit_invalid_text(
     monkeypatch, broken, fragment,
 ):
     monkeypatch.setattr(ObservationEnvelope, "__post_init__", lambda self: None)
-    with pytest.raises(ValueError, match=fragment):
+    # A replaced class validator is now denied before it can execute;
+    # original field-specific diagnostics remain covered when unmodified.
+    with pytest.raises(ValueError, match=fragment + "|changed during construction"):
         _text(**broken)
 
 
@@ -67,5 +69,7 @@ def test_injected_noop_post_init_cannot_admit_invalid_binary(
     monkeypatch, broken, fragment,
 ):
     monkeypatch.setattr(ObservationEnvelope, "__post_init__", lambda self: None)
-    with pytest.raises(ValueError, match=fragment):
+    # A replaced class validator is now denied before it can execute;
+    # original field-specific diagnostics remain covered when unmodified.
+    with pytest.raises(ValueError, match=fragment + "|changed during construction"):
         _binary(**broken)
