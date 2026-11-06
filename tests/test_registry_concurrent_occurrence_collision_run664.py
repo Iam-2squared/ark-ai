@@ -19,6 +19,7 @@ from ark.agency.durable_occurrence_review import (
     SyntheticReplayRejected,
 )
 
+
 @pytest.mark.parametrize(
     "collision",
     ("same_token_distinct_occurrence", "distinct_token_same_occurrence"),
