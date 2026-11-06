@@ -17,6 +17,18 @@
 - Two earlier lineage test files (`run419`, `run525`) were updated to assert early safe refusal rather than expect an injected malicious False getter or forged constructor to execute twice. **No production safety checks were relaxed.**
 - No real camera, microphone, screen, network, media collection, notification, user data export or ToolBackend operation.
 
+## Package 3 — Planner diamond recovery (3 regression cases)
+
+- `tests/test_planner_diamond_cross_handle_terminal_run654.py` adds **3 authored cases** for two independent handles concurrently starting two roots of a shared diamond DAG. Root A FAILED or CANCELLED propagates BLOCKED through join and tail once, while root B may independently SUCCEED. After reopening the SQLite journal, revisions and the retained high-water witness remain stable, the failed step/blocked join cannot be retried, and the unaffected independent branch can proceed without treating another RUNNING as safely dispatchable.
+- A separate success-path regression requires **both roots** to durably SUCCEED before the join can enter RUNNING, then verifies restart classifies the join as ambiguous/UNKNOWN, not automatically executable.
+- This package only exercises established source contracts using ephemeral SQLite; no executable source changes or real tools.
+
+## Package 4 — Proactive attention input carrier custody (22 regression cases)
+
+- `src/ark/proactive_attention_preview.py` now checks the **import-original field descriptors and constructor/allocation hooks** of the exact frozen `AttentionBudgetPolicy` and `SyntheticSurfaceMarker` classes, in addition to existing lookup hooks. A poisoned input slot must be rejected before inspecting synthetic scope/trigger/observation hashes; all JSON/digest callbacks are bracketed by the existing stable checks.
+- `tests/test_proactive_attention_field_allocation_custody_run654.py` contributes **22 authored cases**: 13 original class slot/initializer poison cases; 6 reentrant digest-callback poison cases; 2 isolated inherited-`__new__` child-process cases; 1 healthy deny-only preview. A reviewed test expectation was corrected to `REVIEW_ONLY` at the 1ms cooldown boundary (last marker 90ms, review at 100ms), before any PASS claim.
+- No clock trust, consent, notifications, scheduled execution, media capture, or automatic replay is added. This is local synthetic planning only.
+
 ## Source/CI custody
 
 | Check | Evidence |
@@ -26,9 +38,12 @@
 | Context regression | `6a0fd37e99fe780b9e15d94a1685e0d762e16e25`, [CI #42176868725](https://github.com/Iam-2squared/ark-ai/actions/runs/42176868725) |
 | Observation source | `8291a2109bb6f582eeb28555bc81bbc6d29d7915`, [CI #42177130598](https://github.com/Iam-2squared/ark-ai/actions/runs/42177130598); superseded intermediate source-only CI **FAIL** on old test expectations (Ubuntu 3.11: 3 FAIL / 9,518 PASS / 1 SKIP). Existing tests expected substituted callbacks to execute. |
 | Observation corrected legacy tests | `a61cf2f37b87ff38450f9fc1f7a171005c75011f`, `5c07089e0cf90b129ae59065a1305c6e20c1dc46` |
+| Planner diamond regression | `f1237c0934df8f9252ecee6163f3ed4e14fb87a2`, [CI #42177947515](https://github.com/Iam-2squared/ark-ai/actions/runs/42177947515) **IN PROGRESS** at drafting |
+| Attention original input guard | `f0c78f4e27677a3013503b6d9632b4a6918f50be`, [CI #42178496925](https://github.com/Iam-2squared/ark-ai/actions/runs/42178496925) **IN PROGRESS** at drafting |
+| Attention corrected source/test head | `86e204a184598b6ed5e7592169ebef600d3f9592`, [CI #42178663158](https://github.com/Iam-2squared/ark-ai/actions/runs/42178663158) **QUEUED** at drafting; latest exact-head six-environment CI not yet verified GREEN |
 | Observation new regressions | `d118022fc057c525f1e719fadcfd9f32fcf3aae4`, [CI #42177321918](https://github.com/Iam-2squared/ark-ai/actions/runs/42177321918) **QUEUED** at last read |
 
-**33 authored new test cases is NOT a claim of 33 measured passes.** The final corrected source/test exact-head six-environment CI is **not yet proven GREEN** at document drafting. No full local checkout/pytest is claimed: public GitHub clone DNS failed in this execution environment. All writes used GitHub's ordinary Contents API with a fresh PR HEAD check before each write; no raw object/ref bypass or force push.
+**58 authored new test cases (17 Context + 16 Observation + 3 Planner + 22 Attention) is NOT a claim of 58 measured passes.** The final corrected source/test exact-head six-environment CI is **not yet proven GREEN** at document drafting. No full local checkout/pytest is claimed: public GitHub clone DNS failed in this execution environment. All writes used GitHub's ordinary Contents API with a fresh PR HEAD check before each write; no raw object/ref bypass or force push.
 
 ## Safety boundaries and next work
 
