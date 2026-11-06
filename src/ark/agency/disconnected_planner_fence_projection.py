@@ -19,7 +19,7 @@ from .disconnected_write_recovery_fence import (
     OfflineRecoveryStepClaim,
     review_disconnected_recovery_fence,
 )
-from .planner import PlanGraph
+from .planner import PlanGraph, _plan_digest
 
 
 class DisconnectedPlannerProjectionRejected(ValueError):
@@ -136,6 +136,27 @@ def project_disconnected_planner_fence(
     ):
         raise DisconnectedPlannerProjectionRejected(
             "recovery status membership or ambiguous RUNNING drift"
+        )
+
+    # A caller can replace a frozen SyntheticPlanRecovery's status tuple
+    # without changing the separately retained tail. Verify the *entire*
+    # recovered status image against the replay tail before projecting any
+    # READY_MOCK_ONLY code. This is local consistency, not writer attestation.
+    observed_status_digest = _plan_digest(
+        "pstate_",
+        {
+            "schema_version": 1,
+            "topology_digest": identity,
+            "statuses": [
+                {"step_id": name, "state": states[name], "revision": revisions[name]}
+                for name in sorted(states)
+            ],
+        },
+    )
+    stable()
+    if observed_status_digest != tail_epoch[3]:
+        raise DisconnectedPlannerProjectionRejected(
+            "recovered Planner statuses differ from retained tail digest"
         )
 
     # Reorder caller-provided steps into the fence's canonical dependency-first
