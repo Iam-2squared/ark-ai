@@ -111,6 +111,27 @@ def _require_original_token_denials() -> None:
         )
 
 
+def _require_bounded_source_id(source_id: object) -> None:
+    """Limit opt-in CAS identities by actual UTF-8 bytes, not code points.
+
+    Frozen Memory v1 accepts up to 512 characters. The stricter, optional
+    generation-CAS path must not treat a multibyte identifier as a bounded
+    512-byte identity or let unpaired surrogates escape as encoding errors.
+    """
+    if type(source_id) is not str or not source_id.strip():
+        raise MemoryGenerationCASRejected("exact nonblank generation source required")
+    try:
+        size = len(source_id.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise MemoryGenerationCASRejected(
+            "generation source is not valid UTF-8"
+        ) from exc
+    if size > 512:
+        raise MemoryGenerationCASRejected(
+            "generation source exceeds 512 UTF-8 bytes"
+        )
+
+
 def _digest(domain: bytes, fields: object) -> str:
     return hashlib.sha256(
         domain + json.dumps(
@@ -275,10 +296,10 @@ def observe_memory_generation_for_cas(
     if (
         type(store) is not SQLiteMemoryStore
         or type(scope) is not MemoryScope
-        or type(source_id) is not str or not source_id.strip() or len(source_id) > 512
-    ):
+            ):
         raise MemoryGenerationCASRejected("exact generation observation inputs required")
     _require_original_token_denials()
+    _require_bounded_source_id(source_id)
     owner, namespace, path = scope.owner_id, scope.namespace, store.path
     memory_id = deterministic_memory_id(scope, source_id)
 
@@ -347,6 +368,7 @@ def generation_fenced_memory_update(
     ):
         raise MemoryGenerationCASRejected("exact Memory generation write inputs required")
     _require_original_token_denials()
+    _require_bounded_source_id(write.source_id)
     pinned_token = _token_fields(retained)
     original_scope = write.scope
     original_owner, original_namespace = write.scope.owner_id, write.scope.namespace
