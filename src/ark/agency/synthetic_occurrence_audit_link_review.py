@@ -115,6 +115,33 @@ class SyntheticAuditLinkReceipt:
 # Keep the original receipt class as an exact-type validator even if a local
 # test callback substitutes the exported constructor while a link commits.
 _RECEIPT_CLASS = SyntheticAuditLinkReceipt
+_RECEIPT_MEMBERS = (
+    "occurrence_id", "audit_event_id", "link_hash",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "dispatch_authorized", "external_outcome_known",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_RECEIPT_MEMBERS = tuple(
+    vars(_RECEIPT_CLASS).get(name) for name in _RECEIPT_MEMBERS
+)
+
+
+def _require_original_receipt_contract() -> None:
+    """Reject executable replacement hooks before synthetic SQLite effects.
+
+    This guards local Python class drift only; it cannot authenticate a
+    writer, an audit clock, or a real ToolBackend outcome.
+    """
+    if (
+        SyntheticAuditLinkReceipt is not _RECEIPT_CLASS
+        or any(
+            vars(_RECEIPT_CLASS).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_MEMBERS, _ORIGINAL_RECEIPT_MEMBERS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticAuditLinkRejected("synthetic link receipt definition changed")
 
 
 def _replay(conn: sqlite3.Connection) -> tuple[SyntheticAuditLinkWitness, ...]:
@@ -254,6 +281,7 @@ class SyntheticOccurrenceAuditLinkStore:
         retained: SyntheticAuditLinkWitness | None = None,
     ) -> SyntheticAuditLinkReceipt:
         """Link two existing synthetic records, without dispatch or cross-store atomicity."""
+        _require_original_receipt_contract()
         if (
             type(registry) is not ToolRegistry or type(call) is not ToolCall
             or type(ledger) is not SyntheticOccurrenceStore
@@ -283,6 +311,7 @@ class SyntheticOccurrenceAuditLinkStore:
         )
 
         def assert_input_epoch() -> None:
+            _require_original_receipt_contract()
             try:
                 stable = (
                     self._path is link_path_epoch
@@ -443,9 +472,11 @@ class SyntheticOccurrenceAuditLinkStore:
                 # A post-COMMIT rejection does not erase an already committed
                 # link. Keep durable evidence and deny the diagnostic receipt.
                 assert_input_epoch()
-                result = SyntheticAuditLinkReceipt(
+                _require_original_receipt_contract()
+                result = _RECEIPT_CLASS(
                     reservation_epoch[0], event_epoch[0], link,
                 )
+                _require_original_receipt_contract()
                 # Receipt construction is another Python callback boundary.
                 # A committed link stays durable, but a retargeted/forged
                 # diagnostic receipt must never be returned to its caller.
