@@ -49,6 +49,43 @@ class SyntheticWritePlanBundle:
         return False
 
 
+_BUNDLE_CLASS = SyntheticWritePlanBundle
+_BUNDLE_FIELDS = ("canonical_json", "digest")
+_BUNDLE_DENIALS = (
+    "dispatch_authorized", "automatic_replay_authorized",
+    "external_outcome_known",
+)
+_BUNDLE_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_BUNDLE_FIELDS = tuple(
+    vars(_BUNDLE_CLASS)[name] for name in _BUNDLE_FIELDS
+)
+_ORIGINAL_BUNDLE_DENIALS = tuple(
+    vars(_BUNDLE_CLASS)[name] for name in _BUNDLE_DENIALS
+)
+_ORIGINAL_BUNDLE_HOOKS = tuple(
+    vars(_BUNDLE_CLASS).get(name) for name in _BUNDLE_HOOKS
+)
+
+
+def _require_original_bundle_carrier() -> None:
+    """Refuse executable bundle slots and authority hooks before byte access."""
+    if (
+        SyntheticWritePlanBundle is not _BUNDLE_CLASS
+        or any(
+            vars(_BUNDLE_CLASS).get(name) is not original
+            for names, originals in (
+                (_BUNDLE_FIELDS, _ORIGINAL_BUNDLE_FIELDS),
+                (_BUNDLE_DENIALS, _ORIGINAL_BUNDLE_DENIALS),
+                (_BUNDLE_HOOKS, _ORIGINAL_BUNDLE_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticWritePlanBundleRejected(
+            "synthetic bundle carrier or denial changed"
+        )
+
+
 def _digest(data: bytes) -> str:
     return "splanbundle_" + hashlib.sha256(_LABEL + data).hexdigest()
 
@@ -77,6 +114,7 @@ def restore_synthetic_write_plan_bundle(
     result. Every returned per-step archive needs independent custody before
     it is later used as a retained prefix in a separate restart diagnosis.
     """
+    _require_original_bundle_carrier()
     if (
         type(bundle) is not SyntheticWritePlanBundle
         or type(bundle.canonical_json) is not bytes
@@ -90,6 +128,7 @@ def restore_synthetic_write_plan_bundle(
         raise SyntheticWritePlanBundleRejected("bundle digest mismatch")
 
     def assert_epoch() -> None:
+        _require_original_bundle_carrier()
         if (
             bundle.canonical_json is not original_bytes
             or bundle.digest is not original_digest
@@ -170,6 +209,7 @@ def bundle_synthetic_write_plan(
     review: SyntheticWritePlanReview,
 ) -> SyntheticWritePlanBundle:
     """Capture each independently validated WRITE review in a bounded bundle."""
+    _require_original_bundle_carrier()
     if (
         type(review) is not SyntheticWritePlanReview
         or type(review.steps) is not tuple
@@ -226,15 +266,25 @@ def bundle_synthetic_write_plan(
             raise SyntheticWritePlanBundleRejected("plan bundle budget exceeded")
         digest = _digest(data)
         assert_epoch()
+        _require_original_bundle_carrier()
         result = SyntheticWritePlanBundle(data, digest)
         restore_synthetic_write_plan_bundle(result)
         assert_epoch()
+        _require_original_bundle_carrier()
         if (
             type(result) is not SyntheticWritePlanBundle
             or result.canonical_json is not data
             or result.digest is not digest
         ):
             raise SyntheticWritePlanBundleRejected("constructed bundle changed")
+        for name in _BUNDLE_DENIALS:
+            _require_original_bundle_carrier()
+            if getattr(result, name) is not False:
+                raise SyntheticWritePlanBundleRejected(
+                    "synthetic bundle gained dispatch authority"
+                )
+            _require_original_bundle_carrier()
+            assert_epoch()
         return result
     except SyntheticWritePlanBundleRejected:
         raise
