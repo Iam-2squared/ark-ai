@@ -19,7 +19,10 @@ from ark.disconnected_schedule_quarantine_ledger import QuarantineWitness
     (
         (resume.OfflineScheduleResumeReview, "consent_verified", "denial descriptor replaced"),
         (DisconnectedDuePreview, "notification_authorized", "preview denial descriptor changed"),
-        (QuarantineWitness, "independently_authenticated", "quarantine witness authority descriptor changed"),
+        (
+            QuarantineWitness, "independently_authenticated",
+            "quarantine witness authority descriptor changed",
+        ),
     ),
 )
 def test_preinstalled_false_authority_cannot_touch_private_ledger_path(
