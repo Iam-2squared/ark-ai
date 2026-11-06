@@ -28,7 +28,7 @@ def test_preinstalled_bundle_code_cannot_read_retained_bytes(
         raise AssertionError("executable bundle carrier ran")
 
     with monkeypatch.context() as patch:
-        patch.setattr(bundles.SyntheticWritePlanBundle, name, forbidden)
+        patch.setattr(bundles.SyntheticWritePlanBundle, name, forbidden, raising=False)
         with pytest.raises(
             bundles.SyntheticWritePlanBundleRejected,
             match="synthetic bundle carrier or denial changed",
