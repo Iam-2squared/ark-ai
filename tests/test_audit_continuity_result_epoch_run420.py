@@ -68,8 +68,10 @@ def test_returned_audit_witness_rejects_late_constructor_side_effect(
     original_path = audit.path
     witness_type = module.AuditContinuityWitness
     original_post_init = witness_type.__post_init__
+    executed = []
 
     def tampered(self):
+        executed.append(True)
         original_post_init(self)
         if mutation == "event_count":
             object.__setattr__(self, "event_count", self.event_count + 1)
@@ -83,12 +85,15 @@ def test_returned_audit_witness_rejects_late_constructor_side_effect(
             audit.path = Path(str(original_path))
 
     monkeypatch.setattr(witness_type, "__post_init__", tampered)
-    expected = (
-        "source changed" if mutation == "path"
-        else "returned audit continuity witness changed"
-    )
-    with pytest.raises(ActionAuditSchemaError, match=expected):
+    # The original validator is now statically pinned BEFORE any private
+    # SQLite scan or potentially executable post-init callback. This is a
+    # stronger fail-closed boundary than the older postconstruction rejection.
+    with pytest.raises(
+        ActionAuditSchemaError, match="audit continuity witness constructor changed",
+    ):
         module.review_audit_continuity(audit)
+    assert executed == []
+    assert audit.path is original_path
 
 
 def test_untampered_audit_history_stays_readonly_and_prefix_bound(
