@@ -63,7 +63,35 @@ class SyntheticRevocationWitness:
 
 # Reject a preinstalled or reentrant replacement of the validator itself.
 # Merely calling a mutable method cannot establish even local witness shape.
-_ORIGINAL_WITNESS_VALIDATOR = SyntheticRevocationWitness.assert_integrity
+_WITNESS_TYPE = SyntheticRevocationWitness
+_ORIGINAL_WITNESS_VALIDATOR = vars(_WITNESS_TYPE)["assert_integrity"]
+_WITNESS_FIELDS = ("rows", "witness_id")
+_WITNESS_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(vars(_WITNESS_TYPE)[key] for key in _WITNESS_FIELDS)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(key) for key in _WITNESS_HOOKS
+)
+
+
+def _require_original_witness_carrier() -> None:
+    # A forged slotted field/constructor is executable even if the retained
+    # witness's digest and validator still look correct. Read class dicts,
+    # never those potentially hostile instance attributes, at ingress.
+    if (
+        SyntheticRevocationWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("assert_integrity") is not _ORIGINAL_WITNESS_VALIDATOR
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for names, originals in (
+                (_WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+                (_WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticContextRevocationRejected(
+            "revocation integrity validator changed"
+        )
 
 
 def review_revocation_continuity(
@@ -79,6 +107,7 @@ def review_revocation_continuity(
         raise SyntheticContextRevocationRejected("exact revocation ledger required")
     if retained is not None and type(retained) is not SyntheticRevocationWitness:
         raise SyntheticContextRevocationRejected("exact retained witness required")
+    _require_original_witness_carrier()
     source_path = ledger.path
     # Capture the caller's exact retained evidence BEFORE its first integrity
     # callback. A frozen dataclass can be reflectively mutated from inside
@@ -94,13 +123,7 @@ def review_revocation_continuity(
         pinned = (retained_rows, retained.witness_id)
 
     def assert_epoch() -> None:
-        if (
-            SyntheticRevocationWitness.assert_integrity
-            is not _ORIGINAL_WITNESS_VALIDATOR
-        ):
-            raise SyntheticContextRevocationRejected(
-                "revocation integrity validator changed"
-            )
+        _require_original_witness_carrier()
         ledger._assert_source_path(source_path)
         if retained is not None and (
             retained.rows is not retained_rows
@@ -136,7 +159,10 @@ def review_revocation_continuity(
                 )
             )
             assert_epoch()
-            witness = SyntheticRevocationWitness(rows, _hash(rows))
+            digest = _hash(rows)
+            assert_epoch()
+            witness = SyntheticRevocationWitness(rows, digest)
+            assert_epoch()
             # The freshly constructed witness is also a reflected-mutable
             # carrier. An integrity or COMMIT callback must not retarget the
             # result after its digest was checked and before it is returned.
