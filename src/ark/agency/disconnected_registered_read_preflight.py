@@ -59,6 +59,16 @@ _REPORT_DENIALS = (
 _ORIGINAL_REPORT_DENIALS = tuple(
     vars(_REPORT)[name] for name in _REPORT_DENIALS
 )
+# Even an inert READ preflight report is executable Python during construction
+# and attribute access. Pin field slots, constructor and inherited lookup
+# hooks before touching the registry or invoking the result constructor.
+_REPORT_FIELDS = (
+    "registry_revision", "bound_action_id", "request_id",
+    "tool_name", "capability",
+)
+_REPORT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[name] for name in _REPORT_FIELDS)
+_ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS)
 _ORIGINAL_REGISTERED_POLICY = vars(PermissionGate)["authorize_registered"]
 
 
@@ -67,9 +77,12 @@ def _assert_original_report_denials() -> None:
         DisconnectedReadPreflight is not _REPORT
         or any(
             vars(_REPORT).get(name) is not original
-            for name, original in zip(
-                _REPORT_DENIALS, _ORIGINAL_REPORT_DENIALS, strict=True,
+            for names, originals in (
+                (_REPORT_DENIALS, _ORIGINAL_REPORT_DENIALS),
+                (_REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS),
+                (_REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS),
             )
+            for name, original in zip(names, originals, strict=True)
         )
     ):
         raise DisconnectedReadPreflightRejected(
@@ -187,6 +200,7 @@ def review_disconnected_registered_read(
         before.registry_revision, before.bound_action_id, request_id,
         before.registration.name, before.registration.capability,
     )
+    _assert_original_report_denials()
     report = _REPORT(*report_epoch)
 
     def stable_report() -> None:
