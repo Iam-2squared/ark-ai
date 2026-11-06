@@ -36,7 +36,7 @@ def test_original_review_gives_deterministic_inert_plan_without_append(tmp_path)
     assert view.plan_id == recovered.tail.topology_digest
     assert {item.step_id: item.code for item in view.decisions} == {
         _ROOT: "READY_MOCK_ONLY",
-        _CHILD: "HELD_WRITE_APPROVAL",
+        _CHILD: "WAIT_DEPENDENCY",
     }
     assert view.dispatch_authorized is False
     assert view.automatic_replay_authorized is False
