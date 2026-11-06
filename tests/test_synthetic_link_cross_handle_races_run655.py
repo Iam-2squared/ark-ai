@@ -11,7 +11,6 @@ import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
-import pytest
 from test_synthetic_occurrence_audit_link_run374 import _link, _setup, _source
 
 from ark.agency.synthetic_occurrence_audit_link_review import (
