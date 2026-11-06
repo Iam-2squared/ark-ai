@@ -47,23 +47,32 @@ def test_substituted_preview_authority_refused_before_text(
     assert called == []
 
 
-def test_false_denial_callback_cannot_change_result_fingerprint(monkeypatch):
+def test_false_denial_callback_cannot_change_result_fingerprint():
     audio, segments = _case()
     original = mod.TranscriptBindingPreview.__getattribute__
+    invoked = []
 
     def change_on_denial(self, name):
+        invoked.append(name)
         value = original(self, name)
         if name == "user_consent_proven":
             object.__setattr__(self, "fingerprint", "f" * 64)
         return value
 
-    monkeypatch.setattr(
-        mod.TranscriptBindingPreview, "__getattribute__", change_on_denial,
-    )
-    with pytest.raises(
-        mod.TranscriptBindingRejected, match="transcript preview changed",
-    ):
-        mod.review_audio_transcript_binding(audio, segments)
+    # The original preaccess check now rejects this *before* the changed
+    # lookup callback runs. Restore the inherited hook by removing the own
+    # class attribute, rather than monkeypatching back object.__getattribute__.
+    assert "__getattribute__" not in vars(mod.TranscriptBindingPreview)
+    try:
+        setattr(mod.TranscriptBindingPreview, "__getattribute__", change_on_denial)
+        with pytest.raises(
+            mod.TranscriptBindingRejected,
+            match="transcript carrier definition changed",
+        ):
+            mod.review_audio_transcript_binding(audio, segments)
+    finally:
+        delattr(mod.TranscriptBindingPreview, "__getattribute__")
+    assert invoked == []
 
 
 def test_original_preview_still_hash_only_and_non_authorizing():
