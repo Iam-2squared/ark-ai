@@ -56,8 +56,10 @@ def test_true_descriptor_replacement_is_rejected_before_processing(
 
 def test_false_denial_getter_cannot_retarget_result_digest(monkeypatch):
     original = toolbox.DisconnectedToolResult.__getattribute__
+    calls = []
 
     def retarget(self, name):
+        calls.append(name)
         if name == "dispatch_authorized":
             object.__setattr__(self, "result_digest", "f" * 64)
             return False
@@ -68,9 +70,10 @@ def test_false_denial_getter_cannot_retarget_result_digest(monkeypatch):
     )
     with pytest.raises(
         toolbox.DisconnectedToolRejected,
-        match="result changed during denial check",
+        match="authority definition changed",
     ):
         toolbox.execute_disconnected_fixture_tool(_request())
+    assert calls == []
 
 
 def test_first_denial_getter_cannot_replace_next_authority_property(monkeypatch):
