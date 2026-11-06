@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
@@ -19,10 +18,10 @@ from .personal_context_replay_ledger import (
     DisconnectedContextReplayLedger,
     OfflineContextReplayRejected,
     OfflineContextReplayWitness,
+    _check_witness,
     _inspect,
 )
 
-_SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-offline-context-replay-restart-review-v1\0"
 _LEDGER_TYPE = DisconnectedContextReplayLedger
 _WITNESS_TYPE = OfflineContextReplayWitness
@@ -79,7 +78,6 @@ _RESULT_DENIALS = (
 _ORIGINAL_RESULT_DENIALS = tuple(
     vars(_RESULT_TYPE)[name] for name in _RESULT_DENIALS
 )
-_ORIGINAL_WITNESS_CUSTODY = vars(_WITNESS_TYPE)["independent_custody_proven"]
 
 
 def _assert_result_denials() -> None:
@@ -100,22 +98,16 @@ def _assert_result_denials() -> None:
 
 
 def _witness_fields(value: object) -> tuple[int, str]:
-    # A swapped witness getter must not be invoked even once by triage.
-    if vars(_WITNESS_TYPE).get("independent_custody_proven") is not _ORIGINAL_WITNESS_CUSTODY:
-        raise OfflineContextRecoveryRejected("invalid exact context replay witness")
-    if (
-        type(value) is not _WITNESS_TYPE
-        or type(value.count) is not int
-        or not 0 <= value.count <= 512
-        or type(value.chain_sha256) is not str
-        or _SHA.fullmatch(value.chain_sha256) is None
-        or value.independent_custody_proven is not False
-    ):
-        raise OfflineContextRecoveryRejected("invalid exact context replay witness")
-    if vars(_WITNESS_TYPE).get("independent_custody_proven") is not _ORIGINAL_WITNESS_CUSTODY:
-        raise OfflineContextRecoveryRejected("invalid exact context replay witness")
-    return value.count, value.chain_sha256
-
+    # The ledger already pins witness field, constructor and lookup hooks at
+    # import time, before any possibly hostile descriptor gets executed.
+    # Recovery must never validate the denial getter alone while reading
+    # externally retained synthetic identity metadata.
+    try:
+        return _check_witness(value)
+    except OfflineContextReplayRejected as exc:
+        raise OfflineContextRecoveryRejected(
+            "invalid exact context replay witness"
+        ) from exc
 
 def review_restarted_context_replay(
     ledger: DisconnectedContextReplayLedger,
