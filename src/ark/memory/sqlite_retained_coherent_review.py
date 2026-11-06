@@ -74,6 +74,44 @@ class RetainedCoherentMemoryReview:
 
 _RESULT = RetainedCoherentMemoryReview
 _STORE = SQLiteMemoryStore
+# Result objects are frozen but their class descriptors and constructors can
+# still be replaced at runtime. Do not run a substituted getter/initializer
+# even if it would return False: validate before reading private rows, at
+# reentrant hash/SQLite boundaries and before constructing the final receipt.
+_RESULT_FIELDS = (
+    "previous_event_count", "current_event_count", "row_count",
+    "scope_count", "last_event_id", "status",
+    "current_alignment_sha256", "current_event_sha256", "review_sha256",
+    "retained_row_delta_checked",
+)
+_RESULT_DENIALS = (
+    "independently_authenticated", "historical_writer_authenticated",
+    "consent_verified", "memory_disclosure_authorized",
+    "action_authorized", "cross_store_atomicity_proven",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_RESULT_DENIALS = tuple(vars(_RESULT)[name] for name in _RESULT_DENIALS)
+_ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _RESULT_HOOKS)
+
+
+def _require_original_result_carrier() -> None:
+    if (
+        RetainedCoherentMemoryReview is not _RESULT
+        or any(
+            vars(_RESULT).get(name) is not old
+            for names, originals in (
+                (_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS),
+                (_RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS),
+            )
+            for name, old in zip(names, originals, strict=True)
+        )
+    ):
+        raise MemoryCoherentHistoryRejected(
+            "coherent result constructor or authority descriptor changed"
+        )
+
 
 
 def review_retained_coherent_memory(
@@ -91,6 +129,7 @@ def review_retained_coherent_memory(
     event-prefix and lifecycle checks. None authenticates custody or writer.
     A row with its own appended event is not authenticated by that event.
     """
+    _require_original_result_carrier()
     if type(store) is not _STORE:
         raise MemoryCoherentHistoryRejected("exact Memory source required")
     try:
@@ -113,6 +152,7 @@ def review_retained_coherent_memory(
     path = store.path
 
     def stable() -> None:
+        _require_original_result_carrier()
         try:
             if (
                 type(store) is not _STORE
