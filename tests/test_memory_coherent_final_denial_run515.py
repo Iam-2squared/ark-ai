@@ -1,4 +1,4 @@
-"""Final denial getter must not mutate coherent retained SQLite read receipts."""
+"""Injected final denial getter must be refused before retained Memory reads."""
 
 from __future__ import annotations
 
@@ -57,8 +57,10 @@ def test_last_false_denial_getter_cannot_rewrite_review(
     tmp_path, monkeypatch: pytest.MonkeyPatch, field: str, value: object,
 ):
     store, retained = _context(tmp_path)
+    called = []
 
     def corrupt(self):
+        called.append("injected")
         object.__setattr__(self, field, value)
         return False
 
@@ -68,17 +70,21 @@ def test_last_false_denial_getter_cannot_rewrite_review(
         property(corrupt),
     )
     with pytest.raises(
-        coherent.MemoryCoherentHistoryRejected, match="after final denial",
+        coherent.MemoryCoherentHistoryRejected,
+        match="result constructor or authority descriptor changed",
     ):
         _verify(store, retained)
+    assert called == []
 
 
 def test_same_value_replaced_digest_carrier_is_still_detected(
     tmp_path, monkeypatch: pytest.MonkeyPatch,
 ):
     store, retained = _context(tmp_path)
+    called = []
 
     def change_carrier(self):
+        called.append("injected")
         original = self.review_sha256
         replacement = ("_" + original)[1:]
         assert replacement == original and replacement is not original
@@ -91,9 +97,11 @@ def test_same_value_replaced_digest_carrier_is_still_detected(
         property(change_carrier),
     )
     with pytest.raises(
-        coherent.MemoryCoherentHistoryRejected, match="after final denial",
+        coherent.MemoryCoherentHistoryRejected,
+        match="result constructor or authority descriptor changed",
     ):
         _verify(store, retained)
+    assert called == []
 
 
 def test_last_false_denial_getter_cannot_silently_hide_row_witness(
