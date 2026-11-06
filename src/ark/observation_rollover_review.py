@@ -50,6 +50,44 @@ class ObservationRolloverWitness:
             raise ValueError("rollover chain identity must be canonical")
 
 
+# A frozen witness can still execute replaced slot descriptors, lookup hooks
+# or allocation/post-init callbacks. Pin the original class before reading
+# retained evidence or constructing a new continuity receipt.
+_WITNESS_TYPE = ObservationRolloverWitness
+_WITNESS_FIELDS = (
+    "privacy_scope", "observed_at_ms", "window_witness",
+    "generation", "chain_sha256",
+)
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_WITNESS_HOOKS = (
+    "__init__", "__post_init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
+
+
+def _require_original_witness() -> None:
+    if (
+        ObservationRolloverWitness is not _WITNESS_TYPE
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise ValueError("observation rollover result changed before construction")
+
+
 def _canonical_window_payload(
     *, privacy_scope: str, observed_at_ms: int, window_witness: str, generation: int
 ) -> bytes:
@@ -79,6 +117,7 @@ def review_observation_rollover(
     if retained is not None and type(retained) is not ObservationRolloverWitness:
         raise TypeError("retained must be an exact ObservationRolloverWitness")
 
+    _require_original_witness()
     # Pin original carrier and prior history BEFORE the first consistency
     # callback. Otherwise an early callback could silently rebase a retained
     # witness to an alternate but individually valid rollover baseline.
@@ -95,6 +134,7 @@ def review_observation_rollover(
     )
 
     def assert_outer_epoch() -> None:
+        _require_original_witness()
         if (
             current.privacy_scope is not header_epoch[0]
             or (
