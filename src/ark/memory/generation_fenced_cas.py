@@ -120,6 +120,12 @@ def _require_bounded_source_id(source_id: object) -> None:
     """
     if type(source_id) is not str or not source_id.strip():
         raise MemoryGenerationCASRejected("exact nonblank generation source required")
+    # Preserve the original cheap character cap before any UTF-8 allocation.
+    # A direct observation caller is not required to construct MemoryWrite.
+    if len(source_id) > 512:
+        raise MemoryGenerationCASRejected(
+            "generation source exceeds 512 UTF-8 bytes"
+        )
     try:
         size = len(source_id.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
