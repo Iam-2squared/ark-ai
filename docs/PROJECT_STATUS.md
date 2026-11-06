@@ -1,5 +1,52 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run663 / 2026-11-06 JST:** Four coherent zero-cost **non-UI** core packages committed to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (1) **Planner status/tail digest integrity fix** (the only production-source change), (2) three Memory cross-owner/namespace/source lifetime-churn CAS regressions, (3) six offline Observation exact-byte/Unicode/media-budget regressions, (4) four Planner forged-status and valid-terminal regressions. **13 authored new test cases** are **not** an independently certified latest-HEAD PASS. Source CI at its own HEAD has verified Ubuntu 3/3 GREEN at sampling; final combined 6/6 remains **IN PROGRESS**. Full UI/frontend development remains **PAUSED**; JARVIS/V3 **NOT_PASSED**.
+
+**Saved at:** **2026-11-06T23:54:18.342+09:00 Asia/Tokyo/JST**, sampled immediately before this ordinary GitHub Contents checkpoint write. Administrative clock only, *not* an independently trusted external action time or approval.
+
+## LATEST — branch, HEAD custody, changes
+
+- **PR #8** OPEN / **Draft** / unmerged on `research/jarvis-foundations`; **initial work-basis HEAD** `960b9ecf570f569de791d36b9003c0be6b0b415d`, with [exact-HEAD CI #42230595773](https://github.com/Iam-2squared/ark-ai/actions/runs/42230595773) **6/6 GREEN** verified from jobs.
+- Source fix `673d52fe9700a16f92aded64076faa3de79a6d28`; Memory regression `40dd5aec828f0b092237322be12a00e3e151072f`; Observation regression `d732db606cf0e644fbf087c9b0992b9e64590d96`; Planner projection regression `a7074856795c95eb41025a710c6b5e668f14d137`; evidence/report `bf2e376a4aaef4966ac225c2c4a922d24c043d82`.
+- [Run663 technical report](https://github.com/Iam-2squared/ark-ai/blob/bf2e376a4aaef4966ac225c2c4a922d24c043d82/docs/JARVIS_RUN663_NON_UI_PLANNER_STATUS_DIGEST_MEMORY_CHURN_OBSERVATION_BYTES.md) documents the original missing status/tail binding, exact changes, cases and limitations.
+- **Checkpoint-write-basis HEAD:** `bf2e376a4aaef4966ac225c2c4a922d24c043d82` (freshly re-read immediately before the single status write). **Checkpoint-result HEAD is assigned only by the GitHub Contents write and cannot be stated within the commit itself.** Verify it independently after saving. Prior status blob SHA: `c905e47facd83365dfad1f992a9562a7178f63a0`.
+
+## NEW — exact behavior and nonauthorization
+
+1. **Planner replay status digest:** `project_disconnected_planner_fence` now binds the entire sorted status/revision image to the retained `SyntheticPlanTail.status_digest` using the Planner's exact canonical `pstate_` algorithm, in addition to existing topology/membership checks. Prevents accepting a forged `dataclasses.replace(recovered, step_statuses=...)` snapshot as the source of a local `READY_MOCK_ONLY` disposition. This remains synthetic local consistency, **not independently authenticated provenance**, and SUCCEEDED without a reviewed effect receipt is still rejected.
+2. **Memory disjoint ABA fixture:** 3 authored cases cover another SQLite handle's valid create/delete/recreate sequence in a separate owner, namespace or source lifetime; target row's retained CAS remains valid, while the global event tail is coherent. This is not consent and does not grant COMMIT-UNKNOWN retries.
+3. **Observation fixture privacy:** 6 authored cases cover Unicode byte-distinct identities, parent binding, IMAGE/SCREEN binary payload minimization, invalid surrogate and encoded-byte cap. No actual image/audio capture, personal-data disclosure or upstream device/adapter is added.
+4. **Planner focused validation:** 4 authored cases prove forged running/failed/revised status images cannot reuse the old tail, while genuine local FAILED replay still returns an inert terminal fence. No backend executes; all four no-dispatch booleans remain False.
+
+## CI — exact commits and states (not inferred)
+
+- Baseline [#42230595773](https://github.com/Iam-2squared/ark-ai/actions/runs/42230595773) at `960b9ecf...`: **6/6 GREEN**.
+- [#42236602183](https://github.com/Iam-2squared/ark-ai/actions/runs/42236602183): **4/6 GREEN; 0 FAIL; 2 IN PROGRESS/QUEUED** at administrative sampling. Intermediate-head CI cannot certify later commits.
+- [#42236808766](https://github.com/Iam-2squared/ark-ai/actions/runs/42236808766): **3/6 GREEN; 0 FAIL; 3 IN PROGRESS/QUEUED** at administrative sampling. Intermediate-head CI cannot certify later commits.
+- [#42237000845](https://github.com/Iam-2squared/ark-ai/actions/runs/42237000845): **3/6 GREEN; 0 FAIL; 3 IN PROGRESS/QUEUED** at administrative sampling. Intermediate-head CI cannot certify later commits.
+- [#42237240005](https://github.com/Iam-2squared/ark-ai/actions/runs/42237240005): **3/6 GREEN; 0 FAIL; 3 IN PROGRESS/QUEUED** at administrative sampling. Intermediate-head CI cannot certify later commits.
+- [#42237547563](https://github.com/Iam-2squared/ark-ai/actions/runs/42237547563): **1/6 GREEN; 0 FAIL; 5 IN PROGRESS/QUEUED** at administrative sampling. Intermediate-head CI cannot certify later commits.
+- The final status checkpoint itself may initiate another workflow with an unknown run ID at write time. **No current final-checkpoint exact-head six-job GREEN or exact new-test PASS is claimed.** No local full pytest/Ruff, actual PC GGUF, physical sensor, trusted action clock, consent or external outcome evidence.
+
+## Frozen, blocked and authorization boundaries
+
+- main last observed `7a843f17eb96ed13d66f23b58b06406b3002e405` (no main merge/write). [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/Draft/unmerged at `805b377697472268db02650a89c7a94b1c5337c8`; external GPU/spend, immutable HF/base/tokenizer bytes, legally approved 120/30 data, human decisions, pinned environment and a user-accepted budget/approval remain unresolved. No real Candidate adapter, weight generation, protected V2 final-evaluation opening or automatic promotion.
+- [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/Draft/unmerged at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, untouched. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.** Frozen V1/V2/Local UI/Launcher evaluations, original contracts, evidence and gates unchanged. No destructive/irreversible operation, new account/credential, paid service/API, hardware action, actual tool execution, real notification, independent human review or authenticated erasure/disclosure.
+- Synthetic hashes, local SQLite, observation envelope and offline fence are **not** proofs of independent custody, signed identity, durable consent, real exactly-once external effects or an authorization to replay ambiguous WRITEs.
+
+## Next plan / 今後の方針
+
+1. Resolve all **six** CI jobs on the final exact-HEAD; inspect actual FAIL logs if present, apply the smallest semantics-preserving correction through the normal GitHub Contents safety path, and overlap with independent non-UI audits/tests. Do not duplicate equivalent workflow runs.
+2. Memory COMMIT-UNKNOWN, CAS/expiry/ABA, event-prefix/coherent cross-process snapshots; local diagnostic evidence must never be treated as writer attribution or automatic retry authority.
+3. Planner independently verified SUCCEEDED result receipts and crash recovery, then after exact-head GREEN prerequisites only, join ToolRegistry/exact-type PermissionGate, trusted-clock audit-before-action, durable occurrence/replay defense and disconnected/mock executor in isolated reversible layers.
+4. Privacy-safe Personal Context retention/revocation, proactive restart quarantine, observation fixture provenance and free-only V3 approval/path/reproducibility reviews; retain protected final evaluation, Candidate promotion, billing, immutable contracts and main merge as separate explicit user gates. Keep UI stopped.
+
+---
+
+## Prior checkpoint — Run662 (historical canonical content preserved)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run662 / 2026-11-06 JST:** Three coherent free-only non-UI core work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (1) static preaccess due-witness field/constructor/lookup custody with subprocess-isolated allocation poison, (2) two-handle Memory expiry-purge ABA + exact-deadline CAS regressions, (3) conservative synthetic Planner restart → disconnected mock-only recovery fence that refuses unverifiable SUCCEEDED receipts. **23 authored regression cases** across the new test files, not a certified latest-head PASS. An earlier globally contaminating `__new__` test and a preexisting diagnostic assertion were corrected without weakening production guards. All UI/frontend development remains **PAUSED**. ARK/JARVIS/V3 **NOT_PASSED**; latest exact-HEAD six-job GREEN is **NOT YET VERIFIED**.
 
 **Saved at:** **2026-11-06T23:03:42.590+09:00 Asia/Tokyo/JST**, sampled immediately before the ordinary GitHub Contents API checkpoint write. This is an administrative time only; not a trusted external action clock, consent/identity or writer/effect evidence.
