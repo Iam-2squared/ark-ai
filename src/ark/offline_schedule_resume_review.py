@@ -108,7 +108,9 @@ def _require_original_result_carriers() -> None:
             )
         )
     ):
-        raise ScheduleResumeRejected("offline resume result carrier changed")
+        raise ScheduleResumeRejected(
+            "offline resume result carrier changed: denial descriptor replaced"
+        )
 
 
 # Import-time denial descriptors: capturing them after a ledger/preview
