@@ -24,3 +24,15 @@
 2. Extend Memory CAS uncertainty model with two-handle row/event consistency and expiry-bound recovery without replay.
 3. Continue Planner persistent UNKNOWN/terminal propagation and independently audited mock WRITE reservation/occurrence before considering integrations.
 4. Keep disconnected scheduling/observation, privacy-safe Personal Context and zero-cost V3 guard work reversible and isolated; no paid or protected gate without explicit authorization.
+
+
+## Independent package C — registry-bound local gate vs durable occurrence
+
+- `tests/test_registry_gate_occurrence_two_handle_race_run648.py` committed at `f3d33d09ac4b1b296907e6378ea9178108d6d49a`: **three authored tests**. Two independent process-local `PermissionGate` instances authorize matching offline WRITE requests and race via two SQLite handles; for either the same token/new occurrence or a new token/same occurrence, only one durable reservation may commit. A reopened ledger retains one reservation and the disconnected backend must receive zero calls. A separate restart-clock regression case verifies rejection even when a fresh in-memory gate accepts a new untrusted token. These checks do not authenticate issuer/clock/consent and do not establish external exactly-once effects.
+- Combined Run648 authored test cases: **26** (12 Memory + 11 detached recovery + 3 durable occurrence). Counts are authoring evidence, **NOT** pytest PASS counts.
+
+## CI forensic addendum — observed failures and ordinary-path repair
+
+- The first combined Memory/recovery CI [#42149518260](https://github.com/Iam-2squared/ark-ai/actions/runs/42149518260) showed Ubuntu Python 3.11 **2 FAILED, 9,331 PASSED, 1 SKIPPED**. The failures were `__getattr__` fixture setup (both new test files), not a rejected security guard: `monkeypatch.setattr` defaults to requiring an existing attribute; these slotted dataclasses do not define `__getattr__`.
+- Fixed the test setup with `raising=False`, preserving the original source-level guard semantics, using normal Contents API updates `46873214f6e7cd29eb9ad2d378a3415ca602eacc` and `c1452ded0697c76d81029a251a4dd84b4a6660ea`. Corrected one 93-character parametrization line for Ruff in `6ea8f461ae38ded55404fa369cce40a5979a89e5`. No mock execution, frozen contract, safety property or approval was weakened.
+- At this addendum the new source/test repair HEAD `6ea8f461ae38ded55404fa369cce40a5979a89e5` had [CI #42150038138](https://github.com/Iam-2squared/ark-ai/actions/runs/42150038138) **QUEUED**. There is **no claim** that this HEAD or a later checkpoint is 6/6 GREEN before inspecting actual jobs.
