@@ -12,6 +12,7 @@ import json
 import re
 from dataclasses import dataclass
 
+from . import disconnected_due_reservation as due_module
 from .disconnected_due_prefix_review import (
     DisconnectedDuePrefixRejected,
     DisconnectedDuePrefixReview,
@@ -82,10 +83,43 @@ _ORIGINAL_RESULT_DENIALS = tuple(
 _ORIGINAL_PREFIX_DENIALS = tuple(
     getattr(DisconnectedDuePrefixReview, name) for name in _PREFIX_DENIALS
 )
-_ORIGINAL_WITNESS_DENIAL = _WITNESS_TYPE.independent_custody_proven
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_proven"]
+_WITNESS_FIELDS = ("count", "fingerprint")
+_WITNESS_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
+
+
+def _require_original_witness_carrier() -> None:
+    # The witness is a reflectively mutable, frozen dataclass. Validate its
+    # descriptors BEFORE reading even one untrusted scalar: a substituted
+    # descriptor can execute code before any type/digest comparison.
+    if (
+        due_module.DueReservationWitness is not _WITNESS_TYPE
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
+        or vars(_WITNESS_TYPE).get("independent_custody_proven")
+        is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise DisconnectedDueRecoveryRejected("due witness carrier changed")
 
 
 def _checked(value: object) -> tuple[int, str]:
+    _require_original_witness_carrier()
     if (
         type(value) is not _WITNESS_TYPE
         or type(value.count) is not int
@@ -97,6 +131,7 @@ def _checked(value: object) -> tuple[int, str]:
         or value.independent_custody_proven is not False
     ):
         raise DisconnectedDueRecoveryRejected("invalid exact due witness")
+    _require_original_witness_carrier()
     return (value.count, value.fingerprint)
 
 
