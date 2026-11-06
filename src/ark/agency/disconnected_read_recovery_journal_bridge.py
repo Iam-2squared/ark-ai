@@ -113,7 +113,7 @@ def _require_original_report() -> None:
         )
     ):
         raise ReadRecoveryJournalRejected(
-            "READ recovery report constructor or authority definition changed"
+            "READ recovery report carrier changed: constructor or authority definition changed"
         )
 
 
