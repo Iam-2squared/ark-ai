@@ -77,6 +77,39 @@ class OfflineScheduleResumeReview:
 # before any ledger read instead of trusting only denial-property identities.
 _RESULT_TYPE = OfflineScheduleResumeReview
 _ORIGINAL_RESUME_INIT = vars(_RESULT_TYPE)["__init__"]
+_RESULT_FIELDS = (
+    "quarantine_chain_sha256", "quarantined_count", "next_occurrence_id",
+    "next_state", "preview_sha256", "review_sha256",
+)
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[key] for key in _RESULT_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT_TYPE).get(key) for key in _RESULT_HOOKS
+)
+
+
+def _require_original_result_carriers() -> None:
+    # Even a denied-only result can have executable slot or lookup hooks.
+    # Reject those substitutions before touching the independent SQLite
+    # history or evaluating caller-provided recurrence carriers.
+    if (
+        OfflineScheduleResumeReview is not _RESULT_TYPE
+        or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESUME_INIT
+        or any(
+            vars(_RESULT_TYPE).get(key) is not original
+            for key, original in zip(
+                _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RESULT_TYPE).get(key) is not original
+            for key, original in zip(
+                _RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise ScheduleResumeRejected("offline resume result carrier changed")
+
 
 # Import-time denial descriptors: capturing them after a ledger/preview
 # callback would legitimize a replacement False getter as a new baseline.
@@ -111,6 +144,7 @@ def review_offline_schedule_resume(
         or not 0 <= observed_now_ms <= 2**63 - 1
     ):
         raise ScheduleResumeRejected("exact offline schedule resume inputs required")
+    _require_original_result_carriers()
     path_epoch, ledger_epoch = ledger._path, ledger._epoch
     policy_epoch = (
         policy.policy_sha256, policy.first_due_at_ms, policy.interval_ms,
@@ -142,6 +176,7 @@ def review_offline_schedule_resume(
             raise ScheduleResumeRejected("quarantine witness gained authority or changed")
 
     def stable() -> None:
+        _require_original_result_carriers()
         # The final diagnostic result is denial-only. Pin original class
         # descriptors at import time, before any SQLite/preview callbacks.
         if (
