@@ -81,7 +81,54 @@ class OfflinePrivacyVetoReceipt:
         return False
 
 
+_WITNESS_TYPE = OfflinePrivacyVetoWitness
+_WITNESS_FIELDS = ("count", "fingerprint")
+_WITNESS_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
+_ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_verified"]
+
+
+def _assert_original_witness_carrier() -> None:
+    # A frozen dataclass is still mutable at the *class* level. Reject a
+    # replaced slot/getter/constructor before inspecting a retained witness
+    # or constructing a witness from private SQLite history.
+    if (
+        OfflinePrivacyVetoWitness is not _WITNESS_TYPE
+        or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
+        or vars(_WITNESS_TYPE).get("independent_custody_verified")
+        is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise OfflinePrivacyVetoRejected("privacy veto witness carrier changed")
+
+
 _REVIEW_TYPE = OfflinePrivacyVetoReview
+_REVIEW_FIELDS = ("local_veto_seen", "witness")
+_REVIEW_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REVIEW_FIELDS = tuple(
+    vars(_REVIEW_TYPE)[name] for name in _REVIEW_FIELDS
+)
+_ORIGINAL_REVIEW_HOOKS = tuple(
+    vars(_REVIEW_TYPE).get(name) for name in _REVIEW_HOOKS
+)
+_ORIGINAL_REVIEW_INIT = vars(_REVIEW_TYPE)["__init__"]
 _REVIEW_DENIALS = (
     "consent_verified", "context_release_authorized",
     "user_identity_authenticated",
@@ -92,10 +139,24 @@ _ORIGINAL_REVIEW_DENIALS = tuple(
 
 
 def _assert_original_review_denials() -> None:
-    # Check import-original class identity and static descriptors before
-    # invoking any deny-only property or a replaceable report constructor.
+    # Check import-original class identity, slots, hooks and constructor
+    # before opening private fixture state or invoking any deny-only getter.
+    _assert_original_witness_carrier()
     if (
         OfflinePrivacyVetoReview is not _REVIEW_TYPE
+        or vars(_REVIEW_TYPE).get("__init__") is not _ORIGINAL_REVIEW_INIT
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_FIELDS, _ORIGINAL_REVIEW_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for name, original in zip(
+                _REVIEW_HOOKS, _ORIGINAL_REVIEW_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_REVIEW_TYPE).get(name) is not original
             for name, original in zip(
@@ -113,14 +174,35 @@ _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
 )
 _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
-_WITNESS_TYPE = OfflinePrivacyVetoWitness
-_ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_verified"]
+_RECEIPT_FIELDS = (
+    "owner_sha256", "scope_sha256", "recorded_at_ms", "witness",
+)
+_RECEIPT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+)
 
 
 def _assert_receipt_denials() -> None:
+    _assert_original_witness_carrier()
     if (
         OfflinePrivacyVetoReceipt is not _RECEIPT_TYPE
         or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS, strict=True,
+            )
+        )
         or OfflinePrivacyVetoWitness is not _WITNESS_TYPE
         or vars(_WITNESS_TYPE).get("independent_custody_verified")
         is not _ORIGINAL_WITNESS_DENIAL
@@ -173,10 +255,12 @@ def _digest(rows: tuple[tuple[object, ...], ...]) -> str:
 
 
 def genesis_privacy_veto_witness() -> OfflinePrivacyVetoWitness:
+    _assert_original_witness_carrier()
     return OfflinePrivacyVetoWitness(0, _digest(()))
 
 
 def _valid_witness(witness: object) -> bool:
+    _assert_original_witness_carrier()
     return (
         type(witness) is OfflinePrivacyVetoWitness
         and type(witness.count) is int
@@ -227,6 +311,7 @@ def _schema(conn: sqlite3.Connection) -> None:
 
 
 def _inspect(conn: sqlite3.Connection) -> OfflinePrivacyVetoWitness:
+    _assert_original_witness_carrier()
     _schema(conn)
     rows: list[tuple[object, ...]] = []
     previous = -1
@@ -246,13 +331,16 @@ def _inspect(conn: sqlite3.Connection) -> OfflinePrivacyVetoWitness:
         identities.add((owner, scope))
         rows.append((seq, owner, scope, when))
         previous = when
-    return OfflinePrivacyVetoWitness(len(rows), _digest(tuple(rows)))
+    digest = _digest(tuple(rows))
+    _assert_original_witness_carrier()
+    return OfflinePrivacyVetoWitness(len(rows), digest)
 
 
 class DisconnectedPrivacyVetoLedger:
     """Local create-only fixture database, not a consent or identity provider."""
 
     def __init__(self, path: Path) -> None:
+        _assert_original_witness_carrier()
         self._path = _path(path, exists=False)
         with closing(sqlite3.connect(self._path, timeout=10, isolation_level=None)) as conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -280,6 +368,7 @@ class DisconnectedPrivacyVetoLedger:
 
     def witness(self) -> OfflinePrivacyVetoWitness:
         """Read source evidence without creating a missing file."""
+        _assert_original_witness_carrier()
         source = self._path
         with closing(self._open(read_only=True)) as conn:
             conn.execute("BEGIN")
