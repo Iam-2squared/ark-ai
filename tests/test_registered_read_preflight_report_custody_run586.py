@@ -65,8 +65,10 @@ def test_true_authority_replacement_rejected_at_ingress(monkeypatch, name):
 def test_false_denial_getter_cannot_retarget_request_identity(monkeypatch):
     items = _input()
     original = read.DisconnectedReadPreflight.__getattribute__
+    calls = []
 
     def substitute(self, name):
+        calls.append(name)
         if name == "backend_dispatched":
             request = original(self, "request_id")
             replacement = (" " + request)[1:]
@@ -78,9 +80,10 @@ def test_false_denial_getter_cannot_retarget_request_identity(monkeypatch):
     monkeypatch.setattr(read.DisconnectedReadPreflight, "__getattribute__", substitute)
     with pytest.raises(
         read.DisconnectedReadPreflightRejected,
-        match="changed during denial check",
+        match="definition changed",
     ):
         _review(items)
+    assert calls == []
     assert items[-1].calls == 0
 
 
