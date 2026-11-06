@@ -91,7 +91,31 @@ _CHILD = RegisteredBatchReceiptReview
 _RECOVERY = ReadRecoveryJournalReview
 # Denied-only flags must preserve their import-time implementation, not an
 # arbitrary preinstalled callback which happens to return False.
-_ORIGINAL_REPORT_DENIALS = tuple(getattr(_REPORT, key) for key in _DENIED)
+_ORIGINAL_REPORT_DENIALS = tuple(vars(_REPORT)[key] for key in _DENIED)
+_REPORT_FIELDS = (
+    "plan_digest", "schedule_digest", "recovery_digest",
+    "journal_tip_sha256", "registered_steps", "join_sha256",
+)
+_REPORT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[key] for key in _REPORT_FIELDS)
+_ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(key) for key in _REPORT_HOOKS)
+
+
+def _require_original_result_carrier() -> None:
+    """Reject patched constructors/slots before executing any report getter."""
+    if (
+        RecoveredRegisteredReadReview is not _REPORT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for names, originals in (
+                (_DENIED, _ORIGINAL_REPORT_DENIALS),
+                (_REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS),
+                (_REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise RecoveredRegisteredReadRejected("recovery carrier changed during join")
 
 
 def _digest(domain: bytes, value: object) -> str:
@@ -141,6 +165,7 @@ def review_recovered_registered_reads(
         or not 0 <= observed_at_ms < (1 << 63)
     ):
         raise RecoveredRegisteredReadRejected("exact bounded recovery join required")
+    _require_original_result_carrier()
 
     plan_fields = (plan.request_id, plan.steps, plan.canonical_plan_json, plan.plan_digest)
     schedule_fields = (
@@ -170,6 +195,7 @@ def review_recovered_registered_reads(
         raise RecoveredRegisteredReadRejected("successful READ witness count differs")
 
     def stable() -> None:
+        _require_original_result_carrier()
         if (
             type(plan) is not DisconnectedBatchPlan
             or type(schedule) is not DisconnectedBatchSchedule
@@ -214,12 +240,6 @@ def review_recovered_registered_reads(
                 ))
                 for item, original, fields in zip(
                     evidence, evidence_carriers, evidence_rows, strict=True,
-                )
-            )
-            or any(
-                getattr(_REPORT, name) is not original
-                for name, original in zip(
-                    _DENIED, _ORIGINAL_REPORT_DENIALS, strict=True,
                 )
             )
             or type(snapshot) is not ReadJournalSnapshot
@@ -365,11 +385,15 @@ def review_recovered_registered_reads(
         if inspect() != first:
             raise RecoveredRegisteredReadRejected("join drifted across reads")
         digest = _digest(_DOMAIN, first)
+        stable()
+        _require_original_result_carrier()
         review = _REPORT(*first, digest)
+        _require_original_result_carrier()
         pinned = (*first, digest)
         descriptors = _ORIGINAL_REPORT_DENIALS
 
         def stable_result() -> None:
+            _require_original_result_carrier()
             stable()
             if (
                 type(review) is not _REPORT
@@ -380,7 +404,7 @@ def review_recovered_registered_reads(
                     pinned, strict=True,
                 ))
                 or any(
-                    getattr(_REPORT, key) is not original
+                    vars(_REPORT).get(key) is not original
                     for key, original in zip(_DENIED, descriptors, strict=True)
                 )
             ):
