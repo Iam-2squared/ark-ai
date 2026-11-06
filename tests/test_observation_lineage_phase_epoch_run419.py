@@ -82,9 +82,11 @@ def test_hash_phase_tamper_cannot_be_hidden_by_result_constructor(monkeypatch):
 
     monkeypatch.setattr(lineage.hashlib, "sha256", sha_hook)
     monkeypatch.setattr(lineage, "SyntheticObservationLineageWitness", constructor)
-    with pytest.raises(lineage.SyntheticObservationLineageRejected, match="epoch"):
+    # The forged result constructor is now rejected before any SHA callback,
+    # so a malicious attempt to "restore" a changed input cannot run.
+    with pytest.raises(lineage.SyntheticObservationLineageRejected, match="authority"):
         _review(root, child)
-    assert touched == ["changed"]
+    assert touched == []
 
 
 def test_unchanged_parent_lineage_remains_deterministic_and_inert():
