@@ -69,6 +69,18 @@ _DENIAL_NAMES = (
     "automatic_replay_authorized",
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT)[key] for key in _DENIAL_NAMES)
+# An exact frozen/slotted result can still execute newly installed field
+# descriptors, lookup hooks, or a counterfeit constructor. Capture these
+# originals before reading any retained witness or building a review.
+_RESULT_FIELDS = (
+    "retained_count", "current_count", "status",
+    "current_chain_sha256", "review_sha256",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT).get(name) for name in _RESULT_HOOKS
+)
 
 
 def _original_result_authority() -> None:
@@ -76,6 +88,14 @@ def _original_result_authority() -> None:
     # A counterfeit False callback remains executable code, not a denial.
     if (
         OfflineContextPrefixReview is not _RESULT
+        or any(
+            vars(_RESULT).get(name) is not original
+            for names, originals in (
+                (_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
         or any(
             vars(_RESULT).get(key) is not original
             for key, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
