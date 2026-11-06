@@ -76,3 +76,15 @@ def test_reflected_invalid_write_source_cannot_reuse_old_token(tmp_path):
     with pytest.raises(MemoryGenerationCASRejected, match="valid UTF-8"):
         generation_fenced_memory_update(store, write, retained=token)
     assert store.events(scope) == events
+
+
+def test_unbounded_direct_observation_is_rejected_before_sqlite(monkeypatch, tmp_path):
+    store = SQLiteMemoryStore(tmp_path / "direct-oversize.sqlite")
+    scope = MemoryScope("local-owner", "fixtures")
+
+    def forbidden():
+        pytest.fail("unbounded source must be rejected before SQLite read")
+
+    monkeypatch.setattr(store, "_connect_readonly", forbidden)
+    with pytest.raises(MemoryGenerationCASRejected, match="512 UTF-8 bytes"):
+        observe_memory_generation_for_cas(store, scope, "a" * 100_000)
