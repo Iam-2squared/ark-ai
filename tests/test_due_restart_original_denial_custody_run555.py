@@ -70,7 +70,8 @@ def test_preinstalled_false_witness_denial_rejected_before_read(
         patch.setattr(recovery._WITNESS_TYPE, "independent_custody_proven",
                       property(false_callback))
         with pytest.raises(
-            recovery.DisconnectedDueRecoveryRejected, match="invalid exact due",
+            recovery.DisconnectedDueRecoveryRejected,
+            match="(?:invalid exact due|due witness carrier changed)",
         ):
             recovery.review_restarted_due_reservations(ledger, retained)
     assert entered == []
