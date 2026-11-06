@@ -19,6 +19,10 @@ _ORIGINAL_ENVELOPE_INIT = vars(_ENVELOPE_TYPE)["__init__"]
 # __post_init__ replacement must not turn invalid fixture metadata into a
 # seemingly valid envelope by skipping the original validation hook.
 _VALIDATE_ENVELOPE = ObservationEnvelope.__post_init__
+# Keep the class's original validation identity separate from the intentionally
+# substitutable, independent post-construction validation hook exercised by
+# offline failure-injection tests.
+_ORIGINAL_ENVELOPE_VALIDATOR = _VALIDATE_ENVELOPE
 # The imported envelope's frozen dataclass fields, validation callback and
 # inherited lookup machinery remain reflectively patchable. Guard their
 # import-time identities before constructing any private observation and
@@ -37,11 +41,21 @@ _ORIGINAL_ENVELOPE_HOOKS = tuple(
 
 
 def _require_original_envelope() -> None:
+    # Distinguish constructor substitution from executable field or
+    # validator replacement without invoking any of the substitutions.
     if (
         ObservationEnvelope is not _ENVELOPE_TYPE
         or vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT
-        or vars(_ENVELOPE_TYPE).get("__post_init__") is not _VALIDATE_ENVELOPE
-        or any(
+    ):
+        raise ValueError(
+            "fixture constructor returned a non-envelope result: class or init changed"
+        )
+    if vars(_ENVELOPE_TYPE).get("__post_init__") is not _ORIGINAL_ENVELOPE_VALIDATOR:
+        raise ValueError(
+            "fixture constructor changed during construction: validator definition changed"
+        )
+    if (
+        any(
             vars(_ENVELOPE_TYPE).get(name) is not saved
             for name, saved in zip(
                 _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
