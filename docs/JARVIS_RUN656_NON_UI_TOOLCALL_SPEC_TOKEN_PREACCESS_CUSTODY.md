@@ -59,6 +59,33 @@ commit touches seven paths: three non-UI source files, three new test files,
 and this report; no frozen, V3, UI or main paths. Final CI outcomes must be
 read at exact source/test/checkpoint HEAD before declaring all-six GREEN.
 
+## Actual CI-detected transcript regressions and repair
+
+Subsequent runs identified two **test-only** issues; neither requires
+weakening the new source safety guard:
+
+1. [Transcript source CI #42183953304](https://github.com/Iam-2squared/ark-ai/actions/runs/42183953304)
+   Ubuntu Python 3.11: **9,673 PASS, 1 FAIL, 1 SKIP**.
+   The legacy `test_false_denial_callback_cannot_change_result_fingerprint`
+   expected a *post-read* `transcript preview changed` message, whereas
+   the strengthened guard correctly refused a replaced
+   `__getattribute__` **before any private read** with
+   `transcript carrier definition changed`. Commit
+   `2bee70b83dbe3ef184e9fd0cd319a8b62f2992f6` asserts the
+   earlier rejection, confirms the forged callback is never called,
+   and restores the inherited class hook without a persistent own slot.
+2. [Transcript new-test CI #42184057331](https://github.com/Iam-2squared/ark-ai/actions/runs/42184057331)
+   reported Ruff **I001** across the matrix due only to import order.
+   Commit `dcf10e3779d950a966923158647f7ab7c4745853` changes
+   `import hashlib` before `from contextlib import contextmanager`.
+   No test assertions, digest semantics or source guards were changed.
+
+The corrected source/tests commit above has
+[CI #42184500589](https://github.com/Iam-2squared/ark-ai/actions/runs/42184500589)
+**QUEUED** at initial inspection. Do **not** report corrected latest
+all-six GREEN until exact jobs actually finish. Intermediate failed CI
+runs remain part of immutable evidence.
+
 ## Preserved hard stops
 
 No paid API/service, external GPU, Candidate generation, model-weight mutation, protected V2 evaluation opening, V3 promotion or training, new secrets/account connection, physical-PC action, real ToolBackend dispatch, camera/microphone, irreversible operation, main merge, or UI work. PR #5 remains Draft/unmerged under its existing protected gate; PR #9 remains Draft/unmerged and untouched. Overall JARVIS completion remains **NOT_PASSED**.
