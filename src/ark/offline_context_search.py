@@ -89,6 +89,16 @@ _DENIALS = (
 _DENIAL_DESCRIPTORS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIALS)
 _ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
 _ORIGINAL_HIT_INIT = vars(_HIT_TYPE)["__init__"]
+# A frozen result can still have its fields or inherited lookup hooks
+# replaced at class level. Pin both nested hit and outer result carriers
+# before hashing or constructing a preview with private fixture excerpts.
+_RESULT_FIELDS = ("owner_digest", "query", "hits", "local_digest")
+_HIT_FIELDS = ("record_id", "score", "excerpt")
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_HIT_FIELDS = tuple(vars(_HIT_TYPE)[name] for name in _HIT_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT_TYPE).get(name) for name in _RESULT_HOOKS)
+_ORIGINAL_HIT_HOOKS = tuple(vars(_HIT_TYPE).get(name) for name in _RESULT_HOOKS)
 
 
 def _require_original_constructors() -> None:
@@ -106,6 +116,16 @@ def _require_original_constructors() -> None:
         or OfflineContextSearchHit is not _HIT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or vars(_HIT_TYPE).get("__init__") is not _ORIGINAL_HIT_INIT
+        or any(
+            vars(cls).get(name) is not saved
+            for cls, names, originals in (
+                (_RESULT_TYPE, _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_HIT_TYPE, _HIT_FIELDS, _ORIGINAL_HIT_FIELDS),
+                (_RESULT_TYPE, _RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS),
+                (_HIT_TYPE, _RESULT_HOOKS, _ORIGINAL_HIT_HOOKS),
+            )
+            for name, saved in zip(names, originals, strict=True)
+        )
     ):
         raise OfflineContextSearchRejected(
             "search preview result changed: constructor identity mismatch"
