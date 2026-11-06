@@ -66,6 +66,58 @@ def _require_original_grant_validator() -> None:
         )
     ):
         raise PermissionDenied("capability grant validator changed")
+# A frozen input instance does not protect class-level fields or hooks.
+# Check every original descriptor before reading ToolSpec/OneShot fields,
+# including after potentially reentrant caller-owned grant iterators.
+_SPEC_TYPE = ToolSpec
+_SPEC_FIELDS = ("name", "capability", "effect")
+_SPEC_METHODS = ("__init__", "__post_init__")
+_SPEC_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SPEC_FIELDS = tuple(vars(_SPEC_TYPE)[key] for key in _SPEC_FIELDS)
+_ORIGINAL_SPEC_METHODS = tuple(vars(_SPEC_TYPE)[key] for key in _SPEC_METHODS)
+_ORIGINAL_SPEC_HOOKS = tuple(
+    vars(_SPEC_TYPE).get(key) for key in _SPEC_HOOKS
+)
+_TOKEN_TYPE = OneShotAuthorization
+_TOKEN_FIELDS = ("token_id", "request_id", "expires_at_ms")
+_TOKEN_METHODS = ("__init__", "__post_init__")
+_TOKEN_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_TOKEN_FIELDS = tuple(vars(_TOKEN_TYPE)[key] for key in _TOKEN_FIELDS)
+_ORIGINAL_TOKEN_METHODS = tuple(vars(_TOKEN_TYPE)[key] for key in _TOKEN_METHODS)
+_ORIGINAL_TOKEN_HOOKS = tuple(
+    vars(_TOKEN_TYPE).get(key) for key in _TOKEN_HOOKS
+)
+
+
+def _require_original_spec_and_token() -> None:
+    if (
+        ToolSpec is not _SPEC_TYPE
+        or any(
+            vars(_SPEC_TYPE).get(key) is not original
+            for keys, values in (
+                (_SPEC_FIELDS, _ORIGINAL_SPEC_FIELDS),
+                (_SPEC_METHODS, _ORIGINAL_SPEC_METHODS),
+                (_SPEC_HOOKS, _ORIGINAL_SPEC_HOOKS),
+            )
+            for key, original in zip(keys, values, strict=True)
+        )
+    ):
+        raise PermissionDenied("tool specification contract changed")
+    if (
+        OneShotAuthorization is not _TOKEN_TYPE
+        or any(
+            vars(_TOKEN_TYPE).get(key) is not original
+            for keys, values in (
+                (_TOKEN_FIELDS, _ORIGINAL_TOKEN_FIELDS),
+                (_TOKEN_METHODS, _ORIGINAL_TOKEN_METHODS),
+                (_TOKEN_HOOKS, _ORIGINAL_TOKEN_HOOKS),
+            )
+            for key, original in zip(keys, values, strict=True)
+        )
+    ):
+        raise PermissionDenied("one-shot token contract changed")
+
+
 # Capture registry class-level interfaces before caller-controlled callbacks.
 # Original identity is checked before and during registered authorization.
 _ORIGINAL_REGISTRY_BIND = vars(ToolRegistry)["bind"]
@@ -96,11 +148,13 @@ class PermissionGate:
         boundary, not durable one-shot approval or external execution authority.
         """
         _assert_original_call_contract()
+        _require_original_spec_and_token()
         if type(registry) is not ToolRegistry or type(call) is not ToolCall:
             raise PermissionDenied("registered authorization requires exact registry and call")
 
         def ensure_original_implementations() -> None:
             _assert_original_call_contract()
+            _require_original_spec_and_token()
             if (
                 (one_shot is not None and
                  vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND)
@@ -313,6 +367,7 @@ class PermissionGate:
         _registered_recheck: Callable[[], None] | None = None,
     ) -> None:
         _assert_original_call_contract()
+        _require_original_spec_and_token()
         if _registered_recheck is not None and not callable(_registered_recheck):
             raise PermissionDenied("registered recheck must be callable")
         if type(spec) is not ToolSpec or type(call) is not ToolCall:
@@ -373,6 +428,7 @@ class PermissionGate:
 
         def assert_iteration_epoch() -> None:
             _assert_original_call_contract()
+            _require_original_spec_and_token()
             _require_original_grant_validator()
             # A generator can temporarily retarget a previously yielded
             # grant, the action, or a WRITE token, then restore it before
@@ -479,6 +535,7 @@ class PermissionGate:
             # reflected mutation during contention must not spend a token.
             with self._token_lock:
                 _assert_original_call_contract()
+                _require_original_spec_and_token()
                 _require_original_grant_validator()
                 # The lock may be contended after grant enumeration and the
                 # earlier epoch check. Revalidate every policy input before
@@ -523,6 +580,7 @@ class PermissionGate:
                     # admission epoch before spending even a local token.
                     assert_iteration_epoch()
                 _assert_original_call_contract()
+                _require_original_spec_and_token()
                 if one_shot.token_id in self._consumed_tokens:
                     raise PermissionDenied("one-shot authorization was already consumed")
                 if one_shot.request_id != call.request_id:
