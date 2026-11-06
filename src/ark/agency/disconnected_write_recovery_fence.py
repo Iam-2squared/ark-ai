@@ -68,8 +68,31 @@ class OfflineRecoveryFence:
 
 # Pin original inert result carriers. Synthetic constructor injection must not
 # replace an offline disposition with a fabricated dispatch-capable object.
+_STEP_TYPE = OfflineRecoveryStepClaim
 _DISPOSITION_TYPE = OfflineRecoveryDisposition
 _FENCE_TYPE = OfflineRecoveryFence
+_STEP_MEMBERS = (
+    "step_id", "effect", "depends_on", "state",
+    "result_sha256", "reservation_id",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_DISPOSITION_MEMBERS = (
+    "step_id", "code",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_FENCE_MEMBERS = (
+    "plan_id", "decisions", "digest",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_STEP_MEMBERS = tuple(
+    vars(_STEP_TYPE).get(name) for name in _STEP_MEMBERS
+)
+_ORIGINAL_DISPOSITION_MEMBERS = tuple(
+    vars(_DISPOSITION_TYPE).get(name) for name in _DISPOSITION_MEMBERS
+)
+_ORIGINAL_FENCE_MEMBERS = tuple(
+    vars(_FENCE_TYPE).get(name) for name in _FENCE_MEMBERS
+)
 _ORIGINAL_DISPOSITION_INIT = vars(_DISPOSITION_TYPE)["__init__"]
 _ORIGINAL_FENCE_INIT = vars(_FENCE_TYPE)["__init__"]
 _FENCE_DENIAL_NAMES = (
@@ -85,8 +108,27 @@ def _require_original_fence_denials() -> None:
     # identity matters: copied original descriptors do not authenticate an
     # arbitrary new report constructor.
     if (
-        OfflineRecoveryFence is not _FENCE_TYPE
+        OfflineRecoveryStepClaim is not _STEP_TYPE
+        or OfflineRecoveryFence is not _FENCE_TYPE
         or OfflineRecoveryDisposition is not _DISPOSITION_TYPE
+        or any(
+            vars(_STEP_TYPE).get(name) is not original
+            for name, original in zip(
+                _STEP_MEMBERS, _ORIGINAL_STEP_MEMBERS, strict=True,
+            )
+        )
+        or any(
+            vars(_DISPOSITION_TYPE).get(name) is not original
+            for name, original in zip(
+                _DISPOSITION_MEMBERS, _ORIGINAL_DISPOSITION_MEMBERS, strict=True,
+            )
+        )
+        or any(
+            vars(_FENCE_TYPE).get(name) is not original
+            for name, original in zip(
+                _FENCE_MEMBERS, _ORIGINAL_FENCE_MEMBERS, strict=True,
+            )
+        )
         or vars(_DISPOSITION_TYPE).get("__init__") is not _ORIGINAL_DISPOSITION_INIT
         or vars(_FENCE_TYPE).get("__init__") is not _ORIGINAL_FENCE_INIT
         or any(
@@ -148,6 +190,7 @@ def review_disconnected_recovery_fence(
     canonical: list[tuple[object, ...]] = []
 
     def stable_decisions() -> None:
+        _require_original_fence_denials()
         if len(decisions) != len(decision_epoch) or any(
             type(current) is not _DISPOSITION_TYPE
             or current is not original
@@ -219,6 +262,7 @@ def review_disconnected_recovery_fence(
             code = "READY_MOCK_ONLY"
         _require_original_fence_denials()
         decision = _DISPOSITION_TYPE(name, code)
+        _require_original_fence_denials()
         if (
             type(decision) is not _DISPOSITION_TYPE
             or decision.step_id is not name
