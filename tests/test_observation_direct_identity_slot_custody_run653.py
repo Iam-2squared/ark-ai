@@ -41,8 +41,15 @@ def test_original_direct_identity_slots_checked_before_field_access(
     monkeypatch.setattr(
         observations.ObservationEnvelope, name, replacement, raising=False,
     )
+    # Python resolves an instance property through __getattribute__ first.
+    # Invoke the original reviewed property's fget directly when testing
+    # poisoning of that very lookup hook; otherwise the test itself would
+    # execute the injected getter before our guard can possibly run.
+    original_property = observations._ORIGINAL_ENVELOPE_HOOKS[
+        observations._ENVELOPE_HOOKS.index("observation_id")
+    ]
     with pytest.raises(ValueError, match="observation identity definition changed"):
-        _ = envelope.observation_id
+        original_property.fget(envelope)
     assert called == []
 
 
