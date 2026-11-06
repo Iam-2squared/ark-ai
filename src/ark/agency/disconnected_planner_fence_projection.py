@@ -61,8 +61,15 @@ def project_disconnected_planner_fence(
     ambiguous = recovered.ambiguous_running_steps
     if type(statuses) is not tuple or type(ambiguous) is not tuple:
         raise DisconnectedPlannerProjectionRejected("malformed Planner status snapshot")
+    # A frozen ToolCall is reflectively mutable. Pin nested exact carriers,
+    # not only PlanStep.call identity: a callback may retarget its tool/scope
+    # or substitute value-equal arguments after the topology was hashed.
     original_steps = tuple(
-        (step, step.step_id, step.call, step.depends_on)
+        (
+            step, step.step_id, step.call, step.depends_on,
+            step.call.tool, step.call.capability, step.call.scope,
+            step.call.arguments, step.call.request_id,
+        )
         for step in steps
     )
     original_effects = effects
@@ -80,8 +87,15 @@ def project_disconnected_planner_fence(
             or any(
                 step is not old or step.step_id is not name
                 or step.call is not call or step.depends_on is not deps
-                for step, (old, name, call, deps)
-                in zip(steps, original_steps, strict=True)
+                or call.tool is not tool
+                or call.capability is not capability
+                or call.scope is not scope
+                or call.arguments is not arguments
+                or call.request_id != request_id
+                for step, (
+                    old, name, call, deps, tool, capability, scope,
+                    arguments, request_id,
+                ) in zip(steps, original_steps, strict=True)
             )
         ):
             raise DisconnectedPlannerProjectionRejected("projection inputs changed")
