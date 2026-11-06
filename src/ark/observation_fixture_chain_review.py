@@ -139,12 +139,17 @@ def review_disconnected_fixture_chain(
     # non-UTF-8 surrogate text before iterating potentially private fixture
     # fields or invoking envelope identity/validation callbacks.
     try:
-        source_id.encode("utf-8")
-        privacy_scope.encode("utf-8")
+        encoded_source = source_id.encode("utf-8")
+        encoded_privacy = privacy_scope.encode("utf-8")
     except UnicodeError as exc:
         raise ObservationFixtureChainRejected(
             "fixture chain labels must be valid UTF-8"
         ) from exc
+    # Request labels cross the same digest boundary as envelope labels. Limit
+    # encoded bytes BEFORE reading any private fixture fields: 1024 Unicode
+    # codepoints can occupy 4096 bytes of serialized UTF-8.
+    if len(encoded_source) > 1024 or len(encoded_privacy) > 1024:
+        raise ObservationFixtureChainRejected("exact bounded fixture chain required")
 
     fields = tuple((
         row.kind, row.source_id, row.adapter_id, row.privacy_scope,
