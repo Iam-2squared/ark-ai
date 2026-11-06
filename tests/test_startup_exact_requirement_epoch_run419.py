@@ -39,15 +39,23 @@ def test_requirement_shape_callback_cannot_replace_equal_field_carrier(
     clone = ("!" + original)[1:]
     assert clone == original and clone is not original
     check = lease.SyntheticReadinessRequirement.assert_shape
+    calls = 0
 
     def reflected(self):
+        nonlocal calls
+        calls += 1
         check(self)
         if self is target:
             object.__setattr__(self, field, clone)
 
     monkeypatch.setattr(lease.SyntheticReadinessRequirement, "assert_shape", reflected)
-    with pytest.raises(lease.SyntheticStartupLeaseRejected, match="epoch"):
+    with pytest.raises(
+        lease.SyntheticStartupLeaseRejected,
+        match="requirement descriptor changed before review",
+    ):
         _review((snapshot, required))
+    assert calls == 0
+    assert getattr(target, field) is original
 
 
 @pytest.mark.parametrize("field", [
@@ -83,14 +91,22 @@ def test_receipt_constructor_cannot_mutate_requirement_after_last_review(
 ):
     snapshot, required = _state()
     true_constructor = lease.SyntheticStartupLeaseReview
+    calls = 0
 
     def reflected_constructor(*args, **kwargs):
+        nonlocal calls
+        calls += 1
         object.__setattr__(required[0], "component_id", "unrecognized")
         return true_constructor(*args, **kwargs)
 
     monkeypatch.setattr(lease, "SyntheticStartupLeaseReview", reflected_constructor)
-    with pytest.raises(lease.SyntheticStartupLeaseRejected, match="epoch"):
+    with pytest.raises(
+        lease.SyntheticStartupLeaseRejected,
+        match="readiness result constructor or descriptor changed",
+    ):
         _review((snapshot, required))
+    assert calls == 0
+    assert required[0].component_id == "memory-long"
 
 
 def test_valid_readiness_is_content_minimized_and_not_authorization():
