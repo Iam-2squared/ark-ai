@@ -31,25 +31,40 @@ def _request(ledger, retained, *, operation):
     )
 
 
-def _poison(monkeypatch, carrier_type, name, calls):
+_MISSING = object()
+
+
+def _poison(carrier_type, name, calls):
+    original = vars(carrier_type).get(name, _MISSING)
     if name in ("__getattribute__", "__getattr__"):
         def poisoned(self, field):
             calls.append((name, field))
             raise AssertionError("poisoned carrier hook executed")
 
-        monkeypatch.setattr(carrier_type, name, poisoned, raising=False)
+        setattr(carrier_type, name, poisoned)
     elif name == "__init__":
         def poisoned(self, *args, **kwargs):
             calls.append((name, len(args)))
             raise AssertionError("poisoned carrier constructor executed")
 
-        monkeypatch.setattr(carrier_type, name, poisoned)
+        setattr(carrier_type, name, poisoned)
     else:
         def poisoned(self):
             calls.append((name, "read"))
             raise AssertionError("poisoned carrier slot executed")
 
-        monkeypatch.setattr(carrier_type, name, property(poisoned))
+        setattr(carrier_type, name, property(poisoned))
+
+    def restore():
+        # __getattribute__ is inherited, not an original class dictionary
+        # member. A normal monkeypatch undo would install an own descriptor
+        # and poison every later test in the suite.
+        if original is _MISSING:
+            delattr(carrier_type, name)
+        else:
+            setattr(carrier_type, name, original)
+
+    return restore
 
 
 @pytest.mark.parametrize("operation", ("review", "veto"))
@@ -68,10 +83,13 @@ def test_retained_witness_poison_rejected_before_any_private_sqlite_read(
         raise AssertionError("poisoned witness must be rejected before SQLite")
 
     monkeypatch.setattr(ledger, "_open", forbidden_open)
-    _poison(monkeypatch, veto.OfflinePrivacyVetoWitness, slot, calls)
-    with pytest.raises(veto.OfflinePrivacyVetoRejected, match="witness carrier changed"):
-        _request(ledger, retained, operation=operation)
-    assert calls == []
+    restore = _poison(veto.OfflinePrivacyVetoWitness, slot, calls)
+    try:
+        with pytest.raises(veto.OfflinePrivacyVetoRejected, match="witness carrier changed"):
+            _request(ledger, retained, operation=operation)
+        assert calls == []
+    finally:
+        restore()
     assert opened == []
 
 
@@ -90,10 +108,13 @@ def test_review_result_poison_rejected_before_private_sqlite_read(
         raise AssertionError("poisoned review must be rejected before SQLite")
 
     monkeypatch.setattr(ledger, "_open", forbidden_open)
-    _poison(monkeypatch, veto.OfflinePrivacyVetoReview, slot, calls)
-    with pytest.raises(veto.OfflinePrivacyVetoRejected, match="review acquired authority"):
-        _request(ledger, retained, operation="review")
-    assert calls == []
+    restore = _poison(veto.OfflinePrivacyVetoReview, slot, calls)
+    try:
+        with pytest.raises(veto.OfflinePrivacyVetoRejected, match="review acquired authority"):
+            _request(ledger, retained, operation="review")
+        assert calls == []
+    finally:
+        restore()
     assert opened == []
 
 
@@ -116,10 +137,13 @@ def test_receipt_poison_rejected_before_any_local_veto_mutation(
         raise AssertionError("poisoned receipt must be rejected before SQLite")
 
     monkeypatch.setattr(ledger, "_open", forbidden_open)
-    _poison(monkeypatch, veto.OfflinePrivacyVetoReceipt, slot, calls)
-    with pytest.raises(veto.OfflinePrivacyVetoRejected, match="receipt authority changed"):
-        _request(ledger, retained, operation="veto")
-    assert calls == []
+    restore = _poison(veto.OfflinePrivacyVetoReceipt, slot, calls)
+    try:
+        with pytest.raises(veto.OfflinePrivacyVetoRejected, match="receipt authority changed"):
+            _request(ledger, retained, operation="veto")
+        assert calls == []
+    finally:
+        restore()
     assert opened == []
 
 
