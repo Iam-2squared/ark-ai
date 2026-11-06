@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 from test_memory_postcommit_triage_run552 import make_case
 
-from ark.memory import MemoryWrite, SQLiteMemoryStore
+from ark.memory import SQLiteMemoryStore
 from ark.memory import ambiguous_commit_pair_review as pair
 from ark.memory.generation_fenced_cas import generation_fenced_memory_update
 
