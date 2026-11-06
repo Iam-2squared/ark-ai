@@ -19,6 +19,42 @@ _ORIGINAL_ENVELOPE_INIT = vars(_ENVELOPE_TYPE)["__init__"]
 # __post_init__ replacement must not turn invalid fixture metadata into a
 # seemingly valid envelope by skipping the original validation hook.
 _VALIDATE_ENVELOPE = ObservationEnvelope.__post_init__
+# The imported envelope's frozen dataclass fields, validation callback and
+# inherited lookup machinery remain reflectively patchable. Guard their
+# import-time identities before constructing any private observation and
+# again across validation, not only the direct initializer.
+_ENVELOPE_FIELDS = (
+    "kind", "source_id", "adapter_id", "privacy_scope", "ingested_at_ms",
+    "content_sha256", "parent_sha256", "schema_version",
+)
+_ENVELOPE_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_ENVELOPE_FIELDS = tuple(
+    vars(_ENVELOPE_TYPE)[name] for name in _ENVELOPE_FIELDS
+)
+_ORIGINAL_ENVELOPE_HOOKS = tuple(
+    vars(_ENVELOPE_TYPE).get(name) for name in _ENVELOPE_HOOKS
+)
+
+
+def _require_original_envelope() -> None:
+    if (
+        ObservationEnvelope is not _ENVELOPE_TYPE
+        or vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT
+        or vars(_ENVELOPE_TYPE).get("__post_init__") is not _VALIDATE_ENVELOPE
+        or any(
+            vars(_ENVELOPE_TYPE).get(name) is not saved
+            for name, saved in zip(
+                _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_ENVELOPE_TYPE).get(name) is not saved
+            for name, saved in zip(
+                _ENVELOPE_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise ValueError("fixture envelope definition changed before private access")
 
 
 def _sealed_fixture(
@@ -44,13 +80,9 @@ def _sealed_fixture(
     )
     # An imported constructor symbol can be swapped for an arbitrary callable.
     # Reject it before any forged constructor can run or see fixture metadata.
-    if ObservationEnvelope is not _ENVELOPE_TYPE:
-        raise ValueError("fixture constructor returned a non-envelope result: class changed")
-    # The original dataclass initializer is executable. A forged initializer
-    # must not run merely because the imported class symbol is still correct.
-    # Hashing the fixture may be reentrant; inspect just before construction.
-    if vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT:
-        raise ValueError("fixture constructor returned a non-envelope result: init changed")
+    # Hashing caller-provided bytes is a callback boundary. Refuse class
+    # mutations before any forged result/validator accessor can run.
+    _require_original_envelope()
     envelope = ObservationEnvelope(
         kind=kind,
         source_id=source_id,
@@ -60,10 +92,9 @@ def _sealed_fixture(
         content_sha256=content_sha256,
         parent_sha256=parent_sha256,
     )
-    if ObservationEnvelope is not _ENVELOPE_TYPE or type(envelope) is not _ENVELOPE_TYPE:
+    _require_original_envelope()
+    if type(envelope) is not _ENVELOPE_TYPE:
         raise ValueError("fixture constructor returned a non-envelope result")
-    if vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT:
-        raise ValueError("fixture constructor changed during construction")
     actual = (
         envelope.kind, envelope.source_id, envelope.adapter_id,
         envelope.privacy_scope, envelope.ingested_at_ms,
@@ -76,9 +107,9 @@ def _sealed_fixture(
         raise ValueError("fixture envelope fields changed during construction")
     # Preserve legacy retargeting diagnostics before independently rejecting
     # invalid-but-unchanged metadata from a bypassed constructor validator.
-    if ObservationEnvelope is not _ENVELOPE_TYPE:
-        raise ValueError("fixture constructor class changed before validation")
+    _require_original_envelope()
     _VALIDATE_ENVELOPE(envelope)
+    _require_original_envelope()
     # The independent validator invokes local digest/metadata callbacks. Even
     # though this is a frozen carrier, a callback can reflectively replace its
     # fields after the constructor's first identity check. Never return such a
