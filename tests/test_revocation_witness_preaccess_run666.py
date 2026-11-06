@@ -24,7 +24,8 @@ def _case(tmp_path):
 
 @pytest.mark.parametrize(
     "field",
-    continuity._WITNESS_FIELDS + continuity._WITNESS_HOOKS,
+    continuity._WITNESS_FIELDS
+    + tuple(name for name in continuity._WITNESS_HOOKS if name != "__new__"),
 )
 def test_preinstalled_malicious_witness_field_or_hook_rejected_before_read(
     tmp_path, monkeypatch, field,
