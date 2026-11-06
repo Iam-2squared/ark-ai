@@ -61,7 +61,7 @@ def test_poisoned_request_carrier_rejected_before_private_json_access(name):
 
 @pytest.mark.parametrize("name", (
     "request_id", "operation", "input_digest", "canonical_result_json",
-    "result_digest", "__init__", "__new__", "__getattribute__", "__getattr__",
+    "result_digest", "__init__", "__getattribute__", "__getattr__",
 ))
 def test_poisoned_result_carrier_rejected_before_fixture_execution(name):
     request = _request()
@@ -73,6 +73,41 @@ def test_poisoned_result_carrier_rejected_before_fixture_execution(name):
         ):
             toolbox.execute_disconnected_fixture_tool(request)
         assert calls == []
+
+
+def test_result_allocation_hook_poison_isolated_from_pytest_process():
+    # CPython can keep the altered tp_new slot after deleting an inherited
+    # __new__ attribute. This adversarial check MUST run in a child process:
+    # restoring the class dict alone can corrupt unrelated subsequent tests.
+    import subprocess
+    import sys
+    import textwrap
+
+    script = textwrap.dedent("""\\
+        import ark.agency.disconnected_toolbox as toolbox
+        called = []
+
+        def bad(*_args, **_kwargs):
+            called.append('new')
+            raise AssertionError('poisoned fixture allocation executed')
+
+        toolbox.DisconnectedToolResult.__new__ = staticmethod(bad)
+        request = toolbox.DisconnectedToolRequest(
+            'req_' + 'a' * 32, 'math.sum', '{"values":[1,2]}',
+        )
+        try:
+            toolbox.execute_disconnected_fixture_tool(request)
+        except toolbox.DisconnectedToolRejected as exc:
+            assert 'authority definition changed' in str(exc)
+        else:
+            raise AssertionError('poisoned __new__ was accepted')
+        assert called == []
+    """)
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True, text=True, check=False, timeout=20,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
 def test_constructor_hook_changed_during_calculation_is_rejected(monkeypatch):
