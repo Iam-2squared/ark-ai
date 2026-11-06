@@ -69,15 +69,36 @@ _STEP = OfflineRecoveryStepClaim
 _FENCE = OfflineRecoveryFence
 _REPORT = OfflineWriteRestartReport
 _ORIGINAL_REPORT_INIT = vars(_REPORT)["__init__"]
+_REPORT_FIELDS = (
+    "plan_id", "total_steps", "reserved_write_steps",
+    "quarantined_write_steps", "fingerprint",
+)
+_REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[name] for name in _REPORT_FIELDS)
+_ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS)
 _DOMAIN = b"ARK-disconnected-write-restart-binding-v1\0"
 
 
 def _assert_original_report_constructor() -> None:
-    # Report construction is an executable boundary. A class rebinding or
-    # forged initializer is never a valid witness, even when it returns False.
+    # The inert report is constructed only after SQLite and Planner callbacks.
+    # Check field descriptors and lookup hooks BEFORE opening the ledger: a
+    # substituted slot can execute code during report construction/read even
+    # if its initializer and false-only authority flags appear unchanged.
     if (
         OfflineWriteRestartReport is not _REPORT
         or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
+            )
+        )
     ):
         raise OfflineWriteRestartRejected("WRITE restart report constructor changed")
 
