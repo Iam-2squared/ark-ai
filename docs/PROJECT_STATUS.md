@@ -1,5 +1,49 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run658 / 2026-11-06 JST:** Three coherent non-UI work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): imported-original Personal Context recovery-report carrier guard, a four-case cross-handle Memory WAL mid-event-scan snapshot regression, and 12 recovery-report descriptor/allocation regressions. **16 authored new tests, not 16 confirmed passes.** **Last fully verified predecessor #42191411654 is six-job GREEN; new exact-head CI is not yet declared GREEN.** ARK / JARVIS / V3: **NOT_PASSED**. All new UI/frontend work remains **PAUSED**.
+
+**Saved at:** **2026-11-06T18:54:59.519+09:00 Asia/Tokyo/JST**, sampled immediately before the ordinary GitHub Contents checkpoint update. Administrative timestamp only; not a trusted clock, independent evidence, consent, proof of external effect, model identity or authority to retry.
+
+## LATEST — branch, basis, custody and scopes
+
+- Branch `research/jarvis-foundations`, PR #8 OPEN/Draft/unmerged. **Exact initial work-basis HEAD:** `afd642a479bcd40597c7a55688aff33be5b2f675`, verified from GitHub, with [CI #42191411654](https://github.com/Iam-2squared/ark-ai/actions/runs/42191411654) **SUCCESS / all six Ubuntu+Windows Python 3.11–3.13 jobs GREEN**.
+- Ordinary GitHub Contents commits saved this invocation:
+  - `67fc9850becf14a68cb7053d855dacf672eb5ed9`: `src/ark/personal_context_replay_recovery.py` pins original `OfflineContextRecoveryReview` value-slot descriptors and `__new__` / `__getattribute__` / `__getattr__` hooks on top of the existing constructor and False-only authority checks. It rejects substituted code **before** potentially hostile field access, including after reentrant callbacks. This preserves the report as a non-authorizing local witness.
+  - `8d2ecfb7153dca7e258894003b6d5581ea0d1857`: `tests/test_memory_event_midscan_writer_run658.py`, **4 authored parameterized cases**. A second SQLiteMemoryStore connection commits a CREATE in another scope, UPDATE, DELETE, or DELETE+RECREATE after the first event is hashed by a read-only alignment scan. The in-progress Memory audit must retain its original WAL snapshot; a *fresh* audit must observe the committed change. No consent/erasure/authenticated-writer claim is inferred from hashes.
+  - `f7efe267fe3ee35de96193c23dd0a16260e08a31`: `tests/test_context_recovery_result_original_slots_run658.py`, **12 authored cases** (seven preinstalled field/constructor/lookup substitutes; three reentrant phases; one inherited-allocation poison tested in a fresh Python subprocess; one healthy denial-only baseline). Poisoned inherited `__new__` is never installed in the shared pytest interpreter.
+- **Checkpoint-write-basis HEAD:** `f7efe267fe3ee35de96193c23dd0a16260e08a31` re-read before checkpoint commit. **The checkpoint-result HEAD is allocated by GitHub after the Contents write and cannot be accurately embedded in the committed file itself.** After writing, separately re-fetch PR HEAD and status Blob SHA and report actual values. Prior status Blob SHA: `ce4ca4d165ce7be01741f133101d85b878882bce`.
+- Comparison of `afd642a479bcd40597c7a55688aff33be5b2f675...f7efe267fe3ee35de96193c23dd0a16260e08a31` verified three changed paths only: the one Context recovery source file and the two new Python regression files. No UI/frontend, frozen-evidence, main or V3 protected evaluation path changed.
+
+## Exact-head tests, limits and CI
+
+- [CI #42191411654](https://github.com/Iam-2squared/ark-ai/actions/runs/42191411654): exact SHA `afd642a479bcd40597c7a55688aff33be5b2f675`; **COMPLETED / SUCCESS** at checkpoint drafting. The success of a prior SHA never proves a later HEAD.
+- [CI #42197252524](https://github.com/Iam-2squared/ark-ai/actions/runs/42197252524): exact SHA `67fc9850becf14a68cb7053d855dacf672eb5ed9`; **IN_PROGRESS** at checkpoint drafting. The success of a prior SHA never proves a later HEAD.
+- [CI #42197475312](https://github.com/Iam-2squared/ark-ai/actions/runs/42197475312): exact SHA `8d2ecfb7153dca7e258894003b6d5581ea0d1857`; **IN_PROGRESS** at checkpoint drafting. The success of a prior SHA never proves a later HEAD.
+- [CI #42197929601](https://github.com/Iam-2squared/ark-ai/actions/runs/42197929601): exact SHA `f7efe267fe3ee35de96193c23dd0a16260e08a31`; **IN_PROGRESS** at checkpoint drafting. The success of a prior SHA never proves a later HEAD.
+
+- **16 authored cases are not a PASS claim.** Existing Python full-suite test counts, local suite execution and Windows/target-PC runtime verification were not independently reproduced in this session. Public git clone DNS still failed in the available container; GitHub Actions is the execution evidence source. No manually duplicated workflow runs.
+- The Context tests reject preinstalled fake slotted report fields/getters **before any new SQLite open** and reject reentrant replacements at witness callback, durable inspection and digest construction. The child-process case isolates CPython inherited `__new__` mutation to prevent global pytest test pollution. No Personal Context content is read or exported.
+- The Memory tests deliberately store disposable **synthetic plaintext** in a local pytest SQLite fixture. Only counts and digests from one read snapshot are compared; durable row/event coherence cannot establish external identity, erasure proof, a trusted timestamp, authorization or blind retry safety.
+- If the latest test CI fails, use the actual failing job log and a narrow semantics-preserving fix through the normal GitHub Contents API. Do not conceal or claim GREEN from the earlier baseline run.
+
+## Frozen boundaries and authorization
+
+- `main` has not been merged/modified by this invocation; last observed main/base SHA `7a843f17eb96ed13d66f23b58b06406b3002e405`. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains Draft/unmerged at `805b377697472268db02650a89c7a94b1c5337c8`, with its separate V3 preflight/training/human-review/model-byte/billing and protected V2 final evaluation gates **closed**. [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains Draft/unmerged at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, untouched and **all new UI work paused**. PR #8 remains isolated, Draft/unmerged.
+- Frozen V1/V2/Local UI/Launcher contracts and evidence remain unchanged. **No paid/external compute, new billable service, paid API, training/Candidate generation, external GPU, new account connection/credential, hardware access, privileged tool execution, privacy disclosure, protected evaluation opening, automatic retry/promotion, irreversible operation, or main merge.**
+
+## Next plan / 今後の方針
+
+1. Confirm **exact-head six-job CI** for the source and both regressions; inspect actual job logs on any failure, make the minimum safe correction and continue other independent non-UI lanes during validation. Do not label an in-flight SHA GREEN.
+2. Extend Memory COMMIT-UNKNOWN/manual triage and retained historical prefix/expiry ABA coverage; preserve one SQLite snapshot, fail closed on ambiguity, never blind-retry a local or external WRITE.
+3. Continue Planner crash/terminal recovery, Registry-bound PermissionGate, durable occurrence, audit-before-action and detached/mock execution integration **only once lower-level invariants have exact-head GREEN**. Never infer backend exactly-once from local token uniqueness.
+4. Advance privacy lifecycle and Personal Context revocation, scheduler readiness, observation fixture contracts, and V3 free-only path/approval/identity guards while leaving PR #5's protected evaluation and PR #9 UI Draft holds untouched.
+
+---
+
+## Prior checkpoint — Run657 (historical canonical content follows verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run657 / 2026-11-06 JST:** **Four coherent non-UI work packages saved** to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): pre-COMMIT synthetic audit-link receipt class-custody hardening; cross-handle WAL Memory COMMIT-UNKNOWN row/event triage regression; durable Planner → disconnected recovery fence validation; and detached recovery claim/disposition/result original-descriptor guard. **44 authored new parameterized tests**, plus corrections to five preinstalled audit receipt test expectations. Corrected audit source+tests [#42189740247](https://github.com/Iam-2squared/ark-ai/actions/runs/42189740247) **six-job GREEN**. **Final combined latest-HEAD all-six GREEN NOT VERIFIED** (other runs pending). Overall ARK/JARVIS/V3 **NOT_PASSED**. **All UI/frontend development remains PAUSED.**
 
 **Saved at:** **2026-11-06T17:57:17.938+09:00 Asia/Tokyo/JST**, sampled immediately before this ordinary GitHub Contents checkpoint write. This is an administrative time, **not** a trusted action clock, human review, consent, attested source or runtime identity, permission to retry, external effect or model-evaluation evidence.
