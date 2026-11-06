@@ -83,7 +83,7 @@ def test_result_allocation_hook_poison_isolated_from_pytest_process():
     import sys
     import textwrap
 
-    script = textwrap.dedent("""\\
+    script = textwrap.dedent("""
         import ark.agency.disconnected_toolbox as toolbox
         called = []
 
