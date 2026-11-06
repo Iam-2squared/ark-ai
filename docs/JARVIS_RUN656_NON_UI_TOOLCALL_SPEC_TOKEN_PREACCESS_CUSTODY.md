@@ -29,6 +29,36 @@ Frozen/slotted dataclass **instances** do not freeze their **class attributes**.
 - [Source ToolCall CI #42182969918](https://github.com/Iam-2squared/ark-ai/actions/runs/42182969918), [ToolCall tests CI #42183178168](https://github.com/Iam-2squared/ark-ai/actions/runs/42183178168), [policy source CI #42183329192](https://github.com/Iam-2squared/ark-ai/actions/runs/42183329192), and [policy tests CI #42183442131](https://github.com/Iam-2squared/ark-ai/actions/runs/42183442131) were **IN PROGRESS** at the initial evidence read. Actual final conclusions require a later exact-run six-job check; do not infer PASS from authored assertions.
 - On CI failure, inspect the precise failed job and fix only the demonstrated issue through normal Contents API. Do not weaken preaccess rejection and do not manually create duplicate workflow runs.
 
+## Independent offline transcript privacy lane
+
+After the registry/policy CI pipelines began, development moved to an
+**independent non-UI module** that processes only caller-supplied, detached
+text/audio metadata. `src/ark/offline_transcript_binding.py` now refuses
+reflectively replaced `AudioMetadataClaim`, `TranscriptSegmentClaim`, or
+`TranscriptBindingPreview` field slots, constructors and attribute hooks
+**before** reading transcript text or digest/owner metadata. The same guard
+runs after text-hash callback boundaries and before preview creation/getters.
+
+- Source commit `efba870a729e2c2ee62c2666aa3e5ed28e302e35`.
+- New `tests/test_offline_transcript_carrier_preaccess_run656.py`, commit
+  `6d2418e36d3c41ff36833bf54e9abbbebb5ffef5`: **29 authored cases**
+  (25 preinstalled field/constructor/getter tampering; 3 reentrant
+  text-hash phase tampering; 1 unchanged deterministic safety control).
+- `TranscriptBindingPreview` remains deny-only. No transcript plaintext in
+  repr/output, real microphone/ASR, consent, identity or action authority.
+  Inherited `__new__` replacement was not introduced into shared pytest.
+- [Transcript source CI #42183953304](https://github.com/Iam-2squared/ark-ai/actions/runs/42183953304)
+  and [transcript tests CI #42184057331](https://github.com/Iam-2squared/ark-ai/actions/runs/42184057331)
+  were **QUEUED** at the initial inspection, not claimed GREEN.
+
+**Invocation aggregate:** three coherent non-UI source+test packages,
+**131 authored new parameterized cases** (42 ToolCall + 60 policy carriers +
+29 private transcript), and seven source/test/report commits before this
+report append. The entire comparison from Run655 baseline to transcript test
+commit touches seven paths: three non-UI source files, three new test files,
+and this report; no frozen, V3, UI or main paths. Final CI outcomes must be
+read at exact source/test/checkpoint HEAD before declaring all-six GREEN.
+
 ## Preserved hard stops
 
 No paid API/service, external GPU, Candidate generation, model-weight mutation, protected V2 evaluation opening, V3 promotion or training, new secrets/account connection, physical-PC action, real ToolBackend dispatch, camera/microphone, irreversible operation, main merge, or UI work. PR #5 remains Draft/unmerged under its existing protected gate; PR #9 remains Draft/unmerged and untouched. Overall JARVIS completion remains **NOT_PASSED**.
