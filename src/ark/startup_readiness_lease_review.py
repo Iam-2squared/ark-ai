@@ -55,6 +55,69 @@ class SyntheticStartupLeaseReview:
         return False
 
 
+
+# Capture import-original fixture carrier identities. Frozen instance fields
+# can still be replaced with executable class descriptors, so validating an
+# exact instance alone does not protect the first private probe-field read.
+_REQUIREMENT_TYPE = SyntheticReadinessRequirement
+_REQUIREMENT_FIELDS = ("component_id", "schema_revision")
+_REQUIREMENT_HOOKS = (
+    "__init__", "__new__", "__getattribute__", "__getattr__", "assert_shape",
+)
+_ORIGINAL_REQUIREMENT_FIELDS = tuple(
+    vars(_REQUIREMENT_TYPE)[name] for name in _REQUIREMENT_FIELDS
+)
+_ORIGINAL_REQUIREMENT_HOOKS = tuple(
+    vars(_REQUIREMENT_TYPE).get(name) for name in _REQUIREMENT_HOOKS
+)
+
+_LEASE_TYPE = SyntheticStartupLeaseReview
+_LEASE_FIELDS = (
+    "snapshot_digest", "required_components", "captured_at_ms", "checked_at_ms",
+)
+_LEASE_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_LEASE_FIELDS = tuple(
+    vars(_LEASE_TYPE)[name] for name in _LEASE_FIELDS
+)
+_ORIGINAL_LEASE_HOOKS = tuple(
+    vars(_LEASE_TYPE).get(name) for name in _LEASE_HOOKS
+)
+
+
+def _require_original_requirement() -> None:
+    if (
+        SyntheticReadinessRequirement is not _REQUIREMENT_TYPE
+        or any(
+            vars(_REQUIREMENT_TYPE).get(name) is not original
+            for names, originals in (
+                (_REQUIREMENT_FIELDS, _ORIGINAL_REQUIREMENT_FIELDS),
+                (_REQUIREMENT_HOOKS, _ORIGINAL_REQUIREMENT_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticStartupLeaseRejected(
+            "readiness requirement descriptor changed before review"
+        )
+
+
+def _require_original_lease_result() -> None:
+    if (
+        SyntheticStartupLeaseReview is not _LEASE_TYPE
+        or any(
+            vars(_LEASE_TYPE).get(name) is not original
+            for names, originals in (
+                (_LEASE_FIELDS, _ORIGINAL_LEASE_FIELDS),
+                (_LEASE_HOOKS, _ORIGINAL_LEASE_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticStartupLeaseRejected(
+            "readiness result constructor or descriptor changed"
+        )
+
+
 def review_synthetic_startup_lease(
     snapshot: StartupSnapshot,
     requirements: tuple[SyntheticReadinessRequirement, ...],
@@ -84,11 +147,16 @@ def review_synthetic_startup_lease(
         or now_ms - captured_at_ms > max_age_ms
     ):
         raise SyntheticStartupLeaseRejected("synthetic startup lease expired or clock regressed")
+    # Require import-original descriptors before reading any requirement
+    # field or invoking a caller-replaceable shape validator.
+    _require_original_requirement()
+    _require_original_lease_result()
     # Snapshot the ORIGINAL requirement carriers before the first reentrant
     # shape method; a later callback must not promote a substitute component.
     epoch = tuple((item, item.component_id, item.schema_revision) for item in requirements)
 
     def assert_requirements() -> None:
+        _require_original_requirement()
         try:
             stable = len(requirements) == len(epoch) and all(
                 current is item
@@ -106,6 +174,7 @@ def review_synthetic_startup_lease(
             )
 
     for item in requirements:
+        _require_original_requirement()
         item.assert_shape()
         assert_requirements()
     names = tuple(item.component_id for item in requirements)
@@ -127,6 +196,7 @@ def review_synthetic_startup_lease(
     ) for item in components)
 
     def assert_epoch() -> None:
+        _require_original_lease_result()
         if (
             snapshot.components is not components
             or snapshot.digest is not digest
@@ -201,6 +271,7 @@ def review_synthetic_startup_lease(
     except (ValueError, TypeError, AttributeError) as exc:
         raise SyntheticStartupLeaseRejected("startup snapshot integrity rejected") from exc
     assert_requirements()
+    _require_original_lease_result()
     result = SyntheticStartupLeaseReview(
         digest, tuple(sorted(names)), captured_at_ms, now_ms,
     )
@@ -228,6 +299,7 @@ def review_synthetic_startup_lease(
     )
 
     def assert_result_epoch() -> None:
+        _require_original_lease_result()
         if (
             type(result) is not SyntheticStartupLeaseReview
             or any(current is not previous for current, previous in zip(
