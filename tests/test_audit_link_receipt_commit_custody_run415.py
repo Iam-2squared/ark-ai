@@ -1,8 +1,8 @@
-"""Audit-link receipt construction is a post-COMMIT local callback boundary.
+"""Preinstalled audit-link receipt factory drift is rejected before SQLite writes.
 
-A denied synthetic receipt never erases an already persisted link and never
-allows backend dispatch or automatic replay. These fixtures perform no I/O
-except isolated local SQLite operations.
+A late *post-COMMIT* failure still cannot erase persisted history. Neither
+a rejected synthetic receipt nor a durable link permits backend dispatch.
+These fixtures perform only disposable local SQLite I/O.
 """
 
 import hashlib
@@ -55,14 +55,17 @@ def _clone(value: str) -> str:
     "equal_occurrence", "equal_hash", "wrong_event", "foreign_object",
     "source_rebind",
 ))
-def test_receipt_factory_attack_denies_return_but_keeps_committed_link(
+def test_preinstalled_receipt_factory_attack_is_denied_before_commit(
     tmp_path: Path, monkeypatch, attack: str,
 ):
     state = _state(tmp_path)
     ledger = state[2]
     original = links.SyntheticAuditLinkReceipt
+    prior_ledger_path = ledger._path
+    fired = []
 
     def hostile_factory(occurrence, event_id, link_hash):
+        fired.append("called")
         output = original(occurrence, event_id, link_hash)
         if attack == "equal_occurrence":
             object.__setattr__(output, "occurrence_id", _clone(occurrence))
@@ -77,10 +80,12 @@ def test_receipt_factory_attack_denies_return_but_keeps_committed_link(
         return output
 
     monkeypatch.setattr(links, "SyntheticAuditLinkReceipt", hostile_factory)
-    with pytest.raises(links.SyntheticAuditLinkRejected, match="receipt|original input"):
+    with pytest.raises(links.SyntheticAuditLinkRejected, match="receipt definition"):
         _append(state)
-    # Once COMMIT succeeded, a rejected diagnostic output cannot undo history.
-    assert state[6].read_witness().event_count == 1
+    # Preinstalled executable replacement must never run or persist a link.
+    assert not fired
+    assert ledger._path is prior_ledger_path
+    assert state[6].read_witness().event_count == 0
 
 
 def test_healthy_receipt_is_exact_and_never_authorizes_dispatch(tmp_path: Path):
