@@ -40,6 +40,53 @@ class SyntheticObservationLineageWitness:
 
 
 _LINEAGE_RESULT_TYPE = SyntheticObservationLineageWitness
+_LINEAGE_FIELDS = (
+    "privacy_scope", "checked_at_ms", "observation_count", "lineage_digest",
+)
+_LINEAGE_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_LINEAGE_DENIALS = (
+    "media_capture_authorized", "disclosure_authorized", "dispatch_authorized",
+)
+_ORIGINAL_LINEAGE_FIELDS = tuple(
+    vars(_LINEAGE_RESULT_TYPE)[name] for name in _LINEAGE_FIELDS
+)
+_ORIGINAL_LINEAGE_HOOKS = tuple(
+    vars(_LINEAGE_RESULT_TYPE).get(name) for name in _LINEAGE_HOOKS
+)
+_ORIGINAL_LINEAGE_DENIALS = tuple(
+    vars(_LINEAGE_RESULT_TYPE)[name] for name in _LINEAGE_DENIALS
+)
+
+
+def _assert_original_lineage_result() -> None:
+    # A slotted frozen witness is still mutable at its class definition.
+    # Fail before calling a replaced constructor/field/False-only getter:
+    # otherwise malicious fixture code could read privacy metadata before
+    # the eventual result-shape or authority check rejects the result.
+    if (
+        SyntheticObservationLineageWitness is not _LINEAGE_RESULT_TYPE
+        or any(
+            vars(_LINEAGE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _LINEAGE_FIELDS, _ORIGINAL_LINEAGE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_LINEAGE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _LINEAGE_HOOKS, _ORIGINAL_LINEAGE_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_LINEAGE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _LINEAGE_DENIALS, _ORIGINAL_LINEAGE_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticObservationLineageRejected(
+            "observation lineage result changed: authority definition modified"
+        )
 
 
 def review_synthetic_observation_lineage(
@@ -57,6 +104,7 @@ def review_synthetic_observation_lineage(
     """
     if type(envelopes) is not tuple:
         raise SyntheticObservationLineageRejected("exact observation tuple required")
+    _assert_original_lineage_result()
     # Existing window construction enforces bounded membership, same privacy
     # scope, canonical envelope identity, age and caller-clock constraints.
     window = ObservationWindowReview(
@@ -152,9 +200,11 @@ def review_synthetic_observation_lineage(
     # The cached window detects reflected changes to envelope metadata while
     # walking the graph. This does not attest source authenticity.
     assert_epoch()
+    _assert_original_lineage_result()
     result = SyntheticObservationLineageWitness(
         privacy_scope, now_ms, len(envelopes), digest,
     )
+    _assert_original_lineage_result()
     assert_epoch()
     if (
         type(result) is not _LINEAGE_RESULT_TYPE
@@ -201,14 +251,13 @@ def review_synthetic_observation_lineage(
     # descriptor after the first pass. Re-read each denial in order, then
     # recheck the original input epoch and immutable output after every
     # callback. This is a local synthetic guard, not consent or authority.
-    for authority_name in (
-        "media_capture_authorized", "disclosure_authorized",
-        "dispatch_authorized",
-    ):
+    for authority_name in _LINEAGE_DENIALS:
+        _assert_original_lineage_result()
         if getattr(result, authority_name) is not False:
             raise SyntheticObservationLineageRejected(
                 "observation lineage result gained authority after denial"
             )
+        _assert_original_lineage_result()
         assert_epoch()
         if (
             type(result) is not _LINEAGE_RESULT_TYPE
@@ -221,5 +270,6 @@ def review_synthetic_observation_lineage(
             raise SyntheticObservationLineageRejected(
                 "observation lineage result changed after denial"
             )
+    _assert_original_lineage_result()
     assert_epoch()
     return result
