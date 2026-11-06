@@ -40,15 +40,40 @@ class AuditContinuityWitness:
 
 
 _WITNESS_TYPE = AuditContinuityWitness
+_WITNESS_FIELDS = ("event_count", "tail_event_id", "chain_sha256")
+_WITNESS_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+_ORIGINAL_WITNESS_POST_INIT = vars(_WITNESS_TYPE)["__post_init__"]
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
 
 
 def _require_original_witness_constructor() -> None:
-    # Never invoke a substituted constructor while reporting audit evidence.
-    # A frozen dataclass does not prevent its class-level __init__ replacement.
+    # An exact frozen instance is insufficient when class-level slots,
+    # validators or lookup hooks are replaced with executable descriptors.
+    # Check import-original identities BEFORE reading retained audit evidence,
+    # opening SQLite, or constructing the result after the read.
     if (
         AuditContinuityWitness is not _WITNESS_TYPE
         or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
+        or vars(_WITNESS_TYPE).get("__post_init__")
+        is not _ORIGINAL_WITNESS_POST_INIT
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
     ):
         raise ActionAuditSchemaError("audit continuity witness constructor changed")
 
