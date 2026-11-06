@@ -69,6 +69,19 @@ class OfflineContextRecoveryReview:
 
 _RESULT_TYPE = OfflineContextRecoveryReview
 _ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
+# Persisted recovery evidence is an exact slotted carrier. A patched field
+# descriptor, allocation or lookup hook can execute code before type/value
+# checks on report fields. Capture original class descriptors at import time.
+_RESULT_FIELDS = (
+    "retained_count", "observed_count", "status", "comparison_sha256",
+)
+_ORIGINAL_RESULT_FIELDS = tuple(
+    vars(_RESULT_TYPE)[name] for name in _RESULT_FIELDS
+)
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in _RESULT_HOOKS
+)
 _RESULT_DENIALS = (
     "historical_prefix_proven", "independent_custody_proven",
     "consent_verified", "revocation_freshness_verified",
@@ -85,6 +98,18 @@ def _assert_result_denials() -> None:
     if (
         OfflineContextRecoveryReview is not _RESULT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
