@@ -87,11 +87,14 @@ def test_inherited_result_allocation_is_isolated_in_child_python():
     script = textwrap.dedent("""
         from tempfile import TemporaryDirectory
         from pathlib import Path
-        from test_personal_context_retained_replay_prefix_run511 import _first
+        from ark.personal_context_replay_ledger import DisconnectedContextReplayLedger
         import ark.personal_context_replay_prefix_review as prefix
 
         with TemporaryDirectory() as temp:
-            ledger, retained = _first(Path(temp))
+            ledger = DisconnectedContextReplayLedger(
+                Path(temp) / "prefix.sqlite", create=True,
+            )
+            retained = ledger.witness()
             calls = []
 
             def poison(*args, **kwargs):
