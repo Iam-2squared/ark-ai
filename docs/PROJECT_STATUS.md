@@ -1,5 +1,52 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run661 / 2026-11-06 JST:** **Four independent non-UI integrity regression work packages and a source-grounded execution-gate report** saved to Draft [PR #8](https://github.com/Iam-2squared/ark-ai/pull/8). **26 authored cases**: 8 SQLite occurrence row/expiry custody, 7 mixed-DAG terminal/unknown propagation, 8 Unicode redaction span/privacy boundary, 3 disjoint global Memory events vs target lifetime CAS. All four tests use synthetic fixture-only inputs; this is coverage, NOT a new live ToolBackend or production integration. First three CI runs had **Ubuntu 3/3 GREEN** at their individual heads; Windows pending. Latest exact-HEAD **6/6 GREEN NOT YET CONFIRMED**. ARK/JARVIS/V3 **NOT_PASSED**; all new UI/frontend development **PAUSED**.
+
+**Saved at:** **2026-11-06T21:56:14.885+09:00 Asia/Tokyo/JST**, sampled before the ordinary GitHub Contents checkpoint write. Administrative timestamp only: not an attested action clock, consent, identity, external effect proof, or authority to retry an ambiguous WRITE.
+
+## LATEST — HEAD, branch, custody
+
+- Branch `research/jarvis-foundations`, [PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN / **Draft / unmerged**. **Initial work-basis HEAD** `957777328de7daf339d802ca715bde1a0e8030ec`, whose [CI #42213164435](https://github.com/Iam-2squared/ark-ai/actions/runs/42213164435) has confirmed Ubuntu/Windows × Python 3.11/3.12/3.13 **6/6 GREEN**.
+- Ordinary Contents writes, after a fresh PR HEAD read for each: Registry tests `551f9f90136457a08c3aa91297c486a04e55c9cd`; Planner mixed-fence tests `53f67976df30f9821f205e7f8fb84df1ae207177`; Privacy Unicode spans tests `a64e8c6923afb72a8db112cf0c7b41cc439d3074`; Memory disjoint lifetime tests `0c60662cc6eb06969ace5751ec2838edc7e38a69`; technical report `0d8b9cc707fc7be8c442b5cb70e5561e875c5ed9`.
+- [Run661 source-grounded technical report](https://github.com/Iam-2squared/ark-ai/blob/0d8b9cc707fc7be8c442b5cb70e5561e875c5ed9/docs/JARVIS_RUN661_NON_UI_INTEGRITY_PRIORITY_AND_REGRESSION.md) explains new tests and nonauthorization invariants.
+- **Checkpoint-write-basis HEAD:** `0d8b9cc707fc7be8c442b5cb70e5561e875c5ed9`, re-read immediately before this single status update. **Checkpoint-result HEAD is assigned by GitHub only after this write; it cannot truthfully be inserted into its own committed text.** Verify it separately. Prior status Blob SHA `a64c6ef9f88bd8a1d53d944591503fc470590316`.
+
+## NEW — four regression packages, no new live integration
+
+1. **8 authored registry/occurrence cases:** seven syntactically invalid SQLite row fields/inconsistent time relationships must stop reopened read/append paths before any second reservation; a recycled token with newly extended expiry and changed registry revision must remain reserved. Backend calls = zero.
+2. **7 authored Planner recovery cases:** terminal ancestor precedence over uncertain sibling, multihop HOLD_TERMINAL/HOLD_UNCERTAIN, duplicate WRITE reservation rejection, quarantined local WRITE and unrelated `READY_MOCK_ONLY` READ. All statuses are caller-provided fixture claims, never a permit.
+3. **8 authored Personal Context redaction cases:** full Unicode codepoint mask coverage, rejection of holes/overlaps in complete mode, explicitly non-authorizing partial masking that can leave source text in a local preview. No user data, real erasure, export, or hardware I/O.
+4. **3 authored Memory CAS cases:** separate SQLite handle appends to disjoint owner, namespace or source without changing the target generation token; the retained target CAS can still advance once while global event high-water remains coherent. Local CAS tokens are never consent.
+
+## Tests / exact SHA CI evidence — do not infer later-head PASS
+
+- [#42213164435](https://github.com/Iam-2squared/ark-ai/actions/runs/42213164435) at initial work-basis `957777328de7daf339d802ca715bde1a0e8030ec`: **6/6 GREEN** confirmed by workflow jobs and overall conclusion.
+- [#42220601798](https://github.com/Iam-2squared/ark-ai/actions/runs/42220601798) at `551f9f90136457a08c3aa91297c486a04e55c9cd`: **Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS** at last explicit job review.
+- [#42220652153](https://github.com/Iam-2squared/ark-ai/actions/runs/42220652153) at `53f67976df30f9821f205e7f8fb84df1ae207177`: **Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS** at last job review.
+- [#42220717831](https://github.com/Iam-2squared/ark-ai/actions/runs/42220717831) at `a64e8c6923afb72a8db112cf0c7b41cc439d3074`: **Ubuntu 3/3 GREEN, Windows 3 IN PROGRESS** at last job review.
+- [#42221077369](https://github.com/Iam-2squared/ark-ai/actions/runs/42221077369) at Memory `0c60662cc6eb06969ace5751ec2838edc7e38a69`: **Ubuntu 3.11 GREEN, remaining 5 IN PROGRESS** at last job review.
+- [#42221238331](https://github.com/Iam-2squared/ark-ai/actions/runs/42221238331) at technical report `0d8b9cc707fc7be8c442b5cb70e5561e875c5ed9`: **IN PROGRESS / no confirmed job PASS** at last job review.
+- A new workflow may start for this status commit; its run ID cannot be known inside the commit. The **latest exact-head 6/6 GREEN remains unverified**. 26 authored cases ≠ independently confirmed 26 passes. No target-PC GGUF, local full pytest, real consent or external effect proof.
+
+## Frozen, pending, blocked and authorization boundaries
+
+- **main** last observed `7a843f17eb96ed13d66f23b58b06406b3002e405`, unmodified. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) still OPEN/Draft/unmerged at `805b377697472268db02650a89c7a94b1c5337c8`; paid compute, real Candidate generation/promotion and protected V2 final evaluation remain blocked. [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) still OPEN/Draft/unmerged at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, untouched: **ALL UI/frontend development PAUSED**.
+- Frozen V1/V2/Local UI/Launcher contracts and evaluation/evidence not changed. No new credential/secret/account; no paid API/GPU/external compute, protected evaluation, actual model training, real backend tool dispatch, sensors, notifications, trusted clock, private disclosure, actual deletion, destructive/irreversible action, human-approval inference, auto replay or main merge.
+- Local hashes / synthetic SQLite reservations / disconnected gate classifications are not authenticated human consent, remote exactly-once effects, production audit authority, or proof of external writer/clock provenance. A standalone SQLite hash chain cannot resist coordinated replacement by an attacker with file access.
+
+## Next plan / 今後の方針
+
+1. Resolve **all six** GitHub Actions jobs for the latest HEAD. If any failure, inspect actual failing logs and fix the minimum test/source issue without weakening guards. Continue independent non-UI lanes during CI, with no equivalent duplicate manual reruns.
+2. Close Memory COMMIT-UNKNOWN/ABA/expiry/row-event-prefix/snapshot gaps and Planner crash recovery/terminal propagation. Do not conflate a matching local post-commit row with caller-attributed success or permission to retry.
+3. Only after exact-head prerequisite GREEN, advance registry-bound exact-type PermissionGate, durable occurrence/replay, trusted-clock audit-before-action and mock-only executor/recovery bridge. No actual ToolBackend dispatch.
+4. Independently improve privacy/revocation-aware Personal Context, proactive scheduler readiness, observation fixture contracts and V3 free-only identity/path/reproducibility guards. Explicitly reserve approval, billing, Candidate, protected-evaluation, physical-PC and main-merge boundaries for user review. UI work remains halted.
+
+---
+
+## Prior checkpoint — Run660 (historical canonical content follows verbatim)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run660 / 2026-11-06 JST:** Three independent, non-UI non-authorizing core regression packages and one source-grounded V3 free-only gate audit saved to Draft [PR #8](https://github.com/Iam-2squared/ark-ai/pull/8). **Ten authored cases**: 3 Memory dual-review cross-handle COMMIT-UNKNOWN phase races; 3 registry revision / durable occurrence replay boundaries; 4 Unicode-exact private redaction custody cases. Two CI runs failed **at Ruff F401** before tests, fixed by removing one unused test import; this is not a source guard relaxation. **Latest combined exact-HEAD six-job GREEN NOT YET CONFIRMED. ARK/JARVIS/V3 NOT_PASSED. All UI development PAUSED.**
 
 **Saved at:** **2026-11-06T20:50:06.209+09:00 Asia/Tokyo/JST**, sampled immediately before the ordinary Contents checkpoint write; administrative only, never a trusted-clock attestation, user consent, effect proof, or human approval.
