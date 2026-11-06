@@ -64,7 +64,8 @@ def test_constructor_hook_cannot_replace_imported_class(monkeypatch, binary):
         monkeypatch.setattr(adapters, "ObservationEnvelope", counterfeit)
 
     monkeypatch.setattr(ObservationEnvelope, "__post_init__", after_construct)
-    with pytest.raises(ValueError, match="non-envelope"):
+    # The original validator is now pinned before the forged callback runs.
+    with pytest.raises(ValueError, match="changed during construction"):
         _fixture(binary)
     assert called == []
 
