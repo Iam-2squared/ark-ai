@@ -93,6 +93,46 @@ _ORIGINAL_RECEIPT_DENIALS = (
 )
 _ORIGINAL_WITNESS_DENIAL = QuarantineWitness.independently_authenticated
 
+# Quarantine inputs are local fixtures, not capabilities. Frozen dataclass
+# fields and lookup hooks can nevertheless be replaced at class level with
+# executable descriptors. Inspect the import-time class dictionary before
+# the first policy/witness value is accessed, including the error path.
+_POLICY_INPUT_TYPE = QuarantinePolicy
+_WITNESS_INPUT_TYPE = QuarantineWitness
+_POLICY_INPUT_FIELDS = (
+    "policy_sha256", "first_ms", "interval_ms", "count", "grace_ms",
+)
+_WITNESS_INPUT_FIELDS = ("count", "chain_sha256")
+_INPUT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_POLICY_INPUT_ORIGINALS = tuple(
+    vars(_POLICY_INPUT_TYPE).get(name)
+    for name in (*_POLICY_INPUT_FIELDS, *_INPUT_HOOKS)
+)
+_WITNESS_INPUT_ORIGINALS = tuple(
+    vars(_WITNESS_INPUT_TYPE).get(name)
+    for name in (*_WITNESS_INPUT_FIELDS, *_INPUT_HOOKS)
+)
+
+
+def _require_original_quarantine_input_carriers() -> None:
+    if (
+        QuarantinePolicy is not _POLICY_INPUT_TYPE
+        or QuarantineWitness is not _WITNESS_INPUT_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, fields, originals in (
+                (_POLICY_INPUT_TYPE, (*_POLICY_INPUT_FIELDS, *_INPUT_HOOKS),
+                 _POLICY_INPUT_ORIGINALS),
+                (_WITNESS_INPUT_TYPE, (*_WITNESS_INPUT_FIELDS, *_INPUT_HOOKS),
+                 _WITNESS_INPUT_ORIGINALS),
+            )
+            for name, original in zip(fields, originals, strict=True)
+        )
+    ):
+        raise ScheduleQuarantineRejected(
+            "quarantine input carrier descriptor changed"
+        )
+
 
 def _digest(payload: tuple[object, ...]) -> str:
     data = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("ascii")
@@ -100,6 +140,7 @@ def _digest(payload: tuple[object, ...]) -> str:
 
 
 def _policy_epoch(policy: object) -> tuple[str, int, int, int, int]:
+    _require_original_quarantine_input_carriers()
     if type(policy) is not QuarantinePolicy:
         raise ScheduleQuarantineRejected("exact synthetic policy required")
     values = (policy.policy_sha256, policy.first_ms, policy.interval_ms,
@@ -285,6 +326,7 @@ class DisconnectedScheduleQuarantineLedger:
 
     @staticmethod
     def _check_witness(value: object) -> None:
+        _require_original_quarantine_input_carriers()
         if (type(value) is not QuarantineWitness
                 or type(value.count) is not int or not 0 <= value.count <= _MAX_ROWS
                 or type(value.chain_sha256) is not str
