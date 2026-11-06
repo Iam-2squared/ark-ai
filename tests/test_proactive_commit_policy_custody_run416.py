@@ -101,7 +101,7 @@ def test_post_commit_policy_swap_denies_return_but_preserves_row(
         _prepare(store, _policy(), now=200)
 
 
-def test_forged_post_commit_receipt_does_not_erase_durable_reservation(
+def test_forged_receipt_binding_is_denied_before_persistence(
     tmp_path: Path, monkeypatch,
 ):
     store = proactive.SyntheticProactiveLedger(tmp_path / "trigger.sqlite")
@@ -112,8 +112,11 @@ def test_forged_post_commit_receipt_does_not_erase_durable_reservation(
 
     with monkeypatch.context() as scope:
         scope.setattr(proactive, "SyntheticTriggerReceipt", forged_receipt)
-        with pytest.raises(proactive.SyntheticTriggerRejected, match="receipt changed"):
+        with pytest.raises(proactive.SyntheticTriggerRejected, match="authority epoch"):
             _prepare(store, _policy())
+    # The incoming class binding is already invalid: never spend the marker.
+    assert store.count() == 0
+    _prepare(store, _policy())
     assert store.count() == 1
     with pytest.raises(proactive.SyntheticTriggerRejected, match="duplicate"):
         _prepare(store, _policy(), now=200)
