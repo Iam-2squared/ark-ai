@@ -163,6 +163,18 @@ def _snapshot(graph: PlanGraph, tail: SyntheticPlanTail) -> SyntheticPlanRecover
 # This recovery object is an inert witness, never an authorization. Pin its
 # original class even if a synthetic test hook later replaces the constructor.
 _RECOVERY_RESULT_TYPE = SyntheticPlanRecovery
+# A frozen slotted *tail* is also executable when its class-level field or
+# lookup descriptors are replaced. Pin it before any retained-tail field read,
+# SQLite replay or synthetic result-constructor callback.
+_TAIL_RESULT_TYPE = SyntheticPlanTail
+_TAIL_FIELDS = (
+    "topology_digest", "event_count", "event_hash", "status_digest", "last_at_ms",
+)
+_TAIL_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_TAIL_FIELDS = tuple(vars(_TAIL_RESULT_TYPE)[name] for name in _TAIL_FIELDS)
+_ORIGINAL_TAIL_HOOKS = tuple(
+    vars(_TAIL_RESULT_TYPE).get(name) for name in _TAIL_HOOKS
+)
 _ORIGINAL_RECOVERY_INIT = vars(_RECOVERY_RESULT_TYPE)["__init__"]
 _RECOVERY_DENIAL_NAMES = ("dispatch_authorized", "automatic_replay_authorized")
 _ORIGINAL_RECOVERY_DENIALS = tuple(
@@ -183,7 +195,20 @@ _ORIGINAL_RECOVERY_HOOKS = tuple(
 
 def _require_original_recovery_denials() -> None:
     if (
-        SyntheticPlanRecovery is not _RECOVERY_RESULT_TYPE
+        SyntheticPlanTail is not _TAIL_RESULT_TYPE
+        or any(
+            vars(_TAIL_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _TAIL_FIELDS, _ORIGINAL_TAIL_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_TAIL_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _TAIL_HOOKS, _ORIGINAL_TAIL_HOOKS, strict=True,
+            )
+        )
+        or SyntheticPlanRecovery is not _RECOVERY_RESULT_TYPE
         or vars(_RECOVERY_RESULT_TYPE).get("__init__") is not _ORIGINAL_RECOVERY_INIT
         or any(
             vars(_RECOVERY_RESULT_TYPE).get(name) is not original
