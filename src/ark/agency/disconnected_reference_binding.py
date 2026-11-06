@@ -57,6 +57,45 @@ class SyntheticBoundArguments:
         return False
 
 
+# Class-level slots and lookup hooks of frozen dataclasses remain mutable.
+# Reject substituted descriptors before the first potentially private
+# result JSON field access, not only after a digest has been computed.
+_READ_TYPE = SyntheticReadResult
+_BOUND_TYPE = SyntheticBoundArguments
+_READ_FIELDS = ("step_id", "canonical_result_json", "retained_digest")
+_BOUND_FIELDS = (
+    "request_id", "used_step_ids", "canonical_args_json", "binding_digest",
+)
+_DENIALS = (
+    "dispatch_authorized", "source_authenticated",
+    "replay_authorized", "external_result_proven",
+)
+_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_READ_DESCRIPTORS = tuple(
+    vars(_READ_TYPE).get(name) for name in _READ_FIELDS + _HOOKS
+)
+_ORIGINAL_BOUND_DESCRIPTORS = tuple(
+    vars(_BOUND_TYPE).get(name) for name in _BOUND_FIELDS + _DENIALS + _HOOKS
+)
+
+
+def _require_original_binding_carriers() -> None:
+    if (
+        SyntheticReadResult is not _READ_TYPE
+        or SyntheticBoundArguments is not _BOUND_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_READ_TYPE, _READ_FIELDS + _HOOKS, _ORIGINAL_READ_DESCRIPTORS),
+                (_BOUND_TYPE, _BOUND_FIELDS + _DENIALS + _HOOKS,
+                 _ORIGINAL_BOUND_DESCRIPTORS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise ReadBindingRejected("READ binding carrier definition changed")
+
+
 def _pairs_unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
     value: dict[str, object] = {}
     for key, item in pairs:
@@ -179,6 +218,7 @@ def bind_synthetic_read_arguments(
     The caller must retain plan membership independently; a local digest
     cannot establish a trusted graph, consent, or a successful external READ.
     """
+    _require_original_binding_carriers()
     if (
         type(request_id) is not str or _REQUEST.fullmatch(request_id) is None
         or type(earlier_step_ids) is not tuple
@@ -195,6 +235,7 @@ def bind_synthetic_read_arguments(
                    for row in results)
 
     def assert_epoch() -> None:
+        _require_original_binding_carriers()
         if any(now is not before for now, before in zip(
             (request_id, canonical_template_json, earlier_step_ids, results),
             original, strict=True,
@@ -264,13 +305,29 @@ def bind_synthetic_read_arguments(
     })
     digest = hashlib.sha256(_DOMAIN + provenance.encode("ascii")).hexdigest()
     assert_epoch()
+    _require_original_binding_carriers()
     result = SyntheticBoundArguments(request_id, selected, raw_out, digest)
     assert_epoch()
     if (
-        result.request_id is not request_id
+        type(result) is not _BOUND_TYPE
+        or result.request_id is not request_id
         or result.used_step_ids != selected
         or result.canonical_args_json is not raw_out
         or result.binding_digest is not digest
     ):
         raise ReadBindingRejected("result changed before return")
+    for flag in _DENIALS:
+        _require_original_binding_carriers()
+        if getattr(result, flag) is not False:
+            raise ReadBindingRejected("READ binding gained authority")
+        assert_epoch()
+        if (
+            type(result) is not _BOUND_TYPE
+            or result.request_id is not request_id
+            or result.used_step_ids is not selected
+            or result.canonical_args_json is not raw_out
+            or result.binding_digest is not digest
+        ):
+            raise ReadBindingRejected("result changed during denial review")
+    assert_epoch()
     return result
