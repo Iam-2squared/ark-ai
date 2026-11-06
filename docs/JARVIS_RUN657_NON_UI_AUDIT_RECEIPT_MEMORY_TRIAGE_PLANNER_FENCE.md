@@ -38,3 +38,18 @@ The local `SyntheticAuditLinkReceipt` previously tested the output type and fiel
 - PR #9 UI remains Draft/unmerged and **fully untouched**; all frontend work stays paused.
 - The audit sidecar, source reservation database and action audit are **three separate SQLite transactions**. A locally matching link is not atomic across all stores or proof of live exactly-once dispatch. Both a missing link and a link surviving a post-COMMIT error remain manual-reconciliation cases.
 - Prioritize exact-head CI completion; next address Memory COMMIT-UNKNOWN row/event lineage under two writers, Planner crash recovery and immutable Registry/PermissionGate + trusted clock / audit-before-action mock integration only after prerequisite exact-head GREEN. JARVIS overall **NOT_PASSED**.
+
+
+## Package D — Disconnected mixed-recovery class-custody hardening
+
+**Additional production source:** `src/ark/agency/disconnected_write_recovery_fence.py` commit `9449966bbd14733d79144f6cd23a637ebd1ac33d`.
+
+A frozen/slotted synthetic `OfflineRecoveryStepClaim` can still have its **class-level fields or lookup hooks** replaced by another local Python callback. Existing `_require_original_fence_denials()` pinned only some output constructors and deny-only properties, so Python field access could invoke substituted code during disconnected recovery classification. The revised guard pins **import-original exact class identities** and field, constructor, allocation and lookup descriptors for the three carriers (`OfflineRecoveryStepClaim`, `OfflineRecoveryDisposition`, `OfflineRecoveryFence`). It checks before the original input scan, at each source/decision epoch and directly after constructing a disposition before dereferencing its fields. This is *local* safety only, not an arbitrary-process-control defense.
+
+**New regression:** `tests/test_disconnected_recovery_original_carriers_run657.py`, commit `c4c4c2121bfc1d4f8ca26a466e67d04bfa6c952c`, **24 authored cases** (20 preinstalled field/lookup/constructor poisons, 3 reentrant JSON/hash-stage class substitutions, 1 unchanged UNKNOWN-WRITE control). Every malicious hook must remain uncalled; the normal WRITE remains quarantined and never gains permission or a verified result. No inherited `__new__` test pollutes shared pytest.
+
+**Additional CI:** [source #42190772160](https://github.com/Iam-2squared/ark-ai/actions/runs/42190772160) and [new tests #42190877169](https://github.com/Iam-2squared/ark-ai/actions/runs/42190877169), **QUEUED / exact-head six-job GREEN not yet verified** at this appendix. The earlier five-path comparison pertains to **packages A–C only**; the complete A–D source/test comparison adds two non-UI paths. This invocation now authors **44 new cases** (12 + 3 + 5 + 24) and updates five existing audit receipt cases, not 44 measured PASS results.
+
+## Actual intermediate CI failure (not silently GREEN)
+
+[Source-only #42189516707](https://github.com/Iam-2squared/ark-ai/actions/runs/42189516707) was **6/6 FAIL**, specifically because the old Run415 tests expected five **preinstalled** malicious factory callbacks to run after COMMIT and leave a link. The strengthened source correctly refused them *before* COMMIT; all five expected the now-invalid `event_count == 1`. The immediately following normal Contents API commit `8385b73c...` updates those expectations to `event_count == 0`, no hostile factory invocation. Post-COMMIT rollback ambiguity is independently retained by the Run414 callback test. No safety guard was relaxed. Later corrected exact-head CI remains to be established on real jobs.
