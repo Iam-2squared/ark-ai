@@ -11,14 +11,13 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 import pytest
+from test_registry_policy_durable_occurrence_restart_run643 import _fixture
 
 from ark.agency.contracts import OneShotAuthorization
 from ark.agency.durable_occurrence_review import (
     SyntheticOccurrenceStore,
     SyntheticReplayRejected,
 )
-from test_registry_policy_durable_occurrence_restart_run643 import _fixture
-
 
 @pytest.mark.parametrize(
     "collision",
