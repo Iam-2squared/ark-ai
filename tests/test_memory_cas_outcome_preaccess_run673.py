@@ -46,11 +46,14 @@ def test_bad_reflected_proposal_never_hashes_or_opens_memory(
     def forbidden(*_args, **_kwargs):
         pytest.fail("malformed CAS proposal reached SQLite or payload hashing")
 
-    monkeypatch.setattr(store, "_connect_readonly", forbidden)
-    with pytest.raises(MemoryCASOutcomeRejected, match=diagnostic):
-        review_memory_generation_cas_outcome(
-            store, proposed, retained=retained,
-        )
+    # Restore the read hook before checking the untouched event history.
+    # Only the review under test is forbidden from opening SQLite.
+    with monkeypatch.context() as isolated:
+        isolated.setattr(store, "_connect_readonly", forbidden)
+        with pytest.raises(MemoryCASOutcomeRejected, match=diagnostic):
+            review_memory_generation_cas_outcome(
+                store, proposed, retained=retained,
+            )
     assert tuple(store.events(scope)) == event_image
     assert store.get(saved.memory_id, scope, include_expired=True) == saved
 
