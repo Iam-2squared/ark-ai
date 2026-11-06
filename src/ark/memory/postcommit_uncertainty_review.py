@@ -72,6 +72,41 @@ _REPORT = MemoryCommitTriage
 _ORIGINAL_REPORT_INIT = vars(_REPORT)["__init__"]
 _ORIGINAL_DENIALS = tuple(vars(_REPORT)[name] for name in _DENIALS)
 
+_REPORT_FIELDS = (
+    "memory_id", "retained_event_id", "observed_event_id",
+    "retained_prefix_sha256", "observed_prefix_sha256", "disposition",
+    "report_sha256",
+)
+_REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[name] for name in _REPORT_FIELDS)
+_ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS)
+
+
+def _require_original_report_carrier() -> None:
+    """Reject executable report replacements before observing private Memory."""
+    if (
+        MemoryCommitTriage is not _REPORT
+        or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_FIELDS, _ORIGINAL_REPORT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise MemoryCommitTriageRejected("Memory triage input or denial changed")
+
+
 
 def review_uncertain_memory_commit(
     store: SQLiteMemoryStore,
@@ -94,6 +129,7 @@ def review_uncertain_memory_commit(
         or type(retained_before) is not MemoryGenerationCASToken
     ):
         raise MemoryCommitTriageRejected("exact Memory triage inputs required")
+    _require_original_report_carrier()
     try:
         # The caller-retained witness is not consent or a tool capability.
         # Reject a False-looking substituted getter before it can execute.
@@ -111,6 +147,7 @@ def review_uncertain_memory_commit(
         raise MemoryCommitTriageRejected("invalid retained Memory triage inputs") from exc
 
     def stable() -> None:
+        _require_original_report_carrier()
         try:
             _require_original_token_denials()
         except MemoryGenerationCASRejected as exc:
