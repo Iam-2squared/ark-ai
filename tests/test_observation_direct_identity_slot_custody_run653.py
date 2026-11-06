@@ -61,11 +61,13 @@ def test_direct_validation_rejects_hook_before_reading_metadata(
     monkeypatch.setattr(
         observations.ObservationEnvelope, target, replacement, raising=False,
     )
+    # Call the original validator directly so an overridden instance
+    # __getattribute__ or __post_init__ cannot run merely when obtaining it.
+    original_validator = observations._ORIGINAL_ENVELOPE_HOOKS[
+        observations._ENVELOPE_HOOKS.index("__post_init__")
+    ]
     with pytest.raises(ValueError, match="observation identity definition changed"):
-        envelope.__post_init__() if target != "__post_init__" else (
-            observations._ENVELOPE_HOOKS and
-            observations._require_original_identity_carrier()
-        )
+        original_validator(envelope)
     assert called == []
 
 
