@@ -15,7 +15,6 @@ from ark.agency.disconnected_planner_fence_projection import (
 )
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
-
 _ROOT_A = "step_" + "a" * 16
 _CHILD_A = "step_" + "b" * 16
 _LEAF_A = "step_" + "c" * 16
