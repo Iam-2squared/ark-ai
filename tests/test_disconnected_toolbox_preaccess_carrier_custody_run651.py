@@ -88,7 +88,7 @@ def test_constructor_hook_changed_during_calculation_is_rejected(monkeypatch):
 
     def changed(operation, args):
         result = execute(operation, args)
-        setattr(cls, "__init__", bad)
+        cls.__init__ = bad
         return result
 
     monkeypatch.setattr(toolbox, "_run", changed)
@@ -100,7 +100,7 @@ def test_constructor_hook_changed_during_calculation_is_rejected(monkeypatch):
             toolbox.execute_disconnected_fixture_tool(request)
         assert calls == []
     finally:
-        setattr(cls, "__init__", original)
+        cls.__init__ = original
 
 
 def test_request_field_hook_changed_during_calculation_is_rejected(monkeypatch):
@@ -116,7 +116,7 @@ def test_request_field_hook_changed_during_calculation_is_rejected(monkeypatch):
 
     def changed(operation, args):
         result = execute(operation, args)
-        setattr(cls, "canonical_args_json", property(bad))
+        cls.canonical_args_json = property(bad)
         return result
 
     monkeypatch.setattr(toolbox, "_run", changed)
@@ -128,7 +128,7 @@ def test_request_field_hook_changed_during_calculation_is_rejected(monkeypatch):
             toolbox.execute_disconnected_fixture_tool(request)
         assert calls == []
     finally:
-        setattr(cls, "canonical_args_json", original)
+        cls.canonical_args_json = original
 
 
 def test_legitimate_disconnected_calculation_still_has_no_authority():
