@@ -12,6 +12,7 @@ Accordingly this adapter refuses SUCCEEDED rather than inventing a receipt.
 
 from __future__ import annotations
 
+from . import disconnected_write_recovery_fence as fence_module
 from . import planner_journal_review as journal
 from .contracts import PlanStep
 from .disconnected_write_recovery_fence import (
@@ -29,6 +30,27 @@ class DisconnectedPlannerProjectionRejected(ValueError):
 _JOURNAL_RESULT = journal.SyntheticPlanRecovery
 _JOURNAL_TAIL = journal.SyntheticPlanTail
 _ORIGINAL_TAIL_SHAPE = vars(_JOURNAL_TAIL)["assert_shape"]
+# An injected projection-level callback or replaced class descriptor must not
+# turn an otherwise sound local journal into an unrelated detached fence.
+_ORIGINAL_FENCE_REVIEW = review_disconnected_recovery_fence
+
+
+def _require_original_fence_review() -> None:
+    if (
+        review_disconnected_recovery_fence is not _ORIGINAL_FENCE_REVIEW
+        or fence_module.review_disconnected_recovery_fence is not _ORIGINAL_FENCE_REVIEW
+        or fence_module.OfflineRecoveryFence is not OfflineRecoveryFence
+        or fence_module.OfflineRecoveryStepClaim is not OfflineRecoveryStepClaim
+    ):
+        raise DisconnectedPlannerProjectionRejected(
+            "detached recovery fence review authority changed"
+        )
+    try:
+        fence_module._require_original_fence_denials()
+    except fence_module.OfflineRecoveryFenceRejected as exc:
+        raise DisconnectedPlannerProjectionRejected(
+            "detached recovery fence carrier authority changed"
+        ) from exc
 
 
 def project_disconnected_planner_fence(
@@ -43,6 +65,7 @@ def project_disconnected_planner_fence(
     requires an independent reviewed receipt bridge and is rejected here.
     """
     journal._require_original_recovery_denials()
+    _require_original_fence_review()
     if (
         type(recovered) is not _JOURNAL_RESULT
         or type(recovered.tail) is not _JOURNAL_TAIL
@@ -76,6 +99,7 @@ def project_disconnected_planner_fence(
 
     def stable() -> None:
         journal._require_original_recovery_denials()
+        _require_original_fence_review()
         if (
             vars(_JOURNAL_TAIL).get("assert_shape") is not _ORIGINAL_TAIL_SHAPE
             or type(recovered) is not _JOURNAL_RESULT
@@ -206,6 +230,11 @@ def project_disconnected_planner_fence(
     stable()
     if (
         type(fence) is not OfflineRecoveryFence
+        or fence.plan_id is not identity
+        or type(fence.decisions) is not tuple
+        or len(fence.decisions) != len(ordered)
+        or tuple(decision.step_id for decision in fence.decisions) != tuple(ordered)
+        or type(fence.digest) is not str
         or fence.dispatch_authorized is not False
         or fence.write_authorized is not False
         or fence.automatic_replay_authorized is not False
