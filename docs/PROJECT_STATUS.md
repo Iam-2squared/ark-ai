@@ -1,5 +1,44 @@
 # ARK AI — Canonical Project Status
 
+**LATEST — Run665 / 2026-11-07 JST:** Diagnosed the **10 genuine Proactive regression failures** from Run664's exact-HEAD 6/6 FAIL, then saved **three corrective regression packages** preserving pre-COMMIT receipt authority checks, plus a separate **Memory exact-payload COMMIT-UNKNOWN review** package. **Four authored NEW test cases** (one durable true post-COMMIT injection, three Memory mismatches), with existing tests repaired across three files. **Corrected combined-head CI remains IN PROGRESS / unverified**, not a claimed PASS. UI remains **PAUSED**; overall ARK JARVIS/V3 **NOT_PASSED**.
+
+**Saved at:** **2026-11-07T01:55:59.461+09:00 Asia/Tokyo/JST**, sampled immediately before the single ordinary GitHub Contents checkpoint write. Administrative timestamp, *not* a trusted action clock, signed witness, human permission or attestation.
+
+## LATEST — branch / exact work-basis / result-HEAD custody
+
+- **Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN, **Draft**, unmerged. **Initial work-basis HEAD:** `53e1d1c4efd10ae9671c2b0226959cde84f3dfba`. **Checkpoint-write-basis HEAD:** `ed3bad0ecc40b46d88919ae6219cf1637beb9fd8`, freshly re-read immediately before this write. **Checkpoint-result HEAD is assigned by GitHub after the write and cannot truthfully be embedded within its own contents.** Re-fetch the PR HEAD and the new status blob SHA independently after saving. Prior status blob SHA: `52df507ad3a2c4650c33e8e38f09824960f5ac94`.
+- **Prior Run664 exact-HEAD CI:** [#42247009650](https://github.com/Iam-2squared/ark-ai/actions/runs/42247009650) at `53e1d1c4...` **FAIL across all six Ubuntu/Windows Python 3.11–3.13 jobs**. Actual Ubuntu 3.11 job `127991747735` showed **10 FAIL / 9878 PASS / 1 SKIP**, from old Proactive tests that assumed malformed receipts reached COMMIT. New preaccess checks intentionally refuse malformed class descriptors/constructor before SQLite writes; old expectations were stale. Hard-exit test's constructor replacement could no longer reach COMMIT. Do not label the 10 failures GREEN or hide the mismatch.
+- **Proactive test correction #1:** `7577f253b742ab403afb184e011c53a8656487a4`, `tests/test_proactive_receipt_original_authority_run593.py`: expect **zero markers** and **no injected getter** when a descriptor/getattribute is preinstalled. Added one genuine post-COMMIT fault-injection test via `raw.commit()` that must retain one marker and reject duplicate admission. No production safety weakening.
+- **Proactive test correction #2:** `c1a09727d03e83b9a442837b202eaa6506cf0b8e`, `tests/test_proactive_commit_policy_custody_run416.py`: reject a forged receipt class at ingress before persistence, then prove an unmodified preparation can commit once; duplicate denied.
+- **Proactive hard-exit correction:** `b98b9438f157585ba9f6de28ba5e3acb1ffb2dcd`, `tests/test_hard_exit_local_durability_run436.py`: a disposable child-process SQLite `mode=rw` wrapper calls the real `commit()` then `os._exit(44)`; restart must find exactly one durable marker and deny duplicate. No real notification, dispatch or backend call.
+- **Independent Memory fixture package:** `b08523684bb97fdaf59d42f55787f3ea419f1e44`, `tests/test_memory_ambiguity_exact_payload_run665.py`: three parametrized synthetic two-handle cases; identical-looking update with wrong **metadata**, **finite expiry**, or **composed/decomposed Unicode bytes** must be `DIVERGED_MANUAL_REVIEW` and never an attribution/retry/write/clock grant. Both read-only review and post-review persisted event/row image are inspected. These three are *authored cases*, not independently certified passes.
+- **Run665 technical evidence:** `docs/JARVIS_RUN665_NON_UI_PROACTIVE_CI_RECOVERY_MEMORY_PAYLOAD.md` at `ed3bad0ecc40b46d88919ae6219cf1637beb9fd8`. No production source changes, UI or frozen contract edits this invocation.
+
+## CI / verification — exact state, no inferred GREEN
+
+- Run664 checkpoint [#42247009650](https://github.com/Iam-2squared/ark-ai/actions/runs/42247009650) **6/6 FAIL**, as independently read this invocation. Repaired source/old test expectations through normal GitHub Contents writes; preserved preaccess authority guard.
+- Corrective intermediate runs [#42255813457](https://github.com/Iam-2squared/ark-ai/actions/runs/42255813457) at `7577f253...`, [#42255884939](https://github.com/Iam-2squared/ark-ai/actions/runs/42255884939) at `c1a09727...`, [#42255933764](https://github.com/Iam-2squared/ark-ai/actions/runs/42255933764) at `b98b9438...`: all **IN PROGRESS** at most recent run listing.
+- Memory combined source/test run [#42256308747](https://github.com/Iam-2squared/ark-ai/actions/runs/42256308747) at `b08523684...`: **IN PROGRESS** at most recent listing; technical report run [#42256719369](https://github.com/Iam-2squared/ark-ai/actions/runs/42256719369) at `ed3bad0...`: **QUEUED** at most recent listing. A checkpoint write normally creates another CI whose ID is not known until GitHub accepts it; this checkpoint's **latest exact-HEAD six-job result is UNVERIFIED**. No duplicate manual workflow run, local full pytest/Ruff, actual GGUF, trusted clock, consent or external-effect proof claimed.
+
+## Preserved frozen baselines, blockers, and free-only authorization
+
+- `main` observed at `7a843f17eb96ed13d66f23b58b06406b3002e405`, untouched. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/**Draft**/**unmerged** at `805b377697472268db02650a89c7a94b1c5337c8`; real paid/external training/GPU and pinned base/tokenizer identities, data rights, explicit budget, human approval, Candidate weights and protected V2 final evaluation remain gated. No presumed permission.
+- [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/**Draft**/**unmerged** at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.** Frozen V1/V2/Local UI/Launcher contracts, evaluations and evidence remain intact.
+- Synthetic SQLite, local digests, mock clocks and process crashes do **not** authenticate identity, actual consent, externally trusted action time, real exactly-once effects or authorize ambiguous WRITE replay. No paid API/service, external compute/GPU, new credential/account, physical PC, real ToolBackend, notification, sensor, irreversible operation, Candidate promotion, protected evaluation opening or unauthorized main merge.
+
+## Next plan / 今後の方針
+
+1. Verify each of the **six jobs** on latest exact HEAD (corrected source/tests/checkpoint). If FAIL, inspect actual logs and repair the smallest mismatch using normal Contents API; no Git-object/ref bypass, no repeated identical workflow launches. Overlap unrelated free non-UI work.
+2. Strengthen Memory COMMIT-UNKNOWN manual-only reconciliation, coherent cross-handle event/row snapshot, CAS expiry/ABA, lifecycle and privacy without caller-attribution claims.
+3. Prove independently verified Planner SUCCEEDED result/effect receipts and restart topology/terminal holds before any integration with ToolRegistry/exact-type PermissionGate, durable occurrence or trusted-clock audit-before-action. Disconnected executor only.
+4. Continue privacy-safe Personal Context revocation/erasure, proactive restart quarantine, observation fixture provenance and free-only V3 licensing/path/reproducibility guards. PR #5 training/protected V2 evaluation, UI work and main merge remain separately gated.
+
+---
+
+## Prior checkpoint — Run664 (historical canonical content preserved)
+
+# ARK AI — Canonical Project Status
+
 **LATEST — Run664 / 2026-11-07 JST:** Four coherent free-only **non-UI** core packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (1) Planner multi-step recovery DAG/quarantine regressions, (2) Memory two-handle WAL row/event coherent snapshot regressions, (3) registry-bound durable synthetic occurrence collision concurrency tests, and (4) **proactive synthetic receipt slot/constructor/getter preaccess production hardening** with regression tests. **16 authored new test cases**; their exact-HEAD PASS is **NOT YET VERIFIED**. A registry-test Ruff I001 error was repaired through two minimal import/spacing-only fixes; latest corrected-head CI remains **IN PROGRESS**. UI development remains **PAUSED**; JARVIS/V3 overall **NOT_PASSED**.
 
 **Saved at:** **2026-11-07T00:50:44.794+09:00 Asia/Tokyo/JST**, administrative time sampled before the one canonical GitHub Contents checkpoint update (not a trusted action clock, consent or writer attestation).
