@@ -10,7 +10,9 @@ from test_memory_postcommit_triage_run552 import make_case
 import ark.memory.postcommit_uncertainty_review as triage
 
 
-@pytest.mark.parametrize("name", triage._REPORT_FIELDS + ("__getattribute__", "__getattr__"))
+@pytest.mark.parametrize(
+    "name", triage._REPORT_FIELDS + ("__getattribute__", "__getattr__"),
+)
 def test_preinstalled_report_slot_or_lookup_never_executes(
     tmp_path, monkeypatch, name,
 ):
