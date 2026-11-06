@@ -111,6 +111,28 @@ def _require_original_result_carriers() -> None:
         raise ScheduleResumeRejected(
             "offline resume result carrier changed: denial descriptor replaced"
         )
+    # Check denial-only authority surfaces before reading ledger paths,
+    # cursor fields or retained private scheduling history. A getter returning
+    # False is still executable code if installed later.
+    if any(
+        vars(_RESULT_TYPE).get(name) is not original
+        for name, original in zip(_DENIALS, _ORIGINAL_RESUME_DENIALS, strict=True)
+    ):
+        raise ScheduleResumeRejected(
+            "offline resume witness changed: denial descriptor replaced"
+        )
+    if (
+        vars(QuarantineWitness).get("independently_authenticated")
+        is not _ORIGINAL_QUARANTINE_DENIAL
+    ):
+        raise ScheduleResumeRejected(
+            "quarantine witness authority descriptor changed"
+        )
+    if any(
+        vars(DisconnectedDuePreview).get(name) is not original
+        for name, original in zip(_DENIALS, _ORIGINAL_PREVIEW_DENIALS, strict=True)
+    ):
+        raise ScheduleResumeRejected("offline preview denial descriptor changed")
 
 
 # Import-time denial descriptors: capturing them after a ledger/preview
