@@ -34,8 +34,8 @@ def test_false_only_replacement_is_not_original_receipt_authority(
     )
     with pytest.raises(module.SyntheticTriggerRejected, match="authority epoch"):
         submit()
-    # The denial runs AFTER the local COMMIT. No blind automatic retry.
-    assert ledger.count() == 1
+    # Ingress rejects tampered descriptors before any SQLite write.
+    assert ledger.count() == 0
 
 
 @pytest.mark.parametrize("field", module._RECEIPT_DENIALS)
@@ -51,7 +51,7 @@ def test_receipt_cannot_claim_real_notification_or_dispatch(
         match="gained authority|authority epoch changed",
     ):
         submit()
-    assert ledger.count() == 1
+    assert ledger.count() == 0
 
 
 def test_reentrant_denial_cannot_rebase_earlier_original_descriptor(
@@ -75,8 +75,8 @@ def test_reentrant_denial_cannot_rebase_earlier_original_descriptor(
     monkeypatch.setattr(receipt_type, "__getattribute__", late_replacement)
     with pytest.raises(module.SyntheticTriggerRejected, match="authority epoch"):
         submit()
-    assert triggered == ["automatic_replay_authorized"]
-    assert ledger.count() == 1
+    assert triggered == []
+    assert ledger.count() == 0
 
 
 def test_deny_getter_cannot_modify_committed_receipt_carrier(
@@ -96,9 +96,9 @@ def test_deny_getter_cannot_modify_committed_receipt_carrier(
         return result
 
     monkeypatch.setattr(receipt_type, "__getattribute__", drift)
-    with pytest.raises(module.SyntheticTriggerRejected, match="receipt changed"):
+    with pytest.raises(module.SyntheticTriggerRejected, match="authority epoch"):
         submit()
-    assert ledger.count() == 1
+    assert ledger.count() == 0
 
 
 def test_unmodified_receipt_is_exact_and_never_authorizes(tmp_path):
@@ -108,4 +108,42 @@ def test_unmodified_receipt_is_exact_and_never_authorizes(tmp_path):
     assert receipt.notification_authorized is False
     assert receipt.dispatch_authorized is False
     assert receipt.automatic_replay_authorized is False
+    assert ledger.count() == 1
+
+
+def test_post_commit_descriptor_drift_is_reported_without_erasing_marker(
+    tmp_path, monkeypatch,
+):
+    ledger, submit = _prepare(tmp_path)
+    original_connect = module.sqlite3.connect
+
+    class DriftAfterCommit:
+        def __init__(self, raw):
+            self.raw = raw
+
+        def __getattr__(self, name):
+            return getattr(self.raw, name)
+
+        def commit(self):
+            self.raw.commit()
+            # Tamper only AFTER the real SQLite COMMIT. Preaccess validation
+            # cannot predict this; the durable marker must not be forgotten.
+            scope.setattr(
+                module.SyntheticTriggerReceipt, "notification_authorized",
+                property(lambda _: False),
+            )
+
+    def connect(*args, **kwargs):
+        raw = original_connect(*args, **kwargs)
+        if args and "mode=rw" in str(args[0]) and kwargs.get("uri"):
+            return DriftAfterCommit(raw)
+        return raw
+
+    with monkeypatch.context() as scope:
+        scope.setattr(module.sqlite3, "connect", connect)
+        with pytest.raises(module.SyntheticTriggerRejected, match="authority epoch"):
+            submit()
+    assert ledger.count() == 1
+    with pytest.raises(module.SyntheticTriggerRejected, match="duplicate"):
+        submit()
     assert ledger.count() == 1
