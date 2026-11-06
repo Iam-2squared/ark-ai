@@ -12,7 +12,8 @@
 
 - Production source `src/ark/memory/generation_cas_outcome_review.py`, commit `103c0c39c07b12625a59e1c5d699c0099631ebc3`. The **opt-in** read-only COMMIT-UNKNOWN reviewer now applies the same strict 512-byte UTF-8 generation source validation as generation-fenced CAS, and checks reflected exact content type, size and UTF-8 validity before computing a payload hash, materializing metadata or opening SQLite. A reflected invalid frozen `MemoryWrite` fails via `MemoryCASOutcomeRejected`, rather than escaping an unhandled encoding error.
 - Regression tests `tests/test_memory_cas_outcome_preaccess_run673.py`, commit `1e25fb0384df7fd757a3b6147579006de35483a2`: **7 authored cases**, six invalid post-init source/content substitutions forbidden from reaching storage reads, plus one normal `UNCHANGED_OBSERVED` manual-only result with all authority denials false.
-- Following a static test audit, commit \`44e48ce4d047f5dde4f6ccc05e2e4989ed5d534d\` scoped the forbidden SQLite hook inside a temporary monkeypatch context, so the subsequent read-only invariance assertions use the real store method. No source safety check was relaxed.\n- Frozen Memory v1 schema, legacy put/delete/expiry contracts and existing valid CAS classifications are unchanged. A matching post-COMMIT row cannot attribute the writer or authorize retries, retention extension, real actions, or consent.
+- Following a static test audit, commit `44e48ce4d047f5dde4f6ccc05e2e4989ed5d534d` scoped the forbidden SQLite hook inside a temporary monkeypatch context, so the subsequent read-only invariance assertions use the real store method. No source safety check was relaxed.
+- Frozen Memory v1 schema, legacy put/delete/expiry contracts and existing valid CAS classifications are unchanged. A matching post-COMMIT row cannot attribute the writer or authorize retries, retention extension, real actions, or consent.
 
 ## Package 3 — Planner journal-to-fence bounded mock recovery
 
