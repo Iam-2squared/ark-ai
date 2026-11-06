@@ -82,6 +82,25 @@ _DENIAL_NAMES = (
 _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
     vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES
 )
+# Inert schedule input and output dataclasses are only frozen per instance.
+# A substituted exact-class slot, __new__, or getter can run BEFORE the
+# ordinary input type checks or the False-only result getters. Capture the
+# import-original class dictionaries for all three carriers.
+_CARRIER_FIELDS = (
+    (_POLICY_TYPE, (
+        "policy_sha256", "first_due_at_ms", "interval_ms",
+        "occurrence_count", "grace_ms",
+    )),
+    (_CURSOR_TYPE, ("next_index", "last_occurrence_id")),
+    (_RESULT_TYPE, (
+        "state", "next_index", "occurrence_id", "due_at_ms", "fingerprint",
+    )),
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_CARRIER_DESCRIPTORS = tuple(
+    tuple(vars(kind).get(name) for name in (*fields, *_CARRIER_HOOKS))
+    for kind, fields in _CARRIER_FIELDS
+)
 
 
 def _require_original_denials() -> None:
@@ -92,6 +111,15 @@ def _require_original_denials() -> None:
         DisconnectedSchedulePolicy is not _POLICY_TYPE
         or DisconnectedScheduleCursor is not _CURSOR_TYPE
         or DisconnectedDuePreview is not _RESULT_TYPE
+        or any(
+            vars(kind).get(name) is not original
+            for (kind, fields), saved in zip(
+                _CARRIER_FIELDS, _ORIGINAL_CARRIER_DESCRIPTORS, strict=True,
+            )
+            for name, original in zip(
+                (*fields, *_CARRIER_HOOKS), saved, strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(key) is not original
             for key, original in zip(
