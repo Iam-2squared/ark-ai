@@ -56,7 +56,20 @@ class DisconnectedToolResult:
 
 # A disconnected result must never turn into a capability/dispatch receipt,
 # even when a result property is monkeypatched to return False until queried.
+_REQUEST_TYPE = DisconnectedToolRequest
 _RESULT_TYPE = DisconnectedToolResult
+_REQUEST_FIELDS = ("request_id", "operation", "canonical_args_json")
+_RESULT_FIELDS = (
+    "request_id", "operation", "input_digest", "canonical_result_json",
+    "result_digest",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REQUEST_SLOTS = tuple(
+    vars(_REQUEST_TYPE).get(name) for name in _REQUEST_FIELDS + _CARRIER_HOOKS
+)
+_ORIGINAL_RESULT_SLOTS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in _RESULT_FIELDS + _CARRIER_HOOKS
+)
 _DENIAL_NAMES = (
     "dispatch_authorized", "automatic_replay_authorized",
     "external_outcome_known",
@@ -64,9 +77,37 @@ _DENIAL_NAMES = (
 _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
 
 
+def _require_original_request_carrier() -> None:
+    # A frozen request is still executable if its class-level field/lookup
+    # descriptors are replaced. Inspect the class BEFORE reading private JSON.
+    if (
+        DisconnectedToolRequest is not _REQUEST_TYPE
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(
+                _REQUEST_FIELDS + _CARRIER_HOOKS,
+                _ORIGINAL_REQUEST_SLOTS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedToolRejected(
+            "disconnected fixture request descriptor changed"
+        )
+
+
 def _require_original_result_denials() -> None:
+    # Check constructor and field hooks as well as False-only properties.
+    # A synthetic callback can rebind them before result construction or
+    # between return checks; fail closed before any result field is read.
     if (
         DisconnectedToolResult is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_FIELDS + _CARRIER_HOOKS,
+                _ORIGINAL_RESULT_SLOTS, strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(key) is not expected
             for key, expected in zip(
@@ -206,12 +247,14 @@ def execute_disconnected_fixture_tool(
     executed or that a real-world action occurred. Inputs are exact canonical
     JSON to avoid implicit coercions, duplicate keys and ambiguous identity.
     """
+    _require_original_request_carrier()
     _require_original_result_denials()
     if type(request) is not DisconnectedToolRequest:
         raise DisconnectedToolRejected("exact request type required")
     pinned = (request.request_id, request.operation, request.canonical_args_json)
 
     def assert_epoch() -> None:
+        _require_original_request_carrier()
         _require_original_result_denials()
         if any(
             current is not original
@@ -250,9 +293,12 @@ def execute_disconnected_fixture_tool(
         _DOMAIN + operation.encode("ascii") + b"\0" + data.encode("utf-8")
     ).hexdigest()
     assert_epoch()
+    _require_original_result_denials()
     result = DisconnectedToolResult(
         request_id, operation, input_digest, data, result_digest,
     )
+    # A reentrant result constructor may mutate the request/result class.
+    # Recheck before touching the constructed receipt.
     assert_epoch()
     if (
         type(result) is not _RESULT_TYPE
