@@ -141,6 +141,18 @@ _RECEIPT_DENIALS = (
 _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
 )
+# A frozen slotted receipt still permits class-level replacement of a field,
+# constructor or lookup hook. Check the original class dictionary BEFORE any
+# post-COMMIT constructor or field access; a later False getter cannot undo an
+# injected side effect.
+_RECEIPT_FIELDS = ("trigger_id", "prepared_at_ms")
+_RECEIPT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+)
 
 
 def _require_original_receipt_authority() -> None:
@@ -148,9 +160,12 @@ def _require_original_receipt_authority() -> None:
         SyntheticTriggerReceipt is not _RECEIPT_TYPE
         or any(
             vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            for names, originals in (
+                (_RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS),
+                (_RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
+                (_RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
             )
+            for name, original in zip(names, originals, strict=True)
         )
     ):
         raise SyntheticTriggerRejected("trigger receipt authority epoch changed")
@@ -238,6 +253,7 @@ class SyntheticProactiveLedger:
         """Persist a content-free preparation marker, never an action."""
         if type(policy) is not SyntheticTriggerPolicy:
             raise SyntheticTriggerRejected("exact trigger policy required")
+        _require_original_receipt_authority()
         if (
             type(source_digest) is not str or not _HEX.fullmatch(source_digest)
             or type(observation_digest) is not str
@@ -420,6 +436,7 @@ class SyntheticProactiveLedger:
                     raise SyntheticTriggerRejected("retained proactive witness changed")
                 if self.path is not ledger_path:
                     raise SyntheticTriggerRejected("proactive ledger path changed before commit")
+                _require_original_receipt_authority()
                 conn.commit()
                 # A successful COMMIT is durable even when a subsequent
                 # callback discovers stale input. Never erase or replay it.
@@ -431,7 +448,12 @@ class SyntheticProactiveLedger:
                     raise SyntheticTriggerRejected(
                         "retained proactive witness changed after trigger commit"
                     )
+                _require_original_receipt_authority()
                 receipt = SyntheticTriggerReceipt(trigger, now_ms)
+                # The constructor is itself a caller-observable callback. A
+                # reentrant replacement may patch a slot/getter before our
+                # first result lookup; reject it without executing that getter.
+                _require_original_receipt_authority()
                 assert_policy_epoch("after trigger receipt")
                 if (
                     type(receipt) is not _RECEIPT_TYPE
