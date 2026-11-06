@@ -22,7 +22,7 @@ def test_preinstalled_report_slot_or_lookup_never_executes(
         raise AssertionError("forged Memory report getter executed")
 
     with monkeypatch.context() as patch:
-        patch.setattr(triage.MemoryCommitTriage, name, forbidden)
+        patch.setattr(triage.MemoryCommitTriage, name, forbidden, raising=False)
 
         def forbidden_sqlite():
             raise AssertionError("private SQLite was touched before preflight")
