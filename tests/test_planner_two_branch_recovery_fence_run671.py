@@ -9,9 +9,7 @@ from __future__ import annotations
 import pytest
 
 from ark.agency.contracts import PlanStep, StepState, ToolCall
-from ark.agency.disconnected_planner_fence_projection import (
-    project_disconnected_planner_fence,
-)
+from ark.agency.disconnected_planner_fence_projection import project_disconnected_planner_fence
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
 
