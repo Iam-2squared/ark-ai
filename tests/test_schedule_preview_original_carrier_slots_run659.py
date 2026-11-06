@@ -86,10 +86,9 @@ def test_hash_callback_cannot_install_new_field_getter(
         raise AssertionError("new getter executed after hash")
 
     def injected(*args, **kwargs):
-        with monkeypatch.context() as patch:
-            # Keep the mutation after hash calculation, but deliberately
-            # retain it until the complete preview has been rejected.
-            digest = original(*args, **kwargs)
+        # Install the substituted slot after computing an ordinary hash,
+        # then retain it until the preview has been rejected.
+        digest = original(*args, **kwargs)
         monkeypatch.setattr(cls, field, property(forged))
         return digest
 
