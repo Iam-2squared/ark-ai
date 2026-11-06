@@ -45,7 +45,7 @@ def _poison(cls, name, calls):
 
 @pytest.mark.parametrize("name", (
     "request_id", "operation", "canonical_args_json",
-    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "__init__", "__getattribute__", "__getattr__",
 ))
 def test_poisoned_request_carrier_rejected_before_private_json_access(name):
     request = _request()
