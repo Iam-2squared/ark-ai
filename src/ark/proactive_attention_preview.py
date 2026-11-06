@@ -83,6 +83,28 @@ _ORIGINAL_INPUT_LOOKUPS = tuple(
     (vars(kind).get("__getattribute__"), vars(kind).get("__getattr__"))
     for kind in (_POLICY_TYPE, _MARKER_TYPE)
 )
+# These frozen slotted input carriers can still have class-level field
+# descriptors and allocation hooks swapped. Pin them before ANY policy or
+# marker scalar read, and across all JSON/hash callback epochs.
+_POLICY_FIELDS = (
+    "scope_sha256", "trigger_sha256", "cooldown_ms", "rolling_window_ms",
+    "max_surfaced_per_window", "suppress_unchanged",
+)
+_MARKER_FIELDS = (
+    "scope_sha256", "trigger_sha256", "occurrence_sha256",
+    "observation_sha256", "surfaced_at_ms",
+)
+_INPUT_FIELD_NAMES = (_POLICY_FIELDS, _MARKER_FIELDS)
+_ORIGINAL_INPUT_FIELDS = tuple(
+    tuple(vars(kind)[name] for name in names)
+    for kind, names in zip(
+        (_POLICY_TYPE, _MARKER_TYPE), _INPUT_FIELD_NAMES, strict=True,
+    )
+)
+_ORIGINAL_INPUT_CONSTRUCTORS = tuple(
+    (vars(kind).get("__init__"), vars(kind).get("__new__"))
+    for kind in (_POLICY_TYPE, _MARKER_TYPE)
+)
 
 
 def _assert_original_denials() -> None:
@@ -99,6 +121,24 @@ def _assert_original_denials() -> None:
             for kind, getters in zip(
                 (_POLICY_TYPE, _MARKER_TYPE), _ORIGINAL_INPUT_LOOKUPS,
                 strict=True,
+            )
+        )
+        or any(
+            any(
+                vars(kind).get(name) is not original
+                for name, original in zip(names, fields, strict=True)
+            )
+            for kind, names, fields in zip(
+                (_POLICY_TYPE, _MARKER_TYPE), _INPUT_FIELD_NAMES,
+                _ORIGINAL_INPUT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            (vars(kind).get("__init__"), vars(kind).get("__new__"))
+            != originals
+            for kind, originals in zip(
+                (_POLICY_TYPE, _MARKER_TYPE),
+                _ORIGINAL_INPUT_CONSTRUCTORS, strict=True,
             )
         )
         or any(
