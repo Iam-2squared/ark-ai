@@ -296,7 +296,7 @@ def observe_memory_generation_for_cas(
     if (
         type(store) is not SQLiteMemoryStore
         or type(scope) is not MemoryScope
-            ):
+    ):
         raise MemoryGenerationCASRejected("exact generation observation inputs required")
     _require_original_token_denials()
     _require_bounded_source_id(source_id)
