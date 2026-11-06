@@ -75,6 +75,17 @@ _DENIAL_NAMES = (
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
 _ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
+_RESULT_FIELDS = (
+    "disposition", "next_review_at_ms", "surfaced_count_in_window",
+    "history_sha256", "review_sha256",
+)
+_ORIGINAL_RESULT_FIELDS = tuple(
+    vars(_RESULT_TYPE)[name] for name in _RESULT_FIELDS
+)
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in _RESULT_HOOKS
+)
 # Inherited object.__getattribute__ is absent from the class dictionary.
 # Pin the exact original lookup implementation *before* reading any input
 # fields: a monkeypatched getter can otherwise execute while returning a
@@ -108,6 +119,24 @@ _ORIGINAL_INPUT_CONSTRUCTORS = tuple(
 
 
 def _assert_original_denials() -> None:
+    # Output slot lookups and allocation hooks are executable callbacks.
+    # Refuse replacements before hashing or constructing a receipt, including
+    # a forged False-only descriptor that would otherwise pass the final veto.
+    if (
+        any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise AttentionPreviewRejected("attention preview result changed")
     if (
         # The input class names are also module-level injection surfaces.
         # A counterfeit policy/marker may expose executable field getters.
