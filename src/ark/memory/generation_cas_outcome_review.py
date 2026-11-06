@@ -25,8 +25,10 @@ from .contracts import (
 from .generation_fenced_cas import (
     _EVENT_DOMAIN,
     _MAX_EVENTS,
+    MemoryGenerationCASRejected,
     MemoryGenerationCASToken,
     _digest,
+    _require_bounded_source_id,
     _row_hash,
     _snapshot,
     _token_fields,
@@ -145,6 +147,24 @@ def review_memory_generation_cas_outcome(
     scope = proposed.scope
     owner, namespace = scope.owner_id, scope.namespace
     source, content = proposed.source_id, proposed.content
+    # MemoryWrite is frozen but reflectively mutable. Do not hash caller-private
+    # data, inspect metadata, or open SQLite with an invalid post-init source
+    # identity/content epoch. This opt-in review follows generation-CAS's
+    # stricter 512-byte source rule, without changing Memory v1 behavior.
+    try:
+        _require_bounded_source_id(source)
+    except MemoryGenerationCASRejected as exc:
+        raise MemoryCASOutcomeRejected(
+            "CAS observation requires bounded valid UTF-8 source"
+        ) from exc
+    if type(content) is not str or len(content) > 1_000_000:
+        raise MemoryCASOutcomeRejected("CAS observation requires exact bounded content")
+    try:
+        content_bytes = content.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise MemoryCASOutcomeRejected(
+            "CAS observation requires valid UTF-8 content"
+        ) from exc
     metadata = proposed.metadata
     expiry = proposed.expires_at_ms
     expected_metadata = dict(metadata)
@@ -152,7 +172,7 @@ def review_memory_generation_cas_outcome(
     memory_id = deterministic_memory_id(scope, source)
     if prior[0] != memory_id:
         raise MemoryCASOutcomeRejected("retained generation belongs to another row")
-    expected_content_sha = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    expected_content_sha = hashlib.sha256(content_bytes).hexdigest()
 
     def stable() -> None:
         _require_original_denials()
