@@ -100,6 +100,14 @@ _TOOL_CALL_ORIGINALS = (
 _ORIGINAL_TOOL_CALL_DESCRIPTORS = tuple(
     vars(_TOOL_CALL_TYPE)[name] for name in _TOOL_CALL_ORIGINALS
 )
+_TOOL_CALL_INPUT_FIELDS = ("tool", "capability", "scope", "arguments")
+_ORIGINAL_TOOL_CALL_INPUT_FIELDS = tuple(
+    vars(_TOOL_CALL_TYPE)[name] for name in _TOOL_CALL_INPUT_FIELDS
+)
+_TOOL_CALL_LOOKUP_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_TOOL_CALL_LOOKUP_HOOKS = tuple(
+    vars(_TOOL_CALL_TYPE).get(name) for name in _TOOL_CALL_LOOKUP_HOOKS
+)
 
 
 def _require_original_toolcall_contract() -> None:
@@ -113,6 +121,25 @@ def _require_original_toolcall_contract() -> None:
         vars(_TOOL_CALL_TYPE).get(name) is not original
         for name, original in zip(
             _TOOL_CALL_ORIGINALS, _ORIGINAL_TOOL_CALL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise ValueError("ToolCall identity constructor changed")
+    # Class-level slot/getter replacement can execute hostile code before
+    # even the first ToolCall field read in direct policy or registry paths.
+    if (
+        any(
+            vars(_TOOL_CALL_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOOL_CALL_INPUT_FIELDS,
+                _ORIGINAL_TOOL_CALL_INPUT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_TOOL_CALL_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOOL_CALL_LOOKUP_HOOKS,
+                _ORIGINAL_TOOL_CALL_LOOKUP_HOOKS, strict=True,
+            )
         )
     ):
         raise ValueError("ToolCall identity constructor changed")
