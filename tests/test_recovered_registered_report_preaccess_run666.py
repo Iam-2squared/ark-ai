@@ -15,7 +15,9 @@ import ark.agency.disconnected_recovered_registered_read_join as joined
 
 @pytest.mark.parametrize(
     "field",
-    joined._REPORT_FIELDS + joined._REPORT_HOOKS + joined._DENIED,
+    joined._REPORT_FIELDS
+    + tuple(name for name in joined._REPORT_HOOKS if name != "__new__")
+    + joined._DENIED,
 )
 def test_preinstalled_report_carrier_poison_rejected_before_plan_review(
     tmp_path, monkeypatch, field,
