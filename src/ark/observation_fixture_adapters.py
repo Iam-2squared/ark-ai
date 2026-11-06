@@ -40,6 +40,46 @@ _ORIGINAL_ENVELOPE_HOOKS = tuple(
 )
 
 
+def _preflight_fixture_metadata(
+    source_id: str,
+    privacy_scope: str,
+    ingested_at_ms: int,
+    parent_sha256: str | None,
+) -> None:
+    """Reject malformed labels before hashing caller-private fixture content.
+
+    This is an input budget/shape check only, not source provenance or consent.
+    The envelope independently validates the same values after construction.
+    """
+    for name, value in (
+        ("source_id", source_id),
+        ("privacy_scope", privacy_scope),
+    ):
+        if type(value) is not str or not value.strip():
+            raise ValueError(f"{name} must be a non-empty exact string")
+        if len(value) > 1024:
+            raise ValueError(f"{name} exceeds observation identifier budget")
+        try:
+            nbytes = len(value.encode("utf-8", errors="strict"))
+        except UnicodeError as exc:
+            raise ValueError(f"{name} is not valid UTF-8 text") from exc
+        if nbytes > 1024:
+            raise ValueError(f"{name} exceeds observation identifier budget")
+    if (
+        type(ingested_at_ms) is not int
+        or not 0 <= ingested_at_ms <= 2**63 - 1
+    ):
+        raise ValueError(
+            "ingested_at_ms must be a non-negative exact integer within the SQLite range"
+        )
+    if parent_sha256 is not None and (
+        type(parent_sha256) is not str
+        or len(parent_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in parent_sha256)
+    ):
+        raise ValueError("parent_sha256 must be an exact lowercase SHA-256 digest")
+
+
 def _require_original_envelope() -> None:
     # Distinguish constructor substitution from executable field or
     # validator replacement without invoking any of the substitutions.
@@ -162,6 +202,7 @@ def fixture_text_observation(
         raise ValueError("fixture text kind must be exact TEXT or TRANSCRIPT")
     if type(content) is not str:
         raise TypeError("fixture text must be an exact string")
+    _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
     if len(content) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
     try:
@@ -198,6 +239,7 @@ def fixture_binary_observation(
         raise ValueError("fixture binary kind must be exact IMAGE or SCREEN")
     if type(payload) is not bytes:
         raise TypeError("fixture binary payload must be exact bytes")
+    _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
     if len(payload) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
     digest = hashlib.sha256(payload).hexdigest()
