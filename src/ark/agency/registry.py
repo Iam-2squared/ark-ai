@@ -20,6 +20,15 @@ def _text(name: str, value: object) -> str:
         raise ValueError(f"{name} must be a non-empty exact string")
     if len(value) > _MAX_REGISTRATION_TEXT:
         raise ValueError(f"{name} exceeds registry identifier budget")
+    # Revision and bound-action identities serialize as UTF-8. Restrict the
+    # actual byte budget and reject lone surrogate code points at ingress,
+    # before a backend descriptor, registry digest or policy gate is touched.
+    try:
+        byte_count = len(value.encode("utf-8", errors="strict"))
+    except UnicodeError as exc:
+        raise ValueError(f"{name} is not valid UTF-8 text") from exc
+    if byte_count > _MAX_REGISTRATION_TEXT:
+        raise ValueError(f"{name} exceeds registry identifier budget")
     return value
 
 
