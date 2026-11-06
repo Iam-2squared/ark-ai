@@ -156,7 +156,8 @@ def test_inherited_new_injected_only_in_separate_process(target):
 def test_healthy_policy_history_remains_local_denial_only():
     policy, rows = _inputs()
     result = _preview(policy, rows)
-    assert result.disposition == "COOLDOWN_HOLD"
+    # The 90ms row is outside the 1ms cooldown at a 100ms review.
+    assert result.disposition == "REVIEW_ONLY"
     assert result.notification_authorized is False
     assert result.action_authorized is False
     assert result.consent_verified is False
