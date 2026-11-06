@@ -144,6 +144,15 @@ def test_post_commit_descriptor_drift_is_reported_without_erasing_marker(
         with pytest.raises(module.SyntheticTriggerRejected, match="authority epoch"):
             submit()
     assert ledger.count() == 1
+    # Advance beyond the minimum-interval fence while retaining the SAME
+    # source/observation occurrence. Only the stored primary key can now
+    # reject the replay, proving the marker survived the failed return.
     with pytest.raises(module.SyntheticTriggerRejected, match="duplicate"):
-        submit()
+        ledger.prepare(
+            module.SyntheticTriggerPolicy(
+                "offline", "fixture", "reminder", 1, "policy-v1", 5, 50, 3,
+            ),
+            source_digest="a" * 64, observation_digest="b" * 64,
+            observed_at_ms=100, now_ms=105,
+        )
     assert ledger.count() == 1
