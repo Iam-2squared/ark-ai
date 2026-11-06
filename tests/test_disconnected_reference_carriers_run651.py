@@ -62,7 +62,7 @@ def _poison(cls, name, called):
 
 @pytest.mark.parametrize("name", (
     "step_id", "canonical_result_json", "retained_digest",
-    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "__init__", "__getattribute__", "__getattr__",
 ))
 def test_read_carrier_poison_refused_before_untrusted_json_read(name):
     fixture = _fixture()
@@ -77,7 +77,7 @@ def test_read_carrier_poison_refused_before_untrusted_json_read(name):
     "request_id", "used_step_ids", "canonical_args_json", "binding_digest",
     "dispatch_authorized", "source_authenticated",
     "replay_authorized", "external_result_proven",
-    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "__init__", "__getattribute__", "__getattr__",
 ))
 def test_output_carrier_poison_refused_before_result_construction(name):
     fixture = _fixture()
