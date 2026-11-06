@@ -51,6 +51,70 @@ class SyntheticContextReuseReview:
         return False
 
 
+# Keep import-time, nonauthorizing receipt descriptors independent of any
+# reentrant callback or reflected mutation of a frozen dataclass. This is a
+# local fail-closed guard, not a sandbox or consent attestation.
+_REUSE_RESULT_TYPE = SyntheticContextReuseReview
+_REUSE_RESULT_FIELDS = ("bundle_id", "snapshot_digest", "rechecked_at_ms")
+_REUSE_RESULT_DENIALS = (
+    "context_use_authorized", "external_disclosure_authorized",
+    "dispatch_authorized",
+)
+_REUSE_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_REUSE_RESULT_ORIGINAL_FIELDS = tuple(
+    vars(_REUSE_RESULT_TYPE).get(name) for name in _REUSE_RESULT_FIELDS
+)
+_REUSE_RESULT_ORIGINAL_DENIALS = tuple(
+    vars(_REUSE_RESULT_TYPE).get(name) for name in _REUSE_RESULT_DENIALS
+)
+_REUSE_RESULT_ORIGINAL_HOOKS = tuple(
+    vars(_REUSE_RESULT_TYPE).get(name) for name in _REUSE_RESULT_HOOKS
+)
+
+
+def _require_original_reuse_receipt() -> None:
+    for names, originals in (
+        (_REUSE_RESULT_FIELDS, _REUSE_RESULT_ORIGINAL_FIELDS),
+        (_REUSE_RESULT_DENIALS, _REUSE_RESULT_ORIGINAL_DENIALS),
+        (_REUSE_RESULT_HOOKS, _REUSE_RESULT_ORIGINAL_HOOKS),
+    ):
+        if any(
+            vars(_REUSE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(names, originals, strict=True)
+        ):
+            raise SyntheticContextReuseRejected(
+                "context reuse receipt carrier changed"
+            )
+
+
+def _check_reuse_receipt(
+    receipt: SyntheticContextReuseReview,
+    bundle_id: str,
+    snapshot_digest: str,
+    now_ms: int,
+) -> None:
+    def stable() -> None:
+        _require_original_reuse_receipt()
+        if (
+            type(receipt) is not _REUSE_RESULT_TYPE
+            or receipt.bundle_id is not bundle_id
+            or receipt.snapshot_digest is not snapshot_digest
+            or receipt.rechecked_at_ms is not now_ms
+        ):
+            raise SyntheticContextReuseRejected(
+                "context reuse returned receipt changed during construction"
+            )
+
+    stable()
+    for name in _REUSE_RESULT_DENIALS:
+        _require_original_reuse_receipt()
+        if getattr(receipt, name) is not False:
+            raise SyntheticContextReuseRejected(
+                "context reuse receipt acquired authority"
+            )
+        stable()
+
+
 def _cached_bundle_epoch(cached: SyntheticContextBundle) -> tuple[object, ...]:
     """Pin nested scalar values, not just frozen dataclass/container references.
 
@@ -118,6 +182,9 @@ def review_synthetic_context_reuse(
         or now_ms - captured_at_ms > max_age_ms
     ):
         raise SyntheticContextReuseRejected("cached context age or clock invalid")
+
+    # Deny forged authority getters before reading any private SQLite data.
+    _require_original_reuse_receipt()
 
     # The independently retained veto prefix belongs to the caller. The
     # lower-level review validates it before the Memory projection, but a
@@ -280,6 +347,7 @@ def review_synthetic_context_reuse(
         )
     assert_carriers()
     assert_fresh_epoch()
+    _require_original_reuse_receipt()
     receipt = SyntheticContextReuseReview(
         fresh.bundle_id, fresh.snapshot_digest, now_ms,
     )
@@ -294,13 +362,7 @@ def review_synthetic_context_reuse(
             raise SyntheticContextReuseRejected(
                 "retained revocation witness changed during reuse"
             )
-    if (
-        type(receipt) is not SyntheticContextReuseReview
-        or receipt.bundle_id is not fresh.bundle_id
-        or receipt.snapshot_digest is not fresh.snapshot_digest
-        or receipt.rechecked_at_ms is not now_ms
-    ):
-        raise SyntheticContextReuseRejected(
-            "context reuse returned receipt changed during construction"
-        )
+    _check_reuse_receipt(receipt, fresh.bundle_id, fresh.snapshot_digest, now_ms)
+    assert_carriers()
+    assert_fresh_epoch()
     return receipt
