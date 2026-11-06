@@ -76,6 +76,17 @@ _WITNESS_TYPE = OfflineContextReplayWitness
 # A False-looking replacement property may still execute code before returning.
 # Pin the exact descriptor at import, not at the moment of witness validation.
 _ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_proven"]
+# The two stored values are slotted dataclass descriptors. A subclass is not
+# accepted, but the exact class can still have a field/getter/constructor hook
+# replaced at runtime. Pin all originals before touching retained identities.
+_WITNESS_FIELDS = ("count", "chain_sha256")
+_WITNESS_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
 _RECEIPT_TYPE = OfflineContextReplayReceipt
 _RECEIPT_DENIALS = (
     "consent_verified", "revocation_freshness_verified",
@@ -95,31 +106,57 @@ def _hash(value: tuple[object, ...]) -> str:
 
 
 def genesis_offline_context_replay_witness() -> OfflineContextReplayWitness:
-    return OfflineContextReplayWitness(0, _hash(("genesis",)))
+    _require_original_witness_carrier()
+    value = OfflineContextReplayWitness(0, _hash(("genesis",)))
+    _check_witness(value)
+    return value
 
 
 def _valid(value: object, pattern: re.Pattern[str]) -> bool:
     return type(value) is str and pattern.fullmatch(value) is not None
 
 
-def _check_witness(witness: object) -> tuple[int, str]:
-    # Reject static descriptor drift BEFORE accessing an executable property.
-    # Local replay witnesses are never permission or independent custody.
+def _require_original_witness_carrier() -> None:
+    # Do not execute replaced slots or allocation hooks before the first
+    # witness field read, including in recovery-only and read-only paths.
     if (
         OfflineContextReplayWitness is not _WITNESS_TYPE
         or vars(_WITNESS_TYPE).get("independent_custody_proven")
         is not _ORIGINAL_WITNESS_DENIAL
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+            )
+        )
     ):
         raise OfflineContextReplayRejected("invalid exact retained context witness")
+
+
+def _check_witness(witness: object) -> tuple[int, str]:
+    # Capture values once and recheck after the denial getter. Even a local
+    # synthetic witness may be altered reentrantly; no permission is inferred.
+    _require_original_witness_carrier()
+    if type(witness) is not _WITNESS_TYPE:
+        raise OfflineContextReplayRejected("invalid exact retained context witness")
+    count, chain = witness.count, witness.chain_sha256
     if (
-        type(witness) is not _WITNESS_TYPE
-        or type(witness.count) is not int
-        or not 0 <= witness.count <= _MAX_ROWS
-        or not _valid(witness.chain_sha256, _SHA)
+        type(count) is not int
+        or not 0 <= count <= _MAX_ROWS
+        or not _valid(chain, _SHA)
         or witness.independent_custody_proven is not False
     ):
         raise OfflineContextReplayRejected("invalid exact retained context witness")
-    return witness.count, witness.chain_sha256
+    _require_original_witness_carrier()
+    if witness.count is not count or witness.chain_sha256 is not chain:
+        raise OfflineContextReplayRejected("retained context witness changed")
+    return count, chain
 
 
 def _check_binding(binding: object) -> tuple[str, str, str, str]:
@@ -183,6 +220,7 @@ def _schema(conn: sqlite3.Connection) -> None:
 
 
 def _inspect(conn: sqlite3.Connection) -> OfflineContextReplayWitness:
+    _require_original_witness_carrier()
     _schema(conn)
     current = genesis_offline_context_replay_witness()
     for seq, request, owner, context, binding, chain in conn.execute(
