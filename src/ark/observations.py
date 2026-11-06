@@ -28,6 +28,7 @@ class ObservationEnvelope:
     schema_version: int = 1
 
     def __post_init__(self) -> None:
+        _require_original_identity_carrier()
         if type(self.kind) is not ObservationKind:
             raise TypeError("kind must be an exact ObservationKind")
         for name in ("source_id", "adapter_id", "privacy_scope"):
@@ -62,6 +63,12 @@ class ObservationEnvelope:
 
     @property
     def observation_id(self) -> str:
+        # Check exact import-original slots BEFORE touching any source/privacy
+        # field. A slotted dataclass can still have an executable field getter
+        # or inherited lookup hook installed on its exact class.
+        _require_original_identity_carrier()
+        if type(self) is not _ENVELOPE_TYPE:
+            raise ValueError("observation identity requires exact envelope type")
         # A frozen dataclass is still reflectively mutable. The direct public
         # ID getter must not hash a mixed source/privacy/timestamp epoch when
         # serialization or hashing is intercepted by an adapter fixture.
@@ -72,6 +79,7 @@ class ObservationEnvelope:
         )
 
         def assert_epoch() -> None:
+            _require_original_identity_carrier()
             current = (
                 self.kind, self.source_id, self.adapter_id, self.privacy_scope,
                 self.ingested_at_ms, self.content_sha256, self.parent_sha256,
@@ -109,6 +117,45 @@ class ObservationEnvelope:
         digest = hashlib.sha256(encoded).hexdigest()
         assert_epoch()
         return "obs_" + digest
+
+
+_ENVELOPE_TYPE = ObservationEnvelope
+_ENVELOPE_FIELDS = (
+    "kind", "source_id", "adapter_id", "privacy_scope", "ingested_at_ms",
+    "content_sha256", "parent_sha256", "schema_version",
+)
+_ENVELOPE_HOOKS = (
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "__post_init__", "observation_id",
+)
+_ORIGINAL_ENVELOPE_FIELDS = tuple(
+    vars(_ENVELOPE_TYPE)[name] for name in _ENVELOPE_FIELDS
+)
+_ORIGINAL_ENVELOPE_HOOKS = tuple(
+    vars(_ENVELOPE_TYPE).get(name) for name in _ENVELOPE_HOOKS
+)
+
+
+def _require_original_identity_carrier() -> None:
+    # Only local, import-original class descriptors are treated as reviewed
+    # metadata access paths. This is a defensive check, not in-process
+    # sandboxing, source authentication, or consent/dispatch authorization.
+    if (
+        ObservationEnvelope is not _ENVELOPE_TYPE
+        or any(
+            vars(_ENVELOPE_TYPE).get(name) is not original
+            for name, original in zip(
+                _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_ENVELOPE_TYPE).get(name) is not original
+            for name, original in zip(
+                _ENVELOPE_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise ValueError("observation identity definition changed")
 
 
 def _digest(value: object, name: str) -> None:
