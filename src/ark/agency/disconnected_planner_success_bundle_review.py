@@ -61,18 +61,20 @@ _DENIALS = (
 )
 _HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINALS = tuple(vars(_RESULT).get(key) for key in _FIELDS + _DENIALS + _HOOKS)
+_ORIGINAL_SINGLE_REVIEW = single.review_synthetic_succeeded_read_correlation
 
 
 def _originals() -> None:
     single._originals()
     if (
         PlannerReadSuccessBundle is not _RESULT
+        or single.review_synthetic_succeeded_read_correlation is not _ORIGINAL_SINGLE_REVIEW
         or any(
             vars(_RESULT).get(key) is not original
             for key, original in zip(_FIELDS + _DENIALS + _HOOKS, _ORIGINALS, strict=True)
         )
     ):
-        raise PlannerReadSuccessBundleRejected("bundle output carrier changed")
+        raise PlannerReadSuccessBundleRejected("bundle output carrier or callback changed")
 
 
 def review_synthetic_succeeded_read_bundle(
