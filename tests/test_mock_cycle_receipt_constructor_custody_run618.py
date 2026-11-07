@@ -77,7 +77,9 @@ def test_preinstalled_receipt_replacement_rejected_before_any_write(
     ):
         _run(state)
     assert executed == []
-    assert state[0].recover().step_statuses == (("root", "pending", 0),)
+    # The Planner RUNNING transition predates token reservation; uncertainty
+    # persists after an earlier digest refusal, without any external dispatch.
+    assert state[0].recover().ambiguous_running_steps == ("root",)
     assert state[1].count_synthetic() == 0
     assert state[2].events() == []
     assert state[-1].calls == 0
