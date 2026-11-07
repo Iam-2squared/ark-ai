@@ -1,0 +1,478 @@
+# Offline mock-action and privacy revocation fault matrix
+
+**Scope:** research-only Draft PR #8, `research/jarvis-foundations`. These
+modules and tests exercise disconnected local SQLite fixtures only. They do
+**not** authorize, execute, notify, export, monitor a real person, validate a
+human issuer, open frozen evaluations, or alter existing v1/v2 contracts.
+All hashes and clocks are local/caller-supplied unless explicitly stated.
+
+## Run 376 offline claim, startup and retention contracts
+
+These are three **isolated, opt-in, disconnected fixture** additions; no
+execution path, historical frozen contract, V3 Candidate, live service, account,
+device or protected evaluation is activated.
+
+**Registry-bound synthetic approval claim**
+(`agency/synthetic_approval_claim_review.py`): a proposed approval is
+identified by immutable ToolRegistry revision, exact WRITE binding and request
+ID, digest-only issuer/subject/purpose/recipient/nonce fields, and a bounded
+caller-provided validity interval. Changing any field changes the deterministic
+`approval_<sha256>` identity; review rejects mismatched actor/purpose/recipient,
+registry changes, reflected claim edits, early/expired claims, and an
+explicitly provided cancellation-set membership. A READ registration cannot
+be modeled as WRITE. Neither an untrusted nonce nor an unsourced SHA digest
+authenticates a person, genuine consent, a verified purpose, the intended
+recipient, or non-revocation. The caller-supplied `frozenset` is **not** a
+durable or authenticated cancellation authority. Claim and review receipts
+always report **human_consent_verified=False**,
+**dispatch_authorized=False**, and **automatic_replay_authorized=False**.
+This module does not mint a production permission token.
+
+**Independent persistent cancellation journal**
+(`agency/synthetic_approval_cancellation_review.py`): a separate local
+SQLite v1 fixture appends canonical `approval_<sha256>` cancellation IDs
+with nondecreasing caller timestamps, strict exact-schema/row checks,
+a sequential hash chain and optional earlier externally **retained** local
+prefix witness. Duplicate cancellation, row rewriting, truncation against an
+independently preserved witness, disappeared database files and concurrent
+duplicate cancellation fail closed. Read-only cancellation state returns
+**human_consent_verified=False**, **dispatch_authorized=False** and
+**automatic_replay_authorized=False** even when `cancelled=False`.
+
+The journal does **not** authenticate who cancelled the claim; SHA hashes
+are not signatures, and a complete local rollback can go undetected without
+a genuinely independent earlier witness. It is not yet automatically wired
+into `review_synthetic_approval_claim` or any live PermissionGate. A review
+success therefore must never rely on an absent caller-supplied cancellation
+marker for authority. The cancellation state can change after a review and
+neither an append nor a local receipt is external effect/consent proof.
+Regression coverage is isolated in
+`tests/test_synthetic_approval_cancellation_review_run376.py`.
+
+**Exact-schema startup freshness lease**
+(`startup_readiness_lease_review.py`): independently declared required
+component/schema pairs must all be present and **READY** in a semantically
+revalidated `StartupSnapshot`. DEGRADED, BLOCKED, dependency-blocked, missing,
+stale-schema, duplicate requirements and stale or regressing local timestamps
+fail closed. A blocked independent component does not poison unrelated READY
+dependencies. Snapshot/requirements are rechecked against reflected drift.
+The lease is diagnostic only: caller assertions, timestamps and schema strings
+are unauthenticated, a later failure can race after the review, and there is no
+real-PC proof, backend dispatch or live capability activation.
+
+**Read-only synthetic Memory retention inventory**
+(`personal_context_retention_review.py`): inspects exact local Memory v1
+schema and row digests in a scoped SQLite read snapshot without executing
+`DELETE`, `purge_expired`, migration or export. It emits only pseudonymous
+memory IDs, revisions, caller-time-relative `expired`, `not_expired`, or
+`no_expiry` classifications; inclusive expiration is
+`expires_at_ms <= now_ms`. Separate revocation-ledger read witnesses bracket
+the Memory review, with optional independently retained earlier veto evidence
+detecting deleted or rewritten prefixes. New revocations are recognized, but
+the two SQLite stores are **not** atomically snapshotted. The reviewer
+internally validates local Memory row content digests but does not return
+content, modify source rows, erase audit history, purge backups, authenticate a
+data subject or establish lawful retention. `NO_EXPIRY` means **policy review
+needed**, never consent. All inventories return
+**erasure_completed=False**, **deletion_authorized=False**, and
+**context_use_authorized=False**. Local hashed IDs may still be linkable;
+they must not be exported as a guarantee of anonymity or erasure.
+
+Regression fixtures: `tests/test_synthetic_approval_claim_review_run376.py`,
+`tests/test_startup_readiness_lease_review_run376.py`, and
+`tests/test_personal_context_retention_review_run376.py`. Assertions
+cover identity boundaries, reflection tamper, cancellation membership,
+read-only missing-DB refusal, integrity failure, scope isolation, TTL,
+dependency readiness and zero dispatch/erasure authority. These tests exercise
+only local synthetic fixtures and caller clocks. They do not constitute
+real-world consent, independent attestation or Exactly-Once proof.
+
+## Durable proactive trigger identity
+
+`proactive_synthetic_review.py` verifies that every stored
+`trigger_<sha256>` primary key recomputes from its persisted scope, policy,
+source and observation digests. A syntactically valid but independently
+rewritten digest or primary key now fails closed during opening, counting or
+another preparation.
+
+This local consistency gate does **not** detect a coordinated, fully
+recomputed rewrite of the entire fixture. It cannot authenticate policy,
+source material, observations, consent or monotonic physical time.
+`tests/test_proactive_trigger_binding_run373.py` covers individually rewritten
+canonical digests, primary-key replacement, restart and deduplication **after**
+the minimum-interval gate.
+
+## Synthetic mock-action crash boundaries
+
+`agency/synthetic_mock_action_cycle_review.py` is a **fixture coordinator**,
+not an executor. No registered backend is ever invoked.
+
+| Boundary | Durable state at an injected stop | Interpretation |
+| --- | --- | --- |
+| Before startup preflight passes | No new fixture state | Denied |
+| After journal `RUNNING` | Plan RUNNING; no new occurrence | UNKNOWN, no replay |
+| After SQLite occurrence reservation | Plan RUNNING; occurrence persisted | UNKNOWN, no replay |
+| After pre-action audit append | Plan RUNNING; occurrence plus audit | UNKNOWN, no replay |
+| After optional audit-sidecar link | Plan RUNNING; occurrence, audit and a local link | UNKNOWN, no replay |
+| After pure in-memory mock marker | Same durable state as above | UNKNOWN, no replay |
+| After synthetic `SUCCEEDED` journal | All three stores updated separately | Synthetic success only; real outcome unknown |
+
+Even the complete path records no external side effect. Any restart or
+retry attempt with a non-PENDING step is rejected; a different occurrence ID
+cannot make an ambiguous WRITE safe to repeat. The test backend throws if its
+`execute` method is ever called. `tests/test_synthetic_mock_action_cycle_run373.py`
+covers the above crash points, invalid input, token expiry and registry
+WRITE/READ downgrade. **There is no cross-store atomic transaction** and no
+audited authenticated occurrence field in frozen ActionAudit v1.
+
+The optional new `link_store` argument allows the mock cycle to commit a
+**fourth, independent** SQLite audit-link event *after* the pre-action audit
+and *before* the pure mock marker. Injected `after_audit_link` stops leave
+RUNNING and cannot be retried. Passing an invalid sidecar or requesting this
+fault without a sidecar fails before journal mutation. A missing or malformed
+sidecar discovered after the audit must leave UNKNOWN, not mock success.
+This optional link does not supply proof of the underlying external action.
+`tests/test_synthetic_mock_sidecar_cycle_run374.py` covers these paths.
+
+## Privacy-safe revocation veto (not consent)
+
+`personal_context_revocation_review.py` adds an independent,
+content-minimized SQLite revocation ledger. It records only domain-separated
+owner+namespace hashes and a caller-supplied revocation timestamp. A scope
+may be vetoed once, with no local regrant API. The read-through helper obtains
+a **new coherent Memory snapshot on every request**, bracketing its projection
+with pre/post read-only revocation checks. It refuses a revoked scope, expired
+record inclusion, duplicate scopes and malformed persisted schema/rows.
+No plaintext owner, namespace or Memory content is stored in the veto ledger.
+
+**No consent is inferred from an absent veto.** The veto can be created or
+cleared by an untrusted local actor; nothing authenticates a subject, issuer,
+recipient or lawful purpose. Two SQLite stores cannot be snapshotted
+atomically: revocation between the final check and consumption remains
+possible. The wrapper returns ephemeral informational data **only**, not a
+permission to feed a model, execute a tool, transmit a notification or export
+personal data. Revocation markers do not themselves erase existing Memory,
+logs, backups or prior bundles.
+
+`tests/test_personal_context_revocation_run373.py` checks fresh Memory
+revisions, restart persistence, isolation by namespace, mid-read revocation,
+invalid clocks, schema/row corruption and missing-file refusal. Test input
+contains synthetic fixture text only.
+
+## Independently retained revocation evidence
+
+`personal_context_revocation_continuity_review.py` produces an ordered
+content-free witness of persisted veto rows. Passing a **genuinely earlier,
+separately preserved** witness detects missing or changed revocations,
+while allowing new veto markers. It rechecks retained witness integrity in
+the same read transaction; malformed or reflectedly changed evidence fails
+closed. Deleting and reconstructing the SQLite file does not silently satisfy
+a separately retained witness.
+
+A locally regenerated witness from an already tampered database provides no
+protection. There is no external root of trust, signed receipt, trusted
+filesystem, automatic key management, verified erasure or authenticated
+consent. `tests/test_personal_context_revocation_continuity_run373.py`
+checks append, deletion, rewrite, forged witness and missing-file paths.
+
+## Opt-in retained-history fence on fresh projection
+
+The fresh, veto-bracketed Personal Context wrapper now also reads an
+independent revocation-history witness at the beginning and rechecks that
+prefix after the Memory snapshot and projection. An optional
+`retained_revocations` argument may be an **earlier, separately retained**
+`SyntheticRevocationWitness`; a false type or corrupted witness is rejected.
+This detects coordinated deletion of any previously witnessed veto, including
+one for an unrelated namespace, when it happens during a context review.
+
+When the caller supplies no earlier witness, the initial local witness is
+still useful for detecting changes **during that one call**, but it cannot
+recover revocations already removed before the call. A later edit, deletion
+or external data use can race after the final read. Tests in
+`tests/test_personal_context_retained_fence_run373.py` cover retained veto
+deletion before a review, deletion during the Memory clock hook, unrelated new
+veto markers, and malformed retained carriers. There is still no externally
+authenticated subject/issuer, real consent, cross-store transaction, or
+permission to provide the resulting content to a live model or recipient.
+
+## Synthetic occurrence-to-audit link sidecar (research only)
+
+`agency/synthetic_occurrence_audit_link_review.py` creates a **separate**
+append-only SQLite fixture: one canonical occurrence ID, registry revision,
+bound action ID and request ID, paired with one existing ActionAudit v1
+pre-action event ID and its complete canonical event digest. It does not
+change the preexisting ActionAudit v1 schema. Its write preflight checks the
+registry-bound WRITE identity, verifies the occurrence against a read-only
+snapshot of the durable reservation ledger and the pre-action event against
+the actual ActionAudit row, and then commits a local hash-chained link.
+
+Only `synthetic_audit_before_mock` events qualify. Duplicate occurrence
+links and duplicate event IDs are rejected by SQLite uniqueness constraints.
+Schema drift, invalid row identities, non-monotonic locally supplied link
+times, direct row rewriting and malformed historical chains fail closed.
+An *independently retained* prior `SyntheticAuditLinkWitness` detects
+deletion of a known prefix; a re-created local witness cannot certify a
+missing history. The sidecar refuses to regenerate missing DB files when
+reading or appending. Corresponding synthetic regression tests are in
+`tests/test_synthetic_occurrence_audit_link_run374.py`.
+
+**Critical:** the three source/read/write SQLite transactions are not
+atomic together. A link is a point-in-time local consistency diagnosis, NOT
+an authenticated issuer approval, signed external witness, source-ledger
+tamper protection, proof of effect, production Exactly-Once or permission to
+execute. There is no backend call. Subsequent mutation of an external
+ledger must be separately re-reviewed with a trusted independent witness.
+The mock cycle must not use a link to auto-replay UNKNOWN WRITE.
+
+## Independently retained proactive trigger history
+
+`proactive_synthetic_continuity_review.py` gives a read-only,
+content-minimized witness over all canonical persisted trigger rows, including
+bound digests and observed/prepared timestamps. A later snapshot can append
+new preparations without invalidating a genuinely earlier witness, while
+deletion or a coordinated internally valid rewrite of an earlier trigger
+requires rejection. Invalid witness carriers and changed SQLite schemas
+are refused; a missing fixture file is never recreated during review.
+
+`tests/test_proactive_synthetic_continuity_run374.py` exercises normal
+append, persisted-row removal, coordinated recomputation of a trigger
+primary key, witness tampering, missing-file refusal and schema drift.
+
+The proactive fixture's `prepare(..., retained=...)` now optionally
+validates an independently retained prior `SyntheticTriggerWitness` **inside
+its SQLite BEGIN IMMEDIATE admission transaction**, before any new trigger
+is inserted. This closes the separate-read/admission race for the *local
+proactive database*, but not the absence of external witness authenticity.
+A missing/rewritten historical row rejects the attempted new preparation;
+valid append-only history leaves the existing cooldown, rolling budget and
+duplicate fences unchanged. Existing callers without a retained witness
+remain supported but cannot detect a previously removed trigger.
+`tests/test_proactive_retained_admission_run374.py` tests valid append,
+deletion, timestamp rewrite, bad witnesses and preserved budgets.
+
+Hashes of low-entropy scope/policy identifiers can still be guessed.
+An attacker controlling the SQLite file and all witness copies can forge a
+new consistent history. No policy authentication, real observation,
+notification authorization, external clock, consent or user identity exists.
+
+## Release and integration gates
+
+These fixtures must remain disconnected until exact-head CI is GREEN and
+independent security/privacy review establishes: authenticated issuer and
+revocation rights; durable approval scope/purpose/recipient binding; trusted
+clock; atomic or explicitly recoverable occurrence/audit/journal invariants;
+external backend idempotency and UNKNOWN reconciliation; privacy erasure and
+retention lifecycle; launch readiness; and user-approved side-effect enabling.
+
+Do not turn any of the local receipt flags into external execution authority.
+The existing protected V1/V2/Local UI/Launcher evaluations and V3 PR #5
+Draft/NOT_PASSED gates remain unchanged. No paid services or compute are
+required or invoked by these fixture reviews.
+
+
+## Read-only four-store synthetic recovery review (Run 375)
+
+`review_synthetic_write_recovery(..., link_store=..., retained_link=...)`
+optionally adds the sidecar to the original Planner / occurrence / ActionAudit
+review. The sidecar is validated under **one read-only link-store transaction**:
+its hash-chain witness and link rows are captured together; a genuinely
+earlier independently retained witness can detect deletion of known history.
+Every observed link is checked against saved reservation identities and its
+pre-action audit event. Only matching request/registry/action pairs are
+returned as `matching_audit_links`. Missing or inconsistent identities fail
+closed, whereas an unlinked reservation stays explicitly **unlinked**.
+The old three-store API remains compatible when `link_store` is absent.
+The review's three authority flags remain false even for matching links and a
+locally successful mock cycle.
+
+The sidecar, reservation, journal and audit live in **four separate SQLite
+files**; cross-store reads are NOT atomic and local witness hashes can all be
+forged together by an attacker controlling both records and witnesses. An
+audit event or matching link does not prove that a WRITE happened. A recovered
+RUNNING WRITE remains **UNKNOWN; never auto-replay**. The regression matrix
+is `tests/test_synthetic_recovery_link_review_run375.py`; no real backend,
+approval, effect detection, credential or external clock is introduced.
+
+## Cached Personal Context revalidation (Run 375)
+
+`personal_context_reuse_review.py` revalidates an earlier in-memory bundle
+by obtaining **new coherent Memory evidence with before/after privacy-veto
+checks**, and comparing the complete fresh projection to the cached bundle.
+Changed Memory, newly recorded revocation, missing older veto history,
+malformed cached structures, caller-clock rollback and caller-specified
+maximum-age violations fail closed. The diagnostic result contains identifiers
+and the recheck timestamp, **not copied personal content**; its context-use,
+external-disclosure and dispatch permission flags are always false.
+`tests/test_personal_context_reuse_review_run375.py` covers these cases.
+
+The caller supplies `captured_at_ms` and `now_ms`; they are **not trusted
+time**. A successful comparison is not consent or a production lease.
+Revocation or Memory mutation after the final read may race with later use.
+The SQLite veto and Memory are not one atomic store; there is no erasure
+mechanism, verified subject/issuer or permission to expose the projection.
+
+## Persisted proactive trigger freshness guard (Run 375)
+
+`proactive_synthetic_freshness_review.py` reopens the existing ledger
+**read-only** and rebinds an earlier prepared receipt to the exact scope,
+policy revision, source and observation digests, persisted preparation time
+and synthetic maximum observation age. An independently retained trigger
+history can veto deleted/replaced prior rows. A forged prepared time,
+changed policy, stale observation, future row timestamp, missing DB, invalid
+SQLite schema or clock regression is refused.
+`tests/test_proactive_freshness_review_run375.py` contains the fault matrix.
+
+This review does **not** resurrect a Trigger for execution or send a
+notification. Its synthetic freshness receipt always denies notification,
+ToolBackend dispatch and replay. Caller-provided policy, observation digests,
+clock and retained witness are not authenticated. No physical clock,
+user-consent source, external notification provider or paid compute is used.
+
+
+## Offline observation parent lineage (Run 375)
+
+`observation_lineage_review.py` examines already supplied,
+metadata-only `ObservationEnvelope` values via a bounded,
+privacy-scoped `ObservationWindowReview`. It requires each claimed
+`parent_sha256` to resolve to **exactly one** envelope in the same
+reviewed window, from the same source and with a timestamp not later than
+the child. It rejects unresolved or ambiguous parents, cross-source
+lineage, cycles, reflected identity changes, inappropriate privacy scope
+and stale observations at caller-provided review time. The witness
+contains no raw media or textual payload; canonical parent edges are
+hashed deterministically, independent of tuple ordering. Tests are in
+`tests/test_observation_lineage_review_run375.py`.
+
+These identifiers establish **internal fixture consistency only**.
+Identical content hashes are not signed origins; an actor can construct
+a forged self-consistent lineage with fabricated source names/times.
+There is no webcam, screen capture, speech input, external observation
+provider, human consent, trusted timestamp, disclosure, backend invocation
+or automatically authorized action.
+
+
+## Run 377 — disconnected approval, privacy and recovery integrity
+
+**Read-only claim + persisted cancellation fence.**
+`agency/synthetic_approval_cancellation_fence_review.py` brackets
+`review_synthetic_approval_claim` with two actual SQLite cancellation
+journal reads. An optional independently retained historical cancellation
+witness is verified before the claim check. A cancellation present at the
+first read, a claim cancellation or even an unrelated new cancellation
+appearing between the two reads, a reverted retained prefix, registry or
+claim drift, expired claim, or a regressing caller clock prevents a diagnostic
+receipt. The reviewer returns only hashed identities and denial-only flags.
+An absent marker is **not** consent, authenticated issuer/subject approval,
+non-revocation proof, or dispatch/replay permission. The second read cannot
+make cancellation after that read impossible, and neither storage, witness,
+nor caller clock is externally trusted. Regression coverage:
+`tests/test_synthetic_approval_cancellation_fence_run377.py`.
+
+**Retention inventory receipt bound to validated row bytes.**
+`personal_context_retention_review.py` now uses a domain-separated
+`ARK-offline-retention-inventory-v2` digest: each scoped row contributes
+its pseudonymous memory ID, revision, content digest, separately hashed
+canonical metadata, creation/update/expiry timestamps and computed expiry
+state. This prevents equal inventory receipts for status-preserving local
+row edits whose revised content/metadata remain internally coherent.
+The public `SyntheticRetentionItem` remains minimized to ID, revision
+and expiry classification; the inventory exposes neither content nor
+metadata. The changed digest domain is **not** interchangeable with
+earlier v1 diagnostic receipt hashes. This remains a read-only, locally
+forgeable inventory, not independent tamper evidence, legal retention
+compliance or permission to delete/disclose data. Regression coverage:
+`tests/test_personal_context_retention_row_binding_run377.py`.
+
+**Cross-store recovery late-drift rejection.**
+`agency/synthetic_recovery_triage.py` retains the original internally
+coherent local snapshots for Planner, occurrence reservations, ActionAudit,
+and optional audit sidecar. It now re-observes each store near return and
+refuses a changed plan recovery, reservation witness, audit witness, or
+sidecar witness, including mutations injected between initial reads.
+The extra reads **narrow only the observable race window**. They do
+**not** create an atomic transaction spanning SQLite files, prevent
+changes after final recheck, authenticate historical witnesses, prove
+any external effect or make an ambiguous WRITE safe to retry.
+Regression coverage: `tests/test_synthetic_recovery_drift_fence_run377.py`.
+
+No production backend is called by these modules/tests. There is no
+paid/GPU action, real Candidate, notification, destructive Memory erasure,
+protected evaluation opening, frozen contract edit, or main merge.
+
+
+**Proactive freshness input epoch fence.**
+`proactive_synthetic_freshness_review.py` pins the earlier prepared
+receipt identity/time, local SQLite path object and optional independent
+retained trigger witness before its snapshot transaction, then checks
+for reflected drift before returning. A status-preserving edit to any of
+those carriers during this local read is rejected. Existing policy revision,
+observation expiry, trigger binding and persisted history checks remain
+mandatory. The mechanism does **not** attest the path on disk against an
+adversary, authenticate the clock/observation/policy or prevent a race
+after the final check. No notification, ToolBackend or replay permission
+is produced. Regression coverage:
+`tests/test_proactive_freshness_epoch_run377.py`.
+
+
+## Run 378 — disconnected cross-boundary evidence correlation
+
+**Approval-veto / WRITE recovery diagnostic (no authorizing grant).**
+`agency/synthetic_claim_recovery_review.py` brackets the existing
+Planner / occurrence / ActionAudit / optional sidecar recovery reader with
+**two persisted cancellation-fenced approval-claim reviews**. It requires the
+same Registry revision, bound Action ID and request ID, rejects observed
+cancellation-journal append across the read, retained-history rollback and
+claim/registry changes, and carries only pseudonymous IDs and synthetic
+recovery state in the resulting receipt. The recovered RUNNING WRITE remains
+UNKNOWN and may **never** be automatically replayed; even a locally
+SUCCEEDED journal event is not proof of any real effect. There is no
+authenticated issuer, subject, recipient, trusted clock, signed external
+witness, atomic transaction across SQLite files, or post-final-check race
+elimination. `human_consent_verified`, `dispatch_authorized`,
+`automatic_replay_authorized`, and `external_outcome_known` remain
+permanently false in this research-only review.
+Tests: `tests/test_synthetic_claim_recovery_review_run378.py`.
+
+**Cached retention recheck / possible-erasure queue (no deletion).**
+`personal_context_retention_recheck_review.py` compares a prior
+content-minimized Memory retention inventory to fresh re-reads at its
+original synthetic clock and at a bounded later time. Added/changed Memory,
+revocations, stale inventory and observed drift fail closed. Only scoped,
+pseudonymous expired and unbounded Memory IDs are returned as candidates
+for **manual** review. This module never calls `delete` or
+`purge_expired` and cannot authorize any destructive operation, claim
+erasure completion, certify legal basis, expose personal content or infer
+consent from an absent revocation. The multiple Memory/veto reads are
+independent, not a global snapshot; local witnesses and wall clocks remain
+unauthenticated. Tests:
+`tests/test_personal_context_retention_recheck_run378.py`.
+
+**Prepared proactive Trigger / startup dependency diagnostics (no action).**
+`proactive_startup_fence_review.py` cross-checks a persisted synthetic
+Trigger against an exact-schema READY dependency lease, then repeats both
+reviews to reject observable drift. A separate unrelated blocked component
+need not poison a READY scheduler; its actual required dependencies must
+all be READY at the supplied time. The returned hashes grant no startup
+authority, notification, external dispatch or replay. Probe states, trigger
+policy, observation digest and clocks are synthetic caller inputs; the
+second check cannot exclude subsequent changes or make data authoritative.
+Tests: `tests/test_proactive_startup_fence_run378.py`.
+
+**Observation lineage / prepared Trigger source binding.**
+`proactive_observation_lineage_fence_review.py` requires the selected
+already-supplied `ObservationEnvelope` to be uniquely present in a bounded,
+single-privacy-scope parent-chain window. A domain-separated, **untrusted**
+source-ID hash and the selected exact observation-content digest must match
+the persisted proactive Trigger identity; both lineage and Trigger freshness
+are checked twice to catch observed drift. It does not establish original
+media authenticity, lawful collection, consent, an externally trusted
+timestamp or actual environmental observation. The review returns only
+pseudonymous IDs and digest metadata and **permanently denies** capture,
+disclosure, notification, ToolBackend dispatch and replay. Its two passes
+remain non-atomic, leaving post-review races. Regression coverage:
+`tests/test_proactive_observation_lineage_fence_run378.py`.
+
+**All four integrations remain isolated and reversible.** No live
+ToolBackend, personal-data disclosure, camera/microphone/screen collection,
+real notification, destructive cleanup, paid compute, Credential connection,
+Candidate, protected evaluation opening or main merge is permitted.

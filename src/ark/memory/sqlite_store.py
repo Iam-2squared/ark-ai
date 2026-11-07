@@ -1,0 +1,1135 @@
+"""SQLite-backed local memory with deterministic identity and fail-closed CAS."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sqlite3
+import time
+import unicodedata
+from collections.abc import Callable
+from contextlib import closing
+from pathlib import Path
+from threading import Lock
+from types import MappingProxyType
+
+from .contracts import (
+    MemoryConflictError,
+    MemoryEvent,
+    MemoryQuery,
+    MemoryRecord,
+    MemorySchemaError,
+    MemoryScope,
+    MemoryWrite,
+)
+
+SCHEMA_VERSION = 1
+SQLITE_INT_MAX = (1 << 63) - 1
+# Match the opt-in coherent snapshot row bound. A ranked lexical search must
+# never hydrate an unbounded namespace before applying its small result limit.
+_MAX_NAMESPACE_SEARCH_ROWS = 10_000
+_BOOTSTRAP_LOCK = Lock()  # process-local WAL setup; SQLite remains cross-process authority
+# Preserve original result classes across synthetic constructor injection.
+_MEMORY_EVENT_RESULT_TYPE = MemoryEvent
+_MEMORY_RECORD_RESULT_TYPE = MemoryRecord
+_TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
+
+_SCHEMA_V1_SQL = """CREATE TABLE memories(
+                        memory_id TEXT PRIMARY KEY,
+                        owner_id TEXT NOT NULL,
+                        namespace TEXT NOT NULL,
+                        source_id TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        metadata_json TEXT NOT NULL,
+                        content_sha256 TEXT NOT NULL,
+                        created_at_ms INTEGER NOT NULL,
+                        updated_at_ms INTEGER NOT NULL,
+                        expires_at_ms INTEGER,
+                        revision INTEGER NOT NULL CHECK(revision>=1),
+                        UNIQUE(owner_id, namespace, source_id)
+                    );
+                    CREATE INDEX idx_mem_scope
+                    ON memories(owner_id, namespace, updated_at_ms DESC, memory_id);
+                    CREATE INDEX idx_mem_expiry ON memories(expires_at_ms)
+                    WHERE expires_at_ms IS NOT NULL;
+                    CREATE TABLE memory_events(
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        memory_id TEXT NOT NULL,
+                        owner_id TEXT NOT NULL,
+                        namespace TEXT NOT NULL,
+                        operation TEXT NOT NULL CHECK(
+                            operation IN('create','update','delete','expire')
+                        ),
+                        revision INTEGER NOT NULL,
+                        occurred_at_ms INTEGER NOT NULL
+                    );
+                    CREATE INDEX idx_mem_event_scope
+                    ON memory_events(owner_id, namespace, event_id);
+                    PRAGMA user_version=1;"""
+
+
+def _normalized_ddl(sql: str | None) -> str | None:
+    """Normalize only unquoted SQL trivia; preserve quoted CHECK literals exactly."""
+    if sql is None:
+        return None
+    output: list[str] = []
+    quote: str | None = None
+    index = 0
+    while index < len(sql):
+        char = sql[index]
+        if quote is not None:
+            output.append(char)
+            if char == quote:
+                if index + 1 < len(sql) and sql[index + 1] == quote:
+                    index += 1
+                    output.append(sql[index])
+                else:
+                    quote = None
+        elif char in ("'", '"', "`"):
+            quote = char
+            output.append(char)
+        elif not char.isspace():
+            output.append(char.lower())
+        index += 1
+    if quote is not None:
+        raise MemorySchemaError("unterminated SQLite schema quotation")
+    return "".join(output)
+
+
+def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    rows = conn.execute(
+        "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+    ).fetchall()
+    return tuple((row[0], row[1], row[2], _normalized_ddl(row[3])) for row in rows)
+
+
+def _validate_v1_schema(conn: sqlite3.Connection) -> None:
+    """Fail closed on unexpected version-1 DDL, indexes, triggers or corruption.
+
+    This is startup verification only: it does not repair existing databases,
+    attest historical writers or replace independently retained evidence.
+    """
+    if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+        raise MemorySchemaError("memory v1 schema version changed")
+    quick = conn.execute("PRAGMA quick_check").fetchall()
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
+        raise MemorySchemaError("memory SQLite quick_check failed")
+    with sqlite3.connect(":memory:") as expected:
+        expected.executescript(_SCHEMA_V1_SQL)
+        if _schema_objects(conn) != _schema_objects(expected):
+            raise MemorySchemaError("memory v1 schema objects differ from frozen DDL")
+
+
+
+def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
+    """Return a stable ID without embedding plaintext scope/source bytes."""
+    if type(scope) is not MemoryScope:
+        raise TypeError("scope must be an exact MemoryScope")
+    if not isinstance(source_id, str) or not source_id.strip():
+        raise ValueError("source_id must not be blank")
+    payload = json.dumps(
+        {"namespace": scope.namespace, "owner_id": scope.owner_id, "source_id": source_id},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return "mem_" + hashlib.sha256(payload).hexdigest()
+
+
+class SQLiteMemoryStore:
+    """Local-only store with schema versioning, scope isolation and CAS writes."""
+
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        clock_ms: Callable[[], int] | None = None,
+    ) -> None:
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
+        self._initialize()
+
+    def put(self, write: MemoryWrite, *, expected_revision: int = 0) -> MemoryRecord:
+        if type(write) is not MemoryWrite or type(write.scope) is not MemoryScope:
+            raise TypeError("write requires exact MemoryWrite and MemoryScope")
+        _revision(expected_revision, allow_zero=True)
+        # Pin user-controlled MemoryWrite fields before the reentrant clock.
+        # Frozen dataclasses can still be modified via reflection.
+        pinned_scope = write.scope
+        pinned_metadata = write.metadata
+        pinned_source_id = write.source_id
+        pinned_content = write.content
+        pinned_expiry = write.expires_at_ms
+        pinned_owner = pinned_scope.owner_id
+        pinned_namespace = pinned_scope.namespace
+        metadata_copy = dict(pinned_metadata)
+        memory_id = deterministic_memory_id(pinned_scope, pinned_source_id)
+        metadata_json = json.dumps(
+            metadata_copy, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+        content_hash = hashlib.sha256(pinned_content.encode()).hexdigest()
+        path_epoch = self.path
+        with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed before transaction")
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed during clock")
+            try:
+                stable = (
+                    write.scope is pinned_scope
+                    and write.metadata is pinned_metadata
+                    and pinned_scope.owner_id is pinned_owner
+                    and pinned_scope.namespace is pinned_namespace
+                    and write.source_id is pinned_source_id
+                    and write.content is pinned_content
+                    and write.expires_at_ms is pinned_expiry
+                    and (
+                        pinned_scope.owner_id, pinned_scope.namespace,
+                        write.source_id, write.content, write.expires_at_ms,
+                        dict(write.metadata),
+                    ) == (
+                        pinned_owner, pinned_namespace, pinned_source_id,
+                        pinned_content, pinned_expiry, metadata_copy,
+                    )
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise MemorySchemaError("memory write changed during clock") from exc
+            if not stable:
+                raise MemorySchemaError("memory write changed during clock")
+            current = conn.execute(
+                "SELECT * FROM memories WHERE memory_id = ?",
+                (memory_id,),
+            ).fetchone()
+            if current is None:
+                if expected_revision != 0:
+                    raise MemoryConflictError("memory does not exist at expected revision")
+                revision, created = 1, now
+                conn.execute(
+                    """INSERT INTO memories(
+                        memory_id, owner_id, namespace, source_id, content, metadata_json,
+                        content_sha256, created_at_ms, updated_at_ms, expires_at_ms, revision
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        memory_id,
+                        pinned_owner,
+                        pinned_namespace,
+                        pinned_source_id,
+                        pinned_content,
+                        metadata_json,
+                        content_hash,
+                        created,
+                        now,
+                        pinned_expiry,
+                        revision,
+                    ),
+                )
+                operation = "create"
+            else:
+                # Fail closed on any malformed persisted row before CAS mutation.
+                # Legacy v1 valid rows remain supported without schema changes.
+                stored = _record(current)
+                if (stored.memory_id, stored.scope, stored.source_id) != (
+                    memory_id, pinned_scope, pinned_source_id
+                ):
+                    raise MemorySchemaError("stored memory identity differs from write")
+                actual = stored.revision
+                if expected_revision != actual:
+                    raise MemoryConflictError(
+                        f"revision mismatch: expected {expected_revision}, actual {actual}"
+                    )
+                if actual == SQLITE_INT_MAX:
+                    raise MemoryConflictError("memory revision exhausted SQLite INTEGER range")
+                revision, created = actual + 1, stored.created_at_ms
+                result = conn.execute(
+                    """UPDATE memories SET
+                        content=?, metadata_json=?, content_sha256=?, updated_at_ms=?,
+                        expires_at_ms=?, revision=?
+                    WHERE memory_id=? AND owner_id=? AND namespace=? AND revision=?""",
+                    (
+                        pinned_content,
+                        metadata_json,
+                        content_hash,
+                        now,
+                        pinned_expiry,
+                        revision,
+                        memory_id,
+                        pinned_owner,
+                        pinned_namespace,
+                        actual,
+                    ),
+                )
+                if result.rowcount != 1:
+                    raise MemoryConflictError("memory changed during update")
+                operation = "update"
+            self._event(conn, memory_id, pinned_scope, operation, revision, now)
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed before commit")
+            # The event insertion itself is a callback boundary in synthetic
+            # failure injection. Revalidate all caller-controlled fields after
+            # the final row+event write and BEFORE committing either. Never
+            # return a success for a mixed scope/metadata/value epoch.
+            try:
+                stable_after_event = (
+                    write.scope is pinned_scope
+                    and write.metadata is pinned_metadata
+                    and pinned_scope.owner_id is pinned_owner
+                    and pinned_scope.namespace is pinned_namespace
+                    and write.source_id is pinned_source_id
+                    and write.content is pinned_content
+                    and write.expires_at_ms is pinned_expiry
+                    and (
+                        pinned_scope.owner_id, pinned_scope.namespace,
+                        write.source_id, write.content, write.expires_at_ms,
+                        dict(write.metadata),
+                    ) == (
+                        pinned_owner, pinned_namespace, pinned_source_id,
+                        pinned_content, pinned_expiry, metadata_copy,
+                    )
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise MemorySchemaError(
+                    "memory write changed before event commit"
+                ) from exc
+            if not stable_after_event:
+                raise MemorySchemaError("memory write changed before event commit")
+        # The row and its event have already committed. A reentrant
+        # connection-exit or record-construction callback may still retarget
+        # the original write. Report the late drift as failure, never pretend
+        # the durable CAS/event was rolled back or retry the write here.
+        def assert_post_commit_epoch() -> None:
+            try:
+                stable = (
+                    self.path is path_epoch
+                    and write.scope is pinned_scope
+                    and write.metadata is pinned_metadata
+                    and pinned_scope.owner_id is pinned_owner
+                    and pinned_scope.namespace is pinned_namespace
+                    and write.source_id is pinned_source_id
+                    and write.content is pinned_content
+                    and write.expires_at_ms is pinned_expiry
+                    and dict(write.metadata) == metadata_copy
+                )
+            except (AttributeError, TypeError, ValueError) as exc:
+                raise MemorySchemaError("memory write changed after commit") from exc
+            if not stable:
+                raise MemorySchemaError("memory write changed after commit")
+
+        assert_post_commit_epoch()
+        record = MemoryRecord(
+            memory_id,
+            pinned_scope,
+            pinned_source_id,
+            pinned_content,
+            dict(metadata_copy),
+            created,
+            now,
+            pinned_expiry,
+            revision,
+            content_hash,
+        )
+        assert_post_commit_epoch()
+        # COMMIT already happened. Never return a forged record or a result
+        # whose original value carriers changed during the constructor.
+        try:
+            intact = (
+                type(record) is _MEMORY_RECORD_RESULT_TYPE
+                and record.memory_id is memory_id
+                and record.scope is pinned_scope
+                and record.source_id is pinned_source_id
+                and record.content is pinned_content
+                and record.created_at_ms is created
+                and record.updated_at_ms is now
+                and record.expires_at_ms is pinned_expiry
+                and record.revision is revision
+                and record.content_sha256 is content_hash
+                and type(record.metadata) is MappingProxyType
+                and dict(record.metadata) == metadata_copy
+            )
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise MemorySchemaError("memory put result changed after commit") from exc
+        if not intact:
+            raise MemorySchemaError("memory put result changed after commit")
+        assert_post_commit_epoch()
+        return record
+
+    def get(
+        self,
+        memory_id: str,
+        scope: MemoryScope,
+        *,
+        include_expired: bool = False,
+    ) -> MemoryRecord | None:
+        _memory_id(memory_id)
+        if type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
+        if type(include_expired) is not bool:
+            raise TypeError("include_expired must be a bool")
+        # Bind both the database read and its expiry clock to the same read
+        # transaction; reject scope retargeting by a reentrant clock callback.
+        # Capture original caller carriers before any SQLite or clock callback.
+        original_owner, original_namespace = scope.owner_id, scope.namespace
+        pinned_scope = MemoryScope(original_owner, original_namespace)
+        path_epoch = self.path
+
+        def assert_scope_carrier() -> None:
+            if (scope.owner_id is not original_owner
+                    or scope.namespace is not original_namespace):
+                raise MemorySchemaError("memory get scope changed during read")
+
+        assert_scope_carrier()
+        with closing(self._connect_readonly()) as conn:
+            assert_scope_carrier()
+            conn.execute("BEGIN")
+            assert_scope_carrier()
+            _validate_v1_schema(conn)
+            assert_scope_carrier()
+            row = conn.execute(
+                """SELECT * FROM memories
+                WHERE memory_id=? AND owner_id=? AND namespace=?""",
+                (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
+            ).fetchone()
+            assert_scope_carrier()
+            if row is None:
+                if (scope.owner_id, scope.namespace) != (
+                    pinned_scope.owner_id, pinned_scope.namespace
+                ):
+                    raise MemorySchemaError("memory get scope changed during read")
+                if self.path is not path_epoch:
+                    raise MemorySchemaError("memory get source changed during read")
+                return None
+            record = _record(row)
+            assert_scope_carrier()
+            record_epoch = _hydrated_record_epoch(record)
+            assert_scope_carrier()
+            now = self._now() if not include_expired else None
+            assert_scope_carrier()
+            if (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ):
+                raise MemorySchemaError("memory get scope changed during clock")
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory get source changed during read")
+            expired = now is not None and _expired(record, now)
+            assert_scope_carrier()
+            if _hydrated_record_epoch(record) != record_epoch:
+                raise MemorySchemaError("decoded Memory get record changed during read")
+            if (scope.owner_id, scope.namespace) != (
+                pinned_scope.owner_id, pinned_scope.namespace
+            ) or self.path is not path_epoch:
+                raise MemorySchemaError("memory get input changed during expiry check")
+            assert_scope_carrier()
+            if expired:
+                return None
+            return record
+
+    def search(self, query: MemoryQuery) -> list[MemoryRecord]:
+        if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
+            raise TypeError("query requires exact MemoryQuery and MemoryScope")
+        original_scope = query.scope
+        original_owner = original_scope.owner_id
+        original_namespace = original_scope.namespace
+        pinned_scope = MemoryScope(original_owner, original_namespace)
+        pinned_text = query.text
+        pinned_limit = query.limit
+        pinned_include_expired = query.include_expired
+        MemoryQuery(pinned_scope, pinned_text, pinned_limit, pinned_include_expired)
+        path_epoch = self.path
+
+        def assert_query_epoch() -> None:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory search source changed during read")
+            if (
+                query.scope is not original_scope
+                or type(query.scope) is not MemoryScope
+                or query.scope.owner_id is not original_owner
+                or query.scope.namespace is not original_namespace
+                or (query.scope.owner_id, query.scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory search scope changed during clock")
+            if (
+                type(query.text) is not str or query.text is not pinned_text
+                or query.text != pinned_text
+                or type(query.limit) is not int or query.limit != pinned_limit
+                or type(query.include_expired) is not bool
+                or query.include_expired != pinned_include_expired
+            ):
+                raise MemorySchemaError("memory search query changed during clock")
+
+        with closing(self._connect_readonly()) as conn:
+            assert_query_epoch()
+            conn.execute("BEGIN")
+            assert_query_epoch()
+            _validate_v1_schema(conn)
+            assert_query_epoch()
+            # The SELECT anchors the SQLite snapshot before the clock. A
+            # concurrent writer in the clock callback cannot mix epochs.
+            cursor = conn.execute(
+                "SELECT * FROM memories WHERE owner_id=? AND namespace=?",
+                (pinned_scope.owner_id, pinned_scope.namespace),
+            )
+            assert_query_epoch()
+            rows = cursor.fetchmany(_MAX_NAMESPACE_SEARCH_ROWS + 1)
+            assert_query_epoch()
+            if len(rows) > _MAX_NAMESPACE_SEARCH_ROWS:
+                raise MemorySchemaError("memory search namespace scan budget exceeded")
+            now = self._now()
+            assert_query_epoch()
+            records: list[MemoryRecord] = []
+            epochs: list[tuple[object, ...]] = []
+            for row in rows:
+                item = _record(row)
+                assert_query_epoch()
+                records.append(item)
+                epochs.append(_hydrated_record_epoch(item))
+
+            # A full scan at every per-record callback would make a broad
+            # namespace search quadratic. Keep one epoch per decoded carrier
+            # and check that carrier at each callback plus global phase edges.
+            epoch_by_identity = {
+                id(item): epoch for item, epoch in zip(records, epochs, strict=True)
+            }
+
+            def assert_record(item: MemoryRecord) -> None:
+                if _hydrated_record_epoch(item) != epoch_by_identity[id(item)]:
+                    raise MemorySchemaError(
+                        "decoded Memory search record changed during read"
+                    )
+
+            def assert_records() -> None:
+                for item in records:
+                    assert_record(item)
+
+            assert_records()
+            if not pinned_include_expired:
+                filtered = []
+                for item in records:
+                    assert_query_epoch()
+                    if not _expired(item, now):
+                        filtered.append(item)
+                    assert_query_epoch()
+                    assert_record(item)
+                eligible = filtered
+            else:
+                eligible = records
+            wanted = _tokens(pinned_text)
+            assert_query_epoch()
+            assert_records()
+            ranked: list[tuple[float, int, str, MemoryRecord]] = []
+            for item in eligible:
+                assert_query_epoch()
+                assert_record(item)
+                if wanted:
+                    matched = len(wanted & _tokens(item.content))
+                    assert_query_epoch()
+                    assert_record(item)
+                    if matched == 0:
+                        continue
+                    score = matched / len(wanted)
+                else:
+                    score = 0.0
+                ranked.append((-score, -item.updated_at_ms, item.memory_id, item))
+            ranked.sort(key=lambda value: value[:3])
+            assert_query_epoch()
+            assert_records()
+            return [value[3] for value in ranked[:pinned_limit]]
+
+    def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
+        _memory_id(memory_id)
+        _revision(expected_revision, allow_zero=False)
+        if type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
+        # A clock callback may reflectively modify a frozen scope object.
+        # Bind both SQL and audit events to one pre-clock identity epoch.
+        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        path_epoch = self.path
+        original_owner = scope.owner_id
+        original_namespace = scope.namespace
+
+        def assert_post_commit_delete_epoch() -> None:
+            # A post-COMMIT callback cannot retroactively roll back deletion.
+            # Reject a clean return if its original caller/source changed.
+            if (
+                self.path is not path_epoch
+                or scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory delete input changed after commit")
+        with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed before transaction")
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed during clock")
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory delete scope changed during clock")
+            row = conn.execute(
+                """SELECT * FROM memories
+                WHERE memory_id=? AND owner_id=? AND namespace=?""",
+                (memory_id, pinned_scope.owner_id, pinned_scope.namespace),
+            ).fetchone()
+            # The read itself is a callback boundary. Never return a clean
+            # missing-row result or mutate a found row using a retargeted
+            # owner/namespace carrier, even if its text remains equal.
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed during read")
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+            ):
+                raise MemorySchemaError("memory delete scope changed during read")
+            if row is None:
+                return False
+            stored = _record(row)
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+            ):
+                raise MemorySchemaError("memory delete scope changed during hydration")
+            if stored.memory_id != memory_id or stored.scope != pinned_scope:
+                raise MemorySchemaError("stored memory identity differs from delete")
+            actual = stored.revision
+            if actual != expected_revision:
+                raise MemoryConflictError(
+                    f"revision mismatch: expected {expected_revision}, actual {actual}"
+                )
+            result = conn.execute(
+                """DELETE FROM memories
+                WHERE memory_id=? AND owner_id=? AND namespace=? AND revision=?""",
+                (memory_id, pinned_scope.owner_id, pinned_scope.namespace, expected_revision),
+            )
+            if result.rowcount != 1:
+                raise MemoryConflictError("memory changed during delete")
+            self._event(conn, memory_id, pinned_scope, "delete", actual, now)
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory delete source changed before commit")
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory delete scope changed before commit")
+        assert_post_commit_delete_epoch()
+        return True
+
+    def purge_expired(
+        self, *, scope: MemoryScope | None = None, limit: int | None = None,
+    ) -> int:
+        """Atomically purge expired rows; optional bounded batches are opt-in.
+
+        The original unlimited mode remains for compatibility. A bounded
+        call deletes at most `limit` rows in deterministic memory-ID order,
+        with one event per deletion in the same SQLite write transaction.
+        """
+        if scope is not None and type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
+        if limit is not None and (type(limit) is not int or not 1 <= limit <= 1000):
+            raise ValueError("purge limit must be an exact integer from 1 to 1000")
+        pinned_scope = (
+            MemoryScope(scope.owner_id, scope.namespace) if scope is not None else None
+        )
+        # Claim the SQLite writer slot before taking either the clock reading
+        # or the expiry snapshot. A read-before-write transaction permits a
+        # concurrent refresh to resurrect a selected row before deletion.
+        path_epoch = self.path
+        original_owner = None if scope is None else scope.owner_id
+        original_namespace = None if scope is None else scope.namespace
+
+        def assert_post_commit_purge_epoch() -> None:
+            # A successful SQLite commit cannot be undone by a diagnostic
+            # rejection. Keep durable deletions/events and refuse a clean
+            # result if the original scope or database source was retargeted.
+            if (
+                self.path is not path_epoch
+                or scope is not None and (
+                    scope.owner_id is not original_owner
+                    or scope.namespace is not original_namespace
+                    or (scope.owner_id, scope.namespace)
+                    != (pinned_scope.owner_id, pinned_scope.namespace)
+                )
+            ):
+                raise MemorySchemaError("memory purge input changed after commit")
+
+        with closing(self._connect()) as conn, conn:
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory purge source changed before transaction")
+            conn.execute("BEGIN IMMEDIATE")
+            now = self._now()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory purge source changed during clock")
+            if scope is not None and (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory purge scope changed during clock")
+            # The bounded mode never hydrates more than one configured page
+            # before validating each row and appending its matching event.
+            # The suffix is a fixed SQL fragment, never caller-provided text.
+            suffix = " LIMIT ?" if limit is not None else ""
+            if pinned_scope is None:
+                rows = conn.execute(
+                    """SELECT * FROM memories
+                    WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=? ORDER BY memory_id"""
+                    + suffix,
+                    (now,) if limit is None else (now, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """SELECT * FROM memories
+                    WHERE owner_id=? AND namespace=? AND expires_at_ms IS NOT NULL
+                    AND expires_at_ms<=? ORDER BY memory_id"""
+                    + suffix,
+                    (
+                        (pinned_scope.owner_id, pinned_scope.namespace, now)
+                        if limit is None else
+                        (pinned_scope.owner_id, pinned_scope.namespace, now, limit)
+                    ),
+                ).fetchall()
+            def assert_purge_row_epoch() -> None:
+                # Each decoded row and event write can be a synthetic
+                # reentrant boundary. A reflected scope/source swap that is
+                # undone on the *next* row must not pass the final-only check.
+                if self.path is not path_epoch:
+                    raise MemorySchemaError("memory purge source changed before commit")
+                if scope is not None and (
+                    scope.owner_id is not original_owner
+                    or scope.namespace is not original_namespace
+                    or (scope.owner_id, scope.namespace)
+                    != (pinned_scope.owner_id, pinned_scope.namespace)
+                ):
+                    raise MemorySchemaError("memory purge scope changed before commit")
+
+            for row in rows:
+                assert_purge_row_epoch()
+                stored = _record(row)
+                assert_purge_row_epoch()
+                if pinned_scope is not None and stored.scope != pinned_scope:
+                    raise MemorySchemaError("stored memory scope differs from expiry query")
+                # Bind the DELETE to the *entire* selected row image, not
+                # just revision and expiry eligibility. A reentrant local
+                # callback can rewrite an already-expired row while keeping
+                # its revision and <=now predicate unchanged; never emit a
+                # terminal event for a different row image.
+                deleted = conn.execute(
+                    """DELETE FROM memories
+                    WHERE memory_id=? AND owner_id=? AND namespace=?
+                    AND source_id=? AND content=? AND metadata_json=?
+                    AND content_sha256=? AND created_at_ms=? AND updated_at_ms=?
+                    AND revision=? AND expires_at_ms=? AND expires_at_ms<=?""",
+                    (
+                        row["memory_id"], row["owner_id"], row["namespace"],
+                        row["source_id"], row["content"], row["metadata_json"],
+                        row["content_sha256"], row["created_at_ms"],
+                        row["updated_at_ms"], row["revision"],
+                        row["expires_at_ms"], now,
+                    ),
+                )
+                if deleted.rowcount != 1:
+                    raise MemoryConflictError("expired memory changed before delete")
+                self._event(
+                    conn, stored.memory_id, stored.scope, "expire",
+                    stored.revision, now,
+                )
+                # Fail before the next row's callback can restore a temporary
+                # owner/scope/path retargeting; SQLite rolls back row and event.
+                assert_purge_row_epoch()
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory purge source changed before commit")
+            if scope is not None and (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError("memory purge scope changed before commit")
+        assert_post_commit_purge_epoch()
+        return len(rows)
+
+    def events(
+        self,
+        scope: MemoryScope,
+        *,
+        after_event_id: int = 0,
+        limit: int = 100,
+    ) -> list[MemoryEvent]:
+        if type(scope) is not MemoryScope:
+            raise TypeError("scope must be an exact MemoryScope")
+        if type(after_event_id) is not int or not 0 <= after_event_id <= SQLITE_INT_MAX:
+            raise ValueError("after_event_id must be a non-negative integer")
+        if type(limit) is not int or not 1 <= limit <= 1000:
+            raise ValueError("limit must be an integer from 1 to 1000")
+        # Caller-owned immutable dataclasses can be reflectively retargeted
+        # to a distinct equal-text owner/namespace during a SQLite callback.
+        # A value-equal replacement is still a changed audit-query identity.
+        original_owner = scope.owner_id
+        original_namespace = scope.namespace
+        pinned_scope = MemoryScope(original_owner, original_namespace)
+        path_epoch = self.path
+
+        def assert_events_epoch() -> None:
+            # Decoding individual event rows is reentrant under synthetic
+            # failure injection. Checking only after all rows lets a scope
+            # or Path retargeting be restored by the next row's callback.
+            if (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+                or (scope.owner_id, scope.namespace) != (
+                    pinned_scope.owner_id, pinned_scope.namespace
+                )
+            ):
+                raise MemorySchemaError("memory events scope changed during read")
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory events source changed during read")
+
+        # Opening a read-only SQLite handle, BEGIN, SELECT and fetchall are
+        # separate reentrant boundaries in synthetic fault fixtures. Check
+        # the original scope/source immediately after each boundary so a
+        # later callback cannot restore a short-lived retarget silently.
+        assert_events_epoch()
+        with closing(self._connect_readonly()) as conn:
+            assert_events_epoch()
+            conn.execute("BEGIN")
+            assert_events_epoch()
+            _validate_v1_schema(conn)
+            assert_events_epoch()
+            cursor = conn.execute(
+                """SELECT * FROM memory_events
+                WHERE owner_id=? AND namespace=? AND event_id>?
+                ORDER BY event_id LIMIT ?""",
+                (pinned_scope.owner_id, pinned_scope.namespace, after_event_id, limit),
+            )
+            assert_events_epoch()
+            rows = cursor.fetchall()
+            assert_events_epoch()
+        assert_events_epoch()
+        # Event rows have no associated source_id after deletion, so validate
+        # canonical shape and scope, not an unverifiable source-id preimage.
+        # V1 permits clocks to move backwards between independent memories:
+        # ordering is by event_id only, never by occurred_at_ms.
+        result: list[MemoryEvent] = []
+        # Returning a forged event (or mutating an earlier event while later
+        # rows are hydrated) must not convert local audit history into a
+        # different scope, revision or operation. All carriers are captured
+        # independently of the replaceable event constructor.
+        event_epochs: list[tuple[MemoryEvent, tuple[object, ...]]] = []
+
+        def assert_event_results() -> None:
+            for event, saved in event_epochs:
+                try:
+                    current = (
+                        event.event_id, event.memory_id, event.scope,
+                        event.scope.owner_id, event.scope.namespace,
+                        event.operation, event.revision, event.occurred_at_ms,
+                    )
+                except (AttributeError, TypeError, ValueError) as exc:
+                    raise MemorySchemaError("memory event result changed during read") from exc
+                if (
+                    type(event) is not _MEMORY_EVENT_RESULT_TYPE
+                    or type(event.scope) is not MemoryScope
+                    or any(
+                        field is not original
+                        for field, original in zip(current, saved, strict=True)
+                    )
+                ):
+                    raise MemorySchemaError("memory event result changed during read")
+
+        previous_id = after_event_id
+        for row in rows:
+            assert_events_epoch()
+            assert_event_results()
+
+            def stored_int(event_row: sqlite3.Row, column: str, *, minimum: int) -> int:
+                value = event_row[column]
+                if type(value) is not int or value < minimum:
+                    raise MemorySchemaError(f"stored event {column} is not a valid INTEGER")
+                return value
+
+            def stored_text(event_row: sqlite3.Row, column: str) -> str:
+                value = event_row[column]
+                if type(value) is not str:
+                    raise MemorySchemaError(f"stored event {column} must be TEXT")
+                return value
+
+            event_id = stored_int(row, "event_id", minimum=1)
+            revision = stored_int(row, "revision", minimum=1)
+            occurred = stored_int(row, "occurred_at_ms", minimum=0)
+            memory_id = stored_text(row, "memory_id")
+            owner_id = stored_text(row, "owner_id")
+            namespace = stored_text(row, "namespace")
+            operation = stored_text(row, "operation")
+            if event_id <= previous_id:
+                raise MemorySchemaError("stored event IDs are not strictly increasing")
+            previous_id = event_id
+            try:
+                _memory_id(memory_id)
+                assert_events_epoch()
+                recorded_scope = MemoryScope(owner_id, namespace)
+                assert_events_epoch()
+            except (ValueError, TypeError) as exc:
+                raise MemorySchemaError("stored event identity or scope is invalid") from exc
+            if recorded_scope != pinned_scope:
+                raise MemorySchemaError("stored event scope does not match query")
+            if operation not in {"create", "update", "delete", "expire"}:
+                raise MemorySchemaError("stored event operation is invalid")
+            event = MemoryEvent(
+                event_id, memory_id, recorded_scope, operation, revision, occurred,
+            )
+            assert_events_epoch()
+            # Capturing SQL argument carriers rather than fields from the
+            # constructed result prevents forged equal-valued replacements.
+            event_epochs.append((
+                event,
+                (event_id, memory_id, recorded_scope, owner_id, namespace,
+                 operation, revision, occurred),
+            ))
+            assert_event_results()
+            result.append(event)
+        assert_events_epoch()
+        assert_event_results()
+        return result
+
+    def _initialize(self) -> None:
+        # Ordinary reads/writes must never renegotiate persistent WAL mode.
+        # Serialize same-process first-open setup before SQLite BEGIN IMMEDIATE.
+        with _BOOTSTRAP_LOCK, closing(self._connect(create=True)) as conn, conn:
+            # Separate processes may race on the first WAL negotiation.
+            # SQLite busy_timeout is not a guarantee that journal_mode itself
+            # waits; retry only SQLite lock/busy, then fail closed.
+            for attempt in range(5):
+                try:
+                    journal_mode = conn.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+                except sqlite3.OperationalError as exc:
+                    error_code = getattr(exc, "sqlite_errorcode", 0) & 0xFF
+                    if error_code not in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                        raise
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.05 * (2 ** attempt))
+                else:
+                    if journal_mode.lower() != "wal":
+                        raise MemorySchemaError("memory SQLite WAL negotiation failed")
+                    break
+            # executescript() issues an implicit COMMIT and can preserve a
+            # partially created v1 database after a verification failure.
+            # Reserve the writer slot before checking version/emptiness.
+            conn.execute("BEGIN IMMEDIATE")
+            version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+            if version < 0:
+                raise MemorySchemaError(f"unsupported negative memory schema version {version}")
+            if version > SCHEMA_VERSION:
+                raise MemorySchemaError(
+                    f"memory database schema {version} is newer than supported {SCHEMA_VERSION}"
+                )
+            if version == 0:
+                existing = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' LIMIT 1"
+                ).fetchone()
+                if existing is not None:
+                    raise MemorySchemaError("unversioned memory database is not empty")
+                # V1's frozen DDL consists of semicolon-separated statements;
+                # execute one at a time *inside* the existing transaction.
+                for statement in _SCHEMA_V1_SQL.split(";"):
+                    if statement.strip():
+                        conn.execute(statement)
+            _validate_v1_schema(conn)
+
+    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        # Only explicit initialization can create a SQLite file. Normal
+        # mutators must not create a plausible empty replacement database if
+        # the original Memory store has been moved or removed after startup.
+        if create:
+            conn = sqlite3.connect(self.path)
+        else:
+            conn = sqlite3.connect(
+                self.path.resolve().as_uri() + "?mode=rw", uri=True
+            )
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
+    def _connect_readonly(self) -> sqlite3.Connection:
+        # Reading evidence must never recreate a missing initialized SQLite file.
+        # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
+        uri = self.path.resolve().as_uri() + "?mode=ro"
+        conn = sqlite3.connect(uri, uri=True)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
+    def _now(self) -> int:
+        value = self._clock_ms()
+        if type(value) is not int or not 0 <= value <= SQLITE_INT_MAX:
+            raise ValueError("clock_ms must return a non-negative integer")
+        return value
+
+    @staticmethod
+    def _event(
+        conn: sqlite3.Connection,
+        memory_id: str,
+        scope: MemoryScope,
+        operation: str,
+        revision: int,
+        occurred_at_ms: int,
+    ) -> None:
+        conn.execute(
+            """INSERT INTO memory_events(
+                memory_id,owner_id,namespace,operation,revision,occurred_at_ms
+            ) VALUES(?,?,?,?,?,?)""",
+            (
+                memory_id,
+                scope.owner_id,
+                scope.namespace,
+                operation,
+                revision,
+                occurred_at_ms,
+            ),
+        )
+
+
+
+def _hydrated_record_epoch(record: MemoryRecord) -> tuple[object, ...]:
+    """Value-and-carrier witness for a decoded synthetic Memory v1 row.
+
+    Prevent reentrant callbacks from silently rewriting a decoded record
+    after SQLite's integrity checks, before a read returns it to the caller.
+    It is not OS-backed provenance or a privacy-use authorization.
+    """
+    try:
+        if (
+            type(record) is not MemoryRecord
+            or type(record.scope) is not MemoryScope
+            or not hasattr(record.metadata, "items")
+        ):
+            raise MemorySchemaError("decoded Memory record carrier changed")
+        return (
+            id(record.scope), id(record.metadata), type(record.metadata),
+            record.memory_id, record.scope.owner_id, record.scope.namespace,
+            record.source_id, record.content, record.created_at_ms,
+            record.updated_at_ms, record.expires_at_ms, record.revision,
+            record.content_sha256, tuple(sorted(record.metadata.items())),
+            # Keep the original nested objects alive for the entire epoch.
+            # Bare id() snapshots can be fooled by allocator address reuse if
+            # reflection replaces a frozen scope/metadata and frees the old one.
+            record.scope, record.metadata,
+        )
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise MemorySchemaError("decoded Memory record carrier changed") from exc
+
+
+def _record(row: sqlite3.Row) -> MemoryRecord:
+    """Reject tampered on-disk identity, digests and storage classes on reads.
+
+    This does not attest the writer or verify an independent history root.
+    It preserves the existing v1 schema and the current public record contract.
+    """
+    def stored_text(column: str) -> str:
+        value = row[column]
+        if type(value) is not str:
+            raise MemorySchemaError(f"stored {column} must be SQLite TEXT")
+        return value
+
+    def stored_int(column: str, *, nullable: bool = False) -> int | None:
+        value = row[column]
+        if value is None and nullable:
+            return None
+        if type(value) is not int or value < 0:
+            raise MemorySchemaError(f"stored {column} must be non-negative SQLite INTEGER")
+        return value
+
+    owner_id = stored_text("owner_id")
+    namespace = stored_text("namespace")
+    source_id = stored_text("source_id")
+    memory_id = stored_text("memory_id")
+    content = stored_text("content")
+    content_sha = stored_text("content_sha256")
+    metadata_json = stored_text("metadata_json")
+    created = stored_int("created_at_ms")
+    updated = stored_int("updated_at_ms")
+    expires = stored_int("expires_at_ms", nullable=True)
+    revision = stored_int("revision")
+    if revision is None or revision < 1:
+        raise MemorySchemaError("stored revision must be a positive integer")
+    try:
+        scope = MemoryScope(owner_id, namespace)
+        expected_id = deterministic_memory_id(scope, source_id)
+    except (TypeError, ValueError) as exc:
+        raise MemorySchemaError("stored memory scope or source is invalid") from exc
+    if memory_id != expected_id:
+        raise MemorySchemaError("stored memory identity digest does not match")
+    # SQLite can retain canonical rows written by another local process or
+    # manually edited after startup. Apply the same v1 ingress budgets on
+    # hydration; a correct hash alone does not make oversized data valid.
+    if not source_id.strip() or len(source_id) > 512:
+        raise MemorySchemaError("stored source_id exceeds MemoryWrite bounds")
+    if not content.strip() or len(content) > 1_000_000:
+        raise MemorySchemaError("stored content exceeds MemoryWrite bounds")
+    if content_sha != hashlib.sha256(content.encode()).hexdigest():
+        raise MemorySchemaError("stored memory content digest does not match")
+    try:
+        metadata = json.loads(metadata_json)
+    except (TypeError, ValueError) as exc:
+        raise MemorySchemaError("stored metadata JSON is invalid") from exc
+    if not isinstance(metadata, dict) or not all(
+        type(k) is str and type(v) is str for k, v in metadata.items()
+    ):
+        raise MemorySchemaError("stored metadata is not an exact string mapping")
+    if len(metadata) > 64 or any(
+        not key.strip() or len(key) > 4096 or len(value) > 4096
+        for key, value in metadata.items()
+    ):
+        raise MemorySchemaError("stored metadata exceeds MemoryWrite bounds")
+    canonical = json.dumps(
+        metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    if canonical != metadata_json:
+        raise MemorySchemaError("stored metadata is not canonical JSON")
+    return MemoryRecord(
+        memory_id, scope, source_id, content, metadata, created, updated,
+        expires, revision, content_sha,
+    )
+
+
+def _expired(record: MemoryRecord, now: int) -> bool:
+    return record.expires_at_ms is not None and record.expires_at_ms <= now
+
+
+def _memory_id(value: object) -> None:
+    if not isinstance(value, str) or re.fullmatch(r"mem_[0-9a-f]{64}", value) is None:
+        raise ValueError("memory_id must be a canonical deterministic memory ID")
+
+
+def _revision(value: object, *, allow_zero: bool) -> None:
+    minimum = 0 if allow_zero else 1
+    if type(value) is not int or not minimum <= value <= SQLITE_INT_MAX:
+        raise ValueError(f"expected_revision must be an integer >= {minimum}")
+
+
+def _tokens(text: str) -> set[str]:
+    normalized = unicodedata.normalize("NFKC", text).casefold()
+    result: set[str] = set()
+    for match in _TOKEN_RE.finditer(normalized):
+        chunk = match.group(0)
+        result.add(chunk)
+        if any(
+            "\u3040" <= char <= "\u30ff"
+            or "\u3400" <= char <= "\u9fff"
+            or "\uff66" <= char <= "\uff9f"
+            for char in chunk
+        ) and len(chunk) >= 2:
+            result.update(chunk[i : i + 2] for i in range(len(chunk) - 1))
+    return result

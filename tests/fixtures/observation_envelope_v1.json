@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "kind": "transcript",
+  "source_id": "s",
+  "adapter_id": "a",
+  "privacy_scope": "p",
+  "ingested_at_ms": 1,
+  "content_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "parent_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "expected_observation_id": "obs_e2e66d490467566c58307581de449f278a2bf9755685af1343d66c458513b3d0"
+}

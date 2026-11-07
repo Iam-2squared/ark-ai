@@ -13,6 +13,9 @@ env:
 
 jobs:
   test:
+    # Bound runner time without skipping or weakening any matrix test.
+    # A timeout fails the job; stalled pytest error rendering is not PASS.
+    timeout-minutes: 45
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
