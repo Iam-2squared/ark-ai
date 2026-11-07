@@ -47,7 +47,8 @@ def test_substituted_initializer_is_not_executed(
                 return old_sha256(data)
 
             patch.setattr(adapters.hashlib, "sha256", changed_hash)
-        with pytest.raises(ValueError, match="non-envelope"):
+        expected = "digest implementation" if phase == "digest" else "non-envelope"
+        with pytest.raises(ValueError, match=expected):
             _fixture(binary)
 
     assert calls == []
