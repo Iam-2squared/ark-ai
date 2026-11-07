@@ -82,18 +82,20 @@ def test_batch_rejects_non_exact_or_unbounded_input():
 
 def test_reflective_field_change_during_chain_digest_fails(monkeypatch):
     first, second = _chain()
-    original = review.hashlib.sha256
+    calls = []
 
     def modify(data):
-        if data.startswith(review._DOMAIN):
-            object.__setattr__(first, "privacy_scope", "local:other")
-        return original(data)
+        calls.append(data)
+        object.__setattr__(first, "privacy_scope", "local:other")
+        raise AssertionError("substituted chain digest must not execute")
 
     monkeypatch.setattr(review.hashlib, "sha256", modify)
     with pytest.raises(
-        review.ObservationFixtureChainRejected, match="changed during review",
+        review.ObservationFixtureChainRejected,
+        match="digest implementation changed",
     ):
         _inspect((first, second))
+    assert calls == []
 
 
 @pytest.mark.parametrize("name", review._DENIALS)
