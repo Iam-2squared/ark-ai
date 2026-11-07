@@ -89,7 +89,7 @@ def test_outcome_review_rejects_invalid_scope_before_private_sqlite(
         pytest.fail("manual outcome review must not read malformed scope")
 
     monkeypatch.setattr(store, "_connect_readonly", forbidden)
-    with pytest.raises(MemoryCASOutcomeRejected, match="scope and source"):
+    with pytest.raises(MemoryCASOutcomeRejected, match="valid UTF-8 scope"):
         review_memory_generation_cas_outcome(store, proposed, retained=retained)
 
 
