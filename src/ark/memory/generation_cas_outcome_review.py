@@ -14,6 +14,7 @@ import json
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from .contracts import (
     MemoryConflictError,
@@ -34,7 +35,7 @@ from .generation_fenced_cas import (
     _snapshot,
     _token_fields,
 )
-from .sqlite_store import SQLiteMemoryStore, deterministic_memory_id
+from .sqlite_store import SQLITE_INT_MAX, SQLiteMemoryStore, deterministic_memory_id
 
 _DOMAIN = b"ARK-memory-generation-cas-ambiguous-observation-v1\0"
 _DENIED = (
@@ -180,7 +181,10 @@ def review_memory_generation_cas_outcome(
         raise MemoryCASOutcomeRejected(
             "CAS observation requires bounded valid UTF-8 source"
         ) from exc
-    if type(content) is not str or len(content) > 1_000_000:
+    if (
+        type(content) is not str or not content.strip()
+        or len(content) > 1_000_000
+    ):
         raise MemoryCASOutcomeRejected("CAS observation requires exact bounded content")
     try:
         content_bytes = content.encode("utf-8", errors="strict")
@@ -190,6 +194,12 @@ def review_memory_generation_cas_outcome(
         ) from exc
     metadata = proposed.metadata
     expiry = proposed.expires_at_ms
+    if expiry is not None and (
+        type(expiry) is not int or not 0 <= expiry <= SQLITE_INT_MAX
+    ):
+        raise MemoryCASOutcomeRejected("CAS observation requires SQLite-range expiry")
+    if type(metadata) not in (dict, MappingProxyType) or len(metadata) > 64:
+        raise MemoryCASOutcomeRejected("CAS observation requires bounded plain metadata")
     # MemoryWrite's frozen v1 initializer validates metadata, but an opt-in
     # review can be given a reflectively changed proposal after construction.
     # Do not inspect a private SQLite row for a payload that cannot be
