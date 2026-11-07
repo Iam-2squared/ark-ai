@@ -48,6 +48,35 @@ record, physical-PC result, or evidence of any live action.
   caller or supplies consent/retry/external-dispatch authority. Frozen Memory v1
   schema and public put/delete contracts are unchanged.
 
+## Compatibility CI failures and semantics-preserving corrections
+
+- Production occurrence prehash guard triggered **three** previously valid
+  fault-injection scenarios at a *different, earlier* boundary. The pre-fix
+  [CI #42422227996](https://github.com/Iam-2squared/ark-ai/actions/runs/42422227996)
+  had three Ubuntu failures when last inspected: legacy mock audit marker
+  injection, mock receipt-constructor injection, and a synthetic receipt
+  class injection during token hashing. [#42422306207](https://github.com/Iam-2squared/ark-ai/actions/runs/42422306207)
+  inherited those same three failures while other jobs were pending. These
+  are **real failures**, not PASS evidence.
+- Corrected through ordinary GitHub Contents API updates:
+  `tests/test_mock_cycle_audit_receipt_epoch_run400.py` at commits
+  `cfcc11ef334055c18b1b514c9018d86847eec289`,
+  `55fb32f715becb36ecc430c660e622eef9a9bf24`;
+  `tests/test_mock_cycle_receipt_constructor_custody_run618.py` at
+  `ae1e2ed56a48ce23668e6cb4a4c9f59d6fb73146`,
+  `e0cfec2295405e8f34d1773870b5e42671d7c7b0`;
+  and `tests/test_synthetic_reservation_receipt_class_custody_run607.py`
+  at `82ab196f8a4df30a42a350ed0b006b5c2e9081e6`.
+- Mock Planner RUNNING is durably appended **before** one-shot occurrence
+  reservation. The corrected tests therefore require a retained ambiguous
+  RUNNING step with **zero** occurrence rows and **zero** audit rows after
+  early digest refusal; the injected digest or receipt constructor never
+  runs. A failed mock cycle never automatically retries UNKNOWN WRITE.
+  The post-COMMIT forged-receipt scenario continues to require one retained
+  reservation and rejection of replay. **No production guard was relaxed.**
+- The corrected-source CI is independent from failed earlier HEADs and
+  remains to be attested **6/6 GREEN**. Do not infer success from test edits.
+
 ## CI evidence / known limitations
 
 - After A: [#42421918089](https://github.com/Iam-2squared/ark-ai/actions/runs/42421918089)
