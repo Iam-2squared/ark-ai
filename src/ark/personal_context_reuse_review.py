@@ -73,6 +73,11 @@ _REUSE_RESULT_ORIGINAL_HOOKS = tuple(
 
 
 def _require_original_reuse_receipt() -> None:
+    # An exported result-class alias can be rebound without touching the
+    # original class's descriptors. Reject that before any private SQLite
+    # projection, not only after invoking a counterfeit constructor.
+    if SyntheticContextReuseReview is not _REUSE_RESULT_TYPE:
+        raise SyntheticContextReuseRejected("context reuse receipt carrier changed")
     for names, originals in (
         (_REUSE_RESULT_FIELDS, _REUSE_RESULT_ORIGINAL_FIELDS),
         (_REUSE_RESULT_DENIALS, _REUSE_RESULT_ORIGINAL_DENIALS),
