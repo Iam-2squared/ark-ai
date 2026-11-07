@@ -47,6 +47,15 @@ def _text(name: str, value: object) -> None:
         raise ValueError(f"{name} must be a nonempty exact string")
     if len(value) > 512:
         raise ValueError(f"{name} exceeds policy string budget")
+    # The persisted trigger digest serializes policy text in UTF-8. Treat a
+    # 512-character multibyte label as over-budget and reject unpaired
+    # surrogates before hashing, SQLite access or scheduler decisions.
+    try:
+        size = len(value.encode("utf-8", errors="strict"))
+    except UnicodeError as exc:
+        raise ValueError(f"{name} must be valid UTF-8") from exc
+    if size > 512:
+        raise ValueError(f"{name} exceeds policy string budget")
 
 
 def _int(name: str, value: object, *, minimum: int = 0) -> None:
