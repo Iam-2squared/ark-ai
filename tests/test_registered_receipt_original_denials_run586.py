@@ -140,11 +140,14 @@ def test_original_link_and_review_are_digest_only_and_inert(tmp_path):
 @pytest.mark.parametrize(
     ("carrier", "name"),
     (
+        # Isolate __new__ mutations in a child process if subsequently tested:
+        # restoring inherited object.__new__ through monkeypatch can poison
+        # subsequent dataclass constructors in this pytest interpreter.
         tuple(("review", name) for name in (
-            *review._REVIEW_FIELDS, *review._REVIEW_HOOKS,
+            *review._REVIEW_FIELDS, "__init__", "__getattribute__", "__getattr__",
         ))
         + tuple(("link", name) for name in (
-            *review._LINK_FIELDS, *review._LINK_HOOKS,
+            *review._LINK_FIELDS, "__init__", "__getattribute__", "__getattr__",
         ))
     ),
 )
