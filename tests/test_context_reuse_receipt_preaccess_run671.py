@@ -80,10 +80,16 @@ def test_result_class_rebound_to_authorizing_object_is_rejected(
         def context_use_authorized(self):
             return True
 
+    def forbidden_projection(*_args, **_kwargs):
+        pytest.fail("counterfeit result class reached private Memory projection")
+
     monkeypatch.setattr(reuse, "SyntheticContextReuseReview", Counterfeit)
+    monkeypatch.setattr(
+        reuse, "review_fresh_nonrevoked_context", forbidden_projection,
+    )
     with pytest.raises(
         reuse.SyntheticContextReuseRejected,
-        match="receipt changed during construction",
+        match="receipt carrier changed",
     ):
         _review(state)
     assert original is not Counterfeit
