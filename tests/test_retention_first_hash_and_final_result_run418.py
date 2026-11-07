@@ -11,7 +11,10 @@ import pytest
 import ark.personal_context_retention_review as review
 from ark.memory.contracts import MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
-from ark.personal_context_revocation_review import SyntheticContextRevocationLedger
+from ark.personal_context_revocation_review import (
+    SyntheticContextRevocationLedger,
+    SyntheticContextRevocationRejected,
+)
 
 
 def _state(tmp_path):
@@ -102,9 +105,15 @@ def test_final_hash_callback_cannot_retarget_inventory_inputs(
         return wrapped
 
     monkeypatch.setattr(review.hashlib, "sha256", hostile_sha256)
-    with pytest.raises(review.SyntheticRetentionRejected, match="changed"):
+    # Privacy veto continuity now pins SHA-256 at ingress, so this
+    # preinstalled digest substitution is refused before any callback
+    # can rebase the retention source or private content.
+    with pytest.raises(
+        SyntheticContextRevocationRejected,
+        match="revocation digest implementation changed",
+    ):
         review.review_synthetic_retention_inventory(*state, now_ms=100)
-    assert callbacks == 1
+    assert callbacks == 0
 
 
 def test_modified_inventory_constructor_is_rejected_without_running(
