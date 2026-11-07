@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import replace
 
 import pytest
-
 from test_planner_diamond_independent_read_receipts_run690 import _diamond
 
 from ark.agency.disconnected_planner_success_bundle_review import (
