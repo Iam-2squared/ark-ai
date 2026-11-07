@@ -136,6 +136,7 @@ def test_final_result_constructor_cannot_rewrite_cancellation_evidence(
     original_read = SyntheticCancellationLedger.review_state
     original_init = fence.SyntheticApprovalFenceReview.__init__
     seen = []
+    constructor_calls = []
 
     def recorded(self, *args, **kwargs):
         result = original_read(self, *args, **kwargs)
@@ -143,6 +144,7 @@ def test_final_result_constructor_cannot_rewrite_cancellation_evidence(
         return result
 
     def modified(self, *args, **kwargs):
+        constructor_calls.append(target)
         original_init(self, *args, **kwargs)
         if target == "final_witness":
             witness = seen[-1].witness
@@ -154,9 +156,15 @@ def test_final_result_constructor_cannot_rewrite_cancellation_evidence(
 
     monkeypatch.setattr(SyntheticCancellationLedger, "review_state", recorded)
     monkeypatch.setattr(fence.SyntheticApprovalFenceReview, "__init__", modified)
-    with pytest.raises(fence.SyntheticApprovalFenceRejected, match="final|result"):
+    # The new pre-SQL definition guard must reject the patched constructor
+    # before it or either cancellation-history read can execute.
+    with pytest.raises(
+        fence.SyntheticApprovalFenceRejected,
+        match="synthetic approval fence output changed",
+    ):
         _review(state)
-    assert len(seen) == 2
+    assert constructor_calls == []
+    assert seen == []
 
 
 @pytest.mark.parametrize("target", ("claim", "call"))
