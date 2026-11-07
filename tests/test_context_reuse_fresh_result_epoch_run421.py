@@ -70,7 +70,10 @@ def test_receipt_constructor_cannot_retarget_fresh_projection(
     monkeypatch.setattr(reuse, "review_fresh_nonrevoked_context", project)
     monkeypatch.setattr(reuse, "SyntheticContextReuseReview", receipt)
     # The counterfeit receipt class is now denied before private projection.
-    with pytest.raises(reuse.SyntheticContextReuseRejected, match="context reuse receipt carrier changed"):
+    with pytest.raises(
+        reuse.SyntheticContextReuseRejected,
+        match="context reuse receipt carrier changed",
+    ):
         _review(state)
     assert fresh_holder == []
     assert reuse.SyntheticContextReuseReview is receipt
