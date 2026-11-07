@@ -67,7 +67,21 @@ _DENIAL_NAMES = (
 # install a False-only stand-in. Capturing them only after four SQLite reads
 # would wrongly bless a preinstalled substitute as the expected descriptor.
 _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
-    getattr(_RESULT_TYPE, key) for key in _DENIAL_NAMES
+    vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES
+)
+# Result slots and inherited lookup hooks can be replaced even on a frozen
+# dataclass. A forged descriptor may read or leak private inventory fields
+# before a later False-only authority check. Verify its import-time identity
+# BEFORE the first personal-context SQLite projection.
+_RESULT_FIELDS = (
+    "scope_digest", "captured_inventory_digest", "current_inventory_digest",
+    "checked_at_ms", "expired_memory_ids", "unbounded_memory_ids",
+    "scope_revoked",
+)
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[key] for key in _RESULT_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT_TYPE).get(key) for key in _RESULT_HOOKS
 )
 
 
@@ -75,10 +89,13 @@ def _assert_original_denials() -> None:
     if (
         SyntheticRetentionRecheck is not _RESULT_TYPE
         or any(
-            getattr(_RESULT_TYPE, key) is not descriptor
-            for key, descriptor in zip(
-                _DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS, strict=True,
+            vars(_RESULT_TYPE).get(key) is not descriptor
+            for names, originals in (
+                (_DENIAL_NAMES, _ORIGINAL_DENIAL_DESCRIPTORS),
+                (_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS),
             )
+            for key, descriptor in zip(names, originals, strict=True)
         )
     ):
         raise SyntheticRetentionRecheckRejected(
