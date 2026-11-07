@@ -9,7 +9,6 @@ Four stores remain non-atomic; no real backend is invoked.
 from __future__ import annotations
 
 import pytest
-
 from test_synthetic_mock_sidecar_cycle_run374 import _run, _setup
 
 from ark.agency.contracts import OneShotAuthorization, PlanStep, ToolCall
