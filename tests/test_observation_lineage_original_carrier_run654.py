@@ -75,7 +75,7 @@ def test_preinstalled_lineage_result_hook_never_reads_private_window(
 @pytest.mark.parametrize("name", (
     "privacy_scope", "lineage_digest", "__init__", "dispatch_authorized",
 ))
-def test_late_serialization_callback_cannot_install_result_code(
+def test_digest_guard_blocks_serialization_callback_before_result_code(
     monkeypatch, name,
 ):
     hits = []
@@ -90,12 +90,14 @@ def test_late_serialization_callback_cannot_install_result_code(
         return payload
 
     monkeypatch.setattr(lineage.json, "dumps", serialized_then_swap)
+    # The import-time digest implementation is pinned before private reads;
+    # the injected serializer cannot run and cannot install result code.
     with pytest.raises(
         lineage.SyntheticObservationLineageRejected,
-        match="result changed: authority",
+        match="digest implementation changed",
     ):
         _review()
-    assert serialized == [1]
+    assert serialized == []
     assert hits == []
 
 
