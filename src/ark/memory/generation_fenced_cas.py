@@ -17,6 +17,7 @@ import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from .contracts import (
     MemoryConflictError,
@@ -415,7 +416,41 @@ def generation_fenced_memory_update(
     original_source, original_content = write.source_id, write.content
     original_metadata, original_expiry = write.metadata, write.expires_at_ms
     original_path = store.path
+    # MemoryWrite's constructor normalized these fields, but callers can
+    # reflectively replace frozen slots after construction. Reject malformed
+    # proposals before hashing identities or opening private SQLite. Frozen
+    # Memory v1 remains unchanged; this is only the opt-in CAS path.
+    if (
+        type(original_content) is not str
+        or not original_content.strip()
+        or len(original_content) > 1_000_000
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation CAS requires exact bounded content"
+        )
+    if original_expiry is not None and (
+        type(original_expiry) is not int
+        or not 0 <= original_expiry <= SQLITE_INT_MAX
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation CAS requires SQLite-range expiry"
+        )
+    if (
+        type(original_metadata) not in (dict, MappingProxyType)
+        or len(original_metadata) > 64
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation CAS requires bounded plain metadata"
+        )
     metadata = dict(original_metadata)
+    if any(
+        type(key) is not str or not key.strip() or len(key) > 4096
+        or type(value) is not str or len(value) > 4096
+        for key, value in metadata.items()
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation CAS requires bounded string metadata"
+        )
     expected_id = deterministic_memory_id(original_scope, original_source)
     if pinned_token[0] != expected_id:
         raise MemoryConflictError("generation token does not match target identity")
