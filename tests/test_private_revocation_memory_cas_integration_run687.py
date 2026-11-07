@@ -75,7 +75,7 @@ def test_revocation_remains_scoped_across_independent_cas_and_cold_readers(
     # change the revoked scope's inventory or the independent veto chain.
     foreign_token = observe_memory_generation_for_cas(second, unrelated, "source")
     foreign_update = generation_fenced_memory_update(
-        first,
+        SQLiteMemoryStore(path, clock_ms=lambda: 130),
         MemoryWrite(unrelated, "source", "foreign-after", expires_at_ms=250),
         retained=foreign_token,
     )
