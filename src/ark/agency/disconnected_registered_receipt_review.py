@@ -81,26 +81,46 @@ _REVIEW_DENIALS = (
 _ORIGINAL_REVIEW_DENIALS = tuple(
     vars(_REVIEW_TYPE)[name] for name in _REVIEW_DENIALS
 )
+# Frozen instances do not freeze their class. Original result/link slot
+# descriptors and allocation/lookup hooks must survive before the first
+# retained SQLite read, even when a replacement returns an inert False.
+_REVIEW_FIELDS = (
+    "step_id", "action_request_id", "fixture_request_id",
+    "link_sha256", "journal_count", "journal_tip_sha256",
+)
+_REVIEW_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REVIEW_FIELDS = tuple(
+    vars(_REVIEW_TYPE)[name] for name in _REVIEW_FIELDS
+)
+_ORIGINAL_REVIEW_HOOKS = tuple(
+    vars(_REVIEW_TYPE).get(name) for name in _REVIEW_HOOKS
+)
 _LINK_TYPE = RegisteredFixtureLink
 _ORIGINAL_LINK_DENIALS = tuple(
     vars(_LINK_TYPE)[name] for name in _LINK_DENIALS
+)
+_LINK_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_LINK_FIELDS = tuple(vars(_LINK_TYPE)[name] for name in _LINK_FIELDS)
+_ORIGINAL_LINK_HOOKS = tuple(
+    vars(_LINK_TYPE).get(name) for name in _LINK_HOOKS
 )
 
 
 def _assert_original_denial_definitions() -> None:
     if (
         RegisteredReceiptReview is not _REVIEW_TYPE
+        or RegisteredFixtureLink is not _LINK_TYPE
         or any(
-            vars(_REVIEW_TYPE).get(name) is not descriptor
-            for name, descriptor in zip(
-                _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS, strict=True,
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_REVIEW_TYPE, _REVIEW_FIELDS, _ORIGINAL_REVIEW_FIELDS),
+                (_REVIEW_TYPE, _REVIEW_HOOKS, _ORIGINAL_REVIEW_HOOKS),
+                (_REVIEW_TYPE, _REVIEW_DENIALS, _ORIGINAL_REVIEW_DENIALS),
+                (_LINK_TYPE, _LINK_FIELDS, _ORIGINAL_LINK_FIELDS),
+                (_LINK_TYPE, _LINK_HOOKS, _ORIGINAL_LINK_HOOKS),
+                (_LINK_TYPE, _LINK_DENIALS, _ORIGINAL_LINK_DENIALS),
             )
-        )
-        or any(
-            vars(_LINK_TYPE).get(name) is not descriptor
-            for name, descriptor in zip(
-                _LINK_DENIALS, _ORIGINAL_LINK_DENIALS, strict=True,
-            )
+            for name, original in zip(names, originals, strict=True)
         )
     ):
         raise RegisteredReceiptReviewRejected(
