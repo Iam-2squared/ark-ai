@@ -138,6 +138,32 @@ def _require_bounded_source_id(source_id: object) -> None:
         )
 
 
+
+def _require_bounded_scope(scope: MemoryScope) -> None:
+    """Validate opt-in generation identities without changing frozen Memory v1.
+
+    Legacy MemoryScope is character-bounded; generation CAS requires exact,
+    well-formed and byte-bounded UTF-8 identifiers before hashing or SQLite.
+    """
+    if type(scope) is not MemoryScope:
+        raise MemoryGenerationCASRejected("exact generation scope required")
+    for name in ("owner_id", "namespace"):
+        value = getattr(scope, name)
+        if type(value) is not str or not value.strip() or len(value) > 256:
+            raise MemoryGenerationCASRejected("exact bounded generation scope required")
+        try:
+            size = len(value.encode("utf-8", errors="strict"))
+        except UnicodeEncodeError as exc:
+            raise MemoryGenerationCASRejected(
+                "generation scope is not valid UTF-8"
+            ) from exc
+        if size > 256:
+            raise MemoryGenerationCASRejected(
+                "generation scope exceeds 256 UTF-8 bytes"
+            )
+
+
+
 def _digest(domain: bytes, fields: object) -> str:
     return hashlib.sha256(
         domain + json.dumps(
@@ -305,6 +331,7 @@ def observe_memory_generation_for_cas(
     ):
         raise MemoryGenerationCASRejected("exact generation observation inputs required")
     _require_original_token_denials()
+    _require_bounded_scope(scope)
     _require_bounded_source_id(source_id)
     owner, namespace, path = scope.owner_id, scope.namespace, store.path
     memory_id = deterministic_memory_id(scope, source_id)
@@ -374,6 +401,7 @@ def generation_fenced_memory_update(
     ):
         raise MemoryGenerationCASRejected("exact Memory generation write inputs required")
     _require_original_token_denials()
+    _require_bounded_scope(write.scope)
     _require_bounded_source_id(write.source_id)
     pinned_token = _token_fields(retained)
     original_scope = write.scope
