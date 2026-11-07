@@ -243,6 +243,7 @@ def review_synthetic_succeeded_read_correlation(
         or type(link_epoch[6]) is not str or _SHA.fullmatch(link_epoch[6]) is None
         or type(review_epoch[4]) is not int or review_epoch[4] < 1
         or type(review_epoch[5]) is not str
+        or _SHA.fullmatch(review_epoch[5]) is None
         or (
             review_epoch[0], review_epoch[1], review_epoch[2], review_epoch[3]
         ) != (link_epoch[0], link_epoch[1], link_epoch[2], link_epoch[7])
