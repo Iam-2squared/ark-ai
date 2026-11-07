@@ -53,7 +53,9 @@ def test_counterfeit_result_class_never_constructed(tmp_path, monkeypatch):
             raise AssertionError("counterfeit must not construct")
 
     monkeypatch.setattr(freshness, "SyntheticProactiveFreshnessReview", Counterfeit)
-    with pytest.raises(SyntheticTriggerRejected, match="authority epoch"):
+    with pytest.raises(
+        SyntheticTriggerRejected, match="freshness output carrier definition changed"
+    ):
         _review(case)
     assert calls == []
 
@@ -76,9 +78,13 @@ def test_reentrant_field_check_cannot_install_executable_flag(
         return value
 
     monkeypatch.setattr(cls, "__getattribute__", intervene)
-    with pytest.raises(SyntheticTriggerRejected, match="authority epoch"):
+    # The changed __getattribute__ definition is detected before history
+    # or denial properties are accessed. Injection code never executes.
+    with pytest.raises(
+        SyntheticTriggerRejected, match="freshness output carrier definition changed"
+    ):
         _review(case)
-    assert injected == [True]
+    assert injected == [False]
     assert calls == []
 
 
@@ -97,7 +103,9 @@ def test_earlier_getter_cannot_arm_next_property(tmp_path, monkeypatch):
         return value
 
     monkeypatch.setattr(cls, "__getattribute__", intervene)
-    with pytest.raises(SyntheticTriggerRejected, match="authority epoch"):
+    with pytest.raises(
+        SyntheticTriggerRejected, match="freshness output carrier definition changed"
+    ):
         _review(case)
     assert calls == []
 
