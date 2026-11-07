@@ -44,37 +44,46 @@ def _equal_arguments_replacement(call):
     )
 
 
-def test_token_id_mutated_during_digest_cannot_reserve(tmp_path, monkeypatch):
+def test_substituted_digest_cannot_read_token_or_retarget_it(tmp_path, monkeypatch):
     ledger, registry, call, token = _fixture(tmp_path)
     real = hashlib.sha256
+    hashed = []
 
     def mutate_digest(payload=b""):
+        hashed.append(payload)
         if payload.startswith(b"ARK-synthetic-v1\0"):
             object.__setattr__(token, "token_id", "token-retargeted")
         return real(payload)
 
     monkeypatch.setattr(occurrence.hashlib, "sha256", mutate_digest)
-    with pytest.raises(SyntheticReplayRejected, match="token"):
+    with pytest.raises(SyntheticReplayRejected, match="digest implementation changed"):
         _reserve(ledger, registry, call, token)
     monkeypatch.undo()
+    assert hashed == []
+    assert token.token_id == "token-original"
     assert ledger.count_synthetic() == 0
 
 
-def test_equal_arguments_carrier_changed_during_digest_cannot_reserve(
+def test_substituted_digest_cannot_retarget_equal_arguments(
     tmp_path, monkeypatch,
 ):
     ledger, registry, call, token = _fixture(tmp_path)
     real = hashlib.sha256
+    hashed = []
+    argument_epoch = call.arguments
 
     def mutate_digest(payload=b""):
+        hashed.append(payload)
         if payload.startswith(b"ARK-synthetic-v1\0"):
             _equal_arguments_replacement(call)
         return real(payload)
 
     monkeypatch.setattr(occurrence.hashlib, "sha256", mutate_digest)
-    with pytest.raises(SyntheticReplayRejected, match="input changed"):
+    with pytest.raises(SyntheticReplayRejected, match="digest implementation changed"):
         _reserve(ledger, registry, call, token)
     monkeypatch.undo()
+    assert hashed == []
+    assert call.arguments is argument_epoch
     assert ledger.count_synthetic() == 0
 
 
