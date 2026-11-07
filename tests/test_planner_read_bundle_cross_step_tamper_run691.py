@@ -53,7 +53,7 @@ def test_recovered_diamond_rejects_cross_step_or_mutated_receipt(
             )
         elif fault == "change_journal_tip":
             changed[0] = (
-                first_link, replace(first_review, journal_tip_sha256="0" * 64),
+                first_link, replace(first_review, journal_tip_sha256="not-a-digest"),
             )
         elif fault == "change_action_id":
             changed[0] = (
