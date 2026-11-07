@@ -77,7 +77,7 @@ def _originals() -> None:
             for key, original in zip(_FIELDS + _DENIALS + _HOOKS, _ORIGINALS, strict=True)
         )
     ):
-        raise PlannerReadSuccessBundleRejected("bundle output carrier or callback changed")
+        raise PlannerReadSuccessBundleRejected("bundle output carrier changed or callback changed")
 
 
 def review_synthetic_succeeded_read_bundle(
