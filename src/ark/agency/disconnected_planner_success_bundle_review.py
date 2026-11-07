@@ -68,7 +68,10 @@ def _originals() -> None:
     single._originals()
     if (
         PlannerReadSuccessBundle is not _RESULT
-        or single.review_synthetic_succeeded_read_correlation is not _ORIGINAL_SINGLE_REVIEW
+        or (
+            single.review_synthetic_succeeded_read_correlation
+            is not _ORIGINAL_SINGLE_REVIEW
+        )
         or any(
             vars(_RESULT).get(key) is not original
             for key, original in zip(_FIELDS + _DENIALS + _HOOKS, _ORIGINALS, strict=True)
