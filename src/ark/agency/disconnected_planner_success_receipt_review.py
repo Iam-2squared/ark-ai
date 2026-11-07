@@ -69,9 +69,27 @@ _DENIALS = (
 )
 _HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL = tuple(vars(_RESULT).get(name) for name in _FIELDS + _DENIALS + _HOOKS)
+# The per-step join is also callable without the outer all-success bundle.
+# Pin its local digest primitives and domain before inspecting any supplied
+# recovered/journal evidence; digest equality is never independent custody.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 def _originals() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise PlannerSucceededReadCorrelationRejected(
+            "correlation digest implementation or domain changed"
+        )
     journal._require_original_recovery_denials()
     registered._assert_original_denial_definitions()
     if (
