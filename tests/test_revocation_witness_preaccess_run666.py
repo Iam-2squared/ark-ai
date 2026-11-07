@@ -80,9 +80,11 @@ def test_hash_callback_cannot_install_late_witness_constructor(
         return digest
 
     monkeypatch.setattr(continuity, "_hash", changed_hash)
+    # Hash implementation substitutions now fail before reading revocation
+    # history or invoking a callback that could replace the constructor.
     with pytest.raises(
         SyntheticContextRevocationRejected,
-        match="revocation integrity validator changed",
+        match="revocation digest implementation changed",
     ):
         continuity.review_revocation_continuity(ledger, retained=retained)
     assert executed == []
