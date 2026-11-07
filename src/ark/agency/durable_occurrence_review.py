@@ -401,19 +401,34 @@ class SyntheticOccurrenceStore:
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticReplayRejected("synthetic occurrence source must be a Path")
-        uri = path_epoch.resolve().as_uri() + "?mode=ro"
+
+        def assert_source_epoch() -> None:
+            if self._path is not path_epoch:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence source changed during count"
+                )
+
+        # Path resolution, URI construction, SQLite open and BEGIN are
+        # separate reentrant boundaries. Reject an equal-path replacement
+        # before querying a possibly unrelated private reservation ledger.
+        assert_source_epoch()
+        resolved = path_epoch.resolve()
+        assert_source_epoch()
+        uri = resolved.as_uri() + "?mode=ro"
+        assert_source_epoch()
         with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
+            assert_source_epoch()
             conn.execute("BEGIN")
+            assert_source_epoch()
             try:
                 _validate(conn)
+                assert_source_epoch()
                 count = conn.execute(
                     "SELECT COUNT(*) FROM synthetic_occurrence_reservations"
                 ).fetchone()[0]
-                if self._path is not path_epoch:
-                    raise SyntheticReplayRejected(
-                        "synthetic occurrence source changed during count"
-                    )
+                assert_source_epoch()
                 conn.commit()
+                assert_source_epoch()
                 return count
             except BaseException:
                 conn.rollback()
