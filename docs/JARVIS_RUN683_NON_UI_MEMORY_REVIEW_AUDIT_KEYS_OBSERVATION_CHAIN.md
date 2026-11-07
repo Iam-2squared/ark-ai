@@ -68,6 +68,20 @@ Automatic PR CI run IDs observed during implementation:
 - B: [#42360939761](https://github.com/Iam-2squared/ark-ai/actions/runs/42360939761)
 - Final C source+tests: [#42361110462](https://github.com/Iam-2squared/ark-ai/actions/runs/42361110462)
 
+## Intermediate CI regression and narrow repair
+
+[CI #42360939761](https://github.com/Iam-2squared/ark-ai/actions/runs/42360939761)
+at the initial audit-test HEAD `54c86052117044ed213dd43c61c9bf15c38ee6ae`
+reported Ubuntu Python 3.11/3.12/3.13 **FAIL**; Python 3.11 log:
+**2 FAIL / 10,346 PASS / 1 SKIP**. Both FAIL were the
+`linked`-phase cases: the new fixture used outcome
+`synthetic_preaction_only`, while the untouched linker explicitly requires
+`synthetic_audit_before_mock`. The tests were corrected **only** in
+`a6423956ccc4c6f0f4b26ac17b7ead2ea06efac7`.
+No synthetic audit source, actual permission check or early denial was relaxed.
+The superseded FAIL is not evidence against the corrected exact HEAD;
+automatic new-head CI must separately pass.
+
 The automatic jobs may be in progress when this report is written; a
 documentation/status commit creates a newer exact HEAD and a distinct CI.
 Do not inherit GREEN from an ancestor. No duplicate manual workflow runs.
