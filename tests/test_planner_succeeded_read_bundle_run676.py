@@ -245,3 +245,54 @@ def test_substituted_correlation_callback_cannot_supply_receipt(
         assert backend.calls == 0
     finally:
         journal.close()
+
+
+@pytest.mark.parametrize(
+    "changed_dependency",
+    ("single_originals", "tail_stability", "link_schema", "review_schema"),
+)
+def test_bundle_pins_original_nested_custody_checks_before_correlating(
+    tmp_path, monkeypatch, changed_dependency,
+):
+    journal, steps, recovered, evidence, backend = _multi(tmp_path)
+    invoked = []
+
+    def forbidden(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise AssertionError("substituted dependency hook was executed")
+
+    try:
+        with monkeypatch.context() as patch:
+            if changed_dependency == "single_originals":
+                patch.setattr(bundle.single, "_originals", forbidden)
+            elif changed_dependency == "tail_stability":
+                patch.setattr(
+                    bundle.journal, "_retained_tail_epoch_stable", forbidden,
+                )
+            elif changed_dependency == "link_schema":
+                original = bundle.registered._LINK_FIELDS
+                patch.setattr(
+                    bundle.registered, "_LINK_FIELDS", tuple(list(original)),
+                )
+            else:
+                original = bundle.registered._REVIEW_FIELDS
+                patch.setattr(
+                    bundle.registered, "_REVIEW_FIELDS", tuple(list(original)),
+                )
+            with pytest.raises(
+                bundle.PlannerReadSuccessBundleRejected,
+                match="dependency callback or schema changed",
+            ):
+                bundle.review_synthetic_succeeded_read_bundle(
+                    recovered, steps, evidence,
+                )
+
+        assert invoked == []
+        restored = bundle.review_synthetic_succeeded_read_bundle(
+            recovered, steps, evidence,
+        )
+        assert restored.step_ids == (FIRST, SECOND)
+        assert restored.dispatch_authorized is False
+        assert backend.calls == 0
+    finally:
+        journal.close()
