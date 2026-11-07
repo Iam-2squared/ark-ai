@@ -69,8 +69,11 @@ def test_receipt_constructor_cannot_retarget_fresh_projection(
 
     monkeypatch.setattr(reuse, "review_fresh_nonrevoked_context", project)
     monkeypatch.setattr(reuse, "SyntheticContextReuseReview", receipt)
-    with pytest.raises(reuse.SyntheticContextReuseRejected, match="fresh context changed"):
+    # The counterfeit receipt class is now denied before private projection.
+    with pytest.raises(reuse.SyntheticContextReuseRejected, match="context reuse receipt carrier changed"):
         _review(state)
+    assert fresh_holder == []
+    assert reuse.SyntheticContextReuseReview is receipt
 
 
 @pytest.mark.parametrize("target", ("rows", "witness_id"))
@@ -92,12 +95,15 @@ def test_receipt_constructor_cannot_swap_retained_veto_carriers(
         object.__setattr__(retained, target, clone)
         return receipt_class(*args)
 
+    original_rows, original_witness_id = retained.rows, retained.witness_id
     monkeypatch.setattr(reuse, "SyntheticContextReuseReview", receipt)
     with pytest.raises(
         reuse.SyntheticContextReuseRejected,
-        match="retained revocation witness changed",
+        match="context reuse receipt carrier changed",
     ):
         _review(state, retained=retained)
+    assert retained.rows is original_rows
+    assert retained.witness_id is original_witness_id
 
 
 def test_unmodified_fresh_and_retained_veto_remain_inert(tmp_path):
