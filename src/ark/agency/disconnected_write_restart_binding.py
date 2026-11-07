@@ -79,6 +79,23 @@ _ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS
 _DOMAIN = b"ARK-disconnected-write-restart-binding-v1\0"
 
 
+
+# The retained WRITE diagnostic must not run a substituted serializer or hash
+# while reviewing private fixture evidence. This is process-local definition
+# custody only; it provides no independent provenance or trusted audit clock.
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DOMAIN = _DOMAIN
+
+
+def _assert_original_fingerprint_primitives() -> None:
+    if (
+        json.dumps is not _ORIGINAL_JSON_DUMPS
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise OfflineWriteRestartRejected("WRITE restart digest implementation changed")
+
 def _assert_original_report_constructor() -> None:
     # The inert report is constructed only after SQLite and Planner callbacks.
     # Check field descriptors and lookup hooks BEFORE opening the ledger: a
@@ -125,6 +142,7 @@ def review_disconnected_write_restart(
     ):
         raise OfflineWriteRestartRejected("exact bounded WRITE restart inputs required")
     _assert_original_report_constructor()
+    _assert_original_fingerprint_primitives()
     _check_witness(retained)
     path = ledger._path
     prior_count, prior_hash = retained.count, retained.chain_sha256
@@ -138,6 +156,7 @@ def review_disconnected_write_restart(
 
     def stable() -> None:
         _assert_original_report_constructor()
+        _assert_original_fingerprint_primitives()
         if (
             type(ledger) is not _LEDGER
             or ledger._path is not path
