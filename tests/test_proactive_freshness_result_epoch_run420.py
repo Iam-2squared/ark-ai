@@ -86,8 +86,11 @@ def test_final_result_constructor_cannot_return_a_different_epoch(
     state = _fixture(tmp_path)
     review_type = module.SyntheticProactiveFreshnessReview
     original_init = review_type.__init__
+    constructor_calls = []
+    ledger_before = state[0].path.read_bytes()
 
     def changed_init(self, *args):
+        constructor_calls.append(target)
         original_init(self, *args)
         if target == "trigger_id":
             object.__setattr__(
@@ -117,10 +120,14 @@ def test_final_result_constructor_cannot_return_a_different_epoch(
             )
 
     monkeypatch.setattr(review_type, "__init__", changed_init)
+    # Construction/lookup definitions are pinned before any persisted row
+    # read. A poisoned constructor is never called, even for equal values.
     with pytest.raises(
-        SyntheticTriggerRejected, match="freshness (history|review output) changed"
+        SyntheticTriggerRejected, match="freshness output carrier definition changed"
     ):
         _review(state)
+    assert constructor_calls == []
+    assert state[0].path.read_bytes() == ledger_before
 
 
 def test_untampered_freshness_remains_deterministic_and_non_authorizing(tmp_path):
