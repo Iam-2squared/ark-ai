@@ -20,6 +20,13 @@ from .sqlite_store import SQLiteMemoryStore
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-memory-ambiguous-dual-review-v1\0"
+# Reconciliation has its own hash boundary after two read-only reviews.
+# Bind its actual digest implementation and domain before accessing SQLite.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 _TRIAGE_FN = triage_module.review_uncertain_memory_commit
 _OUTCOME_FN = outcome_module.review_memory_generation_cas_outcome
 _TRIAGE = triage_module.MemoryCommitTriage
@@ -110,6 +117,16 @@ _ORIGINAL_OUTCOME_HOOKS = tuple(vars(_OUTCOME).get(name) for name in _CARRIER_HO
 
 
 def _require_original_review_carriers() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise MemoryAmbiguityPairRejected(
+            "Memory reconciliation digest implementation or domain changed"
+        )
     # Class descriptors are executable code when accessed through getattr.
     # Inspect the original class dicts without executing a forged __get__.
     if (
