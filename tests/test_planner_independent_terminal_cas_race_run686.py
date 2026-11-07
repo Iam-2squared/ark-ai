@@ -9,7 +9,10 @@ from __future__ import annotations
 import pytest
 
 from ark.agency.contracts import (
-    PlanConflictError, PlanStep, StepState, ToolCall,
+    PlanConflictError,
+    PlanStep,
+    StepState,
+    ToolCall,
 )
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
