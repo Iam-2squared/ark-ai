@@ -49,10 +49,11 @@ def test_preinstalled_executable_envelope_field_or_validator_never_runs(
 @pytest.mark.parametrize("name", [
     "__post_init__", "content_sha256",
 ])
-def test_reentrant_hash_cannot_install_executable_envelope_accessor(
+def test_reentrant_hash_is_refused_before_executable_accessor_installation(
     monkeypatch, name,
 ):
     called = []
+    digest_called = []
     original = hashlib.sha256
 
     def forbidden(*_args):
@@ -61,6 +62,7 @@ def test_reentrant_hash_cannot_install_executable_envelope_accessor(
 
     with monkeypatch.context() as patch:
         def mutate(digest_input=b"", *args, **kwargs):
+            digest_called.append(True)
             patch.setattr(
                 ObservationEnvelope, name,
                 forbidden if name.startswith("__") else property(forbidden),
@@ -70,9 +72,10 @@ def test_reentrant_hash_cannot_install_executable_envelope_accessor(
         patch.setattr(
             adapters, "hashlib", SimpleNamespace(sha256=mutate),
         )
-        with pytest.raises(ValueError, match="definition changed"):
+        with pytest.raises(ValueError, match="digest implementation changed"):
             _text()
     assert called == []
+    assert digest_called == []
 
 
 def test_normal_local_observation_remains_minimal_and_inert():
