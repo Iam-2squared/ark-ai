@@ -69,6 +69,37 @@ class SyntheticClaimRecoveryReview:
         return False
 
 
+
+# Keep result construction and all never-authority properties at their original
+# definitions. A reflected patch can otherwise turn a diagnostic returned by
+# this cross-store review into a misleading authorization-shaped value.
+_REVIEW_CLASS = SyntheticClaimRecoveryReview
+_RESULT_MEMBERS = (
+    "approval_id", "registry_revision", "bound_action_id", "request_id",
+    "step_id", "step_state", "ambiguous_write", "matching_occurrences",
+    "cancellation_event_count", "cancellation_tail_hash", "observed_at_ms",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "human_consent_verified", "dispatch_authorized",
+    "automatic_replay_authorized", "external_outcome_known",
+)
+_ORIGINAL_RESULT_MEMBERS = tuple(
+    vars(_REVIEW_CLASS).get(name) for name in _RESULT_MEMBERS
+)
+
+
+def _assert_original_result_contract() -> None:
+    """Fail before inspecting private fixture stores or invoking callbacks."""
+    if (
+        SyntheticClaimRecoveryReview is not _REVIEW_CLASS
+        or any(
+            vars(_REVIEW_CLASS).get(name) is not original
+            for name, original in zip(
+                _RESULT_MEMBERS, _ORIGINAL_RESULT_MEMBERS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticClaimRecoveryRejected("claim recovery result contract changed")
+
 def _claim_epoch(value: SyntheticApprovalEnvelope) -> tuple[object, ...]:
     return tuple(getattr(value, field.name) for field in fields(SyntheticApprovalEnvelope))
 
@@ -101,6 +132,7 @@ def review_synthetic_claim_write_recovery(
     reads. All local epochs are checked again before returning. This cannot
     close a post-review cancellation race or attest a real-world WRITE.
     """
+    _assert_original_result_contract()
     if type(envelope) is not SyntheticApprovalEnvelope:
         raise SyntheticClaimRecoveryRejected("exact synthetic approval envelope required")
     initial = _claim_epoch(envelope)
@@ -178,6 +210,7 @@ def review_synthetic_claim_write_recovery(
         raise SyntheticClaimRecoveryRejected(
             "approval, recovery or cancellation state changed during review"
         )
+    _assert_original_result_contract()
     return SyntheticClaimRecoveryReview(
         first.approval_id, recovery.registry_revision,
         recovery.bound_action_id, recovery.request_id,
