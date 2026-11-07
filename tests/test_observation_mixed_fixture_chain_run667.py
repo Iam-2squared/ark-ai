@@ -105,3 +105,50 @@ def test_parent_cannot_be_replayed_at_past_or_equal_timestamp(when):
     )
     with pytest.raises(ObservationFixtureChainRejected):
         _review(root, child)
+
+
+def test_maximum_closed_chain_remains_digest_only_without_payload_retention():
+    observations = []
+    parent = None
+    for index in range(256):
+        row = _text(
+            f"local-observation-{index}", ObservationKind.TEXT,
+            1000 + index, parent,
+        )
+        observations.append(row)
+        parent = row.content_sha256
+
+    result = _review(*observations)
+
+    assert result.envelope_count == 256
+    assert result.first_observation_id == observations[0].observation_id
+    assert result.last_observation_id == observations[-1].observation_id
+    assert result.source_authenticated is False
+    assert result.consent_verified is False
+    assert result.dispatch_authorized is False
+    assert not hasattr(result, "payload")
+    assert not hasattr(result, "raw_bytes")
+
+
+@pytest.mark.parametrize("length", (0, 257, 512))
+def test_unbounded_or_empty_chain_is_rejected_before_any_lineage_review(length):
+    root = _text("synthetic payload", ObservationKind.TEXT, 100)
+    with pytest.raises(ObservationFixtureChainRejected, match="bounded fixture"):
+        _review(*(root for _ in range(length)))
+
+
+def test_skipping_intermediate_parent_cannot_be_recast_as_closed_lineage():
+    root = _text("private root", ObservationKind.TEXT, 100)
+    intermediate = _binary(
+        b"private image", ObservationKind.IMAGE, 101,
+        root.content_sha256,
+    )
+    bypass = _text(
+        "private transcript", ObservationKind.TRANSCRIPT, 102,
+        root.content_sha256,
+    )
+
+    with pytest.raises(
+        ObservationFixtureChainRejected, match="parent or chronology",
+    ):
+        _review(root, intermediate, bypass)
