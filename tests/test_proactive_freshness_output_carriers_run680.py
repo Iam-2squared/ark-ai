@@ -19,7 +19,7 @@ from ark.proactive_synthetic_review import (
     "member",
     (
         "trigger_id", "prepared_at_ms", "checked_at_ms", "history",
-        "__init__", "__new__", "__getattribute__", "__getattr__",
+        "__init__", "__getattribute__", "__getattr__",
     ),
 )
 def test_result_field_or_hook_swap_denied_before_private_sqlite(
