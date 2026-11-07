@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import pytest
 
+from ark import personal_context_revocation_continuity_review as continuity
 from ark.memory.contracts import MemoryScope
 from ark.personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
     SyntheticContextRevocationRejected,
 )
-from ark import personal_context_revocation_continuity_review as continuity
 
 
 @pytest.mark.parametrize("replacement", ("hash", "sha256", "dumps", "json"))
