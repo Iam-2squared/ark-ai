@@ -34,3 +34,10 @@
 2. Extend Planner cross-step retained READ evidence with immutable provenance and reentrancy checks, but do **not** let local synthetic receipts authorize normal SUCCEEDED recovery.
 3. Continue Memory COMMIT-UNKNOWN nonattribution, CAS/ABA/expiry/WAL coherent snapshots and privacy retention/revocation safety, followed by disconnected-only Registry/PermissionGate/occurrence/audit integration.
 4. A real authorized action would need independently trusted time, human authorization, durable exactly-once occurrence claims and a defensible cross-store crash protocol. Keep these as **blocked architecture gates**, not asserted accomplishments.
+
+
+## CI follow-up after source-and-test run
+
+- [CI #42335300129](https://github.com/Iam-2squared/ark-ai/actions/runs/42335300129) Ubuntu Python 3.11 **COMPLETED FAIL**: **10,209 PASS, one SKIP, one FAIL** at `tests/test_planner_succeeded_read_bundle_run676.py::test_replaced_bundle_authority_carrier_rejected_before_read_review`. The test expected the established contiguous diagnostic `carrier changed`, but the new combined text was `bundle output carrier or callback changed`.
+- The source's **error string only** was corrected in `f6159a0b65e9b5d80fb415d842b03a3dc06e2753` to `bundle output carrier changed or callback changed`, retaining compatibility with the existing carrier test and new callback test while leaving both the callback identity check and deny-only logic unchanged. This is not a safety-gate relaxation.
+- Remaining jobs and the corrected exact-HEAD CI were not considered PASS before completing. Historical failure remains recorded.
