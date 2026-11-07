@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from ark.agency.audit import SQLiteActionAudit
-from ark.agency.contracts import Effect, OneShotAuthorization, PlanStep, ToolCall
+from ark.agency.contracts import Effect, OneShotAuthorization, PlanStep, StepState, ToolCall
 from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
@@ -116,3 +116,59 @@ def test_preflight_denial_is_durable_noop_after_restart(tmp_path: Path):
     assert restarted[4].count_synthetic() == 0
     assert restarted[5].events() == []
     assert restarted[6].read_witness().event_count == 0
+
+
+@pytest.mark.parametrize(
+    ("boundary", "expected_counts", "expected_state"),
+    (
+        ("reservation", (1, 0, 0), "running"),
+        ("audit", (1, 1, 0), "running"),
+        ("link", (1, 1, 1), "running"),
+        ("terminal", (1, 1, 1), "succeeded"),
+    ),
+)
+def test_postcommit_lost_response_never_replays_a_mock_write(
+    tmp_path, monkeypatch, boundary, expected_counts, expected_state,
+):
+    """A callback can commit successfully and then lose its return value."""
+    state = _fixture(tmp_path)
+    _call, _registry, _steps, journal, ledger, audit, links = state
+    obj, method = {
+        "reservation": (ledger, "reserve_synthetic"),
+        "audit": (audit, "append"),
+        "link": (links, "link_synthetic"),
+        "terminal": (journal, "append"),
+    }[boundary]
+    original = getattr(obj, method)
+    completed = []
+
+    def commit_then_throw(*args, **kwargs):
+        result = original(*args, **kwargs)
+        if boundary == "terminal" and args[1] is not StepState.SUCCEEDED:
+            return result
+        completed.append(boundary)
+        raise RuntimeError("response lost after durable commit")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(obj, method, commit_then_throw)
+        with pytest.raises(RuntimeError, match="response lost after durable"):
+            _cycle(state)
+
+    assert completed == [boundary]
+    reopened = _restart(tmp_path, state)
+    recovery = reopened[3].recover()
+    assert recovery.step_statuses == (
+        ("root", expected_state, 2 if expected_state == "succeeded" else 1),
+    )
+    assert reopened[4].count_synthetic() == expected_counts[0]
+    assert len(reopened[5].events()) == expected_counts[1]
+    assert reopened[6].read_witness().event_count == expected_counts[2]
+    for token_id, occurrence in (
+        ("old", "first"),
+        ("fresh-but-not-consent", "another-occurrence"),
+    ):
+        with pytest.raises(SyntheticMockCycleRejected, match="cannot retry"):
+            _cycle(reopened, token_id=token_id, occurrence=occurrence)
+    assert reopened[4].count_synthetic() == expected_counts[0]
+    assert len(reopened[5].events()) == expected_counts[1]
+    assert reopened[6].read_witness().event_count == expected_counts[2]
