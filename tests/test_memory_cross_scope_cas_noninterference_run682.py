@@ -75,7 +75,12 @@ def test_foreign_events_do_not_spuriously_stale_target_cas(
     assert updated.content == "second"
     assert updated.expires_at_ms == 4000
     assert other.get(initial.memory_id, target_scope) == updated
-    assert other.events(foreign_scope) == foreign_before
+    foreign_scope_events = other.events(foreign_scope)
+    if foreign_scope == target_scope:
+        assert foreign_scope_events[:-1] == foreign_before
+        assert foreign_scope_events[-1].memory_id == initial.memory_id
+    else:
+        assert foreign_scope_events == foreign_before
     assert len(target.events(target_scope)) == len(target_before) + 1
     fresh = observe_memory_generation_for_cas(other, target_scope, "target")
     assert fresh.create_event_id == token.create_event_id
