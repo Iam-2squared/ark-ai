@@ -58,20 +58,24 @@ def test_constructor_rebound_in_hash_callback_rejected(monkeypatch, kind):
         else "OfflineRecoveryFence"
     )
     prior = mod.hashlib.sha256
+    hash_callback_calls = []
 
     def constructor(*args):
         called.append(args)
 
     def replace_on_hash(payload):
+        hash_callback_calls.append(payload)
         monkeypatch.setattr(mod, name, constructor)
         return prior(payload)
 
     monkeypatch.setattr(mod.hashlib, "sha256", replace_on_hash)
     with pytest.raises(
-        mod.OfflineRecoveryFenceRejected, match="authority descriptor changed",
+        mod.OfflineRecoveryFenceRejected,
+        match="mixed-plan digest implementation or domain changed",
     ):
         _review()
     assert called == []
+    assert hash_callback_calls == []
 
 
 def test_clean_unknown_write_remains_held_and_read_not_dispatched():
