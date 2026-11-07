@@ -13,7 +13,7 @@ was independently checked **6/6 GREEN** on Windows/Ubuntu × Python
 3.11–3.13 before these packages. That evidence is for **Run687 HEAD only**;
 it does not establish Run688 HEAD as passing.
 
-This invocation wrote **4 new focused test files and 19 parameterized cases**.
+This invocation wrote **5 new focused test files and 24 parameterized cases**.
 No production modules, frozen V1/V2/Local UI/Launcher contracts, main branch,
 Draft PR #5/#9 or UI/front-end were modified. These checks remain diagnostic
 and simulated rather than user-authorizing.
@@ -64,6 +64,18 @@ diagnostic identity. The registered READ backend is a deliberately failing
 non-executor and must remain uncalled. Even an unchanged review is never
 startup or external action authority.
 
+## E — Window freshness is not closed Observation provenance (5 cases)
+
+`tests/test_observation_window_closed_chain_separation_run688.py` at
+`73105fbea1d4405397bd359ea0798dea89f2057f` contrasts a legitimate
+`ObservationWindowReview` age/privacy-scope freshness check with the stricter
+`review_disconnected_fixture_chain` linear-history requirement. A fresh
+window must not launder four malformed closed histories (skipped immediate
+parent, duplicate content digest, non-increasing timestamps or source drift).
+The valid two-envelope fixture remains deterministic and denial-only.
+Both validators operate entirely on synthetic metadata; no media acquisition
+or personal-content disclosure is implemented.
+
 ## CI, evidence quality and remaining blockers
 
 New GitHub Actions runs were automatically triggered by each normal
@@ -71,8 +83,9 @@ Contents API write. At the first sampling they were **IN PROGRESS**,
 not PASS: A [#42382785233](https://github.com/Iam-2squared/ark-ai/actions/runs/42382785233),
 B [#42382825183](https://github.com/Iam-2squared/ark-ai/actions/runs/42382825183),
 C [#42382899200](https://github.com/Iam-2squared/ark-ai/actions/runs/42382899200),
-D [#42383025835](https://github.com/Iam-2squared/ark-ai/actions/runs/42383025835).
-All 19 test definitions are **authored, not exact-head all-platform
+D [#42383025835](https://github.com/Iam-2squared/ark-ai/actions/runs/42383025835),
+E [#42383426514](https://github.com/Iam-2squared/ark-ai/actions/runs/42383426514).
+All 24 test definitions are **authored, not exact-head all-platform
 PASS-attested**. If any job fails, inspect the exact failed job and make the
 smallest legitimate correction; do not relax production invariants or bypass
 GitHub safeguards.
