@@ -13,6 +13,11 @@ import hashlib
 from .observations import ObservationEnvelope, ObservationKind
 
 _MAX_FIXTURE_BYTES = 4 * 1024 * 1024
+# Keep the raw fixture hashing entrypoint fixed at import time. A replaced
+# sha256 function could receive caller-private bytes before an envelope is
+# even constructed, despite all later constructor/validator custody checks.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
 _ENVELOPE_TYPE = ObservationEnvelope
 _ORIGINAL_ENVELOPE_INIT = vars(_ENVELOPE_TYPE)["__init__"]
 # Keep a stable copy of the frozen v1 validator. An injected constructor or
@@ -78,6 +83,12 @@ def _preflight_fixture_metadata(
         or any(character not in "0123456789abcdef" for character in parent_sha256)
     ):
         raise ValueError("parent_sha256 must be an exact lowercase SHA-256 digest")
+
+    # Preserve specific malformed-metadata diagnostics above, but refuse a
+    # substituted raw-byte digest BEFORE hashing any otherwise valid payload.
+    # This is a local in-process guard, not authenticated capture provenance.
+    if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
+        raise ValueError("fixture digest implementation changed before private content hashing")
 
 
 def _require_original_envelope() -> None:
