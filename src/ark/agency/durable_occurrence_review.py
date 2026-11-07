@@ -40,6 +40,21 @@ class SyntheticReplayRejected(RuntimeError):
     """One synthetic occurrence/token cannot be reserved more than once."""
 
 
+# Token IDs are private caller-supplied data. A substituted digest callback
+# must not receive the token before the local reservation is even opened.
+# Import-time identity is an in-process integrity guard, NOT a credential,
+# signed approval, or protection against a compromised Python interpreter.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+
+
+def _require_original_digest() -> None:
+    if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
+        raise SyntheticReplayRejected(
+            "synthetic occurrence digest implementation changed before token hashing"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class SyntheticReservationReceipt:
     occurrence_id: str
@@ -207,6 +222,7 @@ class SyntheticOccurrenceStore:
             raise SyntheticReplayRejected("invalid synthetic occurrence identity")
         # Denial properties are import-time invariants, not callbacks that a
         # registry/SQLite fixture may replace with even an always-False getter.
+        _require_original_digest()
         _assert_receipt_denials()
         # Pin the initialized source before any caller-supplied registry work.
         # A reflected equal-value Path replacement is a different review epoch.
@@ -227,6 +243,7 @@ class SyntheticOccurrenceStore:
         )
 
         def assert_input_epoch() -> None:
+            _require_original_digest()
             _assert_receipt_denials()
             # Preserve established fail-closed provenance diagnostics, so
             # source vs token changes remain distinguishable in durable tests.
