@@ -67,7 +67,8 @@ def test_foreign_row_update_preserves_independent_cas_epoch(tmp_path, other_name
 @pytest.mark.parametrize("lost_event", (1, 2, 3))
 def test_foreign_event_gap_invalidates_target_observation(tmp_path, lost_event):
     path = tmp_path / "event-gap.sqlite"
-    clock = lambda: 100
+    def clock():
+        return 100
     store = SQLiteMemoryStore(path, clock_ms=clock)
     target_scope = MemoryScope("alice", "private")
     foreign_scope = MemoryScope("bob", "other")
