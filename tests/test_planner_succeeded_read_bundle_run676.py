@@ -296,3 +296,54 @@ def test_bundle_pins_original_nested_custody_checks_before_correlating(
         assert backend.calls == 0
     finally:
         journal.close()
+
+
+@pytest.mark.parametrize(
+    "changed",
+    ("hashlib_module", "json_module", "sha256", "dumps",
+     "domain", "equal_domain_replacement"),
+)
+def test_bundle_pins_digest_primitives_and_domain_before_receipt_join(
+    tmp_path, monkeypatch, changed,
+):
+    """A local digest must not be sourced from a mutable injected callback."""
+    journal, steps, recovered, evidence, backend = _multi(tmp_path)
+    invoked = []
+
+    def forbidden(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise AssertionError("counterfeit digest callback executed")
+
+    try:
+        with monkeypatch.context() as patch:
+            if changed == "hashlib_module":
+                patch.setattr(bundle, "hashlib", object())
+            elif changed == "json_module":
+                patch.setattr(bundle, "json", object())
+            elif changed == "sha256":
+                patch.setattr(bundle.hashlib, "sha256", forbidden)
+            elif changed == "dumps":
+                patch.setattr(bundle.json, "dumps", forbidden)
+            elif changed == "domain":
+                patch.setattr(bundle, "_DOMAIN", b"altered-domain")
+            else:
+                identical_bytes = bytes(bytearray(bundle._DOMAIN))
+                assert identical_bytes == bundle._DOMAIN
+                assert identical_bytes is not bundle._DOMAIN
+                patch.setattr(bundle, "_DOMAIN", identical_bytes)
+            with pytest.raises(
+                bundle.PlannerReadSuccessBundleRejected,
+                match="bundle digest implementation or domain changed",
+            ):
+                bundle.review_synthetic_succeeded_read_bundle(
+                    recovered, steps, evidence,
+                )
+        assert invoked == []
+        valid = bundle.review_synthetic_succeeded_read_bundle(
+            recovered, steps, evidence,
+        )
+        assert valid.step_ids == (FIRST, SECOND)
+        assert valid.dispatch_authorized is False
+        assert backend.calls == 0
+    finally:
+        journal.close()
