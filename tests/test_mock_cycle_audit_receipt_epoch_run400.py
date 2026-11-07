@@ -119,6 +119,8 @@ def test_marker_hash_callback_cannot_change_audit_before_terminal_step(
             _run(state, with_link=False)
     assert modified == []
     assert emitted == []
-    assert state[0].recover().step_statuses == (("root", "pending", 0),)
+    # Planner RUNNING was committed before the occurrence digest gate.
+    # The resulting UNKNOWN step cannot be automatically replayed.
+    assert state[0].recover().ambiguous_running_steps == ("root",)
     assert state[1].count_synthetic() == 0
     assert state[2].events() == []
