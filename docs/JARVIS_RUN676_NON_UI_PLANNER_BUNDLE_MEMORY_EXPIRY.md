@@ -21,10 +21,23 @@
 - Independent namespace writes do not corrupt the exact-row generation; a CAS token cannot be applied to a different namespace. These are **local regression claims only**; a caller-supplied clock is not trusted and none of the tests grants retention or erasure authority.
 - The frozen Memory V1 schema, public put/delete semantics and historical evidence remain unchanged.
 
+## Package C — synthetic Proactive policy UTF-8 ingress hardening
+
+- Source `src/ark/proactive_synthetic_review.py`, commit `27476fce9fe3de719bd8ecb49fd263d5d9cbbd6c`: the four policy identity labels now require strict, encodable UTF-8 and **at most 512 encoded bytes**, not just 512 Python characters. Surrogate text or multibyte overflow is rejected before hashed policy identity or local SQLite preparation.
+- Tests `tests/test_proactive_policy_utf8_byte_budget_run676.py`, commit `1c60412a731fb1d4797db4d8a70d288bdef8695f`, **26 authored parameter cases**: four policy fields × four invalid Unicode/byte cases; four fields × two valid UTF-8 boundary cases; two late reflective mutations rejected before a patched SQLite connector may open. No notification, recurring service, proactive action, user permission or trusted-clock proof was added.
+
+## Package D — private retention result-accessor preflight
+
+- Source `src/ark/personal_context_retention_recheck_review.py`, commit `035f54077f9611ba49a16751d75ce3db99b4e9d4`: the local privacy inventory recheck now pins import-original output slot descriptors and inherited lookup hooks using noninvoking class-dictionary inspection **before** any private Memory/revocation projection. Existing original False-only authority-denial checks remain intact, as do four independent local observations and their documented non-atomic limitation.
+- Tests `tests/test_retention_recheck_preaccess_slots_run676.py`, commit `f652e5bd58d256a1b6bfaeee0a7939b8416c5f77`, **10 authored cases** (seven result slot descriptors + two attribute hooks + unchanged non-authorizing receipt). A prohibited private-projector spy and substituted accessor spy must both remain uncalled on invalid original-class identity.
+- Existing post-constructor tamper diagnostics were preserved; this deliberately does not declare class-level monkeypatch defense to be a sandbox, human consent, erasure proof or durable clock.
+
+**Total NEW authored cases this run: 55** = Planner 11 + Memory 8 + Proactive 26 + Personal Context 10. Four independent coherent non-UI packages; changes were made only by normal GitHub Contents source/test writes with fresh PR HEAD reads. Frozen contracts were not edited.
+
 ## Verification and limits
 
 - **Baseline preceding this run:** canonical prior checkpoint HEAD `dad98d16bef1a82840fb6f2dbd39d9738daf0d04` and Actions [#42326423285](https://github.com/Iam-2squared/ark-ai/actions/runs/42326423285): **COMPLETED GREEN 6/6**, individually retrieved, Windows/Ubuntu × Python 3.11–3.13.
-- New Planner source/test and Memory test were saved using the normal GitHub Contents write route. Their **exact-head CI outcomes remain to be verified**; neither new suite nor new code is being called GREEN merely because the earlier baseline passed.
+- The four source/test packages were saved using the normal GitHub Contents write route. Their **exact-head CI outcomes remain to be verified**; neither new suite nor new code is being called GREEN merely because the earlier baseline passed.
 - No protected/frozen tests, candidate weights, model identities, paid training, credentials, local physical PC, or main merge were invoked.
 - PR #5 V3 and PR #9 UI remain Draft/unmerged. The November 3 **UI development pause** remains in force.
 
