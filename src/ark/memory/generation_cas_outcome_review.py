@@ -170,10 +170,15 @@ def review_memory_generation_cas_outcome(
     # stricter 512-byte source rule, without changing Memory v1 behavior.
     try:
         _require_bounded_scope(scope)
+    except MemoryGenerationCASRejected as exc:
+        raise MemoryCASOutcomeRejected(
+            "CAS observation requires bounded valid UTF-8 scope"
+        ) from exc
+    try:
         _require_bounded_source_id(source)
     except MemoryGenerationCASRejected as exc:
         raise MemoryCASOutcomeRejected(
-            "CAS observation requires bounded valid UTF-8 scope and source"
+            "CAS observation requires bounded valid UTF-8 source"
         ) from exc
     if type(content) is not str or len(content) > 1_000_000:
         raise MemoryCASOutcomeRejected("CAS observation requires exact bounded content")
