@@ -7,6 +7,7 @@ from __future__ import annotations
 import pytest
 
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
+from ark.memory import generation_cas_outcome_review as outcome
 from ark.memory.generation_cas_outcome_review import (
     MemoryCASOutcomeRejected,
     review_memory_generation_cas_outcome,
@@ -70,4 +71,54 @@ def test_valid_manual_only_proposal_unchanged_and_has_no_retry_authority(tmp_pat
     assert outcome.consent_authenticated is False
     assert outcome.external_action_authorized is False
     assert tuple(store.events(scope)) == before
+    assert store.get(saved.memory_id, scope, include_expired=True) == saved
+
+
+@pytest.mark.parametrize(
+    "changed",
+    ("hashlib_module", "json_module", "sha256", "dumps",
+     "domain", "equal_domain_replacement"),
+)
+def test_outcome_digest_preflight_blocks_injected_code_before_private_read(
+    monkeypatch, tmp_path, changed,
+):
+    store, scope, saved, retained, proposed = _prepared(tmp_path)
+    untouched = tuple(store.events(scope))
+    invoked = []
+
+    def forbidden(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise AssertionError("untrusted digest or private SQLite access")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(store, "_connect_readonly", forbidden)
+        if changed == "hashlib_module":
+            patch.setattr(outcome, "hashlib", object())
+        elif changed == "json_module":
+            patch.setattr(outcome, "json", object())
+        elif changed == "sha256":
+            patch.setattr(outcome.hashlib, "sha256", forbidden)
+        elif changed == "dumps":
+            patch.setattr(outcome.json, "dumps", forbidden)
+        elif changed == "domain":
+            patch.setattr(outcome, "_DOMAIN", b"wrong-outcome-domain")
+        else:
+            replacement = bytes(bytearray(outcome._DOMAIN))
+            assert replacement == outcome._DOMAIN
+            assert replacement is not outcome._DOMAIN
+            patch.setattr(outcome, "_DOMAIN", replacement)
+        with pytest.raises(
+            MemoryCASOutcomeRejected, match="digest implementation changed",
+        ):
+            outcome.review_memory_generation_cas_outcome(
+                store, proposed, retained=retained,
+            )
+    assert invoked == []
+    reviewed = outcome.review_memory_generation_cas_outcome(
+        store, proposed, retained=retained,
+    )
+    assert reviewed.observation == "UNCHANGED_OBSERVED"
+    assert reviewed.automatic_retry_authorized is False
+    assert reviewed.consent_authenticated is False
+    assert tuple(store.events(scope)) == untouched
     assert store.get(saved.memory_id, scope, include_expired=True) == saved
