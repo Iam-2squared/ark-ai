@@ -20,7 +20,6 @@ from ark.memory.generation_fenced_cas import (
     observe_memory_generation_for_cas,
 )
 
-
 _INVALID_SOURCE = (
     "\ud800",
     "\udfff",
