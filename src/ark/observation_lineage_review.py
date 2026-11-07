@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from .observation_window_review import ObservationWindowReview
 from .observations import ObservationEnvelope
 
-
 # Preserve the import-time digest implementation for privacy metadata.
 # Monkeypatches can otherwise forge local lineage digests or execute callbacks
 # while the reviewer holds private envelope identifiers. This is only an
