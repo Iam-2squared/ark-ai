@@ -25,7 +25,7 @@ from ark.observations import ObservationEnvelope, ObservationKind
         ("a" * 1025, False),
         ("🚀" * 256, True),
         ("🚀" * 257, False),
-        ("bad\\ud800", False),
+        ("bad" + chr(0xD800), False),
         ("   ", False),
     ),
 )
