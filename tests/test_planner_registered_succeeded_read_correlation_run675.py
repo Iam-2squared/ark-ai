@@ -188,3 +188,54 @@ def test_changed_correlation_result_denial_rejected_before_result_construction(
         assert backend.calls == 0
     finally:
         read_journal.close()
+
+
+@pytest.mark.parametrize(
+    "primitive",
+    ("hashlib_module", "json_module", "sha256", "dumps",
+     "domain", "equal_domain_replacement"),
+)
+def test_standalone_read_correlation_pins_digest_before_receipt_access(
+    tmp_path, monkeypatch, primitive,
+):
+    journal, steps, recovered, link, reviewed, backend = _case(tmp_path)
+    calls = []
+
+    def forbidden(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("untrusted correlation digest callback executed")
+
+    try:
+        with monkeypatch.context() as patch:
+            if primitive == "hashlib_module":
+                patch.setattr(join, "hashlib", object())
+            elif primitive == "json_module":
+                patch.setattr(join, "json", object())
+            elif primitive == "sha256":
+                patch.setattr(join.hashlib, "sha256", forbidden)
+            elif primitive == "dumps":
+                patch.setattr(join.json, "dumps", forbidden)
+            elif primitive == "domain":
+                patch.setattr(join, "_DOMAIN", b"altered-local-correlation")
+            else:
+                equal_value = bytes(bytearray(join._DOMAIN))
+                assert equal_value == join._DOMAIN
+                assert equal_value is not join._DOMAIN
+                patch.setattr(join, "_DOMAIN", equal_value)
+            with pytest.raises(
+                join.PlannerSucceededReadCorrelationRejected,
+                match="correlation digest implementation or domain changed",
+            ):
+                join.review_synthetic_succeeded_read_correlation(
+                    recovered, steps, link, reviewed,
+                )
+        assert calls == []
+        restored = join.review_synthetic_succeeded_read_correlation(
+            recovered, steps, link, reviewed,
+        )
+        assert restored.step_id == STEP
+        assert restored.dispatch_authorized is False
+        assert restored.automatic_replay_authorized is False
+        assert backend.calls == 0
+    finally:
+        journal.close()
