@@ -36,8 +36,10 @@ def test_false_looking_substituted_authority_is_rejected(monkeypatch, field):
 
 def test_digest_callback_cannot_install_late_false_descriptor(monkeypatch):
     original_digest = mod.hashlib.sha256
+    callback_calls = []
 
     def spoof_after_digest(payload):
+        callback_calls.append(payload)
         monkeypatch.setattr(
             mod.OfflineRecoveryFence,
             "automatic_replay_authorized", property(lambda _: False),
@@ -46,9 +48,11 @@ def test_digest_callback_cannot_install_late_false_descriptor(monkeypatch):
 
     monkeypatch.setattr(mod.hashlib, "sha256", spoof_after_digest)
     with pytest.raises(
-        mod.OfflineRecoveryFenceRejected, match="authority descriptor changed",
+        mod.OfflineRecoveryFenceRejected,
+        match="mixed-plan digest implementation or domain changed",
     ):
         mod.review_disconnected_recovery_fence(PLAN, _claims())
+    assert callback_calls == []
 
 
 def test_mixed_unknown_write_keeps_quarantine_and_independent_read():
