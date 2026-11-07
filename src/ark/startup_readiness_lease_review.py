@@ -33,6 +33,19 @@ class SyntheticReadinessRequirement:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid exact {label} requirement"
                 )
+            # Match StartupComponent's UTF-8 byte budget. A reflectively
+            # altered frozen requirement must not become a fresh READY claim
+            # merely because its code-point count is under the limit.
+            try:
+                byte_count = len(value.encode("utf-8", errors="strict"))
+            except UnicodeEncodeError as exc:
+                raise SyntheticStartupLeaseRejected(
+                    f"invalid UTF-8 {label} requirement"
+                ) from exc
+            if byte_count > 256:
+                raise SyntheticStartupLeaseRejected(
+                    f"invalid UTF-8 {label} requirement byte budget"
+                )
 
 
 @dataclass(frozen=True, slots=True)
