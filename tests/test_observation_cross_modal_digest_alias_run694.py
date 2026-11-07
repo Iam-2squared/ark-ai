@@ -20,7 +20,6 @@ from ark.observation_fixture_chain_review import (
 )
 from ark.observations import ObservationKind
 
-
 _SOURCE = "synthetic-device"
 _SCOPE = "scope:private"
 
