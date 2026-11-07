@@ -190,7 +190,31 @@ def review_memory_generation_cas_outcome(
         ) from exc
     metadata = proposed.metadata
     expiry = proposed.expires_at_ms
-    expected_metadata = dict(metadata)
+    # MemoryWrite's frozen v1 initializer validates metadata, but an opt-in
+    # review can be given a reflectively changed proposal after construction.
+    # Do not inspect a private SQLite row for a payload that cannot be
+    # represented as the exact UTF-8 JSON accepted by generation CAS.
+    try:
+        expected_metadata = dict(metadata)
+        if (
+            len(expected_metadata) > 64
+            or any(
+                type(key) is not str or not key.strip() or len(key) > 4096
+                or type(value) is not str or len(value) > 4096
+                for key, value in expected_metadata.items()
+            )
+        ):
+            raise MemoryCASOutcomeRejected(
+                "CAS observation requires bounded string metadata"
+            )
+        json.dumps(
+            expected_metadata, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8", errors="strict")
+    except (TypeError, ValueError, UnicodeError, AttributeError) as exc:
+        raise MemoryCASOutcomeRejected(
+            "CAS observation requires valid UTF-8 string metadata"
+        ) from exc
     path = store.path
     memory_id = deterministic_memory_id(scope, source)
     if prior[0] != memory_id:
