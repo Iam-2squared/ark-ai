@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 
 from ark.agency.audit import SQLiteActionAudit
-from ark.agency.contracts import Effect, OneShotAuthorization, PlanStep, StepState, ToolCall
+from ark.agency.contracts import (
+    Effect,
+    OneShotAuthorization,
+    PlanStep,
+    StepState,
+    ToolCall,
+)
 from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
