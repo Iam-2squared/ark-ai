@@ -64,6 +64,36 @@ _FRESHNESS_ORIGINAL_DENIALS = tuple(
 )
 
 
+
+# In addition to the authority descriptors, the slotted output fields and
+# construction/lookup hooks must remain original before private fixture rows
+# are read. A substituted constructor is executable code, not evidence.
+_FRESHNESS_FIELDS = (
+    "trigger_id", "prepared_at_ms", "checked_at_ms", "history",
+)
+_FRESHNESS_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_FRESHNESS_ORIGINAL_FIELDS = tuple(
+    vars(_FRESHNESS_RESULT).get(name) for name in _FRESHNESS_FIELDS
+)
+_FRESHNESS_ORIGINAL_HOOKS = tuple(
+    vars(_FRESHNESS_RESULT).get(name) for name in _FRESHNESS_HOOKS
+)
+
+
+def _assert_original_freshness_carriers() -> None:
+    if (
+        SyntheticProactiveFreshnessReview is not _FRESHNESS_RESULT
+        or any(
+            vars(_FRESHNESS_RESULT).get(name) is not original
+            for names, originals in (
+                (_FRESHNESS_FIELDS, _FRESHNESS_ORIGINAL_FIELDS),
+                (_FRESHNESS_HOOKS, _FRESHNESS_ORIGINAL_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticTriggerRejected("freshness output carrier definition changed")
+
 def _assert_original_freshness_denial(name: str) -> None:
     index = _FRESHNESS_DENIALS.index(name)
     if (
@@ -90,6 +120,7 @@ def review_prepared_trigger_freshness(
     history evidence. A success proves local fixture consistency only. It
     cannot rule out replacement of all unfenced local evidence.
     """
+    _assert_original_freshness_carriers()
     if (
         type(ledger) is not SyntheticProactiveLedger
         or type(receipt) is not SyntheticTriggerReceipt
@@ -126,6 +157,7 @@ def review_prepared_trigger_freshness(
     policy_epoch = tuple((type(value), value) for value in policy_carriers)
 
     def assert_epoch() -> None:
+        _assert_original_freshness_carriers()
         current_carriers = tuple(getattr(policy, name) for name in policy_fields)
         current_policy = tuple((type(value), value) for value in current_carriers)
         if (
