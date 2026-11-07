@@ -32,7 +32,7 @@ def _review(root, child):
     ("privacy_scope", "different-scope"),
     ("parent_sha256", "f" * 64),
 ])
-def test_interphase_json_metadata_retarget_restored_by_sha_is_denied(
+def test_preinstalled_digest_hooks_cannot_run_metadata_retarget_callbacks(
     monkeypatch, field, bad,
 ):
     root, child = _sample()
@@ -56,9 +56,14 @@ def test_interphase_json_metadata_retarget_restored_by_sha_is_denied(
 
     monkeypatch.setattr(lineage.json, "dumps", json_hook)
     monkeypatch.setattr(lineage.hashlib, "sha256", sha_hook)
-    with pytest.raises(lineage.SyntheticObservationLineageRejected, match="epoch"):
+    # The import-original digest guard now rejects these hooks before a
+    # private observation window or attacker callback can be reached.
+    with pytest.raises(
+        lineage.SyntheticObservationLineageRejected,
+        match="digest implementation changed",
+    ):
         _review(root, child)
-    assert touched == ["changed"]
+    assert touched == []
 
 
 def test_hash_phase_tamper_cannot_be_hidden_by_result_constructor(monkeypatch):
