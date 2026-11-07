@@ -24,7 +24,6 @@ import ark.agency.synthetic_claim_recovery_review as module
         "cancellation_tail_hash",
         "observed_at_ms",
         "__init__",
-        "__new__",
         "__getattribute__",
         "__getattr__",
         "human_consent_verified",
