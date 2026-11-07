@@ -35,6 +35,7 @@ def test_forged_false_getter_rejected_without_running_it(
     monkeypatch, flag, stage,
 ):
     invoked = []
+    hash_callback_calls = []
 
     class Counterfeit:
         def __get__(self, _instance, _owner=None):
@@ -47,6 +48,7 @@ def test_forged_false_getter_rejected_without_running_it(
         real_sha256 = mod.hashlib.sha256
 
         def replace_after_hash(payload):
+            hash_callback_calls.append(payload)
             monkeypatch.setattr(mod.OfflineRecoveryFence, flag, Counterfeit())
             return real_sha256(payload)
 
@@ -54,10 +56,14 @@ def test_forged_false_getter_rejected_without_running_it(
 
     with pytest.raises(
         mod.OfflineRecoveryFenceRejected,
-        match="authority descriptor changed",
+        match=(
+            "authority descriptor changed" if stage == "preinstalled"
+            else "mixed-plan digest implementation or domain changed"
+        ),
     ):
         mod.review_disconnected_recovery_fence(PLAN, _claims())
     assert invoked == []
+    assert hash_callback_calls == []
 
 
 def test_counterfeit_result_class_with_original_properties_rejected(
