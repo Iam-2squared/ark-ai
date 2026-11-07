@@ -73,6 +73,53 @@ class SyntheticApprovalReview:
         return False
 
 
+
+# Preserve the diagnostic input and output types before a callback can run.
+# This guards only in-process Python definition drift, not authenticated
+# approval, trusted time, consent, or external execution.
+_ENVELOPE_CLASS = SyntheticApprovalEnvelope
+_REVIEW_CLASS = SyntheticApprovalReview
+_ENVELOPE_MEMBERS = (
+    "approval_id", "registry_revision", "bound_action_id", "request_id",
+    "issuer_digest", "subject_digest", "purpose_digest", "recipient_digest",
+    "nonce_digest", "issued_at_ms", "expires_at_ms",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "dispatch_authorized", "human_consent_verified",
+    "automatic_replay_authorized",
+)
+_REVIEW_MEMBERS = (
+    "approval_id", "bound_action_id", "observed_at_ms",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "dispatch_authorized", "human_consent_verified",
+    "automatic_replay_authorized",
+)
+_ORIGINAL_ENVELOPE_MEMBERS = tuple(
+    vars(_ENVELOPE_CLASS).get(name) for name in _ENVELOPE_MEMBERS
+)
+_ORIGINAL_REVIEW_MEMBERS = tuple(
+    vars(_REVIEW_CLASS).get(name) for name in _REVIEW_MEMBERS
+)
+
+
+def _require_original_claim_carriers() -> None:
+    if (
+        SyntheticApprovalEnvelope is not _ENVELOPE_CLASS
+        or SyntheticApprovalReview is not _REVIEW_CLASS
+        or any(
+            vars(_ENVELOPE_CLASS).get(name) is not original
+            for name, original in zip(
+                _ENVELOPE_MEMBERS, _ORIGINAL_ENVELOPE_MEMBERS, strict=True,
+            )
+        )
+        or any(
+            vars(_REVIEW_CLASS).get(name) is not original
+            for name, original in zip(
+                _REVIEW_MEMBERS, _ORIGINAL_REVIEW_MEMBERS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticApprovalRejected("synthetic approval claim carrier changed")
+
 def _identity(fields: tuple[object, ...]) -> str:
     encoded = json.dumps(
         ["ARK-untrusted-approval-claim-v1", *fields],
@@ -125,6 +172,7 @@ def make_synthetic_approval_claim(
     expires_at_ms: int,
 ) -> SyntheticApprovalEnvelope:
     """Create a content-minimized claim for testing; NOT an approval issuer."""
+    _require_original_claim_carriers()
     if type(registry) is not ToolRegistry or type(call) is not ToolCall:
         raise SyntheticApprovalRejected("exact synthetic registry and call required")
     claims = (
@@ -144,6 +192,7 @@ def make_synthetic_approval_claim(
     revision = registry.revision
 
     def assert_entry() -> None:
+        _require_original_claim_carriers()
         try:
             stable = (
                 call.arguments is entry_arguments
@@ -197,6 +246,7 @@ def review_synthetic_approval_claim(
     Cancellation is only a caller-supplied set. Absence from this set does
     NOT establish authentic user approval or durable non-revocation.
     """
+    _require_original_claim_carriers()
     if (
         type(envelope) is not SyntheticApprovalEnvelope
         or type(registry) is not ToolRegistry or type(call) is not ToolCall
@@ -216,6 +266,7 @@ def review_synthetic_approval_claim(
     revision = registry.revision
 
     def assert_review_entry() -> None:
+        _require_original_claim_carriers()
         try:
             stable = (
                 (envelope.approval_id, _fields(envelope)) == epoch
