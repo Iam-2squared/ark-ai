@@ -28,8 +28,21 @@ class ObservationRolloverWitness:
     chain_sha256: str
 
     def __post_init__(self) -> None:
-        if type(self.privacy_scope) is not str or not self.privacy_scope.strip():
+        # Match the exact UTF-8 byte budget of an ObservationEnvelope's
+        # privacy_scope. Direct retained-witness construction must not admit
+        # unbounded labels or ill-formed Unicode before canonical hashing.
+        # This is an input allocation guard, not consent or source identity.
+        scope = self.privacy_scope
+        if type(scope) is not str or not scope.strip():
             raise ValueError("rollover privacy scope must be nonempty exact text")
+        if len(scope) > 1024:
+            raise ValueError("rollover privacy scope exceeds 1024 UTF-8 bytes")
+        try:
+            encoded = scope.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("rollover privacy scope must be valid UTF-8") from exc
+        if len(encoded) > 1024:
+            raise ValueError("rollover privacy scope exceeds 1024 UTF-8 bytes")
         if (
             type(self.observed_at_ms) is not int
             or not 0 <= self.observed_at_ms <= _MAX_GENERATION
