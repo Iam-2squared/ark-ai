@@ -333,8 +333,11 @@ def observe_memory_generation_for_cas(
     _require_original_token_denials()
     _require_bounded_scope(scope)
     _require_bounded_source_id(source_id)
+    # Pin the original owner/namespace/path *before* the first identity
+    # digest. A reentrant hashing callback must not replace the caller's
+    # input with a fresh (even equal-valued) custody epoch and then have that
+    # replacement accepted as the baseline for private SQLite reads.
     owner, namespace, path = scope.owner_id, scope.namespace, store.path
-    memory_id = deterministic_memory_id(scope, source_id)
 
     def stable() -> None:
         _require_original_token_denials()
@@ -344,6 +347,9 @@ def observe_memory_generation_for_cas(
         ):
             raise MemoryGenerationCASRejected("generation observation input changed")
 
+    stable()
+    memory_id = deterministic_memory_id(scope, source_id)
+    stable()
     try:
         stable()
         with closing(store._connect_readonly()) as conn:
