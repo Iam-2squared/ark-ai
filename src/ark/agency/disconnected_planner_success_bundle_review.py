@@ -62,10 +62,26 @@ _DENIALS = (
 _HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINALS = tuple(vars(_RESULT).get(key) for key in _FIELDS + _DENIALS + _HOOKS)
 _ORIGINAL_SINGLE_REVIEW = single.review_synthetic_succeeded_read_correlation
+# The apparent success evidence is entirely derived from local, caller-held
+# receipts. Do not permit later replacement of its primitive custody checks,
+# including a False-only no-op substitute, to bless those receipts.
+_ORIGINAL_SINGLE_ORIGINALS = single._originals
+_ORIGINAL_TAIL_STABLE = journal._retained_tail_epoch_stable
+_ORIGINAL_LINK_FIELDS = registered._LINK_FIELDS
+_ORIGINAL_REVIEW_FIELDS = registered._REVIEW_FIELDS
 
 
 def _originals() -> None:
-    single._originals()
+    if (
+        single._originals is not _ORIGINAL_SINGLE_ORIGINALS
+        or journal._retained_tail_epoch_stable is not _ORIGINAL_TAIL_STABLE
+        or registered._LINK_FIELDS is not _ORIGINAL_LINK_FIELDS
+        or registered._REVIEW_FIELDS is not _ORIGINAL_REVIEW_FIELDS
+    ):
+        raise PlannerReadSuccessBundleRejected(
+            "bundle dependency callback or schema changed"
+        )
+    _ORIGINAL_SINGLE_ORIGINALS()
     if (
         PlannerReadSuccessBundle is not _RESULT
         or (
