@@ -22,9 +22,7 @@ def test_source_swap_during_schema_read_is_not_hidden_by_hash(
     ledger = _store(tmp_path)
     original_path = ledger.path
     validate = module._validate
-    digest = module._hash
     changed = False
-    restored = False
 
     def inject_validate(conn):
         nonlocal changed
@@ -32,18 +30,12 @@ def test_source_swap_during_schema_read_is_not_hidden_by_hash(
         ledger.path = Path(str(original_path))
         changed = True
 
-    def inject_hash(rows):
-        nonlocal restored
-        if changed:
-            ledger.path = original_path
-            restored = True
-        return digest(rows)
-
+    # The digest implementation is now pinned at ingress. Exercise source
+    # retargeting at the schema phase without preinstalling a fake hash.
     monkeypatch.setattr(module, "_validate", inject_validate)
-    monkeypatch.setattr(module, "_hash", inject_hash)
     with pytest.raises(SyntheticContextRevocationRejected, match="source path"):
         module.review_revocation_continuity(ledger)
-    assert changed and not restored
+    assert changed
 
 
 @pytest.mark.parametrize("field", ("rows", "witness_id"))
@@ -53,11 +45,8 @@ def test_retained_witness_schema_phase_mutation_cannot_be_restored(
     ledger = _store(tmp_path)
     ledger.revoke(MemoryScope("offline", "synthetic"), at_ms=10)
     retained = module.review_revocation_continuity(ledger)
-    original = getattr(retained, field)
     validate = module._validate
-    digest = module._hash
     changed = False
-    restored = False
 
     def inject_validate(conn):
         nonlocal changed
@@ -68,18 +57,10 @@ def test_retained_witness_schema_phase_mutation_cannot_be_restored(
             object.__setattr__(retained, field, "rvk_" + "0" * 64)
         changed = True
 
-    def inject_hash(rows):
-        nonlocal restored
-        if changed:
-            restored = True
-            object.__setattr__(retained, field, original)
-        return digest(rows)
-
     monkeypatch.setattr(module, "_validate", inject_validate)
-    monkeypatch.setattr(module, "_hash", inject_hash)
     with pytest.raises(SyntheticContextRevocationRejected, match="retained"):
         module.review_revocation_continuity(ledger, retained=retained)
-    assert changed and not restored
+    assert changed
 
 
 def test_path_mutation_after_hash_cannot_be_restored_by_witness_integrity(
@@ -101,9 +82,13 @@ def test_path_mutation_after_hash_cannot_be_restored_by_witness_integrity(
         return result
 
     monkeypatch.setattr(module, "_hash", inject)
-    with pytest.raises(SyntheticContextRevocationRejected, match="source path"):
+    with pytest.raises(
+        SyntheticContextRevocationRejected,
+        match="revocation digest implementation changed",
+    ):
         module.review_revocation_continuity(ledger)
-    assert calls == 1
+    # Preinstalled callback is rejected before reading any private history.
+    assert calls == 0
 
 
 def test_retained_mutation_after_hash_detected_before_second_hash(
@@ -136,9 +121,12 @@ def test_retained_mutation_after_hash_detected_before_second_hash(
 
     monkeypatch.setattr(module, "_validate", mark_validation)
     monkeypatch.setattr(module, "_hash", inject)
-    with pytest.raises(SyntheticContextRevocationRejected, match="retained"):
+    with pytest.raises(
+        SyntheticContextRevocationRejected,
+        match="revocation digest implementation changed",
+    ):
         module.review_revocation_continuity(ledger, retained=retained)
-    assert calls == 1
+    assert calls == 0
 
 
 def test_stable_history_remains_deny_only_with_independent_prefix(tmp_path: Path):
