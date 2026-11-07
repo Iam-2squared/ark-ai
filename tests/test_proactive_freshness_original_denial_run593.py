@@ -70,9 +70,12 @@ def test_last_getter_cannot_replace_already_checked_denial(
         return result
 
     monkeypatch.setattr(review_type, "__getattribute__", late_replace)
-    with pytest.raises(SyntheticTriggerRejected, match="authority epoch"):
+    # An altered lookup hook is now rejected before any getter executes.
+    with pytest.raises(
+        SyntheticTriggerRejected, match="freshness output carrier definition changed"
+    ):
         _read(state)
-    assert swapped == ["automatic_replay_authorized"]
+    assert swapped == []
     assert state[0].path.read_bytes() == before
 
 
