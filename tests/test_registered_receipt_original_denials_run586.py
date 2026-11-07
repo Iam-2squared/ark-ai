@@ -135,3 +135,76 @@ def test_original_link_and_review_are_digest_only_and_inert(tmp_path):
         assert case[4]._consumed_tokens == set()
     finally:
         case[0].close()
+
+
+@pytest.mark.parametrize(
+    ("carrier", "name"),
+    (
+        tuple(("review", name) for name in (
+            *review._REVIEW_FIELDS, *review._REVIEW_HOOKS,
+        ))
+        + tuple(("link", name) for name in (
+            *review._LINK_FIELDS, *review._LINK_HOOKS,
+        ))
+    ),
+)
+def test_original_fields_and_hooks_are_checked_before_journal_access(
+    tmp_path, monkeypatch, carrier, name,
+):
+    """A False-looking replacement must not even enter retained SQLite."""
+    case = _case(tmp_path)
+    cls = (
+        review.RegisteredReceiptReview if carrier == "review"
+        else review.RegisteredFixtureLink
+    )
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("substituted carrier entered the retained READ journal")
+
+    def substituted(*_args, **_kwargs):
+        pytest.fail("substituted constructor, field or lookup hook ran")
+
+    try:
+        with monkeypatch.context() as isolated:
+            isolated.setattr(case[0], "_scan", forbidden)
+            if name in ("__init__", "__new__", "__getattribute__", "__getattr__"):
+                isolated.setattr(cls, name, substituted, raising=False)
+            else:
+                isolated.setattr(cls, name, property(substituted))
+            with pytest.raises(
+                review.RegisteredReceiptReviewRejected,
+                match="authority definition changed",
+            ):
+                _review(case)
+        assert case[-1].calls == 0
+        assert case[4]._consumed_tokens == set()
+    finally:
+        case[0].close()
+
+
+@pytest.mark.parametrize("carrier", ("review", "link"))
+def test_replaced_carrier_symbol_is_rejected_before_reading_journal(
+    tmp_path, monkeypatch, carrier,
+):
+    case = _case(tmp_path)
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("substituted class entered retained READ journal")
+
+    try:
+        with monkeypatch.context() as isolated:
+            isolated.setattr(case[0], "_scan", forbidden)
+            isolated.setattr(
+                review,
+                "RegisteredReceiptReview" if carrier == "review"
+                else "RegisteredFixtureLink",
+                object,
+            )
+            with pytest.raises(
+                review.RegisteredReceiptReviewRejected,
+                match="authority definition changed",
+            ):
+                _review(case)
+        assert case[-1].calls == 0
+    finally:
+        case[0].close()
