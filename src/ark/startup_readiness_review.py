@@ -28,8 +28,19 @@ _MAX_DEPENDENCY_EDGES = 65_536
 
 
 def _identifier(value: object, label: str) -> str:
+    """Enforce a strict UTF-8 byte budget for disconnected probe identities.
+
+    The cheap character cap precedes encoding to bound allocations. This
+    stricter foundation input rule does not modify any frozen V1/V2 schema.
+    """
     if type(value) is not str or not value.strip() or len(value) > 256:
         raise ValueError(f"{label} must be nonempty bounded exact text")
+    try:
+        size = len(value.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise ValueError(f"{label} must be valid UTF-8 exact text") from exc
+    if size > 256:
+        raise ValueError(f"{label} exceeds 256 UTF-8 bytes")
     return value
 
 
