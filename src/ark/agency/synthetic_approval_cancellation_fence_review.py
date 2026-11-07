@@ -53,6 +53,41 @@ class SyntheticApprovalFenceReview:
         return False
 
 
+
+# A local veto receipt is never an approval token. Reject altered output
+# classes, fields, constructors, lookup machinery or false-only authority
+# descriptors before consulting any persisted cancellation history.
+_FENCE_RESULT = SyntheticApprovalFenceReview
+_FENCE_RESULT_FIELDS = (
+    "approval_id", "bound_action_id", "cancellation_tail_hash",
+    "cancellation_event_count", "observed_at_ms",
+)
+_FENCE_RESULT_HOOKS = (
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_FENCE_DENIALS = (
+    "human_consent_verified", "dispatch_authorized",
+    "automatic_replay_authorized",
+)
+_FENCE_MEMBERS = _FENCE_RESULT_FIELDS + _FENCE_RESULT_HOOKS + _FENCE_DENIALS
+_ORIGINAL_FENCE_MEMBERS = tuple(
+    vars(_FENCE_RESULT).get(name) for name in _FENCE_MEMBERS
+)
+
+
+def _assert_original_fence_output() -> None:
+    if (
+        SyntheticApprovalFenceReview is not _FENCE_RESULT
+        or any(
+            vars(_FENCE_RESULT).get(name) is not original
+            for name, original in zip(
+                _FENCE_MEMBERS, _ORIGINAL_FENCE_MEMBERS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticApprovalFenceRejected("synthetic approval fence output changed")
+
+
 def _epoch(envelope: SyntheticApprovalEnvelope) -> tuple[object, ...]:
     return tuple(getattr(envelope, field.name) for field in fields(SyntheticApprovalEnvelope))
 
@@ -75,6 +110,7 @@ def review_synthetic_approval_cancellation_fence(
     A successful local match reports *no* authorization: neither missing
     cancellation nor hash-linked history proves authenticated user consent.
     """
+    _assert_original_fence_output()
     if (
         type(envelope) is not SyntheticApprovalEnvelope
         or type(registry) is not ToolRegistry
@@ -101,6 +137,7 @@ def review_synthetic_approval_cancellation_fence(
     )
 
     def assert_epoch() -> None:
+        _assert_original_fence_output()
         if (
             ledger.path is not source_epoch
             or any(
@@ -257,4 +294,16 @@ def review_synthetic_approval_cancellation_fence(
         raise SyntheticApprovalFenceRejected(
             "synthetic approval fence result changed during construction"
         )
+    # The three output properties are permanently deny-only; a substituted
+    # getter cannot create phantom consent or permit a mock WRITE replay.
+    for name in _FENCE_DENIALS:
+        _assert_original_fence_output()
+        if getattr(review, name) is not False:
+            raise SyntheticApprovalFenceRejected(
+                "synthetic approval fence output acquired authority"
+            )
+        assert_epoch()
+        assert_first()
+        assert_claim()
+        assert_second()
     return review
