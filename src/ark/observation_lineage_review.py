@@ -15,6 +15,18 @@ from .observation_window_review import ObservationWindowReview
 from .observations import ObservationEnvelope
 
 
+# Preserve the import-time digest implementation for privacy metadata.
+# Monkeypatches can otherwise forge local lineage digests or execute callbacks
+# while the reviewer holds private envelope identifiers. This is only an
+# in-process fail-closed guard, not authenticated provenance or a sandbox.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_LINEAGE_DOMAIN = b"ARK-observation-lineage-v1\0"
+_ORIGINAL_LINEAGE_DOMAIN = _LINEAGE_DOMAIN
+
+
 class SyntheticObservationLineageRejected(RuntimeError):
     """The fixture's claimed parent-chain identity is inconsistent."""
 
@@ -89,6 +101,19 @@ def _assert_original_lineage_result() -> None:
         )
 
 
+def _assert_original_digest_implementation() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _LINEAGE_DOMAIN is not _ORIGINAL_LINEAGE_DOMAIN
+    ):
+        raise SyntheticObservationLineageRejected(
+            "observation lineage digest implementation changed"
+        )
+
+
 def review_synthetic_observation_lineage(
     envelopes: tuple[ObservationEnvelope, ...],
     *,
@@ -105,6 +130,7 @@ def review_synthetic_observation_lineage(
     if type(envelopes) is not tuple:
         raise SyntheticObservationLineageRejected("exact observation tuple required")
     _assert_original_lineage_result()
+    _assert_original_digest_implementation()
     # Existing window construction enforces bounded membership, same privacy
     # scope, canonical envelope identity, age and caller-clock constraints.
     window = ObservationWindowReview(
@@ -125,6 +151,7 @@ def review_synthetic_observation_lineage(
     )) for envelope in envelopes)
 
     def assert_epoch() -> None:
+        _assert_original_digest_implementation()
         try:
             if any(
                 any(getattr(item, name) is not original
@@ -195,7 +222,7 @@ def review_synthetic_observation_lineage(
     ).encode("utf-8")
     assert_epoch()
     digest = "olineage_" + hashlib.sha256(
-        b"ARK-observation-lineage-v1\0" + payload
+        _LINEAGE_DOMAIN + payload
     ).hexdigest()
     # The cached window detects reflected changes to envelope metadata while
     # walking the graph. This does not attest source authenticity.
@@ -272,4 +299,5 @@ def review_synthetic_observation_lineage(
             )
     _assert_original_lineage_result()
     assert_epoch()
+    _assert_original_digest_implementation()
     return result
