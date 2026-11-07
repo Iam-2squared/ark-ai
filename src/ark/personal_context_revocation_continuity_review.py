@@ -31,6 +31,16 @@ def _hash(rows: tuple[tuple[str, int], ...]) -> str:
     ).hexdigest()
 
 
+# Local retained witnesses depend on these exact hash/JSON primitives.
+# A substituted digest callback could certify a false privacy-veto prefix.
+# Check the implementation before reading retained fields or private SQLite.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_HASH = _hash
+
+
 @dataclass(frozen=True, slots=True)
 class SyntheticRevocationWitness:
     rows: tuple[tuple[str, int], ...]
@@ -74,6 +84,16 @@ _ORIGINAL_WITNESS_HOOKS = tuple(
 
 
 def _require_original_witness_carrier() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _hash is not _ORIGINAL_HASH
+    ):
+        raise SyntheticContextRevocationRejected(
+            "revocation digest implementation changed"
+        )
     # A forged slotted field/constructor is executable even if the retained
     # witness's digest and validator still look correct. Read class dicts,
     # never those potentially hostile instance attributes, at ingress.
