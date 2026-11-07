@@ -153,8 +153,10 @@ def review_synthetic_succeeded_read_correlation(
                 or call.tool is not tool or call.capability is not capability
                 or call.scope is not scope or call.arguments is not args
                 or call.request_id != request_id
-                for step, name, call, deps, tool, capability, scope, args, request_id
-                in step_epoch
+                for step, (
+                    original, name, call, deps, tool, capability, scope, args,
+                    request_id,
+                ) in zip(steps, step_epoch, strict=True)
             )
         ):
             raise PlannerSucceededReadCorrelationRejected(
