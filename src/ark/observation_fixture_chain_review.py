@@ -34,6 +34,11 @@ _ORIGINAL_ENVELOPE_HOOKS = tuple(
     vars(_ORIGINAL_ENVELOPE).get(name) for name in _HOOKS
 )
 _DOMAIN = b"ark:disconnected-observation-fixture-chain:v1\0"
+# Private fixture identity and final digest must use the import-time hash
+# implementation and a byte-identical *object*, not a caller replacement.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 class ObservationFixtureChainRejected(ValueError):
@@ -77,6 +82,14 @@ _ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _HOOKS)
 
 
 def _assert_original_implementations() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise ObservationFixtureChainRejected(
+            "disconnected fixture review digest implementation changed"
+        )
     if (
         ObservationEnvelope is not _ORIGINAL_ENVELOPE
         or vars(_ORIGINAL_ENVELOPE).get("observation_id") is not _ORIGINAL_ID
