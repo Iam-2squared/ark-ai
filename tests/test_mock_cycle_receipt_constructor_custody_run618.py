@@ -77,9 +77,10 @@ def test_preinstalled_receipt_replacement_rejected_before_any_write(
     ):
         _run(state)
     assert executed == []
-    # The Planner RUNNING transition predates token reservation; uncertainty
-    # persists after an earlier digest refusal, without any external dispatch.
-    assert state[0].recover().ambiguous_running_steps == ("root",)
+    # The preinstalled receipt override is rejected before Planner RUNNING.
+    # There is no ambiguous started step and no permission to dispatch.
+    assert state[0].recover().step_statuses == (("root", "pending", 0),)
+    assert state[0].recover().ambiguous_running_steps == ()
     assert state[1].count_synthetic() == 0
     assert state[2].events() == []
     assert state[-1].calls == 0
@@ -112,7 +113,10 @@ def test_mock_marker_digest_reentrant_constructor_change_stays_unknown(
             _run(state)
     assert injected == []
     assert executed == []
-    assert state[0].recover().step_statuses == (("root", "pending", 0),)
+    # A digest replacement is rejected by the occurrence store AFTER the
+    # local Planner RUNNING transition. The started WRITE stays UNKNOWN.
+    assert state[0].recover().step_statuses == (("root", "running", 1),)
+    assert state[0].recover().ambiguous_running_steps == ("root",)
     assert state[1].count_synthetic() == 0
     assert state[2].events() == []
     assert state[-1].calls == 0
