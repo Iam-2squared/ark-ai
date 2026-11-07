@@ -140,3 +140,81 @@ def test_recreated_same_memory_id_requires_manual_review_not_replay(tmp_path):
     assert replacement.revision == 1
     assert tuple(reader.events(scope)) == before
     assert reader.get(original.memory_id, scope, include_expired=True) == replacement
+
+
+def test_two_competing_updates_with_identical_last_bytes_are_not_one_commit(tmp_path):
+    reader, other, scope, original, retained = _pair(tmp_path)
+    proposal = MemoryWrite(
+        scope, "source", "matching latest", metadata={"mode": "local"},
+    )
+    first = generation_fenced_memory_update(other, proposal, retained=retained)
+    next_token = observe_memory_generation_for_cas(other, scope, "source")
+    latest = generation_fenced_memory_update(
+        other, proposal, retained=next_token,
+    )
+    before = tuple(reader.events(scope))
+
+    result = review_memory_generation_cas_outcome(
+        reader, proposal, retained=retained,
+    )
+
+    assert first.revision == original.revision + 1
+    assert latest.revision == original.revision + 2
+    assert result.observation == "DIVERGED_OBSERVED"
+    _no_authority(result)
+    assert reader.get(original.memory_id, scope, include_expired=True) == latest
+    assert tuple(reader.events(scope)) == before
+
+
+def test_identical_source_in_other_scope_does_not_advance_retained_row(tmp_path):
+    reader, other, scope, original, retained = _pair(tmp_path)
+    another_scope = MemoryScope(scope.owner_id, "fixture-other-namespace")
+    other.put(MemoryWrite(another_scope, "source", "other private data"))
+    before = tuple(reader.events(scope))
+
+    result = review_memory_generation_cas_outcome(
+        reader, MemoryWrite(scope, "source", "proposed"),
+        retained=retained,
+    )
+
+    assert result.observation == "UNCHANGED_OBSERVED"
+    _no_authority(result)
+    assert reader.get(original.memory_id, scope, include_expired=True) == original
+    assert tuple(reader.events(scope)) == before
+
+
+def test_removed_row_without_recreation_is_manual_only(tmp_path):
+    reader, other, scope, original, retained = _pair(tmp_path)
+    assert other.delete(original.memory_id, scope, expected_revision=1)
+    before = tuple(reader.events(scope))
+
+    with pytest.raises(MemoryCASOutcomeRejected):
+        review_memory_generation_cas_outcome(
+            reader, MemoryWrite(scope, "source", "no replay"),
+            retained=retained,
+        )
+
+    assert tuple(reader.events(scope)) == before
+    assert reader.get(original.memory_id, scope, include_expired=True) is None
+
+
+def test_reopened_reader_cannot_attribute_competing_matching_update(tmp_path):
+    reader, other, scope, original, retained = _pair(tmp_path)
+    proposal = MemoryWrite(
+        scope, "source", "restart-stable fixture", expires_at_ms=1500,
+    )
+    expected = generation_fenced_memory_update(other, proposal, retained=retained)
+    restarted = SQLiteMemoryStore(tmp_path / "competing-writers.sqlite",
+                                  clock_ms=lambda: 1000)
+    before = tuple(restarted.events(scope))
+
+    result = review_memory_generation_cas_outcome(
+        restarted, proposal, retained=retained,
+    )
+
+    assert result.observation == "ONE_MATCHING_UPDATE_OBSERVED"
+    _no_authority(result)
+    assert restarted.get(
+        original.memory_id, scope, include_expired=True,
+    ) == expected
+    assert tuple(restarted.events(scope)) == before
