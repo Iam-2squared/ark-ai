@@ -16,7 +16,10 @@ from ark.agency.contracts import (
     StepState,
     ToolCall,
 )
-from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
+from ark.agency.durable_occurrence_review import (
+    SyntheticOccurrenceStore,
+    SyntheticReplayRejected,
+)
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
@@ -99,16 +102,17 @@ def test_mock_marker_digest_reentrant_constructor_change_stays_unknown(
             monkeypatch.setattr(cycle.SyntheticMockCycleReceipt, "__init__", malicious)
         return digest
 
-    monkeypatch.setattr(cycle.hashlib, "sha256", sha256)
-    with pytest.raises(
-        cycle.SyntheticMockCycleRejected, match="receipt authority descriptor changed",
-    ):
-        _run(state)
-    assert injected == ["marker"]
+    with monkeypatch.context() as patch:
+        patch.setattr(cycle.hashlib, "sha256", sha256)
+        # The durable occurrence rejects a substituted hash before a private
+        # token can reach it, so the downstream marker/receipt hook never runs.
+        with pytest.raises(SyntheticReplayRejected, match="digest implementation changed"):
+            _run(state)
+    assert injected == []
     assert executed == []
-    assert state[0].recover().ambiguous_running_steps == ("root",)
-    assert state[1].count_synthetic() == 1
-    assert len(state[2].events()) == 1
+    assert state[0].recover().step_statuses == (("root", "pending", 0),)
+    assert state[1].count_synthetic() == 0
+    assert state[2].events() == []
     assert state[-1].calls == 0
 
 
