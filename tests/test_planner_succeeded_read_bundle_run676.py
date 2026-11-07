@@ -210,3 +210,38 @@ def test_replaced_bundle_authority_carrier_rejected_before_read_review(
         assert backend.calls == 0
     finally:
         journal.close()
+
+
+def test_substituted_correlation_callback_cannot_supply_receipt(
+    tmp_path, monkeypatch,
+):
+    """Reject an injected source before reading any synthetic success evidence."""
+    journal, steps, recovered, evidence, backend = _multi(tmp_path)
+    invoked = []
+
+    def synthetic_forgery(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise AssertionError("unexpected untrusted callback")
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                bundle.single, "review_synthetic_succeeded_read_correlation",
+                synthetic_forgery,
+            )
+            with pytest.raises(
+                bundle.PlannerReadSuccessBundleRejected, match="callback changed",
+            ):
+                bundle.review_synthetic_succeeded_read_bundle(
+                    recovered, steps, evidence,
+                )
+        assert invoked == []
+        assert backend.calls == 0
+        restored = bundle.review_synthetic_succeeded_read_bundle(
+            recovered, steps, evidence,
+        )
+        assert restored.step_ids == (FIRST, SECOND)
+        assert restored.dispatch_authorized is False
+        assert backend.calls == 0
+    finally:
+        journal.close()
