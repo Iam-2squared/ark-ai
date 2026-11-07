@@ -58,7 +58,7 @@ def test_restarted_crash_gap_denies_both_independent_replay_keys(
         registry, call, token, occurrence_id=first_occurrence, now_ms=10,
     )
     if phase != "reserved":
-        event = audit.append(call, outcome="synthetic_preaction_only")
+        event = audit.append(call, outcome="synthetic_audit_before_mock")
         if phase == "linked":
             witness = links.link_synthetic(
                 registry, call, reservations, first, audit, event, at_ms=15,
