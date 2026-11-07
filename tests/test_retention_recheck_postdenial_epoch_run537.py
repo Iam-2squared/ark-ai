@@ -1,6 +1,7 @@
-"""A final False privacy authority getter cannot retarget a retention review.
+"""Original result-lookup hooks must be rejected before private SQLite projection.
 
-Only locally seeded SQLite fixtures; no deletion, disclosure or real consent.
+Run676 pins the original result access path at function entry; the former
+last-getter fixture can no longer execute. No deletion, disclosure or consent.
 """
 
 from __future__ import annotations
@@ -34,13 +35,14 @@ def _fixture(tmp_path):
     "current_item", "scope", "memory_path", "veto_path",
     "earlier_denial_descriptor",
 ))
-def test_last_false_denial_cannot_mutate_checked_privacy_epoch(
+def test_modified_final_denial_lookup_is_rejected_before_private_reads(
     tmp_path, monkeypatch, target,
 ):
     state = _fixture(tmp_path)
     memory, scope, veto, cached = state
     original = recheck.review_synthetic_retention_inventory
     observed = []
+    mutations = []
 
     def collect(*args, **kwargs):
         value = original(*args, **kwargs)
@@ -50,6 +52,7 @@ def test_last_false_denial_cannot_mutate_checked_privacy_epoch(
     monkeypatch.setattr(recheck, "review_synthetic_retention_inventory", collect)
 
     def mutate(self):
+        mutations.append(target)
         if target == "result_ids":
             object.__setattr__(self, "expired_memory_ids", ("forged",))
         elif target == "result_flag":
@@ -76,10 +79,8 @@ def test_last_false_denial_cannot_mutate_checked_privacy_epoch(
             )
         return False
 
-    # Keep the original import-pinned denial descriptor intact; intercept
-    # instance lookup to simulate a reentrant callback at the final getter.
-    # Installing a replacement descriptor before the call must now be
-    # rejected before SQLite reads, which has separate regression coverage.
+    # Substituting __getattribute__ now fails the import-pinned hook check
+    # before inventory reads; the former final-getter mutation is unreachable.
     original_getattribute = recheck.SyntheticRetentionRecheck.__getattribute__
 
     def final_getter(self, name):
@@ -94,7 +95,12 @@ def test_last_false_denial_cannot_mutate_checked_privacy_epoch(
         recheck.review_synthetic_retention_recheck(
             *state, now_ms=101, max_age_ms=10,
         )
-    assert len(observed) == 4
+    assert observed == []
+    assert mutations == []
+    assert cached.items[0].revision == 1
+    assert scope.owner_id == "offline-owner"
+    assert memory.path == tmp_path / "memory.sqlite"
+    assert veto.path == tmp_path / "veto.sqlite"
 
 
 def test_stable_privacy_recheck_remains_content_free_and_non_authorizing(tmp_path):
