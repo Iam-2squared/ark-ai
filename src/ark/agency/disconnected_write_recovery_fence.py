@@ -102,6 +102,15 @@ _FENCE_DENIAL_NAMES = (
 _ORIGINAL_FENCE_DENIALS = tuple(
     vars(_FENCE_TYPE)[name] for name in _FENCE_DENIAL_NAMES
 )
+# A synthetic recovery digest is not external-execution evidence, but a
+# substituted hash/serializer/domain must never bless an unreviewed claim.
+# Snapshot their original definitions before any reentrant result callback.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+
 
 def _require_original_fence_denials() -> None:
     # Do not run a substituted getter even if it returns False. Report type
@@ -141,7 +150,16 @@ def _require_original_fence_denials() -> None:
         raise OfflineRecoveryFenceRejected(
             "mixed-plan authority descriptor changed"
         )
-
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise OfflineRecoveryFenceRejected(
+            "mixed-plan digest implementation or domain changed"
+        )
 
 
 def review_disconnected_recovery_fence(
