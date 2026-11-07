@@ -17,6 +17,7 @@ def test_replaced_actual_result_constructor_never_runs(tmp_path, monkeypatch, st
     store, _, _, retained, proposed = _case(tmp_path)
     constructor_calls = []
     opened = []
+    hash_calls = []
     original_hash = outcome.hashlib.sha256
 
     def malicious_init(self, *args):
@@ -33,6 +34,7 @@ def test_replaced_actual_result_constructor_never_runs(tmp_path, monkeypatch, st
         )
     else:
         def replace_during_hash(payload):
+            hash_calls.append(True)
             monkeypatch.setattr(
                 outcome.MemoryCASOutcomeReview, "__init__", malicious_init,
             )
@@ -42,13 +44,17 @@ def test_replaced_actual_result_constructor_never_runs(tmp_path, monkeypatch, st
 
     with pytest.raises(
         outcome.MemoryCASOutcomeRejected,
-        match="authority definition changed|manual inspection required",
+        match=(
+            "digest implementation changed" if stage == "hash_callback"
+            else "authority definition changed|manual inspection required"
+        ),
     ):
         outcome.review_memory_generation_cas_outcome(
             store, proposed, retained=retained,
         )
     assert constructor_calls == []
     assert opened == []
+    assert hash_calls == []  # Poisoned SHA hook is now refused at preflight.
 
 
 def test_unmodified_report_keeps_manual_only_disposition(tmp_path):
