@@ -69,9 +69,27 @@ _ORIGINAL_SINGLE_ORIGINALS = single._originals
 _ORIGINAL_TAIL_STABLE = journal._retained_tail_epoch_stable
 _ORIGINAL_LINK_FIELDS = registered._LINK_FIELDS
 _ORIGINAL_REVIEW_FIELDS = registered._REVIEW_FIELDS
+# A locally derived hash is not execution proof, but an injected digest
+# function or domain must not silently counterfeit the deterministic review.
+# Capture the primitive implementations before fixture-controlled callbacks.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 def _originals() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise PlannerReadSuccessBundleRejected(
+            "bundle digest implementation or domain changed"
+        )
     if (
         single._originals is not _ORIGINAL_SINGLE_ORIGINALS
         or journal._retained_tail_epoch_stable is not _ORIGINAL_TAIL_STABLE
