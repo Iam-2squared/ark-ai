@@ -62,6 +62,7 @@ def test_counterfeit_class_cannot_construct_or_grant_replay(
     ledger, _registry, _call, _token, backend = case
     original = module.SyntheticReservationReceipt
     constructed = []
+    hash_callback_calls = []
 
     class Counterfeit:
         # Copied original False-valued properties must not authenticate a
@@ -83,6 +84,7 @@ def test_counterfeit_class_cannot_construct_or_grant_replay(
         real_sha = module.hashlib.sha256
 
         def hash_with_swap(payload=b""):
+            hash_callback_calls.append(payload)
             if isinstance(payload, bytes) and payload.startswith(b"ARK-synthetic-v1\0"):
                 tamper()
             return real_sha(payload)
@@ -96,11 +98,16 @@ def test_counterfeit_class_cannot_construct_or_grant_replay(
 
         monkeypatch.setattr(ledger, "_connect", connect_with_commit_hook)
 
-    with pytest.raises(
-        module.SyntheticReplayRejected, match="synthetic receipt authority descriptor changed",
-    ):
+    expected = (
+        "digest implementation changed"
+        if phase == "token_hash"
+        else "synthetic receipt authority descriptor changed"
+    )
+    with pytest.raises(module.SyntheticReplayRejected, match=expected):
         _reserve(case)
     assert constructed == []
+    if phase == "token_hash":
+        assert hash_callback_calls == []
     monkeypatch.undo()
     assert ledger.count_synthetic() == expected_rows
     assert backend.calls == 0
