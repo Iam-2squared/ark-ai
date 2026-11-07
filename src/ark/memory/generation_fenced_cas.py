@@ -388,7 +388,17 @@ def generation_fenced_memory_update(
     metadata_json = json.dumps(
         metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
     )
-    content_hash = hashlib.sha256(original_content.encode()).hexdigest()
+    # Memory v1's string length check does not reject unpaired surrogates.
+    # Fail closed *before* opening a write transaction: SQLite cannot encode
+    # such text, and raw UnicodeEncodeError is not an opt-in CAS diagnosis.
+    try:
+        metadata_json.encode("utf-8", errors="strict")
+        content_bytes = original_content.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as exc:
+        raise MemoryGenerationCASRejected(
+            "generation CAS payload is not valid UTF-8"
+        ) from exc
+    content_hash = hashlib.sha256(content_bytes).hexdigest()
 
     def stable() -> None:
         _require_original_token_denials()
