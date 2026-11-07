@@ -68,13 +68,14 @@ def test_preinstalled_recovery_carrier_poison_is_denied_without_execution(
         ("digest", "OfflineRecoveryFence", "decisions"),
     ),
 )
-def test_reentrant_carrier_poison_denied_after_canonicalization(
+def test_substituted_digest_callback_denied_before_canonicalization(
     monkeypatch, callback: str, target_name: str, field: str,
 ):
     claims = _claims()
     attacked = []
     called = []
     target = getattr(recovery, target_name)
+    original_field = vars(target).get(field)
 
     def malicious(*_args, **_kwargs):
         called.append(True)
@@ -104,12 +105,16 @@ def test_reentrant_carrier_poison_denied_after_canonicalization(
 
         monkeypatch.setattr(recovery.hashlib, "sha256", callback_hash)
 
+    # Hash/JSON substitutions are rejected before the callback or class
+    # mutation executes, not merely after a late output-carrier review.
     with pytest.raises(
-        recovery.OfflineRecoveryFenceRejected, match="authority descriptor changed",
+        recovery.OfflineRecoveryFenceRejected,
+        match="mixed-plan digest implementation or domain changed",
     ):
         recovery.review_disconnected_recovery_fence(PLAN, claims)
-    assert attacked == [callback]
+    assert attacked == []
     assert called == []
+    assert vars(target).get(field) is original_field
 
 
 def test_untampered_unknown_write_and_dependent_read_remain_denied():
