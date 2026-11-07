@@ -40,3 +40,46 @@ No network/backend execution, paid compute, Candidate generation/training, prote
 2. Strengthen independent durable custody for Planner step-level READ receipts and UNKNOWN WRITE restart quarantine. A local digest is not external execution evidence.
 3. Continue Memory COMMIT-UNKNOWN manual-only review, CAS/ABA/WAL/expiry coherence and Personal Context revocation read-before-disclosure checks.
 4. Extend disconnected ToolRegistry/PermissionGate and audit-before-action recovery, Observation/proactive backend fixtures, and free V3 path/approval/identity guards. Maintain no-new-UI and no-paid-compute boundaries.
+
+## Package D — Memory COMMIT-UNKNOWN proposed-metadata preaccess
+
+The read-only generation CAS outcome review accepted a reflectively modified
+`MemoryWrite.metadata` mapping without checking that it could be represented
+as valid, bounded UTF-8 JSON. It could therefore access a private SQLite
+snapshot for an impossible proposal. This optional manual-only reader now
+checks metadata entry count (64), exact string keys/values, 4096-character
+individual bounds, nonblank keys, and strict UTF-8 JSON serializability
+**before any private SQLite open**. Frozen Memory v1 is unchanged.
+
+- Source: `c5805e9d4c65d636428b372bc5718f8a57cf79de` —
+  `src/ark/memory/generation_cas_outcome_review.py`.
+- New `tests/test_memory_cas_outcome_metadata_preaccess_run693.py` at
+  `f445cff35dcb5d1e8f97459b9ed86c84ad26b087`, **7** cases: unpaired
+  surrogate metadata key/value, non-string entry, oversize entry, blank key,
+  >64 entries, and normal Unicode manual-only unchanged result. Invalid
+  inputs must be rejected before a hooked private SQLite reader is called
+  and must not consume the retained CAS witness.
+- A matching row or an unchanged row **never** authorizes automatic replay
+  or attributes a COMMIT-UNKNOWN write to this caller.
+
+## CI diagnosis and compatibility fixes
+
+The first privacy implementation/test ancestor CI `#42408610331` failed
+on Ubuntu 3.12 after Ruff passed: **10,600 passed, 1 skipped, 10 failed**.
+Old synthetic fault-injection tests expected callbacks to run and produce
+source/retained-drift messages, but the new stronger hash-implementation
+preflight rejects those installed callbacks *before private reads*. The
+production safety veto was **not relaxed**. Compatibility test fixes:
+
+- `eb1208cbe7677031da5f3e0cf886ac221d192fac` — 5 affected
+  privacy-history cases: keep schema-phase path/retained mutation tests
+  without simultaneous forged `_hash` and require early denial/count=0
+  where a forged digest itself is the test.
+- `3cabd07ac8fd26e83c0af34d87f163d8ddbb066d` — 4 affected
+  retention-inventory cases: injected global SHA-256 now triggers privacy
+  preflight's exact refusal without running the final hash callback.
+- `b1f5912b7b730ecbc4cba7a669161ff4803e1025` — one
+  witness-constructor injection case now expects the earlier digest refusal.
+
+All per-commit CI results must be read at their exact HEAD. No failed,
+queued, partial or prior-green run certifies a later changed HEAD.
