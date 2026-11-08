@@ -68,7 +68,10 @@ def test_orphan_lifecycle_and_live_row_revision_are_denied(tmp_path, corruption)
     scope = MemoryScope("one-owner", "notes")
     _put(store, scope)
     _modify(store, corruption)
-    with pytest.raises(MemorySchemaError, match="event lifecycle|live rows|global event high-water"):
+    with pytest.raises(
+        MemorySchemaError,
+        match="event lifecycle|live rows|global event high-water",
+    ):
         review_atomic_memory_epoch(store, (scope,))
 
 
