@@ -50,17 +50,31 @@ author **17 parameter-expanded cases**: four dependency/domain mutations
 across four generation-CAS ingress/review paths, plus one real **local
 temporary SQLite** nonauthorizing observation fixture.
 
+## Package D — disconnected startup digest guard
+
+[Source `3860d956`](https://github.com/Iam-2squared/ark-ai/commit/3860d95655c7961ce1a67fc296affcbcf164d698)
+pins original `hashlib.sha256`, `json.dumps` and the local readiness
+digest domain before potentially private schema, plan or registry input
+inspection. This check is repeated immediately before the two local
+digest calculations. It does not query a user machine, execute a tool,
+prove cross-store atomicity, or grant startup authority.
+
+[New regression tests `324a6fa5`](https://github.com/Iam-2squared/ark-ai/commit/324a6fa5529652cd2b14fa1233fea112dc921609)
+author **4 parameter-expanded cases**: three preinstalled dependency/domain
+substitutions must reject before touching sentinel private inputs, and one
+original-implementation smoke check. No external resource is used.
+
 ## Evidence, limitations and concurrency
 
-- **36 newly authored parameter-expanded synthetic cases**, two source modules
-  changed, two new test files and one prior test corrected. The new cases
+- **40 newly authored parameter-expanded synthetic cases**, three source modules
+  changed, three new test files and one prior test corrected. The new cases
   were not executed in a local checked-out source tree; GitHub's per-commit
   automatic CI is the verifier, and the final checkpoint-result HEAD needs
   its *own* exact six-job GREEN evidence. No manually duplicated CI runs.
 - Observed during this session: fix [#42531566117](https://github.com/Iam-2squared/ark-ai/actions/runs/42531566117)
   **IN PROGRESS**; registry test [#42531811016](https://github.com/Iam-2squared/ark-ai/actions/runs/42531811016)
   **IN PROGRESS**; Memory test [#42532024733](https://github.com/Iam-2squared/ark-ai/actions/runs/42532024733)
-  **QUEUED** at observation. These are separate per-commit CI runs and
+  **QUEUED** at observation. Startup [#42532406893](https://github.com/Iam-2squared/ark-ai/actions/runs/42532406893) was **QUEUED** at observation. These are separate per-commit CI runs and
   may change. No latest-head GREEN is inferred.
 - `hashlib`/JSON callback identity checks are **process-local**, not a sandbox
   against an attacker with full Python process control. Neither local
