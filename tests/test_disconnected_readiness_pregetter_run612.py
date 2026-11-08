@@ -105,9 +105,12 @@ def test_posthash_global_report_constructor_replacement_is_never_called(
         return original_sha256(payload)
 
     monkeypatch.setattr(mod.hashlib, "sha256", injected_sha256)
-    with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="report authority"):
+    with pytest.raises(
+        mod.DisconnectedLocalReadinessRejected,
+        match="startup digest dependencies changed",
+    ):
         mod.review_disconnected_local_readiness(*args, observed_at_ms=100)
-    assert observed == {"ctor": 0, "mutation": 1}
+    assert observed == {"ctor": 0, "mutation": 0}
     assert backend.calls == 0
 
 
