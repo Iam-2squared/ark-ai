@@ -166,14 +166,19 @@ def test_reflective_mutation_during_decode_denied(monkeypatch):
     import ark.offline_png_scanlines as module
     req = fixture()
     original = module.zlib.decompressobj
+    calls = []
 
     def injected(*args, **kwargs):
+        calls.append((args, kwargs))
         object.__setattr__(req, "height", 2)
         return original(*args, **kwargs)
 
     monkeypatch.setattr(module.zlib, "decompressobj", injected)
-    with pytest.raises(OfflineScanlineRejected, match="carrier changed"):
+    # Refuse the malicious decompressor *before* it sees private IDAT bytes.
+    with pytest.raises(OfflineScanlineRejected, match="codec"):
         audit(req)
+    assert calls == []
+    assert req.height == 1
 
 
 def test_seeded_random_valid_unfiltered_rows():
