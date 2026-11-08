@@ -9,7 +9,10 @@ from __future__ import annotations
 import pytest
 
 import ark.agency.disconnected_due_recovery_review as recovery
-from ark.agency.disconnected_due_reservation import DisconnectedDueReservations
+from ark.agency.disconnected_due_reservation import (
+    DisconnectedDueReservations,
+    DueReservationRejected,
+)
 
 
 def _ledger(tmp_path):
@@ -98,10 +101,14 @@ def test_late_rewritten_prefix_report_cannot_escape_restart_review(
     with monkeypatch.context() as patch:
         patch.setattr(recovery, "review_retained_due_prefix", collect)
         patch.setattr(recovery.hashlib, "sha256", mutate_at_final_digest)
+        # The due ledger now rejects a replaced digest before any prefix
+        # review or untrusted hash callback is reached.
         with pytest.raises(
-            recovery.DisconnectedDueRecoveryRejected, match="prefix result changed",
+            DueReservationRejected, match="due digest callback authority changed",
         ):
             recovery.review_restarted_due_reservations(ledger, retained)
+    assert captured == []
+    assert ledger.witness() == retained
 
 
 def test_clean_due_restart_remains_read_only(tmp_path):
