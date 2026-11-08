@@ -23,20 +23,19 @@ def _case():
 def test_replaced_read_receipt_class_is_rejected_even_if_values_look_valid(monkeypatch):
     request, result, binding = _case()
 
+    executed = []
+
     class FakeReceipt:
         def __init__(self, request_id, step_id, operation, input_digest, result_digest):
-            self.request_id = request_id
-            self.step_id = step_id
-            self.operation = operation
-            self.input_digest = input_digest
-            self.result_digest = result_digest
-            self.dispatch_authorized = True
+            executed.append("forbidden constructor")
+            raise AssertionError("replacement receipt must not be constructed")
 
     monkeypatch.setattr(bridge, "ReadReceipt", FakeReceipt)
-    with pytest.raises(bridge.DisconnectedReadBridgeRejected, match="construction"):
+    with pytest.raises(bridge.DisconnectedReadBridgeRejected, match="receipt descriptor"):
         bridge.prepare_disconnected_read_receipt(
             "step_" + "b" * 16, request, result, binding,
         )
+    assert executed == []
 
 
 @pytest.mark.parametrize(("field", "replacement"), [
@@ -46,13 +45,14 @@ def test_replaced_read_receipt_class_is_rejected_even_if_values_look_valid(monke
     ("result_digest", "f" * 64),
     ("request_bound_digest", "f" * 64),
 ])
-def test_recomputed_binding_changed_during_receipt_construction_is_rejected(
+def test_substituted_receipt_factory_is_rejected_before_rebinding_or_construction(
     monkeypatch, field, replacement,
 ):
     request, result, binding = _case()
     original_binding = bridge.bind_disconnected_fixture_result
     original_receipt = bridge.ReadReceipt
     captured = []
+    constructed = []
 
     def capture(req, res):
         verified = original_binding(req, res)
@@ -60,16 +60,19 @@ def test_recomputed_binding_changed_during_receipt_construction_is_rejected(
         return verified
 
     def mutate(*args, **kwargs):
+        constructed.append((field, replacement))
         receipt = original_receipt(*args, **kwargs)
         object.__setattr__(captured[0], field, replacement)
         return receipt
 
     monkeypatch.setattr(bridge, "bind_disconnected_fixture_result", capture)
     monkeypatch.setattr(bridge, "ReadReceipt", mutate)
-    with pytest.raises(bridge.DisconnectedReadBridgeRejected, match="verified READ binding"):
+    with pytest.raises(bridge.DisconnectedReadBridgeRejected, match="receipt descriptor"):
         bridge.prepare_disconnected_read_receipt(
             "step_" + "b" * 16, request, result, binding,
         )
+    assert captured == []
+    assert constructed == []
 
 
 def test_unmodified_bridge_still_builds_only_inert_read_row():
