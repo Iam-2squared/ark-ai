@@ -145,12 +145,54 @@ def _require_original_snapshot_class() -> None:
         )
 
 
+
+# Frozen dataclass instances do not freeze their class descriptors. A patched
+# slot/getter/constructor may inspect a private receipt before validation;
+# pin import-original carriers and deny-only authority descriptors first.
+_RECEIPT_FIELDS = (
+    "request_id", "step_id", "operation", "input_digest", "result_digest",
+)
+_WITNESS_FIELDS = ("count", "tip_sha256")
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+
+
+def _require_original_read_carriers() -> None:
+    if ReadReceipt is not _RECEIPT_TYPE or ReadJournalWitness is not _WITNESS_TYPE:
+        raise ReadJournalRejected("synthetic READ carrier class changed")
+    for cls, names, originals in (
+        (_RECEIPT_TYPE, _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
+        (_WITNESS_TYPE, _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+        (_RECEIPT_TYPE, _CARRIER_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
+        (_WITNESS_TYPE, _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+        (_WITNESS_TYPE, _WITNESS_DENIALS, _ORIGINAL_WITNESS_DENIALS),
+    ):
+        if any(
+            vars(cls).get(name) is not original
+            for name, original in zip(names, originals, strict=True)
+        ):
+            raise ReadJournalRejected("synthetic READ carrier descriptor changed")
+
+
 def genesis_witness() -> ReadJournalWitness:
     """The single valid starting witness for a new, empty local journal."""
+    _require_original_read_carriers()
     return ReadJournalWitness(0, _GENESIS)
 
 
 def _check_witness(witness: ReadJournalWitness) -> None:
+    _require_original_read_carriers()
     if type(witness) is not _WITNESS_TYPE:
         raise ReadJournalRejected("invalid retained witness")
     original_count = witness.count
@@ -181,6 +223,7 @@ def _check_witness(witness: ReadJournalWitness) -> None:
 
 
 def _check_receipt(row: ReadReceipt) -> None:
+    _require_original_read_carriers()
     if (
         type(row) is not _RECEIPT_TYPE
         or type(row.request_id) is not str or _REQUEST.fullmatch(row.request_id) is None
@@ -311,6 +354,7 @@ class DisconnectedReadJournal:
 
     def _scan(self) -> ReadJournalWitness:
         """Scan in the caller's transaction, enforcing contiguous hash linkage."""
+        _require_original_read_carriers()
         _verify_schema(self._connection)
         marker = self._connection.execute("SELECT revision FROM marker").fetchall()
         if marker != [(_SCHEMA,)]:
@@ -324,6 +368,7 @@ class DisconnectedReadJournal:
         tip = _GENESIS
         seen: set[tuple[str, str]] = set()
         for i, (seq, request, step, op, inp, out, previous, stored) in enumerate(rows, 1):
+            _require_original_read_carriers()
             row = ReadReceipt(request, step, op, inp, out)
             _check_receipt(row)
             identity = (request, step)
@@ -335,6 +380,7 @@ class DisconnectedReadJournal:
             if stored != tip:
                 raise ReadJournalRejected("receipt chain altered")
             seen.add(identity)
+        _require_original_read_carriers()
         return ReadJournalWitness(len(rows), tip)
 
     def verify(self, retained: ReadJournalWitness) -> ReadJournalWitness:
@@ -414,6 +460,7 @@ class DisconnectedReadJournal:
                 "SELECT request_id,step_id,operation,input_digest,result_digest "
                 "FROM receipts ORDER BY seq"
             ).fetchall()
+            _require_original_read_carriers()
             rows = tuple(ReadReceipt(*item) for item in saved)
             if len(rows) != actual.count:
                 raise ReadJournalRejected("READ recovery row count changed")
@@ -452,6 +499,7 @@ class DisconnectedReadJournal:
         )
 
         def stable_result() -> None:
+            _require_original_read_carriers()
             if (
                 type(result) is not _SNAPSHOT_TYPE
                 or result.witness is not actual
