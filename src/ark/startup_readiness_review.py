@@ -53,6 +53,9 @@ class StartupComponent:
     schema_revision: str | None = None
 
     def __post_init__(self) -> None:
+        # A slotted field can be replaced with executable descriptor code.
+        # Validate the original class before reading even the first label.
+        _assert_original_startup_constructors()
         _identifier(self.component_id, "component_id")
         if type(self.dependencies) is not tuple:
             raise TypeError("dependencies must be an exact tuple")
@@ -97,6 +100,7 @@ class StartupSnapshot:
         A local checksum detects stale or altered cached diagnostics; it is
         neither external attestation nor permission to activate a capability.
         """
+        _assert_original_startup_constructors()
         if (
             type(self.components) is not tuple or not self.components
             or len(self.components) > _MAX_COMPONENTS
@@ -302,6 +306,32 @@ _ORIGINAL_COMPONENT_INIT = vars(_STARTUP_COMPONENT_TYPE)["__init__"]
 _ORIGINAL_COMPONENT_POST_INIT = vars(_STARTUP_COMPONENT_TYPE)["__post_init__"]
 _ORIGINAL_COMPONENT_RESULT_INIT = vars(_COMPONENT_RESULT_TYPE)["__init__"]
 _ORIGINAL_SNAPSHOT_INIT = vars(_STARTUP_SNAPSHOT_RESULT_TYPE)["__init__"]
+# Check exact original data slots/lookup hooks in addition to constructors.
+# A frozen dataclass does not prevent a malicious property or overridden
+# __getattribute__ from accessing probe identities before validation.
+_STARTUP_CARRIER_TYPES = (
+    _STARTUP_COMPONENT_TYPE, _COMPONENT_RESULT_TYPE,
+    _STARTUP_SNAPSHOT_RESULT_TYPE,
+)
+_STARTUP_CARRIER_FIELDS = (
+    ("component_id", "dependencies", "local_state", "failure_code", "schema_revision"),
+    (
+        "component_id", "dependencies", "local_state", "effective_state",
+        "failure_code", "schema_revision",
+    ),
+    ("components", "digest"),
+)
+_STARTUP_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_CARRIER_FIELDS = tuple(
+    tuple(vars(kind)[field] for field in fields)
+    for kind, fields in zip(
+        _STARTUP_CARRIER_TYPES, _STARTUP_CARRIER_FIELDS, strict=True,
+    )
+)
+_ORIGINAL_CARRIER_HOOKS = tuple(
+    tuple(vars(kind).get(name) for name in _STARTUP_CARRIER_HOOKS)
+    for kind in _STARTUP_CARRIER_TYPES
+)
 
 
 def _assert_original_startup_constructors() -> None:
@@ -316,6 +346,27 @@ def _assert_original_startup_constructors() -> None:
         is not _ORIGINAL_COMPONENT_RESULT_INIT
         or vars(_STARTUP_SNAPSHOT_RESULT_TYPE).get("__init__")
         is not _ORIGINAL_SNAPSHOT_INIT
+        or any(
+            any(
+                vars(kind).get(name) is not original
+                for name, original in zip(fields, originals, strict=True)
+            )
+            for kind, fields, originals in zip(
+                _STARTUP_CARRIER_TYPES, _STARTUP_CARRIER_FIELDS,
+                _ORIGINAL_CARRIER_FIELDS, strict=True,
+            )
+        )
+        or any(
+            any(
+                vars(kind).get(name) is not original
+                for name, original in zip(
+                    _STARTUP_CARRIER_HOOKS, originals, strict=True,
+                )
+            )
+            for kind, originals in zip(
+                _STARTUP_CARRIER_TYPES, _ORIGINAL_CARRIER_HOOKS, strict=True,
+            )
+        )
     ):
         raise ValueError("startup constructor authority changed")
 
