@@ -4,11 +4,12 @@ The SQLite store contains only synthetic hash identities; it cannot establish
 human consent, independent custody, real data erasure, or external exactly-once.
 """
 
-from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
+from __future__ import annotations
 
 import hashlib
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 
