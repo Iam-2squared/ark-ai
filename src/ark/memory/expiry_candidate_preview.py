@@ -148,14 +148,17 @@ def _check_global_event_highwater(conn: sqlite3.Connection) -> None:
     count, first, last = conn.execute(
         "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
     ).fetchone()
-    seq_row = conn.execute(
+    # sqlite_sequence.name is NOT UNIQUE. A forged duplicate can hide behind
+    # fetchone() even when SQLite quick_check reports a healthy database.
+    # Read all high-water markers inside the same candidate snapshot.
+    seq_rows = conn.execute(
         "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-    ).fetchone()
+    ).fetchall()
     if (
         type(count) is not int or count < 0
         or (
             count == 0
-            and (first is not None or last is not None or seq_row is not None)
+            and (first is not None or last is not None or seq_rows)
         )
         or (
             count > 0
@@ -163,8 +166,9 @@ def _check_global_event_highwater(conn: sqlite3.Connection) -> None:
                 type(first) is not int or first != 1
                 or type(last) is not int or last != count
                 or last > _MAX_TIME
-                or seq_row is None
-                or type(seq_row[0]) is not int or seq_row[0] != last
+                or len(seq_rows) != 1
+                or type(seq_rows[0][0]) is not int
+                or seq_rows[0][0] != last
             )
         )
     ):
