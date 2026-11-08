@@ -30,6 +30,7 @@ from .generation_fenced_cas import (
     MemoryGenerationCASToken,
     _digest,
     _require_bounded_scope,
+    _require_original_generation_inputs,
     _require_bounded_source_id,
     _row_hash,
     _snapshot,
@@ -154,6 +155,12 @@ def review_memory_generation_cas_outcome(
     Missing/deleted/recreated/invalid rows are rejected for manual triage.
     Every category is advisory, non-authorizing and time-limited.
     """
+    # Validate original Memory v1 carrier descriptors before accessing a
+    # proposed field. Frozen instances do not freeze their class slots.
+    try:
+        _require_original_generation_inputs()
+    except MemoryGenerationCASRejected as exc:
+        raise MemoryCASOutcomeRejected("CAS observation input carrier changed") from exc
     if (
         type(store) is not SQLiteMemoryStore
         or type(proposed) is not MemoryWrite
@@ -233,6 +240,10 @@ def review_memory_generation_cas_outcome(
 
     def stable() -> None:
         _require_original_denials()
+        try:
+            _require_original_generation_inputs()
+        except MemoryGenerationCASRejected as exc:
+            raise MemoryCASOutcomeRejected("CAS observation input carrier changed") from exc
         if (
             type(store) is not SQLiteMemoryStore
             or store.path is not path
