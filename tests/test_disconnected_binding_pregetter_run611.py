@@ -97,7 +97,7 @@ def test_hash_callback_cannot_replace_result_constructor(monkeypatch):
 
     monkeypatch.setattr(binding.hashlib, "sha256", inject)
     with pytest.raises(
-        binding.DisconnectedFixtureBindingRejected, match="constructed binding",
+        binding.DisconnectedFixtureBindingRejected, match="fixture recomputation rejected",
     ):
         binding.bind_disconnected_fixture_result(request, result)
     assert calls == []
