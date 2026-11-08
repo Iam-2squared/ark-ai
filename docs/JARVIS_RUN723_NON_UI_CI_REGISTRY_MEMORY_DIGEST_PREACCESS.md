@@ -64,6 +64,36 @@ author **4 parameter-expanded cases**: three preinstalled dependency/domain
 substitutions must reject before touching sentinel private inputs, and one
 original-implementation smoke check. No external resource is used.
 
+## Inherited cross-lane CI corrections after registry-source CI
+
+[Registry-test CI #42531811016](https://github.com/Iam-2squared/ark-ai/actions/runs/42531811016)
+reported **four FAIL on Ubuntu 3.11** (11,314 PASS, 1 SKIP)
+and on the other observed Ubuntu versions. New 19 registry cases passed;
+the failures were inherited late-phase callback expectations. The registry
+now refuses a changed SHA before fixture startup or before a synthetic WRITE
+is ever journaled. Updated expectations in four old test modules:
+
+- [`3b1db8db`](https://github.com/Iam-2squared/ark-ai/commit/3b1db8dbdac83b3f2ce1c351549f79e3c20a0f56):
+  startup must refuse before injected hash/constructor invocation, not
+  demand a late report-authorization failure.
+- [`62cf747e`](https://github.com/Iam-2squared/ark-ai/commit/62cf747ee8e904631b5fb1f689a7118a23d92a59):
+  audit marker mutation is refused at registry before Planner RUNNING,
+  occurrence reservation or pre-action audit; PENDING remains unchanged.
+- [`2caa26a3`](https://github.com/Iam-2squared/ark-ai/commit/2caa26a312b936e1035e6c5e91e910987d77e2ad):
+  synthetic mock receipt constructor mutation is likewise refused before
+  any running state is recorded or backend accessed.
+- [`f22a894f`](https://github.com/Iam-2squared/ark-ai/commit/f22a894f495d68aa85eef15c88b5110586d0e5d5):
+  registry bound constructor test continues to demand constructor denial
+  for preinstalled replacement; digest-reentrant parameter now requires
+  earlier digest-dependency denial and zero hostile invocation.
+
+These corrections **did not relax production protection**, did not execute
+real tools, and are not evidence of a later six-job GREEN. The later Memory
+source/test CI [#42532024733](https://github.com/Iam-2squared/ark-ai/actions/runs/42532024733)
+showed the **same four inherited FAIL** on Ubuntu 3.11
+(**11,331 PASS / 4 FAIL / 1 SKIP**), with no additional Memory test failure.
+The corrections were saved only *after* those earlier per-commit runs.
+
 ## Evidence, limitations and concurrency
 
 - **40 newly authored parameter-expanded synthetic cases**, three source modules
