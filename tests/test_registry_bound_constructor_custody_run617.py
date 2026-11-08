@@ -56,7 +56,11 @@ def test_rebound_original_constructor_refused_without_execution(
             registry_module.hashlib, "sha256", inject_during_bound_digest,
         )
 
-    with pytest.raises(ValueError, match="bound result constructor changed"):
+    expected_denial = (
+        "bound result constructor changed" if epoch == "preinstalled"
+        else "registry digest dependencies changed"
+    )
+    with pytest.raises(ValueError, match=expected_denial):
         registry.bind(call)
     assert invoked == []
     assert backend.calls == 0
