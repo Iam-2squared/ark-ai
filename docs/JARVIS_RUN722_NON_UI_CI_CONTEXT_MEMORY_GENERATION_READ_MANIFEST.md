@@ -6,7 +6,7 @@
 
 - Repo: `Iam-2squared/ark-ai`, `research/jarvis-foundations` / **Draft PR #8**; first basis `062df1781ef993736469cc19400eba1dc9a277bb` (Run721 checkpoint).
 - No changes to `main`, protected Draft PR #5, paused UI Draft PR #9, frozen V1/V2/Local UI/Launcher evidence, protected V3 contract/evaluation boundaries.
-- **Three substantive coherent work packages** (one CI repair across two files; one Memory source/test; one Planner source/test); two production modules modified, three existing test files? **two existing test files corrected**, two NEW test files, **11 authored new parameter-expanded cases**, plus **eight existing parameter-expanded cases changed/strengthened**. No full local Ruff/pytest was available in the tool environment; CI must establish platform PASS.
+- **Three substantive coherent work packages** (one CI repair across two files; one Memory source/test; one Planner source/test); two production modules modified, **two existing test files corrected**, two NEW test files, **11 authored new parameter-expanded cases**, plus **eight existing parameter-expanded cases changed/strengthened**. No full local Ruff/pytest was available in the tool environment; CI must establish platform PASS.
 
 ## A — repair actual Run721 Context CI failure without weakening guards
 
