@@ -70,9 +70,12 @@ class OfflinePngInventory:
         return False
 
 
-# A substituted digest callback could receive raw private PNG fixture bytes
-# before CRC or result-carrier checks run. Hold import-time SHA identity.
+# A substituted digest/framing callback could receive raw private PNG fixture
+# bytes before the integrity/authority checks run. Pin callable identities.
 _ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_CRC32 = zlib.crc32
+_ORIGINAL_UNPACK = struct.unpack
+_ORIGINAL_UNPACK_FROM = struct.unpack_from
 _INVENTORY_TYPE = OfflinePngInventory
 _DENIAL_NAMES = (
     "decoded_pixels_verified", "capture_provenance_verified",
@@ -102,6 +105,12 @@ _ORIGINAL_RESULT_HOOKS = tuple(
 def _require_original_png_authority() -> None:
     if hashlib.sha256 is not _ORIGINAL_SHA256:
         raise OfflinePngRejected("PNG digest implementation changed before private bytes")
+    if (
+        zlib.crc32 is not _ORIGINAL_CRC32
+        or struct.unpack is not _ORIGINAL_UNPACK
+        or struct.unpack_from is not _ORIGINAL_UNPACK_FROM
+    ):
+        raise OfflinePngRejected("PNG framing implementation changed before private bytes")
     # Never run a replacement class constructor or a False-looking forged
     # descriptor. Both can have side effects and can forge an inert receipt.
     if (
