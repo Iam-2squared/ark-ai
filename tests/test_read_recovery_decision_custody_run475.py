@@ -73,8 +73,8 @@ def test_earlier_decision_modified_by_later_constructor_is_rejected(monkeypatch)
 
 @pytest.mark.parametrize("replacement", ["QUARANTINE_UNCERTAIN", "equal_value_copy"])
 def test_decision_changed_during_digest_is_rejected(monkeypatch, replacement):
-    # Capture genuine decisions through a read hook. Replacing the class with
-    # a factory is now rejected before constructing even the first decision.
+    # Import-pinned field/lookup custody now refuses the injected hook before
+    # any decision is read or the substituted digest callback is invoked.
     original_getattribute = recovery.ReadRecoveryDecision.__getattribute__
     old_hash = recovery.hashlib.sha256
     created = []
@@ -99,17 +99,22 @@ def test_decision_changed_during_digest_is_rejected(monkeypatch, replacement):
         recovery.ReadRecoveryDecision, "__getattribute__", remember,
     )
     monkeypatch.setattr(recovery.hashlib, "sha256", change_then_hash)
-    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
+    with pytest.raises(
+        recovery.DetachedReadRecoveryRejected,
+        match="authority descriptor changed",
+    ):
         _review()
-    assert len(created) == 2
+    assert created == []
 
 
 def test_result_constructor_cannot_rewrite_nested_decision(monkeypatch):
     # Retain original class identity. A late authorization getter callback
     # can still mutate a previously constructed nested decision.
     original_getattribute = recovery.DetachedReadRecoverySchedule.__getattribute__
+    callbacks = []
 
     def rewrite(self, name):
+        callbacks.append(name)
         if name == "dispatch_authorized":
             decisions = original_getattribute(self, "decisions")
             object.__setattr__(decisions[0], "disposition", "QUARANTINE_UNCERTAIN")
@@ -119,8 +124,12 @@ def test_result_constructor_cannot_rewrite_nested_decision(monkeypatch):
     monkeypatch.setattr(
         recovery.DetachedReadRecoverySchedule, "__getattribute__", rewrite,
     )
-    with pytest.raises(recovery.DetachedReadRecoveryRejected, match="decision carrier"):
+    with pytest.raises(
+        recovery.DetachedReadRecoveryRejected,
+        match="authority descriptor changed",
+    ):
         _review()
+    assert callbacks == []
 
 
 def test_forged_review_result_is_rejected(monkeypatch):
