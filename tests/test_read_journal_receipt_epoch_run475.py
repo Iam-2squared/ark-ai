@@ -106,7 +106,7 @@ def test_verify_rejects_forged_scan_receipt(tmp_path, monkeypatch):
         assert journal.verify(genesis) == genesis
 
 
-def test_forged_witness_factory_after_commit_is_rejected_without_retry(
+def test_preinstalled_witness_factory_is_rejected_before_append(
     tmp_path, monkeypatch,
 ):
     with _journal(tmp_path) as journal:
@@ -123,17 +123,17 @@ def test_forged_witness_factory_after_commit_is_rejected_without_retry(
 
         with monkeypatch.context() as patch:
             patch.setattr(journal_module, "ReadJournalWitness", forge)
-            with pytest.raises(journal_module.ReadJournalRejected, match="post-commit"):
+            with pytest.raises(
+                journal_module.ReadJournalRejected,
+                match="synthetic READ carrier class changed",
+            ):
                 journal.append(_receipt(), genesis)
-        # The error was observed AFTER COMMIT. Never report rollback or re-append.
-        committed = journal._scan()
-        assert committed.count == 1
-        assert journal.verify(committed) == committed
-        with pytest.raises(journal_module.ReadJournalRejected):
-            journal.append(_receipt(), committed)
+        # Preinstalled factory is rejected before commit, never invoked.
+        assert journal._scan().count == 0
+        assert journal.verify(genesis) == genesis
 
 
-def test_postcommit_witness_callback_mutation_is_reported(tmp_path, monkeypatch):
+def test_preinstalled_witness_mutating_factory_is_rejected_before_append(tmp_path, monkeypatch):
     with _journal(tmp_path) as journal:
         genesis = journal_module.genesis_witness()
         original = journal_module.ReadJournalWitness
@@ -148,6 +148,9 @@ def test_postcommit_witness_callback_mutation_is_reported(tmp_path, monkeypatch)
 
         with monkeypatch.context() as patch:
             patch.setattr(journal_module, "ReadJournalWitness", change_then_construct)
-            with pytest.raises(journal_module.ReadJournalRejected, match="carriers changed"):
+            with pytest.raises(
+                journal_module.ReadJournalRejected,
+                match="synthetic READ carrier class changed",
+            ):
                 journal.append(_receipt(), genesis)
-        assert journal._scan().count == 1
+        assert journal._scan().count == 0
