@@ -81,6 +81,34 @@ class QuarantineReceipt:
         return False
 
 
+# Pin result class identity/slots before a prospective SQLite write. A
+# preinstalled synthetic constructor or field property could otherwise run
+# only AFTER the quarantine had already committed. These are not permission.
+_RECEIPT_TYPE = QuarantineReceipt
+_RECEIPT_CARRIER_NAMES = (
+    "witness", "quarantined_index", "__init__", "__new__",
+    "__getattribute__", "__getattr__",
+)
+_ORIGINAL_RECEIPT_CARRIER = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_CARRIER_NAMES
+)
+
+
+def _require_original_quarantine_receipt_carrier() -> None:
+    if (
+        QuarantineReceipt is not _RECEIPT_TYPE
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_CARRIER_NAMES, _ORIGINAL_RECEIPT_CARRIER, strict=True,
+            )
+        )
+    ):
+        raise ScheduleQuarantineRejected(
+            "quarantine receipt constructor or field descriptor changed"
+        )
+
+
 # Capture denial-only descriptors before any caller-supplied callback can
 # replace them with plausible False-returning getters. An unchanged False
 # return value alone is not proof of original authority semantics.
@@ -338,12 +366,14 @@ class DisconnectedScheduleQuarantineLedger:
         retained: QuarantineWitness,
     ) -> QuarantineReceipt:
         """Record one *already expired* synthetic occurrence in order, without dispatch."""
+        _require_original_quarantine_receipt_carrier()
         self._check_witness(retained)
         original = (retained.count, retained.chain_sha256)
         original_epoch = self._epoch
         original_path = self._path
 
         def stable() -> None:
+            _require_original_quarantine_receipt_carrier()
             if (
                 self._path is not original_path
                 or self._epoch is not original_epoch
