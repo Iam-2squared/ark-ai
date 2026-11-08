@@ -24,6 +24,14 @@ _MAX_EVENTS = 40_000
 _DENIALS = ("write_authorized", "erase_authorized", "generation_authenticated")
 _REVIEW_TYPE = MemoryGenerationReview
 _ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[name] for name in _DENIALS)
+_FIELDS = (
+    "memory_id", "event_count", "generation_count", "live_revision",
+    "expected_revision", "revision_reuse_possible", "retained_history_sha256",
+)
+_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_FIELDS = tuple(vars(_REVIEW_TYPE)[name] for name in _FIELDS)
+_ORIGINAL_HOOKS = tuple(vars(_REVIEW_TYPE).get(name) for name in _HOOKS)
+_ORIGINAL_REVIEW = review_memory_revision_reuse
 
 
 class RetainedMemoryGenerationRejected(MemorySchemaError):
@@ -31,10 +39,20 @@ class RetainedMemoryGenerationRejected(MemorySchemaError):
 
 
 def _assert_original_denials() -> None:
-    # Never invoke a counterfeit class descriptor while checking authority.
-    if any(
-        vars(_REVIEW_TYPE).get(name) is not original
-        for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+    # Before reading retained fields or passing a private store to a callback,
+    # reject substituted record descriptors and the imported review function.
+    if (
+        MemoryGenerationReview is not _REVIEW_TYPE
+        or review_memory_revision_reuse is not _ORIGINAL_REVIEW
+        or any(
+            vars(_REVIEW_TYPE).get(name) is not original
+            for names, originals in (
+                (_DENIALS, _ORIGINAL_DENIALS),
+                (_FIELDS, _ORIGINAL_FIELDS),
+                (_HOOKS, _ORIGINAL_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
     ):
         raise RetainedMemoryGenerationRejected(
             "retained generation authority descriptor changed"
