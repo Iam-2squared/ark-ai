@@ -70,6 +70,7 @@ class ObservationEnvelope:
         # field. A slotted dataclass can still have an executable field getter
         # or inherited lookup hook installed on its exact class.
         _require_original_identity_carrier()
+        _require_original_digest_implementation()
         if type(self) is not _ENVELOPE_TYPE:
             raise ValueError("observation identity requires exact envelope type")
         # A frozen dataclass is still reflectively mutable. The direct public
@@ -83,6 +84,7 @@ class ObservationEnvelope:
 
         def assert_epoch() -> None:
             _require_original_identity_carrier()
+            _require_original_digest_implementation()
             current = (
                 self.kind, self.source_id, self.adapter_id, self.privacy_scope,
                 self.ingested_at_ms, self.content_sha256, self.parent_sha256,
@@ -137,6 +139,26 @@ _ORIGINAL_ENVELOPE_FIELDS = tuple(
 _ORIGINAL_ENVELOPE_HOOKS = tuple(
     vars(_ENVELOPE_TYPE).get(name) for name in _ENVELOPE_HOOKS
 )
+
+
+# The direct public identity getter hashes provenance/privacy labels, not
+# just opaque content. Pin the import-time serializer and digest before any
+# such labels reach a callback. The envelope initializer does not hash and
+# therefore remains independent of this opt-in identity preflight.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+
+
+def _require_original_digest_implementation() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+    ):
+        raise ValueError("observation identity digest implementation changed")
 
 
 def _require_original_identity_carrier() -> None:
