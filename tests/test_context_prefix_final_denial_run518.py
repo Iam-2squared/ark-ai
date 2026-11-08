@@ -83,7 +83,7 @@ def test_preinstalled_source_witness_getter_cannot_reach_report(
         )
         with pytest.raises(
             prefix.OfflineContextPrefixRejected,
-            match="invalid retained context witness",
+            match="context result authority changed after denial",
         ):
             prefix.review_retained_context_replay_prefix(ledger, retained)
     # Rejection now occurs before either side-effecting getter or report
