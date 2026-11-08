@@ -23,6 +23,7 @@ _ORIGINAL_SHA256 = hashlib.sha256
 # Pin canonical JSON encoding at import; digesting injected JSON is not proof
 # that the reviewed owner/scope and masked result actually reached the digest.
 _ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_JSON_LOADS = json.loads
 
 
 class OfflineRedactionRejected(ValueError):
@@ -96,6 +97,8 @@ def _require_original_denials() -> None:
         RedactedOfflinePreview is not _REDACTED_RESULT_TYPE
         or OfflineRedactionSpan is not _REDACTION_SPAN_TYPE
         or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or json.loads is not _ORIGINAL_JSON_LOADS
         or any(
             vars(cls).get(name) is not original
             for cls, names, originals in (
