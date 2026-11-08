@@ -44,6 +44,7 @@ def test_final_constructor_cannot_retarget_privacy_diagnostic(
     original_inventory = recheck.review_synthetic_retention_inventory
     current = []
     reviews = []
+    hostile_constructor_calls = []
 
     def collect(*args, **kwargs):
         value = original_inventory(*args, **kwargs)
@@ -53,6 +54,7 @@ def test_final_constructor_cannot_retarget_privacy_diagnostic(
         return value
 
     def tamper(self, *args, **kwargs):
+        hostile_constructor_calls.append(target)
         native_init(self, *args, **kwargs)
         if target in {
             "scope_digest", "captured_inventory_digest", "current_inventory_digest",
@@ -93,17 +95,18 @@ def test_final_constructor_cannot_retarget_privacy_diagnostic(
 
     monkeypatch.setattr(recheck, "review_synthetic_retention_inventory", collect)
     monkeypatch.setattr(recheck.SyntheticRetentionRecheck, "__init__", tamper)
-    expect = (
-        "source or evidence changed" if target.startswith("cached_")
-        else "current retention evidence changed"
-        if target in {"current_digest", "current_items"}
-        else "returned result changed"
-    )
-    with pytest.raises(recheck.SyntheticRetentionRecheckRejected, match=expect):
+    # The import-pinned original constructor is checked before any inventory
+    # projection, so the previous post-construction tampering route is no
+    # longer reachable. Keep the original variants as pre-access regressions.
+    with pytest.raises(
+        recheck.SyntheticRetentionRecheckRejected,
+        match="original denial implementation",
+    ):
         recheck.review_synthetic_retention_recheck(
             *state, now_ms=101, max_age_ms=10,
         )
-    assert len(reviews) == 4
+    assert reviews == []
+    assert hostile_constructor_calls == []
 
 
 def test_unchanged_recheck_is_a_non_authorizing_review_queue(tmp_path):
