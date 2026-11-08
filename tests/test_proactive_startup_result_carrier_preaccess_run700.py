@@ -70,20 +70,30 @@ def test_substituted_result_carrier_rejected_before_first_read(
         executed.append("private readiness/trigger read")
         raise AssertionError("review entered before carrier check")
 
-    monkeypatch.setattr(
-        mod.SyntheticProactiveStartupReview,
-        field,
-        property(forbidden) if field in _RESULT_FIELDS else forbidden,
-        raising=False,
-    )
-    monkeypatch.setattr(mod, "review_synthetic_startup_lease", unexpected_read)
-    monkeypatch.setattr(mod, "review_prepared_trigger_freshness", unexpected_read)
-    with pytest.raises(
-        mod.SyntheticProactiveStartupRejected,
-        match="authority descriptor epoch changed",
-    ):
-        _review(case)
-    assert executed == []
+    cls = mod.SyntheticProactiveStartupReview
+    # pytest.MonkeyPatch restores inherited __new__ by *assigning* it onto
+    # the class, making object.__new__ receive dataclass constructor args in
+    # later tests. Preserve exact class-dict absence instead.
+    existed = field in vars(cls)
+    original = vars(cls).get(field)
+    try:
+        setattr(
+            cls, field,
+            property(forbidden) if field in _RESULT_FIELDS else forbidden,
+        )
+        monkeypatch.setattr(mod, "review_synthetic_startup_lease", unexpected_read)
+        monkeypatch.setattr(mod, "review_prepared_trigger_freshness", unexpected_read)
+        with pytest.raises(
+            mod.SyntheticProactiveStartupRejected,
+            match="authority descriptor epoch changed",
+        ):
+            _review(case)
+        assert executed == []
+    finally:
+        if existed:
+            setattr(cls, field, original)
+        else:
+            delattr(cls, field)
 
 
 @pytest.mark.parametrize("field", ("__init__", "trigger_id", "__getattribute__"))
@@ -93,7 +103,9 @@ def test_readiness_callback_cannot_install_result_carrier_before_trigger_read(
     case = _case(tmp_path)
     original_readiness = mod.review_synthetic_startup_lease
     seen = []
-    original = vars(mod.SyntheticProactiveStartupReview).get(field)
+    cls = mod.SyntheticProactiveStartupReview
+    existed = field in vars(cls)
+    original = vars(cls).get(field)
 
     def forbidden(*_args, **_kwargs):
         seen.append("counterfeit carrier")
@@ -102,11 +114,9 @@ def test_readiness_callback_cannot_install_result_carrier_before_trigger_read(
     def reentrant(*args, **kwargs):
         seen.append("readiness")
         report = original_readiness(*args, **kwargs)
-        monkeypatch.setattr(
-            mod.SyntheticProactiveStartupReview,
-            field,
+        setattr(
+            cls, field,
             property(forbidden) if field == "trigger_id" else forbidden,
-            raising=False,
         )
         return report
 
@@ -124,14 +134,10 @@ def test_readiness_callback_cannot_install_result_carrier_before_trigger_read(
             _review(case)
         assert seen == ["readiness"]
     finally:
-        if original is None:
-            monkeypatch.delattr(
-                mod.SyntheticProactiveStartupReview, field, raising=False,
-            )
+        if existed:
+            setattr(cls, field, original)
         else:
-            monkeypatch.setattr(
-                mod.SyntheticProactiveStartupReview, field, original,
-            )
+            delattr(cls, field)
 
 
 def test_unmodified_receipt_still_denies_dispatch(tmp_path):
