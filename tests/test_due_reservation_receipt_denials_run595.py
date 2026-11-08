@@ -57,7 +57,8 @@ def test_last_getter_cannot_replace_previously_checked_descriptor(tmp_path, monk
     monkeypatch.setattr(receipt_type, "__getattribute__", drift)
     with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         submit()
-    assert ledger.witness().count == 1
+    # The substituted getter must be rejected BEFORE any reservation.
+    assert ledger.witness().count == 0
 
 
 def test_last_getter_cannot_replace_equal_receipt_identifier(tmp_path, monkeypatch):
@@ -75,9 +76,9 @@ def test_last_getter_cannot_replace_equal_receipt_identifier(tmp_path, monkeypat
         return value
 
     monkeypatch.setattr(receipt_type, "__getattribute__", drift)
-    with pytest.raises(due.DueReservationRejected, match="constructed due reservation"):
+    with pytest.raises(due.DueReservationRejected, match="constructor authority changed"):
         submit()
-    assert ledger.witness().count == 1
+    assert ledger.witness().count == 0
 
 
 def test_unmodified_receipt_remains_inert_and_restart_readable(tmp_path):
