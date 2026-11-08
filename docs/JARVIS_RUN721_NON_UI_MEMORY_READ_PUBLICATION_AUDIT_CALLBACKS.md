@@ -9,8 +9,9 @@
   `d4b311615e7c07dbb42d0a252581dcb7af97297b`.
 - Final source/test work HEAD before this report:
   `3c57ac72cea22f79fae39f922d3310c593293667`.
-- Work packages: three separate non-UI modules, three new synthetic test files,
-  **19 authored parameter-expanded cases** (4 Memory, 3 Planner, 12 Audit).
+- Work packages: four separate non-UI modules, four new synthetic test files,
+  **25 authored parameter-expanded cases** (4 Memory, 3 Planner, 12 Audit,
+  6 Personal Context).
 - The commits and source/test changes are backed by ordinary GitHub Contents API
   writes, with a fresh branch HEAD read before each write.
 
@@ -66,6 +67,20 @@ the synthetic clock callback. No actual tool adapter is connected; no action
 is authorized by these checks. Audit hashes and injected time are **not**
 authenticated source provenance, trusted time, user approval or exactly-once
 external side effects.
+
+## D — Personal Context private fixture hash/JSON preaccess
+
+Source commit `257ab2bcdd968eb8f8434f891682dae0af4b79fe`;
+test commit `644664f2cea488af8edb96abfa1cf53f3882a672`.
+
+The offline, deny-only local context fixture builder and its retained-review
+entry point now reject replaced SHA-256, JSON encoding, and JSON decoding
+callbacks before private synthetic content is read, hashed or serialized.
+The existing immutable-carrier checks also recheck the original callbacks
+between content and serialization phases. Six synthetic parameter-expanded
+cases require the hostile callback never to execute on both build and verify.
+The fixture output remains local-only; it does not prove consent, live Memory
+authority, erasure or permission to export context or use real tools.
 
 ## Evidence status and cross-boundary audit
 
