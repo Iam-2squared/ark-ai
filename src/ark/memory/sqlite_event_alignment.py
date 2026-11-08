@@ -252,18 +252,22 @@ def review_memory_event_alignment(
                 # checked inside this same read snapshot. An attacker able to
                 # rewrite sqlite_sequence can still erase this indication;
                 # an independently retained witness remains essential.
-                sequence = conn.execute(
+                sequences = conn.execute(
                     "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-                ).fetchone()
+                ).fetchall()
                 if count == 0:
-                    if sequence is not None:
+                    if sequences:
                         raise MemoryEventAlignmentRejected(
                             "Memory append-only event tail was truncated"
                         )
                 elif (
-                    sequence is None or type(sequence[0]) is not int
-                    or sequence[0] != last_id
+                    len(sequences) != 1 or type(sequences[0][0]) is not int
+                    or sequences[0][0] != last_id
                 ):
+                    # sqlite_sequence does not declare name UNIQUE. A
+                    # correct-looking first row plus a forged second entry
+                    # is ambiguous, even if fetchone() would return the
+                    # expected high-water. Deny all duplicate markers.
                     raise MemoryEventAlignmentRejected(
                         "Memory append-only event high-water mark differs"
                     )
