@@ -161,6 +161,25 @@ def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
 
 
 
+
+def _require_valid_committed_audit_history(conn: sqlite3.Connection) -> None:
+    """Refuse to extend a locally inconsistent audit prefix.
+
+    Dense IDs alone do not detect historical identity rewrites or chronology
+    regressions outside the latest row. Inspect the complete pre-append prefix
+    in the same SQLite writer transaction. This is local consistency only:
+    SQLite rows/high-water are not independently authenticated evidence.
+    """
+    previous_clock: int | None = None
+    for row in conn.execute("SELECT * FROM action_events ORDER BY event_id"):
+        clock = _validate_tail_identity(row)
+        if previous_clock is not None and clock < previous_clock:
+            raise ActionAuditSchemaError(
+                "audit clock regressed relative to persisted events"
+            )
+        previous_clock = clock
+
+
 def _require_original_event_constructor(phase: str = "") -> None:
     # An audit receipt is data, not a place to execute new Python code.
     # Reflectively replacing a slotted field can install an executable
@@ -251,6 +270,9 @@ class SQLiteActionAudit:
                 raise ActionAuditSchemaError("action audit schema version changed before append")
             _validate_v1_schema(conn)
             _require_dense_committed_audit_sequence(conn)
+            # An intact tail does not certify earlier audit events. Validate
+            # the entire persisted prefix before sampling the action clock.
+            _require_valid_committed_audit_history(conn)
             now = self._now()
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit path changed during clock")
