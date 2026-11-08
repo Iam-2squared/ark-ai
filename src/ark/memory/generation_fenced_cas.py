@@ -38,6 +38,29 @@ _MAX_EVENTS = 40_000
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _EVENT_DOMAIN = b"ARK-memory-generation-write-event-prefix-v1\0"
 _ROW_DOMAIN = b"ARK-memory-generation-write-row-v1\0"
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_EVENT_DOMAIN = _EVENT_DOMAIN
+_ORIGINAL_ROW_DOMAIN = _ROW_DOMAIN
+
+
+def _require_original_generation_digest() -> None:
+    """Deny replaced local digest dependencies before private SQLite access.
+
+    This only protects in-process callback identities. It does not provide
+    authenticated writer provenance or an external immutable witness.
+    """
+    if (
+        hashlib is not _ORIGINAL_HASHLIB or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _EVENT_DOMAIN is not _ORIGINAL_EVENT_DOMAIN
+        or _ROW_DOMAIN is not _ORIGINAL_ROW_DOMAIN
+    ):
+        raise MemoryGenerationCASRejected("generation CAS digest dependencies changed")
+
 
 
 class MemoryGenerationCASRejected(MemorySchemaError):
@@ -85,6 +108,7 @@ _ORIGINAL_TOKEN_DENIALS = tuple(
 
 
 def _require_original_token_denials() -> None:
+    _require_original_generation_digest()
     if (
         MemoryGenerationCASToken is not _TOKEN_TYPE
         or vars(_TOKEN_TYPE).get("__init__") is not _ORIGINAL_TOKEN_INIT
@@ -205,6 +229,7 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
 
 
 def _digest(domain: bytes, fields: object) -> str:
+    _require_original_generation_digest()
     return hashlib.sha256(
         domain + json.dumps(
             fields, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
@@ -369,6 +394,7 @@ def observe_memory_generation_for_cas(
     source_id: str,
 ) -> MemoryGenerationCASToken:
     """Read one coherent row/history snapshot; return no write permission."""
+    _require_original_generation_digest()
     _require_original_generation_inputs()
     if (
         type(store) is not SQLiteMemoryStore
@@ -446,6 +472,7 @@ def generation_fenced_memory_update(
     After an ambiguous commit/connection error, callers must inspect locally;
     this function never retries an update or treats the token as consent.
     """
+    _require_original_generation_digest()
     _require_original_generation_inputs()
     if (
         type(store) is not SQLiteMemoryStore
