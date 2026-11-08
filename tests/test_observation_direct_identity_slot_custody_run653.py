@@ -87,6 +87,7 @@ def test_reentrant_serialization_cannot_install_executable_metadata_slot(
 ):
     envelope = _envelope()
     invoked = []
+    digest_calls = []
 
     def poisoned(*_args, **_kwargs):
         invoked.append(slot)
@@ -97,6 +98,7 @@ def test_reentrant_serialization_cannot_install_executable_metadata_slot(
         original = observations.json.dumps
 
         def injected(*args, **kwargs):
+            digest_calls.append("unsafe serializer")
             output = original(*args, **kwargs)
             monkeypatch.setattr(observations.ObservationEnvelope, slot, replacement)
             return output
@@ -106,13 +108,15 @@ def test_reentrant_serialization_cannot_install_executable_metadata_slot(
         original = observations.hashlib.sha256
 
         def injected(*args, **kwargs):
+            digest_calls.append("unsafe hash")
             output = original(*args, **kwargs)
             monkeypatch.setattr(observations.ObservationEnvelope, slot, replacement)
             return output
 
         monkeypatch.setattr(observations.hashlib, "sha256", injected)
-    with pytest.raises(ValueError, match="observation identity definition changed"):
+    with pytest.raises(ValueError, match="digest implementation changed"):
         _ = envelope.observation_id
+    assert digest_calls == []
     assert invoked == []
 
 
