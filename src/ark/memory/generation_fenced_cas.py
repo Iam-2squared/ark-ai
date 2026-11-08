@@ -259,14 +259,18 @@ def _snapshot(
     count, first, last = conn.execute(
         "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
     ).fetchone()
-    sequence = conn.execute(
+    # sqlite_sequence.name is not UNIQUE. fetchone() could accept a
+    # valid-looking first marker while a second forged marker remains.
+    # Snapshot the *entire* marker set before any row is interpreted or
+    # any generation-fenced WRITE is admitted.
+    sequences = conn.execute(
         "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-    ).fetchone()
+    ).fetchall()
     if (
         type(count) is not int or count < 0
         or (
             count == 0 and (
-                first is not None or last is not None or sequence is not None
+                first is not None or last is not None or sequences
             )
         )
         or (
@@ -274,9 +278,9 @@ def _snapshot(
                 type(first) is not int or first != 1
                 or type(last) is not int or last != count
                 or last > SQLITE_INT_MAX
-                or sequence is None
-                or type(sequence[0]) is not int
-                or sequence[0] != last
+                or len(sequences) != 1
+                or type(sequences[0][0]) is not int
+                or sequences[0][0] != last
             )
         )
     ):
