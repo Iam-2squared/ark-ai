@@ -81,13 +81,16 @@ def test_late_snapshot_getter_cannot_replace_an_earlier_denial(tmp_path, monkeyp
 
 
 @pytest.mark.parametrize("name", read._WITNESS_DENIALS)
-def test_equal_false_post_commit_witness_descriptor_does_not_claim_success(
+def test_preinstalled_witness_factory_cannot_claim_append_success(
     tmp_path, monkeypatch, name,
 ):
     with read.DisconnectedReadJournal.create(tmp_path / "read.db") as journal:
         original_type = read.ReadJournalWitness
+        retained = read.genesis_witness()
+        factory_calls = []
 
         def factory(count, tip):
+            factory_calls.append(True)
             if count == 1:
                 monkeypatch.setattr(
                     original_type, name, property(lambda _: False),
@@ -98,10 +101,12 @@ def test_equal_false_post_commit_witness_descriptor_does_not_claim_success(
             patch.setattr(read, "ReadJournalWitness", factory)
             with pytest.raises(
                 read.ReadJournalRejected,
-                match="post-commit READ witness|invalid retained witness",
+                match="synthetic READ carrier class changed",
             ):
-                journal.append(_receipt(), read.genesis_witness())
-        assert journal._scan().count == 1
+                journal.append(_receipt(), retained)
+        # A substituted factory must be rejected before any SQLite append.
+        assert factory_calls == []
+        assert journal._scan().count == 0
 
 
 def test_unmodified_read_journal_recovers_without_dispatch(tmp_path):
