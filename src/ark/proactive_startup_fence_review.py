@@ -62,6 +62,18 @@ _AUTHORITY_NAMES = (
 _ORIGINAL_AUTHORITY = tuple(
     vars(_RESULT_TYPE)[name] for name in _AUTHORITY_NAMES
 )
+# The diagnostic result is constructed only after two separate, potentially
+# reentrant SQLite/readiness reviews. Pin its actual class-level constructors,
+# slots and lookup hooks at import time, not after consuming private inputs.
+_RESULT_FIELDS = (
+    "trigger_id", "readiness_digest", "trigger_history_digest",
+    "checked_at_ms",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_CARRIER = tuple(
+    vars(_RESULT_TYPE).get(name)
+    for name in (*_RESULT_FIELDS, *_RESULT_HOOKS)
+)
 
 
 def _require_original_authorities() -> None:
@@ -69,6 +81,13 @@ def _require_original_authorities() -> None:
     # Reject the substitution before reading trigger metadata or SQLite.
     if (
         SyntheticProactiveStartupReview is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_RESULT_FIELDS, *_RESULT_HOOKS),
+                _ORIGINAL_RESULT_CARRIER, strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
