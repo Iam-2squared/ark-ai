@@ -117,6 +117,14 @@ _ORIGINAL_RECEIPT_DENIALS = tuple(
 )
 _ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
 _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
+_RECEIPT_FIELDS = ("added_count", "witness")
+_RECEIPT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+)
 
 
 def _require_original_constructors() -> None:
@@ -137,6 +145,8 @@ def _require_original_constructors() -> None:
                 (_CLAIM_TYPE, _CLAIM_FIELDS, _ORIGINAL_CLAIM_FIELDS),
                 (_WITNESS_TYPE, _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
                 (_CLAIM_TYPE, _CARRIER_HOOKS, _ORIGINAL_CLAIM_HOOKS),
+                (_RECEIPT_TYPE, _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
+                (_RECEIPT_TYPE, _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
             )
             for name, original in zip(fields, originals, strict=True)
         )
