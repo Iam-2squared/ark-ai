@@ -12,7 +12,6 @@ import sys
 
 import pytest
 
-
 _SCRIPT = """
 import sys
 from pathlib import Path
