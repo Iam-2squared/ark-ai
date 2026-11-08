@@ -39,7 +39,7 @@ def test_forged_retained_witness_authority_rejected_before_reservation(
 
 
 @pytest.mark.parametrize("tamper", ("count", "digest", "equal_digest"))
-def test_committed_reservation_rejects_witness_mutation_during_receipt(
+def test_preinstalled_receipt_getter_cannot_tamper_with_due_witness(
     tmp_path, monkeypatch, tamper,
 ):
     store, retained = _new(tmp_path)
@@ -48,8 +48,8 @@ def test_committed_reservation_rejects_witness_mutation_during_receipt(
 
     def changed(self, name):
         value = original_getattribute(self, name)
-        # Inject only after the original constructor has run and the local
-        # SQLite COMMIT has completed, preserving the post-COMMIT test.
+        # This hostile getter must never run: the original receipt slot
+        # contract is checked before SQLite reservation.
         if name == "witness" and not mutated:
             mutated.append(True)
             witness = value
@@ -65,11 +65,12 @@ def test_committed_reservation_rejects_witness_mutation_during_receipt(
         return value
 
     monkeypatch.setattr(due.DueReservationReceipt, "__getattribute__", changed)
-    with pytest.raises(due.DueReservationRejected, match="post-commit due witness changed"):
+    with pytest.raises(
+        due.DueReservationRejected, match="due receipt constructor authority changed",
+    ):
         _reserve(store, retained)
-    assert mutated == [True]
-    # Post-COMMIT denial never proves rollback or permission to retry.
-    assert store.witness().count == 1
+    assert mutated == []
+    assert store.witness().count == 0
 
 
 def test_clean_due_receipt_still_survives_restart(tmp_path):
