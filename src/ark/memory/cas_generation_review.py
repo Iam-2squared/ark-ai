@@ -170,21 +170,24 @@ def review_memory_revision_reuse(
                 count, first, last = conn.execute(
                     "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
                 ).fetchone()
-                sequence = conn.execute(
+                # sqlite_sequence.name is not UNIQUE. Refuse a second forged
+                # marker even if the first marker matches the live event tip.
+                sequences = conn.execute(
                     "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-                ).fetchone()
+                ).fetchall()
                 stable()
                 if (
                     type(count) is not int or count < 0
                     or count == 0 and (
-                        first is not None or last is not None or sequence is not None
+                        first is not None or last is not None or sequences
                     )
                     or count > 0 and (
                         type(first) is not int or first != 1
                         or type(last) is not int or last != count
                         or last > SQLITE_INT_MAX
-                        or sequence is None
-                        or type(sequence[0]) is not int or sequence[0] != last
+                        or len(sequences) != 1
+                        or type(sequences[0][0]) is not int
+                        or sequences[0][0] != last
                     )
                 ):
                     raise MemoryGenerationReviewRejected(
