@@ -122,6 +122,35 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
 
 
 
+def _require_dense_committed_memory_events(conn: sqlite3.Connection) -> None:
+    """Verify global append IDs and the local AUTOINCREMENT high-water.
+
+    Run inside the caller's existing SQLite read transaction, before returning
+    any scoped events. An absent foreign-owner event is still a global gap.
+    This is corruption detection, NOT authenticated independent provenance.
+    """
+    row = conn.execute(
+        "SELECT COUNT(*), MIN(event_id), MAX(event_id) FROM memory_events"
+    ).fetchone()
+    sequences = conn.execute(
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+    ).fetchall()
+    count, first, last = row[0], row[1], row[2]
+    valid = type(count) is int and 0 <= count <= SQLITE_INT_MAX
+    if count == 0:
+        valid = valid and first is None and last is None and not sequences
+    else:
+        valid = (
+            valid and type(first) is int and first == 1
+            and type(last) is int and last == count
+            and len(sequences) == 1
+            and type(sequences[0][0]) is int
+            and sequences[0][0] == last
+        )
+    if not valid:
+        raise MemorySchemaError("global memory event append high-water mismatch")
+
+
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
@@ -806,6 +835,8 @@ class SQLiteMemoryStore:
             conn.execute("BEGIN")
             assert_events_epoch()
             _validate_v1_schema(conn)
+            assert_events_epoch()
+            _require_dense_committed_memory_events(conn)
             assert_events_epoch()
             cursor = conn.execute(
                 """SELECT * FROM memory_events
