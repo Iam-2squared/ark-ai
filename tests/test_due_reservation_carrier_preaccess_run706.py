@@ -40,6 +40,7 @@ def test_mutated_carrier_cannot_read_or_persist_due_reservation(
 ):
     script = textwrap.dedent(
         """
+        import contextlib
         import sqlite3
         import tempfile
         from pathlib import Path
@@ -71,7 +72,7 @@ def test_mutated_carrier_cannot_read_or_persist_due_reservation(
             else:
                 raise AssertionError("untrusted due carrier was accepted")
             assert not calls, calls
-            with sqlite3.connect(path) as connection:
+            with contextlib.closing(sqlite3.connect(path)) as connection:
                 assert connection.execute(
                     "SELECT COUNT(*) FROM due_reservations"
                 ).fetchone() == (0,)
