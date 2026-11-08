@@ -158,6 +158,32 @@ def _result(
     return result
 
 
+
+def _sync_created_manifest_directory(target: Path) -> None:
+    """Durably publish the newly created name where directory fsync exists.
+
+    File fsync alone does not guarantee that the directory entry survives a
+    power loss. Windows cannot use POSIX directory-fd fsync here; callers must
+    not infer equivalent crash durability from that platform.
+    """
+    if os.name != "posix":
+        return
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    try:
+        fd = os.open(target.parent, flags)
+        try:
+            if not stat.S_ISDIR(os.fstat(fd).st_mode):
+                raise ReadInputManifestRejected("READ input manifest parent is not directory")
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError as exc:
+        # Never unlink/retry an artifact whose write or publication is UNKNOWN.
+        raise ReadInputManifestRejected("READ input manifest parent sync refused") from exc
+
+
 def write_read_input_manifest_once(
     path: str | Path,
     request_id: str,
@@ -188,6 +214,8 @@ def write_read_input_manifest_once(
     except BaseException:
         # A possibly partial artifact is intentionally NEVER removed here.
         raise
+    _authority()
+    _sync_created_manifest_directory(target)
     _authority()
     return _result(request_id, inputs, digest)
 
