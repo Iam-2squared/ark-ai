@@ -272,11 +272,25 @@ def load_read_input_manifest(
             raw = handle.read(_MAX_BYTES + 1)
             after = os.fstat(handle.fileno())
             current = target.stat(follow_symlinks=False)
+            # A same-inode, same-size rewrite during an open read must not
+            # become a successful receipt simply because its length matches.
+            # These local epochs are NOT independent trusted provenance.
+            original_epoch = (
+                before.st_dev, before.st_ino, before.st_size,
+                before.st_mtime_ns, before.st_ctime_ns, before.st_nlink,
+            )
             if (
-                (before.st_dev, before.st_ino, before.st_size)
-                != (after.st_dev, after.st_ino, after.st_size)
-                or (before.st_dev, before.st_ino)
-                != (current.st_dev, current.st_ino)
+                not stat.S_ISREG(after.st_mode)
+                or not stat.S_ISREG(current.st_mode)
+                or after.st_nlink != 1 or current.st_nlink != 1
+                or original_epoch != (
+                    after.st_dev, after.st_ino, after.st_size,
+                    after.st_mtime_ns, after.st_ctime_ns, after.st_nlink,
+                )
+                or original_epoch != (
+                    current.st_dev, current.st_ino, current.st_size,
+                    current.st_mtime_ns, current.st_ctime_ns, current.st_nlink,
+                )
             ):
                 raise ReadInputManifestRejected("READ input manifest changed during read")
     except OSError as exc:
