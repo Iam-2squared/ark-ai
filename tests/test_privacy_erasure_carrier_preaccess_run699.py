@@ -6,7 +6,7 @@ reclaimed WAL, backup erasure, consent, or forensic privacy completion.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from types import SimpleNamespace
 
 import pytest
@@ -107,22 +107,18 @@ def test_reentrant_digest_cannot_install_counterfeit_carrier(
     )
     original_sha256 = mod.hashlib.sha256
 
-    def reentrant(data: bytes):
-        with _poison(cls, field, touched):
-            # The digest can be returned, but the next source/output review
-            # must reject while the substituted descriptor is installed.
-            # This nested review is deliberately not allowed to succeed.
-            with pytest.raises(
-                mod.SyntheticErasureRejected, match="authority descriptor changed",
-            ):
-                mod.review_synthetic_erasure_evidence(source)
-        return original_sha256(data)
+    with ExitStack() as stack:
+        def reentrant(data: bytes):
+            # Leave the mutation installed until the caller's post-digest
+            # epoch check; temporary restoration would not exercise it.
+            stack.enter_context(_poison(cls, field, touched))
+            return original_sha256(data)
 
-    # One controlled digest callback; the nested review rejects before hash.
-    monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=reentrant))
-    result = mod.review_synthetic_erasure_evidence(source)
-    assert result.cleanup_authorized is False
-    assert result.forensic_erasure_verified is False
+        monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=reentrant))
+        with pytest.raises(
+            mod.SyntheticErasureRejected, match="authority descriptor changed",
+        ):
+            mod.review_synthetic_erasure_evidence(source)
     assert touched == []
 
 
