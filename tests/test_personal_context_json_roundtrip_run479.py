@@ -52,25 +52,37 @@ def test_valid_but_retargeted_json_is_rejected(monkeypatch):
         return encoded
 
     monkeypatch.setattr(mod.json, "dumps", retarget)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="disagrees"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="authority definition changed"):
         _preview(_fixture())
+    assert calls == []
 
 
 def test_serializer_cannot_replace_owner_digest(monkeypatch):
     original = mod.json.dumps
 
+    calls = []
+
     def retarget(data, **kwargs):
+        calls.append(True)
         return original(data, **kwargs).replace(OWNER, "c" * 64)
 
     monkeypatch.setattr(mod.json, "dumps", retarget)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="disagrees"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="authority definition changed"):
         _preview(_fixture())
+    assert calls == []
 
 
 def test_invalid_serialized_json_fails_closed(monkeypatch):
-    monkeypatch.setattr(mod.json, "dumps", lambda *a, **k: "{not-json")
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="serialization invalid"):
+    calls = []
+
+    def malformed(*args, **kwargs):
+        calls.append((args, kwargs))
+        return "{not-json"
+
+    monkeypatch.setattr(mod.json, "dumps", malformed)
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="authority definition changed"):
         _preview(_fixture())
+    assert calls == []
 
 
 def test_noncanonical_but_equivalent_json_fails_closed(monkeypatch):
@@ -85,14 +97,22 @@ def test_noncanonical_but_equivalent_json_fails_closed(monkeypatch):
         return result
 
     monkeypatch.setattr(mod.json, "dumps", extra_whitespace)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="not canonical"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="authority definition changed"):
         _preview(_fixture())
+    assert counter == []
 
 
 def test_parser_must_return_exact_json_object(monkeypatch):
-    monkeypatch.setattr(mod.json, "loads", lambda text: 123)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="disagrees"):
+    calls = []
+
+    def parser(text):
+        calls.append(text)
+        return 123
+
+    monkeypatch.setattr(mod.json, "loads", parser)
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="authority definition changed"):
         _preview(_fixture())
+    assert calls == []
 
 
 def test_parser_callback_cannot_retarget_original_record(monkeypatch):
@@ -105,5 +125,6 @@ def test_parser_callback_cannot_retarget_original_record(monkeypatch):
         return result
 
     monkeypatch.setattr(mod.json, "loads", mutate)
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="changed"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match="authority definition changed"):
         _preview(record)
+    assert record.content == "private text"
