@@ -13,6 +13,7 @@ import re
 from .disconnected_fixture_binding import (
     DisconnectedFixtureBinding,
     DisconnectedFixtureBindingRejected,
+    _assert_original_binding,
     bind_disconnected_fixture_result,
 )
 from .disconnected_read_journal import (
@@ -22,15 +23,71 @@ from .disconnected_read_journal import (
     ReadReceipt,
     _chain,
 )
-from .disconnected_toolbox import DisconnectedToolRequest, DisconnectedToolResult
+from .disconnected_toolbox import (
+    DisconnectedToolRejected,
+    DisconnectedToolRequest,
+    DisconnectedToolResult,
+    _require_original_request_carrier,
+    _require_original_result_denials,
+)
 
 _STEP = re.compile(r"step_[0-9a-f]{16}\Z")
 _RECEIPT_TYPE = ReadReceipt
 _BINDING_TYPE = DisconnectedFixtureBinding
 
+# Immutable instances still have mutable Python classes. Verify descriptors
+# BEFORE dereferencing fixture JSON or invoking any deny-only getter.
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_BINDING_FIELDS = (
+    "request_id", "operation", "input_digest", "result_digest",
+    "request_bound_digest",
+)
+_RECEIPT_FIELDS = (
+    "request_id", "step_id", "operation", "input_digest", "result_digest",
+)
+_ORIGINAL_BINDING_SLOTS = tuple(
+    vars(_BINDING_TYPE).get(name)
+    for name in _BINDING_FIELDS + _CARRIER_HOOKS
+)
+_ORIGINAL_RECEIPT_SLOTS = tuple(
+    vars(_RECEIPT_TYPE).get(name)
+    for name in _RECEIPT_FIELDS + _CARRIER_HOOKS
+)
+
 
 class DisconnectedReadBridgeRejected(ValueError):
     """Cannot connect an exact local fixture and READ journal identity."""
+
+def _require_original_bridge_carriers() -> None:
+    try:
+        _require_original_request_carrier()
+        _require_original_result_denials()
+        _assert_original_binding()
+    except (DisconnectedToolRejected, DisconnectedFixtureBindingRejected) as exc:
+        raise DisconnectedReadBridgeRejected(
+            "fixture rebinding failed: untrusted synthetic authority descriptor"
+        ) from exc
+    if (
+        DisconnectedFixtureBinding is not _BINDING_TYPE
+        or ReadReceipt is not _RECEIPT_TYPE
+        or any(
+            vars(_BINDING_TYPE).get(name) is not original
+            for name, original in zip(
+                _BINDING_FIELDS + _CARRIER_HOOKS,
+                _ORIGINAL_BINDING_SLOTS, strict=True,
+            )
+        )
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_FIELDS + _CARRIER_HOOKS,
+                _ORIGINAL_RECEIPT_SLOTS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedReadBridgeRejected(
+            "fixture rebinding failed: untrusted synthetic authority or receipt descriptor"
+        )
 
 
 def prepare_disconnected_read_receipt(
@@ -40,6 +97,7 @@ def prepare_disconnected_read_receipt(
     binding: DisconnectedFixtureBinding,
 ) -> ReadReceipt:
     """Recompute one fixture before forming an inert v1 READ journal row."""
+    _require_original_bridge_carriers()
     if (
         type(step_id) is not str or _STEP.fullmatch(step_id) is None
         or type(request) is not DisconnectedToolRequest
@@ -60,6 +118,7 @@ def prepare_disconnected_read_receipt(
     )
 
     def stable() -> None:
+        _require_original_bridge_carriers()
         if (
             type(request) is not DisconnectedToolRequest
             or type(result) is not DisconnectedToolResult
@@ -118,6 +177,7 @@ def prepare_disconnected_read_receipt(
     )
 
     def stable_verified() -> None:
+        _require_original_bridge_carriers()
         if (
             type(verified) is not _BINDING_TYPE
             or any(now is not old for now, old in zip((
@@ -136,6 +196,7 @@ def prepare_disconnected_read_receipt(
         result_fields[2], result_fields[4],
     )
     def stable_receipt() -> None:
+        _require_original_bridge_carriers()
         if (
             type(receipt) is not _RECEIPT_TYPE
             or receipt.request_id is not request_fields[0]
@@ -171,6 +232,7 @@ def append_disconnected_fixture_read(
     Never retries: a callback error AFTER SQLite COMMIT must not be mistaken
     for a rolled-back append. The returned witness is not an action grant.
     """
+    _require_original_bridge_carriers()
     if type(journal) is not DisconnectedReadJournal:
         raise DisconnectedReadBridgeRejected("exact detached READ journal required")
     receipt = prepare_disconnected_read_receipt(step_id, request, result, binding)
@@ -195,6 +257,7 @@ def append_disconnected_fixture_read(
     prior = (retained.count, retained.tip_sha256)
 
     def stable() -> None:
+        _require_original_bridge_carriers()
         attributes = (
             ("request_id", "operation", "canonical_args_json"),
             ("request_id", "operation", "input_digest", "canonical_result_json",
