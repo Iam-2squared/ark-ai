@@ -24,6 +24,12 @@ from .personal_context_replay_ledger import (
 
 _DOMAIN = b"ARK-offline-context-replay-restart-review-v1\0"
 _LEDGER_TYPE = DisconnectedContextReplayLedger
+# A hostile replacement lookup hook could run before the first local path
+# read, even with an exact ledger type. Pin these hooks at import time.
+_LEDGER_ACCESS_HOOKS = ("__getattribute__", "__getattr__")
+_ORIGINAL_LEDGER_ACCESS_HOOKS = tuple(
+    vars(_LEDGER_TYPE).get(name) for name in _LEDGER_ACCESS_HOOKS
+)
 _WITNESS_TYPE = OfflineContextReplayWitness
 
 
@@ -122,6 +128,19 @@ def _assert_result_denials() -> None:
         )
 
 
+def _assert_ledger_access_hooks() -> None:
+    if (
+        DisconnectedContextReplayLedger is not _LEDGER_TYPE
+        or any(
+            vars(_LEDGER_TYPE).get(name) is not original
+            for name, original in zip(
+                _LEDGER_ACCESS_HOOKS, _ORIGINAL_LEDGER_ACCESS_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise OfflineContextRecoveryRejected("context replay ledger access hook changed")
+
+
 def _witness_fields(value: object) -> tuple[int, str]:
     # The ledger already pins witness field, constructor and lookup hooks at
     # import time, before any possibly hostile descriptor gets executed.
@@ -147,6 +166,7 @@ def review_restarted_context_replay(
     if type(ledger) is not _LEDGER_TYPE:
         raise OfflineContextRecoveryRejected("exact disconnected context ledger required")
     _assert_result_denials()
+    _assert_ledger_access_hooks()
     pinned = _witness_fields(retained)
     pinned_path = ledger._path
     pinned_carrier = retained
@@ -154,6 +174,7 @@ def review_restarted_context_replay(
 
     def stable() -> None:
         _assert_result_denials()
+        _assert_ledger_access_hooks()
         if (
             type(ledger) is not _LEDGER_TYPE
             or ledger._path is not pinned_path
