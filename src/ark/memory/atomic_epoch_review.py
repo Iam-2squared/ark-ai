@@ -110,22 +110,24 @@ def _require_global_append_highwater(conn: sqlite3.Connection) -> None:
     count, first, last = conn.execute(
         "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
     ).fetchone()
-    tail_row = conn.execute(
+    # sqlite_sequence.name has no UNIQUE constraint. Do not let fetchone()
+    # conceal another forged high-water marker in this same WAL snapshot.
+    tail_rows = conn.execute(
         "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-    ).fetchone()
+    ).fetchall()
     if (
         type(count) is not int or not 0 <= count <= SQLITE_INT_MAX
         or (
             count == 0
-            and (first is not None or last is not None or tail_row is not None)
+            and (first is not None or last is not None or tail_rows)
         )
         or (
             count > 0
             and (
                 type(first) is not int or first != 1
                 or type(last) is not int or last != count
-                or tail_row is None or type(tail_row[0]) is not int
-                or tail_row[0] != last
+                or len(tail_rows) != 1 or type(tail_rows[0][0]) is not int
+                or tail_rows[0][0] != last
             )
         )
     ):
