@@ -28,6 +28,13 @@ def _hash(domain: str, fields: object) -> str:
 
 _GENESIS = _hash("ARK-disconnected-clock-genesis-v1", ())
 _EMPTY_FIELDS = (0, "", -1, -1, _GENESIS)
+# Import-original digest identity: a synthetic clock chain cannot rely on
+# a substituted SHA/JSON implementation or a value-equal genesis carrier.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_GENESIS = _GENESIS
 
 
 class SyntheticClockRejected(RuntimeError):
@@ -100,6 +107,14 @@ _ORIGINAL_DENIALS = tuple(
 
 
 def _denials_original() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _GENESIS is not _ORIGINAL_GENESIS
+    ):
+        raise SyntheticClockRejected("synthetic clock digest implementation changed")
     if (
         SyntheticClockWitness is not _WITNESS_TYPE
         or SyntheticClockSample is not _SAMPLE_TYPE
