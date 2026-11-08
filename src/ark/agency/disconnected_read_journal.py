@@ -115,6 +115,34 @@ _ORIGINAL_SNAPSHOT_DENIALS = tuple(
 )
 
 
+# Receipt recovery must not call a substituted result constructor/getter.
+# Frozen dataclass instances do not freeze their Python class descriptors.
+_SNAPSHOT_FIELDS = ("witness", "receipts")
+_SNAPSHOT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SNAPSHOT_FIELDS = tuple(
+    vars(_SNAPSHOT_TYPE)[name] for name in _SNAPSHOT_FIELDS
+)
+_ORIGINAL_SNAPSHOT_HOOKS = tuple(
+    vars(_SNAPSHOT_TYPE).get(name) for name in _SNAPSHOT_HOOKS
+)
+
+
+def _require_original_snapshot_class() -> None:
+    if (
+        ReadJournalSnapshot is not _SNAPSHOT_TYPE
+        or any(
+            vars(_SNAPSHOT_TYPE).get(name) is not original
+            for names, originals in (
+                (_SNAPSHOT_FIELDS, _ORIGINAL_SNAPSHOT_FIELDS),
+                (_SNAPSHOT_HOOKS, _ORIGINAL_SNAPSHOT_HOOKS),
+                (_SNAPSHOT_DENIALS, _ORIGINAL_SNAPSHOT_DENIALS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise ReadJournalRejected("READ recovery snapshot constructor changed")
+
+
 def genesis_witness() -> ReadJournalWitness:
     """The single valid starting witness for a new, empty local journal."""
     return ReadJournalWitness(0, _GENESIS)
@@ -352,11 +380,13 @@ class DisconnectedReadJournal:
         executed, not a live Planner state, and never authorization to replay.
         The caller must retain the tip outside this local SQLite database.
         """
+        _require_original_snapshot_class()
         retained_fields = (retained.count, retained.tip_sha256)
         _check_witness(retained)
         connection = self._connection
 
         def stable() -> None:
+            _require_original_snapshot_class()
             _check_witness(retained)
             if (
                 type(retained) is not _WITNESS_TYPE
@@ -409,7 +439,9 @@ class DisconnectedReadJournal:
         # Read-only COMMIT, result construction and denial properties may
         # invoke synthetic callbacks. Never silently rebase saved row epochs.
         stable()
+        _require_original_snapshot_class()
         result = ReadJournalSnapshot(actual, rows)
+        _require_original_snapshot_class()
         descriptors = _ORIGINAL_SNAPSHOT_DENIALS
         row_fields = tuple(
             (row.request_id, row.step_id, row.operation,
