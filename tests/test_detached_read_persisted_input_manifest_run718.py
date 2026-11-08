@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from ark.agency.disconnected_read_input_manifest import (
