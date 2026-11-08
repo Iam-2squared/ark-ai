@@ -67,6 +67,7 @@ class ToolRegistration:
     backend: ToolBackend
 
     def __post_init__(self) -> None:
+        _require_original_registration_contract()
         _text("tool name", self.name)
         _text("capability", self.capability)
         if type(self.effect) is not Effect:
@@ -87,6 +88,43 @@ class BoundAction:
     call: ToolCall
     registration: ToolRegistration
     bound_action_id: str
+
+
+_REGISTRATION_TYPE = ToolRegistration
+_REGISTRATION_FIELDS = ("name", "capability", "effect", "backend_id", "backend")
+_REGISTRATION_METHODS = ("__init__", "__post_init__")
+_REGISTRATION_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REGISTRATION_FIELDS = tuple(
+    vars(_REGISTRATION_TYPE)[name] for name in _REGISTRATION_FIELDS
+)
+_ORIGINAL_REGISTRATION_METHODS = tuple(
+    vars(_REGISTRATION_TYPE)[name] for name in _REGISTRATION_METHODS
+)
+_ORIGINAL_REGISTRATION_HOOKS = tuple(
+    vars(_REGISTRATION_TYPE).get(name) for name in _REGISTRATION_HOOKS
+)
+
+
+def _require_original_registration_contract() -> None:
+    """Reject class-level substitution before reading registration fields.
+
+    Frozen instance fields do not prevent replacing a class slot descriptor
+    with a property that executes arbitrary code during registry inspection.
+    This local identity check is not remote backend attestation.
+    """
+    if (
+        ToolRegistration is not _REGISTRATION_TYPE
+        or any(
+            vars(_REGISTRATION_TYPE).get(name) is not original
+            for names, originals in (
+                (_REGISTRATION_FIELDS, _ORIGINAL_REGISTRATION_FIELDS),
+                (_REGISTRATION_METHODS, _ORIGINAL_REGISTRATION_METHODS),
+                (_REGISTRATION_HOOKS, _ORIGINAL_REGISTRATION_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise ValueError("tool registration contract changed")
 
 
 _BOUND_TYPE = BoundAction
@@ -183,6 +221,7 @@ class ToolRegistry:
     _SCHEMA_VERSION = 1
 
     def __init__(self, registrations: Iterable[ToolRegistration]) -> None:
+        _require_original_registration_contract()
         # Registrations can arrive from caller-controlled generators. Never
         # exhaust an unbounded iterator before enforcing the construction
         # budget, and never silently accept a reflected mutation of an
@@ -191,6 +230,7 @@ class ToolRegistry:
         retained: list[tuple[ToolRegistration, str, str, Effect, str, ToolBackend, object]] = []
 
         def assert_ingress_epoch() -> None:
+            _require_original_registration_contract()
             for entry, name, capability, effect, backend_id, backend, execute in retained:
                 try:
                     stable = (
@@ -252,6 +292,7 @@ class ToolRegistry:
         This is only a local drift check; it is NOT backend attestation against
         malicious in-process rewriting of every private reference.
         """
+        _require_original_registration_contract()
         if (
             type(self._revision) is not str
             or self._revision is not self._revision_epoch
@@ -305,6 +346,7 @@ class ToolRegistry:
             raise KeyError(f"unknown tool: {name}") from exc
 
     def resolve(self, call: ToolCall) -> ToolRegistration:
+        _require_original_registration_contract()
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
         _require_original_toolcall_contract()
@@ -354,6 +396,7 @@ class ToolRegistry:
         return registration
 
     def bind(self, call: ToolCall) -> BoundAction:
+        _require_original_registration_contract()
         # Call objects are frozen, but reflected mutation is still possible
         # during a registry lookup. Refuse a bound ID based on mixed snapshots.
         # This check is not an authorization grant or a concurrency primitive.
