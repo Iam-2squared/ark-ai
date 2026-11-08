@@ -128,13 +128,16 @@ def test_proactive_constructor_callback_cannot_retarget_review(
     monkeypatch.setattr(module, "review_prepared_trigger_freshness", trigger)
     monkeypatch.setattr(module, "review_synthetic_startup_lease", ready)
     monkeypatch.setattr(module.SyntheticProactiveStartupReview, "__init__", injected_init)
+    # The original result constructor is now pinned before any readiness
+    # or trigger read. The injected constructor cannot execute at all; the
+    # old late-constructor mutation cases are unreachable by design.
     with pytest.raises(
         module.SyntheticProactiveStartupRejected,
-        match="constructed|input|source|snapshot",
+        match="authority descriptor epoch changed",
     ):
         _run(state)
-    assert len(seen_trigger) == 2
-    assert len(seen_ready) == 2
+    assert seen_trigger == []
+    assert seen_ready == []
 
 
 def test_stable_proactive_result_still_denies_all_external_effects(tmp_path):
