@@ -71,23 +71,20 @@ def test_copied_descriptor_class_never_constructs(monkeypatch):
 
 def test_digest_callback_cannot_install_false_getter(monkeypatch):
     request = _request()
-    original_sha256 = hashlib.sha256
     called = []
 
-    def counterfeit(_self):
-        called.append(True)
-        return False
-
     def during_digest(payload=b""):
-        if payload == request.png_bytes:
-            monkeypatch.setattr(
-                png._INVENTORY_TYPE, "consent_verified", property(counterfeit),
-            )
-        return original_sha256(payload)
+        called.append(payload)
+        raise AssertionError("private PNG bytes reached substituted digest")
 
-    monkeypatch.setattr(png.hashlib, "sha256", during_digest)
-    with pytest.raises(png.OfflinePngRejected, match="denial descriptor changed"):
-        png.inspect_disconnected_png(request)
+    # The stronger preaccess rejection must run before *any* callback, even
+    # one that could replace a False-looking approval/consent descriptor.
+    with monkeypatch.context() as patch:
+        patch.setattr(png.hashlib, "sha256", during_digest)
+        with pytest.raises(
+            png.OfflinePngRejected, match="digest implementation changed",
+        ):
+            png.inspect_disconnected_png(request)
     assert called == []
 
 
