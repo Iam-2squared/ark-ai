@@ -18,9 +18,10 @@
   `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` is an untouched
   Draft. `main` remained `7a843f17eb96ed13d66f23b58b06406b3002e405`
   at invocation inspection; frozen V1/V2/Local UI/Launcher evidence unchanged.
-- Three coherent packages: actual CI failure repaired, Planner mixed-terminal
-  restart classification **20 new cases**, and proactive retained-history
-  substitution **3 new cases**. **23** newly authored cases total, not a
+- Four coherent packages: actual CI failure repaired, Planner mixed-terminal
+  restart classification **20 new cases**, proactive retained-history
+  substitution **3 new cases**, and PermissionGate registered WRITE token
+  non-consumption **11 new cases**. **34** newly authored cases total, not a
   claim that the latest six platform jobs passed.
 
 ## A — Fix real multi-platform audit continuity CI failure
@@ -78,12 +79,25 @@ authenticated provenance, trusted clock, consent or real scheduler service.
 [CI #42448217889](https://github.com/Iam-2squared/ark-ai/actions/runs/42448217889)
 was IN PROGRESS at first check.
 
+## D — Registered WRITE permission denials never spend a local token
+
+[Test-only `1e900ad2`](https://github.com/Iam-2squared/ark-ai/commit/1e900ad24b2b4d7b7624c097842dfc981c0c39ef)
+adds `tests/test_registered_write_denial_token_nonspend_run703.py`:
+**11** cases covering six invalid exact-type/bounds clocks, three
+expired/mismatched capability grants, and two rejected token request/expiry
+values. Each checks that a valid subsequent local registered WRITE
+authorization can consume that same still-unused token only once, without
+calling the mock backend. This is an in-process fixture gate, NOT durable
+consent, execution authority or trusted-time proof.
+[CI #42448400091](https://github.com/Iam-2squared/ark-ai/actions/runs/42448400091)
+was QUEUED/IN PROGRESS at first evidence inspection.
+
 ## CI accuracy, hard stops, and next plan
 
 - **Known earlier failure:** #42444652179 was 6/6 FAIL and its one
   distinct observed failure is corrected in commit `de0afc72`.
-- **New CI:** #42448039012, #42448151947, and #42448217889
-  were IN PROGRESS at evidence preparation. Do not promote any partial
+- **New CI:** #42448039012, #42448151947, #42448217889 and
+  #42448400091 were IN PROGRESS / QUEUED at evidence preparation. Do not promote any partial
   Ubuntu/Windows result to final exact-head six-job GREEN. This document
   and the canonical status checkpoint each create their own HEAD.
 - Zero-cost/free-only: no paid/potentially billable compute, no external GPU,
