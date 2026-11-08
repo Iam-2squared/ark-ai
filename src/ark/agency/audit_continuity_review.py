@@ -211,6 +211,13 @@ def review_audit_continuity(
                 (max_events + 1,),
             ).fetchall()
             assert_epoch()
+            # Capture AUTOINCREMENT's local high-water inside this same
+            # read snapshot. A missing terminal event leaves no ID gap in
+            # the surviving rows but still advances sqlite_sequence.
+            sequence_row = conn.execute(
+                "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
+            ).fetchone()
+            assert_epoch()
             conn.rollback()
     except sqlite3.DatabaseError as exc:
         raise ActionAuditSchemaError("cannot read audit snapshot") from exc
@@ -240,6 +247,17 @@ def review_audit_continuity(
                 raise ActionAuditSchemaError("retained audit prefix differs")
     if pinned is not None and count < pinned[0]:
         raise ActionAuditSchemaError("audit history is shorter than retained witness")
+    # No audit compaction/delete exists in v1. This detects local suffix
+    # truncation even without a separate retained prefix; it does NOT
+    # authenticate a writer who can also rewrite sqlite_sequence.
+    if (
+        (count == 0 and sequence_row is not None)
+        or (count > 0 and (
+            sequence_row is None or type(sequence_row[0]) is not int
+            or sequence_row[0] != tail
+        ))
+    ):
+        raise ActionAuditSchemaError("audit append-only high-water mismatch")
     assert_epoch()
     digest = chain.hex()
     _require_original_witness_constructor()
