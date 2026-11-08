@@ -112,6 +112,44 @@ def _require_original_token_denials() -> None:
         )
 
 
+# The opt-in generation-CAS path must not read caller-owned frozen dataclass
+# fields through a replaced class-level slot/getter. This pins only the new
+# optional API's inputs; frozen Memory v1 contracts and schema stay untouched.
+_SCOPE_TYPE = MemoryScope
+_WRITE_TYPE = MemoryWrite
+_SCOPE_FIELDS = ("owner_id", "namespace")
+_WRITE_FIELDS = ("scope", "source_id", "content", "metadata", "expires_at_ms")
+_INPUT_HOOKS = ("__init__", "__post_init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SCOPE_FIELDS = tuple(
+    vars(_SCOPE_TYPE)[name] for name in _SCOPE_FIELDS
+)
+_ORIGINAL_WRITE_FIELDS = tuple(
+    vars(_WRITE_TYPE)[name] for name in _WRITE_FIELDS
+)
+_ORIGINAL_SCOPE_HOOKS = tuple(
+    vars(_SCOPE_TYPE).get(name) for name in _INPUT_HOOKS
+)
+_ORIGINAL_WRITE_HOOKS = tuple(
+    vars(_WRITE_TYPE).get(name) for name in _INPUT_HOOKS
+)
+
+
+def _require_original_generation_inputs() -> None:
+    if MemoryScope is not _SCOPE_TYPE or MemoryWrite is not _WRITE_TYPE:
+        raise MemoryGenerationCASRejected("generation input carrier changed")
+    for cls, names, originals in (
+        (_SCOPE_TYPE, _SCOPE_FIELDS, _ORIGINAL_SCOPE_FIELDS),
+        (_WRITE_TYPE, _WRITE_FIELDS, _ORIGINAL_WRITE_FIELDS),
+        (_SCOPE_TYPE, _INPUT_HOOKS, _ORIGINAL_SCOPE_HOOKS),
+        (_WRITE_TYPE, _INPUT_HOOKS, _ORIGINAL_WRITE_HOOKS),
+    ):
+        if any(
+            vars(cls).get(name) is not original
+            for name, original in zip(names, originals, strict=True)
+        ):
+            raise MemoryGenerationCASRejected("generation input carrier descriptor changed")
+
+
 def _require_bounded_source_id(source_id: object) -> None:
     """Limit opt-in CAS identities by actual UTF-8 bytes, not code points.
 
@@ -146,6 +184,7 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
     Legacy MemoryScope is character-bounded; generation CAS requires exact,
     well-formed and byte-bounded UTF-8 identifiers before hashing or SQLite.
     """
+    _require_original_generation_inputs()
     if type(scope) is not MemoryScope:
         raise MemoryGenerationCASRejected("exact generation scope required")
     for name in ("owner_id", "namespace"):
@@ -326,6 +365,7 @@ def observe_memory_generation_for_cas(
     source_id: str,
 ) -> MemoryGenerationCASToken:
     """Read one coherent row/history snapshot; return no write permission."""
+    _require_original_generation_inputs()
     if (
         type(store) is not SQLiteMemoryStore
         or type(scope) is not MemoryScope
@@ -341,6 +381,7 @@ def observe_memory_generation_for_cas(
     owner, namespace, path = scope.owner_id, scope.namespace, store.path
 
     def stable() -> None:
+        _require_original_generation_inputs()
         _require_original_token_denials()
         if (
             store.path is not path or scope.owner_id is not owner
@@ -401,6 +442,7 @@ def generation_fenced_memory_update(
     After an ambiguous commit/connection error, callers must inspect locally;
     this function never retries an update or treats the token as consent.
     """
+    _require_original_generation_inputs()
     if (
         type(store) is not SQLiteMemoryStore
         or type(write) is not MemoryWrite
@@ -470,6 +512,7 @@ def generation_fenced_memory_update(
     content_hash = hashlib.sha256(content_bytes).hexdigest()
 
     def stable() -> None:
+        _require_original_generation_inputs()
         _require_original_token_denials()
         if (
             store.path is not original_path
