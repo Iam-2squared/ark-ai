@@ -8,6 +8,7 @@ capable of rewriting sqlite_sequence can still counterfeit local evidence.
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -35,13 +36,14 @@ def _append(store, owner, source):
 
 
 def _delete_row_and_event(store, record):
-    with sqlite3.connect(store.path) as connection:
-        connection.execute(
-            "DELETE FROM memory_events WHERE memory_id=?", (record.memory_id,),
-        )
-        connection.execute(
-            "DELETE FROM memories WHERE memory_id=?", (record.memory_id,),
-        )
+    with closing(sqlite3.connect(store.path)) as connection:
+        with connection:
+            connection.execute(
+                "DELETE FROM memory_events WHERE memory_id=?", (record.memory_id,),
+            )
+            connection.execute(
+                "DELETE FROM memories WHERE memory_id=?", (record.memory_id,),
+            )
 
 
 def test_missing_foreign_event_inside_new_suffix_is_not_safe_advance(tmp_path):
@@ -49,7 +51,7 @@ def test_missing_foreign_event_inside_new_suffix_is_not_safe_advance(tmp_path):
     missing = _append(store, "owner-b", "two")
     _append(store, "owner-c", "three")
     _delete_row_and_event(store, missing)
-    with sqlite3.connect(store.path) as connection:
+    with closing(sqlite3.connect(store.path)) as connection:
         assert connection.execute(
             "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
         ).fetchone() == (2, 1, 3)
@@ -61,7 +63,7 @@ def test_deleted_foreign_tail_must_not_appear_as_unchanged_prefix(tmp_path):
     store, _, retained = _case(tmp_path)
     tail = _append(store, "owner-b", "two")
     _delete_row_and_event(store, tail)
-    with sqlite3.connect(store.path) as connection:
+    with closing(sqlite3.connect(store.path)) as connection:
         assert connection.execute(
             "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
         ).fetchone() == (2,)
