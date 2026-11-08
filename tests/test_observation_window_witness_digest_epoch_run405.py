@@ -34,16 +34,20 @@ def test_witness_refuses_mutation_during_final_json_encoding(
 ):
     review, envelope = _window()
     original = module.json.dumps
+    touched = []
 
     def serialization(payload, **kwargs):
+        touched.append("serializer")
         encoded = original(payload, **kwargs)
         if isinstance(payload, dict) and "observation_ids" in payload:
             object.__setattr__(envelope, field, new_value)
         return encoded
 
     monkeypatch.setattr(module.json, "dumps", serialization)
-    with pytest.raises(ValueError, match="observation identity changed"):
+    with pytest.raises(ValueError, match="observation identity digest implementation changed"):
         _ = review.witness
+    assert touched == []
+    assert getattr(envelope, field) != new_value
 
 
 def test_witness_refuses_temporary_serialization_mutation_even_if_hash_restores(
@@ -69,24 +73,30 @@ def test_witness_refuses_temporary_serialization_mutation_even_if_hash_restores(
 
     monkeypatch.setattr(module.json, "dumps", serialization)
     monkeypatch.setattr(module.hashlib, "sha256", hashing)
-    with pytest.raises(ValueError, match="observation identity changed"):
+    with pytest.raises(ValueError, match="observation identity digest implementation changed"):
         _ = review.witness
-    assert observed == ["mutate"]
+    # No injected serializer or digest function may see the fixture data.
+    assert observed == []
+    assert envelope.source_id == "fixture-src"
 
 
 def test_witness_refuses_mutation_during_final_sha256(monkeypatch):
     review, envelope = _window()
     original = module.hashlib.sha256
+    touched = []
 
     def hashing(payload=b"", *args, **kwargs):
+        touched.append("digest")
         digest = original(payload, *args, **kwargs)
         if b'"observation_ids"' in payload:
             object.__setattr__(envelope, "source_id", "retargeted-after-hash")
         return digest
 
     monkeypatch.setattr(module.hashlib, "sha256", hashing)
-    with pytest.raises(ValueError, match="observation identity changed"):
+    with pytest.raises(ValueError, match="observation identity digest implementation changed"):
         _ = review.witness
+    assert touched == []
+    assert envelope.source_id == "fixture-src"
 
 
 def test_unmodified_witness_remains_deterministic():
