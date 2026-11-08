@@ -15,7 +15,12 @@ from dataclasses import dataclass
 from . import generation_cas_outcome_review as outcome_module
 from . import postcommit_uncertainty_review as triage_module
 from .contracts import MemoryScope, MemoryWrite
-from .generation_fenced_cas import MemoryGenerationCASToken, _token_fields
+from .generation_fenced_cas import (
+    MemoryGenerationCASRejected,
+    MemoryGenerationCASToken,
+    _require_original_generation_inputs,
+    _token_fields,
+)
 from .sqlite_store import SQLiteMemoryStore
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -175,6 +180,11 @@ def review_memory_ambiguous_commit_pair(
     retained: MemoryGenerationCASToken,
 ) -> MemoryAmbiguityPair:
     """Return a detached no-retry diagnostic only on dual-view agreement."""
+    # Reject class-level getters/constructors before reading even proposed.scope.
+    try:
+        _require_original_generation_inputs()
+    except MemoryGenerationCASRejected as exc:
+        raise MemoryAmbiguityPairRejected("Memory triage input carrier changed") from exc
     if (
         type(store) is not SQLiteMemoryStore
         or type(proposed) is not MemoryWrite
@@ -196,6 +206,10 @@ def review_memory_ambiguous_commit_pair(
 
     def stable() -> None:
         _require_original_review_carriers()
+        try:
+            _require_original_generation_inputs()
+        except MemoryGenerationCASRejected as exc:
+            raise MemoryAmbiguityPairRejected("Memory triage input carrier changed") from exc
         if (
             triage_module.review_uncertain_memory_commit is not _TRIAGE_FN
             or outcome_module.review_memory_generation_cas_outcome is not _OUTCOME_FN
