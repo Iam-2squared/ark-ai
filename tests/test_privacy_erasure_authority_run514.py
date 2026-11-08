@@ -114,8 +114,11 @@ def test_constructor_cannot_retarget_caller_claims(monkeypatch):
         object.__setattr__(obs, "reader_state", "unknown")
 
     monkeypatch.setattr(erasure.SyntheticErasureAssessment, "__init__", mutate)
-    with pytest.raises(erasure.SyntheticErasureRejected, match="observations changed"):
+    # Class-level constructor custody rejects a replacement before its body
+    # can modify the caller's originally supplied synthetic claims.
+    with pytest.raises(erasure.SyntheticErasureRejected, match="authority descriptor changed"):
         erasure.review_synthetic_erasure_evidence(obs)
+    assert obs.reader_state == "none_claimed"
 
 
 @pytest.mark.parametrize("change", (
