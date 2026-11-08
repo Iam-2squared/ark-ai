@@ -260,6 +260,13 @@ def review_retained_coherent_memory(
                         or type(at) is not int or not 0 <= at <= SQLITE_INT_MAX
                     ):
                         raise MemoryCoherentHistoryRejected("invalid coherent Memory event")
+                    # This v1 event journal is globally dense across all
+                    # owners. A missing event in an unrelated scope must not
+                    # become an apparently valid appended suffix.
+                    if event_id != last_id + 1:
+                        raise MemoryCoherentHistoryRejected(
+                            "coherent Memory event ID gap"
+                        )
                     try:
                         MemoryScope(owner, namespace)
                     except (TypeError, ValueError) as exc:
@@ -328,6 +335,25 @@ def review_retained_coherent_memory(
                             raise MemoryCoherentHistoryRejected(
                                 "Memory row changed without its own appended event"
                             )
+                # Capture SQLite AUTOINCREMENT's local committed high-water
+                # in the SAME WAL snapshot as rows and the entire event scan.
+                # A deleted suffix can leave a dense surviving history, so a
+                # retained prefix alone cannot detect it. This is still not
+                # independently authenticated provenance.
+                sequences = conn.execute(
+                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                ).fetchall()
+                if (
+                    (count == 0 and sequences)
+                    or (count > 0 and (
+                        len(sequences) != 1
+                        or type(sequences[0][0]) is not int
+                        or sequences[0][0] != last_id
+                    ))
+                ):
+                    raise MemoryCoherentHistoryRejected(
+                        "coherent Memory append high-water mismatch"
+                    )
                 stable()
                 conn.rollback()
             except BaseException:
