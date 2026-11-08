@@ -6,6 +6,9 @@ fixtures. No notification, live device, external execution or consent occurs.
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 import ark.proactive_startup_fence_review as mod
@@ -55,7 +58,9 @@ _RESULT_FIELDS = (
 _HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 
 
-@pytest.mark.parametrize("field", (*_RESULT_FIELDS, *_HOOKS))
+@pytest.mark.parametrize(
+    "field", (*_RESULT_FIELDS, *(hook for hook in _HOOKS if hook != "__new__")),
+)
 def test_substituted_result_carrier_rejected_before_first_read(
     tmp_path, monkeypatch, field,
 ):
@@ -138,6 +143,34 @@ def test_readiness_callback_cannot_install_result_carrier_before_trigger_read(
             setattr(cls, field, original)
         else:
             delattr(cls, field)
+
+
+
+def test_new_slot_substitution_denied_in_separate_python_process():
+    # Rebinding and then deleting an inherited __new__ permanently changes
+    # CPython type's allocation slot in this process (including on Windows).
+    # Test the original-class mutation in an isolated interpreter so later
+    # normal-construction tests cannot be poisoned by pytest teardown.
+    script = """
+import ark.proactive_startup_fence_review as mod
+calls = []
+def forbidden(*args, **kwargs):
+    calls.append("forged __new__ callback")
+    raise AssertionError("forged constructor executed")
+mod.SyntheticProactiveStartupReview.__new__ = forbidden
+try:
+    mod._require_original_authorities()
+except mod.SyntheticProactiveStartupRejected as exc:
+    assert "authority descriptor epoch changed" in str(exc)
+else:
+    raise AssertionError("forged __new__ accepted")
+assert calls == []
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True, text=True, check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
 def test_unmodified_receipt_still_denies_dispatch(tmp_path):
