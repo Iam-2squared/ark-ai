@@ -22,6 +22,19 @@ _MAX_MS = 2**63 - 1
 _MAX_ROWS = 512
 _MAX_LATENESS_MS = 60_000
 _DOMAIN = b"ARK-detached-synthetic-due-slot-v1\0"
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+
+
+def _require_original_due_digest() -> None:
+    """Reject substituted digest callbacks before synthetic private payload access.
+
+    This in-process epoch check is not authenticated provenance or a sandbox.
+    """
+    if hashlib.sha256 is not _ORIGINAL_SHA256 or json.dumps is not _ORIGINAL_DUMPS:
+        raise DueReservationRejected("due digest callback authority changed")
+
+
 _DDL = (
     "CREATE TABLE due_reservations ("
     "seq INTEGER PRIMARY KEY, occurrence_id TEXT NOT NULL UNIQUE, "
@@ -165,8 +178,12 @@ def _checked_witness(count: int, fingerprint: str) -> DueReservationWitness:
 
 
 def _digest(rows: tuple[tuple[object, ...], ...]) -> str:
+    _require_original_due_digest()
     payload = json.dumps(rows, separators=(",", ":"), ensure_ascii=True).encode("ascii")
-    return hashlib.sha256(_DOMAIN + payload).hexdigest()
+    _require_original_due_digest()
+    digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
+    _require_original_due_digest()
+    return digest
 
 
 def genesis_due_witness() -> DueReservationWitness:
@@ -188,6 +205,7 @@ def _check_witness(witness: object) -> None:
 
 
 def _check_path(path: object, *, exists: bool) -> Path:
+    _require_original_due_digest()
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -216,6 +234,7 @@ def _check_path(path: object, *, exists: bool) -> Path:
 
 
 def _schema(conn: sqlite3.Connection) -> None:
+    _require_original_due_digest()
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise DueReservationRejected("due ledger schema version changed")
     with closing(sqlite3.connect(":memory:")) as expected:
@@ -228,6 +247,7 @@ def _schema(conn: sqlite3.Connection) -> None:
 
 
 def _inspect(conn: sqlite3.Connection) -> tuple[DueReservationWitness, int | None]:
+    _require_original_due_digest()
     _schema(conn)
     saved: list[tuple[object, ...]] = []
     last_reserved: int | None = None
@@ -366,6 +386,7 @@ class DisconnectedDueReservations:
         observed_now_ms: int, retained: DueReservationWitness,
     ) -> DueReservationReceipt:
         """Persist one synthetic reservation, then return a non-executing receipt."""
+        _require_original_due_digest()
         if (
             type(policy_sha256) is not str or _SHA.fullmatch(policy_sha256) is None
             or type(due_at_ms) is not int or type(observed_now_ms) is not int
@@ -395,9 +416,11 @@ class DisconnectedDueReservations:
             _check_witness(retained)
 
         assert_retained_epoch()
+        _require_original_due_digest()
         identity = "slot_" + hashlib.sha256(
             _DOMAIN + (policy_sha256 + ":" + str(due_at_ms)).encode("ascii")
         ).hexdigest()
+        _require_original_due_digest()
         assert_retained_epoch()
         with closing(self._open(read_only=False)) as conn:
             assert_retained_epoch()
