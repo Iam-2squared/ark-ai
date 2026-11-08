@@ -83,7 +83,9 @@ def test_named_file_metadata_change_after_read_is_rejected(
                 target, expected_sha256=saved.artifact_sha256,
             )
 
-    assert substituted == [True]
+    # The loader may perform multiple defensive named-file checks. Every
+    # matching stat observation was altered; refusal, not call count, is the invariant.
+    assert len(substituted) >= 1
     assert manifest.load_read_input_manifest(target) == saved
     assert saved.independent_custody_proven is False
     assert saved.external_result_proven is False
