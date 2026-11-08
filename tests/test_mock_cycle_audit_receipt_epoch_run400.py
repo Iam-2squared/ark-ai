@@ -12,10 +12,7 @@ import pytest
 import ark.agency.synthetic_mock_action_cycle_review as cycle
 from ark.agency.audit import SQLiteActionAudit
 from ark.agency.contracts import Effect, OneShotAuthorization, PlanStep, ToolCall
-from ark.agency.durable_occurrence_review import (
-    SyntheticOccurrenceStore,
-    SyntheticReplayRejected,
-)
+from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
 from ark.agency.synthetic_occurrence_audit_link_review import (
@@ -112,15 +109,14 @@ def test_marker_hash_callback_cannot_change_audit_before_terminal_step(
     with monkeypatch.context() as patch:
         patch.setattr(SQLiteActionAudit, "append", append)
         patch.setattr(cycle.hashlib, "sha256", sha256)
-        # The one-shot occurrence refuses the substituted digest before any
-        # audit/marker callback. Earlier fail-closed rejection is stronger than
-        # detecting a forged audit receipt after synthetic SQLite writes.
-        with pytest.raises(SyntheticReplayRejected, match="digest implementation changed"):
+        # The authoritative registry now rejects a substituted digest before
+        # Planner RUNNING, occurrence reservation, audit, or mock marker.
+        with pytest.raises(ValueError, match="registry digest dependencies changed"):
             _run(state, with_link=False)
     assert modified == []
     assert emitted == []
-    # Planner RUNNING was committed before the occurrence digest gate.
-    # The resulting UNKNOWN step cannot be automatically replayed.
-    assert state[0].recover().ambiguous_running_steps == ("root",)
+    # No durable mock phase was entered; no replay or dispatch is granted.
+    assert state[0].recover().step_statuses == (("root", "pending", 0),)
+    assert state[0].recover().ambiguous_running_steps == ()
     assert state[1].count_synthetic() == 0
     assert state[2].events() == []
