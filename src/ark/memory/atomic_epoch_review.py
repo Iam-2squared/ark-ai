@@ -98,6 +98,40 @@ def _validate_event_causality(
         raise MemorySchemaError("Memory epoch live rows disagree with event lifecycle")
 
 
+
+def _require_global_append_highwater(conn: sqlite3.Connection) -> None:
+    """Detect a missing event outside the requested owner's namespaces.
+
+    A scope-limited causal graph can be internally coherent even when the
+    global append-only journal lost a foreign, deleted or terminal event.
+    Check COUNT/MIN/MAX and the AUTOINCREMENT tail in the SAME WAL snapshot.
+    This is local corruption detection, not authenticated provenance.
+    """
+    count, first, last = conn.execute(
+        "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
+    ).fetchone()
+    tail_row = conn.execute(
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+    ).fetchone()
+    if (
+        type(count) is not int or not 0 <= count <= SQLITE_INT_MAX
+        or (
+            count == 0
+            and (first is not None or last is not None or tail_row is not None)
+        )
+        or (
+            count > 0
+            and (
+                type(first) is not int or first != 1
+                or type(last) is not int or last != count
+                or tail_row is None or type(tail_row[0]) is not int
+                or tail_row[0] != last
+            )
+        )
+    ):
+        raise MemorySchemaError("Memory epoch global event high-water mismatch")
+
+
 _RESULT_TYPE = AtomicMemoryEpochReview
 
 
@@ -173,6 +207,8 @@ def review_atomic_memory_epoch(
         conn.execute("SELECT name FROM sqlite_master ORDER BY name LIMIT 1").fetchone()
         stable()
         _validate_v1_schema(conn)
+        stable()
+        _require_global_append_highwater(conn)
         stable()
         observed_at_ms = store._now()
         stable()
