@@ -74,6 +74,12 @@ class SyntheticApprovalReview:
 
 
 
+# These process-local identities must be intact before the claim digest
+# touches synthetic issuer/subject/purpose/recipient data. An injected
+# serializer or hasher must never receive that input, even for diagnostics.
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+
 # Preserve the diagnostic input and output types before a callback can run.
 # This guards only in-process Python definition drift, not authenticated
 # approval, trusted time, consent, or external execution.
@@ -105,6 +111,8 @@ def _require_original_claim_carriers() -> None:
     if (
         SyntheticApprovalEnvelope is not _ENVELOPE_CLASS
         or SyntheticApprovalReview is not _REVIEW_CLASS
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
         or any(
             vars(_ENVELOPE_CLASS).get(name) is not original
             for name, original in zip(
