@@ -81,12 +81,12 @@ def test_preinstalled_executable_carrier_is_never_called(carrier, slot):
 
 
 def test_original_receipt_remains_hash_only_and_non_authorizing():
+    from ark.agency.disconnected_fixture_binding import (
+        bind_disconnected_fixture_result,
+    )
     from ark.agency.disconnected_read_receipt_bridge import (
         DisconnectedToolRequest,
         prepare_disconnected_read_receipt,
-    )
-    from ark.agency.disconnected_fixture_binding import (
-        bind_disconnected_fixture_result,
     )
     from ark.agency.disconnected_toolbox import execute_disconnected_fixture_tool
 
