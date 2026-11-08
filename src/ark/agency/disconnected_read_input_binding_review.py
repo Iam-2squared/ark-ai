@@ -1,0 +1,167 @@
+"""Offline exact-input join for an independently retained synthetic READ journal.
+
+The existing recovery bridge validates states, topological receipt order, and
+result hashes. It does not know the digest of the *intended input* for a step.
+This opt-in second check closes that diagnostic gap for a caller-retained input
+manifest. A caller-controlled manifest is NOT authentication, execution proof,
+consent, or a license to replay.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from dataclasses import dataclass
+
+from .disconnected_read_journal import ReadJournalSnapshot, ReadJournalWitness
+from .disconnected_read_recovery_journal_bridge import (
+    ReadRecoveryJournalReview,
+    review_detached_read_journal_recovery,
+)
+from .disconnected_read_recovery_schedule import ReadRecoveryStep
+
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_STEP = re.compile(r"step_[0-9a-f]{16}\Z")
+_DOMAIN = b"ARK-detached-read-expected-input-join-v1\0"
+
+
+class ReadInputBindingRejected(ValueError):
+    """The retained input claims do not match the recovered READ receipts."""
+
+
+@dataclass(frozen=True, slots=True)
+class ReadInputBindingReview:
+    request_id: str
+    successful_step_ids: tuple[str, ...]
+    journal_tip_sha256: str
+    recovery_review_sha256: str
+    input_binding_sha256: str
+
+    @property
+    def backend_dispatched(self) -> bool:
+        return False
+
+    @property
+    def external_result_proven(self) -> bool:
+        return False
+
+    @property
+    def automatic_replay_authorized(self) -> bool:
+        return False
+
+    @property
+    def independent_custody_proven(self) -> bool:
+        return False
+
+
+_REPORT_TYPE = ReadInputBindingReview
+_FIELDS = (
+    "request_id", "successful_step_ids", "journal_tip_sha256",
+    "recovery_review_sha256", "input_binding_sha256",
+)
+_DENIALS = (
+    "backend_dispatched", "external_result_proven",
+    "automatic_replay_authorized", "independent_custody_proven",
+)
+_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_FIELDS = tuple(vars(_REPORT_TYPE)[name] for name in _FIELDS)
+_ORIGINAL_DENIALS = tuple(vars(_REPORT_TYPE)[name] for name in _DENIALS)
+_ORIGINAL_HOOKS = tuple(vars(_REPORT_TYPE).get(name) for name in _HOOKS)
+
+
+def _require_original_report() -> None:
+    if (
+        ReadInputBindingReview is not _REPORT_TYPE
+        or any(
+            vars(_REPORT_TYPE).get(name) is not original
+            for names, originals in (
+                (_FIELDS, _ORIGINAL_FIELDS),
+                (_DENIALS, _ORIGINAL_DENIALS),
+                (_HOOKS, _ORIGINAL_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise ReadInputBindingRejected("input-join report authority changed")
+
+
+def review_detached_read_input_binding(
+    request_id: str,
+    steps: tuple[ReadRecoveryStep, ...],
+    snapshot: ReadJournalSnapshot,
+    retained: ReadJournalWitness,
+    expected_inputs: tuple[tuple[str, str], ...],
+) -> ReadInputBindingReview:
+    """Match every SUCCEEDED receipt to the expected per-step input digest.
+
+    The manifest is ordered by successful *plan* steps, not receipt append
+    order. It must contain exactly those successful steps, no extra or missing
+    claims. Failed, running, unknown and unstarted steps have no input proof.
+    The caller must independently preserve the expected input manifest and
+    journal witness; this function cannot certify their provenance.
+    """
+    _require_original_report()
+    if (
+        type(expected_inputs) is not tuple or len(expected_inputs) > 24
+        or any(
+            type(item) is not tuple or len(item) != 2
+            or type(item[0]) is not str or _STEP.fullmatch(item[0]) is None
+            or type(item[1]) is not str or _SHA.fullmatch(item[1]) is None
+            for item in expected_inputs
+        )
+    ):
+        raise ReadInputBindingRejected("invalid exact input digest manifest")
+    # Pin caller-provided built-in immutable scalars before any recovery hook.
+    expected = tuple(expected_inputs)
+    if len({item[0] for item in expected}) != len(expected):
+        raise ReadInputBindingRejected("duplicate expected READ input")
+    # Run the original full topological, journal, and result validation first.
+    # No input-only hash comparison can substitute for that complete check.
+    base: ReadRecoveryJournalReview = review_detached_read_journal_recovery(
+        request_id, steps, snapshot, retained,
+    )
+    _require_original_report()
+    if tuple(item[0] for item in expected) != base.successful_step_ids:
+        raise ReadInputBindingRejected("expected inputs do not cover exact successes")
+    if (
+        type(snapshot) is not ReadJournalSnapshot
+        or type(snapshot.receipts) is not tuple
+        or len(snapshot.receipts) != len(expected)
+    ):
+        raise ReadInputBindingRejected("READ receipt set changed")
+    by_step = {receipt.step_id: receipt for receipt in snapshot.receipts}
+    if len(by_step) != len(expected):
+        raise ReadInputBindingRejected("duplicate recovered READ receipt")
+    for step_id, digest in expected:
+        row = by_step.get(step_id)
+        if row is None or row.input_digest != digest:
+            raise ReadInputBindingRejected("recovered READ input digest disagrees")
+    payload = (
+        request_id, base.review_sha256, base.journal_tip_sha256, expected,
+    )
+    digest = hashlib.sha256(
+        _DOMAIN + json.dumps(
+            payload, ensure_ascii=True, separators=(",", ":"), allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    _require_original_report()
+    result = _REPORT_TYPE(
+        request_id, base.successful_step_ids,
+        base.journal_tip_sha256, base.review_sha256, digest,
+    )
+    _require_original_report()
+    pinned = tuple(getattr(result, name) for name in _FIELDS)
+    for name in _DENIALS:
+        _require_original_report()
+        if (
+            type(result) is not _REPORT_TYPE
+            or getattr(result, name) is not False
+            or any(
+                getattr(result, field) is not original
+                for field, original in zip(_FIELDS, pinned, strict=True)
+            )
+        ):
+            raise ReadInputBindingRejected("READ input binding gained authority")
+    _require_original_report()
+    return result
