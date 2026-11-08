@@ -68,11 +68,45 @@ _AUTHORITY_NAMES = (
 _ORIGINAL_AUTHORITY = tuple(
     vars(_ASSESSMENT_TYPE)[name] for name in _AUTHORITY_NAMES
 )
+# A frozen dataclass still exposes class-level slots and lookup hooks that
+# can be rebound to a property before review reads its first input field.
+_OBSERVATION_TYPE = SyntheticErasureObservations
+_OBSERVATION_FIELDS = (
+    "owner_scope_digest", "row_state", "reader_state", "checkpoint_state",
+    "secure_delete_state", "backup_state", "wal_bytes_claimed",
+)
+_ASSESSMENT_FIELDS = (
+    "evidence_digest", "blockers", "logical_absence_claimed",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_OBSERVATION_CARRIER = tuple(
+    vars(_OBSERVATION_TYPE).get(name)
+    for name in (*_OBSERVATION_FIELDS, *_CARRIER_HOOKS)
+)
+_ORIGINAL_ASSESSMENT_CARRIER = tuple(
+    vars(_ASSESSMENT_TYPE).get(name)
+    for name in (*_ASSESSMENT_FIELDS, *_CARRIER_HOOKS)
+)
 
 
 def _assert_original_authority() -> None:
     if (
         SyntheticErasureAssessment is not _ASSESSMENT_TYPE
+        or SyntheticErasureObservations is not _OBSERVATION_TYPE
+        or any(
+            vars(_OBSERVATION_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_OBSERVATION_FIELDS, *_CARRIER_HOOKS),
+                _ORIGINAL_OBSERVATION_CARRIER, strict=True,
+            )
+        )
+        or any(
+            vars(_ASSESSMENT_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_ASSESSMENT_FIELDS, *_CARRIER_HOOKS),
+                _ORIGINAL_ASSESSMENT_CARRIER, strict=True,
+            )
+        )
         or any(
             vars(_ASSESSMENT_TYPE).get(name) is not original
             for name, original in zip(
