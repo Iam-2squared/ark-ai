@@ -196,8 +196,8 @@ def review_retained_coherent_memory(
     old_tail = 0
     rows = 0
     scopes: set[tuple[str, str]] = set()
-    current: dict[str, tuple[str, str, int]] = {}
-    lifecycle: dict[str, tuple[str, str, int, bool]] = {}
+    current: dict[str, tuple[str, str, int, int, int]] = {}
+    lifecycle: dict[str, tuple[str, str, int, bool, int, int]] = {}
     row_commitments: dict[str, tuple[str, int, str]] = {}
     touched_after_retained: set[str] = set()
 
@@ -227,7 +227,10 @@ def review_retained_coherent_memory(
                     namespace = record.scope.namespace
                     if memory_id in current:
                         raise MemoryCoherentHistoryRejected("duplicate live Memory identity")
-                    current[memory_id] = (owner, namespace, record.revision)
+                    current[memory_id] = (
+                        owner, namespace, record.revision,
+                        record.created_at_ms, record.updated_at_ms,
+                    )
                     if old_rows is not None:
                         row_commitments[memory_id] = row_delta._commitment(row)
                     scopes.add((owner, namespace))
@@ -282,6 +285,8 @@ def review_retained_coherent_memory(
                                 "invalid coherent creation lifecycle"
                             )
                         active = True
+                        created_at = at
+                        last_write_at = at
                     else:
                         if previous is None or not previous[3]:
                             raise MemoryCoherentHistoryRejected(
@@ -293,7 +298,11 @@ def review_retained_coherent_memory(
                                 "coherent event revision changed"
                             )
                         active = operation == "update"
-                    lifecycle[memory_id] = (owner, namespace, revision, active)
+                        created_at = previous[4]
+                        last_write_at = at if active else previous[5]
+                    lifecycle[memory_id] = (
+                        owner, namespace, revision, active, created_at, last_write_at,
+                    )
                     scopes.add((owner, namespace))
                     entry = (
                         event_id, memory_id, owner, namespace, operation, revision, at,
@@ -311,9 +320,14 @@ def review_retained_coherent_memory(
                 for memory_id, state in lifecycle.items():
                     found = current.pop(memory_id, None)
                     if state[3]:
-                        if found != state[:3]:
+                        # Timestamp provenance belongs to this memory's own
+                        # CREATE/last UPDATE, not to an unrelated owner's
+                        # newly appended event. Clocks need not be monotonic.
+                        if found != (
+                            state[0], state[1], state[2], state[4], state[5],
+                        ):
                             raise MemoryCoherentHistoryRejected(
-                                "live Memory row differs from event lifecycle"
+                                "live Memory row/time differs from event lifecycle"
                             )
                     elif found is not None:
                         raise MemoryCoherentHistoryRejected(
