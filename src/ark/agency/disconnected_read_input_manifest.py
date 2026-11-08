@@ -211,11 +211,35 @@ def write_read_input_manifest_once(
             handle.write(raw)
             handle.flush()
             os.fsync(handle.fileno())
+            created = os.fstat(handle.fileno())
     except BaseException:
         # A possibly partial artifact is intentionally NEVER removed here.
         raise
     _authority()
     _sync_created_manifest_directory(target)
+    _authority()
+    # A competing rename, unlink or in-place overwrite during publication
+    # must not produce a successful receipt for a different named artifact.
+    # This is a same-invocation local check, NOT authenticated custody or
+    # protection against later edits/replacement by the filesystem owner.
+    try:
+        current = target.stat(follow_symlinks=False)
+    except OSError as exc:
+        raise ReadInputManifestRejected(
+            "READ input manifest publication cannot be verified"
+        ) from exc
+    if (
+        not stat.S_ISREG(created.st_mode) or created.st_nlink != 1
+        or not stat.S_ISREG(current.st_mode) or current.st_nlink != 1
+        or (
+            created.st_dev, created.st_ino, created.st_size,
+            created.st_mtime_ns, created.st_ctime_ns,
+        ) != (
+            current.st_dev, current.st_ino, current.st_size,
+            current.st_mtime_ns, current.st_ctime_ns,
+        )
+    ):
+        raise ReadInputManifestRejected("READ input manifest changed during publication")
     _authority()
     return _result(request_id, inputs, digest)
 
