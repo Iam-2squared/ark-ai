@@ -96,6 +96,13 @@ _ORIGINAL_LEASE_HOOKS = tuple(
     vars(_LEASE_TYPE).get(name) for name in _LEASE_HOOKS
 )
 
+_LEASE_AUTHORITY_FIELDS = (
+    "startup_authorized", "dispatch_authorized", "notification_authorized",
+)
+_ORIGINAL_LEASE_AUTHORITY = tuple(
+    vars(_LEASE_TYPE)[name] for name in _LEASE_AUTHORITY_FIELDS
+)
+
 
 def _require_original_requirement() -> None:
     if (
@@ -128,6 +135,18 @@ def _require_original_lease_result() -> None:
     ):
         raise SyntheticStartupLeaseRejected(
             "readiness result constructor or descriptor changed"
+        )
+    # A substituted False-returning property can execute arbitrary code
+    # before a receipt is returned. Pin denial descriptors at import and
+    # reject them before accessing even synthetic private probe metadata.
+    if any(
+        vars(_LEASE_TYPE).get(name) is not original
+        for name, original in zip(
+            _LEASE_AUTHORITY_FIELDS, _ORIGINAL_LEASE_AUTHORITY, strict=True,
+        )
+    ):
+        raise SyntheticStartupLeaseRejected(
+            "readiness result authority epoch changed before review"
         )
 
 
