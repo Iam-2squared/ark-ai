@@ -286,15 +286,15 @@ def _scan(
                 # stream. Otherwise deleting the latest event (and possibly
                 # its row) can look like a valid earlier prefix. This is a
                 # read-only consistency check in the SAME snapshot.
-                sequence = conn.execute(
+                sequences = conn.execute(
                     "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-                ).fetchone()
+                ).fetchall()
                 if (
-                    (count == 0 and sequence is not None)
+                    (count == 0 and sequences)
                     or (count > 0 and (
-                        sequence is None
-                        or type(sequence[0]) is not int
-                        or sequence[0] != last
+                        len(sequences) != 1
+                        or type(sequences[0][0]) is not int
+                        or sequences[0][0] != last
                     ))
                 ):
                     raise MemoryEventPrefixRejected(
