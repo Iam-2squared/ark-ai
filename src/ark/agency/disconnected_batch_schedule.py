@@ -17,6 +17,17 @@ from .disconnected_batch_plan import (
 )
 
 _DOMAIN = b"ARK-detached-batch-wavefront-v1\0"
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+
+
+def _assert_original_schedule_digest_callbacks() -> None:
+    # Fail before the caller's plan or wave membership reaches a replaced
+    # serializer/hasher. This is local fail-closed checking, not attestation.
+    if hashlib.sha256 is not _ORIGINAL_SHA256 or json.dumps is not _ORIGINAL_DUMPS:
+        raise DisconnectedBatchRejected("batch schedule digest callback changed")
+
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +66,7 @@ _ORIGINAL_DENIALS = tuple(
 
 def _assert_original_schedule_denials() -> None:
     """Prevent patched False-only descriptors from becoming schedule authority."""
+    _assert_original_schedule_digest_callbacks()
     if (
         DisconnectedBatchSchedule is not _SCHEDULE_TYPE
         or any(
@@ -90,11 +102,15 @@ def _wavefronts(plan: DisconnectedBatchPlan) -> tuple[tuple[str, ...], ...]:
 
 
 def _digest(request_id: str, plan_digest: str, waves: tuple[tuple[str, ...], ...]) -> str:
+    _assert_original_schedule_digest_callbacks()
     canonical = json.dumps(
         {"plan_digest": plan_digest, "request_id": request_id, "waves": waves},
         sort_keys=True, ensure_ascii=True, separators=(",", ":"), allow_nan=False,
     ).encode("ascii")
-    return hashlib.sha256(_DOMAIN + canonical).hexdigest()
+    _assert_original_schedule_digest_callbacks()
+    digest = hashlib.sha256(_DOMAIN + canonical).hexdigest()
+    _assert_original_schedule_digest_callbacks()
+    return digest
 
 
 def build_disconnected_batch_schedule(
