@@ -182,7 +182,10 @@ def _require_original_read_carriers() -> None:
             vars(cls).get(name) is not original
             for name, original in zip(names, originals, strict=True)
         ):
-            raise ReadJournalRejected("synthetic READ carrier descriptor changed")
+            raise ReadJournalRejected(
+                "invalid retained witness"
+                if cls is _WITNESS_TYPE else "synthetic READ carrier descriptor changed"
+            )
 
 
 def genesis_witness() -> ReadJournalWitness:
