@@ -52,11 +52,13 @@ def test_last_false_denial_cannot_swap_prior_false_descriptor(monkeypatch, prior
 
 
 def test_false_denial_cannot_replace_one_decision_carrier(monkeypatch):
-    # Preserve the original denial property; exercise a late *instance* getter
-    # mutation rather than replacing an import-pinned class descriptor.
+    # A substituted class-level lookup hook is refused before any instance
+    # getter can mutate a previously built decision carrier.
     original_getattribute = mod.DetachedReadRecoverySchedule.__getattribute__
+    callbacks = []
 
     def malicious(self, name):
+        callbacks.append(name)
         if name == "external_outcome_verified":
             old = original_getattribute(self, "decisions")[0]
             object.__setattr__(old, "disposition", "".join(
@@ -68,8 +70,11 @@ def test_false_denial_cannot_replace_one_decision_carrier(monkeypatch):
     monkeypatch.setattr(
         mod.DetachedReadRecoverySchedule, "__getattribute__", malicious,
     )
-    with pytest.raises(mod.DetachedReadRecoveryRejected, match="carrier changed"):
+    with pytest.raises(
+        mod.DetachedReadRecoveryRejected, match="authority descriptor changed",
+    ):
         _recover()
+    assert callbacks == []
 
 
 def test_true_authority_is_still_denied(monkeypatch):
