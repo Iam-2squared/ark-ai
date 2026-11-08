@@ -76,6 +76,15 @@ _RECEIPT_TYPE = DueReservationReceipt
 # contract. Inspect the CLASS dictionary without running an untrusted getter.
 _ORIGINAL_WITNESS_DENIAL = vars(_WITNESS_TYPE)["independent_custody_proven"]
 _ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+# Import-time class custody must precede every retained witness scalar read.
+_WITNESS_FIELDS = ("count", "fingerprint")
+_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 
 
 def _require_original_witness_denial() -> None:
@@ -84,6 +93,14 @@ def _require_original_witness_denial() -> None:
         or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
         or vars(_WITNESS_TYPE).get("independent_custody_proven")
         is not _ORIGINAL_WITNESS_DENIAL
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for names, originals in (
+                (_WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+                (_CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
     ):
         raise DueReservationRejected("due witness authority descriptor changed")
 
@@ -99,6 +116,13 @@ _ORIGINAL_RECEIPT_DENIALS = tuple(
 )
 _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
 _ORIGINAL_RECEIPT_POST_INIT = vars(_RECEIPT_TYPE).get("__post_init__")
+_RECEIPT_FIELDS = ("occurrence_id", "due_at_ms", "reserved_at_ms", "witness")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 
 
 def _require_original_receipt_constructor() -> None:
@@ -110,9 +134,12 @@ def _require_original_receipt_constructor() -> None:
         or vars(_RECEIPT_TYPE).get("__post_init__") is not _ORIGINAL_RECEIPT_POST_INIT
         or any(
             vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            for names, originals in (
+                (_RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS),
+                (_RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
+                (_CARRIER_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
             )
+            for name, original in zip(names, originals, strict=True)
         )
     ):
         raise DueReservationRejected("due receipt constructor authority changed")
