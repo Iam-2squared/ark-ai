@@ -54,6 +54,33 @@ class SyntheticProactiveStartupReview:
         return False
 
 
+_RESULT_TYPE = SyntheticProactiveStartupReview
+_AUTHORITY_NAMES = (
+    "startup_authorized", "notification_authorized",
+    "dispatch_authorized", "automatic_replay_authorized",
+)
+_ORIGINAL_AUTHORITY = tuple(
+    vars(_RESULT_TYPE)[name] for name in _AUTHORITY_NAMES
+)
+
+
+def _require_original_authorities() -> None:
+    # False-valued replaced properties can execute arbitrary callbacks.
+    # Reject the substitution before reading trigger metadata or SQLite.
+    if (
+        SyntheticProactiveStartupReview is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _AUTHORITY_NAMES, _ORIGINAL_AUTHORITY, strict=True,
+            )
+        )
+    ):
+        raise SyntheticProactiveStartupRejected(
+            "proactive authority descriptor epoch changed before review"
+        )
+
+
 def _epoch(value: object, carrier: type) -> tuple[object, ...]:
     return tuple(getattr(value, field.name) for field in fields(carrier))
 
@@ -103,6 +130,7 @@ def review_synthetic_proactive_startup(
         or retained is not None and type(retained) is not SyntheticTriggerWitness
     ):
         raise SyntheticProactiveStartupRejected("exact synthetic proactive readiness inputs")
+    _require_original_authorities()
     pinned = (
         _epoch(receipt, SyntheticTriggerReceipt),
         _epoch(policy, SyntheticTriggerPolicy),
@@ -131,6 +159,7 @@ def review_synthetic_proactive_startup(
     )
 
     def assert_source_epoch() -> None:
+        _require_original_authorities()
         # Both independent reviewers are reentrant. Check the ORIGINAL trigger,
         # policy and requirement carriers after EACH review, not only at the
         # last combined comparison, where a later callback could restore them.
