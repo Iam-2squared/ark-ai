@@ -242,15 +242,15 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
                 # attest a deliberately rewritten sqlite_sequence or an
                 # independent writer, so retained external custody is still
                 # required.
-                sequence = conn.execute(
+                sequences = conn.execute(
                     "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-                ).fetchone()
+                ).fetchall()
                 if (
-                    (not events and sequence is not None)
+                    (not events and sequences)
                     or (events and (
-                        sequence is None
-                        or type(sequence[0]) is not int
-                        or sequence[0] != previous_id
+                        len(sequences) != 1
+                        or type(sequences[0][0]) is not int
+                        or sequences[0][0] != previous_id
                     ))
                 ):
                     raise MemoryRowDeltaRejected(
