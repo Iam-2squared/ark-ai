@@ -10,6 +10,7 @@ from contextlib import closing
 from pathlib import Path
 from threading import Lock
 
+from . import contracts as _contracts
 from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall, _canonical_json
 
 SCHEMA_VERSION = 1
@@ -22,6 +23,14 @@ _EVENT_FIELDS = (
 _ORIGINAL_EVENT_FIELDS = tuple(vars(_EVENT_TYPE)[name] for name in _EVENT_FIELDS)
 _EVENT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_EVENT_HOOKS = tuple(vars(_EVENT_TYPE).get(name) for name in _EVENT_HOOKS)
+# Local callbacks may be rebound after a ToolCall is constructed. Before
+# touching its private argument mapping or stored audit identities, validate
+# both the audit-side and ToolCall-side canonical digest pipeline.
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_CANONICAL_JSON = _canonical_json
+_ORIGINAL_TOOLCALL_JSON = _contracts._canonical_json
+_ORIGINAL_TOOLCALL_FREEZE = _contracts._freeze_json
+_ORIGINAL_JSON_DUMPS = _contracts.json.dumps
 _SQLITE_INT_MAX = 2**63 - 1
 _AUDIT_BOOTSTRAP_LOCK = Lock()  # process-local; SQLite owns cross-process locking
 
@@ -97,6 +106,7 @@ def _validate_tail_identity(row: sqlite3.Row) -> int:
     The original v1 schema is unchanged. This is a local consistency check,
     not an authenticated event hash chain or a full historical audit.
     """
+    _require_original_event_constructor()
     event_id = row["event_id"]
     occurred = row["occurred_at_ms"]
     if type(event_id) is not int or event_id < 1:
@@ -183,6 +193,14 @@ def _require_valid_committed_audit_history(conn: sqlite3.Connection) -> None:
 
 
 def _require_original_event_constructor(phase: str = "") -> None:
+    if (
+        hashlib.sha256 is not _ORIGINAL_SHA256
+        or _canonical_json is not _ORIGINAL_CANONICAL_JSON
+        or _contracts._canonical_json is not _ORIGINAL_TOOLCALL_JSON
+        or _contracts._freeze_json is not _ORIGINAL_TOOLCALL_FREEZE
+        or _contracts.json.dumps is not _ORIGINAL_JSON_DUMPS
+    ):
+        raise ActionAuditSchemaError("action audit digest callback changed")
     # An audit receipt is data, not a place to execute new Python code.
     # Reflectively replacing a slotted field can install an executable
     # descriptor. Inspect the ORIGINAL class dictionary without getattr(),
@@ -241,6 +259,7 @@ class SQLiteActionAudit:
         path_epoch = self.path
 
         def assert_action_epoch(phase: str) -> None:
+            _require_original_event_constructor(phase)
             try:
                 stable = (
                     call.arguments is original_arguments
@@ -435,6 +454,7 @@ class SQLiteActionAudit:
             # the deterministic request ID can still be recomputed from its
             # separately persisted argument digest and identity fields.
             # Reject self-contradictory, individually well-formed row values.
+            _require_original_event_constructor("before read digest")
             expected_request_id = "act_" + hashlib.sha256(_canonical_json({
                 "arguments_sha256": arguments_sha256,
                 "capability": capability,
