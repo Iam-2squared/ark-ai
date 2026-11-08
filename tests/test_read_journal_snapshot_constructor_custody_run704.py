@@ -5,6 +5,8 @@ CPython special-method slot contamination of unrelated tests. Only synthetic
 local journal fixtures are used, never actual tool execution.
 """
 
+from __future__ import annotations
+
 import subprocess
 import sys
 
