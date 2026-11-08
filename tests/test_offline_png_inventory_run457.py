@@ -133,13 +133,17 @@ def test_source_digest_required_and_bytes_exact():
 
 
 def test_reflected_request_swap_is_rejected(monkeypatch):
-    original = OfflinePngRequest(OWNER, PRIVACY, hashlib.sha256(png()).hexdigest(), png())
-    original_crc = zlib.crc32
+    raw = png()
+    original = OfflinePngRequest(OWNER, PRIVACY, hashlib.sha256(raw).hexdigest(), raw)
+    calls = []
 
     def callback(value):
+        calls.append(value)
         object.__setattr__(original, "privacy_sha256", "c" * 64)
-        return original_crc(value)
+        return 0
 
     monkeypatch.setattr("ark.offline_png_inventory.zlib.crc32", callback)
-    with pytest.raises(OfflinePngRejected, match="carrier changed"):
+    with pytest.raises(OfflinePngRejected, match="framing implementation changed"):
         inspect_disconnected_png(original)
+    assert calls == []
+    assert original.privacy_sha256 == PRIVACY
