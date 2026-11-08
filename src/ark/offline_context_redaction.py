@@ -17,6 +17,9 @@ _LABEL = re.compile(r"[A-Z][A-Z0-9_]{0,19}\Z")
 _DOMAIN = b"ARK-detached-local-context-redaction-v1\0"
 _MAX_TEXT = 8_192
 _MAX_SPANS = 64
+# Reject a replaced SHA-256 callback BEFORE handing private fixture bytes
+# to it, even when a valid source digest was independently supplied.
+_ORIGINAL_SHA256 = hashlib.sha256
 # Pin canonical JSON encoding at import; digesting injected JSON is not proof
 # that the reviewed owner/scope and masked result actually reached the digest.
 _ORIGINAL_JSON_DUMPS = json.dumps
@@ -92,6 +95,7 @@ def _require_original_denials() -> None:
     if (
         RedactedOfflinePreview is not _REDACTED_RESULT_TYPE
         or OfflineRedactionSpan is not _REDACTION_SPAN_TYPE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
         or any(
             vars(cls).get(name) is not original
             for cls, names, originals in (
