@@ -54,14 +54,20 @@ def test_reentrant_hash_cannot_change_retained_preview_during_verification(
     monkeypatch.setattr(context.hashlib, "sha256", digest)
     with pytest.raises(
         context.OfflineContextPreviewRejected,
-        match="retained context report changed during review",
+        match="context preview authority definition changed",
     ):
         context.verify_offline_context_preview(
             report, (fixture,), owner_digest="a" * 64,
             allowed_scope_digests=("b" * 64,), observed_at_ms=1000,
             retained_local_digest=expected.local_digest,
         )
-    assert injected == [attack]
+    # A rebound digest function must never see private fixture bytes or mutate
+    # a retained report, even when the old later-stage check could catch it.
+    assert injected == []
+    if attack == "repair_forged_digest":
+        assert report.local_digest == "f" * 64
+    else:
+        assert report.record_ids is expected.record_ids
 
 
 def test_unchanged_retained_private_report_remains_verifiable():
