@@ -72,7 +72,7 @@ def test_normal_prefix_and_row_delta_preserve_deny_only_contract(tmp_path):
     compared = compare_local_memory_event_prefix(store, prefix)
     reviewed = review_retained_memory_row_delta(store, rows)
     assert compared.current_event_count == 2
-    assert compared.independently_authenticated is False
+    assert compared.independent_witness_custody_proven is False
     assert compared.action_authorized is False
     assert reviewed.appended_events == 1
     assert reviewed.writer_authenticated is False
