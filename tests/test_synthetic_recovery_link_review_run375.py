@@ -8,6 +8,7 @@ import pytest
 
 from ark.agency.audit import SQLiteActionAudit
 from ark.agency.contracts import (
+    ActionAuditSchemaError,
     Effect,
     OneShotAuthorization,
     PlanStep,
@@ -168,7 +169,11 @@ def test_linked_audit_event_deletion_is_rejected(tmp_path: Path):
     _link(state, receipt)
     with sqlite3.connect(state[3].path) as conn:
         conn.execute("DELETE FROM action_events")
-    with pytest.raises(SyntheticRecoveryRejected, match="no matching audit event"):
+    # The local audit high-water gate now refuses the deleted tail before
+    # the four-ledger link reviewer can look for a matching event.
+    with pytest.raises(
+        ActionAuditSchemaError, match="audit append-only high-water mismatch",
+    ):
         _review(state)
 
 
