@@ -57,9 +57,15 @@ def test_last_false_denial_getter_cannot_mutate_retained_result(
         patch.setattr(
             module.DetachedReadRecoverySchedule, "__getattribute__", intercept,
         )
-        with pytest.raises(module.DetachedReadRecoveryRejected, match="altered|changed"):
+        with pytest.raises(
+            module.DetachedReadRecoveryRejected,
+            match="authority descriptor changed",
+        ):
             module.schedule_detached_read_recovery(_REQ, (source,))
-    assert called >= 1
+    # Replacement of the lookup hook is rejected before it can mutate the
+    # input step or one of the newly built result carriers.
+    assert called == 0
+    assert source.operation == "math.sum"
 
 
 def test_last_denial_getter_cannot_enable_earlier_dispatch_flag(
@@ -70,7 +76,10 @@ def test_last_denial_getter_cannot_enable_earlier_dispatch_flag(
             module.DetachedReadRecoverySchedule.__getattribute__
         )
 
+        callbacks = []
+
         def intercept(self, name):
+            callbacks.append(name)
             if name == "external_outcome_verified":
                 patch.setattr(
                     module.DetachedReadRecoverySchedule,
@@ -83,6 +92,8 @@ def test_last_denial_getter_cannot_enable_earlier_dispatch_flag(
             module.DetachedReadRecoverySchedule, "__getattribute__", intercept,
         )
         with pytest.raises(
-            module.DetachedReadRecoveryRejected, match="altered before return",
+            module.DetachedReadRecoveryRejected,
+            match="authority descriptor changed",
         ):
             module.schedule_detached_read_recovery(_REQ, (_row(),))
+        assert callbacks == []
