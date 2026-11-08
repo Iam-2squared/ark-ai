@@ -184,6 +184,16 @@ def _sync_created_manifest_directory(target: Path) -> None:
         raise ReadInputManifestRejected("READ input manifest parent sync refused") from exc
 
 
+def _identity(info: os.stat_result) -> tuple[int, int, int, int]:
+    """Stable identity across file handles and named stats, including Windows."""
+    return info.st_dev, info.st_ino, info.st_size, info.st_nlink
+
+
+def _epoch(info: os.stat_result) -> tuple[int, int, int, int, int, int]:
+    """Compare timestamps only between observations from the same API source."""
+    return (*_identity(info), info.st_mtime_ns, info.st_ctime_ns)
+
+
 def write_read_input_manifest_once(
     path: str | Path,
     request_id: str,
@@ -231,15 +241,35 @@ def write_read_input_manifest_once(
     if (
         not stat.S_ISREG(created.st_mode) or created.st_nlink != 1
         or not stat.S_ISREG(current.st_mode) or current.st_nlink != 1
-        or (
-            created.st_dev, created.st_ino, created.st_size,
-            created.st_mtime_ns, created.st_ctime_ns,
-        ) != (
-            current.st_dev, current.st_ino, current.st_size,
-            current.st_mtime_ns, current.st_ctime_ns,
-        )
+        or _identity(created) != _identity(current)
+        or os.name != "nt" and _epoch(created) != _epoch(current)
     ):
         raise ReadInputManifestRejected("READ input manifest changed during publication")
+    # Windows creation/change timestamps may differ between a live descriptor
+    # and a named-file stat even without a write. Never treat that legitimate
+    # difference as a successful integrity check: re-open the named artifact,
+    # verify the complete bytes, and compare handle epochs within one handle.
+    if os.name == "nt":
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            fd = os.open(target, flags)
+            with os.fdopen(fd, "rb", closefd=True) as handle:
+                before = os.fstat(handle.fileno())
+                actual = handle.read(_MAX_BYTES + 1)
+                after = os.fstat(handle.fileno())
+                named = target.stat(follow_symlinks=False)
+        except OSError as exc:
+            raise ReadInputManifestRejected(
+                "READ input manifest publication cannot be verified"
+            ) from exc
+        if (
+            actual != raw or not stat.S_ISREG(after.st_mode)
+            or _identity(created) != _identity(before)
+            or _epoch(before) != _epoch(after)
+            or _identity(after) != _identity(named)
+        ):
+            raise ReadInputManifestRejected("READ input manifest changed during publication")
     _authority()
     return _result(request_id, inputs, digest)
 
@@ -264,6 +294,9 @@ def load_read_input_manifest(
     try:
         if target.is_symlink():
             raise ReadInputManifestRejected("READ input manifest symlink refused")
+        # Two named-file observations catch metadata changes on Windows where
+        # descriptor creation timestamps are not always comparable to paths.
+        named_before = target.stat(follow_symlinks=False)
         fd = os.open(target, flags)
         with os.fdopen(fd, "rb", closefd=True) as handle:
             before = os.fstat(handle.fileno())
@@ -272,25 +305,19 @@ def load_read_input_manifest(
             raw = handle.read(_MAX_BYTES + 1)
             after = os.fstat(handle.fileno())
             current = target.stat(follow_symlinks=False)
-            # A same-inode, same-size rewrite during an open read must not
-            # become a successful receipt simply because its length matches.
+            # Both the descriptor and named path must stay stable during the
+            # read. The named path must still refer to the opened inode.
             # These local epochs are NOT independent trusted provenance.
-            original_epoch = (
-                before.st_dev, before.st_ino, before.st_size,
-                before.st_mtime_ns, before.st_ctime_ns, before.st_nlink,
-            )
             if (
-                not stat.S_ISREG(after.st_mode)
+                not stat.S_ISREG(named_before.st_mode)
+                or not stat.S_ISREG(after.st_mode)
                 or not stat.S_ISREG(current.st_mode)
+                or named_before.st_nlink != 1
                 or after.st_nlink != 1 or current.st_nlink != 1
-                or original_epoch != (
-                    after.st_dev, after.st_ino, after.st_size,
-                    after.st_mtime_ns, after.st_ctime_ns, after.st_nlink,
-                )
-                or original_epoch != (
-                    current.st_dev, current.st_ino, current.st_size,
-                    current.st_mtime_ns, current.st_ctime_ns, current.st_nlink,
-                )
+                or _epoch(before) != _epoch(after)
+                or _epoch(named_before) != _epoch(current)
+                or _identity(before) != _identity(current)
+                or os.name != "nt" and _epoch(before) != _epoch(current)
             ):
                 raise ReadInputManifestRejected("READ input manifest changed during read")
     except OSError as exc:
