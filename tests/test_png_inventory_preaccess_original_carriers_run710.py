@@ -72,9 +72,12 @@ try:
     png.inspect_disconnected_png(request)
 except png.OfflinePngRejected as exc:
     expected = (
-        "PNG request identity descriptor changed"
-        if kind.startswith("request_") or kind.startswith("crc_")
-        else "constructed PNG inventory"
+        "PNG framing implementation changed"
+        if kind.startswith("crc_")
+        else (
+            "PNG request identity descriptor changed"
+            if kind.startswith("request_") else "constructed PNG inventory"
+        )
     )
     assert expected in str(exc), str(exc)
 else:
