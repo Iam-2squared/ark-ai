@@ -42,6 +42,7 @@ def test_original_cas_carrier_guard_rejects_before_content_or_sqlite(
 ):
     script = textwrap.dedent(
         """
+        import contextlib
         import sqlite3
         import tempfile
         from pathlib import Path
@@ -83,7 +84,7 @@ def test_original_cas_carrier_guard_rejects_before_content_or_sqlite(
             else:
                 raise AssertionError("mutated Memory input accepted")
             assert not invoked, invoked
-            with sqlite3.connect(store.path) as connection:
+            with contextlib.closing(sqlite3.connect(store.path)) as connection:
                 assert connection.execute(
                     "SELECT content,revision FROM memories"
                 ).fetchone() == ("before", 1)
