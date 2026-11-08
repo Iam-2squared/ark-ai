@@ -11,7 +11,7 @@ import ark.offline_png_scanlines as png
 
 
 def _fixture():
-    encoded = zlib.compress(b"\\x00\\x10\\x20")
+    encoded = zlib.compress(b"\x00\x10\x20")
     request = png.OfflineScanlineRequest(
         "a" * 64, "b" * 64, hashlib.sha256(encoded).hexdigest(),
         encoded, 2, 1, 0, 8, 0,
