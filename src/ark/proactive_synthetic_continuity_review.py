@@ -62,6 +62,37 @@ class SyntheticTriggerWitness:
 # the public method. We still call the public method for reentrant fault
 # coverage, but it may not silently skip the actual local digest validation.
 _ORIGINAL_WITNESS_VALIDATOR = SyntheticTriggerWitness.assert_integrity
+# A frozen witness can still acquire executable class descriptors and lookup
+# hooks. Capture the ORIGINAL slots before untrusted caller code can replace
+# them, and check them before reading retained private history or opening
+# SQLite. The validator remains patchable for fault-injection tests, but its
+# original implementation is still called independently.
+_WITNESS_TYPE = SyntheticTriggerWitness
+_WITNESS_FIELDS = ("row_hashes", "digest")
+_WITNESS_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+)
+
+
+def _require_original_witness_carrier() -> None:
+    if (
+        SyntheticTriggerWitness is not _WITNESS_TYPE
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for names, originals in (
+                (_WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+                (_WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticTriggerRejected(
+            "proactive witness carrier changed before private history access"
+        )
 
 
 def assert_proactive_history_continues(
@@ -74,6 +105,7 @@ def assert_proactive_history_continues(
         or type(current) is not SyntheticTriggerWitness
     ):
         raise SyntheticTriggerRejected("exact proactive witnesses required")
+    _require_original_witness_carrier()
     # A direct caller may have no enclosing ledger/witness custody fence.
     # Capture both exact carriers *before* either reentrant integrity method.
     retained_rows = retained.row_hashes
@@ -83,6 +115,7 @@ def assert_proactive_history_continues(
     current_carriers = tuple(current_rows)
 
     def assert_epoch() -> None:
+        _require_original_witness_carrier()
         if (
             retained.row_hashes is not retained_rows
             or current.row_hashes is not current_rows
@@ -121,6 +154,7 @@ def read_proactive_witness(
         raise SyntheticTriggerRejected("exact synthetic proactive ledger required")
     if retained is not None and type(retained) is not SyntheticTriggerWitness:
         raise SyntheticTriggerRejected("exact retained trigger witness required")
+    _require_original_witness_carrier()
     # Bind both source identity and retained values before even the FIRST
     # reentrant retained.assert_integrity() callback, not only before SQLite.
     # any injectable validation/row-hydration callback. An equal-path object
@@ -133,6 +167,7 @@ def read_proactive_witness(
     retained_carriers = () if retained is None else tuple(retained_rows_carrier)
 
     def assert_epoch() -> None:
+        _require_original_witness_carrier()
         if (
             ledger.path is not path_epoch
             or retained is not None
@@ -193,6 +228,7 @@ def read_proactive_witness(
             witness_carriers = tuple(witness_rows)
 
             def assert_witness_epoch() -> None:
+                _require_original_witness_carrier()
                 if (
                     type(witness) is not SyntheticTriggerWitness
                     or witness.row_hashes is not witness_rows
