@@ -88,9 +88,18 @@ authority, erasure or permission to export context or use real tools.
   [#42516998663](https://github.com/Iam-2squared/ark-ai/actions/runs/42516998663):
   **6/6 GREEN** on older `d4b3116...` only.
 - Run721 source/test runs started automatically by ordinary GitHub Contents API
-  commits. At report preparation, exact-head 6/6 GREEN is **NOT YET VERIFIED**.
+  commits. At report revision, exact-head 6/6 GREEN is **NOT YET VERIFIED**.
   Tests are authored, not locally executed; do not promote older-head CI to
   a newer-head PASS. No duplicate Actions workflow was requested.
+- CI diagnostics: [#42522000836](https://github.com/Iam-2squared/ark-ai/actions/runs/42522000836)
+  Ubuntu 3.11 had **11,262 PASS / 1 FAIL / 1 SKIP**; the failing inherited
+  coherent Memory test expected a later attacker-controlled SHA callback,
+  but the new Memory alignment preaccess guard now refuses the retained
+  witness **before** that callback. Other observed Ubuntu jobs failed the
+  same single test (different Python/job totals). The test-only correction
+  [`6b629df0`](https://github.com/Iam-2squared/ark-ai/commit/6b629df04b9a722b7f145ae72094b368e854703c)
+  now requires the earlier `invalid retained witness` denial and zero
+  execution of injected callbacks. No production safety check was relaxed.
 - Read-only spot review of existing `docs/V3_FREE_GUARD_REVIEW.md` against
   protected Draft PR #5 (`805b377697472268db02650a89c7a94b1c5337c8`)
   found its older preflight cross-binding checklist is now covered by source
