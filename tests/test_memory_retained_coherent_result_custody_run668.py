@@ -87,12 +87,15 @@ def test_hash_callback_cannot_replace_report_constructor_before_use(
         return real_hash(payload)
 
     monkeypatch.setattr(coherent.hashlib, "sha256", mutate_after_result_hash)
+    # The new alignment SHA preaccess guard refuses the rebound callback
+    # while validating the retained witness, BEFORE private SQLite or the
+    # coherent result hash can reach the injected constructor mutation.
     with pytest.raises(
         coherent.MemoryCoherentHistoryRejected,
-        match="result constructor or authority descriptor changed",
+        match="invalid retained witness",
     ):
         coherent.review_retained_coherent_memory(store, *retained)
-    assert attempted == ["digest"]
+    assert attempted == []
     assert calls == []
     assert store.get(saved.memory_id, saved.scope).revision == 1
 
