@@ -432,8 +432,11 @@ class DisconnectedReadJournal:
         The caller must retain the tip outside this local SQLite database.
         """
         _require_original_snapshot_class()
-        retained_fields = (retained.count, retained.tip_sha256)
+        # Validate original witness slots/getters before reading either field.
+        # An injected dataclass descriptor is executable, even if its value
+        # resembles the retained count or tip.
         _check_witness(retained)
+        retained_fields = (retained.count, retained.tip_sha256)
         connection = self._connection
 
         def stable() -> None:
