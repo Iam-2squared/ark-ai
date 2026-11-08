@@ -143,19 +143,21 @@ def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
     count, first, last = conn.execute(
         "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM action_events"
     ).fetchone()
-    sequence = conn.execute(
+    sequences = conn.execute(
         "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
-    ).fetchone()
+    ).fetchall()
     if type(count) is not int or count < 0:
         raise ActionAuditSchemaError("audit persisted event sequence is malformed")
     if count == 0:
-        if sequence is not None:
+        if sequences:
             raise ActionAuditSchemaError("audit append-only history was truncated")
     elif (
         type(first) is not int or first != 1
         or type(last) is not int or last != count
-        or sequence is None or type(sequence[0]) is not int
-        or sequence[0] != last
+        # sqlite_sequence.name is not UNIQUE. The first row can appear
+        # correct even when a second forged high-water marker is present.
+        or len(sequences) != 1 or type(sequences[0][0]) is not int
+        or sequences[0][0] != last
     ):
         raise ActionAuditSchemaError("audit append-only event ID gap or tail loss")
 
