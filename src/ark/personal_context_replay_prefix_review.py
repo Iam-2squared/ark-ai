@@ -81,9 +81,27 @@ _ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
 _ORIGINAL_RESULT_HOOKS = tuple(
     vars(_RESULT).get(name) for name in _RESULT_HOOKS
 )
+# The review digest covers synthetic but linkable context request metadata.
+# Pin primitives before retained-data access, SQLite, and every callback boundary.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 def _original_result_authority() -> None:
+    # Reject substituted SHA/JSON before reading any retained context witness.
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise OfflineContextPrefixRejected(
+            "context prefix digest implementation changed"
+        )
     # Verify class descriptors without running any possibly replaced getter.
     # A counterfeit False callback remains executable code, not a denial.
     if (
@@ -119,6 +137,7 @@ def review_retained_context_replay_prefix(
     """
     if type(ledger) is not _LEDGER:
         raise OfflineContextPrefixRejected("exact offline context ledger required")
+    _original_result_authority()
     try:
         previous = replay._check_witness(retained)
     except replay.OfflineContextReplayRejected as exc:
