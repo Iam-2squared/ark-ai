@@ -68,11 +68,20 @@ _HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_FIELDS = tuple(vars(_REPORT_TYPE)[name] for name in _FIELDS)
 _ORIGINAL_DENIALS = tuple(vars(_REPORT_TYPE)[name] for name in _DENIALS)
 _ORIGINAL_HOOKS = tuple(vars(_REPORT_TYPE).get(name) for name in _HOOKS)
+# These are independent dependency identities, not merely output values. A
+# replaced digest/serializer or recovery function can leak the caller's exact
+# input manifest, counterfeit a receipt check or execute hostile code.
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_RECOVERY_REVIEW = review_detached_read_journal_recovery
 
 
 def _require_original_report() -> None:
     if (
         ReadInputBindingReview is not _REPORT_TYPE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or review_detached_read_journal_recovery is not _ORIGINAL_RECOVERY_REVIEW
         or any(
             vars(_REPORT_TYPE).get(name) is not original
             for names, originals in (
