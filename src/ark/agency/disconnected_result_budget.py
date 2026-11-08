@@ -17,6 +17,9 @@ _STEP = re.compile(r"step_[0-9a-f]{16}\Z")
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _OPS = frozenset(("math.sum", "text.stats", "text.find", "json.inspect"))
 _DOMAIN = b"ARK-disconnected-complete-read-result-set-v1\0"
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_LOADS = json.loads
 _MAX_STEP_BYTES = 8_192
 _MAX_BATCH_BYTES = 65_536
 
@@ -82,6 +85,12 @@ def _require_original_result_carriers() -> None:
     if (
         DetachedReadResult is not _RESULT_TYPE
         or CompleteDetachedReadResults is not _SEALED_TYPE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or json.loads is not _ORIGINAL_LOADS
+        or _pairs_unique is not _ORIGINAL_PAIRS_UNIQUE
+        or _int64 is not _ORIGINAL_INT64
+        or _no_float is not _ORIGINAL_NO_FLOAT
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or vars(_SEALED_TYPE).get("__init__") is not _ORIGINAL_SEALED_INIT
         or any(vars(_RESULT_TYPE).get(name) is not original for name, original in zip(
@@ -127,6 +136,11 @@ def _no_float(_: str) -> None:
     raise DisconnectedResultsRejected("float/nonfinite numbers forbidden")
 
 
+_ORIGINAL_PAIRS_UNIQUE = _pairs_unique
+_ORIGINAL_INT64 = _int64
+_ORIGINAL_NO_FLOAT = _no_float
+
+
 def _bounded_json(value: object, depth: int = 0) -> None:
     if depth > 12:
         raise DisconnectedResultsRejected("JSON nesting too deep")
@@ -156,6 +170,7 @@ def _bounded_json(value: object, depth: int = 0) -> None:
 
 
 def _verify_json(raw: str) -> bytes:
+    _require_original_result_carriers()
     if type(raw) is not str:
         raise DisconnectedResultsRejected("result JSON must be an exact string")
     try:
@@ -166,13 +181,16 @@ def _verify_json(raw: str) -> bytes:
             raw, object_pairs_hook=_pairs_unique, parse_int=_int64,
             parse_float=_no_float, parse_constant=_no_float,
         )
+        _require_original_result_carriers()
         _bounded_json(value)
+        _require_original_result_carriers()
         normalized = json.dumps(
             value, sort_keys=True, ensure_ascii=True,
             allow_nan=False, separators=(",", ":"),
         )
     except (ValueError, TypeError, UnicodeError, RecursionError) as exc:
         raise DisconnectedResultsRejected("noncanonical result JSON") from exc
+    _require_original_result_carriers()
     if raw != normalized:
         raise DisconnectedResultsRejected("result JSON must be canonical")
     return payload
