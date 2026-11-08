@@ -385,6 +385,15 @@ class SQLiteActionAudit:
                 ).fetchone()
                 if after_event_id else None
             )
+            # A valid selected page is not evidence that unseen earlier or
+            # later rows are locally consistent. Scan the retained prefix in
+            # this SAME read snapshot. Preserve page-specific diagnostics by
+            # reporting the prefix error only after validating selected rows.
+            history_error: ActionAuditSchemaError | None = None
+            try:
+                _require_valid_committed_audit_history(conn)
+            except ActionAuditSchemaError as exc:
+                history_error = exc
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit source changed during read")
         # Read persisted rows without SQLite's permissive Python coercions.
@@ -453,6 +462,8 @@ class SQLiteActionAudit:
             result.append(event)
         if self.path is not path_epoch:
             raise ActionAuditSchemaError("action audit source changed during hydration")
+        if history_error is not None:
+            raise history_error
         _require_original_event_constructor()
         return result
 
