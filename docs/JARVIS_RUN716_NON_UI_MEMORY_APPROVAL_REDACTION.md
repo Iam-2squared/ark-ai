@@ -1,6 +1,6 @@
-# ARK AI — Run716: coherent Memory timestamps, synthetic claim dependency custody, redaction SHA preaccess
+# ARK AI — Run716: Memory timestamps, claim identity, privacy redaction and PNG fixture digest
 
-**Scope:** Three independent, reversible, **FREE-ONLY NON-UI** work packages on Draft PR #8 (`research/jarvis-foundations`). No UI work, live tools, real/private data, Candidate, GPU, paid service, new credential, evaluation opening, human approval or main merge.
+**Scope:** Four independent, reversible, **FREE-ONLY NON-UI** work packages on Draft PR #8 (`research/jarvis-foundations`). No UI work, live tools, real/private data, Candidate, GPU, paid service, new credential, evaluation opening, human approval or main merge.
 
 ## Exact initial state and prerequisite
 
@@ -26,18 +26,25 @@
 - [Three authored regressions `a99c656c`](https://github.com/Iam-2squared/ark-ai/commit/a99c656cd4abd2c00a98ecafa096bda0263cff3d) cover full and partial masking modes with poisoned callbacks that must never receive fixture bytes, plus an unmodified fully masked result.
 - Limits: process-local callback pinning is not an adversarial sandbox, full redaction is not erasure, and even complete masking grants no external-export permission. **Open review:** other unpinned JSON-related callbacks are exercised in the legacy serializer-negative-test path; evaluate a *separate*, test-aware preaccess custody change without invalidating in-flight CI or incorrectly treating a hash as consent.
 
+## Package D — synthetic PNG digest preaccess
+
+- Production [`637ec82c`](https://github.com/Iam-2squared/ark-ai/commit/637ec82c7ca479a3c55021e9bc6d3d56f609b910) pins the import-time `hashlib.sha256` identity before any raw caller-owned PNG bytes reach the checksum implementation. It does not decode pixels or change the canonical inventory policy. A replaced SHA callback is rejected rather than invoked.
+- The inherited synthetic digest injection test was strengthened in [`7a0861b1`](https://github.com/Iam-2squared/ark-ai/commit/7a0861b16f849ab7b91eb85b20b05080c5c98810): now requires **zero callback invocations before denial**, rather than waiting until the callback has had an opportunity to mutate a denial descriptor. [Three new cases `017174f0`](https://github.com/Iam-2squared/ark-ai/commit/017174f0193477f4d023132ec34ed429c0fe6f26) test matching/nonmatching source SHA plus healthy original hash.
+- Limits: This is process-local guardrail, **not** authenticated image origin, user consent, CRC integrity proof, or permission to open camera/screen. `zlib.crc32` and structural unpack callback dependencies merit separate review after matched CI, without stacking changes onto the same in-flight validation path.
+
 ## CI / evidence / verification posture
 
 - Prior source basis CI #42497450451: **6/6 GREEN**, checked via six completed successful jobs.
 - Package A tests HEAD `1911251ec863eaf3cb3ca4b1bec6523acfa1948b`: [CI #42501394862](https://github.com/Iam-2squared/ark-ai/actions/runs/42501394862), **IN PROGRESS** when last queried.
 - Package B tests HEAD `07aac427654106658d8e8e8e5a0246071aa7e5be`: [CI #42501617066](https://github.com/Iam-2squared/ark-ai/actions/runs/42501617066), **IN PROGRESS** when last queried.
 - Package C tests HEAD `a99c656cd4abd2c00a98ecafa096bda0263cff3d`: [CI #42501861587](https://github.com/Iam-2squared/ark-ai/actions/runs/42501861587), **QUEUED** when last queried.
-- **14 authored tests, 3 production files, 3 test files**. No local complete pytest/Ruff or physical-PC GGUF run; no latest-head all-six GREEN claim before final matching job evidence. All GitHub writes used normal Contents API and new HEAD reads, no raw-object, force-push, hidden route or concurrent overwrite. Automatic CI only, no duplicate manual workflow runs.
+- Package D tests HEAD `017174f0193477f4d023132ec34ed429c0fe6f26`: [CI #42502281381](https://github.com/Iam-2squared/ark-ai/actions/runs/42502281381), **QUEUED** when last queried.
+- **17 authored tests, 4 production files, 4 new test files and 1 inherited test corrected**. No local complete pytest/Ruff or physical-PC GGUF run; no latest-head all-six GREEN claim before final matching job evidence. All GitHub writes used normal Contents API and new HEAD reads, no raw-object, force-push, hidden route or concurrent overwrite. Automatic CI only, no duplicate manual workflow runs.
 
 ## Next plan / 今後の方針
 
 1. Verify exact-head six-job CI for the final checkpoint; use real logs and minimal fixes for any failures, then work on another independent non-UI lane while CI runs.
 2. Memory: further CAS/ABA and COMMIT-UNKNOWN manual outcome boundaries; ensure retained row commitments/replay evidence when legal foreign-owner append advances event count. Never automatically retry ambiguous writes.
 3. Planner: independently retained step input manifest and restart-safe terminal/UNKNOWN proofs, while explicitly **not** treating READ hashes as proof of invocation.
-4. Claim/Privacy: inspect JSON digest machinery before personal text can reach substituted callbacks, preserve existing regression semantics, strengthen audit-before-action and occurrence-bound mock-only authorization.
+4. Claim/Privacy/Observation: inspect JSON digest machinery before masked personal text can reach substituted callbacks, and PNG CRC/framing dependency integrity before raw fixture data. Preserve existing regression semantics, strengthen audit-before-action and occurrence-bound mock-only authorization.
 5. Keep PR #5/#8/#9 Draft/unmerged; UI paused, frozen contracts/evidence unchanged, all paid/GPU/credentials/evaluation/Candidate/hardware/human-approval/main-merge boundaries closed. Overall ARK/JARVIS/V3 **NOT_PASSED**.
