@@ -69,6 +69,39 @@ class OfflineScanlineAudit:
         return False
 
 
+
+# Synthetic IDAT bytes must never reach a replaced digest/decompressor or a
+# class-level request getter. Pin the import-original local boundary before
+# the first private field read; this is NOT remote codec attestation.
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DECOMPRESSOBJ = zlib.decompressobj
+_REQUEST_TYPE = OfflineScanlineRequest
+_REQUEST_FIELDS = (
+    "owner_sha256", "privacy_sha256", "idat_sha256", "idat_bytes",
+    "width", "height", "color_type", "bit_depth", "palette_entries",
+)
+_REQUEST_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REQUEST_SLOTS = tuple(
+    vars(_REQUEST_TYPE).get(name) for name in (*_REQUEST_FIELDS, *_REQUEST_HOOKS)
+)
+
+
+def _require_original_scanline_inputs() -> None:
+    if (
+        hashlib.sha256 is not _ORIGINAL_SHA256
+        or zlib.decompressobj is not _ORIGINAL_DECOMPRESSOBJ
+        or OfflineScanlineRequest is not _REQUEST_TYPE
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_REQUEST_FIELDS, *_REQUEST_HOOKS),
+                _ORIGINAL_REQUEST_SLOTS, strict=True,
+            )
+        )
+    ):
+        raise OfflineScanlineRejected("scanline request or codec implementation changed")
+
+
 def _sha(value: object) -> bool:
     return type(value) is str and _SHA.fullmatch(value) is not None
 
@@ -90,6 +123,7 @@ def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineSca
     wrong row shape or invalid indexed palette value is denied. This returns
     digests and counts, NOT reconstructed pixels or disclosure authorization.
     """
+    _require_original_scanline_inputs()
     if type(request) is not OfflineScanlineRequest:
         raise OfflineScanlineRejected("exact scanline request required")
     attrs = (
@@ -99,11 +133,13 @@ def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineSca
     )
 
     def assert_epoch() -> None:
+        _require_original_scanline_inputs()
         current = (
             request.owner_sha256, request.privacy_sha256, request.idat_sha256,
             request.idat_bytes, request.width, request.height,
             request.color_type, request.bit_depth, request.palette_entries,
         )
+        _require_original_scanline_inputs()
         if any(a is not b for a, b in zip(current, attrs, strict=True)):
             raise OfflineScanlineRejected("scanline request carrier changed during review")
 
@@ -125,6 +161,7 @@ def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineSca
         raise OfflineScanlineRejected("unsupported format, palette or pixel budget")
     if hashlib.sha256(data).hexdigest() != declared:
         raise OfflineScanlineRejected("IDAT digest mismatch")
+    assert_epoch()
     channels = _CHANNELS[color]
     bytes_per_pixel = max(1, (channels * depth + 7) // 8)
     row_bytes = (width * channels * depth + 7) // 8
@@ -144,6 +181,7 @@ def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineSca
             raise OfflineScanlineRejected("IDAT deflate length/trailer invalid")
     except (zlib.error, MemoryError) as exc:
         raise OfflineScanlineRejected("IDAT zlib decompression rejected") from exc
+    assert_epoch()
 
     previous = bytes(row_bytes)
     filtered_counts = [0, 0, 0, 0, 0]
@@ -214,6 +252,7 @@ def verify_offline_png_scanlines(
     potentially reentrant denial getters. This is still local consistency,
     not camera provenance, authentic consent, or filesystem race immunity.
     """
+    _require_original_scanline_inputs()
     if type(audit) is not OfflineScanlineAudit:
         raise OfflineScanlineRejected("exact detached scanline audit required")
     if type(request) is not OfflineScanlineRequest:
