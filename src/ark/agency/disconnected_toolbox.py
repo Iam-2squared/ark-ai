@@ -22,6 +22,14 @@ _MIN_INT = -(2**63)
 _MAX_INT = 2**63 - 1
 
 
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_LOADS = json.loads
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+
+
 class DisconnectedToolRejected(ValueError):
     """Malformed, mutated or unsafe disconnected tool fixture."""
 
@@ -75,6 +83,23 @@ _DENIAL_NAMES = (
     "external_outcome_known",
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT_TYPE)[key] for key in _DENIAL_NAMES)
+
+
+def _require_original_fixture_primitives() -> None:
+    # Reject a preinstalled SHA/JSON callback BEFORE passing caller-private
+    # synthetic arguments to it. Recheck after every calculation boundary.
+    # This establishes only local implementation identity, not attestation.
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.loads is not _ORIGINAL_JSON_LOADS
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise DisconnectedToolRejected(
+            "disconnected fixture digest or JSON implementation changed"
+        )
 
 
 def _require_original_request_carrier() -> None:
@@ -247,6 +272,7 @@ def execute_disconnected_fixture_tool(
     executed or that a real-world action occurred. Inputs are exact canonical
     JSON to avoid implicit coercions, duplicate keys and ambiguous identity.
     """
+    _require_original_fixture_primitives()
     _require_original_request_carrier()
     _require_original_result_denials()
     if type(request) is not DisconnectedToolRequest:
@@ -254,6 +280,7 @@ def execute_disconnected_fixture_tool(
     pinned = (request.request_id, request.operation, request.canonical_args_json)
 
     def assert_epoch() -> None:
+        _require_original_fixture_primitives()
         _require_original_request_carrier()
         _require_original_result_denials()
         if any(
