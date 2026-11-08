@@ -162,6 +162,34 @@ def review_memory_revision_reuse(
             try:
                 _validate_v1_schema(conn)
                 stable()
+                # A valid-looking per-memory lifetime cannot prove that the
+                # surrounding global v1 event append sequence is intact.
+                # Reject gaps even when they belong to another owner or the
+                # requested source has never existed. This is local
+                # corruption detection, not authenticated log provenance.
+                count, first, last = conn.execute(
+                    "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
+                ).fetchone()
+                sequence = conn.execute(
+                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                ).fetchone()
+                stable()
+                if (
+                    type(count) is not int or count < 0
+                    or count == 0 and (
+                        first is not None or last is not None or sequence is not None
+                    )
+                    or count > 0 and (
+                        type(first) is not int or first != 1
+                        or type(last) is not int or last != count
+                        or last > SQLITE_INT_MAX
+                        or sequence is None
+                        or type(sequence[0]) is not int or sequence[0] != last
+                    )
+                ):
+                    raise MemoryGenerationReviewRejected(
+                        "Memory generation global event high-water mismatch"
+                    )
                 row = conn.execute(
                     "SELECT * FROM memories WHERE memory_id=?",
                     (memory_id,),
