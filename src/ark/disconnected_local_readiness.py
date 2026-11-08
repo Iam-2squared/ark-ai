@@ -29,6 +29,11 @@ from .disconnected_sqlite_schema_probe import (
 )
 
 _DOMAIN = b"ARK-disconnected-local-readiness-v1\0"
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 class DisconnectedLocalReadinessRejected(ValueError):
@@ -92,6 +97,17 @@ _ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
 
 
 def _require_original_denials() -> None:
+    # The startup review may handle private fixture topology/registry identity.
+    # Never send those values into a substituted digest/JSON callback.
+    if (
+        hashlib is not _ORIGINAL_HASHLIB or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup digest dependencies changed"
+        )
     if (
         DisconnectedSQLiteSchemaSeal is not _SCHEMA_TYPE
         or any(
@@ -309,10 +325,12 @@ def review_disconnected_local_readiness(
     # Independently recompute the canonical preflight hash from authoritative
     # inputs. A field-shuffled but same-type preflight cannot become readiness.
     def preflight_digest(payload: object) -> str:
+        _require_original_denials()
         data = json.dumps(
             payload, sort_keys=True, separators=(",", ":"),
             ensure_ascii=False, allow_nan=False,
         ).encode("utf-8")
+        _require_original_denials()
         return hashlib.sha256(
             b"ARK-disconnected-registered-read-preflight-v1\0" + data
         ).hexdigest()
@@ -397,11 +415,13 @@ def review_disconnected_local_readiness(
         )
     ):
         raise DisconnectedLocalReadinessRejected("startup schema is not stable")
+    _require_original_denials()
     packed = json.dumps(
         (schema_epoch, topology, status, revision, preview.fingerprint,
          preview.ready_step_ids, observed_at_ms),
         separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
+    _require_original_denials()
     fingerprint = hashlib.sha256(_DOMAIN + packed).hexdigest()
     assert_epoch()
     assert_preview_epoch()
