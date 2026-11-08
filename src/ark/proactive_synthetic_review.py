@@ -121,6 +121,41 @@ class SyntheticTriggerPolicy:
         return original
 
 
+# A frozen policy instance is not protected against class-level replacement of
+# field slots, the identity validator, or attribute lookup hooks. Pin the exact
+# import-original class contract before the first private policy field read.
+_POLICY_TYPE = SyntheticTriggerPolicy
+_POLICY_FIELDS = (
+    "owner", "namespace", "definition_id", "revision", "policy_revision",
+    "minimum_interval_ms", "rolling_window_ms", "max_preparations_per_window",
+)
+_POLICY_METHODS = (
+    "identity", "__post_init__", "__init__", "__new__",
+    "__getattribute__", "__getattr__",
+)
+_ORIGINAL_POLICY_FIELDS = tuple(
+    vars(_POLICY_TYPE)[name] for name in _POLICY_FIELDS
+)
+_ORIGINAL_POLICY_METHODS = tuple(
+    vars(_POLICY_TYPE).get(name) for name in _POLICY_METHODS
+)
+
+
+def _require_original_policy_contract() -> None:
+    if (
+        SyntheticTriggerPolicy is not _POLICY_TYPE
+        or any(
+            vars(_POLICY_TYPE).get(name) is not original
+            for names, originals in (
+                (_POLICY_FIELDS, _ORIGINAL_POLICY_FIELDS),
+                (_POLICY_METHODS, _ORIGINAL_POLICY_METHODS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticTriggerRejected("synthetic trigger policy contract changed")
+
+
 @dataclass(frozen=True, slots=True)
 class SyntheticTriggerReceipt:
     trigger_id: str
@@ -262,6 +297,7 @@ class SyntheticProactiveLedger:
         """Persist a content-free preparation marker, never an action."""
         if type(policy) is not SyntheticTriggerPolicy:
             raise SyntheticTriggerRejected("exact trigger policy required")
+        _require_original_policy_contract()
         _require_original_receipt_authority()
         if (
             type(source_digest) is not str or not _HEX.fullmatch(source_digest)
@@ -302,6 +338,7 @@ class SyntheticProactiveLedger:
         pinned = policy.identity()
 
         def assert_policy_epoch(stage: str) -> None:
+            _require_original_policy_contract()
             if (
                 self.path is not ledger_path
                 or any(
