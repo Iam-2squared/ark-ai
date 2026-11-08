@@ -41,6 +41,10 @@ def _case():
 def test_replaced_dependency_is_denied_before_poison_callback(
     monkeypatch, dependency,
 ):
+    # Construct the synthetic receipt BEFORE monkeypatching shared SHA/JSON
+    # dependencies. Otherwise fixture setup, not the guarded API, executes
+    # the poison callback inside the journal's _chain() implementation.
+    evidence = _case()
     executed = []
 
     def poisoned(*args, **kwargs):
@@ -56,7 +60,7 @@ def test_replaced_dependency_is_denied_before_poison_callback(
             review_mod, "review_detached_read_journal_recovery", poisoned,
         )
     with pytest.raises(review_mod.ReadInputBindingRejected, match="authority changed"):
-        review_mod.review_detached_read_input_binding(*_case())
+        review_mod.review_detached_read_input_binding(*evidence)
     assert executed == []
 
 
