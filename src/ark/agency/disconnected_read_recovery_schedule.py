@@ -71,6 +71,21 @@ _DECISION_TYPE = ReadRecoveryDecision
 _SCHEDULE_TYPE = DetachedReadRecoverySchedule
 _ORIGINAL_DECISION_INIT = vars(_DECISION_TYPE)["__init__"]
 _ORIGINAL_SCHEDULE_INIT = vars(_SCHEDULE_TYPE)["__init__"]
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_DECISION_FIELDS = ("step_id", "disposition")
+_SCHEDULE_FIELDS = ("request_id", "decisions", "schedule_digest")
+_ORIGINAL_DECISION_FIELDS = tuple(
+    vars(_DECISION_TYPE)[field] for field in _DECISION_FIELDS
+)
+_ORIGINAL_SCHEDULE_FIELDS = tuple(
+    vars(_SCHEDULE_TYPE)[field] for field in _SCHEDULE_FIELDS
+)
+_ORIGINAL_DECISION_HOOKS = tuple(
+    vars(_DECISION_TYPE).get(hook) for hook in _RESULT_HOOKS
+)
+_ORIGINAL_SCHEDULE_HOOKS = tuple(
+    vars(_SCHEDULE_TYPE).get(hook) for hook in _RESULT_HOOKS
+)
 _DENIAL_NAMES = (
     "dispatch_authorized", "automatic_replay_authorized",
     "external_outcome_verified",
@@ -96,6 +111,22 @@ def _assert_original_denials() -> None:
         or ReadRecoveryDecision is not _DECISION_TYPE
         or vars(_DECISION_TYPE).get("__init__") is not _ORIGINAL_DECISION_INIT
         or vars(_SCHEDULE_TYPE).get("__init__") is not _ORIGINAL_SCHEDULE_INIT
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_DECISION_TYPE, _DECISION_FIELDS, _ORIGINAL_DECISION_FIELDS),
+                (_SCHEDULE_TYPE, _SCHEDULE_FIELDS, _ORIGINAL_SCHEDULE_FIELDS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            vars(cls).get(name) is not original
+            for cls, originals in (
+                (_DECISION_TYPE, _ORIGINAL_DECISION_HOOKS),
+                (_SCHEDULE_TYPE, _ORIGINAL_SCHEDULE_HOOKS),
+            )
+            for name, original in zip(_RESULT_HOOKS, originals, strict=True)
+        )
         or any(
             vars(_SCHEDULE_TYPE).get(name) is not original
             for name, original in zip(
