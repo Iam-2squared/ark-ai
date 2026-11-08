@@ -111,9 +111,12 @@ def test_retained_history_mutated_during_payload_cannot_be_restored_by_hash(
 
     monkeypatch.setattr(rollover, "_canonical_window_payload", encoding)
     monkeypatch.setattr(rollover.hashlib, "sha256", hashing)
-    with pytest.raises(ValueError, match="retained observation witness changed"):
+    # Import-pinned digest refuses the substituted hash before either
+    # mutation/restoration callback can run.
+    with pytest.raises(ValueError, match="observation identity digest implementation changed"):
         rollover.review_observation_rollover(current, retained=retained)
-    assert calls == ["mutated"]
+    assert calls == []
+    assert retained.generation == original_generation
 
 
 def test_retained_hash_drift_cannot_be_restored_by_next_window_check(
@@ -141,9 +144,12 @@ def test_retained_hash_drift_cannot_be_restored_by_next_window_check(
 
     monkeypatch.setattr(rollover.hashlib, "sha256", hashing)
     monkeypatch.setattr(ObservationWindowReview, "assert_consistent", consistency)
-    with pytest.raises(ValueError, match="retained observation witness changed"):
+    # Import-pinned digest refuses the substituted hash before either
+    # mutation/restoration callback can run.
+    with pytest.raises(ValueError, match="observation identity digest implementation changed"):
         rollover.review_observation_rollover(current, retained=retained)
-    assert calls == ["mutated"]
+    assert calls == []
+    assert retained.generation == original_generation
 
 
 def test_clean_window_rollover_retains_deterministic_inert_identity():
