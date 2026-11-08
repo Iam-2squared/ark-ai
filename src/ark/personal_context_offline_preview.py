@@ -88,6 +88,9 @@ _PREVIEW_DENIAL_NAMES = (
 _PREVIEW_ORIGINAL_DENIALS = tuple(
     vars(_PREVIEW_RESULT_TYPE)[name] for name in _PREVIEW_DENIAL_NAMES
 )
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_LOADS = json.loads
 
 
 def _assert_original_preview_denials() -> None:
@@ -95,6 +98,9 @@ def _assert_original_preview_denials() -> None:
     if (
         OfflineContextPreview is not _PREVIEW_RESULT_TYPE
         or OfflineContextFixture is not _FIXTURE_TYPE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or json.loads is not _ORIGINAL_LOADS
         or any(
             vars(cls).get(name) is not original
             for cls, names, originals in (
