@@ -24,17 +24,17 @@ def test_unmodified_fixture_is_deterministic_and_deny_only():
 
 
 @pytest.mark.parametrize("name", toolbox._DENIAL_NAMES)
-def test_false_looking_descriptor_replacement_is_rejected_before_hash(
+def test_false_looking_descriptor_replacement_is_rejected_before_processing(
     monkeypatch, name,
 ):
     monkeypatch.setattr(
         toolbox.DisconnectedToolResult, name, property(lambda _: False),
     )
 
-    def no_hash(_data):
-        pytest.fail("hashing reached after result authority was replaced")
+    def no_parse(_raw):
+        pytest.fail("private fixture JSON reached after authority was replaced")
 
-    monkeypatch.setattr(toolbox.hashlib, "sha256", no_hash)
+    monkeypatch.setattr(toolbox, "_json", no_parse)
     with pytest.raises(
         toolbox.DisconnectedToolRejected, match="authority definition changed",
     ):
