@@ -91,6 +91,23 @@ def _preflight_fixture_metadata(
         raise ValueError("fixture digest implementation changed before private content hashing")
 
 
+
+def _hash_private_fixture(payload: bytes) -> str:
+    """Pin the reviewed hasher across the metadata-validation to hash gap.
+
+    In-process hooks can replace hashlib.sha256 *after* metadata preflight.
+    Never hand caller-private bytes to that newly installed callback.
+    Original SHA-256 is retained at import time; this is not tamper-proof
+    sandboxing or authenticated observation provenance.
+    """
+    if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
+        raise ValueError("fixture digest implementation changed before private content hashing")
+    digest = _ORIGINAL_SHA256(payload).hexdigest()
+    if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
+        raise ValueError("fixture digest implementation changed during private content hashing")
+    return digest
+
+
 def _require_original_envelope() -> None:
     # Distinguish constructor substitution from executable field or
     # validator replacement without invoking any of the substitutions.
@@ -222,7 +239,7 @@ def fixture_text_observation(
         raise ValueError("fixture text is not valid UTF-8") from exc
     if len(data) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
-    digest = hashlib.sha256(data).hexdigest()
+    digest = _hash_private_fixture(data)
     return _sealed_fixture(
         kind=kind,
         source_id=source_id,
@@ -253,7 +270,7 @@ def fixture_binary_observation(
     _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
     if len(payload) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
-    digest = hashlib.sha256(payload).hexdigest()
+    digest = _hash_private_fixture(payload)
     return _sealed_fixture(
         kind=kind,
         source_id=source_id,
