@@ -17,7 +17,11 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
-from .personal_context_request_binding import OfflineContextRequestBinding
+from .personal_context_request_binding import (
+    OfflineContextBindingRejected,
+    OfflineContextRequestBinding,
+    _assert_original_denials,
+)
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _REQUEST = re.compile(r"ctxreq_[0-9a-f]{64}\Z")
@@ -160,6 +164,15 @@ def _check_witness(witness: object) -> tuple[int, str]:
 
 
 def _check_binding(binding: object) -> tuple[str, str, str, str]:
+    # The context receipt is hash-only, but exact-class descriptors can be
+    # modified into executable callbacks. Reject BEFORE any field/authority
+    # access, including on the read-only/restart and CAS reservation paths.
+    try:
+        _assert_original_denials()
+    except OfflineContextBindingRejected as exc:
+        raise OfflineContextReplayRejected(
+            "untrusted context binding metadata or authority"
+        ) from exc
     if type(binding) is not _BINDING_TYPE:
         raise OfflineContextReplayRejected("exact offline context binding required")
     fields = (
@@ -178,6 +191,19 @@ def _check_binding(binding: object) -> tuple[str, str, str, str]:
         or binding.retention_authorized is not False
     ):
         raise OfflineContextReplayRejected("untrusted context binding metadata or authority")
+    # Denial getters remain callbacks even if they return False. Check the
+    # import-original class definitions and all pinned fields again.
+    try:
+        _assert_original_denials()
+    except OfflineContextBindingRejected as exc:
+        raise OfflineContextReplayRejected(
+            "untrusted context binding metadata or authority"
+        ) from exc
+    if any(now is not old for now, old in zip((
+        binding.request_id, binding.owner_digest,
+        binding.context_digest, binding.binding_digest,
+    ), fields, strict=True)):
+        raise OfflineContextReplayRejected("context binding changed during authority check")
     return fields
 
 
