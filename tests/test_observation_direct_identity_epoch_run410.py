@@ -41,42 +41,54 @@ def test_json_callback_cannot_replace_equal_carrier(tmp_path, monkeypatch):
     del tmp_path
     envelope = _fixture(source_id="a" * 300)
     original = observations.json.dumps
+    calls = []
 
     def swap(*args, **kwargs):
+        calls.append("unsafe serializer")
         encoded = original(*args, **kwargs)
         object.__setattr__(envelope, "source_id", "".join(["a" * 150, "a" * 150]))
         return encoded
 
     monkeypatch.setattr(observations.json, "dumps", swap)
-    with pytest.raises(ValueError, match="identity changed"):
+    with pytest.raises(ValueError, match="digest implementation changed"):
         _ = envelope.observation_id
+    assert calls == []
+    assert envelope.source_id == "a" * 300
 
 
 def test_json_callback_cannot_change_privacy_scope(monkeypatch):
     envelope = _fixture()
     original = observations.json.dumps
+    calls = []
 
     def swap(*args, **kwargs):
+        calls.append("unsafe serializer")
         encoded = original(*args, **kwargs)
         object.__setattr__(envelope, "privacy_scope", "other")
         return encoded
 
     monkeypatch.setattr(observations.json, "dumps", swap)
-    with pytest.raises(ValueError, match="identity changed"):
+    with pytest.raises(ValueError, match="digest implementation changed"):
         _ = envelope.observation_id
+    assert calls == []
+    assert envelope.privacy_scope == "local"
 
 
 def test_hash_callback_cannot_change_timestamp(monkeypatch):
     envelope = _fixture()
     original = hashlib.sha256
+    calls = []
 
     def swap(*args, **kwargs):
+        calls.append("unsafe hash")
         object.__setattr__(envelope, "ingested_at_ms", 2)
         return original(*args, **kwargs)
 
     monkeypatch.setattr(observations.hashlib, "sha256", swap)
-    with pytest.raises(ValueError, match="identity changed"):
+    with pytest.raises(ValueError, match="digest implementation changed"):
         _ = envelope.observation_id
+    assert calls == []
+    assert envelope.ingested_at_ms == 1
 
 
 def test_reflected_invalid_kind_rejected_before_hashing():
