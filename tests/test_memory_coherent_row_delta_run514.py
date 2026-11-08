@@ -114,7 +114,9 @@ def test_unrelated_append_does_not_excuse_silent_row_metadata_mutation(
             f"UPDATE memories SET {field}=? WHERE memory_id=?",
             (value, initial.memory_id),
         )
-    with pytest.raises(coherent.MemoryCoherentHistoryRejected, match="without its own"):
+    # Own-lifecycle timestamp drift now rejects before optional row-delta.
+    expected = "row/time" if field in {"created_at_ms", "updated_at_ms"} else "without its own"
+    with pytest.raises(coherent.MemoryCoherentHistoryRejected, match=expected):
         _review(store, before)
 
 
