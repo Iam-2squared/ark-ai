@@ -76,17 +76,60 @@ _DENIAL_NAMES = (
     "consent_verified", "context_release_authorized",
 )
 _ORIGINAL_DENIALS = tuple(vars(_INVENTORY_TYPE)[name] for name in _DENIAL_NAMES)
+_REQUEST_TYPE = OfflinePngRequest
+_REQUEST_FIELDS = ("owner_sha256", "privacy_sha256", "source_sha256", "png_bytes")
+_RESULT_FIELDS = (
+    "owner_sha256", "privacy_sha256", "source_sha256", "idat_sha256",
+    "width", "height", "color_type", "bit_depth", "idat_chunks",
+    "total_idat_bytes",
+)
+_LOOKUP_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REQUEST_INIT = vars(_REQUEST_TYPE)["__init__"]
+_ORIGINAL_RESULT_INIT = vars(_INVENTORY_TYPE)["__init__"]
+_ORIGINAL_REQUEST_FIELDS = tuple(vars(_REQUEST_TYPE)[name] for name in _REQUEST_FIELDS)
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_INVENTORY_TYPE)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_REQUEST_HOOKS = tuple(
+    vars(_REQUEST_TYPE).get(name) for name in _LOOKUP_HOOKS
+)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_INVENTORY_TYPE).get(name) for name in _LOOKUP_HOOKS
+)
 
 
 def _require_original_png_authority() -> None:
     # Never run a replacement class constructor or a False-looking forged
     # descriptor. Both can have side effects and can forge an inert receipt.
     if (
+        OfflinePngRequest is not _REQUEST_TYPE
+        or vars(_REQUEST_TYPE).get("__init__") is not _ORIGINAL_REQUEST_INIT
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for names, originals in (
+                (_REQUEST_FIELDS, _ORIGINAL_REQUEST_FIELDS),
+                (_LOOKUP_HOOKS, _ORIGINAL_REQUEST_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise OfflinePngRejected("PNG request identity descriptor changed")
+    if (
         OfflinePngInventory is not _INVENTORY_TYPE
+        or vars(_INVENTORY_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_INVENTORY_TYPE).get(name) is not original
-            for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
+            for names, originals in (
+                (_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_LOOKUP_HOOKS, _ORIGINAL_RESULT_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
         )
+    ):
+        raise OfflinePngRejected(
+            "constructed PNG inventory field, constructor or lookup changed"
+        )
+    if any(
+        vars(_INVENTORY_TYPE).get(name) is not original
+        for name, original in zip(_DENIAL_NAMES, _ORIGINAL_DENIALS, strict=True)
     ):
         raise OfflinePngRejected(
             "constructed PNG inventory denial descriptor changed or claims authority"
@@ -113,10 +156,14 @@ def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
     )
 
     def assert_epoch() -> None:
+        # Hash and CRC callbacks may replace class descriptors. Inspect the
+        # original declarations before AND after touching private fixture bytes.
+        _require_original_png_authority()
         current = (
             request.owner_sha256, request.privacy_sha256,
             request.source_sha256, request.png_bytes,
         )
+        _require_original_png_authority()
         if any(value is not pinned for value, pinned in zip(current, epoch, strict=True)):
             raise OfflinePngRejected("PNG request carrier changed during inspection")
 
