@@ -55,9 +55,11 @@ def test_reflective_policy_callback_cannot_redirect_proactive_write(
         return result
 
     monkeypatch.setattr(SyntheticTriggerPolicy, "identity", redirected)
-    with pytest.raises(SyntheticTriggerRejected, match="path"):
+    with pytest.raises(SyntheticTriggerRejected, match="policy contract changed"):
         _prepared(store, policy)
-    assert len(calls) == identity_call
+    # The forged identity callback is never admitted to retarget a path.
+    assert calls == []
+    assert store.path == source_path
     assert _rows(source_path) == 0
     assert _rows(alternate_path) == 0
 
