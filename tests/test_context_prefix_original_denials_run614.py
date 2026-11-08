@@ -67,7 +67,7 @@ def test_descriptor_injected_while_hashing_cannot_run(
 
     with monkeypatch.context() as patch:
         patch.setattr(prefix.json, "dumps", change_during_hashing)
-        with pytest.raises(prefix.OfflineContextPrefixRejected, match="authority"):
+        with pytest.raises(prefix.OfflineContextPrefixRejected, match="digest implementation changed"):
             prefix.review_retained_context_replay_prefix(ledger, retained)
     assert calls == []
 
