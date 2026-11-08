@@ -23,6 +23,7 @@ from .generation_fenced_cas import (
     MemoryGenerationCASRejected,
     MemoryGenerationCASToken,
     _digest,
+    _require_original_generation_inputs,
     _require_original_token_denials,
     _row_hash,
     _snapshot,
@@ -122,6 +123,15 @@ def review_uncertain_memory_commit(
     INDETERMINATE means other changes were observed.
     Neither disposition is permission to retry, dispatch, erase or promote.
     """
+    # Reject executable substitutions of frozen Memory v1 carrier slots before
+    # accessing even proposed.scope; the triage path never invokes getters
+    # installed by a caller to determine its own input identity.
+    try:
+        _require_original_generation_inputs()
+    except MemoryGenerationCASRejected as exc:
+        raise MemoryCommitTriageRejected(
+            "Memory triage input carrier changed"
+        ) from exc
     if (
         type(store) is not SQLiteMemoryStore
         or type(proposed) is not MemoryWrite
@@ -149,6 +159,7 @@ def review_uncertain_memory_commit(
     def stable() -> None:
         _require_original_report_carrier()
         try:
+            _require_original_generation_inputs()
             _require_original_token_denials()
         except MemoryGenerationCASRejected as exc:
             raise MemoryCommitTriageRejected(
