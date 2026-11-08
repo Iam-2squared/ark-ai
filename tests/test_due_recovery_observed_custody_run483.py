@@ -48,10 +48,17 @@ def test_observed_witness_callback_mutation_rejected(tmp_path, monkeypatch, phas
 
         monkeypatch.setattr(recovery, "DisconnectedDueRecoveryReview", injected)
 
-    with pytest.raises(
-        recovery.DisconnectedDueRecoveryRejected, match="observed due witness changed",
-    ):
+    # Hash/JSON callbacks are now refused during the underlying ledger
+    # witness read, before a hostile mutation callback can execute. Result
+    # constructor substitution remains a later observed-witness denial.
+    message = (
+        "retained due reservation prefix rejected"
+        if phase in ("json", "hash") else "observed due witness changed"
+    )
+    with pytest.raises(recovery.DisconnectedDueRecoveryRejected, match=message):
         recovery.review_restarted_due_reservations(ledger, retained)
+    if phase in ("json", "hash"):
+        assert observed == retained
 
 
 def test_unmodified_observed_witness_remains_denial_only(tmp_path):
