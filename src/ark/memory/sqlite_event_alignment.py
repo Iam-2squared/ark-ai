@@ -64,9 +64,21 @@ _DENIAL_NAMES = (
     "deletion_or_erasure_proven", "action_authorized",
 )
 _ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[name] for name in _DENIAL_NAMES)
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+
+
+def _require_original_digest_callbacks() -> None:
+    # Private local metadata and event identities must never enter an
+    # unreviewed hash/JSON callback, including after reentrant row decoding.
+    if hashlib.sha256 is not _ORIGINAL_SHA256 or json.dumps is not _ORIGINAL_DUMPS:
+        raise MemoryEventAlignmentRejected("Memory audit digest authority changed")
+
+
 
 
 def _require_original_denials() -> None:
+    _require_original_digest_callbacks()
     # A newly-installed False-only property is not the reviewed authority
     # contract. Preserve the original descriptors across callbacks.
     if (
@@ -95,6 +107,7 @@ def _require_original_denials() -> None:
 
 
 def _charge(digest: object, entry: tuple[object, ...]) -> None:
+    _require_original_denials()
     digest.update(
         json.dumps(entry, ensure_ascii=True, separators=(",", ":")).encode("ascii") + b"\n"
     )
@@ -120,6 +133,7 @@ def review_memory_event_alignment(
         raise MemoryEventAlignmentRejected("invalid Memory source path")
 
     def stable_source() -> None:
+        _require_original_denials()
         if type(store) is not _STORE_TYPE or store.path is not path:
             raise MemoryEventAlignmentRejected("Memory source changed during audit")
 
