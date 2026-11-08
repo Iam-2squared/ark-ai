@@ -140,7 +140,9 @@ def _require_original_snapshot_class() -> None:
             for name, original in zip(names, originals, strict=True)
         )
     ):
-        raise ReadJournalRejected("READ recovery snapshot constructor changed")
+        raise ReadJournalRejected(
+            "READ recovery result changed: snapshot constructor changed"
+        )
 
 
 def genesis_witness() -> ReadJournalWitness:
