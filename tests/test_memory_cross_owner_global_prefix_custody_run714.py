@@ -34,7 +34,10 @@ def _fixture(tmp_path):
     foreign = store.put(MemoryWrite(foreign_scope, "same", "other"))
     target = observe_memory_generation_for_cas(store, target_scope, "same")
     retained_global = capture_local_memory_event_prefix(store)
-    return store, clock, target_scope, foreign_scope, original, foreign, target, retained_global
+    return (
+        store, clock, target_scope, foreign_scope, original, foreign, target,
+        retained_global,
+    )
 
 
 @pytest.mark.parametrize(
