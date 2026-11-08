@@ -45,7 +45,7 @@ def test_forged_canonical_serializer_payload_is_not_digest_evidence(
     monkeypatch.setattr(redaction.json, "dumps", forged)
     with pytest.raises(
         redaction.OfflineRedactionRejected,
-        match="serialization differs",
+        match="masked preview authority definition changed",
     ):
         _preview()
 
@@ -61,7 +61,7 @@ def test_noncanonical_whitespace_is_refused_even_when_payload_agrees(
     monkeypatch.setattr(redaction.json, "dumps", spaced)
     with pytest.raises(
         redaction.OfflineRedactionRejected,
-        match="serialization differs",
+        match="masked preview authority definition changed",
     ):
         _preview()
 
@@ -73,7 +73,7 @@ def test_non_json_and_wrong_serializer_types_are_refused(monkeypatch, forgery):
     )
     with pytest.raises(
         redaction.OfflineRedactionRejected,
-        match="serialization invalid",
+        match="masked preview authority definition changed",
     ):
         _preview()
 
@@ -90,10 +90,11 @@ def test_serializer_callback_cannot_shift_span_during_digest(monkeypatch):
     monkeypatch.setattr(redaction.json, "dumps", mutating)
     with pytest.raises(
         redaction.OfflineRedactionRejected,
-        match="fixture changed",
+        match="masked preview authority definition changed",
     ):
         redaction.preview_offline_redaction(
             source, owner_digest="a" * 64, scope_digest="b" * 64,
             retained_source_sha256=hashlib.sha256(source.encode()).hexdigest(),
             spans=(span,),
         )
+    assert span.label == "SECRET"
