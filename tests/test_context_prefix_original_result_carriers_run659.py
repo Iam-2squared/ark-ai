@@ -77,7 +77,7 @@ def test_hashing_reentry_must_not_execute_substituted_result_slot(
             patch.setattr(prefix.json, "dumps", inject_dumps)
         else:
             patch.setattr(prefix.hashlib, "sha256", inject_hash)
-        with pytest.raises(prefix.OfflineContextPrefixRejected, match="authority"):
+        with pytest.raises(prefix.OfflineContextPrefixRejected, match="digest implementation changed"):
             prefix.review_retained_context_replay_prefix(ledger, retained)
     assert invoked == []
 
