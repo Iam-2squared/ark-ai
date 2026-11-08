@@ -61,7 +61,10 @@ def test_copied_descriptor_class_never_constructs(monkeypatch):
             raise AssertionError("counterfeit constructor must not execute")
 
     monkeypatch.setattr(png, "OfflinePngInventory", Counterfeit)
-    with pytest.raises(png.OfflinePngRejected, match="denial descriptor changed"):
+    with pytest.raises(
+        png.OfflinePngRejected,
+        match="constructed PNG inventory field, constructor or lookup changed",
+    ):
         png.inspect_disconnected_png(_request())
     assert called == []
 
