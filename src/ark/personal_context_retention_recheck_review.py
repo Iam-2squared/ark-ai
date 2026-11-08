@@ -78,7 +78,9 @@ _RESULT_FIELDS = (
     "checked_at_ms", "expired_memory_ids", "unbounded_memory_ids",
     "scope_revoked",
 )
-_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+# A replaced dataclass constructor can inspect private retention diagnostics
+# before the post-construction authority checks. Pin it at import too.
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[key] for key in _RESULT_FIELDS)
 _ORIGINAL_RESULT_HOOKS = tuple(
     vars(_RESULT_TYPE).get(key) for key in _RESULT_HOOKS
