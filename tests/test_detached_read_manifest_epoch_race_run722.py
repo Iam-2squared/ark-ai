@@ -71,7 +71,11 @@ def test_named_file_metadata_change_after_read_is_rejected(
         original = original_stat(self, *args, **kwargs)
         if self == target and kwargs.get("follow_symlinks") is False:
             substituted.append(True)
-            return _ChangedStat(original, changed_field)
+            # First named observation is the baseline; change only the late
+            # named observation. This models an actual read-time rewrite on
+            # Windows, where descriptor and path creation epochs may differ.
+            if len(substituted) >= 2:
+                return _ChangedStat(original, changed_field)
         return original
 
     with monkeypatch.context() as patch:
@@ -83,9 +87,8 @@ def test_named_file_metadata_change_after_read_is_rejected(
                 target, expected_sha256=saved.artifact_sha256,
             )
 
-    # The loader may perform multiple defensive named-file checks. Every
-    # matching stat observation was altered; refusal, not call count, is the invariant.
-    assert len(substituted) >= 1
+    # A real after-baseline metadata race must be observed and refused.
+    assert len(substituted) >= 2
     assert manifest.load_read_input_manifest(target) == saved
     assert saved.independent_custody_proven is False
     assert saved.external_result_proven is False
