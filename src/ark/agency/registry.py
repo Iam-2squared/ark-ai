@@ -16,6 +16,8 @@ _MAX_REGISTRATION_TEXT = 256  # Bound individual tool/identity text before hashi
 
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_INSPECT = inspect
+_ORIGINAL_GETATTR_STATIC = inspect.getattr_static
 
 
 def _require_original_registry_digest() -> None:
@@ -65,6 +67,14 @@ def _canonical_json(value: object) -> bytes:
 
 def _backend_execute_descriptor(backend: object) -> object:
     """Inspect execution interface without invoking a property or backend."""
+    # The static lookup is a security-relevant local fault-injection seam.
+    # If a caller replaces inspect.getattr_static, it could dynamically
+    # evaluate a backend.execute property before a registry is even bound.
+    if (
+        inspect is not _ORIGINAL_INSPECT
+        or inspect.getattr_static is not _ORIGINAL_GETATTR_STATIC
+    ):
+        raise TypeError("backend static inspection dependency changed")
     try:
         descriptor = inspect.getattr_static(backend, "execute")
     except AttributeError as exc:
