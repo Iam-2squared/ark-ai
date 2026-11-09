@@ -210,7 +210,7 @@ def verify_retained_diagnostic_segments(
             )
 
     stable_segments()
-    for segment, payload, start, count, anchor, tip in snapshots:
+    for _segment, payload, start, count, anchor, tip in snapshots:
         stable_segments()
         try:
             evidence = verifier.verify_private_diagnostic_jsonl(
