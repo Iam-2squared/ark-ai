@@ -209,7 +209,7 @@ def _require_safe_link_path(path: object, *, create: bool) -> Path:
             meta = target.lstat()
         except FileNotFoundError:
             if not create:
-                raise SyntheticAuditLinkRejected("audit link file missing") from None
+                raise sqlite3.OperationalError("audit link file missing") from None
         else:
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise SyntheticAuditLinkRejected("audit link file alias or type unsafe")
