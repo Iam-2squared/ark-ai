@@ -85,7 +85,10 @@ def test_retention_inventory_refuses_early_retained_rebase(
         inventory.review_synthetic_retention_inventory(
             memory, scope, ledger, now_ms=100, retained_revocations=retained,
         )
-    assert calls == 1
+    # An imported revocation-review replacement is rejected at ingress,
+    # whereas the retained witness's own integrity callback still exercises
+    # the original subsequent epoch-drift check.
+    assert calls == (1 if phase == "integrity" else 0)
 
     monkeypatch.undo()
     object.__setattr__(retained, "rows", original_rows)
