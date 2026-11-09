@@ -95,10 +95,36 @@ _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
 )
 
 
+# Schedule hashes and accepted graph states are part of the reviewed
+# diagnostic protocol. A replacement JSON/SHA callback must not see a
+# caller-retained READ graph, and broadened parser/state sets are not valid.
+# These are process-local checks, not trusted external provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_REQUEST = _REQUEST
+_ORIGINAL_STEP = _STEP
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_OPS = _OPS
+_ORIGINAL_STATES = _STATES
+
+
 def _assert_original_denials() -> None:
     """Do not bless a preinstalled False-only replacement after processing."""
     if (
-        ReadRecoveryStep is not _STEP_TYPE
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _REQUEST is not _ORIGINAL_REQUEST
+        or _STEP is not _ORIGINAL_STEP
+        or _SHA is not _ORIGINAL_SHA
+        or _OPS is not _ORIGINAL_OPS
+        or _STATES is not _ORIGINAL_STATES
+        or ReadRecoveryStep is not _STEP_TYPE
         or any(
             vars(_STEP_TYPE).get(field) is not original
             for field, original in zip(_STEP_FIELDS, _ORIGINAL_STEP_SLOTS, strict=True)
