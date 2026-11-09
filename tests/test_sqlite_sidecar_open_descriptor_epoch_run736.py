@@ -41,6 +41,11 @@ def test_open_fd_change_during_last_named_stat_is_refused(tmp_path, monkeypatch,
             target.write_bytes(target.read_bytes() + b" altered after named stat")
         return original_stat(name, *args, **kwargs)
 
+    # Verify the real POSIX descriptor capabilities before the synthetic
+    # monkeypatch: patching os.stat also replaces its global supports_dir_fd
+    # identity, which would make the unrelated platform preflight fail first.
+    module._supported()
+    monkeypatch.setattr(module, "_supported", lambda: None)
     monkeypatch.setattr(module.os, "stat", mutate_at_end_of_named_sweep)
     with pytest.raises(SQLiteSidecarCustodyRejected, match="open descriptor changed"):
         module._capture_once(path)
