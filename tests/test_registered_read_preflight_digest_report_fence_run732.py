@@ -91,20 +91,28 @@ def test_result_descriptor_or_constructor_substitution_is_never_invoked(
         hits.append("executed")
         raise AssertionError("hostile receipt field was evaluated")
 
-    if field.startswith("__"):
-        monkeypatch.setattr(preflight.DisconnectedReadPreflight, field, hostile)
-    else:
-        monkeypatch.setattr(
-            preflight.DisconnectedReadPreflight, field, property(hostile),
-        )
+    cls = preflight.DisconnectedReadPreflight
+    originally_local = field in vars(cls)
+    try:
+        if field.startswith("__"):
+            monkeypatch.setattr(cls, field, hostile)
+        else:
+            monkeypatch.setattr(cls, field, property(hostile))
 
-    with pytest.raises(
-        preflight.DisconnectedReadPreflightRejected,
-        match="authority descriptor changed",
-    ):
-        _run(items)
-    assert hits == []
-    assert items[-1].calls == 0
+        with pytest.raises(
+            preflight.DisconnectedReadPreflightRejected,
+            match="authority descriptor changed",
+        ):
+            _run(items)
+        assert hits == []
+        assert items[-1].calls == 0
+    finally:
+        # Inherited object.__new__ must not be installed as an *own* class
+        # attribute when a hostile __new__ fixture is undone. Doing so
+        # changes dataclass construction for all later tests in this process.
+        monkeypatch.undo()
+        if not originally_local and field in vars(cls):
+            delattr(cls, field)
 
 
 @pytest.mark.parametrize("mutation", ("sha256", "json_dumps", "domain"))
