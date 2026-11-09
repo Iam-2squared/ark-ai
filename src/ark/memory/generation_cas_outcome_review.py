@@ -140,6 +140,41 @@ def _require_original_denials() -> None:
         raise MemoryCASOutcomeRejected("CAS outcome authority definition changed")
 
 
+def _check_global_memory_event_highwater(conn: sqlite3.Connection) -> None:
+    """Refuse missing unrelated Memory events in the SAME observation snapshot.
+
+    A target row's retained prefix can appear coherent after unrelated events
+    were removed. This local AUTOINCREMENT check covers the whole append log;
+    it is NOT independent historical provenance or a durable external anchor.
+    """
+    count, first, last = conn.execute(
+        "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
+    ).fetchone()
+    # sqlite_sequence.name has no UNIQUE constraint. Require exactly one
+    # committed marker, rather than accepting an arbitrary fetchone() row.
+    markers = conn.execute(
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+    ).fetchall()
+    if (
+        type(count) is not int or count < 0
+        or (count == 0 and (first is not None or last is not None or markers))
+        or (
+            count > 0
+            and (
+                type(first) is not int or first != 1
+                or type(last) is not int or last != count
+                or last > SQLITE_INT_MAX
+                or len(markers) != 1
+                or type(markers[0][0]) is not int
+                or markers[0][0] != last
+            )
+        )
+    ):
+        raise MemoryCASOutcomeRejected(
+            "CAS global Memory event high-water mismatch; manual review required"
+        )
+
+
 def review_memory_generation_cas_outcome(
     store: SQLiteMemoryStore,
     proposed: MemoryWrite,
@@ -293,6 +328,11 @@ def review_memory_generation_cas_outcome(
                     raise MemoryCASOutcomeRejected(
                         "retained CAS event prefix disagrees with SQLite"
                     )
+                stable()
+                # A valid per-row prefix is insufficient when another scope's
+                # event is missing or sqlite_sequence has been retargeted.
+                # Read this evidence inside the same SQLite transaction.
+                _check_global_memory_event_highwater(conn)
                 stable()
                 _, again = _snapshot(conn, memory_id, scope, source)
                 # Dataclass __eq__ is replaceable in synthetic callbacks;
