@@ -32,9 +32,18 @@ def test_swapped_result_factory_cannot_retarget_pcm(monkeypatch, field, bad):
         object.__setattr__(result, field, bad)
         return result
 
-    monkeypatch.setattr(resampler, "ResampledPcm", forged_result)
-    with pytest.raises(resampler.OfflineResampleRejected, match="fields changed"):
+    calls = []
+
+    def recording_forgery(*args):
+        calls.append(args)
+        return forged_result(*args)
+
+    monkeypatch.setattr(resampler, "ResampledPcm", recording_forgery)
+    # The newer entry fence rejects the substituted result factory before
+    # reading private PCM or executing attacker-controlled constructor code.
+    with pytest.raises(resampler.OfflineResampleRejected, match="carrier authority changed"):
         _resample()
+    assert calls == []
 
 
 def test_swapped_result_type_is_rejected(monkeypatch):
@@ -44,7 +53,8 @@ def test_swapped_result_type_is_rejected(monkeypatch):
         pass
 
     monkeypatch.setattr(resampler, "ResampledPcm", ForgedResult)
-    with pytest.raises(resampler.OfflineResampleRejected, match="type changed"):
+    # A replaced result type is denied at entry rather than constructed.
+    with pytest.raises(resampler.OfflineResampleRejected, match="carrier authority changed"):
         _resample()
 
 
