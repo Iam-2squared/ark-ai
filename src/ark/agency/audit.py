@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+import stat
 import time
 from collections.abc import Callable
 from contextlib import closing
@@ -225,10 +226,45 @@ def _require_original_event_constructor(phase: str = "") -> None:
         raise ActionAuditSchemaError(f"audit event constructor changed{suffix}")
 
 
+def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
+    """Refuse local audit path aliases before any SQLite open or mkdir.
+
+    Existing ancestors must be real directories, not symbolic links. Bootstrap
+    may create missing directories as before, but cannot create them *through*
+    a preexisting symbolic ancestor. This preflight is NOT atomic dirfd custody,
+    authenticated history or protection from later owner-controlled renames.
+    """
+    if type(path) is not type(Path()) or ".." in path.parts:
+        raise ActionAuditSchemaError("audit path type or parent traversal refused")
+    target = path if path.is_absolute() else path.absolute()
+    try:
+        for ancestor in target.parents:
+            try:
+                meta = ancestor.lstat()
+            except FileNotFoundError:
+                if allow_new_parents:
+                    continue
+                raise ActionAuditSchemaError("audit ancestor unavailable")
+            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+                raise ActionAuditSchemaError("audit symbolic or nondirectory ancestor refused")
+        if target.is_symlink():
+            raise ActionAuditSchemaError("audit symbolic path refused")
+        if target.exists():
+            meta = target.lstat()
+            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise ActionAuditSchemaError("audit path must have one regular-file link")
+    except OSError as exc:
+        raise ActionAuditSchemaError("audit path custody cannot be verified") from exc
+
+
 class SQLiteActionAudit:
     def __init__(self, path: str | Path, *, clock_ms: Callable[[], int] | None = None) -> None:
+        if type(path) not in (str, type(Path("."))):
+            raise ActionAuditSchemaError("audit requires exact local path")
         self.path = Path(path)
+        _require_safe_audit_path(self.path, allow_new_parents=True)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        _require_safe_audit_path(self.path, allow_new_parents=False)
         self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
         self._initialize()
 
@@ -533,6 +569,7 @@ class SQLiteActionAudit:
             _validate_v1_schema(conn)
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        _require_safe_audit_path(self.path, allow_new_parents=False)
         # Explicit bootstrap may create a new SQLite file. Ordinary audit
         # appends MUST NOT recreate an empty replacement after a file moves.
         if create:
@@ -546,6 +583,7 @@ class SQLiteActionAudit:
         return conn
 
     def _connect_readonly(self) -> sqlite3.Connection:
+        _require_safe_audit_path(self.path, allow_new_parents=False)
         try:
             conn = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True)
         except sqlite3.DatabaseError as exc:
