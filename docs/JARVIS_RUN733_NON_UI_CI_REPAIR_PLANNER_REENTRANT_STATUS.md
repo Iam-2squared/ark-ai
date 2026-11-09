@@ -19,6 +19,10 @@
 - GitHub Actions run executions are automatic push/PR CI, **not** manual duplicate dispatches. No local full pytest and no target-PC GGUF test were run.
 - Commit/branch URLs are independently observable; this document contains no prediction of a future checkpoint-result HEAD.
 
+## Independent Registry static inspector guard
+
+6. **[Registry static inspection safety](https://github.com/Iam-2squared/ark-ai/commit/f53020ab27fb1b7fbf532efc9176ac0fe5d7666f)** and **[10 parameter-expanded regressions](https://github.com/Iam-2squared/ark-ai/commit/7f2ecf9b4cabb233d0ffea6ef19ab08d7ea3c059)**: prior static backend verification deliberately avoided dynamic `backend.execute` lookup, but its `inspect.getattr_static` dependency was not pinned to the import-time callable. A substituted inspector could execute a backend property before registry entry admission, or while computing a registry revision. The original inspect module and function identities are now checked **before** invoking `getattr_static`. The cases cover swapped module/function in registration and registry revision/resolve/bind, a changing registration generator, and clean deterministic registry binding. No backend is executed, no grant/spend/dispatch is created. The new registry head [CI #42584683388](https://github.com/Iam-2squared/ark-ai/actions/runs/42584683388) was QUEUED at observation; its eventual verdict is not claimed.
+
 ## Boundaries and next work
 
 No spending, new account/secret, external GPU, real ToolBackend execution, irreversible recovery, automatic replay, Candidate promotion, V2 protected evaluation, PR #5 / PR #9 modification, main merge or UI/frontend work. All three PRs remain Draft and unmerged at the initial read. Underlying registered READ/gate checks remain synthetic and deny backend dispatch. ARK/JARVIS/V3 = **NOT_PASSED**.
