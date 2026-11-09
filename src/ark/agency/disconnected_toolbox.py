@@ -28,6 +28,9 @@ _ORIGINAL_JSON = json
 _ORIGINAL_JSON_LOADS = json.loads
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_ID = _ID
+_ORIGINAL_OPERATIONS = _OPERATIONS
+_ORIGINAL_LIMITS = (_MAX_INPUT, _MAX_TEXT, _MAX_DEPTH, _MIN_INT, _MAX_INT)
 
 
 class DisconnectedToolRejected(ValueError):
@@ -96,6 +99,14 @@ def _require_original_fixture_primitives() -> None:
         or json.loads is not _ORIGINAL_JSON_LOADS
         or json.dumps is not _ORIGINAL_JSON_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _ID is not _ORIGINAL_ID
+        or _OPERATIONS is not _ORIGINAL_OPERATIONS
+        or any(type(value) is not int for value in
+               (_MAX_INPUT, _MAX_TEXT, _MAX_DEPTH, _MIN_INT, _MAX_INT))
+        or (_MAX_INPUT, _MAX_TEXT, _MAX_DEPTH, _MIN_INT, _MAX_INT)
+           != _ORIGINAL_LIMITS
+        or any(globals()[name] is not original
+               for name, original in _ORIGINAL_HELPERS.items())
     ):
         raise DisconnectedToolRejected(
             "disconnected fixture digest or JSON implementation changed"
@@ -166,24 +177,30 @@ def _reject_number(_: str) -> None:
 
 
 def _json(raw: str) -> object:
+    _require_original_fixture_primitives()
     try:
-        return json.loads(
+        parsed = json.loads(
             raw,
             object_pairs_hook=_unique_pairs,
             parse_int=_integer,
             parse_float=_reject_number,
             parse_constant=_reject_number,
         )
+        _require_original_fixture_primitives()
+        return parsed
     except (TypeError, ValueError, UnicodeError, RecursionError) as exc:
         raise DisconnectedToolRejected("invalid canonical JSON") from exc
 
 
 def _canonical(value: object) -> str:
+    _require_original_fixture_primitives()
     try:
-        return json.dumps(
+        encoded = json.dumps(
             value, sort_keys=True, ensure_ascii=True, separators=(",", ":"),
             allow_nan=False,
         )
+        _require_original_fixture_primitives()
+        return encoded
     except (TypeError, ValueError, RecursionError) as exc:
         raise DisconnectedToolRejected("invalid JSON value") from exc
 
@@ -261,6 +278,18 @@ def _run(operation: str, args: object) -> dict[str, object]:
         kind = "object" if type(parsed) is dict else "array" if type(parsed) is list else "scalar"
         return {"kind": kind, "items": len(parsed) if type(parsed) in (dict, list) else 1}
     raise DisconnectedToolRejected("tool operation unavailable")
+
+
+# A nested JSON hook, validator or tool-function replacement could otherwise
+# receive decoded caller-private arguments despite the top-level SHA/JSON pin.
+# These exact helpers never dispatch; replacing them is not a supported API.
+_ORIGINAL_HELPERS = {
+    name: globals()[name]
+    for name in (
+        "_unique_pairs", "_integer", "_reject_number", "_json", "_canonical",
+        "_text", "_validate_tree", "_run",
+    )
+}
 
 
 def execute_disconnected_fixture_tool(
