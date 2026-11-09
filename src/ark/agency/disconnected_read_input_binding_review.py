@@ -14,9 +14,18 @@ import json
 import re
 from dataclasses import dataclass
 
-from .disconnected_read_journal import ReadJournalSnapshot, ReadJournalWitness
+from .disconnected_read_journal import (
+    ReadJournalRejected,
+    ReadJournalSnapshot,
+    ReadJournalWitness,
+    ReadReceipt,
+    _require_original_read_carriers,
+    _require_original_snapshot_class,
+)
 from .disconnected_read_recovery_journal_bridge import (
+    ReadRecoveryJournalRejected,
     ReadRecoveryJournalReview,
+    _require_original_report as _require_original_recovery_report,
     review_detached_read_journal_recovery,
 )
 from .disconnected_read_recovery_schedule import ReadRecoveryStep
@@ -102,6 +111,14 @@ def _require_original_report() -> None:
         )
     ):
         raise ReadInputBindingRejected("input-join report authority changed")
+    # Do not let hostile substituted snapshot/receipt descriptors inspect caller
+    # journal evidence before the delegated recovery reviewer can check them.
+    try:
+        _require_original_read_carriers()
+        _require_original_snapshot_class()
+        _require_original_recovery_report()
+    except (ReadJournalRejected, ReadRecoveryJournalRejected) as exc:
+        raise ReadInputBindingRejected("READ input carrier contract changed") from exc
 
 
 def review_detached_read_input_binding(
@@ -140,6 +157,8 @@ def review_detached_read_input_binding(
         request_id, steps, snapshot, retained,
     )
     _require_original_report()
+    if type(base) is not ReadRecoveryJournalReview:
+        raise ReadInputBindingRejected("READ recovery receipt class changed")
     if tuple(item[0] for item in expected) != base.successful_step_ids:
         raise ReadInputBindingRejected("expected inputs do not cover exact successes")
     if (
@@ -148,13 +167,79 @@ def review_detached_read_input_binding(
         or len(snapshot.receipts) != len(expected)
     ):
         raise ReadInputBindingRejected("READ receipt set changed")
-    by_step = {receipt.step_id: receipt for receipt in snapshot.receipts}
+    # Freeze the independently validated journal, retained tip, and plan step
+    # identities across the input join, digest and report denial callbacks.
+    # Frozen dataclasses alone do not guarantee their slots stay unchanged.
+    original_rows = snapshot.receipts
+    original_witness = snapshot.witness
+    row_epoch = tuple((
+        row, row.request_id, row.step_id, row.operation,
+        row.input_digest, row.result_digest,
+    ) for row in original_rows)
+    step_epoch = tuple((
+        step, step.step_id, step.operation, step.depends_on,
+        step.state, step.result_sha256,
+    ) for step in steps)
+    witness_epoch = (original_witness.count, original_witness.tip_sha256)
+    retained_epoch = (retained.count, retained.tip_sha256)
+    base_epoch = (
+        base.request_id, base.successful_step_ids,
+        base.journal_tip_sha256, base.review_sha256,
+    )
+
+    def assert_epoch() -> None:
+        _require_original_report()
+        if (
+            type(snapshot) is not ReadJournalSnapshot
+            or snapshot.receipts is not original_rows
+            or snapshot.witness is not original_witness
+            or type(retained) is not ReadJournalWitness
+            or type(original_witness) is not ReadJournalWitness
+            or (original_witness.count, original_witness.tip_sha256)
+            != witness_epoch
+            or (retained.count, retained.tip_sha256) != retained_epoch
+            or type(base) is not ReadRecoveryJournalReview
+            or any(now is not first for now, first in zip(
+                (base.request_id, base.successful_step_ids,
+                 base.journal_tip_sha256, base.review_sha256),
+                base_epoch, strict=True,
+            ))
+            or len(original_rows) != len(row_epoch)
+            or len(steps) != len(step_epoch)
+            or any(
+                type(row) is not ReadReceipt
+                or row is not original
+                or any(now is not first for now, first in zip(
+                    (row.request_id, row.step_id, row.operation,
+                     row.input_digest, row.result_digest), fields, strict=True,
+                ))
+                for row, original, *fields in (
+                    (row, *epoch) for row, *epoch in row_epoch
+                )
+            )
+            or any(
+                step is not original
+                or any(now is not first for now, first in zip(
+                    (step.step_id, step.operation, step.depends_on,
+                     step.state, step.result_sha256), fields, strict=True,
+                ))
+                for step, original, *fields in (
+                    (step, *epoch) for step, *epoch in step_epoch
+                )
+            )
+        ):
+            raise ReadInputBindingRejected("READ input evidence changed during join")
+
+    assert_epoch()
+    by_step = {receipt.step_id: receipt for receipt in original_rows}
     if len(by_step) != len(expected):
         raise ReadInputBindingRejected("duplicate recovered READ receipt")
     for step_id, digest in expected:
+        assert_epoch()
         row = by_step.get(step_id)
         if row is None or row.input_digest != digest:
             raise ReadInputBindingRejected("recovered READ input digest disagrees")
+    assert_epoch()
     payload = (
         request_id, base.review_sha256, base.journal_tip_sha256, expected,
     )
@@ -163,23 +248,29 @@ def review_detached_read_input_binding(
             payload, ensure_ascii=True, separators=(",", ":"), allow_nan=False,
         ).encode("ascii")
     ).hexdigest()
-    _require_original_report()
-    result = _REPORT_TYPE(
+    assert_epoch()
+    expected_report = (
         request_id, base.successful_step_ids,
         base.journal_tip_sha256, base.review_sha256, digest,
     )
-    _require_original_report()
-    pinned = tuple(getattr(result, name) for name in _FIELDS)
-    for name in _DENIALS:
-        _require_original_report()
+    result = _REPORT_TYPE(*expected_report)
+    assert_epoch()
+    def assert_report() -> None:
+        assert_epoch()
         if (
             type(result) is not _REPORT_TYPE
-            or getattr(result, name) is not False
             or any(
                 getattr(result, field) is not original
-                for field, original in zip(_FIELDS, pinned, strict=True)
+                for field, original in zip(_FIELDS, expected_report, strict=True)
             )
         ):
+            raise ReadInputBindingRejected("READ input binding result changed")
+
+    assert_report()
+    for name in _DENIALS:
+        assert_report()
+        if getattr(result, name) is not False:
             raise ReadInputBindingRejected("READ input binding gained authority")
-    _require_original_report()
+        assert_report()
+    assert_report()
     return result
