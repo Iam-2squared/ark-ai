@@ -142,7 +142,7 @@ def test_per_step_request_id_does_not_alias_other_step():
         )
 
 
-@pytest.mark.parametrize("request,step_id", [
+@pytest.mark.parametrize("request_id,step_id", [
     ("req_bad", _FIRST),
     (_REQUEST, "step_bad"),
     (True, _FIRST),
