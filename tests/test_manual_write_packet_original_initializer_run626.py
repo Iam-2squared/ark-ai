@@ -65,7 +65,9 @@ def test_counterfeit_packet_initializer_never_executes(
 
     assert attempted == []
     if injection == "fingerprint":
-        assert callbacks == ["operator packet digest"]
+        # The earlier digest-implementation fence denies the substitute
+        # before it can read or hash the operator packet.
+        assert callbacks == []
 
 
 @pytest.mark.parametrize("effect", ("READ", "WRITE"))
