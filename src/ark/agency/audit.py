@@ -249,10 +249,25 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
                 raise ActionAuditSchemaError("audit symbolic or nondirectory ancestor refused")
         if target.is_symlink():
             raise ActionAuditSchemaError("audit symbolic path refused")
-        if target.exists():
+        main_exists = target.exists()
+        if main_exists:
             meta = target.lstat()
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise ActionAuditSchemaError("audit path must have one regular-file link")
+        # SQLite can open a journal, WAL or shared-memory sidecar even when
+        # its main file has a safe pathname. Refuse aliased special sidecars
+        # and do not adopt orphaned journal bytes when bootstrapping.
+        # These are repeated local lstat checks, not atomic dirfd custody.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = target.with_name(target.name + suffix)
+            try:
+                sidecar_info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if not main_exists:
+                raise ActionAuditSchemaError("orphaned audit SQLite sidecar refused")
+            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
+                raise ActionAuditSchemaError("audit SQLite sidecar alias refused")
     except OSError as exc:
         raise ActionAuditSchemaError("audit path custody cannot be verified") from exc
 
