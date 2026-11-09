@@ -84,7 +84,7 @@ assert not calls
 @pytest.mark.parametrize(("carrier", "field"), (
     ("decision", "disposition"), ("schedule", "decisions"),
 ))
-def test_digest_reentrancy_cannot_install_hostile_result_slot(
+def test_substituted_digest_cannot_install_hostile_result_slot(
     monkeypatch, carrier, field,
 ):
     cls = (
@@ -109,7 +109,8 @@ def test_digest_reentrancy_cannot_install_hostile_result_slot(
         mod.DetachedReadRecoveryRejected, match="authority descriptor changed",
     ):
         _review()
-    assert calls == ["digest"]
+    # Reject a replaced SHA callback before it can inject any output slot.
+    assert calls == []
 
 
 def test_unmodified_graph_yields_non_authorizing_mock_hint():
