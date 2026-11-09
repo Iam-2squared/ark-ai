@@ -48,9 +48,10 @@ def test_retention_rejects_memory_source_drift_during_schema(
         memory.path = Path(str(memory.path))
 
     monkeypatch.setattr(module, "_validate_v1_schema", retarget_after_check)
-    with pytest.raises(SyntheticRetentionRejected, match="source changed"):
+    # Schema callbacks must be original before any private SQLite row read.
+    with pytest.raises(SyntheticRetentionRejected, match="dependency changed"):
         _review(state)
-    memory.path = original_path
+    assert memory.path is original_path
     monkeypatch.setattr(module, "_validate_v1_schema", original_check)
     assert len(_review(state).items) == int(not empty)
 
@@ -96,9 +97,10 @@ def test_retention_rejects_revocation_source_drift_at_either_fence(
         return result
 
     monkeypatch.setattr(module, "review_revocation_continuity", redirected_veto)
-    with pytest.raises(SyntheticRetentionRejected, match="source changed"):
+    with pytest.raises(SyntheticRetentionRejected, match="dependency changed"):
         _review(state)
-    veto.path = original_path
+    assert count == 0
+    assert veto.path is original_path
     monkeypatch.setattr(module, "review_revocation_continuity", original_review)
     assert len(_review(state).items) == 1
 
