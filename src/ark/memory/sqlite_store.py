@@ -191,7 +191,7 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
             meta = target.lstat()
         except FileNotFoundError:
             if not create:
-                raise MemorySchemaError("memory database unavailable") from None
+                raise sqlite3.OperationalError("memory database unavailable") from None
         else:
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise MemorySchemaError("memory database path is not a single regular file")
