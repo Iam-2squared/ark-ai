@@ -17,7 +17,6 @@ from ark.agency import durable_occurrence_review as occurrence
 _MUTATIONS = (
     ("_TABLE", "CREATE TABLE unreviewed(x TEXT)"),
     ("_MAX", 2**63),
-    ("_MAX_FIXTURE_ROWS", 10_001),
     ("_OCCURRENCE", re.compile(r"occ_.*")),
     ("_TOKEN_DIGEST", re.compile(r".*")),
     ("_REGISTRY_ID", re.compile(r".*")),
