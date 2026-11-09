@@ -10,11 +10,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import ark.private_diagnostic_segment_review as review
-from ark.private_diagnostic_ledger import (
-    PrivateDiagnosticEvent as E,
-    render_private_diagnostic_ledger,
-)
+from ark import private_diagnostic_ledger as writer
+from ark import private_diagnostic_segment_review as review
 
 
 ANCHOR = "a" * 64
@@ -23,16 +20,16 @@ SECRET = "NEVER_LEAK_PRIVATE_CONTEXT_RUN741"
 
 def _fixtures():
     batches = (
-        (E(9, "memory", "recovery", "deferred", "nonreplay_required"),
-         E(10, "privacy", "postcheck", "reviewed", "missing_evidence")),
-        (E(11, "planner", "preflight", "rejected", "conflict"),),
-        (E(12, "registry", "ingress", "rejected", "invalid_type"),
-         E(13, "startup", "recovery", "deferred", "quarantined")),
+        (writer.PrivateDiagnosticEvent(9, "memory", "recovery", "deferred", "nonreplay_required"),
+         writer.PrivateDiagnosticEvent(10, "privacy", "postcheck", "reviewed", "missing_evidence")),
+        (writer.PrivateDiagnosticEvent(11, "planner", "preflight", "rejected", "conflict"),),
+        (writer.PrivateDiagnosticEvent(12, "registry", "ingress", "rejected", "invalid_type"),
+         writer.PrivateDiagnosticEvent(13, "startup", "recovery", "deferred", "quarantined")),
     )
     previous = ANCHOR
     segments = []
     for batch in batches:
-        p = render_private_diagnostic_ledger(
+        p = writer.render_private_diagnostic_ledger(
             batch, start_sequence=batch[0].sequence,
             retained_anchor_sha256=previous,
         )
@@ -159,7 +156,7 @@ def test_invalid_segment_container_or_limit_rejected(invalid):
 def test_cumulative_byte_budget_before_verification():
     parts = list(_fixtures())
     parts[-1] = replace(
-        parts[-1], canonical_jsonl="x" * 49_000,
+        parts[-1], canonical_jsonl="x" * 49_600,
     )
     with pytest.raises(
         review.RetainedDiagnosticChainRejected, match="budget",
