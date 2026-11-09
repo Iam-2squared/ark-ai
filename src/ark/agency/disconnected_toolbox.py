@@ -7,6 +7,7 @@ It handles caller-supplied synthetic JSON, performs no I/O, and is reversible.
 
 from __future__ import annotations
 
+import builtins
 import hashlib
 import json
 import re
@@ -22,6 +23,8 @@ _MIN_INT = -(2**63)
 _MAX_INT = 2**63 - 1
 
 
+_ORIGINAL_BUILTINS = builtins
+_ORIGINAL_SUM = builtins.sum
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON = json
@@ -93,7 +96,9 @@ def _require_original_fixture_primitives() -> None:
     # synthetic arguments to it. Recheck after every calculation boundary.
     # This establishes only local implementation identity, not attestation.
     if (
-        hashlib is not _ORIGINAL_HASHLIB
+        builtins is not _ORIGINAL_BUILTINS
+        or builtins.sum is not _ORIGINAL_SUM
+        or hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
         or json.loads is not _ORIGINAL_JSON_LOADS
