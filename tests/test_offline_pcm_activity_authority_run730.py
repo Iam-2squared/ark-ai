@@ -66,7 +66,10 @@ def test_hostile_activity_dependency_refused_before_private_audio(
         elif surface == "review_init":
             patch.setattr(activity.OfflinePcmActivityReview, "__init__", hostile)
         else:
-            patch.setattr(activity.OfflinePcmActivityReview, "disclosure_authorized", property(hostile))
+            patch.setattr(
+                activity.OfflinePcmActivityReview, "disclosure_authorized",
+                property(hostile),
+            )
         with pytest.raises(
             activity.OfflinePcmActivityRejected,
             match="PCM activity codec, carrier or denial authority changed",
