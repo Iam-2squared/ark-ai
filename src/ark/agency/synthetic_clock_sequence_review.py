@@ -34,6 +34,9 @@ _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON = json
 _ORIGINAL_DUMPS = json.dumps
+# A changed local digest helper is executable code, even when hashlib and
+# json remain original. Pin the function before any caller iterator is read.
+_ORIGINAL_HASH_HELPER = _hash
 _ORIGINAL_GENESIS = _GENESIS
 
 
@@ -123,6 +126,7 @@ def _denials_original() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
+        or _hash is not _ORIGINAL_HASH_HELPER
         or _GENESIS is not _ORIGINAL_GENESIS
         or _DIGEST is not _ORIGINAL_DIGEST_PATTERN
         or _CHAIN is not _ORIGINAL_CHAIN_PATTERN
