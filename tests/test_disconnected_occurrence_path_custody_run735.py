@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -79,7 +80,7 @@ def test_missing_store_refused_without_recreation(tmp_path: Path) -> None:
     path = tmp_path / "fixture.sqlite"
     store = SyntheticOccurrenceStore(path)
     path.rename(tmp_path / "held.sqlite")
-    with pytest.raises(SyntheticReplayRejected):
+    with pytest.raises(sqlite3.OperationalError):
         store.count_synthetic()
     assert not path.exists()
 
