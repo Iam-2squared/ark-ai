@@ -2,7 +2,7 @@
 
 **Branch:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8); OPEN, unmerged.  
 **Initial exact work-basis HEAD:** `d55156f5d0969ba57273a39e6e2f68dbdf4f8e68`.  
-**Latest source/test and repair HEAD re-read before this report:** `73a37d4b917dc5b3e535ad1545af23daeb246065`.  
+**Initial report-basis HEAD:** `73a37d4b917dc5b3e535ad1545af23daeb246065`. **Subsequent test collection repair:** `1834255647baaae0e731fe5c93d61dabd96ec65f`.  
 **Status:** new packages authored and normally saved; latest exact-head CI **NOT YET GREEN** at report creation. No real ToolBackend, restart replay, physical device, external API, protected evaluation, paid compute or Candidate activity.
 
 ## A — detached proactive recurrence diagnostic
@@ -21,7 +21,7 @@
 
 - [Source `2ba7a12`](https://github.com/Iam-2squared/ark-ai/commit/2ba7a12692158ab532a7bafa37f43a49fa36731b): new `ark.agency.disconnected_read_tool_bridge`. It calls the existing deny-only `schedule_detached_read_recovery` and deterministic memory-only `execute_disconnected_fixture_tool` *only for exact READY_MOCK_ONLY steps*. Unknown/running/failed/already-complete steps do not run. The bridge requires an ordered, complete set of ready-only bindings, identical operation identities and a per-step synthetic request ID derived from a domain-separated hash. Result has four permanently false authority properties. It does not persist, dispatch, notify, infer consent or authorize any external action.
 - [Tests `0ec6d3b`](https://github.com/Iam-2squared/ark-ai/commit/0ec6d3b997580e5dbb599e548e24fd6d3ccc99f0): 18 cases: deterministic independent fixtures, quarantined/failed ancestors, unverified complete state, rejected duplicate/out-of-order/missing bindings, invalid operations/identities, and no real authority.
-- [Collection repair `f4a23f9`](https://github.com/Iam-2squared/ark-ai/commit/f4a23f9fff5b3f7238044d9fa6202b6217ac52cc): actual [CI #42630060945](https://github.com/Iam-2squared/ark-ai/actions/runs/42630060945) exposed pytest collection rejection of parameter `request` (reserved fixture name). The parameter was renamed `request_id`. This changes neither functional semantics nor test acceptance logic.
+- [Collection repairs `f4a23f9`](https://github.com/Iam-2squared/ark-ai/commit/f4a23f9fff5b3f7238044d9fa6202b6217ac52cc) and [`1834255`](https://github.com/Iam-2squared/ark-ai/commit/1834255647baaae0e731fe5c93d61dabd96ec65f): actual [CI #42630060945](https://github.com/Iam-2squared/ark-ai/actions/runs/42630060945) exposed pytest collection rejection of parameter `request` (reserved fixture name). The first repair renamed the test function parameter, but CI still failed because pytest's parametrization key remained `request`. The second repair also changed the decorator to `request_id`. Neither repair changes functional semantics or test acceptance logic; only the second repair is complete.
 - **Security limitations:** topological status, previous READ result digests and the bound fixture arguments remain *caller asserted*. A completed upstream status is not authenticated. A mock result is NOT a real tool execution receipt. Any future integration with ToolRegistry/PermissionGate requires independent exact-head GREEN evidence and real authorization design.
 
 ## D — read-only V3 hard-boundary audit
