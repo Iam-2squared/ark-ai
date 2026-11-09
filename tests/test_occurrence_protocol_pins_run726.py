@@ -10,9 +10,9 @@ from __future__ import annotations
 import re
 
 import pytest
+from test_occurrence_input_commit_epoch_run410 import _fixture, _reserve
 
 from ark.agency import durable_occurrence_review as occurrence
-from test_occurrence_input_commit_epoch_run410 import _fixture, _reserve
 
 _MUTATIONS = (
     ("_TABLE", "CREATE TABLE unreviewed(x TEXT)"),
