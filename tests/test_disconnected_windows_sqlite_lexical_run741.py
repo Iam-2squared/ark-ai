@@ -8,7 +8,6 @@ import pytest
 
 from ark import disconnected_windows_sqlite_lexical as reviewer
 
-
 VALID = (
     r"C:\ark\memory.sqlite3",
     r"Z:\ark\memory_1.sqlite3",
