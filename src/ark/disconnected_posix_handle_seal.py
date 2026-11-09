@@ -157,6 +157,14 @@ def _once(path: Path) -> PosixHandleSeal:
                                 follow_symlinks=False)
         if _file_identity(observed_file) != original:
             raise PosixHandleSealRejected("source name retargeted during read")
+        # A path-stat callback can mutate the held file *after* returning
+        # its old metadata. Before sealing a single sweep, recheck the
+        # descriptor whose content was actually hashed. This only closes
+        # that inspection boundary; it is not lasting pathname custody.
+        if _file_identity(os.fstat(regular_fd)) != original:
+            raise PosixHandleSealRejected(
+                "held fixture descriptor changed during final pathname inspection"
+            )
         return PosixHandleSeal(
             path_sha256=_digest(("path", str(path))),
             directories_sha256=_digest(("dirs", tuple(zip(names, identities, strict=True)))),
