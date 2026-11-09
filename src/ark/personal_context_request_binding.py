@@ -21,6 +21,15 @@ _RECORD = re.compile(r"rec_[0-9a-f]{32}\Z")
 _PREVIEW_DOMAIN = b"ARK-local-context-fixture-preview-v1\0"
 _BINDING_DOMAIN = b"ARK-offline-context-request-binding-v1\0"
 _PREVIEW_TYPE = OfflineContextPreview
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_LOADS = json.loads
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_RE = re
+_ORIGINAL_COMPILE = re.compile
+_ORIGINAL_REGEXES = (_SHA, _REQUEST, _RECORD)
+_ORIGINAL_DOMAINS = (_PREVIEW_DOMAIN, _BINDING_DOMAIN)
 
 
 class OfflineContextBindingRejected(ValueError):
@@ -100,7 +109,33 @@ _ORIGINAL_BINDING_HOOKS = tuple(
 )
 
 
+def _assert_original_private_codec() -> None:
+    """Reject replaced JSON/hash/regex code before reading local-only text.
+
+    These interpreter-local checks do not prove consent, independent capture
+    provenance, source authenticity, or external tool dispatch permission.
+    """
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.loads is not _ORIGINAL_LOADS
+        or json.dumps is not _ORIGINAL_DUMPS
+        or re is not _ORIGINAL_RE
+        or re.compile is not _ORIGINAL_COMPILE
+        or any(now is not prior for now, prior in zip(
+            (_SHA, _REQUEST, _RECORD), _ORIGINAL_REGEXES, strict=True,
+        ))
+        or any(now is not prior for now, prior in zip(
+            (_PREVIEW_DOMAIN, _BINDING_DOMAIN),
+            _ORIGINAL_DOMAINS, strict=True,
+        ))
+    ):
+        raise OfflineContextBindingRejected("private context binding codec changed")
+
+
 def _assert_original_denials() -> None:
+    _assert_original_private_codec()
     if (
         OfflineContextPreview is not _PREVIEW_TYPE
         or any(
@@ -142,6 +177,7 @@ def bind_offline_context_request(
     This is a local integrity check only, not a replay ledger, authenticated
     identity, consent check, or permission to publish context content.
     """
+    _assert_original_private_codec()
     if type(request_id) is not str or _REQUEST.fullmatch(request_id) is None:
         raise OfflineContextBindingRejected("exact local context request ID required")
     if type(preview) is not _PREVIEW_TYPE:
@@ -208,11 +244,14 @@ def bind_offline_context_request(
         encoded = canonical.encode("utf-8", errors="strict")
         if len(encoded) > 65_536:
             raise OfflineContextBindingRejected("context serialized byte budget exceeded")
+        _assert_original_private_codec()
         decoded = json.loads(canonical)
+        _assert_original_private_codec()
         recanonical = json.dumps(
             decoded, sort_keys=True, ensure_ascii=True,
             allow_nan=False, separators=(",", ":"),
         )
+        _assert_original_private_codec()
     except (TypeError, ValueError, UnicodeError) as exc:
         if type(exc) is OfflineContextBindingRejected:
             raise
@@ -249,12 +288,15 @@ def bind_offline_context_request(
         if total > 16384:
             raise OfflineContextBindingRejected("context preview total budget exceeded")
     unchanged()
+    _assert_original_private_codec()
     if hashlib.sha256(_PREVIEW_DOMAIN + encoded).hexdigest() != digest:
         raise OfflineContextBindingRejected("context preview local digest mismatch")
+    _assert_original_private_codec()
     bound_payload = json.dumps(
         (request_id, owner, ids, digest), separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
     unchanged()
+    _assert_original_private_codec()
     binding_digest = hashlib.sha256(_BINDING_DOMAIN + bound_payload).hexdigest()
     unchanged()
     result = OfflineContextRequestBinding(
