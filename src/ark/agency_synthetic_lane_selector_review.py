@@ -86,6 +86,74 @@ def _overlap(left: str, right: str) -> bool:
     return left == right or left.startswith(right + "/") or right.startswith(left + "/")
 
 
+# Work lanes are caller-provided diagnostics.  No monkeypatched JSON/hash,
+# parser, overlap check or class descriptor may inspect private path claims
+# before the original implementation is verified.
+_ORIGINAL_HASHLIB_MODULE = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_MODULE = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_FIELDS_FUNCTION = fields
+_ORIGINAL_PATTERNS = (_LABEL, _PATH_COMPONENT)
+_ORIGINAL_COSTS = _COSTS
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_LIMITS = (_MAX_LANES, _MAX_SELECTED)
+_ORIGINAL_HELPERS = (_check_label, _check_path, _check_labels, _overlap)
+_LANE_TYPE = SyntheticWorkLane
+_LANE_FIELDS = (
+    "lane_id", "priority", "touches", "depends_on", "requires_green",
+    "cost_class", "requires_approval", "reversible",
+)
+_RESULT_FIELDS = ("selected", "deferred", "diagnostic_digest")
+_RESULT_DENIALS = (
+    "execution_authorized", "github_write_authorized", "spending_authorized",
+)
+_LOOKUP_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_LANE_DESCRIPTORS = tuple(
+    vars(_LANE_TYPE).get(name) for name in _LANE_FIELDS + _LOOKUP_HOOKS
+)
+_ORIGINAL_RESULT_DESCRIPTORS = tuple(
+    vars(_SELECTION_RESULT_TYPE).get(name)
+    for name in _RESULT_FIELDS + _RESULT_DENIALS + _LOOKUP_HOOKS
+)
+
+
+def _require_original_lane_selection_protocol() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB_MODULE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON_MODULE
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or fields is not _ORIGINAL_FIELDS_FUNCTION
+        or (_LABEL is not _ORIGINAL_PATTERNS[0])
+        or (_PATH_COMPONENT is not _ORIGINAL_PATTERNS[1])
+        or _COSTS is not _ORIGINAL_COSTS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or (_MAX_LANES, _MAX_SELECTED) != _ORIGINAL_LIMITS
+        or (_check_label, _check_path, _check_labels, _overlap)
+        != _ORIGINAL_HELPERS
+        or SyntheticWorkLane is not _LANE_TYPE
+        or SyntheticLaneSelection is not _SELECTION_RESULT_TYPE
+        or any(
+            vars(_LANE_TYPE).get(name) is not original
+            for name, original in zip(
+                _LANE_FIELDS + _LOOKUP_HOOKS,
+                _ORIGINAL_LANE_DESCRIPTORS, strict=True,
+            )
+        )
+        or any(
+            vars(_SELECTION_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_FIELDS + _RESULT_DENIALS + _LOOKUP_HOOKS,
+                _ORIGINAL_RESULT_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticLaneSelectionRejected(
+            "work lane parser, codec or denial authority changed"
+        )
+
+
 def review_disconnected_work_lanes(
     lanes: tuple[SyntheticWorkLane, ...],
     *,
@@ -99,6 +167,7 @@ def review_disconnected_work_lanes(
     Dependencies are complete only when independently confirmed *outside*
     this API. Passing a string in claimed_green is NOT CI attestation.
     """
+    _require_original_lane_selection_protocol()
     if (
         type(lanes) is not tuple or not 1 <= len(lanes) <= _MAX_LANES
         or type(completed) is not frozenset
@@ -115,6 +184,7 @@ def review_disconnected_work_lanes(
         raise SyntheticLaneSelectionRejected("exact work-lane type required")
 
     def assert_epoch() -> None:
+        _require_original_lane_selection_protocol()
         if len(lanes) != len(pinned) or any(
             current is not old_lane
             or any(getattr(current, f.name) is not old_value
@@ -198,6 +268,7 @@ def review_disconnected_work_lanes(
     assert_epoch()
     digest = "lanes_" + hashlib.sha256(_DOMAIN + encoded).hexdigest()
     assert_epoch()
+    _require_original_lane_selection_protocol()
     result = SyntheticLaneSelection(decision[0], decision[1], digest)
     assert_epoch()
     def assert_result() -> None:
@@ -221,4 +292,5 @@ def review_disconnected_work_lanes(
     ):
         raise SyntheticLaneSelectionRejected("work decision forged authority")
     assert_result()
+    _require_original_lane_selection_protocol()
     return result
