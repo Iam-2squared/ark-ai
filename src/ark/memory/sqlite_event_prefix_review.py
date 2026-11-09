@@ -115,6 +115,30 @@ _COMPARISON_ORIGINAL_FLAGS = tuple(
 )
 
 
+# Keep v1 local event grammar, bounded scan size, and digest separation
+# immutable within this optional, read-only observer. This is not an
+# authenticated append log or independent witness; it only prevents
+# caller-rebound local parser constants from silently expanding acceptance.
+_ORIGINAL_ID = _ID
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_OPERATIONS = _OPERATIONS
+_ORIGINAL_MAX_EVENTS = _MAX_EVENTS
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_COMPARISON_DOMAIN = _COMPARISON_DOMAIN
+
+
+def _require_original_prefix_protocol() -> None:
+    if (
+        _ID is not _ORIGINAL_ID
+        or _SHA is not _ORIGINAL_SHA
+        or _OPERATIONS is not _ORIGINAL_OPERATIONS
+        or _MAX_EVENTS is not _ORIGINAL_MAX_EVENTS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _COMPARISON_DOMAIN is not _ORIGINAL_COMPARISON_DOMAIN
+    ):
+        raise MemoryEventPrefixRejected("local event prefix protocol changed")
+
+
 def _original_witness_flags() -> None:
     if (
         MemoryEventPrefixWitness is not _WITNESS
@@ -207,11 +231,13 @@ def _charge(hasher: object, event: tuple[object, ...]) -> None:
 def _scan(
     store: SQLiteMemoryStore, *, prefix_count: int | None,
 ) -> tuple[MemoryEventPrefixWitness, tuple[int, str] | None]:
+    _require_original_prefix_protocol()
     if type(store) is not _STORE:
         raise MemoryEventPrefixRejected("exact local Memory store required")
     source_path = store.path
 
     def stable_source() -> None:
+        _require_original_prefix_protocol()
         if type(store) is not _STORE or store.path is not source_path:
             raise MemoryEventPrefixRejected("local Memory source changed during prefix read")
 
@@ -334,9 +360,11 @@ def compare_local_memory_event_prefix(
     retained: MemoryEventPrefixWitness,
 ) -> MemoryEventPrefixComparison:
     """Check the old event prefix even when a newer local event tail exists."""
+    _require_original_prefix_protocol()
     old = _witness_epoch(retained)
 
     def stable_retained() -> None:
+        _require_original_prefix_protocol()
         if any(
             value is not pinned for value, pinned in zip(
                 _witness_epoch(retained), old, strict=True,
