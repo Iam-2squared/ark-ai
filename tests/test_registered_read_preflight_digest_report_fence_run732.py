@@ -94,7 +94,14 @@ def test_result_descriptor_or_constructor_substitution_is_never_invoked(
     cls = preflight.DisconnectedReadPreflight
     originally_local = field in vars(cls)
     try:
-        if field.startswith("__"):
+        if field == "__new__":
+            # Mutating __new__ on a live CPython slotted dataclass poisons its
+            # C-level tp_new slot even after monkeypatch.undo()/delattr().
+            # Rebind the public class alias instead, still proving early
+            # rejection before the forged constructor can run.
+            forged = type("ForgedPreflight", (), {"__new__": staticmethod(hostile)})
+            monkeypatch.setattr(preflight, "DisconnectedReadPreflight", forged)
+        elif field.startswith("__"):
             monkeypatch.setattr(cls, field, hostile)
         else:
             monkeypatch.setattr(cls, field, property(hostile))
@@ -113,6 +120,9 @@ def test_result_descriptor_or_constructor_substitution_is_never_invoked(
         monkeypatch.undo()
         if not originally_local and field in vars(cls):
             delattr(cls, field)
+    # Every hostile parametrization must leave the actual frozen dataclass
+    # constructible for later tests in the same Python interpreter.
+    assert type(cls("t", "s", "r", "g", (), (), "f")) is cls
 
 
 @pytest.mark.parametrize("mutation", ("sha256", "json_dumps", "domain"))
