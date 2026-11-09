@@ -35,8 +35,10 @@ def test_false_looking_descriptor_replacement_is_rejected_before_processing(
         pytest.fail("private fixture JSON reached after authority was replaced")
 
     monkeypatch.setattr(toolbox, "_json", no_parse)
+    # Helper substitution now fails even before the original denial descriptor
+    # check; the private parser still must not be called.
     with pytest.raises(
-        toolbox.DisconnectedToolRejected, match="authority definition changed",
+        toolbox.DisconnectedToolRejected, match="digest or JSON implementation changed",
     ):
         toolbox.execute_disconnected_fixture_tool(_request())
 
