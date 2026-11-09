@@ -92,8 +92,31 @@ _DENIAL_NAMES = (
 )
 _ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[key] for key in _DENIAL_NAMES)
 
+# The WAV parser handles private caller-provided audio, so validate original
+# hashing, binary codec and framing limits BEFORE any request field access.
+# These checks are in-process fail-closed fixtures, not sensor attestation.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_STRUCT = struct
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_UNPACK_FROM = struct.unpack_from
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_MAX_WAV_BYTES = _MAX_WAV_BYTES
+_ORIGINAL_MAX_DURATION_SECONDS = _MAX_DURATION_SECONDS
+
 
 def _require_original_wave_authority() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or struct is not _ORIGINAL_STRUCT
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or struct.unpack_from is not _ORIGINAL_UNPACK_FROM
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _MAX_WAV_BYTES is not _ORIGINAL_MAX_WAV_BYTES
+        or _MAX_DURATION_SECONDS is not _ORIGINAL_MAX_DURATION_SECONDS
+    ):
+        raise OfflineWaveRejected(
+            "WAV codec or digest implementation changed before private bytes"
+        )
     if (
         OfflineWaveRequest is not _REQUEST_TYPE
         or vars(_REQUEST_TYPE).get("__init__") is not _ORIGINAL_REQUEST_INIT
