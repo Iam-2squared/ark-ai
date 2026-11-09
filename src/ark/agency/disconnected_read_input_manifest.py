@@ -73,11 +73,28 @@ _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_LOADS = json.loads
 _ORIGINAL_REVIEW = review_detached_read_input_binding
+# Pin the local format, size limits and identifier regexes as well as the
+# serializer: a swapped digest domain or widened parser is not the reviewed
+# expected-input contract, even if its resulting artifact is self-consistent.
+_ORIGINAL_SCHEMA = _SCHEMA
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_BYTES = _MAX_BYTES
+_ORIGINAL_MAX_STEPS = _MAX_STEPS
+_ORIGINAL_REQUEST = _REQUEST
+_ORIGINAL_STEP = _STEP
+_ORIGINAL_SHA = _SHA
 
 
 def _authority() -> None:
     if (
         ReadInputManifest is not _MANIFEST_TYPE
+        or _SCHEMA is not _ORIGINAL_SCHEMA
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_BYTES) is not int or _MAX_BYTES != _ORIGINAL_MAX_BYTES
+        or type(_MAX_STEPS) is not int or _MAX_STEPS != _ORIGINAL_MAX_STEPS
+        or _REQUEST is not _ORIGINAL_REQUEST
+        or _STEP is not _ORIGINAL_STEP
+        or _SHA is not _ORIGINAL_SHA
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or json.loads is not _ORIGINAL_LOADS
