@@ -64,8 +64,10 @@ class DetachedReadRecoverySchedule:
 _STEP_TYPE = ReadRecoveryStep
 _STEP_FIELDS = ("step_id", "operation", "depends_on", "state", "result_sha256")
 _ORIGINAL_STEP_SLOTS = tuple(vars(_STEP_TYPE)[field] for field in _STEP_FIELDS)
-_STEP_HOOKS = ("__init__", "__getattribute__", "__getattr__")
+_STEP_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_STEP_HOOKS = tuple(vars(_STEP_TYPE).get(hook) for hook in _STEP_HOOKS)
+_ORIGINAL_STEP_FIELDS_VECTOR = _STEP_FIELDS
+_ORIGINAL_STEP_HOOKS_VECTOR = _STEP_HOOKS
 
 _DECISION_TYPE = ReadRecoveryDecision
 _SCHEDULE_TYPE = DetachedReadRecoverySchedule
@@ -125,6 +127,8 @@ def _assert_original_denials() -> None:
         or _OPS is not _ORIGINAL_OPS
         or _STATES is not _ORIGINAL_STATES
         or ReadRecoveryStep is not _STEP_TYPE
+        or _STEP_FIELDS is not _ORIGINAL_STEP_FIELDS_VECTOR
+        or _STEP_HOOKS is not _ORIGINAL_STEP_HOOKS_VECTOR
         or any(
             vars(_STEP_TYPE).get(field) is not original
             for field, original in zip(_STEP_FIELDS, _ORIGINAL_STEP_SLOTS, strict=True)
