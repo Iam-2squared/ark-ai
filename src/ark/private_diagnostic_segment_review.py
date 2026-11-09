@@ -154,7 +154,7 @@ def verify_retained_diagnostic_segments(
     current_anchor = retained_anchor_sha256
     total = 0
     total_bytes = 0
-    snapshots: list[tuple[str, int, int, str, str]] = []
+    snapshots: list[tuple[RetainedDiagnosticSegment, str, int, int, str, str]] = []
     for segment in segments:
         _protocol()
         start, count, anchor, tip, payload = (
@@ -177,23 +177,41 @@ def verify_retained_diagnostic_segments(
         total_bytes += len(payload)
         if total > expected_count or total_bytes > _MAX_BYTES:
             raise RetainedDiagnosticChainRejected("diagnostic segment budget invalid")
-        snapshots.append((payload, start, count, anchor, tip))
+        snapshots.append((segment, payload, start, count, anchor, tip))
         current_sequence += count
         current_anchor = tip
     if total != expected_count or current_anchor != expected_final_sha256:
         raise RetainedDiagnosticChainRejected("retained diagnostic series mismatch")
 
-    for segment, (payload, start, count, anchor, tip) in zip(
-        segments, snapshots, strict=True,
-    ):
+    # A verifier may invoke reentrant synthetic callbacks. Checking only the
+    # current segment lets a callback rewrite an earlier, already-verified
+    # segment while the coordinator returns a stale whole-series receipt.
+    # Retain exact carrier identities, not merely equal-valued metadata.
+    def stable_segments() -> None:
         _protocol()
-        if (
-            type(segment) is not _SEGMENT_TYPE
-            or (segment.canonical_jsonl, segment.first_sequence, segment.count,
-                segment.anchor_sha256, segment.tip_sha256)
-            != (payload, start, count, anchor, tip)
+        if len(segments) != len(snapshots) or any(
+            segments[index] is not saved[0]
+            or type(saved[0]) is not _SEGMENT_TYPE
+            or any(
+                now is not retained
+                for now, retained in zip(
+                    (
+                        saved[0].canonical_jsonl, saved[0].first_sequence,
+                        saved[0].count, saved[0].anchor_sha256,
+                        saved[0].tip_sha256,
+                    ),
+                    saved[1:], strict=True,
+                )
+            )
+            for index, saved in enumerate(snapshots)
         ):
-            raise RetainedDiagnosticChainRejected("diagnostic segment changed")
+            raise RetainedDiagnosticChainRejected(
+                "diagnostic segment carrier changed during review"
+            )
+
+    stable_segments()
+    for segment, payload, start, count, anchor, tip in snapshots:
+        stable_segments()
         try:
             evidence = verifier.verify_private_diagnostic_jsonl(
                 payload, retained_anchor_sha256=anchor,
@@ -204,7 +222,7 @@ def verify_retained_diagnostic_segments(
             raise RetainedDiagnosticChainRejected(
                 "diagnostic segment verification failed"
             ) from None
-        _protocol()
+        stable_segments()
         if (
             type(evidence) is not verifier.PrivateDiagnosticVerification
             or evidence.first_sequence != start
@@ -219,13 +237,14 @@ def verify_retained_diagnostic_segments(
             raise RetainedDiagnosticChainRejected(
                 "diagnostic verification gained authority or changed"
             )
+        stable_segments()
 
-    _protocol()
+    stable_segments()
     result = RetainedDiagnosticChainReview(
         expected_start_sequence, current_sequence - 1, expected_count,
         len(segments), current_anchor,
     )
-    _protocol()
+    stable_segments()
     if (
         type(result) is not _RESULT_TYPE
         or result.first_sequence != expected_start_sequence
@@ -233,7 +252,11 @@ def verify_retained_diagnostic_segments(
         or result.count != expected_count
         or result.segment_count != len(segments)
         or result.final_sha256 != current_anchor
-        or any(getattr(result, name) is not False for name in _DENIALS)
     ):
         raise RetainedDiagnosticChainRejected("diagnostic review authority changed")
+    for name in _DENIALS:
+        stable_segments()
+        if getattr(result, name) is not False:
+            raise RetainedDiagnosticChainRejected("diagnostic review authority changed")
+        stable_segments()
     return result
