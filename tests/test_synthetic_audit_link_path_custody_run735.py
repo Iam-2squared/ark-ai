@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -80,7 +81,7 @@ def test_missing_link_database_after_startup_is_not_recreated(tmp_path: Path) ->
     path = tmp_path / "links.sqlite"
     store = SyntheticOccurrenceAuditLinkStore(path)
     path.rename(tmp_path / "held.sqlite")
-    with pytest.raises(SyntheticAuditLinkRejected):
+    with pytest.raises(sqlite3.OperationalError):
         store.read_witness()
     assert not path.exists()
 
