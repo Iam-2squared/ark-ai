@@ -46,6 +46,12 @@ class SyntheticReplayRejected(RuntimeError):
 # signed approval, or protection against a compromised Python interpreter.
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_TABLE = _TABLE
+_ORIGINAL_MAX = _MAX
+_ORIGINAL_MAX_FIXTURE_ROWS = _MAX_FIXTURE_ROWS
+_ORIGINAL_ID_PATTERNS = (
+    _OCCURRENCE, _TOKEN_DIGEST, _REGISTRY_ID, _BOUND_ID, _REQUEST_ID,
+)
 
 
 def _require_original_digest() -> None:
@@ -53,6 +59,29 @@ def _require_original_digest() -> None:
         raise SyntheticReplayRejected(
             "synthetic occurrence digest implementation changed before token hashing"
         )
+
+
+def _require_original_protocol() -> None:
+    """Pin fixture-only schema, capacity and identifiers before reading tokens.
+
+    These process-local checks do not authenticate approval, filesystem
+    ownership, or any external action.
+    """
+    _require_original_digest()
+    if (
+        _TABLE is not _ORIGINAL_TABLE
+        or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+        or type(_MAX_FIXTURE_ROWS) is not int
+        or _MAX_FIXTURE_ROWS != _ORIGINAL_MAX_FIXTURE_ROWS
+        or any(
+            current is not original
+            for current, original in zip(
+                (_OCCURRENCE, _TOKEN_DIGEST, _REGISTRY_ID, _BOUND_ID, _REQUEST_ID),
+                _ORIGINAL_ID_PATTERNS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticReplayRejected("synthetic occurrence protocol changed")
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,6 +156,7 @@ def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
 
 
 def _validate(conn: sqlite3.Connection) -> None:
+    _require_original_protocol()
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticReplayRejected("synthetic reservation schema version changed")
     with sqlite3.connect(":memory:") as expected:
@@ -164,6 +194,7 @@ class SyntheticOccurrenceStore:
     """No-execution fixture ledger; not a real PermissionGate or token issuer."""
 
     def __init__(self, path: Path) -> None:
+        _require_original_protocol()
         if not isinstance(path, Path):
             raise TypeError("synthetic ledger path must be a pathlib.Path")
         self._path = path
@@ -222,7 +253,7 @@ class SyntheticOccurrenceStore:
             raise SyntheticReplayRejected("invalid synthetic occurrence identity")
         # Denial properties are import-time invariants, not callbacks that a
         # registry/SQLite fixture may replace with even an always-False getter.
-        _require_original_digest()
+        _require_original_protocol()
         _assert_receipt_denials()
         # Pin the initialized source before any caller-supplied registry work.
         # A reflected equal-value Path replacement is a different review epoch.
@@ -415,6 +446,7 @@ class SyntheticOccurrenceStore:
 
     def count_synthetic(self) -> int:
         """Read-only count; missing DB is never created as a side effect."""
+        _require_original_protocol()
         path_epoch = self._path
         if not isinstance(path_epoch, Path):
             raise SyntheticReplayRejected("synthetic occurrence source must be a Path")
