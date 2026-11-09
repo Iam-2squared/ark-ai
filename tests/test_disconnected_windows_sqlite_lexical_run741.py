@@ -6,7 +6,7 @@ from dataclasses import fields
 
 import pytest
 
-import ark.disconnected_windows_sqlite_lexical as reviewer
+from ark import disconnected_windows_sqlite_lexical as reviewer
 
 
 VALID = (
