@@ -211,6 +211,36 @@ def _epoch(info: os.stat_result) -> tuple[int, int, int, int, int, int]:
     return (*_identity(info), info.st_mtime_ns, info.st_ctime_ns)
 
 
+def _safe_manifest_path(path: str | Path) -> Path:
+    """Reject symbolic/lexical parent escapes before any manifest file I/O.
+
+    O_NOFOLLOW protects only the final component. This check also refuses
+    symlinked ancestor directories and relative traversal. It is a local
+    preflight, NOT an atomic dirfd custody guarantee against rename races.
+    """
+    if type(path) not in (str, type(Path("."))):
+        raise ReadInputManifestRejected("READ input manifest requires exact local path")
+    target = Path(path)
+    if not target.is_absolute() or ".." in target.parts:
+        raise ReadInputManifestRejected(
+            "READ input manifest requires absolute path without parent traversal"
+        )
+    try:
+        for parent in target.parents:
+            info = parent.lstat()
+            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+                raise ReadInputManifestRejected(
+                    "READ input manifest ancestor is not a real directory"
+                )
+        if target.is_symlink():
+            raise ReadInputManifestRejected("READ input manifest symlink refused")
+    except OSError as exc:
+        raise ReadInputManifestRejected(
+            "READ input manifest ancestor cannot be verified"
+        ) from exc
+    return target
+
+
 def write_read_input_manifest_once(
     path: str | Path,
     request_id: str,
@@ -225,7 +255,8 @@ def write_read_input_manifest_once(
     inputs = _validated_inputs(request_id, expected_inputs)
     raw, digest = _artifact(request_id, inputs)
     _authority()
-    target = Path(path)
+    target = _safe_manifest_path(path)
+    _authority()
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
     flags |= getattr(os, "O_CLOEXEC", 0)
@@ -308,7 +339,8 @@ def load_read_input_manifest(
         type(expected_sha256) is not str or _SHA.fullmatch(expected_sha256) is None
     ):
         raise ReadInputManifestRejected("invalid retained artifact SHA-256")
-    target = Path(path)
+    target = _safe_manifest_path(path)
+    _authority()
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
     flags |= getattr(os, "O_CLOEXEC", 0)
