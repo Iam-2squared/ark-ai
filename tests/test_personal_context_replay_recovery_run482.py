@@ -174,20 +174,29 @@ def test_mutated_ledger_path_during_read_denied(tmp_path, monkeypatch):
         review.review_restarted_context_replay(ledger, retained)
 
 
-def test_mutated_observed_witness_during_hash_denied(tmp_path, monkeypatch):
+def test_substituted_replay_json_refused_before_private_ledger_read(
+    tmp_path, monkeypatch,
+):
     ledger = _ledger(tmp_path)
     old = ledger.witness()
-    original = review.json.dumps
+    calls = []
 
-    def mutate(*args, **kwargs):
-        object.__setattr__(observed, "chain_sha256", "f" * 64)
-        return original(*args, **kwargs)
+    def malicious_dumps(*_args, **_kwargs):
+        calls.append("serializer")
+        raise AssertionError("substituted serializer must never run")
 
-    observed = ledger.witness()
-    monkeypatch.setattr(ledger, "witness", lambda: observed)
-    monkeypatch.setattr(review.json, "dumps", mutate)
-    with pytest.raises(review.OfflineContextRecoveryRejected, match="observed"):
+    def private_read():
+        calls.append("ledger")
+        raise AssertionError("private replay ledger must not be read")
+
+    monkeypatch.setattr(ledger, "witness", private_read)
+    monkeypatch.setattr(review.json, "dumps", malicious_dumps)
+    with pytest.raises(
+        review.OfflineContextRecoveryRejected,
+        match="digest implementation changed",
+    ):
         review.review_restarted_context_replay(ledger, old)
+    assert calls == []
 
 
 def test_spoofed_constructed_review_denied(tmp_path, monkeypatch):
