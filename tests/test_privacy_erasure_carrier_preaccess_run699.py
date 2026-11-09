@@ -115,8 +115,10 @@ def test_reentrant_digest_cannot_install_counterfeit_carrier(
             return original_sha256(data)
 
         monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=reentrant))
+        # The import-original digest fence now refuses the patched hash
+        # BEFORE its callback can install a counterfeit descriptor.
         with pytest.raises(
-            mod.SyntheticErasureRejected, match="authority descriptor changed",
+            mod.SyntheticErasureRejected, match="digest implementation changed",
         ):
             mod.review_synthetic_erasure_evidence(source)
     assert touched == []
