@@ -50,7 +50,8 @@ def test_hash_callback_cannot_install_false_descriptor(monkeypatch):
         return original(data)
 
     monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=reentrant))
-    with pytest.raises(mod.SyntheticErasureRejected, match="authority descriptor"):
+    # Refuse the substituted digest BEFORE it can alter a denial descriptor.
+    with pytest.raises(mod.SyntheticErasureRejected, match="digest implementation changed"):
         mod.review_synthetic_erasure_evidence(observations())
     assert seen == []
 
