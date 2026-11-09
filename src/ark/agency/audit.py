@@ -244,7 +244,7 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
             except FileNotFoundError:
                 if allow_new_parents:
                     continue
-                raise ActionAuditSchemaError("audit ancestor unavailable")
+                raise ActionAuditSchemaError("audit ancestor unavailable") from None
             if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
                 raise ActionAuditSchemaError("audit symbolic or nondirectory ancestor refused")
         if target.is_symlink():
