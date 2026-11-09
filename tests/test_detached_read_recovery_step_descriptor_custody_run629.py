@@ -62,7 +62,7 @@ def test_preinstalled_lookup_hook_is_rejected_before_execution(monkeypatch, hook
 
 
 @pytest.mark.parametrize("field", ("step_id", "state"))
-def test_digest_hook_cannot_install_late_step_slot_trap(monkeypatch, field):
+def test_substituted_digest_hook_cannot_install_late_step_slot_trap(monkeypatch, field):
     row = _step()
     hits = []
     injected = []
@@ -80,7 +80,8 @@ def test_digest_hook_cannot_install_late_step_slot_trap(monkeypatch, field):
         match="authority descriptor changed",
     ):
         _run(row)
-    assert injected == [True]
+    # A replaced SHA callback is denied before it can mutate any step field.
+    assert injected == []
     assert hits == []
 
 
