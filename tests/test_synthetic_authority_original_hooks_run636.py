@@ -90,7 +90,7 @@ def test_hash_callback_cannot_install_forged_report_constructor(
     monkeypatch.setattr(review, "hashlib", SimpleNamespace(sha256=reentrant))
     with pytest.raises(
         review.SyntheticAuthorityRejected,
-        match="constructor or field hooks changed",
+        match="digest or parser dependencies changed",
     ):
         review.review_synthetic_authority_gaps(claims, observations)
     assert called == []
