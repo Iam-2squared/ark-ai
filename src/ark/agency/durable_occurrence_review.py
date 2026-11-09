@@ -210,9 +210,11 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
                 ) from None
             if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
                 raise SyntheticReplayRejected("synthetic occurrence ancestor unsafe")
+        main_absent = False
         try:
             meta = target.lstat()
         except FileNotFoundError:
+            main_absent = True
             if not create:
                 raise sqlite3.OperationalError(
                     "synthetic occurrence storage missing"
@@ -220,6 +222,20 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
         else:
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise SyntheticReplayRejected("synthetic occurrence ledger path unsafe")
+        # A legitimate main DB can still be redirected through an aliased
+        # SQLite journal or WAL file. Refuse unsafe -wal/-shm/-journal entries
+        # before SQLite reads or writes; do not adopt any orphaned journal
+        # when creating a new disconnected fixture ledger.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = target.with_name(target.name + suffix)
+            try:
+                sidecar_info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if main_absent:
+                raise SyntheticReplayRejected("orphaned occurrence SQLite sidecar refused")
+            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
+                raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
     except OSError as exc:
         raise SyntheticReplayRejected("synthetic occurrence path cannot be verified") from exc
     return path
