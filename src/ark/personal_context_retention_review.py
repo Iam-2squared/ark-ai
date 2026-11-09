@@ -95,7 +95,32 @@ _ORIGINAL_INVENTORY_DESCRIPTORS = tuple(
 )
 
 
+# Imported callbacks can receive locally private Memory rows, scope labels,
+# veto witnesses and aggregate digests. Validate their original identity
+# before the first call and after every other callback boundary. This is an
+# in-process fail-closed review, not a sandbox or authenticated provenance.
+_ORIGINAL_RECORD = _record
+_ORIGINAL_SCHEMA_CHECK = _validate_v1_schema
+_ORIGINAL_SCOPE_DIGEST = _scope_digest
+_ORIGINAL_REVOCATION_REVIEW = review_revocation_continuity
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+
+
 def _require_original_retention_contract() -> None:
+    if (
+        _record is not _ORIGINAL_RECORD
+        or _validate_v1_schema is not _ORIGINAL_SCHEMA_CHECK
+        or _scope_digest is not _ORIGINAL_SCOPE_DIGEST
+        or review_revocation_continuity is not _ORIGINAL_REVOCATION_REVIEW
+        or hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+    ):
+        raise SyntheticRetentionRejected("retention inventory dependency changed")
     # Do not invoke a caller-installed False-valued property, executable slot
     # or constructor while inspecting private Memory or returning its summary.
     if (
@@ -175,6 +200,7 @@ def review_synthetic_retention_inventory(
         )
 
     def assert_sources() -> None:
+        _require_original_retention_contract()
         if memory.path is not memory_source or ledger.path is not veto_source:
             raise SyntheticRetentionRejected(
                 "retention evidence source changed during inventory"
@@ -237,8 +263,10 @@ def review_synthetic_retention_inventory(
 
             bound_rows: list[tuple[object, ...]] = []
             for row in rows:
+                assert_sources()
                 assert_item_epoch()
                 record = _record(row)
+                assert_sources()
                 assert_item_epoch()
                 if record.scope != pinned or record.updated_at_ms > now_ms:
                     raise SyntheticRetentionRejected(
@@ -260,10 +288,12 @@ def review_synthetic_retention_inventory(
                 # Bind hidden row identity without exposing the content or metadata.
                 # A coherent byte edit with an unchanged revision/state must change
                 # the offline receipt, even if this local row still passes _record.
+                assert_sources()
                 metadata_json = json.dumps(
                     dict(record.metadata), ensure_ascii=False,
                     sort_keys=True, separators=(",", ":"),
                 ).encode("utf-8")
+                assert_sources()
                 assert_item_epoch()
                 bound_rows.append((
                     record.memory_id, record.revision, record.content_sha256,
