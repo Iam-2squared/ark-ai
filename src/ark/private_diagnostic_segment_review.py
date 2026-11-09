@@ -245,18 +245,38 @@ def verify_retained_diagnostic_segments(
         len(segments), current_anchor,
     )
     stable_segments()
-    if (
-        type(result) is not _RESULT_TYPE
-        or result.first_sequence != expected_start_sequence
-        or result.last_sequence != current_sequence - 1
-        or result.count != expected_count
-        or result.segment_count != len(segments)
-        or result.final_sha256 != current_anchor
-    ):
-        raise RetainedDiagnosticChainRejected("diagnostic review authority changed")
+    # The final denied-authority properties are callback boundaries. A getter
+    # may return False while rewriting an already checked result field, even
+    # to an equal-valued but different object. Pin all original field objects
+    # before the first denial and check them again after EVERY getter.
+    result_fields = tuple(getattr(result, name) for name in _RESULT_FIELDS)
+
+    def stable_result() -> None:
+        _protocol()
+        if (
+            type(result) is not _RESULT_TYPE
+            or any(
+                getattr(result, name) is not original
+                for name, original in zip(_RESULT_FIELDS, result_fields, strict=True)
+            )
+            or result.first_sequence != expected_start_sequence
+            or result.last_sequence != current_sequence - 1
+            or result.count != expected_count
+            or result.segment_count != len(segments)
+            or result.final_sha256 != current_anchor
+        ):
+            raise RetainedDiagnosticChainRejected(
+                "diagnostic review result changed during authority checks"
+            )
+
+    stable_result()
     for name in _DENIALS:
         stable_segments()
+        stable_result()
         if getattr(result, name) is not False:
             raise RetainedDiagnosticChainRejected("diagnostic review authority changed")
+        stable_result()
         stable_segments()
+    stable_result()
+    stable_segments()
     return result
