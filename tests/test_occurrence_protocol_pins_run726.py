@@ -58,7 +58,7 @@ def test_protocol_rebinding_after_registry_callback_refused_precommit(
     def mutate_after_bind(self, candidate):
         result = original(self, candidate)
         calls.append("bound without dispatch")
-        monkeypatch.setattr(occurrence, "_MAX_FIXTURE_ROWS", 10_001)
+        monkeypatch.setattr(occurrence, "_MAX", 2**63)
         return result
 
     monkeypatch.setattr(type(registry), "bind", mutate_after_bind)
