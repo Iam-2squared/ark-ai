@@ -111,6 +111,11 @@ def _require_original_denials() -> None:
         or _DOMAIN is not _ORIGINAL_DOMAIN
     ):
         raise MemoryCASOutcomeRejected("CAS outcome digest implementation changed")
+    # The cross-scope SQLite high-water check is mandatory, not an optional
+    # diagnostic callback. A substituted no-op could otherwise turn an event
+    # gap into an apparently coherent, non-authorizing CAS observation.
+    if _check_global_memory_event_highwater is not _ORIGINAL_GLOBAL_HIGHWATER_CHECK:
+        raise MemoryCASOutcomeRejected("CAS global history validator changed")
     # The properties alone do not authenticate their owning class: a caller
     # could attach the original False-valued descriptors to a counterfeit
     # report class with an executable constructor.
@@ -173,6 +178,9 @@ def _check_global_memory_event_highwater(conn: sqlite3.Connection) -> None:
         raise MemoryCASOutcomeRejected(
             "CAS global Memory event high-water mismatch; manual review required"
         )
+
+
+_ORIGINAL_GLOBAL_HIGHWATER_CHECK = _check_global_memory_event_highwater
 
 
 def review_memory_generation_cas_outcome(
