@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import re
 import sqlite3
+import stat
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -190,6 +191,40 @@ def _validate(conn: sqlite3.Connection) -> None:
             raise SyntheticReplayRejected("synthetic reservation row integrity failed")
 
 
+def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
+    """Reject symlinked/nonregular local reservation ledger paths pre-open.
+
+    This repeated local lstat preflight cannot defeat concurrent path renames
+    by a filesystem owner. It conveys neither trust nor execution authority.
+    """
+    if type(path) is not type(Path()) or ".." in path.parts:
+        raise SyntheticReplayRejected("synthetic occurrence path alias refused")
+    target = path if path.is_absolute() else path.absolute()
+    try:
+        for ancestor in target.parents:
+            try:
+                meta = ancestor.lstat()
+            except FileNotFoundError:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence ancestor unavailable"
+                ) from None
+            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+                raise SyntheticReplayRejected("synthetic occurrence ancestor unsafe")
+        try:
+            meta = target.lstat()
+        except FileNotFoundError:
+            if not create:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence storage missing"
+                ) from None
+        else:
+            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise SyntheticReplayRejected("synthetic occurrence ledger path unsafe")
+    except OSError as exc:
+        raise SyntheticReplayRejected("synthetic occurrence path cannot be verified") from exc
+    return path
+
+
 class SyntheticOccurrenceStore:
     """No-execution fixture ledger; not a real PermissionGate or token issuer."""
 
@@ -219,6 +254,7 @@ class SyntheticOccurrenceStore:
         self, *, create: bool = False, pinned_path: Path | None = None,
     ) -> sqlite3.Connection:
         source = self._path if pinned_path is None else pinned_path
+        _require_safe_occurrence_path(source, create=create)
         if create:
             # Only explicit fixture initialization may create storage.
             return sqlite3.connect(source, timeout=10, isolation_level=None)
@@ -460,6 +496,8 @@ class SyntheticOccurrenceStore:
         # Path resolution, URI construction, SQLite open and BEGIN are
         # separate reentrant boundaries. Reject an equal-path replacement
         # before querying a possibly unrelated private reservation ledger.
+        assert_source_epoch()
+        _require_safe_occurrence_path(path_epoch, create=False)
         assert_source_epoch()
         resolved = path_epoch.resolve()
         assert_source_epoch()
