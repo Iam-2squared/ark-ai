@@ -76,6 +76,7 @@ def test_wav_digest_callback_cannot_install_late_forged_getter(
         else (wave.OfflineWaveReview, "pcm_sha256")
     )
     invoked = []
+    digest_invocations = []
     original_sha = hashlib.sha256
 
     def hostile(*_args, **_kwargs):
@@ -84,6 +85,7 @@ def test_wav_digest_callback_cannot_install_late_forged_getter(
 
     with monkeypatch.context() as patch:
         def digest(data=b"", *args, **kwargs):
+            digest_invocations.append(True)
             answer = original_sha(data, *args, **kwargs)
             if data == request.wav_bytes:
                 patch.setattr(klass, field, property(hostile))
@@ -92,10 +94,11 @@ def test_wav_digest_callback_cannot_install_late_forged_getter(
         patch.setattr(wave, "hashlib", SimpleNamespace(sha256=digest))
         with pytest.raises(
             wave.OfflineWaveRejected,
-            match="request identity|constructed WAV",
+            match="WAV codec or digest implementation changed before private bytes",
         ):
             wave.inspect_local_pcm_wav(request)
     assert invoked == []
+    assert digest_invocations == []
 
 
 def test_unmodified_wav_stays_inert_and_content_free():
