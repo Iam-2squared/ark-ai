@@ -13,7 +13,6 @@ import pytest
 from ark import private_diagnostic_ledger as writer
 from ark import private_diagnostic_segment_review as review
 
-
 ANCHOR = "a" * 64
 SECRET = "NEVER_LEAK_PRIVATE_CONTEXT_RUN741"
 
