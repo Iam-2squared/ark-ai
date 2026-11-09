@@ -74,6 +74,12 @@ _ORIGINAL_HOOKS = tuple(vars(_REPORT_TYPE).get(name) for name in _HOOKS)
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_RECOVERY_REVIEW = review_detached_read_journal_recovery
+# Rebinding a local digest domain or broadening a regex changes which private
+# expected inputs the review accepts, even when the recomputed digest is valid.
+# The checks are in-process integrity fences, not authenticated custody.
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_STEP_PATTERN = _STEP
 
 
 def _require_original_report() -> None:
@@ -82,6 +88,9 @@ def _require_original_report() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
         or review_detached_read_journal_recovery is not _ORIGINAL_RECOVERY_REVIEW
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _STEP is not _ORIGINAL_STEP_PATTERN
         or any(
             vars(_REPORT_TYPE).get(name) is not original
             for names, originals in (
