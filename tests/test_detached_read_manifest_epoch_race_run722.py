@@ -64,7 +64,7 @@ def test_named_file_metadata_change_after_read_is_rejected(
 ):
     target = tmp_path / "read-manifest.json"
     saved = manifest.write_read_input_manifest_once(target, REQUEST, INPUTS)
-    original_stat = manifest.Path.stat
+    original_stat = type(target).stat
     substituted = []
 
     def late_named_stat(self, *args, **kwargs):
@@ -79,7 +79,7 @@ def test_named_file_metadata_change_after_read_is_rejected(
         return original
 
     with monkeypatch.context() as patch:
-        patch.setattr(manifest.Path, "stat", late_named_stat)
+        patch.setattr(type(target), "stat", late_named_stat)
         with pytest.raises(
             manifest.ReadInputManifestRejected, match="changed during read",
         ):
