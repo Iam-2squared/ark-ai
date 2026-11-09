@@ -25,8 +25,10 @@ from .disconnected_read_journal import (
 from .disconnected_read_recovery_journal_bridge import (
     ReadRecoveryJournalRejected,
     ReadRecoveryJournalReview,
-    _require_original_report as _require_original_recovery_report,
     review_detached_read_journal_recovery,
+)
+from .disconnected_read_recovery_journal_bridge import (
+    _require_original_report as _require_original_recovery_report,
 )
 from .disconnected_read_recovery_schedule import ReadRecoveryStep
 
