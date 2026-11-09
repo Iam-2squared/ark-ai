@@ -106,6 +106,17 @@ _ORIGINAL_DENIALS = tuple(
 )
 
 
+# Keep parser/size constraints as exact import-time protocol witnesses too.
+# Changed bounds can otherwise affect iterator admission BEFORE any digest
+# round-trip, even when SHA/JSON and all result constructors remain original.
+_ORIGINAL_DIGEST_PATTERN = _DIGEST
+_ORIGINAL_CHAIN_PATTERN = _CHAIN
+_ORIGINAL_MAX_MS = _MAX
+_ORIGINAL_SAMPLE_LIMIT = _LIMIT
+_ORIGINAL_EMPTY_FIELDS = _EMPTY_FIELDS
+_ORIGINAL_DENIAL_NAMES = _DENIAL_NAMES
+
+
 def _denials_original() -> None:
     if (
         hashlib is not _ORIGINAL_HASHLIB
@@ -113,6 +124,12 @@ def _denials_original() -> None:
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
         or _GENESIS is not _ORIGINAL_GENESIS
+        or _DIGEST is not _ORIGINAL_DIGEST_PATTERN
+        or _CHAIN is not _ORIGINAL_CHAIN_PATTERN
+        or _MAX != _ORIGINAL_MAX_MS
+        or _LIMIT != _ORIGINAL_SAMPLE_LIMIT
+        or _EMPTY_FIELDS is not _ORIGINAL_EMPTY_FIELDS
+        or _DENIAL_NAMES is not _ORIGINAL_DENIAL_NAMES
     ):
         raise SyntheticClockRejected("synthetic clock digest implementation changed")
     if (
@@ -197,6 +214,7 @@ def review_synthetic_clock_sequence(
     The full sequence must be supplied again when checking a retained prefix.
     Consecutive local samples cannot authenticate clock hardware or origin.
     """
+    _denials_original()
     if type(max_samples) is not int or not 1 <= max_samples <= _LIMIT:
         raise SyntheticClockRejected("invalid clock sample budget")
     if retained is not None and type(retained) is not SyntheticClockWitness:
