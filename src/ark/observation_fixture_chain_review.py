@@ -39,6 +39,12 @@ _DOMAIN = b"ark:disconnected-observation-fixture-chain:v1\0"
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DOMAIN = _DOMAIN
+# Protocol sizes, label/order vectors and validation hooks are just as
+# security-sensitive as the hash implementation. Pin their original carriers
+# before reading any caller-supplied private observation fixture.
+_ORIGINAL_MAX_ENVELOPES = _MAX_ENVELOPES
+_ORIGINAL_ENVELOPE_FIELDS_VECTOR = _ENVELOPE_FIELDS
+_ORIGINAL_HOOKS_VECTOR = _HOOKS
 
 
 class ObservationFixtureChainRejected(ValueError):
@@ -79,6 +85,8 @@ _RESULT_FIELDS = (
 _ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
 _ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
 _ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _HOOKS)
+_ORIGINAL_RESULT_FIELDS_VECTOR = _RESULT_FIELDS
+_ORIGINAL_DENIALS_VECTOR = _DENIALS
 
 
 def _assert_original_implementations() -> None:
@@ -86,6 +94,12 @@ def _assert_original_implementations() -> None:
         hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_ENVELOPES) is not int
+        or _MAX_ENVELOPES != _ORIGINAL_MAX_ENVELOPES
+        or _ENVELOPE_FIELDS is not _ORIGINAL_ENVELOPE_FIELDS_VECTOR
+        or _HOOKS is not _ORIGINAL_HOOKS_VECTOR
+        or _RESULT_FIELDS is not _ORIGINAL_RESULT_FIELDS_VECTOR
+        or _DENIALS is not _ORIGINAL_DENIALS_VECTOR
     ):
         raise ObservationFixtureChainRejected(
             "disconnected fixture review digest implementation changed"
