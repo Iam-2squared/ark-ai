@@ -109,18 +109,18 @@ def test_malformed_noncanonical_json_is_denied():
         binding.bind_offline_context_request(_REQUEST, forged)
 
 
-def test_preview_changed_during_parse_is_denied(monkeypatch):
+def test_preview_substituted_parser_never_sees_private_content(monkeypatch):
     preview = _preview()
-    original = binding.json.loads
+    hostile_calls = []
 
     def mutate(serialized):
-        decoded = original(serialized)
-        object.__setattr__(preview, "owner_digest", "c" * 64)
-        return decoded
+        hostile_calls.append(serialized)
+        raise AssertionError("untrusted JSON parser received private context")
 
     monkeypatch.setattr(binding.json, "loads", mutate)
-    with pytest.raises(binding.OfflineContextBindingRejected, match="carrier changed"):
+    with pytest.raises(binding.OfflineContextBindingRejected, match="codec changed"):
         binding.bind_offline_context_request(_REQUEST, preview)
+    assert hostile_calls == []
 
 
 def test_preview_authority_forgery_is_denied(monkeypatch):
