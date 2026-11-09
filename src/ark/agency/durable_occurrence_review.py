@@ -64,7 +64,7 @@ def _require_original_digest() -> None:
 
 
 def _require_original_protocol() -> None:
-    """Pin fixture-only schema, capacity and identifiers before reading tokens.
+    """Pin fixture schema, timestamp bound and IDs before reading tokens.
 
     These process-local checks do not authenticate approval, filesystem
     ownership, or any external action.
