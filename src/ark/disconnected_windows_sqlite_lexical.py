@@ -24,6 +24,7 @@ _SUFFIXES = ("-wal", "-shm", "-journal")
 _MAX_PATH = 240
 _MAX_PART = 80
 
+_ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_HASH = hashlib.sha256
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_DRIVE = _DRIVE
@@ -80,7 +81,9 @@ _ORIGINAL_RESULT = tuple(
 
 def _protocol() -> None:
     if (
-        hashlib.sha256 is not _ORIGINAL_HASH
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_HASH
+        or _digest is not _ORIGINAL_DIGEST
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _DRIVE is not _ORIGINAL_DRIVE
         or _COMPONENT is not _ORIGINAL_COMPONENT
@@ -104,6 +107,11 @@ def _protocol() -> None:
 def _digest(label: bytes, value: str) -> str:
     _protocol()
     return hashlib.sha256(_DOMAIN + label + value.encode("ascii")).hexdigest()
+
+
+# The helper receives the full synthetic path. A substitute must never receive
+# that caller-provided label, even when the imported hash function is intact.
+_ORIGINAL_DIGEST = _digest
 
 
 def review_windows_sqlite_lexical_path(
