@@ -164,6 +164,16 @@ def _capture_once(path: Path) -> DetachedSQLiteSidecarSeal:
                 if expected is None or _file_id(actual) != expected:
                     raise SQLiteSidecarCustodyRejected("SQLite source retargeted")
 
+        # The final named stat pass can itself be a reentrant boundary.
+        # Recheck every still-open main/sidecar descriptor after that pass:
+        # an in-place write to a previously checked sidecar must not yield a
+        # clean single-sweep seal for its pre-write metadata.
+        opened_ids = tuple(_file_id(os.fstat(fd)) for fd in file_fds)
+        if opened_ids != tuple(item for item in file_ids if item is not None):
+            raise SQLiteSidecarCustodyRejected(
+                "SQLite open descriptor changed during inspection"
+            )
+
         sidecars = tuple(
             DetachedSQLiteSidecarState(suffix, item is not None,
                                        _hash(("sidecar", suffix, item)) if item else None)
