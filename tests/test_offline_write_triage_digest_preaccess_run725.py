@@ -94,7 +94,7 @@ def test_digest_dependency_change_during_child_review_denied(
         patch.setattr(triage, "review_disconnected_write_restart", changed_child_scoped)
         with pytest.raises(
             triage.OfflineWriteTriageRejected,
-            match="authority descriptor changed",
+            match="local WRITE recovery validation denied",
         ):
             triage.build_offline_write_triage_packet(ledger, retained, PLAN, steps)
     assert hostile_calls == []
