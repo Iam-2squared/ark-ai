@@ -52,9 +52,11 @@ def test_reentrant_digest_callback_cannot_replace_original_denial(monkeypatch):
         return value
 
     monkeypatch.setattr(clock, "_hash", swap)
-    with pytest.raises(clock.SyntheticClockRejected, match="descriptor changed"):
+    with pytest.raises(clock.SyntheticClockRejected, match="digest implementation changed"):
         clock.review_synthetic_clock_sequence((sample(),))
-    assert changed == [True]
+    # The replacement digest callback is rejected at ingress: it must never
+    # get a chance to install a counterfeit False-only authority property.
+    assert changed == []
 
 
 def test_original_clock_denials_preserve_inert_local_witness():
