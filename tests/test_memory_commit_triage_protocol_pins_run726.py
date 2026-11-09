@@ -30,16 +30,19 @@ def test_rebound_triage_format_refused_before_private_sqlite(
         calls.append("unreviewed sqlite read")
         raise AssertionError("protocol changed before SQLite")
 
-    monkeypatch.setattr(store, "_connect_readonly", forbidden_read)
-    monkeypatch.setattr(triage, name, replacement)
-    with pytest.raises(
-        triage.MemoryCommitTriageRejected,
-        match="Memory triage input or denial changed",
-    ):
-        triage.review_uncertain_memory_commit(
-            store, proposal, retained_before=retained,
-        )
-    assert calls == []
+    with monkeypatch.context() as patch:
+        patch.setattr(store, "_connect_readonly", forbidden_read)
+        patch.setattr(triage, name, replacement)
+        with pytest.raises(
+            triage.MemoryCommitTriageRejected,
+            match="Memory triage input or denial changed",
+        ):
+            triage.review_uncertain_memory_commit(
+                store, proposal, retained_before=retained,
+            )
+        assert calls == []
+    # The deliberate no-SQLite hook is no longer active for this independent
+    # proof that the original persisted row was untouched.
     assert store.get(saved.memory_id, scope).content == "original"
 
 
