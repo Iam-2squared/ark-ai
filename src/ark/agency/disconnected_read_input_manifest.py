@@ -262,31 +262,35 @@ def write_read_input_manifest_once(
         or os.name != "nt" and _epoch(created) != _epoch(current)
     ):
         raise ReadInputManifestRejected("READ input manifest changed during publication")
-    # Windows creation/change timestamps may differ between a live descriptor
-    # and a named-file stat even without a write. Never treat that legitimate
-    # difference as a successful integrity check: re-open the named artifact,
-    # verify the complete bytes, and compare handle epochs within one handle.
-    if os.name == "nt":
-        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
-        flags |= getattr(os, "O_NOFOLLOW", 0)
-        try:
-            fd = os.open(target, flags)
-            with os.fdopen(fd, "rb", closefd=True) as handle:
-                before = os.fstat(handle.fileno())
-                actual = handle.read(_MAX_BYTES + 1)
-                after = os.fstat(handle.fileno())
-                named = target.stat(follow_symlinks=False)
-        except OSError as exc:
-            raise ReadInputManifestRejected(
-                "READ input manifest publication cannot be verified"
-            ) from exc
-        if (
-            actual != raw or not stat.S_ISREG(after.st_mode)
-            or _identity(created) != _identity(before)
-            or _epoch(before) != _epoch(after)
-            or _identity(after) != _identity(named)
-        ):
-            raise ReadInputManifestRejected("READ input manifest changed during publication")
+    # Every platform must reopen the newly named artifact and compare all
+    # published bytes. A same-length local rewrite can escape inode/size
+    # checks; metadata is not a content-integrity witness. Windows descriptor
+    # creation timestamps are not always comparable to named stat timestamps.
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    try:
+        fd = os.open(target, flags)
+        with os.fdopen(fd, "rb", closefd=True) as handle:
+            before = os.fstat(handle.fileno())
+            actual = handle.read(_MAX_BYTES + 1)
+            after = os.fstat(handle.fileno())
+            named = target.stat(follow_symlinks=False)
+    except OSError as exc:
+        raise ReadInputManifestRejected(
+            "READ input manifest publication cannot be verified"
+        ) from exc
+    if (
+        actual != raw or not stat.S_ISREG(after.st_mode)
+        or _identity(created) != _identity(before)
+        or _epoch(before) != _epoch(after)
+        or _identity(after) != _identity(named)
+        or os.name != "nt" and (
+            _epoch(created) != _epoch(after)
+            or _epoch(after) != _epoch(named)
+        )
+    ):
+        raise ReadInputManifestRejected("READ input manifest changed during publication")
     _authority()
     return _result(request_id, inputs, digest)
 
