@@ -13,7 +13,6 @@ from ark.memory.contracts import MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
 from ark.personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
-    SyntheticContextRevocationRejected,
 )
 
 
@@ -68,11 +67,13 @@ def test_first_scope_hash_cannot_rebase_unpinned_inputs(
         return original(scope)
 
     monkeypatch.setattr(review, "_scope_digest", hostile_scope_hash)
-    with pytest.raises(review.SyntheticRetentionRejected, match="changed"):
+    # The imported callback identity is now rejected before the malicious
+    # scope-hash implementation can retarget any private carrier.
+    with pytest.raises(review.SyntheticRetentionRejected, match="dependency changed"):
         review.review_synthetic_retention_inventory(
             *state, now_ms=100,
         )
-    assert calls == 1
+    assert calls == 0
 
 
 @pytest.mark.parametrize(
@@ -109,8 +110,7 @@ def test_final_hash_callback_cannot_retarget_inventory_inputs(
     # preinstalled digest substitution is refused before any callback
     # can rebase the retention source or private content.
     with pytest.raises(
-        SyntheticContextRevocationRejected,
-        match="revocation digest implementation changed",
+        review.SyntheticRetentionRejected, match="dependency changed",
     ):
         review.review_synthetic_retention_inventory(*state, now_ms=100)
     assert callbacks == 0
