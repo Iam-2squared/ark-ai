@@ -64,14 +64,26 @@ _DENIAL_NAMES = (
     "deletion_or_erasure_proven", "action_authorized",
 )
 _ORIGINAL_DENIALS = tuple(vars(_REVIEW_TYPE)[name] for name in _DENIAL_NAMES)
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 def _require_original_digest_callbacks() -> None:
     # Private local metadata and event identities must never enter an
     # unreviewed hash/JSON callback, including after reentrant row decoding.
-    if hashlib.sha256 is not _ORIGINAL_SHA256 or json.dumps is not _ORIGINAL_DUMPS:
+    # Identity checks must also reject a whole-module rebinding and an
+    # equal-byte hash-domain replacement. The scan budgets intentionally
+    # remain injectable for existing bounded-failure tests.
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
         raise MemoryEventAlignmentRejected("Memory audit digest authority changed")
 
 
