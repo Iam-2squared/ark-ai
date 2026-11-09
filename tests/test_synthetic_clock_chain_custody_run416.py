@@ -1,4 +1,4 @@
-"""Synthetic clock link callbacks must never rewrite a prior chain result."""
+"""Substituted synthetic clock hash callbacks must not run at all."""
 
 import hashlib
 import sys
@@ -33,9 +33,11 @@ def test_hash_callback_cannot_reflectively_rewrite_prior_clock_link(
         return original_hash(domain, fields)
 
     monkeypatch.setattr(clock, "_hash", malicious_hash)
-    with pytest.raises(clock.SyntheticClockRejected, match="prior clock chain link"):
+    with pytest.raises(clock.SyntheticClockRejected, match="digest implementation changed"):
         clock.review_synthetic_clock_sequence((_sample(1), _sample(2)))
-    assert callbacks == target_step
+    # The hash helper is pinned before any private clock sample is consumed;
+    # a reflected mutation callback must never execute, even on step 1.
+    assert callbacks == 0
 
 
 @pytest.mark.parametrize("bad_hash", ("not-a-hash", None, 1, "clk_" + "F" * 64))
@@ -43,15 +45,18 @@ def test_hash_callback_must_produce_bounded_canonical_event_digest(
     monkeypatch, bad_hash,
 ):
     original_hash = clock._hash
+    callbacks = []
 
     def invalid_hash(domain, fields):
+        callbacks.append(domain)
         if domain == "ARK-disconnected-clock-event-v1":
             return bad_hash
         return original_hash(domain, fields)
 
     monkeypatch.setattr(clock, "_hash", invalid_hash)
-    with pytest.raises(clock.SyntheticClockRejected, match="event digest"):
+    with pytest.raises(clock.SyntheticClockRejected, match="digest implementation changed"):
         clock.review_synthetic_clock_sequence((_sample(1),))
+    assert callbacks == []
 
 
 def test_synthetic_clock_still_supports_retained_extension_without_authority():
