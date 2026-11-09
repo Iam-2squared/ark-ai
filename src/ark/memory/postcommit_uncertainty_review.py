@@ -86,6 +86,15 @@ _ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_EVENT_DOMAIN = _EVENT_DOMAIN
 _ORIGINAL_MAX_EVENTS = _MAX_EVENTS
+# The imported helpers below are consulted before looking at private retained
+# tokens, proposed Memory content or the local SQLite row. Keep their original
+# callable/module identities. The separately tested _snapshot/_row_hash/_digest
+# injection seams are intentionally NOT made authoritative by this guard.
+_ORIGINAL_SQLITE3 = sqlite3
+_ORIGINAL_IDENTITY = deterministic_memory_id
+_ORIGINAL_TOKEN_FIELDS = _token_fields
+_ORIGINAL_INPUT_VALIDATOR = _require_original_generation_inputs
+_ORIGINAL_TOKEN_VALIDATOR = _require_original_token_denials
 
 
 def _require_original_report_carrier() -> None:
@@ -95,6 +104,11 @@ def _require_original_report_carrier() -> None:
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _EVENT_DOMAIN is not _ORIGINAL_EVENT_DOMAIN
         or type(_MAX_EVENTS) is not int or _MAX_EVENTS != _ORIGINAL_MAX_EVENTS
+        or sqlite3 is not _ORIGINAL_SQLITE3
+        or deterministic_memory_id is not _ORIGINAL_IDENTITY
+        or _token_fields is not _ORIGINAL_TOKEN_FIELDS
+        or _require_original_generation_inputs is not _ORIGINAL_INPUT_VALIDATOR
+        or _require_original_token_denials is not _ORIGINAL_TOKEN_VALIDATOR
         or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
         or any(
             vars(_REPORT).get(name) is not original
@@ -131,6 +145,7 @@ def review_uncertain_memory_commit(
     INDETERMINATE means other changes were observed.
     Neither disposition is permission to retry, dispatch, erase or promote.
     """
+    _require_original_report_carrier()
     # Reject executable substitutions of frozen Memory v1 carrier slots before
     # accessing even proposed.scope; the triage path never invokes getters
     # installed by a caller to determine its own input identity.
