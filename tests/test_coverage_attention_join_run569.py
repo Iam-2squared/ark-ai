@@ -117,15 +117,22 @@ def test_underlying_attention_denial_substitutions_are_rejected(monkeypatch, fla
         check()
 
 
-def test_inflight_coverage_mutation_refused(monkeypatch):
+def test_substituted_hash_refused_before_coverage_mutation(monkeypatch):
     c = fixture_coverage()
     original = join.hashlib.sha256
     # The original dependency remains pinned. Simulate a hash callback
     # mutating a caller-supplied receipt after validation.
+    calls = []
+
     def change(data):
+        calls.append(True)
         object.__setattr__(c, "coverage_sha256", "9" * 64)
         return original(data)
 
     monkeypatch.setattr(join.hashlib, "sha256", change)
-    with pytest.raises(join.DetachedCoverageAttentionRejected, match="evidence changed"):
+    with pytest.raises(
+        join.DetachedCoverageAttentionRejected, match="attention preview rejected",
+    ):
         check(c)
+    assert calls == []
+    assert c.coverage_sha256 == DIGEST
