@@ -81,12 +81,20 @@ _REPORT_FIELDS = (
 _REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[name] for name in _REPORT_FIELDS)
 _ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS)
+# Domain separation and bounded history are part of this manual-only
+# diagnostic protocol. Never accept caller-rebound globals as reviewed input.
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_EVENT_DOMAIN = _EVENT_DOMAIN
+_ORIGINAL_MAX_EVENTS = _MAX_EVENTS
 
 
 def _require_original_report_carrier() -> None:
     """Reject executable report replacements before observing private Memory."""
     if (
         MemoryCommitTriage is not _REPORT
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _EVENT_DOMAIN is not _ORIGINAL_EVENT_DOMAIN
+        or type(_MAX_EVENTS) is not int or _MAX_EVENTS != _ORIGINAL_MAX_EVENTS
         or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
         or any(
             vars(_REPORT).get(name) is not original
