@@ -9,7 +9,8 @@ import pytest
 
 from ark import personal_context_request_binding as binding
 from ark.personal_context_offline_preview import (
-    OfflineContextFixture, build_offline_context_preview,
+    OfflineContextFixture,
+    build_offline_context_preview,
 )
 
 OWNER = "a" * 64
