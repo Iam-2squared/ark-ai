@@ -148,6 +148,6 @@ def test_per_step_request_id_does_not_alias_other_step():
     (True, _FIRST),
     (_REQUEST, None),
 ])
-def test_exact_identity_rejected(request, step_id):
+def test_exact_identity_rejected(request_id, step_id):
     with pytest.raises(mod.DisconnectedReadToolBridgeRejected):
-        mod.derive_disconnected_read_fixture_id(request, step_id)
+        mod.derive_disconnected_read_fixture_id(request_id, step_id)
