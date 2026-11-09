@@ -198,7 +198,13 @@ class PlanGraph:
         No raw ToolCall arguments or backend outcomes are serialized.
         This is an in-process snapshot, NOT a durable concurrency transaction.
         """
+        # A valid reentrant transition can advance the graph while we hash
+        # an earlier detached snapshot. The live epoch may be consistent but
+        # no longer describe the digest being returned.
+        status_epoch = self._status_epoch
         statuses = self.statuses()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during digest snapshot")
         entries = []
         for step_id in sorted(self.steps):
             status = statuses[step_id]
@@ -223,11 +229,17 @@ class PlanGraph:
         # the authoritative statuses changed during either digest callback.
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during digest hashing")
         return digest
 
     def statuses(self) -> Mapping[str, PlanStepStatus]:
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        # A dataclass copy callback can execute an otherwise valid transition.
+        # Record the epoch so a consistent-but-newer graph cannot be paired
+        # with older detached values without detection.
+        status_epoch = self._status_epoch
         # Return detached value snapshots: frozen dataclass fields can still be
         # changed by object.__setattr__ on a caller-held reference.
         detached = MappingProxyType({
@@ -237,6 +249,8 @@ class PlanGraph:
         # Reject stale detached snapshots if an internal carrier drifted.
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during detached snapshot")
         return detached
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
