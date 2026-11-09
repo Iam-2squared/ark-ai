@@ -20,6 +20,33 @@ class OfflineActivityRejected(ValueError):
     """Fail-closed fixture-input or size rejection."""
 
 
+# These are local interpreter/fixture preaccess checks, NOT provenance,
+# authenticated microphone custody, or a runtime isolation sandbox.
+# A substituted hash or codec callback must never receive private PCM.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_STRUCT = struct
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_ITER_UNPACK = struct.iter_unpack
+_ORIGINAL_RATES = _RATES
+_ORIGINAL_SHA_PATTERN = _SHA256
+_ORIGINAL_MAX_PCM_BYTES = MAX_PCM_BYTES
+
+
+def _require_original_activity_codec() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or struct is not _ORIGINAL_STRUCT
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or struct.iter_unpack is not _ORIGINAL_ITER_UNPACK
+        or _RATES is not _ORIGINAL_RATES
+        or _SHA256 is not _ORIGINAL_SHA_PATTERN
+        or MAX_PCM_BYTES is not _ORIGINAL_MAX_PCM_BYTES
+    ):
+        raise OfflineActivityRejected(
+            "PCM activity codec or digest implementation changed before private bytes"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class ActivityRegion:
     start_frame: int
@@ -56,6 +83,7 @@ def detect_activity_regions(
     partial frame is evaluated against its actual sample count. Gap bridging
     changes region span, not the minimum actual active-frame requirement.
     """
+    _require_original_activity_codec()
     if type(pcm) is not bytes or not pcm or len(pcm) > MAX_PCM_BYTES or len(pcm) % 2:
         raise OfflineActivityRejected("invalid PCM bytes")
     if type(expected_sha256) is not str or _SHA256.fullmatch(expected_sha256) is None:
@@ -86,6 +114,7 @@ def detect_activity_regions(
     active_total = 0
     for frame, offset in enumerate(range(0, total_samples, frame_samples)):
         sample_end = min(total_samples, offset + frame_samples)
+        _require_original_activity_codec()
         samples = struct.iter_unpack("<h", memoryview(pcm)[2 * offset : 2 * sample_end])
         energy = sum(sample[0] * sample[0] for sample in samples)
         if energy <= threshold_sq * (sample_end - offset):
@@ -107,6 +136,7 @@ def detect_activity_regions(
         for start, end, count in zip(starts, ends, counts, strict=True)
         if count >= min_active_frames
     )
+    _require_original_activity_codec()
     return ActivityRegions(
         expected_sha256, sample_rate, frame_samples, total_samples, active_total, regions
     )
@@ -148,6 +178,7 @@ def verify_activity_regions(
     independent identity or threshold boundary.
     """
     _assert_original_activity_verifier()
+    _require_original_activity_codec()
     if type(report) is not ActivityRegions or type(report.regions) is not tuple:
         raise OfflineActivityRejected("exact detached activity report required")
     fields = (
