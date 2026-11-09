@@ -153,17 +153,24 @@ def test_preinstalled_false_authority_getter_refused_before_hash(
         _review(now=100)
 
 
-def test_hash_callback_cannot_retarget_history_after_validation(monkeypatch):
+def test_substituted_hash_callback_cannot_retarget_history_before_validation(monkeypatch):
     marker = _marker(1, 100)
     original = attention.hashlib.sha256
 
+    calls = []
+
     def mutate(data):
+        calls.append(True)
         object.__setattr__(marker, "observation_sha256", "d" * 64)
         return original(data)
 
     monkeypatch.setattr(attention.hashlib, "sha256", mutate)
-    with pytest.raises(attention.AttentionPreviewRejected, match="evidence changed"):
+    with pytest.raises(
+        attention.AttentionPreviewRejected, match="authority definition changed",
+    ):
         _review((marker,), now=200)
+    assert calls == []
+    assert marker.observation_sha256 == f"{21:064x}"
 
 
 def test_final_false_getter_cannot_retarget_result_sha(monkeypatch):
