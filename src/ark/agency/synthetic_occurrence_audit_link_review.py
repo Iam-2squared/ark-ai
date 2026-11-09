@@ -205,14 +205,30 @@ def _require_safe_link_path(path: object, *, create: bool) -> Path:
                 raise SyntheticAuditLinkRejected("audit link ancestor missing") from None
             if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
                 raise SyntheticAuditLinkRejected("audit link ancestor unsafe")
+        main_absent = False
         try:
             meta = target.lstat()
         except FileNotFoundError:
+            main_absent = True
             if not create:
                 raise sqlite3.OperationalError("audit link file missing") from None
         else:
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise SyntheticAuditLinkRejected("audit link file alias or type unsafe")
+        # The link ledger is not safe to inspect if its SQLite sidecars
+        # resolve through symbolic/hard links or special files. In particular
+        # never create a replacement database while an orphan WAL/journal
+        # remains from an unverified previous identity.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = target.with_name(target.name + suffix)
+            try:
+                sidecar_info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if main_absent:
+                raise SyntheticAuditLinkRejected("orphaned audit link SQLite sidecar refused")
+            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
+                raise SyntheticAuditLinkRejected("audit link SQLite sidecar alias refused")
     except OSError as exc:
         raise SyntheticAuditLinkRejected("audit link path inspection failed") from exc
     return path
