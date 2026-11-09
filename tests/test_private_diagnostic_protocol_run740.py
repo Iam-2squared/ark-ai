@@ -109,10 +109,18 @@ def test_writer_rejects_replaced_dataclass_descriptors_before_getter(
         touched.append(field)
         return False
 
+    # Construct the fixture BEFORE installing a poisoned slot. Otherwise
+    # the dataclass constructor itself would hit the malicious property,
+    # rather than testing the renderer's preaccess refusal.
+    prior_event = writer.PrivateDiagnosticEvent(
+        10, "memory", "recovery", "deferred", "nonreplay_required",
+    )
     target = writer.PrivateDiagnosticEvent if cls == "event" else writer.PrivateDiagnosticPreview
     monkeypatch.setattr(target, field, property(poison))
     with pytest.raises(writer.PrivateDiagnosticRejected, match="protocol"):
-        _preview()
+        writer.render_private_diagnostic_ledger(
+            (prior_event,), start_sequence=10, retained_anchor_sha256="a" * 64,
+        )
     assert touched == []
 
 
