@@ -20,6 +20,18 @@ _MAX_COUNT = 4096
 _MAX_INTERVAL_MS = 366 * 24 * 60 * 60 * 1000
 _MAX_GRACE_MS = 60_000
 
+# Pin the diagnostic protocol before the caller's private recurrence,
+# opaque policy digest or asserted clock reaches JSON/SHA callbacks.
+# These checks detect local instrumentation, not trusted provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_OCCURRENCE = _OCCURRENCE
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_BOUNDS = (_MAX_MS, _MAX_COUNT, _MAX_INTERVAL_MS, _MAX_GRACE_MS)
+
 
 class SchedulePreviewRejected(ValueError):
     """An offline schedule, cursor, or caller time is invalid or inconsistent."""
@@ -108,7 +120,18 @@ def _require_original_denials() -> None:
     # A rebound input type may accept a counterfeit object, and a rebound
     # result constructor can execute code before postconstruction validation.
     if (
-        DisconnectedSchedulePolicy is not _POLICY_TYPE
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _SHA is not _ORIGINAL_SHA
+        or _OCCURRENCE is not _ORIGINAL_OCCURRENCE
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or any(type(value) is not int for value in
+               (_MAX_MS, _MAX_COUNT, _MAX_INTERVAL_MS, _MAX_GRACE_MS))
+        or (_MAX_MS, _MAX_COUNT, _MAX_INTERVAL_MS, _MAX_GRACE_MS)
+           != _ORIGINAL_BOUNDS
+        or DisconnectedSchedulePolicy is not _POLICY_TYPE
         or DisconnectedScheduleCursor is not _CURSOR_TYPE
         or DisconnectedDuePreview is not _RESULT_TYPE
         or any(
@@ -150,12 +173,16 @@ def _valid_policy(policy: object) -> None:
 
 
 def _occurrence(policy: DisconnectedSchedulePolicy, index: int) -> str:
+    _require_original_denials()
     due = policy.first_due_at_ms + index * policy.interval_ms
     payload = json.dumps(
         (policy.policy_sha256, index, due), ensure_ascii=True,
         separators=(",", ":"),
     ).encode("ascii")
-    return "slot_" + hashlib.sha256(_DOMAIN + b"occurrence\0" + payload).hexdigest()
+    _require_original_denials()
+    digest = hashlib.sha256(_DOMAIN + b"occurrence\0" + payload).hexdigest()
+    _require_original_denials()
+    return "slot_" + digest
 
 
 def preview_disconnected_schedule(
@@ -233,6 +260,7 @@ def preview_disconnected_schedule(
         (original_policy, original_cursor, observed_now_ms, state,
          occurrence, due), separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
+    assert_epoch()
     fingerprint = hashlib.sha256(_DOMAIN + b"preview\0" + packed).hexdigest()
     assert_epoch()
     result = _RESULT_TYPE(state, index, occurrence, due, fingerprint)
