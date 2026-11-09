@@ -41,14 +41,21 @@ def test_same_string_source_replacement_during_schema_validation_fails(
 ):
     ledger = _ledger(tmp_path)
     original = module._validate
+    injected = []
 
     def inject(connection):
+        injected.append(True)
         original(connection)
         ledger.path = Path(str(ledger.path))
 
     monkeypatch.setattr(module, "_validate", inject)
-    with pytest.raises(SyntheticTriggerRejected, match="source|history changed"):
+    with pytest.raises(
+        SyntheticTriggerRejected,
+        match="proactive witness carrier changed before private history access",
+    ):
         module.read_proactive_witness(ledger)
+    # The unreviewed schema callback must not see the private SQLite handle.
+    assert injected == []
 
 
 def test_retained_witness_changes_to_new_valid_history_during_row_hashing(
