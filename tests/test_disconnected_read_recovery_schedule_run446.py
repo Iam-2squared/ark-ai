@@ -141,12 +141,19 @@ def test_reflective_mutation_during_hash_is_rejected(monkeypatch):
     from ark.agency import disconnected_read_recovery_schedule as mod
     item = node()
     original = mod.hashlib.sha256
+    calls = []
+
     def switched(data):
+        calls.append(data)
         object.__setattr__(item, "operation", item.operation.encode().decode())
         return original(data)
+
     monkeypatch.setattr(mod.hashlib, "sha256", switched)
-    with pytest.raises(DetachedReadRecoveryRejected, match="carrier changed"):
+    with pytest.raises(
+        DetachedReadRecoveryRejected, match="authority descriptor changed",
+    ):
         schedule(item)
+    assert calls == []  # reject the substituted callback before private READ hashing
 
 
 def test_relabelled_digest_rejected_even_if_equal_value(monkeypatch):
