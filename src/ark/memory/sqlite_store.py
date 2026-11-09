@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import stat
 import time
 import unicodedata
 from collections.abc import Callable
@@ -166,6 +167,38 @@ def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     return "mem_" + hashlib.sha256(payload).hexdigest()
 
 
+def _require_safe_memory_path(path: Path, *, create: bool) -> None:
+    """Fail closed on local SQLite path aliases before any directory or DB I/O.
+
+    Rechecking every open limits accidental symbolic/hardlink redirection; this
+    process-local preflight is NOT atomic dirfd custody, authenticated storage,
+    or protection from a concurrent owner-controlled rename after inspection.
+    """
+    if type(path) is not type(Path()) or ".." in path.parts:
+        raise MemorySchemaError("memory path type or traversal refused")
+    target = path if path.is_absolute() else path.absolute()
+    try:
+        for ancestor in target.parents:
+            try:
+                meta = ancestor.lstat()
+            except FileNotFoundError:
+                if create:
+                    continue
+                raise MemorySchemaError("memory ancestor unavailable") from None
+            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+                raise MemorySchemaError("memory symbolic or nondirectory ancestor refused")
+        try:
+            meta = target.lstat()
+        except FileNotFoundError:
+            if not create:
+                raise MemorySchemaError("memory database unavailable") from None
+        else:
+            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise MemorySchemaError("memory database path is not a single regular file")
+    except OSError as exc:
+        raise MemorySchemaError("memory path custody cannot be verified") from exc
+
+
 class SQLiteMemoryStore:
     """Local-only store with schema versioning, scope isolation and CAS writes."""
 
@@ -175,8 +208,12 @@ class SQLiteMemoryStore:
         *,
         clock_ms: Callable[[], int] | None = None,
     ) -> None:
+        if type(path) not in (str, type(Path())):
+            raise MemorySchemaError("memory requires exact local path")
         self.path = Path(path)
+        _require_safe_memory_path(self.path, create=True)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        _require_safe_memory_path(self.path, create=True)
         self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
         self._initialize()
 
@@ -983,6 +1020,7 @@ class SQLiteMemoryStore:
         # Only explicit initialization can create a SQLite file. Normal
         # mutators must not create a plausible empty replacement database if
         # the original Memory store has been moved or removed after startup.
+        _require_safe_memory_path(self.path, create=create)
         if create:
             conn = sqlite3.connect(self.path)
         else:
@@ -996,6 +1034,7 @@ class SQLiteMemoryStore:
     def _connect_readonly(self) -> sqlite3.Connection:
         # Reading evidence must never recreate a missing initialized SQLite file.
         # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
+        _require_safe_memory_path(self.path, create=False)
         uri = self.path.resolve().as_uri() + "?mode=ro"
         conn = sqlite3.connect(uri, uri=True)
         conn.row_factory = sqlite3.Row
