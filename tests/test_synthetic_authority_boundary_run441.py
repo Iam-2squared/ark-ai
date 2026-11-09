@@ -80,8 +80,12 @@ def test_mutated_claim_during_hash_fails_closed(claims, observations, monkeypatc
         object.__setattr__(claims, "issuer_claim", "issuer-b")
         return original(value)
     monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=reentrant))
-    with pytest.raises(mod.SyntheticAuthorityRejected, match="changed"):
+    with pytest.raises(
+        mod.SyntheticAuthorityRejected,
+        match="digest or parser dependencies changed",
+    ):
         mod.review_synthetic_authority_gaps(claims, observations)
+    assert claims.issuer_claim == "issuer-a"
 
 
 def test_mutated_probe_during_hash_fails_closed(claims, observations, monkeypatch):
@@ -90,8 +94,12 @@ def test_mutated_probe_during_hash_fails_closed(claims, observations, monkeypatc
         object.__setattr__(observations, "preaction_audit", "caller_claimed")
         return original(value)
     monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=reentrant))
-    with pytest.raises(mod.SyntheticAuthorityRejected, match="changed"):
+    with pytest.raises(
+        mod.SyntheticAuthorityRejected,
+        match="digest or parser dependencies changed",
+    ):
         mod.review_synthetic_authority_gaps(claims, observations)
+    assert observations.preaction_audit == "unknown"
 
 
 def test_exact_types_and_retained_hash(claims, observations):
