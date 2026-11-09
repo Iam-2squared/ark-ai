@@ -44,7 +44,11 @@ def test_substituted_wav_initializer_is_never_run(monkeypatch, phase):
                 return result
 
             patch.setattr(wave, "hashlib", SimpleNamespace(sha256=after_source_digest))
-        with pytest.raises(wave.OfflineWaveRejected, match="constructed WAV"):
+        # A preinstalled forged constructor is refused directly; when the
+        # digest module is substituted, the new preaccess fence refuses that
+        # callback before it can install the constructor at all.
+        expected = "constructed WAV" if phase == "preinstalled" else "codec or digest"
+        with pytest.raises(wave.OfflineWaveRejected, match=expected):
             wave.inspect_local_pcm_wav(request)
     assert invoked == []
 
