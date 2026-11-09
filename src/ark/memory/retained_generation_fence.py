@@ -84,6 +84,31 @@ def _fields(review: MemoryGenerationReview) -> tuple[object, ...]:
     return fields
 
 
+# Comparisons are deny-only.  Do not pass retained private identifiers or a
+# SQLite handle through a replacement parser/review function.  Import-time
+# binding checks cannot authenticate an independent witness or a real writer.
+_ORIGINAL_SHA_PARSER = _SHA
+_ORIGINAL_ID_PARSER = _ID
+_ORIGINAL_EVENT_BUDGET = _MAX_EVENTS
+_ORIGINAL_SQLITE_LIMIT = SQLITE_INT_MAX
+_ORIGINAL_FIELDS_READER = _fields
+_ORIGINAL_DENIAL_CHECK = _assert_original_denials
+
+
+def _assert_retained_generation_protocol() -> None:
+    if (
+        _SHA is not _ORIGINAL_SHA_PARSER
+        or _ID is not _ORIGINAL_ID_PARSER
+        or _MAX_EVENTS != _ORIGINAL_EVENT_BUDGET
+        or SQLITE_INT_MAX != _ORIGINAL_SQLITE_LIMIT
+        or _fields is not _ORIGINAL_FIELDS_READER
+        or _assert_original_denials is not _ORIGINAL_DENIAL_CHECK
+    ):
+        raise RetainedMemoryGenerationRejected(
+            "retained generation parser or review helper changed"
+        )
+
+
 def verify_retained_memory_generation(
     retained: MemoryGenerationReview,
     store: SQLiteMemoryStore,
@@ -98,6 +123,7 @@ def verify_retained_memory_generation(
     write: an external writer can advance the database immediately afterward.
     A detached SHA cannot attest malicious replacement of BOTH observations.
     """
+    _assert_retained_generation_protocol()
     _assert_original_denials()
     pinned = _fields(retained)
     if (
@@ -108,6 +134,7 @@ def verify_retained_memory_generation(
         raise RetainedMemoryGenerationRejected("retained CAS revision mismatch")
 
     def stable() -> None:
+        _assert_retained_generation_protocol()
         _assert_original_denials()
         latest = _fields(retained)
         if (
@@ -128,6 +155,7 @@ def verify_retained_memory_generation(
             )
         stable()
 
+    _assert_retained_generation_protocol()
     try:
         observed = review_memory_revision_reuse(
             store, scope, source_id, expected_revision=expected_revision,
@@ -158,4 +186,5 @@ def verify_retained_memory_generation(
             "current generation changed after verification"
         )
     # Comparison is a short-lived local observation, not a lock or permission.
+    _assert_retained_generation_protocol()
     return None
