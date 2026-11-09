@@ -7,6 +7,7 @@ is granted by a successful read-only reconciliation.
 from __future__ import annotations
 
 import pytest
+from test_detached_read_input_dependency_custody_run715 import _case
 
 import ark.agency.disconnected_read_input_binding_review as binding
 from ark.agency.disconnected_read_journal import (
@@ -17,7 +18,6 @@ from ark.agency.disconnected_read_journal import (
 from ark.agency.disconnected_read_recovery_journal_bridge import (
     ReadRecoveryJournalReview,
 )
-from test_detached_read_input_dependency_custody_run715 import _case
 
 
 @pytest.mark.parametrize(
