@@ -20,6 +20,12 @@ from .registry import (
     _require_original_toolcall_contract,
 )
 
+# The registered gate uses static lookup before binding an action. Preserve
+# that lookup itself so a substituted function cannot observe local tokens or
+# return a counterfeit policy method while the registry remains unexecuted.
+_ORIGINAL_INSPECT = inspect
+_ORIGINAL_GETATTR_STATIC = inspect.getattr_static
+
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
 _ORIGINAL_POLICY_TOOL_CALL = ToolCall
 
@@ -155,6 +161,13 @@ class PermissionGate:
         def ensure_original_implementations() -> None:
             _assert_original_call_contract()
             _require_original_spec_and_token()
+            if (
+                inspect is not _ORIGINAL_INSPECT
+                or inspect.getattr_static is not _ORIGINAL_GETATTR_STATIC
+            ):
+                raise PermissionDenied(
+                    "registered authorization static inspection changed"
+                )
             if (
                 (one_shot is not None and
                  vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND)
