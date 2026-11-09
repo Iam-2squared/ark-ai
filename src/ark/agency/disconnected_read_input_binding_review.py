@@ -207,25 +207,23 @@ def review_detached_read_input_binding(
             or len(original_rows) != len(row_epoch)
             or len(steps) != len(step_epoch)
             or any(
-                type(row) is not ReadReceipt
-                or row is not original
+                type(original) is not ReadReceipt
+                or original_rows[index] is not original
                 or any(now is not first for now, first in zip(
-                    (row.request_id, row.step_id, row.operation,
-                     row.input_digest, row.result_digest), fields, strict=True,
+                    (original.request_id, original.step_id, original.operation,
+                     original.input_digest, original.result_digest),
+                    fields, strict=True,
                 ))
-                for row, original, *fields in (
-                    (row, *epoch) for row, *epoch in row_epoch
-                )
+                for index, (original, *fields) in enumerate(row_epoch)
             )
             or any(
-                step is not original
+                steps[index] is not original
                 or any(now is not first for now, first in zip(
-                    (step.step_id, step.operation, step.depends_on,
-                     step.state, step.result_sha256), fields, strict=True,
+                    (original.step_id, original.operation, original.depends_on,
+                     original.state, original.result_sha256),
+                    fields, strict=True,
                 ))
-                for step, original, *fields in (
-                    (step, *epoch) for step, *epoch in step_epoch
-                )
+                for index, (original, *fields) in enumerate(step_epoch)
             )
         ):
             raise ReadInputBindingRejected("READ input evidence changed during join")
