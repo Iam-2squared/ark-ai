@@ -28,37 +28,58 @@ def test_stable_selector_remains_a_non_authority():
     "execution_authorized", "github_write_authorized", "spending_authorized",
 ])
 def test_injected_grant_cannot_authorize_synthetic_work(monkeypatch, flag):
+    calls = []
+
+    def hostile(_self):
+        calls.append(flag)
+        return True
+
     monkeypatch.setattr(
-        mod.SyntheticLaneSelection, flag, property(lambda _self: True),
+        mod.SyntheticLaneSelection, flag, property(hostile),
     )
-    with pytest.raises(mod.SyntheticLaneSelectionRejected, match="forged authority"):
+    with pytest.raises(
+        mod.SyntheticLaneSelectionRejected, match="denial authority changed",
+    ):
         _select(_lane())
+    assert calls == []
 
 
 def test_last_grant_getter_cannot_modify_previously_checked_result(monkeypatch):
+    calls = []
+
     def change_result(self):
+        calls.append("executed")
         object.__setattr__(self, "selected", ("paid_gpu",))
         return False
 
     monkeypatch.setattr(
         mod.SyntheticLaneSelection, "spending_authorized", property(change_result),
     )
-    with pytest.raises(mod.SyntheticLaneSelectionRejected, match="decision changed"):
+    with pytest.raises(
+        mod.SyntheticLaneSelectionRejected, match="denial authority changed",
+    ):
         _select(_lane())
+    assert calls == []
 
 
 def test_last_grant_getter_cannot_mutate_untrusted_work_lane(monkeypatch):
     lane = _lane()
+    calls = []
 
     def change_lane(_self):
+        calls.append("executed")
         object.__setattr__(lane, "cost_class", "potentially_billable")
         return False
 
     monkeypatch.setattr(
         mod.SyntheticLaneSelection, "spending_authorized", property(change_lane),
     )
-    with pytest.raises(mod.SyntheticLaneSelectionRejected, match="lanes changed"):
+    with pytest.raises(
+        mod.SyntheticLaneSelectionRejected, match="denial authority changed",
+    ):
         _select(lane)
+    assert calls == []
+    assert lane.cost_class == "free_local"
 
 
 def test_result_subclass_injection_rejected(monkeypatch):
@@ -66,5 +87,7 @@ def test_result_subclass_injection_rejected(monkeypatch):
         pass
 
     monkeypatch.setattr(mod, "SyntheticLaneSelection", DerivedResult)
-    with pytest.raises(mod.SyntheticLaneSelectionRejected, match="decision changed"):
+    with pytest.raises(
+        mod.SyntheticLaneSelectionRejected, match="denial authority changed",
+    ):
         _select(_lane())
