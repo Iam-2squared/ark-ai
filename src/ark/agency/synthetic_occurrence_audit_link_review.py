@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import stat
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +22,7 @@ from .contracts import ActionAuditEvent, Effect, ToolCall
 from .durable_occurrence_review import (
     SyntheticOccurrenceStore,
     SyntheticReservationReceipt,
+    _require_safe_occurrence_path,
 )
 from .durable_occurrence_review import (
     _validate as _validate_reservations,
@@ -186,6 +188,36 @@ def _audit_identity(event: ActionAuditEvent) -> tuple[object, ...]:
     )
 
 
+def _require_safe_link_path(path: object, *, create: bool) -> Path:
+    """Deny local audit-link DB aliasing before open or private ledger access.
+
+    Local lstat checks do not supply independent storage provenance or atomic
+    custody against concurrent owner-controlled path replacements.
+    """
+    if type(path) is not type(Path()) or ".." in path.parts:
+        raise SyntheticAuditLinkRejected("synthetic audit link path alias refused")
+    target = path if path.is_absolute() else path.absolute()
+    try:
+        for ancestor in target.parents:
+            try:
+                meta = ancestor.lstat()
+            except FileNotFoundError:
+                raise SyntheticAuditLinkRejected("audit link ancestor missing") from None
+            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+                raise SyntheticAuditLinkRejected("audit link ancestor unsafe")
+        try:
+            meta = target.lstat()
+        except FileNotFoundError:
+            if not create:
+                raise SyntheticAuditLinkRejected("audit link file missing") from None
+        else:
+            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise SyntheticAuditLinkRejected("audit link file alias or type unsafe")
+    except OSError as exc:
+        raise SyntheticAuditLinkRejected("audit link path inspection failed") from exc
+    return path
+
+
 class SyntheticOccurrenceAuditLinkStore:
     """Append-only mock audit links, never an authorization or execution lane."""
 
@@ -209,6 +241,7 @@ class SyntheticOccurrenceAuditLinkStore:
                 raise
 
     def _connect(self, *, create: bool = False, readonly: bool = False) -> sqlite3.Connection:
+        _require_safe_link_path(self._path, create=create)
         if create:
             return sqlite3.connect(self._path, timeout=10, isolation_level=None)
         uri = self._path.resolve().as_uri() + ("?mode=ro" if readonly else "?mode=rw")
@@ -407,6 +440,8 @@ class SyntheticOccurrenceAuditLinkStore:
                     raise SyntheticAuditLinkRejected("synthetic link capacity or clock regression")
                 # The source ledgers are separately snapshotted. This is not an
                 # atomic three-database proof: future modification still races.
+                assert_input_epoch()
+                _require_safe_occurrence_path(ledger._path, create=False)
                 assert_input_epoch()
                 uri = ledger._path.resolve().as_uri() + "?mode=ro"
                 assert_input_epoch()
