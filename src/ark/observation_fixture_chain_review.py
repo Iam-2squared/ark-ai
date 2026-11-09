@@ -161,7 +161,15 @@ def review_disconnected_fixture_chain(
     # Request labels cross the same digest boundary as envelope labels. Limit
     # encoded bytes BEFORE reading any private fixture fields: 1024 Unicode
     # codepoints can occupy 4096 bytes of serialized UTF-8.
-    if len(encoded_source) > 1024 or len(encoded_privacy) > 1024:
+    # The v1 chain digest uses NUL-delimited source/scope labels:
+    # DOMAIN + source + NUL + privacy + NUL + observation IDs.
+    # An embedded NUL makes the prefix framing ambiguous. The underlying
+    # ObservationEnvelope may represent it, but this optional stricter
+    # closed-chain review does not accept ambiguous provenance labels.
+    if (
+        len(encoded_source) > 1024 or len(encoded_privacy) > 1024
+        or b"\x00" in encoded_source or b"\x00" in encoded_privacy
+    ):
         raise ObservationFixtureChainRejected("exact bounded fixture chain required")
 
     fields = tuple((
