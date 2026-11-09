@@ -45,7 +45,11 @@ def test_reflected_source_retarget_mid_review_denied_without_commit(
         monkeypatch.setattr(continuity, "_validate", redirect)
     else:
         monkeypatch.setattr(veto_module, "_validate", redirect)
-    with pytest.raises(SyntheticContextRevocationRejected, match="source path"):
+    with pytest.raises(
+        SyntheticContextRevocationRejected,
+        match=("revocation digest implementation changed" if operation == "continuity"
+               else "source path"),
+    ):
         if operation == "write":
             ledger.revoke(scope, at_ms=100)
         elif operation == "read":
