@@ -8,7 +8,6 @@ import pytest
 
 from ark.agency import disconnected_read_recovery_schedule as recovery
 
-
 REQUEST = "req_" + "a" * 32
 STEP = "step_" + "1" * 16
 
