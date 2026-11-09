@@ -67,7 +67,8 @@ def test_retained_witness_schema_phase_mutation_cannot_be_restored(
         match="revocation digest implementation changed",
     ):
         module.review_revocation_continuity(ledger, retained=retained)
-    assert changed
+    # An untrusted schema callback is vetoed before it can mutate the retained witness.
+    assert changed is False
 
 
 def test_path_mutation_after_hash_cannot_be_restored_by_witness_integrity(
