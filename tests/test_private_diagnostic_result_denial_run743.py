@@ -1,4 +1,4 @@
-"""Detached diagnostics final-denial reentrancy must not forge a receipt."""
+"""Detached diagnostics reject replaced denial descriptors before input access."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def test_no_reentrancy_still_returns_public_only_denied_receipt():
 @pytest.mark.parametrize("field", (
     "first_sequence", "last_sequence", "count", "segment_count", "final_sha256",
 ))
-def test_last_denial_false_cannot_hide_changed_receipt_field(monkeypatch, field):
+def test_last_denial_descriptor_replacement_rejected_before_callback(monkeypatch, field):
     parts = _segments()
     calls = 0
 
@@ -76,13 +76,13 @@ def test_last_denial_false_cannot_hide_changed_receipt_field(monkeypatch, field)
         "private_data_export_authorized", property(last_denial),
     )
     with pytest.raises(
-        coordinator.RetainedDiagnosticChainRejected, match="result changed",
+        coordinator.RetainedDiagnosticChainRejected, match="protocol changed",
     ):
         _review(parts)
-    assert calls >= 1
+    # The protocol rejects the replaced descriptor before any getter runs.\n    assert calls == 0
 
 
-def test_earlier_denial_false_cannot_hide_later_fields(monkeypatch):
+def test_earlier_denial_descriptor_replacement_rejected_before_callback(monkeypatch):
     parts = _segments()
     called = False
 
@@ -97,7 +97,7 @@ def test_earlier_denial_false_cannot_hide_later_fields(monkeypatch):
         property(early_denial),
     )
     with pytest.raises(
-        coordinator.RetainedDiagnosticChainRejected, match="result changed",
+        coordinator.RetainedDiagnosticChainRejected, match="protocol changed",
     ):
         _review(parts)
-    assert called
+    assert called is False
