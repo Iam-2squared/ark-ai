@@ -14,7 +14,7 @@
 - [`4607e6e`](https://github.com/Iam-2squared/ark-ai/commit/4607e6eea7168b1c71a8d474e341f37ce041eb6e): input-step slot trap never installed by replaced SHA.
 - [`ea6b84d`](https://github.com/Iam-2squared/ark-ai/commit/ea6b84d39c30dcf8a74a719e3d8db7371e395812): denial property swap callback never invoked.
 
-The READ production implementation is **unchanged in this run**; no real READ dispatch, automatic replay or external outcome attestation. [Corrected-source CI #42558310308](https://github.com/Iam-2squared/ark-ai/actions/runs/42558310308) had **3/3 Ubuntu GREEN**, Windows jobs **IN PROGRESS** at an observed read; do not extrapolate this to a 6/6 result.
+The READ production implementation is **unchanged in this run**; no real READ dispatch, automatic replay or external outcome attestation. [Corrected-source CI #42558310308](https://github.com/Iam-2squared/ark-ai/actions/runs/42558310308) later completed **6/6 GREEN** on that precise intermediate HEAD; this is not final Run728 checkpoint evidence.
 
 ## B. Detached proactive attention: digest/protocol identity
 
@@ -27,6 +27,16 @@ This is process-local review, not an OS sandbox, trusted clock, notification aut
 [`c2bbd61`](https://github.com/Iam-2squared/ark-ai/commit/c2bbd61c2238ae40927373dc19e679375385ba16) adds a fail-closed import-original check for SHA-256, `struct.iter_unpack`, `struct.pack_into`, their module objects, rate/digest/buffer-size contracts, rounding function, and receipt constructor/field/lookup descriptors **before raw private PCM reaches any of these codecs**. Rechecks occur before output hashing, result construction, field access and return. No waveform acquisition or remote processing. [Twelve new authored parameter-expanded tests](https://github.com/Iam-2squared/ark-ai/commit/c775ea3775005d825d19993d675a6a774ce04f06) cover eleven hostile substitutions plus unchanged bit-sensitive deterministic output/hidden `repr` bytes.
 
 Source and tests are intended as an additive, reversible observation-fixture guard. No anti-alias filtering, production ASR, identity inference, user privacy approval, microphone permission or remote inference is implied. [Source/test CI #42558877877](https://github.com/Iam-2squared/ark-ai/actions/runs/42558877877) was **QUEUED** at observed read. No clean latest-HEAD six-matrix PASS claim.
+
+## D. Memory global row/event alignment: hash-domain preaccess
+
+[`24d4070`](https://github.com/Iam-2squared/ark-ai/commit/24d4070f8dbc8c6a3e96ab112468a49364018a73) pins the original `hashlib` and `json` module bindings plus the original digest domain before all Memory read-only alignment scans and after reentrant callbacks, in addition to previously pinned SHA-256 and JSON encoding functions. [Four new synthetic regression cases](https://github.com/Iam-2squared/ark-ai/commit/cd1d0de7fc76b85676c4e7caad7a0e6e23d2581a) require refusal before any private SQLite connection when a whole module or equal-byte domain is replaced, and verify unchanged read-only/no-authority reporting. Existing `_MAX_EVENTS` injection seam remains untouched because its bounded-scan failure test is intentional.
+
+## Run728 ongoing CI corrections and exact evidence
+
+- **Corrected detached READ source/test HEAD `ea6b84d`: [CI #42558310308](https://github.com/Iam-2squared/ark-ai/actions/runs/42558310308) 6/6 GREEN** across Windows and Ubuntu / Python 3.11–3.13. This is valid only for that exact intermediate HEAD, not later modules or status commits.
+- **Proactive intermediate HEAD `8342bcc`: [CI #42558633091](https://github.com/Iam-2squared/ark-ai/actions/runs/42558633091) Ubuntu Python 3.11 11,471 PASS / 2 FAIL / 1 SKIP**; the two failures were inherited test expectations at a later unsafe digest callback step. Actual failure messages indicated earlier fail-closed denial (`attention source preview rejected`, `attention preview rejected`). The production guard was NOT loosened. [Fix `ac1ad59`](https://github.com/Iam-2squared/ark-ai/commit/ac1ad590b96965099d32ab106f417f8b8928b213) and [fix `c235b68`](https://github.com/Iam-2squared/ark-ai/commit/c235b680e8d69254aeb02ce3ac034d8598368e93) now require the hostile callback not to run and the retained input not to be mutated. Subsequent six-matrix CI verdict pending.
+- **Run728 new tests:** 9 proactive + 12 raw PCM + 4 Memory = **25 authored parameter-expanded cases** across three new test files; plus six inherited test files updated across READ and proactive/coverage callbacks. Exact current-source/most-recent-checkpoint six-job GREEN must be checked independently; the [corrected attention test HEAD `c235b68` CI #42559575773](https://github.com/Iam-2squared/ark-ai/actions/runs/42559575773) was QUEUED on initial read.
 
 ## Independent review / next boundaries
 
