@@ -128,12 +128,14 @@ def test_constructor_hook_changed_during_calculation_is_rejected(monkeypatch):
 
     monkeypatch.setattr(toolbox, "_run", changed)
     try:
+        # Replaced helpers are now rejected before _run can modify __init__.
         with pytest.raises(
             toolbox.DisconnectedToolRejected,
-            match="authority definition changed",
+            match="digest or JSON implementation changed",
         ):
             toolbox.execute_disconnected_fixture_tool(request)
         assert calls == []
+        assert cls.__init__ is original
     finally:
         cls.__init__ = original
 
@@ -156,12 +158,15 @@ def test_request_field_hook_changed_during_calculation_is_rejected(monkeypatch):
 
     monkeypatch.setattr(toolbox, "_run", changed)
     try:
+        # The preaccess helper pin stops the mutation before the request slot
+        # can be replaced, rather than merely noticing after calculation.
         with pytest.raises(
             toolbox.DisconnectedToolRejected,
-            match="request descriptor changed",
+            match="digest or JSON implementation changed",
         ):
             toolbox.execute_disconnected_fixture_tool(request)
         assert calls == []
+        assert vars(cls)["canonical_args_json"] is original
     finally:
         cls.canonical_args_json = original
 
