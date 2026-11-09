@@ -46,9 +46,9 @@ def test_retained_valid_witness_substitution_after_first_veto_denied(
         return result
 
     monkeypatch.setattr(module, "review_revocation_continuity", replace_retained)
-    with pytest.raises(module.SyntheticRetentionRejected, match="retained"):
+    with pytest.raises(module.SyntheticRetentionRejected, match="dependency changed"):
         _review(state, retained_revocations=retained)
-    assert reads == 1
+    assert reads == 0
 
 
 def test_transient_scope_retarget_after_first_veto_denied(tmp_path: Path, monkeypatch):
@@ -71,7 +71,7 @@ def test_transient_scope_retarget_after_first_veto_denied(tmp_path: Path, monkey
 
     monkeypatch.setattr(module, "review_revocation_continuity", change_scope)
     monkeypatch.setattr(state[0], "_connect_readonly", restore_scope)
-    with pytest.raises(module.SyntheticRetentionRejected, match="scope"):
+    with pytest.raises(module.SyntheticRetentionRejected, match="dependency changed"):
         _review(state)
     assert memory_reads == 0
 
