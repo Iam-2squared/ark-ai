@@ -72,6 +72,35 @@ _DENIAL_NAMES = (
 _ORIGINAL_DENIALS = tuple(vars(_VECTOR_TYPE)[name] for name in _DENIAL_NAMES)
 
 
+# These bindings are locally retained dependencies, not a tamper-proof
+# sandbox, trusted source identity or independent store provenance. Reject
+# in-process substitutions before reading caller-supplied store metadata.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_STORE_PATTERN = _STORE
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_STORES = _MAX_STORES
+_ORIGINAL_MAX_INTEGER = _MAX_INTEGER
+
+
+def _assert_epoch_helpers() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _STORE is not _ORIGINAL_STORE_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _MAX_STORES is not _ORIGINAL_MAX_STORES
+        or _MAX_INTEGER is not _ORIGINAL_MAX_INTEGER
+    ):
+        raise EpochVectorRejected("epoch validation or digest dependencies changed")
+
+
 def _assert_non_authorizing(vector: object) -> None:
     """Reject substituted authority getters and reflective result mutation."""
     if (
@@ -124,6 +153,7 @@ def _assert_carriers(
 
 
 def _rows(stores: object) -> tuple[tuple[object, ...], ...]:
+    _assert_epoch_helpers()
     if (
         type(stores) is not tuple
         or not 1 <= len(stores) <= _MAX_STORES
@@ -148,14 +178,19 @@ def _rows(stores: object) -> tuple[tuple[object, ...], ...]:
 
 
 def _canonical_digest(rows: tuple[tuple[object, ...], ...]) -> str:
+    _assert_epoch_helpers()
     data = json.dumps(rows, ensure_ascii=True, separators=(",", ":")).encode("ascii")
-    return hashlib.sha256(_DOMAIN + data).hexdigest()
+    _assert_epoch_helpers()
+    result = hashlib.sha256(_DOMAIN + data).hexdigest()
+    _assert_epoch_helpers()
+    return result
 
 
 def capture_disconnected_epoch_vector(
     stores: tuple[DisconnectedStoreEpoch, ...],
 ) -> DisconnectedEpochVector:
     """Canonicalize synthetic store claims without vouching for their origins."""
+    _assert_epoch_helpers()
     original = stores
     rows = _rows(stores)
     carriers = tuple(stores)
@@ -176,6 +211,7 @@ def capture_disconnected_epoch_vector(
 
 
 def _validated_vector(vector: object) -> tuple[tuple[object, ...], ...]:
+    _assert_epoch_helpers()
     if type(vector) is not DisconnectedEpochVector:
         raise EpochVectorRejected("exact vector required")
     _assert_non_authorizing(vector)
@@ -207,6 +243,7 @@ def review_disconnected_epoch_progress(
     Both vectors must be supplied by callers. An internal hash cannot prove
     independent retention or a coherent transaction spanning multiple stores.
     """
+    _assert_epoch_helpers()
     earlier = _validated_vector(retained)
     later = _validated_vector(observed)
     if len(earlier) != len(later):
