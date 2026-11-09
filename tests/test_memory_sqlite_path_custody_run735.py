@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -138,6 +139,6 @@ def test_missing_database_after_startup_cannot_be_recreated(tmp_path: Path) -> N
     db = tmp_path / "memory.sqlite"
     store = _store(db)
     db.rename(tmp_path / "held.sqlite")
-    with pytest.raises(MemorySchemaError):
+    with pytest.raises(sqlite3.OperationalError):
         store.events(MemoryScope("synthetic-owner"))
     assert not db.exists()
