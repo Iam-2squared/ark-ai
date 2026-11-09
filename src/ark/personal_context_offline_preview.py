@@ -88,9 +88,22 @@ _PREVIEW_DENIAL_NAMES = (
 _PREVIEW_ORIGINAL_DENIALS = tuple(
     vars(_PREVIEW_RESULT_TYPE)[name] for name in _PREVIEW_DENIAL_NAMES
 )
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_LOADS = json.loads
+# Freeze the protocol, not only its serializers. A replaced parser or budget
+# could inspect/release a different owner's private local context while still
+# generating a self-consistent but unreviewed SHA-256 digest.
+_ORIGINAL_DIGEST_PATTERN = _DIGEST
+_ORIGINAL_RECORD_PATTERN = _RECORD
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX = _MAX
+_ORIGINAL_MAX_RECORDS = _MAX_RECORDS
+_ORIGINAL_MAX_CONTENT = _MAX_CONTENT
+_ORIGINAL_MAX_TOTAL = _MAX_TOTAL
+_ORIGINAL_MAX_SERIALIZED_BYTES = _MAX_SERIALIZED_BYTES
 
 
 def _assert_original_preview_denials() -> None:
@@ -98,6 +111,17 @@ def _assert_original_preview_denials() -> None:
     if (
         OfflineContextPreview is not _PREVIEW_RESULT_TYPE
         or OfflineContextFixture is not _FIXTURE_TYPE
+        or hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or _DIGEST is not _ORIGINAL_DIGEST_PATTERN
+        or _RECORD is not _ORIGINAL_RECORD_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+        or type(_MAX_RECORDS) is not int or _MAX_RECORDS != _ORIGINAL_MAX_RECORDS
+        or type(_MAX_CONTENT) is not int or _MAX_CONTENT != _ORIGINAL_MAX_CONTENT
+        or type(_MAX_TOTAL) is not int or _MAX_TOTAL != _ORIGINAL_MAX_TOTAL
+        or type(_MAX_SERIALIZED_BYTES) is not int
+        or _MAX_SERIALIZED_BYTES != _ORIGINAL_MAX_SERIALIZED_BYTES
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or json.loads is not _ORIGINAL_LOADS
