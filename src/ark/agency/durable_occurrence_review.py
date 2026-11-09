@@ -214,7 +214,7 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
             meta = target.lstat()
         except FileNotFoundError:
             if not create:
-                raise SyntheticReplayRejected(
+                raise sqlite3.OperationalError(
                     "synthetic occurrence storage missing"
                 ) from None
         else:
