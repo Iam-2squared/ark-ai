@@ -70,13 +70,15 @@ def test_continuity_rejects_equal_witness_id_replacement(
 
     with pytest.raises(
         continuity.SyntheticContextRevocationRejected,
-        match="retained revocation evidence changed|revocation integrity validator changed",
+        match=("retained revocation evidence changed|revocation integrity validator changed"
+               "|revocation digest implementation changed"),
     ):
         continuity.review_revocation_continuity(
             revocations, retained=retained,
         )
     # A substituted witness validator is rejected before its callback runs.
-    assert injections == ([] if callback == "integrity" else [True])
+    # The unreviewed schema callback is now denied as early as the witness hook.
+    assert injections == []
 
 
 @pytest.mark.parametrize("phase", (1, 3))
