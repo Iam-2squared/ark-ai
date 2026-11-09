@@ -22,12 +22,13 @@ from .personal_context_revocation_review import (
 _SHA = re.compile(r"rvk_[0-9a-f]{64}\Z")
 _DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _MAX = 2**63 - 1
+_DOMAIN = b"ARK-context-revocation-continuity-v1\0"
 
 
 def _hash(rows: tuple[tuple[str, int], ...]) -> str:
     encoded = json.dumps(rows, ensure_ascii=True, separators=(",", ":")).encode()
     return "rvk_" + hashlib.sha256(
-        b"ARK-context-revocation-continuity-v1\0" + encoded
+        _DOMAIN + encoded
     ).hexdigest()
 
 
@@ -42,6 +43,10 @@ _ORIGINAL_HASH = _hash
 # Schema validation runs against a private SQLite connection: a substituted
 # validator must never receive it, even when its eventual result looks valid.
 _ORIGINAL_VALIDATE = _validate
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_DIGEST_PATTERN = _DIGEST
+_ORIGINAL_MAX = _MAX
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +99,10 @@ def _require_original_witness_carrier() -> None:
         or json.dumps is not _ORIGINAL_DUMPS
         or _hash is not _ORIGINAL_HASH
         or _validate is not _ORIGINAL_VALIDATE
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _DIGEST is not _ORIGINAL_DIGEST_PATTERN
+        or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
     ):
         raise SyntheticContextRevocationRejected(
             "revocation digest implementation changed"
