@@ -80,6 +80,46 @@ class DisconnectedFileSeal:
         return False
 
 
+_SEAL_TYPE = DisconnectedFileSeal
+_SEAL_FIELD_NAMES = tuple(item.name for item in fields(_SEAL_TYPE))
+_SEAL_DENIAL_NAMES = (
+    "independent_custody_proven", "source_authenticated",
+    "wal_snapshot_verified", "context_disclosure_authorized",
+    "file_mutation_authorized",
+)
+_SEAL_HOOK_NAMES = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SEAL_DESCRIPTORS = tuple(
+    vars(_SEAL_TYPE).get(name)
+    for name in (*_SEAL_FIELD_NAMES, *_SEAL_DENIAL_NAMES, *_SEAL_HOOK_NAMES)
+)
+_ORIGINAL_FIELD_HELPER = fields
+_ORIGINAL_SEAL_FIELD_NAMES = _SEAL_FIELD_NAMES
+_ORIGINAL_SEAL_DENIAL_NAMES = _SEAL_DENIAL_NAMES
+_ORIGINAL_SEAL_HOOK_NAMES = _SEAL_HOOK_NAMES
+
+
+def _require_original_seal_carrier() -> None:
+    """Reject replaced frozen-field getters, constructors and authority flags.
+
+    Local Python identity checks only; not filesystem custody or consent.
+    """
+    if (
+        DisconnectedFileSeal is not _SEAL_TYPE
+        or fields is not _ORIGINAL_FIELD_HELPER
+        or _SEAL_FIELD_NAMES is not _ORIGINAL_SEAL_FIELD_NAMES
+        or _SEAL_DENIAL_NAMES is not _ORIGINAL_SEAL_DENIAL_NAMES
+        or _SEAL_HOOK_NAMES is not _ORIGINAL_SEAL_HOOK_NAMES
+        or any(
+            vars(_SEAL_TYPE).get(name) is not descriptor
+            for name, descriptor in zip(
+                (*_SEAL_FIELD_NAMES, *_SEAL_DENIAL_NAMES, *_SEAL_HOOK_NAMES),
+                _ORIGINAL_SEAL_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedFileSealRejected("local file seal carrier changed")
+
+
 def _path(value: object) -> Path:
     if (
         type(value) is not type(Path("."))
@@ -149,6 +189,7 @@ def _different_metadata_fields(
 
 def _once(path: Path) -> DisconnectedFileSeal:
     _require_original_seal_codec()
+    _require_original_seal_carrier()
     parent_first = _parents(path)
     try:
         original = _metadata(os.lstat(path))
@@ -198,15 +239,19 @@ def _once(path: Path) -> DisconnectedFileSeal:
     if after != original or _parents(path) != parent_first:
         raise DisconnectedFileSealRejected("source changed after read")
     _require_original_seal_codec()
-    return DisconnectedFileSeal(
+    _require_original_seal_carrier()
+    result = DisconnectedFileSeal(
         hashlib.sha256(_DOMAIN + str(path).encode("utf-8")).hexdigest(),
         parent_first, digest.hexdigest(), *original,
     )
+    _require_original_seal_carrier()
+    return result
 
 
 def capture_disconnected_file_seal(path: Path) -> DisconnectedFileSeal:
     """Read a bounded synthetic file twice; never execute, modify or authorize."""
     _require_original_seal_codec()
+    _require_original_seal_carrier()
     path = _path(path)
     first = _once(path)
     if _once(path) != first:
@@ -219,10 +264,11 @@ def review_disconnected_file_seal(
 ) -> DisconnectedFileSeal:
     """Require a caller-retained, exact prior seal across both fresh reads."""
     _require_original_seal_codec()
+    _require_original_seal_carrier()
     path = _path(path)
     if type(retained) is not DisconnectedFileSeal:
         raise DisconnectedFileSealRejected("exact prior source seal required")
-    pinned = tuple(getattr(retained, item.name) for item in fields(retained))
+    pinned = tuple(getattr(retained, name) for name in _SEAL_FIELD_NAMES)
     if (
         any(type(value) is not str or _SHA.fullmatch(value) is None for value in pinned[:3])
         or any(type(value) is not int or value < 0 for value in pinned[3:])
@@ -231,9 +277,10 @@ def review_disconnected_file_seal(
         raise DisconnectedFileSealRejected("invalid retained seal shape")
 
     def epoch() -> None:
+        _require_original_seal_carrier()
         if any(
-            getattr(retained, item.name) is not value
-            for item, value in zip(fields(retained), pinned, strict=True)
+            getattr(retained, name) is not value
+            for name, value in zip(_SEAL_FIELD_NAMES, pinned, strict=True)
         ):
             raise DisconnectedFileSealRejected("retained seal changed during review")
 
