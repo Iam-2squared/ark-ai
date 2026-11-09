@@ -108,6 +108,38 @@ _ORIGINAL_CONTRACTS = tuple(
 )
 
 
+# These inputs are caller-supplied diagnostic claims, not authorization.  A
+# substituted digest/JSON implementation or regex can observe private labels
+# before any post-hash carrier check.  Pin the exact import-time authorities.
+_ORIGINAL_HASHLIB_MODULE = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_MODULE = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_FORMATS = (_HEX, _ID, _BOUND, _REGISTRY)
+_ORIGINAL_STATES = _STATES
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_MS = _MAX_MS
+
+
+def _require_original_authority_dependencies() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB_MODULE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON_MODULE
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or any(current is not original for current, original in zip(
+            (_HEX, _ID, _BOUND, _REGISTRY), _ORIGINAL_FORMATS, strict=True,
+        ))
+        or _STATES is not _ORIGINAL_STATES
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _MAX_MS is not _ORIGINAL_MAX_MS
+    ):
+        raise SyntheticAuthorityRejected(
+            "synthetic authority digest or parser dependencies changed"
+        )
+
+
+
 def _require_original_authority_contracts() -> None:
     if (
         SyntheticAuthorityClaims is not _CLAIMS_TYPE
@@ -138,6 +170,8 @@ def review_synthetic_authority_gaps(
     caller can fabricate or recalculate it. Proof requires independent trusted
     verification not supplied by this module.
     """
+    _require_original_authority_dependencies()
+    _require_original_authority_contracts()
     if (
         type(claims) is not SyntheticAuthorityClaims
         or type(observations) is not SyntheticAuthorityObservations
@@ -169,6 +203,7 @@ def review_synthetic_authority_gaps(
         raise SyntheticAuthorityRejected("malformed synthetic authority evidence")
 
     def assert_epoch() -> None:
+        _require_original_authority_dependencies()
         _require_original_authority_contracts()
         if (
             type(claims) is not _CLAIMS_TYPE
@@ -212,6 +247,7 @@ def review_synthetic_authority_gaps(
             probe, strict=True,
         )
     )
+    _require_original_authority_dependencies()
     _require_original_authority_contracts()
     result = _REPORT_TYPE(digest, blockers)
     _require_original_authority_contracts()
