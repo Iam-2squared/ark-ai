@@ -10,7 +10,11 @@ import pytest
 
 from ark.agency import policy
 from ark.agency.contracts import (
-    CapabilityGrant, Effect, OneShotAuthorization, PermissionDenied, ToolCall,
+    CapabilityGrant,
+    Effect,
+    OneShotAuthorization,
+    PermissionDenied,
+    ToolCall,
 )
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
