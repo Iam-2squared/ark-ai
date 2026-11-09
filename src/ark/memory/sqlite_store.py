@@ -187,14 +187,32 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
                 raise MemorySchemaError("memory ancestor unavailable") from None
             if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
                 raise MemorySchemaError("memory symbolic or nondirectory ancestor refused")
+        main_absent = False
         try:
             meta = target.lstat()
         except FileNotFoundError:
+            main_absent = True
             if not create:
                 raise sqlite3.OperationalError("memory database unavailable") from None
         else:
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise MemorySchemaError("memory database path is not a single regular file")
+        # SQLite may open -wal/-shm/-journal alongside the main database.
+        # A safe main pathname is not enough if one of these files is a
+        # symbolic link, hardlink, FIFO or directory. Refuse orphan sidecars
+        # before initial creation, preserving rather than adopting unknown
+        # historical journal bytes. These are local lstat prechecks, not an
+        # atomic guarantee against owner-controlled concurrent replacement.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = target.with_name(target.name + suffix)
+            try:
+                sidecar_meta = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if main_absent:
+                raise MemorySchemaError("orphaned memory SQLite sidecar refused")
+            if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
+                raise MemorySchemaError("memory SQLite sidecar path is not a single regular file")
     except OSError as exc:
         raise MemorySchemaError("memory path custody cannot be verified") from exc
 
