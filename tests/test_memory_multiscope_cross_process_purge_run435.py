@@ -68,27 +68,35 @@ def test_global_expiry_purge_and_refresh_preserve_all_scope_events(
             ),
         )
     gate = tmp_path / f"start-{iteration}"
-    workers = [
-        subprocess.Popen(
-            [
-                sys.executable, "-c", _CHILD, str(path), str(gate),
-                str(tmp_path / f"ready-{iteration}-{index}"), action,
-            ],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-        )
-        for index, action in enumerate(("purge", "refresh"))
-    ]
+    workers = []
     try:
-        deadline = time.monotonic() + 25
-        while not all(
-            (tmp_path / f"ready-{iteration}-{index}").exists()
-            for index in range(2)
-        ):
-            if any(worker.poll() is not None for worker in workers):
-                raise AssertionError("Memory purge worker exited before release")
-            if time.monotonic() >= deadline:
-                raise AssertionError("Memory purge workers did not reach release")
-            time.sleep(0.02)
+        # Separate child SQLite bootstrap from the actual two-process race.
+        # Each worker first opens the existing store and parks at the SAME
+        # gate; both purge/refresh operations still race after gate.touch().
+        # Capture real child stderr rather than guessing why bootstrap died.
+        for index, action in enumerate(("purge", "refresh")):
+            marker = tmp_path / f"ready-{iteration}-{index}"
+            worker = subprocess.Popen(
+                [
+                    sys.executable, "-c", _CHILD, str(path), str(gate),
+                    str(marker), action,
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            workers.append(worker)
+            deadline = time.monotonic() + 25
+            while not marker.exists():
+                if worker.poll() is not None:
+                    _, child_stderr = worker.communicate(timeout=5)
+                    raise AssertionError(
+                        "Memory purge child exited during bootstrap "
+                        f"({action}, rc={worker.returncode}): {child_stderr[-2000:]}"
+                    )
+                if time.monotonic() >= deadline:
+                    raise AssertionError(
+                        f"Memory purge child did not reach release ({action})"
+                    )
+                time.sleep(0.02)
         gate.touch()
         replies = [worker.communicate(timeout=35) for worker in workers]
     finally:
