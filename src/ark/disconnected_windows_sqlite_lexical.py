@@ -148,6 +148,10 @@ def review_windows_sqlite_lexical_path(
         )
         or not parts[-1].endswith(".sqlite3")
         or parts[-1] == ".sqlite3"
+        # The SQLite WAL/SHM/rollback journals are separate pathnames.
+        # Accepting the main file at the limit must not silently create a
+        # sidecar name beyond the same strict synthetic path budget.
+        or any(len(label) + len(suffix) > _MAX_PATH for suffix in _SUFFIXES)
     ):
         raise WindowsSQLiteLexicalRejected("ambiguous synthetic Windows component")
     # This is lexical, NOT a guarantee that all accepted names correspond
