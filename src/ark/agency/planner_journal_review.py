@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import stat
 from collections.abc import Callable
 from contextlib import closing
 from dataclasses import dataclass
@@ -349,6 +350,44 @@ def _checked_snapshot(
     return result, assert_result
 
 
+def _require_safe_journal_path(path: Path) -> None:
+    """Refuse lexical/symlinked SQLite path escapes before any DB access.
+
+    SQLite connection strings and Path.resolve() can follow symlinked parent
+    directories even when the final file is not itself a symlink. This local
+    preflight is not atomic directory-handle custody or independent provenance.
+    """
+    if (
+        type(path) is not type(Path())
+        or not path.is_absolute()
+        or ".." in path.parts
+    ):
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan journal requires absolute non-traversing Path"
+        )
+    try:
+        for ancestor in path.parents:
+            meta = ancestor.lstat()
+            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal ancestor is not a real directory"
+                )
+        if path.is_symlink():
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan journal symlink refused"
+            )
+        if path.exists():
+            meta = path.lstat()
+            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal must be one regular file"
+                )
+    except OSError as exc:
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan journal path cannot be verified"
+        ) from exc
+
+
 class SyntheticPlanJournal:
     """Bounded fixture journal: atomic event+tail, replay-only recovery."""
 
@@ -410,6 +449,7 @@ class SyntheticPlanJournal:
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
         self._assert_source_path()
+        _require_safe_journal_path(self._path)
         # Only explicit journal initialization is allowed to create a file.
         # Appending to a missing/moved initialized journal must not silently
         # materialize a fresh empty SQLite database.
