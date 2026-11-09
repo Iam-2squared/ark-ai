@@ -74,6 +74,75 @@ class OfflinePcmActivityReview:
         return False
 
 
+
+# Fixture data and derived amplitude windows may reveal private audio. Freeze
+# implementation and carrier identities before reading even the first request
+# field. This is an in-process consistency check, NOT device provenance or
+# an isolation boundary against arbitrary Python code in this interpreter.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_BYTES = _MAX_BYTES
+_ORIGINAL_MAX_WINDOWS = _MAX_WINDOWS
+
+_REQUEST_TYPE = OfflinePcmActivityRequest
+_WINDOW_TYPE = OfflinePcmActivityWindow
+_REVIEW_TYPE = OfflinePcmActivityReview
+_REQUEST_FIELDS = (
+    "owner_sha256", "privacy_sha256", "pcm_sha256", "pcm_bytes",
+    "channels", "sample_rate_hz", "bits_per_sample", "window_ms",
+)
+_WINDOW_FIELDS = (
+    "index", "start_frame", "end_frame", "sample_count",
+    "peak_absolute", "sum_squares",
+)
+_REVIEW_FIELDS = (
+    "owner_sha256", "privacy_sha256", "pcm_sha256", "channels",
+    "sample_rate_hz", "bits_per_sample", "frame_count", "window_ms",
+    "windows", "inventory_sha256",
+)
+_LOOKUP_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_DENIALS = (
+    "microphone_provenance_verified", "consent_verified",
+    "speech_or_speaker_recognized", "disclosure_authorized",
+)
+_ORIGINAL_CARRIERS = tuple(
+    (cls, names, tuple(vars(cls).get(name) for name in names))
+    for cls, names in (
+        (_REQUEST_TYPE, _REQUEST_FIELDS + _LOOKUP_HOOKS),
+        (_WINDOW_TYPE, _WINDOW_FIELDS + _LOOKUP_HOOKS),
+        (_REVIEW_TYPE, _REVIEW_FIELDS + _LOOKUP_HOOKS + _DENIALS),
+    )
+)
+
+
+def _require_original_pcm_activity_authority() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_BYTES) is not int or _MAX_BYTES != _ORIGINAL_MAX_BYTES
+        or type(_MAX_WINDOWS) is not int or _MAX_WINDOWS != _ORIGINAL_MAX_WINDOWS
+        or OfflinePcmActivityRequest is not _REQUEST_TYPE
+        or OfflinePcmActivityWindow is not _WINDOW_TYPE
+        or OfflinePcmActivityReview is not _REVIEW_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in _ORIGINAL_CARRIERS
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise OfflinePcmActivityRejected(
+            "PCM activity codec, carrier or denial authority changed"
+        )
+
+
 def analyze_offline_pcm_activity(
     request: OfflinePcmActivityRequest,
 ) -> OfflinePcmActivityReview:
@@ -83,6 +152,7 @@ def analyze_offline_pcm_activity(
     Every complete frame belongs to exactly one window, including the tail.
     The caller-provided identity hashes are integrity claims, NOT authority.
     """
+    _require_original_pcm_activity_authority()
     if type(request) is not OfflinePcmActivityRequest:
         raise OfflinePcmActivityRejected("exact PCM request required")
     pinned = (
@@ -92,6 +162,7 @@ def analyze_offline_pcm_activity(
     )
 
     def check_epoch() -> None:
+        _require_original_pcm_activity_authority()
         now = (
             request.owner_sha256, request.privacy_sha256, request.pcm_sha256,
             request.pcm_bytes, request.channels, request.sample_rate_hz,
@@ -164,6 +235,8 @@ def analyze_offline_pcm_activity(
         type(result) is not OfflinePcmActivityReview
         or result.windows is not rows
         or result.inventory_sha256 is not inventory_digest
+        or any(getattr(result, name) is not False for name in _DENIALS)
     ):
         raise OfflinePcmActivityRejected("constructed PCM review changed")
+    check_epoch()
     return result
