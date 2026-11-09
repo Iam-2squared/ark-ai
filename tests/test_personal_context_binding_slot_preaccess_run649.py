@@ -79,8 +79,7 @@ def test_mutation_during_preview_json_parse_cannot_execute_slot(
 ):
     preview = _preview()
     invoked = []
-    original = binding.json.loads
-    klass = binding._PREVIEW_TYPE if which == "preview" else binding._BINDING_TYPE
+    parser_hits = []
 
     def forbidden(*_args):
         invoked.append(name)
@@ -88,16 +87,16 @@ def test_mutation_during_preview_json_parse_cannot_execute_slot(
 
     with monkeypatch.context() as patch:
         def mutate(serialized):
-            value = original(serialized)
-            patch.setattr(klass, name, property(forbidden))
-            return value
+            parser_hits.append(serialized)
+            raise AssertionError("private context passed to replaced JSON parser")
 
         patch.setattr(binding.json, "loads", mutate)
         with pytest.raises(
             binding.OfflineContextBindingRejected,
-            match="preview carrier changed|binding changed",
+            match="private context binding codec changed",
         ):
             binding.bind_offline_context_request(_REQUEST, preview)
+    assert parser_hits == []
     assert invoked == []
 
 
