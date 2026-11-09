@@ -20,7 +20,7 @@ from .registry import BoundAction, ToolRegistry
 _MAX_STEPS = 24
 _MAX_GRANTS = 128
 _MAX_MS = 2**63 - 1
-_DOMAIN = b"ARK-disconnected-registered-read-preflight-v1\\0"
+_DOMAIN = b"ARK-disconnected-registered-read-preflight-v1\0"
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON = json
