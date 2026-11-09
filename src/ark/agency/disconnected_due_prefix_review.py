@@ -71,10 +71,41 @@ _DENIAL_FLAGS = (
 _ORIGINAL_DENIALS = tuple(vars(_RESULT)[flag] for flag in _DENIAL_FLAGS)
 _ORIGINAL_WITNESS_DENIAL = _WITNESS.independent_custody_proven
 
+# A frozen slotted result/witness remains executable when its field
+# descriptors or lookup hooks are replaced. Static class-dictionary checks
+# must run before reading retained private slot values, opening SQLite, or
+# constructing a result; false-valued properties alone are insufficient.
+_RESULT_FIELDS = (
+    "previous_count", "current_count", "current_fingerprint",
+    "status", "review_sha256",
+)
+_WITNESS_FIELDS = ("count", "fingerprint")
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT)[name] for name in _RESULT_FIELDS)
+_ORIGINAL_WITNESS_FIELDS = tuple(vars(_WITNESS)[name] for name in _WITNESS_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS).get(name) for name in _CARRIER_HOOKS
+)
+
 
 def _require_original_denials() -> None:
     if (
-        DisconnectedDuePrefixReview is not _RESULT
+        due.DueReservationWitness is not _WITNESS
+        or due.DisconnectedDueReservations is not _LEDGER
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in (
+                (_RESULT, _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_WITNESS, _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+                (_RESULT, _CARRIER_HOOKS, _ORIGINAL_RESULT_HOOKS),
+                (_WITNESS, _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or DisconnectedDuePrefixReview is not _RESULT
         or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_RESULT).get(flag) is not original
