@@ -88,10 +88,11 @@ def test_cached_inventory_item_mutation_before_digest_return_is_refused(
         )
 
     with pytest.raises(
-        SyntheticRetentionRejected, match="retention inventory items changed",
+        SyntheticRetentionRejected, match="retention inventory dependency changed",
     ):
         _review(state)
-    assert mutations == 1
+    # The original row/veto codec is required before any retained item is read.
+    assert mutations == 0
 
 
 def test_stable_inventory_remains_content_free_and_non_authoritative(tmp_path):
