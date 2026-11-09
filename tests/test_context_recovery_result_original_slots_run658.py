@@ -90,7 +90,10 @@ def test_reentrant_report_slot_replacement_rejected_without_getter(
 
         with pytest.raises(
             recovery.OfflineContextRecoveryRejected,
-            match="review result gained authority",
+            match=(
+                "context replay digest implementation changed"
+                if phase == "digest" else "review result gained authority"
+            ),
         ):
             recovery.review_restarted_context_replay(ledger, retained)
 
