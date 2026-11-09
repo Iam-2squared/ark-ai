@@ -45,6 +45,20 @@ _ORIGINAL_ENVELOPE_HOOKS = tuple(
 )
 
 
+# Fixture sizes are a reviewed ingress contract. Mutating the process-global
+# limit must not allow a larger private payload to reach SHA-256 or a fixture
+# envelope. This does not authenticate a real camera/microphone source.
+_ORIGINAL_MAX_FIXTURE_BYTES = _MAX_FIXTURE_BYTES
+
+
+def _require_original_fixture_budget() -> None:
+    if (
+        type(_MAX_FIXTURE_BYTES) is not int
+        or _MAX_FIXTURE_BYTES is not _ORIGINAL_MAX_FIXTURE_BYTES
+    ):
+        raise ValueError("fixture byte budget definition changed")
+
+
 def _preflight_fixture_metadata(
     source_id: str,
     privacy_scope: str,
@@ -56,6 +70,7 @@ def _preflight_fixture_metadata(
     This is an input budget/shape check only, not source provenance or consent.
     The envelope independently validates the same values after construction.
     """
+    _require_original_fixture_budget()
     for name, value in (
         ("source_id", source_id),
         ("privacy_scope", privacy_scope),
@@ -100,9 +115,11 @@ def _hash_private_fixture(payload: bytes) -> str:
     Original SHA-256 is retained at import time; this is not tamper-proof
     sandboxing or authenticated observation provenance.
     """
+    _require_original_fixture_budget()
     if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
         raise ValueError("fixture digest implementation changed before private content hashing")
     digest = _ORIGINAL_SHA256(payload).hexdigest()
+    _require_original_fixture_budget()
     if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
         raise ValueError("fixture digest implementation changed during private content hashing")
     return digest
@@ -155,6 +172,7 @@ def _sealed_fixture(
     cannot silently replace the source, privacy or content identity after the
     caller's raw content was hashed.
     """
+    _require_original_fixture_budget()
     adapter_id = f"fixture:{kind.value}:v1"
     expected = (
         kind, source_id, adapter_id, privacy_scope, ingested_at_ms,
