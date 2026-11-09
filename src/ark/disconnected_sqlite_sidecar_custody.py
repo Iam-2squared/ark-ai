@@ -22,6 +22,19 @@ _SUFFIXES = ("-wal", "-shm", "-journal")
 _MAX_PATH = 4096
 _MAX_FILE_BYTES = 64 * 1024 * 1024
 
+# Detached metadata can include sensitive absolute fixture paths. Pin the
+# digest codec and inventory bounds before any path inspection or callback.
+# This detects same-process instrumentation, not hostile code isolation.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_SUFFIXES = _SUFFIXES
+_ORIGINAL_MAX_PATH = _MAX_PATH
+_ORIGINAL_MAX_FILE_BYTES = _MAX_FILE_BYTES
+
 
 class SQLiteSidecarCustodyRejected(ValueError):
     """Synthetic SQLite file/sidecar identities cannot be reviewed safely."""
@@ -63,7 +76,26 @@ class DetachedSQLiteSidecarSeal:
         return False
 
 
+def _require_original_codec() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA
+        or _SUFFIXES is not _ORIGINAL_SUFFIXES
+        or type(_MAX_PATH) is not int or _MAX_PATH != _ORIGINAL_MAX_PATH
+        or type(_MAX_FILE_BYTES) is not int
+        or _MAX_FILE_BYTES != _ORIGINAL_MAX_FILE_BYTES
+    ):
+        raise SQLiteSidecarCustodyRejected(
+            "detached SQLite custody codec or inventory bounds changed"
+        )
+
+
 def _hash(payload: object) -> str:
+    _require_original_codec()
     encoded = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("ascii")
     return hashlib.sha256(_DOMAIN + encoded).hexdigest()
 
@@ -114,6 +146,7 @@ def _file_id(info: os.stat_result) -> tuple[int, ...]:
 
 
 def _capture_once(path: Path) -> DetachedSQLiteSidecarSeal:
+    _require_original_codec()
     _supported()
     dirs: list[int] = []
     dir_names: list[str] = []
@@ -197,6 +230,7 @@ def _capture_once(path: Path) -> DetachedSQLiteSidecarSeal:
 
 def capture_disconnected_sqlite_sidecars(path: Path) -> DetachedSQLiteSidecarSeal:
     """Inspect synthetic main/-wal/-shm/-journal twice; no row data or writes."""
+    _require_original_codec()
     source = _path(path)
     first = _capture_once(source)
     if _capture_once(source) != first:
@@ -208,6 +242,7 @@ def review_disconnected_sqlite_sidecars(
     path: Path, retained: DetachedSQLiteSidecarSeal,
 ) -> DetachedSQLiteSidecarSeal:
     """Compare against caller-retained metadata, which is NOT authenticated."""
+    _require_original_codec()
     source = _path(path)
     if type(retained) is not DetachedSQLiteSidecarSeal:
         raise SQLiteSidecarCustodyRejected("exact retained SQLite seal required")
