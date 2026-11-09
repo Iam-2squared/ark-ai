@@ -127,12 +127,36 @@ _ORIGINAL_RECEIPT_HOOKS = tuple(
 )
 
 
+# Pin the local reservation hashing and schema protocol before any private
+# claim/witness bytes reach serializers, digests or SQLite. A local pin is not
+# a signed approval or trusted evidence against a compromised interpreter.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_DDL = _DDL
+_ORIGINAL_ID_PATTERNS = (_PLAN, _STEP, _SLOT, _SHA)
+
+
 def _require_original_constructors() -> None:
     # Constructor custody is independent from the established denial-getter
     # check timings. Keep those existing checks and error paths intact: a
     # synthetic post-COMMIT getter fixture must still test its own boundary.
     if (
-        WriteSlotLedgerWitness is not _WITNESS_TYPE
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _DDL is not _ORIGINAL_DDL
+        or any(
+            candidate is not expected
+            for candidate, expected in zip(
+                (_PLAN, _STEP, _SLOT, _SHA), _ORIGINAL_ID_PATTERNS, strict=True,
+            )
+        )
+        or WriteSlotLedgerWitness is not _WITNESS_TYPE
         or WriteSlotReservationReceipt is not _RECEIPT_TYPE
         or DetachedWriteSlotClaim is not _CLAIM_TYPE
         or vars(_WITNESS_TYPE).get("__init__") is not _ORIGINAL_WITNESS_INIT
@@ -155,8 +179,12 @@ def _require_original_constructors() -> None:
 
 
 def _hash(value: tuple[object, ...]) -> str:
+    _require_original_constructors()
     encoded = json.dumps(value, ensure_ascii=True, separators=(",", ":")).encode("ascii")
-    return hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    _require_original_constructors()
+    digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    _require_original_constructors()
+    return digest
 
 
 def genesis_write_slot_witness() -> WriteSlotLedgerWitness:
@@ -174,6 +202,7 @@ def derive_disconnected_write_slot_id(
     plan_id: str, step_id: str, request_sha256: str,
 ) -> str:
     """Compute a claim ID; computing it does not authorize or reserve a WRITE."""
+    _require_original_constructors()
     if not (_valid(plan_id, _PLAN) and _valid(step_id, _STEP)
             and _valid(request_sha256, _SHA)):
         raise WriteSlotLedgerRejected("invalid exact WRITE identity")
