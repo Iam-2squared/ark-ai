@@ -23,6 +23,14 @@ from .personal_context_replay_ledger import (
 )
 
 _DOMAIN = b"ARK-offline-context-replay-restart-review-v1\0"
+# Identity-only, local diagnostic hashing must not call substituted modules,
+# serializers or digest code on retained Personal Context replay metadata.
+# Keep these import-time witnesses before the first ledger/witness read.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 _LEDGER_TYPE = DisconnectedContextReplayLedger
 # A hostile replacement lookup hook could run before the first local path
 # read, even with an exact ledger type. Pin these hooks at import time.
@@ -100,6 +108,18 @@ _ORIGINAL_RESULT_DENIALS = tuple(
 
 
 def _assert_result_denials() -> None:
+    # The codec receives private, locally retained replay identifiers. Check
+    # it before any caller ledger read and after every overridable callback.
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise OfflineContextRecoveryRejected(
+            "context replay digest implementation changed"
+        )
     # No False-looking replacement may establish a new authority baseline.
     if (
         OfflineContextRecoveryReview is not _RESULT_TYPE
