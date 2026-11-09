@@ -84,7 +84,7 @@ def test_preinstalled_policy_or_marker_slot_does_not_execute(
     ("policy", "__init__"),
     ("marker", "__init__"),
 ))
-def test_digest_callback_cannot_reinstall_input_field_or_constructor(
+def test_substituted_digest_cannot_reinstall_input_field_or_constructor(
     monkeypatch, target, name,
 ):
     policy, rows = _inputs()
@@ -108,7 +108,7 @@ def test_digest_callback_cannot_reinstall_input_field_or_constructor(
         match="attention authority definition changed",
     ):
         _preview(policy, rows)
-    assert count == [1]
+    assert count == []
     assert hits == []
 
 
