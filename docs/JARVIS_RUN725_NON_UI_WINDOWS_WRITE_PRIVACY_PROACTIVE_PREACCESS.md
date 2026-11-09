@@ -1,12 +1,12 @@
 # ARK AI — Run725 non-UI Windows CI recovery and preaccess boundaries
 
-**Work basis:** Draft PR #8, `research/jarvis-foundations` at `090fd13fb74f7d1a37699f388aead8e87d1d98bd` (Run724 checkpoint). **Report source/test basis:** `54c16cd853152b2a50e4f65c4ce49fb896a00fd3`. Everything here is local/free-only, disconnected and reversible. This is non-normative evidence; no frozen contract or PASS gate changed.
+**Work basis:** Draft PR #8, `research/jarvis-foundations` at `090fd13fb74f7d1a37699f388aead8e87d1d98bd` (Run724 checkpoint). **Report source/test basis:** `2de251b27e11295133257a5bd9d303fa1fe3b63f`. Everything here is local/free-only, disconnected and reversible. This is non-normative evidence; no frozen contract or PASS gate changed.
 
 ## A. Exact Run724 Windows CI failure repair
 
 - [Run724 exact checkpoint CI #42537079024](https://github.com/Iam-2squared/ark-ai/actions/runs/42537079024) completed **FAIL**: Ubuntu Python 3.11/3.12/3.13 GREEN; Windows 3.11/3.12/3.13 FAIL. Actual logs show only two failing parameters on each Windows host: `test_named_file_metadata_change_after_read_is_rejected[st_mtime_ns/st_ctime_ns]`, `DID NOT RAISE ReadInputManifestRejected`.
 - The test monkeypatched `Path.stat` but the native `WindowsPath` method may be a different override. [Fix `7f5b8f1`](https://github.com/Iam-2squared/ark-ai/commit/7f5b8f1f43ee70fc48c20c99bef604d610a960b6) uses `type(target).stat` to instrument the method actually called for the native filesystem path. The modified test still demands refusal of a late *same-size* named-file metadata change and does not loosen the production guard. Existing Windows same-source timestamp limitations and post-publish TOCTOU caveats remain.
-- [Fix-head CI #42541375640](https://github.com/Iam-2squared/ark-ai/actions/runs/42541375640) had Ubuntu 3/3 GREEN, Windows 3 jobs IN PROGRESS at observed check. **Do not infer 6/6 GREEN** from the Ubuntu result.
+- [First-fix CI #42541375640](https://github.com/Iam-2squared/ark-ai/actions/runs/42541375640) **still failed all three Windows jobs**, with the same two parameters; Ubuntu remained 3/3 GREEN. The native Windows symlink preflight can itself consume an extra named-stat observation, so choosing the second named call is not a portable marker for the post-read epoch. [Follow-up test-only fix `eaaf135f`](https://github.com/Iam-2squared/ark-ai/commit/eaaf135f253e42dddca5e37b5b49def4a5980d6f) observes the *second actual file-descriptor fstat after reading bytes* and injects named-stat drift only after that point. Its exact-head CI is pending. No production manifest integrity logic was weakened.
 
 ## B. Manual-only WRITE restart/triage privacy gate
 
@@ -22,6 +22,8 @@
 ## D. Proactive SQLite witness privacy boundary
 
 - [Source `6a6d0a06`](https://github.com/Iam-2squared/ark-ai/commit/6a6d0a067af9c5e5356c8102039b3a7487efd79e) pins the proactive history schema validator before SQLite reads. [Three synthetic regression cases `41649468`](https://github.com/Iam-2squared/ark-ai/commit/41649468cc1107dde62103c07f4a9d1d0ec2c704) exercise with/without retained witness and an injected path-resolution callback. No scheduled notification or real action is authorized.
+
+- A proactive inherited schema-injection regression also expected late path retargeting. [Test correction `2de251b2`](https://github.com/Iam-2squared/ark-ai/commit/2de251b27e11295133257a5bd9d303fa1fe3b63f) instead requires the unreviewed callback to remain **uninvoked**, preserving private SQLite custody.
 
 ## Validation and known limits
 
