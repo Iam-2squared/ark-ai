@@ -118,6 +118,21 @@ _ORIGINAL_INPUT_CONSTRUCTORS = tuple(
 )
 
 
+# The policy/history hashes are private local evidence, not authorization.
+# Pin digest/JSON implementations and parser, bound and domain identities
+# before any caller-supplied policy or marker getter is reached. These checks
+# also run after serialization callbacks; replacing them cannot launder a
+# forged REVIEW_ONLY result into an authority to notify.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_MS = _MAX_MS
+_ORIGINAL_MAX_MARKERS = _MAX_MARKERS
+
+
 def _assert_original_denials() -> None:
     # Output slot lookups and allocation hooks are executable callbacks.
     # Refuse replacements before hashing or constructing a receipt, including
@@ -140,7 +155,15 @@ def _assert_original_denials() -> None:
     if (
         # The input class names are also module-level injection surfaces.
         # A counterfeit policy/marker may expose executable field getters.
-        AttentionBudgetPolicy is not _POLICY_TYPE
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _SHA is not _ORIGINAL_SHA
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _MAX_MS is not _ORIGINAL_MAX_MS
+        or _MAX_MARKERS is not _ORIGINAL_MAX_MARKERS
+        or AttentionBudgetPolicy is not _POLICY_TYPE
         or SyntheticSurfaceMarker is not _MARKER_TYPE
         or AttentionBudgetPreview is not _RESULT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
