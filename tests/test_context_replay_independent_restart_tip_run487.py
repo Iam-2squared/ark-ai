@@ -93,7 +93,7 @@ def test_stale_callback_result_after_sqlite_append_is_rejected(
     assert DisconnectedContextReplayLedger(path).witness().count == 1
 
 
-def test_comparison_digest_callback_cannot_hide_intervening_append(
+def test_substituted_comparison_digest_cannot_inject_late_append(
     tmp_path, monkeypatch,
 ):
     ledger, retained, path = _setup(tmp_path)
@@ -101,9 +101,6 @@ def test_comparison_digest_callback_cannot_hide_intervening_append(
     injected = []
 
     def append_during_report_digest(value):
-        # Simulate the same late durable append without replacing the now
-        # protected report constructor. The review digest is computed only
-        # after the first independent SQLite tip read.
         if (
             type(value) is bytes
             and value.startswith(recovery._DOMAIN)
@@ -113,10 +110,17 @@ def test_comparison_digest_callback_cannot_hide_intervening_append(
             _append_valid_row(path)
         return original(value)
 
-    monkeypatch.setattr(recovery.hashlib, "sha256", append_during_report_digest)
-    with pytest.raises(recovery.OfflineContextRecoveryRejected, match="durable tip"):
-        _review(ledger, retained)
-    assert injected == ["appended"]
+    with monkeypatch.context() as patch:
+        patch.setattr(recovery.hashlib, "sha256", append_during_report_digest)
+        with pytest.raises(
+            recovery.OfflineContextRecoveryRejected,
+            match="digest implementation changed",
+        ):
+            _review(ledger, retained)
+    # Refuse the replacement before a private ledger read, not only after a
+    # forged local digest could cause a synthetic DB side effect.
+    assert injected == []
+    assert ledger.witness() == retained
 
 
 def test_callback_with_legitimate_new_durable_tip_still_unverified(
