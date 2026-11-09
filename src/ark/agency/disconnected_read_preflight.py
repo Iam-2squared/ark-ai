@@ -20,6 +20,13 @@ from .registry import BoundAction, ToolRegistry
 _MAX_STEPS = 24
 _MAX_GRANTS = 128
 _MAX_MS = 2**63 - 1
+_DOMAIN = b"ARK-disconnected-registered-read-preflight-v1\\0"
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_BUDGETS = (_MAX_STEPS, _MAX_GRANTS, _MAX_MS)
 
 
 class DisconnectedReadPreflightRejected(ValueError):
@@ -63,6 +70,33 @@ _ORIGINAL_RESULT_DENIALS = tuple(
     vars(_RESULT_TYPE)[name] for name in _RESULT_DENIALS
 )
 _ORIGINAL_REGISTERED_GATE = vars(PermissionGate)["authorize_registered"]
+_RESULT_FIELDS = (
+    "topology_digest", "status_digest", "registry_revision",
+    "grant_fingerprint", "ready_step_ids", "ready_bound_ids", "fingerprint",
+)
+_RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_CARRIERS = tuple(
+    vars(_RESULT_TYPE).get(key) for key in _RESULT_FIELDS + _RESULT_HOOKS
+)
+
+
+def _assert_original_digest_pipeline() -> None:
+    """Reject substituted codec/digest authority before private plan or grants.
+
+    Python module-identity checks are local fault-injection guards, not
+    authenticated provenance or permission to execute a registered backend.
+    """
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or (_MAX_STEPS, _MAX_GRANTS, _MAX_MS) != _ORIGINAL_BUDGETS
+    ):
+        raise DisconnectedReadPreflightRejected(
+            "READ preflight digest dependencies changed"
+        )
 
 
 def _assert_original_result_denials() -> None:
@@ -70,6 +104,13 @@ def _assert_original_result_denials() -> None:
     if (
         DisconnectedReadPreflight is not _RESULT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
+        or any(
+            vars(_RESULT_TYPE).get(name) is not expected
+            for name, expected in zip(
+                _RESULT_FIELDS + _RESULT_HOOKS,
+                _ORIGINAL_RESULT_CARRIERS, strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
@@ -97,11 +138,15 @@ def _assert_original_gate(gate: PermissionGate) -> None:
 
 
 def _digest(payload: object) -> str:
+    _assert_original_digest_pipeline()
     data = json.dumps(
         payload, sort_keys=True, separators=(",", ":"),
         ensure_ascii=False, allow_nan=False,
     ).encode("utf-8")
-    return hashlib.sha256(b"ARK-disconnected-registered-read-preflight-v1\0" + data).hexdigest()
+    _assert_original_digest_pipeline()
+    result = hashlib.sha256(_DOMAIN + data).hexdigest()
+    _assert_original_digest_pipeline()
+    return result
 
 
 def preview_registered_read_plan(
@@ -119,6 +164,7 @@ def preview_registered_read_plan(
     This deliberately cannot handle WRITE, token consumption, scheduling or
     external execution, even with synthetically valid grants.
     """
+    _assert_original_digest_pipeline()
     if (
         type(plan) is not PlanGraph
         or type(registry) is not ToolRegistry
@@ -134,6 +180,7 @@ def preview_registered_read_plan(
     if not 1 <= len(plan.steps) <= _MAX_STEPS:
         raise DisconnectedReadPreflightRejected("plan exceeds disconnected preflight budget")
     _assert_original_result_denials()
+    _assert_original_digest_pipeline()
     # Validate the real registered permission method BEFORE any registry or
     # planner callback. A counterfeit method must never be executed first.
     _assert_original_gate(gate)
@@ -152,6 +199,7 @@ def preview_registered_read_plan(
         raise DisconnectedReadPreflightRejected("unstable plan or registry") from exc
 
     def stable() -> None:
+        _assert_original_digest_pipeline()
         _assert_original_gate(gate)
         try:
             if grants is not original_grants or any(
