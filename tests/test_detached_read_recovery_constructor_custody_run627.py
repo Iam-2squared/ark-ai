@@ -40,7 +40,7 @@ def test_preinstalled_hostile_result_initializer_never_runs(
     assert executed == []
 
 
-def test_digest_callback_injection_cannot_execute_final_schedule_initializer(
+def test_substituted_digest_callback_cannot_execute_final_schedule_initializer(
     monkeypatch,
 ):
     executed = []
@@ -64,7 +64,8 @@ def test_digest_callback_injection_cannot_execute_final_schedule_initializer(
         module.DetachedReadRecoveryRejected, match="authority descriptor changed"
     ):
         _review()
-    assert injected == [True]
+    # The import-pinned SHA implementation is checked before its callback runs.
+    assert injected == []
     assert executed == []
 
 
