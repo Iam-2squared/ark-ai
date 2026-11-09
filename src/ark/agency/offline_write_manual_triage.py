@@ -71,6 +71,12 @@ class OfflineWriteTriagePacket:
 
 _ITEM_TYPE = OfflineWriteTriageItem
 _ORIGINAL_ITEM_INIT = vars(_ITEM_TYPE)["__init__"]
+# Fail closed before any private recovery or SQLite evidence enters a replaced
+# serializer/hash callback. These are process-local implementation identities,
+# not authenticated custody or a sandbox.
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 _PACKET_TYPE = OfflineWriteTriagePacket
 _ORIGINAL_PACKET_INIT = vars(_PACKET_TYPE)["__init__"]
 _RESTART_TYPE = OfflineWriteRestartReport
@@ -103,6 +109,9 @@ def _require_original_denial_descriptors() -> None:
     """Never invoke a replaced False-valued diagnostic authority getter."""
     if (
         OfflineWriteTriagePacket is not _PACKET_TYPE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
         or OfflineWriteTriageItem is not _ITEM_TYPE
         or vars(_PACKET_TYPE).get("__init__") is not _ORIGINAL_PACKET_INIT
         or vars(_ITEM_TYPE).get("__init__") is not _ORIGINAL_ITEM_INIT
@@ -131,6 +140,7 @@ def build_offline_write_triage_packet(
     A claimed SUCCEEDED WRITE is still unverified and never becomes automatic
     dispatch permission. READ steps are omitted from the operator checklist.
     """
+    _require_original_denial_descriptors()
     if (
         type(ledger) is not DisconnectedWriteSlotLedger
         or type(retained) is not WriteSlotLedgerWitness
