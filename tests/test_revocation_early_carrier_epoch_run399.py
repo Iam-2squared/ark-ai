@@ -80,11 +80,12 @@ def test_retained_revocation_custody_starts_before_first_validation(
 
     with pytest.raises(
         SyntheticContextRevocationRejected,
-        match="retained revocation evidence changed|revocation integrity validator changed",
+        match=("retained revocation evidence changed|revocation integrity validator changed"
+               "|revocation digest implementation changed"),
     ):
         continuity.review_revocation_continuity(ledger, retained=retained)
     # Original validator identity is checked before a substituted wrapper can run.
-    assert calls == (0 if phase in ("first_integrity", "later_integrity") else 1)
+    assert calls == (1 if phase == "source_validation" else 0)
     assert retained.rows == original_rows
 
     # The failed diagnostic is read-only. Once the original carrier is
