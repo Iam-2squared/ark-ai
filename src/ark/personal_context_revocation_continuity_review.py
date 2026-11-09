@@ -39,6 +39,9 @@ _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_HASH = _hash
+# Schema validation runs against a private SQLite connection: a substituted
+# validator must never receive it, even when its eventual result looks valid.
+_ORIGINAL_VALIDATE = _validate
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +93,7 @@ def _require_original_witness_carrier() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or _hash is not _ORIGINAL_HASH
+        or _validate is not _ORIGINAL_VALIDATE
     ):
         raise SyntheticContextRevocationRejected(
             "revocation digest implementation changed"
