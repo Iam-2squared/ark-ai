@@ -125,7 +125,7 @@ def test_preview_dependency_is_pinned_before_processing(monkeypatch):
     assert original is prefix._PREVIEW
 
 
-def test_inflight_history_mutation_refused(monkeypatch):
+def test_substituted_hash_refused_before_history_mutation(monkeypatch):
     old = (marker(1, 100),)
     new = (marker(1, 100), marker(2, 150))
     old_digest = digest(policy(), old, 100)
@@ -139,5 +139,9 @@ def test_inflight_history_mutation_refused(monkeypatch):
         return real(data)
 
     monkeypatch.setattr(prefix.hashlib, "sha256", mutate)
-    with pytest.raises(prefix.AttentionPrefixRejected, match="evidence changed"):
+    with pytest.raises(
+        prefix.AttentionPrefixRejected, match="attention source preview rejected",
+    ):
         check(old, new, 100, 200, old_digest=old_digest)
+    assert calls == [0]
+    assert new[1].observation_sha256 == f"{52:064x}"
