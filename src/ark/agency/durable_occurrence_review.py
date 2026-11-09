@@ -274,7 +274,7 @@ class SyntheticOccurrenceStore:
         )
 
         def assert_input_epoch() -> None:
-            _require_original_digest()
+            _require_original_protocol()
             _assert_receipt_denials()
             # Preserve established fail-closed provenance diagnostics, so
             # source vs token changes remain distinguishable in durable tests.
