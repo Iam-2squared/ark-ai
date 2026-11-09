@@ -62,6 +62,10 @@ class SyntheticTriggerWitness:
 # the public method. We still call the public method for reentrant fault
 # coverage, but it may not silently skip the actual local digest validation.
 _ORIGINAL_WITNESS_VALIDATOR = SyntheticTriggerWitness.assert_integrity
+# _validate receives a live private SQLite handle. A swapped validator,
+# including one installed reentrantly after the first source observation,
+# must be denied before any private rows are passed into it.
+_ORIGINAL_SCHEMA_VALIDATE = _validate
 # A frozen witness can still acquire executable class descriptors and lookup
 # hooks. Capture the ORIGINAL slots before untrusted caller code can replace
 # them, and check them before reading retained private history or opening
@@ -81,6 +85,7 @@ _ORIGINAL_WITNESS_HOOKS = tuple(
 def _require_original_witness_carrier() -> None:
     if (
         SyntheticTriggerWitness is not _WITNESS_TYPE
+        or _validate is not _ORIGINAL_SCHEMA_VALIDATE
         or any(
             vars(_WITNESS_TYPE).get(name) is not original
             for names, originals in (
