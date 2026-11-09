@@ -36,7 +36,7 @@ def test_preinstalled_denial_substitution_fails_before_hashing(
 
 
 @pytest.mark.parametrize("name", recovery._DENIAL_NAMES)
-def test_hash_callback_cannot_replace_original_denial(
+def test_substituted_hash_callback_cannot_replace_original_denial(
     monkeypatch, name,
 ):
     original = recovery.hashlib.sha256
@@ -56,7 +56,8 @@ def test_hash_callback_cannot_replace_original_denial(
         recovery.DetachedReadRecoveryRejected, match="descriptor changed",
     ):
         _recover()
-    assert calls == 1
+    # The forged digest is not allowed to run, even once.
+    assert calls == 0
 
 
 def test_honest_detached_recovery_remains_inert_and_deterministic():
