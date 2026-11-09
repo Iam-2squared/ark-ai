@@ -7,9 +7,9 @@ prove a writer, grant replay, or attest an external effect.
 from __future__ import annotations
 
 import pytest
+from test_memory_postcommit_triage_run552 import make_case
 
 import ark.memory.postcommit_uncertainty_review as triage
-from test_memory_postcommit_triage_run552 import make_case
 
 
 @pytest.mark.parametrize(
