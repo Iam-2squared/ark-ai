@@ -71,8 +71,11 @@ def test_reentrant_hash_must_not_invoke_late_witness_constructor(
 
     monkeypatch.setattr(clock, "_hash", callback)
     try:
-        with pytest.raises(clock.SyntheticClockRejected, match="descriptor changed"):
+        with pytest.raises(
+            clock.SyntheticClockRejected, match="digest implementation changed",
+        ):
             clock.review_synthetic_clock_sequence((sample,))
+        # The replaced hash itself is refused before it can poison __init__.
         assert invoked == []
     finally:
         monkeypatch.setattr(clock.SyntheticClockWitness, "__init__", original_init)
