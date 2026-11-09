@@ -26,6 +26,28 @@ class DisconnectedFileSealRejected(ValueError):
     """The read-only local source is missing, modified or unsafe to inspect."""
 
 
+# Local callback identity check only; it does not authenticate source bytes,
+# protect against arbitrary code in this process, or grant file/OS authority.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_MAX_BYTES = _MAX_BYTES
+_ORIGINAL_MAX_PATH = _MAX_PATH
+
+
+def _require_original_seal_codec() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _MAX_BYTES is not _ORIGINAL_MAX_BYTES
+        or _MAX_PATH is not _ORIGINAL_MAX_PATH
+    ):
+        raise DisconnectedFileSealRejected("local file digest or custody budget changed")
+
+
 @dataclass(frozen=True, slots=True)
 class DisconnectedFileSeal:
     path_sha256: str = field(repr=False)
@@ -70,6 +92,7 @@ def _path(value: object) -> Path:
 
 
 def _parents(path: Path) -> str:
+    _require_original_seal_codec()
     chain = []
     try:
         for item in reversed(path.parents):
@@ -125,6 +148,7 @@ def _different_metadata_fields(
 
 
 def _once(path: Path) -> DisconnectedFileSeal:
+    _require_original_seal_codec()
     parent_first = _parents(path)
     try:
         original = _metadata(os.lstat(path))
@@ -142,6 +166,7 @@ def _once(path: Path) -> DisconnectedFileSeal:
             raise DisconnectedFileSealRejected(
                 f"source changed before read (metadata fields: {names})"
             )
+        _require_original_seal_codec()
         digest = hashlib.sha256()
         count = 0
         while True:
@@ -172,6 +197,7 @@ def _once(path: Path) -> DisconnectedFileSeal:
         raise DisconnectedFileSealRejected("source unavailable after read") from exc
     if after != original or _parents(path) != parent_first:
         raise DisconnectedFileSealRejected("source changed after read")
+    _require_original_seal_codec()
     return DisconnectedFileSeal(
         hashlib.sha256(_DOMAIN + str(path).encode("utf-8")).hexdigest(),
         parent_first, digest.hexdigest(), *original,
@@ -180,6 +206,7 @@ def _once(path: Path) -> DisconnectedFileSeal:
 
 def capture_disconnected_file_seal(path: Path) -> DisconnectedFileSeal:
     """Read a bounded synthetic file twice; never execute, modify or authorize."""
+    _require_original_seal_codec()
     path = _path(path)
     first = _once(path)
     if _once(path) != first:
@@ -191,6 +218,7 @@ def review_disconnected_file_seal(
     path: Path, retained: DisconnectedFileSeal,
 ) -> DisconnectedFileSeal:
     """Require a caller-retained, exact prior seal across both fresh reads."""
+    _require_original_seal_codec()
     path = _path(path)
     if type(retained) is not DisconnectedFileSeal:
         raise DisconnectedFileSealRejected("exact prior source seal required")
