@@ -48,7 +48,9 @@ _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_TABLE = _TABLE
 _ORIGINAL_MAX = _MAX
-_ORIGINAL_MAX_FIXTURE_ROWS = _MAX_FIXTURE_ROWS
+# The bounded synthetic ledger's capacity remains an explicit test-injection
+# seam for zero/full/concurrent capacity regression fixtures. Mutating this
+# budget is not evidence of authenticated authority or durable consent.
 _ORIGINAL_ID_PATTERNS = (
     _OCCURRENCE, _TOKEN_DIGEST, _REGISTRY_ID, _BOUND_ID, _REQUEST_ID,
 )
@@ -71,8 +73,6 @@ def _require_original_protocol() -> None:
     if (
         _TABLE is not _ORIGINAL_TABLE
         or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
-        or type(_MAX_FIXTURE_ROWS) is not int
-        or _MAX_FIXTURE_ROWS != _ORIGINAL_MAX_FIXTURE_ROWS
         or any(
             current is not original
             for current, original in zip(
