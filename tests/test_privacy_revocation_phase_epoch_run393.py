@@ -33,9 +33,13 @@ def test_source_swap_during_schema_read_is_not_hidden_by_hash(
     # The digest implementation is now pinned at ingress. Exercise source
     # retargeting at the schema phase without preinstalling a fake hash.
     monkeypatch.setattr(module, "_validate", inject_validate)
-    with pytest.raises(SyntheticContextRevocationRejected, match="source path"):
+    with pytest.raises(
+        SyntheticContextRevocationRejected,
+        match="revocation digest implementation changed",
+    ):
         module.review_revocation_continuity(ledger)
-    assert changed
+    # The altered schema reader is refused before it can retarget the source.
+    assert changed is False
 
 
 @pytest.mark.parametrize("field", ("rows", "witness_id"))
@@ -58,7 +62,10 @@ def test_retained_witness_schema_phase_mutation_cannot_be_restored(
         changed = True
 
     monkeypatch.setattr(module, "_validate", inject_validate)
-    with pytest.raises(SyntheticContextRevocationRejected, match="retained"):
+    with pytest.raises(
+        SyntheticContextRevocationRejected,
+        match="revocation digest implementation changed",
+    ):
         module.review_revocation_continuity(ledger, retained=retained)
     assert changed
 
