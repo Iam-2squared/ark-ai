@@ -89,7 +89,40 @@ _ORIGINAL_ASSESSMENT_CARRIER = tuple(
 )
 
 
+
+# Treat serializer, domain, admissible vocabularies and regexp as exact
+# diagnostic contracts. They receive caller privacy-scope identifiers and
+# can otherwise be replaced with executable or overly permissive callbacks.
+_ORIGINAL_ERASURE_HASHLIB = hashlib
+_ORIGINAL_ERASURE_JSON = json
+_ORIGINAL_ERASURE_SHA256 = hashlib.sha256
+_ORIGINAL_ERASURE_DUMPS = json.dumps
+_ORIGINAL_ERASURE_HEX = _HEX
+_ORIGINAL_ERASURE_DOMAIN = _DOMAIN
+_ORIGINAL_ERASURE_CHOICES = (
+    _ROW, _READERS, _CHECKPOINT, _SECURE_DELETE, _BACKUPS,
+)
+
+
 def _assert_original_authority() -> None:
+    if (
+        hashlib is not _ORIGINAL_ERASURE_HASHLIB
+        or json is not _ORIGINAL_ERASURE_JSON
+        or hashlib.sha256 is not _ORIGINAL_ERASURE_SHA256
+        or json.dumps is not _ORIGINAL_ERASURE_DUMPS
+        or _HEX is not _ORIGINAL_ERASURE_HEX
+        or _DOMAIN is not _ORIGINAL_ERASURE_DOMAIN
+        or any(
+            current is not original
+            for current, original in zip(
+                (_ROW, _READERS, _CHECKPOINT, _SECURE_DELETE, _BACKUPS),
+                _ORIGINAL_ERASURE_CHOICES, strict=True,
+            )
+        )
+    ):
+        raise SyntheticErasureRejected(
+            "erasure assessment digest implementation changed"
+        )
     if (
         SyntheticErasureAssessment is not _ASSESSMENT_TYPE
         or SyntheticErasureObservations is not _OBSERVATION_TYPE
