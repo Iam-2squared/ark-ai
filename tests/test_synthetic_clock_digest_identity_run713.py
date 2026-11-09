@@ -55,7 +55,7 @@ def test_digest_substitution_fails_before_hash_or_iterator(
 
 
 @pytest.mark.parametrize("mutation", ("sha256", "dumps"))
-def test_hash_callback_cannot_leave_changed_implementation_after_hash(
+def test_hash_callback_replacement_is_rejected_before_first_hash(
     monkeypatch: pytest.MonkeyPatch, mutation: str,
 ) -> None:
     native = clock._hash
@@ -80,7 +80,9 @@ def test_hash_callback_cannot_leave_changed_implementation_after_hash(
             match="synthetic clock digest implementation changed",
         ):
             clock.review_synthetic_clock_sequence((_sample(),))
-    assert called == [True]
+    # The pinned helper rejects injection before switch_after_hash can execute.
+    # This early refusal is stronger than the prior post-hash rejection.
+    assert called == []
 
 
 def test_original_local_chain_stays_non_authorizing() -> None:
