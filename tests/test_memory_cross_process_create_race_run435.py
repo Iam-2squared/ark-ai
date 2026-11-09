@@ -74,24 +74,34 @@ def test_concurrent_memory_initial_create_is_single_cas_per_identity(
         "separate-source": ("fixture-owner", "private", "other-source"),
     }[mode]
     identities = (first, second)
-    workers = [
-        subprocess.Popen(
-            [
-                sys.executable, "-c", _CHILD, str(path), str(gate),
-                str(tmp_path / f"ready-{index}"), *identities[index],
-            ],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-        )
-        for index in range(2)
-    ]
+    # Test independent process CAS after both store handles are ready. The
+    # constructor's WAL/schema bootstrap is independently covered elsewhere;
+    # racing it here mixes startup contention into the revision-zero CAS test.
+    # Start each worker and await its readiness before launching the next one.
+    workers = []
+    answers = []
     try:
-        deadline = time.monotonic() + 25
-        while not all((tmp_path / f"ready-{index}").exists() for index in range(2)):
-            if any(worker.poll() is not None for worker in workers):
-                raise AssertionError("Memory worker exited before release")
-            if time.monotonic() >= deadline:
-                raise AssertionError("Memory workers did not reach release")
-            time.sleep(0.02)
+        for index in range(2):
+            worker = subprocess.Popen(
+                [
+                    sys.executable, "-c", _CHILD, str(path), str(gate),
+                    str(tmp_path / f"ready-{index}"), *identities[index],
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            workers.append(worker)
+            deadline = time.monotonic() + 25
+            while not (tmp_path / f"ready-{index}").exists():
+                if worker.poll() is not None:
+                    _, error = worker.communicate()
+                    raise AssertionError(
+                        f"Memory worker {index} exited during bootstrap: {error[-3000:]}"
+                    )
+                if time.monotonic() >= deadline:
+                    raise AssertionError(f"Memory worker {index} did not reach release")
+                time.sleep(0.02)
+        # Only the CAS put is concurrent. Both child handles remain live
+        # behind the shared release gate until all workers are ready.
         gate.touch()
         answers = [worker.communicate(timeout=35) for worker in workers]
     finally:
