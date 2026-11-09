@@ -230,6 +230,37 @@ def review_retained_memory_chain(
     return result
 
 
+# Import-time pins are a local preaccess fence, not a sandbox or a witness.
+# Reject a substituted reviewer/validator/hash callback before providing it
+# any retained Memory epoch or caller-held digest in detached verification.
+_ORIGINAL_VERIFY_REVIEW = review_retained_memory_chain
+_ORIGINAL_EDGE_REVIEW = review_retained_memory_epoch
+_ORIGINAL_EPOCH_VALIDATOR = _validate_epoch
+_ORIGINAL_SHA_PARSER = _SHA
+_ORIGINAL_EPOCH_BUDGET = _MAX_EPOCHS
+_ORIGINAL_RESULT_TYPE = _RESULT_TYPE
+_ORIGINAL_JSON_MODULE = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_HASHLIB_MODULE = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+
+
+def _assert_verify_protocol() -> None:
+    if (
+        review_retained_memory_chain is not _ORIGINAL_VERIFY_REVIEW
+        or review_retained_memory_epoch is not _ORIGINAL_EDGE_REVIEW
+        or _validate_epoch is not _ORIGINAL_EPOCH_VALIDATOR
+        or _SHA is not _ORIGINAL_SHA_PARSER
+        or type(_MAX_EPOCHS) is not int or _MAX_EPOCHS != _ORIGINAL_EPOCH_BUDGET
+        or _RESULT_TYPE is not _ORIGINAL_RESULT_TYPE
+        or json is not _ORIGINAL_JSON_MODULE
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or hashlib is not _ORIGINAL_HASHLIB_MODULE
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+    ):
+        raise MemorySchemaError("retained Memory verification protocol changed")
+
+
 def verify_retained_memory_chain(
     receipt: RetainedMemoryChainReview,
     epochs: tuple[AtomicMemoryEpochReview, ...],
@@ -239,16 +270,34 @@ def verify_retained_memory_chain(
     Verification remains read-only and does not certify the source, writer,
     provenance, event append prefix, consent, deletion or disclosure.
     """
+    _assert_verify_protocol()
     if (
         type(receipt) is not _RESULT_TYPE
         or type(epochs) is not tuple
         or not 2 <= len(epochs) <= _MAX_EPOCHS
     ):
         raise MemorySchemaError("exact retained Memory chain receipt and epochs required")
+    # Keep the original receipt FIELD OBJECTS: an equal-valued replacement
+    # during a reflective denial callback is still a different observation.
+    receipt_field_names = (
+        "observations", "scope_fingerprints", "added_event_counts",
+        "status", "chain_digest",
+    )
+    receipt_fields = tuple(getattr(receipt, name) for name in receipt_field_names)
+
+    def unchanged_receipt() -> None:
+        _assert_verify_protocol()
+        if any(
+            getattr(receipt, name) is not original
+            for name, original in zip(receipt_field_names, receipt_fields, strict=True)
+        ):
+            raise MemorySchemaError("retained Memory chain receipt changed during verification")
+
     original_epochs = tuple(epochs)
     pinned = tuple(_validate_epoch(epoch) for epoch in original_epochs)
 
     def unchanged() -> None:
+        _assert_verify_protocol()
         if (
             len(epochs) != len(original_epochs)
             or any(
@@ -266,8 +315,10 @@ def verify_retained_memory_chain(
             raise MemorySchemaError("retained Memory chain changed during verification")
 
     unchanged()
+    unchanged_receipt()
     expected = review_retained_memory_chain(epochs)
     unchanged()
+    unchanged_receipt()
 
     def exact_receipt() -> bool:
         # Structural value checks, not dataclass equality: a caller can replace
@@ -298,9 +349,15 @@ def verify_retained_memory_chain(
     ):
         if getattr(receipt, flag) is not False:
             raise MemorySchemaError("retained Memory chain receipt gained authority")
+        unchanged()
+        unchanged_receipt()
+        if not exact_receipt():
+            raise MemorySchemaError("retained Memory chain receipt changed after denial")
     # A denial property that returns False can still rewrite an input epoch
     # or receipt. Re-read after every getter, including the last one.
     unchanged()
+    unchanged_receipt()
     if not exact_receipt():
         raise MemorySchemaError("retained Memory chain receipt changed after denial")
     unchanged()
+    unchanged_receipt()
