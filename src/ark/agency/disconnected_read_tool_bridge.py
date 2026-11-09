@@ -30,6 +30,7 @@ _ORIGINAL_EXECUTE = fixture.execute_disconnected_fixture_tool
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_REQUEST = _REQUEST
 _ORIGINAL_STEP = _STEP
+_ORIGINAL_MAX_STEPS = _MAX_STEPS
 
 
 class DisconnectedReadToolBridgeRejected(ValueError):
@@ -98,6 +99,8 @@ def _protocol() -> None:
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _REQUEST is not _ORIGINAL_REQUEST
         or _STEP is not _ORIGINAL_STEP
+        or type(_MAX_STEPS) is not int
+        or _MAX_STEPS != _ORIGINAL_MAX_STEPS
         or DetachedReadToolBinding is not _BINDING_TYPE
         or DetachedReadToolPreview is not _RESULT_TYPE
         or any(
