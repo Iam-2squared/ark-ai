@@ -8,6 +8,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+from contextlib import closing
 
 import pytest
 
@@ -69,32 +70,44 @@ def test_cross_process_expiry_or_delete_race_has_single_durable_effect(
         MemoryWrite(scope, "source", "initial", expires_at_ms=1500),
     )
     gate = root / "start"
-    processes = [
-        subprocess.Popen(
-            [
-                sys.executable, "-c", _CHILD, str(path), str(gate),
-                str(root / f"ready-{index}"), action, original.memory_id,
-            ],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-        )
-        for index, action in enumerate((mode, "refresh"))
-    ]
-    try:
-        deadline = time.monotonic() + 25
-        while not all((root / f"ready-{index}").exists() for index in range(2)):
-            if any(process.poll() is not None for process in processes):
-                raise AssertionError("a competing process exited before the CAS gate")
-            if time.monotonic() >= deadline:
-                raise AssertionError("competing processes never reached the CAS gate")
-            time.sleep(0.02)
-        gate.touch()
-        replies = [process.communicate(timeout=35) for process in processes]
-    finally:
-        gate.touch()
-        for process in processes:
-            if process.poll() is None:
-                process.kill()
-                process.communicate()
+    processes: list[subprocess.Popen[str]] = []
+    # Separate SQLite store bootstrap from the intentional CAS race. A
+    # short-lived final WAL connection can otherwise unlink sidecars while
+    # another child is doing its path-custody lstat. Keep the WAL open, and
+    # have each child finish startup before launching the next.
+    with closing(sqlite3.connect(path)) as wal_keeper:
+        assert wal_keeper.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+        try:
+            for index, action in enumerate((mode, "refresh")):
+                ready = root / f"ready-{index}"
+                process = subprocess.Popen(
+                    [
+                        sys.executable, "-c", _CHILD, str(path), str(gate),
+                        str(ready), action, original.memory_id,
+                    ],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                )
+                processes.append(process)
+                deadline = time.monotonic() + 25
+                while not ready.exists():
+                    if process.poll() is not None:
+                        output = process.communicate()
+                        raise AssertionError(
+                            f"child {index} exited before the CAS gate: {output}"
+                        )
+                    if time.monotonic() >= deadline:
+                        raise AssertionError(
+                            f"child {index} never reached the CAS gate"
+                        )
+                    time.sleep(0.02)
+            gate.touch()
+            replies = [process.communicate(timeout=35) for process in processes]
+        finally:
+            gate.touch()
+            for process in processes:
+                if process.poll() is None:
+                    process.kill()
+                    process.communicate()
     assert all(process.returncode == 0 for process in processes), replies
     output = tuple(stdout.strip() for stdout, _stderr in replies)
     with sqlite3.connect(path) as conn:
