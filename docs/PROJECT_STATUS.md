@@ -1,3 +1,45 @@
+# LATEST — Run767 / 2026-11-10 JST
+
+**LATEST:** FOUR coherent **FREE-ONLY / NON-UI** safety work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) via the normal GitHub Contents API: (A) original atomic binder/preflight callback pinning; (B) proactive SQLite exact-Path admission on bootstrap/prepare; (C) observation source/privacy invalid label preaccess tests; (D) proactive startup original metadata/epoch helper pinning. **3 backend source files updated, 4 test files created, 20 new parameterized regression cases**; one technical evidence report. **Previous Run766 exact HEAD 6/6 GREEN; Run767 latest exact-HEAD all-six GREEN NOT YET VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** Asia/Tokyo/JST **2026-11-10T23:57:53.750+09:00** (administrative environment-clock sample at ordinary checkpoint write, not authenticated ARK clock, signed consent, GPU/cost approval or independent external evidence).
+
+## Exact work basis / branch / result semantics
+
+- **Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at pre-write check. **Initial work-basis HEAD:** `b00648918b03b33022fafaed1d4d71b60e4eddcc` (Run766 checkpoint); **last executable source/test HEAD:** `d4c7f931f4123309178e4e5b7c43fc5203969999`; **final technical report and checkpoint-write work-basis HEAD:** `307d5aa02db95f3475742c7d9888e97b1fbc989e` immediately re-read before this write. **Previous checkpoint Blob SHA:** `863827750fc58df6be3120004c174c4c995e8a12`. This operation creates the **checkpoint-result HEAD**; the result SHA cannot be truthfully self-referenced inside its own file. Re-fetch actual PR HEAD and status Blob after the write. No raw Git objects, force pushes, hidden alternate writes or main merge.
+- **A / immutable atomic bridge functions:** source `1e4c8b0475857948db30ff7a3175d2b0b7db7a1e`, `src/ark/agency/disconnected_atomic_binding_snapshot_review.py`; test `615214fc543dfc88bc3af8327cf50c852f9bcb18`, `tests/test_atomic_binding_callback_originals_run767.py` (**2 cases**). Import-original `derive_registered_atomic_intent` and `review_atomic_input_carriers` are checked before private registry/call/retained/SQLite reads and at reentrant boundaries; substituted callbacks cannot run. Match remains local/manual-only, not dispatch authority.
+- **B / proactive SQLite ingress:** source `819803df184e85a0c3d6ee607a150653d998f009`, `src/ark/proactive_synthetic_review.py`; test `66e6fe1da47dcdd0b1909089a65ed2af489ea00b`, `tests/test_proactive_exact_sqlite_path_run767.py` (**3 cases**). Reject executable pathlib subclasses before SQLite bootstrap and before preparation, preserving exact normal local Path bootstrap. No real notification.
+- **C / observation preaccess regression:** `7d93fe632294d1ac4996147889252d3c8b86610d`, `tests/test_observation_label_preaccess_run767.py` (**12 cases**). NUL, surrogate, and >1024 UTF-8 byte source/privacy labels are rejected before reading an uninitialized envelope or hashing private synthetic fixture bytes; no media capture.
+- **D / proactive startup metadata readers:** source `5e0594fce26a6b0938145aee68b4e11d9d4d7794`, `src/ark/proactive_startup_fence_review.py`; test `d4c7f931f4123309178e4e5b7c43fc5203969999`, `tests/test_proactive_startup_metadata_originals_run767.py` (**3 cases**). Original `dataclasses.fields`, `_epoch`, and `_snapshot_epoch` functions pinned before reading private trigger, policy or readiness carriers, including existing post-callback rechecks. No synthetic READY claim is execution authorization.
+- **Detailed evidence:** [Run767 non-UI technical report](https://github.com/Iam-2squared/ark-ai/blob/307d5aa02db95f3475742c7d9888e97b1fbc989e/docs/JARVIS_RUN767_NON_UI_ATOMIC_PROACTIVE_OBSERVATION.md); updated report commit `307d5aa02db95f3475742c7d9888e97b1fbc989e`.
+
+## CI / exact-SHA results and unverified boundaries
+
+- **Previous initial basis:** [CI #42829555412](https://github.com/Iam-2squared/ark-ai/actions/runs/42829555412) on `b00648918...`: **COMPLETED SUCCESS 6/6**, Windows/Ubuntu × Python 3.11/3.12/3.13. This does NOT prove Run767 changes.
+- **A source:** [#42837476616](https://github.com/Iam-2squared/ark-ai/actions/runs/42837476616) on `1e4c8b04...`: **Ubuntu 3 GREEN / Windows 3 IN PROGRESS** at checkpoint preflight.
+- **B source:** [#42837626966](https://github.com/Iam-2squared/ark-ai/actions/runs/42837626966) on `819803df...`: **Ubuntu 3 GREEN / Windows 3 IN PROGRESS** at preflight.
+- **C tests:** [#42837942342](https://github.com/Iam-2squared/ark-ai/actions/runs/42837942342) on `7d93fe63...`: **Ubuntu 3 GREEN / Windows 3 IN PROGRESS** at preflight.
+- **A tests:** [#42838089589](https://github.com/Iam-2squared/ark-ai/actions/runs/42838089589) on `615214fc...`: **Ubuntu 3 GREEN / Windows 3 IN PROGRESS** at preflight.
+- **B tests:** [#42838176503](https://github.com/Iam-2squared/ark-ai/actions/runs/42838176503) on `66e6fe1d...`: **1 SUCCESS / 5 IN PROGRESS** at preflight.
+- **First report:** [#42838555084](https://github.com/Iam-2squared/ark-ai/actions/runs/42838555084) on `e6fd3ce2...`: QUEUED at prior sample.
+- **D source:** [#42838865493](https://github.com/Iam-2squared/ark-ai/actions/runs/42838865493) on `5e0594fc...`: **6 QUEUED** at preflight.
+- **D tests:** [#42838961935](https://github.com/Iam-2squared/ark-ai/actions/runs/42838961935) on `d4c7f931...`: **6 QUEUED** at preflight. Updated report/checkpoint CI run IDs not yet confirmed. **Final exact HEAD 6/6 GREEN NOT VERIFIED**. Do not fire duplicate equivalent workflows or inherit older results.
+
+## Frozen / protected / free-only state and blockers
+
+- **Main** `7a843f17eb96ed13d66f23b58b06406b3002e405` and frozen V1/V2/Local UI/Launcher contracts/evidence untouched. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) at `805b377697472268db02650a89c7a94b1c5337c8` remains gated/unmerged; [paused Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` untouched/unmerged. **No UI/frontend changes or frontend tests.**
+- **No** paid/external GPU/compute, billable APIs/subscriptions, Candidate adapter/weights/export, protected V2 evaluation, actual ToolBackend WRITE, physical user-PC step, real sensor/notification, new credentials or account connection, destructive/irreversible operation, promotion, main merge, frozen contract change or GitHub safety bypass.
+- **Blockers:** exact in-process function/path/type pinning does not prove immutable code custody, independent write audit, trusted clock, signed human consent, source authenticity, symlink-race freedom, cross-store atomicity or real-world exactly-once tool effects. Memory/Planner/authorization/audit/privacy/proactive remain distinct stores. An ambiguous real WRITE stays **UNKNOWN / manual quarantine, NEVER auto-retry**. V3 frozen model/tokenizer/tool bytes, reviewed approved 120/30 dataset, provider budget/cost authorization and real local Windows GGUF verification remain unavailable.
+
+## Next plan / 今後の方針
+
+1. Confirm every Run767 source/test/report/checkpoint exact-head CI job on Windows and Ubuntu/Python 3.11–3.13; on failure inspect the **actual failing job log**, make only a semantics-preserving ordinary Contents fix, and work on an independent non-UI lane while replacement CI executes.
+2. Continue opt-in Memory generation CAS/ABA and durable COMMIT-UNKNOWN/retained event high-water/cross-scope snapshot safeguards. Treat identical post-COMMIT row bytes as ambiguous attribution, not success proof.
+3. Continue Planner journal crash recovery/terminal dependency closure, immutable ToolRegistry+exact PermissionGate and audit-before-action mock Executor. Integrate only after lower-layer exact-head GREEN; do not permit real WRITE or automatic replay.
+4. Keep Personal Context revocation/retention, proactive clock/startup state, disconnected observation lineage and free-only V3 identity/approval guards isolated and reversible. Preserve Draft PRs, frozen evaluation, and paused frontend/UI. Require explicit user authorization for payment, protected evaluation, irreversible operations, Candidate promotion, hardware action or main merge.
+
+---
+
 # LATEST — Run766 / 2026-11-10 JST
 
 **LATEST:** THREE meaningful FREE-ONLY / **NON-UI** safety packages saved through the ordinary GitHub Contents API to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): **(A)** immutable atomic-binding diagnostic result class/property/constructor pinning, **(B)** exact platform-Path privacy-veto SQLite restart ingress, and **(C)** exact platform-Path proactive startup readiness preaccess guard. **3 backend files updated, 3 new test files, 25 parameterized pytest cases**. CI exposed an intermediate Python slotted-dataclass `__new__` test-harness contamination, which was diagnosed using actual Ubuntu job logs and corrected with subprocess isolation. **Run765 initial basis 6/6 GREEN; Run766 latest exact-HEAD 6/6 GREEN NOT VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
