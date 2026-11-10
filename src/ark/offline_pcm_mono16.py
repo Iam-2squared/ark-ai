@@ -65,6 +65,34 @@ class OfflinePcmMono16:
 
 
 _RESULT_TYPE = OfflinePcmMono16
+# Source PCM is private. The codec/serializer are process-global mutable
+# callbacks; pin their import-time identities before passing any private
+# bytes or source/provenance labels to them. This is defensive in-process
+# detection, NOT sandboxing or authenticated audio provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_BOUNDS = (_MAX_INPUT, _MAX_OUTPUT, _MAX_DURATION)
+
+
+def _require_original_codec() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or any(type(n) is not int for n in
+               (_MAX_INPUT, _MAX_OUTPUT, _MAX_DURATION))
+        or (_MAX_INPUT, _MAX_OUTPUT, _MAX_DURATION) != _ORIGINAL_BOUNDS
+    ):
+        raise OfflinePcmConvertRejected(
+            "offline PCM codec authority changed before private bytes"
+        )
 
 
 def _sha(x: object) -> bool:
@@ -81,6 +109,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     """
     if type(request) is not OfflinePcmConvertRequest:
         raise OfflinePcmConvertRejected("exact conversion request required")
+    _require_original_codec()
     pinned = (
         request.owner_sha256, request.privacy_sha256, request.source_sha256,
         request.pcm_bytes, request.channels, request.sample_rate_hz,
@@ -88,11 +117,13 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     )
 
     def epoch() -> None:
+        _require_original_codec()
         current = (
             request.owner_sha256, request.privacy_sha256, request.source_sha256,
             request.pcm_bytes, request.channels, request.sample_rate_hz,
             request.bits_per_sample,
         )
+        _require_original_codec()
         if any(a is not b for a, b in zip(current, pinned, strict=True)):
             raise OfflinePcmConvertRejected("conversion request changed during processing")
 
@@ -113,6 +144,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     frames = len(raw) // frame_width
     if frames > rate * _MAX_DURATION or frames * 2 > _MAX_OUTPUT:
         raise OfflinePcmConvertRejected("output bytes or duration budget exceeded")
+    _require_original_codec()
     if hashlib.sha256(raw).hexdigest() != claimed:
         raise OfflinePcmConvertRejected("PCM source checksum mismatch")
     epoch()
@@ -138,15 +170,18 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
             epoch()
     epoch()
     output_bytes = bytes(output)
+    _require_original_codec()
     output_sha = hashlib.sha256(output_bytes).hexdigest()
     manifest = {
         "owner": owner, "privacy": privacy, "source": claimed,
         "output": output_sha, "frames": frames,
         "channels": channels, "rate": rate, "bits": bits,
     }
+    _require_original_codec()
     canonical = json.dumps(
         manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
+    _require_original_codec()
     inventory_sha = hashlib.sha256(_DOMAIN + canonical).hexdigest()
     epoch()
     result = OfflinePcmMono16(
