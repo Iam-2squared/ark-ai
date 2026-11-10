@@ -14,6 +14,21 @@ from .contracts import Effect, ToolBackend, ToolCall
 _MAX_REGISTRATIONS = 256  # Bound hostile registration generators before hashing.
 _MAX_REGISTRATION_TEXT = 256  # Bound individual tool/identity text before hashing.
 
+# Bounds are an import-time admission contract, not mutable tuning knobs.
+# Verify before touching a caller-owned tool identity or backend descriptor.
+_ORIGINAL_ADMISSION_LIMITS = (_MAX_REGISTRATIONS, _MAX_REGISTRATION_TEXT)
+
+
+def _require_original_registry_limits() -> None:
+    if (
+        type(_MAX_REGISTRATIONS) is not int
+        or type(_MAX_REGISTRATION_TEXT) is not int
+        or (_MAX_REGISTRATIONS, _MAX_REGISTRATION_TEXT)
+        != _ORIGINAL_ADMISSION_LIMITS
+    ):
+        raise ValueError("registry admission limits changed")
+
+
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_INSPECT = inspect
@@ -26,6 +41,7 @@ def _require_original_registry_digest() -> None:
     These local in-process identity checks are not a security sandbox,
     authenticated backend attestation, or permission to dispatch a tool.
     """
+    _require_original_registry_limits()
     if (
         hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
@@ -35,6 +51,7 @@ def _require_original_registry_digest() -> None:
 
 
 def _text(name: str, value: object) -> str:
+    _require_original_registry_limits()
     if type(value) is not str or not value.strip():
         raise ValueError(f"{name} must be a non-empty exact string")
     # Native and shell-facing identities must not embed NUL separators.
