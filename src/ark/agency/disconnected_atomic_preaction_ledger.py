@@ -119,7 +119,7 @@ def _path(value: object, *, create: bool) -> Path:
             meta = path.lstat()
         except FileNotFoundError:
             if not create:
-                raise AtomicPreactionRejected("intent ledger missing")
+                raise AtomicPreactionRejected("intent ledger missing") from None
         else:
             if create or not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise AtomicPreactionRejected("intent ledger already exists or unsafe")
