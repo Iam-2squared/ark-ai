@@ -73,6 +73,24 @@ class AtomicBindingSnapshotReview:
         return True
 
 
+# A frozen result instance does not freeze its class: reflected replacement
+# of a denial property or output constructor could turn a read-only diagnosis
+# into an apparent dispatch grant. Validate definitions before touching the
+# local private journal, and recheck after each reentrant storage boundary.
+_RESULT_TYPE = AtomicBindingSnapshotReview
+_RESULT_FIELDS = ("occurrence_id", "local_state", "retained_count")
+_RESULT_DENIALS = (
+    "local_binding_matches", "binding_proven", "tool_dispatch_authorized",
+    "automatic_replay_authorized", "external_effect_proven",
+    "independent_custody_proven", "manual_review_required",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_RESULT_NAMES = (*_RESULT_FIELDS, *_RESULT_DENIALS, *_RESULT_HOOKS)
+_ORIGINAL_RESULT_MEMBERS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in _RESULT_NAMES
+)
+
+
 def _original_reader() -> None:
     if (
         _ledger_module._scan is not _SCAN
@@ -81,6 +99,13 @@ def _original_reader() -> None:
             vars(AtomicPreactionSnapshot).get(name) is not descriptor
             for name, descriptor in zip(
                 _SNAPSHOT_FIELDS, _SNAPSHOT_ORIGINALS, strict=True,
+            )
+        )
+        or AtomicBindingSnapshotReview is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_NAMES, _ORIGINAL_RESULT_MEMBERS, strict=True,
             )
         )
     ):
@@ -158,7 +183,10 @@ def review_registered_atomic_binding_snapshot(
         )
         if state not in _LOCAL_STATES:
             raise AtomicBindingSnapshotRejected("invalid local state")
-        return AtomicBindingSnapshotReview(fields[0], state, fields[3])
+        _original_reader()
+        result = AtomicBindingSnapshotReview(fields[0], state, fields[3])
+        _original_reader()
+        return result
     except (AtomicPreactionRejected, sqlite3.DatabaseError, OSError) as exc:
         raise AtomicBindingSnapshotRejected(
             "local atomic recovery binding cannot be trusted"
