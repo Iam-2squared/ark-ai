@@ -55,6 +55,7 @@ class SyntheticProactiveStartupReview:
 
 
 _RESULT_TYPE = SyntheticProactiveStartupReview
+_ORIGINAL_FIELDS_FN = fields
 _AUTHORITY_NAMES = (
     "startup_authorized", "notification_authorized",
     "dispatch_authorized", "automatic_replay_authorized",
@@ -81,6 +82,9 @@ def _require_original_authorities() -> None:
     # Reject the substitution before reading trigger metadata or SQLite.
     if (
         SyntheticProactiveStartupReview is not _RESULT_TYPE
+        or fields is not _ORIGINAL_FIELDS_FN
+        or _epoch is not _ORIGINAL_EPOCH_FN
+        or _snapshot_epoch is not _ORIGINAL_SNAPSHOT_EPOCH_FN
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
@@ -104,6 +108,9 @@ def _epoch(value: object, carrier: type) -> tuple[object, ...]:
     return tuple(getattr(value, field.name) for field in fields(carrier))
 
 
+_ORIGINAL_EPOCH_FN = _epoch
+
+
 def _snapshot_epoch(snapshot: StartupSnapshot) -> tuple[object, ...]:
     """Pin nested component VALUES against reflective changes during a trigger read."""
     if type(snapshot.components) is not tuple or any(
@@ -117,6 +124,9 @@ def _snapshot_epoch(snapshot: StartupSnapshot) -> tuple[object, ...]:
             item.effective_state, item.failure_code, item.schema_revision,
         ) for item in snapshot.components),
     )
+
+
+_ORIGINAL_SNAPSHOT_EPOCH_FN = _snapshot_epoch
 
 
 def review_synthetic_proactive_startup(
