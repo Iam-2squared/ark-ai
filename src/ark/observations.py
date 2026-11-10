@@ -37,11 +37,6 @@ class ObservationEnvelope:
                 raise ValueError(
                     f"{name} must be a non-empty exact string"
                 )
-            # NUL separates labels at native adapter boundaries. Direct
-            # envelopes must enforce the same label safety contract as
-            # disconnected fixture preflight, before identity hashing.
-            if "\x00" in value:
-                raise ValueError(f"{name} contains a NUL separator")
             # Inert fixture metadata must not carry unbounded raw media or
             # arbitrary-sized identifiers into hashes and downstream reviewers.
             # The envelope crosses digest/serialization boundaries in UTF-8.
