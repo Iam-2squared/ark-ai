@@ -106,8 +106,12 @@ def test_mutated_record_during_hash_rejected(monkeypatch):
         return original(data)
 
     monkeypatch.setattr(mod, "hashlib", SimpleNamespace(sha256=altered))
-    with pytest.raises(mod.OfflineContextSearchRejected, match="mutated"):
+    with pytest.raises(
+        mod.OfflineContextSearchRejected,
+        match="search grammar, budget or codec changed",
+    ):
         search((row,))
+    assert row.content == "alpha beta"  # Replaced hash never saw private bytes.
 
 
 def test_exact_fixture_types_required():
