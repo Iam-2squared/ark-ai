@@ -1,3 +1,41 @@
+# LATEST — Run768 / 2026-11-11 JST
+
+**LATEST:** THREE coherent **FREE-ONLY / NON-UI** packages saved on Draft PR #8: **(A)** synthetic SQLite atomic intent/audit rollback and ambiguous second-reservation restart tests, **(B)** ToolRegistry identity NUL-byte ingress guard plus focused tests, **(C)** regression tests preserving the **frozen ObservationEnvelope v1** NUL identity while the opt-in fixture adapter rejects it. **One non-frozen backend source file updated, three new regression test files, 13 parameterized cases**, one corrected technical report. **An exploratory observation source edit violated frozen compatibility; GitHub CI exposed the regression; the source was fully restored byte-for-byte.** Latest exact-HEAD 6/6 GREEN **NOT YET VERIFIED**, ARK/JARVIS/V3 **NOT_PASSED**.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T01:10:57.896+09:00** (administrative environment-clock sample immediately before ordinary checkpoint Contents write; not authenticated ARK time, human consent, or cost authorization).
+
+## Exact work basis, branch, source/results and checkpoint semantics
+
+- **Initial basis HEAD:** `83e4658d1c0ea7d8b25da95a5469e93a669dcd41` (Run767 checkpoint). **Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Last executable source/test HEAD:** `816df19af91dc0bf733969e7a38e0fc72a7415f4`. **Final report / checkpoint-write work-basis HEAD:** `c1c45cc5bc307282260267afa3fea6697ed92956` (re-read immediately before writing). **Previous checkpoint Blob SHA:** `181f018c7a93a6be932c294540375b7c134e28a9`. This Contents operation creates the **checkpoint-result HEAD**, which cannot self-reference its own newly generated SHA inside the committed text. Re-fetch actual PR HEAD and status Blob SHA after the write. No raw Git objects/force push/main merge.
+- **A — atomic preaction WAL:** `55201f61216097c6da0f7cabfa3f9be8b76527bc`, `tests/test_atomic_preaction_two_row_wal_crash_run768.py`, **3** restart/interruption cases. Two distinct uncommitted second-reservation boundaries roll back intents + audits together; a committed response-lost second reservation is locally visible but stale witness cannot be reused. No tool execution or external action proof.
+- **B — exact registry identity:** source `036a6663ecace9821c19af20e78ef119c5d4c660`, `src/ark/agency/registry.py`; tests `b15489ba33b92efb2367df529d7299e1fea7cbe0`, `tests/test_registry_nul_identity_run768.py`, **4** cases. Reject embedded NUL in registered tool name/capability/backend ID before backend descriptor inspection, retain Unicode/deterministic revision and mock non-execution.
+- **C — frozen observation v1 compatibility:** exploratory edits `50c6d70`/`fdfb182` were **reverted via normal Contents API** at `d0bc3f246f5f618df525513e7eb4f560c9b9543a`; `src/ark/observations.py` current Blob `373ddb5085afb09d1c451239a7e75afb34d8c2e0` equals initial basis. New tests corrected at `816df19af91dc0bf733969e7a38e0fc72a7415f4`, `tests/test_observation_direct_nul_identity_run768.py`, **6** cases. V1 remains unchanged; optional fixture adapter still rejects NUL before private fixture hashing. Existing frozen test is preserved.
+- **Detailed evidence:** [Run768 technical report](https://github.com/Iam-2squared/ark-ai/blob/c1c45cc5bc307282260267afa3fea6697ed92956/docs/JARVIS_RUN768_NON_UI_OBSERVATION_ATOMIC_WAL_REGISTRY.md) including exact CI failure chronology and rollback.
+
+## CI — actual reviewed runs, no borrowed GREEN
+
+- **Previous exact initial basis:** [#42839474821](https://github.com/Iam-2squared/ark-ai/actions/runs/42839474821) at `83e4658d...`: **6/6 COMPLETED GREEN**, Windows/Ubuntu × Python 3.11/3.12/3.13. This is **not** Run768 final evidence.
+- **Atomic package intermediate:** [#42849081745](https://github.com/Iam-2squared/ark-ai/actions/runs/42849081745) at `55201f...`: Ubuntu **3 GREEN**, Windows in progress at sample.
+- **Obsolete exploratory observation test:** [#42849260230](https://github.com/Iam-2squared/ark-ai/actions/runs/42849260230) at `16e884c...`: **Ubuntu 3 FAIL**, due a double-escaped source NUL predicate. Fixed in next source edit.
+- **Obsolete actual NUL source / registry tests:** [#42849914931](https://github.com/Iam-2squared/ark-ai/actions/runs/42849914931) at `b15489...`: **Ubuntu 3 FAIL**, including 6 intentional frozen-v1 compatibility regressions in `test_observation_fixture_nul_framing_run745.py`. The source was then restored to original, not the frozen test weakened. One Ubuntu 3.11 run also showed an independent intermittent cross-process Memory CAS setup failure; preserve investigation.
+- **Restored frozen compatibility/test HEAD:** [#42851457266](https://github.com/Iam-2squared/ark-ai/actions/runs/42851457266) at `816df19...`: **IN PROGRESS**, no all-six verdict. Report/checkpoint SHA-specific CI may differ and is not yet established. No duplicate workflow run manually launched.
+- **Local execution:** repository cannot be cloned from the isolated container (GitHub DNS unavailable); no local pytest PASS asserted or fabricated test outcomes.
+
+## Frozen, cost, integration and protection boundaries
+
+- `main` `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged; [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) at `805b377697472268db02650a89c7a94b1c5337c8` remains protected/unmerged; [paused Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` unchanged/unmerged. **No UI/frontend code or tests.** Frozen V1/V2/Local UI/Launcher/Observation v1 contracts and evidence unchanged.
+- **No** paid/external GPU compute, billable API/subscription, Candidate weights/adapter/export, protected final V2 evaluation, real ToolBackend WRITE, live media/sensor/notification, credentials/accounts, physical-PC action, destructive/irreversible user operation, promotion, main merge, safeguard circumvention or new authority claim.
+- **Blockers:** neither local hash/SQLite evidence nor deterministic mock source IDs prove authenticated issuer, immutable independent audit, signed consent, trusted clock, secure filesystem custody, cross-DB atomicity or real-world exactly-once effects. **UNKNOWN external WRITE stays manually quarantined, never automatically retried.** V3 real immutable model/tokenizer/runtime bytes, rights-reviewed data and budget/approval, and local Windows GGUF evidence still absent.
+
+## Next plan / 今後の方針
+
+1. **Exact-head CI:** confirm `816df...` and new report/checkpoint SHA's six matrix jobs; on failure inspect actual logs, fix only with ordinary Contents API, and keep independent non-UI work moving. Do not weaken frozen tests or corruption gates. Investigate intermittent multiprocess Memory CAS early child exit with diagnostic stderr.
+2. **Memory:** opt-in generation CAS/ABA, COMMIT-UNKNOWN, durable retained high-water and multi-namespace coherent snapshots; do not attribute identical local row bytes to a caller automatically.
+3. **Planner/ToolRegistry/PermissionGate:** durable journal recovery/terminal closure, registry-bound exact permission inputs, audit-before-action and detached/mock executor; integration only after lower-layer exact-head GREEN. No real backend dispatch or replay.
+4. **Parallel free lanes:** privacy-safe Personal Context retention/revocation, proactive trusted-clock/startup diagnostics, observation fixture-only lineage and read-only V3 approval/path/identity/reproducibility audit. Keep PR #5 and paused PR #9 Draft/unmerged; seek explicit authorization only at a genuine gated or billable boundary.
+
+---
+
 # LATEST — Run767 / 2026-11-10 JST
 
 **LATEST:** FOUR coherent **FREE-ONLY / NON-UI** safety work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) via the normal GitHub Contents API: (A) original atomic binder/preflight callback pinning; (B) proactive SQLite exact-Path admission on bootstrap/prepare; (C) observation source/privacy invalid label preaccess tests; (D) proactive startup original metadata/epoch helper pinning. **3 backend source files updated, 4 test files created, 20 new parameterized regression cases**; one technical evidence report. **Previous Run766 exact HEAD 6/6 GREEN; Run767 latest exact-HEAD all-six GREEN NOT YET VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
