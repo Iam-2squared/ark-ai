@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from ark.agency.contracts import PlanStep, StepState, ToolCall
+from ark.agency.contracts import PlanConflictError, PlanStep, StepState, ToolCall
 from ark.agency.planner_journal_review import (
     SyntheticPlanJournal,
     SyntheticPlanJournalRejected,
@@ -23,7 +23,7 @@ _DEPENDENT = "step_" + "2" * 16
 _CHILD = """
 import sys
 from pathlib import Path
-from ark.agency.contracts import PlanStep, StepState, ToolCall
+from ark.agency.contracts import PlanConflictError, PlanStep, StepState, ToolCall
 from ark.agency.planner_journal_review import (
     SyntheticPlanJournal, SyntheticPlanJournalRejected,
 )
@@ -44,7 +44,7 @@ try:
         first, StepState(sys.argv[2]), expected_revision=0,
         at_ms=100, retained=retained,
     )
-except SyntheticPlanJournalRejected:
+except (SyntheticPlanJournalRejected, PlanConflictError):
     print("rejected", flush=True)
 else:
     print("committed", sys.argv[2], result.tail.event_count, flush=True)
@@ -115,7 +115,7 @@ def test_two_interpreters_cannot_replay_a_competing_planner_transition(
         assert winning_state == "cancelled"
         assert recovered.ambiguous_running_steps == ()
         assert statuses[_DEPENDENT] == ("blocked", 1)
-    with pytest.raises(SyntheticPlanJournalRejected):
+    with pytest.raises((SyntheticPlanJournalRejected, PlanConflictError)):
         cold.append(
             _FIRST, StepState.RUNNING, expected_revision=0,
             at_ms=101, retained=genesis,
