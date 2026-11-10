@@ -58,7 +58,8 @@ def test_preinstalled_false_only_denial_does_not_become_custody(
     )
     monkeypatch.setattr(bridge, "schedule_detached_read_recovery", forbidden)
     with pytest.raises(
-        bridge.ReadRecoveryJournalRejected,\n        match="READ source descriptor changed|carrier changed",
+        bridge.ReadRecoveryJournalRejected,
+        match="READ source descriptor changed|carrier changed",
     ):
         bridge.review_detached_read_journal_recovery(
             REQUEST, steps, snapshot, retained,
