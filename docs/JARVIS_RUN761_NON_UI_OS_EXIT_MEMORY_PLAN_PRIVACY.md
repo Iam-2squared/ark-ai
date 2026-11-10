@@ -4,7 +4,7 @@
 
 Branch `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8).
 Work basis: Run760 checkpoint `488cd4bd0fd49a162c7f6f02bea7b8a30f5dfe00`.
-Normal GitHub Contents API saved **three standalone regression packages** (10
+Normal GitHub Contents API saved **four standalone regression packages** (12
 parameterized cases). No production modules, frontend code, frozen v1/v2
 contracts, paid services, model execution, protected evaluations, or real
 ToolBackend calls were changed or invoked. The only OS subprocesses use Python
@@ -63,6 +63,19 @@ revocation SQLite bytes never contain either raw owner ID.
 **Non-claims:** the final read cannot prevent revocation immediately after
 it, and the fixture does not authenticate consent, guarantee physical
 erasure, or authorize downstream model, tool, export or notification use.
+
+## D — Memory DELETE/expiry COMMIT-UNKNOWN and scope isolation
+
+Commit `2e5ebed25b0d05cbe59290a1faddd20800de458a`.
+`tests/test_memory_delete_purge_os_exit_run761.py` adds two genuine
+OS-process exit cases. A child commits either an exact-revision deletion or
+one bounded expiry purge and exits before returning confirmation. A cold
+SQLite reader checks that the target row remains absent, the matching
+terminal event appears exactly once and a different namespace's retained
+row is unaffected. The old generation CAS witness is rejected rather than
+used to resurrect a deleted row. These disposable fixture operations are
+not user-data deletion, physical erasure across backups, or permission to
+repeat an ambiguous destructive operation.
 
 ## Outstanding architectural gates
 
