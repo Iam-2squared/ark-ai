@@ -339,14 +339,35 @@ def _inspect(conn: sqlite3.Connection) -> OfflinePrivacyVetoWitness:
 class DisconnectedPrivacyVetoLedger:
     """Local create-only fixture database, not a consent or identity provider."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, require_existing: bool = False) -> None:
+        """Open or explicitly create a local veto ledger.
+
+        On restart use require_existing=True: a missing veto DB must never
+        silently become a new empty, apparently unrevoked source. This is
+        a local fail-closed check, not independent backup or custody proof.
+        """
         _assert_original_witness_carrier()
-        self._path = _path(path, exists=False)
-        with closing(sqlite3.connect(self._path, timeout=10, isolation_level=None)) as conn:
+        if type(require_existing) is not bool:
+            raise OfflinePrivacyVetoRejected("exact restart mode required")
+        self._path = _path(path, exists=require_existing)
+        if require_existing:
+            # SQLite default connect silently creates missing files even
+            # after a path check. mode=rw prevents that fallback on a race.
+            conn = sqlite3.connect(
+                self._path.as_uri() + "?mode=rw", uri=True,
+                timeout=10, isolation_level=None,
+            )
+        else:
+            conn = sqlite3.connect(self._path, timeout=10, isolation_level=None)
+        with closing(conn) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
+                    if require_existing:
+                        raise OfflinePrivacyVetoRejected(
+                            "existing veto ledger is not initialized"
+                        )
                     if tuple(conn.execute("SELECT name FROM sqlite_master")):
                         raise OfflinePrivacyVetoRejected("nonempty unversioned veto ledger")
                     conn.execute(_DDL)
