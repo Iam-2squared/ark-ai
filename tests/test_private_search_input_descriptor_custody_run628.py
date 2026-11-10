@@ -77,7 +77,10 @@ def test_input_descriptor_swapped_during_content_hash_is_denied(
         search, "hashlib", SimpleNamespace(sha256=reentrant_digest),
     )
     # The reviewed codec itself is now checked before private bytes are read.
-    with pytest.raises(search.OfflineContextSearchRejected, match="search grammar, budget or codec changed"):
+    with pytest.raises(
+        search.OfflineContextSearchRejected,
+        match="search grammar, budget or codec changed",
+    ):
         _review(rows)
     assert invoked == []
 
