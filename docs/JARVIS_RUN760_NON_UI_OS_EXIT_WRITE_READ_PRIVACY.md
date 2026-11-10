@@ -1,6 +1,6 @@
 # ARK AI Run760 — OS process COMMIT-UNKNOWN and deny-only cold recovery
 
-**Scope:** FREE-ONLY / NON-UI on Draft PR #8. Four independent, coherent
+**Scope:** FREE-ONLY / NON-UI on Draft PR #8. Five independent, coherent
 **test-only** packages covering actual spawned-process exit immediately after a
 durable synthetic SQLite boundary and restart in a fresh interpreter. No backend
 dispatch, external effect, paid execution, UI, Candidate, protected V2 final
@@ -47,7 +47,15 @@ synthetic claims; neither a committed row nor a digest is consent or custody.
   separately reviewable. Private owner text must not occur in raw main-file
   bytes. No lawful deletion or context disclosure is claimed.
 
-**Total: 11 new parameterized tests across four new test-only modules.**
+- Package E, [`153fc80a`](https://github.com/Iam-2squared/ark-ai/commit/153fc80a61563845348656daeaf1f2f49ae34440):
+  `tests/test_proactive_real_process_lost_response_run760.py`,
+  **2 cases**. A separately spawned worker commits a synthetic proactive
+  preparation then exits without returning its receipt. A cold reader sees
+  one retained preparation and rejects same-policy attempts at rolled-back
+  clock 99 or pre-interval time 104 (last committed time 100, interval 5).
+  No notification, authenticated time or dispatch authority is inferred.
+
+**Total: 13 new parameterized tests across five new test-only modules.**
 No production source, UI or frozen contracts changed. The tests deliberately
 exercise cross-process COMMIT/return boundaries absent from equivalent
 same-interpreter exception-based fixtures; they do not simulate a power cut,
@@ -65,6 +73,8 @@ At the first in-flight sample after authoring:
   on `6a7db1c399d961423278c0f8070aca32ab109af0`: IN PROGRESS.
 - [#42786335715](https://github.com/Iam-2squared/ark-ai/actions/runs/42786335715)
   on `83410c241fcafa6987798f859a18cc22bafee412`: QUEUED.
+- [#42786881464](https://github.com/Iam-2squared/ark-ai/actions/runs/42786881464)
+  on `153fc80a61563845348656daeaf1f2f49ae34440`: QUEUED at addendum sampling.
 - Report and checkpoint commits have distinct HEADs and separately triggered CI,
   so their final six-job conclusions must be checked before a current-head PASS.
 
