@@ -90,7 +90,7 @@ def test_reentrant_query_hook_cannot_install_executable_result_slot(
         patch.setattr(context, "_utf8", mutate_on_query)
         with pytest.raises(
             context.OfflineContextSearchRejected,
-            match="constructor identity mismatch",
+            match="constructor identity mismatch|search grammar, budget or codec changed",
         ):
             _search(rows)
     assert called == []
