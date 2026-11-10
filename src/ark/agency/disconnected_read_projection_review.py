@@ -115,8 +115,13 @@ def _require_original_protocol() -> None:
         )
     ):
         raise ReadRecoveryProjectionRejected("recovery projection protocol changed")
-    _ORIGINAL_READ_GUARD()
-    _ORIGINAL_MIXED_GUARD()
+    try:
+        _ORIGINAL_READ_GUARD()
+        _ORIGINAL_MIXED_GUARD()
+    except (DetachedReadRecoveryRejected, OfflineRecoveryFenceRejected) as exc:
+        raise ReadRecoveryProjectionRejected(
+            "source recovery authority descriptor changed"
+        ) from exc
 
 
 def review_disconnected_read_projection(
