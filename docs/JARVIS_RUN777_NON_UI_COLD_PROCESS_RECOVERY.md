@@ -99,3 +99,51 @@ connections and privacy-safe Context/scheduler/observation guards; (4) keep
 real tools, user data, physical PC, protected V2/V3 evaluation, training,
 spending, credential connection, Candidate promotion and main merge blocked
 without their explicit separate authorizations.
+
+
+## Late CI-grounded Planner fix and independent privacy restart lane
+
+- After this report was first saved, corrected test HEAD `f07d082...` CI
+  [#42919019548](https://github.com/Iam-2squared/ark-ai/actions/runs/42919019548)
+  reached pytest and failed two new Planner tests on Ubuntu 3.11, 3.12, 3.13;
+  **12,739 other tests passed** in those Ubuntu environments. The losing
+  interpreter raised `PlanConflictError: revision mismatch`, an intentional,
+  fail-closed existing Planner CAS rejection, rather than the test fixture's
+  too-narrow `SyntheticPlanJournalRejected` catch. **No production Planner
+  code was changed.** The minimal test-only correction, commit
+  `f40294dce4cb9358f21b83832e76a31a0739c514`, accepts either existing
+  denial exception for the losing process and the stale-token second append;
+  [CI #42919952417](https://github.com/Iam-2squared/ark-ai/actions/runs/42919952417)
+  was in progress at last sampled status, with Ubuntu Python 3.11/3.13 GREEN.
+- Independent fourth package **D — fail-closed local privacy veto restart**
+  adds an opt-in `require_existing: bool = False` keyword to
+  `DisconnectedPrivacyVetoLedger`, production commit
+  `8ff8ee48ff990925a3dc919c6a5d14ab55656003`. A process explicitly
+  recovering historical vetoes with `require_existing=True` will refuse
+  to create a missing or uninitialized SQLite ledger. It uses SQLite
+  `mode=rw` to prevent creation after the filesystem check. Normal
+  default create/initialization is retained for new disposable fixtures;
+  callers **must opt in** for existing-only restart safety. This does not
+  authenticate user identity, persist a backup, survive a malicious path
+  race, or prove global context erasure.
+- Privacy regression file
+  `tests/test_privacy_veto_require_existing_run777.py` at
+  `9253de31a62bcca182f8eb4767e9226f458aa0c5` adds **seven
+  parametrized cases** for missing/deleted source, existing veto continuity,
+  uninitialized source refusal and exact-boolean restart mode. All deletion
+  is confined to disposable `tmp_path`, not actual user data.
+- Source-only privacy CI
+  [#42920510439](https://github.com/Iam-2squared/ark-ai/actions/runs/42920510439)
+  and combined source+test
+  [#42920585697](https://github.com/Iam-2squared/ark-ai/actions/runs/42920585697)
+  were in progress/queued at last inspection. **Latest 6/6 GREEN for these
+  newer HEADs is not yet established.**
+- Total invocation after these corrections: **four meaningful work packages**
+  (three new test packages and one production privacy package with new
+  regression tests), **thirteen parametrized new cases**, and two real-log
+  test corrections (F401 and losing-process exception type). No new
+  paid compute, real WRITE, frontend change, protected evaluation or merge.
+
+**Next:** confirm new exact-head six-job CI (especially the independent
+privacy restart tests), amend only reproducible failures, and preserve the
+single-winner, no-auto-replay and privacy-veto invariants.
