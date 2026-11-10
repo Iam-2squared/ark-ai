@@ -17,7 +17,9 @@ from ark.agency.disconnected_atomic_preaction_ledger import (
     DisconnectedAtomicPreactionLedger,
     genesis_atomic_preaction_witness,
 )
-from ark.agency.disconnected_atomic_registry_bridge import derive_registered_atomic_intent
+from ark.agency.disconnected_atomic_registry_bridge import (
+    derive_registered_atomic_intent,
+)
 from ark.agency.disconnected_registered_planner_atomic_triage import (
     RegisteredPlannerAtomicTriage,
     RegisteredPlannerAtomicTriageRejected,
