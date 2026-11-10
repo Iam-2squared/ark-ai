@@ -11,6 +11,8 @@ from dataclasses import dataclass
 
 from .contracts import PlanStep
 from .disconnected_atomic_preaction_ledger import (
+    AtomicPreactionRejected,
+    AtomicPreactionSnapshot,
     AtomicPreactionWitness,
     DisconnectedAtomicPreactionLedger,
 )
@@ -75,6 +77,7 @@ class EpochBoundAtomicTriage:
 _RECHECK = recheck_disconnected_planner_epoch
 _TRIAGE = review_registered_planner_atomic_triage
 _RESULT = EpochBoundAtomicTriage
+_INSPECT = vars(DisconnectedAtomicPreactionLedger)["inspect"]
 _MEMBERS = (
     "plan_id", "planner_event_count", "retained_atomic_count",
     "observations", "__init__", "__new__", "__getattribute__", "__getattr__",
@@ -90,6 +93,8 @@ def _originals() -> None:
         recheck_disconnected_planner_epoch is not _RECHECK
         or review_registered_planner_atomic_triage is not _TRIAGE
         or EpochBoundAtomicTriage is not _RESULT
+        or vars(DisconnectedAtomicPreactionLedger).get("inspect") is not _INSPECT
+        or _checked_epoch is not _CHECKED_EPOCH
         or any(
             vars(_RESULT).get(name) is not original
             for name, original in zip(_MEMBERS, _ORIGINAL_MEMBERS, strict=True)
@@ -125,6 +130,9 @@ def _checked_epoch(
             "Planner image drifted or recheck gained authority"
         )
     return epoch
+
+
+_CHECKED_EPOCH = _checked_epoch
 
 
 def review_epoch_bound_atomic_triage(
@@ -178,6 +186,27 @@ def review_epoch_bound_atomic_triage(
                 "atomic cross-store triage lost its manual-only fence"
             )
         second = _checked_epoch(journal, recovered, retained_planner)
+        # The atomic review and Planner recheck are separate SQLite reads.
+        # A second atomic snapshot detects a new reservation committed while
+        # Planner was being rechecked; it does not lock either database.
+        atomic_after = _INSPECT(ledger, retained_atomic)
+        _originals()
+        if (
+            type(atomic_after) is not AtomicPreactionSnapshot
+            or type(atomic_after.witness) is not AtomicPreactionWitness
+            or type(atomic_after.witness.count) is not int
+            or type(atomic_after.witness.tip_sha256) is not str
+            or type(retained_atomic.count) is not int
+            or type(retained_atomic.tip_sha256) is not str
+            or atomic_after.witness.count != triage.retained_atomic_count
+            or atomic_after.witness.count != retained_atomic.count
+            or atomic_after.witness.tip_sha256 != retained_atomic.tip_sha256
+            or type(atomic_after.occurrence_ids) is not tuple
+            or len(atomic_after.occurrence_ids) != atomic_after.witness.count
+        ):
+            raise EpochBoundAtomicTriageRejected(
+                "atomic history drifted across Planner recheck"
+            )
         if (
             second.plan_id != first.plan_id
             or second.observed_event_count != first.observed_event_count
@@ -206,6 +235,7 @@ def review_epoch_bound_atomic_triage(
         return result
     except (
         PlannerEpochRecheckRejected, RegisteredPlannerAtomicTriageRejected,
+        AtomicPreactionRejected,
         TypeError, AttributeError,
     ) as exc:
         raise EpochBoundAtomicTriageRejected(
