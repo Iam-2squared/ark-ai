@@ -25,6 +25,11 @@ from .disconnected_atomic_preaction_ledger import (
 from .disconnected_atomic_registry_bridge import derive_registered_atomic_intent
 from .registry import ToolRegistry
 
+# Bind both interpretation stages to their reviewed import-time functions.
+# A substituted callback could read registry/call or retained evidence before
+# the local SQLite snapshot check, or manufacture an apparent LOCAL_MATCH.
+_DERIVE_REGISTERED_INTENT = derive_registered_atomic_intent
+_REVIEW_INPUT_CARRIERS = review_atomic_input_carriers
 _SCAN = _ledger_module._scan
 _OPEN = vars(DisconnectedAtomicPreactionLedger)["_open"]
 _SNAPSHOT_FIELDS = ("witness", "occurrence_ids")
@@ -93,7 +98,9 @@ _ORIGINAL_RESULT_MEMBERS = tuple(
 
 def _original_reader() -> None:
     if (
-        _ledger_module._scan is not _SCAN
+        derive_registered_atomic_intent is not _DERIVE_REGISTERED_INTENT
+        or review_atomic_input_carriers is not _REVIEW_INPUT_CARRIERS
+        or _ledger_module._scan is not _SCAN
         or vars(DisconnectedAtomicPreactionLedger).get("_open") is not _OPEN
         or any(
             vars(AtomicPreactionSnapshot).get(name) is not descriptor
