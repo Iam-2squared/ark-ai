@@ -150,20 +150,25 @@ def review_synthetic_proactive_startup(
     ):
         raise SyntheticProactiveStartupRejected("exact synthetic proactive readiness inputs")
     _require_original_authorities()
+    # A Path subclass can execute user-defined parents/resolve/stat hooks.
+    # Do not read any private readiness/receipt fields until the offline
+    # trigger source has an inert exact local pathlib carrier.
+    source_epoch = ledger.path
+    if type(source_epoch) is not type(Path(".")):
+        raise SyntheticProactiveStartupRejected(
+            "exact local startup trigger source required"
+        )
     pinned = (
         _epoch(receipt, SyntheticTriggerReceipt),
         _epoch(policy, SyntheticTriggerPolicy),
         tuple((item, item.component_id, item.schema_revision) for item in requirements),
         _snapshot_epoch(snapshot),
-        ledger.path,
+        source_epoch,
         source_digest,
         observation_digest,
     )
     # A Path compares equal to a newly constructed Path with the same string.
     # Value-only `pinned` therefore cannot detect an inter-pass redirection.
-    source_epoch = ledger.path
-    if not isinstance(source_epoch, Path):
-        raise SyntheticProactiveStartupRejected("exact startup trigger source required")
     retained_epoch = None if retained is None else (retained.row_hashes, retained.digest)
     retained_hash_carriers = (
         () if retained is None else tuple(retained.row_hashes)
