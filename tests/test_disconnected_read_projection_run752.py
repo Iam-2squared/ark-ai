@@ -128,3 +128,41 @@ def test_replaced_classifier_rejected_before_synthetic_input_is_used(monkeypatch
             _REQ, _PLAN, (_step(_A),),
         )
     assert called == []
+
+
+@pytest.mark.parametrize("field", ("state", "operation", "result_sha256"))
+def test_original_read_slots_checked_before_private_claim_access(
+    monkeypatch, field,
+):
+    observed = []
+
+    def exfiltrating_property(self):
+        observed.append(field)
+        raise AssertionError("malicious accessor invoked")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(ReadRecoveryStep, field, property(exfiltrating_property))
+        with pytest.raises(
+            module.ReadRecoveryProjectionRejected, match="descriptor changed",
+        ):
+            module.review_disconnected_read_projection(
+                _REQ, _PLAN, (_step(_A),),
+            )
+    assert observed == []
+    assert module.review_disconnected_read_projection(
+        _REQ, _PLAN, (_step(_A),),
+    ).dispatch_authorized is False
+
+
+@pytest.mark.parametrize("dependency", ("_STATE", "_CODES"))
+def test_mutated_disposition_projection_mapping_cannot_define_new_authority(
+    monkeypatch, dependency,
+):
+    with monkeypatch.context() as patch:
+        patch.setattr(module, dependency, {"READY_MOCK_ONLY": "COMPLETE_UNVERIFIED"})
+        with pytest.raises(
+            module.ReadRecoveryProjectionRejected, match="protocol changed",
+        ):
+            module.review_disconnected_read_projection(
+                _REQ, _PLAN, (_step(_A),),
+            )
