@@ -1,3 +1,36 @@
+# LATEST — Run771 / 2026-11-11 JST
+
+**LATEST:** THREE coherent **FREE-ONLY / NON-UI** JARVIS-core work packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): **(A)** one coherent read-only SQL snapshot for a bounded batch of immutable registry-bound WRITE identities, **(B)** real OS-process race regression for generation-fenced Memory CAS, **(C)** real OS-process race regression for proactive due/owner isolation. **One new backend source module, three new regression test files, 14 parameterized tests, and one detailed source-grounded technical report**. Existing frozen APIs and production ToolBackends untouched. **ARK/JARVIS/V3 NOT_PASSED.** A local match is not human approval, independent custody, or external exactly-once proof.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T02:53:56.122+09:00** (administrative host-clock sample immediately preceding normal GitHub Contents checkpoint write, not authenticated ARK time, provenance or consent).
+
+## Exact work-basis and checkpoint result semantics
+
+- **Initial work-basis HEAD:** `31cc94ce715d274004325168cdab86a282e1afe9` (Run770). **Branch/PR:** `research/jarvis-foundations` / Draft PR #8 OPEN, UNMERGED. **Latest source/test package HEAD:** `ed21d15e2dc5ed0aebe00eaa33947e435767d7c3`. **Technical-report/checkpoint-write basis HEAD:** `1afe2354b609e67d7a794acbd7ca0f159651fe36`, re-read just before normal Contents update. **Previous status blob SHA:** `e27058909ae2ca8309325d04f30bcd697effef0d`. **Checkpoint-result HEAD:** created by THIS Contents update; this committed document must not guess its own future SHA. Re-fetch PR HEAD and status blob after saving. No force push, raw Git objects or main merge.
+- **A / atomic batch:** source `src/ark/agency/disconnected_atomic_batch_binding_snapshot_review.py`, initial commit `ef0d926d90d0e2d1aba1a65c2f753aa54efcb05a`, corrected original scan pin / exact regex at `185f7b3425f7f88e61a3396818abb697f27ffe5c`; tests `tests/test_atomic_batch_single_snapshot_run771.py` at `630eaa1a1a153ed3fb7523bff02f5e652d149626`, **nine** cases. Multi-occurrence `ABSENT/LOCAL_MATCH/LOCAL_CONFLICT` read within ONE BEGIN transaction after entire local intent/audit chain check; duplicate/invalid/READ claims refused; no reserve, action, approved replay or backend call.
+- **B / Memory CAS:** `tests/test_memory_multiprocess_generation_cas_run771.py` at `98a713a2208107c086e76d90896e18de1d3b2a9c`, **two** cases. Same or different payloads from two independent OS processes race one retained generation and require one winner, one durable event, stale retry denial and cold-start coherent re-observation. Does not attribute matching bytes to a caller.
+- **C / Proactive:** `tests/test_proactive_multiprocess_due_race_run771.py` at `ed21d15e2dc5ed0aebe00eaa33947e435767d7c3`, **three** cases. Concurrent due prep per owner serialized; separate owners unaffected, cold interval fence maintained and no real notifications.
+- **Detailed report:** [JARVIS_RUN771_NON_UI_ATOMIC_BATCH_MEMORY_PROACTIVE_RACES.md](https://github.com/Iam-2squared/ark-ai/blob/1afe2354b609e67d7a794acbd7ca0f159651fe36/docs/JARVIS_RUN771_NON_UI_ATOMIC_BATCH_MEMORY_PROACTIVE_RACES.md).
+
+## CI and evidence
+
+- [CI #42861048283](https://github.com/Iam-2squared/ark-ai/actions/runs/42861048283) — `31cc94ce715d...`: **SUCCESS** (not a final 6/6 GREEN claim for any later SHA).
+- [CI #42867949936](https://github.com/Iam-2squared/ark-ai/actions/runs/42867949936) — `630eaa1a1a15...`: **IN_PROGRESS** (not a final 6/6 GREEN claim for any later SHA).
+- [CI #42868176981](https://github.com/Iam-2squared/ark-ai/actions/runs/42868176981) — `98a713a22081...`: **IN_PROGRESS** (not a final 6/6 GREEN claim for any later SHA).
+- [CI #42868506876](https://github.com/Iam-2squared/ark-ai/actions/runs/42868506876) — `ed21d15e2dc5...`: **IN_PROGRESS** (not a final 6/6 GREEN claim for any later SHA).
+- [CI #42868938403](https://github.com/Iam-2squared/ark-ai/actions/runs/42868938403) — `1afe2354b609...`: **IN_PROGRESS** (not a final 6/6 GREEN claim for any later SHA).
+
+- At final pre-check, Ubuntu **3/3 GREEN** for batch-test HEAD #42867949936 and Memory-test HEAD #42868176981; proactive package #42868506876 Ubuntu **2/3 GREEN**. Windows jobs and latest report/head runs were **IN PROGRESS/QUEUED**. Therefore latest exact-HEAD Windows/Ubuntu × Python 3.11–3.13 **6/6 GREEN NOT VERIFIED**. Old HEAD CI results are not borrowed. No local full pytest is claimed; no duplicate manual runs launched.
+
+## Frozen scope, authorization blockers, and next plan / 今後の方針
+
+- `main` PR base `7a843f17eb96ed13d66f23b58b06406b3002e405`; [Draft V3 PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8` and [paused UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, all unmerged/untouched. Frozen V1/V2/Local UI/Launcher/ObservationEnvelope v1 contracts/evidence unchanged. No UI/frontend development.
+- **No** paid/external GPU or compute, billable APIs, credentials/accounts, Candidate weights/exports, protected V2 final evaluation, real ToolBackend WRITE, camera/microphone/notification, physical-PC step, irreversible operation, permission grant, promotion, or main merge. Unknown external WRITE remains manual-only and never blindly retried.
+- **Still blocked:** trusted-clock/issuer and authenticated human consent, external audit custody, filesystem provenance, cross-store atomicity, real exactly-once effects, protected V3 immutable model/runtime/dataset/human/spend gates; no automatic PASS.
+- **Priority 1:** exact-HEAD CI on final PR #8 HEAD; inspect actual failing job logs and fix minimally using only permitted normal Contents writes. **Priority 2:** feed coherent atomic batch *read-only* findings into manual Planner recovery only after exact-head GREEN; no executor. **Priority 3:** Memory CAS lifetime/ABA/expiry and post-COMMIT uncertainty, Planner terminal replay, PermissionGate and trusted-clock audit-before-action with disconnected mock-only integrations. **Priority 4:** Personal Context privacy/retention, Proactive startup/due state, synthetic Observation and free-only V3 path/approval/identity/reproducibility safeguards. Respect all protected frozen/paid/gated boundaries.
+
+---
+
 # LATEST — Run770 / 2026-11-11 JST
 
 **LATEST:** FOUR coherent **FREE-ONLY / NON-UI** foundation packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): **(A)** Personal Context post-COMMIT receipt allocation/attribute-hook custody (**3** new isolated tests), **(B)** registry-bound atomic preaction retained-witness scalar equality (**2** new tests), **(C)** Planner synthetic SQLite journal retained tail replay/append equality (**4** new tests), **(D)** optional Memory generation CAS scope/write equality and hash hook pinning (**8** new tests). **Four non-frozen backend source files updated, four new test files with 17 parameterized cases, two existing Personal Context test files corrected following actual CI diagnostics, and one detailed technical report.** Previous historical 6/6 GREEN is NOT current-code GREEN. Latest exact-HEAD 6/6 GREEN **NOT YET VERIFIED**. **ARK/JARVIS/V3 NOT_PASSED.**
