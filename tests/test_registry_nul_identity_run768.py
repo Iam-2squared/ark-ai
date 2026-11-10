@@ -48,6 +48,7 @@ def test_unicode_registry_identity_remains_stable_and_never_executes() -> None:
         "fixture.検索", "local.試験", Effect.READ, "offline.検証", backend,
     )
     registry = ToolRegistry((item,))
-    assert registry.resolve(item.name) is item
+    call = ToolCall(item.name, item.capability, "fixture.local", {})
+    assert registry.resolve(call) is item
     assert registry.revision == ToolRegistry((item,)).revision
     assert backend.calls == 0
