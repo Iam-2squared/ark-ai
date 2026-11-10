@@ -656,12 +656,12 @@ class SyntheticPlanJournal:
                 if retained is not None and (
                     retained.event_count >= len(prefixes)
                     or (
-    prefixes[retained.event_count].topology_digest,
-    prefixes[retained.event_count].event_count,
-    prefixes[retained.event_count].event_hash,
-    prefixes[retained.event_count].status_digest,
-    prefixes[retained.event_count].last_at_ms,
-) != pinned
+                        prefixes[retained.event_count].topology_digest,
+                        prefixes[retained.event_count].event_count,
+                        prefixes[retained.event_count].event_hash,
+                        prefixes[retained.event_count].status_digest,
+                        prefixes[retained.event_count].last_at_ms,
+                    ) != pinned
                 ):
                     raise SyntheticPlanJournalRejected("retained synthetic plan history changed")
                 result, check_result = _checked_snapshot(graph, prefixes[-1])
@@ -763,12 +763,12 @@ class SyntheticPlanJournal:
                         or not _retained_tail_epoch_stable(retained, pinned)
                         or retained.event_count >= len(prefixes)
                         or (
-    prefixes[retained.event_count].topology_digest,
-    prefixes[retained.event_count].event_count,
-    prefixes[retained.event_count].event_hash,
-    prefixes[retained.event_count].status_digest,
-    prefixes[retained.event_count].last_at_ms,
-) != pinned
+                            prefixes[retained.event_count].topology_digest,
+                            prefixes[retained.event_count].event_count,
+                            prefixes[retained.event_count].event_hash,
+                            prefixes[retained.event_count].status_digest,
+                            prefixes[retained.event_count].last_at_ms,
+                        ) != pinned
                     ):
                         raise SyntheticPlanJournalRejected(
                             "retained synthetic plan history changed before append"
