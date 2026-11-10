@@ -107,6 +107,13 @@ _ORIGINAL_RECEIPT_FIELDS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
 )
 _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
+# A frozen dataclass can still acquire executable lookup/allocation hooks.
+# Pin absent as well as present class attributes before post-COMMIT receipt
+# construction; a rejected return cannot undo the durable reservation.
+_RECEIPT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_HOOKS = tuple(
+    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+)
 
 
 def _require_original_receipt_constructor() -> None:
@@ -123,6 +130,12 @@ def _require_original_receipt_constructor() -> None:
             vars(_RECEIPT_TYPE).get(name) is not original
             for name, original in zip(
                 _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS, strict=True,
             )
         )
     ):
@@ -543,4 +556,5 @@ class DisconnectedContextReplayLedger:
             raise OfflineContextReplayRejected(
                 "postcommit context receipt authority epoch changed"
             )
+        _require_original_receipt_constructor()
         return receipt
