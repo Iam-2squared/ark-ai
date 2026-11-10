@@ -160,7 +160,13 @@ def review_registered_atomic_binding_snapshot(
                 type(snapshot) is not AtomicPreactionSnapshot
                 or type(snapshot.witness) is not AtomicPreactionWitness
                 or type(snapshot.occurrence_ids) is not tuple
-                or snapshot.witness != retained
+                # Dataclass __eq__ is replaceable. Compare the exact retained
+                # SQLite tip scalars instead of trusting a forged equality
+                # method to reconcile a different audit chain.
+                or type(snapshot.witness.count) is not int
+                or snapshot.witness.count != retained.count
+                or type(snapshot.witness.tip_sha256) is not str
+                or snapshot.witness.tip_sha256 != retained.tip_sha256
                 or len(snapshot.occurrence_ids) != retained.count
                 or len(set(snapshot.occurrence_ids)) != retained.count
             ):
