@@ -1,3 +1,40 @@
+# LATEST — Run763 / 2026-11-10 JST
+
+**LATEST:** TWO meaningful, isolated **FREE-ONLY / NON-UI** development packages saved through the normal GitHub Contents API on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) opt-in, **read-only**, registry-bound local pre-action recovery quarantine with 8 new regression cases; (B) separate import-original input carrier preflight for synthetic AtomicIntentClaim and AtomicPreactionWitness with 16 cases. **24 new parameterized tests in 2 new test files and 2 new source modules**, plus one technical engineering report. No dispatch, actual one-shot authorization, frozen V1/V2/Local UI/Launcher contract, PR #9 UI, PR #5 V3, protected evaluation, Candidate or paid service changed. **Run762 basis GREEN 6/6; Run763 test/report and checkpoint-result exact-head full 6/6 GREEN NOT YET VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** Asia/Tokyo/JST **2026-11-10T20:27:01+09:00** (administrative host-clock sample before this normal status write, **NOT** a trusted ARK clock, authenticated owner, signed consent, runtime identity or spending approval).
+
+## Exact work basis, changed branches and checkpoint wording
+
+- **Branch/PR:** `research/jarvis-foundations` / [PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Initial work-basis HEAD:** `46eaf65b45677cb7f4831dd334eaff2ba0de62a9` (Run762 report HEAD). **Last executable source/test HEAD:** `eefb507513d4ab5e897340c500b99c7e3ecb444b`. **Latest report HEAD and checkpoint-write basis HEAD, re-read:** `d6f0690f2e1706aec7058c89c5c35ac833d6f11b`. **Prior status Blob SHA:** `054b200f56402d8d0fb6d63ee25f63dc920e4fd0`. The **checkpoint-result HEAD** is returned by the next Contents API mutation and cannot be accurately embedded within the file contents producing that SHA; re-read branch HEAD and status Blob after saving. No force push, main merge or PR status change.
+- **A / local atomic recovery:** source `49936958a7ed0999d3f568e5f8e5d96329b0c26e` `src/ark/agency/disconnected_atomic_recovery_quarantine.py`, tests `4b5eccf68a709cb6ab81e100c1ab239b073ffaf8` `tests/test_atomic_recovery_quarantine_run763.py`, **8 cases**. Exact registered WRITE, local occurrence membership and retained count/tip; stale/malformed inputs and changed authority rejected. All output permission/dispatch/replay/external-proof properties denied and manual review required. **Occurrence-only membership cannot prove stored bound action/request identity.**
+- **B / detached preflight:** source `5562fff72fb3e6d57853cac11075020c295c995d` `src/ark/agency/disconnected_atomic_input_review.py`, tests `eefb507513d4ab5e897340c500b99c7e3ecb444b` `tests/test_atomic_input_carrier_custody_run763.py`, **16 cases**. Import-original exact class/field/lookup descriptors; reflected invalid type/grammar/carrier substitutions fail closed. This module is **NOT wired into existing SQLite ingress** yet; no assertion that core storage already adopted its preflight.
+- **Report:** [Run763 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/d6f0690f2e1706aec7058c89c5c35ac833d6f11b/docs/JARVIS_RUN763_NON_UI_ATOMIC_RECOVERY_INPUT_PREFLIGHT.md), report HEAD `d6f0690f2e1706aec7058c89c5c35ac833d6f11b`.
+
+## Exact-SHA CI and evidence (latest sampled before checkpoint)
+
+- **Verified old basis:** [CI #42803612314](https://github.com/Iam-2squared/ark-ai/actions/runs/42803612314), Run762 initial HEAD `46eaf65b45677cb7f4831dd334eaff2ba0de62a9`: **COMPLETED SUCCESS 6/6** Windows/Ubuntu × Python 3.11, 3.12, 3.13. It does NOT transfer to Run763.
+- **A source:** [CI #42805745131](https://github.com/Iam-2squared/ark-ai/actions/runs/42805745131), `49936958...`: **COMPLETED GREEN 6/6**, checked all six job conclusions.
+- **A tests:** [CI #42805859637](https://github.com/Iam-2squared/ark-ai/actions/runs/42805859637), `4b5eccf...`: **IN PROGRESS**, 5/6 GREEN, Windows 3.11 pending at latest job inspection.
+- **B source:** [CI #42806857466](https://github.com/Iam-2squared/ark-ai/actions/runs/42806857466), `5562fff...`: **IN PROGRESS** (do not infer a platform result from other SHA).
+- **B tests:** [CI #42806923585](https://github.com/Iam-2squared/ark-ai/actions/runs/42806923585), `eefb507...`: **IN PROGRESS**, Ubuntu 3/3 GREEN, Windows 3 pending at latest inspection.
+- **Report:** [CI #42807497031](https://github.com/Iam-2squared/ark-ai/actions/runs/42807497031) on `d6f069...`: **IN PROGRESS**. **Checkpoint-result CI** is triggered only after the pending status commit, with its own new SHA and as-yet-unknown run ID; no invented workflow result or manual duplicate dispatch. **Latest exact-head all-six GREEN remains NOT VERIFIED**.
+
+## Frozen contracts / blockers / cost boundary
+
+- Unchanged main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) head `805b377697472268db02650a89c7a94b1c5337c8`, paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) head `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All #5/#8/#9 OPEN/DRAFT/UNMERGED. Frozen V1/V2/Local UI/Launcher evidence, protected V2 final evaluation and reviewed V3 approval contracts unchanged. **NO UI/frontend development**.
+- Free only: no paid/external compute, subscriptions, billable APIs, Candidate adapters/weights, protected evaluation opening, external ToolBackend/action, sensors/notification, credentials/account connection, physical-PC act, destructive irreversible storage change, raw-Git bypass, force push, human-review fiction, Candidate promotion or main merge.
+- Unresolved: single-store local atomic intent/audit is not cross-SQLite transaction with Planner/Memory/occurrence/privacy/proactive; retained witnesses/local digests are not authenticated custody, actor, consent, trusted clock, or exact-once external proof. A local occurrence match without bound-action/request match is especially **NOT** permission. COMMIT-UNKNOWN remains UNKNOWN/manual quarantine, no automatic WRITE retry. V3 immutable model/tokenizer/tool/runtime byte identities, approved rights-reviewed data and capped cost authorization remain blockers. Physical Windows GGUF gate awaits user PC.
+
+## Next plan / 今後の方針
+
+1. Confirm Run763 exact-source/test/report/checkpoint CI on all Windows+Ubuntu × 3.11/3.12/3.13 jobs; on actual FAIL inspect log, apply narrow semantics-preserving fix and overlap work on independent non-UI lane, no duplicate run.
+2. After tested layers GREEN, consider read-only **exact occurrence+bound action+request digest** row inspection under one SQLite snapshot, rather than treating occurrence membership as binding; never allow recovered local records to grant dispatch/replay.
+3. Review witness/claim original carriers at SQLite ingress and Memory CAS/ABA/COMMIT-UNKNOWN retained high-water; preserve safe recovery and user-data privacy.
+4. Independently continue Planner READ/terminal durable recovery, exact PermissionGate/registry, action audit-before-action, disconnected mock execution, Personal Context revocation, proactive/observation backends and V3 free-only identity guards. Preserve UI stop and all frozen/approval gates.
+
+---
+
 # LATEST — Run761 / 2026-11-10 JST
 
 **LATEST:** FOUR coherent **FREE-ONLY / NON-UI** synthetic, disposable process-crash regression packages saved via the **normal GitHub Contents API** to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8). **12 new parameterized test cases in four new test files**, plus one detailed technical report and deletion/expiry addendum. (A) 3 Memory CAS real-process post-COMMIT lost-response manual triage cases; (B) 5 end-to-end Planner/occurrence/audit/link cross-SQLite crash stages with plan-wide read-only quarantine; (C) 2 Personal Context independent-process revocations during final projection; (D) 2 Memory DELETE/expiry process-exit lost-reply cases with namespace isolation. **No production source, UI/frontend, V3/other frozen contracts, real backend actions or authorization boundaries changed. Run760 verified basis 6/6 GREEN; Run761 latest exact-head 6/6 GREEN NOT YET VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
