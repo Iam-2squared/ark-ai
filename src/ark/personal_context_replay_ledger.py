@@ -100,6 +100,35 @@ _RECEIPT_DENIALS = (
 _ORIGINAL_RECEIPT_DENIALS = tuple(
     vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_DENIALS
 )
+# Check constructor and slotted fields BEFORE invoking user-replaceable
+# class code after COMMIT. This cannot undo a durable reservation.
+_RECEIPT_FIELDS = ("request_id", "witness")
+_ORIGINAL_RECEIPT_FIELDS = tuple(
+    vars(_RECEIPT_TYPE)[name] for name in _RECEIPT_FIELDS
+)
+_ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
+
+
+def _require_original_receipt_constructor() -> None:
+    if (
+        OfflineContextReplayReceipt is not _RECEIPT_TYPE
+        or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+            )
+        )
+    ):
+        raise OfflineContextReplayRejected(
+            "postcommit context receipt authority epoch changed"
+        )
 
 
 def _hash(value: tuple[object, ...]) -> str:
@@ -478,7 +507,9 @@ class DisconnectedContextReplayLedger:
 
         stable()
         stable_witness()
+        _require_original_receipt_constructor()
         receipt = OfflineContextReplayReceipt(fields[0], expected)
+        _require_original_receipt_constructor()
         stable()
         stable_witness()
         if (
