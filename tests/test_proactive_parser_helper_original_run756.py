@@ -40,7 +40,10 @@ def test_replaced_synthetic_parser_refused_before_private_labels(
     if replacement == "callable":
         value = hostile
     elif replacement == "boolean":
-        value = lambda _value: True
+        def always_true(_value):
+            return True
+
+        value = always_true
     else:
         value = object()
     monkeypatch.setattr(attention, helper, value)
