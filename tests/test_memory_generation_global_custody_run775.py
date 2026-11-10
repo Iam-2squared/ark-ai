@@ -33,7 +33,10 @@ def test_unrelated_scope_churn_does_not_redeem_or_invalidate_own_generation(
     b = store.put(MemoryWrite(other_scope, "source-b", "initial"))
     retained_a = observe_memory_generation_for_cas(store, owner, "source-a")
     if churn == "update":
-        changed = store.put(MemoryWrite(other_scope, "source-b", "changed"))
+        changed = store.put(
+            MemoryWrite(other_scope, "source-b", "changed"),
+            expected_revision=1,
+        )
         assert changed.revision == 2
         expected_a_event = 4
     else:
