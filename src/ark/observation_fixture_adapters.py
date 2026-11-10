@@ -77,6 +77,10 @@ def _preflight_fixture_metadata(
     ):
         if type(value) is not str or not value.strip():
             raise ValueError(f"{name} must be a non-empty exact string")
+        # NUL in source/privacy labels is ambiguous at native adapter
+        # boundaries. Reject before even hashing caller-private fixture bytes.
+        if "\x00" in value:
+            raise ValueError(f"{name} contains a NUL separator")
         if len(value) > 1024:
             raise ValueError(f"{name} exceeds observation identifier budget")
         try:
