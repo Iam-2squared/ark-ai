@@ -26,6 +26,7 @@ from .personal_context_revocation_review import (
 )
 
 _MAX = 2**63 - 1
+_ORIGINAL_MAX = _MAX
 
 
 class SyntheticRetentionRejected(RuntimeError):
@@ -107,6 +108,17 @@ _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON = json
 _ORIGINAL_JSON_DUMPS = json.dumps
+# A new MemoryScope constructor or slot getter can observe local owner and
+# namespace before the retention inventory has opened its read-only store.
+# Freeze the exact class protocol BEFORE the first scope-field read.
+_ORIGINAL_SCOPE_TYPE = MemoryScope
+_SCOPE_CARRIERS = (
+    "owner_id", "namespace", "__init__", "__post_init__", "__new__",
+    "__getattribute__", "__getattr__",
+)
+_ORIGINAL_SCOPE_CARRIERS = tuple(
+    vars(_ORIGINAL_SCOPE_TYPE).get(name) for name in _SCOPE_CARRIERS
+)
 
 
 def _require_original_retention_contract() -> None:
@@ -119,6 +131,14 @@ def _require_original_retention_contract() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+        or MemoryScope is not _ORIGINAL_SCOPE_TYPE
+        or any(
+            vars(_ORIGINAL_SCOPE_TYPE).get(name) is not original
+            for name, original in zip(
+                _SCOPE_CARRIERS, _ORIGINAL_SCOPE_CARRIERS, strict=True,
+            )
+        )
     ):
         raise SyntheticRetentionRejected("retention inventory dependency changed")
     # Do not invoke a caller-installed False-valued property, executable slot
@@ -167,6 +187,7 @@ def review_synthetic_retention_inventory(
     retention is flagged NO_EXPIRY for future human policy review, not
     treated as consent. A successful diagnostic never authorizes purging.
     """
+    _require_original_retention_contract()
     if (
         type(memory) is not SQLiteMemoryStore
         or type(scope) is not MemoryScope
