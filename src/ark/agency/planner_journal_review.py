@@ -651,9 +651,17 @@ class SyntheticPlanJournal:
                 # Check topology before using the replayed graph: a callback
                 # may mutate its original frozen step during _replay itself.
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
+                # Compare stored prefix scalars, never replaceable dataclass
+                # __eq__; a forged retained hash cannot become a valid tail.
                 if retained is not None and (
                     retained.event_count >= len(prefixes)
-                    or prefixes[retained.event_count] != retained
+                    or (
+    prefixes[retained.event_count].topology_digest,
+    prefixes[retained.event_count].event_count,
+    prefixes[retained.event_count].event_hash,
+    prefixes[retained.event_count].status_digest,
+    prefixes[retained.event_count].last_at_ms,
+) != pinned
                 ):
                     raise SyntheticPlanJournalRejected("retained synthetic plan history changed")
                 result, check_result = _checked_snapshot(graph, prefixes[-1])
@@ -754,7 +762,13 @@ class SyntheticPlanJournal:
                         current_retained != pinned
                         or not _retained_tail_epoch_stable(retained, pinned)
                         or retained.event_count >= len(prefixes)
-                        or prefixes[retained.event_count] != retained
+                        or (
+    prefixes[retained.event_count].topology_digest,
+    prefixes[retained.event_count].event_count,
+    prefixes[retained.event_count].event_hash,
+    prefixes[retained.event_count].status_digest,
+    prefixes[retained.event_count].last_at_ms,
+) != pinned
                     ):
                         raise SyntheticPlanJournalRejected(
                             "retained synthetic plan history changed before append"
