@@ -248,7 +248,28 @@ class SQLiteMemoryStore:
         pinned_expiry = write.expires_at_ms
         pinned_owner = pinned_scope.owner_id
         pinned_namespace = pinned_scope.namespace
-        metadata_copy = dict(pinned_metadata)
+        # A frozen MemoryWrite/MemoryScope can be invalidated reflectively
+        # after its original constructor. Revalidate all caller fields BEFORE
+        # metadata copy, ID hashing, SQLite open or any clock callback.
+        # The reconstructed write is only an ingress snapshot: its metadata
+        # is bounded by the same existing v1 contract, not new policy.
+        try:
+            if any(
+                type(value) is not str
+                for value in (pinned_owner, pinned_namespace, pinned_source_id,
+                              pinned_content)
+            ):
+                raise TypeError("memory identity/content must be exact strings")
+            validated_scope = MemoryScope(pinned_owner, pinned_namespace)
+            validated_write = MemoryWrite(
+                validated_scope, pinned_source_id, pinned_content,
+                pinned_metadata, pinned_expiry,
+            )
+            metadata_copy = dict(validated_write.metadata)
+            pinned_source_id.encode("utf-8", errors="strict")
+            pinned_content.encode("utf-8", errors="strict")
+        except (ValueError, TypeError, UnicodeError, AttributeError) as exc:
+            raise MemorySchemaError("memory write contract invalidated at ingress") from exc
         memory_id = deterministic_memory_id(pinned_scope, pinned_source_id)
         metadata_json = json.dumps(
             metadata_copy, ensure_ascii=False, sort_keys=True, separators=(",", ":")
