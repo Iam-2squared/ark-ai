@@ -50,7 +50,10 @@ def test_private_search_never_invokes_forged_constructor(
                 return result
 
             patch.setattr(context, "_utf8", mutate_on_query)
-        with pytest.raises(context.OfflineContextSearchRejected, match="result changed"):
+        with pytest.raises(
+            context.OfflineContextSearchRejected,
+            match="result changed|search grammar, budget or codec changed",
+        ):
             _search()
     assert invoked == []
 
@@ -70,7 +73,10 @@ def test_post_hash_result_initializer_injection_is_denied(monkeypatch):
             return original(data, *args, **kwargs)
 
         patch.setattr(context, "hashlib", SimpleNamespace(sha256=fake_hash))
-        with pytest.raises(context.OfflineContextSearchRejected, match="result changed"):
+        with pytest.raises(
+            context.OfflineContextSearchRejected,
+            match="result changed|search grammar, budget or codec changed",
+        ):
             _search()
     assert invoked == []
 
