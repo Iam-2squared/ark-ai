@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from ark.memory import MemoryScope
 from ark.personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
     SyntheticContextRevocationRejected,
@@ -62,6 +63,6 @@ def test_retargeted_subclass_cannot_reenter_existing_ledger(
     ledger.path = TrappedPath(str(path))
     ledger._source_path = ledger.path
     with pytest.raises(
-        SyntheticContextRevocationRejected, match="exact local Path",
+        SyntheticContextRevocationRejected, match="source path changed",
     ):
-        ledger.assert_not_revoked(())
+        ledger.assert_not_revoked((MemoryScope("fixture-owner", "profile"),))
