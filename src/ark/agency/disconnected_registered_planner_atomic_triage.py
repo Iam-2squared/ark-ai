@@ -117,7 +117,9 @@ def review_registered_planner_atomic_triage(
         or type(write_occurrences) is not tuple
         or not 1 <= len(write_occurrences) <= len(steps)
     ):
-        raise RegisteredPlannerAtomicTriageRejected("exact bounded triage inputs required")
+        raise RegisteredPlannerAtomicTriageRejected(
+            "exact bounded triage inputs required"
+        )
     originals = tuple(
         (s, s.step_id, s.call, s.depends_on, s.call.tool, s.call.capability,
          s.call.scope, s.call.arguments, s.call.request_id)
@@ -194,7 +196,9 @@ def review_registered_planner_atomic_triage(
             or fence.automatic_replay_authorized is not False
             or fence.external_outcome_verified is not False
         ):
-            raise RegisteredPlannerAtomicTriageRejected("Planner fence gained authority")
+            raise RegisteredPlannerAtomicTriageRejected(
+                "Planner fence gained authority"
+            )
         call_map = {step.step_id: step.call for step in steps}
         requested = tuple((bindings[name], call_map[name]) for name in sorted(writes))
         batch = _BATCH(ledger, retained, registry, requested)
@@ -210,7 +214,9 @@ def review_registered_planner_atomic_triage(
             or type(batch.local_states) is not tuple
             or len(batch.local_states) != len(requested)
         ):
-            raise RegisteredPlannerAtomicTriageRejected("atomic review gained authority")
+            raise RegisteredPlannerAtomicTriageRejected(
+                "atomic review gained authority"
+            )
         local = dict(batch.local_states)
         codes = {item.step_id: item.code for item in fence.decisions}
         if (
@@ -239,7 +245,9 @@ def review_registered_planner_atomic_triage(
             or result.external_effect_proven is not False
             or result.manual_review_required is not True
         ):
-            raise RegisteredPlannerAtomicTriageRejected("triage result gained authority")
+            raise RegisteredPlannerAtomicTriageRejected(
+                "triage result gained authority"
+            )
         return result
     except (
         AtomicBindingSnapshotRejected, DisconnectedPlannerProjectionRejected,
