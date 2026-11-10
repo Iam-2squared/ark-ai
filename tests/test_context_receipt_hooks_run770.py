@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-
 _CHILD = r"""
 import sqlite3
 import sys
