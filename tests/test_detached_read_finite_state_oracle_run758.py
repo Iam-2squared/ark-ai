@@ -31,7 +31,7 @@ _SHAPES = (
 def _reference(states, shape):
     """Independently compute diagnostics or reject impossible started states."""
     decisions = []
-    for i, (state, parents) in enumerate(zip(states, shape, strict=True)):
+    for state, parents in zip(states, shape, strict=True):
         if state != "NOT_STARTED" and any(
             states[parent] != "SUCCEEDED" for parent in parents
         ):
