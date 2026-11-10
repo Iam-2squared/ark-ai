@@ -37,6 +37,11 @@ def _require_original_registry_digest() -> None:
 def _text(name: str, value: object) -> str:
     if type(value) is not str or not value.strip():
         raise ValueError(f"{name} must be a non-empty exact string")
+    # Native and shell-facing identities must not embed NUL separators.
+    # Refuse before inspecting backend.execute or serializing a revision.
+    if "\x00" in value:
+        raise ValueError(f"{name} contains a NUL separator")
+
     if len(value) > _MAX_REGISTRATION_TEXT:
         raise ValueError(f"{name} exceeds registry identifier budget")
     # Revision and bound-action identities serialize as UTF-8. Restrict the
