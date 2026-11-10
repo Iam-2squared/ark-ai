@@ -19,6 +19,12 @@
 - Coverage is **synthetic local filesystem / SQLite only**. Spawned-process deterministic races and abrupt exits are not power-failure/fsync verification, independently witnessed WAL provenance, authenticated approvals, a trusted clock, real exactly-once effects or physical Windows GGUF tests. Temporary SQLite fixture transactions do not establish privacy/legal authorization.
 - Passive read of PR #5 `docs/v3/PRE_PAID_COMPUTE_GATE.md` confirms the same blockers: immutable base/tokenizer and converter/quantizer byte identities, rights-approved and contamination-cleared 120+30 examples, pinned verified hardware/software environment, and explicit user-approved cost/time ceiling. **No actual Candidate, external GPU, protected V2 evaluation or V3 PASS**.
 
+
+## CI-discovered spawned-worker input type and minimal repair
+
+- [Actions #42771089071](https://github.com/Iam-2squared/ark-ai/actions/runs/42771089071) on post-lint-fix HEAD `68e2fc93...` reached **pytest**. Ubuntu 3.11/3.13 reported two failed synthetic occurrence process cases: both workers returned `error` rather than one `reserved`/one `conflict`. A direct source-contract audit identified that `SyntheticOccurrenceStore.__init__` requires an actual `pathlib.Path`, but the new child test transported a string pathname through multiprocessing and used it without reconstruction. This was a **test fixture type error**, not a demonstrated two-reservation breach.
+- [Minimal normal Contents API correction `b7ca40d2`](https://github.com/Iam-2squared/ark-ai/commit/b7ca40d2140acd039bb256e67a52766a7482f56b) reconstructs `Path(path)` inside the child and improves the failed assertion's diagnostic message; **no production source, frozen contract or safety gate changed**. Fresh [#42771579713](https://github.com/Iam-2squared/ark-ai/actions/runs/42771579713) was QUEUED at the fix; its six-platform pytest result was **UNVERIFIED** at this report correction.
+
 ## Next plan / 今後の方針
 
 1. Verify exact latest source/test and checkpoint-result HEAD Windows/Ubuntu Python 3.11–3.13 CI. On FAIL inspect real failing job logs and fix only the affected test/source through the normal Contents API.
