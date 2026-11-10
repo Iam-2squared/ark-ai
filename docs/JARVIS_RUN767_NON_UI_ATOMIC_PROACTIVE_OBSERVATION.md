@@ -81,3 +81,25 @@ adds `tests/test_observation_label_preaccess_run767.py`, 12 cases:
 - Re-check exact final-HEAD CI, then advance Memory retained-CAS/highwater,
   Planner crash/recovery, and registry-bound audit-before-action only on
   independent GREEN foundations. Fail closed at all payment/approval gates.
+
+## D. Proactive startup metadata helper identity
+
+Source commit `5e0594fce26a6b0938145aee68b4e11d9d4d7794` updates
+`src/ark/proactive_startup_fence_review.py`.
+
+- Pin import-time `dataclasses.fields`, `_epoch`, and `_snapshot_epoch`
+  implementations. A replaced metadata reader could access trigger receipts,
+  policy identities or readiness components before the deny-only review.
+- Extend the preaccess original-definition check and its existing reentrant
+  rechecks to refuse these helper replacements without invoking them.
+- Test commit `d4c7f931f4123309178e4e5b7c43fc5203969999` adds
+  3 parameterized cases with intentionally unreadable private carriers.
+- These are synthetic readiness claims, not startup/notification approval.
+
+**D CI:** Source `#42838865493`, tests `#42838961935`, both queued
+at the 23:55 JST sample. The preceding report commit `e6fd3ce2...`
+has `#42838555084` queued. Exact final-HEAD 6/6 GREEN remains unverified.
+
+**Run767 totals:** 4 coherent non-UI packages; 3 source files changed,
+4 new test files, 20 parameterized regression cases, one technical report
+and one canonical checkpoint scheduled at the end of the invocation.
