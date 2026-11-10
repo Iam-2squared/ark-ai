@@ -9,10 +9,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .startup_readiness_review import ComponentResult, ReadinessState, StartupSnapshot
+from .startup_readiness_review import (
+    ComponentResult,
+    ReadinessState,
+    StartupSnapshot,
+    _assert_original_startup_constructors,
+)
 
 _MAX = 2**63 - 1
 _LIMIT = 512
+# These are safety limits, not caller-adjustable convenience settings.
+_ORIGINAL_MAX = _MAX
+_ORIGINAL_LIMIT = _LIMIT
+_ORIGINAL_SOURCE_GUARD = _assert_original_startup_constructors
 
 
 class SyntheticStartupLeaseRejected(RuntimeError):
@@ -150,6 +159,23 @@ def _require_original_lease_result() -> None:
         )
 
 
+def _require_original_lease_protocol() -> None:
+    # A forged snapshot/ComponentResult slot can execute before integrity
+    # checks unless the source's original class descriptors are pinned.
+    if (
+        type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+        or type(_LIMIT) is not int or _LIMIT != _ORIGINAL_LIMIT
+        or _assert_original_startup_constructors is not _ORIGINAL_SOURCE_GUARD
+    ):
+        raise SyntheticStartupLeaseRejected("startup lease limits or source guard changed")
+    try:
+        _assert_original_startup_constructors()
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise SyntheticStartupLeaseRejected(
+            "startup lease source descriptor changed"
+        ) from exc
+
+
 def review_synthetic_startup_lease(
     snapshot: StartupSnapshot,
     requirements: tuple[SyntheticReadinessRequirement, ...],
@@ -163,6 +189,7 @@ def review_synthetic_startup_lease(
     Caller-supplied clocks and probe values are untrusted. The lease can
     become stale or blocked after review; it is not a capability grant.
     """
+    _require_original_lease_protocol()
     if (
         type(snapshot) is not StartupSnapshot
         or type(requirements) is not tuple
@@ -188,6 +215,7 @@ def review_synthetic_startup_lease(
     epoch = tuple((item, item.component_id, item.schema_revision) for item in requirements)
 
     def assert_requirements() -> None:
+        _require_original_lease_protocol()
         _require_original_requirement()
         try:
             stable = len(requirements) == len(epoch) and all(
@@ -228,6 +256,7 @@ def review_synthetic_startup_lease(
     ) for item in components)
 
     def assert_epoch() -> None:
+        _require_original_lease_protocol()
         _require_original_lease_result()
         if (
             snapshot.components is not components
