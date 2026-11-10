@@ -76,6 +76,19 @@ _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_CRC32 = zlib.crc32
 _ORIGINAL_UNPACK = struct.unpack
 _ORIGINAL_UNPACK_FROM = struct.unpack_from
+# The decode-admission and allocation limits are executable input policy.
+# Detect accidental or hostile in-process changes before consulting private
+# fixture bytes; the input still has no authenticated camera provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_STRUCT = struct
+_ORIGINAL_ZLIB = zlib
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_SIGNATURE = _SIGNATURE
+_ORIGINAL_LIMITS = (
+    _MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_CHUNKS, _MAX_IDATS,
+)
+_ORIGINAL_VALID_DEPTHS_OBJECT = _VALID_DEPTHS
+_ORIGINAL_VALID_DEPTHS = tuple(sorted(_VALID_DEPTHS.items()))
 _INVENTORY_TYPE = OfflinePngInventory
 _DENIAL_NAMES = (
     "decoded_pixels_verified", "capture_provenance_verified",
@@ -103,14 +116,30 @@ _ORIGINAL_RESULT_HOOKS = tuple(
 
 
 def _require_original_png_authority() -> None:
-    if hashlib.sha256 is not _ORIGINAL_SHA256:
+    if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
         raise OfflinePngRejected("PNG digest implementation changed before private bytes")
     if (
-        zlib.crc32 is not _ORIGINAL_CRC32
+        zlib is not _ORIGINAL_ZLIB
+        or struct is not _ORIGINAL_STRUCT
+        or zlib.crc32 is not _ORIGINAL_CRC32
         or struct.unpack is not _ORIGINAL_UNPACK
         or struct.unpack_from is not _ORIGINAL_UNPACK_FROM
     ):
         raise OfflinePngRejected("PNG framing implementation changed before private bytes")
+    if (
+        _SHA is not _ORIGINAL_SHA_PATTERN
+        or _SIGNATURE is not _ORIGINAL_SIGNATURE
+        or any(type(n) is not int for n in (
+            _MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_CHUNKS, _MAX_IDATS,
+        ))
+        or (
+            _MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_CHUNKS, _MAX_IDATS,
+        ) != _ORIGINAL_LIMITS
+        or type(_VALID_DEPTHS) is not dict
+        or _VALID_DEPTHS is not _ORIGINAL_VALID_DEPTHS_OBJECT
+        or tuple(sorted(_VALID_DEPTHS.items())) != _ORIGINAL_VALID_DEPTHS
+    ):
+        raise OfflinePngRejected("PNG framing limits changed before private bytes")
     # Never run a replacement class constructor or a False-looking forged
     # descriptor. Both can have side effects and can forge an inert receipt.
     if (
