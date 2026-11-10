@@ -9,8 +9,8 @@ from __future__ import annotations
 import pytest
 from test_personal_context_retention_review_run376 import _review, _setup
 
+import ark.personal_context_retention_review as retention
 from ark.memory.contracts import MemoryScope
-from ark import personal_context_retention_review as retention
 
 
 @pytest.mark.parametrize("member", (
