@@ -77,8 +77,12 @@ def test_last_denial_getter_cannot_replace_equal_receipt_id(
     monkeypatch.setattr(receipt_type, "__getattribute__", reentrant)
     with pytest.raises(replay.OfflineContextReplayRejected, match="authority epoch"):
         ledger.reserve(_binding(), retained=retained)
-    assert altered == ["automatic_replay_authorized"]
+    # Import-pinned receipt lookup now rejects this injected __getattribute__
+    # before it can execute, rather than detecting the late equal-ID swap.
+    assert altered == []
     assert ledger.witness().count == 1
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stale"):
+        ledger.reserve(_binding(), retained=retained)
 
 
 def test_original_receipt_denies_all_external_authority(tmp_path):
