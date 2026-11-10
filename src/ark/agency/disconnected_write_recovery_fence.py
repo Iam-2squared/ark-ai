@@ -110,6 +110,15 @@ _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_DOMAIN = _DOMAIN
+# Freeze the admissible grammar and graph bound as well as the hash protocol.
+# A substituted matcher is executable code: reject it BEFORE fullmatch() or
+# any caller-supplied private step field can reach that replacement.
+_ORIGINAL_PLAN = _PLAN
+_ORIGINAL_STEP = _STEP
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_SLOT = _SLOT
+_ORIGINAL_STATES = _STATES
+_ORIGINAL_MAX_STEPS = _MAX_STEPS
 
 
 def _require_original_fence_denials() -> None:
@@ -151,6 +160,16 @@ def _require_original_fence_denials() -> None:
             "mixed-plan authority descriptor changed"
         )
     if (
+        _PLAN is not _ORIGINAL_PLAN
+        or _STEP is not _ORIGINAL_STEP
+        or _SHA is not _ORIGINAL_SHA
+        or _SLOT is not _ORIGINAL_SLOT
+        or _STATES is not _ORIGINAL_STATES
+        or type(_MAX_STEPS) is not int
+        or _MAX_STEPS != _ORIGINAL_MAX_STEPS
+    ):
+        raise OfflineRecoveryFenceRejected("mixed-plan grammar or budget changed")
+    if (
         hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
@@ -171,6 +190,8 @@ def review_disconnected_recovery_fence(
     propagate to PENDING descendants. No WRITE state is ever READY_MOCK_ONLY;
     reserved PENDING and UNKNOWN/RUNNING WRITE are quarantined.
     """
+    # Must run before invoking regex.fullmatch on a replaceable module global.
+    _require_original_fence_denials()
     if (
         type(plan_id) is not str or _PLAN.fullmatch(plan_id) is None
         or type(steps) is not tuple or not 1 <= len(steps) <= _MAX_STEPS
