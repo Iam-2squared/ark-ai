@@ -135,6 +135,7 @@ def test_original_read_slots_checked_before_private_claim_access(
     monkeypatch, field,
 ):
     observed = []
+    existing_step = _step(_A)
 
     def exfiltrating_property(self):
         observed.append(field)
@@ -146,7 +147,7 @@ def test_original_read_slots_checked_before_private_claim_access(
             module.ReadRecoveryProjectionRejected, match="descriptor changed",
         ):
             module.review_disconnected_read_projection(
-                _REQ, _PLAN, (_step(_A),),
+                _REQ, _PLAN, (existing_step,),
             )
     assert observed == []
     assert module.review_disconnected_read_projection(
