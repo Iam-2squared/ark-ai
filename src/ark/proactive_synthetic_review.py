@@ -264,8 +264,10 @@ class SyntheticProactiveLedger:
     """SQLite CAS-like admission for offline preparations, no execution."""
 
     def __init__(self, path: Path) -> None:
-        if not isinstance(path, Path):
-            raise TypeError("synthetic proactive path must be a Path")
+        # Path subclasses may execute arbitrary __fspath__/stat hooks during
+        # SQLite open. Reject before opening or creating a local trigger store.
+        if type(path) is not type(Path(".")):
+            raise TypeError("synthetic proactive path must be an exact local Path")
         self.path = path
         with closing(sqlite3.connect(path, timeout=10, isolation_level=None)) as conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -324,7 +326,7 @@ class SyntheticProactiveLedger:
         # otherwise a mutated, equally valid policy/path becomes the baseline
         # of a newly persisted synthetic preparation.
         ledger_path = self.path
-        if not isinstance(ledger_path, Path):
+        if type(ledger_path) is not type(Path(".")):
             raise SyntheticTriggerRejected("proactive ledger path changed")
         # Policy fields are immutable values but their carriers can be swapped
         # reflectively during digest / SQLite callbacks. Preserve the exact
