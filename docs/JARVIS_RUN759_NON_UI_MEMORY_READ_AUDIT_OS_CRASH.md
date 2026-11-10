@@ -27,6 +27,14 @@ Two independently spawned interpreters open the same marked journal and wait on 
 
 A separate process performs one of three uncommitted SQL changes (deletes the first audit event, alters its outcome, or stages another row) and terminates without COMMIT. A cold audit reader must see the original dense history, and a later proper audit append must produce ID 2. A fourth case deliberately **commits** a valid audit record and exits before reporting its receipt; manual readback must observe the committed event without a second append. Raw private ToolCall arguments must not appear in the SQLite main database bytes. A successful local audit row is **not** evidence of an external side effect or user consent. In particular, an unknown external WRITE must never be automatically retried.
 
+## D. Proactive scheduler cold-start clock/interval fence — 3 new cases
+
+`tests/test_proactive_cold_clock_interval_run759.py`, ordinary Contents API test commit `ede7b90e42cf231579c046d459de55fa9823332b`.
+
+A second, distinct Python interpreter opens the content-minimized synthetic proactive ledger following one committed preparation at time 100. With the same scope/policy but a different observation digest, time **99** must reject the persisted clock rollback, **104** must reject the five-millisecond minimum interval and boundary time **105** may admit exactly one second inert preparation. New cold opens must retain a count of 1/1/2 respectively. Neither receipt grants a notification, ToolBackend dispatch, replay, authenticated time or consent. Authored file fetched back from exact branch: no source line over 99 characters. New exact test-head CI [#42778247010](https://github.com/Iam-2squared/ark-ai/actions/runs/42778247010) was QUEUED at sampling. It is **not** an all-platform PASS claim.
+
+**Total new parametrized Run759 tests: 13** across four non-UI packages (Memory 4 + READ journal 2 + ActionAudit 4 + Proactive 3). Existing production source and frozen contracts are unchanged. The earlier three-lane CI samples below remain historical samples for those exact older SHAs; each new commit has separate CI evidence.
+
 ## CI pipeline and failure policy
 
 - New source/test-head runs at status sampling: [#42777588388](https://github.com/Iam-2squared/ark-ai/actions/runs/42777588388) (Memory) **IN PROGRESS**; [#42777652288](https://github.com/Iam-2squared/ark-ai/actions/runs/42777652288) (+READ) **IN PROGRESS**; [#42777818544](https://github.com/Iam-2squared/ark-ai/actions/runs/42777818544) (+audit) **QUEUED**. Each is a distinct SHA. No equivalent manual workflow re-run/dispatch was requested.
