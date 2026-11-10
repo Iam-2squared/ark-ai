@@ -23,7 +23,7 @@ def _request():
         )
 
     data = (
-        b"\\x89PNG\\r\\n\\x1a\\n"
+        b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0))
         + chunk(b"IDAT", b"synthetic-no-decoding")
         + chunk(b"IEND", b"")
