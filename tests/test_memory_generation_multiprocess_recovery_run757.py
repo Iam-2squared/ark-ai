@@ -72,9 +72,9 @@ def test_spawned_independent_writers_have_exactly_one_durable_cas_winner(
     children = [
         context.Process(
             target=_spawned_competing_writer,
-            args=(str(path), token, f"{index}-{label}", release, messages),
+            args=(str(path), token, label, release, messages),
         )
-        for index, label in enumerate(labels)
+        for label in labels
     ]
     try:
         for child in children:
@@ -101,6 +101,9 @@ def test_spawned_independent_writers_have_exactly_one_durable_cas_winner(
     fresh = SQLiteMemoryStore(path, clock_ms=lambda: 302)
     stored = fresh.get(original.memory_id, scope)
     assert stored is not None and stored.revision == 2
+    assert stored.content == next(
+        item[0] for item in outcomes if item[1] == "success"
+    )
     assert len(fresh.events(scope)) == 2
     assert [event.operation for event in fresh.events(scope)] == ["create", "update"]
     with pytest.raises(MemoryConflictError, match="generation changed"):
