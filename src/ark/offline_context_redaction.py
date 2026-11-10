@@ -17,6 +17,14 @@ _LABEL = re.compile(r"[A-Z][A-Z0-9_]{0,19}\Z")
 _DOMAIN = b"ARK-detached-local-context-redaction-v1\0"
 _MAX_TEXT = 8_192
 _MAX_SPANS = 64
+# These lexical grammars, budgets and hash-domain bytes are part of the
+# privacy review. A replaced matcher or budget must not inspect private text
+# or silently widen what reaches a digest/preview.
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_LABEL_PATTERN = _LABEL
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_TEXT = _MAX_TEXT
+_ORIGINAL_MAX_SPANS = _MAX_SPANS
 # Reject a replaced SHA-256 callback BEFORE handing private fixture bytes
 # to it, even when a valid source digest was independently supplied.
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -97,6 +105,11 @@ def _require_original_denials() -> None:
         RedactedOfflinePreview is not _REDACTED_RESULT_TYPE
         or OfflineRedactionSpan is not _REDACTION_SPAN_TYPE
         or hashlib.sha256 is not _ORIGINAL_SHA256
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _LABEL is not _ORIGINAL_LABEL_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_TEXT) is not int or _MAX_TEXT != _ORIGINAL_MAX_TEXT
+        or type(_MAX_SPANS) is not int or _MAX_SPANS != _ORIGINAL_MAX_SPANS
         or json.dumps is not _ORIGINAL_JSON_DUMPS
         or json.loads is not _ORIGINAL_JSON_LOADS
         or any(
