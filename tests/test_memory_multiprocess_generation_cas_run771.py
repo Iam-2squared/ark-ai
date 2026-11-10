@@ -7,8 +7,11 @@ fixture, not for authenticated writer identity, consent or external effects.
 from __future__ import annotations
 
 import json
+import sqlite3
 import subprocess
 import sys
+import time
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -36,6 +39,7 @@ def test_independent_processes_race_one_generation_token(
     child = """
 import json
 import sys
+import time
 from pathlib import Path
 from ark.memory import MemoryConflictError, MemoryScope, MemoryWrite, SQLiteMemoryStore
 from ark.memory.generation_fenced_cas import (
@@ -44,6 +48,13 @@ from ark.memory.generation_fenced_cas import (
 )
 store = SQLiteMemoryStore(Path(sys.argv[1]), clock_ms=lambda: 101)
 retained = MemoryGenerationCASToken(*json.loads(sys.argv[2]))
+Path(sys.argv[4]).touch()
+gate = Path(sys.argv[5])
+deadline = time.monotonic() + 25
+while not gate.exists():
+    if time.monotonic() >= deadline:
+        sys.exit("CAS gate timed out")
+    time.sleep(0.02)
 try:
     generation_fenced_memory_update(
         store,
@@ -54,14 +65,45 @@ except (MemoryConflictError, MemoryGenerationCASRejected):
     sys.exit(4)
 """
     values = ("after", "after" if same_payload else "different")
-    processes = [
-        subprocess.Popen(
-            [sys.executable, "-c", child, str(path), persisted, value],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-        )
-        for value in values
-    ]
-    outputs = [process.communicate(timeout=25) for process in processes]
+    gate = tmp_path / "cas-gate"
+    processes: list[subprocess.Popen[str]] = []
+    # Keep a local WAL connection alive while the children race. Otherwise a
+    # last-connection WAL unlink can race an unrelated path-custody lstat.
+    # Start children one by one, so this test measures generation CAS rather
+    # than competing SQLite store bootstraps.
+    with closing(sqlite3.connect(path)) as wal_keeper:
+        assert wal_keeper.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+        try:
+            for index, value in enumerate(values):
+                ready = tmp_path / f"cas-ready-{index}"
+                process = subprocess.Popen(
+                    [
+                        sys.executable, "-c", child, str(path), persisted,
+                        value, str(ready), str(gate),
+                    ],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                )
+                processes.append(process)
+                deadline = time.monotonic() + 25
+                while not ready.exists():
+                    if process.poll() is not None:
+                        output = process.communicate()
+                        raise AssertionError(
+                            f"child {index} exited before CAS gate: {output}"
+                        )
+                    if time.monotonic() >= deadline:
+                        raise AssertionError(
+                            f"child {index} never reached the CAS gate"
+                        )
+                    time.sleep(0.02)
+            gate.touch()
+            outputs = [process.communicate(timeout=35) for process in processes]
+        finally:
+            gate.touch()
+            for process in processes:
+                if process.poll() is None:
+                    process.kill()
+                    process.communicate()
     assert sorted(process.returncode for process in processes) == [0, 4], outputs
 
     cold = SQLiteMemoryStore(path, clock_ms=lambda: 102)
