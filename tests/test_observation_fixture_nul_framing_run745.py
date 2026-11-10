@@ -5,6 +5,8 @@ All envelopes are disconnected text fixtures, not live sensors or permissions.
 
 from __future__ import annotations
 
+import hashlib
+
 import pytest
 
 from ark.observation_fixture_adapters import fixture_text_observation
@@ -12,7 +14,7 @@ from ark.observation_fixture_chain_review import (
     ObservationFixtureChainRejected,
     review_disconnected_fixture_chain,
 )
-from ark.observations import ObservationKind
+from ark.observations import ObservationEnvelope, ObservationKind
 
 
 def _fixture(source: str, privacy: str):
@@ -36,9 +38,21 @@ def _fixture(source: str, privacy: str):
 def test_embedded_nul_cannot_confuse_chain_digest_field_framing(
     source, privacy,
 ):
-    # The base envelope is an inert, exact typed carrier and accepts UTF-8
-    # NUL. Only this opt-in digest-prefix reviewer imposes stricter framing.
-    item = _fixture(source, privacy)
+    # The disconnected adapter now rejects NUL labels BEFORE hashing private
+    # fixture bytes. Keep this stricter boundary; do not relax its preflight.
+    with pytest.raises(ValueError, match="contains a NUL separator"):
+        _fixture(source, privacy)
+
+    # The frozen, inert v1 envelope still permits a NUL label. Construct it
+    # directly to retain the independent chain reviewer's framing regression.
+    item = ObservationEnvelope(
+        kind=ObservationKind.TEXT,
+        source_id=source,
+        adapter_id="fixture:text:v1",
+        privacy_scope=privacy,
+        ingested_at_ms=100,
+        content_sha256=hashlib.sha256(b"synthetic local content").hexdigest(),
+    )
     assert item.source_id == source
     assert item.privacy_scope == privacy
     with pytest.raises(
