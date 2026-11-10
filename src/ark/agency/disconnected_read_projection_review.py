@@ -10,21 +10,24 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from .disconnected_read_recovery_schedule import (
     DetachedReadRecoveryRejected,
     ReadRecoveryStep,
+    _assert_original_denials,
     schedule_detached_read_recovery,
 )
 from .disconnected_write_recovery_fence import (
     OfflineRecoveryFenceRejected,
     OfflineRecoveryStepClaim,
+    _require_original_fence_denials,
     review_disconnected_recovery_fence,
 )
 
-_DOMAIN = b"ARK-disconnected-read-recovery-projection-v1\\0"
-_STATE = {"NOT_STARTED": "PENDING"}
-_CODES = {
+_DOMAIN = b"ARK-disconnected-read-recovery-projection-v1\0"
+_STATE = MappingProxyType({"NOT_STARTED": "PENDING"})
+_CODES = MappingProxyType({
     "COMPLETE_UNVERIFIED": "COMPLETE_UNVERIFIED",
     "TERMINAL_FAILURE": "TERMINAL",
     "QUARANTINE_UNCERTAIN": "QUARANTINE_UNKNOWN",
@@ -32,9 +35,14 @@ _CODES = {
     "HOLD_UNCERTAIN": "HOLD_UNCERTAIN",
     "WAIT_DEPENDENCY": "WAIT_DEPENDENCY",
     "READY_MOCK_ONLY": "READY_MOCK_ONLY",
-}
+})
 _ORIGINAL_SCHEDULE = schedule_detached_read_recovery
 _ORIGINAL_FENCE = review_disconnected_recovery_fence
+_ORIGINAL_READ_GUARD = _assert_original_denials
+_ORIGINAL_MIXED_GUARD = _require_original_fence_denials
+_ORIGINAL_STATE_MAP = _STATE
+_ORIGINAL_CODE_MAP = _CODES
+_ORIGINAL_STEP_TYPE = ReadRecoveryStep
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_DOMAIN = _DOMAIN
@@ -78,12 +86,19 @@ _DENIALS = (
 _ORIGINAL_FIELDS = tuple(vars(_RESULT)[name] for name in _FIELDS)
 _ORIGINAL_DENIALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
 _ORIGINAL_INIT = vars(_RESULT)["__init__"]
+_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_HOOKS = tuple(vars(_RESULT).get(name) for name in _HOOKS)
 
 
 def _require_original_protocol() -> None:
     if (
         schedule_detached_read_recovery is not _ORIGINAL_SCHEDULE
         or review_disconnected_recovery_fence is not _ORIGINAL_FENCE
+        or _assert_original_denials is not _ORIGINAL_READ_GUARD
+        or _require_original_fence_denials is not _ORIGINAL_MIXED_GUARD
+        or _STATE is not _ORIGINAL_STATE_MAP
+        or _CODES is not _ORIGINAL_CODE_MAP
+        or ReadRecoveryStep is not _ORIGINAL_STEP_TYPE
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
@@ -94,11 +109,14 @@ def _require_original_protocol() -> None:
             for names, originals in (
                 (_FIELDS, _ORIGINAL_FIELDS),
                 (_DENIALS, _ORIGINAL_DENIALS),
+                (_HOOKS, _ORIGINAL_HOOKS),
             )
             for name, original in zip(names, originals, strict=True)
         )
     ):
         raise ReadRecoveryProjectionRejected("recovery projection protocol changed")
+    _ORIGINAL_READ_GUARD()
+    _ORIGINAL_MIXED_GUARD()
 
 
 def review_disconnected_read_projection(
