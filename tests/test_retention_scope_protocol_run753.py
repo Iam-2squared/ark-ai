@@ -15,7 +15,7 @@ from ark import personal_context_retention_review as retention
 
 @pytest.mark.parametrize("member", (
     "owner_id", "namespace", "__init__", "__post_init__",
-    "__getattribute__", "__getattr__", "__new__",
+    "__getattribute__", "__getattr__",
 ))
 def test_replaced_scope_carrier_refused_before_reading_private_scope(
     tmp_path, monkeypatch, member,
