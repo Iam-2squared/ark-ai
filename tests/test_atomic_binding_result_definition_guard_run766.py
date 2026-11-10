@@ -31,24 +31,27 @@ import ark.agency.disconnected_atomic_binding_snapshot_review as binding
     ),
 )
 def test_changed_result_definition_denied_before_private_inputs(
-    monkeypatch: pytest.MonkeyPatch,
     attribute: str,
 ) -> None:
-    # A fabricated property returning False is still unreviewed executable
-    # code; there must be no valid SQL/registry/witness input to inspect.
-    monkeypatch.setattr(
-        binding.AtomicBindingSnapshotReview,
-        attribute,
-        property(lambda self: False),
-        raising=False,
-    )
-    with pytest.raises(
-        binding.AtomicBindingSnapshotRejected,
-        match="reader definition changed",
-    ):
-        binding.review_registered_atomic_binding_snapshot(
-            None, None, None, None, occurrence_id="synthetic-invalid",
-        )
+    # Monkeypatch's inherited-special-method restoration would introduce a
+    # new own class attribute. Restore the exact original class dictionary.
+    cls = binding.AtomicBindingSnapshotReview
+    missing = object()
+    original = vars(cls).get(attribute, missing)
+    try:
+        setattr(cls, attribute, property(lambda self: False))
+        with pytest.raises(
+            binding.AtomicBindingSnapshotRejected,
+            match="reader definition changed",
+        ):
+            binding.review_registered_atomic_binding_snapshot(
+                None, None, None, None, occurrence_id="synthetic-invalid",
+            )
+    finally:
+        if original is missing:
+            delattr(cls, attribute)
+        else:
+            setattr(cls, attribute, original)
 
 
 def test_result_class_alias_replacement_is_denied(
