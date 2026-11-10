@@ -18,7 +18,10 @@ import pathlib
 import sys
 import time
 
-from ark.memory import MemoryConflictError, MemorySchemaError, MemoryScope, MemoryWrite, SQLiteMemoryStore
+from ark.memory import (
+    MemoryConflictError, MemorySchemaError, MemoryScope, MemoryWrite,
+    SQLiteMemoryStore,
+)
 
 path = pathlib.Path(sys.argv[1])
 gate = pathlib.Path(sys.argv[2])
