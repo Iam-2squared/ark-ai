@@ -160,6 +160,8 @@ def _assert_original_denials() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or _SHA is not _ORIGINAL_SHA
+        or _sha is not _ORIGINAL_SHA_HELPER
+        or _ms is not _ORIGINAL_MS_HELPER
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _MAX_MS is not _ORIGINAL_MAX_MS
         or _MAX_MARKERS is not _ORIGINAL_MAX_MARKERS
@@ -207,6 +209,12 @@ def _sha(value: object) -> bool:
 
 def _ms(value: object) -> bool:
     return type(value) is int and 0 <= value <= _MAX_MS
+
+
+# The local parsers are executable Python callables. Capture originals once,
+# before any caller-controlled policy or marker can reach either parser.
+_ORIGINAL_SHA_HELPER = _sha
+_ORIGINAL_MS_HELPER = _ms
 
 
 def preview_proactive_attention(
