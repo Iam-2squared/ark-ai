@@ -17,6 +17,8 @@ from .disconnected_read_journal import (
     ReadReceipt,
     _chain,
     _check_receipt,
+    _require_original_read_carriers,
+    _require_original_snapshot_class,
     genesis_witness,
 )
 from .disconnected_read_recovery_schedule import (
@@ -117,6 +119,27 @@ def _require_original_report() -> None:
         )
 
 
+# Imported source guards check raw class dictionaries, never a potentially
+# hostile snapshot/receipt descriptor. Bind them before the first field read.
+_ORIGINAL_SOURCE_CHECKS = (
+    _require_original_read_carriers,
+    _require_original_snapshot_class,
+)
+
+
+def _require_original_source_carriers() -> None:
+    if (
+        _require_original_read_carriers is not _ORIGINAL_SOURCE_CHECKS[0]
+        or _require_original_snapshot_class is not _ORIGINAL_SOURCE_CHECKS[1]
+    ):
+        raise ReadRecoveryJournalRejected("READ source validator changed")
+    try:
+        _require_original_read_carriers()
+        _require_original_snapshot_class()
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise ReadRecoveryJournalRejected("READ source descriptor changed") from exc
+
+
 def review_detached_read_journal_recovery(
     request_id: str,
     steps: tuple[ReadRecoveryStep, ...],
@@ -131,6 +154,7 @@ def review_detached_read_journal_recovery(
     have been preserved independently of the SQLite database by the caller.
     """
     _require_original_report()
+    _require_original_source_carriers()
     if (
         type(request_id) is not str
         or type(steps) is not tuple
@@ -171,6 +195,7 @@ def review_detached_read_journal_recovery(
 
     def stable() -> None:
         _require_original_report()
+        _require_original_source_carriers()
         if (
             request_id is not original_request
             or type(steps) is not tuple
