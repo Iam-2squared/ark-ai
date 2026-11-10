@@ -8,6 +8,7 @@ this is not a real authorization, audit-before-action or exactly-once effect.
 from __future__ import annotations
 
 from multiprocessing import get_context
+from pathlib import Path
 from queue import Empty
 
 import pytest
@@ -56,7 +57,7 @@ def _compete(path, token_label, occurrence_label, released, results):
         if not released.wait(30):
             raise RuntimeError("synthetic reservation start timeout")
         try:
-            receipt = SyntheticOccurrenceStore(path).reserve_synthetic(
+            receipt = SyntheticOccurrenceStore(Path(path)).reserve_synthetic(
                 registry, call, token,
                 occurrence_id=occurrence_label, now_ms=100,
             )
@@ -113,7 +114,7 @@ def test_two_spawned_interpreters_cannot_double_reserve(collision, tmp_path):
         results.close()
         results.join_thread()
     assert all(child.exitcode == 0 for child in children)
-    assert sorted(item[0] for item in outcomes) == ["conflict", "reserved"]
+    assert sorted(item[0] for item in outcomes) == ["conflict", "reserved"], outcomes
     assert "already reserved" in next(
         item[2] for item in outcomes if item[0] == "conflict"
     )
