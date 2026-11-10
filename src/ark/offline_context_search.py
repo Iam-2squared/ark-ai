@@ -20,6 +20,20 @@ _MAX_RECORDS = 32
 _MAX_RECORD_BYTES = 2_048
 _MAX_TOTAL_BYTES = 8_192
 _MAX_QUERY_BYTES = 256
+# Treat the digest grammar and fixture-byte budgets as part of the locally
+# reviewed privacy protocol, not mutable knobs supplied by a caller.
+_ORIGINAL_DIGEST_PATTERN = _DIGEST
+_ORIGINAL_RECORD_PATTERN = _RECORD
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_TIME = _MAX_TIME
+_ORIGINAL_MAX_RECORDS = _MAX_RECORDS
+_ORIGINAL_MAX_RECORD_BYTES = _MAX_RECORD_BYTES
+_ORIGINAL_MAX_TOTAL_BYTES = _MAX_TOTAL_BYTES
+_ORIGINAL_MAX_QUERY_BYTES = _MAX_QUERY_BYTES
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
 
 
 class OfflineContextSearchRejected(ValueError):
@@ -153,6 +167,34 @@ def _utf8(value: str) -> bytes:
         raise OfflineContextSearchRejected("invalid Unicode") from exc
 
 
+_ORIGINAL_UTF8 = _utf8
+
+
+def _require_original_search_protocol() -> None:
+    # Check before a replaced regex matcher or digest callback could observe
+    # even the caller's owner/scope/query metadata, let alone record content.
+    if (
+        _DIGEST is not _ORIGINAL_DIGEST_PATTERN
+        or _RECORD is not _ORIGINAL_RECORD_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_TIME) is not int or _MAX_TIME != _ORIGINAL_MAX_TIME
+        or type(_MAX_RECORDS) is not int
+        or _MAX_RECORDS != _ORIGINAL_MAX_RECORDS
+        or type(_MAX_RECORD_BYTES) is not int
+        or _MAX_RECORD_BYTES != _ORIGINAL_MAX_RECORD_BYTES
+        or type(_MAX_TOTAL_BYTES) is not int
+        or _MAX_TOTAL_BYTES != _ORIGINAL_MAX_TOTAL_BYTES
+        or type(_MAX_QUERY_BYTES) is not int
+        or _MAX_QUERY_BYTES != _ORIGINAL_MAX_QUERY_BYTES
+        or hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _utf8 is not _ORIGINAL_UTF8
+    ):
+        raise OfflineContextSearchRejected("search grammar, budget or codec changed")
+
+
 def search_offline_context(
     fixtures: tuple[OfflineContextSearchRecord, ...],
     *,
@@ -169,6 +211,7 @@ def search_offline_context(
     """
     _require_original_denials()
     _require_original_constructors()
+    _require_original_search_protocol()
     if (
         type(fixtures) is not tuple or not 1 <= len(fixtures) <= _MAX_RECORDS
         or any(type(row) is not OfflineContextSearchRecord for row in fixtures)
@@ -199,6 +242,7 @@ def search_offline_context(
     def assert_epoch() -> None:
         _require_original_denials()
         _require_original_constructors()
+        _require_original_search_protocol()
         if (
             any(now is not before for now, before in zip(
                 (fixtures, owner_digest, allowed_scope_digests, observed_at_ms, query, max_hits),
