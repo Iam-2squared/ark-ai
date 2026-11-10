@@ -77,9 +77,10 @@ def test_descriptor_installed_during_hash_is_rejected_before_getter(
         return sha256(payload)
 
     monkeypatch.setattr(search.hashlib, "sha256", inject)
+    # The replacement digest cannot run: the codec identity is checked first.
     with pytest.raises(
         search.OfflineContextSearchRejected,
-        match="authority descriptor changed",
+        match="search grammar, budget or codec changed",
     ):
         search.search_offline_context(**request)
     assert called == []
