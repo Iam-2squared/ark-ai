@@ -1,0 +1,268 @@
+"""Disconnected atomic intent and pre-action audit, without tool dispatch.
+
+Intent and its digest-only pre-action audit commit in one SQLite transaction.
+This opt-in fixture does NOT bridge ARK's other SQLite stores, authenticate an
+issuer, prove external effects, or authorize replay of an ambiguous WRITE.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sqlite3
+import stat
+from contextlib import closing
+from dataclasses import dataclass
+from pathlib import Path
+
+_DOMAIN = b"ARK-disconnected-atomic-preaction-v1\0"
+_AUDIT_DOMAIN = b"ARK-disconnected-preaction-audit-v1\0"
+_GENESIS = hashlib.sha256(_DOMAIN + b"genesis").hexdigest()
+_ID = re.compile(r"occ_[0-9a-f]{64}\Z")
+_BOUND = re.compile(r"bound_[0-9a-f]{64}\Z")
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_MAX = 128
+_INTENTS = (
+    "CREATE TABLE intents ("
+    "seq INTEGER PRIMARY KEY, occurrence_id TEXT NOT NULL UNIQUE, "
+    "bound_action_id TEXT NOT NULL, request_sha256 TEXT NOT NULL, "
+    "chain_sha256 TEXT NOT NULL)"
+)
+_AUDITS = (
+    "CREATE TABLE preaction_audit ("
+    "seq INTEGER PRIMARY KEY, occurrence_id TEXT NOT NULL UNIQUE, "
+    "audit_sha256 TEXT NOT NULL)"
+)
+
+
+class AtomicPreactionRejected(ValueError):
+    """An inert reservation or its audit cannot be safely reconciled."""
+
+
+@dataclass(frozen=True, slots=True)
+class AtomicIntentClaim:
+    occurrence_id: str
+    bound_action_id: str
+    request_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class AtomicPreactionWitness:
+    count: int
+    tip_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class AtomicPreactionSnapshot:
+    witness: AtomicPreactionWitness
+    occurrence_ids: tuple[str, ...]
+
+    @property
+    def tool_dispatch_authorized(self) -> bool:
+        return False
+
+    @property
+    def automatic_replay_authorized(self) -> bool:
+        return False
+
+    @property
+    def external_effect_proven(self) -> bool:
+        return False
+
+    @property
+    def trusted_approval_verified(self) -> bool:
+        return False
+
+    @property
+    def independent_custody_proven(self) -> bool:
+        return False
+
+
+def genesis_atomic_preaction_witness() -> AtomicPreactionWitness:
+    return AtomicPreactionWitness(0, _GENESIS)
+
+
+def _hex_id(value: object, pattern: re.Pattern[str]) -> bool:
+    return type(value) is str and pattern.fullmatch(value) is not None
+
+
+def _check_witness(value: object) -> None:
+    if (
+        type(value) is not AtomicPreactionWitness
+        or type(value.count) is not int or not 0 <= value.count <= _MAX
+        or not _hex_id(value.tip_sha256, _SHA)
+    ):
+        raise AtomicPreactionRejected("invalid retained pre-action witness")
+
+
+def _check_claim(value: object) -> None:
+    if (
+        type(value) is not AtomicIntentClaim
+        or not _hex_id(value.occurrence_id, _ID)
+        or not _hex_id(value.bound_action_id, _BOUND)
+        or not _hex_id(value.request_sha256, _SHA)
+    ):
+        raise AtomicPreactionRejected("invalid exact synthetic intent")
+
+
+def _path(value: object, *, create: bool) -> Path:
+    if type(value) is not type(Path()) or ".." in value.parts:
+        raise AtomicPreactionRejected("unsafe intent ledger path")
+    path = value.absolute()
+    try:
+        for parent in path.parents:
+            meta = parent.lstat()
+            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+                raise AtomicPreactionRejected("unsafe intent ledger ancestor")
+        try:
+            meta = path.lstat()
+        except FileNotFoundError:
+            if not create:
+                raise AtomicPreactionRejected("intent ledger missing")
+        else:
+            if create or not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise AtomicPreactionRejected("intent ledger already exists or unsafe")
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = path.with_name(path.name + suffix)
+            try:
+                meta = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if create or not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+                raise AtomicPreactionRejected("unsafe intent ledger sidecar")
+    except OSError as exc:
+        raise AtomicPreactionRejected("intent ledger path cannot be inspected") from exc
+    return path
+
+
+def _schema(conn: sqlite3.Connection) -> None:
+    if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
+        raise AtomicPreactionRejected("pre-action schema version mismatch")
+    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+        raise AtomicPreactionRejected("pre-action SQLite integrity failure")
+    query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+    with sqlite3.connect(":memory:") as expected:
+        expected.execute(_INTENTS)
+        expected.execute(_AUDITS)
+        if conn.execute(query).fetchall() != expected.execute(query).fetchall():
+            raise AtomicPreactionRejected("pre-action schema changed")
+
+
+def _digest(domain: bytes, row: tuple[object, ...]) -> str:
+    raw = json.dumps(row, ensure_ascii=True, separators=(",", ":")).encode("ascii")
+    return hashlib.sha256(domain + raw).hexdigest()
+
+
+def _chain(previous: str, seq: int, claim: AtomicIntentClaim) -> str:
+    return _digest(_DOMAIN, (
+        previous, seq, claim.occurrence_id, claim.bound_action_id,
+        claim.request_sha256,
+    ))
+
+
+def _audit(seq: int, claim: AtomicIntentClaim, chain: str) -> str:
+    return _digest(_AUDIT_DOMAIN, (
+        seq, claim.occurrence_id, claim.bound_action_id,
+        claim.request_sha256, chain,
+    ))
+
+
+def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
+    _schema(conn)
+    rows = conn.execute(
+        "SELECT i.seq,i.occurrence_id,i.bound_action_id,i.request_sha256,"
+        "i.chain_sha256,a.occurrence_id,a.audit_sha256 "
+        "FROM intents i LEFT JOIN preaction_audit a ON a.seq=i.seq "
+        "ORDER BY i.seq LIMIT ?", (_MAX + 1,),
+    ).fetchall()
+    audit_count = conn.execute("SELECT COUNT(*) FROM preaction_audit").fetchone()[0]
+    if len(rows) > _MAX or audit_count != len(rows):
+        raise AtomicPreactionRejected("orphan, missing or oversized pre-action audit")
+    tip = _GENESIS
+    occurrences: list[str] = []
+    for seq, row in enumerate(rows, 1):
+        index, occurrence, bound, request, chain, audit_occurrence, audit_sha = row
+        claim = AtomicIntentClaim(occurrence, bound, request)
+        _check_claim(claim)
+        if (
+            type(index) is not int or index != seq
+            or not _hex_id(chain, _SHA) or audit_occurrence != occurrence
+            or not _hex_id(audit_sha, _SHA)
+            or chain != _chain(tip, seq, claim)
+            or audit_sha != _audit(seq, claim, chain)
+        ):
+            raise AtomicPreactionRejected("pre-action row/audit chain mismatch")
+        tip = chain
+        occurrences.append(occurrence)
+    return AtomicPreactionSnapshot(
+        AtomicPreactionWitness(len(rows), tip), tuple(occurrences),
+    )
+
+
+class DisconnectedAtomicPreactionLedger:
+    """Local digest-only intent storage; intentionally has no execute method."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = _path(path, create=False)
+        with closing(self._open(read_only=True)) as conn:
+            conn.execute("BEGIN")
+            _scan(conn)
+
+    @classmethod
+    def create(cls, path: Path) -> DisconnectedAtomicPreactionLedger:
+        target = _path(path, create=True)
+        with closing(sqlite3.connect(target)) as conn:
+            conn.execute("PRAGMA busy_timeout=5000")
+            if conn.execute("PRAGMA journal_mode=WAL").fetchone()[0] != "wal":
+                raise AtomicPreactionRejected("intent WAL setup refused")
+            with conn:
+                conn.execute("BEGIN IMMEDIATE")
+                conn.execute(_INTENTS)
+                conn.execute(_AUDITS)
+                conn.execute("PRAGMA user_version=1")
+                _schema(conn)
+        return cls(path)
+
+    def _open(self, *, read_only: bool) -> sqlite3.Connection:
+        target = _path(self._path, create=False)
+        uri = target.as_uri() + ("?mode=ro" if read_only else "?mode=rw")
+        conn = sqlite3.connect(uri, uri=True)
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
+    def inspect(self, retained: AtomicPreactionWitness) -> AtomicPreactionSnapshot:
+        _check_witness(retained)
+        with closing(self._open(read_only=True)) as conn:
+            conn.execute("BEGIN")
+            snapshot = _scan(conn)
+        if snapshot.witness != retained:
+            raise AtomicPreactionRejected("retained pre-action witness is stale or mismatched")
+        return snapshot
+
+    def reserve(
+        self, claim: AtomicIntentClaim, *, retained: AtomicPreactionWitness,
+    ) -> AtomicPreactionWitness:
+        _check_claim(claim)
+        _check_witness(retained)
+        frozen = (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
+        with closing(self._open(read_only=False)) as conn, conn:
+            conn.execute("BEGIN IMMEDIATE")
+            snapshot = _scan(conn)
+            if snapshot.witness != retained or retained.count == _MAX:
+                raise AtomicPreactionRejected("pre-action CAS mismatch or ledger full")
+            if frozen != (claim.occurrence_id, claim.bound_action_id, claim.request_sha256):
+                raise AtomicPreactionRejected("synthetic intent changed")
+            seq = retained.count + 1
+            tip = _chain(retained.tip_sha256, seq, claim)
+            audit = _audit(seq, claim, tip)
+            try:
+                conn.execute("INSERT INTO intents VALUES (?,?,?,?,?)", (seq, *frozen, tip))
+                conn.execute(
+                    "INSERT INTO preaction_audit VALUES (?,?,?)", (seq, frozen[0], audit),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise AtomicPreactionRejected("duplicate synthetic occurrence") from exc
+            if frozen != (claim.occurrence_id, claim.bound_action_id, claim.request_sha256):
+                raise AtomicPreactionRejected("synthetic intent changed before commit")
+        return AtomicPreactionWitness(seq, tip)
