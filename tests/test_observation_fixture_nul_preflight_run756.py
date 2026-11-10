@@ -15,7 +15,7 @@ from ark.observations import ObservationKind
 
 @pytest.mark.parametrize("adapter", ("text", "binary"))
 @pytest.mark.parametrize("label", ("source_id", "privacy_scope"))
-@pytest.mark.parametrize("value", ("a\\x00b", "\\x00leading", "trailing\\x00"))
+@pytest.mark.parametrize("value", ("a\x00b", "\x00leading", "trailing\x00"))
 def test_nul_fixture_metadata_never_reaches_raw_content_hash(
     monkeypatch, adapter, label, value,
 ):
