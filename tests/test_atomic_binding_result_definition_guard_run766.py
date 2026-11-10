@@ -6,6 +6,10 @@ private SQLite, even if a forged descriptor would return a harmless value.
 
 from __future__ import annotations
 
+import subprocess
+import sys
+import textwrap
+
 import pytest
 
 import ark.agency.disconnected_atomic_binding_snapshot_review as binding
@@ -25,7 +29,6 @@ import ark.agency.disconnected_atomic_binding_snapshot_review as binding
         "independent_custody_proven",
         "manual_review_required",
         "__init__",
-        "__new__",
         "__getattribute__",
         "__getattr__",
     ),
@@ -52,6 +55,33 @@ def test_changed_result_definition_denied_before_private_inputs(
             delattr(cls, attribute)
         else:
             setattr(cls, attribute, original)
+
+
+def test_new_constructor_substitution_denied_in_isolated_process() -> None:
+    # Setting __new__ on a Python slotted dataclass may irreversibly alter
+    # the live type's construction slot even after delattr; isolate the
+    # monkeypatch in a child interpreter so subsequent tests stay pristine.
+    program = textwrap.dedent(
+        """
+        import ark.agency.disconnected_atomic_binding_snapshot_review as binding
+
+        cls = binding.AtomicBindingSnapshotReview
+        cls.__new__ = property(lambda self: False)
+        try:
+            binding.review_registered_atomic_binding_snapshot(
+                None, None, None, None, occurrence_id="synthetic-invalid",
+            )
+        except binding.AtomicBindingSnapshotRejected as exc:
+            assert "reader definition changed" in str(exc)
+        else:
+            raise AssertionError("untrusted constructor was not rejected")
+        """
+    )
+    completed = subprocess.run(
+        [sys.executable, "-c", program],
+        check=False, capture_output=True, text=True, timeout=30,
+    )
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_result_class_alias_replacement_is_denied(
