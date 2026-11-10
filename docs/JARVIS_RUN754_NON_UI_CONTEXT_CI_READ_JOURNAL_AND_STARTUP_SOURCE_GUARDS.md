@@ -21,10 +21,16 @@ This technical record is scoped to **free-only, disconnected/mock, read-only or 
 - Test commit `bf5b9e8853bfca3c78a2f5100d0c389555f2b88e`: `tests/test_startup_lease_source_budget_run754.py` adds **8** isolated cases: two limit rewrites, four forged source slots, one validator replacement, one baseline denial-only READY review.
 - Limitations: even a passing synthetic READY lease is **not** proof of a physical PC, trusted clock, authenticated permission, hardware availability or safe ToolBackend dispatch.
 
+## Package C — Retained Memory epoch input and output integrity
+
+- Source commit `4e4c57ab4c0c98161b655b93d2d48f13ea287a01`: `src/ark/memory/retained_epoch_review.py` now pins retained row/event grammar, numeric budgets, original JSON/SHA-256 implementations, the imported raw AtomicMemoryEpochReview slots and lookup machinery, plus the inert comparison-result slots. It rejects a forged parser, codec or executable field descriptor *before* reading private scope fingerprints and rechecks across digest epochs. No Memory v1 schema or write behavior changed.
+- Test commit `f09a9baabb078c324a09a54ffaac122699e4061a`: `tests/test_memory_retained_epoch_input_protocol_run754.py` adds **12** synthetic scenarios: five grammar/budget mutations, two hostile codec substitutions, two forged private review slots, two forged output slots and one baseline unchanged-snapshot denial-only receipt.
+- This is a detached local comparison, not authenticated append-prefix custody, a cross-store atomicity guarantee, a write lock, consent, retention authorization or disclosure approval.
+
 ## Verification and follow-up
 
-- New cases authored in this invocation: **17 total** (9 + 8). The number denotes parametrized cases added, **not** confirmed passing runs.
-- Last source/test fix HEAD: `d52d69fc946e06ae325db5645f21a819b8bb2fae`. Automatically triggered CI [#42745942405](https://github.com/Iam-2squared/ark-ai/actions/runs/42745942405) was **IN PROGRESS** at the last job check; do not transfer its result to this documentation commit or a later checkpoint SHA.
+- New cases authored in this invocation: **29 total** (9 + 8 + 12). The number denotes parametrized cases added, **not** confirmed passing runs.
+- First CI-repair HEAD: `d52d69fc946e06ae325db5645f21a819b8bb2fae`; later Memory source/test HEAD: `f09a9baabb078c324a09a54ffaac122699e4061a`. Automatically triggered CI [#42745942405](https://github.com/Iam-2squared/ark-ai/actions/runs/42745942405) was **IN PROGRESS** at the last job check; do not transfer its result to this documentation commit or a later checkpoint SHA.
 - No independent local full test suite run and no physical Windows/GGUF gate. If CI fails, inspect actual job logs, repair only via normal allowed Contents API, then switch to another non-UI lane.
 - PR #8 stays Draft/unmerged. PR #5 V3 and PR #9 UI stay Draft/unmerged; PR #9 receives no source, test, build or integration changes. Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. No paid service/external GPU, Candidate/weight generation, real sensor/tool action, protected evaluation, or main merge.
 
