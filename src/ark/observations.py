@@ -40,7 +40,7 @@ class ObservationEnvelope:
             # NUL separates labels at native adapter boundaries. Direct
             # envelopes must enforce the same label safety contract as
             # disconnected fixture preflight, before identity hashing.
-            if "\\x00" in value:
+            if "\x00" in value:
                 raise ValueError(f"{name} contains a NUL separator")
             # Inert fixture metadata must not carry unbounded raw media or
             # arbitrary-sized identifiers into hashes and downstream reviewers.
