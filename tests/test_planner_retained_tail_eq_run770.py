@@ -41,10 +41,10 @@ def test_retained_plan_tail_comparison_avoids_rebound_equality(
 
     with monkeypatch.context() as patch:
         patch.setattr(SyntheticPlanTail, "__eq__", forbidden_eq)
-        if operation == "recover":
-            run = lambda: journal.recover(retained=retained)
-        else:
-            run = lambda: journal.append(
+        def run():
+            if operation == "recover":
+                return journal.recover(retained=retained)
+            return journal.append(
                 "step-one", StepState.RUNNING,
                 expected_revision=0, at_ms=100, retained=retained,
             )
