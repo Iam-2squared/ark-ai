@@ -1,16 +1,19 @@
-"""Direct observation carriers reject NUL identities like fixture adapters.
+"""Preserve frozen v1 envelope identity while adapters block ambiguous NUL.
 
-Synthetic data only; no device, private media, ToolBackend or network read.
+The v1 ObservationEnvelope can carry NUL-bearing synthetic labels, but the
+opt-in fixture adapter must reject them before hashing caller-owned bytes.
+No media device, network, or ToolBackend is accessed.
 """
 
 from __future__ import annotations
 
 import pytest
 
+from ark.observation_fixture_adapters import fixture_text_observation
 from ark.observations import ObservationEnvelope, ObservationKind
 
 
-def _valid_envelope(**overrides: object) -> ObservationEnvelope:
+def _legacy_envelope(**overrides: object) -> ObservationEnvelope:
     values: dict[str, object] = {
         "kind": ObservationKind.TRANSCRIPT,
         "source_id": "synthetic-source",
@@ -24,26 +27,32 @@ def _valid_envelope(**overrides: object) -> ObservationEnvelope:
 
 
 @pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
-def test_direct_envelope_rejects_nul_identity_at_construction(
-    field: str,
-) -> None:
-    # A direct caller does not pass through fixture adapter preflight.
+def test_frozen_v1_envelope_retains_nul_label_identity(field: str) -> None:
+    # Do not tighten frozen v1 constructor semantics. The stricter adapter
+    # ingress gate is separate and cannot rewrite historical envelope IDs.
+    label = "synthetic" + chr(0) + "legacy"
+    envelope = _legacy_envelope(**{field: label})
+    result = envelope.observation_id
+    assert result.startswith("obs_")
+    assert len(result) == 68
+    assert envelope.observation_id == result
+
+
+@pytest.mark.parametrize("field", ("source_id", "privacy_scope"))
+def test_new_adapter_does_not_hash_nul_label(field: str) -> None:
+    values = {"source_id": "synthetic", "privacy_scope": "local-only"}
+    values[field] = "synthetic" + chr(0) + "trailer"
     with pytest.raises(ValueError, match="NUL separator"):
-        _valid_envelope(**{field: "safe\\x00hidden".replace("\\x00", "\x00")})
+        fixture_text_observation(
+            "private synthetic text",
+            kind=ObservationKind.TRANSCRIPT,
+            ingested_at_ms=1234,
+            **values,
+        )
 
 
-@pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
-def test_reflectively_mutated_direct_envelope_cannot_hash_nul_identity(
-    field: str,
-) -> None:
-    record = _valid_envelope()
-    object.__setattr__(record, field, "safe" + chr(0) + "hidden")
-    with pytest.raises(ValueError, match="NUL separator"):
-        _ = record.observation_id
-
-
-def test_non_ascii_valid_identity_remains_deterministic() -> None:
-    record = _valid_envelope(
+def test_frozen_v1_unicode_identity_remains_deterministic() -> None:
+    record = _legacy_envelope(
         source_id="fixture-日本語",
         privacy_scope="local-試験",
     )
