@@ -35,7 +35,10 @@ def test_postcommit_context_witness_mutation_is_detected(tmp_path, monkeypatch, 
     old = replay.genesis_offline_context_replay_witness()
     original = replay.OfflineContextReplayReceipt
 
+    invoked = []
+
     def tamper(request_id, witness):
+        invoked.append(True)
         result = original(request_id, witness)
         if kind == "count":
             object.__setattr__(witness, "count", 2)
@@ -49,10 +52,18 @@ def test_postcommit_context_witness_mutation_is_detected(tmp_path, monkeypatch, 
         return result
 
     monkeypatch.setattr(replay, "OfflineContextReplayReceipt", tamper)
-    with pytest.raises(replay.OfflineContextReplayRejected, match="postcommit context witness"):
+    # Stronger constructor-custody gate refuses the substituted function
+    # BEFORE it can mutate the committed witness. No weakening of replay CAS.
+    with pytest.raises(
+        replay.OfflineContextReplayRejected,
+        match="postcommit context receipt authority epoch changed",
+    ):
         db.reserve(_binding(), retained=old)
-    # This is a real local SQLite COMMIT, not a rollback or retry permit.
+    assert invoked == []
+    # The SQLite COMMIT is durable despite the rejected return value.
     assert db.witness().count == 1
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stale"):
+        db.reserve(_binding(), retained=old)
 
 
 def test_context_replay_receipt_remains_inert_after_restart(tmp_path):
