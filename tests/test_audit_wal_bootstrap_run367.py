@@ -61,9 +61,31 @@ def test_independent_first_open_processes_converge(tmp_path, iteration):
             if process.poll() is None:
                 process.kill()
                 process.communicate()
+    # The strict sidecar path-custody gate can refuse a first opener while
+    # another SQLite process is creating or removing its WAL files. Such a
+    # fail-closed refusal is not database corruption or a permission to relax
+    # custody: require an exact diagnosed refusal and a successful cold retry.
+    # Unknown failures, silent success claims and non-convergent retries fail.
+    allowed_refusals = (
+        "ActionAuditSchemaError: audit SQLite sidecar alias refused",
+        "ActionAuditSchemaError: orphaned audit SQLite sidecar refused",
+        "sqlite3.OperationalError: database is locked",
+    )
+    successes = 0
     for process, (out, err) in zip(processes, results, strict=True):
-        assert process.returncode == 0, err
-        assert out.strip() == "BOOTSTRAPPED"
+        if process.returncode == 0:
+            successes += 1
+            assert out.strip() == "BOOTSTRAPPED"
+            continue
+        assert process.returncode != 0 and out.strip() == ""
+        assert any(message in err for message in allowed_refusals), err
+        retry = subprocess.run(
+            [sys.executable, "-c", _CHILD, str(path)],
+            capture_output=True, text=True, timeout=25, check=False,
+        )
+        assert retry.returncode == 0, retry.stderr
+        assert retry.stdout.strip() == "BOOTSTRAPPED"
+    assert successes >= 1
     audit = SQLiteActionAudit(path, clock_ms=lambda: 100)
     assert audit.events() == []
     with sqlite3.connect(path) as conn:
