@@ -155,6 +155,9 @@ def preview_offline_redaction(
     authentication signature. Labels and boundaries are *caller supplied*, not
     automated PII detection. Even complete coverage conveys no export consent.
     """
+    # Reject a substitute matcher/grammar BEFORE it can evaluate even the
+    # owner/scope digest. The later epoch checks also cover callback drift.
+    _require_original_denials()
     if (
         type(text) is not str or not text or len(text) > _MAX_TEXT
         or type(owner_digest) is not str or _SHA.fullmatch(owner_digest) is None
