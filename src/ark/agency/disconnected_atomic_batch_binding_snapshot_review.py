@@ -14,6 +14,7 @@ from contextlib import closing
 from dataclasses import dataclass
 from typing import Literal
 
+from . import disconnected_atomic_preaction_ledger as _ledger_module
 from .contracts import ToolCall
 from .disconnected_atomic_binding_snapshot_review import (
     AtomicBindingSnapshotRejected,
@@ -30,11 +31,9 @@ from .disconnected_atomic_registry_bridge import derive_registered_atomic_intent
 from .registry import ToolRegistry
 
 _LOCAL_STATES = ("ABSENT", "LOCAL_MATCH", "LOCAL_CONFLICT")
-_OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\\Z")
+_OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _MAX_BATCH = 32
-_SCAN = __import__(
-    "ark.agency.disconnected_atomic_preaction_ledger", fromlist=["_scan"],
-)._scan
+_SCAN = _ledger_module._scan
 _OPEN = vars(DisconnectedAtomicPreactionLedger)["_open"]
 _ORIGINAL_READER = _original_reader
 _DERIVE = derive_registered_atomic_intent
@@ -85,10 +84,7 @@ def _originals() -> None:
         _original_reader is not _ORIGINAL_READER
         or derive_registered_atomic_intent is not _DERIVE
         or review_atomic_input_carriers is not _INPUT_REVIEW
-        or _SCAN is not __import__(
-            "ark.agency.disconnected_atomic_preaction_ledger",
-            fromlist=["_scan"],
-        )._scan
+        or _ledger_module._scan is not _SCAN
         or vars(DisconnectedAtomicPreactionLedger).get("_open") is not _OPEN
         or AtomicBatchBindingSnapshotReview is not _RESULT
         or any(
