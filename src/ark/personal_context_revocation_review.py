@@ -86,6 +86,10 @@ def _check_local_revocation_path(path: Path) -> None:
     filesystem ownership or user consent. Missing source files are handled
     by the existing SQLite read-only restart behavior.
     """
+    if type(path) is not type(Path(".")):
+        raise SyntheticContextRevocationRejected(
+            "revocation path must be an exact local Path"
+        )
     try:
         for parent in path.parents:
             info = parent.lstat()
@@ -122,8 +126,8 @@ class SyntheticContextRevocationLedger:
         fence; independent retained history is still required against a
         coordinated valid-file replacement or rollback.
         """
-        if not isinstance(path, Path):
-            raise TypeError("revocation path must be a pathlib.Path")
+        if type(path) is not type(Path(".")):
+            raise TypeError("revocation path must be an exact local pathlib.Path")
         if type(require_existing) is not bool:
             raise TypeError("require_existing must be an exact boolean")
         _check_local_revocation_path(path)
@@ -175,7 +179,7 @@ class SyntheticContextRevocationLedger:
         if (
             self.path is not expected
             or self._source_path is not expected
-            or not isinstance(expected, Path)
+            or type(expected) is not type(Path("."))
         ):
             raise SyntheticContextRevocationRejected(
                 "revocation source path changed"
