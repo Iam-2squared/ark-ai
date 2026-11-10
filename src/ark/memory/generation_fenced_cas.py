@@ -143,7 +143,12 @@ _SCOPE_TYPE = MemoryScope
 _WRITE_TYPE = MemoryWrite
 _SCOPE_FIELDS = ("owner_id", "namespace")
 _WRITE_FIELDS = ("scope", "source_id", "content", "metadata", "expires_at_ms")
-_INPUT_HOOKS = ("__init__", "__post_init__", "__new__", "__getattribute__", "__getattr__")
+# Exact scoped row comparisons must not invoke swapped equality/hash hooks
+# before the caller's private local history has been validated.
+_INPUT_HOOKS = (
+    "__init__", "__post_init__", "__new__", "__getattribute__",
+    "__getattr__", "__eq__", "__hash__",
+)
 _ORIGINAL_SCOPE_FIELDS = tuple(
     vars(_SCOPE_TYPE)[name] for name in _SCOPE_FIELDS
 )
