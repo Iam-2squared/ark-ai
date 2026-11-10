@@ -1,4 +1,4 @@
-# Run779 — Non-UI CI fault repair and privacy-veto retained rollback fixture
+# Run779 — Non-UI PNG CI repair, privacy veto rollback, registry budget integrity
 
 All work is **free-only**, in isolated, disconnected Python fixtures on Draft PR #8,
 without UI/frontend changes or any live ToolBackend. This report records observed
@@ -49,6 +49,31 @@ or physical file is touched; replacement is confined to pytest `tmp_path`.
 
 [Fixture-head CI #42926203904](https://github.com/Iam-2squared/ark-ai/actions/runs/42926203904)
 was IN PROGRESS when sampled. The new cases have not been declared GREEN.
+
+## Package C — ToolRegistry budget integrity, independent backend lane
+
+`src/ark/agency/registry.py` strengthened at
+`4ca80954e3653ade401a42d4278fd7e19de84b00`.
+The import-original `_MAX_REGISTRATIONS=256` and
+`_MAX_REGISTRATION_TEXT=256` were previously mutable admission knobs.
+Pin both values as exact integers and check them before any untrusted
+registration string or backend descriptor is inspected, and during digest
+and revision reads. This does **not** relax existing registry requirements
+or grant backend execution. A previously constructed registry also rejects
+limit drift instead of returning a new identity.
+
+`tests/test_registry_admission_limit_custody_run779.py` added at
+`8f2e5e8b8038ecdb650d25898e3fb2f4a312b8fa`.
+Eight parameterized negative/restore tests cover rebound, bool, zero and
+negative budgets; invalid backend preflight is refused with an explicit
+admission-limit diagnostic before backend inspection. A local synthetic
+registry remains usable after temporary monkeypatch restoration. Tests use
+only an inert backend which raises if ever executed. There is no live
+tool authorization, external permission or actual effect.
+
+[Registry source CI #42926729041](https://github.com/Iam-2squared/ark-ai/actions/runs/42926729041)
+was IN PROGRESS and [source+test CI #42926836527](https://github.com/Iam-2squared/ark-ai/actions/runs/42926836527)
+was QUEUED when first sampled. Exact-head six-job GREEN is not claimed.
 
 ## Limitations and next checks
 
