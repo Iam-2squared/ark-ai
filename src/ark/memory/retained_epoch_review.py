@@ -69,6 +69,74 @@ _ORIGINAL_COMPARISON_DENIALS = tuple(
     vars(_COMPARISON_TYPE)[name] for name in _COMPARISON_DENIAL_NAMES
 )
 
+# The retained digests can identify private Memory scopes. A substitute
+# parser/codec or data-slot descriptor must never see those values before
+# the original protocol is verified. This is local fault-injection custody,
+# not independent storage attestation.
+_REVIEW_FIELDS = (
+    "scope_fingerprints", "row_counts", "event_counts",
+    "event_tail_ids", "epoch_digest", "content_digest",
+)
+_COMPARISON_FIELDS = (
+    "scope_fingerprints", "new_event_counts", "status", "comparison_digest",
+)
+_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REVIEW_FIELDS = tuple(vars(_REVIEW_TYPE)[n] for n in _REVIEW_FIELDS)
+_ORIGINAL_COMPARISON_FIELDS = tuple(
+    vars(_COMPARISON_TYPE)[n] for n in _COMPARISON_FIELDS
+)
+_ORIGINAL_REVIEW_HOOKS = tuple(
+    vars(_REVIEW_TYPE).get(n) for n in _CARRIER_HOOKS
+)
+_ORIGINAL_COMPARISON_HOOKS = tuple(
+    vars(_COMPARISON_TYPE).get(n) for n in _CARRIER_HOOKS
+)
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_ROW_LIMIT = _MAX_ROWS
+_ORIGINAL_EVENT_LIMIT = _MAX_EVENTS
+_ORIGINAL_SQLITE_LIMIT = _SQLITE_MAX
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+
+
+def _require_original_retained_protocol() -> None:
+    if (
+        _SHA is not _ORIGINAL_SHA or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_ROWS) is not int or _MAX_ROWS != _ORIGINAL_ROW_LIMIT
+        or type(_MAX_EVENTS) is not int or _MAX_EVENTS != _ORIGINAL_EVENT_LIMIT
+        or type(_SQLITE_MAX) is not int or _SQLITE_MAX != _ORIGINAL_SQLITE_LIMIT
+        or hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON or json.dumps is not _ORIGINAL_DUMPS
+    ):
+        raise MemorySchemaError("retained Memory parser or codec changed")
+    if (
+        any(
+            vars(_REVIEW_TYPE).get(n) is not original
+            for names, originals in (
+                (_REVIEW_FIELDS, _ORIGINAL_REVIEW_FIELDS),
+                (_CARRIER_HOOKS, _ORIGINAL_REVIEW_HOOKS),
+            )
+            for n, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise MemorySchemaError("retained Memory review carrier changed")
+
+
+def _require_original_comparison_fields() -> None:
+    if any(
+        vars(_COMPARISON_TYPE).get(n) is not original
+        for names, originals in (
+            (_COMPARISON_FIELDS, _ORIGINAL_COMPARISON_FIELDS),
+            (_CARRIER_HOOKS, _ORIGINAL_COMPARISON_HOOKS),
+        )
+        for n, original in zip(names, originals, strict=True)
+    ):
+        raise MemorySchemaError("retained Memory comparison field changed")
+
 
 def _assert_original_denial_descriptors() -> None:
     # Class-level getattr can run an injected descriptor even if it returns
@@ -91,6 +159,7 @@ def _assert_original_denial_descriptors() -> None:
 
 
 def _validate(review: object) -> tuple[object, ...]:
+    _require_original_retained_protocol()
     _assert_original_denial_descriptors()
     if type(review) is not _REVIEW_TYPE:
         raise MemorySchemaError("exact retained Memory review required")
@@ -183,9 +252,11 @@ def review_retained_memory_epoch(
     stable()
     fingerprint = hashlib.sha256(_DOMAIN + packed).hexdigest()
     stable()
+    _require_original_comparison_fields()
     result = RetainedMemoryEpochComparison(scopes_p, growth_tuple, status, fingerprint)
     stable()
     _assert_original_denial_descriptors()
+    _require_original_comparison_fields()
     if (
         type(result) is not _COMPARISON_TYPE
         or result.scope_fingerprints is not scopes_p
@@ -200,5 +271,6 @@ def review_retained_memory_epoch(
     ):
         raise MemorySchemaError("retained Memory comparison result changed")
     _assert_original_denial_descriptors()
+    _require_original_comparison_fields()
     stable()
     return result
