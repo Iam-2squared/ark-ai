@@ -112,17 +112,52 @@ def _check_local_revocation_path(path: Path) -> None:
 class SyntheticContextRevocationLedger:
     """Irreversible-within-fixture scope veto; no grant/reenrollment API."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(
+        self, path: Path, *, require_existing: bool = False,
+    ) -> None:
+        """Open a synthetic veto ledger, optionally refusing any fresh bootstrap.
+
+        Recovery callers must set require_existing=True so a lost veto file
+        cannot silently become a new empty ledger. This is only a local path
+        fence; independent retained history is still required against a
+        coordinated valid-file replacement or rollback.
+        """
         if not isinstance(path, Path):
             raise TypeError("revocation path must be a pathlib.Path")
+        if type(require_existing) is not bool:
+            raise TypeError("require_existing must be an exact boolean")
         _check_local_revocation_path(path)
+        if require_existing and (not path.is_absolute() or not path.is_file()):
+            raise SyntheticContextRevocationRejected(
+                "existing revocation ledger is missing or noncanonical"
+            )
         self.path = path
         self._source_path = path
-        with closing(sqlite3.connect(path, timeout=10, isolation_level=None)) as conn:
+        if require_existing:
+            # SQLite mode=rw is create-forbidden even if the file vanishes
+            # between the lstat precheck and the actual connection.
+            self._assert_source_path(path)
+            uri = path.resolve().as_uri() + "?mode=rw"
+            self._assert_source_path(path)
+            try:
+                connection = sqlite3.connect(
+                    uri, uri=True, timeout=10, isolation_level=None,
+                )
+            except sqlite3.Error as exc:
+                raise SyntheticContextRevocationRejected(
+                    "cannot reopen existing revocation ledger"
+                ) from exc
+        else:
+            connection = sqlite3.connect(path, timeout=10, isolation_level=None)
+        with closing(connection) as conn:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
+                    if require_existing:
+                        raise SyntheticContextRevocationRejected(
+                            "existing revocation ledger is uninitialized"
+                        )
                     if tuple(conn.execute("SELECT name FROM sqlite_master")):
                         raise SyntheticContextRevocationRejected(
                             "unversioned revocation database is not empty"
