@@ -1,3 +1,42 @@
+# LATEST — Run764 / 2026-11-10 JST
+
+**LATEST:** THREE isolated meaningful **FREE-ONLY / NON-UI** packages saved through the normal GitHub Contents API to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): **(A)** opt-in read-only registry-bound occurrence + bound action + request digest reconciliation using the same SQLite BEGIN snapshot as validated pre-action audit history; **(B)** Memory WAL checkpoint and cold-restart generation-CAS/ABA isolation tests; **(C)** disconnected mixed TEXT / IMAGE / TRANSCRIPT / SCREEN fixture lineage tests. **1 new source module, 3 new test files, 23 parametrized test cases, 1 technical report.** All synthetic/temporary fixtures; no real backend dispatch, physical sensor, UI/frontend, frozen contract, paid compute, Candidate or protected evaluation. **Run763 checkpoint 6/6 GREEN; Run764 latest exact-head full six GREEN NOT YET VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
+
+**Saved at:** Asia/Tokyo/JST **2026-11-10T20:48:41.297+09:00** (administrative host-clock sample before the ordinary Contents status mutation; NOT ARK trusted clock, authenticated actor, reviewed consent or spend approval).
+
+## Exact branch, work basis, checkpoint wording
+
+- **Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at pre-write check. **Initial work-basis HEAD:** `12534d9e288b4f7a31a9c1b0fc5a18b787555534` (Run763 checkpoint). **Final source/test HEAD:** `411ece4f0c95f2e01e212e017622695ed7d2a491`. **Report commit and checkpoint-write basis HEAD, just re-read:** `fe5b691a05c126b42c3f522de21f17ae243d8246`. **Prior status Blob SHA:** `b3e87100ba0cde2536c8bbb85c5b6f310456f603`. This checkpoint's **resulting HEAD** is the next commit returned by the normal Contents write; it cannot be self-embedded. Verify final branch HEAD and Blob SHA after this update. No force push or main merge.
+- **A / exact local binding:** source `04d51fd10c4b9bfb1947147e6d0ccbcfe61fd21e` `src/ark/agency/disconnected_atomic_binding_snapshot_review.py`, tests `c0716ea4466840f70a0be0e42a9d1576dcee1643` `tests/test_atomic_binding_snapshot_review_run764.py`, **12 tests**. Full local row/audit chain plus stored occurrence, registered bound-action ID and request digest checked in ONE SQLite read transaction; absent/matched/conflicting outcomes remain manual-quarantined. **Even local match does NOT prove identity/consent, independent custody or authorized WRITE.** The optional source is not connected to actual execution ingress.
+- **B / Memory checkpoint:** commit `d3938e58569c23777247ecb3f5405e9d20ed4101` `tests/test_memory_wal_checkpoint_generation_run764.py`, **4 tests**. Disposable WAL checkpoint/cold-open; deletion/recreation keeps memory ID and revision 1 but invalidates old generation; global event IDs and owner scopes remain isolated.
+- **C / observation backend-only:** commit `411ece4f0c95f2e01e212e017622695ed7d2a491` `tests/test_observation_crosskind_disconnected_run764.py`, **7 tests**. Synthetic in-memory four-kind chain and parent/privacy/clock/repeated-digest negative checks; no real image, microphone, screen, notification or tool backend.
+- **Report:** [Run764 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/fe5b691a05c126b42c3f522de21f17ae243d8246/docs/JARVIS_RUN764_NON_UI_ATOMIC_BINDING_MEMORY_WAL_OBSERVATION.md); report HEAD `fe5b691a05c126b42c3f522de21f17ae243d8246`.
+
+## CI — exact HEAD and actual last sampled status
+
+- **Verified Run763 basis:** [CI #42807741595](https://github.com/Iam-2squared/ark-ai/actions/runs/42807741595) on `12534d9e...`: **COMPLETED SUCCESS 6/6** for Windows/Ubuntu × Python 3.11, 3.12, 3.13. Not evidence for later Run764 changes.
+- **A source:** [CI #42809362234](https://github.com/Iam-2squared/ark-ai/actions/runs/42809362234) on `04d51fd1...`: **IN PROGRESS**, Ubuntu 3/3 GREEN, Windows 3 pending at last job check.
+- **A tests:** [CI #42809492690](https://github.com/Iam-2squared/ark-ai/actions/runs/42809492690) on `c0716ea4...`: **IN PROGRESS**, Ubuntu 3/3 GREEN, Windows 3 pending.
+- **B tests:** [CI #42809770477](https://github.com/Iam-2squared/ark-ai/actions/runs/42809770477) on `d3938e58...`: **IN PROGRESS**, Ubuntu 3.11/3.13 GREEN, Ubuntu 3.12 + Windows 3 pending.
+- **C tests:** [CI #42810024328](https://github.com/Iam-2squared/ark-ai/actions/runs/42810024328) on `411ece4f...`: **IN PROGRESS**, all 6 uncompleted at last check.
+- **Report:** [CI #42810317867](https://github.com/Iam-2squared/ark-ai/actions/runs/42810317867) on `fe5b691a...`: **QUEUED** at last check.
+- **Checkpoint-result CI:** automatically started by this forthcoming Contents write with new SHA and as-yet unconfirmed run ID. **Latest HEAD 6/6 GREEN is NOT VERIFIED.** No manually duplicated workflows.
+
+## Unchanged contracts, free-only and honest blockers
+
+- **Main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8` gated/unmerged; paused [Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` untouched/unmerged. Frozen V1/V2/Local UI/Launcher contracts/evidence and protected V2 final evaluation untouched. No frontend/UI changes.
+- No paid/external GPU, billable APIs, subscriptions, Candidate adapter/weights, genuine ToolBackend WRITE, real sensors, notification, credentials, secret/account connections, physical-PC act, destructive irreversible mutation, frozen-contract edits, evaluation opening, promotion, main merge, hidden raw Git bypass or force push.
+- **Blockers:** Local SQLite custody/retained digest cannot authenticate writer, signed human consent, trusted clock, independent history, durable cross-database transaction or external exactly-once effect. Memory/Planner/reservation/audit/privacy/proactive data remain separate. Ambiguous real WRITE is **UNKNOWN/manual review; never auto-retry**. V3 base/tokenizer/tool/runtime immutable bytes, approved human-reviewed 120/30 dataset, reproducible device/cost cap and explicit authorization unresolved. Windows real-model GGUF gate requires actual user PC.
+
+## Next plan / 今後の方針
+
+1. Confirm every Run764 source/test/report/checkpoint exact-head CI job; on real failure inspect job logs, apply narrow semantics-preserving fix and use independent non-UI lane during verification.
+2. Keep registry-bound local binding reviewer deny-only. Design independent custody and exact action/request recovery gates before any authorization integration; do not conflate local match with issuer/clock/consent, or retry unknown effects.
+3. Continue Memory durable CAS/ABA, retained high-water/COMMIT-UNKNOWN and coherent snapshots; Planner persisted terminal/READ recovery; immutable ToolRegistry and exact PermissionGate, audit-before-action, disconnected mock executor and startup readiness.
+4. Independently advance Personal Context revocation/privacy, proactive/observation backend-only contracts and free V3 path/identity/reproducibility guards. Preserve full UI stop, draft PRs, frozen evaluations and zero-cost boundaries.
+
+---
+
 # LATEST — Run763 / 2026-11-10 JST
 
 **LATEST:** TWO meaningful, isolated **FREE-ONLY / NON-UI** development packages saved through the normal GitHub Contents API on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) opt-in, **read-only**, registry-bound local pre-action recovery quarantine with 8 new regression cases; (B) separate import-original input carrier preflight for synthetic AtomicIntentClaim and AtomicPreactionWitness with 16 cases. **24 new parameterized tests in 2 new test files and 2 new source modules**, plus one technical engineering report. No dispatch, actual one-shot authorization, frozen V1/V2/Local UI/Launcher contract, PR #9 UI, PR #5 V3, protected evaluation, Candidate or paid service changed. **Run762 basis GREEN 6/6; Run763 test/report and checkpoint-result exact-head full 6/6 GREEN NOT YET VERIFIED. ARK/JARVIS/V3 NOT_PASSED.**
