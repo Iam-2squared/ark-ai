@@ -1,3 +1,40 @@
+# LATEST — Run769 / 2026-11-11 JST
+
+**LATEST:** THREE coherent **FREE-ONLY / NON-UI** work packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): **(A)** diagnosed and corrected a deterministic Run768 ToolRegistry Unicode regression test calling `resolve` with a string rather than an exact `ToolCall` (production contract unchanged); **(B)** added **5** SQLite intent/audit WAL snapshot, tamper-alignment and schema-fail-closed tests; **(C)** strengthened non-frozen Personal Context replay post-COMMIT receipt constructor/slot identity guard, with **6** additional tests and replay/quarantine checks. **One non-frozen backend source file updated, one existing test corrected, two new test files (11 cases)**. Old Run768 Ubuntu CI failures were read from actual logs and are **not** post-fix PASS. Latest exact-HEAD Windows/Ubuntu × 3.11–3.13 **6/6 GREEN NOT YET VERIFIED**. **ARK/JARVIS/V3 NOT_PASSED**.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T01:23:55.268+09:00** (administrative container-clock sample immediately preceding the ordinary checkpoint write, not authenticated ARK time, signed consent, cost authorization or real-world provenance).
+
+## Exact work basis and checkpoint semantics
+
+- **Initial work-basis HEAD:** `76e94a66b2298b19bfb0e3e92aa8ce20f215909b` (Run768 checkpoint). **Branch/PR:** `research/jarvis-foundations` / Draft PR #8 OPEN/DRAFT/UNMERGED. **Last executable source/test HEAD:** `2b33b2543b8103854898a5cd6df698fd3b9615b3`. **Technical report & checkpoint-write basis HEAD:** `a812395b245115a6abd33c8f6415b7bb6c48c395`, re-read immediately before this Contents write. **Previous checkpoint blob:** `064d7f8b9b47c0af1c0ca71dda6730d235dacc1c`. This ordinary Contents update creates the **checkpoint-result HEAD**; its future SHA cannot truthfully self-reference inside the committed text. Re-fetch PR HEAD and new file blob after write.
+- **A — minimal observed CI repair:** `1e7deaf8ba4eafbe69136c7b6d29ae4c052d1a22`, `tests/test_registry_nul_identity_run768.py`. Pass a real `ToolCall` to `ToolRegistry.resolve`, retain Unicode revision and mock non-execution assertions; no relaxation of exact-type registry identity.
+- **B — two-table atomic WAL audit integrity:** `bda2cd87a22c8190924956a9121dc7e350b72478`, `tests/test_atomic_preaction_wal_alignment_run769.py`, **5** cases; uncommitted conflicting row invisible in read-only WAL snapshot; bad/missing/misaligned audit and unknown schema reject read/reserve without a false permission result.
+- **C — Personal Context replay receipt constructor custody:** source `d823291dedebaeb3900129fd4239eb87185119a0`, `src/ark/personal_context_replay_ledger.py`; tests `2b33b2543b8103854898a5cd6df698fd3b9615b3`, `tests/test_context_replay_receipt_constructor_run769.py`, **6** cases. Original receipt class, initializer, slots and denial descriptors checked before/after post-COMMIT receipt creation; reject swapped constructor/getters without executing substituted code. A reservation already committed stays committed and cannot be blindly retried. No user content or live consent assertion.
+- **Detailed report:** [JARVIS_RUN769_NON_UI_REGISTRY_CI_ATOMIC_WAL_CONTEXT_RECEIPT.md](https://github.com/Iam-2squared/ark-ai/blob/a812395b245115a6abd33c8f6415b7bb6c48c395/docs/JARVIS_RUN769_NON_UI_REGISTRY_CI_ATOMIC_WAL_CONTEXT_RECEIPT.md). Exact source/test hashes and failure analysis preserved there.
+
+## CI — latest evidence, no borrowed GREEN
+
+- **Previously confirmed prior basis:** [#42839474821](https://github.com/Iam-2squared/ark-ai/actions/runs/42839474821) at `83e4658d...`: **6/6 GREEN** (old Run767 only).
+- **Original Run768 bad-test head:** [#42851457266](https://github.com/Iam-2squared/ark-ai/actions/runs/42851457266) at `816df19...`: **Ubuntu 3/3 FAIL**, all three failed one new test with `TypeError: call must be an exact ToolCall`; 12,645 other tests passed, 1 skipped per Ubuntu job. Corrected under Run769; failure remains historical evidence.
+- **Run768 checkpoint:** [#42852239724](https://github.com/Iam-2squared/ark-ai/actions/runs/42852239724) at `76e94a...`: Ubuntu **3 FAIL**, Windows **3 IN PROGRESS** at latest sample.
+- **Run769 atomic test commit:** [#42853532414](https://github.com/Iam-2squared/ark-ai/actions/runs/42853532414) at `bda2cd...`: six jobs **IN PROGRESS** at latest sample.
+- **Run769 latest code/test head:** `2b33b254...`: no matching PR workflow run returned at last query; final 6/6 **UNVERIFIED**. Report and checkpoint commits may generate subsequent runs; never imply another SHA's success. No duplicate workflow manually launched; full local pytest not run in isolated environment.
+
+## Frozen/protected/free-only status and real blockers
+
+- `main` last inspected at `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged by this invocation. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) at `805b377697472268db02650a89c7a94b1c5337c8` remains protected/unmerged. [paused Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` remains untouched/unmerged. V1/V2/Local UI/Launcher and ObservationEnvelope v1 frozen contracts/evidence unchanged; **no UI/frontend work**.
+- No paid or external GPU compute, subscriptions, new credentials, real Candidate adapters/weights, protected V2 final evaluation, real ToolBackend action, live capture/sensors/notifications, physical-PC action, destructive change, promotion, main merge or safeguard bypass.
+- **Blockers:** local constructor pinning and chain digests cannot prove independently held audits, a trusted clock, immutable native runtime, original source custody, signed consent, cross-store atomicity or exactly-once real effects. **UNKNOWN real WRITE remains manually quarantined and never auto-retried**. V3 budget, licensing/approved data, real model/tokenizer/runtime artifacts, and Windows GGUF evidence still missing.
+
+## Next plan / 今後の方針
+
+1. **Exact-head CI:** check current PR #8 latest matrix Windows/Ubuntu Python 3.11–3.13. On real failures inspect logs and repair only via ordinary allowed GitHub Contents updates; work on an independent backend lane while CI runs, without making existing results obsolete.
+2. **Memory:** stronger generation CAS/ABA, retained high-water, expiry and COMMIT-UNKNOWN/multi-scope coherent snapshots. Never mistake identical row bytes for attributable caller success.
+3. **Planner, registry, permissions, audit:** exact stored inputs, terminal propagation, durable recovery, audit-before-action and disconnected/mock executor, each gated on matching lower-layer GREEN; no live WRITE or auto-replay.
+4. **Other free lanes:** privacy/retention/revocation for Personal Context, proactive clock/startup/readiness and synthetic observation lineage, free-only V3 guards. Keep PR #5, paused #9 Draft/unmerged, frozen evidence and zero-cost boundaries. Seek explicit user approval at protected/paid/destructive/irreversible gates only.
+
+---
+
 # LATEST — Run768 / 2026-11-11 JST
 
 **LATEST:** THREE coherent **FREE-ONLY / NON-UI** packages saved on Draft PR #8: **(A)** synthetic SQLite atomic intent/audit rollback and ambiguous second-reservation restart tests, **(B)** ToolRegistry identity NUL-byte ingress guard plus focused tests, **(C)** regression tests preserving the **frozen ObservationEnvelope v1** NUL identity while the opt-in fixture adapter rejects it. **One non-frozen backend source file updated, three new regression test files, 13 parameterized cases**, one corrected technical report. **An exploratory observation source edit violated frozen compatibility; GitHub CI exposed the regression; the source was fully restored byte-for-byte.** Latest exact-HEAD 6/6 GREEN **NOT YET VERIFIED**, ARK/JARVIS/V3 **NOT_PASSED**.
