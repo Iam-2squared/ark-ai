@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from ark.agency.contracts import Effect, PlanStep, StepState, ToolCall
+from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency.planner_journal_review import (
     SyntheticPlanJournal,
     SyntheticPlanJournalRejected,
@@ -23,7 +23,7 @@ _DEPENDENT = "step_" + "2" * 16
 _CHILD = """
 import sys
 from pathlib import Path
-from ark.agency.contracts import Effect, PlanStep, StepState, ToolCall
+from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency.planner_journal_review import (
     SyntheticPlanJournal, SyntheticPlanJournalRejected,
 )
