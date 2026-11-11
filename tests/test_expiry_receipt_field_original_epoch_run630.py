@@ -81,7 +81,12 @@ def test_digest_time_constructor_replacement_is_refused(
 
     monkeypatch.setattr(mod.hashlib, "sha256", digest)
     try:
-        with pytest.raises(mod.MemoryExpiryPreviewRejected, match="authority"):
+        # A pinned digest authority may reject before invoking the injected digest.
+        # Earlier fail-closed rejection and the constructor guard are both valid.
+        with pytest.raises(
+            mod.MemoryExpiryPreviewRejected,
+            match="authority|expiry digest protocol changed",
+        ):
             mod.review_memory_expiry_candidates(store, scope, now_ms=1300)
         assert invoked == []
     finally:
