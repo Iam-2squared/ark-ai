@@ -178,6 +178,11 @@ def review_synthetic_memory_scopes(
         or any(type(scope) is not MemoryScope for scope in scopes)
     ):
         raise SyntheticMemorySnapshotRejected("exact Memory scope inputs required")
+    # Scope digesting can itself invoke SHA/JSON callbacks. With a foreign-owner
+    # retained prefix, verify their original bindings BEFORE any scope hash,
+    # rather than waiting until the later retained-witness validation.
+    if retained_global_prefix is not None:
+        _require_original_global_prefix_codec()
     # Pin caller-owned scopes and source BEFORE constructing duplicate scopes
     # or hashing them. Each constructor/digest is a callback boundary, and a
     # later callback must not restore an earlier retargeted owner/path.
