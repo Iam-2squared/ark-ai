@@ -65,6 +65,33 @@ class OfflinePcmMono16:
 
 
 _RESULT_TYPE = OfflinePcmMono16
+# Pin exact request slots before reading private PCM or owner/scope identity.
+# Frozen dataclasses still permit executable class-level getter replacement.
+_REQUEST_TYPE = OfflinePcmConvertRequest
+_REQUEST_SLOTS = (
+    "owner_sha256", "privacy_sha256", "source_sha256", "pcm_bytes",
+    "channels", "sample_rate_hz", "bits_per_sample",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_REQUEST_SLOTS = tuple(
+    vars(_REQUEST_TYPE).get(name) for name in _REQUEST_SLOTS
+)
+
+
+def _require_original_request_carrier() -> None:
+    if (
+        OfflinePcmConvertRequest is not _REQUEST_TYPE
+        or any(
+            vars(_REQUEST_TYPE).get(name) is not original
+            for name, original in zip(
+                _REQUEST_SLOTS, _ORIGINAL_REQUEST_SLOTS, strict=True,
+            )
+        )
+    ):
+        raise OfflinePcmConvertRejected(
+            "offline PCM request carrier changed before private bytes"
+        )
+
 # Source PCM is private. The codec/serializer are process-global mutable
 # callbacks; pin their import-time identities before passing any private
 # bytes or source/provenance labels to them. This is defensive in-process
@@ -110,6 +137,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     if type(request) is not OfflinePcmConvertRequest:
         raise OfflinePcmConvertRejected("exact conversion request required")
     _require_original_codec()
+    _require_original_request_carrier()
     pinned = (
         request.owner_sha256, request.privacy_sha256, request.source_sha256,
         request.pcm_bytes, request.channels, request.sample_rate_hz,
@@ -118,6 +146,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
 
     def epoch() -> None:
         _require_original_codec()
+        _require_original_request_carrier()
         current = (
             request.owner_sha256, request.privacy_sha256, request.source_sha256,
             request.pcm_bytes, request.channels, request.sample_rate_hz,
