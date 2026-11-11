@@ -97,6 +97,54 @@ def _canonical(value: object) -> bytes:
     ).encode("utf-8")
 
 
+# Archive payloads can contain local forensic identifiers. Pin digest,
+# serializer, base64 and archive callbacks before deserializing or invoking
+# them, and repeat at each reentrant decoding/capture boundary. This remains
+# an in-process fail-closed diagnostic, not an authenticated record.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_JSON_LOADS = json.loads
+_ORIGINAL_BASE64 = base64
+_ORIGINAL_BASE64_ENCODE = base64.b64encode
+_ORIGINAL_BASE64_DECODE = base64.b64decode
+_ORIGINAL_DIGEST = _digest
+_ORIGINAL_CANONICAL = _canonical
+_ORIGINAL_RESTORE = _restore
+_ORIGINAL_ARCHIVE = archive_synthetic_recovery
+_ORIGINAL_ARCHIVE_TYPE = SyntheticRecoveryArchive
+_ORIGINAL_LABEL = _LABEL
+_ORIGINAL_MAX_BYTES = _MAX_BYTES
+_ORIGINAL_MAX_STEPS = _MAX_STEPS
+
+
+def _require_original_bundle_codec() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or json.loads is not _ORIGINAL_JSON_LOADS
+        or base64 is not _ORIGINAL_BASE64
+        or base64.b64encode is not _ORIGINAL_BASE64_ENCODE
+        or base64.b64decode is not _ORIGINAL_BASE64_DECODE
+        or _digest is not _ORIGINAL_DIGEST
+        or _canonical is not _ORIGINAL_CANONICAL
+        or _restore is not _ORIGINAL_RESTORE
+        or archive_synthetic_recovery is not _ORIGINAL_ARCHIVE
+        or SyntheticRecoveryArchive is not _ORIGINAL_ARCHIVE_TYPE
+        or _LABEL is not _ORIGINAL_LABEL
+        or type(_MAX_BYTES) is not int
+        or _MAX_BYTES != _ORIGINAL_MAX_BYTES
+        or type(_MAX_STEPS) is not int
+        or _MAX_STEPS != _ORIGINAL_MAX_STEPS
+    ):
+        raise SyntheticWritePlanBundleRejected(
+            "synthetic recovery bundle codec changed"
+        )
+
+
 def _sorted_unique(values: object, names: set[str]) -> bool:
     return (
         type(values) is list
@@ -115,6 +163,7 @@ def restore_synthetic_write_plan_bundle(
     it is later used as a retained prefix in a separate restart diagnosis.
     """
     _require_original_bundle_carrier()
+    _require_original_bundle_codec()
     if (
         type(bundle) is not SyntheticWritePlanBundle
         or type(bundle.canonical_json) is not bytes
@@ -129,6 +178,7 @@ def restore_synthetic_write_plan_bundle(
 
     def assert_epoch() -> None:
         _require_original_bundle_carrier()
+        _require_original_bundle_codec()
         if (
             bundle.canonical_json is not original_bytes
             or bundle.digest is not original_digest
@@ -210,6 +260,7 @@ def bundle_synthetic_write_plan(
 ) -> SyntheticWritePlanBundle:
     """Capture each independently validated WRITE review in a bounded bundle."""
     _require_original_bundle_carrier()
+    _require_original_bundle_codec()
     if (
         type(review) is not SyntheticWritePlanReview
         or type(review.steps) is not tuple
@@ -233,6 +284,8 @@ def bundle_synthetic_write_plan(
         )
 
         def assert_epoch() -> None:
+            _require_original_bundle_codec()
+            _require_original_bundle_carrier()
             if any(
                 getattr(entity, name) is not prior
                 for entity, values in original
