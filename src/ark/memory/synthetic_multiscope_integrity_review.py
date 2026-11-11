@@ -14,15 +14,21 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 
 from .contracts import MemoryScope
-from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
+from .sqlite_event_prefix_review import (
+    _DOMAIN as _GLOBAL_PREFIX_DOMAIN,
+)
 from .sqlite_event_prefix_review import (
     MemoryEventPrefixRejected,
     MemoryEventPrefixWitness,
-    _DOMAIN as _GLOBAL_PREFIX_DOMAIN,
-    _charge as _charge_global_prefix,
     _require_original_prefix_protocol,
+)
+from .sqlite_event_prefix_review import (
+    _charge as _charge_global_prefix,
+)
+from .sqlite_event_prefix_review import (
     _witness_epoch as _global_prefix_epoch,
 )
+from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
 from .synthetic_event_continuity_review import (
     _DIGEST,
     SyntheticMemoryEventRejected,
