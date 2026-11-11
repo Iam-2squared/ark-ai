@@ -1,3 +1,49 @@
+# LATEST — Run798 / 2026-11-12 JST
+
+**LATEST:** Four independent **NON-UI / FREE-ONLY** work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) synthetic proposal COMMIT-UNKNOWN **manual-only read-only triage** (19 submitted regression cases); (B) independent proactive recurrence/fingerprint oracle (109 cases); (C) private Context metadata carrier preaccess guards (21 cases); (D) durable Planner WRITE restart denial descriptor custody (13 cases). **162 total submitted cases; latest exact-head six-job CI GREEN NOT YET CONFIRMED.** A four-line Ruff E501 test formatting issue was identified from actual CI logs and corrected via the normal Contents API. Overall ARK/JARVIS **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation local clock):** Asia/Tokyo/JST **2026-11-12T04:03:20.458071705+09:00** (ordinary wall-clock observation, NOT trusted audit time, real machine identity, human permission, or GitHub commit time).
+
+## Branch / PR / exact state
+
+- **Initial work-basis HEAD:** `5f57e1f56048e90a758ca3c3424a4d28ba6ac3b1`, branch `research/jarvis-foundations`, Draft PR #8 **OPEN/DRAFT/UNMERGED**.
+- **Checkpoint-write basis HEAD (re-read immediately before normal Contents API write):** `8d5de8c50dfb6b4cbe19fa89bb9fe2c7d92f3795`. Previous checkpoint blob SHA `bc762184f136a66d41b4cf9d99fb782f4d9cf079`.
+- **Checkpoint-result-HEAD wording:** The Contents API assigns the resulting commit SHA only after this write. Do NOT infer it from the work-basis SHA. Verify returned commit, subsequent PR/branch HEAD, and new status blob independently.
+- PR #5 OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; controlling frozen V3 Contract 1/protected V2 final evaluation unchanged. PR #9 OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; **UNTOUCHED. ALL NEW UI/FRONTEND WORK PAUSED**.
+
+## NEW source / tests / evidence saved this invocation
+
+1. **Manual-only proposal COMMIT-UNKNOWN reconciliation:** source `src/ark/agency/disconnected_proposal_unknown_commit_review.py` commit `eda0725ceadd57d2435855f9e8a1a62672a7210a`; tests `tests/test_disconnected_proposal_unknown_commit_review_run798.py` commit `ffc71b2fcac403f7cf1569ca9a70d0442a5a23b6` (**19 cases**). Derives expected one-event global digest from the caller's prior synthetic CAS witness and inspects a coherent readonly SQLite snapshot with retained-prefix check. Distinguishes `OBSERVED_UNCHANGED`, `OBSERVED_EXACT_APPEND` and `MANUAL_REVIEW_REQUIRED`; **none grants automatic retry, authentication, code edit, training or Candidate promotion**. An unchanged observation does not settle unknown commit and may be followed by unseen work.
+2. **Proactive recurrence reference oracle:** `tests/test_disconnected_schedule_oracle_run798.py` commit `de4afee500f9bb15a520d2c223c6b19486ec86db` (**109 cases**). Independently verifies occurrence IDs, SHA-256 preview fingerprint, due/grace/exhaustion boundaries, denied time/cursor types and never-authorized runtime/notification. Existing schedule source unchanged.
+3. **Context privacy metadata input/result carrier custody:** source `src/ark/offline_context_membership_guard.py` commit `8a1cb701baf51a0cda6b5e498d28cd523f7aa69b`, test `tests/test_context_membership_carrier_custody_run798.py` commit `73fecdf50a632d6a0581c166a9bbbedb764eeff1` (**21 cases**); precise four-line **Ruff E501 only** correction `843e0563bb652600b6bb05009dcd3fd8d49562a4`. Import-original record/veto/result field descriptors and lookup/constructor hooks are checked before synthetic Context metadata access. Existing SHA reentrant fault tests preserved. No consent or real private content access.
+4. **Planner durable WRITE restart authority boundary:** source `src/ark/agency/disconnected_write_restart_binding.py` commit `101ba90e419b90725bbccff139f79cc8689a5466`, tests `tests/test_write_restart_original_denials_run798.py` commit `7627272eef5ed6c64299107ec6c2c2e56902ed5e` (**13 cases**). The six false-only report authority property descriptors are pinned at import before reading private durable WRITE reservations. Normal UNKNOWN quarantine and no replay preserved, no external outcome or cross-store atomicity proven.
+5. **Technical report:** `docs/JARVIS_RUN798_NON_UI_PROPOSAL_TRIAGE_SCHEDULE_ORACLE_CONTEXT_CUSTODY.md`, latest report update commit `8d5de8c50dfb6b4cbe19fa89bb9fe2c7d92f3795`, records source/test commit pointers, precise caveats and CI failure/repair. Historical Run797 and earlier status content preserved in full below.
+
+## Tests / CI / precise evidence at final pre-checkpoint inspection
+
+- **Last completed exact baseline:** Run797 initial HEAD `5f57e1f56048e90a758ca3c3424a4d28ba6ac3b1`, [CI #43071826276](https://github.com/Iam-2squared/ark-ai/actions/runs/43071826276) **GREEN 6/6** individually inspected (Ubuntu and Windows, Python 3.11/3.12/3.13). **Run797 only**, not Run798's 162 cases.
+- Proposal review source [#43081482954](https://github.com/Iam-2squared/ark-ai/actions/runs/43081482954) **IN PROGRESS** at inspection; proposal tests [#43081654083](https://github.com/Iam-2squared/ark-ai/actions/runs/43081654083) Ubuntu **3/3 GREEN**, Windows 3 **IN PROGRESS**.
+- Schedule oracle tests [#43081938985](https://github.com/Iam-2squared/ark-ai/actions/runs/43081938985) Ubuntu **3/3 GREEN**, Windows 3 **IN PROGRESS**.
+- Context source [#43082232510](https://github.com/Iam-2squared/ark-ai/actions/runs/43082232510) Ubuntu **3/3 GREEN**, Windows 3 **IN PROGRESS**; Context tests [#43082340512](https://github.com/Iam-2squared/ark-ai/actions/runs/43082340512) **FAIL 6/6 on Ruff E501 only** (four overlong test lines, actual Ubuntu job `130737850601` log inspected). Tests were not reached in that run. Corrected code's [#43082784274](https://github.com/Iam-2squared/ark-ai/actions/runs/43082784274) Ubuntu **3/3 GREEN**, Windows 3 **IN PROGRESS** at latest inspection. No equivalent duplicate workflow launched.
+- Planner source [#43083114076](https://github.com/Iam-2squared/ark-ai/actions/runs/43083114076) and tests [#43083216910](https://github.com/Iam-2squared/ark-ai/actions/runs/43083216910): **IN PROGRESS/QUEUED**.
+- Technical-report work HEAD [#43083354743](https://github.com/Iam-2squared/ark-ai/actions/runs/43083354743) **QUEUED**; the checkpoint-result commit will have its own CI with its own new run ID, **not yet known**.
+- **162 test cases submitted, NOT certified six-job exact-head GREEN**. No local integrated pytest/Ruff or physical target-PC/model evidence claimed.
+
+## Frozen contracts / blockers / authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1, contamination/provenance/reproducibility/regression protections, protected V2 final evaluation unchanged. PR #5 stays Draft/unmerged, PR #9 remains Draft/unmerged and untouched. No paid or potentially billable compute/services/API, external GPU, new account/credential, real machine action, real human approval, real ToolBackend, Candidate/weight generation or promotion, protected evaluation opening, unknown WRITE automatic replay, destructive action or main merge. All detached evidence is unauthenticated unless separately proven; synthetic SHA hashes and SQLite witnesses do not establish human identity, independent provenance, trusted clock or consent.
+
+## Next plan / 今後の方針
+
+1. Resolve exact-HEAD six CI job results. If FAIL, inspect concrete job logs, repair minimal semantics-preserving issue through normal GitHub Contents API, and switch to non-conflicting non-UI lanes during CI. Do not manually duplicate equivalent Actions runs.
+2. Improve Memory CAS/ABA/coherent expiry and COMMIT-UNKNOWN reconciliation, preserving caller-independent retention witnesses, zero automatic retry and privacy-safe SQLite sidecar custody.
+3. Strengthen Planner recovery terminal/UNKNOWN quarantine and durable WRITE reservation audit; keep synthetic proposal triage strictly manual and disconnected until integrity/provenance is independently established.
+4. Continue Registry-bound exact PermissionGate, trusted clock audit-before-action and durable occurrence protection, but integrate **only with disconnected/mock executors after exact-head GREEN**; no real tool dispatch or notification.
+5. Extend privacy-safe Personal Context, proactive/observation backend contracts and V3 free-only approval/path/identity guards while UI remains PAUSED. Overall JARVIS **NOT_PASSED**.
+
+
+---
+
 # LATEST — Run797 / 2026-11-12 JST
 
 **LATEST:** Three isolated **NON-UI / FREE-ONLY** source+test packages submitted to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) SQLite proposal event-store sidecar alias and creation refuse checks (**13 regression cases**); (B) detached improvement-proposal input/output/authority control-plane integrity (**8 cases**); (C) private Personal Context offline-preview validation-name pinning on build/reverify (**8 cases**). **Total 29 submitted cases. Latest exact-head CI 6/6 GREEN NOT YET VERIFIED.** ARK/JARVIS **NOT_PASSED**.
