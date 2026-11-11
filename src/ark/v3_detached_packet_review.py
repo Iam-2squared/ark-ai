@@ -90,7 +90,7 @@ def _protocol() -> None:
         or _pairs_unique is not _ORIGINAL_PAIRS_UNIQUE
         or _nonfinite is not _ORIGINAL_NONFINITE
         or _fields is not _ORIGINAL_FIELDS_HELPER
-        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
         or json.loads is not _ORIGINAL_LOADS
