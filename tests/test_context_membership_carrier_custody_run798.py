@@ -50,7 +50,9 @@ def test_swapped_metadata_slot_denied_before_first_getter(monkeypatch, carrier, 
     cls = guard.ContextRecordClaim if carrier == "record" else guard.ContextScopeVetoClaim
     with monkeypatch.context() as patch:
         patch.setattr(cls, field, property(unexpected))
-        with pytest.raises(guard.OfflineContextAdmissionRejected, match="original Context authority"):
+        with pytest.raises(
+            guard.OfflineContextAdmissionRejected, match="original Context authority",
+        ):
             _review(record, veto)
     assert seen == []
 
@@ -71,7 +73,9 @@ def test_swapped_attribute_lookup_denied_pre_metadata(monkeypatch, carrier):
 
     with monkeypatch.context() as patch:
         patch.setattr(cls, "__getattribute__", unexpected)
-        with pytest.raises(guard.OfflineContextAdmissionRejected, match="original Context authority"):
+        with pytest.raises(
+            guard.OfflineContextAdmissionRejected, match="original Context authority",
+        ):
             _review(record, veto)
     assert seen == []
 
@@ -91,7 +95,9 @@ def test_swapped_constructor_denied_before_call(monkeypatch, carrier):
 
     with monkeypatch.context() as patch:
         patch.setattr(cls, "__init__", unexpected)
-        with pytest.raises(guard.OfflineContextAdmissionRejected, match="original Context authority"):
+        with pytest.raises(
+            guard.OfflineContextAdmissionRejected, match="original Context authority",
+        ):
             _review(record, veto)
     assert not called
 
@@ -105,7 +111,9 @@ def test_swapped_review_field_denied_before_constructor(monkeypatch, field):
         patch.setattr(
             guard.OfflineContextMembershipReview, field, property(lambda _: "fake"),
         )
-        with pytest.raises(guard.OfflineContextAdmissionRejected, match="original Context authority"):
+        with pytest.raises(
+            guard.OfflineContextAdmissionRejected, match="original Context authority",
+        ):
             _review(record, veto)
 
 
