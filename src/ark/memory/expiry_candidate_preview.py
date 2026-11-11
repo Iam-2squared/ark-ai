@@ -85,6 +85,7 @@ _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_BOUNDS = (_MAX_ROWS, _MAX_EVENT_SCAN, _MAX_TIME)
 
 _AUTHORITY_DESCRIPTORS = tuple(
     getattr(_RECEIPT_TYPE, flag) for flag in _FLAGS
@@ -99,6 +100,13 @@ def _assert_original_authority() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or any(
+            type(value) is not int
+            for value in (_MAX_ROWS, _MAX_EVENT_SCAN, _MAX_TIME)
+        )
+        or (_MAX_ROWS, _MAX_EVENT_SCAN, _MAX_TIME) != _ORIGINAL_BOUNDS
+        or _check_global_event_highwater is not _ORIGINAL_GLOBAL_HIGHWATER_CHECK
+        or _check_due_event_chain is not _ORIGINAL_DUE_CHAIN_CHECK
     ):
         raise MemoryExpiryPreviewRejected("expiry digest protocol changed")
     if (
@@ -193,6 +201,9 @@ def _check_global_event_highwater(conn: sqlite3.Connection) -> None:
 
 
 
+_ORIGINAL_GLOBAL_HIGHWATER_CHECK = _check_global_event_highwater
+
+
 def _check_due_event_chain(
     conn: sqlite3.Connection,
     record: MemoryRecord,
@@ -277,6 +288,9 @@ def _check_due_event_chain(
             "expiry candidate lacks matching live Memory event"
         )
     return len(events)
+
+
+_ORIGINAL_DUE_CHAIN_CHECK = _check_due_event_chain
 
 
 def review_memory_expiry_candidates(
