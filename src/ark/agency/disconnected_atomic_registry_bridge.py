@@ -22,6 +22,28 @@ _BOUND = re.compile(r"bound_[0-9a-f]{64}\Z")
 _ORIGINAL_BIND = vars(ToolRegistry)["bind"]
 _ORIGINAL_REVISION = vars(ToolRegistry)["revision"]
 
+_REQUEST = re.compile(r"act_[0-9a-f]{64}\Z")
+_ORIGINAL_OCC = _OCC
+_ORIGINAL_BOUND = _BOUND
+_ORIGINAL_REQUEST = _REQUEST
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_RE = re
+
+
+def _require_original_bridge_dependencies() -> None:
+    """Refuse changed hash/grammar authorities before binding an inert WRITE."""
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or re is not _ORIGINAL_RE
+        or _OCC is not _ORIGINAL_OCC
+        or _BOUND is not _ORIGINAL_BOUND
+        or _REQUEST is not _ORIGINAL_REQUEST
+    ):
+        raise AtomicPreactionRejected("registry intent digest or grammar changed")
+
+
 
 def derive_registered_atomic_intent(
     registry: ToolRegistry,
@@ -34,6 +56,7 @@ def derive_registered_atomic_intent(
     This function does not grant permission and does not call execute().
     Occurrence identity must be supplied by a separately reviewed source.
     """
+    _require_original_bridge_dependencies()
     if (
         type(registry) is not ToolRegistry
         or type(call) is not ToolCall
@@ -45,6 +68,7 @@ def derive_registered_atomic_intent(
         raise AtomicPreactionRejected("invalid registry-bound intent source")
     try:
         bound = registry.bind(call)
+        _require_original_bridge_dependencies()
         if (
             type(bound) is not BoundAction
             or type(bound.registration) is not ToolRegistration
@@ -62,13 +86,16 @@ def derive_registered_atomic_intent(
         if (
             type(request_id) is not str or len(request_id) != 68
             or not request_id.startswith("act_")
-            or re.fullmatch(r"act_[0-9a-f]{64}\Z", request_id) is None
+            or _REQUEST.fullmatch(request_id) is None
         ):
             raise AtomicPreactionRejected("registered request identity changed")
+        _require_original_bridge_dependencies()
         request_digest = hashlib.sha256(request_id.encode("ascii")).hexdigest()
+        _require_original_bridge_dependencies()
         claim = AtomicIntentClaim(
             occurrence_id, bound.bound_action_id, request_digest,
         )
+        _require_original_bridge_dependencies()
         if (
             claim.occurrence_id is not occurrence_id
             or claim.bound_action_id is not bound.bound_action_id
@@ -78,4 +105,5 @@ def derive_registered_atomic_intent(
             raise AtomicPreactionRejected("registered intent changed during binding")
     except (TypeError, ValueError) as exc:
         raise AtomicPreactionRejected("registered intent binding refused") from exc
+    _require_original_bridge_dependencies()
     return claim
