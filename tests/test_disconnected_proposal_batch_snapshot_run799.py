@@ -9,7 +9,6 @@ import pytest
 from ark.agency import disconnected_proposal_snapshot_bundle as batch
 from ark.agency import disconnected_proposal_store as store
 
-
 _A = "proposal_" + "a" * 64
 _B = "proposal_" + "b" * 64
 _C = "proposal_" + "c" * 64
