@@ -67,9 +67,66 @@ class AtomicRecoveryQuarantine:
         return True
 
 
+# A local SQLite witness cannot authenticate an action, but replaced
+# review callbacks and result descriptors must not acquire dispatch authority.
+_SNAPSHOT_FIELDS = ("witness", "occurrence_ids")
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SNAPSHOT_FIELDS = tuple(
+    vars(_SNAPSHOT_TYPE).get(name) for name in _SNAPSHOT_FIELDS
+)
+_ORIGINAL_SNAPSHOT_HOOKS = tuple(
+    vars(_SNAPSHOT_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_SNAPSHOT_NAMES = _SNAPSHOT_DENIALS
+_ORIGINAL_SNAPSHOT_DESCRIPTORS = _ORIGINAL_DENIALS
+_RESULT_TYPE = AtomicRecoveryQuarantine
+_RESULT_FIELDS = ("occurrence_id", "locally_recorded", "retained_count")
+_RESULT_DENIALS = (
+    "binding_proven", "tool_dispatch_authorized", "automatic_replay_authorized",
+    "external_effect_proven", "independent_custody_proven",
+    "manual_review_required",
+)
+_ORIGINAL_RESULT_NAMES = _RESULT_DENIALS
+_ORIGINAL_RESULT_DESCRIPTORS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in (*_RESULT_FIELDS, *_RESULT_DENIALS)
+)
+_ORIGINAL_RESULT_HOOKS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in _CARRIER_HOOKS
+)
+_ORIGINAL_DERIVE = derive_registered_atomic_intent
+_ORIGINAL_INSPECT = vars(DisconnectedAtomicPreactionLedger).get("inspect")
+
+
 def _original_snapshot_denials() -> None:
     if (
-        AtomicPreactionSnapshot is not _SNAPSHOT_TYPE
+        _SNAPSHOT_DENIALS is not _ORIGINAL_SNAPSHOT_NAMES
+        or _ORIGINAL_DENIALS is not _ORIGINAL_SNAPSHOT_DESCRIPTORS
+        or _RESULT_DENIALS is not _ORIGINAL_RESULT_NAMES
+        or derive_registered_atomic_intent is not _ORIGINAL_DERIVE
+        or vars(DisconnectedAtomicPreactionLedger).get("inspect") is not _ORIGINAL_INSPECT
+        or AtomicRecoveryQuarantine is not _RESULT_TYPE
+        or any(
+            vars(_SNAPSHOT_TYPE).get(name) is not original
+            for names, originals in (
+                (_SNAPSHOT_FIELDS, _ORIGINAL_SNAPSHOT_FIELDS),
+                (_CARRIER_HOOKS, _ORIGINAL_SNAPSHOT_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_RESULT_FIELDS, *_RESULT_DENIALS),
+                _ORIGINAL_RESULT_DESCRIPTORS, strict=True,
+            )
+        )
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _CARRIER_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True,
+            )
+        )
+        or AtomicPreactionSnapshot is not _SNAPSHOT_TYPE
         or any(
             vars(_SNAPSHOT_TYPE).get(name) is not original
             for name, original in zip(_SNAPSHOT_DENIALS, _ORIGINAL_DENIALS, strict=True)
