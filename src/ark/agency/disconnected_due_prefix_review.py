@@ -59,6 +59,15 @@ _RESULT = DisconnectedDuePrefixReview
 _ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
 _WITNESS = due.DueReservationWitness
 _LEDGER = due.DisconnectedDueReservations
+# An alternate witness validator/digest could accept or forge a historical
+# prefix before SQLite's retained rows are compared. Keep original local
+# callbacks and the outer reconciliation digest fixed at import time.
+# This is interpreter-local custody, NOT authenticated provenance.
+_ORIGINAL_WITNESS_CHECK = due._check_witness
+_ORIGINAL_DUE_DIGEST = due._digest
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 # Original descriptors, not just False-valued callbacks, are part of the
 # passive review boundary. A substituted property can return False while
@@ -94,6 +103,11 @@ _ORIGINAL_WITNESS_HOOKS = tuple(
 def _require_original_denials() -> None:
     if (
         due.DueReservationWitness is not _WITNESS
+        or due._check_witness is not _ORIGINAL_WITNESS_CHECK
+        or due._digest is not _ORIGINAL_DUE_DIGEST
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
         or due.DisconnectedDueReservations is not _LEDGER
         or any(
             vars(cls).get(name) is not original
