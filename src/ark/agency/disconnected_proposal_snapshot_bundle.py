@@ -53,19 +53,27 @@ _DENIALS = (
 )
 _ORIGINAL_FIELDS = tuple(vars(_REPORT)[n] for n in _FIELDS)
 _ORIGINAL_DENIALS = tuple(vars(_REPORT)[n] for n in _DENIALS)
+_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_HOOKS = tuple(vars(_REPORT).get(name) for name in _HOOKS)
 _STORE_SCAN = store._scan
 _STORE_PATH = store._path
 _STORE_ASSERT = store._assert_retained
 _STORE_WITNESS = store._witness
 _LIFECYCLE_ID = lifecycle._id
 _LIFECYCLE_REPLAY = lifecycle.replay_disconnected_proposal_lifecycle
+_STORE_PROTOCOL = store._protocol
+_LIFECYCLE_PROTOCOL = lifecycle._protocol
 _MAX_IDS = 32
 
 
 def _protocol() -> None:
-    store._protocol()
-    lifecycle._protocol()
+    # Never invoke a substituted dependent control-plane validator.
+    if store._protocol is not _STORE_PROTOCOL or lifecycle._protocol is not _LIFECYCLE_PROTOCOL:
+        raise DisconnectedProposalBatchRejected("proposal batch protocol changed")
+    _STORE_PROTOCOL()
+    _LIFECYCLE_PROTOCOL()
     if (
+        _protocol is not _ORIGINAL_PROTOCOL
         DetachedProposalBatchSnapshot is not _REPORT
         or vars(_REPORT).get("__init__") is not _REPORT_INIT
         or any(
@@ -76,6 +84,10 @@ def _protocol() -> None:
                 strict=True,
             )
         )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(_HOOKS, _ORIGINAL_HOOKS, strict=True)
+        )
         or store._scan is not _STORE_SCAN
         or store._path is not _STORE_PATH
         or store._assert_retained is not _STORE_ASSERT
@@ -85,6 +97,9 @@ def _protocol() -> None:
         or type(_MAX_IDS) is not int or _MAX_IDS != 32
     ):
         raise DisconnectedProposalBatchRejected("proposal batch protocol changed")
+
+
+_ORIGINAL_PROTOCOL = _protocol
 
 
 def inspect_disconnected_proposal_batch(
@@ -102,7 +117,7 @@ def inspect_disconnected_proposal_batch(
     transaction's full validated event frontier, not merely a past prefix.
     This API never permits proposal state advancement.
     """
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     if type(require_latest) is not bool:
         raise DisconnectedProposalBatchRejected(
             "exact latest-frontier requirement flag required"
@@ -129,7 +144,7 @@ def inspect_disconnected_proposal_batch(
     pinned_ids = proposal_ids
 
     def stable() -> None:
-        _protocol()
+        _ORIGINAL_PROTOCOL()
         if (
             proposal_ids is not pinned_ids
             or _STORE_WITNESS(retained) != retained_tuple
