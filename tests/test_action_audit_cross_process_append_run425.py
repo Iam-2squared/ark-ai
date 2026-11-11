@@ -64,8 +64,18 @@ def test_two_process_audit_append_has_ordered_unique_ids_without_raw_arguments(
     try:
         deadline = time.monotonic() + 25
         while not all((root / f"ready-{index}").exists() for index in range(2)):
-            if any(process.poll() is not None for process in processes):
-                raise AssertionError("audit writer exited before common start gate")
+            terminated = [
+                (index, process) for index, process in enumerate(processes)
+                if process.poll() is not None
+            ]
+            if terminated:
+                diagnostics = [
+                    (index, process.returncode, process.communicate(timeout=5))
+                    for index, process in terminated
+                ]
+                raise AssertionError(
+                    f"audit writer exited before common start gate: {diagnostics!r}"
+                )
             if time.monotonic() >= deadline:
                 raise AssertionError("audit writers never reached start gate")
             time.sleep(0.02)
