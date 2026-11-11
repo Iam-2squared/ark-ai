@@ -437,6 +437,28 @@ def verify_memory_expiry_preview(
         report.scope_sha256, report.read_at_ms, report.candidate_count,
         report.has_more, report.candidate_sha256, report.preview_sha256,
     )
+    retained_scope, retained_time, count, more, rows_hash, preview_hash = (
+        original_receipt_fields
+    )
+    # Reject malformed or clearly mismatched detached evidence before opening
+    # private SQLite. A reflected frozen receipt can contain bool-as-int or an
+    # executable equality carrier; compare only after exact-type validation.
+    if (
+        type(now_ms) is not int or not 0 <= now_ms <= _MAX_TIME
+        or type(limit) is not int or not 1 <= limit <= _MAX_ROWS
+        or type(retained_time) is not int or retained_time != now_ms
+        or type(count) is not int or not 0 <= count <= limit
+        or type(more) is not bool
+        or any(
+            type(value) is not str
+            or len(value) != 64
+            or any(c not in "0123456789abcdef" for c in value)
+            for value in (retained_scope, rows_hash, preview_hash)
+        )
+        or preview_hash != retained_preview_sha256
+    ):
+        raise MemoryExpiryPreviewRejected("retained expiry preview mismatch")
+    _assert_original_authority()
     source_path = store.path if type(store) is _STORE_TYPE else None
     owner = scope.owner_id if type(scope) is _SCOPE_TYPE else None
     namespace = scope.namespace if type(scope) is _SCOPE_TYPE else None
