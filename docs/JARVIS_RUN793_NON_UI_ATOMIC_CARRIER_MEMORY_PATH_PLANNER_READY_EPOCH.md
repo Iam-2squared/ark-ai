@@ -3,7 +3,7 @@
 Repository work basis: `f0233f9e245a6766390160ed2795d905ec5ee4f6` (Run792 exact HEAD).
 Branch: `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8).
 Status: **implementation saved; latest exact-head 6-job CI pending at report preparation**.
-The three packages are intentionally separate from frozen V1/V2/Local UI/Launcher,
+The four packages are intentionally separate from frozen V1/V2/Local UI/Launcher,
 protected V2 final evaluation, V3 Candidate approval, and the untouched UI Draft PR #9.
 
 ## Package A — local atomic intent/audit carrier custody
@@ -65,6 +65,27 @@ protected V2 final evaluation, V3 Candidate approval, and the untouched UI Draft
 - No persistent journal migration, automatic WRITE replay, or live planner
   execution is introduced.
 
+## Package D — Personal Context durable replay ledger sidecar privacy
+
+- Source commit `5bd86dbc25b28a8fcf52c001ae56ae33386a18ea`:
+  `src/ark/personal_context_replay_ledger.py` now checks each SQLite
+  `-wal`, `-shm`, and `-journal` companion with `lstat`. A fresh
+  database refuses any orphaned sidecar; an existing context replay ledger
+  refuses symlinks, hardlinks, directories, or other nonregular companion
+  files. This occurs before SQLite opens the private ledger. No plaintext
+  context or actual source content is copied to the ledger.
+- Tests committed `68dafd5032f78ae463aae584b2fc7b89f87be2e9`:
+  `tests/test_context_replay_sidecar_custody_run793.py`, **8 submitted
+  cases**: three orphan variants, three symbolic-link variants, one hardlink,
+  and one ordinary genesis/reopen.
+- This is local pathname preflight only; cannot prove atomic OS path custody
+  against a concurrent attacker-controlled rename. No permission to disclose,
+  replay a context request, remove retention protections, or dispatch tools.
+
+**Total newly submitted Run793 tests: 27** (11 Atomic + 5 Memory +
+3 Planner + 8 Personal Context). These tests are not marked six-job GREEN
+without matching CI verification.
+
 ## Exact evidence discipline / pending gates
 
 - Previous exact-head Run792:
@@ -76,7 +97,7 @@ protected V2 final evaluation, V3 Candidate approval, and the untouched UI Draft
   report writing. CI should be inspected at matching head SHA and individual
   six jobs, and only real failures should trigger minimal fixes.
 - No local pytest, Ruff or external hardware execution is claimed.
-- Source changes are limited to three non-UI modules; no frozen contract
+- Source changes are limited to four non-UI modules; no frozen contract
   or historical evidence was deliberately altered.
 - PR #5 Draft/unmerged; PR #9 Draft/unmerged, untouched, UI development
   paused. No paid/external GPU/API, new credentials, authenticated approval,
