@@ -14,8 +14,8 @@ import math
 import re
 from dataclasses import dataclass
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-detached-V3-preflight-crossbind-v1\\0"
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-detached-V3-preflight-crossbind-v1\0"
 _MAX_BYTES = 4_096
 
 
