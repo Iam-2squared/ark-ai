@@ -101,11 +101,29 @@ def _check_local_revocation_path(path: Path) -> None:
             raise SyntheticContextRevocationRejected(
                 "revocation source symlink is forbidden"
             )
-        if path.exists():
+        main_exists = path.exists()
+        if main_exists:
             info = path.lstat()
             if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise SyntheticContextRevocationRejected(
                     "revocation source must be one regular-file link"
+                )
+        # SQLite may open or create these sidecars before the first query.
+        # Deny obvious aliases/special files and stale orphan sidecars;
+        # ordinary single-link regular journal/WAL files remain compatible.
+        # Path prechecks are not atomic open-handle ownership or consent.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = path.with_name(path.name + suffix)
+            try:
+                details = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if (
+                not main_exists or not stat.S_ISREG(details.st_mode)
+                or details.st_nlink != 1
+            ):
+                raise SyntheticContextRevocationRejected(
+                    "unsafe revocation SQLite sidecar"
                 )
     except OSError as exc:
         raise SyntheticContextRevocationRejected(
