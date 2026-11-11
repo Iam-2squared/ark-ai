@@ -49,10 +49,14 @@ def test_latest_frontier_rejects_older_valid_prefix(tmp_path):
         path, proposal_ids=(_A,), retained=genesis,
     )
     assert prefix_only.witness == first.witness
-    with pytest.raises(batch.DisconnectedProposalBatchRejected, match="stale"):
+    with pytest.raises(
+        batch.DisconnectedProposalBatchRejected, match="coherent proposal batch",
+    ) as caught:
         batch.inspect_disconnected_proposal_batch(
             path, proposal_ids=(_A,), retained=genesis, require_latest=True,
         )
+    assert type(caught.value.__cause__) is store.DisconnectedProposalStoreRejected
+    assert "stale" in str(caught.value.__cause__)
     verified = batch.inspect_disconnected_proposal_batch(
         path, proposal_ids=(_A,), retained=first.witness, require_latest=True,
     )
@@ -66,11 +70,15 @@ def test_unrequested_proposal_append_invalidates_prior_frontier(tmp_path):
     path, genesis = _new(tmp_path)
     first = _append(path, _A, genesis)
     second = _append(path, _B, first.witness)
-    with pytest.raises(batch.DisconnectedProposalBatchRejected, match="stale"):
+    with pytest.raises(
+        batch.DisconnectedProposalBatchRejected, match="coherent proposal batch",
+    ) as caught:
         batch.inspect_disconnected_proposal_batch(
             path, proposal_ids=(_A,), retained=first.witness,
             require_latest=True,
         )
+    assert type(caught.value.__cause__) is store.DisconnectedProposalStoreRejected
+    assert "stale" in str(caught.value.__cause__)
     observed = batch.inspect_disconnected_proposal_batch(
         path, proposal_ids=(_B, _A), retained=second.witness,
         require_latest=True,
