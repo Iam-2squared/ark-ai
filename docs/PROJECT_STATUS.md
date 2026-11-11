@@ -1,3 +1,46 @@
+# LATEST — Run801 / 2026-11-12 JST
+
+**LATEST:** Three meaningful **NON-UI / FREE-ONLY** work packages saved in [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) Memory bootstrap/preflight same-process serialization, (B) narrow proactive transient zero-link SQLite journal recheck preserving hardlink/symlink denial, and (C) SQLite action audit bootstrap/preflight same-process serialization. **Six NEW committed synthetic regression cases** (1 Memory + 4 Proactive + 1 Audit), with one Ruff import-only correction after observed CI failure. Technical report saved. **Latest exact-head six-job GREEN NOT YET VERIFIED.** ARK/JARVIS overall **NOT_PASSED**.
+
+**Saved at (checkpoint preparation wall-clock):** Asia/Tokyo/JST **2026-11-12T06:53:10+09:00**. This is a local observation before GitHub accepted the checkpoint, NOT the commit creation time, trusted audit clock, owner authorization, physical-PC identity or external provenance.
+
+## Branch / PR / exact state
+
+- **Initial work-basis HEAD:** `a58a268b7eae0dd1146aac23276afc60331a6736` on `research/jarvis-foundations` / PR #8 OPEN/DRAFT/UNMERGED.
+- **Checkpoint-write basis HEAD, reread immediately before normal Contents API mutation:** `d8644b2aa3690524d7dabc8a74638a26c7ae2a5e`. Prior checkpoint blob SHA `136bfaf4e65eb94e00048735aada1ee18801d2ed`. PR #8 HEAD matched the repository branch/ref at the checkpoint read.
+- **Checkpoint-result-HEAD wording:** This Contents API update creates a new commit *after* acceptance. The checkpoint-write basis SHA above is **NOT** the result SHA. The resulting commit and checkpoint blob SHA must be taken from the API response and independently confirmed against live PR/branch state; no speculative result SHA is written into its own content.
+- PR #5 OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; frozen V3 Contract 1, protected V2 final evaluation and paid compute gate unchanged.
+- PR #9 OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; **UNTOUCHED. ALL NEW UI/FRONTEND WORK PAUSED.**
+
+## NEW work saved this invocation
+
+1. **Memory local SQLite bootstrap:** `src/ark/memory/sqlite_store.py` commit `b454667a5a3e8a6c0868d36e1c4cff1ad25d3aae` and `tests/test_memory_bootstrap_path_fence_race_run801.py` commit `3b8869dfa6db3dbf91363634ed5a422fe6f87b71`, **1 new case**. Parent/main/sidecar preflight and WAL initialization share a process-local reentrant lock, eliminating constructor precheck overlap with another initializer's WAL creation on the same process. Existing v1 schema and standalone `_initialize` guard preserved. Initial test import formatting Ruff I001 corrected at commit `9e686d76c7f5e0f19ba60062a29d66b9ed137836`, with unchanged assertions.
+2. **Proactive short-lived journal race:** `src/ark/proactive_synthetic_review.py` commit `fe29a5379263cde0a6f71c0b221361405ba0b186`, `tests/test_proactive_transient_journal_preflight_run801.py` commit `c3a997adca87adbe41a0d7a881352463bf24d1fa`, **4 cases**. Only an already-unlinked **regular** sidecar inode with `st_nlink == 0` is resampled once; hardlinks, symlinks, special files, orphaned sidecars and repeated unsafe metadata remain denied. No action dispatch or retry. The previous CI log lacks `st_nlink` detail; do not assert this resolves every interprocess failure.
+3. **Audit local SQLite bootstrap:** `src/ark/agency/audit.py` commit `2d24e2bcb8cea0021c8e3dc2b9198cbebccbcfd8`, `tests/test_audit_bootstrap_path_fence_race_run801.py` commit `01e2c1369d699891a770fe27f9b40c3ed3f952dd`, **1 case**. Process-local preflight and original audit WAL init share reentrant startup lock; no v1 schema, event append semantics, approval rights or trusted clock guarantee changed.
+4. **Technical report:** `docs/JARVIS_RUN801_NON_UI_BOOTSTRAP_JOURNAL_CONCURRENCY.md` commit `d8644b2aa3690524d7dabc8a74638a26c7ae2a5e`, describing exact failure logs, test limits and safety gates. Prior Run800 and historical checkpoint entries preserved below.
+
+## CI / tests / source evidence (as actually inspected)
+
+- Run799 [CI #43093515609](https://github.com/Iam-2squared/ark-ai/actions/runs/43093515609) **FAILED**: Ubuntu 3.12 job `130776371290` had one deterministic-looking but race-dependent Memory initializer failure (`orphaned memory SQLite sidecar refused`). Ubuntu 3.11 and 3.13 **GREEN**. Windows 3.12 job `130776371264` passed pytest **13,490 with 74 skips**, but then failed GitHub `upload-artifact@v4` with an HTML-for-JSON service response after five retries. Do not misclassify Windows artifact service failure as source test failure. Other Windows results are not categorized here.
+- Run800 [CI #43098848007](https://github.com/Iam-2squared/ark-ai/actions/runs/43098848007) **FAILED 1/6**: five platform/Python jobs **GREEN**; Ubuntu 3.13 job `130784465992` failed `test_process_race_preserves_scope_budget_and_durable_dedup[distinct-policy-expected2]` because one process rejected a concurrent proactive SQLite sidecar. Link count and inode type of the ephemeral sidecar were not printed, so precise mechanism **NOT VERIFIED**.
+- Earlier Run801 package [#43106123571](https://github.com/Iam-2squared/ark-ai/actions/runs/43106123571), [#43106348736](https://github.com/Iam-2squared/ark-ai/actions/runs/43106348736), [#43106589837](https://github.com/Iam-2squared/ark-ai/actions/runs/43106589837) failed the same **Ruff I001 only** from the new Memory test; actual Ubuntu logs inspected. Those runs did not reach pytest and do not validate source.
+- After the import-only fix, [CI #43106710755](https://github.com/Iam-2squared/ark-ai/actions/runs/43106710755) **IN PROGRESS, 6/6 jobs IN PROGRESS** at last inspection. After the report, [CI #43106918490](https://github.com/Iam-2squared/ark-ai/actions/runs/43106918490) **IN PROGRESS, 6/6 jobs IN PROGRESS** at last inspection. The checkpoint-result commit creates another as-yet-unknown exact-head run; never fabricate its ID, reuse prior GREEN, or launch a duplicate workflow.
+- **Six regression cases submitted, NOT six cases proven GREEN.** No local integrated pytest/Ruff or real GGUF/Windows target-machine evaluation claimed.
+
+## Frozen contracts / blockers / authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence and V3 Contract 1, provenance/contamination/regression/reproducibility gates unchanged. PR #5 Draft/unmerged, PR #9 Draft/unmerged untouched, UI development PAUSED. No paid/potentially billable compute, external GPU, subscription/API, new account/credentials, real ToolBackend/notification, automatic unknown WRITE replay, Candidate/weight creation/promotion, protected evaluation opening, destructive modification, authenticated owner approval, physical-PC action or main merge. A local `RLock` does not protect across processes; pathname `lstat` is not atomic handle ownership. No human approval or trust is inferred from SQLite hashes.
+
+## Next plan / 今後の方針
+
+1. **First:** check six CI jobs on the actual checkpoint-result HEAD. On FAIL, inspect concrete first-failing step, make only minimal semantics-preserving corrections through normal GitHub contents path, preserve existing fault-injection expectations, and work on independent non-UI modules while CI runs.
+2. Investigate proactive interprocess sidecar metadata and memory cross-process/orphan timing with grounded evidence. Never allow symlink/hardlink or truly orphaned SQLite adoption; no speculative blanket retries.
+3. Advance Memory CAS/ABA, coherent expiry and manual-only COMMIT-UNKNOWN inspection; Planner durable terminal/UNKNOWN quarantine.
+4. Advance registry-bound exact PermissionGate, durable audit-before-action and disconnected/mock executor integration only when lower-level exact-head GREEN confirms invariants.
+5. Continue privacy-safe Personal Context, proactive/observation backend contracts, and V3 free-only approval/path/identity guards. PR #9 UI paused, PR #5 gate frozen; overall JARVIS **NOT_PASSED**.
+
+---
+
 # LATEST — Run800 / 2026-11-12 JST
 
 **LATEST:** Two coherent **NON-UI / FREE-ONLY** packages saved in [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) necessary lifecycle-geometry verification for retained Memory CAS generations **before** private SQLite reads, without v1 schema or write-contract changes; (B) immutable detached improvement-proposal transition policy and import-original replay grammar, closing in-place terminal-reopen rule mutation. **19 NEW committed parameterized regression cases** (9 Memory + 10 Proposal). Technical report saved. Latest exact-head Windows+Ubuntu/Python 3.11–3.13 six-job GREEN is **NOT YET VERIFIED**. Run799 checkpoint workflow has one observed Ubuntu 3.12 pytest **FAIL** and pending Windows jobs; log was inaccessible during this invocation, so do not label it a flake or invent a fix. ARK/JARVIS **NOT_PASSED**.
