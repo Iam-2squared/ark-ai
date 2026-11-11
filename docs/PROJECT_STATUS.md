@@ -1,3 +1,45 @@
+# LATEST — Run800 / 2026-11-12 JST
+
+**LATEST:** Two coherent **NON-UI / FREE-ONLY** packages saved in [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) necessary lifecycle-geometry verification for retained Memory CAS generations **before** private SQLite reads, without v1 schema or write-contract changes; (B) immutable detached improvement-proposal transition policy and import-original replay grammar, closing in-place terminal-reopen rule mutation. **19 NEW committed parameterized regression cases** (9 Memory + 10 Proposal). Technical report saved. Latest exact-head Windows+Ubuntu/Python 3.11–3.13 six-job GREEN is **NOT YET VERIFIED**. Run799 checkpoint workflow has one observed Ubuntu 3.12 pytest **FAIL** and pending Windows jobs; log was inaccessible during this invocation, so do not label it a flake or invent a fix. ARK/JARVIS **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation local wall clock):** Asia/Tokyo/JST **2026-11-12T05:55:24.658+09:00**. This is ordinary wall-clock observation, NOT a trusted action/audit time, authenticated human approval, actual physical-PC identity, or external provenance.
+
+## Branch / PR / exact state
+
+- **Initial work-basis HEAD:** `beb7b4bc04356c75f7240daeb2e154a4964bc3c0` on `research/jarvis-foundations`, PR #8 OPEN/DRAFT/UNMERGED.
+- **Checkpoint-write basis HEAD, read immediately before normal Contents API mutation:** `3104f84cc47f32490e8bdb602fb978dd9a713b7e`. Previous checkpoint blob SHA `8a065fb07efd31c3f792dcfdc43c01dd4190f0e5`. PR #8 HEAD matched branch HEAD at this read.
+- **Checkpoint-result-HEAD wording:** the checkpoint write's resulting commit SHA does NOT exist until the Contents API accepts it. The work-basis and checkpoint-write basis HEADs above must NOT be presented as the checkpoint-result commit. After acceptance, use the API-returned commit SHA and independently re-read live branch/PR HEAD and checkpoint blob SHA. No speculative HEAD or CI run ID is included here.
+- PR #5 OPEN/DRAFT/UNMERGED, `805b377697472268db02650a89c7a94b1c5337c8`, still under protected V3 / frozen evaluation gate.
+- PR #9 OPEN/DRAFT/UNMERGED, `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, **UNTOUCHED. ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+## NEW code, tests and report saved this invocation
+
+1. **Memory retained CAS generation geometry:** `src/ark/memory/retained_generation_fence.py` commit `322fa170c600550e44b4cda8027f5d093c6c3e98`, `tests/test_memory_retained_generation_geometry_run800.py` commit `636e30256a7b4b7867a0634976b8a20e4912d5bc`, **9 cases**. A retained report with no generations but a live row, insufficient terminal events for its generation count, or too few updates to reach its claimed live revision is rejected before private SQLite access. Accepted geometry still goes through the established exact-history verification; no writer identity, CAS permission, retry authority or atomicity is inferred.
+2. **Immutable proposal transition grammar:** `src/ark/agency/disconnected_proposal_lifecycle.py` commit `848b7d4b6854cbc8809243226ecf05c2710e8370`, `tests/test_disconnected_proposal_policy_custody_run800.py` commit `4d2fe8299dacb208ea5e61e534f8a04a2f57df3d`, **10 cases**. Internal rule map is now `MappingProxyType`: the prior dict and `_ORIGINAL_ALLOWED` alias could both observe an in-place expansion of terminal transitions while passing an identity check. Genesis, ID/digest regex and replay budget are now protocol-pinned. Accepted-for-implementation remains strictly **descriptive**, not authenticated human review or execution/training/Candidate authority.
+3. **Detailed grounded report:** `docs/JARVIS_RUN800_NON_UI_MEMORY_GEOMETRY_PROPOSAL_POLICY.md` saved in `3104f84cc47f32490e8bdb602fb978dd9a713b7e`. It documents the necessary-but-not-sufficient event geometry, concrete source/test commits, safety boundaries, and outstanding observed CI failure. Historical Run799 and earlier checkpoint records preserved below.
+
+## Tests / CI / evidence at pre-checkpoint inspection
+
+- Run799 exact checkpoint [CI #43093515609](https://github.com/Iam-2squared/ark-ai/actions/runs/43093515609): **IN PROGRESS**; Ubuntu Python 3.11 and 3.13 **GREEN**, Ubuntu Python 3.12 pytest **FAIL** in job `130776371290`, Windows three jobs **IN PROGRESS**. Ruff on the failed Ubuntu job was GREEN. The official job-log fetch timed out / returned unavailable; root cause **NOT VERIFIED**. Do not change semantics or existing failure oracles from speculation.
+- Earlier corrected Run799 package [CI #43092597442](https://github.com/Iam-2squared/ark-ai/actions/runs/43092597442) **SUCCESS**, but at an earlier SHA and **not** proof for Run800.
+- Memory source [CI #43098102418](https://github.com/Iam-2squared/ark-ai/actions/runs/43098102418), Memory tests [#43098167443](https://github.com/Iam-2squared/ark-ai/actions/runs/43098167443), Proposal source [#43098248865](https://github.com/Iam-2squared/ark-ai/actions/runs/43098248865), Proposal tests [#43098309544](https://github.com/Iam-2squared/ark-ai/actions/runs/43098309544), technical report [#43098595234](https://github.com/Iam-2squared/ark-ai/actions/runs/43098595234) were **QUEUED** when inspected. Each run has its own exact HEAD; the checkpoint write will enqueue its own as-yet-unknown run. No manual duplicate equivalent workflow was launched.
+- **19 new submitted cases, not 19 claimed GREEN.** No local full pytest/Ruff, physical machine action, model/hash attestation or independent runtime approval evidence is asserted.
+
+## Frozen contracts / blockers / authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher, V3 Contract 1 and contamination/provenance/regression/reproducibility gates remain unchanged. Protected V2 final evaluation is not opened. All UI work remains paused; PR #5 and PR #9 remain Draft/unmerged. No new paid/potentially billable API/service, external GPU/compute, new credential/account, real ToolBackend/notification, automatic unknown WRITE replay, Candidate generation/promotion, destructive operation, authenticated human-review claim or main merge. Local read-only hashes do not establish trusted-clock proof, consent, provenance, cross-store atomicity or race-free OS path custody.
+
+## Next plan / 今後の方針
+
+1. **Highest priority:** obtain concrete Run799 Ubuntu 3.12 pytest failure details when logs become accessible; identify a deterministic fault vs concurrency/environment race, make the smallest semantics-preserving repair and preserve every existing fault-injection expectation. Do not repeat failed workflow runs unnecessarily.
+2. Verify the **six jobs on the actual final Run800 checkpoint-result HEAD**, not prior commits. On fail, inspect exact job logs; pipeline independent non-UI lanes while jobs run.
+3. Deepen Memory CAS/ABA, globally coherent row/event expiry and retained witness lifecycle, and manual-only COMMIT-UNKNOWN diagnostics without automatic retry or schema changes.
+4. Improve Planner terminal persistence/recovery, registry-bound PermissionGate, durable trusted-clock audit-before-action and disconnected/mock execution integrations only after lower-level exact-head GREEN.
+5. Advance privacy-safe Personal Context, observation/proactive back-end contracts and V3 free-only guards in isolated reversible work. Keep PR #5 controlling gate, PR #9 UI pause. Overall ARK/JARVIS **NOT_PASSED**.
+
+
+---
+
 # LATEST — Run799 / 2026-11-12 JST
 
 **LATEST:** Four coherent **NON-UI / FREE-ONLY** work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (1) actual Run798 6-job CI failure forensics and semantics-preserving Planner WRITE restart repair with old fault-injection expectations retained; (2) six synthetic concurrent proposal SQLite global-CAS regression cases; (3) new coherent read-only multi-proposal SQLite snapshot and 13 test cases; (4) proactive SQLite main/ancestor/sidecar alias preflight and 12 test cases. **31 NEW submitted cases in this invocation**, plus Run798 regression expectation repair. Latest exact-head all-six CI GREEN is **NOT YET CONFIRMED**. ARK/JARVIS overall **NOT_PASSED**.
