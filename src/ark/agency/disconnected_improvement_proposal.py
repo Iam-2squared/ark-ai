@@ -83,6 +83,14 @@ _ORIGINAL_NAME = _NAME
 _ORIGINAL_SHA = _SHA
 _ORIGINAL_KINDS = _KINDS
 _ORIGINAL_LIMITS = (_MAX_PROPOSALS, _MAX_SOURCES)
+_ORIGINAL_INPUT_NAMES = _INPUT_FIELDS
+_ORIGINAL_OUTPUT_NAMES = _OUTPUT_FIELDS
+_ORIGINAL_DENIAL_NAMES = _DENIALS
+_CARRIER_HOOK_NAMES = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_HOOKS = {
+    cls: tuple(vars(cls).get(name) for name in _CARRIER_HOOK_NAMES)
+    for cls in (_INPUT, _OUTPUT)
+}
 
 
 def _protocol() -> None:
@@ -96,6 +104,14 @@ def _protocol() -> None:
         or type(_MAX_PROPOSALS) is not int
         or type(_MAX_SOURCES) is not int
         or (_MAX_PROPOSALS, _MAX_SOURCES) != _ORIGINAL_LIMITS
+        or _INPUT_FIELDS is not _ORIGINAL_INPUT_NAMES
+        or _OUTPUT_FIELDS is not _ORIGINAL_OUTPUT_NAMES
+        or _DENIALS is not _ORIGINAL_DENIAL_NAMES
+        or any(
+            tuple(vars(cls).get(name) for name in _CARRIER_HOOK_NAMES)
+            != original
+            for cls, original in _ORIGINAL_HOOKS.items()
+        )
         or any(
             vars(_INPUT).get(name) is not original
             for name, original in zip(_INPUT_FIELDS, _ORIGINAL_INPUT, strict=True)
