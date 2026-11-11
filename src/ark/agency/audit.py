@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
-from threading import Lock
+from threading import RLock
 
 from . import contracts as _contracts
 from .contracts import ActionAuditEvent, ActionAuditSchemaError, ToolCall, _canonical_json
@@ -33,7 +33,7 @@ _ORIGINAL_TOOLCALL_JSON = _contracts._canonical_json
 _ORIGINAL_TOOLCALL_FREEZE = _contracts._freeze_json
 _ORIGINAL_JSON_DUMPS = _contracts.json.dumps
 _SQLITE_INT_MAX = 2**63 - 1
-_AUDIT_BOOTSTRAP_LOCK = Lock()  # process-local; SQLite owns cross-process locking
+_AUDIT_BOOTSTRAP_LOCK = RLock()  # same-process path preflight and WAL bootstrap
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -277,11 +277,17 @@ class SQLiteActionAudit:
         if type(path) not in (str, type(Path("."))):
             raise ActionAuditSchemaError("audit requires exact local path")
         self.path = Path(path)
-        _require_safe_audit_path(self.path, allow_new_parents=True)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        _require_safe_audit_path(self.path, allow_new_parents=False)
-        self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
-        self._initialize()
+        # The first-open parent/main/sidecar checks and WAL negotiation must
+        # form one same-process bootstrap epoch. Otherwise a second constructor
+        # can mistake transient journal creation for an orphaned audit sidecar.
+        # This reentrant lock preserves _initialize()'s standalone guard,
+        # without asserting cross-process or atomic filesystem path custody.
+        with _AUDIT_BOOTSTRAP_LOCK:
+            _require_safe_audit_path(self.path, allow_new_parents=True)
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            _require_safe_audit_path(self.path, allow_new_parents=False)
+            self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
+            self._initialize()
 
     def append(self, call: ToolCall, *, outcome: str) -> ActionAuditEvent:
         _require_original_event_constructor()
