@@ -42,7 +42,9 @@ def test_replaced_input_slot_denied_without_reading_private_bytes(
     # Every patched attribute is inspected statically via vars(), not invoked.
     replacement = forbidden if slot.startswith("__") else property(forbidden)
     with monkeypatch.context() as patch:
-        patch.setattr(pcm.OfflinePcmConvertRequest, slot, replacement)
+        # __getattr__ is absent on the original dataclass; add it only
+        # inside this isolated fault-injection context.
+        patch.setattr(pcm.OfflinePcmConvertRequest, slot, replacement, raising=False)
         with pytest.raises(
             pcm.OfflinePcmConvertRejected,
             match="request carrier changed before private bytes",
