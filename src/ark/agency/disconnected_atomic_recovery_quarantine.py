@@ -15,6 +15,7 @@ from .disconnected_atomic_preaction_ledger import (
     AtomicPreactionSnapshot,
     AtomicPreactionWitness,
     DisconnectedAtomicPreactionLedger,
+    _witness_image,
 )
 from .disconnected_atomic_registry_bridge import derive_registered_atomic_intent
 from .registry import ToolRegistry
@@ -95,6 +96,15 @@ _ORIGINAL_RESULT_HOOKS = tuple(
 )
 _ORIGINAL_DERIVE = derive_registered_atomic_intent
 _ORIGINAL_INSPECT = vars(DisconnectedAtomicPreactionLedger).get("inspect")
+_ORIGINAL_WITNESS_IMAGE = _witness_image
+_WITNESS_TYPE = AtomicPreactionWitness
+_WITNESS_FIELDS = ("count", "tip_sha256")
+_ORIGINAL_WITNESS_FIELDS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_FIELDS
+)
+_ORIGINAL_WITNESS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name) for name in _CARRIER_HOOKS
+)
 
 
 def _original_snapshot_denials() -> None:
@@ -104,6 +114,16 @@ def _original_snapshot_denials() -> None:
         or _RESULT_DENIALS is not _ORIGINAL_RESULT_NAMES
         or derive_registered_atomic_intent is not _ORIGINAL_DERIVE
         or vars(DisconnectedAtomicPreactionLedger).get("inspect") is not _ORIGINAL_INSPECT
+        or _witness_image is not _ORIGINAL_WITNESS_IMAGE
+        or AtomicPreactionWitness is not _WITNESS_TYPE
+        or any(
+            vars(_WITNESS_TYPE).get(name) is not original
+            for names, originals in (
+                (_WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
+                (_CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
         or AtomicRecoveryQuarantine is not _RESULT_TYPE
         or any(
             vars(_SNAPSHOT_TYPE).get(name) is not original
@@ -160,19 +180,26 @@ def review_registered_atomic_recovery(
     ):
         raise AtomicRecoveryQuarantineRejected("exact recovery inputs required")
     try:
+        # Retain exact scalar witness values before any registry callback or
+        # SQLite access. Dataclass equality is mutable and can be forged.
+        prior = _witness_image(retained)
+        _original_snapshot_denials()
         claim = derive_registered_atomic_intent(
             registry, call, occurrence_id=occurrence_id,
         )
         _original_snapshot_denials()
+        bound_occurrence = claim.occurrence_id
         snapshot = ledger.inspect(retained)
         _original_snapshot_denials()
         if (
             type(snapshot) is not _SNAPSHOT_TYPE
-            or type(snapshot.witness) is not AtomicPreactionWitness
-            or snapshot.witness != retained
+            or type(snapshot.witness) is not _WITNESS_TYPE
+            or _witness_image(retained) != prior
+            or _witness_image(snapshot.witness) != prior
             or type(snapshot.occurrence_ids) is not tuple
-            or len(snapshot.occurrence_ids) != retained.count
-            or len(set(snapshot.occurrence_ids)) != retained.count
+            or len(snapshot.occurrence_ids) != prior[0]
+            or len(set(snapshot.occurrence_ids)) != prior[0]
+            or claim.occurrence_id is not bound_occurrence
         ):
             raise AtomicRecoveryQuarantineRejected("local recovery snapshot invalid")
         for name in _SNAPSHOT_DENIALS:
@@ -181,10 +208,34 @@ def review_registered_atomic_recovery(
                 raise AtomicRecoveryQuarantineRejected(
                     "local recovery snapshot acquired authority"
                 )
+            if _witness_image(retained) != prior:
+                raise AtomicRecoveryQuarantineRejected(
+                    "retained witness changed during recovery review"
+                )
         _original_snapshot_denials()
         # Membership is not proof that the stored bound action/request matched.
-        recorded = claim.occurrence_id in snapshot.occurrence_ids
-        return AtomicRecoveryQuarantine(claim.occurrence_id, recorded, retained.count)
+        recorded = bound_occurrence in snapshot.occurrence_ids
+        result = _RESULT_TYPE(bound_occurrence, recorded, prior[0])
+        _original_snapshot_denials()
+        if (
+            type(result) is not _RESULT_TYPE
+            or result.occurrence_id is not bound_occurrence
+            or type(result.locally_recorded) is not bool
+            or result.locally_recorded is not recorded
+            or type(result.retained_count) is not int
+            or result.retained_count != prior[0]
+            or _witness_image(retained) != prior
+        ):
+            raise AtomicRecoveryQuarantineRejected("local recovery result changed")
+        for name in _RESULT_DENIALS:
+            if getattr(result, name) is not (name == "manual_review_required"):
+                raise AtomicRecoveryQuarantineRejected("local recovery result acquired authority")
+            _original_snapshot_denials()
+            if _witness_image(retained) != prior:
+                raise AtomicRecoveryQuarantineRejected(
+                    "retained witness changed during recovery result checks"
+                )
+        return result
     except AtomicPreactionRejected as exc:
         raise AtomicRecoveryQuarantineRejected(
             "local recovery is stale, malformed or registry-unbound"
