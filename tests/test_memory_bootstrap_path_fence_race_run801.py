@@ -9,8 +9,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from ark.memory import SQLiteMemoryStore
-from ark.memory import sqlite_store
+from ark.memory import SQLiteMemoryStore, sqlite_store
 
 
 def test_two_initializers_serialize_precreate_path_fences(tmp_path, monkeypatch):
