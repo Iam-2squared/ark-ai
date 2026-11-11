@@ -19,6 +19,7 @@ from .sqlite_store import (
     SQLiteMemoryStore,
     _expired,
     _record,
+    _require_safe_memory_path,
     _tokens,
     _validate_v1_schema,
 )
@@ -268,7 +269,15 @@ def review_coherent_snapshot(
     try:
         # Path resolution and URI construction are separate input boundaries:
         # reject reflected request/source changes BEFORE opening any handle.
+        # The store checked this filename at initialization, but an alias
+        # can be installed later. Never follow a symbolic/hardlinked Memory
+        # database or unsafe SQLite sidecar during a private multi-scope read.
+        # These path checks are local preflights, not atomic dirfd custody.
+        _require_safe_memory_path(path_epoch, create=False)
+        assert_epoch()
         resolved_path = path_epoch.resolve()
+        assert_epoch()
+        _require_safe_memory_path(path_epoch, create=False)
         assert_epoch()
         readonly_uri = resolved_path.as_uri() + "?mode=ro"
         assert_epoch()
