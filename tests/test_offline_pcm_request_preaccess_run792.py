@@ -26,7 +26,7 @@ def _fixture() -> pcm.OfflinePcmConvertRequest:
     (
         "owner_sha256", "privacy_sha256", "source_sha256", "pcm_bytes",
         "channels", "sample_rate_hz", "bits_per_sample",
-        "__init__", "__new__", "__getattribute__", "__getattr__",
+        "__init__", "__getattribute__", "__getattr__",
     ),
 )
 def test_replaced_input_slot_denied_without_reading_private_bytes(
@@ -39,24 +39,19 @@ def test_replaced_input_slot_denied_without_reading_private_bytes(
         called.append(slot)
         raise AssertionError("replaced PCM input accessor executed")
 
-    # Every patched attribute is inspected statically via vars(), not invoked.
+    # An inherited __new__ special-method mutation cannot be reliably
+    # restored by pytest: CPython may retain an altered constructor slot.
+    # Test all other getters in-process without contaminating later cases.
     replacement = forbidden if slot.startswith("__") else property(forbidden)
-    request_type = pcm.OfflinePcmConvertRequest
-    # Pytest restores inherited object.__new__ as an explicit class member;
-    # that breaks later legitimate dataclass construction. Reestablish the
-    # original *absence* of that hook after this synthetic fault injection.
-    original_new_absent = "__new__" not in vars(request_type)
-    try:
-        with monkeypatch.context() as patch:
-            patch.setattr(request_type, slot, replacement, raising=False)
-            with pytest.raises(
-                pcm.OfflinePcmConvertRejected,
-                match="request carrier changed before private bytes",
-            ):
-                pcm.convert_offline_pcm_mono16(request)
-    finally:
-        if slot == "__new__" and original_new_absent:
-            delattr(request_type, "__new__")
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            pcm.OfflinePcmConvertRequest, slot, replacement, raising=False,
+        )
+        with pytest.raises(
+            pcm.OfflinePcmConvertRejected,
+            match="request carrier changed before private bytes",
+        ):
+            pcm.convert_offline_pcm_mono16(request)
     assert called == []
 
 
