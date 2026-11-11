@@ -130,6 +130,11 @@ def _denials_original() -> None:
         or _GENESIS is not _ORIGINAL_GENESIS
         or _DIGEST is not _ORIGINAL_DIGEST_PATTERN
         or _CHAIN is not _ORIGINAL_CHAIN_PATTERN
+        # Numeric subclasses can compare equal while running arbitrary
+        # __eq__/__ne__ code on a caller-controlled clock evidence path.
+        # Refuse them before checking equality or consuming the iterator.
+        or type(_MAX) is not int
+        or type(_LIMIT) is not int
         or _MAX != _ORIGINAL_MAX_MS
         or _LIMIT != _ORIGINAL_SAMPLE_LIMIT
         or _EMPTY_FIELDS is not _ORIGINAL_EMPTY_FIELDS
