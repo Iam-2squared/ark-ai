@@ -97,6 +97,23 @@ def _recovery_image(recovered: SyntheticPlanRecovery) -> tuple[object, ...]:
             for item in statuses
         )
         or any(type(name) is not str for name in running)
+        # This is a detached caller-held image, not the journal's own graph.
+        # An invalid state, duplicate step, unsorted row or bool revision must
+        # never be classified as merely a benign stale Planner snapshot.
+        or any(
+            not 1 <= len(item[0]) <= 128
+            or item[1] not in (
+                "pending", "running", "succeeded",
+                "failed", "blocked", "cancelled",
+            )
+            or not 0 <= item[2] <= 2**63 - 1
+            for item in statuses
+        )
+        or tuple(name for name, _, _ in statuses)
+        != tuple(sorted({name for name, _, _ in statuses}))
+        or running != tuple(
+            name for name, state, _ in statuses if state == "running"
+        )
         or recovered.dispatch_authorized is not False
         or recovered.automatic_replay_authorized is not False
     ):
