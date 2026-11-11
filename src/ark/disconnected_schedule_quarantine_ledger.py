@@ -32,6 +32,39 @@ _DDL = (
 )
 
 
+# These local protocol constants and codecs define the persisted hash chain.
+# Refuse post-import mutation before accepting a retained witness or opening a
+# SQLite writer. This is instrumentation defense, not external provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_SLOT = _SLOT
+_ORIGINAL_DDL = _DDL
+_ORIGINAL_BOUNDS = (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS)
+
+
+def _require_original_quarantine_protocol() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA
+        or _SLOT is not _ORIGINAL_SLOT
+        or _DDL is not _ORIGINAL_DDL
+        or any(type(value) is not int for value in (
+            _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS,
+        ))
+        or (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS)
+           != _ORIGINAL_BOUNDS
+    ):
+        raise ScheduleQuarantineRejected("quarantine digest or protocol changed")
+
+
 class ScheduleQuarantineRejected(ValueError):
     """An invalid or stale synthetic occurrence/storage epoch was supplied."""
 
@@ -95,6 +128,7 @@ _ORIGINAL_RECEIPT_CARRIER = tuple(
 
 
 def _require_original_quarantine_receipt_carrier() -> None:
+    _require_original_quarantine_protocol()
     if (
         QuarantineReceipt is not _RECEIPT_TYPE
         or any(
@@ -143,6 +177,7 @@ _WITNESS_INPUT_ORIGINALS = tuple(
 
 
 def _require_original_quarantine_input_carriers() -> None:
+    _require_original_quarantine_protocol()
     if (
         QuarantinePolicy is not _POLICY_INPUT_TYPE
         or QuarantineWitness is not _WITNESS_INPUT_TYPE
@@ -163,8 +198,12 @@ def _require_original_quarantine_input_carriers() -> None:
 
 
 def _digest(payload: tuple[object, ...]) -> str:
+    _require_original_quarantine_protocol()
     data = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("ascii")
-    return hashlib.sha256(_DOMAIN + data).hexdigest()
+    _require_original_quarantine_protocol()
+    digest = hashlib.sha256(_DOMAIN + data).hexdigest()
+    _require_original_quarantine_protocol()
+    return digest
 
 
 def _policy_epoch(policy: object) -> tuple[str, int, int, int, int]:
@@ -195,11 +234,14 @@ def derive_quarantined_occurrence(policy: QuarantinePolicy, index: int) -> str:
         raise ScheduleQuarantineRejected("invalid occurrence index")
     due = first + index * interval
     payload = json.dumps((sha, index, due), separators=(",", ":")).encode("ascii")
+    _require_original_quarantine_protocol()
     # Match the independent deterministic preview identifier without importing
     # or trusting a preview result object as authority.
-    return "slot_" + hashlib.sha256(
+    result = "slot_" + hashlib.sha256(
         b"ARK-disconnected-schedule-preview-v1\0" + b"occurrence\0" + payload
     ).hexdigest()
+    _require_original_quarantine_protocol()
+    return result
 
 
 def _path(value: object, *, create: bool) -> Path:
