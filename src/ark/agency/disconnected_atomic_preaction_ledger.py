@@ -280,5 +280,7 @@ class DisconnectedAtomicPreactionLedger:
                 frozen != (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
                 or _witness_image(retained) != expected
             ):
-                raise AtomicPreactionRejected("synthetic intent or CAS witness changed before commit")
+                raise AtomicPreactionRejected(
+                    "synthetic intent or CAS witness changed before commit"
+                )
         return AtomicPreactionWitness(seq, tip)
