@@ -173,6 +173,30 @@ def _tip(value: object, proposal_id: str) -> tuple[int, str, str] | None:
     return value.revision, value.state, value.event_digest
 
 
+_SQLITE_SIDECARS = ("-wal", "-shm", "-journal")
+
+
+def _sidecar_integrity(path: Path, *, create: bool) -> None:
+    """Refuse aliased SQLite sidecars before any SQLite call.
+
+    Normal single-link regular WAL/SHM/journal files may be present while
+    another local connection is alive. Creation refuses every stale sidecar.
+    This check does not claim atomic race resistance or trusted storage.
+    """
+    for suffix in _SQLITE_SIDECARS:
+        sidecar = path.with_name(path.name + suffix)
+        try:
+            info = sidecar.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise DisconnectedProposalStoreRejected(
+                "proposal SQLite sidecar unavailable"
+            ) from exc
+        if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise DisconnectedProposalStoreRejected("unsafe proposal SQLite sidecar")
+
+
 def _path(path: object, *, create: bool) -> Path:
     if (
         type(path) is not type(Path.cwd())
@@ -193,6 +217,7 @@ def _path(path: object, *, create: bool) -> Path:
         else:
             if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise DisconnectedProposalStoreRejected("unsafe or aliased proposal file")
+        _sidecar_integrity(path, create=create)
     except OSError as exc:
         raise DisconnectedProposalStoreRejected("proposal fixture path unavailable") from exc
     return path
