@@ -93,6 +93,17 @@ _ORIGINAL_EVENT_BUDGET = _MAX_EVENTS
 _ORIGINAL_SQLITE_LIMIT = SQLITE_INT_MAX
 _ORIGINAL_FIELDS_READER = _fields
 _ORIGINAL_DENIAL_CHECK = _assert_original_denials
+# Keep a second, independent import-time baseline for the protocol's own
+# lookup tables and captured class descriptors. Rebinding the lists that
+# select which False-only properties to inspect must not suppress a denial.
+_ORIGINAL_DENIAL_NAMES = _DENIALS
+_ORIGINAL_FIELD_NAMES = _FIELDS
+_ORIGINAL_HOOK_NAMES = _HOOKS
+_ORIGINAL_REVIEW_TYPE = _REVIEW_TYPE
+_ORIGINAL_DENIAL_DESCRIPTORS = _ORIGINAL_DENIALS
+_ORIGINAL_FIELD_DESCRIPTORS = _ORIGINAL_FIELDS
+_ORIGINAL_HOOK_DESCRIPTORS = _ORIGINAL_HOOKS
+_ORIGINAL_REVIEW_CALLBACK = _ORIGINAL_REVIEW
 
 
 def _assert_retained_generation_protocol() -> None:
@@ -103,6 +114,14 @@ def _assert_retained_generation_protocol() -> None:
         or SQLITE_INT_MAX != _ORIGINAL_SQLITE_LIMIT
         or _fields is not _ORIGINAL_FIELDS_READER
         or _assert_original_denials is not _ORIGINAL_DENIAL_CHECK
+        or _DENIALS is not _ORIGINAL_DENIAL_NAMES
+        or _FIELDS is not _ORIGINAL_FIELD_NAMES
+        or _HOOKS is not _ORIGINAL_HOOK_NAMES
+        or _REVIEW_TYPE is not _ORIGINAL_REVIEW_TYPE
+        or _ORIGINAL_DENIALS is not _ORIGINAL_DENIAL_DESCRIPTORS
+        or _ORIGINAL_FIELDS is not _ORIGINAL_FIELD_DESCRIPTORS
+        or _ORIGINAL_HOOKS is not _ORIGINAL_HOOK_DESCRIPTORS
+        or _ORIGINAL_REVIEW is not _ORIGINAL_REVIEW_CALLBACK
     ):
         raise RetainedMemoryGenerationRejected(
             "retained generation parser or review helper changed"
