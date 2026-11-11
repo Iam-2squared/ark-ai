@@ -74,7 +74,7 @@ def _protocol() -> None:
     _LIFECYCLE_PROTOCOL()
     if (
         _protocol is not _ORIGINAL_PROTOCOL
-        DetachedProposalBatchSnapshot is not _REPORT
+        or DetachedProposalBatchSnapshot is not _REPORT
         or vars(_REPORT).get("__init__") is not _REPORT_INIT
         or any(
             vars(_REPORT).get(name) is not original
