@@ -12,7 +12,7 @@ import unicodedata
 from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
-from threading import Lock
+from threading import RLock
 from types import MappingProxyType
 
 from .contracts import (
@@ -30,7 +30,7 @@ SQLITE_INT_MAX = (1 << 63) - 1
 # Match the opt-in coherent snapshot row bound. A ranked lexical search must
 # never hydrate an unbounded namespace before applying its small result limit.
 _MAX_NAMESPACE_SEARCH_ROWS = 10_000
-_BOOTSTRAP_LOCK = Lock()  # process-local WAL setup; SQLite remains cross-process authority
+_BOOTSTRAP_LOCK = RLock()  # protects same-process first-open preflights and WAL setup
 # Preserve original result classes across synthetic constructor injection.
 _MEMORY_EVENT_RESULT_TYPE = MemoryEvent
 _MEMORY_RECORD_RESULT_TYPE = MemoryRecord
@@ -229,11 +229,18 @@ class SQLiteMemoryStore:
         if type(path) not in (str, type(Path())):
             raise MemorySchemaError("memory requires exact local path")
         self.path = Path(path)
-        _require_safe_memory_path(self.path, create=True)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        _require_safe_memory_path(self.path, create=True)
-        self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
-        self._initialize()
+        # Serialize the pre-create path fences with WAL bootstrap. Otherwise
+        # a competing initializer can observe the first connection's
+        # transient SQLite sidecar before its main-file creation is visible,
+        # incorrectly treating an ordinary same-process bootstrap as an
+        # orphaned sidecar. The reentrant lock preserves _initialize()'s
+        # independent serialization and never grants cross-process authority.
+        with _BOOTSTRAP_LOCK:
+            _require_safe_memory_path(self.path, create=True)
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            _require_safe_memory_path(self.path, create=True)
+            self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
+            self._initialize()
 
     def put(self, write: MemoryWrite, *, expected_revision: int = 0) -> MemoryRecord:
         if type(write) is not MemoryWrite or type(write.scope) is not MemoryScope:
