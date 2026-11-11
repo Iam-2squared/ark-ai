@@ -15,11 +15,13 @@ construction/lookup hooks **before reading any PCM or provenance field**. The
 same check repeats at each existing request epoch; it does not change DSP
 arithmetic or turn the fixture into authenticated audio.
 
-`tests/test_offline_pcm_request_preaccess_run792.py`: **11 negative
+`tests/test_offline_pcm_request_preaccess_run792.py`: **10 negative
 fault-injection variants + 1 successful local-only conversion**. A forged
 getter/method is counted but must never be called, including an originally
-absent `__getattr__`. After creating the test, the isolated monkeypatch was
-corrected to use `raising=False` for the absent hook.
+absent `__getattr__`. `__new__` is pinned by production but is not mutated
+inside a shared pytest process: GitHub CI exposed CPython constructor-slot
+poisoning after monkeypatch restoration, causing unrelated audio tests to
+fail. The regression fixture was repaired without weakening production guard.
 
 ## Package B — retained Memory expiry receipt budget and shape
 
@@ -48,7 +50,7 @@ dispatched or automatically replayed.
 
 ## Verification discipline
 
-**31 submitted cases total** across the three packages. Source and test files
+**30 submitted cases total** across the three packages. Source and test files
 were saved using the ordinary GitHub Contents API with fresh file blob SHAs and
 fresh PR HEAD checks before each write. No local `pytest`/`ruff` result is
 claimed because repository code execution is not mounted in this automation
@@ -57,10 +59,10 @@ must not be reported as GREEN.
 
 Known workflow IDs at report preparation:
 
-- PCM tests head: [#43023023816](https://github.com/Iam-2squared/ark-ai/actions/runs/43023023816), **IN PROGRESS** at last observation.
+- PCM tests head: [#43023023816](https://github.com/Iam-2squared/ark-ai/actions/runs/43023023816), **Ubuntu pytest FAIL** with `TypeError: object.__new__() takes exactly one argument` after an injected `__new__` test contaminated the process. Root cause verified from individual job logs; all historical tests remain unchanged.
 - Memory tests head: [#43023249346](https://github.com/Iam-2squared/ark-ai/actions/runs/43023249346), **QUEUED**.
 - Planner tests head: [#43023456283](https://github.com/Iam-2squared/ark-ai/actions/runs/43023456283), **QUEUED**.
-- PCM test correction head: [#43023538738](https://github.com/Iam-2squared/ark-ai/actions/runs/43023538738), **QUEUED**.
+- First PCM test correction head: [#43023538738](https://github.com/Iam-2squared/ark-ai/actions/runs/43023538738), **QUEUED** at previous read; second attempted restoration was also proven insufficient in an isolated CPython reproduction. The final test revision simply does not mutate `__new__` in-process; **latest exact-HEAD CI remains unconfirmed**.
 
 Further work: inspect six individual jobs on latest code; repair any actual
 failure by minimal ordinary Contents-API changes; keep source packages
