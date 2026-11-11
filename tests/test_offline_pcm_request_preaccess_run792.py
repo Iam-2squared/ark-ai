@@ -41,15 +41,22 @@ def test_replaced_input_slot_denied_without_reading_private_bytes(
 
     # Every patched attribute is inspected statically via vars(), not invoked.
     replacement = forbidden if slot.startswith("__") else property(forbidden)
-    with monkeypatch.context() as patch:
-        # __getattr__ is absent on the original dataclass; add it only
-        # inside this isolated fault-injection context.
-        patch.setattr(pcm.OfflinePcmConvertRequest, slot, replacement, raising=False)
-        with pytest.raises(
-            pcm.OfflinePcmConvertRejected,
-            match="request carrier changed before private bytes",
-        ):
-            pcm.convert_offline_pcm_mono16(request)
+    request_type = pcm.OfflinePcmConvertRequest
+    # Pytest restores inherited object.__new__ as an explicit class member;
+    # that breaks later legitimate dataclass construction. Reestablish the
+    # original *absence* of that hook after this synthetic fault injection.
+    original_new_absent = "__new__" not in vars(request_type)
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(request_type, slot, replacement, raising=False)
+            with pytest.raises(
+                pcm.OfflinePcmConvertRejected,
+                match="request carrier changed before private bytes",
+            ):
+                pcm.convert_offline_pcm_mono16(request)
+    finally:
+        if slot == "__new__" and original_new_absent:
+            delattr(request_type, "__new__")
     assert called == []
 
 
