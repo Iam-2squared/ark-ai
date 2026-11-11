@@ -104,6 +104,10 @@ _ORIGINAL_MAX_RECORDS = _MAX_RECORDS
 _ORIGINAL_MAX_CONTENT = _MAX_CONTENT
 _ORIGINAL_MAX_TOTAL = _MAX_TOTAL
 _ORIGINAL_MAX_SERIALIZED_BYTES = _MAX_SERIALIZED_BYTES
+_ORIGINAL_FIXTURE_NAMES = _FIXTURE_FIELDS
+_ORIGINAL_RESULT_NAMES = _RESULT_FIELDS
+_ORIGINAL_HOOK_NAMES = _CARRIER_HOOKS
+_ORIGINAL_DENIAL_NAMES = _PREVIEW_DENIAL_NAMES
 
 
 def _assert_original_preview_denials() -> None:
@@ -125,6 +129,10 @@ def _assert_original_preview_denials() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or json.loads is not _ORIGINAL_LOADS
+        or _FIXTURE_FIELDS is not _ORIGINAL_FIXTURE_NAMES
+        or _RESULT_FIELDS is not _ORIGINAL_RESULT_NAMES
+        or _CARRIER_HOOKS is not _ORIGINAL_HOOK_NAMES
+        or _PREVIEW_DENIAL_NAMES is not _ORIGINAL_DENIAL_NAMES
         or any(
             vars(cls).get(name) is not original
             for cls, names, originals in (
