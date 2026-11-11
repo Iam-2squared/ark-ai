@@ -56,6 +56,12 @@ class SyntheticProactiveStartupReview:
 
 _RESULT_TYPE = SyntheticProactiveStartupReview
 _ORIGINAL_FIELDS_FN = fields
+# Each independent reviewer can read private ledger/readiness state. A replaced
+# callback must be rejected before either reader is invoked, even if it returns
+# a value-equivalent synthetic receipt. This only pins in-process function
+# identity; it cannot authenticate clocks, storage or user consent.
+_ORIGINAL_STARTUP_REVIEW = review_synthetic_startup_lease
+_ORIGINAL_TRIGGER_REVIEW = review_prepared_trigger_freshness
 _AUTHORITY_NAMES = (
     "startup_authorized", "notification_authorized",
     "dispatch_authorized", "automatic_replay_authorized",
@@ -83,6 +89,8 @@ def _require_original_authorities() -> None:
     if (
         SyntheticProactiveStartupReview is not _RESULT_TYPE
         or fields is not _ORIGINAL_FIELDS_FN
+        or review_synthetic_startup_lease is not _ORIGINAL_STARTUP_REVIEW
+        or review_prepared_trigger_freshness is not _ORIGINAL_TRIGGER_REVIEW
         or _epoch is not _ORIGINAL_EPOCH_FN
         or _snapshot_epoch is not _ORIGINAL_SNAPSHOT_EPOCH_FN
         or any(
@@ -100,7 +108,7 @@ def _require_original_authorities() -> None:
         )
     ):
         raise SyntheticProactiveStartupRejected(
-            "proactive authority descriptor epoch changed before review"
+            "proactive input, source or retained review callback changed before review"
         )
 
 
