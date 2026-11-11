@@ -1,3 +1,46 @@
+# LATEST — Run802 / 2026-11-12 JST
+
+**LATEST:** Four coherent **NON-UI / FREE-ONLY** source + regression packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), with **60 NEW submitted parameterized test cases**: (A) optional latest global CAS frontier for a one-transaction improvement-proposal batch snapshot; (B) strict, byte-bound canonical detached V3 preflight packet review with explicit no-authority flags; (C) exact-`int` untrusted clock parser limits; (D) privacy-preserving Context revocation SQLite WAL/SHM/journal alias/orphan preflight. First new Proposal test-bearing CI exposed **2 new test error-message mismatches** in actual Ubuntu logs; minimum **test-only** repair saved preserving fail-closed behavior and checking the original stale-CAS `__cause__`. Full latest Run802 HEAD six-job GREEN **NOT YET VERIFIED**. ARK/JARVIS overall **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation wall-clock):** Asia/Tokyo/JST **2026-11-12T08:02:27+09:00**. This is not the GitHub commit time, trusted audit/action time, owner consent, model identity, independent dataset provenance or physical-PC evidence.
+
+## Branch / PR / exact state
+
+- **Initial work-basis HEAD:** `2eccddaa3dac2666e0d6a8fc01e9af1420562e50` on `research/jarvis-foundations`, PR #8 OPEN/DRAFT/UNMERGED. Earlier exact-head CI [#43107145199](https://github.com/Iam-2squared/ark-ai/actions/runs/43107145199) **GREEN 6/6** (Windows/Ubuntu × Python 3.11/3.12/3.13), verified from six final job statuses; this is **prior-basis GREEN ONLY**, not the new code.
+- **Checkpoint-write basis HEAD (re-read immediately before normal Contents API mutation):** `b34c639826d28501f35c7189798d11eb54d7e096`. Previous status blob SHA `70e8bdacc02f38ffb26d36a8f7f33d216706f428`. Source/test/report content saved at this basis, PR #8 HEAD previously matched the live branch/ref.
+- **Checkpoint-result-HEAD wording:** The checkpoint update creates an additional commit only after GitHub accepts the normal Contents API write. The checkpoint-write basis HEAD above is **NOT** the checkpoint-result HEAD. After acceptance, take the result commit + blob SHA from GitHub, then independently re-read live branch/PR/ref and status blob; never speculate in this file about its own resulting commit SHA.
+- PR #5 OPEN/DRAFT/UNMERGED, HEAD `805b377697472268db02650a89c7a94b1c5337c8`, frozen V3 Contract 1, protected V2 evaluation and paid-compute boundaries unchanged.
+- PR #9 OPEN/DRAFT/UNMERGED, HEAD `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, **UNTOUCHED; ALL UI/FRONTEND WORK PAUSED**.
+
+## NEW saved work this invocation — four independent packages + evidence
+
+1. **Improvement Proposal latest-frontier CAS batch (9 cases):** `src/ark/agency/disconnected_proposal_snapshot_bundle.py` `e497b5adc792b88f9ef3b8a19c903f67313d3261`; `tests/test_disconnected_proposal_latest_frontier_run802.py` `062e18f948c888541fcc686a755e695913ec8527` and semantics-preserving assertion repair `26d239db99f83518fe5636b5f283be0e90a13dcd`. Exact optional `require_latest=True` requires held global witness equal the current one-transaction frontier; original default allows validated historical prefix. No permission, execution, human attestation or signing is inferred.
+2. **Detached V3 strict packet identity (35 cases):** new `src/ark/v3_detached_packet_review.py` `9e37888c96667b11b6d570480a0f0d1bc63542be`; `tests/test_v3_detached_packet_review_run802.py` `77d2faf0bd5300d32e1bb2e2137a167a72fb9b22`. Exact bytes ≤4096, UTF-8, canonical sorted ASCII JSON, no duplicate/unknown keys, no NaN/Inf; reuse existing *synthetic* numeric V3 cross-binding and SHA-256 of the complete supplied JSON bytes. Nothing launches GPU/Candidate, opens protected data or modifies PR #5.
+3. **Exact primitive synthetic-clock limits (3 cases):** `src/ark/agency/synthetic_clock_sequence_review.py` `087774f6eac607d9d2e54cb305b125ed0f580aa8`; `tests/test_synthetic_clock_exact_parser_bounds_run802.py` `7edcbcf320b2950a1e10245cdb15afed4ce74453`. Reject equal-valued hostile `int` subclasses at parser limits before comparison callback or caller iterator; no trusted clock or action rights.
+4. **Context revocation SQLite sidecars (13 cases):** `src/ark/personal_context_revocation_review.py` `5fc5799aac7a2d27ed1e94bd0ec4a9c6e74547d7`; `tests/test_privacy_revocation_sidecar_fence_run802.py` `2bb01cd3276accf46b75345c7fd8ff7f42ffe41f`. Deny suspicious -wal/-shm/-journal aliases/special files and orphaned files on missing ledger; ordinary regular single-link current sidecars allowed. This does NOT guarantee race-free cross-process path custody, privacy consent or irreversible erasure.
+5. **Technical evidence report:** `docs/JARVIS_RUN802_NON_UI_PROPOSAL_FRONTIER_V3_PACKET_CLOCK_PRIVACY.md` saved in commit `b34c639826d28501f35c7189798d11eb54d7e096`. Preserves actual CI failure diagnosis, exact commit evidence and blocked authority.
+
+## CI / test evidence with exact runs
+
+- Previous Run801 latest [#43107145199](https://github.com/Iam-2squared/ark-ai/actions/runs/43107145199) **GREEN 6/6** — unchanged earlier HEAD, only valid as the Run802 starting gate.
+- New Proposal test-bearing [#43114505982](https://github.com/Iam-2squared/ark-ai/actions/runs/43114505982) **FAILED**. Actual Ubuntu Python 3.11 logs job `130838858427`, V3-source [#43114849234](https://github.com/Iam-2squared/ark-ai/actions/runs/43114849234) job `130840055832`, and V3-tests [#43114989099](https://github.com/Iam-2squared/ark-ai/actions/runs/43114989099) job `130840547099` each exposed the SAME 2 new test message assertions: expected public error string `stale`, actual public error `coherent proposal batch inspection rejected` wrapping the underlying `DisconnectedProposalStoreRejected('stale ...')`. **Source behavior was already deny-only**. Tests now verify public rejection plus nested underlying cause; earlier failures are NOT the fixed HEAD's result.
+- Fixed Proposal [#43115781186](https://github.com/Iam-2squared/ark-ai/actions/runs/43115781186) **QUEUED** at last check. Clock-tests [#43115339336](https://github.com/Iam-2squared/ark-ai/actions/runs/43115339336) **IN PROGRESS** with older Proposal assertion failures in Ubuntu jobs; privacy tests [#43115613452](https://github.com/Iam-2squared/ark-ai/actions/runs/43115613452) **QUEUED/STARTING**. Report [#43116200556](https://github.com/Iam-2squared/ark-ai/actions/runs/43116200556) **QUEUED**. Their exact SHAs differ; neither result is six-job proof for this checkpoint.
+- **Latest checkpoint-result CI run ID unknown until after this update. Do not fabricate.** 60 parameterized regression cases **submitted**, not proven six-platform GREEN; no local full pytest/Ruff or physical Windows GGUF verification claimed.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1 and contamination/provenance/regression/reproducibility gates **unchanged**. PR #5 Draft, PR #9 Draft/untouched. No protected V2 final evaluation opened. No paid/potentially billable GPU/provider/API/service, new credentials/account, Candidate/weight generation or promotion, external tool/backend/notification, self-editing code execution, automatic COMMIT-UNKNOWN replay, human-review authorization, destructive/irreversible action, physical-PC action, or main merge performed. Local SHA-256 and file preflight cannot authenticate independent provenance, consent, paid-cost approval, cross-store atomicity or OS-path race freedom.
+
+## Next plan / 今後の方針
+
+1. Verify six CI jobs for **actual checkpoint-result HEAD**, not older intermediate commits. If FAIL, inspect first concrete job log, apply only smallest semantics-preserving correction on normal GitHub write path; while CI runs, switch to another independent non-UI lane. Do not rerun duplicate workflows.
+2. Expand isolated Memory CAS/ABA/expiry and COMMIT-UNKNOWN manual recovery, Planner persisted terminal/UNKNOWN quarantine, and privacy-safe coherent snapshots. Maintain exact-head GREEN gates before integration.
+3. Review clock, packet and SQLite sidecar interprocess/reentrant issues against real CI; after the current V3 packet code path finishes CI, consider pinning its strict JSON helper callbacks to import originals, without claiming signatures or training authority.
+4. Advance registry-bound exact PermissionGate and audit-before-action with disconnected/mock executor only after lower-level invariants are independently GREEN. Preserve one-shot restart/occurrence fences and strict deny-by-default.
+5. Continue free-only observation/proactive/Personal Context/V3 guards, freeze all UI and PR #9, preserve PR #5 protected gate. Overall ARK/JARVIS **NOT_PASSED**.
+
+---
+
 # LATEST — Run801 / 2026-11-12 JST
 
 **LATEST:** Three meaningful **NON-UI / FREE-ONLY** work packages saved in [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) Memory bootstrap/preflight same-process serialization, (B) narrow proactive transient zero-link SQLite journal recheck preserving hardlink/symlink denial, and (C) SQLite action audit bootstrap/preflight same-process serialization. **Six NEW committed synthetic regression cases** (1 Memory + 4 Proactive + 1 Audit), with one Ruff import-only correction after observed CI failure. Technical report saved. **Latest exact-head six-job GREEN NOT YET VERIFIED.** ARK/JARVIS overall **NOT_PASSED**.
