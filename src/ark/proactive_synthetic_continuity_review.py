@@ -66,6 +66,14 @@ _ORIGINAL_WITNESS_VALIDATOR = SyntheticTriggerWitness.assert_integrity
 # including one installed reentrantly after the first source observation,
 # must be denied before any private rows are passed into it.
 _ORIGINAL_SCHEMA_VALIDATE = _validate
+# Private trigger rows are serialized and SHA-256 hashed under an exact local
+# codec. Accept a smaller test-only row budget, never a larger production one.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_ROWS = _ROWS
+_ORIGINAL_MAX_WITNESS_ROWS = _MAX_WITNESS_ROWS
 # A frozen witness can still acquire executable class descriptors and lookup
 # hooks. Capture the ORIGINAL slots before untrusted caller code can replace
 # them, and check them before reading retained private history or opening
@@ -86,6 +94,13 @@ def _require_original_witness_carrier() -> None:
     if (
         SyntheticTriggerWitness is not _WITNESS_TYPE
         or _validate is not _ORIGINAL_SCHEMA_VALIDATE
+        or hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _ROWS is not _ORIGINAL_ROWS
+        or type(_MAX_WITNESS_ROWS) is not int
+        or not 0 <= _MAX_WITNESS_ROWS <= _ORIGINAL_MAX_WITNESS_ROWS
         or any(
             vars(_WITNESS_TYPE).get(name) is not original
             for names, originals in (
