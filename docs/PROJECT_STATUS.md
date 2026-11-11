@@ -1,4 +1,136 @@
-# LATEST — Run790 / 2026-11-11 JST
+# LATEST — Run791 / 2026-11-11 JST
+
+**LATEST:** Four non-UI/free-only work packages and **19 submitted new
+regression cases** were saved on
+[Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8):
+(A) proactive review callback compatibility restored after measured CI
+regression; the original race-detection contract remains active and
+three new synthetic callback tests were revised,
+(B) disconnected due-prefix witness/hash callback custody,
+(C) exact-type Memory retained-generation budget admission, and
+(D) exact-type PermissionGate original grant-budget custody.
+**No new actual ToolBackend dispatch, paid compute, model training,
+Candidate promotion, approved consent, automatic WRITE replay, or UI work.**
+ARK / JARVIS / V3 **NOT_PASSED**.
+The latest Run791 **exact HEAD six-job GREEN is not yet confirmed**.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T20:56:04.643+09:00** (repository checkpoint-writing
+wall clock, not an independently trusted clock or user authorization).
+
+## Branch, HEAD, PR and delivery bookkeeping
+
+- **Initial work-basis HEAD:** `4be0d71782c1ac0629cf264065093dccdfd48878`,
+  `research/jarvis-foundations`, PR #8 **OPEN/DRAFT/UNMERGED**.
+- Prior source/test/checkpoint CI
+  [#43007372724](https://github.com/Iam-2squared/ark-ai/actions/runs/43007372724):
+  **COMPLETED/GREEN 6/6**, independently confirmed Windows/Ubuntu ×
+  Python 3.11–3.13 at work session start.
+- **Package A initial source:** `14e6c88e1c757b1bab3d8535053dde98f9efb1a9`;
+  first E501 message issue repaired at
+  `36e01a7bc6bf759390e299bcd2a73481e67a485c`, but actual CI
+  [#43014440234](https://github.com/Iam-2squared/ark-ai/actions/runs/43014440234)
+  produced **21 failed Ubuntu tests** due to conflict with required
+  synthetic fault-injection callback behavior. The proactive source was
+  **restored to its original byte-identical GREEN blob**
+  `36793a89a3bd4f64c72c883d78a201b865056edb` by commit
+  `45cc06d5d57cfcf9c395a7cc70b05ecd61cf3072`. This
+  run **does NOT claim the rejected early reviewer guard as implemented**.
+  Revised proactive fixture test at
+  `46763f78a7196246e0a5852874238e2e68afa6d4`: **3 cases**.
+- **Package B:** source `f004a6bdc9ed9a7496443854e098c92485274f7e`
+  `src/ark/agency/disconnected_due_prefix_review.py`;
+  tests `b4c4debb45e6f9aaf76587818826190527f1392f`
+  `tests/test_due_prefix_callback_custody_run791.py`: **6 cases**.
+- **Package C:** source `f18d1d55c8bfbf525eabf9f9829b84d4642d7b9a`
+  `src/ark/memory/retained_generation_fence.py`;
+  tests `b3fedda337d6a0492c6d57ee13cc7e4e269afa97`
+  `tests/test_memory_generation_budget_carriers_run791.py`: **6 cases**.
+- **Package D:** source `05d8753e8d72f74e4e93d8162aee57e1f04b8f3d`
+  `src/ark/agency/policy.py`;
+  tests `ce341ddf64f169d7dc1cf26a81e6f7a5784b2dcd`
+  `tests/test_permission_grant_original_budget_custody_run791.py`: **4 cases**.
+- **Technical report:** `docs/JARVIS_RUN791_NON_UI_REVIEWER_CUSTODY_MEMORY_BUDGET.md`
+  revised at `d932ad7ff33ecf73a46d79da5bed396565ad9851`.
+- **Checkpoint-write basis HEAD re-read:** `d932ad7ff33ecf73a46d79da5bed396565ad9851`;
+  prior `docs/PROJECT_STATUS.md` blob `1839259cf6bec1ce29c36606f970e53aa585f5c0`.
+  The **checkpoint-result HEAD is created by the ordinary GitHub Contents
+  API after saving this text**, and cannot be truthfully predicted in its
+  own content. Verify returned commit SHA separately against live branch
+  and PR #8 HEAD; its own CI will require an independent check.
+
+## Exact-head CI — no borrowed success
+
+- Prior Run790 baseline [#43007372724](https://github.com/Iam-2squared/ark-ai/actions/runs/43007372724):
+  **6/6 GREEN**.
+- Interim Run791 heads
+  [#43014122417](https://github.com/Iam-2squared/ark-ai/actions/runs/43014122417),
+  [#43014177936](https://github.com/Iam-2squared/ark-ai/actions/runs/43014177936),
+  [#43014239808](https://github.com/Iam-2squared/ark-ai/actions/runs/43014239808),
+  [#43014293308](https://github.com/Iam-2squared/ark-ai/actions/runs/43014293308):
+  **6/6 FAILED**, initial proactive E501 verified in job logs.
+- Corrected-E501 but old-callback regression
+  [#43014440234](https://github.com/Iam-2squared/ark-ai/actions/runs/43014440234):
+  **Ubuntu 3/3 FAIL**, 21 failures in inspected job logs; Windows in progress
+  at inspection. Source restored rather than weakening earlier tests.
+- Memory test-head [#43014631815](https://github.com/Iam-2squared/ark-ai/actions/runs/43014631815)
+  **IN PROGRESS**; prior report-head
+  [#43014795731](https://github.com/Iam-2squared/ark-ai/actions/runs/43014795731)
+  **IN PROGRESS** at read.
+- Policy test-head [#43015359754](https://github.com/Iam-2squared/ark-ai/actions/runs/43015359754),
+  proactive-source-restore [#43015495732](https://github.com/Iam-2squared/ark-ai/actions/runs/43015495732),
+  revised-proactive-tests [#43015571003](https://github.com/Iam-2squared/ark-ai/actions/runs/43015571003),
+  revised technical report [#43015719642](https://github.com/Iam-2squared/ark-ai/actions/runs/43015719642):
+  all **QUEUED** at last read, not yet GREEN.
+- **19 newly submitted tests: GREEN NOT YET CONFIRMED**;
+  no local pytest/Ruff execution or manual duplicate workflow launch
+  is claimed. Review exact HEAD + individual six jobs before any PASS.
+
+## Frozen gates / blockers and safe readiness
+
+PR #5 remains **OPEN/DRAFT/UNMERGED** under its paid-compute and
+protected-evaluation gate; PR #9 remains **OPEN/DRAFT/UNMERGED, untouched**,
+all UI/frontend development PAUSED. Frozen V1/V2/Local UI/Launcher
+contracts and evidence, V3 Contract 1, protected V2 final evaluation,
+Candidate weight/artifact generation and promotion were **not modified
+or opened**. No external/billable GPU/API, new secrets/accounts,
+physical-PC action, real backend execution, automatic unknown-WRITE
+retry, destructive mutation or approval-required main merge.
+Locally retained SQLite SHA-256 hashes, interpreter-local descriptor
+guards and repeated diagnostics are NOT trusted external attestation,
+independent consent, secure sandbox, cross-store atomicity or proven
+real-world effects. Human/clock/occurrence authority remains blocked.
+
+## Next plan / 今後の方針
+
+1. Confirm **actual latest exact-source/test/report/checkpoint HEAD six-job CI**.
+   Diagnose any failure from individual job logs and apply minimal changes
+   by ordinary GitHub Contents API. If in-flight, work an independent module,
+   not the exact code path currently being validated.
+2. Advance **Memory** durable row/event integrity, global high-water,
+   generation CAS/ABA, expiry/coherent snapshot and manual-only
+   COMMIT-UNKNOWN recovery with independent retained evidence.
+3. Advance **Planner** terminal/crash persistence and deterministic
+   fault-injection fixtures. Preserve original proactive callback
+   race-injection seams; any new guard must coexist with these tests.
+4. Integrate only after exact prerequisite GREEN:
+   immutable **ToolRegistry + exact-type PermissionGate + durable one-shot
+   occurrence + trusted-clock audit-before-action**, exclusively through
+   disconnected mock executor; no real WRITE or automatic replay.
+5. Continue privacy-safe Personal Context, proactive occurrence/replay
+   diagnostics, fixture-only Observation and zero-cost V3 identity/path
+   approval guards on isolated lanes. Preserve UI pause and frozen gates.
+   **ARK/JARVIS/V3 remain NOT_PASSED.**
+
+## Historical status preservation
+
+The full prior Run790 and Run789 checkpoint text follows below;
+Run786-and-earlier full status remains unchanged at
+`docs/status_archive/PROJECT_STATUS_THROUGH_RUN786.md`. Historical
+and frozen evidence was not rewritten.
+
+---
+
+## Historical checkpoint — Run790 / 2026-11-11 JST
 
 **LATEST:** Three **FREE-ONLY / NON-UI** development packages saved on
 [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8):
