@@ -137,3 +137,40 @@ def test_substituted_store_scan_rejected_without_execution(
                 path, proposal_ids=(_A,), retained=genesis,
             )
     assert invoked == []
+
+@pytest.mark.parametrize(("target", "name"), (
+    ("report", "__new__"),
+    ("report", "__getattribute__"),
+    ("report", "__getattr__"),
+    ("batch", "_protocol"),
+    ("store", "_protocol"),
+    ("lifecycle", "_protocol"),
+))
+def test_snapshot_control_plane_rebinding_rejected_before_private_read(
+    tmp_path, monkeypatch, target, name,
+):
+    path, genesis = _new(tmp_path)
+    invoked = []
+
+    def replaced(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise RuntimeError("substituted snapshot callback must not run")
+
+    owner = {
+        "report": batch.DetachedProposalBatchSnapshot,
+        "batch": batch,
+        "store": store,
+        "lifecycle": batch.lifecycle,
+    }[target]
+    with monkeypatch.context() as patch:
+        patch.setattr(owner, name, replaced, raising=False)
+        with pytest.raises(
+            batch.DisconnectedProposalBatchRejected, match="protocol changed",
+        ):
+            batch.inspect_disconnected_proposal_batch(
+                path, proposal_ids=(_A,), retained=genesis,
+            )
+    assert invoked == []
+    assert store.inspect_disconnected_proposal_store(
+        path, proposal_id=_A,
+    ).witness == genesis
