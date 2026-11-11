@@ -42,13 +42,14 @@ def review(args):
     "field",
     ("start_frame", "end_frame", "start_sample", "end_sample", "active_frames"),
 )
-def test_reflective_nested_region_edit_during_final_digest_is_rejected(
+def test_nested_region_mutation_callback_is_refused_before_invocation(
     monkeypatch, field,
 ):
     args = fixture()
     region = args[2].regions[0]
     original = alignment.json.dumps
     touched = []
+    before = getattr(region, field)
 
     def mutate(*pos, **kw):
         touched.append(field)
@@ -56,23 +57,33 @@ def test_reflective_nested_region_edit_during_final_digest_is_rejected(
         return original(*pos, **kw)
 
     monkeypatch.setattr(alignment.json, "dumps", mutate)
-    with pytest.raises(alignment.OfflineAlignmentRejected, match="input changed"):
+    with pytest.raises(
+        alignment.OfflineAlignmentRejected, match="original alignment authority changed",
+    ):
         review(args)
-    assert touched == [field]
+    assert touched == []
+    assert getattr(region, field) == before
 
 
-def test_reflective_nested_region_replacement_during_digest_is_rejected(monkeypatch):
+def test_nested_region_replacement_callback_is_refused_before_invocation(monkeypatch):
     args = fixture()
     report = args[2]
     original = alignment.json.dumps
+    original_region = report.regions[0]
+    invoked = []
 
     def mutate(*pos, **kw):
+        invoked.append(True)
         object.__setattr__(report, "regions", (replace(report.regions[0]),))
         return original(*pos, **kw)
 
     monkeypatch.setattr(alignment.json, "dumps", mutate)
-    with pytest.raises(alignment.OfflineAlignmentRejected, match="input changed"):
+    with pytest.raises(
+        alignment.OfflineAlignmentRejected, match="original alignment authority changed",
+    ):
         review(args)
+    assert invoked == []
+    assert report.regions[0] is original_region
 
 
 def test_original_region_carrier_type_cannot_be_rebound(monkeypatch):
