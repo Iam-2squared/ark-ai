@@ -215,10 +215,12 @@ def test_bundle_reflective_carrier_swap_during_decode_is_rejected(
         return value
 
     monkeypatch.setattr(bundle_module, "_restore", swapped)
+    # A changed archive decoder is now refused before any callback can
+    # mutate a retained bundle; no earlier decoded carrier is trusted.
     with pytest.raises(
         bundle_module.SyntheticWritePlanBundleRejected,
-        match="changed during decode",
+        match="synthetic recovery bundle codec changed",
     ):
         bundle_module.restore_synthetic_write_plan_bundle(bundle)
-    assert injections == [True]
+    assert injections == []
     assert state[5].calls == 0
