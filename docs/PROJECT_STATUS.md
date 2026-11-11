@@ -1,3 +1,53 @@
+# LATEST — Run792 / 2026-11-11 JST
+
+**LATEST:** Three independent, free-only **non-UI** foundation packages and **30 submitted regression cases** are saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8):
+(A) exact import-original PCM request field/hook custody before synthetic private audio ingress (10 negative cases + one ordinary conversion),
+(B) retained Memory expiry receipt type/budget/digest validation before private SQLite reads (15 negative + one valid read-only case), and
+(C) detached Planner epoch preflight callback custody before recovery journal inspection (two negative + one valid read-only case).
+**All 30 are submitted, NOT certified six-job GREEN at this checkpoint.**
+No UI/frontend, real hardware, tool dispatch, paid service, training, external effects, consent, automatic WRITE retry, Candidate generation/promotion, protected V2 final evaluation, or main merge.
+ARK/JARVIS/V3 **NOT_PASSED**.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T21:54:37.365572213+09:00** (repository checkpoint preparation wall clock; not a trusted external clock or exact GitHub commit timestamp).
+
+## Branch / PR / exact-head bookkeeping
+
+- **Initial work-basis HEAD:** `4dfb39c47990cdb7f44f7c8a6eb8f82842fd99eb`, branch `research/jarvis-foundations`, PR #8 **OPEN/DRAFT/UNMERGED**.
+- **Checkpoint-write basis HEAD re-read:** `be87694d900ea717d28094f1fff1aa5cb7799645` (GitHub PR #8 at this checkpoint preparation).
+- **Status prior blob SHA:** `732bd1705188211c397bca051c51d43eda06753e`. This pre-existing Run791 plus historical content is retained after this section, unmodified.
+- **Checkpoint-result HEAD:** created only *after* GitHub Contents-API status replacement; not predictable from this text. Re-read the returned commit SHA against PR/branch HEAD and content blob separately.
+- PR #5 **OPEN/DRAFT/UNMERGED**, head `805b377697472268db02650a89c7a94b1c5337c8`; PR #9 **OPEN/DRAFT/UNMERGED and untouched**, head `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`.
+
+## NEW code and tests this invocation
+
+1. **PCM / Observation fixture preaccess.** `src/ark/offline_pcm_mono16.py` pins exact `OfflinePcmConvertRequest` class, 7 field descriptors and 4 construction/lookup hooks before any private PCM/provenance access, with repeated checks at existing epoch boundaries. Source commit `08dc3aaae53d17734d948aec61abe99e9e382fa2`. `tests/test_offline_pcm_request_preaccess_run792.py`: **11 cases** after final fix. The production `__new__` guard remains; `__new__` synthetic class patch was removed from shared-process pytest because it left CPython constructor slot poisoned.
+2. **Memory retained expiry preaccess.** `src/ark/memory/expiry_candidate_preview.py` rejects non-exact/invalid receipt time/count/bool/hash/limit before private SQLite access, without opening an erasure lane. Source commit `bcabafea19c0d33561cd2893f57e609fa776c8f1`. `tests/test_memory_expiry_retained_preaccess_run792.py`: **16 cases**.
+3. **Planner crash/epoch diagnostic preaccess.** `src/ark/agency/disconnected_planner_epoch_recheck.py` checks import-original recovery denial precheck and tail `assert_shape` before executing either. Keeps original two-sweep local diagnostic and no automatic replay. Source commit `3e960e2d380011528f891713767e5cc45acb3ba5`. `tests/test_planner_recheck_callback_preaccess_run792.py`: **3 cases**.
+4. **Run792 technical report:** `docs/JARVIS_RUN792_NON_UI_PCM_MEMORY_EXPIRY_PLANNER_CALLBACK_CUSTODY.md`, revised after real CI failure to preserve exact test count and no-PASS status, head `be87694d900ea717d28094f1fff1aa5cb7799645`.
+
+## CI / measured evidence (do not borrow GREEN)
+
+- **Run791 exact-head baseline:** [CI #43016042021](https://github.com/Iam-2squared/ark-ai/actions/runs/43016042021) **COMPLETED GREEN 6/6**, separately checked Windows/Ubuntu Python 3.11, 3.12, 3.13.
+- **Early Run792 PCM tests:** [#43023023816](https://github.com/Iam-2squared/ark-ai/actions/runs/43023023816) **Ubuntu Python 3.11 and 3.12 pytest FAILED** in inspected job logs; a test's mutation of inherited `__new__` contaminated the shared CPython process, causing many unrelated audio failures. The production guard was not relaxed; the unsafe *test injection* was removed. Later old test-head [#43023249346](https://github.com/Iam-2squared/ark-ai/actions/runs/43023249346) also had Ubuntu pytest FAIL with the same observed error.
+- [#43023456283](https://github.com/Iam-2squared/ark-ai/actions/runs/43023456283) Planner test head **IN PROGRESS/QUEUED**; [#43023538738](https://github.com/Iam-2squared/ark-ai/actions/runs/43023538738) earlier PCM test correction **QUEUED** at last check.
+- **Latest corrected PCM test head:** `1e071820c37b24d9cb88cb550b3ebd07e63effcd`, [CI #43023996716](https://github.com/Iam-2squared/ark-ai/actions/runs/43023996716) **QUEUED** at last individual-job read.
+- **Report head:** [CI #43024067253](https://github.com/Iam-2squared/ark-ai/actions/runs/43024067253) **QUEUED** at last read.
+- **No fresh six-job success on latest source/test/report/checkpoint HEAD** yet. No local pytest/Ruff execution or duplicate workflow reruns are claimed.
+
+## Immutable gates / blockers
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence and V3 Contract 1 remain untouched. The protected V2 final-evaluation gate is unopened. PR #5 paid-compute/real Candidate/human-review gates remain blocked; PR #9 new UI branch is Draft, untouched and all new UI/frontend development PAUSED. No external/billable GPU or APIs, new credentials, physical-PC action, autonomous promotion or approval-requiring main merge. Review-only mock/SQLite digests cannot establish trusted time, actual consent, external effects, non-replayable real-world action or independently authenticated provenance.
+
+## Next plan / 今後の方針
+
+1. Inspect **latest exact-head six-job CI** after queued jobs finish. On failure use **individual real job logs**, apply only minimal semantics-preserving fix via normal safe GitHub Contents API. Do not duplicate workflow runs.
+2. Continue **Memory** CAS/ABA, global append high-water/coherent snapshot/expiry, manual-only COMMIT-UNKNOWN recovery with independently retained evidence. Do not infer erasure authorization.
+3. Continue **Planner** durable terminal/restart journal and callback-race/UNKNOWN diagnostics; do not automatically retry ambiguous WRITE.
+4. After lower-level exact-head GREEN, join **ToolRegistry, PermissionGate, durable one-shot occurrence, audit-before-action** through *disconnected/mock* executor only. Process-local token spends are not durable approvals.
+5. Continue Personal Context privacy, proactive/observation fixture contracts and free-only V3 identity/path approval guards on separate reversible lanes; preserve frozen gates and UI pause. **Overall NOT_PASSED.**
+
+---
+
 # LATEST — Run791 / 2026-11-11 JST
 
 **LATEST:** Four non-UI/free-only work packages and **19 submitted new
