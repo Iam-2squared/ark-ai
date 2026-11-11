@@ -113,8 +113,16 @@ def _epoch(value: SyntheticRetentionInventory) -> tuple[object, ...]:
     would follow that mutation and fail to notice it.
     """
     if type(value.items) is not tuple or any(
-        type(item) is not SyntheticRetentionItem for item in value.items
+        type(item) is not SyntheticRetentionItem
+        or type(item.memory_id) is not str
+        or type(item.revision) is not int
+        or item.revision < 1
+        or type(item.state) is not RetentionState
+        for item in value.items
     ):
+        # RetentionState extends str and bool extends int. Value-only epoch
+        # equality would accept e.g. "not_expired" in place of the enum,
+        # or True in place of revision 1, as a supposedly intact receipt.
         raise SyntheticRetentionRecheckRejected("exact cached retention item types required")
     head = tuple(
         getattr(value, field.name) for field in fields(SyntheticRetentionInventory)
