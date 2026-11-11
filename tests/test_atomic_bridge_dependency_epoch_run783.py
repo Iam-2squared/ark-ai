@@ -89,8 +89,11 @@ def test_bind_callback_cannot_swap_sha_before_request_digest(
             return result
 
         patch.setattr(registry, "bind", bind_then_swap)
+        # A nested fail-closed refusal may be normalized by the bridge's
+        # original ValueError boundary; neither path may run the forged hash.
         with pytest.raises(
-            AtomicPreactionRejected, match="registry intent digest or grammar changed",
+            AtomicPreactionRejected,
+            match="registry intent digest or grammar changed|registered intent binding refused",
         ):
             bridge.derive_registered_atomic_intent(
                 registry, call, occurrence_id="occ_" + "b" * 64,
