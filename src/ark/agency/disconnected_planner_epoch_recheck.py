@@ -63,10 +63,20 @@ _FIELDS = (
 _ORIGINAL_FIELDS = tuple(vars(_RESULT).get(name) for name in _FIELDS)
 _RECOVER = vars(SyntheticPlanJournal)["recover"]
 _STATUS_DIGEST = _plan_digest
+# The detached review's own preflight and tail-shape callbacks are mutable
+# Python module/class symbols. A substituted callback must not be invoked
+# before inspecting retained Planner identities or opening private SQLite.
+_ORIGINAL_DENIAL_PRECHECK = _require_original_recovery_denials
+_ORIGINAL_TAIL_SHAPE = vars(SyntheticPlanTail)["assert_shape"]
 
 
 def _originals() -> None:
-    _require_original_recovery_denials()
+    if (
+        _require_original_recovery_denials is not _ORIGINAL_DENIAL_PRECHECK
+        or vars(SyntheticPlanTail).get("assert_shape") is not _ORIGINAL_TAIL_SHAPE
+    ):
+        raise PlannerEpochRecheckRejected("Planner recheck reader epoch changed")
+    _ORIGINAL_DENIAL_PRECHECK()
     if (
         PlannerEpochRecheck is not _RESULT
         or _plan_digest is not _STATUS_DIGEST
