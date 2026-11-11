@@ -64,6 +64,11 @@ _DENIAL_NAMES = (
     "candidate_promotion_authorized",
 )
 _REPORT_ORIGINALS = tuple(vars(_REPORT)[n] for n in _REPORT_NAMES + _DENIAL_NAMES)
+_REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(n) for n in _REPORT_HOOKS)
+_ORIGINAL_DISPOSITIONS = (
+    OBSERVED_UNCHANGED, OBSERVED_EXACT_APPEND, MANUAL_REVIEW_REQUIRED,
+)
 _STORE_INSPECT = store.inspect_disconnected_proposal_store
 _STORE_HASH = store._hash
 _STORE_WITNESS = store._witness
@@ -73,18 +78,36 @@ _LIFECYCLE_ID = lifecycle._id
 _TIP_TYPE = lifecycle.DetachedProposalLifecycleTip
 _SNAPSHOT_TYPE = store.DetachedProposalStoreSnapshot
 _WITNESS_TYPE = store.DetachedProposalStoreWitness
+_STORE_PROTOCOL = store._protocol
+_LIFECYCLE_PROTOCOL = lifecycle._protocol
 
 
 def _protocol() -> None:
-    store._protocol()
-    lifecycle._protocol()
+    if store._protocol is not _STORE_PROTOCOL or lifecycle._protocol is not _LIFECYCLE_PROTOCOL:
+        raise OfflineProposalUnknownCommitRejected("proposal reconciliation protocol changed")
+    _STORE_PROTOCOL()
+    _LIFECYCLE_PROTOCOL()
     if (
-        OfflineProposalUnknownCommitReport is not _REPORT
+        _protocol is not _ORIGINAL_PROTOCOL
+        or OfflineProposalUnknownCommitReport is not _REPORT
         or vars(_REPORT).get("__init__") is not _REPORT_INIT
         or any(
             vars(_REPORT).get(name) is not original
             for name, original in zip(
                 _REPORT_NAMES + _DENIAL_NAMES, _REPORT_ORIGINALS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
+            )
+        )
+        or any(
+            now is not original
+            for now, original in zip(
+                (OBSERVED_UNCHANGED, OBSERVED_EXACT_APPEND, MANUAL_REVIEW_REQUIRED),
+                _ORIGINAL_DISPOSITIONS, strict=True,
             )
         )
         or store.inspect_disconnected_proposal_store is not _STORE_INSPECT
@@ -100,6 +123,9 @@ def _protocol() -> None:
         raise OfflineProposalUnknownCommitRejected(
             "proposal reconciliation protocol changed"
         )
+
+
+_ORIGINAL_PROTOCOL = _protocol
 
 
 def _tip_fields(value: lifecycle.DetachedProposalLifecycleTip | None) -> tuple | None:
@@ -127,7 +153,7 @@ def review_disconnected_proposal_unknown_commit(
     independent provenance. Every disposition requires manual reconciliation
     before any separate operation; none permits a WRITE replay.
     """
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     try:
         _LIFECYCLE_ID(proposal_id)
         before_count, before_digest = _STORE_WITNESS(retained_before)
@@ -159,7 +185,7 @@ def review_disconnected_proposal_unknown_commit(
     )
 
     def stable() -> None:
-        _protocol()
+        _ORIGINAL_PROTOCOL()
         if (
             _STORE_WITNESS(retained_before) != (before_count, before_digest)
             or (
