@@ -89,6 +89,15 @@ _ORIGINAL_SHA = _SHA
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_HASH = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_FIELDS_MAP = _FIELDS
+_ORIGINAL_FIELD_ITEMS = tuple(_FIELDS.items())
+_ORIGINAL_HOOKS = _HOOKS
+_ORIGINAL_SLOTS_MAP = _ORIGINAL_SLOTS
+_ORIGINAL_SLOT_TUPLES = tuple((cls, _ORIGINAL_SLOTS[cls]) for cls in _FIELDS)
+_ORIGINAL_DENIAL_NAMES = _DENIALS
+_ORIGINAL_REVIEW_FIELD_NAMES = _REVIEW_FIELDS
+_ORIGINAL_MATH_MODULE = math
+_ORIGINAL_MATH_ISFINITE = math.isfinite
 
 
 def _protocol() -> None:
@@ -101,6 +110,22 @@ def _protocol() -> None:
         or hashlib.sha256 is not _ORIGINAL_HASH
         or json.dumps is not _ORIGINAL_DUMPS
         or type(_MAX_BYTES) is not int or _MAX_BYTES != _ORIGINAL_MAX_BYTES
+        or _FIELDS is not _ORIGINAL_FIELDS_MAP
+        or tuple(_FIELDS) != tuple(cls for cls, _ in _ORIGINAL_FIELD_ITEMS)
+        or any(
+            _FIELDS.get(cls) is not fields
+            for cls, fields in _ORIGINAL_FIELD_ITEMS
+        )
+        or _HOOKS is not _ORIGINAL_HOOKS
+        or _ORIGINAL_SLOTS is not _ORIGINAL_SLOTS_MAP
+        or any(
+            _ORIGINAL_SLOTS.get(cls) is not slots
+            for cls, slots in _ORIGINAL_SLOT_TUPLES
+        )
+        or _DENIALS is not _ORIGINAL_DENIAL_NAMES
+        or _REVIEW_FIELDS is not _ORIGINAL_REVIEW_FIELD_NAMES
+        or math is not _ORIGINAL_MATH_MODULE
+        or math.isfinite is not _ORIGINAL_MATH_ISFINITE
         or any(
             vars(_REVIEW).get(name) is not old
             for name, old in zip(
