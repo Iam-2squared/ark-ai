@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import stat
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -260,6 +261,44 @@ def _validate(conn: sqlite3.Connection) -> None:
             )
 
 
+_SQLITE_SIDECARS = ("-wal", "-shm", "-journal")
+
+
+def _refuse_aliased_proactive_path(path: Path) -> None:
+    """Preflight the literal SQLite path; never follow a known local alias.
+
+    This read-only lstat fence does not defeat an attacker racing path swaps
+    between checks and SQLite open. No directory, file or sidecar is removed.
+    A missing main file is still handled by SQLite as before on read/write.
+    """
+    if type(path) is not type(Path(".")) or ".." in path.parts:
+        raise SyntheticTriggerRejected("proactive ledger path changed")
+    target = path if path.is_absolute() else path.absolute()
+    try:
+        for ancestor in target.parents:
+            parent = ancestor.lstat()
+            if not stat.S_ISDIR(parent.st_mode) or stat.S_ISLNK(parent.st_mode):
+                raise SyntheticTriggerRejected("unsafe proactive parent path")
+        try:
+            main = target.lstat()
+        except FileNotFoundError:
+            absent = True
+        else:
+            absent = False
+            if not stat.S_ISREG(main.st_mode) or main.st_nlink != 1:
+                raise SyntheticTriggerRejected("unsafe proactive SQLite file")
+        for suffix in _SQLITE_SIDECARS:
+            sidecar = target.with_name(target.name + suffix)
+            try:
+                info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if absent or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
+    except OSError as exc:
+        raise SyntheticTriggerRejected("proactive SQLite path unavailable") from exc
+
+
 class SyntheticProactiveLedger:
     """SQLite CAS-like admission for offline preparations, no execution."""
 
@@ -268,8 +307,10 @@ class SyntheticProactiveLedger:
         # SQLite open. Reject before opening or creating a local trigger store.
         if type(path) is not type(Path(".")):
             raise TypeError("synthetic proactive path must be an exact local Path")
+        _refuse_aliased_proactive_path(path)
         self.path = path
         with closing(sqlite3.connect(path, timeout=10, isolation_level=None)) as conn:
+            _refuse_aliased_proactive_path(path)
             conn.execute("BEGIN IMMEDIATE")
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
@@ -281,6 +322,7 @@ class SyntheticProactiveLedger:
                     conn.execute(_TABLE)
                     conn.execute("PRAGMA user_version=1")
                 _validate(conn)
+                _refuse_aliased_proactive_path(path)
                 if self.path is not path:
                     raise SyntheticTriggerRejected(
                         "proactive ledger path changed during initialization"
@@ -397,6 +439,7 @@ class SyntheticProactiveLedger:
             (scope, policy_hash, source_digest, observation_digest),
         )
         assert_digest_epoch()
+        _refuse_aliased_proactive_path(ledger_path)
         resolved = ledger_path.resolve()
         if self.path is not ledger_path:
             raise SyntheticTriggerRejected("proactive ledger path changed before opening")
@@ -410,6 +453,7 @@ class SyntheticProactiveLedger:
             # writer slot or making the first persistent schema read.
             if self.path is not ledger_path:
                 raise SyntheticTriggerRejected("proactive ledger path changed before opening")
+            _refuse_aliased_proactive_path(ledger_path)
             conn.execute("BEGIN IMMEDIATE")
             try:
                 if self.path is not ledger_path:
@@ -484,6 +528,7 @@ class SyntheticProactiveLedger:
                     raise SyntheticTriggerRejected("retained proactive witness changed")
                 if self.path is not ledger_path:
                     raise SyntheticTriggerRejected("proactive ledger path changed before commit")
+                _refuse_aliased_proactive_path(ledger_path)
                 _require_original_receipt_authority()
                 conn.commit()
                 # A successful COMMIT is durable even when a subsequent
@@ -533,8 +578,9 @@ class SyntheticProactiveLedger:
     def count(self) -> int:
         """Read-only count; a missing database is never recreated."""
         path_epoch = self.path
-        if not isinstance(path_epoch, Path):
+        if type(path_epoch) is not type(Path(".")):
             raise SyntheticTriggerRejected("proactive ledger path changed")
+        _refuse_aliased_proactive_path(path_epoch)
         resolved = path_epoch.resolve()
         if self.path is not path_epoch:
             raise SyntheticTriggerRejected("proactive ledger path changed before opening")
@@ -546,6 +592,7 @@ class SyntheticProactiveLedger:
         )) as conn:
             if self.path is not path_epoch:
                 raise SyntheticTriggerRejected("proactive ledger path changed before opening")
+            _refuse_aliased_proactive_path(path_epoch)
             conn.execute("BEGIN")
             try:
                 _validate(conn)
@@ -556,6 +603,7 @@ class SyntheticProactiveLedger:
                     raise SyntheticTriggerRejected(
                         "proactive ledger path changed during count"
                     )
+                _refuse_aliased_proactive_path(path_epoch)
                 conn.commit()
                 return result
             except BaseException:
