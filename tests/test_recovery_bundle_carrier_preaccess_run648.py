@@ -57,9 +57,11 @@ def test_digest_callback_cannot_patch_bundle_slot_before_decode(
             return digest
 
         patch.setattr(bundles, "_digest", poison)
+        # The codec is now rejected before invoking the substituted digest,
+        # rather than after it could install a hostile result descriptor.
         with pytest.raises(
             bundles.SyntheticWritePlanBundleRejected,
-            match="synthetic bundle carrier or denial changed",
+            match="synthetic recovery bundle codec changed",
         ):
             bundles.restore_synthetic_write_plan_bundle(report)
 
@@ -84,9 +86,11 @@ def test_capture_digest_callback_cannot_patch_result_constructor(
             return digest
 
         patch.setattr(bundles, "_digest", poison)
+        # The codec is now rejected before invoking the substituted digest,
+        # rather than after it could install a hostile result descriptor.
         with pytest.raises(
             bundles.SyntheticWritePlanBundleRejected,
-            match="synthetic bundle carrier or denial changed",
+            match="synthetic recovery bundle codec changed",
         ):
             bundles.bundle_synthetic_write_plan(review)
 
