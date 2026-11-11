@@ -371,7 +371,11 @@ class DisconnectedScheduleQuarantineLedger:
             try:
                 actual = _validate(conn, original_policy)
                 stable()
-                if type(actual) is not QuarantineWitness or actual != retained:
+                if (
+                    type(actual) is not QuarantineWitness
+                    or actual.count != retained.count
+                    or actual.chain_sha256 != retained.chain_sha256
+                ):
                     raise ScheduleQuarantineRejected("stale or changed quarantine witness")
                 result_epoch = (actual.count, actual.chain_sha256)
                 conn.commit()
@@ -446,7 +450,11 @@ class DisconnectedScheduleQuarantineLedger:
             try:
                 current = _validate(conn, original_epoch)
                 stable()
-                if current != retained:
+                if (
+                    type(current) is not QuarantineWitness
+                    or current.count != retained.count
+                    or current.chain_sha256 != retained.chain_sha256
+                ):
                     raise ScheduleQuarantineRejected("stale or rolled-back quarantine witness")
                 if index != current.count or current.count >= _MAX_ROWS:
                     raise ScheduleQuarantineRejected("out-of-order or duplicate quarantine")
@@ -462,7 +470,14 @@ class DisconnectedScheduleQuarantineLedger:
                 conn.execute("INSERT INTO quarantines VALUES(?,?,?,?,?)",
                              (seq, occurrence_id, due, observed_ms, chain))
                 result = QuarantineWitness(seq, chain)
-                if _validate(conn, original_epoch) != result:
+                # Do not invoke a caller-replaced dataclass __eq__ on
+                # the retained or recomputed witnesses.
+                checked = _validate(conn, original_epoch)
+                if (
+                    type(checked) is not QuarantineWitness
+                    or checked.count != result.count
+                    or checked.chain_sha256 != result.chain_sha256
+                ):
                     raise ScheduleQuarantineRejected("quarantine write lost integrity")
                 stable()
                 result_epoch = (result.count, result.chain_sha256)
