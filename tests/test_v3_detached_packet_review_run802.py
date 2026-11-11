@@ -164,3 +164,28 @@ def test_crossbind_dependency_substitution_never_called(monkeypatch):
         ):
             mod.review_detached_v3_packet(_encode(_payload()))
     assert called == []
+
+@pytest.mark.parametrize(("target", "name"), (
+    ("packet", "_pairs_unique"),
+    ("packet", "_nonfinite"),
+    ("packet", "_fields"),
+    ("packet", "_protocol"),
+    ("crossbind", "_protocol"),
+))
+def test_packet_parser_control_plane_substitution_refused_before_callback(
+    monkeypatch, target, name,
+):
+    invoked = []
+
+    def replaced(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise RuntimeError("untrusted parser callback must not run")
+
+    owner = mod if target == "packet" else mod.crossbind
+    with monkeypatch.context() as patch:
+        patch.setattr(owner, name, replaced)
+        with pytest.raises(
+            mod.DetachedV3PacketRejected, match="protocol changed",
+        ):
+            mod.review_detached_v3_packet(_encode(_payload()))
+    assert invoked == []
