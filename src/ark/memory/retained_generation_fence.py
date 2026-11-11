@@ -78,6 +78,15 @@ def _fields(review: MemoryGenerationReview) -> tuple[object, ...]:
         or type(expected) is not int or not 0 <= expected <= SQLITE_INT_MAX
         or type(reuse) is not bool
         or reuse is not (generations > 1 and live == expected)
+        # Every historical lifetime needs a create; every earlier lifetime
+        # needs a terminal event. A live revision R needs R-1 updates in
+        # its current lifetime. Reject geometrically impossible retained
+        # observations BEFORE reviewing private SQLite history.
+        or (generations == 0 and (events != 0 or live is not None))
+        or (generations > 0 and events < (
+            2 * generations - 1
+            + (live - 1 if live is not None else 1)
+        ))
         or type(digest) is not str or _SHA.fullmatch(digest) is None
     ):
         raise RetainedMemoryGenerationRejected("invalid retained generation fields")
