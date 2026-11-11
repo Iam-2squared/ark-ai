@@ -101,7 +101,7 @@ def _recovery_image(recovered: SyntheticPlanRecovery) -> tuple[object, ...]:
         # An invalid state, duplicate step, unsorted row or bool revision must
         # never be classified as merely a benign stale Planner snapshot.
         or any(
-            not 1 <= len(item[0]) <= 128
+            not item[0].strip()
             or item[1] not in (
                 "pending", "running", "succeeded",
                 "failed", "blocked", "cancelled",
