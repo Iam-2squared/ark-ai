@@ -1,3 +1,52 @@
+# LATEST — Run799 / 2026-11-12 JST
+
+**LATEST:** Four coherent **NON-UI / FREE-ONLY** work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (1) actual Run798 6-job CI failure forensics and semantics-preserving Planner WRITE restart repair with old fault-injection expectations retained; (2) six synthetic concurrent proposal SQLite global-CAS regression cases; (3) new coherent read-only multi-proposal SQLite snapshot and 13 test cases; (4) proactive SQLite main/ancestor/sidecar alias preflight and 12 test cases. **31 NEW submitted cases in this invocation**, plus Run798 regression expectation repair. Latest exact-head all-six CI GREEN is **NOT YET CONFIRMED**. ARK/JARVIS overall **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation local clock):** Asia/Tokyo/JST **2026-11-12T05:06:14+09:00**. Observed local wall-clock only; NOT trusted execution/audit time, human authorization, model/runtime identity or GitHub commit time.
+
+## Branch / PR / exact state
+
+- **Initial work-basis HEAD:** `0aae0b199d831c4dbed3c089e9f3881162141fe1` on `research/jarvis-foundations`; Draft PR #8 OPEN/DRAFT/UNMERGED.
+- **Checkpoint-write basis HEAD (re-read immediately before Contents API mutation):** `8e1a2adf0637c9200a1c6e133f794134ca4c76a0`. Previous status blob SHA `744ce56c2e17be998062a45eab05720b2a8fc072`.
+- **Checkpoint-result-HEAD wording:** This write creates its result commit only after GitHub accepts it. The basis HEAD above is NOT the checkpoint-result HEAD. The result commit must be taken from the Contents API response and separately compared against live branch/PR HEAD and status blob after mutation.
+- PR #5 OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; frozen V3 Contract 1 and protected V2 evaluation remain unchanged.
+- PR #9 OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; **UNTOUCHED. ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+## NEW source / tests / report saved this invocation
+
+1. **Planner WRITE CI repair:** Original exact Run798 [CI #43083772796](https://github.com/Iam-2squared/ark-ai/actions/runs/43083772796) **FAIL 6/6**. Ubuntu job `130742760654` had 9 failing existing WRITE restart fault-injection expectations, 13,523 pass, 1 skip. Import-original denial descriptor rejection occurred too early and obscured original post-getter drift errors. Source `src/ark/agency/disconnected_write_restart_binding.py` fixed commit `a22179ec9bceb475dc39f561af42b513784be27e`: constructor/field/hook guards remain early; original false-only denial descriptors checked again after final caller callbacks and SQLite read. New Run798 test expectations updated `fe9aa0e1e7a7dd23abc8d2d394460285efd2bfda` for late descriptor or acquired authority rejection. Existing Run524/Run541 fault tests unchanged. Never releases UNKNOWN WRITE or grants ToolBackend.
+2. **Concurrent proposal global CAS:** `tests/test_disconnected_proposal_concurrent_cas_run799.py` saved `a9023e5355db41b450f2b38fa86c64b3af585b12`: **6 cases** (2/3/4 competing SQLite connections × same/different proposal IDs) requiring exactly one global-witness CAS winner, all others refused, no authority. Intermediate [CI #43091266118](https://github.com/Iam-2squared/ark-ai/actions/runs/43091266118) failed Ruff `I001` (test import spacing only); fix `803ee7a8158a72dee1e13544a4175b28b68de39a`.
+3. **Coherent multi-proposal readonly view:** Source `src/ark/agency/disconnected_proposal_snapshot_bundle.py` `763989cd589c82f472a889a2e45d8a603845fb34`; tests `tests/test_disconnected_proposal_batch_snapshot_run799.py` `1f57a99d84ec89e66ddfd6c02c7238cf8ef26db3`, **13 cases**. Exact unique tuple up to 32 IDs, one SQLite read-only snapshot and retained-prefix check; no code-change/training/retry/human-review authority. Ruff import-only failure in intermediate [CI #43091639374](https://github.com/Iam-2squared/ark-ai/actions/runs/43091639374) / [#43091760300](https://github.com/Iam-2squared/ark-ai/actions/runs/43091760300) fixed in test files with `803ee7a8158a72dee1e13544a4175b28b68de39a` and `dfa55c2829ff4bba7e3286f1332bebb6fa73c016`. No behavior or expected safety check weakened.
+4. **Proactive SQLite path custody:** Source `src/ark/proactive_synthetic_review.py` `668768d79a6c27229b73f028c07cf694019d3e43`; tests `tests/test_proactive_sqlite_alias_preaccess_run799.py` `db9896899dcb816dd0b2989aeae0f11ee01fae94`, **12 cases**. Known main/parent/sidecar symlink, main hardlink and orphan sidecars denied before SQLite operations; ordinary synthetic path still works. Read-only `lstat` checks only; no atomic race safety proof, no real notification/dispatch or filesystem destruction.
+5. **Detailed report:** `docs/JARVIS_RUN799_NON_UI_PLANNER_CI_PROPOSAL_BATCH_PROACTIVE_PATH.md` commit `8e1a2adf0637c9200a1c6e133f794134ca4c76a0`. All prior Run798 and earlier checkpoint history retained below.
+
+## Tests / CI at pre-checkpoint inspection
+
+- Last independently confirmed previous exact baseline: Run797 [CI #43071826276](https://github.com/Iam-2squared/ark-ai/actions/runs/43071826276), Windows+Ubuntu × Python 3.11–3.13 **GREEN 6/6**. This is NOT Run798/Run799 evidence.
+- Original Run798 [CI #43083772796](https://github.com/Iam-2squared/ark-ai/actions/runs/43083772796) **FAIL 6/6**, 9 existing failure-injection expectation mismatches diagnosed from Ubuntu logs.
+- [CI #43090923490](https://github.com/Iam-2squared/ark-ai/actions/runs/43090923490): 4/6 individual jobs GREEN, 0 FAIL, 2 IN PROGRESS/QUEUED as inspected. Planner CI repair code+test.
+- [CI #43091923275](https://github.com/Iam-2squared/ark-ai/actions/runs/43091923275): 3/6 individual jobs GREEN, 0 FAIL, 3 IN PROGRESS/QUEUED as inspected. corrected proposal concurrency/batch tests.
+- [CI #43092540731](https://github.com/Iam-2squared/ark-ai/actions/runs/43092540731): 3/6 individual jobs GREEN, 0 FAIL, 3 IN PROGRESS/QUEUED as inspected. proactive path source.
+- [CI #43092597442](https://github.com/Iam-2squared/ark-ai/actions/runs/43092597442): 2/6 individual jobs GREEN, 0 FAIL, 4 IN PROGRESS/QUEUED as inspected. proactive alias tests.
+- [CI #43092792834](https://github.com/Iam-2squared/ark-ai/actions/runs/43092792834): 1/6 individual jobs GREEN, 0 FAIL, 5 IN PROGRESS/QUEUED as inspected. technical report HEAD.
+- **31 new test cases submitted, not certified latest exact-head GREEN 6/6.** The checkpoint-result commit will enqueue a different CI run ID, not known before acceptance; do not invent it, manually duplicate runs or claim PASS from earlier heads.
+- No local integrated pytest/Ruff, physical target-PC GGUF, authenticated approval evidence or independent runtime attestation was asserted.
+
+## Frozen contracts / blockers / authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1, contamination/provenance/reproducibility/regression gates and protected V2 final evaluation unchanged. PR #5 Draft/unmerged; PR #9 Draft/unmerged/untouched. All actual action adapters and UI development remain disconnected or paused. No paid/potentially billable API/services or external GPU/compute, new account/credentials, real physical-PC action, Candidate/weight generation/promotion, protected evaluation opening, unknown WRITE replay, destructive change, trusted human approval or main merge. Local hash chains/SQLite retention witnesses do not establish trusted clock, consent, authenticated provenance, or cross-store atomicity.
+
+## Next plan / 今後の方針
+
+1. Review the checkpoint-result HEAD and **all six exact job outcomes**. On failure, inspect concrete job logs, repair via normal GitHub Contents API and maintain old fault-injection oracles; switch to another non-conflicting non-UI lane during CI.
+2. Strengthen Memory CAS/ABA, coherent row+event retention/expiry, and manual-only COMMIT-UNKNOWN diagnostics, without blind retry.
+3. Advance Planner terminal/recovery/WRITE quarantine and registry-bound durable PermissionGate + trusted-clock audit-before-action, integrating only isolated/mock executors after exact-head GREEN lower-level gates.
+4. Extend disconnected privacy-safe Personal Context, proactive observation and proposal retained witnesses; no external notification, training or action dispatch.
+5. Continue V3 free-only authorization/path/identity/reproducibility reviews on the reversible lane. Keep PR #5 gate and PR #9 UI pause; overall ARK/JARVIS **NOT_PASSED**.
+
+
+---
+
 # LATEST — Run798 / 2026-11-12 JST
 
 **LATEST:** Four independent **NON-UI / FREE-ONLY** work packages saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) synthetic proposal COMMIT-UNKNOWN **manual-only read-only triage** (19 submitted regression cases); (B) independent proactive recurrence/fingerprint oracle (109 cases); (C) private Context metadata carrier preaccess guards (21 cases); (D) durable Planner WRITE restart denial descriptor custody (13 cases). **162 total submitted cases; latest exact-head six-job CI GREEN NOT YET CONFIRMED.** A four-line Ruff E501 test formatting issue was identified from actual CI logs and corrected via the normal Contents API. Overall ARK/JARVIS **NOT_PASSED**.
