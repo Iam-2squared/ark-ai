@@ -1,7 +1,7 @@
 """Read-only recheck of a previously retained Planner recovery image.
 
 A later journal event makes a previously reviewed Planner snapshot stale.
-Even MATCH_AT_READ is not a lock, cross-store transaction, authorization,
+Even two matching local reads are not a lock, cross-store transaction, authorization,
 independent custody, real-effect proof or permission to replay a WRITE.
 """
 
@@ -112,10 +112,10 @@ def recheck_disconnected_planner_epoch(
     recovered: SyntheticPlanRecovery,
     retained: SyntheticPlanTail,
 ) -> PlannerEpochRecheck:
-    """Compare old vs one new coherent journal read, never authorize action.
+    """Compare retained recovery with two local journal reads; never dispatch.
 
-    The older independently retained tail is replay-checked by the original
-    journal reader. A concurrent commit after the read may still occur.
+    The independent earlier tail is replay-checked by the original journal
+    reader on each sweep. A commit after the final read may still occur.
     """
     _originals()
     if (
@@ -168,6 +168,28 @@ def recheck_disconnected_planner_epoch(
             or result.manual_review_required is not True
         ):
             raise PlannerEpochRecheckRejected("Planner recheck gained authority")
+        # A second original journal sweep catches a local commit that arrived
+        # while the first recovery was classified or the denial result was
+        # constructed. This is a finite read-only fence, not a durable lease.
+        second = _recovery_image(_RECOVER(journal, retained=retained))
+        _originals()
+        if (
+            second[1:] != current[1:]
+            or _recovery_image(recovered) != before
+            or retained_image != (
+                retained.topology_digest, retained.event_count,
+                retained.event_hash, retained.status_digest, retained.last_at_ms,
+            )
+            or type(result) is not _RESULT
+            or (
+                result.plan_id, result.retained_event_count,
+                result.observed_event_count, result.local_freshness,
+            ) != (current[3], before[4], current[4], local_freshness)
+        ):
+            raise PlannerEpochRecheckRejected(
+                "Planner changed across local recheck sweeps"
+            )
+        _originals()
         return result
     except (SyntheticPlanJournalRejected, TypeError, AttributeError) as exc:
         raise PlannerEpochRecheckRejected(
