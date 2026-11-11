@@ -254,8 +254,14 @@ class PlanGraph:
         return detached
 
     def ready_steps(self) -> tuple[PlanStep, ...]:
+        # A reentrant but valid transition during dependency/readiness
+        # inspection must not leave a stale runnable set. A consistent newer
+        # status dictionary is not the same snapshot as this read began with.
+        status_epoch = self._status_epoch
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during readiness preflight")
         ready: list[PlanStep] = []
         for step_id in sorted(self.steps):
             status = self._status[step_id]
@@ -266,6 +272,8 @@ class PlanGraph:
                 ready.append(self.steps[step_id])
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during readiness snapshot")
         return tuple(ready)
 
     def transition(
