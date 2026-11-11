@@ -72,10 +72,14 @@ _FIELDS = {
     _EVIDENCE: ("device", "reported_capacity_gib", "tokenizer_probe_sha256",
                 "peak_vram_mib", "peak_reserved_vram_mib", "wall_seconds"),
 }
+_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_SLOTS = {
-    cls: tuple(vars(cls).get(field) for field in fields + ("__init__",))
+    cls: tuple(vars(cls).get(field) for field in fields + _HOOKS)
     for cls, fields in _FIELDS.items()
 }
+_REVIEW_FIELDS = ("digest", "checks") + _HOOKS
+_ORIGINAL_REVIEW_FIELDS = tuple(vars(_REVIEW).get(n) for n in _REVIEW_FIELDS)
+_ORIGINAL_MAX_BYTES = _MAX_BYTES
 _DENIALS = (
     "independent_provenance_verified", "training_authorized",
     "paid_compute_authorized", "candidate_promotion_authorized",
@@ -96,11 +100,18 @@ def _protocol() -> None:
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or hashlib.sha256 is not _ORIGINAL_HASH
         or json.dumps is not _ORIGINAL_DUMPS
+        or type(_MAX_BYTES) is not int or _MAX_BYTES != _ORIGINAL_MAX_BYTES
+        or any(
+            vars(_REVIEW).get(name) is not old
+            for name, old in zip(
+                _REVIEW_FIELDS, _ORIGINAL_REVIEW_FIELDS, strict=True,
+            )
+        )
         or any(
             vars(cls).get(field) is not value
             for cls, fields in _FIELDS.items()
             for field, value in zip(
-                fields + ("__init__",), _ORIGINAL_SLOTS[cls], strict=True,
+                fields + _HOOKS, _ORIGINAL_SLOTS[cls], strict=True,
             )
         )
         or any(
@@ -120,6 +131,10 @@ def _numeric(value: object) -> float:
         raise DetachedV3PreflightRejected("unrepresentable V3 number") from exc
     if not math.isfinite(number) or number <= 0:
         raise DetachedV3PreflightRejected("nonfinite or nonpositive V3 number")
+    # A huge integer could otherwise round to another integer on conversion
+    # to float and spuriously match a different capacity/measurement.
+    if type(value) is int and int(number) != value:
+        raise DetachedV3PreflightRejected("precision-losing V3 integer")
     return number
 
 
@@ -208,7 +223,16 @@ def review_detached_v3_preflight(
          "wall_clock_budget"),
     )
     stable()
-    if type(result) is not _REVIEW or result.digest is not digest:
+    if (
+        type(result) is not _REVIEW
+        or type(result.digest) is not str
+        or result.digest != digest
+        or type(result.checks) is not tuple
+        or result.checks != (
+            "device", "capacity", "tokenizer_probe", "peak_vram_order",
+            "wall_clock_budget",
+        )
+    ):
         raise DetachedV3PreflightRejected("detached V3 review result changed")
     for denial in _DENIALS:
         stable()
