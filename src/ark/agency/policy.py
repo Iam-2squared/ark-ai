@@ -59,7 +59,11 @@ _ORIGINAL_GRANT_HOOKS = tuple(
 
 
 def _require_original_grant_validator() -> None:
-    if type(_MAX_GRANTS) is not int or _MAX_GRANTS != _ORIGINAL_MAX_GRANTS:
+    if (
+        type(_MAX_GRANTS) is not int
+        or type(_ORIGINAL_MAX_GRANTS) is not int
+        or _MAX_GRANTS is not _ORIGINAL_MAX_GRANTS
+    ):
         raise PermissionDenied("capability grant budget contract changed")
     if (
         CapabilityGrant is not _GRANT_TYPE
