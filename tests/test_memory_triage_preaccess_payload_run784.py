@@ -37,15 +37,15 @@ def test_invalid_reflectively_changed_proposal_never_opens_private_db(
     if mutation == "source_multibyte":
         object.__setattr__(proposed, "source_id", "あ" * 200)
     elif mutation == "source_surrogate":
-        object.__setattr__(proposed, "source_id", "broken\\ud800")
+        object.__setattr__(proposed, "source_id", "broken\ud800")
     elif mutation == "content_oversize":
         object.__setattr__(proposed, "content", "x" * 1_000_001)
     elif mutation == "content_surrogate":
-        object.__setattr__(proposed, "content", "broken\\ud800")
+        object.__setattr__(proposed, "content", "broken\ud800")
     elif mutation == "metadata_value_type":
         object.__setattr__(proposed, "metadata", {"key": object()})
     elif mutation == "metadata_surrogate":
-        object.__setattr__(proposed, "metadata", {"key": "bad\\ud800"})
+        object.__setattr__(proposed, "metadata", {"key": "bad\ud800"})
     elif mutation == "metadata_multibyte":
         object.__setattr__(proposed, "metadata", {"key": "あ" * 2000})
     elif mutation == "metadata_excess":
@@ -60,7 +60,7 @@ def test_invalid_reflectively_changed_proposal_never_opens_private_db(
         changed_scope = MemoryScope("owner", "private")
         object.__setattr__(
             changed_scope, "owner_id",
-            "あ" * 100 if mutation == "scope_multibyte" else "bad\\ud800",
+            "あ" * 100 if mutation == "scope_multibyte" else "bad\ud800",
         )
         object.__setattr__(proposed, "scope", changed_scope)
 
