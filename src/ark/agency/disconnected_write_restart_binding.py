@@ -126,12 +126,6 @@ def _assert_original_report_constructor() -> None:
                 _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
             )
         )
-        or any(
-            vars(_REPORT).get(name) is not original
-            for name, original in zip(
-                _REPORT_DENIAL_NAMES, _ORIGINAL_REPORT_DENIALS, strict=True,
-            )
-        )
     ):
         raise OfflineWriteRestartRejected("WRITE restart report constructor changed")
 
@@ -416,4 +410,18 @@ def review_disconnected_write_restart(
     stable()
     assert_fence()
     stable_report()
+    # Old fault-injection contracts exercise denied getters and their
+    # post-callback integrity checks. A pre-read check on the False-only
+    # descriptor conflicts with those established fail-closed contracts:
+    # validate original identity AFTER those final-denial callbacks instead.
+    # The result is never dispatched or granted authority by this review.
+    if any(
+        vars(_REPORT).get(name) is not original
+        for name, original in zip(
+            _REPORT_DENIAL_NAMES, _ORIGINAL_REPORT_DENIALS, strict=True,
+        )
+    ):
+        raise OfflineWriteRestartRejected(
+            "WRITE restart denial descriptor changed after review"
+        )
     return report
