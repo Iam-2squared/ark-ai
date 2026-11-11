@@ -262,14 +262,34 @@ def _check_path(path: object, *, create: bool) -> Path:
             info = ancestor.lstat()
             if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
                 raise OfflineContextReplayRejected("context ledger ancestor is unsafe")
+        main_absent = False
         try:
             info = path.lstat()
         except FileNotFoundError:
+            main_absent = True
             if not create:
                 raise OfflineContextReplayRejected("context ledger is missing") from None
         else:
             if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise OfflineContextReplayRejected("existing or aliased context ledger path")
+        # SQLite can also open companion journal/WAL/shared-memory files.
+        # An otherwise safe main path is not safe when one of those aliases
+        # a foreign private file. For a new ledger, refuse orphan sidecars.
+        # These are lstat preflights, NOT atomic directory-handle custody.
+        for suffix in ("-wal", "-shm", "-journal"):
+            companion = path.with_name(path.name + suffix)
+            try:
+                sidecar = companion.lstat()
+            except FileNotFoundError:
+                continue
+            if (
+                main_absent
+                or not stat.S_ISREG(sidecar.st_mode)
+                or sidecar.st_nlink != 1
+            ):
+                raise OfflineContextReplayRejected(
+                    "context ledger SQLite sidecar is missing its main file or unsafe"
+                )
     except OSError as exc:
         raise OfflineContextReplayRejected("context ledger path unavailable") from exc
     return path
