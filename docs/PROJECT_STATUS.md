@@ -1,3 +1,46 @@
+# LATEST — Run797 / 2026-11-12 JST
+
+**LATEST:** Three isolated **NON-UI / FREE-ONLY** source+test packages submitted to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) SQLite proposal event-store sidecar alias and creation refuse checks (**13 regression cases**); (B) detached improvement-proposal input/output/authority control-plane integrity (**8 cases**); (C) private Personal Context offline-preview validation-name pinning on build/reverify (**8 cases**). **Total 29 submitted cases. Latest exact-head CI 6/6 GREEN NOT YET VERIFIED.** ARK/JARVIS **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation clock):** Asia/Tokyo/JST **2026-11-12T02:47:56.862+09:00** (local wall-clock observation; not trusted audit time, GitHub commit time, human permission or runtime identity).
+
+## Branch / PR / exact state
+
+- **Initial work-basis HEAD:** `1d67981ae08c07fe52a3b08243e0ba2de59a0774` on `research/jarvis-foundations`, Draft PR #8 **OPEN/DRAFT/UNMERGED**.
+- **Checkpoint-write basis HEAD (PR HEAD re-read immediately before this Contents API write):** `29853aa8c9ec4cba12e29d500072c3574f0f70c8`. Previous checkpoint blob `115e046885f1c872e6a567cd68c16b778e7619f1`.
+- **Checkpoint-result-HEAD wording:** The Contents API assigns a new commit SHA *after* this write. Do not guess it in advance; verify the returned commit, PR/branch HEAD and status blob separately.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; frozen Contract 1 and protected V2 evaluation unchanged. PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, **UNTOUCHED; UI WORK PAUSED**.
+
+## NEW work saved this invocation
+
+1. **Local-only proposal SQLite sidecar safety:** source `src/ark/agency/disconnected_proposal_store.py` committed `b34b82ff130269dbd77e5c57db3d36a203f19b18`, tests `tests/test_disconnected_proposal_sidecars_run797.py` `35ca0ac02301b3418af1c8abccc923e29eb1e699`. **13 submitted cases.** Pre-/post-access `lstat` deny unsafe `-wal/-shm/-journal` symlinks, hardlinks, directories; creation refuses leftover sidecars. Legitimate regular single-link sidecars accepted for existing fixtures. Not TOCTOU proof or encrypted privacy; no sidecar destruction.
+2. **Disconnected improvement identity:** `src/ark/agency/disconnected_improvement_proposal.py` `e7bce11c4b145951ce56e2271546102c8c0a10bf`; tests `tests/test_disconnected_improvement_controlplane_run797.py` `c10b27385e6dc6dbae5eeb84e0388d3b6665ad0d`. **8 submitted cases.** Original input/output/denial field names and carrier constructor/access hooks pinned; deliberate tampering fails before proposal ingress. Never grants code edits, training or Candidate promotion.
+3. **Privacy-safe Personal Context preview:** `src/ark/personal_context_offline_preview.py` `895baed08c4e70e811c0062581b5f55f477e6d5b`; tests `tests/test_personal_context_preview_names_run797.py` `838e67accdb95b47698fceb31d862067577ec2d6`. **8 submitted cases.** Prevent replacement of private fixture/result/hook/denial validation name tuples on both local build and retained verify before reading private fixture values. No authenticated consent, external export or live Memory connection.
+4. **Technical limitations/evidence:** `docs/JARVIS_RUN797_NON_UI_SIDECAR_PROPOSAL_PRIVACY_CONTROL.md` committed `29853aa8c9ec4cba12e29d500072c3574f0f70c8` with exact saved commit pointers, privacy/race boundaries and CI. Historical Run796 and earlier checkpoint contents preserved below this heading.
+
+## CI / tests at last inspection
+
+- **Last exact baseline:** initial work-basis HEAD `1d67981ae08c07fe52a3b08243e0ba2de59a0774`, [CI #43063801165](https://github.com/Iam-2squared/ark-ai/actions/runs/43063801165) **GREEN 6/6** individually inspected (Ubuntu/Windows × Python 3.11–3.13). **Previous Run796 only**, not the 29 new tests.
+- **Package A tests:** [#43070479098](https://github.com/Iam-2squared/ark-ai/actions/runs/43070479098): **IN PROGRESS** when inspected.
+- **Package B tests:** [#43070958584](https://github.com/Iam-2squared/ark-ai/actions/runs/43070958584): **IN PROGRESS**.
+- **Package C tests:** [#43071346241](https://github.com/Iam-2squared/ark-ai/actions/runs/43071346241): **QUEUED**.
+- **Report exact HEAD:** [#43071595224](https://github.com/Iam-2squared/ark-ai/actions/runs/43071595224): **QUEUED**. Checkpoint new HEAD's run is not yet known; no duplicate run manually launched.
+- **29 tests are submitted, not certified by exact-head all-six CI.** No local fully integrated pytest/Ruff or physical-PC/model test claimed.
+
+## Frozen / blockers / hard gates
+
+V1/V2/Local UI/Launcher evidence and frozen V3 Contract 1, provenance/contamination/reproducibility gates, protected V2 final-evaluation unchanged. No paid/external GPU/APIs, new service or credential, real tool action, physical PC execution, authenticated human review, automatic uncertain WRITE replay, Candidate generation/promotion, destructive erasure, or main merge. All proposal state is **synthetic and non-authoritative**; SQLite metadata hashes/witnesses are not independently authenticated proof. UI remains PAUSED and PR #9 untouched.
+
+## Next plan / 今後の方針
+
+1. Inspect current exact-head six CI jobs. If FAIL, inspect concrete job failures and make smallest semantics-preserving change via normal GitHub Contents API; use independent non-UI lanes while CI runs.
+2. Improve locally verifiable proposal-store path/sidecar race defenses and independent witness continuity **without claiming trusted identity**; keep COMMIT-UNKNOWN manual reconciliation, never automatic retry.
+3. Continue **Memory CAS/ABA/coherent expiry/retained witness** and **Planner crash terminal/UNKNOWN WRITE quarantine**, with isolation from live tools and existing frozen evidence.
+4. Integrate Registry-bound exact PermissionGate, durable occurrence and trusted-clock audit-before-action only against disconnected mocks after exact-head GREEN; no real effects.
+5. Continue privacy lifecycle, proactive/observation back-end fixtures and free-only V3 identity guards; no new UI work. Overall **JARVIS NOT_PASSED**.
+
+---
+
 # LATEST — Run796 / 2026-11-12 JST
 
 **LATEST:** Two coherent, independent, free-only **NON-UI** implementation+test packages were saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) an isolated SQLite CAS event store for synthetic improvement proposals, with a retained global prefix and per-proposal revision, **17 submitted test cases**; (B) detached V3 preflight control-plane integrity guards with **9 submitted test cases**. A new technical limitations/evidence document was saved. **Total 26 submitted cases; latest exact-head all-six GREEN NOT YET CONFIRMED.** JARVIS **NOT_PASSED**.
