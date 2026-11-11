@@ -32,6 +32,27 @@ from .disconnected_schedule_quarantine_ledger import (
 
 _DOMAIN = b"ARK-offline-schedule-resume-review-v1\0"
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+
+
+def _require_original_schedule_review_codec() -> None:
+    """Keep synthetic recurrence hashing code fixed across review callbacks."""
+    if (
+        _SHA is not _ORIGINAL_SHA_PATTERN
+        or hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise ScheduleResumeRejected("offline resume digest or grammar authority changed")
+
+
 _DENIALS = (
     "trusted_clock_verified", "notification_authorized",
     "tool_execution_authorized", "automatic_replay_authorized",
@@ -89,6 +110,7 @@ _ORIGINAL_RESULT_HOOKS = tuple(
 
 
 def _require_original_result_carriers() -> None:
+    _require_original_schedule_review_codec()
     # Even a denied-only result can have executable slot or lookup hooks.
     # Reject those substitutions before touching the independent SQLite
     # history or evaluating caller-provided recurrence carriers.
@@ -363,10 +385,12 @@ def review_offline_schedule_resume(
              expected_occurrence, expected_due),
             separators=(",", ":"), ensure_ascii=True,
         ).encode("ascii")
+        stable()
         expected_fingerprint = hashlib.sha256(
             b"ARK-disconnected-schedule-preview-v1\0"
             + b"preview\0" + preview_payload
         ).hexdigest()
+        stable()
         if preview.fingerprint != expected_fingerprint:
             raise ScheduleResumeRejected("offline preview fingerprint disagrees with inputs")
         preview_epoch = (
@@ -401,7 +425,9 @@ def review_offline_schedule_resume(
         encoded = json.dumps(fields, separators=(",", ":"), ensure_ascii=True).encode(
             "ascii"
         )
+        stable()
         digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
+        stable()
         # Refuse an initializer replaced during preview/ledger/hash callbacks,
         # before executing any injected result-construction code.
         stable()
