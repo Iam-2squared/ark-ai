@@ -1,3 +1,47 @@
+# LATEST — Run793 / 2026-11-11 JST
+
+**LATEST:** Four independent, reversible, free-only **NON-UI** core packages and **27 newly submitted regression cases** are saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): Atomic pre-action intent/witness/snapshot descriptor custody (11), coherent multi-namespace Memory SQLite path/sidecar custody (5), Planner ready-step status epoch continuity (3), and privacy-safe Personal Context replay SQLite sidecar checks (8). The older Atomic CI failure was **measured, diagnosed, and repaired** without weakening the established recovery regression. **No latest exact-head six-job GREEN claim** is made at this checkpoint. Overall ARK/JARVIS/V3 **NOT_PASSED**.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T23:05:05.756+09:00** (checkpoint preparation wall clock observed at ordinary execution; NOT independently trusted time or GitHub commit timestamp).
+
+## Branch / PR / exact SHA accounting
+
+- **Initial work-basis HEAD:** `f0233f9e245a6766390160ed2795d905ec5ee4f6`, branch `research/jarvis-foundations`, PR #8 **OPEN / DRAFT / UNMERGED**.
+- **Checkpoint-write basis HEAD, re-read from live PR #8:** `9d784d625eb344f1bac8fc80980a986d498b6264`.
+- **Previous status Blob SHA:** `fdf5b25788cd12efb838049998c62df8fa1fc310`; the entire Run792 and earlier status text is preserved below this section, with no history deleted.
+- **Checkpoint-result HEAD wording:** the result commit does **not exist until after GitHub Contents API successfully saves this document**; therefore its SHA is not fabricated here. Verify the returned commit SHA against the subsequently fetched PR #8 and branch HEAD and verify this file's returned Blob SHA separately.
+- PR #5: **OPEN/DRAFT/UNMERGED**, head `805b377697472268db02650a89c7a94b1c5337c8`. PR #9: **OPEN/DRAFT/UNMERGED, untouched**, head `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; **NO NEW UI WORK**.
+
+## NEW saved work this invocation
+
+1. **Atomic intent/audit carrier integrity**: `src/ark/agency/disconnected_atomic_preaction_ledger.py`, source commit `1ced484850bbf85ca97007bbc30bd4ca4de00796`; `tests/test_atomic_carrier_preaccess_run793.py` commit `a1592614f140954bcffbac174c1c338feab5e6c8`: **11 cases**. Checks import-original claim/witness/receipt descriptors and deny-only snapshot hooks *before* corresponding local private audit scan. An over-broad genesis check initially broke a pre-existing higher-level injected-denial test, confirmed by real Ubuntu job logs. Minimal source-only repair at `1d9de812b73fadf64904489cccfcdfb0306e869f` scopes snapshot guard to private `_scan` while leaving claim/witness preaccess checks and established regression unchanged. This does not grant consent, ToolBackend dispatch, trusted time, or exactly-once real action.
+2. **Coherent Memory read path**: `src/ark/memory/coherent_snapshot_review.py` source `cc36e33f8c83fd6235590ee97c60998488d67d99`; `tests/test_memory_coherent_path_custody_run793.py` test commit `27959e7e97e298cc3a911698b0a7c62d992a25c5`: **5 cases**. Existing safe-path checks now run immediately before and after pathname resolution; reject post-init symlinked/aliased file/parent, hardlink, unsafe SQLite sidecar before accessing private multi-namespace data. This is local lstat-based path preflight, not atomic OS ancestry custody.
+3. **Planner readiness/terminal coherency**: `src/ark/agency/planner.py` source `45f55288554be1273f27d4aa427e07c0d8d94432`; `tests/test_planner_ready_epoch_run793.py` `f71f5425fbaa69702429ea738608917bc46827e1`: **3 cases**. Pin actual state epoch before ready-step validation; reject a valid concurrent/reentrant transition that would make the calculated runnable list stale. Existing terminal failure propagation remains tested. No persistence migration, Tool dispatch or automatic replay.
+4. **Personal Context private SQLite sidecars**: `src/ark/personal_context_replay_ledger.py` source `5bd86dbc25b28a8fcf52c001ae56ae33386a18ea`; `tests/test_context_replay_sidecar_custody_run793.py` `68dafd5032f78ae463aae584b2fc7b89f87be2e9`: **8 cases**. Refuse orphaned `-wal`/`-shm`/`-journal` at new-ledger creation, symlink/hardlink/nonregular companions at subsequent opens, without disclosure/retention change/real context reuse approval.
+5. **Run793 technical report**: `docs/JARVIS_RUN793_NON_UI_ATOMIC_CARRIER_MEMORY_PATH_PLANNER_READY_EPOCH.md` initially saved `ed88fe7289a9048354d519a4e3d485bd7fbaab7d`, updated to include fourth workstream, 27 cases and actual CI failure/fix at `9d784d625eb344f1bac8fc80980a986d498b6264`.
+
+## CI / exact-head tested evidence
+
+- **Previous complete baseline**: Run792 exact HEAD `f0233f9e245a6766390160ed2795d905ec5ee4f6`, [CI #43024567602](https://github.com/Iam-2squared/ark-ai/actions/runs/43024567602): **GREEN 6/6** (Windows/Ubuntu × Python 3.11, 3.12, 3.13), individually inspected. Do not borrow this status for current packages.
+- **Measured early Atomic regression**: [#43032612695](https://github.com/Iam-2squared/ark-ai/actions/runs/43032612695) and [#43032763003](https://github.com/Iam-2squared/ark-ai/actions/runs/43032763003) **Ubuntu pytest FAIL** in established `test_rebound_snapshot_authority_cannot_run_before_recovery`; logs show one existing test failing with correct higher-layer exception being intercepted by over-broad input guard. Fixed source commit `1d9de812...`, no test semantics weakened.
+- **Post-fix Atomic CI** [#43033428992](https://github.com/Iam-2squared/ark-ai/actions/runs/43033428992): **IN PROGRESS** at last read; updated Memory test [#43033162310](https://github.com/Iam-2squared/ark-ai/actions/runs/43033162310): **IN PROGRESS**.
+- Planner [#43033704500](https://github.com/Iam-2squared/ark-ai/actions/runs/43033704500): **QUEUED**; Context source [#43034168550](https://github.com/Iam-2squared/ark-ai/actions/runs/43034168550): **QUEUED**; Context tests [#43034309323](https://github.com/Iam-2squared/ark-ai/actions/runs/43034309323): **QUEUED**; latest updated technical report [#43034800214](https://github.com/Iam-2squared/ark-ai/actions/runs/43034800214): **QUEUED** at last observed.
+- **Current checkpoint and combined source/test exact-head CI is not yet six-job GREEN**, and all **27 cases are submitted, NOT certified** until actual per-job success is observed. No local pytest/Ruff/physical-PC testing claimed; no equivalent workflow reruns launched.
+
+## Frozen contracts / no new authorization
+
+Frozen V1/V2/Local UI/Launcher + Gate Runner evidence, protected V2 final evaluation, V3 Contract 1, approval/contamination/provenance/reproducibility gates and PR #5 stay untouched. Draft PR #9 new UI stays untouched/unmerged; all frontend development PAUSED. No paid/external GPU or API, new credentials/accounts, actual Candidate generation, training/promotion, protected-evaluation opening, external action, tool backend dispatch, irreversible/destructive change or approval-requiring main merge. Local SQLite hashes and Python object-descriptor pins do not authenticate actor/consent, prove external effects, guarantee atomic path custody, or make ambiguous WRITE retry safe.
+
+## Next plan / 今後の方針
+
+1. Inspect **the repaired Atomic and latest exact-head** six CI jobs, not workflow summary alone; use actual failing job logs for the smallest semantics-preserving fix, then work on another independent lane while CI runs. Never rerun duplicate equivalent CI.
+2. Advance Memory global event/high-water, CAS/ABA, coherent snapshots, expiry privacy and **COMMIT-UNKNOWN manual-only recovery**, retaining independent evidence without deducing author or retry permission.
+3. Advance Planner durable topology/terminal/restart journal and epoch-recheck diagnostics, with no silent ambiguous WRITE re-execution.
+4. After lower-level exact-head GREEN, join immutable ToolRegistry, exact PermissionGate, durable one-shot occurrence and audit-before-action through **disconnected/mock executor only**, preserving fail-closed startup.
+5. Continue privacy-safe Personal Context, Proactive/observation backend fixture contracts, and free-only V3 path/identity/approval guards as isolated reversible lanes. **Overall NOT_PASSED.**
+
+---
+
 # LATEST — Run792 / 2026-11-11 JST
 
 **LATEST:** Three independent, free-only **non-UI** foundation packages and **30 submitted regression cases** are saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8):
