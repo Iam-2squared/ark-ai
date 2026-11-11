@@ -104,9 +104,14 @@ def test_final_atomic_callback_cannot_retarget_prior_planner_image(
         return old_open(read_only=read_only)
 
     monkeypatch.setattr(ledger, "_open", change_during_last_atomic_read)
-    with pytest.raises(
-        EpochBoundAtomicTriageRejected, match="Planner recovery input epoch changed",
-    ):
+    # A changed recovered count can be rejected by the earlier Planner
+    # cross-store comparison; both outcomes must fail closed without dispatch.
+    message = (
+        "Planner changed across atomic review"
+        if mutation == "recovered_tail_value"
+        else "Planner recovery input epoch changed"
+    )
+    with pytest.raises(EpochBoundAtomicTriageRejected, match=message):
         review_epoch_bound_atomic_triage(*args)
     assert changed == [mutation]
     assert backend.calls == 0
