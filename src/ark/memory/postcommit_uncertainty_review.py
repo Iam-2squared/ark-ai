@@ -9,6 +9,7 @@ from __future__ import annotations
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from .contracts import (
     MemoryConflictError,
@@ -23,13 +24,15 @@ from .generation_fenced_cas import (
     MemoryGenerationCASRejected,
     MemoryGenerationCASToken,
     _digest,
+    _require_bounded_scope,
+    _require_bounded_source_id,
     _require_original_generation_inputs,
     _require_original_token_denials,
     _row_hash,
     _snapshot,
     _token_fields,
 )
-from .sqlite_store import SQLiteMemoryStore, deterministic_memory_id
+from .sqlite_store import SQLITE_INT_MAX, SQLiteMemoryStore, deterministic_memory_id
 
 _DOMAIN = b"ARK-memory-postcommit-manual-triage-v1\0"
 _DENIALS = (
@@ -168,6 +171,42 @@ def review_uncertain_memory_commit(
         # Reject a False-looking substituted getter before it can execute.
         _require_original_token_denials()
         before = _token_fields(retained_before)
+        # Reflective mutation of a frozen MemoryWrite must not let invalid
+        # private content, scopes, expiry or mapping callbacks reach SQLite.
+        # The opt-in CAS diagnostic uses the same UTF-8 byte limits as CAS;
+        # frozen Memory v1 contracts and public CRUD semantics are unchanged.
+        _require_bounded_scope(proposed.scope)
+        _require_bounded_source_id(proposed.source_id)
+        content_input = proposed.content
+        if (
+            type(content_input) is not str or not content_input.strip()
+            or len(content_input) > 1_000_000
+        ):
+            raise MemoryCommitTriageRejected("invalid bounded Memory triage content")
+        content_input.encode("utf-8", errors="strict")
+        expiry_input = proposed.expires_at_ms
+        if expiry_input is not None and (
+            type(expiry_input) is not int
+            or not 0 <= expiry_input <= SQLITE_INT_MAX
+        ):
+            raise MemoryCommitTriageRejected("invalid Memory triage expiry")
+        metadata_input = proposed.metadata
+        if (
+            type(metadata_input) not in (dict, MappingProxyType)
+            or len(metadata_input) > 64
+        ):
+            raise MemoryCommitTriageRejected("invalid Memory triage metadata mapping")
+        for key, value in metadata_input.items():
+            if (
+                type(key) is not str or not key.strip() or len(key) > 4096
+                or type(value) is not str or len(value) > 4096
+            ):
+                raise MemoryCommitTriageRejected("invalid Memory triage metadata")
+            if (
+                len(key.encode("utf-8", errors="strict")) > 4096
+                or len(value.encode("utf-8", errors="strict")) > 4096
+            ):
+                raise MemoryCommitTriageRejected("oversized Memory triage metadata")
         memory_id = deterministic_memory_id(proposed.scope, proposed.source_id)
         if memory_id != before[0]:
             raise MemoryCommitTriageRejected("retained token targets another row")
@@ -176,7 +215,7 @@ def review_uncertain_memory_commit(
         source, content = proposed.source_id, proposed.content
         expiry, carrier = proposed.expires_at_ms, proposed.metadata
         metadata = dict(carrier)
-    except (MemoryGenerationCASRejected, TypeError, ValueError) as exc:
+    except (MemoryGenerationCASRejected, TypeError, ValueError, UnicodeError) as exc:
         raise MemoryCommitTriageRejected("invalid retained Memory triage inputs") from exc
 
     def stable() -> None:
