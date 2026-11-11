@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from .planner import _plan_digest
 from .planner_journal_review import (
     SyntheticPlanJournal,
     SyntheticPlanJournalRejected,
@@ -61,12 +62,14 @@ _FIELDS = (
 )
 _ORIGINAL_FIELDS = tuple(vars(_RESULT).get(name) for name in _FIELDS)
 _RECOVER = vars(SyntheticPlanJournal)["recover"]
+_STATUS_DIGEST = _plan_digest
 
 
 def _originals() -> None:
     _require_original_recovery_denials()
     if (
         PlannerEpochRecheck is not _RESULT
+        or _plan_digest is not _STATUS_DIGEST
         or vars(SyntheticPlanJournal).get("recover") is not _RECOVER
         or any(
             vars(_RESULT).get(name) is not original
@@ -118,9 +121,47 @@ def _recovery_image(recovered: SyntheticPlanRecovery) -> tuple[object, ...]:
         or recovered.automatic_replay_authorized is not False
     ):
         raise PlannerEpochRecheckRejected("Planner image malformed or gained authority")
+    # A structurally plausible detached image can still have been edited
+    # without updating the canonical status digest bound to its tail. Verify
+    # status/tail coherence BEFORE journal access, not as ordinary staleness.
+    # The journal's exact PlanGraph.status_digest payload is used here; this
+    # is local image integrity, never independently authenticated evidence.
+    if any(
+        (state == "pending") != (revision == 0)
+        for _, state, revision in statuses
+    ):
+        raise PlannerEpochRecheckRejected("Planner status revision is inconsistent")
+    image_epoch = (
+        tail.topology_digest, tail.event_count, tail.event_hash,
+        tail.status_digest, tail.last_at_ms,
+    )
+    expected_status_digest = _STATUS_DIGEST(
+        "pstate_",
+        {
+            "schema_version": 1,
+            "topology_digest": image_epoch[0],
+            "statuses": [
+                {"step_id": step_id, "state": state, "revision": revision}
+                for step_id, state, revision in statuses
+            ],
+        },
+    )
+    _originals()
+    if (
+        recovered.tail is not tail
+        or recovered.step_statuses is not statuses
+        or recovered.ambiguous_running_steps is not running
+        or (
+            tail.topology_digest, tail.event_count, tail.event_hash,
+            tail.status_digest, tail.last_at_ms,
+        ) != image_epoch
+        or expected_status_digest != image_epoch[3]
+    ):
+        raise PlannerEpochRecheckRejected(
+            "Planner detached status digest or carriers changed"
+        )
     return (
-        tail, statuses, running, tail.topology_digest, tail.event_count,
-        tail.event_hash, tail.status_digest, tail.last_at_ms,
+        tail, statuses, running, *image_epoch,
     )
 
 
