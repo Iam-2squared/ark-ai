@@ -75,10 +75,52 @@ _ORIGINAL_DENIALS = tuple(
     vars(_MEMBERSHIP_RESULT_TYPE)[name] for name in _DENIAL_NAMES
 )
 
+# Membership is metadata-only, but caller-supplied frozen dataclass slots can
+# still be replaced with executable getters. Pin exact class and field/lookup
+# descriptors BEFORE reading a record, a veto, or constructing the result.
+# Deliberately do not pin SHA callbacks here: reentrant drift is separately
+# detected by epoch(), including fault-injection tests that swap the hasher.
+_RECORD_CARRIER = ContextRecordClaim
+_VETO_CARRIER = ContextScopeVetoClaim
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_CARRIER_FIELDS = (
+    (_RECORD_CARRIER, (
+        "record_id", "owner_digest", "scope_digest", "content_sha256",
+        "captured_at_ms", "expires_at_ms",
+    )),
+    (_VETO_CARRIER, (
+        "scope_digest", "revoked", "observed_at_ms", "continuity_sha256",
+    )),
+    (_MEMBERSHIP_RESULT_TYPE, (
+        "owner_digest", "record_count", "scope_count", "membership_sha256",
+    )),
+)
+_ORIGINAL_CARRIER_DESCRIPTORS = tuple(
+    tuple(vars(kind).get(name) for name in (*fields, *_CARRIER_HOOKS))
+    for kind, fields in _CARRIER_FIELDS
+)
+_ORIGINAL_CARRIER_FIELDS = _CARRIER_FIELDS
+_ORIGINAL_CARRIER_HOOK_NAMES = _CARRIER_HOOKS
+_ORIGINAL_DENIAL_NAMES = _DENIAL_NAMES
+
 
 def _require_original_denials() -> None:
     if (
         OfflineContextMembershipReview is not _MEMBERSHIP_RESULT_TYPE
+        or ContextRecordClaim is not _RECORD_CARRIER
+        or ContextScopeVetoClaim is not _VETO_CARRIER
+        or _CARRIER_FIELDS is not _ORIGINAL_CARRIER_FIELDS
+        or _CARRIER_HOOKS is not _ORIGINAL_CARRIER_HOOK_NAMES
+        or _DENIAL_NAMES is not _ORIGINAL_DENIAL_NAMES
+        or any(
+            vars(kind).get(name) is not original
+            for (kind, fields), originals in zip(
+                _CARRIER_FIELDS, _ORIGINAL_CARRIER_DESCRIPTORS, strict=True,
+            )
+            for name, original in zip(
+                (*fields, *_CARRIER_HOOKS), originals, strict=True,
+            )
+        )
         or any(
             vars(_MEMBERSHIP_RESULT_TYPE).get(name) is not original
             for name, original in zip(
