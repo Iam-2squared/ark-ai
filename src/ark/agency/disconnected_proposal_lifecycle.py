@@ -12,10 +12,10 @@ import json
 import re
 from dataclasses import dataclass
 
-_PROPOSAL_ID = re.compile(r"proposal_[0-9a-f]{64}\\Z")
-_DIGEST = re.compile(r"[0-9a-f]{64}\\Z")
+_PROPOSAL_ID = re.compile(r"proposal_[0-9a-f]{64}\Z")
+_DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _GENESIS = "0" * 64
-_DOMAIN = b"ARK-disconnected-proposal-lifecycle-v1\\0"
+_DOMAIN = b"ARK-disconnected-proposal-lifecycle-v1\0"
 _MAX_EVENTS = 256
 _ALLOWED = {
     "NONE": frozenset(("PROPOSED",)),
