@@ -23,6 +23,8 @@ from .personal_context_revocation_continuity_review import SyntheticRevocationWi
 from .personal_context_revocation_review import SyntheticContextRevocationLedger
 
 _MAX = 2**63 - 1
+_MAX_CACHED_ITEMS = 1000  # Same upper bound as the underlying inventory query.
+_HEX = frozenset("0123456789abcdef")
 
 
 class SyntheticRetentionRecheckRejected(RuntimeError):
@@ -112,11 +114,29 @@ def _epoch(value: SyntheticRetentionInventory) -> tuple[object, ...]:
     a subsequent SQLite review. A shallow tuple of the original item objects
     would follow that mutation and fail to notice it.
     """
-    if type(value.items) is not tuple or any(
+    if (
+        type(value) is not SyntheticRetentionInventory
+        or type(value.scope_digest) is not str
+        or len(value.scope_digest) != 64
+        or any(char not in _HEX for char in value.scope_digest)
+        or type(value.inventory_digest) is not str
+        or not value.inventory_digest.startswith("retention_")
+        or len(value.inventory_digest) != 74
+        or any(char not in _HEX for char in value.inventory_digest[10:])
+        or type(value.reviewed_at_ms) is not int
+        or not 0 <= value.reviewed_at_ms <= _MAX
+        or type(value.revoked) is not bool
+        or type(value.items) is not tuple
+        or len(value.items) > _MAX_CACHED_ITEMS
+    ):
+        raise SyntheticRetentionRecheckRejected(
+            "exact cached retention inventory fields required"
+        )
+    if any(
         type(item) is not SyntheticRetentionItem
         or type(item.memory_id) is not str
         or type(item.revision) is not int
-        or item.revision < 1
+        or not 1 <= item.revision <= _MAX
         or type(item.state) is not RetentionState
         for item in value.items
     ):
