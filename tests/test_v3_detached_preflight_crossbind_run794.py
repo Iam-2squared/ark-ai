@@ -75,9 +75,10 @@ def test_snapshot_and_evidence_cannot_be_subclassed_into_review():
     class Child(mod.DetachedV3Snapshot):
         pass
 
-    with pytest.raises(TypeError):
-        Child("cuda:0", 12.0, _SHA, 20)
-    # Exactness is required for the runtime, not merely matching string repr.
+    child = Child("cuda:0", 12.0, _SHA, 20)
+    # Subclass identity is not sufficient even with matching field values.
+    with pytest.raises(mod.DetachedV3PreflightRejected):
+        mod.review_detached_v3_preflight(child, evidence)
     with pytest.raises(mod.DetachedV3PreflightRejected):
         mod.review_detached_v3_preflight(snapshot, "not-evidence")
 
