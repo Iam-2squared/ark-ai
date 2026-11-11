@@ -105,14 +105,18 @@ _ORIGINAL_CARRIER_SLOTS = tuple(
 )
 
 
-def _require_original_atomic_carriers() -> None:
+def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
+    # Genesis and raw witness/claim validation must remain independently
+    # usable while a downstream recovery reviewer tests a forbidden snapshot
+    # getter. The private _scan boundary checks the snapshot definition.
     if (
         AtomicIntentClaim is not _CLAIM_TYPE
         or AtomicPreactionWitness is not _WITNESS_TYPE
-        or AtomicPreactionSnapshot is not _SNAPSHOT_TYPE
+        or (snapshot and AtomicPreactionSnapshot is not _SNAPSHOT_TYPE)
         or any(
             vars(cls).get(name) is not original
             for cls, names, originals in _ORIGINAL_CARRIER_SLOTS
+            if snapshot or cls is not _SNAPSHOT_TYPE
             for name, original in zip(names, originals, strict=True)
         )
     ):
@@ -120,7 +124,7 @@ def _require_original_atomic_carriers() -> None:
 
 
 def genesis_atomic_preaction_witness() -> AtomicPreactionWitness:
-    _require_original_atomic_carriers()
+    _require_original_atomic_carriers(snapshot=False)
     return AtomicPreactionWitness(0, _GENESIS)
 
 
@@ -129,7 +133,7 @@ def _hex_id(value: object, pattern: re.Pattern[str]) -> bool:
 
 
 def _check_witness(value: object) -> None:
-    _require_original_atomic_carriers()
+    _require_original_atomic_carriers(snapshot=False)
     if (
         type(value) is not AtomicPreactionWitness
         or type(value.count) is not int or not 0 <= value.count <= _MAX
@@ -145,7 +149,7 @@ def _witness_image(value: object) -> tuple[int, str]:
 
 
 def _check_claim(value: object) -> None:
-    _require_original_atomic_carriers()
+    _require_original_atomic_carriers(snapshot=False)
     if (
         type(value) is not AtomicIntentClaim
         or not _hex_id(value.occurrence_id, _ID)
