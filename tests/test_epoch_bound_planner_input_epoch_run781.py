@@ -25,7 +25,6 @@ from ark.agency.disconnected_epoch_bound_atomic_triage import (
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
-
 _STEP = "step_" + "1" * 16
 _OCCURRENCE = "occ_" + "a" * 64
 
