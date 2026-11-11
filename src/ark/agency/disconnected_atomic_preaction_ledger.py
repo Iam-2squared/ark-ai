@@ -96,6 +96,12 @@ def _check_witness(value: object) -> None:
         raise AtomicPreactionRejected("invalid retained pre-action witness")
 
 
+def _witness_image(value: object) -> tuple[int, str]:
+    """Exact scalar CAS, never user-replaceable dataclass equality."""
+    _check_witness(value)
+    return value.count, value.tip_sha256
+
+
 def _check_claim(value: object) -> None:
     if (
         type(value) is not AtomicIntentClaim
@@ -232,11 +238,14 @@ class DisconnectedAtomicPreactionLedger:
         return conn
 
     def inspect(self, retained: AtomicPreactionWitness) -> AtomicPreactionSnapshot:
-        _check_witness(retained)
+        expected = _witness_image(retained)
         with closing(self._open(read_only=True)) as conn:
             conn.execute("BEGIN")
             snapshot = _scan(conn)
-        if snapshot.witness != retained:
+        if (
+            _witness_image(retained) != expected
+            or _witness_image(snapshot.witness) != expected
+        ):
             raise AtomicPreactionRejected("retained pre-action witness is stale or mismatched")
         return snapshot
 
@@ -244,17 +253,21 @@ class DisconnectedAtomicPreactionLedger:
         self, claim: AtomicIntentClaim, *, retained: AtomicPreactionWitness,
     ) -> AtomicPreactionWitness:
         _check_claim(claim)
-        _check_witness(retained)
+        expected = _witness_image(retained)
         frozen = (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
         with closing(self._open(read_only=False)) as conn, conn:
             conn.execute("BEGIN IMMEDIATE")
             snapshot = _scan(conn)
-            if snapshot.witness != retained or retained.count == _MAX:
+            if (
+                _witness_image(retained) != expected
+                or _witness_image(snapshot.witness) != expected
+                or expected[0] == _MAX
+            ):
                 raise AtomicPreactionRejected("pre-action CAS mismatch or ledger full")
             if frozen != (claim.occurrence_id, claim.bound_action_id, claim.request_sha256):
                 raise AtomicPreactionRejected("synthetic intent changed")
-            seq = retained.count + 1
-            tip = _chain(retained.tip_sha256, seq, claim)
+            seq = expected[0] + 1
+            tip = _chain(expected[1], seq, claim)
             audit = _audit(seq, claim, tip)
             try:
                 conn.execute("INSERT INTO intents VALUES (?,?,?,?,?)", (seq, *frozen, tip))
@@ -263,6 +276,9 @@ class DisconnectedAtomicPreactionLedger:
                 )
             except sqlite3.IntegrityError as exc:
                 raise AtomicPreactionRejected("duplicate synthetic occurrence") from exc
-            if frozen != (claim.occurrence_id, claim.bound_action_id, claim.request_sha256):
-                raise AtomicPreactionRejected("synthetic intent changed before commit")
+            if (
+                frozen != (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
+                or _witness_image(retained) != expected
+            ):
+                raise AtomicPreactionRejected("synthetic intent or CAS witness changed before commit")
         return AtomicPreactionWitness(seq, tip)
