@@ -13,9 +13,9 @@ import json
 import re
 from dataclasses import dataclass
 
-_NAME = re.compile(r"[a-z][a-z0-9_.-]{0,63}\\Z")
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
-_DOMAIN = b"ARK-disconnected-improvement-proposal-v1\\0"
+_NAME = re.compile(r"[a-z][a-z0-9_.-]{0,63}\Z")
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_DOMAIN = b"ARK-disconnected-improvement-proposal-v1\0"
 _MAX_PROPOSALS = 256
 _MAX_SOURCES = 32
 _KINDS = frozenset((
