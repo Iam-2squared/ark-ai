@@ -33,6 +33,11 @@ from .registry import ToolRegistry
 _LOCAL_STATES = ("ABSENT", "LOCAL_MATCH", "LOCAL_CONFLICT")
 _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _MAX_BATCH = 32
+# Immutable ingress limits/grammar at import: never let a caller substitute a
+# larger allocation budget or an accepting-all occurrence parser at runtime.
+_ORIGINAL_LOCAL_STATES = _LOCAL_STATES
+_ORIGINAL_OCCURRENCE = _OCCURRENCE
+_ORIGINAL_MAX_BATCH = _MAX_BATCH
 _SCAN = _ledger_module._scan
 _OPEN = vars(DisconnectedAtomicPreactionLedger)["_open"]
 _ORIGINAL_READER = _original_reader
@@ -81,7 +86,11 @@ _ORIGINAL_MEMBERS = tuple(vars(_RESULT).get(name) for name in _RESULT_MEMBERS)
 def _originals() -> None:
     _ORIGINAL_READER()
     if (
-        _original_reader is not _ORIGINAL_READER
+        _LOCAL_STATES is not _ORIGINAL_LOCAL_STATES
+        or _OCCURRENCE is not _ORIGINAL_OCCURRENCE
+        or type(_MAX_BATCH) is not int
+        or _MAX_BATCH is not _ORIGINAL_MAX_BATCH
+        or _original_reader is not _ORIGINAL_READER
         or derive_registered_atomic_intent is not _DERIVE
         or review_atomic_input_carriers is not _INPUT_REVIEW
         or _ledger_module._scan is not _SCAN
