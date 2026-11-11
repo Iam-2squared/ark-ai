@@ -77,9 +77,14 @@ def test_spawned_independent_writers_have_exactly_one_durable_cas_winner(
         for label in labels
     ]
     try:
+        # Initialize one independent SQLite handle at a time. Competing
+        # first-open WAL sidecar cleanup is a distinct, fail-closed path
+        # preflight and must not mask the actual CAS race under test.
+        # The shared release event still starts BOTH CAS writes together.
+        readiness = []
         for child in children:
             child.start()
-        readiness = [messages.get(timeout=35) for _ in children]
+            readiness.append(messages.get(timeout=35))
         assert sorted(item[1] for item in readiness) == ["ready", "ready"], readiness
         release.set()
         outcomes = [messages.get(timeout=35) for _ in children]
