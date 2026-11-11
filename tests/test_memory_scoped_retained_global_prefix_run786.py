@@ -4,8 +4,8 @@ Only disposable synthetic SQLite fixtures are changed. Local witnesses are
 not authenticated provenance, independent custody, or privacy permission.
 """
 
-from dataclasses import replace
 import sqlite3
+from dataclasses import replace
 
 import pytest
 
