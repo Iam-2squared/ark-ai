@@ -278,7 +278,7 @@ def preview_disconnected_read_tools(
         _protocol()
         expected_output = hashlib.sha256(
             _ORIGINAL_FIXTURE_DOMAIN + request.operation.encode("ascii")
-            + b"\\0" + receipt[3].encode("utf-8", errors="strict")
+            + b"\0" + receipt[3].encode("utf-8", errors="strict")
         ).hexdigest()
         _protocol()
         if (
