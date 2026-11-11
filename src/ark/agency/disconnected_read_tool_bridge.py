@@ -31,6 +31,9 @@ _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_REQUEST = _REQUEST
 _ORIGINAL_STEP = _STEP
 _ORIGINAL_MAX_STEPS = _MAX_STEPS
+_ORIGINAL_FIXTURE_DOMAIN = fixture._DOMAIN
+_ORIGINAL_FIXTURE_RESULT = fixture.DisconnectedToolResult
+_ORIGINAL_FIXTURE_REQUEST = fixture.DisconnectedToolRequest
 
 
 class DisconnectedReadToolBridgeRejected(ValueError):
@@ -99,6 +102,9 @@ def _protocol() -> None:
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _REQUEST is not _ORIGINAL_REQUEST
         or _STEP is not _ORIGINAL_STEP
+        or fixture._DOMAIN is not _ORIGINAL_FIXTURE_DOMAIN
+        or fixture.DisconnectedToolResult is not _ORIGINAL_FIXTURE_RESULT
+        or fixture.DisconnectedToolRequest is not _ORIGINAL_FIXTURE_REQUEST
         or type(_MAX_STEPS) is not int
         or _MAX_STEPS != _ORIGINAL_MAX_STEPS
         or DetachedReadToolBinding is not _BINDING_TYPE
@@ -204,6 +210,28 @@ def preview_disconnected_read_tools(
         raise DisconnectedReadToolBridgeRejected("bindings must match READY READ steps")
     operations = {fields[0]: fields[1] for fields in step_epoch}
     results: list[fixture.DisconnectedToolResult] = []
+    receipt_epochs: list[
+        tuple[fixture.DisconnectedToolResult, tuple[str, ...]]
+    ] = []
+
+    def check_receipts() -> None:
+        _protocol()
+        for receipt, saved in receipt_epochs:
+            if (
+                type(receipt) is not _ORIGINAL_FIXTURE_RESULT
+                or any(
+                    getattr(receipt, field) is not value
+                    for field, value in zip(
+                        ("request_id", "operation", "input_digest",
+                         "canonical_result_json", "result_digest"),
+                        saved, strict=True,
+                    )
+                )
+            ):
+                raise DisconnectedReadToolBridgeRejected(
+                    "mock receipt changed after execution"
+                )
+
     manifest: list[tuple[str, str, str]] = []
     for binding in bindings:
         stable()
@@ -230,21 +258,59 @@ def preview_disconnected_read_tools(
             or result.operation != request.operation
         ):
             raise DisconnectedReadToolBridgeRejected("fixture result gained authority")
+        # A disconnected fixture receipt is not provenance. Its asserted
+        # hashes must at least match the actual bounded input and output
+        # bytes before either value enters a higher-level manifest.
+        receipt = (
+            result.request_id, result.operation, result.input_digest,
+            result.canonical_result_json, result.result_digest,
+        )
+        if (
+            any(type(value) is not str for value in receipt)
+            or len(receipt[2]) != 64 or len(receipt[4]) != 64
+            or len(receipt[3].encode("utf-8", errors="strict")) > 16_384
+        ):
+            raise DisconnectedReadToolBridgeRejected("invalid mock receipt fields")
+        expected_input = hashlib.sha256(
+            _ORIGINAL_FIXTURE_DOMAIN
+            + request.canonical_args_json.encode("utf-8", errors="strict")
+        ).hexdigest()
+        _protocol()
+        expected_output = hashlib.sha256(
+            _ORIGINAL_FIXTURE_DOMAIN + request.operation.encode("ascii")
+            + b"\\0" + receipt[3].encode("utf-8", errors="strict")
+        ).hexdigest()
+        _protocol()
+        if (
+            receipt[0] != request.request_id
+            or receipt[1] != request.operation
+            or receipt[2] != expected_input
+            or receipt[4] != expected_output
+        ):
+            raise DisconnectedReadToolBridgeRejected(
+                "mock receipt digest or identity mismatch"
+            )
+        check_receipts()
         results.append(result)
-        manifest.append((binding.step_id, result.input_digest, result.result_digest))
+        receipt_epochs.append((result, receipt))
+        manifest.append((binding.step_id, receipt[2], receipt[4]))
 
     stable()
+    check_receipts()
     serialized = json.dumps(
         (request_id, plan.schedule_digest, ready, withheld, manifest),
         ensure_ascii=True, separators=(",", ":"),
     ).encode("ascii")
     stable()
+    check_receipts()
     fingerprint = hashlib.sha256(_DOMAIN + b"preview\0" + serialized).hexdigest()
     stable()
+    check_receipts()
     output = _RESULT_TYPE(
         request_id, plan.schedule_digest, ready, withheld, tuple(results), fingerprint,
     )
     stable()
+    check_receipts()
     if (
         type(output) is not _RESULT_TYPE
         or output.request_id is not request_id
@@ -257,7 +323,10 @@ def preview_disconnected_read_tools(
         raise DisconnectedReadToolBridgeRejected("constructed mock preview changed")
     for name in _DENIALS:
         stable()
+        check_receipts()
         if getattr(output, name) is not False:
             raise DisconnectedReadToolBridgeRejected("mock preview gained authority")
+        check_receipts()
     stable()
+    check_receipts()
     return output
