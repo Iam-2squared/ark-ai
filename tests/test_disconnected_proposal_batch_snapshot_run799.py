@@ -162,14 +162,22 @@ def test_snapshot_control_plane_rebinding_rejected_before_private_read(
         "store": store,
         "lifecycle": batch.lifecycle,
     }[target]
-    with monkeypatch.context() as patch:
-        patch.setattr(owner, name, replaced, raising=False)
-        with pytest.raises(
-            batch.DisconnectedProposalBatchRejected, match="protocol changed",
-        ):
-            batch.inspect_disconnected_proposal_batch(
-                path, proposal_ids=(_A,), retained=genesis,
-            )
+    # MonkeyPatch restores inherited __new__/__getattribute__ by assigning
+    # object defaults on the class, changing its own dict. Remove only newly
+    # installed class attributes after the context, even on assertion failure.
+    had_own_attribute = name in vars(owner)
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(owner, name, replaced, raising=False)
+            with pytest.raises(
+                batch.DisconnectedProposalBatchRejected, match="protocol changed",
+            ):
+                batch.inspect_disconnected_proposal_batch(
+                    path, proposal_ids=(_A,), retained=genesis,
+                )
+    finally:
+        if not had_own_attribute and name in vars(owner):
+            delattr(owner, name)
     assert invoked == []
     assert store.inspect_disconnected_proposal_store(
         path, proposal_id=_A,
