@@ -1,4 +1,114 @@
-# LATEST — Run789 / 2026-11-11 JST
+# LATEST — Run790 / 2026-11-11 JST
+
+**LATEST:** Three **FREE-ONLY / NON-UI** development packages saved on
+[Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8):
+(1) exact scalar retained-witness comparison for disconnected atomic
+recovery, (2) bounded and exact-type Personal Context retention-recheck
+receipt admission before private SQLite, and (3) an exhaustive detached
+Planner terminal-failure DAG oracle. **140 submitted regression cases**;
+none authorizes tool dispatch, independent consent, automatic WRITE replay,
+erasure or other external effects. ARK / JARVIS / V3 **NOT_PASSED**.
+The Run790 exact-source/test/checkpoint **six-job CI result is not
+GREEN-confirmed**. The preceding Run789 exact-head CI is GREEN 6/6.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T19:53:20+09:00**
+(repository checkpoint-writing time, not trusted clock or approval evidence).
+
+## Branch, PR and exact-HEAD bookkeeping
+
+- **Initial work-basis HEAD:** `a9daf09086102635b9771e8cccfc2446f80593c0` on
+  `research/jarvis-foundations`, PR #8 **OPEN / DRAFT / UNMERGED**.
+- **Prior basis CI:** [#42998644954](https://github.com/Iam-2squared/ark-ai/actions/runs/42998644954)
+  — individual Windows/Ubuntu × Python 3.11–3.13 jobs **COMPLETED/GREEN 6/6**
+  (directly checked before Run790's first source change).
+- **Package A source HEAD:** `6139b6ff0b7779491eed15b4d9b0cfa50dc15116`;
+  `src/ark/agency/disconnected_atomic_recovery_quarantine.py`.
+  **Package A test HEAD:** `1fc038d57395c7ac3687b1d3b322338f914bb4bc`;
+  `tests/test_atomic_recovery_scalar_witness_run790.py` (**5 cases**).
+  Original witness slot/lookup/callback checks, count/tip exact-scalar
+  continuity and final False-only result custody; no patchable witness `__eq__`.
+- **Package B source HEAD:** `7582e2aafdac82cead23c6e09b4b747bd7fc3a05`;
+  `src/ark/personal_context_retention_recheck_review.py`.
+  **Package B test HEAD:** `98ae6c745efe05be918fdce1a943c8c2737281fb`;
+  `tests/test_context_retention_cached_shape_run790.py` (**7 cases**).
+  Exact typed bounded digest, clock, revocation state, item count and
+  item revision before private context reads.
+- **Package C test HEAD:** `d8effc055524762199c5f134fd28e76973ca0d15`;
+  `tests/test_disconnected_terminal_dag_oracle_run790.py` (**128 cases**)
+  over four five-step dependency shapes × all 32 failure subsets,
+  with independent no-backend terminal oracle.
+- **Technical evidence report HEAD:** `0cc5ce7da3c7799f317fe91b3bee12fc53ed3b5c`,
+  [Run790 technical report](./JARVIS_RUN790_NON_UI_RECOVERY_RETENTION_DAG_ORACLE.md).
+- **Checkpoint-write work-basis HEAD re-read:** `0cc5ce7da3c7799f317fe91b3bee12fc53ed3b5c`; immediately
+  prior `PROJECT_STATUS.md` blob SHA `3a2894d53bee66b9283d022937c16fd6e3983ed7`.
+  **Checkpoint-result HEAD:** produced by the ordinary GitHub Contents API
+  *after* this text is saved; it is **not predicted in its own commit**.
+  Verify the returned commit SHA against the live branch and PR HEAD.
+  This checkpoint commit's own CI result must be independently verified.
+
+## CI and evidence — do not borrow GREEN across HEADs
+
+- Previous GREEN baseline: [#42998644954](https://github.com/Iam-2squared/ark-ai/actions/runs/42998644954),
+  exact Run789 HEAD `a9daf09086102635b9771e8cccfc2446f80593c0`, **6/6 GREEN**.
+- Package A test HEAD: [#43006091566](https://github.com/Iam-2squared/ark-ai/actions/runs/43006091566):
+  **3/3 Ubuntu GREEN**, Windows 3 **IN PROGRESS** at inspection.
+- Package B test HEAD: [#43006329359](https://github.com/Iam-2squared/ark-ai/actions/runs/43006329359):
+  **6 IN PROGRESS** at inspection.
+- Package C test HEAD: [#43006552878](https://github.com/Iam-2squared/ark-ai/actions/runs/43006552878):
+  **2 IN PROGRESS, 4 QUEUED** at inspection.
+- Report HEAD: [#43006962678](https://github.com/Iam-2squared/ark-ai/actions/runs/43006962678):
+  **6 QUEUED** at inspection.
+- Source-only runs [#43006002586](https://github.com/Iam-2squared/ark-ai/actions/runs/43006002586)
+  and [#43006260387](https://github.com/Iam-2squared/ark-ai/actions/runs/43006260387)
+  were also **IN PROGRESS** at previous review. No equivalent manual
+  workflow rerun or local pytest is claimed. **140 cases SUBMITTED,
+  not six-environment validated.** Inspect each actual job/log if it fails.
+
+## Frozen boundaries, blockers and readiness
+
+- PR #5 remains **OPEN/DRAFT/UNMERGED** under V3 pre-paid-compute approval;
+  PR #9 remains **OPEN/DRAFT/UNMERGED and untouched**; **all new UI
+  and frontend development PAUSED**. PR #8 remains independent and unmerged.
+- Frozen V1/V2/Local UI/Launcher evidence and contracts, V3 Contract 1,
+  protected V2 final evaluation, Candidate training/promotion, model identities
+  and human approvals **not modified or opened**. No paid/external compute,
+  paid API, account/credential connection, physical-PC action, destructive
+  operation, production ToolBackend, main merge or automatic unknown-WRITE retry.
+- Local hashes/SQLite receipts are not independent authenticated consent,
+  runtime identity or globally atomic proof. Python descriptor guards are
+  interpreter-local checks, not a security sandbox. Trusted-clock approval
+  issuer and durable effect occurrence provenance remain blocked; no false PASS.
+
+## Next plan / 今後の方針
+
+1. Resolve individual Run790 exact-head six-job outcomes and checkpoint CI;
+   inspect real failed job logs before minimal semantics-preserving corrections
+   through ordinary GitHub Contents API. Immediately switch to other
+   non-conflicting core work whenever CI is in flight.
+2. Advance **Memory** multi-owner event continuity, generation CAS/ABA,
+   expiry/coherent snapshots and manual-only COMMIT-UNKNOWN reconciliation;
+   reject missing or ambiguous durable history, never automatically replay.
+3. Advance **Planner** durable terminal/crash recovery and independent mock
+   receipt fixtures. Only connect **immutable ToolRegistry + exact-type
+   PermissionGate + restart-safe one-shot ledger + trusted-clock
+   audit-before-action** after dependent exact-head GREEN. No real backend.
+4. Independently improve privacy-safe Personal Context revocation/expiry,
+   Proactive occurrence replay/startup readiness, fixture-only Observation
+   contracts, and free V3 path/approval/identity safeguards.
+5. Preserve UI pause, frozen gates, no spending, protected evaluations and
+   approval-required main merges. **ARK/JARVIS/V3 remain NOT_PASSED.**
+
+## Historical status preservation
+
+Previous Run789 checkpoint text is preserved below; Run786-and-earlier
+complete history remains at
+[PROJECT_STATUS_THROUGH_RUN786.md](./status_archive/PROJECT_STATUS_THROUGH_RUN786.md).
+The authoritative newest state is this `LATEST` section, not a stale
+historical checkpoint. No archived/frozen files were altered.
+
+---
+
+## Historical checkpoint — Run789 / 2026-11-11 JST
 
 **LATEST:** Three verified-as-saved, **FREE-ONLY / NON-UI** packages were
 committed to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8)
