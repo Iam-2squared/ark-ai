@@ -1,3 +1,51 @@
+# LATEST — Run794 / 2026-11-11 JST
+
+**LATEST:** **Three independently scoped, free-only NON-UI packages** were saved to [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8):
+(A) disconnected READ fixture result/manifest SHA-256 reconciliation and post-execution receipt epoch custody (**9 submitted regression cases**);
+(B) detached **V3** runtime/evidence/device/tokenizer/VRAM/wall-time cross-binding with conservative exact capacity, no authorization (**26 submitted cases**);
+(C) deterministic owner/scope-isolated, proposal-only self-improvement identity with bounded duplicate counting, no code/train/eval actions (**26 submitted cases**).
+**61 new regression cases submitted, latest exact-head all-six-job GREEN NOT YET CONFIRMED.** Earlier CI success must not be borrowed. ARK/JARVIS/V3 **NOT_PASSED**.
+
+**Saved at:** Asia/Tokyo/JST **2026-11-11T23:54:04.653+09:00** (time observed for checkpoint preparation; not a cryptographically trusted clock, GitHub commit timestamp, external consent or runtime identity).
+
+## Branch / PR / exact SHA bookkeeping
+
+- **Initial work-basis HEAD:** `bfcd7762171ac1416b69ea9f1df7ab0e129c4aab`, branch `research/jarvis-foundations`, PR #8 **OPEN/DRAFT/UNMERGED**.
+- **Checkpoint-write basis HEAD, re-read via GitHub PR #8:** `de4ec8f12c84c2aa634ca121590ec56d769b84b2`; previous `docs/PROJECT_STATUS.md` blob SHA `7e31fffc647038a106931c21ec8482a09d62ce26`.
+- **Checkpoint-result HEAD wording:** GitHub creates the commit only after this Contents API write; its hash is not fabricated inside this file. Verify the returned commit SHA, subsequent PR/branch HEAD, and new status blob separately.
+- PR #5 **OPEN/DRAFT=true/UNMERGED=true**, head `805b377697472268db02650a89c7a94b1c5337c8`; PR #9 **OPEN/DRAFT=true/UNMERGED=true, UNTOUCHED**, head `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`.
+- **ZERO NEW UI/FRONTEND WORK.** PR #9 not modified.
+
+## NEW work saved this invocation
+
+1. **Disconnected mock READ receipt integrity**: `src/ark/agency/disconnected_read_tool_bridge.py` source `c50f39d55699e5f6b4404c2cfed62013c062a03e`, digest separator correction `8b6a4d63f372ca9a19fb4a8d111e4b621e5188ce`, `tests/test_disconnected_mock_receipt_binding_run794.py` `a3016cf5eb658fae008a32458bef272e4552e2e3`: **9 cases**. Recompute mock input/output digests from local fixture bytes, pin request/result field epochs and recheck at manifest/digest/return callbacks. Synthetic test injection emulates a faulty trusted *disconnected fixture*, not real approval or external execution.
+2. **V3 free-only detached preflight cross-bind**: `src/ark/v3_detached_preflight_crossbind.py` `503b09d6ff344ca4876a027b594852ae2be42907` then grammar/domain fix `fbd324447200d17886f26e2a268d8ed94f39a08d`; tests `2868f66aefd48d9cadfe055edf7fa414a9abd17e`, subclass-fixture correction `59a3f9aef0c2c1552e98f942c2d02afcf2117114`: **26 cases**. Exact device/tokenizer, non-bool finite positive VRAM ordering, exact conservative capacity and wall-clock bound; all authority flags False. This is **not** PR #5's actual preflight, no GPU measurement and no frozen-contract change.
+3. **Proposal-only self-improvement identity**: `src/ark/agency/disconnected_improvement_proposal.py` `4bc73354dabb532f4cd7d3e2696278c67ff91a7a`, grammar/domain correction `1f20e170bcec70cca782fed070bdc4e2775cd3c8`; tests `e2958e8310c880b7eda044772da51a4ab99b2355`: **26 cases**. Owner/namespace hash isolation, normalized source digest order, revision/change-class binding, duplicate counting, bounded inputs, False-only action flags. **Memory-only**: not a durable lifecycle/approved proposal and not user consent.
+4. **Technical evidence**: `docs/JARVIS_RUN794_NON_UI_MOCK_RECEIPT_V3_PROPOSAL.md`, save HEAD `de4ec8f12c84c2aa634ca121590ec56d769b84b2`. This documents exact commits, negative fixture boundaries, and unverified CI status. Original Run793 and older PROJECT_STATUS content remains intact below this new header.
+
+## CI / exact-head evidence at last read
+
+- **Initial work-basis HEAD** `bfcd7762171ac1416b69ea9f1df7ab0e129c4aab`: [CI #43035092767](https://github.com/Iam-2squared/ark-ai/actions/runs/43035092767) individually inspected **6/6 GREEN** (Ubuntu/Windows × Python 3.11–3.13); **prior baseline only**.
+- **Package A source+test HEAD** `a3016cf5eb658fae008a32458bef272e4552e2e3`, [CI #43041371867](https://github.com/Iam-2squared/ark-ai/actions/runs/43041371867): Ubuntu 3/3 **GREEN**, Windows 3/3 **IN PROGRESS** when last read. Not all-six-job GREEN.
+- **Package B corrected test HEAD** `59a3f9aef0c2c1552e98f942c2d02afcf2117114`, [CI #43041940154](https://github.com/Iam-2squared/ark-ai/actions/runs/43041940154): **QUEUED** at last read.
+- **Package C source+test HEAD** `e2958e8310c880b7eda044772da51a4ab99b2355`, [CI #43042380723](https://github.com/Iam-2squared/ark-ai/actions/runs/43042380723): **QUEUED** at last read.
+- **Report HEAD** `de4ec8f12c84c2aa634ca121590ec56d769b84b2`, [CI #43042630617](https://github.com/Iam-2squared/ark-ai/actions/runs/43042630617): **QUEUED** at last read.
+- **Latest exact-head CI is NOT yet 6/6 GREEN**. No local pytest/Ruff or physical PC/model run claimed. No duplicate workflow reruns launched.
+
+## Frozen contracts / hard boundaries and blockers
+
+All frozen V1/V2/Local UI/Launcher evidence and controlling V3 Contract 1 remain unchanged. PR #5 Draft/unmerged and under its existing user/human evaluation/payment/identity gates; protected V2 final eval not opened. PR #9 Draft/unmerged, untouched, UI pause retained. No paid/external GPU/API, accounts/credentials, Candidate adapter/training/weights, promotion, human-review fabrication, external ToolBackend dispatch, destructive action, automatic unknown WRITE replay or approval-requiring main merge. Local mock hashes are not authenticated actor identity, trusted-clock evidence, consent, external execution proof or exactly-once permission. Candidate/evaluation/paid operations require separate authorization.
+
+## Next plan / 今後の方針
+
+1. Inspect **latest exact-head 6 CI jobs** when available, not summary alone. On FAIL inspect concrete job logs and apply the smallest semantics-preserving correction via normal Contents API; switch to a distinct non-UI lane while it runs.
+2. Advance **Memory** schema/event/row integrity, global high-water, expiry, CAS/ABA and COMMIT-UNKNOWN manual-only reconciliation using independently retained evidence; no erasure permission inferred.
+3. Advance **Planner** durable terminal/restart journal, disconnected recovery and UNKNOWN WRITE quarantine; do not automatically retry a possibly executed action.
+4. After relevant exact-head GREEN, extend ToolRegistry/PermissionGate, durable occurrence, trusted-clock audit-before-action through disconnected/mock-only integration; remain fail-closed for real execution.
+5. Advance privacy-safe Personal Context, Proactive/observation fixture contracts, deterministic proposal lifecycle proposals and V3 free-only identity/path/reproducibility review in isolated lanes. No paid compute, frozen gate changes, Candidate promotion or UI resume. **ARK/JARVIS overall NOT_PASSED.**
+
+---
+
 # LATEST — Run793 / 2026-11-11 JST
 
 **LATEST:** Four independent, reversible, free-only **NON-UI** core packages and **27 newly submitted regression cases** are saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): Atomic pre-action intent/witness/snapshot descriptor custody (11), coherent multi-namespace Memory SQLite path/sidecar custody (5), Planner ready-step status epoch continuity (3), and privacy-safe Personal Context replay SQLite sidecar checks (8). The older Atomic CI failure was **measured, diagnosed, and repaired** without weakening the established recovery regression. **No latest exact-head six-job GREEN claim** is made at this checkpoint. Overall ARK/JARVIS/V3 **NOT_PASSED**.
