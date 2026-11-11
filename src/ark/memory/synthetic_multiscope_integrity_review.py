@@ -294,6 +294,40 @@ def review_synthetic_memory_scopes(
         try:
             _validate_v1_schema(conn)
             assert_epoch()
+            # A scope-restricted replay must not ignore missing journal
+            # events belonging to another namespace or owner. The event
+            # journal is globally dense AUTOINCREMENT; check its durable
+            # high-water in this SAME WAL read snapshot as the scoped rows.
+            # This is local gap/truncation detection, not authentication of
+            # any foreign event payload or independently held history.
+            count, first, last = conn.execute(
+                "SELECT COUNT(*),MIN(event_id),MAX(event_id) FROM memory_events"
+            ).fetchone()
+            markers = conn.execute(
+                "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+            ).fetchall()
+            assert_epoch()
+            if (
+                type(count) is not int
+                or not 0 <= count <= _SQLITE_MAX
+                or (
+                    count == 0
+                    and (first is not None or last is not None or markers)
+                )
+                or (
+                    count > 0
+                    and (
+                        type(first) is not int or first != 1
+                        or type(last) is not int or last != count
+                        or len(markers) != 1
+                        or type(markers[0][0]) is not int
+                        or markers[0][0] != last
+                    )
+                )
+            ):
+                raise SyntheticMemorySnapshotRejected(
+                    "global Memory event high-water mismatch"
+                )
             for scope, scope_hash in zip(pinned, hashes, strict=True):
                 raw_events = conn.execute(
                     """SELECT event_id,memory_id,owner_id,namespace,operation,
