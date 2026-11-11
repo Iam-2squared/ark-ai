@@ -161,6 +161,12 @@ class PermissionGate:
         _require_original_grant_validator()
         if type(registry) is not ToolRegistry or type(call) is not ToolCall:
             raise PermissionDenied("registered authorization requires exact registry and call")
+        # Validate a caller-supplied clock before registry.bind(), a grant
+        # generator or any one-shot token inspection. The direct gate already
+        # enforces this exact SQLite-range time contract, but relying on the
+        # later direct call would expose untrusted callbacks first.
+        if type(now_ms) is not int or not 0 <= now_ms <= (1 << 63) - 1:
+            raise ValueError("now_ms must be a non-negative integer")
 
         def ensure_original_implementations() -> None:
             _assert_original_call_contract()
