@@ -163,8 +163,57 @@ def review_epoch_bound_atomic_triage(
         or type(write_occurrences) is not tuple
     ):
         raise EpochBoundAtomicTriageRejected("exact inert inputs required")
+    # Two SQLite snapshots cannot atomically freeze the caller's detached
+    # Planner recovery objects. Keep their exact carrier/field epoch across
+    # the independent atomic callback and the result-construction boundary.
+    recovery_tail = recovered.tail
+    recovery_epoch = (
+        recovered.tail, recovered.step_statuses,
+        recovered.ambiguous_running_steps,
+    )
+    tail_epoch = (
+        recovery_tail.topology_digest, recovery_tail.event_count,
+        recovery_tail.event_hash, recovery_tail.status_digest,
+        recovery_tail.last_at_ms,
+    )
+    retained_epoch = (
+        retained_planner.topology_digest, retained_planner.event_count,
+        retained_planner.event_hash, retained_planner.status_digest,
+        retained_planner.last_at_ms,
+    )
+
+    def stable_planner_inputs() -> None:
+        _originals()
+        if (
+            type(recovered) is not SyntheticPlanRecovery
+            or type(retained_planner) is not SyntheticPlanTail
+            or type(recovered.tail) is not SyntheticPlanTail
+            or any(current is not original for current, original in zip(
+                (recovered.tail, recovered.step_statuses,
+                 recovered.ambiguous_running_steps),
+                recovery_epoch, strict=True,
+            ))
+            or any(current is not original for current, original in zip(
+                (recovery_tail.topology_digest, recovery_tail.event_count,
+                 recovery_tail.event_hash, recovery_tail.status_digest,
+                 recovery_tail.last_at_ms),
+                tail_epoch, strict=True,
+            ))
+            or any(current is not original for current, original in zip(
+                (retained_planner.topology_digest, retained_planner.event_count,
+                 retained_planner.event_hash, retained_planner.status_digest,
+                 retained_planner.last_at_ms),
+                retained_epoch, strict=True,
+            ))
+        ):
+            raise EpochBoundAtomicTriageRejected(
+                "Planner recovery input epoch changed during cross-store review"
+            )
+
+    stable_planner_inputs()
     try:
         first = _checked_epoch(journal, recovered, retained_planner)
+        stable_planner_inputs()
         triage = _TRIAGE(
             recovered, steps, registry, ledger, retained_atomic,
             write_occurrences,
@@ -185,7 +234,10 @@ def review_epoch_bound_atomic_triage(
             raise EpochBoundAtomicTriageRejected(
                 "atomic cross-store triage lost its manual-only fence"
             )
+        stable_planner_inputs()
+        triage_epoch = (triage.plan_id, triage.retained_atomic_count, triage.observations)
         second = _checked_epoch(journal, recovered, retained_planner)
+        stable_planner_inputs()
         # The atomic review and Planner recheck are separate SQLite reads.
         # A second atomic snapshot detects a new reservation committed while
         # Planner was being rechecked; it does not lock either database.
@@ -216,11 +268,19 @@ def review_epoch_bound_atomic_triage(
             raise EpochBoundAtomicTriageRejected(
                 "Planner changed across atomic review"
             )
+        stable_planner_inputs()
+        if any(current is not original for current, original in zip(
+            (triage.plan_id, triage.retained_atomic_count, triage.observations),
+            triage_epoch, strict=True,
+        )):
+            raise EpochBoundAtomicTriageRejected(
+                "atomic child receipt changed during Planner recheck"
+            )
         result = _RESULT(
             first.plan_id, second.observed_event_count,
-            triage.retained_atomic_count, triage.observations,
+            triage_epoch[1], triage_epoch[2],
         )
-        _originals()
+        stable_planner_inputs()
         if (
             type(result) is not _RESULT
             or result.dispatch_authorized is not False
@@ -232,6 +292,7 @@ def review_epoch_bound_atomic_triage(
             or result.manual_review_required is not True
         ):
             raise EpochBoundAtomicTriageRejected("result gained authority")
+        stable_planner_inputs()
         return result
     except (
         PlannerEpochRecheckRejected, RegisteredPlannerAtomicTriageRejected,
