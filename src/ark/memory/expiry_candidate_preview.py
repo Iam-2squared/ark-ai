@@ -78,6 +78,13 @@ _ORIGINAL_RECEIPT_HOOKS = tuple(
 )
 _STORE_TYPE = SQLiteMemoryStore
 _SCOPE_TYPE = MemoryScope
+# A digest of private candidate metadata is not meaningful if its codec
+# or domain can be rebound before the read-only review begins.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 _AUTHORITY_DESCRIPTORS = tuple(
     getattr(_RECEIPT_TYPE, flag) for flag in _FLAGS
@@ -86,6 +93,14 @@ _AUTHORITY_DESCRIPTORS = tuple(
 
 def _assert_original_authority() -> None:
     """Deny substituted authority callbacks before touching Memory SQLite."""
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+    ):
+        raise MemoryExpiryPreviewRejected("expiry digest protocol changed")
     if (
         MemoryExpiryPreview is not _RECEIPT_TYPE
         or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
