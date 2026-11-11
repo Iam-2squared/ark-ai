@@ -27,6 +27,7 @@ _ORIGINAL_INSPECT = inspect
 _ORIGINAL_GETATTR_STATIC = inspect.getattr_static
 
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
+_ORIGINAL_MAX_GRANTS = _MAX_GRANTS
 _ORIGINAL_POLICY_TOOL_CALL = ToolCall
 
 
@@ -58,6 +59,8 @@ _ORIGINAL_GRANT_HOOKS = tuple(
 
 
 def _require_original_grant_validator() -> None:
+    if type(_MAX_GRANTS) is not int or _MAX_GRANTS != _ORIGINAL_MAX_GRANTS:
+        raise PermissionDenied("capability grant budget contract changed")
     if (
         CapabilityGrant is not _GRANT_TYPE
         or vars(_GRANT_TYPE).get("__init__") is not _ORIGINAL_GRANT_INIT
@@ -155,6 +158,7 @@ class PermissionGate:
         """
         _assert_original_call_contract()
         _require_original_spec_and_token()
+        _require_original_grant_validator()
         if type(registry) is not ToolRegistry or type(call) is not ToolCall:
             raise PermissionDenied("registered authorization requires exact registry and call")
 
@@ -381,6 +385,7 @@ class PermissionGate:
     ) -> None:
         _assert_original_call_contract()
         _require_original_spec_and_token()
+        _require_original_grant_validator()
         if _registered_recheck is not None and not callable(_registered_recheck):
             raise PermissionDenied("registered recheck must be callable")
         if type(spec) is not ToolSpec or type(call) is not ToolCall:
