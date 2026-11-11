@@ -69,6 +69,7 @@ _ORIGINAL_JSON = json
 _ORIGINAL_LOADS = json.loads
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_CROSSBIND = crossbind.review_detached_v3_preflight
+_ORIGINAL_CROSSBIND_PROTOCOL = crossbind._protocol
 _ORIGINAL_CLASSES = (
     crossbind.DetachedV3Snapshot, crossbind.DetachedV3Evidence,
     crossbind.DetachedV3PreflightReview,
@@ -80,8 +81,15 @@ _ORIGINAL_EVIDENCE = _EVIDENCE
 
 
 def _protocol() -> None:
-    crossbind._protocol()
+    # Refuse replacement control-plane callbacks before invoking any of them.
+    if crossbind._protocol is not _ORIGINAL_CROSSBIND_PROTOCOL:
+        raise DetachedV3PacketRejected("detached V3 packet protocol changed")
+    _ORIGINAL_CROSSBIND_PROTOCOL()
     if (
+        _protocol is not _ORIGINAL_PROTOCOL
+        or _pairs_unique is not _ORIGINAL_PAIRS_UNIQUE
+        or _nonfinite is not _ORIGINAL_NONFINITE
+        or _fields is not _ORIGINAL_FIELDS_HELPER
         hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
@@ -127,6 +135,13 @@ def _fields(value: object, keys: frozenset[str]) -> dict:
     return value
 
 
+# Freeze strict JSON policy callbacks before inspecting arbitrary packet bytes.
+_ORIGINAL_PAIRS_UNIQUE = _pairs_unique
+_ORIGINAL_NONFINITE = _nonfinite
+_ORIGINAL_FIELDS_HELPER = _fields
+_ORIGINAL_PROTOCOL = _protocol
+
+
 def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
     """Review exact canonical UTF-8 JSON bytes with no side effects.
 
@@ -134,7 +149,7 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
     noncanonical serialization fail closed. A passing result NEVER approves
     costs, training, candidate promotion or independent provenance.
     """
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     if type(packet) is not bytes or not 1 <= len(packet) <= _MAX_BYTES:
         raise DetachedV3PacketRejected("exact bounded V3 packet bytes required")
     try:
@@ -156,14 +171,14 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
         allow_nan=False,
     ).encode("ascii") != packet:
         raise DetachedV3PacketRejected("noncanonical V3 packet byte representation")
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     try:
         snapshot = crossbind.DetachedV3Snapshot(**snapshot_fields)
         evidence = crossbind.DetachedV3Evidence(**evidence_fields)
         review = crossbind.review_detached_v3_preflight(snapshot, evidence)
     except (TypeError, ValueError) as exc:
         raise DetachedV3PacketRejected("invalid V3 evidence cross-binding") from exc
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     if (
         type(review) is not crossbind.DetachedV3PreflightReview
         or review.independent_provenance_verified is not False
@@ -177,14 +192,14 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
         "device", "capacity", "tokenizer_probe", "peak_vram_order",
         "wall_clock_budget",
     )
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     if (
         type(review.digest) is not str or len(review.digest) != 64
         or review.checks != expected_checks
     ):
         raise DetachedV3PacketRejected("detached V3 cross-binding result changed")
     result = _REPORT(packet_sha, review.digest, expected_checks)
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     if (
         type(result) is not _REPORT
         or result.packet_sha256 != packet_sha
@@ -193,5 +208,5 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
         or any(getattr(result, name) is not False for name in _DENIALS)
     ):
         raise DetachedV3PacketRejected("detached V3 packet result gained authority")
-    _protocol()
+    _ORIGINAL_PROTOCOL()
     return result
