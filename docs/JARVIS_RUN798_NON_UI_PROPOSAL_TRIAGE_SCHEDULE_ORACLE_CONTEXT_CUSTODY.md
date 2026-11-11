@@ -29,6 +29,16 @@ Source `src/ark/offline_context_membership_guard.py` commit `8a1cb701baf51a0cda6
 - Run798 C source [#43082232510](https://github.com/Iam-2squared/ark-ai/actions/runs/43082232510), tests [#43082340512](https://github.com/Iam-2squared/ark-ai/actions/runs/43082340512).
 - **149 submitted cases**, NOT verified six-job exact-HEAD GREEN at document preparation; no local integrated pytest/Ruff or real target-PC model evidence claimed. Normal GitHub CI does not open GPU/Candidate/Tool runtime.
 
+## D. Planner durable WRITE restart denial descriptor custody
+
+Source `src/ark/agency/disconnected_write_restart_binding.py` commit `101ba90e419b90725bbccff139f79cc8689a5466`; tests `tests/test_write_restart_original_denials_run798.py` commit `7627272eef5ed6c64299107ec6c2c2e56902ed5e`, **13 submitted cases**. A preexisting restart path captured denial properties only after interacting with the persisted ledger. This package pins the original six denial property descriptors at import and checks them BEFORE ledger inspection. Substituted True- or False-returning executable getters are rejected without invoking the getter or opening a WRITE effect. Existing complete reservation, exact witness, UNKNOWN quarantine and mock-only invariants unchanged; this still proves neither an external WRITE outcome nor cross-store atomicity.
+
+## CI failure triage (new Run798 work only)
+
+The C test HEAD [#43082340512](https://github.com/Iam-2squared/ark-ai/actions/runs/43082340512) had **6/6 Ruff E501 FAIL**, each caused by the same four overlong test assertion lines. No source security condition failed in that run because pytest was not reached. Those four lines were wrapped without changing assertions (fix commit `843e0563bb652600b6bb05009dcd3fd8d49562a4`). Corrected CI [#43082784274](https://github.com/Iam-2squared/ark-ai/actions/runs/43082784274) was still **IN PROGRESS** when rechecked; do not claim its GREEN. D code/tests CI likewise not yet certified.
+
+**Revised Run798 total: 162 submitted cases (19 + 109 + 21 + 13), NOT 162 proven PASS.**
+
 ## Next plan / 今後の方針
 
 1. Verify individual six CI jobs on the exact latest HEAD and correct only actual failures via the normal GitHub safety path.
