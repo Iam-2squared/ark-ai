@@ -165,3 +165,42 @@ def test_invalid_schema_is_not_classified_as_unchanged(tmp_path):
         conn.execute("CREATE TABLE unexpected (n INTEGER)")
     with pytest.raises(store.DisconnectedProposalStoreRejected, match="schema changed"):
         _triage(path, before)
+
+@pytest.mark.parametrize(("target", "name"), (
+    ("report", "__new__"),
+    ("report", "__getattribute__"),
+    ("report", "__getattr__"),
+    ("triage", "_protocol"),
+    ("store", "_protocol"),
+    ("lifecycle", "_protocol"),
+    ("triage", "OBSERVED_UNCHANGED"),
+    ("triage", "OBSERVED_EXACT_APPEND"),
+    ("triage", "MANUAL_REVIEW_REQUIRED"),
+))
+def test_unknown_commit_protocol_substitution_refused_before_store_read(
+    tmp_path, monkeypatch, target, name,
+):
+    path, _ = _new(tmp_path)
+    before = _read(path)
+    invoked = []
+
+    def injected(*args, **kwargs):
+        invoked.append((args, kwargs))
+        raise RuntimeError("injected unknown-commit callback must not run")
+
+    owner = {
+        "report": triage.OfflineProposalUnknownCommitReport,
+        "triage": triage,
+        "store": store,
+        "lifecycle": triage.lifecycle,
+    }[target]
+    replacement = "FORGED_STATE" if name.isupper() else injected
+    with monkeypatch.context() as patch:
+        patch.setattr(owner, name, replacement, raising=False)
+        with pytest.raises(
+            triage.OfflineProposalUnknownCommitRejected,
+            match="proposal reconciliation protocol changed",
+        ):
+            _triage(path, before)
+    assert invoked == []
+    assert _read(path) == before
