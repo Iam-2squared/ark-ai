@@ -13,6 +13,7 @@ from contextlib import closing
 from dataclasses import dataclass, fields
 from pathlib import Path
 
+from . import sqlite_event_prefix_review as global_prefix_module
 from .contracts import MemoryScope
 from .sqlite_event_prefix_review import (
     _DOMAIN as _GLOBAL_PREFIX_DOMAIN,
@@ -111,6 +112,46 @@ class SyntheticMemorySnapshotDigest:
 # original result types separate from any reflected constructor binding.
 _MEMORY_SCOPE_RESULT_TYPE = SyntheticMemoryScopeDigest
 _MEMORY_SNAPSHOT_RESULT_TYPE = SyntheticMemorySnapshotDigest
+
+# The optional cross-owner retained witness covers private foreign-owner event
+# bytes. Fail BEFORE passing any such row to a rebindable hashing callback.
+# This is in-process callback custody only, not protection from hostile Python.
+_GLOBAL_HASHLIB = hashlib
+_GLOBAL_SHA256 = hashlib.sha256
+_GLOBAL_JSON = json
+_GLOBAL_DUMPS = json.dumps
+_GLOBAL_PREFIX_ORIGINAL_DOMAIN = _GLOBAL_PREFIX_DOMAIN
+_GLOBAL_PREFIX_ORIGINAL_CHARGE = _charge_global_prefix
+_GLOBAL_PREFIX_ORIGINAL_EPOCH = _global_prefix_epoch
+_GLOBAL_PREFIX_ORIGINAL_GATE = _require_original_prefix_protocol
+
+
+def _require_original_global_prefix_codec() -> None:
+    if (
+        hashlib is not _GLOBAL_HASHLIB
+        or hashlib.sha256 is not _GLOBAL_SHA256
+        or json is not _GLOBAL_JSON
+        or json.dumps is not _GLOBAL_DUMPS
+        or _GLOBAL_PREFIX_DOMAIN is not _GLOBAL_PREFIX_ORIGINAL_DOMAIN
+        or _charge_global_prefix is not _GLOBAL_PREFIX_ORIGINAL_CHARGE
+        or _global_prefix_epoch is not _GLOBAL_PREFIX_ORIGINAL_EPOCH
+        or _require_original_prefix_protocol is not _GLOBAL_PREFIX_ORIGINAL_GATE
+        or global_prefix_module._charge is not _GLOBAL_PREFIX_ORIGINAL_CHARGE
+        or global_prefix_module._witness_epoch is not _GLOBAL_PREFIX_ORIGINAL_EPOCH
+        or global_prefix_module._require_original_prefix_protocol
+        is not _GLOBAL_PREFIX_ORIGINAL_GATE
+        or global_prefix_module.json is not _GLOBAL_JSON
+        or global_prefix_module.hashlib is not _GLOBAL_HASHLIB
+    ):
+        raise SyntheticMemorySnapshotRejected(
+            "retained global Memory event prefix codec changed"
+        )
+    try:
+        _GLOBAL_PREFIX_ORIGINAL_GATE()
+    except MemoryEventPrefixRejected as exc:
+        raise SyntheticMemorySnapshotRejected(
+            "retained global Memory event prefix protocol changed"
+        ) from exc
 
 
 def review_synthetic_memory_scopes(
@@ -252,7 +293,7 @@ def review_synthetic_memory_scopes(
     global_prefix_fields = None
     if retained_global_prefix is not None:
         try:
-            _require_original_prefix_protocol()
+            _require_original_global_prefix_codec()
             global_prefix_fields = _global_prefix_epoch(retained_global_prefix)
         except MemoryEventPrefixRejected as exc:
             raise SyntheticMemorySnapshotRejected(
@@ -284,6 +325,17 @@ def review_synthetic_memory_scopes(
         )
 
     def assert_epoch() -> None:
+        if retained_global_prefix is not None:
+            _require_original_global_prefix_codec()
+            try:
+                if _global_prefix_epoch(retained_global_prefix) != global_prefix_fields:
+                    raise SyntheticMemorySnapshotRejected(
+                        "retained global Memory prefix changed during review"
+                    )
+            except MemoryEventPrefixRejected as exc:
+                raise SyntheticMemorySnapshotRejected(
+                    "retained global Memory prefix changed during review"
+                ) from exc
         try:
             scope_end = len(scopes)
             if store.path is not path_epoch or carrier_changed(0, scope_end):
@@ -368,13 +420,14 @@ def review_synthetic_memory_scopes(
                 # changing global COUNT/MIN/MAX or sqlite_sequence. Re-hash
                 # the earlier retained global tip INSIDE the scoped WAL
                 # transaction, before accepting selected namespace results.
-                _require_original_prefix_protocol()
+                _require_original_global_prefix_codec()
                 wanted_count, wanted_tail, wanted_hash = global_prefix_fields
                 if wanted_count > count:
                     raise SyntheticMemorySnapshotRejected(
                         "retained global Memory prefix rolled back"
                     )
                 old_digest = hashlib.sha256(_GLOBAL_PREFIX_DOMAIN)
+                _require_original_global_prefix_codec()
                 seen = 0
                 for event in conn.execute(
                     "SELECT event_id,memory_id,owner_id,namespace,operation,"
@@ -382,10 +435,12 @@ def review_synthetic_memory_scopes(
                     "ORDER BY event_id LIMIT ?",
                     (wanted_count,),
                 ):
+                    _require_original_global_prefix_codec()
                     _charge_global_prefix(old_digest, tuple(event))
+                    _require_original_global_prefix_codec()
                     seen += 1
                     assert_epoch()
-                _require_original_prefix_protocol()
+                _require_original_global_prefix_codec()
                 if (
                     seen != wanted_count or wanted_tail != seen
                     or old_digest.hexdigest() != wanted_hash
