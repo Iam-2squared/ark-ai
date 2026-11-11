@@ -92,14 +92,21 @@ def inspect_disconnected_proposal_batch(
     *,
     proposal_ids: tuple[str, ...],
     retained: store.DetachedProposalStoreWitness,
+    require_latest: bool = False,
 ) -> DetachedProposalBatchSnapshot:
     """Return ordered tips from one SQLite history epoch, without effects.
 
     Retained prefix matching detects some local rollbacks, but a hash alone
     cannot authenticate history or prove that an unseen later commit did not
-    occur. This API never permits proposal state advancement.
+    occur. When require_latest=True, the retained witness must match this
+    transaction's full validated event frontier, not merely a past prefix.
+    This API never permits proposal state advancement.
     """
     _protocol()
+    if type(require_latest) is not bool:
+        raise DisconnectedProposalBatchRejected(
+            "exact latest-frontier requirement flag required"
+        )
     if (
         type(proposal_ids) is not tuple
         or not 1 <= len(proposal_ids) <= _MAX_IDS
@@ -141,7 +148,9 @@ def inspect_disconnected_proposal_batch(
             conn.execute("BEGIN")
             try:
                 witness, histories, prefixes = _STORE_SCAN(conn)
-                _STORE_ASSERT(retained_tuple, prefixes, latest_required=False)
+                _STORE_ASSERT(
+                    retained_tuple, prefixes, latest_required=require_latest,
+                )
                 tips = tuple(
                     _LIFECYCLE_REPLAY(pid, histories[pid])
                     if pid in histories else None
