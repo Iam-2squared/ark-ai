@@ -195,12 +195,19 @@ def test_unknown_commit_protocol_substitution_refused_before_store_read(
         "lifecycle": triage.lifecycle,
     }[target]
     replacement = "FORGED_STATE" if name.isupper() else injected
-    with monkeypatch.context() as patch:
-        patch.setattr(owner, name, replacement, raising=False)
-        with pytest.raises(
-            triage.OfflineProposalUnknownCommitRejected,
-            match="proposal reconciliation protocol changed",
-        ):
-            _triage(path, before)
+    # Restoring inherited class hooks by assignment leaves a new own
+    # __new__/__getattribute__ descriptor and can corrupt later tests.
+    had_own_attribute = name in vars(owner)
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(owner, name, replacement, raising=False)
+            with pytest.raises(
+                triage.OfflineProposalUnknownCommitRejected,
+                match="proposal reconciliation protocol changed",
+            ):
+                _triage(path, before)
+    finally:
+        if not had_own_attribute and name in vars(owner):
+            delattr(owner, name)
     assert invoked == []
     assert _read(path) == before
