@@ -293,7 +293,18 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
                 info = sidecar.lstat()
             except FileNotFoundError:
                 continue
-            if absent or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            if absent or not stat.S_ISREG(info.st_mode):
+                raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
+            if info.st_nlink == 0:
+                # SQLite can unlink a short-lived rollback journal between
+                # pathname lookup and lstat's inode snapshot. Only this
+                # already-unlinked *regular* inode may be rechecked once.
+                # Symlinks, hardlinks and special files are never retried.
+                try:
+                    info = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
     except OSError as exc:
         raise SyntheticTriggerRejected("proactive SQLite path unavailable") from exc
