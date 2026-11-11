@@ -33,6 +33,15 @@ _MEMORY_WITNESS = MemoryLedgerWitness
 _CONTEXT_WITNESS = OfflineContextReplayWitness
 _DUE_WITNESS = DueReservationWitness
 
+# Private local restart metadata must never reach substituted serializers or
+# digest functions. This is an in-process fault-injection boundary, NOT
+# independent custody or a security sandbox.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+
 
 class OfflineRestartWitnessRejected(ValueError):
     """One or more local startup witness observations are not stable."""
@@ -86,6 +95,13 @@ _REPORT_DENIALS = (
 _ORIGINAL_REPORT_DENIALS = tuple(
     vars(_REPORT)[name] for name in _REPORT_DENIALS
 )
+_REPORT_CARRIER_NAMES = (
+    "memory_epochs", "context_requests", "due_occurrences", "fingerprint",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_REPORT_CARRIERS = tuple(
+    vars(_REPORT).get(name) for name in _REPORT_CARRIER_NAMES
+)
 _ORIGINAL_WITNESS_DENIALS = (
     vars(_MEMORY_WITNESS)["custody_authenticated"],
     vars(_CONTEXT_WITNESS)["independent_custody_proven"],
@@ -95,7 +111,18 @@ _ORIGINAL_WITNESS_DENIALS = (
 
 def _assert_original_authority() -> None:
     if (
-        OfflineRestartWitnessReport is not _REPORT
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or OfflineRestartWitnessReport is not _REPORT
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_CARRIER_NAMES, _ORIGINAL_REPORT_CARRIERS, strict=True,
+            )
+        )
         or any(
             vars(_REPORT).get(name) is not original
             for name, original in zip(
