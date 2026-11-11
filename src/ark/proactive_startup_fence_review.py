@@ -108,7 +108,8 @@ def _require_original_authorities() -> None:
         )
     ):
         raise SyntheticProactiveStartupRejected(
-            "proactive authority descriptor epoch changed: input, source or retained review callback changed"
+            "proactive authority descriptor epoch changed: "
+            "input, source or retained review callback changed"
         )
 
 
