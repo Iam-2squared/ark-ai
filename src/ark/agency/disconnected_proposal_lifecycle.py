@@ -11,13 +11,14 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
+from types import MappingProxyType
 
 _PROPOSAL_ID = re.compile(r"proposal_[0-9a-f]{64}\Z")
 _DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _GENESIS = "0" * 64
 _DOMAIN = b"ARK-disconnected-proposal-lifecycle-v1\0"
 _MAX_EVENTS = 256
-_ALLOWED = {
+_ALLOWED = MappingProxyType({
     "NONE": frozenset(("PROPOSED",)),
     "PROPOSED": frozenset(("REVIEW_REQUIRED", "REJECTED")),
     "REVIEW_REQUIRED": frozenset((
@@ -26,7 +27,7 @@ _ALLOWED = {
     "ACCEPTED_FOR_IMPLEMENTATION": frozenset(("SUPERSEDED",)),
     "REJECTED": frozenset(),
     "SUPERSEDED": frozenset(),
-}
+})
 
 
 class DisconnectedProposalLifecycleRejected(ValueError):
@@ -91,6 +92,10 @@ _ORIGINAL_HASH = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_ALLOWED = _ALLOWED
+_ORIGINAL_MAX_EVENTS = _MAX_EVENTS
+_ORIGINAL_GENESIS = _GENESIS
+_ORIGINAL_PROPOSAL_ID = _PROPOSAL_ID
+_ORIGINAL_DIGEST_RE = _DIGEST
 
 
 def _protocol() -> None:
@@ -101,6 +106,11 @@ def _protocol() -> None:
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _ALLOWED is not _ORIGINAL_ALLOWED
+        or type(_MAX_EVENTS) is not int
+        or _MAX_EVENTS is not _ORIGINAL_MAX_EVENTS
+        or _GENESIS is not _ORIGINAL_GENESIS
+        or _PROPOSAL_ID is not _ORIGINAL_PROPOSAL_ID
+        or _DIGEST is not _ORIGINAL_DIGEST_RE
         or vars(_TRANSITION).get("__init__") is not _ORIGINAL_TRANSITION_INIT
         or vars(_TIP).get("__init__") is not _ORIGINAL_TIP_INIT
         or any(
