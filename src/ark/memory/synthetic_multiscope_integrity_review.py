@@ -15,6 +15,14 @@ from pathlib import Path
 
 from .contracts import MemoryScope
 from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
+from .sqlite_event_prefix_review import (
+    MemoryEventPrefixRejected,
+    MemoryEventPrefixWitness,
+    _DOMAIN as _GLOBAL_PREFIX_DOMAIN,
+    _charge as _charge_global_prefix,
+    _require_original_prefix_protocol,
+    _witness_epoch as _global_prefix_epoch,
+)
 from .synthetic_event_continuity_review import (
     _DIGEST,
     SyntheticMemoryEventRejected,
@@ -105,13 +113,16 @@ def review_synthetic_memory_scopes(
     *,
     retained_events: tuple[SyntheticMemoryEventWitness, ...] | None = None,
     require_same_snapshot: SyntheticMemorySnapshotDigest | None = None,
+    retained_global_prefix: MemoryEventPrefixWitness | None = None,
 ) -> SyntheticMemorySnapshotDigest:
     """Check all named namespaces in ONE read-only SQLite transaction.
 
     `retained_events` permits append-only history growth; it does not prove
     earlier row content. `require_same_snapshot` instead demands an unchanged
     exact snapshot, including all current row hashes, so legitimate new writes
-    also require an explicit new review. No clock or backend is called.
+    also require an explicit new review. `retained_global_prefix` binds the
+    event bytes of *all owners* at a caller-retained earlier tip inside this
+    same WAL read snapshot; it is not authenticated custody. No backend runs.
     """
     if (
         type(store) is not SQLiteMemoryStore
@@ -232,12 +243,23 @@ def review_synthetic_memory_scopes(
             raise SyntheticMemorySnapshotRejected("invalid retained snapshot") from exc
 
     assert_initial_scope_epoch()
+    global_prefix_fields = None
+    if retained_global_prefix is not None:
+        try:
+            _require_original_prefix_protocol()
+            global_prefix_fields = _global_prefix_epoch(retained_global_prefix)
+        except MemoryEventPrefixRejected as exc:
+            raise SyntheticMemorySnapshotRejected(
+                "invalid retained global Memory event prefix"
+            ) from exc
     # Every accessor and SQLite callback is a reentrancy boundary. Values
     # alone do not pin reflected-mutable frozen dataclasses: retain their
     # exact original field carriers throughout every namespace and row.
     carriers = [*scopes]
     if retained_events is not None:
         carriers.extend(retained_events)
+    if retained_global_prefix is not None:
+        carriers.append(retained_global_prefix)
     if require_same_snapshot is not None:
         carriers.append(require_same_snapshot)
         carriers.extend(require_same_snapshot.scopes)
@@ -273,7 +295,14 @@ def review_synthetic_memory_scopes(
                 raise SyntheticMemorySnapshotRejected(
                     "retained Memory event witness changed during review"
                 )
-            if carrier_changed(retained_end, len(input_epoch)):
+            global_end = retained_end + (
+                1 if retained_global_prefix is not None else 0
+            )
+            if carrier_changed(retained_end, global_end):
+                raise SyntheticMemorySnapshotRejected(
+                    "retained global Memory prefix changed during review"
+                )
+            if carrier_changed(global_end, len(input_epoch)):
                 # Malformed shape must retain its existing specific failure
                 # reason (bool-vs-int, event fields, owner digest, etc.).
                 assert_cached_shape()
@@ -328,6 +357,39 @@ def review_synthetic_memory_scopes(
                 raise SyntheticMemorySnapshotRejected(
                     "global Memory event high-water mismatch"
                 )
+            if global_prefix_fields is not None:
+                # The unselected owners' *payloads* may be rewritten without
+                # changing global COUNT/MIN/MAX or sqlite_sequence. Re-hash
+                # the earlier retained global tip INSIDE the scoped WAL
+                # transaction, before accepting selected namespace results.
+                _require_original_prefix_protocol()
+                wanted_count, wanted_tail, wanted_hash = global_prefix_fields
+                if wanted_count > count:
+                    raise SyntheticMemorySnapshotRejected(
+                        "retained global Memory prefix rolled back"
+                    )
+                old_digest = hashlib.sha256(_GLOBAL_PREFIX_DOMAIN)
+                seen = 0
+                for event in conn.execute(
+                    "SELECT event_id,memory_id,owner_id,namespace,operation,"
+                    "revision,occurred_at_ms FROM memory_events "
+                    "ORDER BY event_id LIMIT ?",
+                    (wanted_count,),
+                ):
+                    _charge_global_prefix(old_digest, tuple(event))
+                    seen += 1
+                    assert_epoch()
+                _require_original_prefix_protocol()
+                if (
+                    seen != wanted_count or wanted_tail != seen
+                    or old_digest.hexdigest() != wanted_hash
+                    or _global_prefix_epoch(retained_global_prefix)
+                    != global_prefix_fields
+                ):
+                    raise SyntheticMemorySnapshotRejected(
+                        "retained global Memory event prefix differs"
+                    )
+                assert_epoch()
             for scope, scope_hash in zip(pinned, hashes, strict=True):
                 raw_events = conn.execute(
                     """SELECT event_id,memory_id,owner_id,namespace,operation,
