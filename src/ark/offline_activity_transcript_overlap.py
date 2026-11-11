@@ -22,6 +22,11 @@ _AUDIO_TYPE = binding_module.AudioMetadataClaim
 _SEGMENT_TYPE = binding_module.TranscriptSegmentClaim
 _PREVIEW_TYPE = binding_module.TranscriptBindingPreview
 _DOMAIN = b"ARK-offline-activity-transcript-overlap-v1\0"
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
 
 
 class OfflineAlignmentRejected(ValueError):
@@ -69,6 +74,51 @@ _PREVIEW_DENIALS = (
     "asr_verified", "tool_execution_authorized",
 )
 _PREVIEW_PROPS = tuple(vars(_PREVIEW_TYPE)[name] for name in _PREVIEW_DENIALS)
+# A frozen result's slots/constructor are still mutable at class level.
+_RESULT_FIELDS = (
+    "pcm_sha256", "transcript_fingerprint", "activity_region_count",
+    "transcript_segment_count", "region_span_samples",
+    "transcript_overlap_samples", "uncovered_region_span_samples",
+    "regions_with_overlap", "overlap_ppm", "alignment_sha256",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_RESULT_FIELDS = tuple(
+    vars(_RESULT_TYPE).get(name) for name in _RESULT_FIELDS
+)
+
+
+def _originals() -> None:
+    # Before any PCM byte reaches an activity verifier or a digest callback,
+    # reject substituted serialization, domain, verifier and result carriers.
+    # This is local fault-injection protection, not audio/source attestation.
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or OfflineActivityTranscriptOverlap is not _RESULT_TYPE
+        or activity_module.verify_activity_regions is not _ACTIVITY_VERIFY
+        or binding_module.review_audio_transcript_binding is not _TRANSCRIPT_REVIEW
+        or activity_module.ActivityRegions is not _ACTIVITY_TYPE
+        or activity_module.ActivityRegion is not _REGION_TYPE
+        or binding_module.AudioMetadataClaim is not _AUDIO_TYPE
+        or binding_module.TranscriptSegmentClaim is not _SEGMENT_TYPE
+        or binding_module.TranscriptBindingPreview is not _PREVIEW_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True,
+            )
+        )
+        or any(vars(_RESULT_TYPE).get(name) is not old for name, old in zip(
+            _DENIALS, _RESULT_PROPS, strict=True,
+        ))
+        or any(vars(_PREVIEW_TYPE).get(name) is not old for name, old in zip(
+            _PREVIEW_DENIALS, _PREVIEW_PROPS, strict=True,
+        ))
+    ):
+        raise OfflineAlignmentRejected("original alignment authority changed")
 
 
 def review_offline_activity_transcript_overlap(
@@ -92,6 +142,7 @@ def review_offline_activity_transcript_overlap(
     Retained fingerprints must originate outside the caller's current fixture
     to detect coordinated rewrites. This is read-only and cannot dispatch.
     """
+    _originals()
     if (
         type(pcm) is not bytes
         or type(activity) is not _ACTIVITY_TYPE
@@ -132,6 +183,7 @@ def review_offline_activity_transcript_overlap(
     )
 
     def stable() -> None:
+        _originals()
         if (
             activity_module.verify_activity_regions is not _ACTIVITY_VERIFY
             or binding_module.review_audio_transcript_binding is not _TRANSCRIPT_REVIEW
