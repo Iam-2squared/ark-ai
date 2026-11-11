@@ -79,7 +79,48 @@ class AtomicPreactionSnapshot:
         return False
 
 
+# Exact in-process custody of the inert intent/audit carriers. A frozen,
+# slotted dataclass is still patchable at class level: a replacement slot or
+# __getattribute__ executes before ordinary value/type validation. Check the
+# originals without invoking the substituted descriptors.
+_CLAIM_TYPE = AtomicIntentClaim
+_WITNESS_TYPE = AtomicPreactionWitness
+_SNAPSHOT_TYPE = AtomicPreactionSnapshot
+_CLAIM_FIELDS = ("occurrence_id", "bound_action_id", "request_sha256")
+_WITNESS_FIELDS = ("count", "tip_sha256")
+_SNAPSHOT_FIELDS = ("witness", "occurrence_ids")
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_SNAPSHOT_DENIALS = (
+    "tool_dispatch_authorized", "automatic_replay_authorized",
+    "external_effect_proven", "trusted_approval_verified",
+    "independent_custody_proven",
+)
+_ORIGINAL_CARRIER_SLOTS = tuple(
+    (cls, names, tuple(vars(cls).get(name) for name in names))
+    for cls, names in (
+        (_CLAIM_TYPE, _CLAIM_FIELDS + _CARRIER_HOOKS),
+        (_WITNESS_TYPE, _WITNESS_FIELDS + _CARRIER_HOOKS),
+        (_SNAPSHOT_TYPE, _SNAPSHOT_FIELDS + _CARRIER_HOOKS + _SNAPSHOT_DENIALS),
+    )
+)
+
+
+def _require_original_atomic_carriers() -> None:
+    if (
+        AtomicIntentClaim is not _CLAIM_TYPE
+        or AtomicPreactionWitness is not _WITNESS_TYPE
+        or AtomicPreactionSnapshot is not _SNAPSHOT_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in _ORIGINAL_CARRIER_SLOTS
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise AtomicPreactionRejected("atomic intent or audit carrier definition changed")
+
+
 def genesis_atomic_preaction_witness() -> AtomicPreactionWitness:
+    _require_original_atomic_carriers()
     return AtomicPreactionWitness(0, _GENESIS)
 
 
@@ -88,6 +129,7 @@ def _hex_id(value: object, pattern: re.Pattern[str]) -> bool:
 
 
 def _check_witness(value: object) -> None:
+    _require_original_atomic_carriers()
     if (
         type(value) is not AtomicPreactionWitness
         or type(value.count) is not int or not 0 <= value.count <= _MAX
@@ -103,6 +145,7 @@ def _witness_image(value: object) -> tuple[int, str]:
 
 
 def _check_claim(value: object) -> None:
+    _require_original_atomic_carriers()
     if (
         type(value) is not AtomicIntentClaim
         or not _hex_id(value.occurrence_id, _ID)
@@ -175,6 +218,7 @@ def _audit(seq: int, claim: AtomicIntentClaim, chain: str) -> str:
 
 
 def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
+    _require_original_atomic_carriers()
     _schema(conn)
     rows = conn.execute(
         "SELECT i.seq,i.occurrence_id,i.bound_action_id,i.request_sha256,"
@@ -201,9 +245,12 @@ def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
             raise AtomicPreactionRejected("pre-action row/audit chain mismatch")
         tip = chain
         occurrences.append(occurrence)
-    return AtomicPreactionSnapshot(
+    _require_original_atomic_carriers()
+    result = AtomicPreactionSnapshot(
         AtomicPreactionWitness(len(rows), tip), tuple(occurrences),
     )
+    _require_original_atomic_carriers()
+    return result
 
 
 class DisconnectedAtomicPreactionLedger:
