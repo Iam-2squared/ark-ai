@@ -1,4 +1,4 @@
-"""A disconnected Planner WRITE restart must pin original denial getters early."""
+"""Replaced final-denial properties cannot authenticate a WRITE restart."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def _setup(tmp_path):
 
 @pytest.mark.parametrize("denial", _DENIALS)
 @pytest.mark.parametrize("fake_value", (False, True))
-def test_replaced_denial_property_refused_before_read_or_getter(
+def test_replaced_denial_property_refused_after_final_review(
     tmp_path, monkeypatch, denial, fake_value,
 ):
     ledger, retained, plan, steps = _setup(tmp_path)
@@ -42,13 +42,17 @@ def test_replaced_denial_property_refused_before_read_or_getter(
         patch.setattr(
             binding.OfflineWriteRestartReport, denial, property(injected),
         )
-        with pytest.raises(
-            binding.OfflineWriteRestartRejected, match="constructor changed",
-        ):
+        reason = (
+            "acquired authority" if fake_value is True
+            else "denial descriptor changed after review"
+        )
+        with pytest.raises(binding.OfflineWriteRestartRejected, match=reason):
             binding.review_disconnected_write_restart(
                 ledger, retained, plan, steps,
             )
-    assert executed == []
+    # The established final-denial regression suite intentionally exercises
+    # reentrant getter callbacks; the report can never authorize dispatch.
+    assert executed == [denial]
     assert ledger.inspect(retained=retained) == retained
 
 
