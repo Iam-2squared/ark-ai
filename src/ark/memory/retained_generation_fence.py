@@ -110,8 +110,15 @@ def _assert_retained_generation_protocol() -> None:
     if (
         _SHA is not _ORIGINAL_SHA_PARSER
         or _ID is not _ORIGINAL_ID_PARSER
-        or _MAX_EVENTS != _ORIGINAL_EVENT_BUDGET
-        or SQLITE_INT_MAX != _ORIGINAL_SQLITE_LIMIT
+        # Value equality accepts e.g. 40000.0 or a hostile __eq__ carrier.
+        # Both limits must remain the ORIGINAL exact integer objects before
+        # any retained identifiers or private SQLite inputs are inspected.
+        or type(_MAX_EVENTS) is not int
+        or type(_ORIGINAL_EVENT_BUDGET) is not int
+        or _MAX_EVENTS is not _ORIGINAL_EVENT_BUDGET
+        or type(SQLITE_INT_MAX) is not int
+        or type(_ORIGINAL_SQLITE_LIMIT) is not int
+        or SQLITE_INT_MAX is not _ORIGINAL_SQLITE_LIMIT
         or _fields is not _ORIGINAL_FIELDS_READER
         or _assert_original_denials is not _ORIGINAL_DENIAL_CHECK
         or _DENIALS is not _ORIGINAL_DENIAL_NAMES
