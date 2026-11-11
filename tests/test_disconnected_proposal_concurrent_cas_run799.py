@@ -13,7 +13,6 @@ import pytest
 
 from ark.agency import disconnected_proposal_store as store
 
-
 _A = "proposal_" + "a" * 64
 _B = "proposal_" + "b" * 64
 
