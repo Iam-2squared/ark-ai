@@ -76,6 +76,16 @@ _REPORT_FIELDS = (
 _REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT)[name] for name in _REPORT_FIELDS)
 _ORIGINAL_REPORT_HOOKS = tuple(vars(_REPORT).get(name) for name in _REPORT_HOOKS)
+# Unlike a late capture after SQLite review, import-original False-only
+# descriptors cannot be silently replaced by an intervening ledger callback.
+_REPORT_DENIAL_NAMES = (
+    "tool_dispatch_authorized", "write_replay_authorized",
+    "external_outcome_verified", "trusted_clock_verified",
+    "consent_verified", "cross_store_atomicity_proven",
+)
+_ORIGINAL_REPORT_DENIALS = tuple(
+    vars(_REPORT)[name] for name in _REPORT_DENIAL_NAMES
+)
 _DOMAIN = b"ARK-disconnected-write-restart-binding-v1\0"
 
 
@@ -114,6 +124,12 @@ def _assert_original_report_constructor() -> None:
             vars(_REPORT).get(name) is not original
             for name, original in zip(
                 _REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_REPORT).get(name) is not original
+            for name, original in zip(
+                _REPORT_DENIAL_NAMES, _ORIGINAL_REPORT_DENIALS, strict=True,
             )
         )
     ):
