@@ -13,6 +13,9 @@ from dataclasses import dataclass
 
 from . import offline_observation_pair as pair_module
 from . import offline_observation_transcript as transcript_module
+from . import offline_pcm_wav as wave_module
+from . import offline_png_inventory as png_module
+from . import offline_transcript_binding as binding_module
 from .offline_pcm_wav import OfflineWaveRequest
 from .offline_png_inventory import OfflinePngRequest
 from .offline_transcript_binding import TranscriptSegmentClaim
@@ -87,6 +90,46 @@ _PAIR_PROPS = tuple(getattr(_PAIR_TYPE, name) for name in _PAIR_DENIALS)
 _JOIN_PROPS = tuple(getattr(_JOIN_TYPE, name) for name in _JOIN_DENIALS)
 
 
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_PNG_GUARD = png_module._require_original_png_authority
+_ORIGINAL_WAVE_GUARD = wave_module._require_original_wave_authority
+_ORIGINAL_SEGMENT_GUARD = binding_module._assert_original_binding_carriers
+
+
+def _require_original_coverage_ingress() -> None:
+    """Guard private image/audio/text carriers BEFORE reading any fields.
+
+    The underlying parsers already pin their input class slots at import
+    time. Invoke those original guards rather than capturing a potentially
+    poisoned new baseline in this higher-level coverage adapter.
+    """
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or png_module._require_original_png_authority is not _ORIGINAL_PNG_GUARD
+        or wave_module._require_original_wave_authority is not _ORIGINAL_WAVE_GUARD
+        or binding_module._assert_original_binding_carriers is not _ORIGINAL_SEGMENT_GUARD
+    ):
+        raise OfflineCoverageRejected("coverage private ingress dependencies changed")
+    try:
+        _ORIGINAL_PNG_GUARD()
+        _ORIGINAL_WAVE_GUARD()
+        _ORIGINAL_SEGMENT_GUARD()
+    except (
+        png_module.OfflinePngRejected,
+        wave_module.OfflineWaveRejected,
+        binding_module.TranscriptBindingRejected,
+    ) as exc:
+        raise OfflineCoverageRejected("coverage private ingress carriers changed") from exc
+
+
 def review_disconnected_transcript_coverage(
     image: OfflinePngRequest,
     audio: OfflineWaveRequest,
@@ -111,6 +154,7 @@ def review_disconnected_transcript_coverage(
         or any(type(span) is not TranscriptSegmentClaim for span in segments)
     ):
         raise OfflineCoverageRejected("exact bounded coverage fixture required")
+    _require_original_coverage_ingress()
     retained = (
         retained_owner_sha256, retained_privacy_sha256, retained_png_sha256,
         retained_wav_sha256, retained_transcript_fingerprint,
@@ -129,6 +173,7 @@ def review_disconnected_transcript_coverage(
     ) for span in segments)
 
     def stable() -> None:
+        _require_original_coverage_ingress()
         if (
             transcript_module.review_disconnected_observation_transcript is not _JOIN
             or pair_module.inspect_disconnected_observation_pair is not _PAIR
