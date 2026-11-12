@@ -130,7 +130,7 @@ def review_registered_unknown_outcome(
     original_path = ledger._path
     original_revision = registry.revision
     call_epoch = (call.tool, call.capability, call.scope, call.arguments, call.request_id)
-    before_epoch = (before.count, before.chain_sha256)
+    before_epoch = (before.count, before.tip_sha256)
 
     def stable() -> None:
         _protocol()
@@ -144,7 +144,7 @@ def review_registered_unknown_outcome(
                     call_epoch, strict=True,
                 )
             )
-            or (before.count, before.chain_sha256) != before_epoch
+            or (before.count, before.tip_sha256) != before_epoch
         ):
             raise RegisteredUnknownOutcomeRejected("registered triage inputs changed")
 
