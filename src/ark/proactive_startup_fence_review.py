@@ -76,6 +76,23 @@ _ORIGINAL_RESULT_CARRIER = tuple(
     for name in (*_RESULT_FIELDS, *_RESULT_HOOKS)
 )
 
+# The combined reviewer reads fields from six independently frozen local
+# receipt types. Reject executable class-level getters *before* the first
+# provenance/clock/SQLite callback, not only in the child reviewers.
+# This is interpreter-local descriptor custody, never authenticated readiness.
+_SOURCE_TYPES = (
+    SyntheticTriggerReceipt, SyntheticTriggerPolicy, SyntheticTriggerWitness,
+    StartupSnapshot, ComponentResult, SyntheticReadinessRequirement,
+)
+_SOURCE_FIELDS = tuple(
+    tuple(item.name for item in fields(cls)) for cls in _SOURCE_TYPES
+)
+_SOURCE_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_SOURCE_DESCRIPTORS = tuple(
+    tuple(vars(cls).get(name) for name in (*names, *_SOURCE_HOOKS))
+    for cls, names in zip(_SOURCE_TYPES, _SOURCE_FIELDS, strict=True)
+)
+
 
 def _require_original_authorities() -> None:
     # False-valued replaced properties can execute arbitrary callbacks.
@@ -85,6 +102,19 @@ def _require_original_authorities() -> None:
         or fields is not _ORIGINAL_FIELDS_FN
         or _epoch is not _ORIGINAL_EPOCH_FN
         or _snapshot_epoch is not _ORIGINAL_SNAPSHOT_EPOCH_FN
+        or (
+            SyntheticTriggerReceipt, SyntheticTriggerPolicy,
+            SyntheticTriggerWitness, StartupSnapshot, ComponentResult,
+            SyntheticReadinessRequirement,
+        ) != _SOURCE_TYPES
+        or any(
+            tuple(vars(cls).get(name) for name in (*names, *_SOURCE_HOOKS))
+            != original
+            for cls, names, original in zip(
+                _SOURCE_TYPES, _SOURCE_FIELDS, _SOURCE_DESCRIPTORS,
+                strict=True,
+            )
+        )
         or any(
             vars(_RESULT_TYPE).get(name) is not original
             for name, original in zip(
