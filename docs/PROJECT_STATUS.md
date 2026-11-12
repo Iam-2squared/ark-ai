@@ -1,4 +1,45 @@
-# LATEST — ARK AI Run824 NON-UI SQLite race / Planner restart / Memory ABA preaccess
+# LATEST — ARK AI Run825 NON-UI actual Memory CAS / Planner + proactive callback custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T03:52:08.936+09:00.** Observed repository-report clock only; **NOT** a trusted consent/action timestamp. **Overall ARK/JARVIS: NOT_PASSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Initial work-basis HEAD:** `e91a72a56e04fe4d7149c9908b1317c37191967e` (prior Run824 checkpoint). **Last executable/test result HEAD:** `da54c8782a767a3acafcb4e5f7dc9e6cf9c8a0db`. **Technical report result HEAD:** `c39d99c59cd0e9ee0af11872c320ac1f30dda08e`. **Checkpoint-write-basis HEAD:** `c39d99c59cd0e9ee0af11872c320ac1f30dda08e` (live PR re-read before Github Contents API write). **Checkpoint-result HEAD: UNKNOWN in this pre-write file**; the GitHub Contents API returns a new commit SHA only *after* this content is committed. The write-basis must never be presented as the checkpoint-result; verify live PR/branch/file after the update. Previous status blob SHA: `0a5241a336b540efe49a0c8477a3e7431fb24f26`.
+
+## NEW — Three coherent independent non-UI packages, 29 authored regression tests
+
+1. **Memory / actual independent-process generation-fenced CAS diagnostic.** [Source `195e2dbd`](https://github.com/Iam-2squared/ark-ai/commit/195e2dbd2317d5dbbef913f1a52ecdcdc3f94423) adds opt-in `--operation generation-cas` to the disposable two-Python-process SQLite sidecar harness. Pre-seeds synthetic rows and retained local tokens and executes true `generation_fenced_memory_update` (not just `put(expected_revision=0)`). Independent scopes should both UPDATE; competing same identity must yield one conflict. Existing default create-mode, bounded iterations and sequential/concurrent startup modes remain. [7 new test cases `1a6cc487`](https://github.com/Iam-2squared/ark-ai/commit/1a6cc487d0d816a2fa3b69a935a017422ec82ffd) cover four identities, revision 2 / historical create→update events, aggregate-only receipts and invalid operation. No private database/path/row output, no unsafe sidecar retry.
+2. **Planner / crash-restart source descriptor preaccess.** [Source `673e6d00`](https://github.com/Iam-2squared/ark-ai/commit/673e6d00409610ce867f4496fd0354de5f4edf6f) pins seven source carrier classes and their original slots/getters before receipt comparison, step-ID hashing, journal/SQLite review or child callbacks. [11 new regression cases `eb09926a`](https://github.com/Iam-2squared/ark-ai/commit/eb09926a46c21c083a90053a8df36b9a45ba1f4f) cover replaced slots/classes and no-execution positive quarantine. No replay or dispatch.
+3. **Proactive / restart-readiness source descriptor preaccess.** [Source `22b986e9`](https://github.com/Iam-2squared/ark-ai/commit/22b986e991ed3306c5d13a9eed3d40696d979230) checks six synthetic receipt/policy/readiness class and dataclass field identities before dual local review. [11 new regression cases `da54c878`](https://github.com/Iam-2squared/ark-ai/commit/da54c8782a767a3acafcb4e5f7dc9e6cf9c8a0db) cover getter/class swaps and unchanged protocol. No notification or startup authorization.
+
+[Full technical evidence/report `c39d99c5`](https://github.com/Iam-2squared/ark-ai/blob/c39d99c59cd0e9ee0af11872c320ac1f30dda08e/docs/JARVIS_RUN825_NON_UI_GENERATION_CAS_PLANNER_PROACTIVE_CUSTODY.md) distinguishes authored tests from executed tests and records limits. Compare from Run824 to report HEAD: **7 commits ahead / 0 behind**, exactly 3 source/script + 3 test + 1 documentation file; no frozen, frontend or UI path changed.
+
+## CI / exact-head evidence (at last inspection)
+
+- Prior exact checkpoint `e91a72a56e04fe4d7149c9908b1317c37191967e`: [CI #43274967459](https://github.com/Iam-2squared/ark-ai/actions/runs/43274967459) **GREEN 6/6** (Windows + Ubuntu × Python 3.11/3.12/3.13), each job inspected.
+- [CI #43282564465](https://github.com/Iam-2squared/ark-ai/actions/runs/43282564465) — 3/6 GREEN; 0 FAIL, 3 IN PROGRESS/QUEUED at recorded inspection
+- [CI #43282709844](https://github.com/Iam-2squared/ark-ai/actions/runs/43282709844) — 3/6 GREEN; 0 FAIL, 3 IN PROGRESS/QUEUED at recorded inspection
+- [CI #43282971958](https://github.com/Iam-2squared/ark-ai/actions/runs/43282971958) — 3/6 GREEN; 0 FAIL, 3 IN PROGRESS/QUEUED at recorded inspection
+- [CI #43283078777](https://github.com/Iam-2squared/ark-ai/actions/runs/43283078777) — 2/6 GREEN; 0 FAIL, 4 IN PROGRESS/QUEUED at recorded inspection
+- [CI #43283330576](https://github.com/Iam-2squared/ark-ai/actions/runs/43283330576) — 0/6 GREEN; 0 FAIL, 6 IN PROGRESS/QUEUED at recorded inspection
+- [CI #43283384821](https://github.com/Iam-2squared/ark-ai/actions/runs/43283384821) — 0/6 GREEN; 0 FAIL, 6 IN PROGRESS/QUEUED at recorded inspection
+- Last test commit `da54c8782a767a3acafcb4e5f7dc9e6cf9c8a0db` and report commit `c39d99c59cd0e9ee0af11872c320ac1f30dda08e` have their own later CI. **Their exact six-job outcome is NOT ESTABLISHED** in this record; this checkpoint CI ID does not exist until after its write. Never infer a newer HEAD's PASS from preceding green jobs. No duplicate equivalent workflow runs were dispatched. No local full repository pytest/Ruff or physical GGUF validation performed.
+
+## Frozen contracts, blockers, authorization
+
+V1/V2/Local UI/Launcher frozen contracts/evidence unchanged; [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains under its controlling pre-paid training gate; [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains **paused and untouched**; #5/#8/#9 are Draft/unmerged. The intermittent independent-process Memory SQLite `-wal/-shm/-journal` sidecar refusal remains **unresolved**; a synthetic local token/sidecar metadata is not external custody or provenance. No paid API/service/GPU/external compute, Candidate/weights/training/promotion, protected V2 final evaluation, trusted consent/time, live tool dispatch, automatic UNKNOWN WRITE replay, unreviewed new credentials, destructive changes, unavailable PC activity or main merge.
+
+## Next plan / 今後の方針
+
+1. Obtain **exact final checkpoint HEAD** and inspect all six CI jobs; on FAIL inspect real logs, preserve rejection semantics, apply only a minimal fix, then work another independent lane during CI. No duplicate workflow dispatch.
+2. Reproduce intermittent sidecar refusal with the updated **real generation-CAS** disposable subprocess probe: isolate bootstrap vs WRITE phase, use only suffix/file-type/link-count evidence and never weaken symlink/hardlink/orphan checking.
+3. Extend Memory coherent CAS/ABA and COMMIT-UNKNOWN event/row reconstruction, Planner durable RUNNING/UNKNOWN quarantine and dependency terminal propagation. Never infer external completion from local SQLite.
+4. Only after lower-layer exact-head GREEN, integrate immutable ToolRegistry, exact-type PermissionGate, durable once-per-occurrence audit-before-action, trusted-clock separation, disconnected/mock executor and readiness. Remain no-dispatch.
+5. Continue privacy-safe Personal Context, proactive scheduler recovery, observation fixture adapters and free-only V3 path/identity/reproducibility guards independently. Stop specific lane only at paid, credential, protected, irreversible, Candidate, frozen-contract or approval-required merge gate.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run824 NON-UI SQLite race / Planner restart / Memory ABA preaccess
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T02:57:17.389+09:00.** Timestamp observed in this execution, not a trusted action/consent clock. **Overall ARK/JARVIS: NOT_PASSED.**
 
