@@ -1,3 +1,42 @@
+# LATEST — Run805 / 2026-11-12 JST
+
+**LATEST:** Four independent **NON-UI / FREE-ONLY** core packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) SQLite schema probe fail-before-getter/serializer identity fence; (B) proposal-store witness/snapshot lookup descriptor pinning; (C) strict V3 JSON exponent overflow rejection; (D) private Memory row-delta JSON/SHA preaccess custody. **62 NEW regression cases submitted** (34 + 5 + 14 + 9), with [Run805 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/9a9a2d0eb8711b9399c79372a1cfc675cc3edc37/docs/JARVIS_RUN805_NON_UI_SCHEMA_PROPOSAL_V3_MEMORY.md). Import-only Ruff UP035 failure diagnosed and repaired without changing source semantics. **Latest exact-head six-job CI GREEN NOT VERIFIED**; ARK/JARVIS overall **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation observed wall-clock):** Asia/Tokyo/JST **2026-11-12T09:55:24+09:00**. This is a local wall-clock observation taken before GitHub accepts the checkpoint commit; it is not trusted audit time, human consent, independent provenance or hardware evidence.
+
+## Branch, exact work basis and checkpoint identity
+
+- **Initial work-basis HEAD:** `462ca29c63310f6febc7385f595b2ecf7f2ec23d` on `research/jarvis-foundations`, PR #8 OPEN/DRAFT/UNMERGED. This was Run804 checkpoint HEAD.
+- **Checkpoint-write basis HEAD** re-read live immediately before normal Contents API mutation: `9a9a2d0eb8711b9399c79372a1cfc675cc3edc37` (four source/test packages + one minimal Ruff test import fix + Run805 report already saved). **Previous canonical status blob SHA**: `721a2d464528d5c2f55f968da4784e5267d208f4`.
+- **Checkpoint-result-HEAD wording:** GitHub creates a **new commit SHA** when it accepts this status update; `9a9a2d0eb8711b9399c79372a1cfc675cc3edc37` is only the write-basis SHA and **must not be represented as this checkpoint's resulting HEAD**. Observe the returned commit/blob SHA, then re-fetch the live branch/PR HEAD and this file independently. No self-referential result SHA is invented inside the checkpoint itself.
+- PR #5 V3 protected gate remains OPEN/DRAFT/UNMERGED; PR #9 `ui/next-generation-command-center-20261103` remains OPEN/DRAFT/UNMERGED and **untouched**. Frozen V1/V2/Local UI/Launcher contracts/evidence unchanged; **ALL NEW UI/FRONTEND WORK PAUSED**.
+
+## NEW source, tests and technical evidence this invocation
+
+1. **SQLite schema detached read preaccess:** `src/ark/disconnected_sqlite_schema_probe.py` commit `cea668a731ac32967993aaf13898a23a1cc7b25c` pins schema carrier slots/hooks/deny flags plus digest/JSON and query/budget constants before any private SQLite metadata read. `tests/test_disconnected_schema_probe_preaccess_run805.py`, commit `c318ffee3d637b8a9fd0b963ba34438b6ffa5795`, test-isolation repair `99d34650cd5b7ffafdaa2163c97377356c73e47b`: **34 cases**. Avoids inherited `__new__` monkeypatch to prevent CPython `tp_new` poisoning.
+2. **Proposal store carrier custody:** `src/ark/agency/disconnected_proposal_store.py` commit `156978d194d49b101c2ce294d6ae88f0f45092bd` rejects substituted witness/snapshot lookup hooks. `tests/test_disconnected_proposal_lookup_hooks_run805.py` commit `b7b878ff5789c52e01cc8166f70d8a95ed068963`, UP035 test-import repair `92067d5a3efb38e6d0fde7d034f7cea463333811`: **5 cases**. Retains original CAS/event semantics and manual-only authority.
+3. **V3 offline packet canonicalization:** `src/ark/v3_detached_packet_review.py` commit `f4dd9a2d5fa110378a0aadba902410ec4db02d11` turns JSON exponent-overflow serializer errors into explicit `DetachedV3PacketRejected`; `tests/test_v3_packet_overflow_run805.py` commit `d0ab0b1cb6d0220338529578925484818e8f82ff`: **14 cases**, no GPU, Candidate or evaluation opened.
+4. **Memory private row digest boundary:** `src/ark/memory/sqlite_retained_row_delta_review.py` commit `1d16aee8f30c3bcd48fa43e55784c75d8e971b4b` pins JSON/SHA domain/codecs before reading private SQLite rows and across digest callbacks; `tests/test_memory_row_delta_digest_preaccess_run805.py` commit `f07397caede4bfe56a8deae59d7e8a5011bbeabd`: **9 cases**. Existing fault-injection seams preserved.
+5. **Evidence report:** `docs/JARVIS_RUN805_NON_UI_SCHEMA_PROPOSAL_V3_MEMORY.md` saved at `9a9a2d0eb8711b9399c79372a1cfc675cc3edc37`. No stand-alone local checkout, real-model execution, full local Ruff or local pytest claims.
+
+## CI outcomes at last actual inspection
+
+- **Prior, unchanged Run804 checkpoint:** `462ca29c63310f6febc7385f595b2ecf7f2ec23d`, [CI #43127438154](https://github.com/Iam-2squared/ark-ai/actions/runs/43127438154), **GREEN 6/6** (Windows/Ubuntu × Python 3.11/3.12/3.13) observed during Run805. This is **not** evidence for Run805 changes.
+- **Run805 intermediate CI:** [#43129756257](https://github.com/Iam-2squared/ark-ai/actions/runs/43129756257), **FAIL 6/6 at Ruff**; actual Ubuntu Python 3.11 job `130890659060` reports `UP035` (import `Iterator` from `collections.abc` instead of `typing`) in the new proposal test. Import-only fixed at `92067d5a3efb38e6d0fde7d034f7cea463333811`. Multiple earlier-head CI failures inherit this same lint issue; do not label them an independent semantics failure.
+- **Corrected test-import HEAD:** `92067d5a3efb38e6d0fde7d034f7cea463333811`, [CI #43130299031](https://github.com/Iam-2squared/ark-ai/actions/runs/43130299031), **IN PROGRESS** on all 6 jobs at last job inspection. Report-bearing HEAD `9a9a2d0eb8711b9399c79372a1cfc675cc3edc37`, [CI #43130612287](https://github.com/Iam-2squared/ark-ai/actions/runs/43130612287), **QUEUED** at last run inspection. The checkpoint-result run ID is unknown until accepted; its six-job GREEN must be independently checked later. No attempt to reuse prior-head GREEN for new code.
+
+## Authority limits, blockers and frozen evidence
+
+No changes to frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1, protected final evaluation, provenance/contamination/regression/reproducibility gates or main. No paid/external GPU/API/compute, new paid services/subscriptions, new secrets/account connections, actual Candidate/weight generation, Candidate promotion, owner-authorized WRITE, real ToolBackend or physical PC action. No automatic COMMIT-UNKNOWN retry, irreversible deletion, fake hashes or user review assertions. Source edits only on reversible PR #8. Local Python pin checks do not constitute a security sandbox, independent storage attestation, trusted wall clock or consent.
+
+## Next plan / 今後の方針
+
+1. Observe the **actual checkpoint-result HEAD** and all six CI job conclusions; if any FAIL, obtain concrete failing job logs and apply the smallest semantics-preserving correction with normal GitHub Contents API, then work another non-UI lane while new CI runs. Do not run duplicate equivalent workflows.
+2. Advance Memory generation CAS/ABA/expiry and post-COMMIT ambiguity handling, Planner persisted UNKNOWN quarantine/recovery, immutable ToolRegistry + exact PermissionGate, durable occurrence/replay protection and audit-before-action, always disconnected/mock until integrated GREEN is independently observed.
+3. Continue privacy-safe Personal Context, proactive readiness, multimodal fixture-only contracts and zero-cost V3 path/identity guards. Preserve frozen evidence, Draft PR #5 and untouched Draft PR #9/UI pause. **ARK/JARVIS NOT_PASSED**.
+
+---
+
 # LATEST — Run804 / 2026-11-12 JST
 
 **LATEST:** Two coherent **NON-UI / FREE-ONLY** source and regression packages saved in [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) caller-supplied protected/frozen path quarantine in the disconnected work-lane selector; (B) fail-before-getter cached Observation lineage and source privacy descriptor fence. **20 NEW parameterized regression cases submitted** (13 + 7), plus a detailed technical report. Both test files passed local Python syntax compilation only. Older-head CI exposed one existing witness-alias compatibility test failure (Ubuntu 3.12/3.13); a minimal source-only correction at `94a19690332008e3e21d99718cd03a26c8bcc81f` retains all original descriptor fences. The corrected source's **six-job GREEN is NOT YET VERIFIED**; ARK/JARVIS remains **NOT_PASSED**.
