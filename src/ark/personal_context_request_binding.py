@@ -252,7 +252,7 @@ def bind_offline_context_request(
             allow_nan=False, separators=(",", ":"),
         )
         _assert_original_private_codec()
-    except (TypeError, ValueError, UnicodeError) as exc:
+    except (TypeError, ValueError, UnicodeError, OverflowError, RecursionError) as exc:
         if type(exc) is OfflineContextBindingRejected:
             raise
         raise OfflineContextBindingRejected("context preview JSON invalid") from exc
