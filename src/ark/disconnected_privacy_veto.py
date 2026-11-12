@@ -289,10 +289,29 @@ def _path(value: object, *, exists: bool) -> Path:
         raise OfflinePrivacyVetoRejected("veto ancestor unavailable") from exc
     if value.is_symlink() or (exists and not value.exists()):
         raise OfflinePrivacyVetoRejected("missing or symbolic veto ledger")
-    if value.exists():
-        info = value.stat(follow_symlinks=False)
+    main_exists = value.exists()
+    if main_exists:
+        try:
+            info = value.stat(follow_symlinks=False)
+        except OSError as exc:
+            raise OfflinePrivacyVetoRejected("veto ledger metadata unavailable") from exc
         if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
             raise OfflinePrivacyVetoRejected("veto ledger requires one regular-file link")
+    # Even this disconnected privacy fixture must not open SQLite through
+    # an aliased WAL/SHM/journal pathname. A safe main file cannot vouch
+    # for sidecars. This lstat preflight is not atomic filesystem custody.
+    for suffix in ("-wal", "-shm", "-journal"):
+        sidecar = value.with_name(value.name + suffix)
+        try:
+            sidecar_info = sidecar.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise OfflinePrivacyVetoRejected("veto sidecar metadata unavailable") from exc
+        if not main_exists:
+            raise OfflinePrivacyVetoRejected("orphaned veto SQLite sidecar refused")
+        if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
+            raise OfflinePrivacyVetoRejected("veto SQLite sidecar alias refused")
     if not value.parent.is_dir() or value.parent.is_symlink():
         raise OfflinePrivacyVetoRejected("veto parent must be a real directory")
     return value
