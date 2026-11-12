@@ -20,7 +20,11 @@ from .disconnected_dependency_quarantine_projection import (
     DisconnectedDependencyHold,
     DisconnectedDependencyProjection,
 )
-from .planner_journal_review import SyntheticPlanRecovery, SyntheticPlanTail
+from .planner_journal_review import (
+    SyntheticPlanJournalRejected,
+    SyntheticPlanRecovery,
+    SyntheticPlanTail,
+)
 
 _MAX_STEPS = 128
 _MAX_EDGES = 4096
@@ -170,7 +174,7 @@ def review_disconnected_restart_dependency(
     try:
         retained_tail.assert_shape()
         recovered.tail.assert_shape()
-    except (ValueError, TypeError, AttributeError) as exc:
+    except (SyntheticPlanJournalRejected, ValueError, TypeError, AttributeError) as exc:
         raise DisconnectedRestartDependencyRejected("retained journal tail invalid") from exc
 
     tail_fields = (
@@ -235,8 +239,8 @@ def review_disconnected_restart_dependency(
     if (
         recovered.ambiguous_running_steps != expected_running
         or any(
-            claim.state.value != status[1]
-            for (_, claim), status in zip(pinned_claims, pinned_statuses, strict=True)
+            row[2].value != status[1]
+            for (_, row), status in zip(pinned_claims, pinned_statuses, strict=True)
         )
     ):
         raise DisconnectedRestartDependencyRejected("RUNNING/UNKNOWN or state mismatch")
