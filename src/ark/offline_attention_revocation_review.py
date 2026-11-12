@@ -70,6 +70,23 @@ class AttentionRevocationReview:
 
 _RESULT = AttentionRevocationReview
 _ORIGINAL_DENIALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
+# Replacing an output field/constructor or digest callback can execute code
+# before an otherwise False-only privacy result is checked. Pin originals at
+# import rather than trusting a per-call snapshot of executable descriptors.
+_RESULT_INPUT_FIELDS = (
+    "scope_sha256", "revocation_witness_id", "revocation_count", "vetoed",
+    "attention_disposition", "attention_review_sha256", "review_sha256",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_CARRIER = tuple(
+    vars(_RESULT).get(name) for name in (*_RESULT_INPUT_FIELDS, *_RESULT_HOOKS)
+)
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_PATTERN = _SHA
 
 
 def review_offline_attention_revocation(
@@ -89,7 +106,13 @@ def review_offline_attention_revocation(
     """
     def original_authorities() -> None:
         if (
-            attention.AttentionBudgetPolicy is not _POLICY
+            hashlib is not _ORIGINAL_HASHLIB
+            or json is not _ORIGINAL_JSON
+            or hashlib.sha256 is not _ORIGINAL_SHA256
+            or json.dumps is not _ORIGINAL_DUMPS
+            or _DOMAIN is not _ORIGINAL_DOMAIN
+            or _SHA is not _ORIGINAL_SHA_PATTERN
+            or attention.AttentionBudgetPolicy is not _POLICY
             or attention.SyntheticSurfaceMarker is not _MARKER
             or attention.AttentionBudgetPreview is not _PREVIEW
             or attention.preview_proactive_attention is not _ATTENTION_REVIEW
@@ -102,6 +125,14 @@ def review_offline_attention_revocation(
             )
         ):
             raise AttentionRevocationRejected("original attention/veto authority changed")
+        if any(
+            vars(_RESULT).get(name) is not original
+            for name, original in zip(
+                (*_RESULT_INPUT_FIELDS, *_RESULT_HOOKS),
+                _ORIGINAL_RESULT_CARRIER, strict=True,
+            )
+        ):
+            raise AttentionRevocationRejected("attention/veto report gained authority")
 
     original_authorities()
     if (
