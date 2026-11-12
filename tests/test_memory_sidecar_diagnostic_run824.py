@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
+from importlib import util
 from pathlib import Path
 
 import pytest
@@ -13,9 +13,9 @@ _SCRIPT = (
     Path(__file__).resolve().parents[1]
     / "scripts" / "diagnose_memory_sidecar_startup.py"
 )
-_SPEC = importlib.util.spec_from_file_location("ark_memory_sidecar_diag_run824", _SCRIPT)
+_SPEC = util.spec_from_file_location("ark_memory_sidecar_diag_run824", _SCRIPT)
 assert _SPEC is not None and _SPEC.loader is not None
-_DIAG = importlib.util.module_from_spec(_SPEC)
+_DIAG = util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_DIAG)
 
 
