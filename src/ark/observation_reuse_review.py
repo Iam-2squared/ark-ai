@@ -56,6 +56,51 @@ _ORIGINAL_REUSE_DENIALS = tuple(
     vars(_REUSE_RESULT_TYPE)[name] for name in _REUSE_DENIAL_NAMES
 )
 
+# A cached witness or envelope is caller-owned privacy metadata. Slotted
+# fields and lookup hooks can be rebound at class level. Deny such replacements
+# before reading the first cached scope or source identifier, and repeat across
+# the two reentrant lineage callbacks. Leave result __init__ injectable for
+# existing after-construction mutation regression tests.
+_REUSE_SOURCE_TYPE = ObservationEnvelope
+_REUSE_SOURCE_NAMES = (
+    "kind", "source_id", "adapter_id", "privacy_scope", "ingested_at_ms",
+    "content_sha256", "parent_sha256", "schema_version", "observation_id",
+    "__getattribute__", "__getattr__",
+)
+_REUSE_CACHE_NAMES = (
+    "privacy_scope", "checked_at_ms", "observation_count", "lineage_digest",
+    "__getattribute__", "__getattr__",
+)
+_REUSE_SOURCE_ORIGINAL = tuple(
+    vars(_REUSE_SOURCE_TYPE).get(name) for name in _REUSE_SOURCE_NAMES
+)
+_REUSE_CACHE_ORIGINAL = tuple(
+    vars(_LINEAGE_WITNESS_TYPE).get(name) for name in _REUSE_CACHE_NAMES
+)
+
+
+def _require_original_reuse_inputs() -> None:
+    if (
+        ObservationEnvelope is not _REUSE_SOURCE_TYPE
+        or SyntheticObservationLineageWitness is not _LINEAGE_WITNESS_TYPE
+        or any(
+            vars(_REUSE_SOURCE_TYPE).get(name) is not original
+            for name, original in zip(
+                _REUSE_SOURCE_NAMES, _REUSE_SOURCE_ORIGINAL, strict=True,
+            )
+        )
+        or any(
+            vars(_LINEAGE_WITNESS_TYPE).get(name) is not original
+            for name, original in zip(
+                _REUSE_CACHE_NAMES, _REUSE_CACHE_ORIGINAL, strict=True,
+            )
+        )
+    ):
+        raise SyntheticObservationReuseRejected(
+            "observation reuse input descriptor changed"
+        )
+
+
 
 def review_synthetic_observation_reuse(
     cached: SyntheticObservationLineageWitness,
@@ -72,6 +117,7 @@ def review_synthetic_observation_reuse(
     historical input mismatch; recomputing at `now_ms` catches expiry. The
     two reads are not globally atomic and can race after this review.
     """
+    _require_original_reuse_inputs()
     if (
         type(cached) is not _LINEAGE_WITNESS_TYPE
         or type(envelopes) is not tuple
@@ -120,6 +166,7 @@ def review_synthetic_observation_reuse(
     except (AttributeError, TypeError, ValueError) as exc:
         raise SyntheticObservationReuseRejected("invalid observation envelope") from exc
     def assert_epoch() -> None:
+        _require_original_reuse_inputs()
         # A change between the historical and current lineage reviews must
         # not be hidden by restoring the original carrier on a later callback.
         try:
