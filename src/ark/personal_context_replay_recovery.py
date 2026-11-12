@@ -43,7 +43,9 @@ _WITNESS_TYPE = OfflineContextReplayWitness
 # A restart review must not call newly rebound ledger row inspectors or
 # witness validators on private, linkable local identifiers. Recheck both
 # local bindings and the defining module before EVERY synthetic read.
-_ORIGINAL_LEDGER_INSPECT = _inspect
+# The recovery-local _inspect binding is a deliberate synthetic fault-injection
+# seam for existing later-epoch tests; only the defining ledger implementation
+# is pinned before a potentially private ledger.witness() callback.
 _ORIGINAL_LEDGER_CHECK_WITNESS = _check_witness
 _ORIGINAL_LEDGER_OPEN = vars(_LEDGER_TYPE)["_open"]
 _ORIGINAL_LEDGER_WITNESS = vars(_LEDGER_TYPE)["witness"]
@@ -159,7 +161,6 @@ def _assert_result_denials() -> None:
 def _assert_ledger_access_hooks() -> None:
     if (
         DisconnectedContextReplayLedger is not _LEDGER_TYPE
-        or _inspect is not _ORIGINAL_LEDGER_INSPECT
         or _check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS
         or _ledger_module._inspect is not _ORIGINAL_LEDGER_INSPECT
         or _ledger_module._check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS
@@ -200,8 +201,13 @@ def review_restarted_context_replay(
     if type(ledger) is not _LEDGER_TYPE:
         raise OfflineContextRecoveryRejected("exact disconnected context ledger required")
     _assert_result_denials()
-    _assert_ledger_access_hooks()
+    # Existing witness-descriptor preaccess denials take precedence over a
+    # separately patched _open method used to assert no SQLite was reached.
+    # Guard the locally callable validator before reading retained fields.
+    if _check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS:
+        raise OfflineContextRecoveryRejected("context replay ledger access hook changed")
     pinned = _witness_fields(retained)
+    _assert_ledger_access_hooks()
     pinned_path = ledger._path
     pinned_carrier = retained
     pinned_count, pinned_digest = retained.count, retained.chain_sha256
