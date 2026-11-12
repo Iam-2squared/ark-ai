@@ -1,3 +1,44 @@
+# LATEST — Run804 / 2026-11-12 JST
+
+**LATEST:** Two coherent **NON-UI / FREE-ONLY** source and regression packages saved in [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8): (A) caller-supplied protected/frozen path quarantine in the disconnected work-lane selector; (B) fail-before-getter cached Observation lineage and source privacy descriptor fence. **20 NEW parameterized regression cases submitted** (13 + 7), plus a detailed technical report. Both test files passed local Python syntax compilation only. Remote **six-job GREEN is NOT YET VERIFIED** on this checkpoint-result HEAD; ARK/JARVIS remains **NOT_PASSED**.
+
+**Saved at (checkpoint-preparation wall-clock):** Asia/Tokyo/JST **2026-11-12T09:22:46+09:00**. This is a local wall-clock observation before GitHub accepts this file, not a trusted audit clock, verified CI conclusion, user consent, physical-PC measurement or external provenance.
+
+## Branch, PR, and exact state
+
+- **Initial work-basis HEAD:** `f4fe57a2815f2f9aa772954e5cd26f2abbd3cffe` on `research/jarvis-foundations`, PR #8 OPEN/DRAFT/UNMERGED, following the latest Run803 report. Prior Run802 status HEAD `e4ca6d7db9bbd6185d7d1125823ea37a325b3886` is historical and not the current code.
+- **Checkpoint-write basis HEAD (live PR re-read immediately before normal Contents API mutation):** `6c5e59859aacbef8645a3c98a2fec724bad5426d`. Prior canonical status blob SHA `3544f7e9c98cda4322bf0b9177a952f446befbca`; source, tests and Run804 report are saved at this basis.
+- **Checkpoint-result-HEAD wording:** The normal GitHub Contents API creates the checkpoint commit **after** acceptance; the checkpoint-write basis SHA is **NOT** the checkpoint-result SHA. Observe the result commit/blob SHA from GitHub, then independently re-read live PR/branch and status. No speculative self-referential result SHA is claimed inside this file.
+- PR #5 OPEN/DRAFT/UNMERGED and protected V3 Contract 1 untouched. PR #9 OPEN/DRAFT/UNMERGED, `ui/next-generation-command-center-20261103` **untouched; all new UI/frontend development paused**. Frozen V1/V2/Local UI/Launcher evidence unchanged.
+
+## NEW saved work this invocation
+
+1. **Protected-path quarantine (13 cases).** `src/ark/agency_synthetic_lane_selector_review.py` commit `c8e2ba086a79e8238689a6964412a879584312df`; `tests/test_agency_protected_lane_selection_run804.py` commit `62c0218bcae5c25113c339b2b899e3a0d37e36a7`. Opt-in `protected_paths` exact bounded sorted path list; deny lexical parent/child overlap as `protected_path`, preserve sibling eligibility and original default decision/digest. Test coverage includes frozen frontend/Local UI/next-ui screenshots, parent traversal attempts, six malformed protected inputs, CI-claim non-bypass and no inferred write/execute/spend authority. The optional caller-owned exclusion list is not an authenticated repository policy.
+2. **Observation lineage reuse privacy (7 cases).** `src/ark/observation_reuse_review.py` commit `10ffd79ce5381c3cdf67c4de906125db4b7e97c4`; `tests/test_observation_reuse_input_descriptor_run804.py` commit `179d206331dd00fad7f1fd3e67c4852898a0a70f`. Pin imported cache/source field and lookup descriptors before private metadata reads and after reentrant lineage callbacks; reject substituted getter without invocation. Keep existing result-initializer fault-injection tests untouched; no real media, capture, notification or disclosure authority.
+3. **Technical evidence report:** `docs/JARVIS_RUN804_NON_UI_PAUSED_LANE_OBSERVATION_PRIVACY.md`, commit `6c5e59859aacbef8645a3c98a2fec724bad5426d`. Documents code/test identities, limitations, historical evidence and follow-ups. Historical checkpoint entries retained below.
+
+## CI/test evidence as last actually inspected
+
+- Run802 checkpoint `e4ca6d7db9bbd6185d7d1125823ea37a325b3886`, [CI #43116886052](https://github.com/Iam-2squared/ark-ai/actions/runs/43116886052): **5/6 GREEN, 1 FAIL**, Ubuntu Python 3.12 audit subprocess exited before gate. Run803 test diagnostics were enhanced; do not infer an audit source fix from that alone.
+- Run803 report basis `f4fe57a2815f2f9aa772954e5cd26f2abbd3cffe`, [CI #43124776142](https://github.com/Iam-2squared/ark-ai/actions/runs/43124776142): Ubuntu 3/3 GREEN, Windows 3/3 **IN PROGRESS** at last observation.
+- Run804 test-bearing source HEAD `179d206331dd00fad7f1fd3e67c4852898a0a70f`, [CI #43126442391](https://github.com/Iam-2squared/ark-ai/actions/runs/43126442391): some jobs IN PROGRESS or QUEUED at last observation; no individual final test conclusion established.
+- Run804 report HEAD `6c5e59859aacbef8645a3c98a2fec724bad5426d`, [CI #43126701362](https://github.com/Iam-2squared/ark-ai/actions/runs/43126701362): **QUEUED** at last observation. Checkpoint-result CI run ID remains unknown until GitHub accepts this status update; do not invent or reuse old GREEN.
+- Both new test files passed local `python -m py_compile`; **full local pytest/Ruff not run** against an actual repository checkout. No real GGUF/hardware evidence.
+
+## Frozen contracts, blockers and authority limits
+
+No changes to frozen V1/V2/Local UI/Launcher evidence, V3 Contract 1, protected V2 final evaluation or contamination/provenance/regression/reproducibility boundaries. All PRs #5/#8/#9 remain Draft and unmerged. No paid/potentially billable GPU/provider/API or compute, external subscriptions, new credentials/account connection, Candidate/weight creation or promotion, real ToolBackend/notification, owner-approved WRITE, automatic COMMIT-UNKNOWN retry, destructive operation, physical PC work or main merge. GitHub Actions uses the public repo's ordinary existing CI; no external paid runner was started. Python-class descriptor pinning is a defensive in-process check, not a sandbox or independent provenance.
+
+## Next plan / 今後の方針
+
+1. Verify all six CI jobs for the **actual checkpoint-result HEAD**; if any FAIL, inspect first concrete job logs, apply only minimal semantics-preserving fixes via the normal contents path. Immediately work an independent non-UI lane while CI is in flight. Never launch duplicate equivalent workflows.
+2. Inspect enhanced Run803 audit/Memory multi-process stderr on any reproduced startup failure, avoiding guesses or loosening symlink/hardlink/orphan SQLite vetoes.
+3. Consider binding an independently reviewed paused/frozen path policy into the detached lane selector *after exact-head GREEN*; currently `protected_paths` is optional and caller asserted.
+4. Prioritize Memory CAS/ABA/expiry and COMMIT-UNKNOWN manual recovery, Planner persistent UNKNOWN terminal quarantine, registry-bound PermissionGate, durable occurrence/one-shot and audit-before-action with **disconnected/mock executor only**.
+5. Continue free-only Personal Context, proactive readiness, observation fixture privacy and V3 identity/reproducibility guards. Preserve PR #9/UI freeze and PR #5 protected gates. Overall ARK/JARVIS **NOT_PASSED**.
+
+---
+
 # LATEST — Run802 / 2026-11-12 JST
 
 **LATEST:** Four coherent **NON-UI / FREE-ONLY** source + regression packages saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), with **60 NEW submitted parameterized test cases**: (A) optional latest global CAS frontier for a one-transaction improvement-proposal batch snapshot; (B) strict, byte-bound canonical detached V3 preflight packet review with explicit no-authority flags; (C) exact-`int` untrusted clock parser limits; (D) privacy-preserving Context revocation SQLite WAL/SHM/journal alias/orphan preflight. First new Proposal test-bearing CI exposed **2 new test error-message mismatches** in actual Ubuntu logs; minimum **test-only** repair saved preserving fail-closed behavior and checking the original stale-CAS `__cause__`. Full latest Run802 HEAD six-job GREEN **NOT YET VERIFIED**. ARK/JARVIS overall **NOT_PASSED**.
