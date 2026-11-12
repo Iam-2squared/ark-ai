@@ -212,7 +212,16 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
             if main_absent:
                 raise MemorySchemaError("orphaned memory SQLite sidecar refused")
             if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
-                raise MemorySchemaError("memory SQLite sidecar path is not a single regular file")
+                # Retain the fail-closed refusal. The only added diagnostics are
+                # bounded filesystem metadata, never a private database path,
+                # filename, row value, or inferred owner. SQLite may replace a
+                # sidecar during independent-process WAL startup; the observed
+                # type/link count lets CI distinguish that race from an alias.
+                raise MemorySchemaError(
+                    "memory SQLite sidecar path is not a single regular file "
+                    f"(suffix={suffix}, file_type={stat.S_IFMT(sidecar_meta.st_mode):#o}, "
+                    f"link_count={sidecar_meta.st_nlink})"
+                )
     except OSError as exc:
         raise MemorySchemaError("memory path custody cannot be verified") from exc
 
