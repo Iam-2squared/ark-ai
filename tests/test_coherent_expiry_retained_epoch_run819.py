@@ -80,3 +80,43 @@ def test_reentrant_retained_page_or_cohort_mutation_refused_before_transition(
     ):
         restart.review_coherent_expiry_restart(store, scopes, prior, now_ms=1500)
     assert calls == [field]
+
+@pytest.mark.parametrize(
+    "invalid",
+    ("hostile-pages", "empty-pages", "foreign-page", "foreign-cohort"),
+)
+def test_reflected_outer_receipt_shape_rejected_before_iterators_or_sqlite(
+    tmp_path, monkeypatch, invalid,
+):
+    store, scopes, prior = _case(tmp_path)
+    invoked = []
+
+    class HostilePages:
+        def __iter__(self):
+            invoked.append("iter")
+            raise AssertionError("untrusted retained iterator executed")
+
+        def __len__(self):
+            invoked.append("len")
+            raise AssertionError("untrusted retained length executed")
+
+    def forbidden_sqlite():
+        invoked.append("sqlite")
+        raise AssertionError("malformed prior must not open SQLite")
+
+    if invalid == "hostile-pages":
+        object.__setattr__(prior, "pages", HostilePages())
+    elif invalid == "empty-pages":
+        object.__setattr__(prior, "pages", ())
+    elif invalid == "foreign-page":
+        object.__setattr__(prior, "pages", (object(),))
+    else:
+        object.__setattr__(prior, "cohort", object())
+
+    monkeypatch.setattr(store, "_connect_readonly", forbidden_sqlite)
+    with pytest.raises(
+        restart.CoherentExpiryRestartRejected,
+        match="invalid retained snapshot carriers",
+    ):
+        restart.review_coherent_expiry_restart(store, scopes, prior, now_ms=1500)
+    assert invoked == []
