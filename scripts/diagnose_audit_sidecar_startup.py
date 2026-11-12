@@ -52,8 +52,8 @@ try:
     print(json.dumps({"status": "AUDITED"}), flush=True)
 except ActionAuditSchemaError as exc:
     evidence = re.search(
-        r"\\(suffix=(-wal|-shm|-journal), file_type=(0o[0-7]+), "
-        r"link_count=([0-9]+)\\)\\Z", str(exc),
+        r"\(suffix=(-wal|-shm|-journal), file_type=(0o[0-7]+), "
+        r"link_count=([0-9]+)\)\Z", str(exc),
     )
     if evidence is None:
         result = {"status": "AUDIT_SCHEMA_REJECTED", "phase": phase}
