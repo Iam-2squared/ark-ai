@@ -69,11 +69,19 @@ _RESULT_FIELDS = (
     "__getattr__",
 )
 _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _RESULT_FIELDS)
+# SQLite is both the exception boundary and the source of local history.
+# Rebound module handles or disposition sets must never redefine this reviewer.
+_ORIGINAL_SQLITE = sqlite3
+_ORIGINAL_LEDGER_SQLITE = ledger_module.sqlite3
+_ORIGINAL_STATES = _RESULT_STATES
 
 
 def _protocol() -> None:
     if (
-        ledger_module._scan is not _ORIGINAL_SCAN
+        sqlite3 is not _ORIGINAL_SQLITE
+        or ledger_module.sqlite3 is not _ORIGINAL_LEDGER_SQLITE
+        or _RESULT_STATES is not _ORIGINAL_STATES
+        or ledger_module._scan is not _ORIGINAL_SCAN
         or ledger_module._check_claim is not _ORIGINAL_CLAIM
         or ledger_module._witness_image is not _ORIGINAL_WITNESS
         or ledger_module._require_original_atomic_carriers is not _ORIGINAL_CARRIERS
