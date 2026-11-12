@@ -140,10 +140,11 @@ def review_registered_unknown_outcome(
             or any(
                 current is not saved
                 for current, saved in zip(
-                    (call.tool, call.capability, call.scope, call.arguments, call.request_id),
-                    call_epoch, strict=True,
+                    (call.tool, call.capability, call.scope, call.arguments),
+                    call_epoch[:4], strict=True,
                 )
             )
+            or call.request_id != call_epoch[4]
             or (before.count, before.tip_sha256) != before_epoch
         ):
             raise RegisteredUnknownOutcomeRejected("registered triage inputs changed")
