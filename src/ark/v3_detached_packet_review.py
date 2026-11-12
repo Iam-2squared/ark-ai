@@ -166,10 +166,20 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
     # Hash actual supplied bytes, not a partial packet or a pre-hash JSON
     # structure with the digest added later. Strict canonical bytes prevent
     # ambiguous whitespace/order spellings from masquerading as one packet.
-    if json.dumps(
-        data, ensure_ascii=True, sort_keys=True, separators=(",", ":"),
-        allow_nan=False,
-    ).encode("ascii") != packet:
+    try:
+        canonical = json.dumps(
+            data, ensure_ascii=True, sort_keys=True, separators=(",", ":"),
+            allow_nan=False,
+        ).encode("ascii")
+    except (ValueError, TypeError, OverflowError, UnicodeError) as exc:
+        # JSON permits exponent syntax whose decoded float overflows to
+        # infinity even without a literal NaN/Infinity token. A strict
+        # packet rejection must not leak an unclassified serializer error.
+        raise DetachedV3PacketRejected(
+            "V3 packet cannot be serialized canonically"
+        ) from exc
+    _ORIGINAL_PROTOCOL()
+    if canonical != packet:
         raise DetachedV3PacketRejected("noncanonical V3 packet byte representation")
     _ORIGINAL_PROTOCOL()
     try:
