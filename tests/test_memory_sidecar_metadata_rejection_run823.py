@@ -48,7 +48,9 @@ def test_unsafe_sidecar_rejection_includes_only_type_and_link_metadata(
 
     saved_main = main.read_bytes()
     saved_outside = outside.read_bytes()
-    with pytest.raises(MemorySchemaError, match="sidecar path is not a single regular file") as caught:
+    with pytest.raises(
+        MemorySchemaError, match="sidecar path is not a single regular file",
+    ) as caught:
         _require_safe_memory_path(main, create=False)
     message = str(caught.value)
     assert f"suffix={suffix}" in message
