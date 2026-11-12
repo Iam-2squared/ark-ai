@@ -167,7 +167,8 @@ def _image(report: MemoryExpiryPreview) -> tuple[str, int, int, bool, str, str]:
         not _sha(image[0]) or type(image[1]) is not int
         or not 0 <= image[1] <= _MAX_TIME
         or type(image[2]) is not int or not 0 <= image[2] <= 1000
-        or type(image[3]) is not bool or not _sha(image[4]) or not _sha(image[5])
+        or type(image[3]) is not bool or (image[3] and image[2] == 0)
+        or not _sha(image[4]) or not _sha(image[5])
         or any(getattr(report, name) is not False for name in _PREVIEW_DENIALS)
     ):
         raise MemoryExpiryCohortRejected("unbounded or authorizing expiry preview")
@@ -271,6 +272,10 @@ def compare_memory_expiry_cohorts(
             or type(item.truncated_scopes) is not tuple
             or any(name not in item.scope_hashes for name in item.truncated_scopes)
             or item.truncated_scopes != tuple(sorted(set(item.truncated_scopes)))
+            # Each truncated scope contains at least one observed candidate.
+            # A cohort claiming fewer candidates than truncated pages cannot
+            # come from aggregate_memory_expiry_cohort at any permitted limit.
+            or item.candidate_count < len(item.truncated_scopes)
             or not _sha(item.cohort_sha256)
             or any(getattr(item, name) is not False for name in _COHORT_DENIALS)
         ):
