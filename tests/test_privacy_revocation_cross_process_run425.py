@@ -42,6 +42,8 @@ while not gate.exists():
 try:
     digest = ledger.revoke(scope, at_ms=2000)
 except SyntheticContextRevocationRejected as error:
+    # Preserve the exact unexpected rejection in CI without relaxing the test.
+    print("LOSER_REJECTION_DETAIL:" + repr(str(error)), flush=True)
     assert "already revoked" in str(error)
     print("ALREADY", flush=True)
 else:
