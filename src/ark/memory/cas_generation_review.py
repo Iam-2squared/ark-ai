@@ -76,9 +76,23 @@ _ORIGINAL_REPORT_DENIALS = tuple(
 )
 
 
+def _strict_utf8_identity(value: object, max_bytes: int) -> bool:
+    """Bound optional read-only generation identities before private row access."""
+    if type(value) is not str or not value.strip() or len(value) > max_bytes:
+        return False
+    try:
+        return len(value.encode("utf-8", errors="strict")) <= max_bytes
+    except UnicodeError:
+        return False
+
+
+_ORIGINAL_STRICT_IDENTITY = _strict_utf8_identity
+
+
 def _require_original_report() -> None:
     if (
         MemoryGenerationReview is not _REPORT_TYPE
+        or _strict_utf8_identity is not _ORIGINAL_STRICT_IDENTITY
         or vars(_REPORT_TYPE).get("__init__") is not _ORIGINAL_REPORT_INIT
         or any(
             vars(_REPORT_TYPE).get(name) is not original
@@ -128,6 +142,17 @@ def review_memory_revision_reuse(
     ):
         raise MemoryGenerationReviewRejected("exact bounded Memory generation inputs required")
     _require_original_report()
+    # The frozen Memory v1 scope is character-bounded, not byte-bounded.
+    # This optional reviewer must reject reflected malformed/surrogate labels
+    # before deterministic ID hashing or any private SQLite access.
+    if (
+        not _strict_utf8_identity(scope.owner_id, 256)
+        or not _strict_utf8_identity(scope.namespace, 256)
+        or not _strict_utf8_identity(source_id, 512)
+    ):
+        raise MemoryGenerationReviewRejected(
+            "generation review requires exact bounded UTF-8 scope and source"
+        )
     # Preserve the FIRST caller-visible scope/path identities. Computing the
     # deterministic ID may call a reentrant test hash; sampling the epoch only
     # afterwards would silently adopt a substituted scope or SQLite source.
