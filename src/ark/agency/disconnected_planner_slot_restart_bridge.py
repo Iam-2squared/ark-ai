@@ -28,6 +28,7 @@ from .synthetic_write_quarantine_matrix_review import SyntheticWriteStoreObserva
 
 _DOMAIN = b"ARK-disconnected-planner-slot-restart-bridge-v1\0"
 _MAX_STEPS = 24
+_MAX_STEP_ID_BYTES = 256  # Local review budget; not a frozen Planner ID limit.
 _ORIGINAL_CODECS = (hashlib.sha256, json.dumps)
 _ORIGINAL_REVIEWERS = (
     bundle_module.review_disconnected_restart_receipt_bundle,
@@ -82,10 +83,25 @@ _FIELDS = (
 _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _FIELDS)
 
 
+def _valid_step_id(value: object) -> bool:
+    """Reject forged inputs before dict/set/equality or journal/SQLite callbacks."""
+    if type(value) is not str or not value or "\x00" in value:
+        return False
+    try:
+        return len(value.encode("utf-8", errors="strict")) <= _MAX_STEP_ID_BYTES
+    except UnicodeError:
+        return False
+
+
+_ORIGINAL_STEP_ID_CHECK = _valid_step_id
+
+
 def _protocol() -> None:
     if (
         _DOMAIN != b"ARK-disconnected-planner-slot-restart-bridge-v1\0"
         or type(_MAX_STEPS) is not int or _MAX_STEPS != 24
+        or type(_MAX_STEP_ID_BYTES) is not int or _MAX_STEP_ID_BYTES != 256
+        or _valid_step_id is not _ORIGINAL_STEP_ID_CHECK
         or (hashlib.sha256, json.dumps) != _ORIGINAL_CODECS
         or (
             bundle_module.review_disconnected_restart_receipt_bundle,
@@ -129,20 +145,25 @@ def review_disconnected_planner_slot_restart(
         or type(independently_expected_write_ids) is not tuple
         or type(observations) is not tuple
         or len(independently_expected_write_ids) > _MAX_STEPS
-        or any(
-            type(step_id) is not str or not step_id
-            for step_id in independently_expected_write_ids
-        )
+        or any(not _valid_step_id(step_id)
+               for step_id in independently_expected_write_ids)
         or not 1 <= len(claims) <= _MAX_STEPS
         or len(offline_steps) != len(claims)
         or any(type(item) is not DisconnectedDependencyClaim for item in claims)
         or any(type(item) is not OfflineRecoveryStepClaim for item in offline_steps)
+        or any(not _valid_step_id(item.step_id) for item in claims)
+        or any(not _valid_step_id(item.step_id) for item in offline_steps)
+        or any(
+            type(item) is not SyntheticWriteStoreObservation
+            or not _valid_step_id(item.step_id)
+            for item in observations
+        )
     ):
         raise DisconnectedPlannerSlotBridgeRejected("inexact restart bridge inputs")
 
-    # Exact string admission precedes every set/sort/tuple comparison of the
-    # independently supplied WRITE IDs. A str subclass could otherwise run
-    # __eq__ or __hash__ while merely checking offline identity.
+    # Exact bounded string admission now also covers reflected claim/offline/
+    # observation IDs before any dict key, set, sort, or journal/SQLite callback.
+    # Forged str subclasses must not execute their __hash__ or __eq__.
     # Reconcile the complete ordered offline step inventory against every
     # canonical recovered Planner step, not merely the reserved subset.
     expected = {
