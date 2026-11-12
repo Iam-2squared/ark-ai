@@ -1,4 +1,46 @@
-# LATEST — ARK AI Run826 NON-UI WAL/Memory, Observation preaccess, Privacy veto sidecar integrity
+# LATEST — ARK AI Run827 NON-UI atomic SQLite storage, WRITE quarantine, free V3 validator custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T06:11:13.873+09:00.** This is an observed GitHub reporting timestamp, **not** a trusted authorization/consent/action clock. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Initial work-basis HEAD:** `11a262e9e763c7cac58d58498cb44c756b8658ea` (preexisting Memory diagnostic sanitizer/tests had already advanced from the Run826 checkpoint). **Last executable/test result HEAD:** `a1a67429b427e0c35263a7a7c1e527a528761aa5` (includes test-only CI repair). **Technical report result HEAD:** `1e6644e8091cdfd575fe183ada57f7e13f0beaf6`. **Checkpoint-write-basis HEAD:** `1e6644e8091cdfd575fe183ada57f7e13f0beaf6` (PR re-read before normal GitHub Contents API update). **Checkpoint-result HEAD: UNKNOWN in this pre-write file** — the API returns it only after this file is saved; verify actual PR/branch/file afterward. Previous status blob SHA: `ddfe3f5268e5944fa1e46da75c7e52cbf822b773`.
+
+## NEW — 3 non-UI packages, 36 authored regression cases, one targeted repair
+
+1. **Atomic preaction durable SQLite: 11 poison/restart tests.** [`62a00c33`](https://github.com/Iam-2squared/ark-ai/commit/62a00c336b7ce238bebdf859cb6ccb6b100fef62) exercises malformed BLOB/text storage classes and corrupted digest/identity columns in disposable `intents`/`preaction_audit` rows, refuses `inspect` and `reserve`, verifies no added row, and retains exact witnessed local COMMIT-UNKNOWN quarantine. No real tools, consent/provenance inference, automatic replay or external effects.
+2. **Disconnected WRITE quarantine: original carrier preaccess and 21 safe tests.** [Source `fdeca412`](https://github.com/Iam-2squared/ark-ai/commit/fdeca412a8048070068eb5f20dd1de61305337fb) rejects substituted observation/finding/matrix class slots or lookup/constructor hooks *before* reading a synthetic receipt. [Tests `dc0a6821`](https://github.com/Iam-2squared/ark-ai/commit/dc0a6821091dc28ac822bc39ccef6745788362ae) initially included 24 cases. Actual Ubuntu [CI #43305904064](https://github.com/Iam-2squared/ark-ai/actions/runs/43305904064) **FAIL** (21 test failures) identified CPython `__new__` monkeypatch/delete poisoning future slotted dataclass constructor calls, including old unrelated tests. [Repair `a1a67429`](https://github.com/Iam-2squared/ark-ai/commit/a1a67429b427e0c35263a7a7c1e527a528761aa5) removes only three unsafe in-process `__new__` fault injections, retains original source `__new__` protection and 21 other regression cases; no denial/replay checks weakened. Repaired [CI #43306963944](https://github.com/Iam-2squared/ark-ai/actions/runs/43306963944) **QUEUED** at most recent check; not GREEN.
+3. **Free-only detached V3 preflight: original callback custody + 4 tests.** [Source `24098abe`](https://github.com/Iam-2squared/ark-ai/commit/24098abec5da0d1bf1436d129b114688f8c9d793) pins `_numeric`, `_device`, `_digest` validators before synthetic evidence ingress. [Tests `58edb2ff`](https://github.com/Iam-2squared/ark-ai/commit/58edb2ffcc8ea15e49e444ad638665e2475be6ae) require fail-before-call on substitution, ordinary local receipt always denies spend/training/promotion. No real Candidate, protected evaluation, external compute or GPU activity.
+4. **Technical evidence:** [Run827 report, HEAD `1e6644e8`](https://github.com/Iam-2squared/ark-ai/blob/1e6644e8091cdfd575fe183ada57f7e13f0beaf6/docs/JARVIS_RUN827_NON_UI_ATOMIC_MATRIX_V3_AND_CI_FORENSICS.md) details exact source/test commits, safety boundaries, real CI failure, test-only repair, old SQLite sidecar investigation and next priorities. This is documentation, not a fabricated PASS.
+
+## CI / evidence — exact HEAD only; no duplicate workflow
+
+- Prior Run826 checkpoint **GREEN 6/6**: [#43295767903](https://github.com/Iam-2squared/ark-ai/actions/runs/43295767903). Preexisting Run827 Memory diagnostic source/test **GREEN 6/6** at exact work-basis `11a262e9`: [#43303668516](https://github.com/Iam-2squared/ark-ai/actions/runs/43303668516) (all job results independently read).
+- First Atomic test CI [#43305454490](https://github.com/Iam-2squared/ark-ai/actions/runs/43305454490): Ubuntu **3/3 GREEN**; Windows 3 jobs **IN PROGRESS** at last job inspection. Not proof of later HEAD.
+- Original WRITE tests [#43305904064](https://github.com/Iam-2squared/ark-ai/actions/runs/43305904064): Ubuntu **3/3 FAIL** from test-class `__new__` mutation after ~14,490 other cases passed; fail diagnosed from real job logs, test-only fix saved.
+- Repaired last executable/test exact HEAD [#43306963944](https://github.com/Iam-2squared/ark-ai/actions/runs/43306963944): **QUEUED** at last check. Technical report HEAD [#43307426942](https://github.com/Iam-2squared/ark-ai/actions/runs/43307426942): **QUEUED** at last check. Checkpoint's own CI will have a NEW run/HEAD; do not infer outcome from these earlier runs.
+- **No exact final-HEAD 6/6 GREEN has been confirmed; no local/full pytest or physical GGUF tests claimed.**
+- Historical Memory sidecar race: [#43252974470](https://github.com/Iam-2squared/ark-ai/actions/runs/43252974470), failed Ubuntu Python 3.12 `test_memory_cross_process_create_race_run435.py` separate-owner path with `MemorySchemaError: memory SQLite sidecar path is not a single regular file`. Failure existed before later privacy-safe suffix/type/link-count diagnostics; **root cause remains unproven**. No unsafe retry, sidecar alias relaxation, file deletion or fake model/file identity.
+
+## Unchanged frozen contracts, blockers and authorization boundaries
+
+- V1/V2/Local UI/Launcher frozen evaluation/contracts/evidence **unchanged**. Draft PR #5 remains under its protected gate, Draft PR #9 Next Generation UI **untouched and paused**; #5/#8/#9 have **not been merged**. No UI/frontend features/tests/integration. No main merge or protected final-evaluation opening.
+- **No paid/external GPU compute, potentially billable service/API, subscription, training/Candidate generation or promotion; no credential, account connection, unapproved physical-PC action, destructive change or real ToolBackend side effect.** Local hashes and matching SQLite rows never authenticate consent, clock, externally executed action or independent provenance.
+- CI test poisoning is fixed in the source test fixture, but **await actual CI result**; Memory two-process WAL sidecar race is **unresolved**. Neither blocks the safe other backend modules, but execution/promotions stay blocked.
+
+## Next plan / 今後の方針 — dependency-ordered non-UI
+
+1. Inspect corrected exact-head [CI #43306963944](https://github.com/Iam-2squared/ark-ai/actions/runs/43306963944) and subsequent checkpoint CI; if red, read job logs, smallest semantics-preserving patch. Avoid duplicate runs and switch to independent backend work while CI runs.
+2. Reproduce/compare the Memory sidecar phase with disposable two-process WAL keeper/default and generation-CAS cases. Preserve pathname/suffix/type/link-count-only diagnostics and reject sidecar aliases; no automatic retry of unknown writes.
+3. Advance Memory CAS/ABA, coherent read/expiry, ambiguous COMMIT recovery; Planner exact topology/status replay, persistent UNKNOWN quarantine and terminal propagation with independent retained witnesses.
+4. When lower modules achieve exact-head GREEN, connect ToolRegistry, exact-type PermissionGate, durable restart-safe occurrence/authorization and single-store audit-before-action to **disconnected mocks only**. No signed approval authority inferred from a DB hash.
+5. Continue privacy-safe Personal Context/revocation, proactive scheduler restart, offline observation fixtures, V3 free-only provenance/identity/path guards in independent reversible lanes; no UI development until explicitly resumed.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORY — Run826 and earlier checkpoints (unchanged historical evidence)
+
+## Run826 LATEST (historical) — ARK AI Run826 NON-UI WAL/Memory, Observation preaccess, Privacy veto sidecar integrity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T04:59:25.487+09:00.** This is a GitHub reporting timestamp, **not** a trusted authorization or tool-action clock. **Overall ARK/JARVIS: NOT_PASSED.**
 
