@@ -21,6 +21,17 @@ _MAX_DDL_BYTES = 65_536
 _MAX_VERSION = 2**31 - 1
 _QUERY = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
 
+# The caller may supply private schema SQL through a local SQLite connection.
+# Reject altered codec, digest and admission rules before reading that SQL.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_QUERY = _QUERY
+_ORIGINAL_LIMITS = (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION)
+
 
 class SQLiteSchemaProbeRejected(ValueError):
     """A supplied read-only schema snapshot is malformed or inconsistent."""
@@ -62,10 +73,51 @@ _DENIALS = (
 )
 # A getter replaced with a different False-only callback is not an original
 # denial. Pin descriptors at module import, before untrusted reviews.
-_ORIGINAL_DENIALS = tuple(getattr(_SEAL_TYPE, key) for key in _DENIALS)
+_ORIGINAL_DENIALS = tuple(vars(_SEAL_TYPE)[key] for key in _DENIALS)
+_SEAL_FIELDS = ("schema_sha256", "object_count", "user_version", "schema_version")
+_SEAL_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SEAL_DESCRIPTORS = tuple(
+    vars(_SEAL_TYPE).get(key) for key in _SEAL_FIELDS + _SEAL_HOOKS
+)
+
+
+def _require_original_schema_probe() -> None:
+    """Fail before accessing a private seal, SQLite metadata or caller callbacks.
+
+    The fence checks in-process descriptor identity, not authenticated source
+    custody. A mutable Python runtime is not a security sandbox.
+    """
+    if (
+        DisconnectedSQLiteSchemaSeal is not _SEAL_TYPE
+        or any(
+            vars(_SEAL_TYPE).get(key) is not original
+            for key, original in zip(
+                _SEAL_FIELDS + _SEAL_HOOKS,
+                _ORIGINAL_SEAL_DESCRIPTORS, strict=True,
+            )
+        )
+        or any(
+            vars(_SEAL_TYPE).get(key) is not original
+            for key, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+        )
+        or hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _QUERY is not _ORIGINAL_QUERY
+        or any(
+            type(value) is not int for value in
+            (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION)
+        )
+        or (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION) != _ORIGINAL_LIMITS
+    ):
+        raise SQLiteSchemaProbeRejected("schema probe contract changed")
 
 
 def _seal_fields(seal: DisconnectedSQLiteSchemaSeal) -> tuple[str, int, int, int]:
+    _require_original_schema_probe()
     return (
         seal.schema_sha256, seal.object_count, seal.user_version,
         seal.schema_version,
@@ -74,6 +126,7 @@ def _seal_fields(seal: DisconnectedSQLiteSchemaSeal) -> tuple[str, int, int, int
 
 def _assert_inert_seal(seal: object) -> None:
     """Check deny-only descriptors and the entire carrier after each callback."""
+    _require_original_schema_probe()
     if type(seal) is not _SEAL_TYPE:
         raise SQLiteSchemaProbeRejected("schema seal acquired authority")
     fields = _seal_fields(seal)
@@ -92,6 +145,7 @@ def _assert_inert_seal(seal: object) -> None:
 
 
 def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
+    _require_original_schema_probe()
     databases = tuple(connection.execute("PRAGMA database_list"))
     if (
         len(databases) != 1 or databases[0][1] != "main"
@@ -124,7 +178,9 @@ def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
         ):
             raise SQLiteSchemaProbeRejected("noncanonical schema object")
         # A SQLite autoindex has no SQL text but still belongs in the seal.
+        _require_original_schema_probe()
         payload = json.dumps(record, ensure_ascii=True, separators=(",", ":"))
+        _require_original_schema_probe()
         size += len(payload.encode("ascii"))
         if size > _MAX_DDL_BYTES:
             raise SQLiteSchemaProbeRejected("schema text exceeds byte budget")
@@ -134,13 +190,17 @@ def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
         (user[0], schema[0], records), ensure_ascii=True,
         separators=(",", ":"),
     ).encode("ascii")
-    return hashlib.sha256(_DOMAIN + packed).hexdigest(), len(records), user[0], schema[0]
+    _require_original_schema_probe()
+    digest = hashlib.sha256(_DOMAIN + packed).hexdigest()
+    _require_original_schema_probe()
+    return digest, len(records), user[0], schema[0]
 
 
 def capture_disconnected_sqlite_schema(
     connection: sqlite3.Connection,
 ) -> DisconnectedSQLiteSchemaSeal:
     """Capture one transaction-scoped synthetic schema; leave no open BEGIN."""
+    _require_original_schema_probe()
     if type(connection) is not sqlite3.Connection or connection.in_transaction:
         raise SQLiteSchemaProbeRejected("exact idle SQLite connection required")
     try:
@@ -165,6 +225,7 @@ def review_disconnected_sqlite_schema(
     connection: sqlite3.Connection, retained: DisconnectedSQLiteSchemaSeal,
 ) -> DisconnectedSQLiteSchemaSeal:
     """Compare with caller-supplied prior seal; no trust or consent is inferred."""
+    _require_original_schema_probe()
     if (
         type(retained) is not DisconnectedSQLiteSchemaSeal
         or type(retained.schema_sha256) is not str
