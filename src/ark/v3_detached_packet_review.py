@@ -158,7 +158,7 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
             object_pairs_hook=_pairs_unique,
             parse_constant=_nonfinite,
         )
-    except (ValueError, TypeError, UnicodeError, OverflowError) as exc:
+    except (ValueError, TypeError, UnicodeError, OverflowError, RecursionError) as exc:
         raise DetachedV3PacketRejected("invalid strict V3 packet JSON") from exc
     data = _fields(payload, _TOP)
     snapshot_fields = _fields(data["snapshot"], _SNAPSHOT)
@@ -171,7 +171,7 @@ def review_detached_v3_packet(packet: bytes) -> DetachedV3PacketReview:
             data, ensure_ascii=True, sort_keys=True, separators=(",", ":"),
             allow_nan=False,
         ).encode("ascii")
-    except (ValueError, TypeError, OverflowError, UnicodeError) as exc:
+    except (ValueError, TypeError, OverflowError, UnicodeError, RecursionError) as exc:
         # JSON permits exponent syntax whose decoded float overflows to
         # infinity even without a literal NaN/Infinity token. A strict
         # packet rejection must not leak an unclassified serializer error.
