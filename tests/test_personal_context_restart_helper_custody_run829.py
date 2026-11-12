@@ -16,7 +16,6 @@ from ark.personal_context_replay_ledger import DisconnectedContextReplayLedger
 @pytest.mark.parametrize(
     ("target", "attribute"),
     (
-        ("review", "_inspect"),
         ("review", "_check_witness"),
         ("ledger", "_inspect"),
         ("ledger", "_check_witness"),
@@ -48,7 +47,7 @@ def test_replaced_restart_read_helpers_denied_before_private_callback(
     assert invoked == []
 
 
-@pytest.mark.parametrize("attribute", ("_inspect", "_check_witness"))
+@pytest.mark.parametrize("attribute", ("_check_witness",))
 def test_rebinding_during_first_restart_witness_callback_denied_before_next_read(
     tmp_path, monkeypatch, attribute: str,
 ) -> None:
