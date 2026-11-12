@@ -1,4 +1,48 @@
-# LATEST — ARK AI Run829 NON-UI Personal Context restart and ActionAudit WAL sidecar forensics
+# LATEST — ARK AI Run830 NON-UI CI repair, proactive quarantine, privacy veto, recovery identity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T08:54:34.063+09:00.** Observed reporting timestamp ONLY; not a trusted action/consent/approval clock. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at this live GitHub pre-write read. **Initial work-basis HEAD:** `4b15eee117e92184c4db72fbe9b604d2ff96c61d` (prior Run829 checkpoint). **Latest executable/test result HEAD:** `e4108b810b6b27a98af868bb201bdb01da4d4a1d`. **Technical report result HEAD:** `7a14fd4cc0df828842fd05ee115db3ad34c2f6d5`. **Checkpoint-write-basis HEAD:** `7a14fd4cc0df828842fd05ee115db3ad34c2f6d5` (re-read immediately before normal Contents API write). **Checkpoint-result HEAD: NOT KNOWN before saving this self-referential checkpoint; verify the Contents API returned SHA and PR/branch HEAD after the write.** Prior status blob SHA: `de57bd14ae9ecb4bff46354e1d8918023ba5824d`.
+
+## NEW — four coherent non-UI work packages, 16 authored regression cases, two CI-driven repairs
+
+1. **Personal Context restart defining-ledger inspector repair.** [Commit `68745dc2`](https://github.com/Iam-2squared/ark-ai/commit/68745dc2c061e8ddfecaa045a509f14f5a72390b) restores import-original `_ORIGINAL_LEDGER_INSPECT` in the privacy recovery checker. Actual prior exact Run829 checkpoint [CI #43324453857](https://github.com/Iam-2squared/ark-ai/actions/runs/43324453857) **FAIL 6/6** at Ruff F821 on the missing name. Repair left defining-ledger private-before-access checks and local synthetic injection seam intact, no authorization/replay enabled.
+2. **Proactive schedule UNKNOWN review preaccess.** [Source `41421aff`](https://github.com/Iam-2squared/ark-ai/commit/41421aff24349ab517b87ab53bc1191a767fcd6c) pins ledger lookup hooks and SQLite connector identity before any fixture path or read-only review. [Three new tests `fd985696`](https://github.com/Iam-2squared/ark-ai/commit/fd9856968ca87d566323bd481433b447c44be811) poison those hooks and require no invocation. Initial [CI #43331470865](https://github.com/Iam-2squared/ark-ai/actions/runs/43331470865) **FAIL 6/6** at Ruff I001 import-block whitespace; [test-only repair `8a6d11b2`](https://github.com/Iam-2squared/ark-ai/commit/8a6d11b2bf2cfe23485c33bdcdde6cc31c547b75) removes the extra blank line without changing behavior. No schedule dispatch/replay/clock trust.
+3. **Privacy revocation to proactive attention boundary.** [Source `96e7da84`](https://github.com/Iam-2squared/ark-ai/commit/96e7da84774634e65117a823bcec0086f7d746f9) pins local report field, constructor, getter and digest implementations before hash-only privacy ingress. [Five new tests `18c15063`](https://github.com/Iam-2squared/ark-ai/commit/18c15063ff277644b48cebd09d6b0c9960b05452) deny injected descriptor/codecs without ever invoking them. Old last-denial rejection wording preserved; an absent local veto does not establish user consent or notification permission.
+4. **Disconnected Recovery Quarantine protocol equality boundary.** [Source `ea488374`](https://github.com/Iam-2squared/ark-ai/commit/ea488374e27b1b0425f5c403bf575f02cf4d73c9) compares import-original codec/pattern/constant identities without running a substituted object’s `__eq__` or `__ne__`; exact built-in ints still have bounded scalar checks. [Eight new tests `e4108b81`](https://github.com/Iam-2squared/ark-ai/commit/e4108b810b6b27a98af868bb201bdb01da4d4a1d) cover seven poisoned protocol constants plus ordinary invalid-input refusal. Manual-only quarantine remains intact; no cross-store atomicity or recovered external-effect proof.
+
+**16 tests are authored cases, NOT 16 confirmed PASS.** The local full pytest/Ruff suite and real user-PC GGUF validation were not run. [Technical report `7a14fd4c`](https://github.com/Iam-2squared/ark-ai/blob/7a14fd4cc0df828842fd05ee115db3ad34c2f6d5/docs/JARVIS_RUN830_NON_UI_CI_REPAIR_PROACTIVE_PRIVACY_ORIGINALS.md) gives exact source/test commits and failures. All four packages remain isolated, reversible, non-UI.
+
+## CI evidence — exact-head, avoid stale success inference
+
+- Prior Run829 checkpoint HEAD `4b15eee117e92184c4db72fbe9b604d2ff96c61d`: [#43324453857](https://github.com/Iam-2squared/ark-ai/actions/runs/43324453857) **FAIL 6/6** Ruff F821; not a prior GREEN.
+- Repaired privacy HEAD `68745dc2`: initial per-job review found Ubuntu **3/3 GREEN**, Windows still executing. This establishes only that old local preaccess repair passed Ubuntu at that exact HEAD.
+- Scheduler source [#43331418688](https://github.com/Iam-2squared/ark-ai/actions/runs/43331418688) and attention source [#43331931271](https://github.com/Iam-2squared/ark-ai/actions/runs/43331931271) were running at earlier review; later statuses are not inferred from later HEADs.
+- **privacyCI** HEAD `68745dc2c061e8ddfecaa045a509f14f5a72390b`: [CI #43331250959](https://github.com/Iam-2squared/ark-ai/actions/runs/43331250959) **IN_PROGRESS**; later heads are not equivalent to an earlier passing HEAD.
+- **schedulerCI** HEAD `8a6d11b2bf2cfe23485c33bdcdde6cc31c547b75`: [CI #43331836147](https://github.com/Iam-2squared/ark-ai/actions/runs/43331836147) **IN_PROGRESS**; later heads are not equivalent to an earlier passing HEAD.
+- **attentionCI** HEAD `18c15063ff277644b48cebd09d6b0c9960b05452`: [CI #43331978695](https://github.com/Iam-2squared/ark-ai/actions/runs/43331978695) **IN_PROGRESS**; later heads are not equivalent to an earlier passing HEAD.
+- **recoveryCI** HEAD `e4108b810b6b27a98af868bb201bdb01da4d4a1d`: [CI #43332442866](https://github.com/Iam-2squared/ark-ai/actions/runs/43332442866) **QUEUED**; later heads are not equivalent to an earlier passing HEAD.
+- **reportCI** HEAD `7a14fd4cc0df828842fd05ee115db3ad34c2f6d5`: [CI #43332548441](https://github.com/Iam-2squared/ark-ai/actions/runs/43332548441) **QUEUED**; later heads are not equivalent to an earlier passing HEAD.
+- The new checkpoint HEAD will receive an independent workflow run after this update, which **cannot be GREEN at pre-write time**. Do not start a duplicate run. Resolve any actual FAIL from job logs, no weakened denial tests.
+
+## Frozen boundaries / blockers
+
+- V1/V2/Local UI/Launcher frozen contracts, evaluation and evidence untouched. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected/unmerged; [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) completed UI foundation paused/unmerged and untouched. No frontend development or UI integration.
+- Historical independent-process SQLite WAL/SHM alias race (regular `-shm`, observed link count 0) root cause remains **UNRESOLVED**. Diagnostics are only synthetic, owned, bounded and path-free; no unsafe sidecar retry, alias-guard relaxation, user database manipulation, or hidden overwrite.
+- No paid/possibly billable compute, GPU/API/service/subscription, new secrets/credentials/connections, real Candidate/weight creation or automatic promotion, protected V2 final evaluation opening, trusted-clock authority, real ToolBackend/external execution, destructive actions, hardware action, human-review decision or main merge. Local hashes/receipts do not authenticate identity, permission, consent, clock or exactly-once effects.
+
+## Next plan / 今後の方針
+
+1. Inspect all jobs for **the latest exact checkpoint HEAD** and the repaired source/test HEADs. If FAIL, read logs and make the smallest normal-path semantics-preserving repair while working an independent core module during in-flight CI. No duplicate equivalent workflow reruns.
+2. Compare disposable Memory and ActionAudit multi-process WAL startup/keeper/last-close observations to isolate the `-shm` zero-link race; keep fail-closed sidecar custody. Do not declare root cause from circumstantial metadata.
+3. Advance Memory CAS/ABA, coherent expiry and COMMIT-UNKNOWN manual reconciliation; Planner persisted terminal/UNKNOWN isolation; registry-bound exact PermissionGate, trusted-clock audit-before-action and disconnected Mock Executor only after lower-level exact-head GREEN evidence.
+4. Continue privacy-first Personal Context and proactive recurrence/restart safeguards, observation fixture adapters, V3 free-only path/identity/reproducibility guards. No UI work absent explicit user instruction; no version/JARVIS PASS without a real gate.
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run829 NON-UI Personal Context restart and ActionAudit WAL sidecar forensics
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T07:56:12.720+09:00.** Observed reporting timestamp ONLY, not a trusted approval/consent/action clock. **Overall ARK/JARVIS: NOT_PASSED.**
 
