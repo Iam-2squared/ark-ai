@@ -158,6 +158,9 @@ def review_coherent_expiry_restart(
     )
 
     def stable() -> None:
+        # Identity-fence immutable receipt scalars, not Python's permissive
+        # equality (True == 1 and 1500.0 == 1500). Reflected same-value
+        # substitutions are also a new, unauthenticated source epoch.
         _protocol()
         if (
             store.path is not original_path
@@ -177,20 +180,32 @@ def review_coherent_expiry_restart(
             or any(
                 type(page) is not coherent.preview_module.MemoryExpiryPreview
                 or page is not old
-                or (
-                    page.scope_sha256, page.read_at_ms, page.candidate_count,
-                    page.has_more, page.candidate_sha256, page.preview_sha256,
-                ) != (scope, read_at, count, more, candidate, digest)
+                or any(
+                    value is not pinned
+                    for value, pinned in zip(
+                        (page.scope_sha256, page.read_at_ms, page.candidate_count,
+                         page.has_more, page.candidate_sha256, page.preview_sha256),
+                        (scope, read_at, count, more, candidate, digest),
+                        strict=True,
+                    )
+                )
                 for page, (old, scope, read_at, count, more, candidate, digest)
                 in zip(retained.pages, page_epoch, strict=True)
             )
             or type(retained.cohort) is not coherent.MemoryExpiryCohort
             or retained.cohort is not cohort_epoch[0]
-            or (
-                retained.cohort.scope_hashes, retained.cohort.asserted_now_ms,
-                retained.cohort.candidate_count, retained.cohort.truncated_scopes,
-                retained.cohort.cohort_sha256,
-            ) != cohort_epoch[1:]
+            or any(
+                value is not pinned
+                for value, pinned in zip(
+                    (retained.cohort.scope_hashes,
+                     retained.cohort.asserted_now_ms,
+                     retained.cohort.candidate_count,
+                     retained.cohort.truncated_scopes,
+                     retained.cohort.cohort_sha256),
+                    cohort_epoch[1:],
+                    strict=True,
+                )
+            )
         ):
             raise CoherentExpiryRestartRejected("coherent restart inputs changed")
 
