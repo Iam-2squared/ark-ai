@@ -126,6 +126,14 @@ def _protocol() -> None:
         or _REVIEW_FIELDS is not _ORIGINAL_REVIEW_FIELD_NAMES
         or math is not _ORIGINAL_MATH_MODULE
         or math.isfinite is not _ORIGINAL_MATH_ISFINITE
+        # This detached reviewer must not call a rebinding of its own local
+        # device/digest/numeric validators on frozen-like private evidence.
+        or any(
+            now is not original
+            for now, original in zip(
+                (_numeric, _device, _digest), _ORIGINAL_VALIDATORS, strict=True,
+            )
+        )
         or any(
             vars(_REVIEW).get(name) is not old
             for name, old in zip(
@@ -177,6 +185,9 @@ def _digest(value: object) -> str:
     if type(value) is not str or _SHA.fullmatch(value) is None:
         raise DetachedV3PreflightRejected("invalid V3 tokenizer probe digest")
     return value
+
+
+_ORIGINAL_VALIDATORS = (_numeric, _device, _digest)
 
 
 def review_detached_v3_preflight(
