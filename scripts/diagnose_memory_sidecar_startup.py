@@ -6,7 +6,9 @@ Run from a checkout with ARK installed:
 No real user databases, credentials, model files, services or paid compute.
 Default sequential child bootstrap mirrors the historical CI CAS fixture;
 --startup-mode concurrent separately probes simultaneous WAL initialization.
-All writes are confined to an owned TemporaryDirectory. Only aggregate
+All writes are confined to an owned TemporaryDirectory. Optional real
+--operation generation-cas performs lifetime-fenced updates, not creates.
+Only aggregate
 statuses and path-free filesystem metadata are emitted. A reproduction is
 NOT a reason to retry unsafe paths or weaken alias/sidecar checks.
 """
@@ -36,10 +38,15 @@ from ark.memory import (
     SQLiteMemoryStore,
 )
 
+from ark.memory.generation_fenced_cas import (
+    MemoryGenerationCASToken, MemoryGenerationCASRejected,
+    generation_fenced_memory_update,
+)
+
 path = pathlib.Path(sys.argv[1])
 gate = pathlib.Path(sys.argv[2])
 ready = pathlib.Path(sys.argv[3])
-owner, namespace, source = sys.argv[4:7]
+owner, namespace, source, operation, token_json = sys.argv[4:9]
 phase = "BOOTSTRAP"
 try:
     store = SQLiteMemoryStore(path, clock_ms=lambda: 1000)
@@ -51,14 +58,19 @@ try:
         time.sleep(0.01)
     phase = "WRITE"
     try:
-        store.put(
-            MemoryWrite(MemoryScope(owner, namespace), source, "fixture"),
-            expected_revision=0,
-        )
-    except MemoryConflictError:
+        write = MemoryWrite(MemoryScope(owner, namespace), source, "fixture")
+        if operation == "generation-cas":
+            token = MemoryGenerationCASToken(*json.loads(token_json))
+            generation_fenced_memory_update(store, write, retained=token)
+        elif operation == "create":
+            store.put(write, expected_revision=0)
+        else:
+            raise ValueError("unknown diagnostic operation")
+    except (MemoryConflictError, MemoryGenerationCASRejected):
         print(json.dumps({"status": "CONFLICT"}), flush=True)
     else:
-        print(json.dumps({"status": "CREATED"}), flush=True)
+        status = "UPDATED" if operation == "generation-cas" else "CREATED"
+        print(json.dumps({"status": status}), flush=True)
 except MemorySchemaError as exc:
     # Match only the new bounded metadata suffix. Never expose the pathname,
     # original message, traceback, row data or other runtime identifiers.
@@ -92,15 +104,16 @@ def _positive_bounded_int(text: str) -> int:
 
 
 def _probe(
-    path: Path, mode: str, startup_mode: str,
+    path: Path, mode: str, startup_mode: str, operation: str = "create",
 ) -> list[dict[str, object]]:
-    from ark.memory import SQLiteMemoryStore
+    from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
+    from ark.memory.generation_fenced_cas import observe_memory_generation_for_cas
 
     # The historical failing CI fixture serialized child *bootstrap* and
     # released two ready children together for competing CAS. Default to its
     # exact scheduling boundary; optional simultaneous bootstrap isolates the
     # more aggressive WAL initialization race separately.
-    SQLiteMemoryStore(path, clock_ms=lambda: 1000)
+    store = SQLiteMemoryStore(path, clock_ms=lambda: 1000)
     gate = path.parent / "release"
     first = ("owner-a", "fixture", "source")
     second = {
@@ -109,6 +122,20 @@ def _probe(
         "separate-namespace": ("owner-a", "other", "source"),
         "separate-source": ("owner-a", "fixture", "other"),
     }[mode]
+    # Real CAS needs a preexisting row and its observed lifetime token.
+    # Never include either token or private identity in the CLI output.
+    tokens: dict[tuple[str, str, str], str] = {}
+    if operation == "generation-cas":
+        for owner, namespace, source in dict.fromkeys((first, second)):
+            scope = MemoryScope(owner, namespace)
+            store.put(MemoryWrite(scope, source, "before"))
+            token = observe_memory_generation_for_cas(store, scope, source)
+            tokens[(owner, namespace, source)] = json.dumps((
+                token.memory_id, token.create_event_id, token.last_event_id,
+                token.revision, token.event_prefix_sha256, token.row_sha256,
+            ), separators=(",", ":"))
+    elif operation != "create":
+        raise ValueError("unknown disposable diagnostic operation")
     children: list[subprocess.Popen[str]] = []
 
     def ready(index: int) -> bool:
@@ -128,7 +155,8 @@ def _probe(
         for index, identity in enumerate((first, second)):
             children.append(subprocess.Popen(
                 [sys.executable, "-c", _CHILD, str(path), str(gate),
-                 str(path.parent / f"ready-{index}"), *identity],
+                 str(path.parent / f"ready-{index}"), *identity,
+                 operation, tokens.get(identity, "null")],
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
             ))
             if startup_mode == "sequential" and not await_ready(range(index, index + 1)):
@@ -147,7 +175,9 @@ def _probe(
                     item = json.loads(output)
                     if type(item) is not dict or type(item.get("status")) is not str:
                         item = {"status": "INVALID_CHILD_OUTPUT"}
-                if not ready(index) and item["status"] in ("CREATED", "CONFLICT"):
+                if not ready(index) and item["status"] in (
+                    "CREATED", "UPDATED", "CONFLICT",
+                ):
                     item = {"status": "MISSING_READY_MARKER"}
                 results.append(item)
             except (subprocess.TimeoutExpired, ValueError, TypeError):
@@ -175,6 +205,10 @@ def main(argv: list[str] | None = None) -> int:
         "--startup-mode", choices=("sequential", "concurrent"),
         default="sequential",
     )
+    parser.add_argument(
+        "--operation", choices=("create", "generation-cas"),
+        default="create",
+    )
     args = parser.parse_args(argv)
     counts: Counter[str] = Counter()
     sidecar_evidence: list[dict[str, object]] = []
@@ -183,20 +217,24 @@ def main(argv: list[str] | None = None) -> int:
         for attempt in range(args.iterations):
             case = Path(root) / f"case-{attempt}"
             case.mkdir()
-            outcome = _probe(case / "memory.sqlite", args.mode, args.startup_mode)
+            outcome = _probe(
+                case / "memory.sqlite", args.mode, args.startup_mode, args.operation,
+            )
             statuses = sorted(item["status"] for item in outcome)
             for item in outcome:
                 counts[str(item["status"])] += 1
                 if item["status"] == "SIDECAR_REJECTED":
                     sidecar_evidence.append(item)
+            success = "UPDATED" if args.operation == "generation-cas" else "CREATED"
             expected = (
-                ["CONFLICT", "CREATED"] if args.mode == "same-identity"
-                else ["CREATED", "CREATED"]
+                ["CONFLICT", success] if args.mode == "same-identity"
+                else [success, success]
             )
             if statuses != expected:
                 unexpected += 1
     print(json.dumps({
         "mode": args.mode, "startup_mode": args.startup_mode,
+        "operation": args.operation,
         "iterations": args.iterations,
         "status_counts": dict(sorted(counts.items())),
         "anomalous_iterations": unexpected,
