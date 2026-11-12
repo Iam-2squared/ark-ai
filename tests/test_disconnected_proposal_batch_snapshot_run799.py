@@ -139,7 +139,10 @@ def test_substituted_store_scan_rejected_without_execution(
     assert invoked == []
 
 @pytest.mark.parametrize(("target", "name"), (
-    ("report", "__new__"),
+    # Patching inherited __new__ on a slotted dataclass permanently changes
+    # CPython type allocation slots, even after monkeypatch undoes the name.
+    # Exercise the guarded own constructor instead, preserving test isolation.
+    ("report", "__init__"),
     ("report", "__getattribute__"),
     ("report", "__getattr__"),
     ("batch", "_protocol"),
