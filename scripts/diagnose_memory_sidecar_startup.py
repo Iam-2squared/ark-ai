@@ -9,7 +9,9 @@ Default sequential child bootstrap mirrors the historical CI CAS fixture;
 All writes are confined to an owned TemporaryDirectory. Optional real
 --operation generation-cas performs lifetime-fenced updates, not creates.
 Only aggregate
-statuses and path-free filesystem metadata are emitted. A reproduction is
+statuses and path-free filesystem metadata are emitted.
+--wal-keeper is an explicit control that holds one read-only-in-effect SQLite
+WAL connection open across child exits; it does not turn off any ARK path check. A reproduction is
 NOT a reason to retry unsafe paths or weaken alias/sidecar checks.
 """
 
@@ -17,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -105,6 +108,7 @@ def _positive_bounded_int(text: str) -> int:
 
 def _probe(
     path: Path, mode: str, startup_mode: str, operation: str = "create",
+    *, wal_keeper: bool = False,
 ) -> list[dict[str, object]]:
     from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
     from ark.memory.generation_fenced_cas import observe_memory_generation_for_cas
@@ -151,7 +155,16 @@ def _probe(
             time.sleep(0.01)
         return False
 
+    keeper: sqlite3.Connection | None = None
     try:
+        # Diagnostic control only: preserve the WAL lifecycle across both
+        # child processes, matching the stable-keeper regression fixture.
+        # The default (no keeper) still exposes last-close sidecar races.
+        if wal_keeper:
+            keeper = sqlite3.connect(path)
+            mode_row = keeper.execute("PRAGMA journal_mode").fetchone()
+            if mode_row is None or mode_row[0].lower() != "wal":
+                raise RuntimeError("disposable diagnostic WAL keeper unavailable")
         for index, identity in enumerate((first, second)):
             children.append(subprocess.Popen(
                 [sys.executable, "-c", _CHILD, str(path), str(gate),
@@ -191,6 +204,8 @@ def _probe(
             if child.poll() is None:
                 child.kill()
                 child.communicate()
+        if keeper is not None:
+            keeper.close()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -209,6 +224,10 @@ def main(argv: list[str] | None = None) -> int:
         "--operation", choices=("create", "generation-cas"),
         default="create",
     )
+    parser.add_argument(
+        "--wal-keeper", action="store_true",
+        help="retain one disposable WAL connection across child execution",
+    )
     args = parser.parse_args(argv)
     counts: Counter[str] = Counter()
     sidecar_evidence: list[dict[str, object]] = []
@@ -219,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
             case.mkdir()
             outcome = _probe(
                 case / "memory.sqlite", args.mode, args.startup_mode, args.operation,
+                wal_keeper=args.wal_keeper,
             )
             statuses = sorted(item["status"] for item in outcome)
             for item in outcome:
@@ -234,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
                 unexpected += 1
     print(json.dumps({
         "mode": args.mode, "startup_mode": args.startup_mode,
-        "operation": args.operation,
+        "operation": args.operation, "wal_keeper": args.wal_keeper,
         "iterations": args.iterations,
         "status_counts": dict(sorted(counts.items())),
         "anomalous_iterations": unexpected,
