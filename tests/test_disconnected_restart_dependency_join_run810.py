@@ -9,8 +9,8 @@ import pytest
 from ark.agency.contracts import Effect, StepState
 from ark.agency.disconnected_dependency_quarantine_projection import (
     DisconnectedDependencyClaim,
-    DisconnectedDependencyProjection,
     DisconnectedDependencyHold,
+    DisconnectedDependencyProjection,
     review_disconnected_dependency_quarantine,
 )
 from ark.agency.disconnected_restart_dependency_join import (
