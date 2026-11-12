@@ -15,17 +15,27 @@ from ark.agency.synthetic_write_quarantine_matrix_review import (
 _TOPOLOGY = "plan_" + "a" * 64
 
 
-def _review() -> projection.DisconnectedDependencyProjection:
+def _claims() -> tuple[projection.DisconnectedDependencyClaim, ...]:
+    return (
+        projection.DisconnectedDependencyClaim(
+            "read", Effect.READ, StepState.PENDING, ("write",),
+        ),
+        projection.DisconnectedDependencyClaim(
+            "write", Effect.WRITE, StepState.PENDING,
+        ),
+    )
+
+
+def _review(
+    claims: tuple[projection.DisconnectedDependencyClaim, ...] | None = None,
+) -> projection.DisconnectedDependencyProjection:
+    # Retain concrete claims before a hostile class-level descriptor is
+    # installed. The reviewer, not this fixture constructor, owns ingress.
+    if claims is None:
+        claims = _claims()
     return projection.review_disconnected_dependency_quarantine(
         topology_digest=_TOPOLOGY,
-        claims=(
-            projection.DisconnectedDependencyClaim(
-                "read", Effect.READ, StepState.PENDING, ("write",),
-            ),
-            projection.DisconnectedDependencyClaim(
-                "write", Effect.WRITE, StepState.PENDING,
-            ),
-        ),
+        claims=claims,
         independently_expected_write_ids=("write",),
         observations=(
             SyntheticWriteStoreObservation(
@@ -55,12 +65,13 @@ def _review() -> projection.DisconnectedDependencyProjection:
 def test_rebound_protocol_denied_without_classifying(
     monkeypatch: pytest.MonkeyPatch, name: str, replacement: object,
 ) -> None:
+    claims = _claims()
     with monkeypatch.context() as patch:
         patch.setattr(projection, name, replacement)
         with pytest.raises(
             projection.DisconnectedDependencyQuarantineRejected, match="authority",
         ):
-            _review()
+            _review(claims)
     assert _review().automatic_replay_authorized is False
 
 
@@ -79,12 +90,13 @@ def test_rebound_carrier_field_rejected_before_getter(
     def leak(_: object) -> object:
         raise AssertionError("untrusted carrier field was read")
 
+    claims = _claims()
     with monkeypatch.context() as patch:
         patch.setattr(cls, field, property(leak))
         with pytest.raises(
             projection.DisconnectedDependencyQuarantineRejected, match="authority",
         ):
-            _review()
+            _review(claims)
 
 
 @pytest.mark.parametrize(
@@ -98,12 +110,20 @@ def test_rebound_carrier_field_rejected_before_getter(
 def test_rebound_carrier_getattribute_rejected(
     monkeypatch: pytest.MonkeyPatch, cls: type,
 ) -> None:
-    with monkeypatch.context() as patch:
-        patch.setattr(cls, "__getattribute__", lambda *_: None)
-        with pytest.raises(
-            projection.DisconnectedDependencyQuarantineRejected, match="authority",
-        ):
-            _review()
+    claims = _claims()
+    # pytest's monkeypatch restores inherited lookup as an OWN class method.
+    # Delete the artificial own hook to avoid poisoning later test collection.
+    originally_owned = "__getattribute__" in vars(cls)
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(cls, "__getattribute__", lambda *_: None)
+            with pytest.raises(
+                projection.DisconnectedDependencyQuarantineRejected, match="authority",
+            ):
+                _review(claims)
+    finally:
+        if not originally_owned and "__getattribute__" in vars(cls):
+            delattr(cls, "__getattribute__")
 
 
 def test_original_protocol_returns_only_denial_for_all_descendants() -> None:
