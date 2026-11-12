@@ -100,11 +100,36 @@ _ORIGINAL_TRANSITION = tuple(
 )
 _ORIGINAL_HASH = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+# Keep the digest algorithm, wire domain, resource budgets and carrier layout
+# pinned across the whole read-only review. A rebound regex must not let a
+# forged scope digest or cohort digest be treated as well formed.
+_ORIGINAL_MODULES = (hashlib, json, re)
+_ORIGINAL_PROTOCOL = (_SHA, _DOMAIN, _MAX_SCOPES, _MAX_CANDIDATES, _MAX_TIME)
+_ORIGINAL_TYPES = (MemoryExpiryPreview, MemoryExpiryCohort, MemoryExpiryCohortTransition)
+_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_HOOKS = tuple(
+    tuple(vars(cls).get(name) for name in _HOOKS)
+    for cls in _ORIGINAL_TYPES
+)
 
 
 def _protocol() -> None:
     if (
-        hashlib.sha256 is not _ORIGINAL_HASH
+        (hashlib, json, re) != _ORIGINAL_MODULES
+        or (_SHA is not _ORIGINAL_PROTOCOL[0])
+        or (_DOMAIN is not _ORIGINAL_PROTOCOL[1])
+        or any(type(value) is not int for value in (
+            _MAX_SCOPES, _MAX_CANDIDATES, _MAX_TIME,
+        ))
+        or (_MAX_SCOPES, _MAX_CANDIDATES, _MAX_TIME) != _ORIGINAL_PROTOCOL[2:]
+        or (MemoryExpiryPreview, MemoryExpiryCohort, MemoryExpiryCohortTransition)
+        != _ORIGINAL_TYPES
+        or any(
+            vars(cls).get(name) is not old
+            for cls, values in zip(_ORIGINAL_TYPES, _ORIGINAL_HOOKS, strict=True)
+            for name, old in zip(_HOOKS, values, strict=True)
+        )
+        or hashlib.sha256 is not _ORIGINAL_HASH
         or json.dumps is not _ORIGINAL_DUMPS
         or any(
             vars(cls).get(name) is not old
