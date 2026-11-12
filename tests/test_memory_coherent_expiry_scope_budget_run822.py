@@ -31,9 +31,14 @@ def test_unbounded_or_invalid_utf8_scopes_rejected_before_connection(
         raise AssertionError("private SQLite opened before bounded scope validation")
 
     monkeypatch.setattr(SQLiteMemoryStore, "_connect_readonly", fail_if_opened)
+    scope = MemoryScope("owner", "notes")
+    # The frozen MemoryScope constructor already refuses >256 characters.
+    # A reflected mutation or multi-byte UTF-8 name can still reach a reader.
+    object.__setattr__(scope, "owner_id", owner)
+    object.__setattr__(scope, "namespace", namespace)
     with pytest.raises(review.CoherentExpirySnapshotRejected):
         review.review_coherent_expiry_snapshot(
-            store, (MemoryScope(owner, namespace),), now_ms=50,
+            store, (scope,), now_ms=50,
         )
     assert calls == []
 
