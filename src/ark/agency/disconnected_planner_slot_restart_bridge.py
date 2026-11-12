@@ -166,6 +166,22 @@ def review_disconnected_planner_slot_restart(
         name for name, (effect, _, _) in expected.items() if effect == "WRITE"
     )) != independently_expected_write_ids:
         raise DisconnectedPlannerSlotBridgeRejected("WRITE inventory mismatch")
+    # The synthetic cross-store matrix is caller supplied. Its reservation
+    # observation must agree with the independently opened durable slot ledger
+    # claim; otherwise a fake "present" can be accepted with zero real slots.
+    for observation in observations:
+        if (
+            type(observation) is not SyntheticWriteStoreObservation
+            or observation.step_id not in expected
+            or expected[observation.step_id][0] != "WRITE"
+            or observation.plan_state != expected[observation.step_id][1].lower()
+            or observation.reservation not in ("present", "absent")
+            or (observation.reservation == "present")
+            != (observed[observation.step_id].reservation_id is not None)
+        ):
+            raise DisconnectedPlannerSlotBridgeRejected(
+                "synthetic reservation observation disagrees with slot claim"
+            )
     plan_id = retained_tail.topology_digest
     initial_offline = tuple(
         (step, step.step_id, step.effect, step.state, step.depends_on,
