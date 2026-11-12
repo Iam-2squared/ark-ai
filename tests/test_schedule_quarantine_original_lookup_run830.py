@@ -16,7 +16,6 @@ from ark.disconnected_schedule_quarantine_ledger import (
     genesis_quarantine_witness,
 )
 
-
 _POLICY = QuarantinePolicy("a" * 64, 1_000, 10_000, 3, 1_000)
 
 
