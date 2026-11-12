@@ -28,6 +28,12 @@ _DOMAIN = b"ARK-disconnected-occurrence-frontier-v1\0"
 _MAX_ROWS = 10_000
 _MAX_CLOCK = 2**63 - 1
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SQLITE3 = sqlite3
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_STORE_CLASS = SyntheticOccurrenceStore
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_VALIDATE = _validate
@@ -71,7 +77,13 @@ _ORIGINAL_DESCRIPTORS = tuple(
 
 def _protocol() -> None:
     if (
-        hashlib.sha256 is not _ORIGINAL_SHA256
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or sqlite3 is not _ORIGINAL_SQLITE3
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or SyntheticOccurrenceStore is not _ORIGINAL_STORE_CLASS
+        or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
         or _validate is not _ORIGINAL_VALIDATE
         or _require_safe_occurrence_path is not _ORIGINAL_PATH_CHECK
