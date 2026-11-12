@@ -267,7 +267,15 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
             if not main_exists:
                 raise ActionAuditSchemaError("orphaned audit SQLite sidecar refused")
             if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
-                raise ActionAuditSchemaError("audit SQLite sidecar alias refused")
+                # Report bounded metadata only. Never include the audit DB
+                # pathname, request identifiers, arguments or row contents.
+                # This identifies the rejected file class in a real process
+                # race without relaxing the no-alias policy or retrying I/O.
+                raise ActionAuditSchemaError(
+                    "audit SQLite sidecar alias refused "
+                    f"(suffix={suffix}, file_type={stat.S_IFMT(sidecar_info.st_mode):#o}, "
+                    f"link_count={sidecar_info.st_nlink})"
+                )
     except OSError as exc:
         raise ActionAuditSchemaError("audit path custody cannot be verified") from exc
 
