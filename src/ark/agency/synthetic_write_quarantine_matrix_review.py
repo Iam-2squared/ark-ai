@@ -75,10 +75,38 @@ _MATRIX_DENIAL_FIELDS = (
 _ORIGINAL_MATRIX_DENIALS = tuple(
     vars(_MATRIX_TYPE)[name] for name in _MATRIX_DENIAL_FIELDS
 )
+# Frozen dataclasses can have their class-level slot descriptors, lookup hooks
+# or constructors replaced. Refuse those changes *before* reading a private
+# synthetic store observation or invoking any result/denial callback.
+_OBSERVATION_TYPE = SyntheticWriteStoreObservation
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_CARRIER_SHAPES = tuple(
+    (cls, names, tuple(vars(cls).get(name) for name in names))
+    for cls, names in (
+        (_OBSERVATION_TYPE, (
+            "step_id", "plan_state", "reservation", "preaction_audit", "audit_link",
+        ) + _CARRIER_HOOKS),
+        (_FINDING_TYPE, ("step_id", "reasons") + _CARRIER_HOOKS),
+        (_MATRIX_TYPE, (
+            "topology_digest", "observed_write_step_ids", "findings", "local_digest",
+        ) + _CARRIER_HOOKS),
+    )
+)
 
 
 def _assert_original_denials() -> None:
-    """Reject even False-returning counterfeit properties without calling them."""
+    """Reject counterfeit receipt constructors/fields and authority getters."""
+    if (
+        SyntheticWriteStoreObservation is not _OBSERVATION_TYPE
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in _ORIGINAL_CARRIER_SHAPES
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticQuarantineMatrixRejected(
+            "WRITE observation/receipt carrier definition changed"
+        )
     if (
         SyntheticQuarantineFinding is not _FINDING_TYPE
         or vars(_FINDING_TYPE).get("automatic_replay_authorized")
