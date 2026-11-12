@@ -77,8 +77,12 @@ def test_rebound_slotted_field_is_denied_before_executable_getter(
     "SyntheticQuarantineFinding",
     "SyntheticQuarantineMatrix",
 ))
+# Replacing __new__ on a live slotted dataclass changes CPython's tp_new
+# slot even after monkeypatch deletion (Python 3.11-3.13), poisoning later
+# unrelated tests. The runtime still guards __new__; do not fault-inject that
+# C-level slot in the shared pytest process.
 @pytest.mark.parametrize("hook", (
-    "__new__", "__getattribute__", "__getattr__", "__init__",
+    "__getattribute__", "__getattr__", "__init__",
 ))
 def test_rebound_carrier_hook_fails_closed_without_invocation(
     monkeypatch: pytest.MonkeyPatch, class_name: str, hook: str,
