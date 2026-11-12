@@ -81,6 +81,66 @@ _DENIAL_NAMES = (
 )
 _RESULT_PROPERTIES = tuple(getattr(_RESULT, x) for x in _DENIAL_NAMES)
 
+# A disconnected fixture still carries private image/audio/transcript bytes.
+# Frozen dataclasses do not protect their *class-level* slotted descriptors.
+# Refuse replaced getters before the first request field read, rather than
+# relying only on rechecking an input after it has already been accessed.
+_SOURCE_TYPES = (OfflinePngRequest, OfflineWaveRequest, TranscriptSegmentClaim)
+_SOURCE_FIELDS = (
+    ("owner_sha256", "privacy_sha256", "source_sha256", "png_bytes"),
+    ("owner_sha256", "privacy_sha256", "wav_sha256", "wav_bytes"),
+    ("start_frame", "end_frame", "language", "text_sha256", "text"),
+)
+_LOOKUP_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_SOURCE_ORIGINALS = tuple(
+    tuple(vars(cls).get(key) for key in (*names, *_LOOKUP_HOOKS))
+    for cls, names in zip(_SOURCE_TYPES, _SOURCE_FIELDS, strict=True)
+)
+_RESULT_FIELDS = (
+    "pair_sha256", "transcript_fingerprint", "segment_count",
+    "first_frame", "final_frame", "envelope_sha256",
+)
+_RESULT_HOOKS = ("__init__", *_LOOKUP_HOOKS)
+_RESULT_ORIGINALS = tuple(
+    vars(_RESULT).get(key)
+    for key in (*_RESULT_FIELDS, *_DENIAL_NAMES, *_RESULT_HOOKS)
+)
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_GRAMMAR = _SHA
+_ORIGINAL_PAIR_FN = _PAIR_FN
+_ORIGINAL_TRANSCRIPT_FN = _TRANSCRIPT_FN
+
+
+def _require_original_observation_carriers() -> None:
+    # This is local callback custody only, not sensor/source attestation.
+    if (
+        (OfflinePngRequest, OfflineWaveRequest, TranscriptSegmentClaim)
+        != _SOURCE_TYPES
+        or any(
+            tuple(vars(cls).get(key) for key in (*names, *_LOOKUP_HOOKS))
+            != original
+            for cls, names, original in zip(
+                _SOURCE_TYPES, _SOURCE_FIELDS, _SOURCE_ORIGINALS, strict=True,
+            )
+        )
+        or OfflineObservationTranscript is not _RESULT
+        or tuple(
+            vars(_RESULT).get(key)
+            for key in (*_RESULT_FIELDS, *_DENIAL_NAMES, *_RESULT_HOOKS)
+        ) != _RESULT_ORIGINALS
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_GRAMMAR
+        or _PAIR_FN is not _ORIGINAL_PAIR_FN
+        or _TRANSCRIPT_FN is not _ORIGINAL_TRANSCRIPT_FN
+    ):
+        raise OfflineObservationTranscriptRejected(
+            "observation fixture carrier or digest callback changed"
+        )
+
 
 def review_disconnected_observation_transcript(
     image: OfflinePngRequest,
@@ -107,6 +167,7 @@ def review_disconnected_observation_transcript(
         or any(type(s) is not TranscriptSegmentClaim for s in segments)
     ):
         raise OfflineObservationTranscriptRejected("exact bounded fixture inputs required")
+    _require_original_observation_carriers()
     retained = (
         retained_owner_sha256, retained_privacy_sha256,
         retained_png_sha256, retained_wav_sha256,
@@ -128,6 +189,7 @@ def review_disconnected_observation_transcript(
     ) for s in segments)
 
     def epoch() -> None:
+        _require_original_observation_carriers()
         if (
             pair_module.inspect_disconnected_observation_pair is not _PAIR_FN
             or transcript_module.review_audio_transcript_binding is not _TRANSCRIPT_FN
