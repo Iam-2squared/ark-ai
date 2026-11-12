@@ -195,3 +195,35 @@ def test_recovered_running_step_can_be_marked_unknown_but_never_replayed(tmp_pat
     assert result.unknown_step_ids == (_WRITE,)
     assert result.reserved_write_count == 1
     assert result.automatic_replay_authorized is False
+
+
+@pytest.mark.parametrize("case", ("subclass", "blank", "overbudget"))
+def test_expected_write_id_ingress_refuses_hostile_or_unbounded_input(
+    tmp_path, case,
+):
+    """Do not run attacker equality/hash when reconciling offline WRITE names."""
+    data = _setup(tmp_path)
+    called = []
+
+    class HostileStr(str):
+        def __eq__(self, other):
+            called.append("eq")
+            raise AssertionError("untrusted WRITE equality executed")
+
+        def __hash__(self):
+            called.append("hash")
+            raise AssertionError("untrusted WRITE hash executed")
+
+    if case == "subclass":
+        data["independently_expected_write_ids"] = (HostileStr(_WRITE),)
+    elif case == "blank":
+        data["independently_expected_write_ids"] = ("",)
+    else:
+        data["independently_expected_write_ids"] = (_WRITE,) * 25
+
+    with pytest.raises(
+        bridge.DisconnectedPlannerSlotBridgeRejected,
+        match="inexact restart bridge inputs",
+    ):
+        bridge.review_disconnected_planner_slot_restart(**data)
+    assert called == []
