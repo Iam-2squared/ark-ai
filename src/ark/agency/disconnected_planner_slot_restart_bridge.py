@@ -95,6 +95,36 @@ def _valid_step_id(value: object) -> bool:
 
 _ORIGINAL_STEP_ID_CHECK = _valid_step_id
 
+# Reject a class-level slot/getter substitution before inspecting private
+# Planner IDs or asking either independent child reviewer to open SQLite.
+# A frozen dataclass instance does not make its class descriptors immutable.
+# This is process-local callback custody, NOT durable plan authentication.
+_INPUT_TYPES = (
+    DisconnectedDependencyClaim,
+    DisconnectedDependencyProjection,
+    OfflineRecoveryStepClaim,
+    SyntheticWriteStoreObservation,
+    SyntheticPlanRecovery,
+    SyntheticPlanTail,
+    WriteSlotLedgerWitness,
+)
+_INPUT_FIELD_NAMES = (
+    ("step_id", "effect", "state", "depends_on"),
+    ("topology_digest", "matrix_digest", "holds", "digest"),
+    ("step_id", "effect", "state", "depends_on",
+     "result_sha256", "reservation_id"),
+    ("step_id", "plan_state", "reservation", "preaction_audit", "audit_link"),
+    ("tail", "step_statuses", "ambiguous_running_steps"),
+    ("topology_digest", "event_count", "event_hash", "status_digest",
+     "last_at_ms"),
+    ("count", "chain_sha256"),
+)
+_INPUT_HOOKS = ("__getattribute__", "__getattr__", "__init__", "__new__")
+_INPUT_DESCRIPTORS = tuple(
+    tuple(vars(cls).get(name) for name in (*fields, *_INPUT_HOOKS))
+    for cls, fields in zip(_INPUT_TYPES, _INPUT_FIELD_NAMES, strict=True)
+)
+
 
 def _protocol() -> None:
     if (
@@ -102,6 +132,19 @@ def _protocol() -> None:
         or type(_MAX_STEPS) is not int or _MAX_STEPS != 24
         or type(_MAX_STEP_ID_BYTES) is not int or _MAX_STEP_ID_BYTES != 256
         or _valid_step_id is not _ORIGINAL_STEP_ID_CHECK
+        or (
+            DisconnectedDependencyClaim, DisconnectedDependencyProjection,
+            OfflineRecoveryStepClaim, SyntheticWriteStoreObservation,
+            SyntheticPlanRecovery, SyntheticPlanTail, WriteSlotLedgerWitness,
+        ) != _INPUT_TYPES
+        or any(
+            tuple(vars(cls).get(name) for name in (*fields, *_INPUT_HOOKS))
+            != originals
+            for cls, fields, originals in zip(
+                _INPUT_TYPES, _INPUT_FIELD_NAMES, _INPUT_DESCRIPTORS,
+                strict=True,
+            )
+        )
         or (hashlib.sha256, json.dumps) != _ORIGINAL_CODECS
         or (
             bundle_module.review_disconnected_restart_receipt_bundle,
