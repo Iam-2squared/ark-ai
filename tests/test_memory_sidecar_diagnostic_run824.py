@@ -12,6 +12,8 @@ _SCRIPT = (
     Path(__file__).resolve().parents[1]
     / "scripts" / "diagnose_memory_sidecar_startup.py"
 )
+
+
 def _load_disposable_diagnostic():
     # Local import keeps the test's top-level import block simple.
     from importlib import util
