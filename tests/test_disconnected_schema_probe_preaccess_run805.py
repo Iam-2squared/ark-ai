@@ -26,7 +26,8 @@ def _db() -> sqlite3.Connection:
 _FIELDS = (
     "schema_sha256", "object_count", "user_version", "schema_version",
 )
-_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+# Do not patch inherited __new__: CPython can retain a changed tp_new slot.
+_HOOKS = ("__init__", "__getattribute__", "__getattr__")
 _DENIALS = (
     "source_authenticated", "independent_custody_proven",
     "wal_snapshot_verified", "cross_store_atomicity_proven",
@@ -37,7 +38,7 @@ _DENIALS = (
 @pytest.mark.parametrize("field", _FIELDS + _HOOKS + _DENIALS)
 @pytest.mark.parametrize("operation", ("capture", "review"))
 def test_poisoned_schema_seal_descriptor_never_invoked(
-    monkeypatch: pytest.MonkeyPatch, field: str, operation: str,
+    field: str, operation: str,
 ) -> None:
     touched: list[str] = []
     with closing(_db()) as connection:
@@ -48,12 +49,23 @@ def test_poisoned_schema_seal_descriptor_never_invoked(
             raise AssertionError("hostile schema descriptor executed")
 
         replacement = property(poison) if field in _FIELDS + _DENIALS else poison
-        monkeypatch.setattr(probe.DisconnectedSQLiteSchemaSeal, field, replacement)
-        with pytest.raises(probe.SQLiteSchemaProbeRejected, match="contract"):
-            if operation == "capture":
-                probe.capture_disconnected_sqlite_schema(connection)
-            else:
-                probe.review_disconnected_sqlite_schema(connection, retained)
+        carrier = probe.DisconnectedSQLiteSchemaSeal
+        had_own = field in vars(carrier)
+        original = vars(carrier).get(field)
+        try:
+            # Restoration must delete originally inherited lookup hooks;
+            # MonkeyPatch.setattr would leave an own class descriptor.
+            setattr(carrier, field, replacement)
+            with pytest.raises(probe.SQLiteSchemaProbeRejected, match="contract"):
+                if operation == "capture":
+                    probe.capture_disconnected_sqlite_schema(connection)
+                else:
+                    probe.review_disconnected_sqlite_schema(connection, retained)
+        finally:
+            if had_own:
+                setattr(carrier, field, original)
+            elif field in vars(carrier):
+                delattr(carrier, field)
         assert touched == []
         assert not connection.in_transaction
 
