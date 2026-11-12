@@ -46,6 +46,7 @@ _WITNESS_TYPE = OfflineContextReplayWitness
 # The recovery-local _inspect binding is a deliberate synthetic fault-injection
 # seam for existing later-epoch tests; only the defining ledger implementation
 # is pinned before a potentially private ledger.witness() callback.
+_ORIGINAL_LEDGER_INSPECT = _ledger_module._inspect
 _ORIGINAL_LEDGER_CHECK_WITNESS = _check_witness
 _ORIGINAL_LEDGER_OPEN = vars(_LEDGER_TYPE)["_open"]
 _ORIGINAL_LEDGER_WITNESS = vars(_LEDGER_TYPE)["witness"]
