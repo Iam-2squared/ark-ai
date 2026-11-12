@@ -151,6 +151,42 @@ def _sanitize_child_reply(value: object) -> dict[str, object]:
     return invalid
 
 
+
+def _no_duplicate_receipt_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Refuse ambiguous JSON at every object depth, not just top-level keys."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate child receipt key")
+        result[key] = value
+    return result
+
+
+def _no_nonfinite_receipt_number(_value: str) -> object:
+    raise ValueError("nonfinite child receipt number")
+
+
+def _parse_child_reply(output: str) -> dict[str, object]:
+    """Reject equivocal/unbounded child JSON before applying the allowlist.
+
+    json.loads normally takes the *last* duplicate key and accepts NaN.
+    Neither may silently turn a failure receipt into CREATED/UPDATED. The
+    raw child reply is never included in a diagnostic or exception message.
+    """
+    invalid = {"status": "INVALID_CHILD_OUTPUT"}
+    if type(output) is not str or len(output) > 4096:
+        return invalid
+    try:
+        decoded = json.loads(
+            output,
+            object_pairs_hook=_no_duplicate_receipt_keys,
+            parse_constant=_no_nonfinite_receipt_number,
+        )
+    except (ValueError, TypeError, RecursionError):
+        return invalid
+    return _sanitize_child_reply(decoded)
+
+
 def _probe(
     path: Path, mode: str, startup_mode: str, operation: str = "create",
     *, wal_keeper: bool = False,
@@ -232,11 +268,7 @@ def _probe(
                 else:
                     # The subprocess is a diagnostic source, not a trusted
                     # serializer. Never forward unexpected JSON fields.
-                    item = (
-                        _sanitize_child_reply(json.loads(output))
-                        if len(output) <= 4096
-                        else {"status": "INVALID_CHILD_OUTPUT"}
-                    )
+                    item = _parse_child_reply(output)
                 if not ready(index) and item["status"] in (
                     "CREATED", "UPDATED", "CONFLICT",
                 ):
