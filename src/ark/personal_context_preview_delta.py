@@ -132,6 +132,8 @@ def _parse(
         or type(local_digest) is not str or _SHA.fullmatch(local_digest) is None
     ):
         raise PrivateContextDeltaRejected("private preview shape or owner mismatch")
+    if record_ids != tuple(sorted(set(record_ids))):
+        raise PrivateContextDeltaRejected("private preview IDs are not unique and sorted")
     try:
         body = raw.encode("ascii", "strict")
     except UnicodeError as exc:
@@ -180,9 +182,11 @@ def _parse(
             type(record_id) is not str or _REC.fullmatch(record_id) is None
             or record_id != expected or type(scope) is not str
             or _SHA.fullmatch(scope) is None or scope not in scopes
-            or type(content) is not str or len(content) > _MAX_CONTENT_BYTES
+            or type(content) is not str
         ):
             raise PrivateContextDeltaRejected("private preview record identity mismatch")
+        if len(content) > _MAX_CONTENT_BYTES:
+            raise PrivateContextDeltaRejected("private preview content budget exceeded")
         try:
             content_bytes = content.encode("utf-8", "strict")
         except UnicodeError as exc:
