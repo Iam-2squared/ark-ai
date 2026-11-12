@@ -102,7 +102,9 @@ def test_unrelated_commit_does_not_create_registered_intent(tmp_path):
     _inert(reviewed, parts[-1])
 
 
-@pytest.mark.parametrize(\n    "problem", ("read", "malformed", "fake-prefix", "wrong-bound", "bad-audit"),\n)
+@pytest.mark.parametrize(
+    "problem", ("read", "malformed", "fake-prefix", "wrong-bound", "bad-audit"),
+)
 def test_denies_unregistered_or_corrupt_evidence(tmp_path, problem):
     parts = _fixture(tmp_path, effect=Effect.READ if problem == "read" else Effect.WRITE)
     if problem == "malformed":
