@@ -113,7 +113,7 @@ def _require_original_schema_probe() -> None:
         )
         or (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION) != _ORIGINAL_LIMITS
     ):
-        raise SQLiteSchemaProbeRejected("schema probe contract changed")
+        raise SQLiteSchemaProbeRejected("schema probe contract changed or acquired authority")
 
 
 def _seal_fields(seal: DisconnectedSQLiteSchemaSeal) -> tuple[str, int, int, int]:
