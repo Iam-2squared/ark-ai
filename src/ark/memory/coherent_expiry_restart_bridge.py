@@ -121,6 +121,20 @@ def review_coherent_expiry_restart(
         retained.snapshot_sha256,
     )
     original_path = store.path
+    # Reject malformed retained outer carriers BEFORE iteration/field access.
+    # A reflected frozen `pages` slot can contain a hostile non-tuple iterator,
+    # and a forged cohort may have executable attributes.  Neither is local
+    # historical evidence, so do not invoke their callbacks.
+    if (
+        type(retained.pages) is not tuple
+        or not 1 <= len(retained.pages) <= 16
+        or any(
+            type(page) is not coherent.preview_module.MemoryExpiryPreview
+            for page in retained.pages
+        )
+        or type(retained.cohort) is not coherent.MemoryExpiryCohort
+    ):
+        raise CoherentExpiryRestartRejected("invalid retained snapshot carriers")
     # A frozen dataclass is not immutable under object.__setattr__.  The
     # retained page/cohort values must remain the same throughout the fresh
     # SQLite callback and the separate transition reviewer, otherwise a
