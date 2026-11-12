@@ -36,7 +36,7 @@ def test_reject_reflected_utf8_identity_before_memory_store_path_access(case):
             raise AssertionError("untrusted source equality executed")
 
     invalid = {
-        "surrogate": "bad\\ud800",
+        "surrogate": "bad\ud800",
         "overbudget": "界" * 200,
         "subclass": HostileStr("fixture-owner"),
     }
