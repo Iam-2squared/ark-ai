@@ -183,6 +183,44 @@ def review_disconnected_planner_slot_restart(
                 "synthetic reservation observation disagrees with slot claim"
             )
     plan_id = retained_tail.topology_digest
+    # The two child reviewers run in separate epochs. In particular the
+    # durable SQLite reviewer can invoke reentrant callbacks *after* the
+    # Planner reviewer has produced its receipt. Pin all Planner-side input
+    # carriers before either callback, not only offline_steps. A mutable
+    # frozen dataclass field is not independent historical evidence.
+    def source_epoch() -> tuple[object, ...]:
+        return (
+            (id(ledger), id(ledger._path), id(retained_slot_witness),
+             id(retained_slot_witness.count),
+             id(retained_slot_witness.chain_sha256)),
+            (id(recovered), id(recovered.tail), id(recovered.step_statuses),
+             id(recovered.ambiguous_running_steps)),
+            (id(retained_tail), id(retained_tail.topology_digest),
+             id(retained_tail.event_count), id(retained_tail.event_hash),
+             id(retained_tail.status_digest), id(retained_tail.last_at_ms)),
+            tuple(
+                (id(step), id(step.step_id), id(step.effect),
+                 id(step.state), id(step.depends_on))
+                for step in claims
+            ),
+            id(independently_expected_write_ids),
+            tuple(id(name) for name in independently_expected_write_ids),
+            tuple(
+                (id(row), id(row.step_id), id(row.plan_state),
+                 id(row.reservation), id(row.preaction_audit),
+                 id(row.audit_link))
+                for row in observations
+            ),
+            (id(dependency), id(dependency.topology_digest),
+             id(dependency.matrix_digest), id(dependency.holds),
+             id(dependency.digest)),
+            tuple(
+                (id(hold), id(hold.step_id), id(hold.reason))
+                for hold in dependency.holds
+            ),
+        )
+
+    original_source_epoch = source_epoch()
     initial_offline = tuple(
         (step, step.step_id, step.effect, step.state, step.depends_on,
          step.result_sha256, step.reservation_id)
@@ -191,6 +229,10 @@ def review_disconnected_planner_slot_restart(
 
     def stable() -> None:
         _protocol()
+        if source_epoch() != original_source_epoch:
+            raise DisconnectedPlannerSlotBridgeRejected(
+                "Planner source carriers changed between independent reviews"
+            )
         if any(
             type(item) is not OfflineRecoveryStepClaim or item is not old
             or (
