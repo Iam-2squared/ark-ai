@@ -135,7 +135,13 @@ _ORIGINAL_CONSTANTS = (
 
 def _protocol() -> None:
     if (
-        (hashlib.sha256, json.dumps, re.compile) != _ORIGINAL_CODECS
+        any(
+            current is not original
+            for current, original in zip(
+                (hashlib.sha256, json.dumps, re.compile),
+                _ORIGINAL_CODECS, strict=True,
+            )
+        )
         or any(
             current is not original
             for current, original in zip(
@@ -144,9 +150,20 @@ def _protocol() -> None:
             )
         )
         or _DOMAIN is not _ORIGINAL_DOMAIN
-        or type(_MAX_STEP_ID_BYTES) is not int
-        or (_SHA, _OCC, _MAX_OCCURRENCES, _MAX_STEPS,
-            _MAX_STEP_ID_BYTES, _MEMORY_DISPOSITIONS, _ATOMIC_STATES) != _ORIGINAL_CONSTANTS
+        or any(
+            current is not original
+            for current, original in zip(
+                (_SHA, _OCC, _MEMORY_DISPOSITIONS, _ATOMIC_STATES),
+                (_ORIGINAL_CONSTANTS[0], _ORIGINAL_CONSTANTS[1],
+                 _ORIGINAL_CONSTANTS[5], _ORIGINAL_CONSTANTS[6]),
+                strict=True,
+            )
+        )
+        or any(type(value) is not int for value in (
+            _MAX_OCCURRENCES, _MAX_STEPS, _MAX_STEP_ID_BYTES,
+        ))
+        or (_MAX_OCCURRENCES, _MAX_STEPS, _MAX_STEP_ID_BYTES)
+           != _ORIGINAL_CONSTANTS[2:5]
         or memory_module.MemoryAmbiguityPair is not _MEMORY
         or planner_module.DisconnectedPlannerSlotBridge is not _PLANNER
         or atomic_module.AtomicUnknownOutcomeReview is not _ATOMIC
