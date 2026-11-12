@@ -17,7 +17,7 @@
 
 `src/ark/agency/disconnected_occurrence_frontier_review.py` now pins the original domain separator, regex descriptor, source store type, and `hashlib`/`json`/`sqlite3` module references before any retained witness or local SQLite row is read. Existing original callback, budget, timestamp and result-denial fences remain. Commit `33fb8663fe1f16cafb7d7dd832ccc16c61ae8bfa`.
 
-New `tests/test_disconnected_occurrence_frontier_custody_run807.py` submits **6 regression cases** for same-shaped protocol substitutions, using an intentionally absent database and asserting rejection **before SQLite creation/read**; final test commit `a1cb418d148eaba4863285ccbf4436ad3695d3e6`, initial `f4dd7ded20ae6845f54f94e20596972e5288abe5`. This snapshot remains a bounded, synthetic, **read-only** local digest; it cannot authenticate independent custody, authorize dispatch, establish exactly-once physical effects, or warrant automatic retry.
+New `tests/test_disconnected_occurrence_frontier_custody_run807.py` submits **6 regression cases** for same-shaped protocol substitutions, using an intentionally absent database and asserting rejection **before SQLite creation/read**; final test-correction commit `9ff4d3f7bd455faea15831157b321594c231e44b` (distinct regex-flag identity to avoid Python `re.compile` cache); earlier `a1cb418d148eaba4863285ccbf4436ad3695d3e6`, initial `f4dd7ded20ae6845f54f94e20596972e5288abe5`. This snapshot remains a bounded, synthetic, **read-only** local digest; it cannot authenticate independent custody, authorize dispatch, establish exactly-once physical effects, or warrant automatic retry.
 
 ## 3. Planner WRITE quarantine matrix independent regression
 
