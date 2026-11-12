@@ -133,7 +133,9 @@ def test_malformed_or_cross_scope_private_snapshots_are_refused(
     elif condition == "bad-digest-shape":
         after = replace(after, local_digest="x")
     elif condition == "duplicate-json-key":
-        raw = after.canonical_local_json.replace('"owner_digest":', '"owner_digest":"x","owner_digest":')
+        raw = after.canonical_local_json.replace(
+            '"owner_digest":', '"owner_digest":"x","owner_digest":',
+        )
         after = forged_raw(after, raw)
     elif condition == "noncanonical-json":
         raw = json.dumps(json.loads(after.canonical_local_json), indent=2)
@@ -155,7 +157,7 @@ def test_malformed_or_cross_scope_private_snapshots_are_refused(
         after = forged_raw(after, raw)
     elif condition == "bad-content-utf8":
         decoded = json.loads(after.canonical_local_json)
-        decoded["records"][0]["content"] = "\\ud800"
+        decoded["records"][0]["content"] = chr(0xD800)
         raw = json.dumps(decoded, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
         after = forged_raw(after, raw)
     elif condition == "content-too-large":
