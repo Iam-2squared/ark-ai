@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
+from ark.agency import disconnected_occurrence_frontier_review as frontier
 from ark.agency.durable_occurrence_review import (
     SyntheticOccurrenceStore,
     SyntheticReplayRejected,
 )
-from ark.agency import disconnected_occurrence_frontier_review as frontier
 
 
 def _store(tmp_path: Path, *, name: str = "synthetic.db") -> SyntheticOccurrenceStore:
