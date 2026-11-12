@@ -25,6 +25,15 @@ _MAX_EVENTS = 40_000
 _DOMAIN = b"ARK-retained-memory-row-delta-v1\0"
 _REVIEW_DOMAIN = b"ARK-retained-memory-row-delta-review-v2\0"
 
+# Private row metadata is serialized and hashed during detached review.
+# Refuse substituted codec/digest code before reading it from SQLite.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_REVIEW_DOMAIN = _REVIEW_DOMAIN
+
 
 class MemoryRowDeltaRejected(MemorySchemaError):
     """Retained Memory row history is missing, inconsistent or unauthorized."""
@@ -117,22 +126,41 @@ def _require_original_carriers() -> None:
         raise MemoryRowDeltaRejected("retained Memory row carrier descriptors changed")
 
 
+def _require_original_row_delta_digest() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _REVIEW_DOMAIN is not _ORIGINAL_REVIEW_DOMAIN
+    ):
+        raise MemoryRowDeltaRejected("Memory row digest dependencies changed")
+
+
 def _commitment(row: sqlite3.Row) -> tuple[str, int, str]:
+    _require_original_row_delta_digest()
     record = _record(row)
+    _require_original_row_delta_digest()
     payload = (
         record.memory_id, record.scope.owner_id, record.scope.namespace,
         record.source_id, record.revision, record.content_sha256,
         hashlib.sha256(row["metadata_json"].encode("utf-8")).hexdigest(),
         record.created_at_ms, record.updated_at_ms, record.expires_at_ms,
     )
+    _require_original_row_delta_digest()
     encoded = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("ascii")
-    return record.memory_id, record.revision, hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    _require_original_row_delta_digest()
+    digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    _require_original_row_delta_digest()
+    return record.memory_id, record.revision, digest
 
 
 def _scan(store: SQLiteMemoryStore) -> tuple[
     tuple[tuple[str, int, str], ...],
     tuple[tuple[object, ...], ...],
 ]:
+    _require_original_row_delta_digest()
     path = store.path
     try:
         with closing(store._connect_readonly()) as conn:
@@ -272,9 +300,12 @@ def _scan(store: SQLiteMemoryStore) -> tuple[
 
 
 def _prefix_hash(events: tuple[tuple[object, ...], ...], count: int) -> str:
+    _require_original_row_delta_digest()
     state = hashlib.sha256(prefix._DOMAIN)
     for entry in events[:count]:
+        _require_original_row_delta_digest()
         prefix._charge(state, entry)
+    _require_original_row_delta_digest()
     return state.hexdigest()
 
 
@@ -316,6 +347,7 @@ def _validate(value: MemoryRowDeltaWitness) -> tuple[object, ...]:
 
 def capture_local_memory_row_delta(store: SQLiteMemoryStore) -> MemoryRowDeltaWitness:
     """Capture hashes, revisions and local event prefix, never private text."""
+    _require_original_row_delta_digest()
     if type(store) is not _STORE:
         raise MemoryRowDeltaRejected("exact Memory source required")
     _require_original_carriers()
@@ -353,6 +385,7 @@ def review_retained_memory_row_delta(
     store: SQLiteMemoryStore, retained: MemoryRowDeltaWitness,
 ) -> MemoryRowDeltaReview:
     """Require a matching prior event prefix and event-backed row changes."""
+    _require_original_row_delta_digest()
     if type(store) is not _STORE:
         raise MemoryRowDeltaRejected("exact Memory source required")
     _require_original_carriers()
@@ -360,6 +393,7 @@ def review_retained_memory_row_delta(
     source = store.path
 
     def stable() -> None:
+        _require_original_row_delta_digest()
         if store.path is not source or any(
             actual is not original for actual, original in zip(
                 _validate(retained), epoch, strict=True,
@@ -399,6 +433,7 @@ def review_retained_memory_row_delta(
          full_event_root, tuple(sorted(changed_ids)), changes),
         separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
+    _require_original_row_delta_digest()
     root = hashlib.sha256(_REVIEW_DOMAIN + encoded).hexdigest()
     stable()
     _require_original_carriers()
