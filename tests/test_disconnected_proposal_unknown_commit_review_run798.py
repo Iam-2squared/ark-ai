@@ -167,7 +167,10 @@ def test_invalid_schema_is_not_classified_as_unchanged(tmp_path):
         _triage(path, before)
 
 @pytest.mark.parametrize(("target", "name"), (
-    ("report", "__new__"),
+    # Rebinding inherited __new__ permanently changes CPython tp_new on
+    # slotted dataclasses, even if the class attribute is later removed.
+    # Test the checked own constructor instead, with no global slot poison.
+    ("report", "__init__"),
     ("report", "__getattribute__"),
     ("report", "__getattr__"),
     ("triage", "_protocol"),
