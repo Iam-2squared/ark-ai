@@ -7,13 +7,13 @@ import json
 
 import pytest
 
+import ark.agency.disconnected_recovery_quarantine_inventory as inventory
 from ark.agency.disconnected_atomic_unknown_outcome_review import (
     AtomicUnknownOutcomeReview,
 )
 from ark.agency.disconnected_planner_slot_restart_bridge import (
     DisconnectedPlannerSlotBridge,
 )
-import ark.agency.disconnected_recovery_quarantine_inventory as inventory
 from ark.memory.ambiguous_commit_pair_review import MemoryAmbiguityPair
 
 
