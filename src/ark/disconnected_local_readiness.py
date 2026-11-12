@@ -403,10 +403,12 @@ def review_disconnected_local_readiness(
     assert_epoch()
     assert_preview_epoch()
     second_epoch = checked_seal_epoch(second, phase="second")
+    # Comparing frozen schema dataclasses via __eq__ would execute a mutable
+    # class-level callback. All four exact seal scalars were already checked
+    # in both independent reviews; compare their immutable images only.
+    # This is a disconnected consistency check, not atomic WAL custody.
     if (
         second_epoch != schema_epoch
-        or first != retained_schema
-        or second != first
         or any(
             current is not old for current, old in zip(
                 checked_seal_epoch(first, phase="first"), first_epoch,
