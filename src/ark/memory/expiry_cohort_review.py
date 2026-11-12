@@ -129,6 +129,8 @@ def _protocol() -> None:
             for cls, values in zip(_ORIGINAL_TYPES, _ORIGINAL_HOOKS, strict=True)
             for name, old in zip(_HOOKS, values, strict=True)
         )
+        or _sha is not _ORIGINAL_SHA_HELPER
+        or _image is not _ORIGINAL_IMAGE_HELPER
         or hashlib.sha256 is not _ORIGINAL_HASH
         or json.dumps is not _ORIGINAL_DUMPS
         or any(
@@ -174,6 +176,14 @@ def _image(report: MemoryExpiryPreview) -> tuple[str, int, int, bool, str, str]:
         raise MemoryExpiryCohortRejected("unbounded or authorizing expiry preview")
     _protocol()
     return image
+
+
+# The public reviewers call these internal helpers after inspecting detached
+# scope/clock receipts. Pin their original definitions before the first input
+# is touched: replacing _image with a forged page projection would otherwise
+# let an inexact expiry receipt evade the format and authority checks.
+_ORIGINAL_SHA_HELPER = _sha
+_ORIGINAL_IMAGE_HELPER = _image
 
 
 def aggregate_memory_expiry_cohort(
