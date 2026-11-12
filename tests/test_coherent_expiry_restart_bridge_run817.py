@@ -59,7 +59,7 @@ def test_new_due_memory_changes_local_digest_but_never_purges(tmp_path):
     assert reviewed.observed_candidates == 3
     assert reviewed.previous_snapshot_sha256 != reviewed.observed_snapshot_sha256
     _no_authority(reviewed)
-    assert len(store.query.__name__) > 0  # Store remains accessible; bridge is read-only.
+    assert _baseline(store, scopes).cohort.candidate_count == 3  # No automatic purge.
 
 
 def test_later_caller_clock_is_not_trusted_time(tmp_path):
