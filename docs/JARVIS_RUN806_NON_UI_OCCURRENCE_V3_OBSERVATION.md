@@ -20,6 +20,14 @@
 - `src/ark/observations.py`, source commit `d055ec573ded9dcb67d5df5438127098728c2daf`, rejects NUL in directly supplied `source_id`, `adapter_id` and `privacy_scope` before any observation ID hash. This aligns the direct metadata contract with existing fixture-adapter preflight, preventing ambiguous native-boundary labels from bypassing the adapter.
 - `tests/test_observation_direct_nul_boundary_run806.py`, commit `8669fa57d6627378e24b5c2f0f45f98956fd9063`, includes parametrized direct-ingress, reflected identity-mutation and cached-window consistency cases. No real media acquisition or disclosure.
 
+## Package 4 — Private Personal Context parser recursion denial
+
+- `src/ark/personal_context_request_binding.py`, commit `52a36f4d314497ac41b609f5cf4d6fec125436a8`, catches `RecursionError` and `OverflowError` from parsing or reserializing a bounded private `canonical_local_json`, translating them to the existing `OfflineContextBindingRejected` fail-closed path. The 65,536-byte preview budget, one-owner/one-request identity, digest and non-authorizing properties remain unchanged.
+- `tests/test_private_context_json_depth_run806.py`, commit `1613899416e16ef6978678296190862741e9653d`: four hostile-depth fixtures and one valid local-only fixture test; the latter continues to assert that neither export, retention, tool dispatch nor consent becomes authorized.
+- This is a parser exception boundary, **not** consent, profile retrieval, external disclosure, a model connection, deletion or a legal-basis decision.
+
+**Run806 test cases submitted:** 16 occurrence + 8 V3 + 14 observation + 5 Personal Context = **43 new cases**. Submission is not PASS; exact-head six-platform CI remains to be observed.
+
 ## CI and evidence accuracy
 
 - Baseline prior HEAD `229b812cae70b35e24d75fe085c43a119f8aa910` [#43131287447](https://github.com/Iam-2squared/ark-ai/actions/runs/43131287447): six matrix jobs **GREEN**, observed this invocation.
@@ -28,6 +36,6 @@
 
 ## Boundaries and integration plan
 
-All three packages are opt-in and reversible on Draft PR #8. Existing V1/V2/Local UI/Launcher evidence untouched. Draft PR #5 remains protected/unmerged, Draft PR #9 and all new UI/frontend work remain paused and untouched. No paid/external compute or API, real tool execution, actual owner consent, irreversible deletion, Candidate creation/promotion, training, protected final evaluation or main merge. In-process class/function pinning is **not** sandboxing, independent custody or a trusted clock.
+All four packages are opt-in and reversible on Draft PR #8. Existing V1/V2/Local UI/Launcher evidence untouched. Draft PR #5 remains protected/unmerged, Draft PR #9 and all new UI/frontend work remain paused and untouched. No paid/external compute or API, real tool execution, actual owner consent, irreversible deletion, Candidate creation/promotion, training, protected final evaluation or main merge. In-process class/function pinning is **not** sandboxing, independent custody or a trusted clock.
 
 Next: verify exact current HEAD, inspect six matrix conclusions and actual failure logs if any; keep the new occurrence frontier isolated until exact-head GREEN. Then prioritize Memory CAS/ABA/COMMIT-UNKNOWN, Planner restart UNKNOWN quarantine and immutable registry-bound PermissionGate/audit/mock integration after respective invariants are GREEN. **ARK/JARVIS remains NOT_PASSED.**
