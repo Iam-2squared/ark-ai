@@ -37,7 +37,7 @@ def test_frozen_direct_envelope_retains_nul_json_identity(
 ) -> None:
     # The v1 public envelope is intentionally not the strict adapter boundary.
     with_nul = _envelope(**{label: value})
-    without_nul = _envelope(**{label: value.replace("\x00", "")})
+    without_nul = _envelope(**{label: value.replace("\x00", "") or "clean"})
     identity = with_nul.observation_id
     assert identity.startswith("obs_")
     assert len(identity) == 68
