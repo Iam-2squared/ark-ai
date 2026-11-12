@@ -128,6 +128,11 @@ def review_disconnected_planner_slot_restart(
         or type(offline_steps) is not tuple
         or type(independently_expected_write_ids) is not tuple
         or type(observations) is not tuple
+        or len(independently_expected_write_ids) > _MAX_STEPS
+        or any(
+            type(step_id) is not str or not step_id
+            for step_id in independently_expected_write_ids
+        )
         or not 1 <= len(claims) <= _MAX_STEPS
         or len(offline_steps) != len(claims)
         or any(type(item) is not DisconnectedDependencyClaim for item in claims)
@@ -135,6 +140,9 @@ def review_disconnected_planner_slot_restart(
     ):
         raise DisconnectedPlannerSlotBridgeRejected("inexact restart bridge inputs")
 
+    # Exact string admission precedes every set/sort/tuple comparison of the
+    # independently supplied WRITE IDs. A str subclass could otherwise run
+    # __eq__ or __hash__ while merely checking offline identity.
     # Reconcile the complete ordered offline step inventory against every
     # canonical recovered Planner step, not merely the reserved subset.
     expected = {
