@@ -1,3 +1,41 @@
+# LATEST — Run819: retained Memory expiry epoch, registered UNKNOWN, private context request safety — 2026-11-12 JST
+
+**LATEST / overall:** JARVIS **NOT_PASSED**. Three coherent strictly **FREE-ONLY, NON-UI** workstreams saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), branch `research/jarvis-foundations`; NO merge. UI development remains PAUSED and [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched. Protected V3 [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains unmerged, blocked by its approval/evaluation gate. The independently retained V1/V2/Local UI/Launcher contracts and historical evidence were not modified.
+
+**Saved at (Asia/Tokyo/JST): 2026-11-12T22:03:55+09:00.**
+
+**Work-basis HEAD (before this invocation):** `04b3c308d86126c98ecb28f5c6bb43fc4c2f6ee3` (Run818). **Checkpoint-write-basis HEAD (after Run819 source/tests/report, immediately re-read):** `d7dc0ce265f7300ff989fac1d392fa9228901252`. **Checkpoint-result HEAD:** this file update itself creates the next commit; a self-referential result SHA cannot be truthfully embedded before GitHub writes it. Confirm the resulting commit from the normal write response and PR/branch HEAD after saving; the write-basis SHA above is NOT the resulting checkpoint HEAD.
+
+## NEW in this invocation — 3 safe workstreams, 28 test cases
+
+1. **Memory retained coherent expiry / nested epoch and ingress** — Existing `src/ark/memory/coherent_expiry_restart_bridge.py` pins all six retained page fields and five cohort fields across the separate live SQLite epoch and restart review. A second correction rejects hostile/non-tuple page iterators, empty/oversized/foreign page inventories and wrong cohort types **before** evaluating nested carriers or opening SQLite. Tests: `tests/test_coherent_expiry_retained_epoch_run819.py`, **13** cases (one unchanged, eight late reflective drift, four invalid carrier preflight). Source/test commits `4c493e678b9f00cae83c3c530d8c610546ce4eeb`, `9e13083a42fa9ce587171676c75a5139825c02af`, `951350efc3dcefe9f0e25d63240ad94b5d8e5ef8`, `da252aeb05263155a951184b85e0e4a862a22c9b`. No Memory purge, plaintext return, trusted clock, owner-consent proof or cross-epoch atomicity.
+2. **Registry-bound audited WRITE COMMIT-UNKNOWN** — `tests/test_registered_unknown_wal_recovery_run819.py`, **9** cases: four local states, collision, reentrant call/witness/registry drift, forbidden result authority getter; backend NeverExecute. Initial source/test HEAD `35c62ea6bcffaceeaeecc2b7cde892e6ca59b7ef` exposed a raw registry revision-drift `ValueError` in CI. Minimal source fix `117c204437c7da222b45431032c9aecfab39a0b4` normalizes the same fail-closed refusal to `RegisteredUnknownOutcomeRejected`, without changing approval/replay controls. Local audited intent **never proves external effect or exactly-once authorization**.
+3. **Privacy-safe Personal Context receipt composition** — `tests/test_personal_context_delta_request_epoch_run819.py`, commit `a49e7dd6b55caabb70ee0f5129d585b9b1fc85d3`, **6** cases (same/edit/add/remove/scope migration/new request ID). Confirms request rebind and private delta review expose only local digests/counts, never consent, export permission or automatic reuse. No live user data or account connection.
+
+Technical evidence: [Run819 report](https://github.com/Iam-2squared/ark-ai/blob/d7dc0ce265f7300ff989fac1d392fa9228901252/docs/JARVIS_RUN819_NON_UI_RETAINED_MEMORY_AND_REGISTERED_UNKNOWN.md) (report existed by work-basis HEAD). Total newly authored cases **13+9+6=28**; do not confuse test authoring with exact-head GREEN.
+
+## Tests/CI and evidence status at checkpoint preparation
+
+- Previous exact Run818 HEAD `04b3c308d86126c98ecb28f5c6bb43fc4c2f6ee3`: [CI #43217156318](https://github.com/Iam-2squared/ark-ai/actions/runs/43217156318) **GREEN 6/6**, each Windows/Ubuntu × Python 3.11–3.13 job verified.
+- Memory nested-drift test HEAD `9e13083a42fa9ce587171676c75a5139825c02af`: [CI #43220847949](https://github.com/Iam-2squared/ark-ai/actions/runs/43220847949) **GREEN 6/6**. This is evidence before the subsequent malformed-input preflight addition.
+- Registry new-test HEAD `35c62ea6bcffaceeaeecc2b7cde892e6ca59b7ef`: [CI #43221113204](https://github.com/Iam-2squared/ark-ai/actions/runs/43221113204) **FAIL** on Ubuntu due to the raw registry error-class mismatch; real Python logs inspected.
+- Registry corrected HEAD `117c204437c7da222b45431032c9aecfab39a0b4`: [CI #43221643895](https://github.com/Iam-2squared/ark-ai/actions/runs/43221643895) Ubuntu 3/3 GREEN, Windows 3.13 GREEN and Windows 3.11/3.12 **IN PROGRESS** at most recent check (not 6/6).
+- Privacy composition HEAD `a49e7dd6b55caabb70ee0f5129d585b9b1fc85d3`: [CI #43223124695](https://github.com/Iam-2squared/ark-ai/actions/runs/43223124695) **IN PROGRESS**.
+- Memory ingress source `951350efc3dcefe9f0e25d63240ad94b5d8e5ef8`, test HEAD `da252aeb05263155a951184b85e0e4a862a22c9b`: [CI #43223414547](https://github.com/Iam-2squared/ark-ai/actions/runs/43223414547) **QUEUED / IN PROGRESS**. Newly saved technical report commits also trigger ordinary workflow checks; they do not supersede executable-source verification. Final checkpoint-result six-job CI is **NOT YET GREEN-VERIFIED**.
+- No local pytest/Ruff execution or physical PC GGUF execution claimed; use exact GitHub CI log identities only. No equivalent workflow manually re-dispatched.
+
+## Boundaries, unresolved blockers and Next plan / 今後の方針
+
+1. **Priority 1:** read and close the exact six-job CI runs for new agency, privacy and Memory preflight commits; inspect any actual FAIL trace and make only a semantics-preserving fix. Pending CI is not PASS.
+2. **Priority 2:** continue Memory CAS/ABA, postcommit COMMIT-UNKNOWN and coherent privacy-expiry handling; reject unauthenticated history, clock rollback, forged event rows, missing cross-store custody. No erasure authorization inferred from timestamps.
+3. **Priority 3:** Planner crash recovery and permanent UNKNOWN WRITE quarantine, registry-bound exact PermissionGate, durable one-shot occurrence identity, audit-before-action and disconnected mock executor. Connect components only after their lower-layer exact-head GREEN; no auto-retry after UNKNOWN.
+4. **Priority 4:** privacy-safe Personal Context revocation and retention, proactive schedule recovery, Observation/media fixtures, startup readiness and V3 free-only approval/path/reproducibility guard review. No capture, live external action or training assumed.
+5. **Human-only gates:** real PC/GGUF validation requires the user/hardware; new credentials or account connections, paid services/possible billing, frozen contract changes, protected V2 evaluation, Candidate generation/promotion, destructive/irreversible operations and explicit-approval main merge all remain BLOCKED. PR #5 gate and PR #9 UI pause remain intact. Never infer user approval from a local synthetic digest.
+
+ARK/JARVIS **NOT_PASSED**. All new components are isolated/reversible and do not certify autonomous JARVIS readiness.
+
+---
+
 # LATEST — Run818: Planner cross-epoch drift fence + detached V3 packet regression matrix — 2026-11-12 JST
 
 **LATEST:** TWO meaningful, independent, strictly FREE-ONLY/NON-UI packages and one technical report saved on [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) through the NORMAL GitHub Contents API. (A) Planner recovery → SQLite WRITE slot bridge now rechecks all previously reviewed Planner carriers after an independent ledger callback. (B) Detached synthetic V3 packet parser gets 30 new strict canonicalization/numerical/no-spend tests, without changing any protected V3 contract or training runtime. **37 new regression tests submitted, but latest exact-head six-job GREEN is NOT YET established. ARK/JARVIS NOT_PASSED.**
