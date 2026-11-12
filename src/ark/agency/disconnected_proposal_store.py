@@ -77,6 +77,16 @@ _SNAPSHOT_DENIALS = tuple(
 )
 _WITNESS_DESCRIPTORS = tuple(vars(_WITNESS)[name] for name in _FIELDS)
 _SNAPSHOT_DESCRIPTORS = tuple(vars(_SNAPSHOT)[name] for name in _SNAPSHOT_FIELDS)
+# Both dataclasses are frozen only per instance. A hostile class-level
+# __getattribute__ or __getattr__ substitution can execute before the first
+# private witness or snapshot field read. Refuse even a false-returning hook.
+_CARRIER_LOOKUP_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_WITNESS_LOOKUP_DESCRIPTORS = tuple(
+    vars(_WITNESS).get(name) for name in _CARRIER_LOOKUP_HOOKS
+)
+_SNAPSHOT_LOOKUP_DESCRIPTORS = tuple(
+    vars(_SNAPSHOT).get(name) for name in _CARRIER_LOOKUP_HOOKS
+)
 _ORIGINAL_WITNESS_INIT = vars(_WITNESS)["__init__"]
 _ORIGINAL_SNAPSHOT_INIT = vars(_SNAPSHOT)["__init__"]
 _ORIGINAL_CONNECT = sqlite3.connect
@@ -109,6 +119,12 @@ def _protocol() -> None:
         ))
         or any(vars(_SNAPSHOT).get(name) is not original for name, original in zip(
             _SNAPSHOT_FIELDS, _SNAPSHOT_DESCRIPTORS, strict=True,
+        ))
+        or any(vars(_WITNESS).get(name) is not original for name, original in zip(
+            _CARRIER_LOOKUP_HOOKS, _WITNESS_LOOKUP_DESCRIPTORS, strict=True,
+        ))
+        or any(vars(_SNAPSHOT).get(name) is not original for name, original in zip(
+            _CARRIER_LOOKUP_HOOKS, _SNAPSHOT_LOOKUP_DESCRIPTORS, strict=True,
         ))
         or sqlite3.connect is not _ORIGINAL_CONNECT
         or os.open is not _ORIGINAL_OS_OPEN
