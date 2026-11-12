@@ -119,17 +119,24 @@ def _require_original_observation_carriers() -> None:
         (OfflinePngRequest, OfflineWaveRequest, TranscriptSegmentClaim)
         != _SOURCE_TYPES
         or any(
-            tuple(vars(cls).get(key) for key in (*names, *_LOOKUP_HOOKS))
-            != original
-            for cls, names, original in zip(
+            any(
+                vars(cls).get(key) is not descriptor
+                for key, descriptor in zip(
+                    (*names, *_LOOKUP_HOOKS), originals, strict=True,
+                )
+            )
+            for cls, names, originals in zip(
                 _SOURCE_TYPES, _SOURCE_FIELDS, _SOURCE_ORIGINALS, strict=True,
             )
         )
         or OfflineObservationTranscript is not _RESULT
-        or tuple(
-            vars(_RESULT).get(key)
-            for key in (*_RESULT_FIELDS, *_DENIAL_NAMES, *_RESULT_HOOKS)
-        ) != _RESULT_ORIGINALS
+        or any(
+            vars(_RESULT).get(key) is not descriptor
+            for key, descriptor in zip(
+                (*_RESULT_FIELDS, *_DENIAL_NAMES, *_RESULT_HOOKS),
+                _RESULT_ORIGINALS, strict=True,
+            )
+        )
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
@@ -138,7 +145,7 @@ def _require_original_observation_carriers() -> None:
         or _TRANSCRIPT_FN is not _ORIGINAL_TRANSCRIPT_FN
     ):
         raise OfflineObservationTranscriptRejected(
-            "observation fixture carrier or digest callback changed"
+            "observation fixture carrier or digest callback replaced"
         )
 
 
