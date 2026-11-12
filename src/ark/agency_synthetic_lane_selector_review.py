@@ -160,12 +160,15 @@ def review_disconnected_work_lanes(
     completed: frozenset[str] = frozenset(),
     claimed_green: frozenset[str] = frozenset(),
     inflight_paths: tuple[str, ...] = (),
+    protected_paths: tuple[str, ...] = (),
     max_selected: int = 4,
 ) -> SyntheticLaneSelection:
     """Propose isolated, free-only work; no caller claims become authority.
 
     Dependencies are complete only when independently confirmed *outside*
     this API. Passing a string in claimed_green is NOT CI attestation.
+    protected_paths holds paths frozen or paused by the caller; it is not
+    an authenticated policy source, but blocks overlapping proposed work.
     """
     _require_original_lane_selection_protocol()
     if (
@@ -174,6 +177,7 @@ def review_disconnected_work_lanes(
         or type(claimed_green) is not frozenset
         or any(not _check_label(value) for value in completed | claimed_green)
         or not _check_labels(inflight_paths, paths=True)
+        or not _check_labels(protected_paths, paths=True)
         or type(max_selected) is not int
         or not 1 <= max_selected <= _MAX_SELECTED
     ):
@@ -237,6 +241,11 @@ def review_disconnected_work_lanes(
         reason = None
         if lane.lane_id in completed:
             reason = "already_completed"
+        elif any(
+            _overlap(touch, protected)
+            for touch in lane.touches for protected in protected_paths
+        ):
+            reason = "protected_path"
         elif lane.cost_class != "free_local":
             reason = "cost_unapproved"
         elif lane.requires_approval:
