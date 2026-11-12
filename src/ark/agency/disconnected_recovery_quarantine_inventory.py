@@ -26,6 +26,7 @@ _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _OCC = re.compile(r"occ_[0-9a-f]{64}\Z")
 _MAX_OCCURRENCES = 16
 _MAX_STEPS = 24
+_MAX_STEP_ID_BYTES = 256  # Local review budget; not a frozen Planner ID limit.
 
 _MEMORY_DISPOSITIONS = (
     "LOCAL_UNCHANGED_REVIEW",
@@ -127,7 +128,7 @@ _SCHEMAS = tuple(
 _ORIGINAL_CODECS = (hashlib.sha256, json.dumps, re.compile)
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_CONSTANTS = (
-    _SHA, _OCC, _MAX_OCCURRENCES, _MAX_STEPS, _MEMORY_DISPOSITIONS,
+    _SHA, _OCC, _MAX_OCCURRENCES, _MAX_STEPS, _MAX_STEP_ID_BYTES, _MEMORY_DISPOSITIONS,
     _ATOMIC_STATES,
 )
 
@@ -138,13 +139,14 @@ def _protocol() -> None:
         or any(
             current is not original
             for current, original in zip(
-                (_sha, _digest, _same_leaf_epoch), _ORIGINAL_HELPERS,
+                (_sha, _digest, _same_leaf_epoch, _step_id), _ORIGINAL_HELPERS,
                 strict=True,
             )
         )
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or type(_MAX_STEP_ID_BYTES) is not int
         or (_SHA, _OCC, _MAX_OCCURRENCES, _MAX_STEPS,
-            _MEMORY_DISPOSITIONS, _ATOMIC_STATES) != _ORIGINAL_CONSTANTS
+            _MAX_STEP_ID_BYTES, _MEMORY_DISPOSITIONS, _ATOMIC_STATES) != _ORIGINAL_CONSTANTS
         or memory_module.MemoryAmbiguityPair is not _MEMORY
         or planner_module.DisconnectedPlannerSlotBridge is not _PLANNER
         or atomic_module.AtomicUnknownOutcomeReview is not _ATOMIC
@@ -186,7 +188,21 @@ def _same_leaf_epoch(current: object, pinned: object) -> bool:
     return current is pinned
 
 
-_ORIGINAL_HELPERS = (_sha, _digest, _same_leaf_epoch)
+def _step_id(value: object) -> bool:
+    """Admit exact bounded UTF-8 IDs before any hash, set or sort of a child.
+
+    Forged frozen receipts may contain objects with executable __hash__/__lt__,
+    or inexact strings. Never inspect those through a collection operation.
+    """
+    if type(value) is not str or not value or "\x00" in value:
+        return False
+    try:
+        return len(value.encode("utf-8", errors="strict")) <= _MAX_STEP_ID_BYTES
+    except UnicodeError:
+        return False
+
+
+_ORIGINAL_HELPERS = (_sha, _digest, _same_leaf_epoch, _step_id)
 
 
 def review_disconnected_recovery_quarantine(
@@ -227,7 +243,9 @@ def review_disconnected_recovery_quarantine(
         or not all(_sha(x) for x in plan[:3])
         or type(plan[3]) is not tuple or type(plan[4]) is not tuple
         or not 1 <= len(plan[3]) <= _MAX_STEPS
-        or not all(type(x) is str and x for x in plan[3])
+        or len(plan[4]) > _MAX_STEPS
+        or not all(_step_id(x) for x in plan[3])
+        or not all(_step_id(x) for x in plan[4])
         or plan[3] != tuple(sorted(set(plan[3])))
         or plan[4] != tuple(sorted(set(plan[4])))
         or not set(plan[4]).issubset(set(plan[3]))
