@@ -23,6 +23,12 @@ _ORIGINAL_GENESIS = module.genesis_quarantine_witness
 _ORIGINAL_CARRIERS = module._require_original_quarantine_input_carriers
 _ORIGINAL_OPEN = vars(DisconnectedScheduleQuarantineLedger)["_open"]
 _ORIGINAL_WITNESS = vars(DisconnectedScheduleQuarantineLedger)["_check_witness"]
+# Ledger lookup hooks run before a read-only path or epoch is observed.
+_LEDGER_LOOKUP_HOOKS = ("__getattribute__", "__getattr__")
+_ORIGINAL_LEDGER_LOOKUP_HOOKS = tuple(
+    vars(DisconnectedScheduleQuarantineLedger).get(name)
+    for name in _LEDGER_LOOKUP_HOOKS
+)
 _STATES = ("UNCHANGED", "LOCALLY_QUARANTINED", "PREEXISTING", "ADVANCED_OTHER")
 
 
@@ -75,6 +81,7 @@ _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _RESULT_FIELDS)
 # Rebinding SQLite or the set of allowable local states is not evidence.
 _ORIGINAL_SQLITE = sqlite3
 _ORIGINAL_LEDGER_SQLITE = module.sqlite3
+_ORIGINAL_SQLITE_CONNECT = sqlite3.connect
 _ORIGINAL_STATES = _STATES
 
 
@@ -82,6 +89,14 @@ def _protocol() -> None:
     if (
         sqlite3 is not _ORIGINAL_SQLITE
         or module.sqlite3 is not _ORIGINAL_LEDGER_SQLITE
+        or sqlite3.connect is not _ORIGINAL_SQLITE_CONNECT
+        or module.sqlite3.connect is not _ORIGINAL_SQLITE_CONNECT
+        or any(
+            vars(DisconnectedScheduleQuarantineLedger).get(name) is not original
+            for name, original in zip(
+                _LEDGER_LOOKUP_HOOKS, _ORIGINAL_LEDGER_LOOKUP_HOOKS, strict=True,
+            )
+        )
         or _STATES is not _ORIGINAL_STATES
         or module._validate is not _ORIGINAL_VALIDATE
         or module._policy_epoch is not _ORIGINAL_POLICY
