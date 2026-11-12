@@ -135,6 +135,13 @@ _ORIGINAL_CONSTANTS = (
 def _protocol() -> None:
     if (
         (hashlib.sha256, json.dumps, re.compile) != _ORIGINAL_CODECS
+        or any(
+            current is not original
+            for current, original in zip(
+                (_sha, _digest, _same_leaf_epoch), _ORIGINAL_HELPERS,
+                strict=True,
+            )
+        )
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or (_SHA, _OCC, _MAX_OCCURRENCES, _MAX_STEPS,
             _MEMORY_DISPOSITIONS, _ATOMIC_STATES) != _ORIGINAL_CONSTANTS
@@ -161,6 +168,25 @@ def _digest(domain: bytes, payload: object) -> str:
         payload, ensure_ascii=True, separators=(",", ":"), allow_nan=False,
     ).encode("ascii")
     return hashlib.sha256(domain + raw).hexdigest()
+
+
+def _same_leaf_epoch(current: object, pinned: object) -> bool:
+    """Compare leaf identities without invoking coercive or hostile equality.
+
+    Frozen receipt fields can be reflectively replaced by Python-equal values
+    (False == 0, 1.0 == 1). A new carrier is a new, unverified source epoch.
+    """
+    if type(current) is not type(pinned):
+        return False
+    if type(current) is tuple:
+        return len(current) == len(pinned) and all(
+            _same_leaf_epoch(value, original)
+            for value, original in zip(current, pinned, strict=True)
+        )
+    return current is pinned
+
+
+_ORIGINAL_HELPERS = (_sha, _digest, _same_leaf_epoch)
 
 
 def review_disconnected_recovery_quarantine(
@@ -241,7 +267,7 @@ def review_disconnected_recovery_quarantine(
 
     def stable() -> None:
         _protocol()
-        if epoch() != original:
+        if not _same_leaf_epoch(epoch(), original):
             raise DisconnectedRecoveryInventoryRejected(
                 "recovery receipts changed during aggregation"
             )
