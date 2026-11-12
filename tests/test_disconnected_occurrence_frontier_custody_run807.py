@@ -41,7 +41,7 @@ def test_detached_frontier_rejects_protocol_rebinding_before_storage(
     store._path = missing
     replacements: dict[str, object] = {
         "_DOMAIN": frontier._DOMAIN + b"altered",
-        "_SHA": re.compile(r"[0-9a-f]{64}\Z"),
+        "_SHA": re.compile(frontier._SHA.pattern, re.ASCII),
         "hashlib": SimpleNamespace(sha256=hashlib.sha256),
         "json": SimpleNamespace(dumps=json.dumps),
         "sqlite3": SimpleNamespace(connect=sqlite3.connect),
