@@ -82,7 +82,9 @@ _REUSE_CACHE_ORIGINAL = tuple(
 def _require_original_reuse_inputs() -> None:
     if (
         ObservationEnvelope is not _REUSE_SOURCE_TYPE
-        or SyntheticObservationLineageWitness is not _LINEAGE_WITNESS_TYPE
+        # The exported witness name is not authoritative: callers retaining
+        # the exact imported class still pass when a global alias is rebound.
+        # Inspect the original type's descriptors below, not its public alias.
         or any(
             vars(_REUSE_SOURCE_TYPE).get(name) is not original
             for name, original in zip(
