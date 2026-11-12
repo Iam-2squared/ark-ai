@@ -207,7 +207,15 @@ def review_registered_unknown_outcome(
             raise RegisteredUnknownOutcomeRejected("registered result gained authority")
         stable()
         return result
-    except (AtomicPreactionRejected, unknown.AtomicUnknownOutcomeRejected) as exc:
+    except RegisteredUnknownOutcomeRejected:
+        raise
+    except (
+        AtomicPreactionRejected, unknown.AtomicUnknownOutcomeRejected,
+        TypeError, ValueError,
+    ) as exc:
+        # Registry revision drift can be raised by the immutable registry's
+        # own epoch guard during the *later* SQLite callback. Normalize the
+        # fail-closed rejection rather than exposing a raw registry ValueError.
         raise RegisteredUnknownOutcomeRejected(
             "registry-bound unknown evidence refused; manual review required"
         ) from exc
