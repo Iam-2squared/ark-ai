@@ -77,6 +77,33 @@ _DENIALS = (
 )
 _ORIGINAL_DENIALS = tuple(vars(_RESULT)[name] for name in _DENIALS)
 _ORIGINAL_RESULT_INIT = vars(_RESULT)["__init__"]
+# Pin the complete disconnected classifier protocol before reading supplied
+# Planner topology or delegated synthetic WRITE evidence. This is not an
+# authorization boundary for real actions or proof of independent inventory.
+_ORIGINAL_PROTOCOL = (_PLAN, _MAX_STEPS, _MAX_EDGES, _DOMAIN)
+_ORIGINAL_MODULES = (hashlib, json, re)
+_ORIGINAL_CODECS = (hashlib.sha256, json.dumps)
+_ORIGINAL_ENUMS = (Effect, StepState)
+_ORIGINAL_CLASSES = (
+    DisconnectedDependencyClaim, DisconnectedDependencyHold, DisconnectedDependencyProjection,
+)
+_CARRIER_FIELDS = (
+    ("step_id", "effect", "state", "depends_on"),
+    ("step_id", "reason"),
+    ("topology_digest", "matrix_digest", "holds", "digest"),
+)
+_CARRIER_HOOKS = ("__new__", "__getattribute__", "__getattr__", "__init__")
+_ORIGINAL_FIELDS = tuple(
+    tuple(vars(cls).get(name) for name in fields)
+    for cls, fields in zip(_ORIGINAL_CLASSES, _CARRIER_FIELDS, strict=True)
+)
+_ORIGINAL_HOOKS = tuple(
+    tuple(vars(cls).get(name) for name in _CARRIER_HOOKS)
+    for cls in _ORIGINAL_CLASSES
+)
+_ORIGINAL_MATRIX = diagnose_disconnected_write_quarantine
+_ORIGINAL_MATRIX_ERROR = SyntheticQuarantineMatrixRejected
+_ORIGINAL_HEAP = (heappush, heappop)
 
 
 def _identifier(value: object) -> bool:
@@ -90,7 +117,32 @@ def _identifier(value: object) -> bool:
 
 def _require_denials() -> None:
     if (
-        DisconnectedDependencyProjection is not _RESULT
+        (hashlib, json, re) != _ORIGINAL_MODULES
+        or hashlib.sha256 is not _ORIGINAL_CODECS[0]
+        or json.dumps is not _ORIGINAL_CODECS[1]
+        or _PLAN is not _ORIGINAL_PROTOCOL[0]
+        or _DOMAIN is not _ORIGINAL_PROTOCOL[3]
+        or type(_MAX_STEPS) is not int or type(_MAX_EDGES) is not int
+        or (_MAX_STEPS, _MAX_EDGES) != _ORIGINAL_PROTOCOL[1:3]
+        or (Effect, StepState) != _ORIGINAL_ENUMS
+        or (DisconnectedDependencyClaim, DisconnectedDependencyHold,
+            DisconnectedDependencyProjection) != _ORIGINAL_CLASSES
+        or diagnose_disconnected_write_quarantine is not _ORIGINAL_MATRIX
+        or SyntheticQuarantineMatrixRejected is not _ORIGINAL_MATRIX_ERROR
+        or (heappush, heappop) != _ORIGINAL_HEAP
+        or any(
+            vars(cls).get(name) is not old
+            for cls, fields, values in zip(
+                _ORIGINAL_CLASSES, _CARRIER_FIELDS, _ORIGINAL_FIELDS, strict=True,
+            )
+            for name, old in zip(fields, values, strict=True)
+        )
+        or any(
+            vars(cls).get(name) is not old
+            for cls, values in zip(_ORIGINAL_CLASSES, _ORIGINAL_HOOKS, strict=True)
+            for name, old in zip(_CARRIER_HOOKS, values, strict=True)
+        )
+        or DisconnectedDependencyProjection is not _RESULT
         or vars(_RESULT).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
             vars(_RESULT).get(name) is not original
