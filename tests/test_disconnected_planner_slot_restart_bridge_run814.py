@@ -227,3 +227,77 @@ def test_expected_write_id_ingress_refuses_hostile_or_unbounded_input(
     ):
         bridge.review_disconnected_planner_slot_restart(**data)
     assert called == []
+
+
+@pytest.mark.parametrize(
+    "carrier",
+    ("claim", "offline", "observation", "independent"),
+)
+@pytest.mark.parametrize(
+    "invalid",
+    ("str-subclass", "hostile-object", "nul", "surrogate", "utf8-overbudget"),
+)
+def test_reflected_restart_ids_preaccess_refuse_hostile_hash_or_unicode(
+    tmp_path, carrier, invalid,
+):
+    """Never hash/sort forged step identity before the local review admission."""
+    data = _setup(tmp_path)
+    invoked = []
+
+    class Trap(str):
+        def __hash__(self):
+            invoked.append("hash")
+            raise AssertionError("hostile identity hash executed")
+
+        def __eq__(self, other):
+            invoked.append("equality")
+            raise AssertionError("hostile identity equality executed")
+
+        def __lt__(self, other):
+            invoked.append("sort")
+            raise AssertionError("hostile identity sort executed")
+
+    class ObjectTrap:
+        def __hash__(self):
+            invoked.append("hash")
+            raise AssertionError("hostile object hashed")
+
+        def __eq__(self, other):
+            invoked.append("equality")
+            raise AssertionError("hostile object compared")
+
+    value = {
+        "str-subclass": Trap(_WRITE),
+        "hostile-object": ObjectTrap(),
+        "nul": _WRITE + "\x00",
+        "surrogate": _WRITE + "\ud800",
+        "utf8-overbudget": _WRITE + "界" * 100,
+    }[invalid]
+    if carrier == "independent":
+        data["independently_expected_write_ids"] = (value,)
+    elif carrier == "claim":
+        cloned = replace(data["claims"][0])
+        object.__setattr__(cloned, "step_id", value)
+        data["claims"] = (cloned, data["claims"][1])
+    elif carrier == "offline":
+        cloned = replace(data["offline_steps"][0])
+        object.__setattr__(cloned, "step_id", value)
+        data["offline_steps"] = (cloned, data["offline_steps"][1])
+    else:
+        cloned = replace(data["observations"][0])
+        object.__setattr__(cloned, "step_id", value)
+        data["observations"] = (cloned,)
+    with pytest.raises(
+        bridge.DisconnectedPlannerSlotBridgeRejected,
+        match="inexact restart bridge inputs",
+    ):
+        bridge.review_disconnected_planner_slot_restart(**data)
+    assert invoked == []
+
+
+def test_restart_step_id_accepts_exact_boundary_without_granting_authority():
+    assert bridge._valid_step_id("x" * 256)
+    assert bridge._valid_step_id("界" * 85)
+    assert not bridge._valid_step_id("界" * 86)
+    assert not bridge._valid_step_id("")
+    assert not bridge._valid_step_id("\x00")
