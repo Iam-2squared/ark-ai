@@ -74,9 +74,12 @@ def derive_registered_atomic_intent(
         or _OCC.fullmatch(occurrence_id) is None
         or vars(ToolRegistry).get("bind") is not _ORIGINAL_BIND
         or vars(ToolRegistry).get("revision") is not _ORIGINAL_REVISION
-        or "bind" in vars(registry)
     ):
         raise AtomicPreactionRejected("invalid registry-bound intent source")
+    if "bind" in vars(registry):
+        # Preserve the established rejection taxonomy for a replaced bind;
+        # never run the shadowed instance method or the subsequent callback.
+        raise AtomicPreactionRejected("registered intent binding refused")
     _ORIGINAL_CALL_GUARD()
     # Class-level method checks do not reject an instance-shadowed bind.
     # Record the original call identity and recheck it after every callback.
