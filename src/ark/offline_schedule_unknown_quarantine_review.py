@@ -72,11 +72,18 @@ _RESULT_FIELDS = (
     "__getattr__",
 )
 _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _RESULT_FIELDS)
+# Rebinding SQLite or the set of allowable local states is not evidence.
+_ORIGINAL_SQLITE = sqlite3
+_ORIGINAL_LEDGER_SQLITE = module.sqlite3
+_ORIGINAL_STATES = _STATES
 
 
 def _protocol() -> None:
     if (
-        module._validate is not _ORIGINAL_VALIDATE
+        sqlite3 is not _ORIGINAL_SQLITE
+        or module.sqlite3 is not _ORIGINAL_LEDGER_SQLITE
+        or _STATES is not _ORIGINAL_STATES
+        or module._validate is not _ORIGINAL_VALIDATE
         or module._policy_epoch is not _ORIGINAL_POLICY
         or module.derive_quarantined_occurrence is not _ORIGINAL_DERIVE
         or module.genesis_quarantine_witness is not _ORIGINAL_GENESIS
