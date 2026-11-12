@@ -42,3 +42,11 @@ Work basis: prior Run816 checkpoint HEAD `513893e2c3608cdbfbad4d8c59914a9a40564b
 3. Test simultaneous WAL writer / restart epoch behavior and check result-carrier drift across all callbacks before any higher-level integration.
 4. Build the next *independent* read-only Planner UNKNOWN quarantine and Memory CAS/ABA package, using lower-layer GREEN evidence; keep mock execution disconnected.
 5. Maintain free-only boundaries, UI pause, frozen contracts, PR #5 Draft gate and all human-confirmation conditions. Overall ARK/JARVIS **NOT_PASSED**.
+
+## Post-submission regression triage (observed before final checkpoint)
+
+The first post-formatting Python matrix reached pytest and exposed two **new code/test mistakes**, rather than a change to the frozen authorization policy: (1) the registry bridge used `AtomicPreactionWitness.chain_sha256` although the actual existing ledger carrier has `tip_sha256`; (2) the Memory test referenced a nonexistent `SQLiteMemoryStore.query` method. Corrections used the real ledger field (`415cb131403f25001acad03b7d011088ed623ea3`) and asserted the real coherent snapshot still contains three candidates after review (`d299e2f6e6e66d392c6712d55367644c4de6c793`). No source authorization or policy was relaxed.
+
+[CI #43212649275](https://github.com/Iam-2squared/ark-ai/actions/runs/43212649275) then revealed a third issue: the `ToolCall.request_id` digest is a computed `str` and need not preserve Python object identity across reads. The bridge initially compared this value with `is`, causing four legitimate read-only cases to reject. Commit `bbd78dd810f2f895a46459a14bba8c5bdd455e99` now pins the actual four input carriers by identity but compares the derived request digest by **value**, as the preexisting registry binding does. The integrity/authority checks, SQLite audit validation, and prohibition of automatic replay remain unchanged.
+
+For [CI #43213234759](https://github.com/Iam-2squared/ark-ai/actions/runs/43213234759) at `bbd78dd810f2f895a46459a14bba8c5bdd455e99`, Ubuntu 3.11/3.12/3.13 were observed individually **GREEN**, Windows 3.11/3.12/3.13 **IN PROGRESS**. This is intermediate evidence only, not final checkpoint-result 6/6 GREEN. No local test runner or paid compute was used.
