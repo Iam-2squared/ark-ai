@@ -110,11 +110,18 @@ def review_coherent_expiry_restart(
     if (
         type(store) is not SQLiteMemoryStore
         or type(scopes) is not tuple
+        or not 1 <= len(scopes) <= coherent._MAX_SCOPES
+        or any(type(scope) is not MemoryScope for scope in scopes)
         or type(retained) is not coherent.CoherentExpirySnapshot
         or type(now_ms) is not int
+        or not 0 <= now_ms <= coherent._MAX_TIME
         or type(limit) is not int
+        or not 1 <= limit <= coherent._MAX_ROWS_PER_SCOPE
     ):
         raise CoherentExpiryRestartRejected("inexact coherent restart inputs")
+    # Exact bounded scope carriers and clock/limit were checked above BEFORE
+    # reading even one owner/namespace property. An inexact scope proxy can
+    # execute code on attribute access; it is never valid retained evidence.
     original_scopes = tuple((scope, scope.owner_id, scope.namespace) for scope in scopes)
     prior_epoch = (
         retained.read_at_ms, retained.pages, retained.cohort,
