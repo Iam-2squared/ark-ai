@@ -13,9 +13,9 @@ import json
 import re
 from dataclasses import dataclass
 
+from ..memory import ambiguous_commit_pair_review as memory_module
 from . import disconnected_atomic_unknown_outcome_review as atomic_module
 from . import disconnected_planner_slot_restart_bridge as planner_module
-from ..memory import ambiguous_commit_pair_review as memory_module
 
 AtomicUnknownOutcomeReview = atomic_module.AtomicUnknownOutcomeReview
 DisconnectedPlannerSlotBridge = planner_module.DisconnectedPlannerSlotBridge
