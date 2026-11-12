@@ -89,6 +89,7 @@ def _protocol() -> None:
     _LIFECYCLE_PROTOCOL()
     if (
         _protocol is not _ORIGINAL_PROTOCOL
+        or _tip_fields is not _ORIGINAL_TIP_FIELDS
         or OfflineProposalUnknownCommitReport is not _REPORT
         or vars(_REPORT).get("__init__") is not _REPORT_INIT
         or any(
@@ -134,6 +135,12 @@ def _tip_fields(value: lifecycle.DetachedProposalLifecycleTip | None) -> tuple |
     return (
         value.proposal_id, value.revision, value.state, value.event_digest,
     )
+
+
+# A replaced local tip-image helper could forge a matching post-commit tip,
+# misclassifying an uncertain CAS as OBSERVED_EXACT_APPEND. Pin it before
+# inspecting retained SQLite or caller-owned tip metadata.
+_ORIGINAL_TIP_FIELDS = _tip_fields
 
 
 def review_disconnected_proposal_unknown_commit(
