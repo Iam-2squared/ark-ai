@@ -121,6 +121,20 @@ def review_coherent_expiry_restart(
         retained.snapshot_sha256,
     )
     original_path = store.path
+    # A frozen dataclass is not immutable under object.__setattr__.  The
+    # retained page/cohort values must remain the same throughout the fresh
+    # SQLite callback and the separate transition reviewer, otherwise a
+    # post-commit diagnosis may combine two different historical assertions.
+    page_epoch = tuple(
+        (page, page.scope_sha256, page.read_at_ms, page.candidate_count,
+         page.has_more, page.candidate_sha256, page.preview_sha256)
+        for page in retained.pages
+    )
+    cohort_epoch = (
+        retained.cohort, retained.cohort.scope_hashes,
+        retained.cohort.asserted_now_ms, retained.cohort.candidate_count,
+        retained.cohort.truncated_scopes, retained.cohort.cohort_sha256,
+    )
 
     def stable() -> None:
         _protocol()
@@ -138,6 +152,24 @@ def review_coherent_expiry_restart(
                 (retained.read_at_ms, retained.pages, retained.cohort,
                  retained.snapshot_sha256), prior_epoch, strict=True,
             ))
+            or len(retained.pages) != len(page_epoch)
+            or any(
+                type(page) is not coherent.preview_module.MemoryExpiryPreview
+                or page is not old
+                or (
+                    page.scope_sha256, page.read_at_ms, page.candidate_count,
+                    page.has_more, page.candidate_sha256, page.preview_sha256,
+                ) != (scope, read_at, count, more, candidate, digest)
+                for page, (old, scope, read_at, count, more, candidate, digest)
+                in zip(retained.pages, page_epoch, strict=True)
+            )
+            or type(retained.cohort) is not coherent.MemoryExpiryCohort
+            or retained.cohort is not cohort_epoch[0]
+            or (
+                retained.cohort.scope_hashes, retained.cohort.asserted_now_ms,
+                retained.cohort.candidate_count, retained.cohort.truncated_scopes,
+                retained.cohort.cohort_sha256,
+            ) != cohort_epoch[1:]
         ):
             raise CoherentExpiryRestartRejected("coherent restart inputs changed")
 
