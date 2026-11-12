@@ -24,6 +24,11 @@ _ORIGINAL_WITNESS = ledger_module._witness_image
 _ORIGINAL_CARRIERS = ledger_module._require_original_atomic_carriers
 _ORIGINAL_GENESIS = ledger_module.genesis_atomic_preaction_witness
 _ORIGINAL_OPEN = vars(DisconnectedAtomicPreactionLedger)["_open"]
+_LEDGER_HOOK_NAMES = ("__getattribute__", "__getattr__", "__dict__")
+_ORIGINAL_LEDGER_HOOKS = tuple(
+    vars(DisconnectedAtomicPreactionLedger).get(name)
+    for name in _LEDGER_HOOK_NAMES
+)
 _RESULT_STATES = ("UNCHANGED", "LOCALLY_RECORDED", "PREEXISTING", "ADVANCED_OTHER")
 
 
@@ -87,6 +92,12 @@ def _protocol() -> None:
         or ledger_module._require_original_atomic_carriers is not _ORIGINAL_CARRIERS
         or ledger_module.genesis_atomic_preaction_witness is not _ORIGINAL_GENESIS
         or vars(DisconnectedAtomicPreactionLedger).get("_open") is not _ORIGINAL_OPEN
+        or any(
+            vars(DisconnectedAtomicPreactionLedger).get(name) is not original
+            for name, original in zip(
+                _LEDGER_HOOK_NAMES, _ORIGINAL_LEDGER_HOOKS, strict=True,
+            )
+        )
         or ledger_module.AtomicIntentClaim is not AtomicIntentClaim
         or ledger_module.AtomicPreactionWitness is not AtomicPreactionWitness
         or ledger_module.DisconnectedAtomicPreactionLedger is not DisconnectedAtomicPreactionLedger
@@ -118,6 +129,13 @@ def review_atomic_unknown_outcome(
         or type(claim) is not AtomicIntentClaim
     ):
         raise AtomicUnknownOutcomeRejected("exact pre-action triage inputs required")
+    # The ledger is intentionally a plain Python instance. Its _open method
+    # may be shadowed per-instance even while the class method is unchanged.
+    # Pin the only expected instance field before any callback or SQLite IO.
+    instance_state = object.__getattribute__(ledger, "__dict__")
+    if type(instance_state) is not dict or set(instance_state) != {"_path"}:
+        raise AtomicUnknownOutcomeRejected("pre-action ledger instance changed")
+    original_path = instance_state["_path"]
     try:
         _ORIGINAL_CLAIM(claim)
         original_before = _ORIGINAL_WITNESS(before)
@@ -132,6 +150,13 @@ def review_atomic_unknown_outcome(
 
         def stable() -> None:
             _protocol()
+            current = object.__getattribute__(ledger, "__dict__")
+            if (
+                type(current) is not dict
+                or set(current) != {"_path"}
+                or current["_path"] is not original_path
+            ):
+                raise AtomicUnknownOutcomeRejected("pre-action ledger instance changed")
             if (
                 _ORIGINAL_WITNESS(before) != original_before
                 or (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
@@ -140,7 +165,7 @@ def review_atomic_unknown_outcome(
                 raise AtomicUnknownOutcomeRejected("retained triage inputs changed")
 
         stable()
-        with closing(ledger._open(read_only=True)) as connection:
+        with closing(_ORIGINAL_OPEN(ledger, read_only=True)) as connection:
             connection.execute("BEGIN")
             stable()
             snapshot = _ORIGINAL_SCAN(connection)
