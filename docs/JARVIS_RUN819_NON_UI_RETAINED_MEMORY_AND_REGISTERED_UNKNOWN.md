@@ -43,4 +43,4 @@ Strictly **FREE-ONLY**, **NON-UI**, isolated Draft [PR #8](https://github.com/Ia
 
 **Registry UNKNOWN fix follow-up** — [CI #43221643895](https://github.com/Iam-2squared/ark-ai/actions/runs/43221643895) had Ubuntu 3/3 GREEN and Windows 3.13 GREEN; Windows 3.11/3.12 IN PROGRESS at the addendum. The earlier #43221113204 failure is not asserted to be GREEN.
 
-Run819 saved **three cohesive non-UI workstreams** with **24 newly authored test cases** (Memory 9+4, registry UNKNOWN 9, privacy 6). All comparisons remain local/non-authorizing; no paid, main merge, protected final evaluation or UI action.
+Run819 saved **three cohesive non-UI workstreams** with **28 newly authored test cases** (Memory 9+4, registry UNKNOWN 9, privacy 6). All comparisons remain local/non-authorizing; no paid, main merge, protected final evaluation or UI action.
