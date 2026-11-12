@@ -1,4 +1,43 @@
-# LATEST — ARK AI Run822 NON-UI core hardening
+# LATEST — ARK AI Run823 NON-UI Memory sidecar forensic safety
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T01:57:25.731+09:00.** Checkpoint record time, not a trusted action clock. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Initial work-basis HEAD:** `de2f59e449eb1bac14f293a32be9677aa918a961` (Run822). **Last executable/test write-basis HEAD:** `e0d0ea649180325386ae5b241abdd72ed16315db` for new disposable script; final executable/test HEAD `fffcc56907ce5065956107344800564ba3a6577a`. **Report-write-basis HEAD:** `fffcc56907ce5065956107344800564ba3a6577a`. **Checkpoint-write-basis HEAD:** `04d378c489153a6f0dbb126eae3943db735a16e5` (live PR re-read before Contents API write). **Checkpoint-result HEAD: UNKNOWN until GitHub creates the subsequent status commit.** Never confuse this recorded basis SHA with the status-result SHA. Previous status blob SHA: `18927ad1a533f62dea0bcb1f821b588754cfc4ba`. Re-read PR/branch/status after saving.
+
+## NEW — Three coherent non-UI work packages; preserve path safety
+
+1. **SQLite sidecar failure diagnostics:** `src/ark/memory/sqlite_store.py` [source `74cbb871`](https://github.com/Iam-2squared/ark-ai/commit/74cbb8716931190a1505916ce954a6122085b927). Existing `MemorySchemaError` on a nonregular or multiply linked `-wal/-shm/-journal` now includes ONLY sidecar suffix, octal filesystem type and integer link count. No pathname, owner, row value, file bytes, retry, path relaxation, CAS/schema change or new authority. Existing orphan, symlink/hardlink and nonregular denials preserved.
+2. **Synthetic path custody regression:** `tests/test_memory_sidecar_metadata_rejection_run823.py` [test `e9096ec7`](https://github.com/Iam-2squared/ark-ai/commit/e9096ec7a45dcd5ca1d5fcba079ec6ccb5712f6f), [Ruff-only correction `e0d0ea64`](https://github.com/Iam-2squared/ark-ai/commit/e0d0ea649180325386ae5b241abdd72ed16315db). **11 new cases authored:** 9 sidecar suffix × hostile kind combinations, 1 regular accepted preflight, 1 orphan rejected. Assert no path disclosure and byte preservation. The initial test had a 103-character Ruff E501 line; only its formatting was corrected.
+3. **Disposable two-process race harness and forensic receipt:** `scripts/diagnose_memory_sidecar_startup.py` [script `fffcc569`](https://github.com/Iam-2squared/ark-ai/commit/fffcc56907ce5065956107344800564ba3a6577a). Creates ONLY disposable temporary databases; 2 independent interpreters overlap WAL bootstrap and gate concurrent mock CAS, bounded 1–30 iterations; exposes aggregate results and suffix/type/link metadata but not private DB paths. **Not automatically run against this GitHub checkout.** [Full Run823 report `04d378c4`](https://github.com/Iam-2squared/ark-ai/blob/04d378c489153a6f0dbb126eae3943db735a16e5/docs/JARVIS_RUN823_NON_UI_SQLITE_SIDECAR_OBSERVATION.md). A separate bare sqlite3 temporary 2-process local metadata sample observed 554643 sidecar stat attempts, with existing `-wal/-shm` observations all regular, link count 1, and no anomalous sample. This is **NOT** an ARK MemoryStore reproduction and does not resolve the intermittency.
+
+**No local full ARK checkout/pytest/Ruff or actual physical-PC/GGUF execution claimed.** The script's standalone authored copy passed Python syntax compilation and `--help` locally; its genuine repository runtime behavior still requires exact-head CI/isolated execution.
+
+## CI / evidence — status at last independent inspection
+
+- **Run822 latest checkpoint** `de2f59e449eb1bac14f293a32be9677aa918a961`, [CI #43252974470](https://github.com/Iam-2squared/ark-ai/actions/runs/43252974470): **FAIL**. Ubuntu Python 3.12 job `131303524907`: **1 FAIL, 14338 PASS, 1 SKIP**, independent-owner Memory SQLite sidecar check rejected one child; sibling CREATED. Actual suffix/mode/nlink and root cause were **not in old logs**, and cannot be fabricated.
+- [Source diagnostics #43262840182](https://github.com/Iam-2squared/ark-ai/actions/runs/43262840182): **IN PROGRESS** last checked.
+- [Initial new regression #43262916256](https://github.com/Iam-2squared/ark-ai/actions/runs/43262916256): **FAIL 6/6 at Ruff E501**, only 103-character assertion; corrected in `e0d0ea649180325386ae5b241abdd72ed16315db`.
+- [Corrected tests #43263317952](https://github.com/Iam-2squared/ark-ai/actions/runs/43263317952): Ubuntu Python 3.13 GREEN, other jobs **IN PROGRESS** at last check.
+- [Disposable harness #43263443699](https://github.com/Iam-2squared/ark-ai/actions/runs/43263443699): Ubuntu Python 3.11 and 3.12 GREEN, other jobs **IN PROGRESS** at last check.
+- [Report #43263929515](https://github.com/Iam-2squared/ark-ai/actions/runs/43263929515): **IN PROGRESS** last checked. **This checkpoint's own CI run is created only after this status update and its ID/outcome are not preknown.** Exact final HEAD 6/6 GREEN **NOT ESTABLISHED**; do not dispatch equivalent duplicate workflows. Inspect logs on any failure.
+
+## Frozen contracts / authorization / blockers
+
+V1/V2/Local UI/Launcher frozen evidence and contracts unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and **paused UI Draft PR #9** untouched; #5/#8/#9 all Draft/unmerged. No new frontend/UI, paid/external GPU/API/service/subscription, real Candidate/training/promotion, protected V2 final evaluation, authenticated external effect/consent/clock, real tool dispatch, new credentials, destructive operation, unapproved main merge or unavailable PC work. Sidecar type/link metadata are local observations, **NOT** an independent provenance or cross-process custody guarantee. Existing intermittent SQLite race remains unresolved.
+
+## Next plan / 今後の方針
+
+1. Complete exact-HEAD CI job inspection; if FAIL, diagnose actual logs, change only the smallest relevant code or test while preserving fail-closed alias denial. No duplicate equivalent CI launch.
+2. Reproduce and classify the independent-owner sidecar race using bounded **disposable** process fixtures: record suffix/type/link count without original pathname/row. Avoid unsafe retries, suppression or weakening of orphan/symlink/hardlink checks.
+3. Continue Memory coherent CAS/ABA and COMMIT-UNKNOWN recovery, then Planner RUNNING/UNKNOWN durable quarantine and terminal propagation. Do not replay unknown writes.
+4. Once relevant lower-layer exact-head GREEN, connect immutable ToolRegistry, exact-type PermissionGate, audit-before-action and trusted-clock separation, disconnected Mock Executor, startup readiness; remain dry-run/no real authority.
+5. Independently harden Personal Context privacy, proactive state, observation fixture adapters, and V3 free-only approval/path/identity/reproducibility guards. Request explicit approval only at protected, billable, irreversible, credentials, frozen-evaluation or main-merge boundaries.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run822 NON-UI core hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T00:55:00.506+09:00.** Recording checkpoint time only; not an independently trusted action clock. **Overall ARK/JARVIS: NOT_PASSED.**
 
