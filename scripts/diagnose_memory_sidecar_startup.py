@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sqlite3
 import subprocess
 import sys
@@ -106,6 +107,50 @@ def _positive_bounded_int(text: str) -> int:
     return value
 
 
+def _sanitize_child_reply(value: object) -> dict[str, object]:
+    """Allowlist fixture subprocess output before it reaches aggregate reports.
+
+    A child JSON payload is not trusted evidence. Never echo arbitrary keys,
+    exception messages, private paths, traceback, or identity/token strings.
+    """
+    invalid = {"status": "INVALID_CHILD_OUTPUT"}
+    if type(value) is not dict or type(value.get("status")) is not str:
+        return invalid
+    status = value["status"]
+    if status in ("CREATED", "UPDATED", "CONFLICT"):
+        return {"status": status} if set(value) == {"status"} else invalid
+    if status in ("SIDECAR_REJECTED", "MEMORY_SCHEMA_REJECTED", "OTHER_ERROR"):
+        if type(value.get("phase")) is not str or value["phase"] not in (
+            "BOOTSTRAP", "WRITE",
+        ):
+            return invalid
+        if status == "SIDECAR_REJECTED":
+            if (
+                set(value) != {
+                    "status", "phase", "suffix", "file_type", "link_count",
+                }
+                or type(value.get("suffix")) is not str
+                or value["suffix"] not in ("-wal", "-shm", "-journal")
+                or type(value.get("file_type")) is not str
+                or re.fullmatch(r"0o[0-7]{1,7}", value["file_type"]) is None
+                or type(value.get("link_count")) is not int
+                or not 0 <= value["link_count"] <= (1 << 63) - 1
+            ):
+                return invalid
+        elif status == "MEMORY_SCHEMA_REJECTED":
+            if set(value) != {"status", "phase"}:
+                return invalid
+        elif (
+            set(value) != {"status", "phase", "exception_type"}
+            or type(value.get("exception_type")) is not str
+            or re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", value["exception_type"])
+            is None
+        ):
+            return invalid
+        return dict(value)
+    return invalid
+
+
 def _probe(
     path: Path, mode: str, startup_mode: str, operation: str = "create",
     *, wal_keeper: bool = False,
@@ -185,9 +230,13 @@ def _probe(
                 if child.returncode != 0:
                     item = {"status": "EXIT_FAILURE"}
                 else:
-                    item = json.loads(output)
-                    if type(item) is not dict or type(item.get("status")) is not str:
-                        item = {"status": "INVALID_CHILD_OUTPUT"}
+                    # The subprocess is a diagnostic source, not a trusted
+                    # serializer. Never forward unexpected JSON fields.
+                    item = (
+                        _sanitize_child_reply(json.loads(output))
+                        if len(output) <= 4096
+                        else {"status": "INVALID_CHILD_OUTPUT"}
+                    )
                 if not ready(index) and item["status"] in (
                     "CREATED", "UPDATED", "CONFLICT",
                 ):
