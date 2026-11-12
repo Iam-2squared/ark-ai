@@ -26,6 +26,7 @@ _MAX_SCOPES = 16
 _MAX_ROWS_PER_SCOPE = 100
 _MAX_TOTAL_ROWS = 1_616  # Include one overflow row for every scope.
 _MAX_EVENT_SCAN = 40_000
+_MAX_SCOPE_BYTES = 256  # Local preview ingress bound; no frozen store schema change.
 _MAX_TIME = (1 << 63) - 1
 _DOMAIN = b"ARK-coherent-expiry-snapshot-v1\0"
 
@@ -41,7 +42,7 @@ _ORIGINAL_HELPERS = (
     hashlib.sha256,
 )
 _ORIGINAL_BOUNDS = (_MAX_SCOPES, _MAX_ROWS_PER_SCOPE, _MAX_TOTAL_ROWS,
-                    _MAX_EVENT_SCAN, _MAX_TIME, _DOMAIN)
+                    _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME, _DOMAIN)
 
 
 class CoherentExpirySnapshotRejected(ValueError):
@@ -105,10 +106,10 @@ def _protocol() -> None:
         ))
         or any(type(value) is not int for value in (
             _MAX_SCOPES, _MAX_ROWS_PER_SCOPE, _MAX_TOTAL_ROWS,
-            _MAX_EVENT_SCAN, _MAX_TIME,
+            _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME,
         ))
         or (_MAX_SCOPES, _MAX_ROWS_PER_SCOPE, _MAX_TOTAL_ROWS,
-            _MAX_EVENT_SCAN, _MAX_TIME, _DOMAIN) != _ORIGINAL_BOUNDS
+            _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME, _DOMAIN) != _ORIGINAL_BOUNDS
         or CoherentExpirySnapshot is not _RESULT
         or any(vars(_RESULT).get(name) is not old for name, old in zip(
             _RESULT_NAMES, _ORIGINAL_RESULT, strict=True,
@@ -157,8 +158,14 @@ def review_coherent_expiry_snapshot(
     try:
         for _, owner, namespace in original_scopes:
             MemoryScope(owner, namespace)
-            owner.encode("utf-8", "strict")
-            namespace.encode("utf-8", "strict")
+            # A valid MemoryScope can still carry arbitrarily long names. A
+            # content-free cross-scope preview deliberately refuses those
+            # before any SQLite open or private row/event scan.
+            if (len(owner.encode("utf-8", "strict")) > _MAX_SCOPE_BYTES
+                    or len(namespace.encode("utf-8", "strict")) > _MAX_SCOPE_BYTES):
+                raise CoherentExpirySnapshotRejected(
+                    "coherent expiry scope byte budget exceeded"
+                )
     except (TypeError, ValueError, UnicodeError) as exc:
         raise CoherentExpirySnapshotRejected("invalid expiry scope") from exc
 
