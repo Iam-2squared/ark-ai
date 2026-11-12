@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from importlib import util
 from pathlib import Path
 
 import pytest
@@ -13,11 +12,18 @@ _SCRIPT = (
     Path(__file__).resolve().parents[1]
     / "scripts" / "diagnose_memory_sidecar_startup.py"
 )
-_SPEC = util.spec_from_file_location("ark_memory_sidecar_diag_run824", _SCRIPT)
-assert _SPEC is not None and _SPEC.loader is not None
-_DIAG = util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(_DIAG)
+def _load_disposable_diagnostic():
+    # Local import keeps the test's top-level import block simple.
+    from importlib import util
 
+    spec = util.spec_from_file_location("ark_memory_sidecar_diag_run824", _SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_DIAG = _load_disposable_diagnostic()
 
 @pytest.mark.parametrize("value", ("0", "31", "-1", "not-a-number", ""))
 def test_disposable_diagnostic_refuses_unbounded_iterations(value):
