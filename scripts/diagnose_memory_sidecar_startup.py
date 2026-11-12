@@ -4,6 +4,8 @@ Run from a checkout with ARK installed:
     python scripts/diagnose_memory_sidecar_startup.py --iterations 12
 
 No real user databases, credentials, model files, services or paid compute.
+Default sequential child bootstrap mirrors the historical CI CAS fixture;
+--startup-mode concurrent separately probes simultaneous WAL initialization.
 All writes are confined to an owned TemporaryDirectory. Only aggregate
 statuses and path-free filesystem metadata are emitted. A reproduction is
 NOT a reason to retry unsafe paths or weaken alias/sidecar checks.
@@ -37,7 +39,8 @@ from ark.memory import (
 path = pathlib.Path(sys.argv[1])
 gate = pathlib.Path(sys.argv[2])
 ready = pathlib.Path(sys.argv[3])
-owner = sys.argv[4]
+owner, namespace, source = sys.argv[4:7]
+phase = "BOOTSTRAP"
 try:
     store = SQLiteMemoryStore(path, clock_ms=lambda: 1000)
     ready.touch()
@@ -46,9 +49,10 @@ try:
         if time.monotonic() > deadline:
             raise TimeoutError("disposable fixture gate timed out")
         time.sleep(0.01)
+    phase = "WRITE"
     try:
         store.put(
-            MemoryWrite(MemoryScope(owner, "fixture"), "test-source", "fixture"),
+            MemoryWrite(MemoryScope(owner, namespace), source, "fixture"),
             expected_revision=0,
         )
     except MemoryConflictError:
@@ -64,13 +68,15 @@ except MemorySchemaError as exc:
     )
     if evidence:
         print(json.dumps({
-            "status": "SIDECAR_REJECTED", "suffix": evidence.group(1),
+            "status": "SIDECAR_REJECTED", "phase": phase,
+            "suffix": evidence.group(1),
             "file_type": evidence.group(2), "link_count": int(evidence.group(3)),
         }), flush=True)
     else:
-        print(json.dumps({"status": "MEMORY_SCHEMA_REJECTED"}), flush=True)
+        print(json.dumps({"status": "MEMORY_SCHEMA_REJECTED", "phase": phase}), flush=True)
 except Exception as exc:
-    print(json.dumps({"status": "OTHER_ERROR", "exception_type": type(exc).__name__}),
+    print(json.dumps({"status": "OTHER_ERROR", "phase": phase,
+                          "exception_type": type(exc).__name__}),
           flush=True)
 '''
 
@@ -85,40 +91,64 @@ def _positive_bounded_int(text: str) -> int:
     return value
 
 
-def _probe(path: Path, mode: str) -> list[dict[str, object]]:
+def _probe(
+    path: Path, mode: str, startup_mode: str,
+) -> list[dict[str, object]]:
     from ark.memory import SQLiteMemoryStore
 
-    # Mirror the failing CI fixture with a disposable parent bootstrap. Both
-    # children then overlap their initial WAL opens and only race CAS after
-    # the shared release gate. The probe never retries on a safety refusal.
+    # The historical failing CI fixture serialized child *bootstrap* and
+    # released two ready children together for competing CAS. Default to its
+    # exact scheduling boundary; optional simultaneous bootstrap isolates the
+    # more aggressive WAL initialization race separately.
     SQLiteMemoryStore(path, clock_ms=lambda: 1000)
     gate = path.parent / "release"
-    owners = ("owner-a", "owner-a" if mode == "same-identity" else "owner-b")
+    first = ("owner-a", "fixture", "source")
+    second = {
+        "same-identity": first,
+        "separate-owner": ("owner-b", "fixture", "source"),
+        "separate-namespace": ("owner-a", "other", "source"),
+        "separate-source": ("owner-a", "fixture", "other"),
+    }[mode]
     children: list[subprocess.Popen[str]] = []
-    try:
-        for index, owner in enumerate(owners):
-            ready = path.parent / f"ready-{index}"
-            children.append(subprocess.Popen(
-                [sys.executable, "-c", _CHILD, str(path), str(gate), str(ready), owner],
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
-            ))
+
+    def ready(index: int) -> bool:
+        return (path.parent / f"ready-{index}").exists()
+
+    def await_ready(indices: range) -> bool:
         deadline = time.monotonic() + 12
         while time.monotonic() < deadline:
-            if all((path.parent / f"ready-{i}").exists() for i in range(2)):
-                break
-            if any(child.poll() is not None for child in children):
-                break
+            if all(ready(index) for index in indices):
+                return True
+            if any(children[index].poll() is not None for index in indices):
+                return False
             time.sleep(0.01)
+        return False
+
+    try:
+        for index, identity in enumerate((first, second)):
+            children.append(subprocess.Popen(
+                [sys.executable, "-c", _CHILD, str(path), str(gate),
+                 str(path.parent / f"ready-{index}"), *identity],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+            ))
+            if startup_mode == "sequential" and not await_ready(range(index, index + 1)):
+                break
+        # A bootstrap refusal is an observed result, not a reason to retry.
+        if startup_mode == "concurrent" and len(children) == 2:
+            await_ready(range(2))
         gate.touch()
         results: list[dict[str, object]] = []
-        for child in children:
+        for index, child in enumerate(children):
             try:
                 output, _ = child.communicate(timeout=15)
-                item = json.loads(output) if child.returncode == 0 else {
-                    "status": "EXIT_FAILURE"
-                }
-                if type(item) is not dict or type(item.get("status")) is not str:
-                    item = {"status": "INVALID_CHILD_OUTPUT"}
+                if child.returncode != 0:
+                    item = {"status": "EXIT_FAILURE"}
+                else:
+                    item = json.loads(output)
+                    if type(item) is not dict or type(item.get("status")) is not str:
+                        item = {"status": "INVALID_CHILD_OUTPUT"}
+                if not ready(index) and item["status"] in ("CREATED", "CONFLICT"):
+                    item = {"status": "MISSING_READY_MARKER"}
                 results.append(item)
             except (subprocess.TimeoutExpired, ValueError, TypeError):
                 child.kill()
@@ -137,8 +167,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=_positive_bounded_int, default=4)
     parser.add_argument(
-        "--mode", choices=("same-identity", "separate-owner"),
+        "--mode", choices=("same-identity", "separate-owner",
+                           "separate-namespace", "separate-source"),
         default="separate-owner",
+    )
+    parser.add_argument(
+        "--startup-mode", choices=("sequential", "concurrent"),
+        default="sequential",
     )
     args = parser.parse_args(argv)
     counts: Counter[str] = Counter()
@@ -148,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
         for attempt in range(args.iterations):
             case = Path(root) / f"case-{attempt}"
             case.mkdir()
-            outcome = _probe(case / "memory.sqlite", args.mode)
+            outcome = _probe(case / "memory.sqlite", args.mode, args.startup_mode)
             statuses = sorted(item["status"] for item in outcome)
             for item in outcome:
                 counts[str(item["status"])] += 1
@@ -161,7 +196,8 @@ def main(argv: list[str] | None = None) -> int:
             if statuses != expected:
                 unexpected += 1
     print(json.dumps({
-        "mode": args.mode, "iterations": args.iterations,
+        "mode": args.mode, "startup_mode": args.startup_mode,
+        "iterations": args.iterations,
         "status_counts": dict(sorted(counts.items())),
         "anomalous_iterations": unexpected,
         "sidecar_metadata_only": sidecar_evidence[:30],
