@@ -76,17 +76,25 @@ _ORIGINAL_SLOTS = tuple(
     ) for name in names
 )
 _ORIGINAL_CODECS = (hashlib.sha256, json.loads, json.dumps)
+_ORIGINAL_MODULES = (hashlib, json)
+_ORIGINAL_PREVIEW_GUARD = _assert_original_preview_denials
 _ORIGINAL_CONSTANTS = (_SHA, _REC, _SOURCE_DOMAIN, _DELTA_DOMAIN,
                        _MAX_BYTES, _MAX_RECORDS, _MAX_CONTENT_BYTES)
 
 
 def _require_originals() -> None:
+    # Reject a rebound private preview validator before executing that hook.
+    if _assert_original_preview_denials is not _ORIGINAL_PREVIEW_GUARD:
+        raise PrivateContextDeltaRejected("private delta protocol changed")
     try:
-        _assert_original_preview_denials()
+        _ORIGINAL_PREVIEW_GUARD()
     except OfflineContextPreviewRejected as exc:
         raise PrivateContextDeltaRejected("preview source authority changed") from exc
     if (
-        (hashlib.sha256, json.loads, json.dumps) != _ORIGINAL_CODECS
+        (hashlib, json) != _ORIGINAL_MODULES
+        or (hashlib.sha256, json.loads, json.dumps) != _ORIGINAL_CODECS
+        or _parse is not _ORIGINAL_PARSE
+        or _duplicate_refusal is not _ORIGINAL_DUPLICATE_REFUSAL
         or (_SHA, _REC, _SOURCE_DOMAIN, _DELTA_DOMAIN,
             _MAX_BYTES, _MAX_RECORDS, _MAX_CONTENT_BYTES) != _ORIGINAL_CONSTANTS
         or type(_MAX_BYTES) is not int or type(_MAX_RECORDS) is not int
@@ -203,6 +211,13 @@ def _parse(
             raise PrivateContextDeltaRejected("private preview gained authority")
         stable()
     return tuple(out)
+
+
+# Snapshot the parsing and duplicate-key boundary after their definitions.
+# Neither a synthetic fixture callback nor a local monkeypatch may silently
+# substitute a no-op parser before the private JSON is inspected.
+_ORIGINAL_PARSE = _parse
+_ORIGINAL_DUPLICATE_REFUSAL = _duplicate_refusal
 
 
 def review_private_context_delta(
