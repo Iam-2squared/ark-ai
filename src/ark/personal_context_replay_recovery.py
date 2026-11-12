@@ -14,6 +14,7 @@ import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 
+from . import personal_context_replay_ledger as _ledger_module
 from .personal_context_replay_ledger import (
     DisconnectedContextReplayLedger,
     OfflineContextReplayRejected,
@@ -39,6 +40,13 @@ _ORIGINAL_LEDGER_ACCESS_HOOKS = tuple(
     vars(_LEDGER_TYPE).get(name) for name in _LEDGER_ACCESS_HOOKS
 )
 _WITNESS_TYPE = OfflineContextReplayWitness
+# A restart review must not call newly rebound ledger row inspectors or
+# witness validators on private, linkable local identifiers. Recheck both
+# local bindings and the defining module before EVERY synthetic read.
+_ORIGINAL_LEDGER_INSPECT = _inspect
+_ORIGINAL_LEDGER_CHECK_WITNESS = _check_witness
+_ORIGINAL_LEDGER_OPEN = vars(_LEDGER_TYPE)["_open"]
+_ORIGINAL_LEDGER_WITNESS = vars(_LEDGER_TYPE)["witness"]
 
 
 class OfflineContextRecoveryRejected(OfflineContextReplayRejected):
@@ -151,6 +159,12 @@ def _assert_result_denials() -> None:
 def _assert_ledger_access_hooks() -> None:
     if (
         DisconnectedContextReplayLedger is not _LEDGER_TYPE
+        or _inspect is not _ORIGINAL_LEDGER_INSPECT
+        or _check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS
+        or _ledger_module._inspect is not _ORIGINAL_LEDGER_INSPECT
+        or _ledger_module._check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS
+        or vars(_LEDGER_TYPE).get("_open") is not _ORIGINAL_LEDGER_OPEN
+        or vars(_LEDGER_TYPE).get("witness") is not _ORIGINAL_LEDGER_WITNESS
         or any(
             vars(_LEDGER_TYPE).get(name) is not original
             for name, original in zip(
