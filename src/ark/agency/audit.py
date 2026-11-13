@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import sqlite3
 import stat
 import time
@@ -241,9 +242,16 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
     raw = str(path)
     if not path.name or "\x00" in raw or len(raw) > 4096:
         raise ActionAuditSchemaError("audit database path exceeds local fixture limits")
-    target = path if path.is_absolute() else path.absolute()
-    if len(str(target)) + len("-journal") > 4096:
-        raise ActionAuditSchemaError("audit database/sidecar path exceeds local fixture limits")
+    # Encode before touching the filesystem: Unicode codepoint counts may
+    # understate actual database and -journal sidecar byte lengths.
+    try:
+        if len(os.fsencode(path)) > 4096:
+            raise ActionAuditSchemaError("audit database path exceeds local fixture limits")
+        target = path if path.is_absolute() else path.absolute()
+        if len(os.fsencode(target)) + len(b"-journal") > 4096:
+            raise ActionAuditSchemaError("audit database/sidecar path exceeds local fixture limits")
+    except (UnicodeError, ValueError) as exc:
+        raise ActionAuditSchemaError("audit database/sidecar path encoding invalid") from exc
     try:
         for ancestor in target.parents:
             try:
