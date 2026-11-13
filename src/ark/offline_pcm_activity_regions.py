@@ -6,6 +6,7 @@ Input/output are privacy-sensitive even when only region metadata is returned.
 
 from __future__ import annotations
 
+import builtins
 import hashlib
 import re
 import struct
@@ -23,6 +24,8 @@ class OfflineActivityRejected(ValueError):
 # These are local interpreter/fixture preaccess checks, NOT provenance,
 # authenticated microphone custody, or a runtime isolation sandbox.
 # A substituted hash or codec callback must never receive private PCM.
+_ORIGINAL_BUILTINS = builtins
+_ORIGINAL_SUM = builtins.sum
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_STRUCT = struct
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -34,7 +37,13 @@ _ORIGINAL_MAX_PCM_BYTES = MAX_PCM_BYTES
 
 def _require_original_activity_codec() -> None:
     if (
-        hashlib is not _ORIGINAL_HASHLIB
+        builtins is not _ORIGINAL_BUILTINS
+        or builtins.sum is not _ORIGINAL_SUM
+        # Unqualified sum() resolves module-global names before builtins.
+        # Never route decoded caller-private PCM energies to a substituted
+        # callback, even if builtins.sum is unchanged.
+        or "sum" in globals()
+        or hashlib is not _ORIGINAL_HASHLIB
         or struct is not _ORIGINAL_STRUCT
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or struct.iter_unpack is not _ORIGINAL_ITER_UNPACK
@@ -86,7 +95,11 @@ def detect_activity_regions(
     _require_original_activity_codec()
     if type(pcm) is not bytes or not pcm or len(pcm) > MAX_PCM_BYTES or len(pcm) % 2:
         raise OfflineActivityRejected("invalid PCM bytes")
-    if type(expected_sha256) is not str or _SHA256.fullmatch(expected_sha256) is None:
+    if (
+        type(expected_sha256) is not str
+        or len(expected_sha256) != 64
+        or _SHA256.fullmatch(expected_sha256) is None
+    ):
         raise OfflineActivityRejected("invalid source digest")
     if hashlib.sha256(pcm).hexdigest() != expected_sha256:
         raise OfflineActivityRejected("source digest mismatch")
