@@ -75,6 +75,17 @@ add **9 authored cases**: 2 swapped modules × 4 registry operations
 The result is an in-process injection guard, **not** remote backend
 attestation or actual dispatch authorization.
 
+## CI failure and semantics-preserving repair observed later
+
+The six-job Memory source/test [CI #43404237793](https://github.com/Iam-2squared/ark-ai/actions/runs/43404237793)
+subsequently **FAILED 6/6 at Ruff I001**, before pytest, because the new
+Memory test grouped `ark.memory.postcommit_uncertainty_review` after the
+`ark.memory.generation_fenced_cas` import. Its failure does **not** establish
+a functional Memory regression or passing test assertions. The ordinary
+GitHub Contents API [repair 246e6295](https://github.com/Iam-2squared/ark-ai/commit/246e6295be7f1d77123cfa230cd3987100ff6f72)
+only reorders those imports, changing **no** source validation or test logic.
+The corrected exact-head matrix must still finish before any PASS claim.
+
 ## Evidence precision and next priorities
 
 - 32 new authored test parameterizations + one existing test assertion update
