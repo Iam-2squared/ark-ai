@@ -98,6 +98,10 @@ def _require_original_fixture_primitives() -> None:
     if (
         builtins is not _ORIGINAL_BUILTINS
         or builtins.sum is not _ORIGINAL_SUM
+        # Python resolves unqualified sum() in _run through module globals
+        # before builtins. A synthetic injected global must not receive
+        # private fixture numbers even while builtins.sum remains original.
+        or "sum" in globals()
         or hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
