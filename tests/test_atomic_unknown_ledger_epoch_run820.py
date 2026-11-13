@@ -63,7 +63,7 @@ def test_unexpected_ledger_instance_state_is_refused(tmp_path: Path) -> None:
         )
 
 
-def test_path_rebind_inside_sqlite_open_is_refused(
+def test_connector_rebind_refused_before_instance_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ledger = _ledger(tmp_path)
@@ -77,15 +77,15 @@ def test_path_rebind_inside_sqlite_open_is_refused(
 
     monkeypatch.setattr(review.sqlite3, "connect", rebinding_connect)
     with pytest.raises(
-        review.AtomicUnknownOutcomeRejected, match="ledger instance changed",
+        review.AtomicUnknownOutcomeRejected, match="protocol changed",
     ):
         review.review_atomic_unknown_outcome(
             ledger, genesis_atomic_preaction_witness(), _claim(),
         )
-    assert calls == [True]
+    assert calls == []
 
 
-def test_late_instance_shadow_open_is_refused(
+def test_connector_rebind_refused_before_shadow_installation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ledger = _ledger(tmp_path)
@@ -99,12 +99,12 @@ def test_late_instance_shadow_open_is_refused(
 
     monkeypatch.setattr(review.sqlite3, "connect", rebinding_connect)
     with pytest.raises(
-        review.AtomicUnknownOutcomeRejected, match="ledger instance changed",
+        review.AtomicUnknownOutcomeRejected, match="protocol changed",
     ):
         review.review_atomic_unknown_outcome(
             ledger, genesis_atomic_preaction_witness(), _claim(),
         )
-    assert calls == [True]
+    assert calls == []
 
 
 def test_class_attribute_interception_denied_without_invocation(
