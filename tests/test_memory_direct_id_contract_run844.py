@@ -39,7 +39,7 @@ def test_direct_id_rejects_str_subclass_without_protocol_execution() -> None:
         deterministic_memory_id(MemoryScope("owner"), StrSubclass("source"))
 
 
-@pytest.mark.parametrize("source", ["bad\\ud800", "bad\\udfff"])
+@pytest.mark.parametrize("source", ["bad\ud800", "bad\udfff"])
 def test_direct_id_rejects_invalid_utf8_source(source: str) -> None:
     with pytest.raises(ValueError, match="UTF-8"):
         deterministic_memory_id(MemoryScope("owner"), source)
@@ -65,7 +65,7 @@ def test_direct_id_rejects_mutated_string_subclass_scope(field: str) -> None:
 
 def test_direct_id_rejects_invalid_utf8_mutated_scope() -> None:
     scope = MemoryScope("owner", "namespace")
-    object.__setattr__(scope, "owner_id", "bad\\ud800")
+    object.__setattr__(scope, "owner_id", "bad\ud800")
     with pytest.raises(ValueError, match="UTF-8"):
         deterministic_memory_id(scope, "source")
 
