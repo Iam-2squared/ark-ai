@@ -160,9 +160,12 @@ def preview_offline_redaction(
     _require_original_denials()
     if (
         type(text) is not str or not text or len(text) > _MAX_TEXT
-        or type(owner_digest) is not str or _SHA.fullmatch(owner_digest) is None
-        or type(scope_digest) is not str or _SHA.fullmatch(scope_digest) is None
+        or type(owner_digest) is not str or len(owner_digest) != 64
+        or _SHA.fullmatch(owner_digest) is None
+        or type(scope_digest) is not str or len(scope_digest) != 64
+        or _SHA.fullmatch(scope_digest) is None
         or type(retained_source_sha256) is not str
+        or len(retained_source_sha256) != 64
         or _SHA.fullmatch(retained_source_sha256) is None
         or type(spans) is not tuple or not 1 <= len(spans) <= _MAX_SPANS
         or any(type(span) is not OfflineRedactionSpan for span in spans)
@@ -214,7 +217,8 @@ def preview_offline_redaction(
         if (
             type(start) is not int or type(end) is not int
             or not 0 <= cursor <= start < end <= len(text)
-            or type(label) is not str or _LABEL.fullmatch(label) is None
+            or type(label) is not str or len(label) > 20
+            or _LABEL.fullmatch(label) is None
             or (require_complete and cursor != start)
         ):
             raise OfflineRedactionRejected("invalid, overlapping or uncovered redaction span")
