@@ -207,6 +207,49 @@ def _probe(path: Path, startup_mode: str, *, wal_keeper: bool = False) -> list[d
             keeper.close()
 
 
+
+def _verify_disposable_audit(path: Path) -> bool:
+    """Require the two synthetic events actually persisted, not just IDs.
+
+    A subprocess success receipt does not prove any committed action audit.
+    Check exact request digests, outcomes and append highwater in a read-only
+    disposable database. These are NOT externally authenticated effects.
+    """
+    from ark.agency.contracts import ToolCall
+
+    if not path.is_file() or path.is_symlink():
+        return False
+    expected = []
+    for index in range(2):
+        call = ToolCall(
+            "offline", "local.write", "synthetic", {"index": str(index)},
+        )
+        expected.append((
+            call.request_id, call.tool, call.capability, call.scope,
+            call.arguments_sha256, "synthetic_preaction_only", 2000,
+        ))
+    try:
+        with closing(sqlite3.connect(
+            path.absolute().as_uri() + "?mode=ro", uri=True,
+        )) as conn:
+            conn.execute("PRAGMA query_only=ON")
+            rows = conn.execute(
+                "SELECT event_id,request_id,tool,capability,scope,"
+                "arguments_sha256,outcome,occurred_at_ms "
+                "FROM action_events ORDER BY event_id"
+            ).fetchall()
+            highwater = conn.execute(
+                "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
+            ).fetchall()
+    except (sqlite3.Error, OSError, ValueError):
+        return False
+    return (
+        [row[0] for row in rows] == [1, 2]
+        and sorted(row[1:] for row in rows) == sorted(expected)
+        and highwater == [(2,)]
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=_positive_iterations, default=4)
@@ -233,18 +276,10 @@ def main(argv: list[str] | None = None) -> int:
                     details.append(item)
             if len(outcomes) != 2 or any(item["status"] != "AUDITED" for item in outcomes):
                 anomalous += 1
-            else:
-                # This is a disposable SQLite count, not a proof of trusted
-                # audit chronology or an externally executed side effect.
-                # sqlite3.Connection.__exit__ commits but does not close.
-                # Explicit closure is required before TemporaryDirectory
-                # cleanup on Windows, where open DB handles block unlink.
-                with closing(sqlite3.connect(case / "audit.sqlite")) as conn:
-                    events = conn.execute(
-                        "SELECT event_id FROM action_events ORDER BY event_id"
-                    ).fetchall()
-                if events != [(1,), (2,)]:
-                    anomalous += 1
+            elif not _verify_disposable_audit(case / "audit.sqlite"):
+                # A child can report AUDITED without persisting the expected
+                # fixture effects; no green result from status text alone.
+                anomalous += 1
     print(json.dumps({
         "startup_mode": args.startup_mode, "wal_keeper": args.wal_keeper,
         "iterations": args.iterations,
