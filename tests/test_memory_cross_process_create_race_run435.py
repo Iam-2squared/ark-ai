@@ -65,6 +65,15 @@ def test_concurrent_memory_initial_create_is_single_cas_per_identity(
 ):
     path = tmp_path / "memory.sqlite3"
     SQLiteMemoryStore(path, clock_ms=lambda: 1000)
+    # Keep one real WAL read epoch across BOTH child exits. A store instance
+    # is not a live connection: short-lived connections can make another
+    # process observe SQLite's transient last-close -shm unlink. This test
+    # isolates revision-zero CAS. Unkept WAL lifecycle refusals are tested
+    # separately without weakening any production sidecar checks.
+    keeper = sqlite3.connect(path)
+    assert keeper.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+    keeper.execute("BEGIN")
+    keeper.execute("SELECT COUNT(*) FROM memories").fetchone()
     gate = tmp_path / "start"
     first = ("fixture-owner", "private", "source")
     second = {
@@ -110,6 +119,7 @@ def test_concurrent_memory_initial_create_is_single_cas_per_identity(
             if worker.poll() is None:
                 worker.kill()
                 worker.communicate()
+        keeper.close()
     assert all(worker.returncode == 0 for worker in workers), answers
     assert tuple(sorted(out.strip() for out, _ in answers)) == expected
     created = expected.count("CREATED")
