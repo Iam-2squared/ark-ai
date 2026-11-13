@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -197,9 +198,16 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
     raw = str(path)
     if not path.name or "\x00" in raw or len(raw) > 4096:
         raise MemorySchemaError("memory database path exceeds local fixture limits")
-    target = path if path.is_absolute() else path.absolute()
-    if len(str(target)) + len("-journal") > 4096:
-        raise MemorySchemaError("memory database/sidecar path exceeds local fixture limits")
+    # Filesystem path limits apply to ENCODED bytes, not Unicode codepoints.
+    # Reject malformed/oversized fixture paths before any mkdir/lstat/SQLite.
+    try:
+        if len(os.fsencode(path)) > 4096:
+            raise MemorySchemaError("memory database path exceeds local fixture limits")
+        target = path if path.is_absolute() else path.absolute()
+        if len(os.fsencode(target)) + len(b"-journal") > 4096:
+            raise MemorySchemaError("memory database/sidecar path exceeds local fixture limits")
+    except (UnicodeError, ValueError) as exc:
+        raise MemorySchemaError("memory database/sidecar path encoding invalid") from exc
     try:
         for ancestor in target.parents:
             try:
