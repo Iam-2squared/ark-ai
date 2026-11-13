@@ -67,6 +67,7 @@ def test_connector_rebind_refused_before_instance_mutation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ledger = _ledger(tmp_path)
+    retained = genesis_atomic_preaction_witness()
     original_connect = review.sqlite3.connect
     calls = []
 
@@ -80,7 +81,7 @@ def test_connector_rebind_refused_before_instance_mutation(
         review.AtomicUnknownOutcomeRejected, match="protocol changed",
     ):
         review.review_atomic_unknown_outcome(
-            ledger, genesis_atomic_preaction_witness(), _claim(),
+            ledger, retained, _claim(),
         )
     assert calls == []
 
@@ -89,6 +90,7 @@ def test_connector_rebind_refused_before_shadow_installation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ledger = _ledger(tmp_path)
+    retained = genesis_atomic_preaction_witness()
     original_connect = review.sqlite3.connect
     calls = []
 
@@ -102,7 +104,7 @@ def test_connector_rebind_refused_before_shadow_installation(
         review.AtomicUnknownOutcomeRejected, match="protocol changed",
     ):
         review.review_atomic_unknown_outcome(
-            ledger, genesis_atomic_preaction_witness(), _claim(),
+            ledger, retained, _claim(),
         )
     assert calls == []
 
