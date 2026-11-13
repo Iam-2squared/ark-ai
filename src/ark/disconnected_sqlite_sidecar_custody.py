@@ -76,6 +76,81 @@ class DetachedSQLiteSidecarSeal:
         return False
 
 
+# Frozen instances remain vulnerable to replacement class slot/constructor or
+# equality descriptors. Keep all carrier definitions, including deny-only
+# properties, anchored to their import-time identity before filesystem access.
+_STATE_TYPE = DetachedSQLiteSidecarState
+_SEAL_TYPE = DetachedSQLiteSidecarSeal
+_STATE_FIELDS = ("suffix", "present", "identity_sha256")
+_SEAL_FIELDS = (
+    "path_sha256", "directories_sha256", "main_identity_sha256",
+    "sidecars", "fingerprint",
+)
+_DENIAL_FIELDS = (
+    "sqlite_transaction_atomicity_proven", "independent_witness_custody_proven",
+    "stable_future_path_proven", "consent_verified",
+    "tool_execution_authorized",
+)
+_CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__", "__eq__")
+_STATE_ORIGINALS = tuple(
+    vars(_STATE_TYPE).get(key) for key in _STATE_FIELDS + _CARRIER_HOOKS
+)
+_SEAL_ORIGINALS = tuple(
+    vars(_SEAL_TYPE).get(key)
+    for key in _SEAL_FIELDS + _CARRIER_HOOKS + _DENIAL_FIELDS
+)
+
+
+def _require_original_carriers() -> None:
+    if (
+        DetachedSQLiteSidecarState is not _STATE_TYPE
+        or DetachedSQLiteSidecarSeal is not _SEAL_TYPE
+        or any(
+            vars(cls).get(key) is not original
+            for cls, keys, originals in (
+                (_STATE_TYPE, _STATE_FIELDS + _CARRIER_HOOKS, _STATE_ORIGINALS),
+                (_SEAL_TYPE, _SEAL_FIELDS + _CARRIER_HOOKS + _DENIAL_FIELDS,
+                 _SEAL_ORIGINALS),
+            )
+            for key, original in zip(keys, originals, strict=True)
+        )
+    ):
+        raise SQLiteSidecarCustodyRejected("detached SQLite carrier definition changed")
+
+
+def _seal_snapshot(seal: object) -> tuple[object, ...]:
+    """Compare exact primitive evidence; never invoke replaceable dataclass equality."""
+    _require_original_codec()
+    if type(seal) is not _SEAL_TYPE:
+        raise SQLiteSidecarCustodyRejected("malformed retained SQLite sidecar seal")
+    head = (
+        seal.path_sha256, seal.directories_sha256, seal.main_identity_sha256,
+        seal.fingerprint,
+    )
+    states = seal.sidecars
+    if (
+        any(type(digest) is not str or _SHA.fullmatch(digest) is None
+            for digest in head)
+        or type(states) is not tuple or len(states) != len(_SUFFIXES)
+    ):
+        raise SQLiteSidecarCustodyRejected("malformed retained SQLite sidecar seal")
+    normalized = []
+    for suffix, state in zip(_SUFFIXES, states, strict=True):
+        if (
+            type(state) is not _STATE_TYPE
+            or type(state.suffix) is not str or state.suffix != suffix
+            or type(state.present) is not bool
+            or (state.present and (
+                type(state.identity_sha256) is not str
+                or _SHA.fullmatch(state.identity_sha256) is None
+            ))
+            or (not state.present and state.identity_sha256 is not None)
+        ):
+            raise SQLiteSidecarCustodyRejected("malformed retained SQLite sidecar seal")
+        normalized.append((state.suffix, state.present, state.identity_sha256))
+    return (*head, tuple(normalized))
+
+
 def _require_original_codec() -> None:
     if (
         hashlib is not _ORIGINAL_HASHLIB
@@ -92,6 +167,7 @@ def _require_original_codec() -> None:
         raise SQLiteSidecarCustodyRejected(
             "detached SQLite custody codec or inventory bounds changed"
         )
+    _require_original_carriers()
 
 
 def _hash(payload: object) -> str:
@@ -233,7 +309,9 @@ def capture_disconnected_sqlite_sidecars(path: Path) -> DetachedSQLiteSidecarSea
     _require_original_codec()
     source = _path(path)
     first = _capture_once(source)
-    if _capture_once(source) != first:
+    first_fields = _seal_snapshot(first)
+    second = _capture_once(source)
+    if _seal_snapshot(second) != first_fields or _seal_snapshot(first) != first_fields:
         raise SQLiteSidecarCustodyRejected("SQLite sidecar bundle changed between inspections")
     return first
 
@@ -246,22 +324,9 @@ def review_disconnected_sqlite_sidecars(
     source = _path(path)
     if type(retained) is not DetachedSQLiteSidecarSeal:
         raise SQLiteSidecarCustodyRejected("exact retained SQLite seal required")
+    previous_snapshot = _seal_snapshot(retained)
     previous = tuple(getattr(retained, field_.name) for field_ in fields(retained))
     sidecars = previous[3]
-    if (
-        any(type(s) is not str or _SHA.fullmatch(s) is None for s in
-            (previous[0], previous[1], previous[2], previous[4]))
-        or type(sidecars) is not tuple or len(sidecars) != len(_SUFFIXES)
-        or any(
-            type(s) is not DetachedSQLiteSidecarState or s.suffix != suffix
-            or type(s.present) is not bool
-            or (s.present and (type(s.identity_sha256) is not str
-                              or _SHA.fullmatch(s.identity_sha256) is None))
-            or (not s.present and s.identity_sha256 is not None)
-            for suffix, s in zip(_SUFFIXES, sidecars, strict=True)
-        )
-    ):
-        raise SQLiteSidecarCustodyRejected("malformed retained SQLite sidecar seal")
     originals = tuple((s, s.suffix, s.present, s.identity_sha256) for s in sidecars)
 
     def epoch() -> None:
@@ -276,6 +341,6 @@ def review_disconnected_sqlite_sidecars(
     epoch()
     current = capture_disconnected_sqlite_sidecars(source)
     epoch()
-    if current != retained:
+    if _seal_snapshot(current) != previous_snapshot:
         raise SQLiteSidecarCustodyRejected("retained SQLite sidecar custody differs")
     return current
