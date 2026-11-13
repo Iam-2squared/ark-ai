@@ -21,6 +21,7 @@ import sys
 import tempfile
 import time
 from collections import Counter
+from contextlib import closing
 from pathlib import Path
 
 _CHILD = r"""
@@ -235,7 +236,10 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 # This is a disposable SQLite count, not a proof of trusted
                 # audit chronology or an externally executed side effect.
-                with sqlite3.connect(case / "audit.sqlite") as conn:
+                # sqlite3.Connection.__exit__ commits but does not close.
+                # Explicit closure is required before TemporaryDirectory
+                # cleanup on Windows, where open DB handles block unlink.
+                with closing(sqlite3.connect(case / "audit.sqlite")) as conn:
                     events = conn.execute(
                         "SELECT event_id FROM action_events ORDER BY event_id"
                     ).fetchall()
