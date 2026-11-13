@@ -28,6 +28,7 @@ _MAX_FILE_BYTES = 64 * 1024 * 1024
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_SHA = _SHA
@@ -156,6 +157,7 @@ def _require_original_codec() -> None:
         hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
+        or os.fsencode is not _ORIGINAL_FSENCODE
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _SHA is not _ORIGINAL_SHA
@@ -181,7 +183,9 @@ def _path(value: object) -> Path:
         type(value) is not type(Path("."))
         or not value.is_absolute()
         or "\x00" in str(value)
-        or len(str(value)) + len(_SUFFIXES[-1]) > _MAX_PATH
+        # POSIX path limits are byte limits. A bounded number of Unicode
+        # code points can still exceed the filesystem's encoded path budget.
+        or len(os.fsencode(value)) + len(_SUFFIXES[-1]) > _MAX_PATH
         or len(value.parts) < 2
         or ".." in value.parts
         or any(part in ("", ".", "..") for part in value.parts[1:])
