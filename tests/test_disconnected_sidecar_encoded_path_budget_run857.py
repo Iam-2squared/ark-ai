@@ -42,5 +42,7 @@ def test_multibyte_path_budget_rejected_before_inventory(
 
 
 def test_small_encoded_path_keeps_exact_local_source() -> None:
-    source = Path("/synthetic/fixture.sqlite3")
+    # pathlib treats POSIX-rooted /synthetic as a drive-relative path on Windows.
+    # Use an exact native absolute Path on both supported CI platforms.
+    source = Path.cwd() / "synthetic" / "fixture.sqlite3"
     assert custody._path(source) is source
