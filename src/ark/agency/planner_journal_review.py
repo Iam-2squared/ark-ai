@@ -672,7 +672,7 @@ class SyntheticPlanJournal:
                 result, check_result = _checked_snapshot(graph, prefixes[-1])
                 if retained is not None:
                     _require_original_recovery_denials()
-            retained.assert_shape()
+                    retained.assert_shape()
                     current = (
                         retained.topology_digest, retained.event_count,
                         retained.event_hash, retained.status_digest, retained.last_at_ms,
@@ -761,7 +761,7 @@ class SyntheticPlanJournal:
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 if pinned is not None:
                     _require_original_recovery_denials()
-            retained.assert_shape()
+                    retained.assert_shape()
                     current_retained = (
                         retained.topology_digest, retained.event_count, retained.event_hash,
                         retained.status_digest, retained.last_at_ms,
@@ -818,7 +818,7 @@ class SyntheticPlanJournal:
                 # *after* it, before committing the row and header together.
                 if retained is not None:
                     _require_original_recovery_denials()
-            retained.assert_shape()
+                    retained.assert_shape()
                     if (
                         retained.topology_digest, retained.event_count,
                         retained.event_hash, retained.status_digest, retained.last_at_ms,
