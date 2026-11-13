@@ -365,6 +365,7 @@ def _require_safe_journal_path(path: Path) -> None:
         type(path) is not type(Path())
         or not path.is_absolute()
         or ".." in path.parts
+        or len(str(path)) > 4096
     ):
         raise SyntheticPlanJournalRejected(
             "synthetic plan journal requires absolute non-traversing Path"
@@ -385,6 +386,24 @@ def _require_safe_journal_path(path: Path) -> None:
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal must be one regular file"
+                )
+        # An otherwise safe main DB does not make its SQLite -wal/-shm
+        # or rollback journal safe. Refuse aliases, special files, and
+        # orphan sidecars before either read-only replay or an append.
+        # This lexical check is not a descriptor-held race proof.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = path.with_name(path.name + suffix)
+            try:
+                sidecar_meta = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if (
+                not path.exists()
+                or not stat.S_ISREG(sidecar_meta.st_mode)
+                or sidecar_meta.st_nlink != 1
+            ):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal sidecar unsafe or orphaned"
                 )
     except OSError as exc:
         raise SyntheticPlanJournalRejected(
@@ -648,6 +667,11 @@ class SyntheticPlanJournal:
                 raise SyntheticPlanJournalRejected(
                     "retained synthetic plan witness changed before recovery"
                 )
+        # Recovery previously bypassed the verified _connect() path and
+        # resolved an unchecked pathname, permitting a post-init symlink
+        # retarget to be read. Recheck main, ancestors and sidecars before
+        # constructing the read-only URI. No source is auto-recreated.
+        _require_safe_journal_path(path_epoch)
         uri = path_epoch.resolve().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
             conn.execute("BEGIN")
