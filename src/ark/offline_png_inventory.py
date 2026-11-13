@@ -137,7 +137,15 @@ def _require_original_png_authority() -> None:
         ) != _ORIGINAL_LIMITS
         or type(_VALID_DEPTHS) is not dict
         or _VALID_DEPTHS is not _ORIGINAL_VALID_DEPTHS_OBJECT
-        or tuple(sorted(_VALID_DEPTHS.items())) != _ORIGINAL_VALID_DEPTHS
+        # The table is a mutable dict. Comparing its values can call an
+        # injected __eq__/__ne__ on a private PNG ingress path. Require
+        # exact canonical keys and original tuple objects before any bytes.
+        or any(type(key) is not int for key in _VALID_DEPTHS)
+        or len(_VALID_DEPTHS) != len(_ORIGINAL_VALID_DEPTHS)
+        or any(
+            _VALID_DEPTHS.get(key) is not saved
+            for key, saved in _ORIGINAL_VALID_DEPTHS
+        )
     ):
         raise OfflinePngRejected("PNG framing limits changed before private bytes")
     # Never run a replacement class constructor or a False-looking forged
