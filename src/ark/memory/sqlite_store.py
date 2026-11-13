@@ -156,14 +156,29 @@ def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
         raise TypeError("scope must be an exact MemoryScope")
-    if not isinstance(source_id, str) or not source_id.strip():
-        raise ValueError("source_id must not be blank")
+    # This exported helper is reachable without MemoryWrite construction.
+    # Apply the existing MemoryScope/MemoryWrite identifier bounds BEFORE
+    # JSON allocation or hashing, including when a frozen scope was mutated.
+    if type(source_id) is not str:
+        raise TypeError("source_id must be an exact string")
+    if len(source_id) > 512 or not source_id.strip():
+        raise ValueError("source_id must be nonblank and at most 512 characters")
+    owner, namespace = scope.owner_id, scope.namespace
+    if type(owner) is not str or type(namespace) is not str:
+        raise TypeError("scope identifiers must be exact strings")
+    MemoryScope(owner, namespace)
+    try:
+        source_id.encode("utf-8", errors="strict")
+        owner.encode("utf-8", errors="strict")
+        namespace.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise ValueError("memory identity is not valid UTF-8") from exc
     payload = json.dumps(
-        {"namespace": scope.namespace, "owner_id": scope.owner_id, "source_id": source_id},
+        {"namespace": namespace, "owner_id": owner, "source_id": source_id},
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
-    ).encode()
+    ).encode("utf-8", errors="strict")
     return "mem_" + hashlib.sha256(payload).hexdigest()
 
 
