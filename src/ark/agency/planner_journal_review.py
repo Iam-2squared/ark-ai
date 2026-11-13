@@ -171,7 +171,11 @@ _TAIL_RESULT_TYPE = SyntheticPlanTail
 _TAIL_FIELDS = (
     "topology_digest", "event_count", "event_hash", "status_digest", "last_at_ms",
 )
-_TAIL_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+# assert_shape is invoked on a caller-retained witness; a class method
+# substituted between topology/replay callbacks and validation must never run.
+_TAIL_HOOKS = (
+    "__init__", "__new__", "__getattribute__", "__getattr__", "assert_shape",
+)
 _ORIGINAL_TAIL_FIELDS = tuple(vars(_TAIL_RESULT_TYPE)[name] for name in _TAIL_FIELDS)
 _ORIGINAL_TAIL_HOOKS = tuple(
     vars(_TAIL_RESULT_TYPE).get(name) for name in _TAIL_HOOKS
@@ -635,6 +639,7 @@ class SyntheticPlanJournal:
             )
         steps_epoch, topology_epoch, carriers = self._pin_topology()
         if retained is not None:
+            _require_original_recovery_denials()
             retained.assert_shape()
             if (
                 retained.topology_digest, retained.event_count,
@@ -666,7 +671,8 @@ class SyntheticPlanJournal:
                     raise SyntheticPlanJournalRejected("retained synthetic plan history changed")
                 result, check_result = _checked_snapshot(graph, prefixes[-1])
                 if retained is not None:
-                    retained.assert_shape()
+                    _require_original_recovery_denials()
+            retained.assert_shape()
                     current = (
                         retained.topology_digest, retained.event_count,
                         retained.event_hash, retained.status_digest, retained.last_at_ms,
@@ -737,6 +743,7 @@ class SyntheticPlanJournal:
             )
         steps_epoch, topology_epoch, carriers = self._pin_topology()
         if retained is not None:
+            _require_original_recovery_denials()
             retained.assert_shape()
             if (
                 retained.topology_digest, retained.event_count,
@@ -753,7 +760,8 @@ class SyntheticPlanJournal:
                 # may mutate its original frozen step during _replay itself.
                 self._assert_topology_epoch(steps_epoch, topology_epoch, carriers)
                 if pinned is not None:
-                    retained.assert_shape()
+                    _require_original_recovery_denials()
+            retained.assert_shape()
                     current_retained = (
                         retained.topology_digest, retained.event_count, retained.event_hash,
                         retained.status_digest, retained.last_at_ms,
@@ -809,7 +817,8 @@ class SyntheticPlanJournal:
                 # boundary. Revalidate an independently retained older tail
                 # *after* it, before committing the row and header together.
                 if retained is not None:
-                    retained.assert_shape()
+                    _require_original_recovery_denials()
+            retained.assert_shape()
                     if (
                         retained.topology_digest, retained.event_count,
                         retained.event_hash, retained.status_digest, retained.last_at_ms,
