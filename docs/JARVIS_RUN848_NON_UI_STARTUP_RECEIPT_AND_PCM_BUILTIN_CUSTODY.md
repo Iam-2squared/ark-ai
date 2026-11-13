@@ -12,7 +12,7 @@ Observed 2026-11-13 23:02:17 JST (reporting clock only; not a trusted consent/ac
 ## Package A — startup READ/schema receipt descriptor custody
 
 - Source commit [`fdf1e6fa`](https://github.com/Iam-2squared/ark-ai/commit/fdf1e6fad30ffeda3198e1bed95f9362f7475daa) in `src/ark/disconnected_local_readiness.py` snapshots the original schema and preflight receipt field and lookup descriptors at import time. Before reading retained local schema or invoking potentially reentrant registered-READ/SQLite probes, the review denies tampered descriptors, including False-looking or hostile getters. Original denial-property checks remain.
-- Test commit [`980e4657`](https://github.com/Iam-2squared/ark-ai/commit/980e4657c1eeba2a04b1a17b428a05bdee118193) adds **20 authored cases**: eleven altered metadata fields, eight altered class lookup/constructor hooks, and one unchanged deterministic READ-only baseline. Tests assert that substituted field/hook callbacks and ToolBackend methods are not invoked.
+- Test commit [`980e4657`](https://github.com/Iam-2squared/ark-ai/commit/980e4657c1eeba2a04b1a17b428a05bdee118193) initially authored **20 cases**; after the CI-discovered `__new__` monkeypatch teardown failure, corrected to **18 authored cases**: eleven altered metadata fields, six safe field-lookup/initializer hooks, and one unchanged deterministic READ-only baseline. The source still checks `__new__` identity; only the unsafe in-process monkeypatch fixture was withdrawn. Tests assert that substituted field/hook callbacks and ToolBackend methods are not invoked.
 - The startup review still does not authenticate the SQLite source, authorize backend execution, establish cross-store atomicity, or grant write/consent authority.
 
 ## Package B — disconnected private PCM sum shadowing and digest width
@@ -20,6 +20,12 @@ Observed 2026-11-13 23:02:17 JST (reporting clock only; not a trusted consent/ac
 - Source commit [`a0cfb2e3`](https://github.com/Iam-2squared/ark-ai/commit/a0cfb2e33f1837c81b5f4bcf3f7e4718f859748d) in `src/ark/offline_pcm_activity_regions.py` rejects replaced `builtins.sum` and module-global `sum` before processing private PCM energy samples. It requires a 64-character SHA-256 text carrier before invoking the regex engine. Existing codec digest and budget checks are not relaxed.
 - Test commit [`17806cdc`](https://github.com/Iam-2squared/ark-ai/commit/17806cdc04233bb664746098dee6acf9a616a2da) adds **13 authored cases**: two ingress modes × two patched-sum surfaces, two entrypoints × four invalid digest widths, and one original valid silent-offline fixture.
 - This is not microphone access, automatic speech recognition, speaker identification, provenance, user consent or a real action. Detached signal metadata remains caller-controlled.
+
+## CI-discovered repairs (same invocation; no weakened safety checks)
+
+- [Startup source CI #43438206189](https://github.com/Iam-2squared/ark-ai/actions/runs/43438206189) reported two Ubuntu regressions in pre-existing `test_disconnected_readiness_pregetter_run612.py`: a new *earlier* fail-closed rejection used an error message that did not match the legacy `authority|denied` taxonomy. [Commit `92aaa11f`](https://github.com/Iam-2squared/ark-ai/commit/92aaa11f33e5a882d4b5d0d5bdcd3a85ec7e32b6) changed the rejection text to include `schema receipt authority carrier`; the earlier denial and metadata preaccess guard are unchanged.
+- [Startup test CI #43438356286](https://github.com/Iam-2squared/ark-ai/actions/runs/43438356286) surfaced a test-only `__new__` monkeypatch teardown problem that polluted unrelated schema fixtures (18 failures/8 errors in Ubuntu 3.12, including dependent fixture setup). [Commit `3ebd29c5`](https://github.com/Iam-2squared/ark-ai/commit/3ebd29c58e72380cc741086bda774d07ff33a6e5) stops patching the class `__new__` in-process; `__new__` is still covered by the source's import-time carrier identity check. The test now authors 18 cases, not 20.
+- The two safety packages together contain **31 corrected authored cases** (18 startup + 13 PCM), **not a proven 31 PASS**. The exact post-repair full Windows/Ubuntu Python matrix remains unverified, and other in-flight CI runs may show stale-HEAD failures.
 
 ## Validation and pending gates
 
