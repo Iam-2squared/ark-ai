@@ -229,6 +229,39 @@ def review_retained_coherent_memory(
                 # caller-controlled record decoding or hash callbacks.
                 _validate_v1_schema(conn)
                 stable()
+                # Reject oversized or non-TEXT private fields inside SQLite,
+                # before Python hydrates rows. Share the WAL read snapshot
+                # with the later row/event lifecycle reconciliation.
+                row_count = conn.execute(
+                    "SELECT COUNT(*) FROM memories"
+                ).fetchone()[0]
+                event_count = conn.execute(
+                    "SELECT COUNT(*) FROM memory_events"
+                ).fetchone()[0]
+                if (
+                    type(row_count) is not int or row_count > _MAX_ROWS
+                    or type(event_count) is not int
+                    or event_count > _MAX_EVENTS
+                ):
+                    raise MemoryCoherentHistoryRejected(
+                        "coherent row/event scan budget exceeded"
+                    )
+                malformed = conn.execute(
+                    "SELECT 1 FROM memories WHERE "
+                    "typeof(memory_id)!='text' OR length(memory_id)!=68 OR "
+                    "typeof(owner_id)!='text' OR length(owner_id)>256 OR "
+                    "typeof(namespace)!='text' OR length(namespace)>256 OR "
+                    "typeof(source_id)!='text' OR length(source_id)>512 OR "
+                    "typeof(content)!='text' OR length(content)>1000000 OR "
+                    "typeof(metadata_json)!='text' OR length(metadata_json)>4000000 OR "
+                    "typeof(content_sha256)!='text' OR length(content_sha256)!=64 "
+                    "LIMIT 1"
+                ).fetchone()
+                if malformed is not None:
+                    raise MemoryCoherentHistoryRejected(
+                        "coherent persisted Memory row width or storage type changed"
+                    )
+                stable()
                 for row in conn.execute("SELECT * FROM memories ORDER BY memory_id"):
                     rows += 1
                     if rows > _MAX_ROWS:
