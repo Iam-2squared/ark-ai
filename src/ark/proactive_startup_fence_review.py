@@ -102,17 +102,29 @@ def _require_original_authorities() -> None:
         or fields is not _ORIGINAL_FIELDS_FN
         or _epoch is not _ORIGINAL_EPOCH_FN
         or _snapshot_epoch is not _ORIGINAL_SNAPSHOT_EPOCH_FN
-        or (
-            SyntheticTriggerReceipt, SyntheticTriggerPolicy,
-            SyntheticTriggerWitness, StartupSnapshot, ComponentResult,
-            SyntheticReadinessRequirement,
-        ) != _SOURCE_TYPES
+        # Equality on a substituted class or descriptor can execute
+        # attacker-controlled __eq__/__ne__ before any receipt is read.
+        # Compare the exact import-time objects, never their overloaded values.
         or any(
-            tuple(vars(cls).get(name) for name in (*names, *_SOURCE_HOOKS))
-            != original
+            current is not original
+            for current, original in zip(
+                (
+                    SyntheticTriggerReceipt, SyntheticTriggerPolicy,
+                    SyntheticTriggerWitness, StartupSnapshot, ComponentResult,
+                    SyntheticReadinessRequirement,
+                ),
+                _SOURCE_TYPES, strict=True,
+            )
+        )
+        or any(
+            current is not pinned
             for cls, names, original in zip(
                 _SOURCE_TYPES, _SOURCE_FIELDS, _SOURCE_DESCRIPTORS,
                 strict=True,
+            )
+            for current, pinned in zip(
+                (vars(cls).get(name) for name in (*names, *_SOURCE_HOOKS)),
+                original, strict=True,
             )
         )
         or any(
