@@ -38,6 +38,20 @@ _AUDITS = (
 )
 
 
+# Explicit process-local custody of the digest codec, ledger DDL and admission
+# bound. Refuse replacements before constructing/reviewing private intent rows
+# or opening a SQLite fixture. These checks cannot authenticate provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_AUDIT_DOMAIN = _AUDIT_DOMAIN
+_ORIGINAL_GENESIS = _GENESIS
+_ORIGINAL_SQL = (_INTENTS, _AUDITS)
+_ORIGINAL_MAX = _MAX
+
+
 class AtomicPreactionRejected(ValueError):
     """An inert reservation or its audit cannot be safely reconciled."""
 
@@ -108,6 +122,19 @@ _ORIGINAL_CARRIER_SLOTS = tuple(
 
 
 def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _AUDIT_DOMAIN is not _ORIGINAL_AUDIT_DOMAIN
+        or _GENESIS is not _ORIGINAL_GENESIS
+        or _INTENTS is not _ORIGINAL_SQL[0]
+        or _AUDITS is not _ORIGINAL_SQL[1]
+        or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+    ):
+        raise AtomicPreactionRejected("atomic preaction codec or schema changed")
     # Genesis and raw witness/claim validation must remain independently
     # usable while a downstream recovery reviewer tests a forbidden snapshot
     # getter. The private _scan boundary checks the snapshot definition.
@@ -177,6 +204,7 @@ def _check_claim(value: object) -> None:
 
 
 def _path(value: object, *, create: bool) -> Path:
+    _require_original_atomic_carriers(snapshot=False)
     if type(value) is not type(Path()) or ".." in value.parts:
         raise AtomicPreactionRejected("unsafe intent ledger path")
     path = value.absolute()
@@ -207,6 +235,7 @@ def _path(value: object, *, create: bool) -> Path:
 
 
 def _schema(conn: sqlite3.Connection) -> None:
+    _require_original_atomic_carriers()
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise AtomicPreactionRejected("pre-action schema version mismatch")
     if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
@@ -220,6 +249,7 @@ def _schema(conn: sqlite3.Connection) -> None:
 
 
 def _digest(domain: bytes, row: tuple[object, ...]) -> str:
+    _require_original_atomic_carriers(snapshot=False)
     raw = json.dumps(row, ensure_ascii=True, separators=(",", ":")).encode("ascii")
     return hashlib.sha256(domain + raw).hexdigest()
 
