@@ -310,6 +310,26 @@ def _schema(conn: sqlite3.Connection) -> None:
 def _inspect(conn: sqlite3.Connection) -> OfflineContextReplayWitness:
     _require_original_witness_carrier()
     _schema(conn)
+    # Fail closed on malformed/off-budget persisted identifiers before Python
+    # materializes request-linkable private metadata. Counts and SQLite
+    # storage-class/width checks share the caller's existing read/write TX.
+    persisted_count = conn.execute(
+        "SELECT COUNT(*) FROM context_requests"
+    ).fetchone()[0]
+    if type(persisted_count) is not int or persisted_count > _MAX_ROWS:
+        raise OfflineContextReplayRejected("context replay persisted row budget exceeded")
+    malformed = conn.execute(
+        "SELECT 1 FROM context_requests WHERE "
+        "typeof(request_id)!='text' OR length(request_id)!=71 OR "
+        "typeof(owner_digest)!='text' OR length(owner_digest)!=64 OR "
+        "typeof(context_digest)!='text' OR length(context_digest)!=64 OR "
+        "typeof(binding_digest)!='text' OR length(binding_digest)!=64 OR "
+        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 LIMIT 1"
+    ).fetchone()
+    if malformed is not None:
+        raise OfflineContextReplayRejected(
+            "context replay persisted identity width or storage type changed"
+        )
     current = genesis_offline_context_replay_witness()
     for seq, request, owner, context, binding, chain in conn.execute(
         "SELECT seq,request_id,owner_digest,context_digest,"
