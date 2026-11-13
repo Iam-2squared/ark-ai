@@ -120,7 +120,7 @@ def _recovery_image(recovered: SyntheticPlanRecovery) -> tuple[object, ...]:
     running = recovered.ambiguous_running_steps
     if (
         type(statuses) is not tuple or len(statuses) > 24
-        or type(running) is not tuple
+        or type(running) is not tuple or len(running) > len(statuses)
         or any(
             type(item) is not tuple or len(item) != 3
             or not _valid_recovered_step_id(item[0])
