@@ -164,7 +164,12 @@ def _require_original_denials() -> None:
 
 
 def _sha(value: object) -> bool:
-    return type(value) is str and _SHA.fullmatch(value) is not None
+    return type(value) is str and len(value) == 64 and _SHA.fullmatch(value) is not None
+
+
+def _doc_id(value: object) -> bool:
+    """Bound document identifiers before evaluating their regular expression."""
+    return type(value) is str and len(value) == 20 and _DOC.fullmatch(value) is not None
 
 
 def _encode_text(value: object, maximum: int, *, empty_allowed: bool) -> bytes:
@@ -270,7 +275,7 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
             raise OfflineIndexRejected("invalid document carrier")
         doc_id, doc_owner, doc_scope, declared_text_sha, text = row
         if (
-            type(doc_id) is not str or _DOC.fullmatch(doc_id) is None
+            not _doc_id(doc_id)
             or doc_id in seen or doc_owner != owner or doc_scope != scope
             or not _sha(declared_text_sha)
         ):
@@ -295,7 +300,7 @@ def search_offline_text(query: OfflineIndexQuery) -> OfflineIndexResult:
         manifest.append((doc_id, declared_text_sha))
         check_epoch()
     if (
-        any(type(item) is not str or _DOC.fullmatch(item) is None for item in expected)
+        any(not _doc_id(item) for item in expected)
         or tuple(sorted(seen)) != tuple(expected)
     ):
         raise OfflineIndexRejected("complete ordered document membership mismatch")
