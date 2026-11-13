@@ -24,6 +24,22 @@ class PlannerEpochRecheckRejected(ValueError):
     """The detached Planner epoch is not safe to compare."""
 
 
+_MAX_RECOVERED_STEP_ID_BYTES = 256  # Local review bound; not a Planner v1 limit.
+
+
+def _valid_recovered_step_id(value: object) -> bool:
+    """Bound a detached ID before sorting, hashing, or journal callbacks."""
+    if type(value) is not str or not value.strip() or "\x00" in value:
+        return False
+    try:
+        return len(value.encode("utf-8", errors="strict")) <= _MAX_RECOVERED_STEP_ID_BYTES
+    except UnicodeError:
+        return False
+
+
+_ORIGINAL_STEP_CHECK = _valid_recovered_step_id
+
+
 @dataclass(frozen=True, slots=True)
 class PlannerEpochRecheck:
     plan_id: str
@@ -74,6 +90,9 @@ def _originals() -> None:
     if (
         _require_original_recovery_denials is not _ORIGINAL_DENIAL_PRECHECK
         or vars(SyntheticPlanTail).get("assert_shape") is not _ORIGINAL_TAIL_SHAPE
+        or _valid_recovered_step_id is not _ORIGINAL_STEP_CHECK
+        or type(_MAX_RECOVERED_STEP_ID_BYTES) is not int
+        or _MAX_RECOVERED_STEP_ID_BYTES != 256
     ):
         raise PlannerEpochRecheckRejected("Planner recheck reader epoch changed")
     _ORIGINAL_DENIAL_PRECHECK()
@@ -104,12 +123,12 @@ def _recovery_image(recovered: SyntheticPlanRecovery) -> tuple[object, ...]:
         or type(running) is not tuple
         or any(
             type(item) is not tuple or len(item) != 3
-            or type(item[0]) is not str
+            or not _valid_recovered_step_id(item[0])
             or type(item[1]) is not str
             or type(item[2]) is not int
             for item in statuses
         )
-        or any(type(name) is not str for name in running)
+        or any(not _valid_recovered_step_id(name) for name in running)
         # This is a detached caller-held image, not the journal's own graph.
         # An invalid state, duplicate step, unsorted row or bool revision must
         # never be classified as merely a benign stale Planner snapshot.
