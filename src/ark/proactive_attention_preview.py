@@ -188,8 +188,13 @@ def _assert_original_denials() -> None:
             )
         )
         or any(
-            (vars(kind).get("__init__"), vars(kind).get("__new__"))
-            != originals
+            any(
+                current is not original
+                for current, original in zip(
+                    (vars(kind).get("__init__"), vars(kind).get("__new__")),
+                    originals, strict=True,
+                )
+            )
             for kind, originals in zip(
                 (_POLICY_TYPE, _MARKER_TYPE),
                 _ORIGINAL_INPUT_CONSTRUCTORS, strict=True,
