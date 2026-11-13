@@ -109,3 +109,34 @@ def test_overlong_retained_digest_rejected_before_rebuilding(
                 allowed_scope_digests=(_SCOPE,), observed_at_ms=1000,
                 retained_local_digest="f" * count,
             )
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid"),
+    [
+        ("canonical_local_json", "f" * 65536),
+        ("canonical_local_json", "{} "),
+        ("canonical_local_json", "\u005cud800"),
+        ("canonical_local_json", "é" * 32769),
+        ("record_ids", ("rec_" + "g" * 32,)),
+        ("owner_digest", "G" * 64),
+        ("local_digest", "G" * 64),
+    ],
+)
+def test_malformed_retained_receipt_never_rebuilds_private_fixtures(
+    field: str, invalid: object, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipt = _build()
+    forged = replace(receipt, **{field: invalid})
+
+    def forbidden_private_rebuild(*args: object, **kwargs: object) -> None:
+        pytest.fail("malformed receipt reached private context fixtures")
+
+    with monkeypatch.context() as guard:
+        guard.setattr(preview, "build_offline_context_preview", forbidden_private_rebuild)
+        with pytest.raises(OfflineContextPreviewRejected):
+            verify_offline_context_preview(
+                forged, (_fixture(),), owner_digest=_OWNER,
+                allowed_scope_digests=(_SCOPE,), observed_at_ms=1000,
+                retained_local_digest=receipt.local_digest,
+            )
