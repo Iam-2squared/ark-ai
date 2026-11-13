@@ -108,7 +108,15 @@ def _protocol() -> None:
         )
     ):
         raise AtomicUnknownOutcomeRejected("unknown outcome review protocol changed")
-    _ORIGINAL_CARRIERS(snapshot=True)
+    # The lower-level ledger may reject a poisoned SQLite connector before
+    # this reviewer opens a transaction. Preserve the review API's own
+    # fail-closed error boundary rather than leaking its internal exception.
+    try:
+        _ORIGINAL_CARRIERS(snapshot=True)
+    except ledger_module.AtomicPreactionRejected as exc:
+        raise AtomicUnknownOutcomeRejected(
+            "unknown outcome review protocol changed"
+        ) from exc
 
 
 def review_atomic_unknown_outcome(
