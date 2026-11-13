@@ -11,8 +11,8 @@ import sqlite3
 import pytest
 
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
-from ark.memory.generation_fenced_cas import observe_memory_generation_for_cas
 from ark.memory import postcommit_uncertainty_review as triage
+from ark.memory.generation_fenced_cas import observe_memory_generation_for_cas
 
 
 def _case(tmp_path):
