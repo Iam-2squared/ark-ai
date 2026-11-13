@@ -1204,6 +1204,11 @@ def _record(row: sqlite3.Row) -> MemoryRecord:
     revision = stored_int("revision")
     if revision is None or revision < 1:
         raise MemorySchemaError("stored revision must be a positive integer")
+    # Preserve the v1 persisted-record error contract, and reject an oversized
+    # source BEFORE asking the now-bounded public deterministic ID helper to
+    # hash it. An invalid legacy/forged row is still a schema error.
+    if not source_id.strip() or len(source_id) > 512:
+        raise MemorySchemaError("stored source_id exceeds MemoryWrite bounds")
     try:
         scope = MemoryScope(owner_id, namespace)
         expected_id = deterministic_memory_id(scope, source_id)
@@ -1214,8 +1219,6 @@ def _record(row: sqlite3.Row) -> MemoryRecord:
     # SQLite can retain canonical rows written by another local process or
     # manually edited after startup. Apply the same v1 ingress budgets on
     # hydration; a correct hash alone does not make oversized data valid.
-    if not source_id.strip() or len(source_id) > 512:
-        raise MemorySchemaError("stored source_id exceeds MemoryWrite bounds")
     if not content.strip() or len(content) > 1_000_000:
         raise MemorySchemaError("stored content exceeds MemoryWrite bounds")
     if content_sha != hashlib.sha256(content.encode()).hexdigest():
