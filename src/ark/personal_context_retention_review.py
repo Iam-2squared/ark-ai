@@ -172,6 +172,24 @@ def _require_original_retention_contract() -> None:
         )
 
 
+def _item_carriers_original(
+    item: object, memory_id: str, revision: int, state: RetentionState,
+) -> bool:
+    """Check retained private inventory identity without invoking equality.
+
+    A frozen item can be reflectively edited between SQLite and revocation
+    reads. Its replaced slot may implement arbitrary __eq__/__ne__ methods.
+    A value-equivalent replacement is also a different diagnostic epoch.
+    """
+    _require_original_retention_contract()
+    return (
+        type(item) is _RETENTION_ITEM_TYPE
+        and item.memory_id is memory_id
+        and item.revision is revision
+        and item.state is state
+    )
+
+
 def review_synthetic_retention_inventory(
     memory: SQLiteMemoryStore,
     scope: MemoryScope,
@@ -271,8 +289,8 @@ def review_synthetic_retention_inventory(
                 if len(selected) != len(item_epoch) or any(
                     type(item) is not SyntheticRetentionItem
                     or item is not original
-                    or (item.memory_id, item.revision, item.state) != (
-                        identity, revision, state,
+                    or not _item_carriers_original(
+                        item, identity, revision, state,
                     )
                     for item, (original, identity, revision, state) in zip(
                         selected, item_epoch, strict=True,
