@@ -147,8 +147,10 @@ _ORIGINAL_ENVELOPE_HOOKS = tuple(
 # therefore remains independent of this opt-in identity preflight.
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
+_ORIGINAL_RE = re
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_RE_FULLMATCH = re.fullmatch
 
 
 def _require_original_digest_implementation() -> None:
@@ -157,6 +159,8 @@ def _require_original_digest_implementation() -> None:
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or re is not _ORIGINAL_RE
+        or re.fullmatch is not _ORIGINAL_RE_FULLMATCH
     ):
         raise ValueError("observation identity digest implementation changed")
 
@@ -184,8 +188,13 @@ def _require_original_identity_carrier() -> None:
 
 
 def _digest(value: object, name: str) -> None:
+    # Refuse a patched matcher before invoking it on a caller-supplied label.
+    # Exact width also rejects oversized text without running any regex.
+    if re is not _ORIGINAL_RE or re.fullmatch is not _ORIGINAL_RE_FULLMATCH:
+        raise ValueError("observation digest matcher changed")
     if (
         type(value) is not str
+        or len(value) != 64
         or re.fullmatch(r"[0-9a-f]{64}", value) is None
     ):
         raise ValueError(
