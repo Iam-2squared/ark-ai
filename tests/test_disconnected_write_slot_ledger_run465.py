@@ -269,8 +269,8 @@ def test_reflective_claim_mutation_during_commit_precheck_denied(tmp_path, monke
     assert db.inspect(retained=genesis_write_slot_witness()) == genesis_write_slot_witness()
 
 
-def _inject_after_actual_commit(monkeypatch, module, after_commit):
-    """Inject after SQLite COMMIT; never confuse this with pre-COMMIT drift."""
+def _inject_forbidden_commit_wrapper(monkeypatch, module, after_commit):
+    """Attempt an untrusted connector wrapper; current custody must deny it."""
     real_connect = module.sqlite3.connect
 
     class CommitWrapper:
@@ -293,51 +293,58 @@ def _inject_after_actual_commit(monkeypatch, module, after_commit):
     monkeypatch.setattr(module.sqlite3, "connect", connect)
 
 
-def test_postcommit_returned_receipt_mutation_is_denied_without_replay(tmp_path, monkeypatch):
+def test_disallowed_commit_wrapper_cannot_mutate_receipt(tmp_path, monkeypatch):
     from ark.agency import disconnected_write_slot_ledger as module
 
     db = ledger(tmp_path)
     retained = genesis_write_slot_witness()
-    original_receipt = module.WriteSlotReservationReceipt
     invoked = []
 
     def corrupt_receipt(*args, **kwargs):
         invoked.append((args, kwargs))
         raise AssertionError("replaced receipt constructor executed")
 
-    _inject_after_actual_commit(
-        monkeypatch, module,
-        lambda: monkeypatch.setattr(
-            module, "WriteSlotReservationReceipt", corrupt_receipt,
-        ),
-    )
-    with pytest.raises(WriteSlotLedgerRejected, match="constructor or authority changed"):
-        db.reserve_many((claim(1),), retained=retained)
+    with monkeypatch.context() as patch:
+        _inject_forbidden_commit_wrapper(
+            patch, module,
+            lambda: patch.setattr(
+                module, "WriteSlotReservationReceipt", corrupt_receipt,
+            ),
+        )
+        with pytest.raises(
+            WriteSlotLedgerRejected, match="constructor or authority changed",
+        ):
+            db.reserve_many((claim(1),), retained=retained)
     assert invoked == []
     with sqlite3.connect(tmp_path / "synthetic.db") as conn:
-        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
-    # The malicious symbol is still installed at this point; restore it
-    # before the separate retained-history/stale-witness diagnostic.
-    monkeypatch.setattr(module, "WriteSlotReservationReceipt", original_receipt)
-    with pytest.raises(WriteSlotLedgerRejected, match="stale"):
-        db.inspect(retained=retained)
+        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (0,)
+    assert db.inspect(retained=retained) == retained
+    # An unmodified disconnected reservation still succeeds, without dispatch.
+    receipt = db.reserve_many((claim(1),), retained=retained)
+    assert receipt.witness.count == 1
+    assert receipt.dispatch_authorized is False
 
 
-def test_postcommit_claim_reflection_is_denied_and_not_rolled_back(tmp_path, monkeypatch):
+def test_disallowed_commit_wrapper_cannot_reflect_claim(tmp_path, monkeypatch):
     from ark.agency import disconnected_write_slot_ledger as module
 
     db = ledger(tmp_path)
     retained = genesis_write_slot_witness()
     item = claim(1)
+    invoked = []
 
     def mutate_claim():
-        old_plan = item.plan_id
-        object.__setattr__(item, "plan_id", ("x" + old_plan)[1:])
+        invoked.append(True)
+        object.__setattr__(item, "plan_id", "plan_" + "f" * 64)
 
-    _inject_after_actual_commit(monkeypatch, module, mutate_claim)
-    with pytest.raises(WriteSlotLedgerRejected, match="carriers changed"):
-        db.reserve_many((item,), retained=retained)
+    with monkeypatch.context() as patch:
+        _inject_forbidden_commit_wrapper(patch, module, mutate_claim)
+        with pytest.raises(
+            WriteSlotLedgerRejected, match="constructor or authority changed",
+        ):
+            db.reserve_many((item,), retained=retained)
+    assert invoked == []
+    assert item.plan_id == "plan_" + f"{1:064x}"
     with sqlite3.connect(tmp_path / "synthetic.db") as conn:
-        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (1,)
-    with pytest.raises(WriteSlotLedgerRejected, match="stale"):
-        db.inspect(retained=retained)
+        assert conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone() == (0,)
+    assert db.inspect(retained=retained) == retained
