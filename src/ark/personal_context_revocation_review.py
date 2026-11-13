@@ -56,6 +56,22 @@ def _scope_digest(scope: MemoryScope) -> str:
 def _validate(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticContextRevocationRejected("revocation schema version changed")
+    # A schema and row preflight executes inside the caller's active SQLite
+    # transaction. Never hydrate unbounded private DDL or scope digests into
+    # Python before confirming their stored sizes and storage classes.
+    schema_budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(schema_budget) is not tuple or len(schema_budget) != 2
+        or type(schema_budget[0]) is not int or schema_budget[0] != 2
+        or type(schema_budget[1]) is not int
+        or not 0 <= schema_budget[1] <= 4_096
+    ):
+        raise SyntheticContextRevocationRejected(
+            "revocation schema preflight budget exceeded"
+        )
     expected = sqlite3.connect(":memory:")
     try:
         expected.execute(_TABLE)
@@ -66,6 +82,25 @@ def _validate(conn: sqlite3.Connection) -> None:
         expected.close()
     if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
         raise SyntheticContextRevocationRejected("revocation SQLite quick_check failed")
+    row_budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(CASE WHEN "
+        "typeof(scope_digest)='text' "
+        "AND length(CAST(scope_digest AS BLOB))=64 "
+        "AND typeof(revoked_at_ms)='integer' "
+        "AND revoked_at_ms BETWEEN 0 AND ? "
+        "THEN 0 ELSE 1 END),0) "
+        "FROM synthetic_context_revocations",
+        (_MAX,),
+    ).fetchone()
+    if (
+        type(row_budget) is not tuple or len(row_budget) != 2
+        or type(row_budget[0]) is not int
+        or not 0 <= row_budget[0] <= _MAX_REVOCATION_ROWS
+        or type(row_budget[1]) is not int or row_budget[1] != 0
+    ):
+        raise SyntheticContextRevocationRejected(
+            "revocation row preflight budget or type failed"
+        )
     rows = conn.execute(
         "SELECT scope_digest,revoked_at_ms FROM synthetic_context_revocations"
     )
