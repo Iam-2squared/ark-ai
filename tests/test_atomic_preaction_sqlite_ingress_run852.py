@@ -65,7 +65,9 @@ def test_overlong_preaction_path_refused_before_any_stat(tmp_path, relative):
     )
     with pytest.raises(atomic.AtomicPreactionRejected, match="unsafe intent ledger path"):
         atomic.DisconnectedAtomicPreactionLedger.create(path)
-    assert not path.exists()
+    # A negative existence check on an overlong component can itself raise
+    # ENAMETOOLONG on POSIX. Check the actual fixture directory instead.
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_valid_preaction_witness_remains_non_authorizing(tmp_path):
