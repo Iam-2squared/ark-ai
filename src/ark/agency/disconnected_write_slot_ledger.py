@@ -245,14 +245,32 @@ def _check_path(value: object, *, create: bool) -> Path:
             info = ancestor.lstat()
             if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
                 raise WriteSlotLedgerRejected("unsafe SQLite ancestor")
+        main_exists = False
         try:
             info = value.lstat()
         except FileNotFoundError:
             if not create:
                 raise WriteSlotLedgerRejected("missing durable reservation ledger") from None
         else:
+            main_exists = True
             if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise WriteSlotLedgerRejected("existing or aliased SQLite path")
+        # A regular main DB does not authenticate the WAL, SHM or rollback
+        # journal. Refuse orphaned and aliased sidecar names before SQLite
+        # can follow them. This lexical preflight is NOT an atomic file
+        # custody or external-write authorization guarantee.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = value.with_name(value.name + suffix)
+            try:
+                sidecar_info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if (
+                create or not main_exists
+                or not stat.S_ISREG(sidecar_info.st_mode)
+                or sidecar_info.st_nlink != 1
+            ):
+                raise WriteSlotLedgerRejected("unsafe or orphaned SQLite sidecar")
     except OSError as exc:
         raise WriteSlotLedgerRejected("SQLite fixture path unavailable") from exc
     return value
