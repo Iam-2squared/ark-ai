@@ -15,10 +15,10 @@ from ark.agency.disconnected_atomic_preaction_ledger import (
 )
 
 
-def _attempt(ledger):
+def _attempt(ledger, retained):
     return review.review_atomic_unknown_outcome(
         ledger,
-        genesis_atomic_preaction_witness(),
+        retained,
         AtomicIntentClaim("occ_" + "a" * 64, "bound_" + "b" * 64, "c" * 64),
     )
 
@@ -30,6 +30,7 @@ def test_rebound_history_or_outcome_protocol_refused_before_sqlite(
     tmp_path, monkeypatch, rebound,
 ):
     ledger = DisconnectedAtomicPreactionLedger.create(tmp_path / "intent.sqlite")
+    retained = genesis_atomic_preaction_witness()
     with monkeypatch.context() as patch:
         if rebound == "review_sqlite":
             patch.setattr(review, "sqlite3", object())
@@ -40,12 +41,13 @@ def test_rebound_history_or_outcome_protocol_refused_before_sqlite(
         with pytest.raises(
             review.AtomicUnknownOutcomeRejected, match="protocol changed",
         ):
-            _attempt(ledger)
+            _attempt(ledger, retained)
 
 
 def test_unmodified_protocol_remains_non_authorizing(tmp_path):
     ledger = DisconnectedAtomicPreactionLedger.create(tmp_path / "intent.sqlite")
-    result = _attempt(ledger)
+    retained = genesis_atomic_preaction_witness()
+    result = _attempt(ledger, retained)
     assert result.local_state == "UNCHANGED"
     assert result.dispatch_authorized is False
     assert result.automatic_replay_authorized is False
