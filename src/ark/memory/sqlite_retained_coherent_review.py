@@ -26,6 +26,14 @@ from .sqlite_store import SQLITE_INT_MAX, SQLiteMemoryStore, _record, _validate_
 _MAX_ROWS = 10_000
 _MAX_EVENTS = 40_000
 _RESULT_DOMAIN = b"ARK-memory-retained-coherent-snapshot-v1\0"
+# Prevent replacement of digest/serialization dependencies while traversing
+# an untrusted local WAL snapshot. This is process-local callback custody,
+# never authenticated history or permission to disclose.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_RESULT_DOMAIN = _RESULT_DOMAIN
 
 
 class MemoryCoherentHistoryRejected(MemorySchemaError):
@@ -96,6 +104,16 @@ _ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _RESULT_HOOKS
 
 
 def _require_original_result_carrier() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _RESULT_DOMAIN is not _ORIGINAL_RESULT_DOMAIN
+    ):
+        raise MemoryCoherentHistoryRejected(
+            "coherent Memory digest implementation or domain changed"
+        )
     if (
         RetainedCoherentMemoryReview is not _RESULT
         or any(
