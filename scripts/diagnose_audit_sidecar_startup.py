@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import sqlite3
+import stat
 import subprocess
 import sys
 import tempfile
@@ -142,7 +143,33 @@ def _parse_child_reply(value: object) -> dict[str, object]:
     return data
 
 
-def _probe(path: Path, startup_mode: str, *, wal_keeper: bool = False) -> list[dict[str, object]]:
+def _audit_sidecar_states(path: Path) -> dict[str, str]:
+    """Passive disposable path metadata; never follow or adopt a peer file."""
+    states: dict[str, str] = {}
+    for suffix in ("-wal", "-shm", "-journal"):
+        try:
+            metadata = path.with_name(path.name + suffix).lstat()
+        except FileNotFoundError:
+            state = "absent"
+        except OSError:
+            state = "unavailable"
+        else:
+            if not stat.S_ISREG(metadata.st_mode):
+                state = "nonregular"
+            elif metadata.st_nlink == 0:
+                state = "unlinked"
+            elif metadata.st_nlink == 1:
+                state = "single"
+            else:
+                state = "multilink"
+        states[suffix] = state
+    return states
+
+
+def _probe(
+    path: Path, startup_mode: str, *, wal_keeper: bool = False,
+    lifecycle: list[tuple[str, dict[str, str]]] | None = None,
+) -> list[dict[str, object]]:
     from ark.agency.audit import SQLiteActionAudit
 
     SQLiteActionAudit(path, clock_ms=lambda: 1000)
@@ -163,12 +190,17 @@ def _probe(path: Path, startup_mode: str, *, wal_keeper: bool = False) -> list[d
             time.sleep(0.01)
         return False
 
+    def capture(stage: str) -> None:
+        if lifecycle is not None:
+            lifecycle.append((stage, _audit_sidecar_states(path)))
+
     try:
         if wal_keeper:
             keeper = sqlite3.connect(path)
             mode = keeper.execute("PRAGMA journal_mode").fetchone()
             if mode is None or mode[0].lower() != "wal":
                 raise RuntimeError("disposable WAL keeper unavailable")
+        capture("prepared")
         for index in range(2):
             children.append(subprocess.Popen(
                 [sys.executable, "-c", _CHILD, str(path), str(gate),
@@ -179,6 +211,7 @@ def _probe(path: Path, startup_mode: str, *, wal_keeper: bool = False) -> list[d
                 break
         if startup_mode == "concurrent" and len(children) == 2:
             await_ready(range(2))
+        capture("ready")
         gate.touch()
         results: list[dict[str, object]] = []
         for index, child in enumerate(children):
@@ -196,6 +229,7 @@ def _probe(path: Path, startup_mode: str, *, wal_keeper: bool = False) -> list[d
                 child.kill()
                 child.communicate()
                 results.append({"status": "TIMEOUT_OR_INVALID_CHILD_OUTPUT"})
+            capture(f"child-exit-{index}")
         return results
     finally:
         gate.touch()
@@ -205,7 +239,7 @@ def _probe(path: Path, startup_mode: str, *, wal_keeper: bool = False) -> list[d
                 child.communicate()
         if keeper is not None:
             keeper.close()
-
+        capture("closed")
 
 
 def _verify_disposable_audit(path: Path) -> bool:
@@ -273,18 +307,28 @@ def main(argv: list[str] | None = None) -> int:
         default="sequential",
     )
     parser.add_argument("--wal-keeper", action="store_true")
+    parser.add_argument(
+        "--lifecycle-snapshots", action="store_true",
+        help="include bounded disposable sidecar states at process boundaries",
+    )
     args = parser.parse_args(argv)
     counts: Counter[str] = Counter()
+    lifecycle_counts: Counter[tuple[str, str, str]] = Counter()
     details: list[dict[str, object]] = []
     anomalous = 0
     with tempfile.TemporaryDirectory(prefix="ark-disposable-audit-") as root:
         for index in range(args.iterations):
             case = Path(root) / f"case-{index}"
             case.mkdir()
+            lifecycle: list[tuple[str, dict[str, str]]] = []
             outcomes = _probe(
                 case / "audit.sqlite", args.startup_mode,
                 wal_keeper=args.wal_keeper,
+                lifecycle=lifecycle if args.lifecycle_snapshots else None,
             )
+            for stage, states in lifecycle:
+                for suffix, state in states.items():
+                    lifecycle_counts[(stage, suffix, state)] += 1
             for item in outcomes:
                 counts[str(item["status"])] += 1
                 if item["status"] == "SIDECAR_REJECTED":
@@ -301,6 +345,10 @@ def main(argv: list[str] | None = None) -> int:
         "status_counts": dict(sorted(counts.items())),
         "anomalous_iterations": anomalous,
         "sidecar_metadata_only": details[:30],
+        "lifecycle_sidecar_counts": [
+            {"stage": stage, "suffix": suffix, "state": state, "count": count}
+            for (stage, suffix, state), count in sorted(lifecycle_counts.items())
+        ],
         "private_paths_exported": False, "safety_checks_relaxed": False,
         "real_actions_executed": False,
     }, sort_keys=True, ensure_ascii=True))
