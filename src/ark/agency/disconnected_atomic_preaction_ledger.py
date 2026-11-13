@@ -23,6 +23,8 @@ _ID = re.compile(r"occ_[0-9a-f]{64}\Z")
 _BOUND = re.compile(r"bound_[0-9a-f]{64}\Z")
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _MAX = 128
+# Pin the three identity grammars and reject overlong labels before regex.
+_ORIGINAL_PATTERNS = (_ID, _BOUND, _SHA)
 _INTENTS = (
     "CREATE TABLE intents ("
     "seq INTEGER PRIMARY KEY, occurrence_id TEXT NOT NULL UNIQUE, "
@@ -129,7 +131,22 @@ def genesis_atomic_preaction_witness() -> AtomicPreactionWitness:
 
 
 def _hex_id(value: object, pattern: re.Pattern[str]) -> bool:
-    return type(value) is str and pattern.fullmatch(value) is not None
+    if any(
+        current is not original
+        for current, original in zip((_ID, _BOUND, _SHA), _ORIGINAL_PATTERNS, strict=True)
+    ):
+        raise AtomicPreactionRejected("atomic identifier protocol changed")
+    if type(value) is not str:
+        return False
+    if pattern is _ID:
+        expected = 68
+    elif pattern is _BOUND:
+        expected = 70
+    elif pattern is _SHA:
+        expected = 64
+    else:
+        return False
+    return len(value) == expected and pattern.fullmatch(value) is not None
 
 
 def _check_witness(value: object) -> None:
@@ -224,6 +241,26 @@ def _audit(seq: int, claim: AtomicIntentClaim, chain: str) -> str:
 def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
     _require_original_atomic_carriers()
     _schema(conn)
+    # Bound the relational set and exact text widths in SQLite before Python
+    # materializes any malformed persisted row contents. This also fails
+    # closed on BLOBs or NULLs rather than coercing identity fields.
+    count = conn.execute("SELECT COUNT(*) FROM intents").fetchone()[0]
+    if type(count) is not int or not 0 <= count <= _MAX:
+        raise AtomicPreactionRejected("oversized or malformed pre-action intent set")
+    bad_intent = conn.execute(
+        "SELECT 1 FROM intents WHERE "
+        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=68 OR "
+        "typeof(bound_action_id)!='text' OR length(bound_action_id)!=70 OR "
+        "typeof(request_sha256)!='text' OR length(request_sha256)!=64 OR "
+        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 LIMIT 1"
+    ).fetchone()
+    bad_audit = conn.execute(
+        "SELECT 1 FROM preaction_audit WHERE "
+        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=68 OR "
+        "typeof(audit_sha256)!='text' OR length(audit_sha256)!=64 LIMIT 1"
+    ).fetchone()
+    if bad_intent is not None or bad_audit is not None:
+        raise AtomicPreactionRejected("pre-action persisted identity width or type changed")
     rows = conn.execute(
         "SELECT i.seq,i.occurrence_id,i.bound_action_id,i.request_sha256,"
         "i.chain_sha256,a.occurrence_id,a.audit_sha256 "
