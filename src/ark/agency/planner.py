@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from dataclasses import replace
 from types import MappingProxyType
 
-from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState
+from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState, ToolCall
 
 
 def _plan_digest(prefix: str, payload: object) -> str:
@@ -56,6 +56,23 @@ class PlanGraph:
             raise TypeError("steps must be a tuple of exact PlanStep values")
         if any(type(step.depends_on) is not tuple for step in steps):
             raise PlanConflictError("plan dependency carrier must be a tuple")
+        # Frozen PlanStep fields can be reflectively replaced after their
+        # constructor validates them. Check exact primitive identities before
+        # constructing a dict/set (which could invoke hostile __hash__/__eq__)
+        # or reading the ToolCall to build a retained plan epoch.
+        for step in steps:
+            if (
+                type(step.step_id) is not str
+                or not step.step_id.strip()
+                or type(step.call) is not ToolCall
+                or any(
+                    type(dep) is not str or not dep.strip()
+                    for dep in step.depends_on
+                )
+            ):
+                raise PlanConflictError("plan step carrier changed before admission")
+            if len(set(step.depends_on)) != len(step.depends_on):
+                raise PlanConflictError("plan dependency carrier has duplicate IDs")
         if sum(len(step.depends_on) for step in steps) > _MAX_PLAN_GRAPH_EDGES:
             raise ValueError("plan dependency budget exceeded")
         step_map = {step.step_id: step for step in steps}
@@ -106,10 +123,20 @@ class PlanGraph:
             or type(self._status_epoch) is not tuple
             or len(self._status) != len(self.steps)
             or len(self._status_epoch) != len(self.steps)
+            # Dict/set reconstruction hashes keys. Reject substituted keys
+            # before they can execute custom hash/equality callbacks.
+            or any(type(name) is not str for name in self._status)
+            or any(type(name) is not str for name in self.steps)
+            or any(
+                type(entry) is not tuple or len(entry) != 4
+                for entry in self._status_epoch
+            )
             or set(self._status) != set(self.steps)
         ):
             raise PlanConflictError("plan status mapping changed")
         for name, carrier, state, revision in self._status_epoch:
+            if type(name) is not str:
+                raise PlanConflictError("plan status epoch identifier changed")
             current = self._status.get(name)
             if current is not None and (
                 type(current) is not PlanStepStatus or current.step_id != name
@@ -136,6 +163,10 @@ class PlanGraph:
             or self.steps is not self._step_mapping_epoch
             or type(self._step_epoch) is not tuple
             or len(self._step_epoch) != len(self.steps)
+            or any(
+                type(entry) is not tuple or len(entry) != 10
+                for entry in self._step_epoch
+            )
         ):
             raise PlanConflictError("plan mapping changed after construction")
         for (
@@ -143,7 +174,8 @@ class PlanGraph:
             tool, capability, scope, arguments, request_id,
         ) in self._step_epoch:
             if (
-                type(step) is not PlanStep
+                type(step_id) is not str
+                or type(step) is not PlanStep
                 or type(step.step_id) is not str
                 or step.step_id != step_id
                 or step.step_id is not original_step_id
