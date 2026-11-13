@@ -99,7 +99,7 @@ def _validate(conn: sqlite3.Connection) -> None:
         or type(row_budget[1]) is not int or row_budget[1] != 0
     ):
         raise SyntheticContextRevocationRejected(
-            "revocation row preflight budget or type failed"
+            "revocation row preflight row integrity budget or type failed"
         )
     rows = conn.execute(
         "SELECT scope_digest,revoked_at_ms FROM synthetic_context_revocations"
