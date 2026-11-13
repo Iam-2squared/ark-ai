@@ -6,7 +6,7 @@ Status at report creation: **implementation and regression fixtures saved on Dra
 
 Initial inspected PR #8 HEAD: `c280d2a66036da529cfb07ea482c93a33cd969bb` (Run843 checkpoint). Prior exact-HEAD [CI #43412325605](https://github.com/Iam-2squared/ark-ai/actions/runs/43412325605) completed **GREEN 6/6** for Windows/Ubuntu × Python 3.11–3.13. Draft PR #5 remained protected/unmerged and paused UI Draft PR #9 was not modified.
 
-This invocation saved **three independent non-UI source + fixture packages**. The reported cases are authored parametrizations, **not** verified test passes at this document's creation. All test stores are disposable fixture databases; no physical PC, live ToolBackend, notification, media source, or paid service is accessed by the code paths introduced here.
+This invocation saved **four independent non-UI source + fixture packages**. The reported cases are authored parametrizations, **not** verified test passes at this document's creation. All test stores are disposable fixture databases; no physical PC, live ToolBackend, notification, media source, or paid service is accessed by the code paths introduced here.
 
 ### 1. Proactive expiry quarantine storage: path aliases and bounded SQL history
 
@@ -30,9 +30,25 @@ This invocation saved **three independent non-UI source + fixture packages**. Th
 - After checking existing schema in the same read transaction, count committed intents (maximum 128); use SQLite `typeof` and `length` predicates to reject BLOB, NULL or oversized identity/hash fields in both `intents` and `preaction_audit` **before** loading those rows into Python. Preserve the existing contiguous event chain/audit digest verification, retention witness equality/CAS, and atomic two-table write.
 - The ledger is **inert and disconnected**; it has no ToolBackend execution method. A successfully committed local pre-action audit is neither durable approval provenance nor evidence of a real external effect. Unknown WRITE outcomes remain quarantined and never automatically replayed.
 
+### 4. Privacy-safe Personal Context detached preview/replay ingress
+
+- Source [`cfa285b1`](https://github.com/Iam-2squared/ark-ai/commit/cfa285b1680068d9fb01d8ff726bf016907e70e1); 15 parameterized tests [`d3a67d6e`](https://github.com/Iam-2squared/ark-ai/commit/d3a67d6efd150248cf97264481ee2236c64569a9).
+- Require exact 64-character lowercase digest widths before regex for detached owner and allowed scopes, and private fixture content hashes; require exact 36-character `rec_` identity before regex.
+- Reject an overlong retained report digest, owner label, record-ID tuple, or serialized private JSON **before** rebuilding its expected output from private fixtures. The original digest/scope equality and all four False-only authority descriptors are unchanged.
+- Valid synthetic local previews and proof-of-replay remain **not** consent, external-export permission, live Memory access, or trusted time.
+
+### CI-triggered test compatibility correction (Memory, without weakening checks)
+
+- [#43420404165](https://github.com/Iam-2squared/ark-ai/actions/runs/43420404165) and [#43420615381](https://github.com/Iam-2squared/ark-ai/actions/runs/43420615381) surfaced a **real** incompatibility: the older corrupt-persisted-row fixture used the now-bounded public `deterministic_memory_id` helper to synthesize an intentionally oversized source ID. That helper now correctly refuses the invalid direct input before the test can create its deliberately malformed SQLite row.
+- Minimal source repair [`b3569fed`](https://github.com/Iam-2squared/ark-ai/commit/b3569fed220e38d8b7217380c02d83744f0df1a6) preserves the original typed `MemorySchemaError` / `MemoryWrite bounds` diagnostic by rejecting an oversized *stored* source before calling the public helper during hydration.
+- Existing test-only fixture correction [`4dbb5597`](https://github.com/Iam-2squared/ark-ai/commit/4dbb559785abe557b90b9bda1c3ee99ff62d44af) builds the **forbidden** hash-consistent SQLite row offline with canonical JSON and SHA, bypassing the valid public helper strictly for tamper testing. No production caller can use this as an allowed Memory write.
+- The initial new test file also erroneously used a Python doubled backslash in its invalid-surrogate literals; [`66e6c69b`](https://github.com/Iam-2squared/ark-ai/commit/66e6c69b6b6647eaaab0268795b9015166bdbce9) corrected the synthetic test fixtures. Later [#43420615381](https://github.com/Iam-2squared/ark-ai/actions/runs/43420615381) Ubuntu tests show the surrogate cases no longer failing and isolate the remaining older fixture issue. These are not new privacy permissions or an API weakening.
+
+**Authoring total: 59 new parameterized cases across four packages, plus one corrected existing tamper fixture.** These are authored counts, NOT exact-final-HEAD verified passes. The later corrections and this report have automatic CI pending; do not promote an earlier GREEN to their HEAD.
+
 ## Evidence and limitations
 
-At this report creation time the new PR branch had ordinary automatic CI for new source and test commits: [#43420082795](https://github.com/Iam-2squared/ark-ai/actions/runs/43420082795), [#43420231231](https://github.com/Iam-2squared/ark-ai/actions/runs/43420231231), [#43420404165](https://github.com/Iam-2squared/ark-ai/actions/runs/43420404165), [#43420513668](https://github.com/Iam-2squared/ark-ai/actions/runs/43420513668), [#43420615381](https://github.com/Iam-2squared/ark-ai/actions/runs/43420615381), [#43420834111](https://github.com/Iam-2squared/ark-ai/actions/runs/43420834111), [#43420959518](https://github.com/Iam-2squared/ark-ai/actions/runs/43420959518); all were pending/in progress on last observation. **No latest-head 6/6 GREEN is claimed.** No local complete Ruff/pytest/GGUF run was made.
+At initial report creation the new PR branch had ordinary automatic CI for new source and test commits: [#43420082795](https://github.com/Iam-2squared/ark-ai/actions/runs/43420082795), [#43420231231](https://github.com/Iam-2squared/ark-ai/actions/runs/43420231231), [#43420404165](https://github.com/Iam-2squared/ark-ai/actions/runs/43420404165), [#43420513668](https://github.com/Iam-2squared/ark-ai/actions/runs/43420513668), [#43420615381](https://github.com/Iam-2squared/ark-ai/actions/runs/43420615381), [#43420834111](https://github.com/Iam-2squared/ark-ai/actions/runs/43420834111), [#43420959518](https://github.com/Iam-2squared/ark-ai/actions/runs/43420959518); all were pending/in progress on last observation. **No latest-head 6/6 GREEN is claimed.** No local complete Ruff/pytest/GGUF run was made.
 
 Relevant independent controls: `docs/DURABLE_STATE_INTEGRITY_CONTRACT.md`, `docs/AGENCY_EXECUTION_CONTRACT.md`, and `docs/JARVIS_EXECUTION_SAFETY_INTEGRATION_GATE.md`. This work does not amend them or frozen V1/V2/Local UI/Launcher evidence.
 
