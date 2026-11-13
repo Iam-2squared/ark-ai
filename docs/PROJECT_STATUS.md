@@ -1,3 +1,45 @@
+# LATEST — ARK AI Run853 non-UI fail-closed CI reconciliation
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T03:53:51+09:00** (observed reporting-runtime clock only; **NOT** trusted consent, authorization, audit or action time). **Overall ARK/JARVIS: NOT_PASSED.** Disconnected/local-first, strictly free-only and reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), rechecked Draft/open/unmerged. **Initial work-basis HEAD:** `631cf28b0acfbb28cc32b6054e4758345d1baafb` (Run852 latest). **Latest repair source+test HEAD:** `c6079392e76a40da3f69a5d5c248bb53dfb3ea48`. **Technical-report/checkpoint-write-basis HEAD:** `a46c3c2c4514841c58ae95b5e9593cd615abf0bf` (branch+PR exact agreement immediately before Contents API write). **Previous PROJECT_STATUS blob:** `b133f9795d271f24e6301dfc4297dfaabaf6c74f`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**, as the commit cannot contain its own hash; verify returned commit and subsequent branch/PR head. At last observation, report-head CI [#43486911214](https://github.com/Iam-2squared/ark-ai/actions/runs/43486911214) was **QUEUED**.
+
+## NEW — fail-closed repair / regression reconciliation
+
+The prior exact HEAD `631cf28b` [CI #43478278440](https://github.com/Iam-2squared/ark-ai/actions/runs/43478278440) completed **FAIL 6/6**, not green. Ubuntu 3.12 job `132067815415` had 11 FAIL / 15,175 PASS / 1 SKIP; Windows 3.12 job `132067815738` had 9 FAIL / 15,088 PASS / 90 SKIP. Existing tests patched global `sqlite3.connect`, but Run852's stricter constructor/digest custody correctly denied such substitutions **before** the synthetic callback. Two overlong-path tests also erroneously called `Path.exists()` on 4100-character names and raised OS `ENAMETOOLONG`.
+
+1. **Atomic UNKNOWN reviewer error boundary:** translated lower-level SQLite connector custody denial into a reviewer-level `AtomicUnknownOutcomeRejected` without weakening source refusal. Changed earlier tests to precompute retained genesis witnesses before attempted module/connector tampering, demand zero interceptor execution, and preserve manual-only quarantine. Changes `38096220`, `59788d98`, `81e2f0aa`, `c6079392`.
+2. **Proactive and WRITE restart behavior:** replaced now-disallowed connector monkeypatch observation with unchanged durable SQLite dumps, actual readers under a RESERVED writer, and separate fail-closed zero-callback poisoned-connector regressions. Changes `a11f4551`, `56630957`. No authority to notify or dispatch granted.
+3. **WRITE-slot post-COMMIT interceptor:** tests now assert a substituted connector/commit wrapper is rejected **before any reservation** and cannot mutate a claim or receipt; a restored healthy fixture still supports only inert reservation. Older synthetic late connector injection is no longer reachable; this does **not** prove post-COMMIT effect recovery or exactly-once action. Change `45d6c407`.
+4. **Overlong path test correction:** avoid a second unsafe filesystem existence probe and check the disposable fixture directory remains empty; production path limits unchanged. Change `2a77e31e`.
+5. [Run853 technical report](https://github.com/Iam-2squared/ark-ai/blob/a46c3c2c4514841c58ae95b5e9593cd615abf0bf/docs/JARVIS_RUN853_NON_UI_CI_REPAIR_AND_RESTART_INVARIANTS.md) documents observed failure signatures, exact repair scope, lost interception visibility, and remaining safety gates. **These are changed/added regression assertions, NOT verified PASS counts.** No local full Ruff/pytest or physical-PC GGUF was run.
+
+## CI — latest observed evidence (different SHA != current HEAD)
+
+- [CI #43486911214](https://github.com/Iam-2squared/ark-ai/actions/runs/43486911214) at `a46c3c2c`: **QUEUED** (last observed; not proof for other HEADs).
+- [CI #43486566990](https://github.com/Iam-2squared/ark-ai/actions/runs/43486566990) at `81e2f0aa`: **QUEUED** (last observed; not proof for other HEADs).
+- [CI #43486469035](https://github.com/Iam-2squared/ark-ai/actions/runs/43486469035) at `2a77e31e`: **QUEUED** (last observed; not proof for other HEADs).
+- [CI #43486383243](https://github.com/Iam-2squared/ark-ai/actions/runs/43486383243) at `45d6c407`: **QUEUED** (last observed; not proof for other HEADs).
+- [CI #43486301287](https://github.com/Iam-2squared/ark-ai/actions/runs/43486301287) at `56630957`: **IN_PROGRESS** (last observed; not proof for other HEADs).
+- [CI #43486258382](https://github.com/Iam-2squared/ark-ai/actions/runs/43486258382) at `a11f4551`: **IN_PROGRESS** (last observed; not proof for other HEADs).
+- [CI #43486126122](https://github.com/Iam-2squared/ark-ai/actions/runs/43486126122) at `59788d98`: **IN_PROGRESS** (last observed; not proof for other HEADs).
+- [CI #43486065812](https://github.com/Iam-2squared/ark-ai/actions/runs/43486065812) at `38096220`: **IN_PROGRESS** (last observed; not proof for other HEADs).
+- [CI #43478278440](https://github.com/Iam-2squared/ark-ai/actions/runs/43478278440) at `631cf28b`: **FAILURE** (last observed; not proof for other HEADs).
+
+**Latest repair+report HEAD is not six-job GREEN.** Automatic CI has been triggered by normal GitHub writes; no equivalent manual workflow rerun. Do not promote old-head GREEN or partial jobs to current correctness evidence.
+
+## Frozen contracts, blockers, prioritized Next plan / 今後の方針
+
+V1/V2/Local UI/Launcher frozen source/contracts/evidence unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains protected Draft/unmerged and [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched Draft/unmerged. No UI work, external compute, paid or potentially billable APIs/services, model Candidate adapter/weights/training/promotion, protected evaluation, physical PC action, credentials/new connection, real backend dispatch, human approval fabrication, destructive work or main merge. SQLite lexical custody is best-effort; WAL/SHM last-close and pathname-swap races remain unresolved. `PermissionGate` consumption remains process-local, so restart-safe exactly-once authorization/effect remains **NOT PASSED**; COMMIT-UNKNOWN requires manual review.
+
+1. Check exact newest HEAD's CI × six Python/OS jobs when available. If any fail, inspect specific stack trace, minimally repair without loosening guards; overlap unrelated non-UI work instead of redundant polling/reruns.
+2. Continue disposable Memory/ActionAudit WAL/SHM held-descriptor and last-close/link-count race research while preserving no-follow/single-link rejection.
+3. Strengthen coherent Memory row/event/highwater and manual COMMIT-UNKNOWN recovery plus Planner durable UNKNOWN/terminal quarantine with CAS restart isolation.
+4. Only after lower-level exact-head GREEN, integrate immutable ToolRegistry, exact-type PermissionGate, persistent occurrence/replay/audit-before-action with **disconnected Mock**; no real effects.
+5. Advance privacy-safe Personal Context/proactive/observation and V3 free-only approval/path/identity/reproducibility guards independently; versions are roadmap/evidence labels, never automatic PASS.
+
+---
+
 # LATEST — ARK AI Run852 disconnected SQLite ingress and persisted-row preflight
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T02:58:54.702+09:00** (observed reporting-runtime clock only, **NOT** trusted consent, audit, action or approval time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, disconnected/reversible, **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
