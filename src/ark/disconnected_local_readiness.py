@@ -95,8 +95,44 @@ _REPORT_FIELDS = (
 _ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT_TYPE)[n] for n in _REPORT_FIELDS)
 _ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
 
+# These frozen receipt slots are read before any schema/registry callback.
+# A substituted field getter must never observe caller-owned metadata while
+# reporting a harmless unchanged readiness result.
+_SCHEMA_CARRIER_NAMES = (
+    "schema_sha256", "object_count", "user_version", "schema_version",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_PREFLIGHT_CARRIER_NAMES = (
+    "topology_digest", "status_digest", "registry_revision",
+    "grant_fingerprint", "ready_step_ids", "ready_bound_ids", "fingerprint",
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_SCHEMA_CARRIERS = tuple(
+    vars(_SCHEMA_TYPE).get(name) for name in _SCHEMA_CARRIER_NAMES
+)
+_ORIGINAL_PREFLIGHT_CARRIERS = tuple(
+    vars(_PREFLIGHT_TYPE).get(name) for name in _PREFLIGHT_CARRIER_NAMES
+)
+
 
 def _require_original_denials() -> None:
+    if (
+        any(
+            vars(_SCHEMA_TYPE).get(name) is not pinned
+            for name, pinned in zip(
+                _SCHEMA_CARRIER_NAMES, _ORIGINAL_SCHEMA_CARRIERS, strict=True,
+            )
+        )
+        or any(
+            vars(_PREFLIGHT_TYPE).get(name) is not pinned
+            for name, pinned in zip(
+                _PREFLIGHT_CARRIER_NAMES, _ORIGINAL_PREFLIGHT_CARRIERS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup receipt field or lookup carrier changed"
+        )
     # The startup review may handle private fixture topology/registry identity.
     # Never send those values into a substituted digest/JSON callback.
     if (
