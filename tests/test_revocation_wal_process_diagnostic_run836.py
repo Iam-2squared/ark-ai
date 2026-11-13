@@ -6,6 +6,7 @@ consent or proof of external deletion; no rejected path is retried.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sqlite3
 from contextlib import closing
@@ -126,5 +127,5 @@ def test_cli_reports_ambiguous_sidecar_without_replay_or_path(
 
 @pytest.mark.parametrize("arg", ("0", "13", "-1", "1.5", "bad"))
 def test_iteration_bounds(arg: str) -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(argparse.ArgumentTypeError):
         _DIAG._iterations(arg)
