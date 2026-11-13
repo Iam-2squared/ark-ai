@@ -70,7 +70,7 @@ def derive_registered_atomic_intent(
     if (
         type(registry) is not ToolRegistry
         or type(call) is not ToolCall
-        or type(occurrence_id) is not str
+        or type(occurrence_id) is not str or len(occurrence_id) != 68
         or _OCC.fullmatch(occurrence_id) is None
         or vars(ToolRegistry).get("bind") is not _ORIGINAL_BIND
         or vars(ToolRegistry).get("revision") is not _ORIGINAL_REVISION
@@ -84,6 +84,13 @@ def derive_registered_atomic_intent(
     # Class-level method checks do not reject an instance-shadowed bind.
     # Record the original call identity and recheck it after every callback.
     call_epoch = (call.tool, call.capability, call.scope, call.arguments, call.request_id)
+    # No registry binding attempt may see an unbounded or malformed request ID.
+    # This check is still only a local identity check, never authorization.
+    if (
+        type(call_epoch[4]) is not str or len(call_epoch[4]) != 68
+        or _REQUEST.fullmatch(call_epoch[4]) is None
+    ):
+        raise AtomicPreactionRejected("invalid registered request identity")
 
     def assert_call_epoch() -> None:
         _require_original_bridge_dependencies()
@@ -109,6 +116,7 @@ def derive_registered_atomic_intent(
             or bound.call is not call
             or bound.registration.effect is not Effect.WRITE
             or type(bound.bound_action_id) is not str
+            or len(bound.bound_action_id) != 70
             or _BOUND.fullmatch(bound.bound_action_id) is None
             or bound.registry_revision != registry.revision
             or bound.registration.name != call.tool
