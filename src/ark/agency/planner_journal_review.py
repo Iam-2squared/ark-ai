@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -375,15 +376,33 @@ def _require_safe_journal_path(path: Path) -> None:
     directories even when the final file is not itself a symlink. This local
     preflight is not atomic directory-handle custody or independent provenance.
     """
+    # Sidecar names must fit in the filesystem's encoded byte budget.
+    # Refuse NUL, empty basename and oversized -journal paths BEFORE lstat:
+    # OS-dependent path errors must not leak into the SQLite open boundary.
+    if type(path) is not type(Path()):
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan journal requires absolute non-traversing Path"
+        )
+    raw = str(path)
     if (
-        type(path) is not type(Path())
-        or not path.is_absolute()
+        not path.is_absolute()
+        or not path.name
         or ".." in path.parts
-        or len(str(path)) > 4096
+        or "\x00" in raw
+        or len(raw) > 4096
     ):
         raise SyntheticPlanJournalRejected(
             "synthetic plan journal requires absolute non-traversing Path"
         )
+    try:
+        if len(os.fsencode(path)) + len(b"-journal") > 4096:
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan journal requires absolute non-traversing Path"
+            )
+    except (UnicodeError, ValueError) as exc:
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan journal requires absolute non-traversing Path"
+        ) from exc
     try:
         for ancestor in path.parents:
             meta = ancestor.lstat()
