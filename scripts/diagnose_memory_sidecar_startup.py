@@ -301,7 +301,8 @@ def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
     """
     from contextlib import closing
 
-    from ark.memory import MemoryScope, deterministic_memory_id
+    from ark.memory import MemorySchemaError, MemoryScope, deterministic_memory_id
+    from ark.memory.sqlite_store import _validate_v1_schema
 
     identities = {
         "same-identity": (("owner-a", "fixture", "source"),),
@@ -345,6 +346,12 @@ def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
         uri = path.absolute().as_uri() + "?mode=ro"
         with closing(sqlite3.connect(uri, uri=True)) as conn:
             conn.execute("PRAGMA query_only=ON")
+            # One SQLite read epoch must cover the frozen DDL, fixture rows,
+            # event prefix, and AUTOINCREMENT highwater. Without BEGIN a
+            # concurrent writer could change the inspected schema/data between
+            # separate autocommit SELECT statements.
+            conn.execute("BEGIN")
+            _validate_v1_schema(conn)
             rows = conn.execute(
                 "SELECT memory_id,owner_id,namespace,source_id,content,metadata_json,"
                 "content_sha256,created_at_ms,updated_at_ms,expires_at_ms,revision "
@@ -357,7 +364,7 @@ def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
             highwater = conn.execute(
                 "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
             ).fetchall()
-    except (sqlite3.Error, OSError, ValueError):
+    except (sqlite3.Error, MemorySchemaError, OSError, ValueError):
         return False
     try:
         return (
