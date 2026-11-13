@@ -160,8 +160,10 @@ def _valid_policy(policy: object) -> None:
         policy.policy_sha256, policy.first_due_at_ms, policy.interval_ms,
         policy.occurrence_count, policy.grace_ms,
     )
+    # Reject oversized persisted policy labels before regex scanning.
     if (
-        type(sha) is not str or _SHA.fullmatch(sha) is None
+        type(sha) is not str or len(sha) != 64
+        or _SHA.fullmatch(sha) is None
         or any(type(n) is not int for n in (first, interval, count, grace))
         or not 0 <= first <= _MAX_MS
         or not 1_000 <= interval <= _MAX_INTERVAL_MS
@@ -239,8 +241,11 @@ def preview_disconnected_schedule(
     if index == 0:
         if previous is not None:
             raise SchedulePreviewRejected("genesis cursor cannot claim prior occurrence")
+    # A cursor may be replayed from an untrusted restart snapshot; width
+    # is a fixed protocol invariant, not just a regex acceptance property.
     elif (
-        type(previous) is not str or _OCCURRENCE.fullmatch(previous) is None
+        type(previous) is not str or len(previous) != 69
+        or _OCCURRENCE.fullmatch(previous) is None
         or previous != _occurrence(policy, index - 1)
     ):
         raise SchedulePreviewRejected("cursor prior occurrence does not match policy")
