@@ -94,6 +94,12 @@ _REPORT_FIELDS = (
 )
 _ORIGINAL_REPORT_FIELDS = tuple(vars(_REPORT_TYPE)[n] for n in _REPORT_FIELDS)
 _ORIGINAL_REPORT_INIT = vars(_REPORT_TYPE)["__init__"]
+# Preserve denial-only result hooks before any report gets created or inspected.
+# A replaced __getattribute__ can otherwise execute at the first False getter.
+_REPORT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_REPORT_HOOKS = tuple(
+    vars(_REPORT_TYPE).get(name) for name in _REPORT_HOOKS
+)
 
 # These frozen receipt slots are read before any schema/registry callback.
 # A substituted field getter must never observe caller-owned metadata while
@@ -171,6 +177,10 @@ def _require_original_denials() -> None:
     if (
         DisconnectedLocalReadiness is not _REPORT_TYPE
         or vars(_REPORT_TYPE).get("__init__") is not _ORIGINAL_REPORT_INIT
+        or any(
+            vars(_REPORT_TYPE).get(n) is not old
+            for n, old in zip(_REPORT_HOOKS, _ORIGINAL_REPORT_HOOKS, strict=True)
+        )
         or any(
             vars(_REPORT_TYPE).get(n) is not old
             for n, old in zip(
