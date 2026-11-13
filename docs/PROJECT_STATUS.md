@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run856 non-UI CI repair, SQLite sidecar path admission, Planner UNKNOWN budget
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T06:50:57+09:00** (observed reporting-runtime wall clock immediately before write; NOT trusted authorization, audit, action, consent or approval time). **Overall ARK/JARVIS: NOT_PASSED.** Strict free-only and local/disconnected; **all new UI/frontend work remains PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), verified open/Draft/unmerged. **Initial work-basis HEAD:** `e8efb56929bf88628504db5c1e0f4b87fb507a13`. **Newest source+test HEAD:** `c85f9fe0c02e4db7b97c5f3173265d5b8b5937cc`. **Technical-report/checkpoint-write-basis HEAD:** `26aef296b18d12c1d2090d3ba8a3c7e88559b55f`, checked equal PR+branch immediately before this Contents API write. **Previous PROJECT_STATUS blob:** `69845bc00ef86782fb2a38c8e27503afafb92025`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; the commit cannot truthfully encode its own SHA. Verify the returned write commit, PR+branch HEAD, and the new status blob after saving.
+
+## NEW — three independent non-UI coherent packages (7 authored regression cases)
+
+1. **Exact CI failure repair:** prior [CI #43504676089](https://github.com/Iam-2squared/ark-ai/actions/runs/43504676089) at initial HEAD **FAIL 6/6**, not GREEN. Inspected Ubuntu 3.12 job `132159084270` and Windows 3.12 job `132159084287`, both with one failure: schema preflight's new early rejection message lacked contiguous `byte budget`, causing a prior regex expectation mismatch. Ubuntu: 15,236 PASS / 1 FAIL / 1 SKIP; Windows: 15,147 PASS / 1 FAIL / 90 SKIP. [Fix `a1436ab2`](https://github.com/Iam-2squared/ark-ai/commit/a1436ab27be33a2d525783b862c57a888d9be9a2) preserves SQL aggregate early rejection and all limits; only the diagnostic now reads `schema SQL preflight exceeds byte budget or row budget`. This is a repair to a known CI failure, **not** a verified subsequent PASS.
+2. **Detached POSIX SQLite sidecar lexical admission:** [source `a0d18621`](https://github.com/Iam-2squared/ark-ai/commit/a0d186211224557e4f9c624bfa053e2c2658a9be), [4-case test `612eec3f`](https://github.com/Iam-2squared/ark-ai/commit/612eec3f6b7f6d152a32b97ad8e2d9de094c7976). Reject NUL in ancestors/filename and total longest `-journal` path exceeding the existing 4,096-character lexical budget **before descriptor inventory**. Tests use synthetic paths and prohibit reaching the file-inventory callback. These checks do not establish future pathname custody or WAL transaction atomicity.
+3. **Planner recovered RUNNING/UNKNOWN bounded input:** [source `a875be40`](https://github.com/Iam-2squared/ark-ai/commit/a875be4040c7e2b0fffdcd128c9283d1119c34e1), [3-case test `c85f9fe0`](https://github.com/Iam-2squared/ark-ai/commit/c85f9fe0c02e4db7b97c5f3173265d5b8b5937cc). Require recovered ambiguous RUNNING tuple length at most recovered step-status count before iterating untrusted step identities or opening a second journal. Tests use only disposable synthetic Planner stores, with a forbidden journal-path callback. No automatic replay or actual effect.
+4. [Run856 evidence report](https://github.com/Iam-2squared/ark-ai/blob/26aef296b18d12c1d2090d3ba8a3c7e88559b55f/docs/JARVIS_RUN856_NON_UI_SCHEMA_CI_REPAIR_SIDECAR_BUDGET_PLANNER_AMBIGUITY.md) ties changed paths to commit hashes and records boundaries. Additional independent read-only inspection identified that legacy Personal Context revocation `_validate()` hydrates stored scope digests before a SQL-side length/type preflight; treat this as a future **review target**, not a proven exploitable issue or a completed change.
+
+**7 new cases AUTHORED, not 7 confirmed PASS.** No local full-project Ruff/pytest, physical Windows/GGUF, independent provenance attestation, trusted clock or real-tool execution occurred.
+
+## CI — exact-HEAD noninterchangeable evidence
+
+- **Prior work-basis HEAD `e8efb569`:** [CI #43504676089](https://github.com/Iam-2squared/ark-ai/actions/runs/43504676089), **FAILURE 6/6** (six completed failing jobs).
+- **Schema repair HEAD `a1436ab2`:** [CI #43513161835](https://github.com/Iam-2squared/ark-ai/actions/runs/43513161835), **IN PROGRESS** at last observation, conclusion none.
+- **Sidecar source+test HEAD `612eec3f`:** [CI #43513538337](https://github.com/Iam-2squared/ark-ai/actions/runs/43513538337), **IN PROGRESS**, conclusion none.
+- **Planner source+test HEAD `c85f9fe0`:** [CI #43513823715](https://github.com/Iam-2squared/ark-ai/actions/runs/43513823715), **QUEUED**, conclusion none.
+- **Technical-report HEAD `26aef296`:** [CI #43514133001](https://github.com/Iam-2squared/ark-ai/actions/runs/43514133001), **QUEUED**, conclusion none.
+- The checkpoint write may start its own automatic CI; **latest checkpoint-result HEAD 6/6 GREEN NOT VERIFIED**. No redundant manual workflow rerun was launched. Do not transplant a different-SHA GREEN or partial job result.
+
+## Frozen state, blockers, authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, contracts and evaluation gates unchanged. [Protected PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) open/Draft/unmerged; [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched open/Draft/unmerged. No UI development, paid or potentially billable external compute/services, external GPU, Candidate adapter/weights/training/promotion, V2 protected final evaluation opening, new secrets/account connection, destructive operation, real backend dispatch, hardware-PC action, human-approval fabrication or main merge.
+
+SQLite WAL/SHM last-close unlink and open-to-use descriptor/path races remain unresolved. Local lexical checks do not prove a coherent cross-store SQLite snapshot or independently authenticated provenance. Memory COMMIT-UNKNOWN remains quarantined/manual only. Planner recovered RUNNING remains UNKNOWN with no automatic retry. `PermissionGate` consumed-token storage remains process-local; **restart-safe exactly-once authorization/effects NOT PASSED**. No fixture grants tool execution.
+
+## Next plan / 今後の方針
+
+1. Verify exact newest-head Windows/Ubuntu Python 3.11–3.13 CI six jobs. On FAIL, inspect logs and make smallest semantics-preserving fix, switch to another independent non-UI lane while CI runs.
+2. On disposable SQLite fixtures, investigate Memory/ActionAudit WAL/SHM last-close and open-to-use descriptor race without relaxing no-follow/single-link controls or inferring replay authorization.
+3. Strengthen retained Memory COMMIT-UNKNOWN event high-water provenance and Planner durable UNKNOWN/terminal CAS under independently retained evidence.
+4. After exact-head GREEN prerequisites, integrate immutable ToolRegistry, exact-type PermissionGate, durable occurrence/replay, trusted-clock audit-before-action and disconnected Mock Executor **without real external effects**.
+5. Review Personal Context revocation schema/row bounds before private hydration; continue proactive/observation fixture-only contracts and V3 free-only identity, reproducibility and approval gates without opening protected evaluation.
+
+---
+
 # LATEST — ARK AI Run855 non-UI SQLite path budgets and bounded schema SQL preflight
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T05:46:28.002+09:00** (observed reporting runtime clock, NOT a trusted authorization, action, audit, approval or consent timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Fully local/disconnected, reversible and free-only; **all new UI/frontend work remains PAUSED**.
