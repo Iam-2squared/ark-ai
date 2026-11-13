@@ -71,7 +71,11 @@ def test_original_retained_tail_cannot_rebase_to_valid_older_prefix(
 
     with pytest.raises(
         SyntheticPlanJournalRejected,
-        match="retained synthetic plan witness changed before",
+        match=(
+            "synthetic recovery authority epoch changed"
+            if callback == "tail_shape"
+            else "retained synthetic plan witness changed before"
+        ),
     ):
         if operation == "recover":
             journal.recover(retained=retained)
@@ -80,7 +84,10 @@ def test_original_retained_tail_cannot_rebase_to_valid_older_prefix(
                 "step", StepState.SUCCEEDED,
                 expected_revision=1, at_ms=11, retained=retained,
             )
-    assert reflected
+    # The retained shape implementation must be pinned: a substituted
+    # method must not receive, mutate, or rebase the caller's witness.
+    # The topology callback remains a separate deliberate drift probe.
+    assert reflected == ([] if callback == "tail_shape" else [True])
     monkeypatch.undo()
     assert journal.recover().tail == running
     assert journal.recover().ambiguous_running_steps == ("step",)
