@@ -277,6 +277,11 @@ def _probe(
             mode_row = keeper.execute("PRAGMA journal_mode").fetchone()
             if mode_row is None or mode_row[0].lower() != "wal":
                 raise RuntimeError("disposable diagnostic WAL keeper unavailable")
+            # Pin a real WAL read transaction rather than assuming that an
+            # idle sqlite3.Connection keeps an active snapshot. This is a
+            # disposable lifecycle CONTROL, not independent durability proof.
+            keeper.execute("BEGIN")
+            keeper.execute("SELECT COUNT(*) FROM memories").fetchone()
         capture("prepared")
         for index, identity in enumerate((first, second)):
             children.append(subprocess.Popen(
