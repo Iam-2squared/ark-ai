@@ -327,9 +327,13 @@ def execute_disconnected_fixture_tool(
             raise DisconnectedToolRejected("request changed during fixture execution")
 
     request_id, operation, raw = pinned
+    # Bound fixed-width synthetic identities and operation names before the
+    # regex engine or set lookup. Neither path dispatches an external tool.
     if (
-        type(request_id) is not str or _ID.fullmatch(request_id) is None
-        or type(operation) is not str or operation not in _OPERATIONS
+        type(request_id) is not str or len(request_id) != 36
+        or _ID.fullmatch(request_id) is None
+        or type(operation) is not str or len(operation) > 12
+        or operation not in _OPERATIONS
         or type(raw) is not str or not 0 < len(raw) <= _MAX_INPUT
     ):
         raise DisconnectedToolRejected("unsupported or unbounded fixture request")
