@@ -1,3 +1,36 @@
+# LATEST — ARK AI Run854 non-UI coherent Memory / Planner recovery / Personal Context preflight
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T04:57:43.526+09:00** (reporting runtime clock observed immediately before saving; NOT trusted consent, approval, audit or action time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, reversible, free-only. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8); PR and branch heads read and identical immediately before this Contents API checkpoint write. **Initial work-basis HEAD:** `0a55e7433887b323831909f8467a4947e74ee0e7`. **Latest source+test HEAD:** `f9c8f5477984154a952d396197ff98b069b461db`. **Technical-report/checkpoint-write-basis HEAD:** `4896ad6821d10d4412d19dfcb63c012a000bf3c6`. **Previous PROJECT_STATUS blob:** `b48322a01fb4ccb5fa233d69c337d91ef4a9bd3c`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE** (a commit cannot truthfully record its own SHA; verify returned commit and post-write branch+PR HEAD separately).
+
+## NEW — three independent, non-UI source+test packages (36 authored cases)
+
+1. **Memory coherent WAL snapshot private ingress:** source [`e62155c1`](https://github.com/Iam-2squared/ark-ai/commit/e62155c1a2bcfa4152e259086c5af5caad4ff102), 10-case test [`09c02ad2`](https://github.com/Iam-2squared/ark-ai/commit/09c02ad262a130e15120ba03c36bca2388367caa). In `sqlite_retained_coherent_review`, SQL COUNT and storage-class/width preflight runs **inside the same read transaction** as prefix, row, event and high-water checks, rejecting overbudget/BLOB/oversized foreign-owner Memory before Python `_record` hydration. Existing canonical JSON/content hash/event lifecycle still required; no schema change or disclosure permission.
+2. **Planner restart path and sidecar custody:** source [`1e55e665`](https://github.com/Iam-2squared/ark-ai/commit/1e55e665dd2c1bc168ac61b4cf4094519b7f09e6), 18-case test [`ff6efc5a`](https://github.com/Iam-2squared/ark-ai/commit/ff6efc5a3afe14a6318e524ebc8ecf0642d3e38d). Fixed `SyntheticPlanJournal.recover()` bypass of common path guard before `Path.resolve()`; new 4096-character limit and orphaned/aliased `-wal/-shm/-journal` denial for init/recover/append. **Best-effort lexical custody only**; no open-to-use race proof, no retry/dispatch authority, recovered RUNNING remains UNKNOWN.
+3. **Privacy-safe Personal Context replay SQL ingress:** source [`540b77b7`](https://github.com/Iam-2squared/ark-ai/commit/540b77b74050920f5a65999f526e9821874516e6), 8-case test [`f9c8f547`](https://github.com/Iam-2squared/ark-ai/commit/f9c8f5477984154a952d396197ff98b069b461db). SQL COUNT<=512, exact request-id TEXT width and SHA TEXT widths before Python requests and hash processing inside existing transaction. No consent, disclosure, revocation freshness or backend execution authority granted.
+4. [Run854 technical report](https://github.com/Iam-2squared/ark-ai/blob/4896ad6821d10d4412d19dfcb63c012a000bf3c6/docs/JARVIS_RUN854_NON_UI_MEMORY_PLANNER_PRIVACY_PREFLIGHT.md) documents exact package commits, test scopes, remaining races and gates. **36 authored regressions are NOT verified 36 PASS.** No local full Ruff/pytest, physical Windows/GGUF verification or real tools executed.
+
+## CI — exact HEAD evidence
+
+- **Initial Run853 HEAD `0a55e743`:** [CI #43487043887](https://github.com/Iam-2squared/ark-ai/actions/runs/43487043887), **GREEN 6/6** Windows/Ubuntu × Python 3.11–3.13 (verified all six job conclusions). This is **older HEAD evidence only**.
+- **Newest source+test HEAD `f9c8f547`:** [CI #43496430949](https://github.com/Iam-2squared/ark-ai/actions/runs/43496430949) — **QUEUED (no conclusion yet)** at last observation; NOT asserted GREEN.
+- **Technical-report HEAD `4896ad68`:** [#43496877547](https://github.com/Iam-2squared/ark-ai/actions/runs/43496877547) QUEUED (unconfirmed). This checkpoint will generate a separate automatic CI. **Exact checkpoint-result HEAD 6/6 GREEN NOT YET VERIFIED**. No duplicate manual CI runs requested.
+
+## Frozen contracts, blockers, authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains protected Draft/unmerged; [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched Draft/unmerged; no UI development. No paid/potentially billable compute or services, external GPU, candidate weights/adapter/training/promotion, V2 protected evaluation, new secrets/account connections, human-approval invention, physical-PC actions, real dispatch, destructive changes or main merge. SQLite pathname/sidecar preflights are not atomic descriptor custody; WAL/SHM last-close unlink/races remain unresolved. `PermissionGate` consumed-token set is process-local; restart-safe exactly-once authorization/effect and trusted clock **NOT PASSED**. COMMIT-UNKNOWN requires retained manual quarantine and no automatic retry. Hash-only retained evidence is not independently authenticated provenance.
+
+## Next plan / 今後の方針
+
+1. Verify latest exact HEAD CI six jobs, inspect concrete Ruff/pytest failure logs if any and minimally repair without weakening fail-closed behavior; while CI runs, work on independent non-UI lanes.
+2. Use disposable fixture DBs for Memory/ActionAudit WAL/SHM held-descriptor last-close link-count race analysis; preserve no-follow and single-link rejection.
+3. Strengthen Memory retained coherent COMMIT-UNKNOWN and Planner durable UNKNOWN/terminal CAS restart isolation, including event high-water integrity.
+4. After exact-head foundation GREEN evidence, integrate immutable ToolRegistry, exact-type PermissionGate, durable occurrence/replay and audit-before-action with disconnected/mock executor ONLY; real effects remain prohibited.
+5. Continue privacy-safe Personal Context, proactive scheduler/observation fixture contracts and free-only V3 approvals, identity and reproducibility guards. Version boundaries never grant PASS.
+
+---
+
 # LATEST — ARK AI Run853 non-UI fail-closed CI reconciliation
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T03:53:51+09:00** (observed reporting-runtime clock only; **NOT** trusted consent, authorization, audit or action time). **Overall ARK/JARVIS: NOT_PASSED.** Disconnected/local-first, strictly free-only and reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
