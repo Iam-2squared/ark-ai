@@ -20,13 +20,19 @@ Run850 [CI #43455343810](https://github.com/Iam-2squared/ark-ai/actions/runs/434
 
 A final SQLite close can legitimately remove a `-shm` name while another process retains a descriptor. **It does not imply that a zero-link FD should be accepted as safe**. The direct causal link to earlier Memory/ActionAudit CI failures remains unproven. This experiment is not proof of cross-process atomicity, trusted provenance, or future path custody.
 
+### 3. Durable, disconnected preaction intent/audit codec and schema custody
+
+[Source commit `3c0d2745`](https://github.com/Iam-2squared/ark-ai/commit/3c0d27459f59c974b7d5bf87cdbef772024f72a8) pins the original `hashlib`, `hashlib.sha256`, `json`, `json.dumps`, chain/audit domains, genesis, both DDL strings and capacity before local intent-ledger path opening, SQLite schema review or digesting a synthetic claim. It preserves the existing carrier and grammar validation; does **not** promote this ledger to a consent authority or permit a real WRITE.
+
+[Test commit `c004eb20`](https://github.com/Iam-2squared/ark-ai/commit/c004eb20b31f5afbc204922e9a7096bcdc10765f) authors **13 cases**: ten altered-module/domain/DDL/budget failures before new DB creation, one direct digest mutation, one reentrant digest callback drift with rollback and unchanged genesis, and one positive inert intent/audit append/inspect with all dispatch and approval flags False. These are **not confirmed PASS** until exact-head CI completes.
+
 ## Independent integration-boundary audit
 
 Read-only inspection of `src/ark/agency/policy.py` confirms that `PermissionGate` maintains `_consumed_tokens` behind a **process-local lock**. `disconnected_atomic_preaction_ledger.py` offers a separate digest-only SQLite intent plus audit transaction, and `disconnected_atomic_registry_bridge.py` creates only inert WRITE claims. No evidence from this run proves a single restart-safe, permission-bound, audit-before-action, exactly-once execution path across those stores. **Integration of a real executor therefore remains blocked** until a tested durable protocol, clock/consent authority and crash recovery exists.
 
 ## Evidence restrictions and next steps
 
-Latest source+test repair HEAD prior to this report: `5c696e860ab3cbe05da9e6b5a2bb37bf31a92d94`. New tests **authored 13, not 13 proven PASS**; no physical-PC, GGUF, external GPU, paid API or local full repository pytest executed. No frozen V1/V2/Local UI/Launcher contract changed. PR #5 protected V3 gate remains closed, PR #9 UI is untouched Draft, and no PR is merged.
+First two package repair HEAD: `5c696e860ab3cbe05da9e6b5a2bb37bf31a92d94`. Third source+test HEAD before this report revision: `c004eb20b31f5afbc204922e9a7096bcdc10765f`. New tests **authored 26 across three packages, not 26 proven PASS**; no physical-PC, GGUF, external GPU, paid API or local full repository pytest executed. No frozen V1/V2/Local UI/Launcher contract changed. PR #5 protected V3 gate remains closed, PR #9 UI is untouched Draft, and no PR is merged.
 
 1. Confirm final exact-HEAD CI six-job matrix; fix real failures through normal GitHub Contents API only. Do not conflate the old Ruff failure with functional failures.
 2. Isolate Windows/Ubuntu Memory/ActionAudit WAL last-connection races and preserve no-follow, single-link and no-automatic-uncertain-retry policy.
