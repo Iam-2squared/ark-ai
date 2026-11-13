@@ -1,3 +1,35 @@
+# LATEST — ARK AI Run851 non-UI CI fail-closed repair and SQLite sidecar custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T01:50:20.119+09:00** (observed GitHub checkpoint runtime clock, **NOT** a trusted event, approval, consent or authorization timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Disconnected/local-first, no-new-paid-service, reversible; **ALL UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), verified open/Draft/unmerged. **Initial work-basis HEAD:** `2deb4a12fb9a28cbd764e3def70b590f3ca16af8` (Run850 checkpoint). **Latest source+test HEAD:** `2349ca9188973b0111b275f001c2170c6f844a9d`. **Technical-report / checkpoint-write-basis HEAD:** `85614a9f33cbc2d98d92a2a1cabfaa6c989ad8ac` (re-read identical PR HEAD and branch ref immediately before Contents API write). **Previous checkpoint blob:** `e7f13fa8e4d478331a0c6b6bb33d0ed13ad1adf1`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; a commit cannot contain its own hash. Verify the returned commit and later PR+branch HEAD after saving.
+
+## NEW — three independent non-UI packages, 27 authored regressions and one CI repair
+
+1. **Memory coherent retained review / previous CI fix:** [test-only `f859f2a6`](https://github.com/Iam-2squared/ark-ai/commit/f859f2a6f8f81882fcef09c547594b481521f65e) aligns one existing diagnostic assertion with the earlier, stronger `coherent Memory digest implementation or domain changed` rejection before the substituted SHA callback runs. Run850 checkpoint [CI #43457126299](https://github.com/Iam-2squared/ark-ai/actions/runs/43457126299) **FAIL 6/6** during pytest; inspected Ubuntu 3.12 `131994086263` and Windows 3.12 `131994086325` showing the same one-test message mismatch after Ruff GREEN. No production coherent Memory guard loosened.
+2. **Disconnected WRITE-slot SQLite path custody:** [source `7faeba0b`](https://github.com/Iam-2squared/ark-ai/commit/7faeba0ba2fed0f6ccec75536e410210c2e95b98) denies orphan/aliased/nonregular `-wal`, `-shm`, `-journal` pathnames prior to SQLite open, preserving existing main-file checks. [13 authored tests `ed8862a9`](https://github.com/Iam-2squared/ark-ai/commit/ed8862a9956181a81f00673374cc05ea455e4eed) cover three suffixes × directory, orphan, hardlink, symlink, plus a successful local synthetic reservation/reopen.
+3. **Disconnected proactive due-reservation SQLite path custody:** [source `af516efe`](https://github.com/Iam-2squared/ark-ai/commit/af516efe624cfd871e205e91b49a5abe3c2e92df) rejects over-4096-character fixture paths, missing/aliased main DB and unsafe/orphaned WAL/SHM/journal pathnames before opening SQLite. [14 authored tests `2349ca91`](https://github.com/Iam-2squared/ark-ai/commit/2349ca9188973b0111b275f001c2170c6f844a9d) cover 3 suffixes × 4 sidecar types, oversized path and valid read-only restart. Host-dependent link tests explicitly SKIP if unavailable.
+4. [Run851 technical report](https://github.com/Iam-2squared/ark-ai/blob/85614a9f33cbc2d98d92a2a1cabfaa6c989ad8ac/docs/JARVIS_RUN851_NON_UI_SQLITE_SIDECAR_CUSTODY_AND_CI_REPAIR.md) describes exact source boundaries and remaining limitations. **27 new authored cases and one changed existing assertion are NOT confirmed PASS.** No full local Ruff/pytest, physical-PC GGUF or actual tool execution.
+
+## CI — observed exact SHA/run statuses, never reuse older-head GREEN
+
+- Run850 `2deb4a12`: [#43457126299](https://github.com/Iam-2squared/ark-ai/actions/runs/43457126299) **FAIL 6/6** on the same existing Memory expectation after Ruff. Corrected test `f859f2a6`: [#43465316128](https://github.com/Iam-2squared/ark-ai/actions/runs/43465316128) **IN PROGRESS** at last observation.
+- WRITE-slot source `7faeba0b`: [#43465662043](https://github.com/Iam-2squared/ark-ai/actions/runs/43465662043) **IN PROGRESS**; tests `ed8862a9`: [#43465779325](https://github.com/Iam-2squared/ark-ai/actions/runs/43465779325) **IN PROGRESS**.
+- Proactive due source `af516efe`: [#43465921493](https://github.com/Iam-2squared/ark-ai/actions/runs/43465921493) **IN PROGRESS**; tests `2349ca91`: [#43466012658](https://github.com/Iam-2squared/ark-ai/actions/runs/43466012658) **QUEUED**.
+- Report `85614a9f`: [#43466342506](https://github.com/Iam-2squared/ark-ai/actions/runs/43466342506) **QUEUED**. Checkpoint commit will trigger automatic CI; its run ID and result are unknown at write time. **Exact checkpoint-result six-job GREEN is NOT verified**. No manual duplicate run requested.
+
+## Frozen contracts, blockers and prioritized Next plan / 今後の方針
+
+V1/V2/Local UI/Launcher frozen contracts/evidence unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected Draft/unmerged; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) UI paused Draft/unmerged and untouched. No UI development, paid/external GPU/API or billing, Candidate weights/adapters/training/promotion, protected V2 evaluation, secrets/new account connection, real ToolBackend/camera/microphone/notifications, physical-PC actions, destructive operations, main merge or fabricated user review. New sidecar checks are **lexical best-effort, not race-free fd custody, independent attestation, consent, trusted time or exactly-once effects**. Memory COMMIT-UNKNOWN stays manual-only, fail-closed. `PermissionGate._consumed_tokens` is process-local, so durable exactly-once **authorization** is still unsatisfied.
+
+1. Confirm exact latest checkpoint HEAD's Windows/Ubuntu × Python 3.11–3.13 CI. If FAIL, inspect logs and minimally repair without weakening fail-closed checks; while CI runs use another non-UI lane, never duplicate runs.
+2. Investigate Memory/ActionAudit WAL/SHM last-close race using disposable independent processes; a normally unlinked SHM must not be misconstrued as an authorized uncertain-write retry.
+3. Advance Memory globally coherent row/event/highwater and COMMIT-UNKNOWN manual recovery; Planner persistence/terminal/UNKNOWN quarantine, preserving CAS and restart isolation.
+4. Only after lower-level exact-head GREEN, connect immutable ToolRegistry and exact-type PermissionGate to persistent occurrence/replay/audit-before-action in **disconnected Mock** integration; never real dispatch.
+5. Continue privacy-safe Personal Context lifecycle, proactive state, observation fixture adapters and free-only V3 approval/identity/reproducibility gates. Versions are roadmap labels, not completion evidence.
+
+---
+
 # LATEST — ARK AI Run850 non-UI coherent Memory codec / atomic preaction custody / WAL SHM keeper
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T00:53:14.836+09:00** (actual observed reporting runtime clock, **not** a trusted consent, authorization or event time). **Overall ARK/JARVIS: NOT_PASSED**. Local-first, disconnected, zero-new-paid-service, reversible. **ALL UI/FRONTEND DEVELOPMENT PAUSED**.
