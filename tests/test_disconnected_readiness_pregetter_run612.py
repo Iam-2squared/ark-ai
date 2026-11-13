@@ -80,10 +80,10 @@ def test_first_denial_read_cannot_activate_second_descriptor(
     monkeypatch.setattr(cls, "__getattribute__", reentrant_getattribute)
     with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="authority|denied"):
         mod.review_disconnected_local_readiness(*args, observed_at_ms=100)
-    # The READ preflight now rejects a substituted class lookup before the
-    # getter can perform any mutation. Other legacy fixtures may still reach
-    # their first getter; neither path may evaluate the hostile second one.
-    assert observed["injection"] == (0 if stage == "preflight" else 1)
+    # Startup now pins schema, READ preflight, and report carrier descriptors
+    # before any per-instance getter. All three substituted __getattribute__
+    # implementations must be rejected without even entering the first getter.
+    assert observed["injection"] == 0
     assert observed["evil"] == 0
     assert backend.calls == 0
 
