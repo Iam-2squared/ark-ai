@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run845 non-UI private fixture format / WAV / offline proposal custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T21:23:33.794+09:00** (observed reporting runtime clock only, **NOT** a trusted authorization, consent or action timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, zero-new-paid-service, disconnected and reversible. **UI/frontend development remains PAUSED.**
+
+**Branch / PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged on prewrite verification. **Initial work-basis HEAD:** `ddf56d3c98047e6cf09b3b4ca90cd153bd42e5ff` (Run844 checkpoint). **Latest source+test HEAD:** `bcdd3e64c067617b7bdc2df6358d84e72a43b47b`. **Technical report/checkpoint-write-basis HEAD:** `c7e6bf4ef792644d108c8f0903d220a5e3826504` (PR/branch reread before status update). **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; the resulting commit SHA cannot be embedded within its own commit, so it must be verified via Contents API result and a subsequent PR/branch read. Previous checkpoint blob SHA `ebfcfd2f9ab872c65fd283cfef98a8b9dacd6ad9`.
+
+## NEW — three independent non-UI packages; 37 authored regression cases
+
+1. **Offline PNG scanline format/callback custody:** [source `d2f1a356`](https://github.com/Iam-2squared/ark-ai/commit/d2f1a3569ce9348222e41c3153bb1b0b503c244b), [21 cases `8e29db2e`](https://github.com/Iam-2squared/ark-ai/commit/8e29db2e6fa527d54b9483e7b27a13bdc836c130). Check exact original mutable PNG depth/channel table identity/content and all decode budgets before handing private fixture bytes to the synthetic scanline decoder; reject hostile foreign value equality before evaluation; bound all SHA fixture labels to 64 characters before regex. No captured frames, identity or consent authority.
+2. **Offline WAV SHA helper admission:** [source `f16a3931`](https://github.com/Iam-2squared/ark-ai/commit/f16a39311c3833da6cc20248a4f5a98a7ccdeeab), [7 cases `1ed72de3`](https://github.com/Iam-2squared/ark-ai/commit/1ed72de3af8002f8f95113de8088f19c78275285). Pin original local `_sha` before private fixture access; require fixed SHA length before regex. No microphone, speech recognition, export or trusted provenance.
+3. **Disconnected improvement proposal validator custody:** [source `6db38389`](https://github.com/Iam-2squared/ark-ai/commit/6db3838916c97c73d85f2975646e6f1f8b18dff7), [9 cases `bcdd3e64`](https://github.com/Iam-2squared/ark-ai/commit/bcdd3e64c067617b7bdc2df6358d84e72a43b47b). Original `_name`/`_sha` callback identities checked before handling private owner/namespace/source labels; exact bounded name/digest lengths before regex. Synthetic proposal outputs still deny code changes, training, Candidate promotion and protected evaluation.
+
+Technical report: [Run845 at `c7e6bf4e`](https://github.com/Iam-2squared/ark-ai/blob/c7e6bf4ef792644d108c8f0903d220a5e3826504/docs/JARVIS_RUN845_NON_UI_PRIVATE_FIXTURE_AND_PROPOSAL_VALIDATORS.md). Six source/test paths re-fetched and checked for line lengths >100 (none); **37 cases are authored, NOT a proven 37 PASS**, with no local full Ruff/pytest or physical GGUF/PC run.
+
+## CI / exact evidence (no stale-HEAD PASS claim)
+
+- Earlier Run843 checkpoint HEAD `c280d2a6` [#43412325605](https://github.com/Iam-2squared/ark-ai/actions/runs/43412325605) **GREEN 6/6** for that earlier HEAD **only**.
+- Run845 PNG source [#43423497923](https://github.com/Iam-2squared/ark-ai/actions/runs/43423497923) and tests [#43423586874](https://github.com/Iam-2squared/ark-ai/actions/runs/43423586874): **QUEUED**.
+- WAV source [#43423807794](https://github.com/Iam-2squared/ark-ai/actions/runs/43423807794) and tests [#43423847680](https://github.com/Iam-2squared/ark-ai/actions/runs/43423847680): **QUEUED**.
+- Proposal source [#43424080879](https://github.com/Iam-2squared/ark-ai/actions/runs/43424080879) and tests [#43424150171](https://github.com/Iam-2squared/ark-ai/actions/runs/43424150171): **QUEUED**.
+- Run845 report HEAD `c7e6bf4e` [#43424611892](https://github.com/Iam-2squared/ark-ai/actions/runs/43424611892) **QUEUED**. The new checkpoint should trigger ordinary automatic CI. **Final checkpoint-result HEAD six-job GREEN: UNVERIFIED.** No duplicate manual CI start.
+- Historic [#43412103999](https://github.com/Iam-2squared/ark-ai/actions/runs/43412103999) Ubuntu 3.12 revocation and [#43411602255](https://github.com/Iam-2squared/ark-ai/actions/runs/43411602255) Windows 3.11 Memory CAS showed fail-closed sidecar/SHM link-count transient errors. Cause remains unconfirmed, safety checks not weakened.
+- Intermediate Run844 [#43421705279](https://github.com/Iam-2squared/ark-ai/actions/runs/43421705279) Ubuntu 3.12 showed five FAIL. Run844 separately repaired the legacy Memory corrupt-source fixture; three Personal Context old tests' expected error text `mismatch` disagrees with earlier `exact retained context preview required`, and new overlong `canonical_local_json` fixture with length exactly 65,536 reached private rebuild rather than early refusal. Source/test review confirms the exact-limit edge. **No change to its in-flight source path this invocation**; do not claim it is fixed or that all newer runs fail until checked.
+
+## Frozen boundaries, blocked authority, prioritized Next plan / 今後の方針
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. Protected [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) Draft/unmerged; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/unmerged/untouched, new UI development paused. No paid/potentially billable compute/API/service, external GPU, new accounts/secrets, real Candidate generation/promotion, protected final evaluation, actual ToolBackend/notification/camera/microphone, trusted consent/clock/human review fabrication, irreversible operation or main merge. Disconnected SQLite and local hashes are **not independent provenance/authentication**.
+
+1. Confirm exact latest source/test+checkpoint six-job CI across Windows/Ubuntu Python 3.11–3.13, triage FAIL without bypassing normal GitHub Contents API. Run unrelated non-UI lanes while CI in flight.
+2. Investigate and safely reconcile Personal Context retained receipt length-edge and legacy expectation discrepancies **after** the currently in-flight path has exact-head results, without weakening no-private-rebuild or canonical payload limits.
+3. Use disposable Memory/ActionAudit two-process SQLite WAL/SHM held-FD/last-close fixtures to identify exact Windows/Linux sidecar interleavings; preserve path alias/no-follow protections, never treat COMMIT-UNKNOWN as safe to retry automatically.
+4. Strengthen Memory CAS/expiry/coherent event snapshots and Planner persistent UNKNOWN, terminal propagation, recovery invariants.
+5. Only after prerequisite exact-HEAD GREEN integrate immutable ToolRegistry, exact PermissionGate, durable occurrence/replay denial, audit-before-action and disconnected Mock Executor, without any real execution permission; independently continue privacy-safe Personal Context, proactive readiness, observation fixtures and free-only V3 guards.
+
+---
+
 # LATEST — ARK AI Run844 non-UI quarantine SQLite / bounded Memory / atomic ledger / privacy replay
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T21:07:23.346+09:00** (observed reporting runtime clock; **NOT** a trusted authorization/action timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, zero new paid services, disconnected, reversible; all new **UI/frontend development PAUSED**.
