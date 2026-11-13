@@ -22,6 +22,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import stat
 import subprocess
 import sys
 import tempfile
@@ -188,9 +189,33 @@ def _parse_child_reply(output: str) -> dict[str, object]:
     return _sanitize_child_reply(decoded)
 
 
+def _bounded_sidecar_states(path: Path) -> dict[str, str]:
+    """Read-only, non-identifying sidecar lstat across disposable process epochs."""
+    states: dict[str, str] = {}
+    for suffix in ("-wal", "-shm", "-journal"):
+        try:
+            meta = path.with_name(path.name + suffix).lstat()
+        except FileNotFoundError:
+            state = "absent"
+        except OSError:
+            state = "unavailable"
+        else:
+            if not stat.S_ISREG(meta.st_mode):
+                state = "nonregular"
+            elif meta.st_nlink == 0:
+                state = "unlinked"
+            elif meta.st_nlink == 1:
+                state = "single"
+            else:
+                state = "multilink"
+        states[suffix] = state
+    return states
+
+
 def _probe(
     path: Path, mode: str, startup_mode: str, operation: str = "create",
     *, wal_keeper: bool = False,
+    lifecycle: list[tuple[str, dict[str, str]]] | None = None,
 ) -> list[dict[str, object]]:
     from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
     from ark.memory.generation_fenced_cas import observe_memory_generation_for_cas
@@ -238,6 +263,11 @@ def _probe(
         return False
 
     keeper: sqlite3.Connection | None = None
+
+    def capture(stage: str) -> None:
+        if lifecycle is not None:
+            lifecycle.append((stage, _bounded_sidecar_states(path)))
+
     try:
         # Diagnostic control only: preserve the WAL lifecycle across both
         # child processes, matching the stable-keeper regression fixture.
@@ -247,6 +277,7 @@ def _probe(
             mode_row = keeper.execute("PRAGMA journal_mode").fetchone()
             if mode_row is None or mode_row[0].lower() != "wal":
                 raise RuntimeError("disposable diagnostic WAL keeper unavailable")
+        capture("prepared")
         for index, identity in enumerate((first, second)):
             children.append(subprocess.Popen(
                 [sys.executable, "-c", _CHILD, str(path), str(gate),
@@ -259,6 +290,7 @@ def _probe(
         # A bootstrap refusal is an observed result, not a reason to retry.
         if startup_mode == "concurrent" and len(children) == 2:
             await_ready(range(2))
+        capture("ready")
         gate.touch()
         results: list[dict[str, object]] = []
         for index, child in enumerate(children):
@@ -279,6 +311,7 @@ def _probe(
                 child.kill()
                 child.communicate()
                 results.append({"status": "TIMEOUT_OR_INVALID_CHILD_OUTPUT"})
+            capture(f"child-exit-{index}")
         return results
     finally:
         gate.touch()
@@ -288,7 +321,7 @@ def _probe(
                 child.communicate()
         if keeper is not None:
             keeper.close()
-
+        capture("closed")
 
 
 def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
@@ -399,18 +432,28 @@ def main(argv: list[str] | None = None) -> int:
         "--wal-keeper", action="store_true",
         help="retain one disposable WAL connection across child execution",
     )
+    parser.add_argument(
+        "--lifecycle-snapshots", action="store_true",
+        help="include bounded disposable WAL state transitions without path data",
+    )
     args = parser.parse_args(argv)
     counts: Counter[str] = Counter()
+    lifecycle_counts: Counter[tuple[str, str, str]] = Counter()
     sidecar_evidence: list[dict[str, object]] = []
     unexpected = 0
     with tempfile.TemporaryDirectory(prefix="ark-disposable-memory-") as root:
         for attempt in range(args.iterations):
             case = Path(root) / f"case-{attempt}"
             case.mkdir()
+            lifecycle: list[tuple[str, dict[str, str]]] = []
             outcome = _probe(
                 case / "memory.sqlite", args.mode, args.startup_mode, args.operation,
                 wal_keeper=args.wal_keeper,
+                lifecycle=lifecycle if args.lifecycle_snapshots else None,
             )
+            for stage, states in lifecycle:
+                for suffix, state in states.items():
+                    lifecycle_counts[(stage, suffix, state)] += 1
             statuses = sorted(item["status"] for item in outcome)
             for item in outcome:
                 counts[str(item["status"])] += 1
@@ -432,6 +475,10 @@ def main(argv: list[str] | None = None) -> int:
         "status_counts": dict(sorted(counts.items())),
         "anomalous_iterations": unexpected,
         "sidecar_metadata_only": sidecar_evidence[:30],
+        "lifecycle_sidecar_counts": [
+            {"stage": stage, "suffix": suffix, "state": state, "count": count}
+            for (stage, suffix, state), count in sorted(lifecycle_counts.items())
+        ],
         "private_paths_exported": False,
         "safety_checks_relaxed": False,
     }, ensure_ascii=True, sort_keys=True))
