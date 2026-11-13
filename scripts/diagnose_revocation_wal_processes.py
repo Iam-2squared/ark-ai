@@ -170,6 +170,13 @@ def _probe(path: Path, *, wal_keeper: bool = False) -> tuple[list[dict[str, str]
             keeper = sqlite3.connect(path)
             if keeper.execute("PRAGMA journal_mode").fetchone() != ("wal",):
                 raise RuntimeError("disposable WAL keeper unavailable")
+            # Keep a true WAL reader snapshot alive through both revocation
+            # process exits. This is a controlled disposable lifecycle fixture,
+            # not proof of consent, external deletion or authorized replay.
+            keeper.execute("BEGIN")
+            keeper.execute(
+                "SELECT COUNT(*) FROM synthetic_context_revocations"
+            ).fetchone()
         for index in range(2):
             children.append(subprocess.Popen(
                 [
