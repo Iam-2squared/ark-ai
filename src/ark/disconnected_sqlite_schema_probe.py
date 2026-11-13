@@ -187,7 +187,7 @@ def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
         or type(preflight[0]) is not int or not 0 <= preflight[0] <= _MAX_ITEMS
         or type(preflight[1]) is not int or not 0 <= preflight[1] <= _MAX_DDL_BYTES
     ):
-        raise SQLiteSchemaProbeRejected("schema SQL preflight exceeds byte or row budget")
+        raise SQLiteSchemaProbeRejected("schema SQL preflight exceeds byte budget or row budget")
     records = []
     size = 0
     for record in connection.execute(_QUERY):
