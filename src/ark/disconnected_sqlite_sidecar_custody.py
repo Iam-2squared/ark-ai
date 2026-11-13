@@ -180,7 +180,8 @@ def _path(value: object) -> Path:
     if (
         type(value) is not type(Path("."))
         or not value.is_absolute()
-        or len(str(value)) > _MAX_PATH
+        or "\x00" in str(value)
+        or len(str(value)) + len(_SUFFIXES[-1]) > _MAX_PATH
         or len(value.parts) < 2
         or ".." in value.parts
         or any(part in ("", ".", "..") for part in value.parts[1:])
