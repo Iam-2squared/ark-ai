@@ -1,3 +1,46 @@
+# LATEST — ARK AI Run836 NON-UI disposable WAL lifecycle and revocation diagnostics
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T13:54:10.643+09:00** (reporting clock only, **NOT trusted approval/action time**). **Overall ARK/JARVIS: NOT_PASSED**. Isolated, reversible, free-only work; UI suspended.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED verified immediately before the write. **Initial work-basis HEAD:** `9c170825b03de66440549ebd2b1d0a5625c6096a` (Run835). **Last executable/test HEAD:** `1967620960fc8405bf64799ed1fbbb65f6006e2e`. **Technical-report HEAD:** `2dfb2733ec01a171889b69f9887413393db41f5d`. **Checkpoint-write-basis HEAD:** `2dfb2733ec01a171889b69f9887413393db41f5d` (branch and PR #8 matched pre-write). **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; use the returned normal Contents API commit SHA and verify live branch/PR after saving. Previous PROJECT_STATUS blob: `67bf9c94a2e684de17fc19c6ca0e26765bbf2915`. Observed CI snapshot: `2026-11-13T04:54:10.643Z` (UTC).
+
+## NEW — three non-UI diagnostic source/test packages and 35 authored cases
+
+1. **Privacy revocation WAL lifecycle:** [source `fbbe9a43`](https://github.com/Iam-2squared/ark-ai/commit/fbbe9a431497bb89ddba445788bdc4460cb1eb1f), [25 tests `c1a9d400`](https://github.com/Iam-2squared/ark-ai/commit/c1a9d40026b355791bd1e3553d4f7d8ebf0aae28), [Ruff B017 test repair `ceddc308`](https://github.com/Iam-2squared/ark-ai/commit/ceddc308cdf4085e05839cb8507830d39aa05e58). A new disposable fixed-scope two-process synthetic revocation diagnostic compares the default WAL last-close boundary to explicit --wal-keeper, rejects ambiguous/unbounded child JSON, and independently verifies a read-only SQLite schema/row/version snapshot. Refusals remain anomalies; no replay/real consent claim. Initial isolated tests failed **at Ruff B017** due to broad pytest.raises(Exception); corrected only to exact argparse.ArgumentTypeError, no safety predicate weakened.
+2. **Memory WAL process lifecycle:** [source `b52db211`](https://github.com/Iam-2squared/ark-ai/commit/b52db211a9749ddcf62787eea812bf1e9c439ed2), [5 tests `8894ee19`](https://github.com/Iam-2squared/ark-ai/commit/8894ee19ddca187b4e4b2b905faa95d8239a0e69). Adds opt-in `--lifecycle-snapshots` to the disposable Memory diagnostic; bounded passive lstat states for -wal/-shm/-journal at prepared, ready, child exit, and closed phases. No sidecar following, accepting, unlinking, path exposure or production Memory change.
+3. **ActionAudit WAL process lifecycle:** [source `09b17f20`](https://github.com/Iam-2squared/ark-ai/commit/09b17f20f621215139f2671224c27abbe2d81e11), [5 tests `19676209`](https://github.com/Iam-2squared/ark-ai/commit/1967620960fc8405bf64799ed1fbbb65f6006e2e). Same opt-in, path-free lifecycle categories in an independent two-process synthetic audit fixture; includes keeper/no real tool execution and read-only postcommit data verification. The default diagnostic remains unchanged.
+4. **Technical evidence:** [Run836 report `2dfb2733`](https://github.com/Iam-2squared/ark-ai/blob/2dfb2733ec01a171889b69f9887413393db41f5d/docs/JARVIS_RUN836_NON_UI_WAL_REVOCATION_LIFECYCLE.md). Documents controlled reproduction, historical CI failure forensics, bounded metadata, and lack of independent proof/authorization.
+
+**35 authored tests are NOT 35 independently confirmed PASS**. Local full pytest/Ruff, a physical Windows host and GGUF were not run by this invocation; an isolated SQLite table-schema sanity check does not establish application correctness. In-flight CI claims apply only to their exact HEADs. Root cause of historical zero-link WAL/SHM sidecar observations remains **UNRESOLVED**. No production guard was relaxed.
+
+## CI — exact HEAD evidence (no inferred GREEN)
+
+- `2dfb2733` [CI #43368332837](https://github.com/Iam-2squared/ark-ai/actions/runs/43368332837): **QUEUED**, final result pending.
+- `19676209` [CI #43368200814](https://github.com/Iam-2squared/ark-ai/actions/runs/43368200814): **QUEUED**, final result pending.
+- `09b17f20` [CI #43368166047](https://github.com/Iam-2squared/ark-ai/actions/runs/43368166047): **IN_PROGRESS**, final result pending.
+- `5fcc2a53` [CI #43367951957](https://github.com/Iam-2squared/ark-ai/actions/runs/43367951957): **IN_PROGRESS**, final result pending.
+- `ceddc308` [CI #43367737614](https://github.com/Iam-2squared/ark-ai/actions/runs/43367737614): **IN_PROGRESS**, final result pending.
+- `8894ee19` [CI #43367679551](https://github.com/Iam-2squared/ark-ai/actions/runs/43367679551): **FAIL**, failure.
+- `b52db211` [CI #43367629380](https://github.com/Iam-2squared/ark-ai/actions/runs/43367629380): **FAIL**, failure.
+- `c1a9d400` [CI #43367443738](https://github.com/Iam-2squared/ark-ai/actions/runs/43367443738): **FAIL**, failure.
+- `fbbe9a43` [CI #43367359478](https://github.com/Iam-2squared/ark-ai/actions/runs/43367359478): **IN_PROGRESS**, final result pending.
+- `9c170825` [CI #43362813338](https://github.com/Iam-2squared/ark-ai/actions/runs/43362813338): **GREEN**, success.
+
+Baseline exact Run835 checkpoint [CI #43362813338](https://github.com/Iam-2squared/ark-ai/actions/runs/43362813338) was independently confirmed **GREEN 6/6** (Windows/Ubuntu Python 3.11–3.13), NOT evidence that new Run836 code passed. Intermediate first-test/source/test CI FAILs share the newly introduced Ruff B017, subsequently fixed; the latest exact checkpoint-result-HEAD CI remains unestablished at this pre-write snapshot. All workflows are auto-triggered by commits; no duplicate manual workflow dispatched.
+
+## Frozen contracts, blocked authority and zero-cost boundaries
+
+Frozen V1/V2/Local UI/Launcher contracts and evaluation evidence unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) still protected/unmerged; [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) paused/Draft/unmerged/untouched. No new UI, frontend source/tests, UI integration or polish. No paid/potentially billable compute, external GPU, Candidate adapter/weight generation, protected final evaluation, automatic Candidate promotion, authenticated credentials/consent/identity, real ToolBackend, private user data, irreversible file action, automatic COMMIT-UNKNOWN retry, frozen-contract edit or unapproved main merge. A synthetic SHA or reporting timestamp is not independent evidence.
+
+## Next plan / 今後の方針 (priority)
+
+1. Inspect **exact checkpoint-result HEAD** and six job outcomes, plus the corrected test HEAD; if FAIL, inspect exact failing job logs and apply minimum semantics-preserving fix on the normal GitHub Contents API route. Work in independent non-UI lanes while CI runs; never launch duplicate workflows.
+2. On disposable data only, compare revocation/Memory/ActionAudit WAL keeper vs no-keeper, sequential vs concurrent startup, append/revoke and last-close phases. Correlate status, postcommit row and nonidentifying sidecar lstat, but **never treat zero-link as automatically safe** or bypass sidecar fences.
+3. Advance Memory coherent CAS/ABA/expiry and COMMIT-UNKNOWN manual triage, Planner persistent UNKNOWN and terminal propagation, exact Registry-bound PermissionGate, durable audit-before-action and disconnected Mock Executor **only after lower-level exact-head GREEN evidence**.
+4. Extend privacy-safe Personal Context revocation/retention, proactive scheduler occurrence/restart, observation/mock multimodal contracts, and free V3 approval/path/identity/reproducibility. Do not reopen UI, protected evaluation or Candidate lanes without explicit authorization.
+
+---
+
 # LATEST — ARK AI Run835 NON-UI coherent SQLite WAL/Planner/privacy guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T13:01:30.436+09:00** (observed reporting clock, **NOT** trusted approval/action time). **Overall ARK/JARVIS: NOT_PASSED.** Work is isolated, reversible, zero-cost, and non-UI.
