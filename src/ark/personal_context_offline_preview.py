@@ -335,16 +335,38 @@ def verify_offline_context_preview(
         or _DIGEST.fullmatch(retained_local_digest) is None
         or type(report.owner_digest) is not str
         or len(report.owner_digest) != 64
+        or _DIGEST.fullmatch(report.owner_digest) is None
         or type(report.record_ids) is not tuple
         or not 1 <= len(report.record_ids) <= _MAX_RECORDS
-        or any(type(i) is not str or len(i) != 36 for i in report.record_ids)
+        or any(
+            type(i) is not str or len(i) != 36 or _RECORD.fullmatch(i) is None
+            for i in report.record_ids
+        )
         or type(report.canonical_local_json) is not str
         or len(report.canonical_local_json) > _MAX_SERIALIZED_BYTES
         or type(report.local_digest) is not str
         or len(report.local_digest) != 64
+        or _DIGEST.fullmatch(report.local_digest) is None
         or type(fixtures) is not tuple
     ):
         raise OfflineContextPreviewRejected("exact retained context preview required")
+    # A retained receipt must at least be self-consistent before accessing any
+    # private fixture. Character width alone is insufficient: a forged ASCII
+    # payload can be exactly at the accepted 65,536-character boundary. Preserve
+    # valid max-size canonical receipts rather than shrinking the public budget.
+    try:
+        retained_bytes = report.canonical_local_json.encode("utf-8", "strict")
+    except UnicodeError as exc:
+        raise OfflineContextPreviewRejected(
+            "exact retained context preview required"
+        ) from exc
+    if (
+        len(retained_bytes) > _MAX_SERIALIZED_BYTES
+        or report.local_digest != retained_local_digest
+        or hashlib.sha256(_DOMAIN + retained_bytes).hexdigest()
+        != retained_local_digest
+    ):
+        raise OfflineContextPreviewRejected("retained context preview mismatch")
     # Pin the caller-retained report BEFORE rebuilding from private fixtures.
     # A serializer/hash callback must not repair a forged report, or replace
     # an equal-valued field carrier, after verification has already begun.
