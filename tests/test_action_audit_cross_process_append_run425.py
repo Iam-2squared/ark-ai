@@ -50,6 +50,14 @@ def test_two_process_audit_append_has_ordered_unique_ids_without_raw_arguments(
     root.mkdir()
     path = root / "audit.sqlite"
     audit = SQLiteActionAudit(path, clock_ms=lambda: 1000)
+    # Exercise audit ordering, not SQLite's independent last-close WAL
+    # checkpoint/unlink race. Keep a read transaction alive until both
+    # subprocesses exit. The no-keeper sidecar condition remains explicitly
+    # covered by disposable diagnostics and production still fails closed.
+    keeper = sqlite3.connect(path)
+    assert keeper.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+    keeper.execute("BEGIN")
+    keeper.execute("SELECT COUNT(*) FROM action_events").fetchone()
     gate = root / "start"
     processes = [
         subprocess.Popen(
@@ -87,6 +95,7 @@ def test_two_process_audit_append_has_ordered_unique_ids_without_raw_arguments(
             if process.poll() is None:
                 process.kill()
                 process.communicate()
+        keeper.close()
     assert all(process.returncode == 0 for process in processes), replies
     outputs = [stdout.strip() for stdout, _stderr in replies]
     assert all(message.startswith("AUDITED:") for message in outputs)
