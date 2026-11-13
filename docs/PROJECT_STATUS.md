@@ -1,3 +1,38 @@
+# LATEST — ARK AI Run850 non-UI coherent Memory codec / atomic preaction custody / WAL SHM keeper
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T00:53:14.836+09:00** (actual observed reporting runtime clock, **not** a trusted consent, authorization or event time). **Overall ARK/JARVIS: NOT_PASSED**. Local-first, disconnected, zero-new-paid-service, reversible. **ALL UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), verified open/Draft/unmerged prewrite. **Initial work-basis HEAD:** `f515503d8064b362a282b28219b80e913e9bb0f9` (Run849 checkpoint; previous `PROJECT_STATUS.md` blob `9e861de43d7921724ca614150ddcc2e133e4c1fc`). **Latest source+test HEAD:** `c004eb20b31f5afbc204922e9a7096bcdc10765f`. **Technical-report/checkpoint-write-basis HEAD:** `1d7ef27b4897c8207094b8a9a797f68b3a59f6d6` (re-read immediately before Contents API write). **Checkpoint-result HEAD is UNKNOWN BEFORE WRITE**, since a commit cannot embed its own SHA; verify returned commit against subsequent PR HEAD.
+
+## NEW — 3 coherent non-UI packages, 26 authored regression cases, CI triage and correction
+
+1. **Memory / coherent retained WAL review digest preaccess:** [source `37a562a3`](https://github.com/Iam-2squared/ark-ai/commit/37a562a30a738257055b6581fce41328f78a062d) pins `hashlib`, `hashlib.sha256`, `json`, `json.dumps` and the digest domain before private SQLite reads and at reentrant `stable()` callback boundaries. [8 authored cases `7c59ffe9`](https://github.com/Iam-2squared/ark-ai/commit/7c59ffe954d998c6f144084e2500f161c6b0fbcf) exercise entry-time codec substitution, in-snapshot callback changes and valid cross-owner read-only behavior. CI detected Ruff I001 import ordering: first `5c696e86` correction was incomplete; [`42a0dd4a`](https://github.com/Iam-2squared/ark-ai/commit/42a0dd4a9fb99ce275b0f6db3eff1beacd42db3d) applies Ruff's exact separate alias-import layout. Reject semantics unchanged.
+2. **SQLite WAL/SHM keeper / last-close descriptor custody:** [5 authored cases `364d4fb3`](https://github.com/Iam-2squared/ark-ai/commit/364d4fb34cbd16e435e103a63eba49e73fd9b8e0) test a live keeper, zero-link held SHM after final SQLite close, mismatch across two read-only inventory captures, and symlink/hardlink denial. Disposable `tmp_path` fixtures only; unsupported host capability explicitly SKIPs. Last-close unlink can be normal SQLite behavior but **must not weaken no-follow/single-link or uncertain-write safeguards**. Direct cause of earlier ARK CI failure unproven.
+3. **Inert atomic preaction intent+audit codec/schema:** [source `3c0d2745`](https://github.com/Iam-2squared/ark-ai/commit/3c0d27459f59c974b7d5bf87cdbef772024f72a8) pins original digest/serialization functions, both chain domains, genesis, DDL and admission limit before fixture SQLite opening and at digest boundaries. [13 authored cases `c004eb20`](https://github.com/Iam-2squared/ark-ai/commit/c004eb20b31f5afbc204922e9a7096bcdc10765f) check precreation rejection, callback drift rollback, unchanged genesis, and positive **inert** append/inspect with no authority flags. This is **not** a restart-safe, externally authorized real WRITE.
+4. **Grounded [Run850 technical report](https://github.com/Iam-2squared/ark-ai/blob/1d7ef27b4897c8207094b8a9a797f68b3a59f6d6/docs/JARVIS_RUN850_NON_UI_COHERENT_CODEC_AND_WAL_LAST_CLOSE.md)** records source, evidence and integration blockers. **26 authored cases are NOT 26 confirmed PASS**. No full local Ruff/pytest or actual GGUF/physical PC run.
+
+## CI — exact SHA/run, no stale-head PASS
+
+- Prior Run849 `f515503d`: [#43446857496](https://github.com/Iam-2squared/ark-ai/actions/runs/43446857496) **GREEN 6/6** Windows/Ubuntu Python 3.11–3.13, **older HEAD only**.
+- New coherent-test import `7c59ffe9`: [#43455343810](https://github.com/Iam-2squared/ark-ai/actions/runs/43455343810) **FAIL 6/6** on Ruff I001 before pytest. First corrected `5c696e86`: [#43455679604](https://github.com/Iam-2squared/ark-ai/actions/runs/43455679604) **FAIL 6/6** on remaining Ruff alias-import order; exact suggested layout applied in `42a0dd4a`. These are syntax/style failures, **not proof of functional failures**.
+- **import_fix** `42a0dd4a9fb9`: [#43456169563](https://github.com/Iam-2squared/ark-ai/actions/runs/43456169563) **IN_PROGRESS**
+- **atomic_source** `3c0d27459f59`: [#43456371994](https://github.com/Iam-2squared/ark-ai/actions/runs/43456371994) **IN_PROGRESS**
+- **atomic_test** `c004eb20b31f`: [#43456520466](https://github.com/Iam-2squared/ark-ai/actions/runs/43456520466) **IN_PROGRESS**
+- **report** `1d7ef27b4897`: [#43456779952](https://github.com/Iam-2squared/ark-ai/actions/runs/43456779952) **QUEUED**
+- **Exact checkpoint-result 6-job GREEN is not yet established**. The checkpoint commit itself will trigger automatic CI; do not invent its ID or launch duplicate equivalent workflows.
+
+## Boundaries, blockers and Next plan / 今後の方針
+
+Frozen V1/V2/Local UI/Launcher contracts/evidence unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected Draft/unmerged, [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) paused UI Draft/unmerged/untouched. No UI, paid/external GPU/API, training/Candidate weight/adapter/promotion, protected final V2 evaluation, personal account/credential action, real camera/microphone/notification, trusted-clock or consent fabrication, actual ToolBackend dispatch, destructive/irreversible action or main merge. In `policy.py`, `PermissionGate._consumed_tokens` is **process-local**, so separately saved inert audit receipts do **not** prove restart-safe exactly-once authorization. COMMIT-UNKNOWN remains manual-only and fail-closed.
+
+1. Confirm the latest **exact-head Windows/Ubuntu × Python 3.11–3.13** CI; if FAIL, inspect logs and make the smallest semantics-preserving Contents API repair, then work another independent non-UI lane. Never claim newer GREEN from older runs.
+2. Continue disposable Memory/ActionAudit/revocation WAL/SHM last-close race diagnosis; never accept unlinked held FDs or auto-retry uncertain writes.
+3. Strengthen Memory CAS/expiry/globally coherent append highwater and COMMIT-UNKNOWN manual review; Planner durable UNKNOWN/terminal dependency restart quarantine.
+4. After prerequisite **exact-head GREEN**, connect immutable registry identity, exact-type permission, durable occurrence/replay denial and audit-before-action to **disconnected Mock only**, keeping real executor unavailable.
+5. Advance privacy-safe Personal Context lifecycle, proactive scheduler state, offline observation fixtures and V3 free-only approval/path/identity/reproducibility guards. Versions are not release/PASS evidence.
+
+---
+
 # LATEST — ARK AI Run849 non-UI startup carrier CI recovery + bounded privacy veto ingress
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T23:51:56+09:00** (observed reporting clock only; **NOT** trusted action, consent, authorization or evidence time). **Overall ARK/JARVIS: NOT_PASSED**. Local-first, disconnected, zero-new-paid-service, reversible; **ALL UI/FRONTEND DEVELOPMENT PAUSED**.
