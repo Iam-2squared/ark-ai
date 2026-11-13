@@ -200,6 +200,11 @@ def _probe(
             mode = keeper.execute("PRAGMA journal_mode").fetchone()
             if mode is None or mode[0].lower() != "wal":
                 raise RuntimeError("disposable WAL keeper unavailable")
+            # Hold a concrete WAL snapshot through independent child exits.
+            # A merely open, idle connection is not a durable-read witness;
+            # this is only a disposable lifetime-control experiment.
+            keeper.execute("BEGIN")
+            keeper.execute("SELECT COUNT(*) FROM action_events").fetchone()
         capture("prepared")
         for index in range(2):
             children.append(subprocess.Popen(
