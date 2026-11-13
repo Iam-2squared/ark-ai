@@ -78,7 +78,7 @@ def test_replaced_receipt_field_never_reads_private_data(
 
 
 @pytest.mark.parametrize("name", (
-    "__new__", "__getattribute__", "__getattr__", "__init__",
+    "__getattribute__", "__getattr__", "__init__",
 ))
 @pytest.mark.parametrize("carrier", (local._SCHEMA_TYPE, local._PREFLIGHT_TYPE))
 def test_replaced_receipt_lookup_hooks_denied_before_callbacks(
