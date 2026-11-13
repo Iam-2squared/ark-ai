@@ -43,17 +43,17 @@ def test_explicit_synthetic_fixture_roundtrip_is_never_consent():
     assert original.retention_authorized is False
 
 
-@pytest.mark.parametrize("field,bad", [
-    ("owner_digest", "f" * 64),
-    ("record_ids", ("rec_" + "f" * 32,)),
-    ("record_ids", [True]),
-    ("canonical_local_json", "{}"),
-    ("canonical_local_json", True),
-    ("local_digest", "f" * 64),
-    ("local_digest", True),
+@pytest.mark.parametrize("field,bad,denial", [
+    ("owner_digest", "f" * 64, "mismatch"),
+    ("record_ids", ("rec_" + "f" * 32,), "mismatch"),
+    ("record_ids", [True], "exact retained context preview required"),
+    ("canonical_local_json", "{}", "mismatch"),
+    ("canonical_local_json", True, "exact retained context preview required"),
+    ("local_digest", "f" * 64, "mismatch"),
+    ("local_digest", True, "exact retained context preview required"),
 ])
 def test_dataclass_equality_spoof_does_not_allow_private_payload_drift(
-    monkeypatch, field, bad,
+    monkeypatch, field, bad, denial,
 ):
     rows = (fixture(),)
     original = build(rows)
@@ -61,7 +61,7 @@ def test_dataclass_equality_spoof_does_not_allow_private_payload_drift(
     monkeypatch.setattr(
         mod.OfflineContextPreview, "__eq__", lambda self, other: True,
     )
-    with pytest.raises(mod.OfflineContextPreviewRejected, match="mismatch"):
+    with pytest.raises(mod.OfflineContextPreviewRejected, match=denial):
         verify(forged, rows, original.local_digest)
 
 
