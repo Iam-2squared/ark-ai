@@ -1,3 +1,37 @@
+# LATEST — ARK AI Run855 non-UI SQLite path budgets and bounded schema SQL preflight
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T05:46:28.002+09:00** (observed reporting runtime clock, NOT a trusted authorization, action, audit, approval or consent timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Fully local/disconnected, reversible and free-only; **all new UI/frontend work remains PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), checked open/Draft/unmerged. **Initial work-basis HEAD:** `fa542d8fa2a62b9417f273c987a38d94b4c8663b`. **Latest source+test HEAD:** `58631c75d0828356bb2e4af6b29f822631748cf9`. **Technical-report/checkpoint-write-basis HEAD:** `cc81bb10bd2aaadef69cf971770104cd4c2cfe28`, identical at PR and branch immediately before checkpoint write. **Previous PROJECT_STATUS blob:** `2a2986c05026fbb0bc1e095e9c514c37a2686c0b`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE** (the commit cannot truthfully encode its own SHA; verify returned write commit and postwrite PR+branch head separately).
+
+## NEW — two coherent non-UI source+test packages (13 authored regression cases)
+
+1. **Primary Memory and ActionAudit SQLite local path admission.** Memory [`e6df799e`](https://github.com/Iam-2squared/ark-ai/commit/e6df799e8cc240299a39cfaad40241ea4b3fc755), ActionAudit [`bbe5a04c`](https://github.com/Iam-2squared/ark-ai/commit/bbe5a04c6920151b1bd9462fade2da6f1d4452b2) and [9-case regression `14a81d1d`](https://github.com/Iam-2squared/ark-ai/commit/14a81d1d429939e187b53ece633b2d3dd1da13b9). Reject oversized, NUL and no-filename SQLite paths before mkdir/lstat/clock/connection, including normalized absolute path and longest `-journal` sidecar. Safe fixture constructors remain supported. No frozen schema/contract or live API change.
+2. **Detached SQLite schema prehydration.** [Source `ac4dd03e`](https://github.com/Iam-2squared/ark-ai/commit/ac4dd03e9eb8fe6995f88190308b84ec8834b434) and [4-case regression `58631c75`](https://github.com/Iam-2squared/ark-ai/commit/58631c75d0828356bb2e4af6b29f822631748cf9). Same-transaction SQL COUNT and DDL-byte preflight now rejects over-budget schemas before Python loads private DDL; import-time query identity pinned. Existing query-only, single-main, exact JSON budget, SHA sealing, double snapshot and deny-only properties preserved.
+3. [Run855 technical report](https://github.com/Iam-2squared/ark-ai/blob/cc81bb10bd2aaadef69cf971770104cd4c2cfe28/docs/JARVIS_RUN855_NON_UI_SQLITE_BOUNDED_PATHS_AND_SCHEMA_PREFLIGHT.md) records relevant source/test commits and an independent read-only review of the disposable actual ARK Memory/ActionAudit WAL/SHM last-close probe. Its held-FD link-count observations are diagnostics, not proof of future custody or COMMIT reconciliation.
+
+**13 authored tests do NOT imply 13 confirmed PASS.** No local full project Ruff/pytest, physical Windows/GGUF, human approval or real tool run occurred.
+
+## CI — exact HEAD evidence, no false carry-forward
+
+- Initial exact HEAD `fa542d8f`: [CI #43497087891](https://github.com/Iam-2squared/ark-ai/actions/runs/43497087891) **GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13, six job conclusions checked; older-head evidence only.
+- Latest test HEAD `58631c75`: [CI #43504215558](https://github.com/Iam-2squared/ark-ai/actions/runs/43504215558) **QUEUED** (conclusion none at checkpoint prewrite). **Latest HEAD six-job GREEN NOT VERIFIED.**
+- Technical-report HEAD `cc81bb10`: [CI #43504488566](https://github.com/Iam-2squared/ark-ai/actions/runs/43504488566) QUEUED (conclusion none). Checkpoint commit itself may initiate another automatic CI; no duplicate workflow rerun requested.
+
+## Frozen state, unresolved blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. [Protected PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains Draft/unmerged; [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains untouched Draft/unmerged. No UI/front-end work, paid/potentially billable service or compute, external GPU, Candidate weights/adapter/training/promotion, protected V2 evaluation, new secrets/connections, destructive work, real backend dispatch, required physical-PC action or main merge. SQLite pathname and sidecar preflights remain best-effort; WAL/SHM last-close unlink, descriptor custody-to-open race and independently authenticated provenance remain unresolved. `PermissionGate` spent tokens are process-local and exactly-once effects NOT PASSED. Memory COMMIT-UNKNOWN and Planner recovered RUNNING/UNKNOWN remain manual-only, never automatic retry. Reporting clock is not trusted action time.
+
+## Next plan / 今後の方針
+
+1. Check exact latest-source/test/checkpoint CI six jobs; if FAIL, inspect concrete Ruff/pytest logs and apply smallest fail-closed correction, without weakening hard denials or launching equivalent duplicate workflows.
+2. Continue disposable Memory/ActionAudit WAL/SHM last-close and open-to-use descriptor race investigation, keeping no-follow and single-link refusal; retain uncertainty rather than reexecute.
+3. Improve coherent Memory retained event/high-water and COMMIT-UNKNOWN manual triage, Planner durable UNKNOWN/terminal CAS and recovery quarantine.
+4. After exact-head GREEN prerequisites, connect immutable ToolRegistry, exact-type PermissionGate, durable occurrence/replay and audit-before-action to a disconnected Mock Executor only; never grant real effects.
+5. Independently strengthen privacy-safe Personal Context, proactive scheduler, observation fixture contracts and free-only V3 identity/authorization/reproducibility guards. Versions are evidence labels, not automatic PASS.
+
+---
+
 # LATEST — ARK AI Run854 non-UI coherent Memory / Planner recovery / Personal Context preflight
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T04:57:43.526+09:00** (reporting runtime clock observed immediately before saving; NOT trusted consent, approval, audit or action time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, reversible, free-only. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
