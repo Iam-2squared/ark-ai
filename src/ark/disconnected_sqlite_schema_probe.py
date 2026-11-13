@@ -20,6 +20,11 @@ _MAX_ITEMS = 128
 _MAX_DDL_BYTES = 65_536
 _MAX_VERSION = 2**31 - 1
 _QUERY = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+# SQL-side count and byte budget before any private DDL is hydrated by Python.
+_PREFLIGHT_QUERY = (
+    "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+    "FROM sqlite_master"
+)
 
 # The caller may supply private schema SQL through a local SQLite connection.
 # Reject altered codec, digest and admission rules before reading that SQL.
@@ -30,6 +35,7 @@ _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_SHA_PATTERN = _SHA
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_QUERY = _QUERY
+_ORIGINAL_PREFLIGHT_QUERY = _PREFLIGHT_QUERY
 _ORIGINAL_LIMITS = (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION)
 
 
@@ -107,6 +113,7 @@ def _require_original_schema_probe() -> None:
         or _SHA is not _ORIGINAL_SHA_PATTERN
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _QUERY is not _ORIGINAL_QUERY
+        or _PREFLIGHT_QUERY is not _ORIGINAL_PREFLIGHT_QUERY
         or any(
             type(value) is not int for value in
             (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION)
@@ -172,6 +179,15 @@ def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
         or not 0 <= schema[0] <= _MAX_VERSION
     ):
         raise SQLiteSchemaProbeRejected("invalid schema/version metadata")
+    _require_original_schema_probe()
+    preflight = connection.execute(_PREFLIGHT_QUERY).fetchone()
+    _require_original_schema_probe()
+    if (
+        preflight is None or len(preflight) != 2
+        or type(preflight[0]) is not int or not 0 <= preflight[0] <= _MAX_ITEMS
+        or type(preflight[1]) is not int or not 0 <= preflight[1] <= _MAX_DDL_BYTES
+    ):
+        raise SQLiteSchemaProbeRejected("schema SQL preflight exceeds byte or row budget")
     records = []
     size = 0
     for record in connection.execute(_QUERY):
