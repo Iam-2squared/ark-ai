@@ -215,7 +215,8 @@ def _verify_disposable_audit(path: Path) -> bool:
     Check exact request digests, outcomes and append highwater in a read-only
     disposable database. These are NOT externally authenticated effects.
     """
-    from ark.agency.contracts import ToolCall
+    from ark.agency.audit import _validate_v1_schema
+    from ark.agency.contracts import ActionAuditSchemaError, ToolCall
 
     if not path.is_file() or path.is_symlink():
         return False
@@ -233,6 +234,11 @@ def _verify_disposable_audit(path: Path) -> bool:
             path.absolute().as_uri() + "?mode=ro", uri=True,
         )) as conn:
             conn.execute("PRAGMA query_only=ON")
+            if conn.execute("PRAGMA user_version").fetchone() != (1,):
+                return False
+            # The persisted rows alone cannot attest a replacement DDL or
+            # trigger. Require the original read-only synthetic audit schema.
+            _validate_v1_schema(conn)
             rows = conn.execute(
                 "SELECT event_id,request_id,tool,capability,scope,"
                 "arguments_sha256,outcome,occurred_at_ms "
@@ -241,13 +247,18 @@ def _verify_disposable_audit(path: Path) -> bool:
             highwater = conn.execute(
                 "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
             ).fetchall()
-    except (sqlite3.Error, OSError, ValueError):
+    except (sqlite3.Error, ActionAuditSchemaError, OSError, ValueError):
         return False
-    return (
-        [row[0] for row in rows] == [1, 2]
-        and sorted(row[1:] for row in rows) == sorted(expected)
-        and highwater == [(2,)]
-    )
+    try:
+        return (
+            [row[0] for row in rows] == [1, 2]
+            and sorted(row[1:] for row in rows) == sorted(expected)
+            and highwater == [(2,)]
+        )
+    except (TypeError, ValueError):
+        # BLOB identities or otherwise malformed SQLite values cannot be
+        # promoted into a clean fixture or leaked through a traceback.
+        return False
 
 
 def main(argv: list[str] | None = None) -> int:
