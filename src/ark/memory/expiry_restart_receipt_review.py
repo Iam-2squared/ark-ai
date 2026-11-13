@@ -26,6 +26,9 @@ _ORIGINAL_CALLEES = (
     cohort_module.compare_memory_expiry_cohorts,
 )
 _ORIGINAL_PROTOCOL = (_DOMAIN, _SHA)
+_ORIGINAL_HASHLIB_MODULE = hashlib
+_ORIGINAL_JSON_MODULE = json
+_ORIGINAL_COHORT_MODULE = cohort_module
 
 
 class MemoryExpiryRestartRejected(ValueError):
@@ -75,7 +78,12 @@ _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _FIELDS)
 
 def _protocol() -> None:
     if (
-        (_DOMAIN, _SHA) != _ORIGINAL_PROTOCOL
+        # Check modules before invoking their potentially replaced getters.
+        hashlib is not _ORIGINAL_HASHLIB_MODULE
+        or json is not _ORIGINAL_JSON_MODULE
+        or cohort_module is not _ORIGINAL_COHORT_MODULE
+        or _DOMAIN is not _ORIGINAL_PROTOCOL[0]
+        or _SHA is not _ORIGINAL_PROTOCOL[1]
         or hashlib.sha256 is not _ORIGINAL_HASH
         or json.dumps is not _ORIGINAL_DUMPS
         or (
