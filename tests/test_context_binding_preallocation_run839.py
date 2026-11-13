@@ -55,14 +55,14 @@ def test_oversized_untrusted_preview_rejected_without_disclosure(field, value, e
     assert "rec_" not in str(caught.value)
 
 
-@pytest.mark.parametrize("request", (
+@pytest.mark.parametrize("request_id", (
     "ctxreq_" + "a" * 100_000,
     "ctxreq_" + "\ud800" * 100,
 ))
-def test_oversized_request_identifier_rejected_before_private_preview(request):
+def test_oversized_request_identifier_rejected_before_private_preview(request_id):
     preview = _fixture_preview()
     with pytest.raises(OfflineContextBindingRejected, match="request ID"):
-        bind_offline_context_request(request, preview)
+        bind_offline_context_request(request_id, preview)
 
 
 def test_canonical_preview_still_binds_without_authorizing_any_effect():
