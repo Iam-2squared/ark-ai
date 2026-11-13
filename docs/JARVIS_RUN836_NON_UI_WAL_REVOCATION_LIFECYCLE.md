@@ -47,9 +47,14 @@ real tool backend, training, protected evaluation, private disclosure or deletio
    adds five cases for lstat categories, no symlink traversal, keeper-mode
    real two-process fixture, opt-in aggregate and default opt-out.
 
-**30 test cases AUTHORED, NOT independently confirmed PASS.**
+**35 test cases AUTHORED (25 revocation + 5 Memory + 5 ActionAudit), NOT independently confirmed PASS.**
 No frozen Memory schema or production permission, action, or Memory write
 API was changed. Fixture success is not a real external side-effect witness.
+
+## NEW — independent ActionAudit WAL lifecycle lane
+
+5. **ActionAudit sidecar lifecycle.** [Source 09b17f20](https://github.com/Iam-2squared/ark-ai/commit/09b17f20f621215139f2671224c27abbe2d81e11) updates the opt-in disposable ActionAudit two-interpreter test utility with passive, path-free lstat categories for -wal/-shm/-journal at prepared, ready, each child exit, and closed phases. It does not invoke any real tool/backend or relax sidecar admission.
+6. **ActionAudit regression tests.** [Commit 19676209](https://github.com/Iam-2squared/ark-ai/commit/1967620960fc8405bf64799ed1fbbb65f6006e2e) adds five cases including a real keeper-mode two-process synthetic audit/readback, symlink non-dereference, opt-in bounded counts and opt-out behavior. No synthetic audit record proves an external effect. Automated [CI #43368166047](https://github.com/Iam-2squared/ark-ai/actions/runs/43368166047) was IN_PROGRESS for source and [CI #43368200814](https://github.com/Iam-2squared/ark-ai/actions/runs/43368200814) QUEUED for test HEAD at the 2026-11-13T13:52:26 JST inspection; both are **NOT YET GREEN**. No duplicate workflow run dispatched.
 
 ## SQLite source facts vs hypothesis
 
