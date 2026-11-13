@@ -120,6 +120,46 @@ def review_registered_planner_atomic_triage(
         raise RegisteredPlannerAtomicTriageRejected(
             "exact bounded triage inputs required"
         )
+    # The WRITE occurrence tuple is independent caller input, not a registry
+    # identity. Refuse malformed and oversized entries *before* reading any
+    # Planner/registry/SQLite witness or calling a registry resolver. This
+    # prevents an invalid manual-recovery request from reaching callbacks.
+    names_seen: set[str] = set()
+    occurrences_seen: set[str] = set()
+    for pair in write_occurrences:
+        if (
+            type(pair) is not tuple or len(pair) != 2
+            or type(pair[0]) is not str or type(pair[1]) is not str
+            or not pair[0].strip() or len(pair[0]) > 256
+            or len(pair[1]) != 68 or not pair[1].startswith("occ_")
+        ):
+            raise RegisteredPlannerAtomicTriageRejected(
+                "malformed bounded WRITE occurrence before review"
+            )
+        try:
+            encoded_name = pair[0].encode("utf-8", errors="strict")
+        except UnicodeError as exc:
+            raise RegisteredPlannerAtomicTriageRejected(
+                "invalid UTF-8 WRITE step identity"
+            ) from exc
+        if (
+            len(encoded_name) > 256
+            or re.fullmatch(r"occ_[0-9a-f]{64}", pair[1]) is None
+            or pair[0] in names_seen or pair[1] in occurrences_seen
+        ):
+            raise RegisteredPlannerAtomicTriageRejected(
+                "invalid or repeated WRITE occurrence before review"
+            )
+        names_seen.add(pair[0])
+        occurrences_seen.add(pair[1])
+    if (
+        type(retained.count) is not int or not 0 <= retained.count <= 128
+        or type(retained.tip_sha256) is not str
+        or re.fullmatch(r"[0-9a-f]{64}", retained.tip_sha256) is None
+    ):
+        raise RegisteredPlannerAtomicTriageRejected(
+            "invalid retained atomic witness before review"
+        )
     originals = tuple(
         (s, s.step_id, s.call, s.depends_on, s.call.tool, s.call.capability,
          s.call.scope, s.call.arguments, s.call.request_id)
@@ -137,7 +177,8 @@ def review_registered_planner_atomic_triage(
                 (recovered.tail, recovered.step_statuses,
                  recovered.ambiguous_running_steps), recovery_image, strict=True,
             ))
-            or (retained.count, retained.tip_sha256) != retained_image
+            or retained.count is not retained_image[0]
+            or retained.tip_sha256 is not retained_image[1]
             or any(
                 s is not old or s.step_id is not name or s.call is not call
                 or s.depends_on is not deps or call.tool is not tool
