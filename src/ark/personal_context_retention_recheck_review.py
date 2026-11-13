@@ -144,6 +144,19 @@ def _epoch(value: SyntheticRetentionInventory) -> tuple[object, ...]:
         # equality would accept e.g. "not_expired" in place of the enum,
         # or True in place of revision 1, as a supposedly intact receipt.
         raise SyntheticRetentionRecheckRejected("exact cached retention item types required")
+    # The persisted inventory is ordered by canonical deterministic Memory ID.
+    # A reflected cached receipt can instead contain a huge, malformed,
+    # duplicate, or permuted identity. Reject that before any private SQLite
+    # or revocation read, without invoking user-controlled equality/hash code.
+    ids = tuple(item.memory_id for item in value.items)
+    if any(
+        len(identity) != 68 or not identity.startswith("mem_")
+        or any(char not in _HEX for char in identity[4:])
+        for identity in ids
+    ) or ids != tuple(sorted(set(ids))):
+        raise SyntheticRetentionRecheckRejected(
+            "exact cached retention item identity or order required"
+        )
     head = tuple(
         getattr(value, field.name) for field in fields(SyntheticRetentionInventory)
         if field.name != "items"
