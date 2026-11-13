@@ -19,6 +19,7 @@ from pathlib import Path
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_ROWS = 512
+_MAX_PATH = 4096
 _MAX_MS = 2**63 - 1
 _DOMAIN = b"ARK-disconnected-privacy-veto-v1\0"
 _DDL = (
@@ -242,7 +243,9 @@ def _assert_review_denied(review: OfflinePrivacyVetoReview) -> None:
 
 
 def _sha(value: object) -> bool:
-    return type(value) is str and _SHA.fullmatch(value) is not None
+    # Reject oversized or truncated pseudonymous identifiers before regex.
+    # A same-process malformed receipt must not reach a matching callback.
+    return type(value) is str and len(value) == 64 and _SHA.fullmatch(value) is not None
 
 
 def _ms(value: object) -> bool:
@@ -272,6 +275,7 @@ def _valid_witness(witness: object) -> bool:
 def _path(value: object, *, exists: bool) -> Path:
     if (
         type(value) is not type(Path("."))
+        or len(str(value)) > _MAX_PATH
         or not value.is_absolute()
         or ".." in value.parts
     ):
