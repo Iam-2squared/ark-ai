@@ -29,6 +29,8 @@ def _require_original_registry_limits() -> None:
         raise ValueError("registry admission limits changed")
 
 
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_INSPECT = inspect
@@ -43,7 +45,11 @@ def _require_original_registry_digest() -> None:
     """
     _require_original_registry_limits()
     if (
-        hashlib.sha256 is not _ORIGINAL_SHA256
+        # Module rebinding may itself install executable __getattr__ code.
+        # Compare the module identity before fetching a digest/JSON member.
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
     ):
         raise ValueError("registry digest dependencies changed")
