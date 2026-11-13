@@ -131,7 +131,7 @@ def _require_original_denials() -> None:
         )
     ):
         raise DisconnectedLocalReadinessRejected(
-            "startup receipt field or lookup carrier changed"
+            "startup schema receipt authority carrier changed"
         )
     # The startup review may handle private fixture topology/registry identity.
     # Never send those values into a substituted digest/JSON callback.
