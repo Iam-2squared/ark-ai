@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run840 non-UI Planner / mock / PNG ingress and WAL last-close evidence
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T16:57:51.003+09:00** (observed tool-runtime reporting clock ONLY; **not** trusted execution/authorization time). **Overall ARK/JARVIS: NOT_PASSED.** Entire invocation was free-only, local-first, disconnected/reversible; new UI/frontend development remains PAUSED.
+
+**Branch / PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED on live inspection. **Initial work-basis HEAD:** `df8d35336437a9ce71ba4f0cb9c9fa5e0e23a1a4` (Run839 checkpoint). **Last source/test HEAD:** `0feb3e684160db3e6b4fcf6e82bcbcc7e87b7685`. **Latest report HEAD / checkpoint-write-basis HEAD:** `7f5cd7f201fdeb1087b8cbc1c97359bd40a474be` (recheck before write). **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; obtain ordinary GitHub Contents API commit SHA, then inspect PR and branch refs. Prior canonical status blob SHA: `5a04cbaff85b0b4d4328dc1830a9f44744f2df98`.
+
+## NEW — three independent non-UI implementation+test packages (17 authored cases)
+
+1. **Disconnected mock executor / unqualified builtin shadowing:** [source `03c265ce`](https://github.com/Iam-2squared/ark-ai/commit/03c265ce760565f171650a2d4057e5214337b9f4), [tests `e3c81704`](https://github.com/Iam-2squared/ark-ai/commit/e3c81704c305866747f3f37e43b6a5510903f9be). Refuse an injected `disconnected_toolbox.sum` global **before private synthetic JSON is decoded or evaluated**; Python resolves unqualified `sum(values)` through module globals prior to builtins. No actual backend, notification or external dispatch. **3 authored tests**.
+2. **PlanGraph exact admission and retained epoch safety:** [source `8b74656d`](https://github.com/Iam-2squared/ark-ai/commit/8b74656d198f7ed3308251df3f13adfa6de7cb05), [tests `f5e21621`](https://github.com/Iam-2squared/ark-ai/commit/f5e216213001a781bbb5a71d10b76a4eb2509606). Guard reflected PlanStep IDs, dependency tuples, ToolCall type and duplicate dependency IDs before dict/set hashing, and retained status/plan epoch records before user-code iteration or key equality. Existing topological ordering, revision/CAS and terminal cascades unchanged. **8 authored tests**.
+3. **Offline PNG metadata/digest privacy:** [source `60e24c6c`](https://github.com/Iam-2squared/ark-ai/commit/60e24c6c25cf2bd9aac849241b9da5bfe7291f44), [tests `0feb3e68`](https://github.com/Iam-2squared/ark-ai/commit/0feb3e684160db3e6b4fcf6e82bcbcc7e87b7685). Pin original SHA validation helper before accessing owner/privacy/source digests; reject non-64-character labels before regex scanning. No camera, pixels, consent or reusable captured data. **6 authored tests**.
+
+**17 authored cases are NOT 17 independently confirmed PASS.** No local full repository Ruff/pytest, target physical PC or real GGUF benchmark was run. Technical evidence: [Run840 report at `7f5cd7f`](https://github.com/Iam-2squared/ark-ai/blob/7f5cd7f201fdeb1087b8cbc1c97359bd40a474be/docs/JARVIS_RUN840_NON_UI_INGRESS_AND_SQLITE_LAST_CLOSE.md).
+
+## Independent disposable SQLite WAL evidence — narrow and reproducible
+
+Using **only ephemeral synthetic Linux SQLite DBs** (Python 3.13.5 / SQLite 3.46.1), parent retained an open read-only `-shm` FD while another **child process** closed the final writer. Without keeper, FD's `st_nlink` transitioned `1 → 0` after child exit. With a parent keeper connection, writer close left `st_nlink=1` until the keeper itself closed, then it became `0`. Both child processes exited 0. The same in-process two-connection result was observed. This establishes a plausible **normal SQLite last-close sidecar unlink mechanism**, **not** ARK's precise Windows/CI race root cause, not an alias bypass and not provenance/authority. Existing production no-follow, link-count and committed-data checks remain strictly fail-closed and unchanged. No automatic retry, journal recovery replay or owner-data mutation.
+
+## CI / evidence at checkpoint preparation
+
+- Run839 final HEAD `df8d3533` — [CI #43382147635](https://github.com/Iam-2squared/ark-ai/actions/runs/43382147635): **GREEN 6/6** on Windows/Ubuntu Python 3.11–3.13, exact *previous* checkpoint only.
+- Run840 mock/test `e3c81704` — [CI #43388576663](https://github.com/Iam-2squared/ark-ai/actions/runs/43388576663): **IN PROGRESS, 3 GREEN / 3 pending** on last inspection.
+- Run840 Planner/test `f5e21621` — [CI #43388726238](https://github.com/Iam-2squared/ark-ai/actions/runs/43388726238): **IN PROGRESS, 2 GREEN / 4 pending** on last inspection.
+- Run840 PNG/test `0feb3e68` — [CI #43388843468](https://github.com/Iam-2squared/ark-ai/actions/runs/43388843468): **QUEUED, 0 GREEN / 6 pending** on last inspection.
+- Report/checkpoint commits launch normal automatic CI. **No duplicate manual workflow run** was started. Latest exact checkpoint-result HEAD 6/6 GREEN remains **UNVERIFIED** as of saving. No passed status is inferred from an earlier HEAD.
+
+## Frozen contracts, blockers and approval boundaries unchanged
+
+Frozen V1/V2/Local UI/Launcher evidence/contracts and protected final-evaluation boundaries untouched. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains protected/Draft/unmerged; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) paused/Draft/unmerged/untouched. No UI source, frontend tests, UI integration or design changes. No paid/potentially billable external compute/API/service, real Candidate adapter/weights/promotion, protected V2 final evaluation, main merge, physical device actions, credentials, external ToolBackend, notifications, trusted-clock/consent assertions or destructive/irreversible operations. Offline receipts do not constitute execution, approval, or durable authority. SQLite `-shm` ARK-specific collision remains an unresolved fail-closed investigation. **ARK/JARVIS: NOT_PASSED.**
+
+## Next plan / 今後の方針 — priority
+
+1. Verify **Run840 exact checkpoint-result HEAD** CI 6/6; inspect failed job logs and apply only minimal semantics-preserving repairs through normal GitHub Contents API, progressing a different non-UI lane while CI runs.
+2. Differentiate SQLite last-close/keeper behaviour from alias attacks in owned disposable Memory, ActionAudit and Personal Context cross-process tests; preserve link-count guards and avoid automatic COMMIT-UNKNOWN replay.
+3. Continue Memory coherent CAS/ABA/expiry/manual COMMIT-UNKNOWN reconciliation; Planner persistent UNKNOWN quarantine and terminal propagation. Integrate immutable ToolRegistry/PermissionGate/trusted-clock audit-before-action/disconnected Mock Executor **only after lower-layer exact-head GREEN**.
+4. Progress private Personal Context retention/revocation, proactive restart/occurrence, offline observation contracts and V3 free-only approvals/path/identity guards without UI, protected Candidate or main gates.
+
+---
+
 # LATEST — ARK AI Run839 non-UI recovery / privacy / mock ingress budgets and CI repair
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T15:55:18.846+09:00** (observed reporting clock ONLY, **NOT** a trusted authorization/action clock). **Overall ARK/JARVIS: NOT_PASSED.** All work zero-cost, disconnected/local-first and reversible; new UI/frontend remains PAUSED.
