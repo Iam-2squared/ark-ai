@@ -177,8 +177,11 @@ def bind_offline_context_request(
     This is a local integrity check only, not a replay ledger, authenticated
     identity, consent check, or permission to publish context content.
     """
+    # Fixed-width ASCII identifiers and a bounded canonical JSON string are
+    # rejected before regex scanning, UTF-8 allocation or private parsing.
     _assert_original_private_codec()
-    if type(request_id) is not str or _REQUEST.fullmatch(request_id) is None:
+    if type(request_id) is not str or len(request_id) != 71
+        or _REQUEST.fullmatch(request_id) is None:
         raise OfflineContextBindingRejected("exact local context request ID required")
     if type(preview) is not _PREVIEW_TYPE:
         raise OfflineContextBindingRejected("exact local context preview required")
@@ -232,12 +235,16 @@ def bind_offline_context_request(
     unchanged()
     owner, ids, canonical, digest = pinned
     if (
-        type(owner) is not str or _SHA.fullmatch(owner) is None
+        type(owner) is not str or len(owner) != 64
+        or _SHA.fullmatch(owner) is None
         or type(ids) is not tuple or not 1 <= len(ids) <= 32
-        or any(type(x) is not str or _RECORD.fullmatch(x) is None for x in ids)
+        or any(type(x) is not str or len(x) != 36
+               or _RECORD.fullmatch(x) is None for x in ids)
         or ids != tuple(sorted(set(ids)))
         or type(canonical) is not str
-        or type(digest) is not str or _SHA.fullmatch(digest) is None
+        or len(canonical) > 65_536
+        or type(digest) is not str or len(digest) != 64
+        or _SHA.fullmatch(digest) is None
     ):
         raise OfflineContextBindingRejected("invalid context preview metadata")
     try:
@@ -271,8 +278,10 @@ def bind_offline_context_request(
             type(record) is not dict
             or set(record) != {"record_id", "scope_digest", "content"}
             or type(record["record_id"]) is not str
+            or len(record["record_id"]) != 36
             or record["record_id"] != expected_id
             or type(record["scope_digest"]) is not str
+            or len(record["scope_digest"]) != 64
             or _SHA.fullmatch(record["scope_digest"]) is None
             or type(record["content"]) is not str
             or len(record["content"]) > 4096
