@@ -98,6 +98,10 @@ def _protocol() -> None:
         ImprovementProposalInput is not _INPUT
         or ImprovementProposalDraft is not _OUTPUT
         or _NAME is not _ORIGINAL_NAME or _SHA is not _ORIGINAL_SHA
+        # Validators handle private owner/namespace/source digests. A
+        # substituted local callback must not learn them or forge a proposal.
+        or _name is not _ORIGINAL_NAME_HELPER
+        or _sha is not _ORIGINAL_SHA_HELPER
         or _DOMAIN is not _ORIGINAL_DOMAIN or _KINDS is not _ORIGINAL_KINDS
         or hashlib.sha256 is not _ORIGINAL_HASH
         or json.dumps is not _ORIGINAL_DUMPS
@@ -129,15 +133,19 @@ def _protocol() -> None:
 
 
 def _name(value: object) -> str:
-    if type(value) is not str or _NAME.fullmatch(value) is None:
+    if type(value) is not str or not 1 <= len(value) <= 64 or _NAME.fullmatch(value) is None:
         raise DisconnectedImprovementRejected("invalid proposal category/component")
     return value
 
 
 def _sha(value: object) -> str:
-    if type(value) is not str or _SHA.fullmatch(value) is None:
+    if type(value) is not str or len(value) != 64 or _SHA.fullmatch(value) is None:
         raise DisconnectedImprovementRejected("invalid content-free source digest")
     return value
+
+
+_ORIGINAL_NAME_HELPER = _name
+_ORIGINAL_SHA_HELPER = _sha
 
 
 def draft_disconnected_improvements(
