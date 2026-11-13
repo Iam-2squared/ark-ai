@@ -1,4 +1,40 @@
-# LATEST — ARK AI Run831 NON-UI Windows SQLite reader closure; Proactive + Planner protocol identity
+# LATEST — ARK AI Run832 NON-UI durable two-process verification and V3 offline protocol identity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T10:51:39+09:00** (reporting timestamp only; **NOT** a verified clock, approval, external action or consent). **Overall ARK/JARVIS: NOT_PASSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED at this exact pre-write head check. **Initial work-basis HEAD:** `a0df0438b0d47ca0cc4d8ade1e42c8bb0fa96981` (Run831 checkpoint). **Last executable/test HEAD:** `de8d6d75082c09c9716495ed576f18628d83f3c3`. **Technical-report HEAD:** `9b2de979ff1b7d21ad9d7f1638e20c9d41aeb2db`. **Checkpoint-write-basis HEAD:** `9b2de979ff1b7d21ad9d7f1638e20c9d41aeb2db`, re-read immediately before this normal Contents API write. **Checkpoint-result HEAD: UNKNOWN before write**; use the returned Contents API SHA and post-write live PR/branch HEAD for verification, never substitute report HEAD. Previous status blob SHA: `3534c5500b5d224076175e620a2df9d4b17a07f0`.
+
+## NEW — three independent non-UI packages and 21 authored tests
+
+1. **Memory disposable multiprocess post-commit evidence.** [Source `27114747`](https://github.com/Iam-2squared/ark-ai/commit/27114747a40e7a487a8bd6ccabe51a7c25a318c6), [9 tests `fe82d87e`](https://github.com/Iam-2squared/ark-ai/commit/fe82d87e0e4efe10323bb4cd0234e6ff2752396d). The CLI now independently reads read-only SQLite state after both synthetic child reports: exact owner/namespace/source identities, canonical memory ID, content, revision, create/update event prefix, dense event IDs and AUTOINCREMENT highwater. This prevents child-only `CREATED`/`UPDATED` text from establishing false green. Tests include 4 real two-process cases, 3 corruption cases, absent-file no-create and forged-success CLI. No user data, unsafe sidecar replay or real action.
+2. **ActionAudit disposable post-commit evidence.** [Source `3401a2c5`](https://github.com/Iam-2squared/ark-ai/commit/3401a2c569e4cd3277b02dc52ddf24cdb5d26c65), [8 tests `b512f7ee`](https://github.com/Iam-2squared/ark-ai/commit/b512f7ee3bb5646bf07e0cf6e42689c9a359b4f5). Instead of verifying only event IDs, a read-only SQLite check now requires both expected synthetic ToolCall request IDs, SHA, tool, capability, scope, outcome, fixture timestamp and highwater. Windows file handles are closed explicitly. Covers keeper success, 5 field-drifts, absent file, forged-success CLI. Audit append is not proof of an external effect.
+3. **V3 offline packet class-custody hardening.** [Source `2f02de1a`](https://github.com/Iam-2squared/ark-ai/commit/2f02de1a72838ff9348ccc7cc9fca327de3497e6), [4 tests `de8d6d75`](https://github.com/Iam-2squared/ark-ai/commit/de8d6d75082c09c9716495ed576f18628d83f3c3). Three protocol class positions now compare by Python object identity rather than running injected `__eq__`/`__ne__` callbacks; healthy synthetic review continues to deny compute/training/promotion/provenance. Protected PR #5/frozen boundaries unchanged.
+4. **Read-only historical CI forensics and evidence.** [Run832 technical report](https://github.com/Iam-2squared/ark-ai/blob/9b2de979ff1b7d21ad9d7f1638e20c9d41aeb2db/docs/JARVIS_RUN832_NON_UI_DURABLE_PROBE_READBACK_V3_CLASS_IDENTITY.md) records exact commits, status and safe reproduction controls. Historical [Memory failed CI #43314091179](https://github.com/Iam-2squared/ark-ai/actions/runs/43314091179) observed Ubuntu 3.12 `-shm` regular file, `nlink=0`, separate-source; [ActionAudit failed CI #43313725582](https://github.com/Iam-2squared/ark-ai/actions/runs/43313725582) observed Ubuntu 3.13 bootstrap sidecar refusal. **WAL/SHM race cause remains UNRESOLVED.** No alias-guard weakening, automatic retry or inference of benignness.
+
+**21 authored tests are NOT 21 independently confirmed PASS yet**. The full local pytest/Ruff and physical user-PC GGUF were not run. Exact work-basis diff confirms **seven commits**, affecting only the above two diagnostic scripts, detached V3 packet reviewer, three new tests and Run832 report; no UI, frozen contract, or protected PR source touched.
+
+## CI — exact HEAD evidence, no inferred GREEN
+
+- Prior Run831 exact checkpoint HEAD `a0df0438b0d47ca0cc4d8ade1e42c8bb0fa96981`: [CI #43340314592](https://github.com/Iam-2squared/ark-ai/actions/runs/43340314592) **GREEN 6/6**, Windows/Ubuntu Python 3.11–3.13; all 6 jobs individually inspected.
+- Memory source `27114747`: [CI #43346856768](https://github.com/Iam-2squared/ark-ai/actions/runs/43346856768), **IN_PROGRESS**; Memory test `fe82d87e`: [CI #43346948134](https://github.com/Iam-2squared/ark-ai/actions/runs/43346948134), **IN_PROGRESS**; test HEAD Ubuntu 3/3 GREEN and Windows in-progress at the observed jobs read.
+- Audit source `3401a2c5`: [CI #43347084970](https://github.com/Iam-2squared/ark-ai/actions/runs/43347084970), **IN_PROGRESS**; Audit test `b512f7ee`: [CI #43347157490](https://github.com/Iam-2squared/ark-ai/actions/runs/43347157490), **IN_PROGRESS**.
+- V3 source `2f02de1a`: [CI #43347393110](https://github.com/Iam-2squared/ark-ai/actions/runs/43347393110), **IN_PROGRESS**; V3 test `de8d6d75`: [CI #43347479892](https://github.com/Iam-2squared/ark-ai/actions/runs/43347479892), **QUEUED**.
+- Report `9b2de979`: [CI #43347775561](https://github.com/Iam-2squared/ark-ai/actions/runs/43347775561) **QUEUED**. **The checkpoint-result HEAD created by this write will have another exact-head CI, not GREEN at pre-write time.** No duplicate workflow manually launched.
+
+## Frozen gates, blockers and free-only authorization boundaries
+
+V1/V2/Local UI/Launcher frozen evidence/contracts unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected and UNMERGED. [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) completed UI foundation PAUSED/DRAFT/UNMERGED/UNTOUCHED. No UI/frontend source, tests, polish or integration. No paid/potentially billable service, GPU, compute, API, subscription, real Candidate/weights/training/promotion, protected V2 final evaluation, new credentials/account access, physical PC act, destructive/irreversible operation, unapproved main merge, real external ToolBackend, automatic UNKNOWN replay or human approval assertion. Synthetic local SQLite statuses, event hashes and test clocks are not trusted consent, provenance, authenticated runtime or exactly-once side-effect receipts.
+
+## Next plan / 今後の方針 (prioritized)
+
+1. Inspect final exact checkpoint-head six-job CI and independent package test-head jobs. On actual FAIL, read job logs and use the smallest semantics-preserving normal Contents API correction. Switch independent non-UI lane during CI, no duplicate equivalent runs, raw Git bypass or force-push.
+2. Compare Memory/ActionAudit synthetic WAL startup, keeper, last-close and generation-CAS on exact-head GREEN scripts. Isolate zero-link transient sidecar causality without weakening fail-closed path checks or touching user DBs.
+3. Memory coherent multi-scope expiry, CAS/ABA, event integrity and COMMIT-UNKNOWN manual recovery; Planner persisted UNKNOWN and terminal propagation. Bind registry/exact-type PermissionGate, durable authorization, trusted-clock preaction audit and inert Mock Executor only after lower-level exact-head GREEN proofs.
+4. Privacy-safe Personal Context revocation/retention, proactive occurrence/restart, observation fixture contracts and free-only V3 identity/reproducibility. No UI until explicit user resumption, no protected evaluation/Candidate/real action without separate authorization. **ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run831 NON-UI Windows SQLite reader closure; Proactive + Planner protocol identity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T09:50:11.186+09:00.** Reporting timestamp only, NOT an authenticated consent, action or approval clock. **Overall ARK/JARVIS: NOT_PASSED**.
 
@@ -25,7 +61,7 @@ V1/V2/Local UI/Launcher frozen contracts/evidence untouched. Protected [Draft PR
 
 ---
 
-# LATEST — ARK AI Run830 NON-UI CI repair, proactive quarantine, privacy veto, recovery identity
+# HISTORY — ARK AI Run830 NON-UI CI repair, proactive quarantine, privacy veto, recovery identity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T08:54:34.063+09:00.** Observed reporting timestamp ONLY; not a trusted action/consent/approval clock. **Overall ARK/JARVIS: NOT_PASSED.**
 
