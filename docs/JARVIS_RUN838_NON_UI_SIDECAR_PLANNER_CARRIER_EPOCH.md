@@ -1,0 +1,24 @@
+# Run838 — non-UI disconnected SQLite carrier & Planner witness shape-method fencing
+
+**Scope:** free-only local fixture hardening; Draft PR #8 only. This is NOT a runtime model evaluation, authority grant, user consent, or JARVIS PASS.
+
+## Exact starting point and package inventory
+
+- **Initial observed work-basis HEAD:** `136d3369a4d578a5422be5acc014c96da377323c` (Run837 checkpoint). PR #8 Draft/open/unmerged and PR #5 / PR #9 Draft/open/unmerged at initial inspection. Latest `PROJECT_STATUS.md` recorded Run837 with Run837 checkpoint CI in progress.
+- **SQLite sidecar carrier safeguard:** [`6a1fa37b`](https://github.com/Iam-2squared/ark-ai/commit/6a1fa37b3be09d5564096b34ac09723a4fc883b8), `src/ark/disconnected_sqlite_sidecar_custody.py`. Pin import-time exact state/seal class identity, field slots, constructors, lookup hooks, equality implementations and deny-only authority descriptors before observing a fixture path. Compare validated, typed primitive seal snapshots instead of replaceable dataclass `__eq__` in both two-pass capture and retained-review paths. This does **not** replace descriptor-relative no-follow, single-link, last-FD verification or read-only sidecar admission.
+- **Planner shape-method guard:** [source `30c8209c`](https://github.com/Iam-2squared/ark-ai/commit/30c8209ceb3f31e2a221ea8f2ba0cd9f8bbb0b87), [syntax repair `28daf78e`](https://github.com/Iam-2squared/ark-ai/commit/28daf78e2eeb915ec8437d06b8395597eebaa7c7), `src/ark/agency/planner_journal_review.py`. Include `SyntheticPlanTail.assert_shape` in original class-method admission contract; check original class identity immediately before all five retained-tail shape callbacks, including after topology and replay callbacks. The first commit accidentally misindented three nested call sites; the immediate follow-up restored original nested indentation without changing the intended guard semantics. [First CI #43376973717](https://github.com/Iam-2squared/ark-ai/actions/runs/43376973717) failed all six jobs at syntax/lint, **not a GREEN claim**. The corrected CI must pass before this can be treated as validated.
+- **Sidecar regression tests:** [`870dd6fa`](https://github.com/Iam-2squared/ark-ai/commit/870dd6fa9844966a1cd02abfd02d5cabbaa52ddc), `tests/test_detached_sidecar_carrier_epoch_run838.py`. Sixteen parameterized pre-access class monkeypatch refusals, a hostile second-capture equality probe, a stable deny-only fixture baseline: **18 authored cases**, results pending at report creation.
+- **Planner regression tests:** [`a3f70698`](https://github.com/Iam-2squared/ark-ai/commit/a3f7069853661673e0fc5b829d686bfdde46f682), `tests/test_planner_tail_shape_callback_epoch_run838.py`. Preinstalled and reentrant `assert_shape` monkeypatches in recovery and append plus valid retained-tail / RUNNING-ambiguous replay baseline: **5 authored cases**, results pending at report creation.
+
+## Failure boundaries, CI and evidence limits
+
+- Known initial syntax failure was a testable integration error and was fixed by the normal GitHub Contents API path. **Neither test counts nor source edits establish PASS** without exact-HEAD CI.
+- Initial sidecar source [CI #43376817283](https://github.com/Iam-2squared/ark-ai/actions/runs/43376817283): Ubuntu 3/3 GREEN, Windows 3 still running at intermediate inspection. Planner repair [CI #43377183590](https://github.com/Iam-2squared/ark-ai/actions/runs/43377183590), sidecar tests [#43377267053](https://github.com/Iam-2squared/ark-ai/actions/runs/43377267053) and Planner tests [#43377360107](https://github.com/Iam-2squared/ark-ai/actions/runs/43377360107): in progress/queued at intermediate inspection. Inspect latest exact checkpoint-result CI separately; never infer success from older heads.
+- No new UI, frontend or PR #9 change. Frozen V1/V2/Local UI/Launcher contracts/evaluation unchanged. PR #5 must remain protected and Draft/unmerged. No paid APIs, compute, external GPU, Candidate artifacts, protected final evaluation, actual Memory user data or ToolBackend effects. No main merge, credential/consent assumptions, external commands, automatically replayed UNKNOWN or authorization from synthetic report timestamps.
+- SQLite WAL/SHM zero-link incident remains **UNRESOLVED**: local dataclass/Planner class guards do not prove WAL lifetime safety, cross-process atomicity, or durable effect authorization.
+
+## Next
+
+1. Verify corrected exact-head full Windows/Ubuntu Python 3.11–3.13 CI, read failures if any; patch only the semantics-preserving culprit and keep independent work moving.
+2. Compare Memory/Audit/Context WAL last-close lifecycle control and `-shm` refusal without bypassing any filesystem guard.
+3. Extend Memory COMMIT-UNKNOWN manual triage and Planner terminal/UNKNOWN persistence after lower-layer GREEN. Only then review Registry, PermissionGate, audit-before-action and disconnected Mock Executor joins.
