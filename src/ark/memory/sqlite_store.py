@@ -191,7 +191,15 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
     """
     if type(path) is not type(Path()) or ".." in path.parts:
         raise MemorySchemaError("memory path type or traversal refused")
+    # Do not pass an overlong or NUL-containing private path to mkdir/lstat or
+    # SQLite. Include the longest journal suffix in the normalized bound:
+    # otherwise the main file can pass while SQLite's sidecar cannot.
+    raw = str(path)
+    if not path.name or "\x00" in raw or len(raw) > 4096:
+        raise MemorySchemaError("memory database path exceeds local fixture limits")
     target = path if path.is_absolute() else path.absolute()
+    if len(str(target)) + len("-journal") > 4096:
+        raise MemorySchemaError("memory database/sidecar path exceeds local fixture limits")
     try:
         for ancestor in target.parents:
             try:
