@@ -234,6 +234,10 @@ def bind_offline_context_request(
 
     unchanged()
     owner, ids, canonical, digest = pinned
+    # Preserve the existing byte-budget diagnostic without allocating a
+    # potentially huge UTF-8 buffer for an already oversized string.
+    if type(canonical) is str and len(canonical) > 65_536:
+        raise OfflineContextBindingRejected("context serialized byte budget exceeded")
     if (
         type(owner) is not str or len(owner) != 64
         or _SHA.fullmatch(owner) is None
@@ -242,7 +246,6 @@ def bind_offline_context_request(
                or _RECORD.fullmatch(x) is None for x in ids)
         or ids != tuple(sorted(set(ids)))
         or type(canonical) is not str
-        or len(canonical) > 65_536
         or type(digest) is not str or len(digest) != 64
         or _SHA.fullmatch(digest) is None
     ):
