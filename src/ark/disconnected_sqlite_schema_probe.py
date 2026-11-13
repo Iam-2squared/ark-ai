@@ -112,6 +112,14 @@ def _require_original_schema_probe() -> None:
             (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION)
         )
         or (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION) != _ORIGINAL_LIMITS
+        # A substituted read/receipt helper can forge schema evidence while
+        # appearing to use the original digest and deny-only carrier type.
+        or any(
+            globals().get(name) is not original
+            for name, original in zip(
+                _SCHEMA_HELPER_NAMES, _ORIGINAL_SCHEMA_HELPERS, strict=True,
+            )
+        )
     ):
         raise SQLiteSchemaProbeRejected("schema probe contract changed or acquired authority")
 
@@ -194,6 +202,13 @@ def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
     digest = hashlib.sha256(_DOMAIN + packed).hexdigest()
     _require_original_schema_probe()
     return digest, len(records), user[0], schema[0]
+
+
+# Keep the helper admission boundary separate from the public capture code.
+# These callbacks are not plugins and cannot be replaced to grant schema
+# authentication, data disclosure or an authenticated WAL snapshot.
+_SCHEMA_HELPER_NAMES = ("_state", "_seal_fields", "_assert_inert_seal")
+_ORIGINAL_SCHEMA_HELPERS = tuple(globals()[name] for name in _SCHEMA_HELPER_NAMES)
 
 
 def capture_disconnected_sqlite_schema(
