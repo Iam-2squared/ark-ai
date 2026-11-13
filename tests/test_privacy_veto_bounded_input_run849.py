@@ -23,7 +23,7 @@ class WidthCheckedMatcher:
     def fullmatch(self, value: str):
         assert type(value) is str
         assert len(value) == 64
-        return re.fullmatch(r"[0-9a-f]{64}\\Z", value)
+        return re.fullmatch(r"[0-9a-f]{64}\Z", value)
 
 
 @pytest.mark.parametrize(
