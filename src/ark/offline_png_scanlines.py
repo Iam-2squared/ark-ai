@@ -21,6 +21,16 @@ _MAX_PIXELS = 4_194_304
 _MAX_SIDE = 4096
 _MAX_RAW = 40 * 1024 * 1024
 
+# A mutable format table must not silently redefine the supported IDAT
+# dialect during an offline privacy review. These are process-local source
+# fingerprints, not container or camera provenance.
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_DEPTH_TABLE = _DEPTHS
+_ORIGINAL_CHANNEL_TABLE = _CHANNELS
+_ORIGINAL_DEPTH_ROWS = tuple(_DEPTHS.items())
+_ORIGINAL_CHANNEL_ROWS = tuple(_CHANNELS.items())
+_ORIGINAL_BUDGETS = (_MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_RAW)
+
 
 class OfflineScanlineRejected(ValueError):
     """The fixture stream, declared format, or row reconstruction is invalid."""
@@ -90,6 +100,30 @@ def _require_original_scanline_inputs() -> None:
     if (
         hashlib.sha256 is not _ORIGINAL_SHA256
         or zlib.decompressobj is not _ORIGINAL_DECOMPRESSOBJ
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or type(_DEPTHS) is not dict
+        or _DEPTHS is not _ORIGINAL_DEPTH_TABLE
+        or type(_CHANNELS) is not dict
+        or _CHANNELS is not _ORIGINAL_CHANNEL_TABLE
+        or len(_DEPTHS) != len(_ORIGINAL_DEPTH_ROWS)
+        or len(_CHANNELS) != len(_ORIGINAL_CHANNEL_ROWS)
+        # Reject hostile objects before tuple equality or dict membership.
+        or any(
+            type(key) is not int or type(value) is not tuple
+            or any(type(depth) is not int for depth in value)
+            for key, value in _DEPTHS.items()
+        )
+        or any(
+            type(key) is not int or type(value) is not int
+            for key, value in _CHANNELS.items()
+        )
+        or tuple(_DEPTHS.items()) != _ORIGINAL_DEPTH_ROWS
+        or tuple(_CHANNELS.items()) != _ORIGINAL_CHANNEL_ROWS
+        or any(
+            type(value) is not int
+            for value in (_MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_RAW)
+        )
+        or (_MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_RAW) != _ORIGINAL_BUDGETS
         or OfflineScanlineRequest is not _REQUEST_TYPE
         or any(
             vars(_REQUEST_TYPE).get(name) is not original
@@ -103,7 +137,7 @@ def _require_original_scanline_inputs() -> None:
 
 
 def _sha(value: object) -> bool:
-    return type(value) is str and _SHA.fullmatch(value) is not None
+    return type(value) is str and len(value) == 64 and _SHA.fullmatch(value) is not None
 
 
 def _paeth(left: int, above: int, upper_left: int) -> int:
