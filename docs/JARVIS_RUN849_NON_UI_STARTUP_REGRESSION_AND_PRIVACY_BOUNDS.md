@@ -77,3 +77,24 @@ Memory global event/restart coherence and Planner persistent UNKNOWN;
 and disconnected Mock Executor only after exact-head prerequisites turn green;
 (5) continue privacy-safe Personal Context, proactive and observation
 backend contracts and free-only V3 guards. No UI development.
+
+## Subsequent CI finding and safer source correction
+
+Following `6ed922de`, inspected Ubuntu Python 3.13 job
+`131952960659` in [#43445271968](https://github.com/Iam-2squared/ark-ai/actions/runs/43445271968).
+The schema case was repaired, but the `[report]` case failed
+`assert 1 == 0`; Ubuntu Python 3.11/3.12 in this same earlier run also
+failed. This revealed that the final inert readiness report had **not yet
+pinned its `__getattribute__` hook** before evaluating the first
+False-only property. The earlier blanket assumption that all three
+carriers rejected preaccess was therefore premature.
+
+Rather than weaken the test to tolerate invoking a caller-substituted
+getter, [source repair `80092450`](https://github.com/Iam-2squared/ark-ai/commit/800924502aa35d622987fc86bc0db86ae70887fe)
+now pins report `__new__`, `__getattribute__` and `__getattr__`
+class descriptors and rejects replacement during `_require_original_denials`
+before constructing/inspecting a report. Existing coverage requires
+zero first/second injected callbacks for schema, preflight and report.
+No start, registry dispatch, authority, frozen evidence or UI is changed.
+**The exact source-repair HEAD CI remains UNVERIFIED** until the automatic
+six-job workflow has completed.
