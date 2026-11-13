@@ -213,7 +213,7 @@ def _policy_epoch(policy: object) -> tuple[str, int, int, int, int]:
     values = (policy.policy_sha256, policy.first_ms, policy.interval_ms,
               policy.count, policy.grace_ms)
     sha, first, interval, count, grace = values
-    if (type(sha) is not str or _SHA.fullmatch(sha) is None
+    if (type(sha) is not str or len(sha) != 64 or _SHA.fullmatch(sha) is None
             or any(type(n) is not int for n in (first, interval, count, grace))
             or not 0 <= first <= _MAX_MS
             or not 1_000 <= interval <= _MAX_INTERVAL_MS
@@ -257,11 +257,28 @@ def _path(value: object, *, create: bool) -> Path:
         try:
             info = value.lstat()
         except FileNotFoundError:
+            main_missing = True
             if not create:
                 raise ScheduleQuarantineRejected("missing quarantine ledger") from None
         else:
+            main_missing = False
             if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise ScheduleQuarantineRejected("aliased or existing quarantine ledger")
+        # SQLite also opens these known sibling paths. Do not adopt orphaned
+        # journals on create, or follow an aliased sidecar on later reads/writes.
+        # This is a lexical lstat preflight, not race-free dirfd custody.
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = value.with_name(value.name + suffix)
+            try:
+                sidecar_info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if (
+                main_missing or create
+                or not stat.S_ISREG(sidecar_info.st_mode)
+                or sidecar_info.st_nlink != 1
+            ):
+                raise ScheduleQuarantineRejected("unsafe quarantine SQLite sidecar")
     except OSError as exc:
         raise ScheduleQuarantineRejected("quarantine path unavailable") from exc
     return value
@@ -278,7 +295,9 @@ def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -
             raise ScheduleQuarantineRejected("quarantine schema drift")
     if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
         raise ScheduleQuarantineRejected("quarantine SQLite integrity failure")
-    if tuple(conn.execute("SELECT * FROM policy")) != (epoch,):
+    # A malformed store can have many distinct policy rows. Examine at most
+    # two: any second row is a failure, never an unbounded tuple materialization.
+    if tuple(conn.execute("SELECT * FROM policy").fetchmany(2)) != (epoch,):
         raise ScheduleQuarantineRejected("stored schedule policy changed")
     witness = QuarantineWitness(0, _digest(("genesis", epoch)))
     last_observed = -1
@@ -289,8 +308,10 @@ def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -
         if (witness.count >= _MAX_ROWS or type(seq) is not int
                 or seq != witness.count + 1 or seq > epoch[3]
                 or type(due) is not int or type(observed) is not int
-                or type(chain) is not str or _SHA.fullmatch(chain) is None
-                or type(occurrence) is not str or _SLOT.fullmatch(occurrence) is None):
+                or type(chain) is not str or len(chain) != 64
+                or _SHA.fullmatch(chain) is None
+                or type(occurrence) is not str or len(occurrence) != 69
+                or _SLOT.fullmatch(occurrence) is None):
             raise ScheduleQuarantineRejected("invalid quarantine history row")
         wanted_due = epoch[1] + (seq - 1) * epoch[2]
         policy = QuarantinePolicy(*epoch)
@@ -404,6 +425,7 @@ class DisconnectedScheduleQuarantineLedger:
         if (type(value) is not QuarantineWitness
                 or type(value.count) is not int or not 0 <= value.count <= _MAX_ROWS
                 or type(value.chain_sha256) is not str
+                or len(value.chain_sha256) != 64
                 or _SHA.fullmatch(value.chain_sha256) is None):
             raise ScheduleQuarantineRejected("invalid retained quarantine witness")
 
@@ -433,6 +455,7 @@ class DisconnectedScheduleQuarantineLedger:
         if (type(index) is not int or type(observed_ms) is not int
                 or not 0 <= observed_ms <= _MAX_MS
                 or type(occurrence_id) is not str
+                or len(occurrence_id) != 69
                 or _SLOT.fullmatch(occurrence_id) is None):
             raise ScheduleQuarantineRejected("invalid synthetic expiry claim")
         policy = QuarantinePolicy(*self._epoch)
