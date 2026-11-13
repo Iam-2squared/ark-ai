@@ -83,14 +83,14 @@ def test_write_slot_rejects_oversized_or_binary_storage_before_hydration(
     assert receipt.automatic_replay_authorized is False
 
 
-@pytest.mark.parametrize(("plan", "step", "request"), (
+@pytest.mark.parametrize(("plan", "step", "request_sha256"), (
     ("plan_" + "1" * 100000, "step_" + "2" * 16, "a" * 64),
     ("plan_" + "1" * 64, "step_" + "2" * 100000, "a" * 64),
     ("plan_" + "1" * 64, "step_" + "2" * 16, "a" * 100000),
 ))
-def test_write_slot_rejects_oversized_claim_before_digest(plan, step, request):
+def test_write_slot_rejects_oversized_claim_before_digest(plan, step, request_sha256):
     with pytest.raises(slots.WriteSlotLedgerRejected, match="invalid exact WRITE"):
-        slots.derive_disconnected_write_slot_id(plan, step, request)
+        slots.derive_disconnected_write_slot_id(plan, step, request_sha256)
 
 
 def test_write_slot_still_restarts_inertly_with_exact_witness(tmp_path):
