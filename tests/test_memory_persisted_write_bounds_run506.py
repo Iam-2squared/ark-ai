@@ -16,7 +16,6 @@ from ark.memory import (
     MemoryScope,
     MemoryWrite,
     SQLiteMemoryStore,
-    deterministic_memory_id,
 )
 
 
@@ -52,7 +51,15 @@ def test_hash_consistent_out_of_budget_sqlite_row_denied(tmp_path, field, value)
                 (value, digest, memory_id),
             )
         else:
-            new_id = deterministic_memory_id(scope, value)
+            # Deliberately construct a *corrupt persisted* identity without
+            # passing the oversized source through the bounded public helper.
+            # This test is a malformed SQLite fixture, never an allowed write.
+            raw = json.dumps(
+                {"namespace": scope.namespace, "owner_id": scope.owner_id,
+                 "source_id": value},
+                ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+            ).encode("utf-8")
+            new_id = "mem_" + hashlib.sha256(raw).hexdigest()
             conn.execute(
                 "UPDATE memories SET source_id=?, memory_id=? WHERE memory_id=?",
                 (value, new_id, memory_id),
