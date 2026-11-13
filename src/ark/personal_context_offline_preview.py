@@ -178,10 +178,12 @@ def build_offline_context_preview(
     original = (fixtures, owner_digest, allowed_scope_digests, observed_at_ms)
     if (
         type(fixtures) is not tuple or not 1 <= len(fixtures) <= _MAX_RECORDS
-        or type(owner_digest) is not str or _DIGEST.fullmatch(owner_digest) is None
+        or type(owner_digest) is not str or len(owner_digest) != 64
+        or _DIGEST.fullmatch(owner_digest) is None
         or type(allowed_scope_digests) is not tuple
         or not 1 <= len(allowed_scope_digests) <= _MAX_RECORDS
-        or any(type(x) is not str or _DIGEST.fullmatch(x) is None
+        or any(type(x) is not str or len(x) != 64
+               or _DIGEST.fullmatch(x) is None
                for x in allowed_scope_digests)
         or allowed_scope_digests != tuple(sorted(set(allowed_scope_digests)))
         or type(observed_at_ms) is not int or not 0 <= observed_at_ms <= _MAX
@@ -222,11 +224,13 @@ def build_offline_context_preview(
         assert_epoch()
         record_id, owner, scope, content, content_sha, expires = captured
         if (
-            type(record_id) is not str or _RECORD.fullmatch(record_id) is None
+            type(record_id) is not str or len(record_id) != 36
+            or _RECORD.fullmatch(record_id) is None
             or type(owner) is not str or owner != owner_digest
             or type(scope) is not str or scope not in allowed_scope_digests
             or type(content) is not str or len(content) > _MAX_CONTENT
-            or type(content_sha) is not str or _DIGEST.fullmatch(content_sha) is None
+            or type(content_sha) is not str or len(content_sha) != 64
+            or _DIGEST.fullmatch(content_sha) is None
             or type(expires) is not int or not observed_at_ms < expires <= _MAX
         ):
             raise OfflineContextPreviewRejected("stale or mismatched context record")
@@ -327,7 +331,17 @@ def verify_offline_context_preview(
     if (
         type(report) is not _PREVIEW_RESULT_TYPE
         or type(retained_local_digest) is not str
+        or len(retained_local_digest) != 64
         or _DIGEST.fullmatch(retained_local_digest) is None
+        or type(report.owner_digest) is not str
+        or len(report.owner_digest) != 64
+        or type(report.record_ids) is not tuple
+        or not 1 <= len(report.record_ids) <= _MAX_RECORDS
+        or any(type(i) is not str or len(i) != 36 for i in report.record_ids)
+        or type(report.canonical_local_json) is not str
+        or len(report.canonical_local_json) > _MAX_SERIALIZED_BYTES
+        or type(report.local_digest) is not str
+        or len(report.local_digest) != 64
         or type(fixtures) is not tuple
     ):
         raise OfflineContextPreviewRejected("exact retained context preview required")
