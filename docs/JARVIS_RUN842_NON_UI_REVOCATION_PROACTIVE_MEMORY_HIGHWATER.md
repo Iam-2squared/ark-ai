@@ -61,15 +61,31 @@ temporary synthetic test databases; **none** authorizes automatic retry, write,
 erasure, external action or caller attribution. Independent retained witnesses
 are still required against valid-file replacement or rollback.
 
+## Package D — immutable ToolRegistry dependency module custody
+
+[Source a5cb35ad](https://github.com/Iam-2squared/ark-ai/commit/a5cb35ad6f4d4026525da3762aecaf87036bb642)
+pins the original `hashlib` and `json` **module objects**, in addition to
+existing `sha256` and `dumps` callable pins, before consulting a member
+attribute. A caller-rebound module with executable `__getattr__` can no
+longer run through the registry's digest guard while the original module
+objects are absent. No registry backend is executed.
+[Tests cc523bf1](https://github.com/Iam-2squared/ark-ai/commit/cc523bf19239403e6d493b1bcc7273bf8f69263e)
+add **9 authored cases**: 2 swapped modules × 4 registry operations
+(construction, revision, resolution, binding), plus an intact mock binding.
+The result is an in-process injection guard, **not** remote backend
+attestation or actual dispatch authorization.
+
 ## Evidence precision and next priorities
 
-- 23 new authored test parameterizations + one existing test assertion update
-  are **NOT 23 CI-confirmed passes**.
+- 32 new authored test parameterizations + one existing test assertion update
+  are **NOT 32 CI-confirmed passes**.
 - First test-repair [CI #43403857677](https://github.com/Iam-2squared/ark-ai/actions/runs/43403857677)
   and proactive source/test [#43403968137](https://github.com/Iam-2squared/ark-ai/actions/runs/43403968137)
   were **IN PROGRESS** on latest early inspection; latest Memory
   source/test [#43404237793](https://github.com/Iam-2squared/ark-ai/actions/runs/43404237793)
-  was **QUEUED**. These statuses can evolve; check exact run/head before claiming GREEN.
+  was **QUEUED**. Registry source/test
+  [#43404552747](https://github.com/Iam-2squared/ark-ai/actions/runs/43404552747)
+  was also **QUEUED**. These statuses can evolve; check exact run/head before claiming GREEN.
 - No local full 14k+ pytest matrix, Windows-hosted test, model, hardware or
   source/contract freeze was directly executed during this invocation.
 - Next: inspect exact latest-head six-job CI, repair genuine failures without
