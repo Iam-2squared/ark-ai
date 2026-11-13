@@ -1,3 +1,37 @@
+# LATEST — ARK AI Run841 non-UI held-FD WAL forensics / registered atomic triage
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T18:00:13+09:00** (observed reporting clock only; **NOT trusted execution/authorization time**). **Overall ARK/JARVIS: NOT_PASSED.** Fully free-only/local-first/disconnected/reversible; all new UI/frontend remains PAUSED.
+
+**Branch / PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED on live inspection. **Initial work-basis HEAD:** `c100191c74324ce40e572f768384e96f148ba793` (Run840). **Last source/test HEAD:** `e8a3f6748bb83640844d3c2df5452fc6be8e2fbb`. **Last technical report HEAD and checkpoint-write-basis HEAD:** `d34368395d5af9829d38b9116f03c550b325218a` (recheck before write). **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; obtain ordinary GitHub Contents API commit SHA, then inspect branch/PR HEAD. Previous canonical status blob SHA: `84343a701fa499516c4c5b6aa3054e7ff52a34e6`.
+
+## NEW — two independent non-UI packages with 22 authored parameterized regression cases
+
+1. **SQLite WAL/SHM descriptor lifecycle control:** [source commit `7176e080`](https://github.com/Iam-2squared/ark-ai/commit/7176e08086f32fd45ba92bcc59eefd92fd7a5d15), [test commit `600d40bd`](https://github.com/Iam-2squared/ark-ai/commit/600d40bdc7b48d9d51fb81e52e4777723191ec07), [test-only Ruff width repair `e8a3f674`](https://github.com/Iam-2squared/ark-ai/commit/e8a3f6748bb83640844d3c2df5452fc6be8e2fbb). A new bounded **temporary-directory-only** synthetic SQLite WAL CLI captures held `-shm` descriptor fstat link identity vs pathname lstat across an independent subprocess's SQLite last connection close, with/without an optional WAL keeper. Only bounded path-free categories, no rows or user data, real tools or identity leak. **9 authored parameterized tests**, not yet 9 proven PASS. POSIX O_NOFOLLOW-only path, Windows unsupported/skip; no production alias/sidecar checks relaxed. Normal last-close is a plausible explanation, **not** ARK-specific Windows CI root cause.
+2. **Registered Planner + atomic pre-action triage early exact ingress:** [source commit `b4235034`](https://github.com/Iam-2squared/ark-ai/commit/b423503459b9cbf24868765d30e9cde94cd25358), [tests commit `1c0a8177`](https://github.com/Iam-2squared/ark-ai/commit/1c0a81776725a5f868c99f6f8cffdc819b27f095). Before registry/SQLite recovery callbacks, refuse malformed/big/non-UTF-8/repeated WRITE occurrence pairs and invalid retained atomic count/hex tip; recheck witness scalar identity without executing a hostile `__eq__`. **13 authored parameterized tests**, not yet 13 proven PASS. Manual-only local diagnostics retain all original false authority properties: no cross-store atomicity, consent, execution, external effect proof, retry or automatic promotion.
+
+Technical evidence and limitation report: [`docs/JARVIS_RUN841_NON_UI_HELD_FD_AND_ATOMIC_TRIAGE.md` at `d3436839`](https://github.com/Iam-2squared/ark-ai/blob/d34368395d5af9829d38b9116f03c550b325218a/docs/JARVIS_RUN841_NON_UI_HELD_FD_AND_ATOMIC_TRIAGE.md). **No real physical PC/GGUF benchmark or local full repository pytest/Ruff execution**; exact-head GitHub matrix provides validation. Diagnostic child receipts and held-FD states are not independent provenance or tool authorization.
+
+## CI and jobs — exact observed evidence, not inferred
+
+- Previous Run840 final HEAD `c100191c` — [CI #43389534444](https://github.com/Iam-2squared/ark-ai/actions/runs/43389534444) **GREEN all 6** Windows/Ubuntu Python 3.11–3.13, previous code only.
+- Initial SQLite test HEAD `600d40bd` — [CI #43396712496](https://github.com/Iam-2squared/ark-ai/actions/runs/43396712496) **FAIL all 6** at Ruff E501 (one overlong test source path). B intermediate `b4235034` — [CI #43396981273](https://github.com/Iam-2squared/ark-ai/actions/runs/43396981273) **FAIL all 6** with same outstanding E501. B test `1c0a8177` — [CI #43397052068](https://github.com/Iam-2squared/ark-ai/actions/runs/43397052068) **FAIL all 6** (earlier E501 in shared test path). This error was corrected in `e8a3f674` only by line wrapping; no assertions or safety rules removed.
+- Final formatted source/test HEAD `e8a3f674` — [CI #43397176437](https://github.com/Iam-2squared/ark-ai/actions/runs/43397176437) **IN PROGRESS**, six jobs running at last inspection; **all six GREEN UNVERIFIED**.
+- New report commit `d3436839` — [CI #43397563067](https://github.com/Iam-2squared/ark-ai/actions/runs/43397563067) **QUEUED** at last inspection.
+- Normal checkpoint commit will launch additional automatic CI. No duplicate manual CI runs launched, and the latest exact checkpoint-result HEAD **NOT** declared PASS in advance.
+
+## Frozen boundaries, blockers and authorization
+
+Frozen V1/V2/Local UI/Launcher artifacts/contracts/evaluation boundaries unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected Draft/unmerged; paused [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/unmerged/untouched, no frontend feature/test/UI integration. No paid or potentially billable external GPU/API/service, new credentials/accounts, protected V2 final evaluation, Candidate real adapter/weight generation/promotion, actual ToolBackend action, physical PC, automated COMMIT-UNKNOWN retry, main merge, trusted-clock/consent/authorization claim, destructive or irreversible operation. SQLite `-shm` ARK-specific collision remains an unresolved **fail-closed** forensic investigation. All independent local matches are manual-only and do not prove external effects.
+
+## Next plan / 今後の方針 — priority
+
+1. Verify exact formatted code/head and newest checkpoint CI six jobs; inspect specific failure logs, correct minimal semantics-preserving bug via normal GitHub Contents API; work different non-UI lane during CI.
+2. Continue ephemeral Memory/ActionAudit SQLite held-FD vs named-sidecar and keeper/no-keeper investigation, preserving single-link/no-follow checks, ownership and no automatic COMMIT-UNKNOWN replay.
+3. Advance Memory coherent snapshot/CAS/expiry/manual COMMIT-UNKNOWN reconciliation, Planner persistent UNKNOWN/write quarantine and terminal propagation; integrate immutable ToolRegistry, exact PermissionGate, audit-before-action and disconnected Mock Executor **only after lower-layer exact-head GREEN**.
+4. Advance privacy-safe Personal Context revocation/retention, proactive startup/occurrence and observation fixture contracts, V3 free-only approval/path/identity guards. UI, main, Candidate and protected evaluation stay blocked.
+
+---
+
 # LATEST — ARK AI Run840 non-UI Planner / mock / PNG ingress and WAL last-close evidence
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T16:57:51.003+09:00** (observed tool-runtime reporting clock ONLY; **not** trusted execution/authorization time). **Overall ARK/JARVIS: NOT_PASSED.** Entire invocation was free-only, local-first, disconnected/reversible; new UI/frontend development remains PAUSED.
