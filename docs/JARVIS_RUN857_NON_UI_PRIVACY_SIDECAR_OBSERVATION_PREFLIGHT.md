@@ -21,10 +21,20 @@
 - [Six-case fixture suite `b0173fa2`](https://github.com/Iam-2squared/ark-ai/commit/b0173fa2c2df65c650932f473401dafcca915f11) covers oversized, wrong-type and replaced matcher ingress, plus a valid deterministic synthetic observation ID.
 - No microphone/camera, ASR, source attestation, consent, disclosure permission, streaming, or physical machine activity is enabled.
 
+## Package 4 — bounded Planner crash-replay schema admission
+
+- [Source `ff805358`](https://github.com/Iam-2squared/ark-ai/commit/ff805358cbe8d83cbaf8275dbe79e3e68e720e4d) adds SQL-side schema object count (exactly two) and DDL-byte budget (4096) inside the existing replay/append transaction, before Python `sqlite_master` hydration. Exact DDL comparison and `quick_check` remain mandatory.
+- [Three-case fixture suite `b2709e01`](https://github.com/Iam-2squared/ark-ai/commit/b2709e01e939d1d863564ce3262b50c23202cd1c) checks the unchanged canonical schema plus extra-view and oversized-name rejection before the DDL-hydration callback. No recovered RUNNING/UNKNOWN step acquires replay or dispatch authority.
+
+## In-run CI failure repair (not a new PASS)
+
+- Ubuntu Python 3.12 [run #43521945930](https://github.com/Iam-2squared/ark-ai/actions/runs/43521945930) reported **FAIL** in `tests/test_personal_context_revocation_run373.py::test_valid_shape_but_rewritten_digest_refused`. The newly earlier SQL denial was correct, but its message dropped the established `row integrity` substring expected by a legacy regression.
+- [Diagnostic-only fix `713e4808`](https://github.com/Iam-2squared/ark-ai/commit/713e4808a3c171206becd7d7751517740fc5cea1) restores the legacy substring while retaining `revocation row preflight` for the new tests. No predicate, budget, transaction boundary or denial semantics was weakened. Later exact-HEAD CI is **not yet confirmed GREEN**.
+
 ## Verification and limits
 
 - **Last prior HEAD with completed exact CI:** `4a55338955c515f407e17d2581821b54ed4a3ef7`, [Actions run #43514612444](https://github.com/Iam-2squared/ark-ai/actions/runs/43514612444): Windows/Ubuntu × Python 3.11–3.13 **GREEN 6/6**. This evidence does *not* apply to the new changes.
-- New-source CI [#43521945930](https://github.com/Iam-2squared/ark-ai/actions/runs/43521945930) and sidecar-test CI [#43522101203](https://github.com/Iam-2squared/ark-ai/actions/runs/43522101203) were **IN PROGRESS** at observation. Privacy-tests CI [#43522175028](https://github.com/Iam-2squared/ark-ai/actions/runs/43522175028) and observation-tests CI [#43522367710](https://github.com/Iam-2squared/ark-ai/actions/runs/43522367710) were **QUEUED**, no conclusion. **16 newly authored cases, not 16 confirmed PASS.**
+- New-source CI [#43521945930](https://github.com/Iam-2squared/ark-ai/actions/runs/43521945930) and sidecar-test CI [#43522101203](https://github.com/Iam-2squared/ark-ai/actions/runs/43522101203) were **IN PROGRESS** at observation. Privacy-tests CI [#43522175028](https://github.com/Iam-2squared/ark-ai/actions/runs/43522175028) and observation-tests CI [#43522367710](https://github.com/Iam-2squared/ark-ai/actions/runs/43522367710) were **QUEUED**, no conclusion. **19 newly authored cases (including Planner), not 19 confirmed PASS.**
 - Disposable in-memory `sqlite3` preflight arithmetic was exercised locally for valid text, invalid width, BLOB and negative time. Full repository pytest/Ruff, real-model hardware, authenticated provenance and cross-store atomicity were not measured here. CI on the *final* checkpoint HEAD requires independent confirmation.
 - No frozen V1/V2/Local UI/Launcher contracts or evidence, PR #5, PR #9, protected evaluation, real candidate weights or credentials were modified. PRs #5/#8/#9 remain Draft and unmerged as observed at work basis.
 
