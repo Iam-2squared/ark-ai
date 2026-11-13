@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pytest
 
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "diagnose_sqlite_sidecar_fd_lifecycle.py"
+_SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "diagnose_sqlite_sidecar_fd_lifecycle.py"
+)
 _spec = util.spec_from_file_location("sqlite_fd_lifecycle_run841", _SCRIPT)
 assert _spec is not None and _spec.loader is not None
 _DIAG = util.module_from_spec(_spec)
