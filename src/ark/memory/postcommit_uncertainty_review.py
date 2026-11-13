@@ -18,6 +18,7 @@ from .contracts import (
     MemoryScope,
     MemoryWrite,
 )
+from .generation_cas_outcome_review import _check_global_memory_event_highwater
 from .generation_fenced_cas import (
     _EVENT_DOMAIN,
     _MAX_EVENTS,
@@ -98,6 +99,7 @@ _ORIGINAL_IDENTITY = deterministic_memory_id
 _ORIGINAL_TOKEN_FIELDS = _token_fields
 _ORIGINAL_INPUT_VALIDATOR = _require_original_generation_inputs
 _ORIGINAL_TOKEN_VALIDATOR = _require_original_token_denials
+_ORIGINAL_GLOBAL_HIGHWATER = _check_global_memory_event_highwater
 
 
 def _require_original_report_carrier() -> None:
@@ -112,6 +114,7 @@ def _require_original_report_carrier() -> None:
         or _token_fields is not _ORIGINAL_TOKEN_FIELDS
         or _require_original_generation_inputs is not _ORIGINAL_INPUT_VALIDATOR
         or _require_original_token_denials is not _ORIGINAL_TOKEN_VALIDATOR
+        or _check_global_memory_event_highwater is not _ORIGINAL_GLOBAL_HIGHWATER
         or vars(_REPORT).get("__init__") is not _ORIGINAL_REPORT_INIT
         or any(
             vars(_REPORT).get(name) is not original
@@ -272,6 +275,11 @@ def review_uncertain_memory_commit(
             conn.execute("BEGIN")
             stable()
             record, observed = _snapshot(conn, memory_id, scope, source)
+            # A per-target CAS prefix can still look valid after another
+            # scope's event was removed. Verify the global append high-water
+            # inside the same BEGIN snapshot before classifying any outcome.
+            _check_global_memory_event_highwater(conn)
+            stable()
             after = _token_fields(observed)
             # The SQLite generation snapshot pins the row SHA at observation
             # time. The local record object can still be reflectively changed
