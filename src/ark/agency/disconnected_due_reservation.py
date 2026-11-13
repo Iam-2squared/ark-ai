@@ -208,6 +208,7 @@ def _check_path(path: object, *, exists: bool) -> Path:
     _require_original_due_digest()
     if (
         type(path) is not type(Path("."))
+        or len(str(path)) > 4096
         or not path.is_absolute()
         or ".." in path.parts
     ):
@@ -222,12 +223,34 @@ def _check_path(path: object, *, exists: bool) -> Path:
                 raise DueReservationRejected("due ancestor is not a real directory")
     except OSError as exc:
         raise DueReservationRejected("due ancestor unavailable") from exc
-    if path.is_symlink() or (exists and not path.exists()):
-        raise DueReservationRejected("missing or symbolic due ledger")
-    if path.exists():
-        info = path.stat(follow_symlinks=False)
-        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+    try:
+        main = path.lstat()
+    except FileNotFoundError:
+        main_exists = False
+        if exists:
+            raise DueReservationRejected("missing or symbolic due ledger") from None
+    except OSError as exc:
+        raise DueReservationRejected("due ledger metadata unavailable") from exc
+    else:
+        main_exists = True
+        if not stat.S_ISREG(main.st_mode) or main.st_nlink != 1:
             raise DueReservationRejected("due ledger requires one regular-file link")
+    # Refuse orphaned or aliased WAL/SHM/journal paths BEFORE SQLite opens,
+    # including during a new ledger bootstrap. This is only best-effort
+    # lexical custody; it does not eliminate concurrent path swaps.
+    for suffix in ("-wal", "-shm", "-journal"):
+        sidecar = path.with_name(path.name + suffix)
+        try:
+            info = sidecar.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise DueReservationRejected("due sidecar metadata unavailable") from exc
+        if (
+            not main_exists or not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+        ):
+            raise DueReservationRejected("unsafe or orphaned due SQLite sidecar")
     if not path.parent.is_dir() or path.parent.is_symlink():
         raise DueReservationRejected("due ledger parent must be a real directory")
     return path
