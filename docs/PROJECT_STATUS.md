@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run838 NON-UI sidecar/Planner/schema carrier integrity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T15:27:40.412+09:00** (observed reporting clock ONLY; **NOT** trusted action/authorization time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, isolated/reversible development; UI/frontend development remains PAUSED.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED rechecked before write. **Initial work-basis HEAD:** `136d3369a4d578a5422be5acc014c96da377323c` (Run837 checkpoint). **Last executable/test HEAD:** `159f2c7f7f6c9bd9c99b0ba35d6916cacc6d56f6`. **Updated technical-report HEAD:** `37ede1298f5036d07fbb4abe2c9f6372faf74886`. **Checkpoint-write-basis HEAD:** `37ede1298f5036d07fbb4abe2c9f6372faf74886`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE;** use the returned normal GitHub Contents API commit SHA and verify both live PR/branch after saving. **Prior status blob SHA:** `8c7d3b4a7a4ffe01d2ec2e4a083a147acdcee256`.
+
+## NEW — three meaningful independent non-UI source/test work packages, 30 authored test cases
+
+1. **Detached SQLite sidecar carrier + primitive seal comparison:** [source `6a1fa37b`](https://github.com/Iam-2squared/ark-ai/commit/6a1fa37b3be09d5564096b34ac09723a4fc883b8), [tests `870dd6fa`](https://github.com/Iam-2squared/ark-ai/commit/870dd6fa9844966a1cd02abfd02d5cabbaa52ddc). Guard original state/seal class, field, constructor, equality and deny-only definitions BEFORE path inspection; compare exact validated primitive snapshots rather than replaceable dataclass equality in capture/review. **18 new authored tests**, not independently all PASS. Existing no-follow, regular-file/link and last-FD guards unchanged.
+2. **Planner retained-tail method guard:** [first source `30c8209c`](https://github.com/Iam-2squared/ark-ai/commit/30c8209ceb3f31e2a221ea8f2ba0cd9f8bbb0b87), [syntax correction `28daf78e`](https://github.com/Iam-2squared/ark-ai/commit/28daf78e2eeb915ec8437d06b8395597eebaa7c7), [new tests `a3f70698`](https://github.com/Iam-2squared/ark-ai/commit/a3f7069853661673e0fc5b829d686bfdde46f682), [existing tests corrected `159f2c7f`](https://github.com/Iam-2squared/ark-ai/commit/159f2c7f7f6c9bd9c99b0ba35d6916cacc6d56f6). Pin original `SyntheticPlanTail.assert_shape` and refuse before any reentrant witness method executes; cover 5 retained-shape call sites. **5 new authored cases**. Initial source syntax CI FAIL fixed. Subsequent CI exposed 2 old tests expecting the malicious substitute to run; updated those old regression expectations to require pre-callback refusal and zero callback execution, without relaxing any source safety predicate. Corrected exact HEAD CI unproven.
+3. **Detached SQLite schema-helper identity:** [source `069b130b`](https://github.com/Iam-2squared/ark-ai/commit/069b130b690d720f287ee56b996705d89317c0ed), [tests `cb27530c`](https://github.com/Iam-2squared/ark-ai/commit/cb27530c4901e28736be4d7826124423e2fab8ce). Pin `_state`, `_seal_fields` and `_assert_inert_seal` before any schema reads. **7 new authored cases** using disposable in-memory SQLite only, not independent custody proof.
+
+**Technical evidence:** [Run838 report `37ede129`](https://github.com/Iam-2squared/ark-ai/blob/37ede1298f5036d07fbb4abe2c9f6372faf74886/docs/JARVIS_RUN838_NON_UI_SIDECAR_PLANNER_CARRIER_EPOCH.md). **30 newly authored cases are not 30 confirmed PASS**; 2 existing tests adjusted only to assert stricter fail-before-untrusted-callback semantics. An independent disposable Linux SQLite mini-harness completed 18/18 bounded two-child rounds with 2 rows persisted in each; NOT ARK pytest, Windows parity, zero-link root-cause proof, or authorization. Repository-wide local pytest/Ruff and target-PC GGUF not run in this invocation. SQLite `-shm` zero-link root cause **UNRESOLVED**; production refused state stays fail-closed.
+
+## CI / evidence — exact run outcomes as inspected prior to checkpoint
+
+- [CI #43376817283](https://github.com/Iam-2squared/ark-ai/actions/runs/43376817283): GREEN 6/6, FAIL 0/6, pending 0/6
+- [CI #43377183590](https://github.com/Iam-2squared/ark-ai/actions/runs/43377183590): GREEN 0/6, FAIL 4/6, pending 2/6
+- [CI #43377267053](https://github.com/Iam-2squared/ark-ai/actions/runs/43377267053): GREEN 0/6, FAIL 3/6, pending 3/6
+- [CI #43377360107](https://github.com/Iam-2squared/ark-ai/actions/runs/43377360107): GREEN 0/6, FAIL 3/6, pending 3/6
+- [CI #43377735125](https://github.com/Iam-2squared/ark-ai/actions/runs/43377735125): GREEN 0/6, FAIL 2/6, pending 4/6
+- [CI #43377799017](https://github.com/Iam-2squared/ark-ai/actions/runs/43377799017): GREEN 0/6, FAIL 0/6, pending 6/6
+- [CI #43378467504](https://github.com/Iam-2squared/ark-ai/actions/runs/43378467504): GREEN 0/6, FAIL 0/6, pending 6/6
+- [CI #43378690502](https://github.com/Iam-2squared/ark-ai/actions/runs/43378690502): GREEN 0/6, FAIL 0/6, pending 6/6
+
+Historical first Planner source [CI #43376973717](https://github.com/Iam-2squared/ark-ai/actions/runs/43376973717) **FAIL 6/6** due to accidental indentation; fixed at `28daf78e`. Corrected Planner/sidecar/schema intermediate heads with Ubuntu FAIL had **two prior Planner test expectation mismatches** (`tail_shape-recover`, `tail_shape-append`), not evidence that our later regression correction passed. Latest executable/test [CI #43378467504](https://github.com/Iam-2squared/ark-ai/actions/runs/43378467504) and report [CI #43378690502](https://github.com/Iam-2squared/ark-ai/actions/runs/43378690502) must be confirmed on exact heads. This checkpoint will trigger its own automatic CI; **no duplicate manual workflow run dispatched.**
+
+## Frozen evidence, blockers and authorization boundaries unchanged
+
+Frozen V1/V2/Local UI/Launcher contracts, V2 evaluation gates and Evidence unchanged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected/Draft/unmerged; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) paused/Draft/unmerged/untouched. No UI features/tests/polish/integration, main merge, protected final evaluation opening, Candidate adapter/weight generation/promotion, external GPU, paid or potentially billable API/service, new credentials/connection, physical-PC action, actual tool dispatch, notification, destructive or irreversible operation. No trusted clock/consent or durable/independent action authority inferred from synthetic receipts or SHAs. **ARK/JARVIS NOT_PASSED**.
+
+## Next plan / 今後の方針 — prioritized
+
+1. Verify **latest checkpoint-result HEAD** CI all Windows/Ubuntu Python 3.11–3.13 jobs; check source/test/report exact HEADs, inspect any fresh failure and make the narrowest semantics-preserving fix via normal API without overriding concurrent HEAD. Advance unrelated non-UI work during CI.
+2. Continue bounded disposable Memory/ActionAudit/Context last-close WAL keeper-vs-no-keeper diagnosis; isolate observed `-shm` link-count-zero race while maintaining strict sidecar safety refusal. No automatic COMMIT-UNKNOWN replay.
+3. Advance Memory CAS/ABA/expiry/coherent snapshots and manual COMMIT-UNKNOWN triage, Planner durable UNKNOWN isolation, terminal propagation and recovery; integrate Registry-bound PermissionGate, trusted-clock audit-before-action, and disconnected Mock Executor only after lower layer GREEN.
+4. Privacy-safe Personal Context retention/revocation, proactive occurrence/restart and offline observation contracts; free-only V3 approval/path/identity guards. Never cross protected Candidate/V2/UI/main gates without user authorization.
+
+---
+
 # LATEST — ARK AI Run837 NON-UI WAL isolation and explicit read-epoch controls
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T15:02:30.490+09:00** (observed reporting clock ONLY; **NOT trusted action/authorization time**). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, isolated/reversible work; new UI/frontend remains PAUSED.
