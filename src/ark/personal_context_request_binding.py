@@ -180,8 +180,10 @@ def bind_offline_context_request(
     # Fixed-width ASCII identifiers and a bounded canonical JSON string are
     # rejected before regex scanning, UTF-8 allocation or private parsing.
     _assert_original_private_codec()
-    if type(request_id) is not str or len(request_id) != 71
-        or _REQUEST.fullmatch(request_id) is None:
+    if (
+        type(request_id) is not str or len(request_id) != 71
+        or _REQUEST.fullmatch(request_id) is None
+    ):
         raise OfflineContextBindingRejected("exact local context request ID required")
     if type(preview) is not _PREVIEW_TYPE:
         raise OfflineContextBindingRejected("exact local context preview required")
