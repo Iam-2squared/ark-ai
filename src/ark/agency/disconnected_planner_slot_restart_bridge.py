@@ -132,24 +132,44 @@ def _protocol() -> None:
         or type(_MAX_STEPS) is not int or _MAX_STEPS != 24
         or type(_MAX_STEP_ID_BYTES) is not int or _MAX_STEP_ID_BYTES != 256
         or _valid_step_id is not _ORIGINAL_STEP_ID_CHECK
-        or (
-            DisconnectedDependencyClaim, DisconnectedDependencyProjection,
-            OfflineRecoveryStepClaim, SyntheticWriteStoreObservation,
-            SyntheticPlanRecovery, SyntheticPlanTail, WriteSlotLedgerWitness,
-        ) != _INPUT_TYPES
         or any(
-            tuple(vars(cls).get(name) for name in (*fields, *_INPUT_HOOKS))
-            != originals
+            now is not original
+            for now, original in zip(
+                (
+                    DisconnectedDependencyClaim, DisconnectedDependencyProjection,
+                    OfflineRecoveryStepClaim, SyntheticWriteStoreObservation,
+                    SyntheticPlanRecovery, SyntheticPlanTail, WriteSlotLedgerWitness,
+                ), _INPUT_TYPES, strict=True,
+            )
+        )
+        or any(
+            any(
+                current is not original
+                for current, original in zip(
+                    (vars(cls).get(name) for name in (*fields, *_INPUT_HOOKS)),
+                    originals, strict=True,
+                )
+            )
             for cls, fields, originals in zip(
                 _INPUT_TYPES, _INPUT_FIELD_NAMES, _INPUT_DESCRIPTORS,
                 strict=True,
             )
         )
-        or (hashlib.sha256, json.dumps) != _ORIGINAL_CODECS
-        or (
-            bundle_module.review_disconnected_restart_receipt_bundle,
-            slot_module.review_disconnected_write_restart,
-        ) != _ORIGINAL_REVIEWERS
+        or any(
+            current is not original
+            for current, original in zip(
+                (hashlib.sha256, json.dumps), _ORIGINAL_CODECS, strict=True,
+            )
+        )
+        or any(
+            current is not original
+            for current, original in zip(
+                (
+                    bundle_module.review_disconnected_restart_receipt_bundle,
+                    slot_module.review_disconnected_write_restart,
+                ), _ORIGINAL_REVIEWERS, strict=True,
+            )
+        )
         or DisconnectedPlannerSlotBridge is not _RESULT
         or any(vars(_RESULT).get(name) is not old for name, old in zip(
             _FIELDS, _ORIGINAL_RESULT, strict=True,
