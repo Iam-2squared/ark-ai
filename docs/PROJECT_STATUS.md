@@ -1,3 +1,45 @@
+# LATEST — ARK AI Run857 non-UI privacy, SQLite custody, observation and Planner schema hardening
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T07:53:02+09:00** (observed reporting-runtime wall clock immediately before this GitHub checkpoint write, NOT a trusted authorization/audit/action/approval/consent timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, disconnected, reversible; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8); PR open/Draft/unmerged. **Initial work-basis HEAD:** `4a55338955c515f407e17d2581821b54ed4a3ef7` (the prior Run856 latest). **Newest source+test HEAD:** `b2709e01e939d1d863564ce3262b50c23202cd1c`. **Last evidence/report HEAD and checkpoint-write-basis HEAD:** `c299ee07859c871f90a14b6437b1e03f6f25edb0`, to be checked immediately before this write. **Previous canonical PROJECT_STATUS blob:** `1ac7a22feca35729fe1fc8dec40fa6861ab29ca6`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE** — this commit cannot truthfully contain its own SHA. Verify the returned commit, branch+PR HEAD and status blob after saving.
+
+## NEW — four coherent non-UI packages; 19 authored regression cases; one CI diagnostic repair
+
+1. **Personal Context revocation privacy (7 cases):** [source `71b78ceb`](https://github.com/Iam-2squared/ark-ai/commit/71b78ceb63e01e660a213dc2b0121fe1dd51e57c) adds SQL-first schema count/DDL-byte admission and scope digest/time type, width and row-count budgets inside the same SQLite transaction before Python private DDL/digest hydration. Exact schema comparison, quick_check and digest integrity remain. [New regressions `a93695ff`](https://github.com/Iam-2squared/ark-ai/commit/a93695ff16e798a5196a99a13306295c4a3b1f5a) prohibit early row/DDL hydration and cover malformed text/BLOB, timestamps, oversize row sets, and normal veto denial. **CI failure repair [`713e4808`](https://github.com/Iam-2squared/ark-ai/commit/713e4808a3c171206becd7d7751517740fc5cea1):** a legacy test expected substring `row integrity`; the valid new early rejection initially omitted it. Restore diagnostic compatibility while retaining `revocation row preflight` and every safety predicate. No relaxed permission or automatic replay.
+2. **Detached POSIX SQLite sidecar path custody (3 cases):** [source `35818a54`](https://github.com/Iam-2squared/ark-ai/commit/35818a546a51c0e268970488d2777562fd906833) checks the filesystem-encoded byte length of the path plus `-journal`, rather than Unicode character count, and pins `os.fsencode` before callback. [Test `1264a5e7`](https://github.com/Iam-2squared/ark-ai/commit/1264a5e72cd48573f77c36233e5be58a610dd85f) denies oversized multibyte names before descriptor inventory.
+3. **Offline observation digest fixture (6 cases):** [source `391c5202`](https://github.com/Iam-2squared/ark-ai/commit/391c52021e02664f0d12c7c7a3a60b8e597f0937) adds exact 64-character width admission before regex and refuses a replaced regex identity. [Tests `b0173fa2`](https://github.com/Iam-2squared/ark-ai/commit/b0173fa2c2df65c650932f473401dafcca915f11) cover invalid/oversized digests, injected callback and stable normal fixture identity. No camera/microphone/access/consent grant.
+4. **Planner crash-journal DDL preflight (3 cases):** [source `ff805358`](https://github.com/Iam-2squared/ark-ai/commit/ff805358cbe8d83cbaf8275dbe79e3e68e720e4d) bounds schema object count and DDL bytes in SQLite before Python hydration, retaining exact DDL comparison and quick_check. [Tests `b2709e01`](https://github.com/Iam-2squared/ark-ai/commit/b2709e01e939d1d863564ce3262b50c23202cd1c) cover normal schema, extra view and oversized schema; recovered RUNNING stays quarantined UNKNOWN.
+5. [Run857 exact-package technical report](https://github.com/Iam-2squared/ark-ai/blob/c299ee07859c871f90a14b6437b1e03f6f25edb0/docs/JARVIS_RUN857_NON_UI_PRIVACY_SIDECAR_OBSERVATION_PREFLIGHT.md) records each path/commit, synthetic evidence scope, source limitations and known CI failure. **19 cases AUTHORED, not 19 confirmed PASS.** Disposable in-memory SQLite type/width aggregation was checked locally; full local Ruff/pytest and target-PC GGUF were not executed.
+
+## CI — exact-HEAD noninterchangeable evidence
+
+- **Old initial work-basis HEAD `4a553389`:** [CI #43514612444](https://github.com/Iam-2squared/ark-ai/actions/runs/43514612444), **GREEN 6/6** across Windows/Ubuntu Python 3.11–3.13, verified six successful job conclusions. This is prior code only.
+- **Privacy source HEAD `71b78ceb`:** [CI #43521945930](https://github.com/Iam-2squared/ark-ai/actions/runs/43521945930) **FAILURE** (Ubuntu 3.11 and 3.12 already failed at last job inspection). Concrete [Ubuntu 3.12 job 132218141007](https://github.com/Iam-2squared/ark-ai/actions/runs/43521945930/job/132218141007) has 15,243 PASS, 1 FAIL, 1 SKIP; single legacy `row integrity` regex expectation mismatch. Corrected with later HEAD `713e4808`, not claimed GREEN.
+- **Sidecar test HEAD `1264a5e7`:** [CI #43522101203](https://github.com/Iam-2squared/ark-ai/actions/runs/43522101203) **IN PROGRESS** with at least one failing older inherited privacy test at last job observation; not evidence about independent sidecar correctness.
+- **Privacy test HEAD `a93695ff`:** [CI #43522175028](https://github.com/Iam-2squared/ark-ai/actions/runs/43522175028) **IN PROGRESS/QUEUED** at last job inspection; conclusion not established.
+- **Observation test HEAD `b0173fa2`:** [CI #43522367710](https://github.com/Iam-2squared/ark-ai/actions/runs/43522367710) **QUEUED**, no conclusion at last inspection.
+- **Repair HEAD `713e4808`:** [CI #43522537600](https://github.com/Iam-2squared/ark-ai/actions/runs/43522537600) **QUEUED**, no conclusion at last check.
+- **Planner source HEAD `ff805358`:** [CI #43522682964](https://github.com/Iam-2squared/ark-ai/actions/runs/43522682964) **QUEUED**, no conclusion.
+- **Planner test HEAD `b2709e01`:** [CI #43522735600](https://github.com/Iam-2squared/ark-ai/actions/runs/43522735600) **QUEUED**, no conclusion.
+- Exact latest technical-report/checkpoint-result HEAD Windows/Ubuntu six-job GREEN **NOT VERIFIED**. No manual duplicate workflow runs launched. CI source/step evidence is never transferred between different SHAs.
+
+## Frozen boundaries, blockers, authorization
+
+Existing V1/V2/Local UI/Launcher evidence and frozen contracts untouched. [Protected PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain untouched, open/Draft/unmerged; PR #8 remains Draft/unmerged. No UI/frontend development or integration, no paid/potentially billable external compute/API/service, GPU, new credentials/accounts, real model/adapter/weights/Candidate generation or promotion, protected V2 evaluation opening, material erasure, physical-PC action, real tool dispatch, human-review/consent fabrication or main merge.
+
+SQLite row/schema metadata preflights do **not** prove independently authenticated provenance, coherent multi-store snapshots, durable end-to-end exactly-once effects, or atomic descriptor custody between preflight and open. WAL/SHM last-close/unlink race is unresolved. Memory COMMIT-UNKNOWN remains quarantined/manual only; Planner recovered RUNNING remains UNKNOWN with no automatic retry. PermissionGate's spent-token set remains in-process; restart-safe exactly-once authorization and trusted-clock audit-before-action integration remain **NOT_PASSED**. No fixture grants real-world access.
+
+## Next plan / 今後の方針
+
+1. Verify final exact HEAD across Windows/Ubuntu Python 3.11–3.13; on any FAIL inspect job logs and apply only the smallest semantics-preserving repair while switching to another independent non-UI lane.
+2. Validate coherent Memory/ActionAudit SQLite WAL/SHM last-close descriptor lifecycle and post-COMMIT UNKNOWN quarantine on disposable files, with retained exact-head evidence and no automatic replay.
+3. Advance Planner durable UNKNOWN/terminal CAS and persisted input/replay provenance. Preserve denial-only return types and independent held witnesses.
+4. Only after dependent exact-head GREEN, integrate immutable ToolRegistry, exact-type PermissionGate, durable occurrence ledger, trusted audit-before-action and disconnected Mock Executor; **no real dispatch**.
+5. Continue privacy-safe Personal Context, proactive scheduler, observation fixture-only contracts and free-only V3 approval/path/identity/reproducibility guards without protected gates or Candidate work.
+
+---
+
 # LATEST — ARK AI Run856 non-UI CI repair, SQLite sidecar path admission, Planner UNKNOWN budget
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T06:50:57+09:00** (observed reporting-runtime wall clock immediately before write; NOT trusted authorization, audit, action, consent or approval time). **Overall ARK/JARVIS: NOT_PASSED.** Strict free-only and local/disconnected; **all new UI/frontend work remains PAUSED**.
