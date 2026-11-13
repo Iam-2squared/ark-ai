@@ -221,10 +221,22 @@ def review_coherent_expiry_restart(
     if retained.cohort.truncated_scopes:
         # An incomplete page must not be silently interpreted as full expiry coverage.
         raise CoherentExpiryRestartRejected("prior expiry inventory truncated")
-    inventory = tuple(sorted(page.scope_sha256 for page in retained.pages))
-    if inventory != retained.cohort.scope_hashes or len(inventory) != len(scopes):
+    # Compare canonical scalar hashes, never dataclass equality or a caller-
+    # supplied sort operator. A frozen retained page can be altered in memory
+    # even when its original slot descriptor remains unchanged.
+    page_hashes = tuple(page.scope_sha256 for page in retained.pages)
+    cohort_hashes = retained.cohort.scope_hashes
+    if (
+        any(type(value) is not str for value in page_hashes)
+        or type(cohort_hashes) is not tuple
+        or len(cohort_hashes) > 16
+        or any(type(value) is not str for value in cohort_hashes)
+    ):
+        raise CoherentExpiryRestartRejected("invalid prior expiry scope hashes")
+    inventory = tuple(sorted(page_hashes))
+    if inventory != cohort_hashes or len(inventory) != len(scopes):
         raise CoherentExpiryRestartRejected("prior expiry scope inventory changed")
-    if retained.pages != tuple(sorted(retained.pages, key=lambda page: page.scope_sha256)):
+    if page_hashes != inventory:
         raise CoherentExpiryRestartRejected("prior expiry pages out of order")
 
     # Recalculate the coherent digest, not merely the child cohort signature.
