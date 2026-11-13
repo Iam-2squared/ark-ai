@@ -1,3 +1,44 @@
+# LATEST — ARK AI Run837 NON-UI WAL isolation and explicit read-epoch controls
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T15:02:30.490+09:00** (observed reporting clock ONLY; **NOT trusted action/authorization time**). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, isolated/reversible work; new UI/frontend remains PAUSED.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED verified immediately before the checkpoint write. **Initial work-basis HEAD:** `6078227b3f40e25a5d6cbd77abd9174f499af24b` (Run836 checkpoint). **Last executable/test HEAD:** `d65bd4124fc114f22e63805abe5f7714e9571348`. **Technical-report HEAD:** `c6d55afd56403a82a2ec4c2b1c1508b32e7c85d4`. **Checkpoint-write-basis HEAD:** `c6d55afd56403a82a2ec4c2b1c1508b32e7c85d4` (matched live PR and branch pre-write). **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE;** take the returned GitHub Contents API commit SHA, then compare with live PR and branch. Previous PROJECT_STATUS blob SHA: `36a10a27afddb03f727eb86b8b829985478c3fdc`.
+
+## NEW — five coherent non-UI source/test packages, zero additional test cases
+
+1. **Memory cross-process CAS fixture** [`39e91b5e`](https://github.com/Iam-2squared/ark-ai/commit/39e91b5eebe58679d12fe9861922f4f7cef3ba19): explicitly holds a parent WAL read transaction through both worker exits. Preserves existing four CAS assertions but isolates them from SQLite last-close `-shm` unlink. No production path/sidecar/rollback guard changed.
+2. **ActionAudit cross-process append fixture** [`43f2d61c`](https://github.com/Iam-2squared/ark-ai/commit/43f2d61c6024327d12342853d1965562fd407c8c): likewise holds parent WAL reader through both audit workers; preserves existing ordered event/digest-only assertions and strict cleanup. No real ToolBackend.
+3. **Memory disposable WAL diagnostic** [`acaa1efc`](https://github.com/Iam-2squared/ark-ai/commit/acaa1efca627d616bb273c884de398e819f28955): the opt-in keeper now pins `BEGIN` plus a Memory table read; a merely open idle connection is not assumed to hold a read epoch.
+4. **ActionAudit disposable WAL diagnostic** [`dec61039`](https://github.com/Iam-2squared/ark-ai/commit/dec610392285ce2936dabebd0eaea1fab91922cf): opt-in keeper pins an audit table snapshot through child exits.
+5. **Personal Context revocation disposable WAL diagnostic** [`d65bd412`](https://github.com/Iam-2squared/ark-ai/commit/d65bd4124fc114f22e63805abe5f7714e9571348): opt-in keeper pins the synthetic revocation table snapshot through two independent workers. No consent, real deletion or automatic retry.
+
+**Technical evidence:** [Run837 report at `c6d55afd`](https://github.com/Iam-2squared/ark-ai/blob/c6d55afd56403a82a2ec4c2b1c1508b32e7c85d4/docs/JARVIS_RUN837_NON_UI_WAL_CAS_ISOLATION.md). Exact `6078227b...d65bd412` compare: five modified non-UI paths, 5 sequential normal Contents API commits; 2 existing test functions strengthened, 3 synthetic scripts refined, **0 new regression cases authored**. Small disposable *separate* SQLite mini-harness passed 4/4 same-key and 4/4 separate-key WAL reader/write rounds, **not ARK pytest/CI evidence**.
+
+## CI / evidence — do not claim future GREEN
+
+- Prior checkpoint `6078227b` [CI #43368494922](https://github.com/Iam-2squared/ark-ai/actions/runs/43368494922): **FAIL 1/6**, specifically Ubuntu Python3.12 `separate-source` cross-process Memory CAS fixture; worker observed a `-shm` regular file with `st_nlink=0` and **refused**. Other five jobs GREEN. Prior `2dfb2733` [#43368332837](https://github.com/Iam-2squared/ark-ai/actions/runs/43368332837): **GREEN 6/6** but different HEAD.
+- Memory test `39e91b5e` [#43373725302](https://github.com/Iam-2squared/ark-ai/actions/runs/43373725302): **IN_PROGRESS** at inspection (Ubuntu 3/3 GREEN, Windows 3 pending).
+- Audit test `43f2d61c` [#43373814955](https://github.com/Iam-2squared/ark-ai/actions/runs/43373814955): **IN_PROGRESS** (Ubuntu 3/3 GREEN, Windows 3 pending).
+- Memory diagnostic `acaa1efc` [#43373927558](https://github.com/Iam-2squared/ark-ai/actions/runs/43373927558): **IN_PROGRESS** at last branch listing.
+- Audit diagnostic `dec61039` [#43373972632](https://github.com/Iam-2squared/ark-ai/actions/runs/43373972632): **IN_PROGRESS** (Ubuntu 3/3 GREEN, Windows 3 pending).
+- Revocation diagnostic `d65bd412` [#43374227595](https://github.com/Iam-2squared/ark-ai/actions/runs/43374227595): **IN_PROGRESS** (Ubuntu 3/3 GREEN, Windows 3 pending).
+- Run837 technical-report `c6d55afd` [#43374821510](https://github.com/Iam-2squared/ark-ai/actions/runs/43374821510): **IN_PROGRESS** (Ubuntu3.12/3.13 GREEN; Ubuntu3.11 and Windows 3 pending). This checkpoint commit will start its own automatic CI, not known GREEN at write time. **No manual duplicate CI dispatched.**
+
+The zero-link `-shm` event is a real observed **fail-closed refusal**. The precise WAL unlink/checkpoint root cause is **UNRESOLVED** and is NOT deemed benign/safe; no acceptance, unchecked retry, automatic COMMIT-UNKNOWN execution, or production guard relaxation. No repository-wide local pytest/Ruff or physical PC/GGUF was run in this invocation.
+
+## Frozen evidence and cost/authorization boundaries unchanged
+
+V1/V2/Local UI/Launcher frozen contracts/evidence unchanged; [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains protected/Draft/unmerged and [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) paused/Draft/unmerged/untouched. No new UI/frontend features, tests, polish, integration or branch modification. No paid or potentially billable compute/API/service, GPU, Candidate adapter/weight generation/promotion, frozen V2 final evaluation opening, new credentials/connection, destructive operations, actual notifications/tools, unauthorized main merge, or independent approval/effect/clock assertion. Test synthetic WAL read snapshots cannot prove authorization, transactional correctness across stores or external execution. ARK/JARVIS **NOT_PASSED**.
+
+## Next plan / 今後の方針 — prioritized
+
+1. Confirm latest exact checkpoint-result HEAD and all **six** Windows/Ubuntu job outcomes, including Run837 package heads. If FAIL, inspect exact failed job logs and apply the narrowest semantics-preserving normal GitHub Contents API correction; work other non-UI lanes during CI.
+2. Continue independent disposable Memory/Audit/Context keeper-vs-no-keeper, sequential-vs-concurrent WAL last-close diagnostics and bounded sidecar lstat observation. Keep zero-link/symlink/hardlink refusal in production, never treat automatic retry as safe.
+3. Memory coherent CAS/ABA/expiry and COMMIT-UNKNOWN manual triage; Planner durable UNKNOWN isolation, crash recovery and terminal propagation; integrate exact immutable ToolRegistry/PermissionGate and audit-before-action Mock Executor only after lower-layer GREEN proof.
+4. Privacy-safe Personal Context retention/revocation, proactive restart/occurrence and observation/multimodal offline contracts; zero-cost V3 identity/path/approval guards. Frozen evaluation/Candidate/UI/main approval gates remain closed.
+
+---
+
 # LATEST — ARK AI Run836 NON-UI disposable WAL lifecycle and revocation diagnostics
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T13:54:10.643+09:00** (reporting clock only, **NOT trusted approval/action time**). **Overall ARK/JARVIS: NOT_PASSED**. Isolated, reversible, free-only work; UI suspended.
