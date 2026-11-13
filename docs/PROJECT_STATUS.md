@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run858 non-UI native encoded SQLite paths, Windows CI repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T08:47:51+09:00** (reporting-runtime wall clock observed immediately before this Contents API checkpoint, NOT trusted approval/action/audit/consent time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, disconnected, reversible, free-only; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged. **Initial work-basis HEAD:** `bcfabd84d5a64610b1b4bf15ec6314346638ff90`. **Newest source+test HEAD:** `a7f7829f611ec7ab533fcb6f5751c3265094df30`. **Technical report/checkpoint-write-basis HEAD:** `4911ca183030462bc4e1982888f71725c526a443` (identical to PR HEAD immediately before this write). **Previous canonical status blob SHA:** `15e8353da76ef99d5d72b43724015b101b2ea3e3`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; verify returned commit, PR/branch HEAD and postwrite blob separately. Do not put an invented self-referential SHA in this file.
+
+## NEW — four non-UI work packages; 10 new authored regression cases
+
+1. **Exact Windows CI repair:** [commit `353e6275`](https://github.com/Iam-2squared/ark-ai/commit/353e6275bd72523b9cd6e84ff88167061634d2e9) replaces drive-relative-on-Windows `Path("/synthetic/fixture.sqlite3")` with an exact native absolute `Path.cwd()` fixture in the existing positive sidecar test; no production safety predicate relaxed.
+2. **Planner crash journal encoded path safety:** [source `64c5e110`](https://github.com/Iam-2squared/ark-ai/commit/64c5e1103a177bf83b4f23f19510385deea6d95a), [4-case regression `fba67cc0`](https://github.com/Iam-2squared/ark-ai/commit/fba67cc08c60d3ecb2cf171888be00ea641561f7). Reject NUL, missing basename and overlong `os.fsencode` main + `-journal` paths before filesystem metadata access; valid native Path still accepted.
+3. **Memory encoded SQLite path safety:** [source `54172a26`](https://github.com/Iam-2squared/ark-ai/commit/54172a26bff3037d5da5a1f48272f60aada8d2bb), [3-case regression `92dac16f`](https://github.com/Iam-2squared/ark-ai/commit/92dac16f483036691c0681e8fe72d2e6773749b1). Bound raw and normalized-absolute filesystem-encoded database and longest sidecar paths before mkdir/lstat/SQLite; retain typed fail-closed refusal.
+4. **ActionAudit encoded SQLite path safety:** [source `a0a5c585`](https://github.com/Iam-2squared/ark-ai/commit/a0a5c585029e86f4c5242cf6a97c24492f18df7b), [3-case regression `a7f7829f`](https://github.com/Iam-2squared/ark-ai/commit/a7f7829f611ec7ab533fcb6f5751c3265094df30). Deny oversized filesystem-encoded database/journal paths before local file inventory. No action, backend call or audit write in the tests.
+
+[Run858 exact-package technical report](https://github.com/Iam-2squared/ark-ai/blob/4911ca183030462bc4e1982888f71725c526a443/docs/JARVIS_RUN858_NON_UI_ENCODED_SQLITE_PATH_ADMISSION_AND_WIN_CI_REPAIR.md) documents scope, exact commit links, CI run IDs and limitations. **10 cases AUTHORED, NOT confirmed PASS.** No full local Ruff/pytest or physical Windows/GGUF execution was performed. Public-repo workflow CI is auto-triggered by normal writes only; no duplicate manual reruns.
+
+## CI — exact-HEAD evidence
+
+- **Previous Run857 HEAD `bcfabd84`:** [CI #43522982061](https://github.com/Iam-2squared/ark-ai/actions/runs/43522982061), **FAIL 3/6 (all Windows)**, Ubuntu Python 3.11–3.13 **GREEN 3/3**. Each Windows job had 1 failure from the POSIX-root fixture path in the positive sidecar test. Windows 3.12: 15,173 PASS / 1 FAIL / 90 SKIP. Root cause corrected in later `353e6275`; older CI remains FAILED.
+- **Windows repair HEAD `353e6275`:** [CI #43528916562](https://github.com/Iam-2squared/ark-ai/actions/runs/43528916562), **IN PROGRESS** at last check.
+- **Planner source/test HEADs `64c5e110` / `fba67cc0`:** [CI #43529130665](https://github.com/Iam-2squared/ark-ai/actions/runs/43529130665), [#43529191071](https://github.com/Iam-2squared/ark-ai/actions/runs/43529191071), both **IN PROGRESS** at last check.
+- **Memory source/test HEADs `54172a26` / `92dac16f`:** [CI #43529249211](https://github.com/Iam-2squared/ark-ai/actions/runs/43529249211) **IN PROGRESS**, [#43529301363](https://github.com/Iam-2squared/ark-ai/actions/runs/43529301363) **QUEUED**.
+- **Audit source/test HEADs `a0a5c585` / `a7f7829f`:** [CI #43529386394](https://github.com/Iam-2squared/ark-ai/actions/runs/43529386394), [#43529410125](https://github.com/Iam-2squared/ark-ai/actions/runs/43529410125), both **QUEUED**.
+- **Report HEAD `4911ca18`:** [CI #43529696966](https://github.com/Iam-2squared/ark-ai/actions/runs/43529696966), **QUEUED** at last check. This checkpoint commit itself may trigger auto-CI; **latest checkpoint-result HEAD six-job GREEN NOT VERIFIED**. Results on older hashes are never carried forward.
+
+## Frozen contracts, blockers and authorization
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence untouched. [Protected PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched, open/Draft/unmerged; PR #8 remains Draft/unmerged. No UI, paid/potentially billable compute/services, external GPU, Candidate weights/adapter/training/promotion, protected V2 final evaluation, new secrets/accounts, destructive operation, physical-PC action, actual tools/backend dispatch, human-approval fabrication or main merge.
+
+Encoded path preflights cannot prove atomic pathname/FD custody from check to SQLite open; Memory/ActionAudit WAL/SHM last-close/unlink races remain. Multi-store coherent snapshots and authenticated historical provenance remain unproven. Memory COMMIT-UNKNOWN and recovered Planner RUNNING remain UNKNOWN/manual-only, never automatically replayed. PermissionGate spent-token storage remains process-local; restart-safe exactly-once authorization/effects and trusted-clock audit-before-action integration **NOT_PASSED**. Synthetic fixtures grant no authority.
+
+## Next plan / 今後の方針
+
+1. Establish **exact latest HEAD** Windows/Ubuntu Python 3.11–3.13 six-job CI evidence and repair any failure with minimal semantics-preserving changes; switch independent lanes while in flight.
+2. On disposable Memory/ActionAudit SQLite fixtures, investigate WAL/SHM last-close and descriptor open-to-use races; keep uncertain commits quarantined, no implied authority or replay.
+3. Strengthen Memory retained event/COMMIT-UNKNOWN reconciliation and Planner durable UNKNOWN/terminal CAS with retained independent evidence.
+4. After relevant exact-head GREEN dependencies, connect immutable ToolRegistry, exact-type PermissionGate, durable occurrence ledger, trusted-clock audit-before-action and disconnected Mock Executor; **never real dispatch**.
+5. Continue privacy-safe Personal Context, proactive scheduler and observation fixture-only backend contracts, and free-only V3 approval/path/identity/reproducibility guards without protected evaluation or Candidate work.
+
+---
+
 # LATEST — ARK AI Run857 non-UI privacy, SQLite custody, observation and Planner schema hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T07:53:02+09:00** (observed reporting-runtime wall clock immediately before this GitHub checkpoint write, NOT a trusted authorization/audit/action/approval/consent timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, disconnected, reversible; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
