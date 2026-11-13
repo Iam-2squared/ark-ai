@@ -92,7 +92,7 @@ def test_hash_callback_cannot_replace_report_constructor_before_use(
     # coherent result hash can reach the injected constructor mutation.
     with pytest.raises(
         coherent.MemoryCoherentHistoryRejected,
-        match="invalid retained witness",
+        match="coherent Memory digest implementation or domain changed",
     ):
         coherent.review_retained_coherent_memory(store, *retained)
     assert attempted == []
