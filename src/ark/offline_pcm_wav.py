@@ -111,6 +111,9 @@ def _require_original_wave_authority() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or struct.unpack_from is not _ORIGINAL_UNPACK_FROM
         or _SHA is not _ORIGINAL_SHA_PATTERN
+        # The SHA helper sees private owner/privacy digests. Refuse a
+        # substituted callable before any request field is read.
+        or _sha is not _ORIGINAL_SHA_HELPER
         or _MAX_WAV_BYTES is not _ORIGINAL_MAX_WAV_BYTES
         or _MAX_DURATION_SECONDS is not _ORIGINAL_MAX_DURATION_SECONDS
     ):
@@ -166,7 +169,12 @@ def _require_original_wave_authority() -> None:
 
 
 def _sha(value: object) -> bool:
-    return type(value) is str and _SHA.fullmatch(value) is not None
+    # Fixed-width ASCII before regex: caller-supplied digest labels may be
+    # enormous even when the WAV bytes themselves fit the source budget.
+    return type(value) is str and len(value) == 64 and _SHA.fullmatch(value) is not None
+
+
+_ORIGINAL_SHA_HELPER = _sha
 
 
 def inspect_local_pcm_wav(request: OfflineWaveRequest) -> OfflineWaveReview:
