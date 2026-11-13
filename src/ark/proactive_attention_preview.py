@@ -209,7 +209,12 @@ def _assert_original_denials() -> None:
 
 
 def _sha(value: object) -> bool:
-    return type(value) is str and _SHA.fullmatch(value) is not None
+    # SHA-256 hex labels are exact-width identities. Refuse oversized or
+    # truncated input before handing caller data to the regex engine.
+    return (
+        type(value) is str and len(value) == 64
+        and _SHA.fullmatch(value) is not None
+    )
 
 
 def _ms(value: object) -> bool:
