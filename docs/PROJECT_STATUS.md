@@ -1,4 +1,42 @@
-# LATEST — ARK AI Run834 NON-UI startup/PNG/privacy original-identity hardening
+# LATEST — ARK AI Run835 NON-UI coherent SQLite WAL/Planner/privacy guards
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T13:01:30.436+09:00** (observed reporting clock, **NOT** trusted approval/action time). **Overall ARK/JARVIS: NOT_PASSED.** Work is isolated, reversible, zero-cost, and non-UI.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED at the live pre-write inspection. **Initial work-basis HEAD:** `7339bf27967058d94b1695304e36997a63e78878` (prior Run834 checkpoint). **Last executable/test HEAD:** `b22c0784152c7533f41d9d0cb48cad365980a537`. **Technical-report HEAD:** `807ae094dd77085d9f9fd726c295ec0dd3a24708`. **Checkpoint-write-basis HEAD:** `807ae094dd77085d9f9fd726c295ec0dd3a24708`, re-read against PR #8 and branch immediately before the normal Contents API write. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; use returned Contents API SHA and compare with live PR/branch HEAD after saving. Previous PROJECT_STATUS blob SHA: `0d7229bb0d15720e2c053ce9188cb22211f52b6a`.
+
+## NEW — four independent non-UI source+test packages, 26 authored test cases
+
+1. **Memory disposable SQLite diagnostic:** [source `4c353dec`](https://github.com/Iam-2squared/ark-ai/commit/4c353dec62298fa43ba81a1910a0c7be40fe70e4), [five tests `36ce9b81`](https://github.com/Iam-2squared/ark-ai/commit/36ce9b818a8a08d864efa7b05a10060be62658c6). Existing two-process fixture now validates frozen Memory v1 DDL/index/trigger/schema **inside the same read-only BEGIN epoch** as Memory rows, event IDs and AUTOINCREMENT markers; rejects four schema drifts, tests an overlapping WAL commit without mixed epochs. No change to Memory v1 schema or public CRUD; no unsafe sidecar adoption.
+2. **ActionAudit disposable SQLite diagnostic:** [source `f711b6f1`](https://github.com/Iam-2squared/ark-ai/commit/f711b6f12274570b7fc4b5e0400c35836e60e82c), [three tests `41d443cb`](https://github.com/Iam-2squared/ark-ai/commit/41d443cb738c682a3b1768a0d1e1a29080010bea). Binds v1 schema, private synthetic audit rows and highwater to one WAL snapshot. Two mid-review writer cases and an unexpected-trigger case refuse false success. No real ToolBackend/action.
+3. **Planner crash-recovery read-only recheck:** [source `bbbaa2ae`](https://github.com/Iam-2squared/ark-ai/commit/bbbaa2aecc9bb0c03efa362083923174491e3488), [nine tests `b9e06910`](https://github.com/Iam-2squared/ark-ai/commit/b9e06910904be08c65236ec2a6f33614f6c1293c). Import-pinned strict UTF-8 step ID reviewer budget of 256 bytes, rejecting NUL, surrogate, blank and overlarge detached claims before hashing, sorting or journal access. Frozen Planner v1 ID contract unchanged; UNKNOWN remains quarantined and cannot trigger replay.
+4. **Personal Context retained privacy inventory:** [source `be111153`](https://github.com/Iam-2squared/ark-ai/commit/be1111536fe6e4f9099c7941562ff4f6474fedec), [nine tests `b22c0784`](https://github.com/Iam-2squared/ark-ai/commit/b22c0784152c7533f41d9d0cb48cad365980a537). Before independent Memory/revocation reads, cached memory IDs must be canonical `mem_` + 64 lowercase hex, unique and sorted like the original SQLite inventory; reject malformed/overlong/duplicate/permuted local receipts. No deletion, erasure claim or consent decision.
+5. **Technical evidence:** [Run835 detailed report `807ae094`](https://github.com/Iam-2squared/ark-ai/blob/807ae094dd77085d9f9fd726c295ec0dd3a24708/docs/JARVIS_RUN835_NON_UI_SQLITE_SNAPSHOT_PLANNER_RETENTION.md). Exact initial-to-test diff comprises **eight sequential normal Contents API commits**, only four non-UI sources and four new test files; no UI/frozen/protected change.
+
+**26 test cases AUTHORED, NOT independently confirmed PASS.** Full local pytest/Ruff, physical Windows host and GGUF have NOT run in this invocation. Synthetic SQLite status text, local clocks, hashes and Python original-descriptor pins are NOT independent historical evidence, trusted identity, consent, executed side effect, safe retry or Candidate promotion. Existing zero-link `-shm` WAL concurrency root cause remains **UNRESOLVED**; no custody guard weakened.
+
+## CI — exact work-basis and in-flight HEAD evidence
+
+- Prior exact Run834 HEAD `7339bf27967058d94b1695304e36997a63e78878`: [CI #43356604626](https://github.com/Iam-2squared/ark-ai/actions/runs/43356604626) **GREEN 6/6**, Windows/Ubuntu Python3.11–3.13, each job examined. It does **not** establish current changes GREEN.
+- Memory source `4c353dec` [#43361376615](https://github.com/Iam-2squared/ark-ai/actions/runs/43361376615) **IN_PROGRESS**; ActionAudit source `f711b6f1` [#43361430688](https://github.com/Iam-2squared/ark-ai/actions/runs/43361430688) **IN_PROGRESS**.
+- Memory tests `36ce9b81` [#43361523349](https://github.com/Iam-2squared/ark-ai/actions/runs/43361523349) **IN_PROGRESS** (Ubuntu 3.13 GREEN at prior job check); Audit tests `41d443cb` [#43361606121](https://github.com/Iam-2squared/ark-ai/actions/runs/43361606121) **IN_PROGRESS**.
+- Planner source `bbbaa2ae` [#43361761088](https://github.com/Iam-2squared/ark-ai/actions/runs/43361761088) **IN_PROGRESS**; Planner tests `b9e06910` [#43361855339](https://github.com/Iam-2squared/ark-ai/actions/runs/43361855339) **QUEUED**.
+- Privacy source `be111153` [#43362356075](https://github.com/Iam-2squared/ark-ai/actions/runs/43362356075) **QUEUED**; Privacy tests `b22c0784` [#43362431542](https://github.com/Iam-2squared/ark-ai/actions/runs/43362431542) **QUEUED**.
+- Technical report HEAD `807ae094dd77085d9f9fd726c295ec0dd3a24708`: [#43362566263](https://github.com/Iam-2squared/ark-ai/actions/runs/43362566263) **QUEUED**. This checkpoint write itself triggers another automatic CI on its returned HEAD; **latest exact-head full 6/6 GREEN NOT ESTABLISHED**, and no duplicate equivalent workflow manually dispatched.
+
+## Frozen contracts, permission and cost blockers
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected/unmerged and [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) UI-paused/Draft/unmerged/untouched. No UI/frontend features, polish, integration or tests. No main merge, paid/potentially billable service, API, provider compute, GPU, Candidate/weight generation or promotion, protected V2 final-evaluation opening, new credentials/accounts, real tools, automatic UNKNOWN replay, private disclosure, destructive action, unauthenticated consent, relaxed regression/contamination/provenance gates or unavailable physical-PC activity. The opt-in local synthetic reviewers cannot establish a JARVIS PASS.
+
+## Next plan / 今後の方針 (priority)
+
+1. Inspect **exact checkpoint-result HEAD CI** and per-package six-job statuses. On actual FAIL, inspect failing logs and implement smallest semantics-preserving normal Contents API repair; use independent non-UI work while CI runs. No duplicate runs or raw Git/force safety bypass.
+2. Reproduce and compare disposable Memory/ActionAudit WAL keeper/last-close/bootstrap/generation-CAS hazards to distinguish legitimate zero-link `-shm` races from real aliases, **without weakening fail-closed path/sidecar refusal or automatically retrying ambiguous COMMIT**.
+3. Advance Memory coherent CAS/ABA/expiry/COMMIT-UNKNOWN manual triage, Planner persisted UNKNOWN/terminal propagation. Bind immutable ToolRegistry, exact PermissionGate, durable audit-before-action and disconnected Mock Executor **only after underlying exact-head GREEN evidence**.
+4. Continue privacy-safe Personal Context revocation/retention, proactive occurrence/restart, observation and multimodal fixture contracts, and free-only V3 approval/path/identity/reproducibility gates; never open protected evaluation, Candidate or UI lanes without explicit approval.
+
+---
+
+# HISTORY — ARK AI Run834 NON-UI startup/PNG/privacy original-identity hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T12:05:26.563+09:00** (observed reporting timestamp immediately before this Contents API write, **NOT** a trusted authorization clock). **Overall ARK/JARVIS: NOT_PASSED**.
 
