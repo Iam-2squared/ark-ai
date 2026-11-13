@@ -116,7 +116,7 @@ def test_overlong_retained_digest_rejected_before_rebuilding(
     [
         ("canonical_local_json", "f" * 65536),
         ("canonical_local_json", "{} "),
-        ("canonical_local_json", "\u005cud800"),
+        ("canonical_local_json", "\ud800"),
         ("canonical_local_json", "é" * 32769),
         ("record_ids", ("rec_" + "g" * 32,)),
         ("owner_digest", "G" * 64),
