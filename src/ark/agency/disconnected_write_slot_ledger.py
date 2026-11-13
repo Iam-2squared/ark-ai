@@ -130,6 +130,10 @@ _ORIGINAL_RECEIPT_HOOKS = tuple(
 # Pin the local reservation hashing and schema protocol before any private
 # claim/witness bytes reach serializers, digests or SQLite. A local pin is not
 # a signed approval or trusted evidence against a compromised interpreter.
+_ORIGINAL_SQLITE3 = sqlite3
+_ORIGINAL_CONNECT = sqlite3.connect
+_ORIGINAL_MAX_ROWS = _MAX_ROWS
+_ORIGINAL_MAX_BATCH = _MAX_BATCH
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -144,7 +148,11 @@ def _require_original_constructors() -> None:
     # check timings. Keep those existing checks and error paths intact: a
     # synthetic post-COMMIT getter fixture must still test its own boundary.
     if (
-        hashlib is not _ORIGINAL_HASHLIB
+        sqlite3 is not _ORIGINAL_SQLITE3
+        or sqlite3.connect is not _ORIGINAL_CONNECT
+        or type(_MAX_ROWS) is not int or _MAX_ROWS != _ORIGINAL_MAX_ROWS
+        or type(_MAX_BATCH) is not int or _MAX_BATCH != _ORIGINAL_MAX_BATCH
+        or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_JSON_DUMPS
@@ -195,7 +203,17 @@ def genesis_write_slot_witness() -> WriteSlotLedgerWitness:
 
 
 def _valid(value: object, pattern: re.Pattern[str]) -> bool:
-    return type(value) is str and pattern.fullmatch(value) is not None
+    # Bound hostile strings before invoking the pattern matcher. A caller
+    # cannot supply an alternate grammar as a synthetic WRITE identity.
+    if pattern is _STEP:
+        width = 21
+    elif pattern is _PLAN or pattern is _SLOT:
+        width = 69
+    elif pattern is _SHA:
+        width = 64
+    else:
+        return False
+    return type(value) is str and len(value) == width and pattern.fullmatch(value) is not None
 
 
 def derive_disconnected_write_slot_id(
@@ -291,6 +309,22 @@ def _schema(conn: sqlite3.Connection) -> None:
 def _inspect(conn: sqlite3.Connection) -> WriteSlotLedgerWitness:
     _require_original_constructors()
     _schema(conn)
+    _require_original_constructors()
+    # The full chain is checked below. First reject count/width/type without
+    # fetching potentially oversized persisted identity BLOB/TEXT into Python.
+    count = conn.execute("SELECT COUNT(*) FROM synthetic_write_slots").fetchone()[0]
+    if type(count) is not int or not 0 <= count <= _MAX_ROWS:
+        raise WriteSlotLedgerRejected("invalid persisted reservation row")
+    malformed = conn.execute(
+        "SELECT 1 FROM synthetic_write_slots WHERE "
+        "typeof(slot_id)!='text' OR length(slot_id)!=69 OR "
+        "typeof(plan_id)!='text' OR length(plan_id)!=69 OR "
+        "typeof(step_id)!='text' OR length(step_id)!=21 OR "
+        "typeof(request_sha256)!='text' OR length(request_sha256)!=64 OR "
+        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 LIMIT 1"
+    ).fetchone()
+    if malformed is not None:
+        raise WriteSlotLedgerRejected("invalid persisted reservation row")
     _require_original_constructors()
     witness = genesis_write_slot_witness()
     seen: set[tuple[str, str]] = set()
