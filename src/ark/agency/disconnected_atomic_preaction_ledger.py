@@ -23,6 +23,7 @@ _ID = re.compile(r"occ_[0-9a-f]{64}\Z")
 _BOUND = re.compile(r"bound_[0-9a-f]{64}\Z")
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _MAX = 128
+_MAX_PATH = 4096  # Local fixture pathname budget, before filesystem access.
 # Pin the three identity grammars and reject overlong labels before regex.
 _ORIGINAL_PATTERNS = (_ID, _BOUND, _SHA)
 _INTENTS = (
@@ -41,6 +42,8 @@ _AUDITS = (
 # Explicit process-local custody of the digest codec, ledger DDL and admission
 # bound. Refuse replacements before constructing/reviewing private intent rows
 # or opening a SQLite fixture. These checks cannot authenticate provenance.
+_ORIGINAL_SQLITE3 = sqlite3
+_ORIGINAL_CONNECT = sqlite3.connect
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -50,6 +53,7 @@ _ORIGINAL_AUDIT_DOMAIN = _AUDIT_DOMAIN
 _ORIGINAL_GENESIS = _GENESIS
 _ORIGINAL_SQL = (_INTENTS, _AUDITS)
 _ORIGINAL_MAX = _MAX
+_ORIGINAL_MAX_PATH = _MAX_PATH
 
 
 class AtomicPreactionRejected(ValueError):
@@ -123,7 +127,9 @@ _ORIGINAL_CARRIER_SLOTS = tuple(
 
 def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
     if (
-        hashlib is not _ORIGINAL_HASHLIB
+        sqlite3 is not _ORIGINAL_SQLITE3
+        or sqlite3.connect is not _ORIGINAL_CONNECT
+        or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
@@ -133,6 +139,7 @@ def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
         or _INTENTS is not _ORIGINAL_SQL[0]
         or _AUDITS is not _ORIGINAL_SQL[1]
         or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+        or type(_MAX_PATH) is not int or _MAX_PATH != _ORIGINAL_MAX_PATH
     ):
         raise AtomicPreactionRejected("atomic preaction codec or schema changed")
     # Genesis and raw witness/claim validation must remain independently
@@ -205,9 +212,15 @@ def _check_claim(value: object) -> None:
 
 def _path(value: object, *, create: bool) -> Path:
     _require_original_atomic_carriers(snapshot=False)
-    if type(value) is not type(Path()) or ".." in value.parts:
+    if (
+        type(value) is not type(Path())
+        or len(str(value)) > _MAX_PATH
+        or ".." in value.parts
+    ):
         raise AtomicPreactionRejected("unsafe intent ledger path")
     path = value.absolute()
+    if len(str(path)) > _MAX_PATH:
+        raise AtomicPreactionRejected("unsafe intent ledger path")
     try:
         for parent in path.parents:
             meta = parent.lstat()
