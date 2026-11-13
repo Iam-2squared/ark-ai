@@ -236,7 +236,14 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
     """
     if type(path) is not type(Path()) or ".." in path.parts:
         raise ActionAuditSchemaError("audit path type or parent traversal refused")
+    # Bound private paths BEFORE mkdir/lstat/SQLite; leave room for SQLite's
+    # longest journal suffix even when the main database path fits.
+    raw = str(path)
+    if not path.name or "\x00" in raw or len(raw) > 4096:
+        raise ActionAuditSchemaError("audit database path exceeds local fixture limits")
     target = path if path.is_absolute() else path.absolute()
+    if len(str(target)) + len("-journal") > 4096:
+        raise ActionAuditSchemaError("audit database/sidecar path exceeds local fixture limits")
     try:
         for ancestor in target.parents:
             try:
