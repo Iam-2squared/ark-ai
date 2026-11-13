@@ -96,10 +96,20 @@ def _protocol() -> None:
         or json.loads is not _ORIGINAL_LOADS
         or json.dumps is not _ORIGINAL_DUMPS
         or crossbind.review_detached_v3_preflight is not _ORIGINAL_CROSSBIND
-        or (
-            crossbind.DetachedV3Snapshot, crossbind.DetachedV3Evidence,
-            crossbind.DetachedV3PreflightReview,
-        ) != _ORIGINAL_CLASSES
+        # Tuple equality could dispatch an injected __eq__/__ne__ before
+        # the detached free-only refusal. Class custody is identity-only.
+        or len(_ORIGINAL_CLASSES) != 3
+        or any(
+            now is not original
+            for now, original in zip(
+                (
+                    crossbind.DetachedV3Snapshot,
+                    crossbind.DetachedV3Evidence,
+                    crossbind.DetachedV3PreflightReview,
+                ),
+                _ORIGINAL_CLASSES, strict=True,
+            )
+        )
         or type(_MAX_BYTES) is not int or _MAX_BYTES != _ORIGINAL_LIMIT
         or _TOP is not _ORIGINAL_TOP
         or _SNAPSHOT is not _ORIGINAL_SNAPSHOT
