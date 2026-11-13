@@ -1,4 +1,41 @@
-# LATEST — ARK AI Run832 NON-UI durable two-process verification and V3 offline protocol identity
+# LATEST — ARK AI Run834 NON-UI startup/PNG/privacy original-identity hardening
+
+**Saved at (Asia/Tokyo/JST): 2026-11-13T12:05:26.563+09:00** (observed reporting timestamp immediately before this Contents API write, **NOT** a trusted authorization clock). **Overall ARK/JARVIS: NOT_PASSED**.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED on live pre-write check. **Initial work-basis HEAD:** `c78df2fb5a5bbeb96a3c19369b01b06e0fb0ad77` (Run833 prior head). **Last executable/test HEAD:** `f293686279159cfca340fbf6e89a5dea3c867fe3`. **Technical-report HEAD:** `c807e2fbbffffa4684e306d153fe4494ae622417`. **Checkpoint-write-basis HEAD:** `c807e2fbbffffa4684e306d153fe4494ae622417`, re-read immediately before normal Contents API update. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**; the actual commit SHA is the Contents API result, to be compared with live PR and branch HEAD after saving; never substitute this report HEAD. Previous checkpoint blob SHA: `21a72146658b9d33c5c04b05fbdca6fdcb6f0a26`.
+
+## NEW — three independent non-UI packages; 22 authored regression tests
+
+1. **Proactive startup source-class/descriptor identity.** [Source `05fadb38`](https://github.com/Iam-2squared/ark-ai/commit/05fadb38a0f6ea348b06ba75746d52220d5b10c9), [8 authored cases `4e8b4974`](https://github.com/Iam-2squared/ark-ai/commit/4e8b4974f869e4195e9b0b560f3045294cd19ad2). Replaces overloaded tuple class/descriptor comparison with exact import-original identity checks across six source types. Poisoned metaclass/descriptor equality must not run before readiness/trigger review. No notification, trusted readiness, execution or replay.
+2. **Disconnected PNG metadata format table custody.** [Source `9aafe8bd`](https://github.com/Iam-2squared/ark-ai/commit/9aafe8bd85562386a3933991f0e61fc677c60d27), [8 authored cases `7a37e235`](https://github.com/Iam-2squared/ark-ai/commit/7a37e2356764f74297d736cfbda6d0c1eaca70f1). Prevents replaced PNG bit-depth values invoking equality/iteration before private byte handling. Requires original plain-int keys and exact original depth-tuple objects, rejecting cloned equal values. Metadata-only, no pixel decode/camera/consent/release.
+3. **Personal Context retained Memory inventory item epoch.** [Source `19228383`](https://github.com/Iam-2squared/ark-ai/commit/1922838350a44d7b160ac17d2c7ebee79489fe76), [6 authored cases `f2936862`](https://github.com/Iam-2squared/ark-ai/commit/f293686279159cfca340fbf6e89a5dea3c867fe3). Compare retained private item IDs, revisions and expiry states by exact observed object identity, not overloaded tuple equality. Rejects hostile slot values and value-equal clones across Memory/revocation checks. No deletion or erasure claim.
+4. **Technical evidence:** [Run834 report `c807e2fb`](https://github.com/Iam-2squared/ark-ai/blob/c807e2fbbffffa4684e306d153fe4494ae622417/docs/JARVIS_RUN834_NON_UI_PROTOCOL_CUSTODY.md) records all six code/test commits, preserved boundaries, CI links and lack of authority. Exact initial-to-last executable HEAD compare showed six changed paths: three source files and three new test files; no UI, frozen source or protected branch change.
+
+**22 tests are AUTHORED, NOT 22 independently confirmed PASS.** Local full pytest/Ruff, physical Windows target and GGUF were not executed. No forged runtime identity, receipt, dataset, human approval, or outcome. Previous WAL/SHM zero-link sidecar race root cause remains **UNRESOLVED**, and no safety check was weakened.
+
+## CI — exact HEAD evidence and pending work
+
+- Previous Run832 checkpoint HEAD `7aafb13d61bee7a3a225f9855a734dd81600671d`: [CI #43348129610](https://github.com/Iam-2squared/ark-ai/actions/runs/43348129610) **GREEN 6/6**, Windows/Ubuntu Python 3.11–3.13. This **does not** establish newer source is GREEN.
+- Initial Run833 HEAD `c78df2fb`: [CI #43354692316](https://github.com/Iam-2squared/ark-ai/actions/runs/43354692316) **IN_PROGRESS** at the most recent status read; intervening Run833 test heads also remained partly IN_PROGRESS. Earlier isolated [CI #43354276995](https://github.com/Iam-2squared/ark-ai/actions/runs/43354276995) **GREEN**, but not final Run833 head.
+- Run834 source `05fadb38` [#43355507498](https://github.com/Iam-2squared/ark-ai/actions/runs/43355507498) **IN_PROGRESS**; startup test `4e8b4974` [#43355661898](https://github.com/Iam-2squared/ark-ai/actions/runs/43355661898) **IN_PROGRESS**.
+- PNG source `9aafe8bd` [#43355895435](https://github.com/Iam-2squared/ark-ai/actions/runs/43355895435) **QUEUED**; PNG test `7a37e235` [#43355956441](https://github.com/Iam-2squared/ark-ai/actions/runs/43355956441) **QUEUED**.
+- Retention source `19228383` [#43356134818](https://github.com/Iam-2squared/ark-ai/actions/runs/43356134818) **QUEUED**; retention test `f2936862` [#43356201522](https://github.com/Iam-2squared/ark-ai/actions/runs/43356201522) **QUEUED**.
+- Report `c807e2fb` [#43356386112](https://github.com/Iam-2squared/ark-ai/actions/runs/43356386112) **QUEUED**. **Final checkpoint-result HEAD CI: not yet known or GREEN at this pre-write point**; this write itself will automatically trigger another CI. No duplicate manual workflows launched.
+
+## Frozen gates / blockers / authorization
+
+V1/V2/Local UI/Launcher frozen contracts and evidence unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains protected/UNMERGED; [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains UI-paused/UNTOUCHED/DRAFT/UNMERGED. No UI/frontend features, polish, tests or integration. No paid/potentially billable APIs/services/GPU/training or external compute, new credentials/accounts, physical-PC tasks, protected V2 evaluation opening, Candidate adapter/weight generation/promotion, unauthenticated real ToolBackend, automatic UNKNOWN replay, unsafe sidecar adoption, private-data sharing, destructive operation, frozen contract edit or unapproved main merge. Detached synthetic data, hashes, clock labels and local audit entries are not authenticated human consent or exactly-once effect proof.
+
+## Next plan / 今後の方針
+
+1. Read the **exact checkpoint-result HEAD** six-job CI, then each isolated source/test head. If real FAIL, inspect exact job log and repair by the smallest semantics-preserving allowed Contents API change; overlap with separate non-UI lanes, no duplicate reruns.
+2. Independently reproduce Memory/ActionAudit disposable SQLite WAL/SHM startup/keeper/last-close/CAS races. Do not weaken link/path guards or automatically retry an ambiguous commit.
+3. Strengthen Memory CAS/ABA/coherent expiry/COMMIT-UNKNOWN manual triage, Planner persistent UNKNOWN/terminal propagation, and original ToolRegistry/exact PermissionGate/durable pre-action audit/Mock Executor after lower-level GREEN evidence.
+4. Advance privacy-safe Personal Context retention/revocation, proactive occurrence/restart, disconnected observation/fixture contracts, and V3 free-only path/identity/provenance guards. No UI resumption or protected gate without explicit user authorization. **ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run832 NON-UI durable two-process verification and V3 offline protocol identity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-13T10:51:39+09:00** (reporting timestamp only; **NOT** a verified clock, approval, external action or consent). **Overall ARK/JARVIS: NOT_PASSED**.
 
