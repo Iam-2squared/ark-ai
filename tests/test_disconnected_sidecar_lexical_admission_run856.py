@@ -14,8 +14,8 @@ from ark import disconnected_sqlite_sidecar_custody as custody
 @pytest.mark.parametrize(
     "source",
     (
-        Path("/synthetic/fixture\\x00.sqlite3"),
-        Path("/synthetic\\x00/fixture.sqlite3"),
+        Path("/synthetic/fixture\x00.sqlite3"),
+        Path("/synthetic\x00/fixture.sqlite3"),
         # Main pathname is under 4096, but the -journal sidecar exceeds it.
         Path("/" + "x" * (4096 - len("-journal"))),
         # Even the main pathname alone is beyond the local lexical budget.
