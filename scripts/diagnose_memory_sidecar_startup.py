@@ -289,6 +289,80 @@ def _probe(
             keeper.close()
 
 
+
+def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
+    """Read back child effects before calling a synthetic WAL probe clean.
+
+    A child's CREATED/UPDATED JSON is untrusted. This read-only check uses
+    only a disposable fixture path, verifies every row and append event, and
+    never exports identity, content, paths or raw database error messages.
+    It is NOT external-effect, clock, or authorization evidence.
+    """
+    from contextlib import closing
+
+    from ark.memory import MemoryScope, deterministic_memory_id
+
+    identities = {
+        "same-identity": (("owner-a", "fixture", "source"),),
+        "separate-owner": (
+            ("owner-a", "fixture", "source"),
+            ("owner-b", "fixture", "source"),
+        ),
+        "separate-namespace": (
+            ("owner-a", "fixture", "source"),
+            ("owner-a", "other", "source"),
+        ),
+        "separate-source": (
+            ("owner-a", "fixture", "source"),
+            ("owner-a", "fixture", "other"),
+        ),
+    }.get(mode)
+    if (
+        identities is None
+        or operation not in ("create", "generation-cas")
+        or not path.is_file()
+        or path.is_symlink()
+    ):
+        return False
+
+    expected_rows = []
+    expected_events = []
+    revision = 2 if operation == "generation-cas" else 1
+    for owner, namespace, source in identities:
+        memory_id = deterministic_memory_id(MemoryScope(owner, namespace), source)
+        expected_rows.append(
+            (memory_id, owner, namespace, source, "fixture", revision)
+        )
+        expected_events.append((memory_id, owner, namespace, "create", 1))
+        if revision == 2:
+            expected_events.append((memory_id, owner, namespace, "update", 2))
+    try:
+        # mode=ro prevents silently creating an empty database; explicit
+        # close releases the disposable file handle on Windows.
+        uri = path.absolute().as_uri() + "?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as conn:
+            conn.execute("PRAGMA query_only=ON")
+            rows = conn.execute(
+                "SELECT memory_id,owner_id,namespace,source_id,content,revision "
+                "FROM memories"
+            ).fetchall()
+            events = conn.execute(
+                "SELECT event_id,memory_id,owner_id,namespace,operation,revision "
+                "FROM memory_events ORDER BY event_id"
+            ).fetchall()
+            highwater = conn.execute(
+                "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+            ).fetchall()
+    except (sqlite3.Error, OSError, ValueError):
+        return False
+    return (
+        sorted(rows) == sorted(expected_rows)
+        and sorted(event[1:] for event in events) == sorted(expected_events)
+        and [event[0] for event in events] == list(range(1, len(expected_events) + 1))
+        and highwater == [(len(expected_events),)]
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=_positive_bounded_int, default=4)
@@ -331,7 +405,9 @@ def main(argv: list[str] | None = None) -> int:
                 ["CONFLICT", success] if args.mode == "same-identity"
                 else [success, success]
             )
-            if statuses != expected:
+            if statuses != expected or not _verify_disposable_commit(
+                case / "memory.sqlite", args.mode, args.operation,
+            ):
                 unexpected += 1
     print(json.dumps({
         "mode": args.mode, "startup_mode": args.startup_mode,
