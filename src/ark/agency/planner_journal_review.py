@@ -81,6 +81,20 @@ def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
 def _schema_check(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticPlanJournalRejected("synthetic plan schema version changed")
+    # Bound SQLite metadata inside the caller's existing replay/append
+    # transaction before hydrating any untrusted DDL into Python.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 2
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+    ):
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan schema changed: preflight budget exceeded"
+        )
     with sqlite3.connect(":memory:") as expected:
         for ddl in _SCHEMA:
             expected.execute(ddl)
