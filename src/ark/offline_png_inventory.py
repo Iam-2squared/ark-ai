@@ -128,6 +128,9 @@ def _require_original_png_authority() -> None:
         raise OfflinePngRejected("PNG framing implementation changed before private bytes")
     if (
         _SHA is not _ORIGINAL_SHA_PATTERN
+        # The helper itself receives private owner/privacy/source digests.
+        # Refuse a substituted callable before any request field is read.
+        or _sha is not _ORIGINAL_SHA_HELPER
         or _SIGNATURE is not _ORIGINAL_SIGNATURE
         or any(type(n) is not int for n in (
             _MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_CHUNKS, _MAX_IDATS,
@@ -188,7 +191,11 @@ def _require_original_png_authority() -> None:
 
 
 def _sha(value: object) -> bool:
-    return type(value) is str and _SHA.fullmatch(value) is not None
+    # Canonical SHA-256 is fixed-width ASCII. Avoid scanning unbounded labels.
+    return type(value) is str and len(value) == 64 and _SHA.fullmatch(value) is not None
+
+
+_ORIGINAL_SHA_HELPER = _sha
 
 
 def inspect_disconnected_png(request: OfflinePngRequest) -> OfflinePngInventory:
