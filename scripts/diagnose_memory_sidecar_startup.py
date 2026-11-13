@@ -18,6 +18,7 @@ NOT a reason to retry unsafe paths or weaken alias/sidecar checks.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sqlite3
@@ -327,15 +328,17 @@ def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
 
     expected_rows = []
     expected_events = []
+    content_digest = hashlib.sha256(b"fixture").hexdigest()
     revision = 2 if operation == "generation-cas" else 1
     for owner, namespace, source in identities:
         memory_id = deterministic_memory_id(MemoryScope(owner, namespace), source)
-        expected_rows.append(
-            (memory_id, owner, namespace, source, "fixture", revision)
-        )
-        expected_events.append((memory_id, owner, namespace, "create", 1))
+        expected_rows.append((
+            memory_id, owner, namespace, source, "fixture", "{}", content_digest,
+            1000, 1000, None, revision,
+        ))
+        expected_events.append((memory_id, owner, namespace, "create", 1, 1000))
         if revision == 2:
-            expected_events.append((memory_id, owner, namespace, "update", 2))
+            expected_events.append((memory_id, owner, namespace, "update", 2, 1000))
     try:
         # mode=ro prevents silently creating an empty database; explicit
         # close releases the disposable file handle on Windows.
@@ -343,24 +346,30 @@ def _verify_disposable_commit(path: Path, mode: str, operation: str) -> bool:
         with closing(sqlite3.connect(uri, uri=True)) as conn:
             conn.execute("PRAGMA query_only=ON")
             rows = conn.execute(
-                "SELECT memory_id,owner_id,namespace,source_id,content,revision "
+                "SELECT memory_id,owner_id,namespace,source_id,content,metadata_json,"
+                "content_sha256,created_at_ms,updated_at_ms,expires_at_ms,revision "
                 "FROM memories"
             ).fetchall()
             events = conn.execute(
-                "SELECT event_id,memory_id,owner_id,namespace,operation,revision "
-                "FROM memory_events ORDER BY event_id"
+                "SELECT event_id,memory_id,owner_id,namespace,operation,revision,"
+                "occurred_at_ms FROM memory_events ORDER BY event_id"
             ).fetchall()
             highwater = conn.execute(
                 "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
             ).fetchall()
     except (sqlite3.Error, OSError, ValueError):
         return False
-    return (
-        sorted(rows) == sorted(expected_rows)
-        and sorted(event[1:] for event in events) == sorted(expected_events)
-        and [event[0] for event in events] == list(range(1, len(expected_events) + 1))
-        and highwater == [(len(expected_events),)]
-    )
+    try:
+        return (
+            sorted(rows) == sorted(expected_rows)
+            and sorted(event[1:] for event in events) == sorted(expected_events)
+            and [event[0] for event in events] == list(range(1, len(expected_events) + 1))
+            and highwater == [(len(expected_events),)]
+        )
+    except (TypeError, ValueError):
+        # SQLite can return BLOB/NULL where a legacy TEXT row is expected.
+        # Such an invalid fixture must not escape as a traceback with paths.
+        return False
 
 
 def main(argv: list[str] | None = None) -> int:
