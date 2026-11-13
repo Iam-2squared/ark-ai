@@ -8,10 +8,14 @@ from __future__ import annotations
 
 import pytest
 
-from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
+from ark.memory import (
+    MemoryScope,
+    MemoryWrite,
+    SQLiteMemoryStore,
+    sqlite_retained_coherent_review as coherent,
+)
 from ark.memory.sqlite_event_alignment import review_memory_event_alignment
 from ark.memory.sqlite_event_prefix_review import capture_local_memory_event_prefix
-from ark.memory import sqlite_retained_coherent_review as coherent
 
 
 def _fixture(tmp_path):
