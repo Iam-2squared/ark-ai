@@ -22,6 +22,16 @@ _MAX_MS = 2**63 - 1
 _MAX_ROWS = 512
 _MAX_LATENESS_MS = 60_000
 _DOMAIN = b"ARK-detached-synthetic-due-slot-v1\0"
+_ORIGINAL_SQLITE3 = sqlite3
+_ORIGINAL_CONNECT = sqlite3.connect
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_ID = _ID
+_ORIGINAL_MAX_MS = _MAX_MS
+_ORIGINAL_MAX_ROWS = _MAX_ROWS
+_ORIGINAL_MAX_LATENESS_MS = _MAX_LATENESS_MS
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
 
@@ -31,7 +41,22 @@ def _require_original_due_digest() -> None:
 
     This in-process epoch check is not authenticated provenance or a sandbox.
     """
-    if hashlib.sha256 is not _ORIGINAL_SHA256 or json.dumps is not _ORIGINAL_DUMPS:
+    if (
+        sqlite3 is not _ORIGINAL_SQLITE3
+        or sqlite3.connect is not _ORIGINAL_CONNECT
+        or hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA
+        or _ID is not _ORIGINAL_ID
+        or _DDL is not _ORIGINAL_DDL
+        or type(_MAX_MS) is not int or _MAX_MS != _ORIGINAL_MAX_MS
+        or type(_MAX_ROWS) is not int or _MAX_ROWS != _ORIGINAL_MAX_ROWS
+        or type(_MAX_LATENESS_MS) is not int
+        or _MAX_LATENESS_MS != _ORIGINAL_MAX_LATENESS_MS
+    ):
         raise DueReservationRejected("due digest callback authority changed")
 
 
@@ -41,6 +66,7 @@ _DDL = (
     "policy_sha256 TEXT NOT NULL, due_at_ms INTEGER NOT NULL, "
     "reserved_at_ms INTEGER NOT NULL)"
 )
+_ORIGINAL_DDL = _DDL
 
 
 class DueReservationRejected(ValueError):
@@ -197,6 +223,7 @@ def _check_witness(witness: object) -> None:
         or type(witness.count) is not int
         or not 0 <= witness.count <= _MAX_ROWS
         or type(witness.fingerprint) is not str
+        or len(witness.fingerprint) != 64
         or _SHA.fullmatch(witness.fingerprint) is None
         or witness.independent_custody_proven is not False
     ):
@@ -272,6 +299,22 @@ def _schema(conn: sqlite3.Connection) -> None:
 def _inspect(conn: sqlite3.Connection) -> tuple[DueReservationWitness, int | None]:
     _require_original_due_digest()
     _schema(conn)
+    # Reject oversized rows and malformed SQLite types before hydrating any
+    # persisted policy/occurrence strings into Python. This is not a substitute
+    # for the later full digest and chronology scan.
+    count = conn.execute("SELECT COUNT(*) FROM due_reservations").fetchone()[0]
+    if type(count) is not int or not 0 <= count <= _MAX_ROWS:
+        raise DueReservationRejected("due ledger review budget exceeded")
+    malformed = conn.execute(
+        "SELECT 1 FROM due_reservations WHERE "
+        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=69 OR "
+        "typeof(policy_sha256)!='text' OR length(policy_sha256)!=64 OR "
+        "typeof(due_at_ms)!='integer' OR "
+        "typeof(reserved_at_ms)!='integer' LIMIT 1"
+    ).fetchone()
+    if malformed is not None:
+        raise DueReservationRejected("due persisted identity width or type changed")
+    _require_original_due_digest()
     saved: list[tuple[object, ...]] = []
     last_reserved: int | None = None
     for seq, occurrence, policy, due, reserved in conn.execute(
@@ -282,7 +325,8 @@ def _inspect(conn: sqlite3.Connection) -> tuple[DueReservationWitness, int | Non
             raise DueReservationRejected("due ledger review budget exceeded")
         if (
             type(seq) is not int or seq != len(saved) + 1
-            or type(policy) is not str or _SHA.fullmatch(policy) is None
+            or type(policy) is not str or len(policy) != 64
+            or _SHA.fullmatch(policy) is None
             or type(due) is not int or type(reserved) is not int
             or not 0 <= due <= reserved <= _MAX_MS
             or reserved - due > _MAX_LATENESS_MS
@@ -292,7 +336,10 @@ def _inspect(conn: sqlite3.Connection) -> tuple[DueReservationWitness, int | Non
         wanted = "slot_" + hashlib.sha256(
             _DOMAIN + (policy + ":" + str(due)).encode("ascii")
         ).hexdigest()
-        if type(occurrence) is not str or _ID.fullmatch(occurrence) is None:
+        if (
+            type(occurrence) is not str or len(occurrence) != 69
+            or _ID.fullmatch(occurrence) is None
+        ):
             raise DueReservationRejected("invalid persisted slot identity")
         if occurrence != wanted:
             raise DueReservationRejected("due slot identity does not bind its policy")
@@ -411,7 +458,8 @@ class DisconnectedDueReservations:
         """Persist one synthetic reservation, then return a non-executing receipt."""
         _require_original_due_digest()
         if (
-            type(policy_sha256) is not str or _SHA.fullmatch(policy_sha256) is None
+            type(policy_sha256) is not str or len(policy_sha256) != 64
+            or _SHA.fullmatch(policy_sha256) is None
             or type(due_at_ms) is not int or type(observed_now_ms) is not int
             or not 0 <= due_at_ms <= observed_now_ms <= _MAX_MS
             or observed_now_ms - due_at_ms > _MAX_LATENESS_MS
