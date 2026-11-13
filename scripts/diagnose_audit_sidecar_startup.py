@@ -234,6 +234,10 @@ def _verify_disposable_audit(path: Path) -> bool:
             path.absolute().as_uri() + "?mode=ro", uri=True,
         )) as conn:
             conn.execute("PRAGMA query_only=ON")
+            # Hold one read epoch from schema validation through ordered
+            # event and sqlite_sequence checks. Otherwise independent WAL
+            # commits can slip between autocommit reads and mix generations.
+            conn.execute("BEGIN")
             if conn.execute("PRAGMA user_version").fetchone() != (1,):
                 return False
             # The persisted rows alone cannot attest a replacement DDL or
