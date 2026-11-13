@@ -190,10 +190,14 @@ def review_disconnected_recovery_fence(
     propagate to PENDING descendants. No WRITE state is ever READY_MOCK_ONLY;
     reserved PENDING and UNKNOWN/RUNNING WRITE are quarantined.
     """
+    # Refuse oversized untrusted strings before the regex engine or JSON codec.
+    # The canonical identity formats are fixed-width ASCII; no normalized or
+    # truncated claimant can become a recovery, replay or dispatch receipt.
     # Must run before invoking regex.fullmatch on a replaceable module global.
     _require_original_fence_denials()
     if (
-        type(plan_id) is not str or _PLAN.fullmatch(plan_id) is None
+        type(plan_id) is not str or len(plan_id) != 69
+        or _PLAN.fullmatch(plan_id) is None
         or type(steps) is not tuple or not 1 <= len(steps) <= _MAX_STEPS
         or any(type(step) is not OfflineRecoveryStepClaim for step in steps)
     ):
@@ -248,20 +252,24 @@ def review_disconnected_recovery_fence(
         epoch()
         stable_decisions()
         if (
-            type(name) is not str or _STEP.fullmatch(name) is None or name in states
-            or type(effect) is not str or effect not in ("READ", "WRITE")
+            type(name) is not str or len(name) != 21
+            or _STEP.fullmatch(name) is None or name in states
+            or type(effect) is not str or len(effect) > 5
+            or effect not in ("READ", "WRITE")
             or type(deps) is not tuple or len(deps) > 16
-            or any(type(dep) is not str or _STEP.fullmatch(dep) is None for dep in deps)
+            or any(type(dep) is not str or len(dep) != 21
+                   or _STEP.fullmatch(dep) is None for dep in deps)
             or deps != tuple(sorted(set(deps)))
             or any(dep not in states for dep in deps)
-            or type(state) is not str or state not in _STATES
+            or type(state) is not str or len(state) > 9 or state not in _STATES
             or (state == "SUCCEEDED") != (
-                type(result) is str and _SHA.fullmatch(result) is not None
+                type(result) is str and len(result) == 64
+                and _SHA.fullmatch(result) is not None
             )
             or (state != "SUCCEEDED" and result is not None)
             or (reservation is not None and (
                 effect != "WRITE" or type(reservation) is not str
-                or _SLOT.fullmatch(reservation) is None
+                or len(reservation) != 69 or _SLOT.fullmatch(reservation) is None
             ))
         ):
             raise OfflineRecoveryFenceRejected("invalid ordered mixed-plan step")
