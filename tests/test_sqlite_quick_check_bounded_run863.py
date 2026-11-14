@@ -74,5 +74,6 @@ def test_bounded_quick_check_rejects_extra_or_bad_diagnostics(
             with pytest.raises(rejected, match="quick_check"):
                 validate(guarded)
         assert guarded.read_sizes == [2]
-        assert original.execute("SELECT COUNT(*) FROM sqlite_master").fetchone() == before
+        after = original.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
+        assert after == before
         assert original.execute("PRAGMA quick_check").fetchone() == ("ok",)
