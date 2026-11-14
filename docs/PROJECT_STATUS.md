@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run871 non-UI CI repair and bounded WRITE slot bootstrap
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T21:22:28.302+09:00** (observed pre-write reporting wall clock, **NOT** trusted audit time, issuer identity, user consent, physical-PC evidence or authenticated execution). **Overall ARK/JARVIS: NOT_PASSED**; free-only, disconnected/reversible; **ALL NEW UI/FRONTEND DEVELOPMENT REMAINS PAUSED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged at final prewrite basis. PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) and UI PR [#9](https://github.com/Iam-2squared/ark-ai/pull/9) independently checked open/Draft/unmerged; neither changed. **Initial work-basis HEAD:** `31447872c8a777614daa795add4c869c9c9f20d4` (Run870 checkpoint). **Latest full source+test HEAD:** `5303d29349e85d7e1113e94e799343901cf9d884`. **Run871 technical report HEAD / checkpoint-write-basis HEAD:** `e008c6a21103b94dd0a5262bfde7bb7a87176401`, directly re-read from branch before normal Contents API write. **Previous status blob:** `55baaaff0941dca88ee6aa96cf8791087279233f`. **Checkpoint-result HEAD unknown before write**: verify separately from returned commit and follow-up PR/ref/status blob reread. No future SHA fabricated.
+
+## NEW — two coherent fixes + separate non-UI read-only boundary audit
+
+1. **Run870 CI recovery (test-only).** [CI #43593077083](https://github.com/Iam-2squared/ark-ai/actions/runs/43593077083) had failed all six jobs on Ruff E731 (two assigned lambdas) and I001 (unsorted imports). Semantics-preserving repair: `a4a30da5ec56bd6782c524ad86a546de4afc9afa` replaces two deferred lambdas with one local nested test function; `9665f148e0ac429e4e602e0783ae96a11749a004` sorts two fixture imports. No runtime path changed.
+2. **WRITE Slot Ledger create-only SQLite catalog admission.** Source `279b9113dc9e54f95e24db8df0d187c3668e7ba3`: replace unbounded Python `tuple(SELECT name FROM sqlite_master)` enumeration with a same-transaction `SELECT 1 FROM sqlite_master LIMIT 1` existence probe. Preserve exact schema v0/nonempty denial and no adoption of a planted foreign DB. Tests `5303d29349e85d7e1113e94e799343901cf9d884`: **3 new synthetic cases AUTHORED**, covering after-preflight TABLE/VIEW injection refusal and normal clean v1 bootstrap. Local isolated SQLite URI smoke for TABLE and VIEW presence, rollback and retention PASSED; this smoke does **not** run the ARK test suite. Never claim race-free pathname custody.
+3. **Independent read-only audit:** registry, PermissionGate, atomic registry intent, mock recovery fence, V3 detached packet safeguards, existing Memory WAL/CAS tests and mock action cycle inspected. Existing synthetic authority checks are not authenticated consent, trusted execution, or actual exactly-once proof. No source integration or protected eval opening.
+4. **Evidence report:** [Run871](https://github.com/Iam-2squared/ark-ai/blob/e008c6a21103b94dd0a5262bfde7bb7a87176401/docs/JARVIS_RUN871_NON_UI_RUFF_REPAIR_AND_WRITE_SLOT_BOOTSTRAP.md). Only non-UI tests/module/docs changed.
+
+## CI — exact-head observations at checkpoint authoring
+
+- Run870 prior checkpoint `31447872c8a777614daa795add4c869c9c9f20d4`: [#43593077083](https://github.com/Iam-2squared/ark-ai/actions/runs/43593077083) **FAIL 6/6**, all on Ruff, repaired in this invocation. Earlier Run869 checkpoint [#43588169206](https://github.com/Iam-2squared/ark-ai/actions/runs/43588169206) **GREEN 6/6** only for old HEAD.
+- Lint fix source/test HEAD `9665f148e0ac429e4e602e0783ae96a11749a004`: [#43593532416](https://github.com/Iam-2squared/ark-ai/actions/runs/43593532416) had Ubuntu 3/3 GREEN, Windows 3/3 IN PROGRESS at latest precise observation. Not proof of latest source+test.
+- Latest source+test HEAD `5303d29349e85d7e1113e94e799343901cf9d884`: [#43593856244](https://github.com/Iam-2squared/ark-ai/actions/runs/43593856244) — **GREEN 3/6** (test (ubuntu-latest, 3.12), test (ubuntu-latest, 3.11), test (ubuntu-latest, 3.13)); **FAIL 0** (none); **IN PROGRESS 3** (test (windows-latest, 3.12), test (windows-latest, 3.11), test (windows-latest, 3.13)). Exact-head 6/6 GREEN **NOT YET ESTABLISHED**.
+- Technical report HEAD `e008c6a21103b94dd0a5262bfde7bb7a87176401`: [#43594122352](https://github.com/Iam-2squared/ark-ai/actions/runs/43594122352) observed in progress. This checkpoint write triggers a distinct automatic CI; no duplicate manual run or paid compute.
+
+## Frozen boundaries / blockers
+
+V1/V2/Local UI/Launcher frozen contracts and evidence unchanged; protected V2 final evaluation closed. PR #5/#8/#9 remain Draft/unmerged; UI PR #9 and frontend unchanged. No paid/external GPU/service/API, Candidate/adapter/weight generation or promotion, new account or credentials, physical-PC action, authenticated human decision, real tool effect, destructive operation or main merge.
+
+**Still NOT_PASSED:** SQLite pathname-to-open/last WAL-SHM client-close races; independently retained Memory witness custody, COMMIT-UNKNOWN and cross-store atomicity; Planner UNKNOWN manual-only disposition/terminal propagation; Registry/PermissionGate coupled to durable trusted one-shot approval; trusted-clock audit-before-action and external effect exactly-once. Local synthetic data/green CI cannot grant these.
+
+## Next plan / 今後の方針
+
+1. Resolve the **latest exact checkpoint HEAD** six-job Ubuntu/Windows CI; inspect genuine FAIL and make minimal normal safety-path correction only. Never duplicate CI or apply prior-head GREEN to latest HEAD.
+2. Investigate disposable Memory/ActionAudit last-close WAL/SHM and postcommit uncertainty with independent process snapshots, no blind retries.
+3. Strengthen Planner persistent UNKNOWN/manual resolution and Memory CAS/coherent expiry snapshots.
+4. Extend privacy-safe Personal Context revocation/expiry, proactive schedule and observation back-end contracts in isolated lanes.
+5. Progress immutable ToolRegistry, exact PermissionGate, durable occurrence authorization, trusted audit-before-action and mock-only integration *only* after prerequisite exact-HEAD GREEN; no external side effects.
+
+---
+
 # LATEST — ARK AI Run870 non-UI bounded recovery, bootstraps, sidecar path admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T21:04:50.541+09:00** (observed pre-write reporting wall clock; **NOT** trusted authorization, consent, issuer, action execution, audit timestamp or physical-PC evidence). **ARK/JARVIS overall: NOT_PASSED.** Free-only, offline/disconnected, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
