@@ -333,7 +333,9 @@ def _schema(conn: sqlite3.Connection) -> None:
         sql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(sql)) != tuple(expected.execute(sql)):
             raise OfflineContextReplayRejected("context ledger schema drift")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # A malformed database requires denial, not unbounded Python hydration
+    # of SQLite corruption diagnostics. At most two rows distinguish clean.
+    if conn.execute("PRAGMA quick_check").fetchmany(2) != [("ok",)]:
         raise OfflineContextReplayRejected("context ledger integrity check failed")
 
 
