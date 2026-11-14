@@ -217,19 +217,37 @@ def _require_original_receipt_authority() -> None:
 
 
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
-    return tuple(map(tuple, conn.execute(
-        "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
-    )))
+    # A trigger fixture has exactly one table and its PRIMARY KEY index.
+    # Admit catalog size in SQLite before hydrating potentially hostile DDL.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 2
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+    ):
+        raise SyntheticTriggerRejected("trigger fixture schema changed")
+    return tuple(
+        tuple(row) for row in conn.execute(
+            "SELECT type,name,tbl_name,sql FROM sqlite_master "
+            "ORDER BY type,name LIMIT 2"
+        )
+    )
 
 
 def _validate(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticTriggerRejected("trigger fixture schema version changed")
-    with sqlite3.connect(":memory:") as expected:
+    # The SQLite connection context manager does not close disposable handles.
+    with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_TABLE)
         if _objects(conn) != _objects(expected):
             raise SyntheticTriggerRejected("trigger fixture schema changed")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # Only two diagnostics are needed to reject anything but one exact "ok".
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise SyntheticTriggerRejected("trigger fixture integrity failed")
     rows = conn.execute(
         """SELECT trigger_id,scope_digest,policy_digest,source_digest,
