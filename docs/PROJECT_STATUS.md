@@ -1,3 +1,37 @@
+# LATEST — ARK AI Run875 non-UI privacy WAL lifecycle and free-only guards
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T00:46:34.314+09:00** (observed report wall-clock, NOT trusted audit time/consent/execution provenance). **Overall ARK/JARVIS: NOT_PASSED.** All work disconnected, reversible, zero-new-cost; **ALL NEW UI/FRONTEND DEVELOPMENT REMAINS PAUSED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged immediately before checkpoint. Frozen-gated [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused UI [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) independently confirmed Draft/open/unmerged, untouched. **Initial work-basis HEAD:** `3660db2c2ff8ee23873342c9b1e91218bf8c104f` (Run874). **Latest source + tests HEAD:** `8ce3ea4562255a5d03b71bfa299d5047cb1357a4`. **Technical report HEAD / checkpoint-write-basis HEAD:** `172382df6ce8f957247395fe21208fce5ed37f7e`; it is reread from PR immediately before this update. **Prior checkpoint blob:** `8afff01fa61be51cfe0ab877fdb638c1016d53f1`. **Checkpoint-result commit HEAD is UNKNOWN before write; establish only from normal Contents API result and independent PR/blob reread.**
+
+## NEW — three independent non-UI packages, 26 authored synthetic regression scenarios
+
+1. **Actual disposable revocation SQLite WAL last-close/restart diagnostic.** `scripts/diagnose_ark_store_wal_last_close.py` now supports Memory, ActionAudit, and a **synthetic** revocation veto. The latter creates only a disposable SQLite DB, sets WAL on **that test fixture only**, uses a local independent SQLite-reader child, measures held `-shm` descriptor link states and checks cold `require_existing=True` revocation denial. No user path, real authorization, backend or replay. Extended `tests/test_ark_store_wal_last_close_run847.py` with **3** additional synthetic cases (two keeper states plus no-path CLI). Source commit `352f3aac7d0ca31434afb64fe44e3c511cb31fc7`, test commit `0470ac4834904b96d9dbf79956513affcc0f91ee`; a same-invocation review identified that `with sqlite3.connect(...)` does not close a handle, and a minimal fix changed the temporary WAL setup to `contextlib.closing` at source+test HEAD `8ce3ea4562255a5d03b71bfa299d5047cb1357a4`. On non-POSIX hosts the existing held-FD diagnostic explicitly reports UNSUPPORTED, **not a Windows PASS**.
+2. **V3 free-only detached packet mutation gate.** New `tests/test_v3_free_only_packet_metamorphic_run875.py` adds **13** synthetic cases: no provenance, training, paid compute or promotion authority after positive parsing; exact device/tokenizer/measurement bounds; oversized numeric/exact type rejection; canonical wire framing/unknown field/duplicate key denial. Commit `14ee6124a73d72dc015a6ee360a1b51b4090244d`. **PR #5 frozen contract and all protected gates stay closed**; no Candidate/runtime/GPU activity.
+3. **Startup readiness topological oracle.** New `tests/test_startup_readiness_dag_oracle_run875.py` adds **10** deterministic cases covering eight seeded 14-node DAGs, input-order-stable digest, independent BLOCKED ancestor oracle, DEGRADED diagnostic semantics and fail-closed cycle refusal. Commit `0284c28dc6056a16e1eb2de2e9de46b1dc9b9b9d`. READY remains unauthenticated and does not authorize actions.
+
+[Run875 technical report](https://github.com/Iam-2squared/ark-ai/blob/172382df6ce8f957247395fe21208fce5ed37f7e/docs/JARVIS_RUN875_NON_UI_REVOCATION_WAL_AND_FREE_ONLY_GUARDS.md). Comparison Run874 → source+tests shows exactly four non-UI paths modified/added: one disposable script, one existing regression suite, two new offline test suites. **26 cases AUTHORED, not yet all-PASS-proven.** No complete local pytest/Ruff, physical Windows, actual GGUF, user-memory disclosure, live tool, or trusted-clock experiment. A local independent Python SQLite check verified that a bare connection context manager remains usable after `with`, motivating explicit `closing`; this is not an integration PASS.
+
+## CI — separate exact-head evidence
+
+- Previous Run874 checkpoint `3660db2c2ff8ee23873342c9b1e91218bf8c104f`: [CI #43607878336](https://github.com/Iam-2squared/ark-ai/actions/runs/43607878336) **GREEN 6/6** Windows/Ubuntu, Python 3.11–3.13, *old HEAD only*; all six individual jobs directly verified this invocation.
+- Current corrected source+test HEAD `8ce3ea4562255a5d03b71bfa299d5047cb1357a4`: [CI #43611663812](https://github.com/Iam-2squared/ark-ai/actions/runs/43611663812) **QUEUED at checkpoint observation**, no 6/6 GREEN claim. Earlier source/testing automatic CI [#43611354520](https://github.com/Iam-2squared/ark-ai/actions/runs/43611354520), [#43611483926](https://github.com/Iam-2squared/ark-ai/actions/runs/43611483926) still IN PROGRESS when inspected. Report HEAD `172382df6ce8f957247395fe21208fce5ed37f7e` has its own automatically triggered CI; never manually duplicate.
+- Historical [#43596487033](https://github.com/Iam-2squared/ark-ai/actions/runs/43596487033) raw failed job logs show **Ubuntu 3.13 privacy revocation loser unexpected rejection** (reason elided by old pytest output) and **Windows 3.11 Memory constructor `-wal` `link_count=0` sidecar-path denial**. This establishes two transient failure observations, *not a definitive causal explanation*. Keep current strict denial and no auto-retry.
+
+## Frozen evidence and hard boundaries
+
+Frozen V1/V2/Local UI/Launcher contracts/evaluation/evidence untouched; PR #5/#8/#9 Draft/unmerged, paused UI PR #9 untouched. Protected V2 final evaluation remains closed. No paid external GPU/compute/APIs, new secrets, Candidate training/weights/adapter/promotion, actual hardware operation, real tool dispatch, destructive action, main merge, rollback repair, fabricated hashes or human consent. SQLite WAL/SHM path-custody, independent evidence, cross-store atomicity, ambiguous COMMIT-UNKNOWN, Planner UNKNOWN and exact-once external effect **remain unproven**.
+
+## Next plan / 今後の方針
+
+1. **Conclude exact current source+test/checkpoint CI all six jobs**. For real failures inspect logs; repair only via normal GitHub Contents API with a fresh HEAD, then work in independent non-UI lanes during CI. No duplicate manual Actions.
+2. **Privacy race & Memory/ActionAudit WAL/SHM:** collect bounded stable loser category and coherent persisted marker snapshot, distinguish normal DELETE-journal final close from synthetic WAL probe, and preserve single-link/alias/path denials and irreversible UNKNOWN/no automatic replay.
+3. **Planner / Memory:** improve crash-recovery UNKNOWN/terminal propagation and fenced CAS/expiry snapshots without using real user PC, fake hashes or cross-store atomicity claims.
+4. **Registry/PermissionGate & audit-before-action:** only after exact-head GREEN, connect immutable registry identity, exact-type grant, trusted-clock synthetic evidence and disconnected mock-only executor; no real effects.
+5. Continue private Personal Context, proactive schedule and observation back-end fixture contracts, always no UI or paid boundary. Do not merge PR #5/#8/#9 without required approval.
+
+---
+
 # LATEST — ARK AI Run874 non-UI occurrence + audit-link SQLite admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T00:00:54+09:00** (actual report-writing wall clock; NOT trusted audit time, consent, identity, physical-PC or external-effect evidence). **Overall ARK/JARVIS: NOT_PASSED.** Offline/disconnected, free-only, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
