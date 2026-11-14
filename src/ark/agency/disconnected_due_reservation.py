@@ -385,7 +385,8 @@ class DisconnectedDueReservations:
                 if version == 0:
                     if require_existing:
                         raise DueReservationRejected("uninitialized due ledger on restart")
-                    if tuple(conn.execute("SELECT name FROM sqlite_master")):
+                    # Only existence matters; refuse before hydrating foreign DDL.
+                    if conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone():
                         raise DueReservationRejected("unversioned nonempty due ledger")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
