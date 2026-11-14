@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run878 five non-UI SQLite oracle, proactive bounded admission packages
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T03:55:01.975+09:00** (observed wall clock, not trusted system-clock provenance, consent or human review). **Overall ARK/JARVIS: NOT_PASSED.** Work is disconnected, reversible, zero-new-cost. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open, unmerged. Independent [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) (frozen gated) and [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) (paused UI) rechecked open/Draft and left untouched. **Initial work-basis HEAD:** `7a586154607c73c0152329b220ea29de33502ad0` (Run877). **Full new source+test HEAD:** `f803ecbc8102adeade7c13aad11edc55e774d02c`. **Technical-report HEAD / checkpoint-write-basis HEAD:** `9968b301232e660e43bfc388344a1af4b636f0ce` (re-read before this write). **Previous status blob:** `cbbfdd06d184df810dc8a18743a68dafb03baa2f`. **Checkpoint-result HEAD is UNKNOWN at authoring**; establish using the normal Contents API response and independent branch/PR/file verification after write, never invent a future SHA.
+
+## NEW — five independent non-UI work packages / 18 authored regression cases
+
+1. **Occurrence reservation SQLite schema-oracle closure** — `src/ark/agency/durable_occurrence_review.py`, source `417c68a53bfcfad4702ea6941d5de55eec758ef8`, tests `2f3ed6be26c094892a927ec9f7af71793081f411` (3).
+2. **Atomic pre-action intent/audit schema-oracle closure** — `src/ark/agency/disconnected_atomic_preaction_ledger.py`, source `11aecb582745ed8bccab5d458870f90eebcc4ace`, tests `74e7c500e4167d0b4c089becb6313342072bdbbd` (3).
+3. **Memory v1 frozen DDL verifier handle closure** — `src/ark/memory/sqlite_store.py`, source `a966e9e2a07bbe9e325f3a342bd93d6d8e94bc3a`, tests `3dd75b947080dda84653869aacd23730cf44facf` (3). **Memory v1 schema itself unchanged.**
+4. **Proactive synthetic SQLite bounded schema/quick_check admission** — `src/ark/proactive_synthetic_review.py`, source `45c691ea2590402ffe1af6844411c09dad90ffc9`, tests `1a82fd70e017cc7005410bde03fc9209760d5d8b` (6). Reject foreign/oversized catalog before hydrating private DDL; cap diagnostic hydration at two rows; close temporary schema oracle.
+5. **Occurrence-to-audit link DDL reference lifetime** — `src/ark/agency/synthetic_occurrence_audit_link_review.py`, source `53a551db0cfa5a02594614d9bb1acbf8df6dd274`, tests `f803ecbc8102adeade7c13aad11edc55e774d02c` (3). Link remains synthetic, inert and cross-store non-atomic.
+
+Changes are **five non-UI source files, five new non-UI test files and one technical report**, not a claim of any completed real tool execution. Diff independently checked against initial HEAD. Explicit `closing(sqlite3.connect(":memory:"))` is necessary because the connection context manager does NOT close handles. Synthetic tests check closure on success, schema mismatch and exception. [Run878 technical report](https://github.com/Iam-2squared/ark-ai/blob/9968b301232e660e43bfc388344a1af4b636f0ce/docs/JARVIS_RUN878_NON_UI_SQLITE_SCHEMA_ORACLE_CLOSE.md).
+
+## CI / exact-HEAD evidence
+
+- **Previous Run877 checkpoint** `7a586154607c73c0152329b220ea29de33502ad0`: [CI #43624213673](https://github.com/Iam-2squared/ark-ai/actions/runs/43624213673), individually verified **GREEN 6/6** Windows/Ubuntu Python 3.11–3.13, OLD HEAD ONLY.
+- **Current complete source/test HEAD** `f803ecbc8102adeade7c13aad11edc55e774d02c`: [CI #43629001530](https://github.com/Iam-2squared/ark-ai/actions/runs/43629001530), **QUEUED** at 2026-11-15T03:55:01.975+09:00; not a six-job PASS.
+- **Technical-report HEAD** `9968b301232e660e43bfc388344a1af4b636f0ce`: [CI #43629120829](https://github.com/Iam-2squared/ark-ai/actions/runs/43629120829) **QUEUED** at review. This checkpoint automatically triggers a further ordinary CI; no manual duplicate workflow run launched.
+- **18 authored tests ≠ 18 CI-confirmed PASS tests.** No container checkout or local pytest/Ruff, physical target-PC/GGUF testing, authenticated provenance, signed consent, or actual deployment evidence. GitHub hostname was unresolvable in the container; all repository reads/writes used the normal connected GitHub Contents API with fresh HEAD and exact per-file blob SHA, never raw Git object/ref bypass.
+
+## Frozen gates, unresolved incidents, authorization boundary
+
+V1/V2/Local UI/Launcher frozen contracts, evaluation and evidence unchanged; protected V2 final evaluation closed; PR #5/#8/#9 stay Draft/unmerged; paused UI PR #9 unmodified. No paid APIs/compute/external GPU, Candidate weights/adapter/training/promotion, new credentials/accounts, hardware operations, real executor, irreversible migration, destructive action or main merge.
+
+Historical [CI #43596487033](https://github.com/Iam-2squared/ark-ai/actions/runs/43596487033) logs reviewed: Ubuntu Python 3.13 Privacy Revocation competing-process loser returned a rejection not matching `already revoked`; Windows Python 3.11 Memory reported `-wal` sidecar `link_count=0`. Root causes remain **UNKNOWN**. Handle closure and bounded catalog admissions are **not** repairs for those races. Do not weaken alias/path deny, COMMIT-UNKNOWN quarantine or no-auto-retry rules. Trusted-clock audit-before-action, independent custody, cross-store atomicity and physical-PC evidence remain unproven.
+
+## Next plan / 今後の方針
+
+1. Verify **latest exact source/test and checkpoint six-job CI** and fix genuine failures minimally via normal safe GitHub writes, switching to independent lanes while CI runs. Never infer latest GREEN from older HEADs.
+2. Investigate Privacy Revocation loser, Windows WAL/SHM last-close `link_count=0`, and Memory/ActionAudit COMMIT-UNKNOWN. Preserve fail-closed custody and manual-only UNKNOWN review.
+3. Advance durable Memory CAS/expiry/coherent snapshots and Planner RUNNING→UNKNOWN propagation/recovery with exact epoch and retained witness checks.
+4. Connect ToolRegistry + exact-type PermissionGate + durable occurrence/replay fencing + audit-before-action + disconnected Mock Executor **only after lower-level exact-head GREEN**, with zero real dispatch.
+5. Continue Personal Context privacy, proactive scheduler, observation fixture contracts, and V3 free-only guards. Keep **all UI work paused**, PR #5/#8/#9 Draft, frozen evaluations closed and approval-gated merges untouched.
+
+---
+
 # LATEST — ARK AI Run877 non-UI readiness budgets, closed schema oracles and privacy COMMIT uncertainty
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T03:00:48.770+09:00** (observed wall clock, NOT authenticated clock/provenance or human consent). **Overall ARK/JARVIS: NOT_PASSED**. All work disconnected, reversible, **zero-new-cost**, with **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
