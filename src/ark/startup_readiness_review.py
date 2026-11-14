@@ -125,47 +125,12 @@ class StartupSnapshot:
             or len(self.components) > _MAX_COMPONENTS
         ):
             raise ValueError("startup snapshot structure changed")
-        names: list[str] = []
-        edge_count = 0
-        for item in self.components:
-            if (
-                type(item) is not ComponentResult
-                or type(item.local_state) is not ReadinessState
-                or type(item.effective_state) is not ReadinessState
-                or type(item.dependencies) is not tuple
-                or any(type(parent) is not str for parent in item.dependencies)
-                or type(item.component_id) is not str
-                or (item.failure_code is not None and type(item.failure_code) is not str)
-                or (item.schema_revision is not None and type(item.schema_revision) is not str)
-            ):
-                raise ValueError("startup snapshot component changed")
-            # Reject reflected unbounded names before constructing sets,
-            # sorting dependency IDs or computing a cached READY digest.
-            # Revalidation after staging still protects reentrant callbacks.
-            try:
-                _identifier(item.component_id, "component_id")
-                for parent in item.dependencies:
-                    _identifier(parent, "dependency")
-                if item.failure_code is not None:
-                    _identifier(item.failure_code, "failure_code")
-                if item.schema_revision is not None:
-                    _identifier(item.schema_revision, "schema_revision")
-            except ValueError as exc:
-                raise ValueError("startup snapshot identifier changed") from exc
-            if len(item.dependencies) > _MAX_DEPENDENCIES_PER_COMPONENT:
-                raise ValueError("startup snapshot dependency budget exceeded")
-            if item.dependencies != tuple(sorted(set(item.dependencies))):
-                raise ValueError("startup snapshot component changed")
-            edge_count += len(item.dependencies)
-            if edge_count > _MAX_DEPENDENCY_EDGES:
-                raise ValueError("startup snapshot dependency budget exceeded")
-            names.append(item.component_id)
-        if names != sorted(set(names)):
-            raise ValueError("startup snapshot component order changed")
-
-        # Internal validators and hash functions can be replaced by local
-        # fixture callbacks. Hold each original carrier through those calls:
-        # a mutation restored by the next callback must not go unnoticed.
+        # Pin all original cached carriers *before* invoking any identity
+        # validator. Validators are reentrant (including fixture overrides),
+        # so capturing the epoch only after the first validation would allow
+        # a transient mutation to escape detection.
+        if any(type(item) is not ComponentResult for item in self.components):
+            raise ValueError("startup snapshot component changed")
         components_epoch = self.components
         digest_epoch = self.digest
         carrier_epoch = tuple(
@@ -196,6 +161,48 @@ class StartupSnapshot:
                 )
             ):
                 raise ValueError("startup snapshot changed during integrity review")
+
+        names: list[str] = []
+        edge_count = 0
+        for item in self.components:
+            if (
+                type(item) is not ComponentResult
+                or type(item.local_state) is not ReadinessState
+                or type(item.effective_state) is not ReadinessState
+                or type(item.dependencies) is not tuple
+                or any(type(parent) is not str for parent in item.dependencies)
+                or type(item.component_id) is not str
+                or (item.failure_code is not None and type(item.failure_code) is not str)
+                or (item.schema_revision is not None and type(item.schema_revision) is not str)
+            ):
+                raise ValueError("startup snapshot component changed")
+            # Reject reflected unbounded names before constructing sets,
+            # sorting dependency IDs or computing a cached READY digest.
+            # Revalidation after staging still protects reentrant callbacks.
+            try:
+                _identifier(item.component_id, "component_id")
+                assert_component_epoch()
+                for parent in item.dependencies:
+                    _identifier(parent, "dependency")
+                    assert_component_epoch()
+                if item.failure_code is not None:
+                    _identifier(item.failure_code, "failure_code")
+                    assert_component_epoch()
+                if item.schema_revision is not None:
+                    _identifier(item.schema_revision, "schema_revision")
+                    assert_component_epoch()
+            except ValueError as exc:
+                raise ValueError("startup snapshot identifier changed") from exc
+            if len(item.dependencies) > _MAX_DEPENDENCIES_PER_COMPONENT:
+                raise ValueError("startup snapshot dependency budget exceeded")
+            if item.dependencies != tuple(sorted(set(item.dependencies))):
+                raise ValueError("startup snapshot component changed")
+            edge_count += len(item.dependencies)
+            if edge_count > _MAX_DEPENDENCY_EDGES:
+                raise ValueError("startup snapshot dependency budget exceeded")
+            names.append(item.component_id)
+        if names != sorted(set(names)):
+            raise ValueError("startup snapshot component order changed")
 
         # A digest is not sufficient: it can be recomputed over a logically
         # contradictory snapshot. Re-derive graph semantics before returning a
