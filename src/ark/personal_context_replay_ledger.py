@@ -409,7 +409,9 @@ class DisconnectedContextReplayLedger:
                 if create:
                     if (
                         conn.execute("PRAGMA user_version").fetchone() != (0,)
-                        or conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone() is not None
+                        or conn.execute(
+                            "SELECT 1 FROM sqlite_master LIMIT 1"
+                        ).fetchone() is not None
                     ):
                         raise OfflineContextReplayRejected("new context ledger not empty")
                     conn.execute(_DDL)
