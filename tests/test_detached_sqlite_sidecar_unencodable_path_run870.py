@@ -23,10 +23,10 @@ def test_invalid_native_path_encoding_is_a_typed_denial(tmp_path, operation):
     else:
         pytest.skip("host accepts the fixture's native path encoding")
 
-    if operation == "capture":
-        review = lambda: custody.capture_disconnected_sqlite_sidecars(path)
-    else:
-        review = lambda: custody.review_disconnected_sqlite_sidecars(path, object())
+    def review():
+        if operation == "capture":
+            return custody.capture_disconnected_sqlite_sidecars(path)
+        return custody.review_disconnected_sqlite_sidecars(path, object())
 
     with pytest.raises(
         custody.SQLiteSidecarCustodyRejected, match="path encoding unavailable",
