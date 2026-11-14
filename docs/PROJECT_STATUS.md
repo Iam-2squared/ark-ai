@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run881 non-UI bounded-first Memory/Planner/Readiness/Registry safety
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T06:49:48.692+09:00** (observed runtime wall clock, NOT a trusted clock, human review, provenance or consent). **Overall ARK/JARVIS: NOT_PASSED**. **All new UI/frontend development PAUSED**. No paid/external compute.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged; [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) Draft/approval-gated and [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/UI-paused, left untouched. **Initial exact work-basis HEAD:** `8160a8afb18f469b26962716f94a0918772ade94` (Run880 checkpoint). **Complete Run881 source+test HEAD:** `bed9597f260828e0f5747f72002deddc267e96c4`. **Technical-report / checkpoint-write-basis HEAD:** `e834de9a4b7e1041209b5e135703eba4bf60cd40` (freshly re-read before normal Contents API checkpoint write). **Previous status blob:** `36f69141c811310d86e4b24785d7d7eabd671ffc`. **Checkpoint-result HEAD UNKNOWN at document authoring:** obtain it from Contents API result and verify fresh PR/branch/status after write; a future commit SHA is never fabricated.
+
+## NEW — four independent non-UI source/test packages; 21 authored parametric cases
+
+1. **Memory generation CAS:** `src/ark/memory/generation_fenced_cas.py` commit `a208eea82c13e49465f010886bd6c2d1de063192` + `tests/test_memory_generation_sequence_bounded_run881.py` commit `a35525c0ab3772ed34323c7e3d84339220c49e75` (4 cases). `sqlite_sequence` marker query now `LIMIT 2`: sufficient to reject duplicate marker rows without unbounded Python hydration; missing/incorrect markers still refused. Memory v1 schema, row/event and CAS semantics unchanged.
+2. **Planner graph:** `src/ark/agency/planner.py` commit `6e03138a01ef6e07b8674f8b56848b6e381a9c60` + `tests/test_planner_preallocation_edge_budget_run881.py` commit `7945d9e7c96692ef4fbd6bc06d9e7f090bd315fb` (3 cases). Existing 65,536-edge graph budget runs before per-step duplicate-set allocation on reflected exact-tuple dependencies. In-budget duplicate rejection, terminal propagation and UNKNOWN no-replay unchanged.
+3. **Startup Readiness:** `src/ark/startup_readiness_review.py` commit `9641404b93d26d7326ef9d23a1c13220bbc707bc` + `tests/test_readiness_cached_identity_preallocation_run881.py` commit `f4fb7df6e990e2c26dc45861e04d16011cbabe05` (7 cases). Bound cached exact UTF-8 IDs before set/sort/hash; do the cheap length check before whitespace scan. Semantic graph integrity remains revalidated; synthetic READY is never deployment authority.
+4. **Immutable Registry admission:** `src/ark/agency/registry.py` commit `7a4566f11112bc82687d9f2f4d270ec0f5d35ef4` + `tests/test_registry_preallocation_text_budget_run881.py` commit `bed9597f260828e0f5747f72002deddc267e96c4` (7 cases). 256-character budget now enforced before scanning caller tool/capability/backend labels; strict UTF-8 256-byte bound and backend non-execution unchanged.
+
+Exact compare `8160a8a...bed9597` verified **eight commits, exactly four non-UI source files and four new non-UI test files**, no frozen/PR #5/PR #9/UI file changed. [Run881 technical report](https://github.com/Iam-2squared/ark-ai/blob/e834de9a4b7e1041209b5e135703eba4bf60cd40/docs/JARVIS_RUN881_NON_UI_BOUNDED_FIRST_ADMISSION.md). **21 authored tests are NOT 21 validated tests;** no local pytest/Ruff, target-PC/GGUF, real backend or credential verification in this run.
+
+## Exact-head CI observations
+
+- **Inherited Run880 checkpoint HEAD** `8160a8afb18f469b26962716f94a0918772ade94`: [CI #43639710161](https://github.com/Iam-2squared/ark-ai/actions/runs/43639710161) **GREEN 6/6** Windows/Ubuntu × Python 3.11–3.13, all individual jobs verified. Applies ONLY to old HEAD.
+- **Run881 source+test HEAD** `bed9597f260828e0f5747f72002deddc267e96c4`: [CI #43644625921](https://github.com/Iam-2squared/ark-ai/actions/runs/43644625921) **QUEUED at last check, NOT PASS**.
+- **Run881 technical-report HEAD** `e834de9a4b7e1041209b5e135703eba4bf60cd40`: [CI #43644755080](https://github.com/Iam-2squared/ark-ai/actions/runs/43644755080) **QUEUED at last check, NOT PASS**.
+- Intermediate package CI [#43644299987](https://github.com/Iam-2squared/ark-ai/actions/runs/43644299987), [#43644349578](https://github.com/Iam-2squared/ark-ai/actions/runs/43644349578), [#43644386435](https://github.com/Iam-2squared/ark-ai/actions/runs/43644386435), [#43644415997](https://github.com/Iam-2squared/ark-ai/actions/runs/43644415997), [#43644512540](https://github.com/Iam-2squared/ark-ai/actions/runs/43644512540), [#43644544466](https://github.com/Iam-2squared/ark-ai/actions/runs/43644544466), [#43644595312](https://github.com/Iam-2squared/ark-ai/actions/runs/43644595312) **IN PROGRESS/QUEUED at last check**; these are different HEADs, not overall PASS. No duplicate manual CI launched.
+- This checkpoint write triggers its own ordinary PR CI; **latest checkpoint exact-head six-job PASS remains UNCONFIRMED** until that run is complete.
+
+## Frozen contracts, blockers and authorization boundaries
+
+V1/V2/Local UI/Launcher evidence and frozen contracts intact; Memory/ActionAudit v1 DDL unchanged; protected V2 final evaluation remains unopened. PR #5/#8/#9 still Draft/unmerged; no new UI/frontend work. No real Candidate training/adapter/weights, Candidate promotion, paid/external GPU/API/service, protected evaluation, material irreversible action, human review/consent, new credentials/secret/account, local target-PC action, actual ToolBackend dispatch or main merge. New evidence is synthetic/local, not a trusted clock or independent custody.
+
+**Unresolved:** Windows SQLite WAL/SHM last-client-close `link_count=0`, Privacy Revocation competing-process loser, COMMIT-UNKNOWN and cross-store side-effect ambiguity, independent historical event/provenance custody, trusted-clock provenance, real exactly-once authorization and real-world tool execution. No automatic replay of ambiguous external WRITE outcomes.
+
+## Next plan / 今後の方針
+
+1. Verify Run881 latest **exact-head** six-job Windows/Ubuntu CI; inspect failing jobs and repair minimally via the normal safety path only. While CI runs, select independent non-UI work; never trigger duplicate equivalent workflow.
+2. Investigate Privacy Revocation multiprocess and WAL/SHM last-close anomalies with restart-verifiable witnesses; preserve strict alias/symlink/hardlink rejection and COMMIT-UNKNOWN quarantine.
+3. Strengthen Memory bounded generation-fenced CAS, expiry coherent snapshots and event/row replay custody; Planner durable UNKNOWN recovery and dependency terminal propagation.
+4. Progress immutable Registry + exact-type PermissionGate + durable occurrence + audit-before-action + *disconnected* Mock Executor integration only after lower-level **exact-head GREEN**, without claiming a trusted clock or authorization to dispatch.
+5. Continue privacy-safe Personal Context, proactive scheduler, observation fixture contracts and free-only V3 path/identity/reproducibility guards. **All UI remains paused** and protected gates remain closed.
+
+---
+
 # LATEST — ARK AI Run880 bounded last-close SQLite admission across four non-UI ledgers
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T05:51:28.319+09:00** (observed runtime wall clock, NOT a trusted-time proof, consent, provenance or review). **Overall ARK/JARVIS: NOT_PASSED**. **All new UI/frontend development PAUSED**. No new paid services or external compute.
