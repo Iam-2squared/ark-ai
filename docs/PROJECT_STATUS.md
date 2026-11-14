@@ -1,3 +1,47 @@
+# LATEST — ARK AI Run882 non-UI CI repairs, Observation/V3 bounded-first identities
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T07:52:13.184+09:00** (observed runtime wall clock only; NOT a trusted clock, provenance, consent or review). **Overall ARK/JARVIS: NOT_PASSED**. **All new UI/frontend development PAUSED**. No paid/external compute.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains Draft/approval-gated; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/UI-paused and untouched. **Initial exact work-basis HEAD:** `09aa757d7bf3f4e76ca5cf2198bdf05b129574c6` (Run881 checkpoint). **Complete Run882 source+test HEAD:** `cbb53d47098b5e03279111cd882544a4ef7feaa5`. **Technical-report / checkpoint-write-basis HEAD:** `1a12652d976360ce8578b15fc1f549fe10ab6131` (freshly re-read immediately before normal Contents API checkpoint update). **Previous status Blob SHA:** `ff73fabed7d3c20494b58ed6c775a0aa94c20c92`. **Checkpoint-result HEAD UNKNOWN at authoring**; obtain from GitHub update result and verify PR/branch/status after write. No future SHA is predicted.
+
+## NEW — four coherent non-UI packages, seven source/test commits, 22 authored cases
+
+1. **Run881 CI repair: Ruff import sorting.** `tests/test_registry_preallocation_text_budget_run881.py` commit `66a5e69fcb9fd070ee040196f82607b579830f2d` fixes Ruff I001 without changing registry authority or its seven tests.
+2. **Run881 CI repair: cached Readiness carrier epoch.** `src/ark/startup_readiness_review.py` commit `2cde0253b46578a2423fb7d94d41abcb88434d45` pins exact frozen ComponentResult carriers **before the first reentrant identifier callback**, checks epoch after each callback and preserves existing synthetic READY/blocked/UNKNOWN semantics. Existing six transient-mutation cases previously FAILED; now pending exact-head CI, not declared PASS.
+3. **Observation ingestion budget:** `src/ark/observations.py` commit `66350d53cde2a56f58e048c3bc88b84177438b96` rejects any >1024-character raw source/adapter/privacy label before unbounded strip or UTF-8 allocation, retaining the 1024-byte UTF-8 cap, invalid surrogate rejection and no real sensor authority. `tests/test_observation_preencode_label_budget_run882.py` commits `692f3e4be75209de973ceadf7acdac12504ae426`, `69a5a1644b01c958401962d4744afc8b91dfaf17`: **13 synthetic cases authored**.
+4. **Free-only detached V3 digest:** `src/ark/v3_detached_preflight_crossbind.py` commit `d0113907b9feafba6c5c989fe36f1f3056de19dd` requires exact 64-character digest before direct-carrier regex, without changing Draft PR #5 V3 contract or authorizing training. `tests/test_v3_direct_tokenizer_digest_budget_run882.py` commit `cbb53d47098b5e03279111cd882544a4ef7feaa5`: **9 synthetic cases authored**, both evidence sides and non-authorizing positive witness.
+
+GitHub exact `09aa757...cbb53d` compare: **7 commits, 6 changed paths** (three non-UI source files, one existing test, two added tests), no frozen, UI, PR #5 or PR #9 paths changed. [Run882 source-based incident report](https://github.com/Iam-2squared/ark-ai/blob/1a12652d976360ce8578b15fc1f549fe10ab6131/docs/JARVIS_RUN882_NON_UI_CI_RECOVERY_OBSERVATION_V3_BOUNDS.md). **22 authored cases do not equal 22 verified passes**. No local checkout/pytest/Ruff, physical PC/GGUF, training, trusted clock or real backend action was performed.
+
+## Exact-head CI/evidence (most recent observation; no premature PASS)
+
+Run881 checkpoint **FAIL 6/6**, including Ruff I001 across six jobs. At the earlier readiness-only HEAD, six historical snapshot epoch tests failed because the original carrier baseline was pinned after reentrant validation; fixed in new code without weakening rejection.
+
+- [CI #43644875692](https://github.com/Iam-2squared/ark-ai/actions/runs/43644875692): `09aa757d7bf3f4e76ca5cf2198bdf05b129574c6` — **FAILURE** (applies to that exact HEAD only).
+- [CI #43649875563](https://github.com/Iam-2squared/ark-ai/actions/runs/43649875563): `66a5e69fcb9fd070ee040196f82607b579830f2d` — **IN_PROGRESS** (applies to that exact HEAD only).
+- [CI #43649914280](https://github.com/Iam-2squared/ark-ai/actions/runs/43649914280): `2cde0253b46578a2423fb7d94d41abcb88434d45` — **IN_PROGRESS** (applies to that exact HEAD only).
+- [CI #43650005906](https://github.com/Iam-2squared/ark-ai/actions/runs/43650005906): `66350d53cde2a56f58e048c3bc88b84177438b96` — **IN_PROGRESS** (applies to that exact HEAD only).
+- [CI #43650150790](https://github.com/Iam-2squared/ark-ai/actions/runs/43650150790): `cbb53d47098b5e03279111cd882544a4ef7feaa5` — **QUEUED** (applies to that exact HEAD only).
+- [CI #43650259536](https://github.com/Iam-2squared/ark-ai/actions/runs/43650259536): `1a12652d976360ce8578b15fc1f549fe10ab6131` — **QUEUED** (applies to that exact HEAD only).
+
+Newest report HEAD `1a12652d976360ce8578b15fc1f549fe10ab6131` is not source/test HEAD and has its own distinct queued/in-progress CI. The subsequent checkpoint commit starts another exact-head CI. **As of writing, latest complete Run882 and checkpoint six-job GREEN is NOT CONFIRMED.** No duplicate manual workflows launched. Preserve result/failure logs as evidence, never call older PASS a latest PASS.
+
+## Frozen evidence and unresolved authorization boundaries
+
+V1/V2/Local UI/Launcher evidence and all frozen contracts unchanged; Memory v1 DDL/CAS rules and protected V2 final evaluation remain unopened. PR #5/#8/#9 Draft/unmerged; UI paused. No paid/external GPU/API/subscription, new credential, Candidate adapter/weight training/promotion, protected evaluation, target-PC operation, real ToolBackend dispatch, actual user consent/human review, destructive change or main merge. Nothing here grants cost, external-action or runtime authority.
+
+**Unresolved:** Windows SQLite WAL/SHM transient `link_count=0` last-client-close observations; Privacy Revocation competing-process loser; cross-store COMMIT-UNKNOWN and exactly-once side-effect ambiguity; trusted-clock provenance; independent event/history witness custody; real model/GGUF and physical-PC verification. Do NOT auto-retry ambiguous WRITE.
+
+## Next plan / 今後の方針
+
+1. Confirm **Run882 latest exact-head** Windows/Ubuntu × Python 3.11–3.13 six-job CI, inspect any FAIL and make smallest semantics-preserving fixes only through normal GitHub path. Use other independent non-UI work while CI runs; no duplicate equivalent run.
+2. Reproduce and diagnose SQLite WAL/SHM last-close and Privacy Revocation multi-process failures with restart-verifiable witness evidence; keep hardlink/symlink/alias and unknown-outcome refusal intact.
+3. Advance Memory generation-fenced CAS, expiry coherent snapshots and row/event custody; Planner persistence, dependency terminal propagation and crash UNKNOWN quarantine.
+4. Integrate immutable ToolRegistry, exact-type PermissionGate, durable occurrence, trusted-clock-aware audit-before-action and **disconnected** Mock Executor only after lower-level exact-head GREEN; no live tool dispatch or authorization inference.
+5. Extend privacy-safe Personal Context, proactive scheduler, observation fixture adapters and detached V3 approval/path/identity/reproducibility guards within **zero-cost**, frozen-gate and UI-pause boundaries.
+
+---
+
 # LATEST — ARK AI Run881 non-UI bounded-first Memory/Planner/Readiness/Registry safety
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T06:49:48.692+09:00** (observed runtime wall clock, NOT a trusted clock, human review, provenance or consent). **Overall ARK/JARVIS: NOT_PASSED**. **All new UI/frontend development PAUSED**. No paid/external compute.
