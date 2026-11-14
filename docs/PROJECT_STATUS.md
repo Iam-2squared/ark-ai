@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run869 non-UI proposal/scheduler/atomic-preaction/READ SQLite admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T20:02:10.203+09:00** (observed reporting wall clock before GitHub Contents API write; **NOT** a trusted authorization clock, consent event, external action/audit timestamp, model hash, issuer identity, or human review). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, local-first, disconnected/reversible, **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) open/Draft/unmerged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) previously inspected open/Draft/unmerged, untouched. **Initial work-basis HEAD:** `2c9e5c328c7f8f94b2ef80eae1979570a4449351` (Run868 checkpoint). **Latest complete executable source+test HEAD (post compatibility fix):** `26b0808eedd37b93e59a9c86d6e7cdc475691d8a`. **Run869 technical evidence report HEAD:** `1f5c76e5d9cfdde3dadcc86cd1f39b5b50dc35ba`. **Checkpoint-write-basis HEAD:** `26b0808eedd37b93e59a9c86d6e7cdc475691d8a`, re-read from PR #8 immediately before this normal GitHub Contents API checkpoint write. **Previous PROJECT_STATUS blob SHA:** `f59e8e98627f9a4913dff6aa60dd9ac515c2276f`. **Checkpoint-result HEAD is UNKNOWN BEFORE WRITE**; confirm from GitHub response and independent subsequent PR/ref/blob reread. Never self-reference a not-yet-created commit.
+
+## NEW — four independent non-UI hardening packages; 36 synthetic regression cases authored
+
+1. **Disconnected proposal SQLite store (12 cases):** source commit `3111873fc7f51af788fbf1a4fee67eae874ddcf4`; tests `e731b1c290d29aa1328f6045f88f9e57fa104374`, portability repair `85060a92287fcc054a005a7aa111a031a02a5768`. NUL/native UTF-8 file and `-journal` filename preflight; SQLite-side 512-row cap and exact stored storage class/native widths of proposal identity/state/hash rows before Python hydration. Normal lifecycle/restart, zero dispatch. Ubuntu source+test CI on the earlier uncorrected test discovered an `ENAMETOOLONG` **test assertion** fault when it called `Path.exists()` on an intentionally invalid 4,200-byte filename; source correctly rejected first. Normal GitHub test edit now checks the disposable parent directory without ever stat-ing the invalid child.
+2. **Proactive schedule quarantine (5 cases):** source `45252e0b4b62acf3d64d3b359651c72865311864`, tests `9feb2c0445024d4f9a53ddda961a76e31398f494`. Persisted occurrence and chain identities now use SQLite `length(CAST(... AS BLOB))`, disallowing false fixed-width Unicode and injected BLOB before hydration. Existing policy, clock/expiry and witness semantics unchanged.
+3. **Atomic preaction intent+audit local fixture (7 cases):** source `115d9298100beb91ce9214ea1c9660e718d2f9c3`, tests `68cd219379539278d78dc4aa2132dc2d6f4ef998`. Five persisted intent/occurrence/audit hash fields now use UTF-8 byte widths, preserving same-transaction pair/chain, denial-only receipt and no executor.
+4. **Disconnected READ journal (12 cases):** source `17ff14d7216c98a18f91c682da20264d7b0c61e3`, tests `d6bcdd1c06d781ff2ce8888fe277ec822b9a5e71`; compatibility source refinement `26b0808eedd37b93e59a9c86d6e7cdc475691d8a`. NUL/native path/-journal bound, marker SQLite TEXT-byte admission, <=128-row receipt set and exact storage classes/native widths before Python row materialization. A malformed/incomplete SQLite diagnostic cursor now produces a normal **fail-closed** `ReadJournalRejected`, preserving the existing synthetic open-time connection cleanup contract. No new read operation is executed.
+5. **Exact technical evidence:** [Run869 non-UI report](https://github.com/Iam-2squared/ark-ai/blob/1f5c76e5d9cfdde3dadcc86cd1f39b5b50dc35ba/docs/JARVIS_RUN869_NON_UI_SQLITE_ADMISSION_PROPOSAL_SCHEDULER_PREACTION_READ.md). All four changed source blobs and four new test blobs were independently re-read; source and new test lines <=100. 36 cases **AUTHORED**, **NOT** asserted latest-head all-six-green; no complete local pytest/Ruff, physical Windows, real GGUF, or live executor evidence.
+
+## CI — exact-SHA evidence; historical test regression, latest still pending
+
+- **Prior Run868 checkpoint** `2c9e5c328c7f8f94b2ef80eae1979570a4449351`: [CI #43583826579](https://github.com/Iam-2squared/ark-ai/actions/runs/43583826579) **GREEN 6/6** Windows/Ubuntu Python 3.11–3.13, independent job checks verified. This GREEN applies **only** to Run868, not today's source.
+- **Proposal old test HEAD** `e731b1c290d29aa1328f6045f88f9e57fa104374`: [#43587076099](https://github.com/Iam-2squared/ark-ai/actions/runs/43587076099) **Ubuntu FAIL** from a test's `Path.exists()` on overlong name (Ubuntu 3.12 output: 15,472 PASSED, one FAILED, one SKIPPED). Already corrected in `85060a92287fcc054a005a7aa111a031a02a5768`. This is an old-HEAD failure, not current HEAD evidence.
+- **Scheduler test HEAD** `9feb2c0445024d4f9a53ddda961a76e31398f494`: [#43587134656](https://github.com/Iam-2squared/ark-ai/actions/runs/43587134656) **Ubuntu 3.11/3.12 FAIL**, same inherited old proposal test. No observed independent scheduler-specific failure.
+- **Atomic preaction test HEAD** `68cd219379539278d78dc4aa2132dc2d6f4ef998`: [#43587251787](https://github.com/Iam-2squared/ark-ai/actions/runs/43587251787) **IN PROGRESS** at last exact observation, all six unconfirmed.
+- **READ journal test HEAD** `d6bcdd1c06d781ff2ce8888fe277ec822b9a5e71`: [#43587394580](https://github.com/Iam-2squared/ark-ai/actions/runs/43587394580) **QUEUED** at last observation.
+- **Proposal test portability-fix HEAD** `85060a92287fcc054a005a7aa111a031a02a5768`: [#43587511171](https://github.com/Iam-2squared/ark-ai/actions/runs/43587511171) **QUEUED** at last observation.
+- **READ journal cleanup-compat source HEAD** `26b0808eedd37b93e59a9c86d6e7cdc475691d8a`: [#43588036813](https://github.com/Iam-2squared/ark-ai/actions/runs/43588036813) **QUEUED** at last observation. The report and checkpoint commits have their own automatic CI. **LATEST CHECKPOINT EXACT-HEAD 6/6 GREEN NOT YET ESTABLISHED.** No manual duplicate workflow dispatch.
+
+## Frozen evidence, prohibitions and remaining blockers
+
+V1/V2/Local UI/Launcher frozen contracts/evidence untouched, protected V2 final evaluation unopened; PR #5/#8/#9 Draft/unmerged, new UI/frontend development remains paused and UI PR #9 branch unchanged. No paid compute/API/service/GPU, no Candidate/adapter/weight generation or training/promotion, no issuer/consent/trusted-clock evidence invention, no credentials or account linkage, no physical PC action, no destructive real tool action, and no main merge.
+
+Still **NOT_PASSED:** SQLite path-to-open races and WAL/SHM last-client-close interleavings; independently retained witness custody, Memory COMMIT-UNKNOWN attribution, cross-store atomicity, Planner durable UNKNOWN/manual disposition/terminal propagation, immutable registry/gate coupled to authenticated one-shot approval, trusted audit-before-action and actual exactly-once external effects. Local SQL checks do not authenticate a writer or permit side effects.
+
+## Next plan / 今後の方針
+
+1. Resolve latest **exact checkpoint HEAD** Windows/Ubuntu six-job CI and any real FAIL logs. Fix smallest semantics-preserving defect via normal GitHub Contents API; never inherit prior GREEN or rerun duplicate workflow.
+2. Investigate disposable Memory and ActionAudit WAL/SHM final-close/path alias races and COMMIT-UNKNOWN with separate Python processes. UNKNOWN remains manual-only, never auto-replayed.
+3. Strengthen Planner durable UNKNOWN lineage and terminal propagation plus Memory CAS/expiry coherent snapshot/retained-prefix rules.
+4. Continue privacy-safe Personal Context consent-revocation/expiry and proactive/observation backend fixture integrity in independent free lanes.
+5. Connect immutable ToolRegistry, exact-type PermissionGate, durable occurrence, trusted audit-before-action and **mock-only** executor only after prerequisite exact-head GREEN; maintain denial of all live external effects.
+
+---
+
 # LATEST — ARK AI Run868 non-UI Audit/Memory/WRITE slot SQLite byte admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T19:06:54.808+09:00** (observed reporting wall clock before normal GitHub Contents-API write; **NOT** a trusted action clock, human review, consent, issuer, model hash or audit timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Zero-new-cost, offline-first, disconnected/reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
