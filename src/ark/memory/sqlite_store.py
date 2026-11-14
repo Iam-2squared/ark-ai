@@ -295,12 +295,19 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
                 continue
             if main_absent:
                 raise MemorySchemaError("orphaned memory SQLite sidecar refused")
+            if stat.S_ISREG(sidecar_meta.st_mode) and sidecar_meta.st_nlink == 0:
+                # SQLite can unlink an ordinary journal/WAL/SHM inode after
+                # pathname lookup but before this stat snapshot. Only this
+                # already-unlinked regular inode gets ONE new pathname check.
+                # An alias, special file, orphan or still-unlinked inode never
+                # gains access to the private Memory database.
+                try:
+                    sidecar_meta = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
             if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
-                # Retain the fail-closed refusal. The only added diagnostics are
-                # bounded filesystem metadata, never a private database path,
-                # filename, row value, or inferred owner. SQLite may replace a
-                # sidecar during independent-process WAL startup; the observed
-                # type/link count lets CI distinguish that race from an alias.
+                # Preserve strict path-alias refusal and bounded diagnostics.
+                # Do not include private paths, owners, content or identifiers.
                 raise MemorySchemaError(
                     "memory SQLite sidecar path is not a single regular file "
                     f"(suffix={suffix}, file_type={stat.S_IFMT(sidecar_meta.st_mode):#o}, "
