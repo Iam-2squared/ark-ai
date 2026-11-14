@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run861 non-UI Planner/Privacy cold-restart and SQLite ancestry CI repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T11:58:55.088+09:00** (observed reporting wall clock before this normal Contents API write; NOT trusted audit, authorization, action, consent, or approval time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, disconnected, free-only, reversible; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), still Draft/open/unmerged at the write-basis read. **Initial work-basis HEAD:** `a8ce0c41296c7a9dedb6be706058080198a377a8` (Run860 checkpoint). **Latest new executable test/repair HEAD:** `e6d87fa14b89020fd24b4a2c2e58f699e769944f` (no production code modified). **Report HEAD:** `6de03d2538d15868deb2958bd3374af051c4f3c4`, followed by test repairs `490228df` and `e6d87fa`. **Checkpoint-write-basis HEAD:** `e6d87fa14b89020fd24b4a2c2e58f699e769944f` read immediately before this Contents API update; **previous PROJECT_STATUS blob:** `7231026e7c2aff7ba34efc87e7cdd15d57bfc545`. **Checkpoint-result HEAD: UNKNOWN BEFORE WRITE**, independently verify returned commit and PR HEAD afterwards; do not invent a self-referential SHA.
+
+## NEW — three coherent non-UI packages, five new regression cases, fail-closed CI repairs
+
+1. **Run860 CI lint/fixture correction.** [CI #43542920093](https://github.com/Iam-2squared/ark-ai/actions/runs/43542920093), Run860 `a8ce0c41`: **FAIL 6/6** at Ruff I001/E501 before tests. Initial `f959c954` corrected line length but not all import grouping; [CI #43548082827](https://github.com/Iam-2squared/ark-ai/actions/runs/43548082827) also **FAIL 6/6** at I001. `989449f7` restores correct Ruff separation. Once tests were running, previous Run860 POSIX ancestry fixture incorrectly patched the globally shared `os.stat`, causing fail-closed `_supported()` preflight to reject before the intended swap (3 fixtures FAIL, thousands of others PASS). `490228df` moves this test injection to the held-file `_file_id` boundary and retains post-stat parent-retarget rejection. No admission/authority check was weakened.
+2. **Planner independent-process crash and CAS.** `cd1ef451` added **2** spawned-interpreter synthetic tests. Post-COMMIT lost reply for `root_a RUNNING` must remain UNKNOWN/manual-only after cold restart, disallow retry and dependent `child_a`, while independent `root_b` reaches local success; second fresh recovery must agree. Two independent processes race the same root RUNNING CAS and must produce exactly one local journal winner, one stale loser, without ToolBackend dispatch. This is SQLite-local state, never exactly-once external effects.
+3. **Personal Context privacy cold restart.** `86ba6a8c` added **3** disposable SQLite tests: expiry reclassification without private output or deletion/use authority; post-capture revocation invalidates cached inventory after restart; independent Memory revision invalidates cached inventory and does not echo owner/content. Initial privacy test used a synthetic write clock later than the cached capture time, which violates the explicit retention review contract; `e6d87fa` keeps the fixture write clock at the captured time while the later review clock remains separate. No real erasure, disclosure, new account, user grant, or trusted time.
+
+[Run861 detailed technical report](https://github.com/Iam-2squared/ark-ai/blob/6de03d2538d15868deb2958bd3374af051c4f3c4/docs/JARVIS_RUN861_NON_UI_CI_REPAIR_SPAWNED_PLANNER_PRIVACY_RESTART.md) records the originally observed CI failures and limits; the subsequent two repairs are authoritative above. **Five new test cases AUTHORED; no exact final checkpoint HEAD 6/6 GREEN claim yet.** Local full pytest/Ruff and physical-PC/GGUF gates NOT run. No duplicate equivalent CI workflow launches.
+
+## CI — exact evidence, no retroactive green
+
+- Prior clean source+test commit `3331b4dbbf267e344460a3aa73fa494cd6a3879d`, [CI #43542532774](https://github.com/Iam-2squared/ark-ai/actions/runs/43542532774): **GREEN 6/6** (Windows/Ubuntu × Python 3.11/3.12/3.13). This only certifies the older commit.
+- Run860 checkpoint `a8ce0c41` [CI #43542920093](https://github.com/Iam-2squared/ark-ai/actions/runs/43542920093): **FAIL 6/6 Ruff**.
+- First Ruff patch `f959c954`, [CI #43548082827](https://github.com/Iam-2squared/ark-ai/actions/runs/43548082827): **FAIL 6/6 Ruff I001**.
+- `989449f7` [CI #43548347401](https://github.com/Iam-2squared/ark-ai/actions/runs/43548347401): **FAIL observed**; Ubuntu failure inspected: three prior ancestry fixture assertions did not reach their hook because replacing `os.stat` invalidated platform feature membership.
+- New privacy test head `86ba6a8c`, [CI #43548446858](https://github.com/Iam-2squared/ark-ai/actions/runs/43548446858): **FAIL observed** in Ubuntu, including the three ancestry cases and one future-clock privacy fixture inconsistency, both repaired on newer heads.
+- Ancestry regression fix head `490228df`, [CI #43548878537](https://github.com/Iam-2squared/ark-ai/actions/runs/43548878537): automatic run; final status not yet verified.
+- Latest executable source+tests `e6d87fa`, [CI #43548895837](https://github.com/Iam-2squared/ark-ai/actions/runs/43548895837): **IN PROGRESS / QUEUED** at checkpoint inspection. test (ubuntu-latest, 3.12): success; test (ubuntu-latest, 3.11): IN_PROGRESS; test (ubuntu-latest, 3.13): IN_PROGRESS; test (windows-latest, 3.12): IN_PROGRESS; test (windows-latest, 3.11): IN_PROGRESS; test (windows-latest, 3.13): IN_PROGRESS. A separate automatic checkpoint CI may start on the checkpoint-result HEAD; **do not treat prior commits' results as that new HEAD's PASS**.
+
+## Frozen contracts, blockers, approvals
+
+V1/V2/Local UI/Launcher evidence and frozen contracts untouched. PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) and [#9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched, Draft/unmerged; PR #8 Draft/unmerged. No UI/frontend features, tests, integration, styling, branch modification. No external/paid GPU compute or services, purchased API, actual Candidate/adapter/weight, training, protected V2 final evaluation, Candidate promotion, new credentials/accounts, physical-PC work, real ToolBackend dispatch, irreversible mutation, or main merge.
+
+Known limitations **NOT_PASSED**: SQLite WAL/SHM last-close and pathname-to-open races; independent witness custody and Memory COMMIT-UNKNOWN attribution; Planner recovered RUNNING UNKNOWN/manual only; cross-store atomicity; trusted approval issuer/clock, trusted audit-before-action, PermissionGate restart-safe one-shot tokens and exactly-once external effects. Hashes are local diagnostics, not authenticated provenance. A green test cannot bypass frozen gates.
+
+## Next plan / 今後の方針
+
+1. Confirm exact final-head six-job Windows/Ubuntu CI; inspect any remaining failures and apply the smallest semantics-preserving test/source fix, immediately shifting to another non-conflicting lane while CI runs.
+2. Strengthen disposable Memory/ActionAudit WAL/SHM final-close and reopen races with bounded, independent processes and no automatic retry. Keep source custody failures explicit.
+3. Extend Memory COMMIT-UNKNOWN independent causal witnesses and Planner durable UNKNOWN/terminal CAS, verifying dependent-child block and unrelated-branch progress.
+4. Continue privacy-safe Personal Context cached retention and revocation, scheduler restart quarantine and observation fixture-only contracts.
+5. Once relevant lower-level **exact-head GREEN** and independent review exist, integrate immutable registry, exact-type PermissionGate, durable occurrence/audit-before-action and *disconnected* Mock Executor only. Do not claim trust, authority, consent or actual effects.
+
+---
+
 # LATEST — ARK AI Run860 non-UI SQLite descriptor ancestry, native path fences and Planner UNKNOWN
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T10:49:13+09:00** (observed local reporting wall clock shortly before the Contents API write; NOT a trusted action, approval, audit, consent or authorization time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, disconnected, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
