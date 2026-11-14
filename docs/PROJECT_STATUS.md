@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run876 non-UI WAL probe, detached V3, readiness, observation privacy
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T01:57:04.967+09:00** (observed wall-clock; not an audited clock, source provenance or human approval). **Overall ARK/JARVIS: NOT_PASSED**. Disconnected, reversible, **zero-new-cost**; **ALL NEW UI/FRONTEND DEVELOPMENT REMAINS PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) open, Draft, unmerged. Frozen-gated [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused UI [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) separately checked Draft/open/unmerged and left untouched. **Initial work-basis HEAD:** `ec10063917a92b30963a65e4d0c0cd4b1a24a33d` (Run875). **Complete current source+test HEAD:** `e9afa9ba56bd124fce5847126921276900d7f2e8`. **Technical-report HEAD / checkpoint-write-basis HEAD:** `7603aea0dc8cc1b6b4672309cf90da168163d325`, independently checked immediately before this write. **Previous checkpoint blob:** `4de5f04f56ee6d18f4ee49076cfc7c0850951b32`. **Checkpoint-result HEAD UNKNOWN before Contents write; record it only after the normal API response and independent PR/ref re-read.** No future SHA or unsupported human review invented.
+
+## NEW — four non-UI packages, 46 authored synthetic test cases
+
+1. **Disposable WAL/SHM probe admission:** `scripts/diagnose_ark_store_wal_last_close.py` source `126792d4b56fa4213afae37634ea204dc9f163c6`, extended `tests/test_ark_store_wal_last_close_run847.py` at `c150921ea7927c02092e9148a7b323a855be78c1`: exact `str` iteration and `str`/bool store/keeper input, refusing malicious hash/truth callbacks before filesystem or child-process access. **16 authored cases**. No real WAL race remediation claimed.
+2. **Free-only detached V3 JSON packet hardening:** new `tests/test_v3_free_only_packet_boundary_run876.py`, commit `d59459dfeaee5a2fd05aaf30f776e28b90ebdcaa`: **15** malformed or boundary cases (device-independent synthetic VRAM/time limits, UTF-8/BOM/framing, receipt descriptor and crossbind callback replacement). Does **not** authorize compute, training, protected evaluation, Candidate promotion or authenticate provenance; frozen PR #5 untouched.
+3. **Readiness semantic custody despite forged digest:** new `tests/test_startup_readiness_semantic_digest_run876.py`, commit `5d96db58e815160de2461821649fe71d43528d3d`: **7** cases for fully re-hashed yet contradictory dependent readiness, cycles, missing parents, UTF-8 budget, valid degraded and blocked ancestors. READY grants no capability.
+4. **Multimodal observation private-hash helper:** `src/ark/observation_fixture_adapters.py` source `1a19ca65d6c0f43b011b31f0c2798f38fe7d8c09`, new `tests/test_observation_private_hash_helper_custody_run876.py` at `e9afa9ba56bd124fce5847126921276900d7f2e8`: pin import-time local private hash helper so a replaced callback never receives raw synthetic text/transcript/image/screen fixture bytes; preserve SHA-256, metadata and envelope minimization. **8 authored cases**. No camera, microphone, actual private user data or backend operation.
+
+[Run876 technical report](https://github.com/Iam-2squared/ark-ai/blob/7603aea0dc8cc1b6b4672309cf90da168163d325/docs/JARVIS_RUN876_NON_UI_CUSTODY_AND_DETACHED_BOUNDARIES.md). **46 cases authored, not yet 46 proven PASS.** No local checkout/pytest/Ruff or physical PC; container GitHub hostname resolution failed, so all repository reads/writes went through the approved connected GitHub interface. All writes used normal Contents API, fresh PR HEAD and per-file blob SHA, no force/ref bypass.
+
+## CI — strictly bound to exact HEAD
+
+- Run875 prior checkpoint `ec10063917a92b30963a65e4d0c0cd4b1a24a33d`: [#43611994857](https://github.com/Iam-2squared/ark-ai/actions/runs/43611994857) **GREEN 6/6** Windows/Ubuntu Python 3.11–3.13, *old HEAD only*, independently verified at invocation start. The corrected Run875 source+tests [#43611663812](https://github.com/Iam-2squared/ark-ai/actions/runs/43611663812) also individually verified GREEN 6/6, *old source HEAD only*.
+- Readiness-tests intermediate HEAD `5d96db58e815160de2461821649fe71d43528d3d`: [CI #43617732209](https://github.com/Iam-2squared/ark-ai/actions/runs/43617732209) **3/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS, 0/6 QUEUED** at checkpoint observation.
+- **Latest complete source+test HEAD** `e9afa9ba56bd124fce5847126921276900d7f2e8`: [CI #43617976074](https://github.com/Iam-2squared/ark-ai/actions/runs/43617976074) **0/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS, 3/6 QUEUED** at checkpoint observation. No all-GREEN claim yet.
+- Technical report HEAD `7603aea0dc8cc1b6b4672309cf90da168163d325`: [CI #43618128750](https://github.com/Iam-2squared/ark-ai/actions/runs/43618128750) **0/6 GREEN, 0/6 FAIL, 0/6 IN PROGRESS, 6/6 QUEUED** at observation. This checkpoint will trigger its own workflow; no duplicate manual run launched.
+- Earlier intermediate auto-triggered runs [#43617514269](https://github.com/Iam-2squared/ark-ai/actions/runs/43617514269), [#43617574539](https://github.com/Iam-2squared/ark-ai/actions/runs/43617574539), [#43617653125](https://github.com/Iam-2squared/ark-ai/actions/runs/43617653125) are **not** proof of the latest HEAD.
+
+## Frozen gates, blockers and authorization
+
+Frozen V1/V2/Local UI/Launcher contracts, artifacts and evaluation boundaries unchanged; protected V2 final evaluation stays closed. PR #5/#8/#9 Draft and unmerged. UI PR #9 and frontend untouched. **No paid/external GPU/compute/APIs, secrets, new accounts, Candidate weights/adapters/training/promotion, live executor, physical-PC effects, destructive acts, approval-gated main merge or fabricated training/runtime/human-review evidence.** In-process test fixtures and numerical cross-binding do not authenticate consent or grant action authority.
+
+**Unresolved:** Windows WAL/SHM last-close path identity race (historic `link_count=0`), Privacy Revocation multiple-process loser intermittent category, Memory/ActionAudit ambiguous COMMIT-UNKNOWN and path custody, cross-store atomicity, independent custody, Planner RUNNING→UNKNOWN external outcome, exact-once external authorization and trusted-clock audit. Preserve strict fail-closed denials and manual-only UNKNOWN quarantine.
+
+## Next plan / 今後の方針
+
+1. Verify latest source/test and checkpoint **six-job CI**. Inspect real FAIL logs and make only minimal semantics-preserving source/test repair via normal Contents API at re-read HEAD, immediately switching to another isolated non-UI lane during CI.
+2. Diagnose Privacy Revocation loser and Memory/ActionAudit SQLite WAL/SHM last-close with bounded independent diagnostics; no auto-retry or weakening of path/alias revocation denials.
+3. Advance durable Planner crash recovery/terminal propagation, Memory CAS/concurrent coherent snapshots/expiry and retained witness provenance; no cross-store atomicity assumptions.
+4. Connect pinned ToolRegistry, exact-type PermissionGate, restart-safe durable occurrence, audit-before-action and mock-only executor only after exact-head independent GREEN; no real side effects.
+5. Continue privacy-safe Personal Context retention, proactive scheduler and observation back-end fixture contracts. Keep UI paused, PR #5/#8/#9 unmerged absent approvals and all cost/credential/evaluation restrictions intact.
+
+---
+
 # LATEST — ARK AI Run875 non-UI privacy WAL lifecycle and free-only guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T00:46:34.314+09:00** (observed report wall-clock, NOT trusted audit time/consent/execution provenance). **Overall ARK/JARVIS: NOT_PASSED.** All work disconnected, reversible, zero-new-cost; **ALL NEW UI/FRONTEND DEVELOPMENT REMAINS PAUSED**.
