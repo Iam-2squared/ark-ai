@@ -314,6 +314,19 @@ def _path(value: object, *, exists: bool) -> Path:
             raise OfflinePrivacyVetoRejected("veto sidecar metadata unavailable") from exc
         if not main_exists:
             raise OfflinePrivacyVetoRejected("orphaned veto SQLite sidecar refused")
+        # Last-client SQLite close can unlink a regular sidecar between
+        # lstat and pathname inspection (notably on Windows). Re-observe
+        # *only* an already-unlinked regular inode once; never re-admit a
+        # symlink, hardlink, special file or orphaned sidecar.
+        if stat.S_ISREG(sidecar_info.st_mode) and sidecar_info.st_nlink == 0:
+            try:
+                sidecar_info = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            except OSError as exc:
+                raise OfflinePrivacyVetoRejected(
+                    "veto sidecar metadata unavailable"
+                ) from exc
         if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
             raise OfflinePrivacyVetoRejected("veto SQLite sidecar alias refused")
     if not value.parent.is_dir() or value.parent.is_symlink():
