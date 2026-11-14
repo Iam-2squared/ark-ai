@@ -318,9 +318,11 @@ class DisconnectedMemoryWitnessLedger:
             conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
+                    # Probe existence inside the bootstrap transaction without
+                    # allocating a Python tuple of foreign SQLite catalog rows.
                     if (
                         conn.execute("PRAGMA user_version").fetchone() != (0,)
-                        or tuple(conn.execute("SELECT name FROM sqlite_master"))
+                        or conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone() is not None
                     ):
                         raise MemoryWitnessLedgerRejected("new witness ledger not empty")
                     conn.execute(_DDL)
