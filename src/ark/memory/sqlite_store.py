@@ -152,7 +152,7 @@ def _require_dense_committed_memory_events(conn: sqlite3.Connection) -> None:
     ).fetchone()
     sequences = conn.execute(
         "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
-    ).fetchall()
+    ).fetchmany(2)
     count, first, last = row[0], row[1], row[2]
     valid = type(count) is int and 0 <= count <= SQLITE_INT_MAX
     if count == 0:
