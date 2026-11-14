@@ -192,6 +192,32 @@ def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
 
 
 
+def _require_audit_row_hydration_admission(conn: sqlite3.Connection) -> None:
+    """Reject invalid stored SQLite classes/digest byte widths before Python rows.
+
+    The query runs within the caller's existing BEGIN/BEGIN IMMEDIATE snapshot.
+    This is a local resource and type fence, not authenticated audit custody.
+    Frozen v1 schema and valid persisted identities remain unchanged.
+    """
+    malformed = conn.execute(
+        "SELECT 1 FROM action_events WHERE "
+        "typeof(event_id)!='integer' "
+        "OR typeof(request_id)!='text' "
+        "OR length(CAST(request_id AS BLOB))!=68 "
+        "OR typeof(tool)!='text' "
+        "OR typeof(capability)!='text' "
+        "OR typeof(scope)!='text' "
+        "OR typeof(arguments_sha256)!='text' "
+        "OR length(CAST(arguments_sha256 AS BLOB))!=64 "
+        "OR typeof(outcome)!='text' "
+        "OR typeof(occurred_at_ms)!='integer' LIMIT 1"
+    ).fetchone()
+    if malformed is not None:
+        raise ActionAuditSchemaError(
+            "audit persisted event hydration admission failed"
+        )
+
+
 def _require_valid_committed_audit_history(conn: sqlite3.Connection) -> None:
     """Refuse to extend a locally inconsistent audit prefix.
 
@@ -200,6 +226,7 @@ def _require_valid_committed_audit_history(conn: sqlite3.Connection) -> None:
     in the same SQLite writer transaction. This is local consistency only:
     SQLite rows/high-water are not independently authenticated evidence.
     """
+    _require_audit_row_hydration_admission(conn)
     previous_clock: int | None = None
     for row in conn.execute("SELECT * FROM action_events ORDER BY event_id"):
         clock = _validate_tail_identity(row)
@@ -486,6 +513,7 @@ class SQLiteActionAudit:
             _require_dense_committed_audit_sequence(conn)
             if self.path is not path_epoch:
                 raise ActionAuditSchemaError("action audit source changed during read")
+            _require_audit_row_hydration_admission(conn)
             rows = conn.execute(
                 """SELECT * FROM action_events WHERE event_id>?
                 ORDER BY event_id LIMIT ?""",
