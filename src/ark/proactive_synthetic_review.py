@@ -344,7 +344,13 @@ class SyntheticProactiveLedger:
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
-                    if _objects(conn):
+                    # The unversioned bootstrap must admit an *empty* catalog
+                    # without invoking the versioned, exactly-two-object
+                    # schema oracle. Even one foreign object remains denied,
+                    # and no stored DDL is hydrated before the rejection.
+                    if conn.execute(
+                        "SELECT 1 FROM sqlite_master LIMIT 1"
+                    ).fetchone() is not None:
                         raise SyntheticTriggerRejected(
                             "unversioned trigger fixture is not empty"
                         )
