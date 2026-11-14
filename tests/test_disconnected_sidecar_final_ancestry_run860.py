@@ -44,25 +44,34 @@ def _restore(path: Path, moved: Path) -> None:
 @pytest.mark.parametrize(
     "trigger", ("fixture.sqlite", "fixture.sqlite-wal", "fixture.sqlite-journal")
 )
-def test_final_named_file_stat_retarget_requires_new_ancestry_scan(
+def test_post_named_file_metadata_retarget_requires_new_ancestry_scan(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, trigger: str,
 ) -> None:
     path = _fixture(tmp_path)
-    original_stat = custody.os.stat
-    moved = []
+    target = path.with_name(trigger)
+    if trigger != path.name:
+        target.write_bytes(b"disconnected sidecar metadata")
+    target_inode = target.stat().st_ino
+    original_file_id = custody._file_id
     calls = []
+    moved = []
 
-    def swap_on_last_named_file(name, *args, **kwargs):
-        if name == trigger and kwargs.get("dir_fd") is not None and not moved:
-            moved.append(_retarget(path))
-            calls.append(name)
-        return original_stat(name, *args, **kwargs)
+    def retarget_after_named_metadata(info):
+        # The first identity for each inode is from the held FD; the
+        # second is from the descriptor-relative named-file stat. Changing
+        # the pathname AFTER that stat must fail the final ancestry pass.
+        if info.st_ino == target_inode:
+            calls.append(True)
+            if len(calls) == 2:
+                moved.append(_retarget(path))
+        return original_file_id(info)
 
     with monkeypatch.context() as patch:
-        patch.setattr(custody.os, "stat", swap_on_last_named_file)
+        patch.setattr(custody, "_file_id", retarget_after_named_metadata)
         with pytest.raises(custody.SQLiteSidecarCustodyRejected):
             custody._capture_once(path)
-    assert calls == [trigger]
+    assert len(calls) >= 2
+    assert len(moved) == 1
     _restore(path, moved[0])
     seal = custody.capture_disconnected_sqlite_sidecars(path)
     assert seal.tool_execution_authorized is False
