@@ -52,7 +52,7 @@ def _identifier(value: object, label: str) -> str:
     The cheap character cap precedes encoding to bound allocations. This
     stricter foundation input rule does not modify any frozen V1/V2 schema.
     """
-    if type(value) is not str or not value.strip() or len(value) > 256:
+    if type(value) is not str or len(value) > 256 or not value.strip():
         raise ValueError(f"{label} must be nonempty bounded exact text")
     try:
         size = len(value.encode("utf-8", errors="strict"))
@@ -134,14 +134,28 @@ class StartupSnapshot:
                 or type(item.effective_state) is not ReadinessState
                 or type(item.dependencies) is not tuple
                 or any(type(parent) is not str for parent in item.dependencies)
-                or item.dependencies != tuple(sorted(set(item.dependencies)))
                 or type(item.component_id) is not str
                 or (item.failure_code is not None and type(item.failure_code) is not str)
                 or (item.schema_revision is not None and type(item.schema_revision) is not str)
             ):
                 raise ValueError("startup snapshot component changed")
+            # Reject reflected unbounded names before constructing sets,
+            # sorting dependency IDs or computing a cached READY digest.
+            # Revalidation after staging still protects reentrant callbacks.
+            try:
+                _identifier(item.component_id, "component_id")
+                for parent in item.dependencies:
+                    _identifier(parent, "dependency")
+                if item.failure_code is not None:
+                    _identifier(item.failure_code, "failure_code")
+                if item.schema_revision is not None:
+                    _identifier(item.schema_revision, "schema_revision")
+            except ValueError as exc:
+                raise ValueError("startup snapshot identifier changed") from exc
             if len(item.dependencies) > _MAX_DEPENDENCIES_PER_COMPONENT:
                 raise ValueError("startup snapshot dependency budget exceeded")
+            if item.dependencies != tuple(sorted(set(item.dependencies))):
+                raise ValueError("startup snapshot component changed")
             edge_count += len(item.dependencies)
             if edge_count > _MAX_DEPENDENCY_EDGES:
                 raise ValueError("startup snapshot dependency budget exceeded")
