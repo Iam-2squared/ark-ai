@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 
 import pytest
+
 from ark import disconnected_sqlite_sidecar_custody as custody
 
 pytestmark = pytest.mark.skipif(
