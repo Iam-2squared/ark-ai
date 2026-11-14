@@ -11,9 +11,7 @@ import os
 from pathlib import Path
 
 import pytest
-
 from ark import disconnected_sqlite_sidecar_custody as custody
-
 
 pytestmark = pytest.mark.skipif(
     os.name != "posix" or not getattr(os, "O_NOFOLLOW", 0),
@@ -42,7 +40,9 @@ def _restore(path: Path, moved: Path) -> None:
     moved.rename(path.parent)
 
 
-@pytest.mark.parametrize("trigger", ("fixture.sqlite", "fixture.sqlite-wal", "fixture.sqlite-journal"))
+@pytest.mark.parametrize(
+    "trigger", ("fixture.sqlite", "fixture.sqlite-wal", "fixture.sqlite-journal")
+)
 def test_final_named_file_stat_retarget_requires_new_ancestry_scan(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, trigger: str,
 ) -> None:
