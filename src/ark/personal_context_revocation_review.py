@@ -80,7 +80,8 @@ def _validate(conn: sqlite3.Connection) -> None:
             raise SyntheticContextRevocationRejected("revocation schema changed")
     finally:
         expected.close()
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if quick != [("ok",)]:
         raise SyntheticContextRevocationRejected("revocation SQLite quick_check failed")
     row_budget = conn.execute(
         "SELECT COUNT(*),COALESCE(SUM(CASE WHEN "
@@ -215,7 +216,7 @@ class SyntheticContextRevocationLedger:
                         raise SyntheticContextRevocationRejected(
                             "existing revocation ledger is uninitialized"
                         )
-                    if tuple(conn.execute("SELECT name FROM sqlite_master")):
+                    if conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone() is not None:
                         raise SyntheticContextRevocationRejected(
                             "unversioned revocation database is not empty"
                         )
