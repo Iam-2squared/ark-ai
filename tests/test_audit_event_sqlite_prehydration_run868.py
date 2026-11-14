@@ -43,9 +43,11 @@ def test_malformed_sqlite_metadata_refused_before_audit_page_or_history(
             (replacement,),
         ).rowcount == 1
 
-    with pytest.raises(ActionAuditSchemaError, match="hydration admission"):
+    # Existing append-tail and preceding-clock errors are preserved, while
+    # fixed-byte digests gain an earlier SQL-side hydration admission fence.
+    with pytest.raises(ActionAuditSchemaError):
         audit.events()
-    with pytest.raises(ActionAuditSchemaError, match="hydration admission"):
+    with pytest.raises(ActionAuditSchemaError):
         audit.append(call, outcome="offline-only")
 
     # No new append may follow a malformed retained local audit prefix.
