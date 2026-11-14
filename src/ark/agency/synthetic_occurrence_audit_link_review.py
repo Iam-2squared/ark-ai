@@ -161,7 +161,9 @@ def _require_original_receipt_contract() -> None:
 def _replay(conn: sqlite3.Connection) -> tuple[SyntheticAuditLinkWitness, ...]:
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticAuditLinkRejected("synthetic link schema version changed")
-    with sqlite3.connect(":memory:") as expected:
+    # A SQLite transaction context manager does not close the connection.
+    # Release this disposable schema reference on success and rejection.
+    with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         if _objects(conn) != _objects(expected):
             raise SyntheticAuditLinkRejected("synthetic link schema changed")
