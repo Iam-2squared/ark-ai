@@ -33,10 +33,15 @@ class ObservationEnvelope:
             raise TypeError("kind must be an exact ObservationKind")
         for name in ("source_id", "adapter_id", "privacy_scope"):
             value = getattr(self, name)
-            if type(value) is not str or not value.strip():
-                raise ValueError(
-                    f"{name} must be a non-empty exact string"
-                )
+            if type(value) is not str:
+                raise ValueError(f"{name} must be a non-empty exact string")
+            # Reject an oversized caller label before even stripping or
+            # encoding it. The byte budget below remains authoritative for
+            # multibyte UTF-8 text; neither check grants media access.
+            if len(value) > 1024:
+                raise ValueError(f"{name} exceeds observation identifier budget")
+            if not value.strip():
+                raise ValueError(f"{name} must be a non-empty exact string")
             # Inert fixture metadata must not carry unbounded raw media or
             # arbitrary-sized identifiers into hashes and downstream reviewers.
             # The envelope crosses digest/serialization boundaries in UTF-8.
