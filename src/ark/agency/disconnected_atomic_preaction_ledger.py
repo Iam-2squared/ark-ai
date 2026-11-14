@@ -268,8 +268,23 @@ def _schema(conn: sqlite3.Connection) -> None:
     _require_original_atomic_carriers()
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise AtomicPreactionRejected("pre-action schema version mismatch")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # A corrupted database may return many diagnostics. Two rows suffice to
+    # reject any response other than one exact "ok" without unbounded hydration.
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise AtomicPreactionRejected("pre-action SQLite integrity failure")
+    # Check SQLite's catalog inside the caller's transaction BEFORE bringing
+    # any persisted DDL into Python. Two UNIQUE indexes are auto-generated,
+    # so the frozen v1 fixture has exactly four catalog entries.
+    object_count, ddl_bytes = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(object_count) is not int or object_count != 4
+        or type(ddl_bytes) is not int or not 0 <= ddl_bytes <= 4_096
+    ):
+        raise AtomicPreactionRejected("pre-action schema catalog preflight failed")
     query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
     with sqlite3.connect(":memory:") as expected:
         expected.execute(_INTENTS)
