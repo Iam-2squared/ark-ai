@@ -91,7 +91,7 @@ def test_rejected_open_closes_connection(
             if failure == "sqlite_error":
                 raise sqlite3.OperationalError("synthetic failed PRAGMA")
             if statement == "SELECT revision FROM marker":
-                return SimpleNamespace(fetchall=lambda: [("foreign",)])
+                return SimpleNamespace(fetchmany=lambda size: [("foreign",)][:size])
             return SimpleNamespace(fetchall=lambda: [])
 
         def close(self) -> None:
