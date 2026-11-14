@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -22,6 +23,7 @@ _MAX_MS = 2**63 - 1
 _MAX_ROWS = 512
 _MAX_OCCURRENCES = 4096
 _MAX_INTERVAL_MS = 366 * 24 * 60 * 60 * 1000
+_MAX_DB_PATH = 4096
 _DOMAIN = b"ARK-disconnected-quarantine-ledger-v1\0"
 _DDL = (
     "CREATE TABLE policy (policy_sha256 TEXT PRIMARY KEY, first_ms INTEGER NOT NULL, "
@@ -39,11 +41,13 @@ _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_SHA = _SHA
 _ORIGINAL_SLOT = _SLOT
 _ORIGINAL_DDL = _DDL
-_ORIGINAL_BOUNDS = (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS)
+_ORIGINAL_BOUNDS = (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS, _MAX_DB_PATH)
 
 
 def _require_original_quarantine_protocol() -> None:
@@ -52,14 +56,16 @@ def _require_original_quarantine_protocol() -> None:
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
+        or os is not _ORIGINAL_OS
+        or os.fsencode is not _ORIGINAL_FSENCODE
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _SHA is not _ORIGINAL_SHA
         or _SLOT is not _ORIGINAL_SLOT
         or _DDL is not _ORIGINAL_DDL
         or any(type(value) is not int for value in (
-            _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS,
+            _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS, _MAX_DB_PATH,
         ))
-        or (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS)
+        or (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS, _MAX_DB_PATH)
            != _ORIGINAL_BOUNDS
     ):
         raise ScheduleQuarantineRejected("quarantine digest or protocol changed")
@@ -245,10 +251,18 @@ def derive_quarantined_occurrence(policy: QuarantinePolicy, index: int) -> str:
 
 
 def _path(value: object, *, create: bool) -> Path:
+    # SQLite can open the main file and a longer -journal sibling. Reject
+    # malformed/oversized native-encoded paths before any lstat or connection.
+    _require_original_quarantine_protocol()
     if (type(value) is not type(Path(".")) or not value.is_absolute()
-            or ".." in value.parts or len(str(value)) > 4096
+            or ".." in value.parts or "\x00" in str(value)
             or value.name in ("", ".", "..")):
         raise ScheduleQuarantineRejected("absolute exact fixture path required")
+    try:
+        if len(os.fsencode(value)) + len(b"-journal") > _MAX_DB_PATH:
+            raise ScheduleQuarantineRejected("quarantine SQLite path byte budget exceeded")
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise ScheduleQuarantineRejected("invalid quarantine SQLite path encoding") from exc
     try:
         for parent in value.parents:
             info = parent.lstat()
