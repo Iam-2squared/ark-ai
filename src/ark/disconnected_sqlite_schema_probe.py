@@ -161,7 +161,9 @@ def _assert_inert_seal(seal: object) -> None:
 
 def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
     _require_original_schema_probe()
-    databases = tuple(connection.execute("PRAGMA database_list"))
+    # Admission only needs to distinguish one main DB from multiple attached
+    # databases. Do not hydrate a potentially unbounded attachment list.
+    databases = connection.execute("PRAGMA database_list").fetchmany(2)
     if (
         len(databases) != 1 or databases[0][1] != "main"
         or type(databases[0][0]) is not int
