@@ -80,7 +80,8 @@ def test_invalid_native_sqlite_path_rejected_before_file_access(tmp_path, bad_na
     path = tmp_path / bad_name
     with pytest.raises(store.DisconnectedProposalStoreRejected, match="path"):
         store.create_disconnected_proposal_store(path)
-    assert not path.exists() if "\x00" not in bad_name else True
+    # Avoid stat() on an intentionally ENAMETOOLONG or NUL-containing name.
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_clean_proposal_history_retains_restart_cas_and_denial_only(tmp_path):
