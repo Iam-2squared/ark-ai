@@ -129,6 +129,12 @@ def _hash_private_fixture(payload: bytes) -> str:
     return digest
 
 
+# A same-process replacement of the *local* hashing helper could otherwise
+# receive raw caller-private text or image bytes even when hashlib itself is
+# untouched. Refuse that replacement before either fixture hands over data.
+_ORIGINAL_PRIVATE_HASH_HELPER = _hash_private_fixture
+
+
 def _require_original_envelope() -> None:
     # Distinguish constructor substitution from executable field or
     # validator replacement without invoking any of the substitutions.
@@ -261,6 +267,8 @@ def fixture_text_observation(
         raise ValueError("fixture text is not valid UTF-8") from exc
     if len(data) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
+    if _hash_private_fixture is not _ORIGINAL_PRIVATE_HASH_HELPER:
+        raise ValueError("fixture private digest helper changed before content hashing")
     digest = _hash_private_fixture(data)
     return _sealed_fixture(
         kind=kind,
@@ -292,6 +300,8 @@ def fixture_binary_observation(
     _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
     if len(payload) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
+    if _hash_private_fixture is not _ORIGINAL_PRIVATE_HASH_HELPER:
+        raise ValueError("fixture private digest helper changed before content hashing")
     digest = _hash_private_fixture(payload)
     return _sealed_fixture(
         kind=kind,
