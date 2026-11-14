@@ -351,11 +351,11 @@ def _inspect(conn: sqlite3.Connection) -> WriteSlotLedgerWitness:
         raise WriteSlotLedgerRejected("invalid persisted reservation row")
     malformed = conn.execute(
         "SELECT 1 FROM synthetic_write_slots WHERE "
-        "typeof(slot_id)!='text' OR length(slot_id)!=69 OR "
-        "typeof(plan_id)!='text' OR length(plan_id)!=69 OR "
-        "typeof(step_id)!='text' OR length(step_id)!=21 OR "
-        "typeof(request_sha256)!='text' OR length(request_sha256)!=64 OR "
-        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 LIMIT 1"
+        "typeof(slot_id)!='text' OR length(CAST(slot_id AS BLOB))!=69 OR "
+        "typeof(plan_id)!='text' OR length(CAST(plan_id AS BLOB))!=69 OR "
+        "typeof(step_id)!='text' OR length(CAST(step_id AS BLOB))!=21 OR "
+        "typeof(request_sha256)!='text' OR length(CAST(request_sha256 AS BLOB))!=64 OR "
+        "typeof(chain_sha256)!='text' OR length(CAST(chain_sha256 AS BLOB))!=64 LIMIT 1"
     ).fetchone()
     if malformed is not None:
         raise WriteSlotLedgerRejected("invalid persisted reservation row")
