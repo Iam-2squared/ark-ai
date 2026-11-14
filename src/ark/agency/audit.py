@@ -173,7 +173,7 @@ def _require_dense_committed_audit_sequence(conn: sqlite3.Connection) -> None:
     ).fetchone()
     sequences = conn.execute(
         "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
-    ).fetchall()
+    ).fetchmany(2)
     if type(count) is not int or count < 0:
         raise ActionAuditSchemaError("audit persisted event sequence is malformed")
     if count == 0:
