@@ -101,7 +101,11 @@ def _schema_check(conn: sqlite3.Connection) -> None:
             expected.execute(ddl)
         if _objects(conn) != _objects(expected):
             raise SyntheticPlanJournalRejected("synthetic plan schema changed")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # A malformed journal can yield many SQLite corruption diagnostics.
+    # Only one exact "ok" is accepted; two rows detect extra output without
+    # hydrating an unbounded diagnostic stream into Python.
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise SyntheticPlanJournalRejected("synthetic plan quick_check failed")
 
 
