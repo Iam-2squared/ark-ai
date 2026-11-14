@@ -276,6 +276,16 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
                 continue
             if main_absent:
                 raise SyntheticReplayRejected("orphaned occurrence SQLite sidecar refused")
+            if stat.S_ISREG(sidecar_info.st_mode) and sidecar_info.st_nlink == 0:
+                # SQLite's last connection can unlink a regular sidecar
+                # between pathname lookup and the inode snapshot. Re-lstat
+                # this *already-unlinked regular* case just once; an orphan,
+                # alias, special file or persistent zero-link inode is still
+                # rejected before the reservation ledger is opened.
+                try:
+                    sidecar_info = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
             if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
                 raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
     except OSError as exc:
