@@ -172,7 +172,9 @@ def _validate(conn: sqlite3.Connection) -> None:
     _require_original_protocol()
     if conn.execute("PRAGMA user_version").fetchone()[0] != 1:
         raise SyntheticReplayRejected("synthetic reservation schema version changed")
-    with sqlite3.connect(":memory:") as expected:
+    # The SQLite connection context manager controls transactions, not handle lifetime.
+    # Close the disposable DDL oracle on success and every fail-closed rejection.
+    with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_TABLE)
         if _objects(conn) != _objects(expected):
             raise SyntheticReplayRejected("synthetic reservation schema changed")
