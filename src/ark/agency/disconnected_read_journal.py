@@ -289,7 +289,7 @@ def _verify_schema(connection: sqlite3.Connection) -> None:
         or type(budget[0]) is not int or budget[0] != 3
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
     ):
-        raise ReadJournalRejected("synthetic READ schema catalog preflight failed")
+        raise ReadJournalRejected("synthetic READ schema catalog preflight failed (schema changed)")
     expected = sqlite3.connect(":memory:")
     try:
         expected.execute(_MARKER_DDL)
