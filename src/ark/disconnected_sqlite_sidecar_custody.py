@@ -288,6 +288,23 @@ def _capture_once(path: Path) -> DetachedSQLiteSidecarSeal:
                 "SQLite open descriptor changed during inspection"
             )
 
+        # A parent may be renamed or replaced by a symlink during the named
+        # file stat pass above. Held file/dir descriptors still point to the
+        # old tree, so verifying only the open FDs misses that retargeting.
+        # Recheck the complete named ancestry after the last file stat.
+        # This is not atomic future pathname custody: a rename after this
+        # final check remains an explicitly unproven boundary.
+        if _dir_id(os.stat("/", follow_symlinks=False)) != dir_ids[0]:
+            raise SQLiteSidecarCustodyRejected("root identity changed")
+        for i in range(1, len(dirs)):
+            actual = os.stat(
+                dir_names[i], dir_fd=dirs[i - 1], follow_symlinks=False
+            )
+            if _dir_id(actual) != dir_ids[i]:
+                raise SQLiteSidecarCustodyRejected(
+                    "SQLite directory was retargeted after file inspection"
+                )
+
         sidecars = tuple(
             DetachedSQLiteSidecarState(suffix, item is not None,
                                        _hash(("sidecar", suffix, item)) if item else None)
