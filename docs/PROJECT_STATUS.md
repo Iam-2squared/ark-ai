@@ -1,3 +1,48 @@
+# LATEST — ARK AI Run880 bounded last-close SQLite admission across four non-UI ledgers
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T05:51:28.319+09:00** (observed runtime wall clock, NOT a trusted-time proof, consent, provenance or review). **Overall ARK/JARVIS: NOT_PASSED**. **All new UI/frontend development PAUSED**. No new paid services or external compute.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) open, unmerged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains Draft/approval-gated; [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/paused UI. Both were re-read at invocation start and left untouched. **Initial exact work-basis HEAD:** `679567a07d7ebf39bdf02a82ee932076c44e385c` (Run879 checkpoint). **Complete Run880 source+test HEAD:** `947ef4215f6f34ce814f161d5a1f5e7bd3229b34`. **Technical report / checkpoint-write-basis HEAD:** `ad337ae896a729f3975b61a8033161f527edc0aa` (re-read before normal GitHub Contents API write). **Previous status blob:** `db4d1617f9e406efca6d3a339c61f2a9a51fb4ca`. **Checkpoint-result HEAD UNKNOWN at document authoring**; verify actual commit from API response and new branch/PR/status reads after write.
+
+## NEW — 4 coherent non-UI source/test packages, 70 authored parametric regression cases
+
+- **Planner SQLite journal:** `src/ark/agency/planner_journal_review.py` + `tests/test_planner_transient_sqlite_sidecar_run880.py`, 16 cases, source/test commits `c739e6a7450a623705c7491018102c2064565277` / `5a8d0d0e2a1e7e4fe969244cc2a3f5ab473f560e`.
+- **Durable occurrence:** `src/ark/agency/durable_occurrence_review.py` + `tests/test_occurrence_transient_sqlite_sidecar_run880.py`, 18 cases, `ebfa84ccb3c6f2c8ea217585a89b1aa14c2f316e` / `77a9e38a6750abfb66300f3b6069aefaa10fd387`.
+- **WRITE Slot Ledger:** `src/ark/agency/disconnected_write_slot_ledger.py` + `tests/test_write_slot_transient_sqlite_sidecar_run880.py`, 18 cases, `bcd2d71331166bb44475679252d661538211e12e` / `8ba060060a32269648021966a82d6cc206ea3e31`.
+- **Atomic Preaction Ledger:** `src/ark/agency/disconnected_atomic_preaction_ledger.py` + `tests/test_atomic_preaction_transient_sidecar_run880.py`, 18 cases, `0e8144dbc423eabceea1291fcc8d2f95e9417f94` / `947ef4215f6f34ce814f161d5a1f5e7bd3229b34`.
+
+All four modules now re-observe a **previously seen already-unlinked regular SQLite -wal/-shm/-journal** pathname at most once during last-close races. Missing main files/first-creation orphans, symlinks, hardlinks, special files and persistently unlinked inodes remain **fail-closed**; existing error classifications retained. New tests use disposable **path-only** stubs with fake `lstat` observations and assert non-interference with unrelated targets. No SQLite schema or real action changed.
+
+Exact `679567a...947ef42` compare: **four non-UI source files and four added non-UI test files only** (eight commits); technical report saved at `ad337ae896a729f3975b61a8033161f527edc0aa`: [Run880 report](https://github.com/Iam-2squared/ark-ai/blob/ad337ae896a729f3975b61a8033161f527edc0aa/docs/JARVIS_RUN880_NON_UI_SQLITE_LAST_CLOSE_ADMISSION.md). **70 cases authored is not 70 validated passes.** No local checkout/pytest/Ruff or physical-PC/GGUF verification; GitHub Actions is sole current integrated test evidence.
+
+## Exact-head CI/evidence at checkpoint observation
+
+**Inherited Run879 checkpoint** `679567a07d7ebf39bdf02a82ee932076c44e385c`: [CI #43635703737](https://github.com/Iam-2squared/ark-ai/actions/runs/43635703737) **GREEN 6/6** Windows + Ubuntu, Python 3.11–3.13; verified individual jobs. **Old HEAD only**.
+
+- [CI #43639082483](https://github.com/Iam-2squared/ark-ai/actions/runs/43639082483): 3/6 GREEN, 0/6 FAIL, 3/6 IN PROGRESS or QUEUED. NOT COMPLETE; no exact-HEAD PASS claim.
+- [CI #43639156598](https://github.com/Iam-2squared/ark-ai/actions/runs/43639156598): 1/6 GREEN, 0/6 FAIL, 5/6 IN PROGRESS or QUEUED. NOT COMPLETE; no exact-HEAD PASS claim.
+- [CI #43639227453](https://github.com/Iam-2squared/ark-ai/actions/runs/43639227453): 0/6 GREEN, 0/6 FAIL, 6/6 IN PROGRESS or QUEUED. NOT COMPLETE; no exact-HEAD PASS claim.
+- [CI #43639313609](https://github.com/Iam-2squared/ark-ai/actions/runs/43639313609): 0/6 GREEN, 0/6 FAIL, 6/6 IN PROGRESS or QUEUED. NOT COMPLETE; no exact-HEAD PASS claim.
+- [CI #43639515653](https://github.com/Iam-2squared/ark-ai/actions/runs/43639515653): 0/6 GREEN, 0/6 FAIL, 6/6 IN PROGRESS or QUEUED. NOT COMPLETE; no exact-HEAD PASS claim.
+
+A later checkpoint commit will itself trigger ordinary PR CI; **do not infer its six-job result from older HEADs**. No duplicate manual workflow runs.
+
+## Frozen contracts / blockers / authorization boundary
+
+V1/V2/Local UI/Launcher frozen contracts/evaluation evidence, Memory and ActionAudit v1 DDL, protected V2 final evaluation, V3 Candidate gates and PR #5 control remain unchanged. PR #5/#8/#9 Draft/unmerged, UI paused. No paid API/service/GPU, Candidate weight/adapter/training/promotion, external action, authenticated human review, new credentials/account, physical-PC operation, destructive change, protected evaluation or main merge.
+
+**Unresolved:** observed Windows WAL/SHM last-client-close `link_count=0` and Privacy Revocation competing-process loser, unknown COMMIT outcomes and manual-only quarantine, authentic trusted-clock evidence, atomic descriptor-held file custody, cross-store atomicity and external exactly-once execution. One re-`lstat` is NOT an atomic filesystem authorization or repair of all races. All ambiguous actions remain non-replayable and require manual triage.
+
+## Next plan / 今後の方針
+
+1. Confirm exact **Run880 latest checkpoint** Windows+Ubuntu six-job CI; inspect any FAIL logs and apply only minimal, semantics-preserving normal GitHub Contents API repair. In-flight CI: use independent non-UI lanes, no duplicate equivalent workflows.
+2. Characterize remaining Windows WAL/SHM/Privacy Veto multi-process failure with retained, restart-verifiable witnesses and no unsafe path-alias reclassification. Keep COMMIT-UNKNOWN quarantined.
+3. Strengthen Memory generation-fenced CAS, expiry coherent snapshots, row/event retained evidence and Planner crash-recovery UNKNOWN/terminal propagation.
+4. Progress immutable ToolRegistry + exact-type PermissionGate + durable occurrence + audit-before-action + disconnected Mock Executor integration only on exact-head GREEN lower-level evidence; never infer real permission or trusted time.
+5. Continue privacy-safe Personal Context, proactive scheduler, observation fixtures and free-only V3 reproducibility/approval guards, preserving all frozen evaluations and UI suspension.
+
+---
+
 # LATEST — ARK AI Run879 proactive bootstrap repair, guarded SQLite unlink and registry-bound disconnected WRITE
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T05:06:23.702+09:00** (observed wall clock; NOT a trusted clock, human approval, model provenance, authenticated consent or deployment proof). **Overall ARK/JARVIS: NOT_PASSED**. All work remains offline, reversible, no-new-paid-services; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
