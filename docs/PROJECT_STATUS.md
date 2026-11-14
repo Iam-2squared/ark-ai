@@ -1,3 +1,47 @@
+# LATEST — ARK AI Run867 non-UI Memory/Planner/Scheduler/Context SQLite row admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T17:57:34.784+09:00** (observed reporting wall clock before normal GitHub Contents API write, **NOT** trusted clock, issuer, approval, audit, model or action evidence). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, zero-new-cost, disconnected/reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged. PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) and PR [#9](https://github.com/Iam-2squared/ark-ai/pull/9) were independently verified open/Draft/unmerged and left untouched. **Initial work-basis HEAD:** `3588e2fd124c5ab5fae9cff777179154311b33ba` (Run866 checkpoint). **Latest complete executable source+test HEAD / checkpoint-write-basis HEAD:** `e58d7c0c65c514be7ebfe5fe2a628697f826c2f9` (re-read PR HEAD immediately before this write). **Run867 technical report commit:** `66e52ccdcd99bb54a541a47775979f9de21c2960`. **Previous PROJECT_STATUS blob:** `873755b8c4ace55d947d95d4d9e16e6609e97cb2`. **Checkpoint-result HEAD UNKNOWN BEFORE WRITE**; confirm from Contents API returned commit SHA and independent subsequent PR/ref reread, never self-reference a future SHA.
+
+## NEW — four coherent independent non-UI hardening packages, 36 synthetic regression cases authored
+
+1. **Memory witness SQLite row prehydration:** source `573fba22a4feaa2a91b96294ab899e542111622c`, tests `cb667c9c1d74f25bb66314c56ba9264c8d665cc4` (**9** new cases). Inspect committed-row count, total/maximum encoded payload bytes, status/digest widths and exact SQLite storage classes **inside the same transaction before Python row hydration**. Reject 257-row overflow, oversized UTF-8/codepoint discrepancy and injected BLOB values; original empty-genesis startup remains accepted. No witness authority or schema change.
+2. **Planner cold header/event SQLite prehydration:** source `5089269cdd75466779286f1504adbede9aa5dd7c`, tests `4104ca215deab512432f5fb69631fee1e3372141` (**14** cases). SQL-side checks for header hash byte widths and INTEGER fields; bound event count to 10,000 and reject oversized/incorrect event storage classes before Python replays a persisted row. Legitimate step-ID limit is taken from the admitted graph; recovered RUNNING stays manual-only UNKNOWN, never automatically executable.
+3. **Proactive Scheduler quarantine policy prehydration:** source `3246a73e9f1d13f2802f71285c8321715b8b0171`, tests `d0f8e40a6baca19f73c8fcd5138bb7d3b1ee2978` (**7** cases). SQL-side policy-hash native byte width and numeric storage classes check before the bounded two-row policy cursor; exact original denial-only schedule policy/restart remains.
+4. **Personal Context UTF-8 identifier privacy:** source `a30f20ff68d35582ee30d57b24ce3157ef81e061`, tests `e58d7c0c65c514be7ebfe5fe2a628697f826c2f9` (**6** cases). Replace SQL character counts with `length(CAST(... AS BLOB))` for request ID and all four stored 64-hex digests; reject visually fixed-length Unicode strings whose UTF-8 bytes exceed canonical width before reading potentially linkable identity metadata.
+
+[Run867 focused technical report](https://github.com/Iam-2squared/ark-ai/blob/66e52ccdcd99bb54a541a47775979f9de21c2960/docs/JARVIS_RUN867_NON_UI_SQLITE_ROW_PREHYDRATION.md) records the first three complete packages. The fourth privacy package is additionally recorded in this canonical latest checkpoint. **36 cases AUTHORed, not certified latest-HEAD PASS.** GitHub reread confirms new source/test blobs and line lengths <=100. This is static review, not full local pytest/Ruff, target Windows/GGUF or live model evidence.
+
+## CI — exact-head evidence, no inherited GREEN
+
+- Run866 checkpoint `3588e2fd124c5ab5fae9cff777179154311b33ba`: [Actions #43573518079](https://github.com/Iam-2squared/ark-ai/actions/runs/43573518079) **GREEN 6/6** (Windows and Ubuntu × Python 3.11–3.13) confirmed from individual jobs **before** Run867 source changes. This GREEN does not cover new work.
+- [CI #43577484085](https://github.com/Iam-2squared/ark-ai/actions/runs/43577484085) exact head `573fba22a4feaa2a91b96294ab899e542111622c`: **IN_PROGRESS** (latest API observation, not a six-job GREEN claim).
+- [CI #43577526858](https://github.com/Iam-2squared/ark-ai/actions/runs/43577526858) exact head `cb667c9c1d74f25bb66314c56ba9264c8d665cc4`: **IN_PROGRESS** (latest API observation, not a six-job GREEN claim).
+- [CI #43577667508](https://github.com/Iam-2squared/ark-ai/actions/runs/43577667508) exact head `5089269cdd75466779286f1504adbede9aa5dd7c`: **IN_PROGRESS** (latest API observation, not a six-job GREEN claim).
+- [CI #43577708660](https://github.com/Iam-2squared/ark-ai/actions/runs/43577708660) exact head `4104ca215deab512432f5fb69631fee1e3372141`: **IN_PROGRESS** (latest API observation, not a six-job GREEN claim).
+- [CI #43577809874](https://github.com/Iam-2squared/ark-ai/actions/runs/43577809874) exact head `d0f8e40a6baca19f73c8fcd5138bb7d3b1ee2978`: **QUEUED** (latest API observation, not a six-job GREEN claim).
+- [CI #43577928568](https://github.com/Iam-2squared/ark-ai/actions/runs/43577928568) exact head `66e52ccdcd99bb54a541a47775979f9de21c2960`: **QUEUED** (latest API observation, not a six-job GREEN claim).
+- [CI #43578065587](https://github.com/Iam-2squared/ark-ai/actions/runs/43578065587) exact head `a30f20ff68d35582ee30d57b24ce3157ef81e061`: **QUEUED** (latest API observation, not a six-job GREEN claim).
+- [CI #43578141956](https://github.com/Iam-2squared/ark-ai/actions/runs/43578141956) exact head `e58d7c0c65c514be7ebfe5fe2a628697f826c2f9`: **QUEUED** (latest API observation, not a six-job GREEN claim).
+- The checkpoint write will start its own automatic exact-HEAD CI. **Latest checkpoint HEAD GREEN is NOT yet known**, and no duplicate workflow dispatch occurred. Windows runner jobs may remain in progress independently of Ubuntu results.
+
+## Frozen boundaries, remaining blockers and authorization
+
+Frozen V1/V2/Local UI/Launcher contracts and evidence remain unchanged, including protected final evaluation. PR #5/#8/#9 remain Draft/unmerged; no UI/frontend source/tests/integration, paid API/service/GPU, real Candidate/adapter/weights/training/promotion, protected V2 final-eval opening, new credentials/account connection, destructive real-world operation, live Tool dispatch, or main merge. These SQLite preflights do not prove independent custody, consent, trusted time or real authorization.
+
+**Still NOT_PASSED:** main-file/path-to-open aliasing and WAL/SHM final-close race, unauthenticated retained Memory witness / COMMIT-UNKNOWN attribution, cross-store CAS and atomicity, Planner persistent UNKNOWN manual disposition, trusted-clock audit-before-action, restart-safe one-shot permission, and external exactly-once effects. No ambiguous external effect is replayable from these local fixtures.
+
+## Next plan / 今後の方針
+
+1. Verify **latest exact-source/checkpoint HEAD CI across all six environments**; inspect failing test/job logs and use the smallest semantics-preserving fix. Work another independent non-UI lane while CI executes.
+2. Extend disposable Memory/ActionAudit WAL/SHM last-client-close and COMMIT-UNKNOWN investigations with independent-process observations, **without** asserting external replay safety.
+3. Strengthen Planner UNKNOWN lineage and durable terminal propagation, Memory coherent CAS/expiry snapshot and retained-prefix integrity.
+4. Continue privacy-safe Personal Context retention/revocation, proactive scheduler and offline observation fixtures; retain no actual private records.
+5. Integrate immutable ToolRegistry identity, exact-type PermissionGate, durable occurrence, trusted-clock audit-before-action and disconnected Mock Executor **only after** prerequisite exact-head GREEN, with no live action or automatic Candidate promotion.
+
+---
+
 # LATEST — ARK AI Run866 non-UI witness ledger SQLite admission and Planner bounded cold recovery
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T16:56:33.166+09:00** (observed reporting wall clock immediately before normal GitHub Contents API checkpoint write, NOT a trusted clock, issuer, consent, audit or action time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, zero-new-cost, disconnected/reversible; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
