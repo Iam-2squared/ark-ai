@@ -316,12 +316,27 @@ def _check_path(value: object, *, create: bool) -> Path:
 def _schema(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise WriteSlotLedgerRejected("unknown SQLite ledger version")
+    # Validate the untrusted catalog inside the caller's SQLite snapshot
+    # BEFORE allocating its DDL. Frozen fixture DDL has one table and two
+    # SQLite-generated UNIQUE indexes, exactly three catalog objects.
+    object_count, ddl_bytes = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(object_count) is not int or object_count != 3
+        or type(ddl_bytes) is not int or not 0 <= ddl_bytes <= 4_096
+    ):
+        raise WriteSlotLedgerRejected("reservation schema catalog preflight failed")
     with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(query)) != tuple(expected.execute(query)):
             raise WriteSlotLedgerRejected("reservation schema drift")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # A corrupt fixture may return arbitrarily many error diagnostics; only
+    # one exact "ok" is permitted, with at most two rows hydrated.
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise WriteSlotLedgerRejected("reservation SQLite integrity failure")
 
 
