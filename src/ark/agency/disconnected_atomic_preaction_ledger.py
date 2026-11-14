@@ -286,7 +286,9 @@ def _schema(conn: sqlite3.Connection) -> None:
     ):
         raise AtomicPreactionRejected("pre-action schema catalog preflight failed")
     query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
-    with sqlite3.connect(":memory:") as expected:
+    # A SQLite connection context manager does not close the DDL oracle.
+    # Release the throwaway handle even if schema comparison raises.
+    with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_INTENTS)
         expected.execute(_AUDITS)
         if conn.execute(query).fetchall() != expected.execute(query).fetchall():
