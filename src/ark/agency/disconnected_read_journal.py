@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -253,8 +254,18 @@ def _safe_path(path: Path, *, must_exist: bool) -> None:
         type(path) is not type(Path("."))
         or not path.is_absolute()
         or ".." in path.parts
+        or not path.name
+        or "\x00" in str(path)
     ):
         raise ReadJournalRejected("explicit absolute local Path required")
+    # Main SQLite path may fit in characters while its rollback sidecar
+    # exceeds the native byte limit. Refuse before any ancestor lstat/open.
+    try:
+        encoded_size = len(os.fsencode(path))
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise ReadJournalRejected("READ journal path encoding invalid") from exc
+    if encoded_size + len(b"-journal") > 4096:
+        raise ReadJournalRejected("READ journal native path byte budget exceeded")
     # path.parent.is_symlink() misses a symbolic GRANDPARENT. Reject all
     # non-directory/symbolic ancestors before any open("x") or SQLite access.
     # Ancestry inspection is not an atomic open-handle/path custody proof.
@@ -304,6 +315,17 @@ def _verify_schema(connection: sqlite3.Connection) -> None:
         raise ReadJournalRejected("synthetic READ journal SQLite integrity failure")
 
 
+def _require_stored_marker_admission(connection: sqlite3.Connection) -> None:
+    """Reject oversized or non-TEXT revision before retrieving marker rows."""
+    bad = connection.execute(
+        "SELECT 1 FROM marker WHERE typeof(revision)!='text' "
+        "OR length(CAST(revision AS BLOB))!=? LIMIT 1",
+        (len(_SCHEMA),),
+    ).fetchone()
+    if bad is not None:
+        raise ReadJournalRejected("synthetic READ marker hydration admission failed")
+
+
 class DisconnectedReadJournal:
     """SQLite-only append/CAS ledger; stores digests, never raw result contents."""
 
@@ -347,6 +369,7 @@ class DisconnectedReadJournal:
                 # Marker, schema and chain must come from ONE SQLite snapshot.
                 # No claim of cross-process custody or writer authentication.
                 connection.execute("BEGIN")
+                _require_stored_marker_admission(connection)
                 rows = connection.execute("SELECT revision FROM marker").fetchmany(2)
                 if rows != [(_SCHEMA,)]:
                     raise ReadJournalRejected("foreign journal marker")
@@ -375,9 +398,37 @@ class DisconnectedReadJournal:
         """Scan in the caller's transaction, enforcing contiguous hash linkage."""
         _require_original_read_carriers()
         _verify_schema(self._connection)
+        _require_stored_marker_admission(self._connection)
         marker = self._connection.execute("SELECT revision FROM marker").fetchmany(2)
         if marker != [(_SCHEMA,)]:
             raise ReadJournalRejected("foreign journal marker")
+        # A bounded number of rows is not a bounded byte allocation.
+        # Inspect all stored types and UTF-8 widths inside this same snapshot
+        # BEFORE materializing even one potentially huge private receipt.
+        count = self._connection.execute(
+            "SELECT COUNT(*) FROM receipts"
+        ).fetchone()[0]
+        if type(count) is not int or not 0 <= count <= _MAX_ROWS:
+            raise ReadJournalRejected("journal row budget exceeded")
+        malformed = self._connection.execute(
+            "SELECT 1 FROM receipts WHERE typeof(seq)!='integer' "
+            "OR typeof(request_id)!='text' "
+            "OR length(CAST(request_id AS BLOB))!=36 "
+            "OR typeof(step_id)!='text' "
+            "OR length(CAST(step_id AS BLOB))!=21 "
+            "OR typeof(operation)!='text' "
+            "OR length(CAST(operation AS BLOB)) NOT BETWEEN 1 AND 32 "
+            "OR typeof(input_digest)!='text' "
+            "OR length(CAST(input_digest AS BLOB))!=64 "
+            "OR typeof(result_digest)!='text' "
+            "OR length(CAST(result_digest AS BLOB))!=64 "
+            "OR typeof(previous_sha)!='text' "
+            "OR length(CAST(previous_sha AS BLOB))!=64 "
+            "OR typeof(chain_sha)!='text' "
+            "OR length(CAST(chain_sha AS BLOB))!=64 LIMIT 1"
+        ).fetchone()
+        if malformed is not None:
+            raise ReadJournalRejected("journal receipt hydration admission failed")
         rows = self._connection.execute(
             "SELECT seq, request_id, step_id, operation, input_digest, "
             "result_digest, previous_sha, chain_sha FROM receipts ORDER BY seq"
