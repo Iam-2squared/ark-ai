@@ -187,7 +187,7 @@ def review_schedule_unknown_quarantine(
                     raise ScheduleUnknownQuarantineRejected("retained prefix changed")
             rows = conn.execute(
                 "SELECT seq,due_ms,observed_ms FROM quarantines "
-                "WHERE occurrence_id=?", (occurrence_id,),
+                "WHERE occurrence_id=? LIMIT 2", (occurrence_id,),
             ).fetchall()
             stable()
             if len(rows) > 1 or bool(rows) != (index < count):
