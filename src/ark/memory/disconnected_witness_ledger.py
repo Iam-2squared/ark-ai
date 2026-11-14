@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sqlite3
 import stat
 from contextlib import closing
@@ -22,6 +23,8 @@ from .retained_epoch_review import _validate, review_retained_memory_epoch
 
 _DOMAIN = b"ARK-disconnected-memory-witness-ledger-v1\\0"
 _MAX_EPOCHS = 256
+_MAX_SQLITE_PATH_BYTES = 4096
+_MAX_SCHEMA_DDL_BYTES = 4096
 _DDL = (
     "CREATE TABLE retained_memory_epochs ("
     "seq INTEGER PRIMARY KEY, payload_json TEXT NOT NULL, "
@@ -82,27 +85,50 @@ def genesis_memory_ledger_witness() -> MemoryLedgerWitness:
 
 
 def _path(path: object, *, create: bool) -> Path:
+    # Fail closed before lstat or SQLite connects: journal siblings are longer
+    # than the main name, and POSIX/Windows enforce native byte budgets.
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
         or ".." in path.parts
-        or len(str(path)) > 4096
+        or "\x00" in str(path)
         or path.name in ("", ".", "..")
     ):
         raise MemoryWitnessLedgerRejected("exact absolute ledger path required")
+    try:
+        encoded_length = len(os.fsencode(path))
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise MemoryWitnessLedgerRejected("witness ledger path encoding invalid") from exc
+    if encoded_length + len(b"-journal") > _MAX_SQLITE_PATH_BYTES:
+        raise MemoryWitnessLedgerRejected("witness ledger path byte budget exceeded")
     try:
         for parent in path.parents:
             info = parent.lstat()
             if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
                 raise MemoryWitnessLedgerRejected("unsafe ledger ancestor")
+        main_missing = False
         try:
             info = path.lstat()
         except FileNotFoundError:
+            main_missing = True
             if not create:
                 raise MemoryWitnessLedgerRejected("missing retained ledger") from None
         else:
             if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                 raise MemoryWitnessLedgerRejected("existing or aliased ledger")
+        # Refuse orphan, symlink, multi-linked or non-file SQLite sidecars.
+        # This is only an lstat preflight, NOT race-free pathname custody.
+        for suffix in ("-wal", "-shm", "-journal"):
+            companion = path.with_name(path.name + suffix)
+            try:
+                sidecar = companion.lstat()
+            except FileNotFoundError:
+                continue
+            if (
+                main_missing or create or not stat.S_ISREG(sidecar.st_mode)
+                or sidecar.st_nlink != 1
+            ):
+                raise MemoryWitnessLedgerRejected("unsafe witness SQLite sidecar")
     except OSError as exc:
         raise MemoryWitnessLedgerRejected("ledger path cannot be inspected") from exc
     return path
@@ -112,6 +138,18 @@ def _schema(conn: sqlite3.Connection) -> None:
     try:
         if conn.execute("PRAGMA user_version").fetchone() != (1,):
             raise MemoryWitnessLedgerRejected("unknown witness schema version")
+        # SQL-side admission bounds catalog hydration within the SAME SQLite
+        # read/write transaction. Exactly one table is the original DDL.
+        objects, ddl_bytes = conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+            "FROM sqlite_master"
+        ).fetchone()
+        if (
+            type(objects) is not int or objects != 1
+            or type(ddl_bytes) is not int
+            or not 0 <= ddl_bytes <= _MAX_SCHEMA_DDL_BYTES
+        ):
+            raise MemoryWitnessLedgerRejected("witness schema drift")
         with closing(sqlite3.connect(":memory:")) as expected:
             expected.execute(_DDL)
             query = (
@@ -120,7 +158,7 @@ def _schema(conn: sqlite3.Connection) -> None:
             )
             if tuple(conn.execute(query)) != tuple(expected.execute(query)):
                 raise MemoryWitnessLedgerRejected("witness schema drift")
-        if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+        if conn.execute("PRAGMA quick_check").fetchmany(2) != [("ok",)]:
             raise MemoryWitnessLedgerRejected("witness database integrity failed")
     except sqlite3.Error as exc:
         raise MemoryWitnessLedgerRejected("invalid local witness database") from exc
