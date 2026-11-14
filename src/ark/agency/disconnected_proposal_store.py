@@ -217,9 +217,19 @@ def _path(path: object, *, create: bool) -> Path:
     if (
         type(path) is not type(Path.cwd())
         or not path.is_absolute() or ".." in path.parts
-        or not path.name or len(str(path)) > 4096
+        or not path.name or len(str(path)) > 4096 or "\x00" in str(path)
     ):
         raise DisconnectedProposalStoreRejected("exact absolute local file path required")
+    # SQLite can access a -journal sibling after opening the main database.
+    # Limit native filesystem bytes, not just Unicode codepoints, before lstat.
+    try:
+        encoded_size = len(os.fsencode(path))
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise DisconnectedProposalStoreRejected(
+            "proposal SQLite path encoding invalid"
+        ) from exc
+    if encoded_size + len(b"-journal") > 4096:
+        raise DisconnectedProposalStoreRejected("proposal SQLite path byte budget exceeded")
     try:
         for ancestor in path.parents:
             mode = ancestor.lstat().st_mode
@@ -277,6 +287,33 @@ def _scan(conn: sqlite3.Connection) -> tuple[
 ]:
     _protocol()
     _schema(conn)
+    # Bound both row count and each stored identity BEFORE Python sees a row.
+    # This is one SQLite transaction snapshot; it does not authenticate writers.
+    persisted_count = conn.execute(
+        "SELECT COUNT(*) FROM synthetic_proposal_events"
+    ).fetchone()[0]
+    if type(persisted_count) is not int or not 0 <= persisted_count <= _MAX_ROWS:
+        raise DisconnectedProposalStoreRejected("proposal persisted row budget exceeded")
+    malformed = conn.execute(
+        "SELECT 1 FROM synthetic_proposal_events WHERE "
+        "typeof(seq)!='integer' OR typeof(revision)!='integer' OR "
+        "typeof(proposal_id)!='text' OR "
+        "length(CAST(proposal_id AS BLOB))!=73 OR "
+        "typeof(prior_state)!='text' OR "
+        "length(CAST(prior_state AS BLOB)) NOT BETWEEN 1 AND 32 OR "
+        "typeof(new_state)!='text' OR "
+        "length(CAST(new_state AS BLOB)) NOT BETWEEN 1 AND 32 OR "
+        "typeof(previous_digest)!='text' OR "
+        "length(CAST(previous_digest AS BLOB))!=64 OR "
+        "typeof(event_digest)!='text' OR "
+        "length(CAST(event_digest AS BLOB))!=64 OR "
+        "typeof(global_digest)!='text' OR "
+        "length(CAST(global_digest AS BLOB))!=64 LIMIT 1"
+    ).fetchone()
+    if malformed is not None:
+        raise DisconnectedProposalStoreRejected(
+            "proposal persisted event hydration admission failed"
+        )
     witness = genesis_disconnected_proposal_witness()
     prefixes = [witness]
     histories: dict[str, tuple[lifecycle.DetachedProposalTransition, ...]] = {}
