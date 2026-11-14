@@ -1,4 +1,4 @@
-"""Real ARK v1 Memory and ActionAudit disposable WAL close/restart regressions.
+"""Actual ARK Memory, ActionAudit and synthetic veto WAL-close regressions.
 
 All stores live under fresh TemporaryDirectory paths. This does not prove
 the original intermittent Windows race or allow a failed write to be retried.
@@ -26,7 +26,7 @@ def test_disposable_probe_iteration_budget(invalid: str) -> None:
         _DIAG["bounded_count"](invalid)
 
 
-@pytest.mark.parametrize("kind", ("memory", "audit"))
+@pytest.mark.parametrize("kind", ("memory", "audit", "revocation"))
 @pytest.mark.parametrize("keeper", (False, True))
 def test_real_ark_schema_recovers_after_final_sqlite_close(
     kind: str, keeper: bool,
@@ -55,10 +55,11 @@ def test_disposable_probe_rejects_unknown_store_before_looking_at_paths() -> Non
         _DIAG["probe_ark_store"](kind="unknown", keeper=False)
 
 
-def test_cli_reports_no_disposable_paths_or_authority(capsys) -> None:
+@pytest.mark.parametrize("kind", ("memory", "revocation"))
+def test_cli_reports_no_disposable_paths_or_authority(capsys, kind: str) -> None:
     if os.name != "posix":
         pytest.skip("POSIX-only WAL last-close probe")
-    code = _DIAG["main"](["--kind", "memory", "--iterations", "1"])
+    code = _DIAG["main"](["--kind", kind, "--iterations", "1"])
     payload = capsys.readouterr().out
     assert code == 0
     receipt = json.loads(payload)
