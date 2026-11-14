@@ -317,11 +317,17 @@ def _verify_schema(connection: sqlite3.Connection) -> None:
 
 def _require_stored_marker_admission(connection: sqlite3.Connection) -> None:
     """Reject oversized or non-TEXT revision before retrieving marker rows."""
-    bad = connection.execute(
-        "SELECT 1 FROM marker WHERE typeof(revision)!='text' "
-        "OR length(CAST(revision AS BLOB))!=? LIMIT 1",
-        (len(_SCHEMA),),
-    ).fetchone()
+    try:
+        bad = connection.execute(
+            "SELECT 1 FROM marker WHERE typeof(revision)!='text' "
+            "OR length(CAST(revision AS BLOB))!=? LIMIT 1",
+            (len(_SCHEMA),),
+        ).fetchone()
+    except (AttributeError, TypeError) as exc:
+        # A pre-open diagnostic cursor may be incomplete (including a
+        # disconnected test double). Reject and allow open() to close the
+        # handle; never fall through to reading an unverified marker.
+        raise ReadJournalRejected("unreadable journal schema") from exc
     if bad is not None:
         raise ReadJournalRejected("synthetic READ marker hydration admission failed")
 
