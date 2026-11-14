@@ -302,11 +302,20 @@ def _check_path(value: object, *, create: bool) -> Path:
                 sidecar_info = sidecar.lstat()
             except FileNotFoundError:
                 continue
+            # An orphan/first-creation sidecar is never acceptable, even if
+            # another process is unlinking it. Only an *existing main DB* and
+            # an already-unlinked regular inode may trigger ONE re-lstat.
             if (
                 create or not main_exists
                 or not stat.S_ISREG(sidecar_info.st_mode)
-                or sidecar_info.st_nlink != 1
             ):
+                raise WriteSlotLedgerRejected("unsafe or orphaned SQLite sidecar")
+            if sidecar_info.st_nlink == 0:
+                try:
+                    sidecar_info = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
+            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
                 raise WriteSlotLedgerRejected("unsafe or orphaned SQLite sidecar")
     except OSError as exc:
         raise WriteSlotLedgerRejected("SQLite fixture path unavailable") from exc
