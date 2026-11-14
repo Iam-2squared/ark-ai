@@ -287,12 +287,27 @@ def _schema(conn: sqlite3.Connection) -> None:
     _require_original_due_digest()
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise DueReservationRejected("due ledger schema version changed")
+    # Inspect catalog size in SQLite before hydrating untrusted schema SQL.
+    # The frozen DDL contains one table and its generated UNIQUE index.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 2
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+    ):
+        raise DueReservationRejected("due ledger schema catalog preflight failed")
     with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(query)) != tuple(expected.execute(query)):
             raise DueReservationRejected("due ledger schema drift")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # Accept exactly one clean diagnostic; never hydrate an unbounded error
+    # stream from a damaged local fixture.
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise DueReservationRejected("due ledger storage integrity failure")
 
 
