@@ -102,7 +102,9 @@ def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
 def _validate_v1_schema(conn: sqlite3.Connection) -> None:
     """Startup-only v1 audit DDL and quick_check gate; never auto-repair."""
     try:
-        quick = conn.execute("PRAGMA quick_check").fetchall()
+        # Only one clean result is valid. Never hydrate every untrusted
+        # corruption diagnostic before rejecting a malformed audit database.
+        quick = conn.execute("PRAGMA quick_check").fetchmany(2)
         if len(quick) != 1 or tuple(quick[0]) != ("ok",):
             raise ActionAuditSchemaError("action audit SQLite quick_check failed")
         with sqlite3.connect(":memory:") as expected:
