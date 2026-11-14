@@ -1,3 +1,41 @@
+# LATEST — ARK AI Run872 non-UI SQLite bootstrap admission and schema-probe bounds
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T21:58:56.777+09:00** (actual reporting observation; **NOT** authenticated audit time, user consent, trusted execution clock or physical-PC evidence). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, disconnected, reversible; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged on prewrite review. PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) and UI PR [#9](https://github.com/Iam-2squared/ark-ai/pull/9) separately verified Draft/unmerged and untouched. **Initial work-basis HEAD:** `a3d687ad888138dc63d4da3d0fc9321a278188f0` (prior Run871 checkpoint). **Latest full source+tests HEAD / checkpoint-write-basis HEAD:** `3c250425b01640c601d06dc4df9375bc491cae6f`, independently re-read immediately before this normal Contents API checkpoint update. **Previous checkpoint blob:** `0df968ed4f3906817c233e17e32aa7e454293e93`. **Checkpoint-result HEAD is UNKNOWN before writing**; verify from API return and separately reread branch/PR/blob; this heading does not pretend to know its own commit SHA.
+
+## NEW — 3 independent non-UI safety packages; 9 new synthetic cases
+
+1. **Memory witness ledger bootstrap:** `dbc27c2d8ffcf48d8cc3ae1cd4fe7cf1350af032` replaces the unbounded Python `tuple(SELECT name FROM sqlite_master)` with `SELECT 1 FROM sqlite_master LIMIT 1` during the existing `BEGIN IMMEDIATE`. `35cb78111d9e53755e5a4a32c1b8c3296e796091` adds **3 authored fixture cases**: exact bounded catalog probe, post-path-preflight TABLE and VIEW injection denial; no foreign database adoption. `f1800295b96e9318fd292665e03017eba48e5569` repairs a 101-character Ruff E501 line by parentheses/line wraps only, without changing rejection semantics.
+2. **Detached read-only schema seal:** `b62e9ab02fef9e980a379b2d73c59c6cc9e96acd` bounds `PRAGMA database_list` hydration to `fetchmany(2)`. Exactly one main DB remains required. `c774d3ae2cacbad879e9d02e2d5becd707d36e01` adds **3 cases** (1, 2, 3 attached DBs), proving fail-closed capture/review and caller-controlled detach/revalidation; no schema digest authority elevated.
+3. **Disconnected proactive due reservations:** `8491a6deffe4cb371cf44c28022841aee4b66415` bounds the unversioned database bootstrap catalog probe to SQLite-side `SELECT 1 ... LIMIT 1`. `3c250425b01640c601d06dc4df9375bc491cae6f` adds **3 cases**: planted TABLE/VIEW rejected without rollback repair, clean empty existing SQLite file bootstraps. No trusted-clock or notification authority.
+4. **Separate read-only core audit and evidence:** `registry.py`, `policy.py`, WRITE Slot Ledger and Atomic Preaction checked for their explicit offline, non-authoritative bounds. Registry identity and local one-shot tokens do not establish restart-safe user consent, independent provenance or real exactly-once effects. [Run872 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/519a00a6613e539a2a6589457117af86823a5f4f/docs/JARVIS_RUN872_NON_UI_BOUNDED_BOOTSTRAP_SCHEMA_PROBE.md) documents packages 1–2 and gating review; this newer checkpoint additionally records package 3. All four packages are non-UI and use only disconnected fixtures.
+
+**Validation scope:** nine authored regression test cases; affected source/new test files reread and lines limited to <=100 characters on package 1/2; local isolated SQLite existence and attach/detach smoke. No complete local pytest/Ruff, physical Windows, offline real GGUF, independently authenticated witness, actual action permission or external effects. GitHub CI is the cross-platform gate.
+
+## CI — strictly exact-HEAD observations
+
+- Previous checkpoint `a3d687ad888138dc63d4da3d0fc9321a278188f0`: [#43594513344](https://github.com/Iam-2squared/ark-ai/actions/runs/43594513344) **GREEN 6/6** Ubuntu/Windows Python 3.11–3.13 confirmed from job results. This does NOT cover today's code.
+- Intermediate `c774d3ae2cacbad879e9d02e2d5becd707d36e01`: [#43596366738](https://github.com/Iam-2squared/ark-ai/actions/runs/43596366738) **FAIL 6/6** Ruff E501 at Memory witness bootstrap line, corrected in `f1800295...`.
+- Corrected intermediate source+test HEAD `f1800295b96e9318fd292665e03017eba48e5569`: [#43596487033](https://github.com/Iam-2squared/ark-ai/actions/runs/43596487033) Ubuntu 3.11/3.12 **GREEN 2/6**, Ubuntu 3.13 **FAIL 1/6** on the previously existing cross-process privacy-revocation test (`test_privacy_revocation_cross_process_run425.py` iteration 1), remaining Windows 3/6 **IN PROGRESS** at last precise observation. One process persisted REVOKED while the loser raised an unexpected rejection; captured CI traceback truncates its exact text. This is a genuine unresolved reproducibility/sidecar-race investigation, **NOT** fixed, ignored, relabeled or attributed to new code without evidence.
+- Latest complete source+test HEAD `3c250425b01640c601d06dc4df9375bc491cae6f`: [#43596922091](https://github.com/Iam-2squared/ark-ai/actions/runs/43596922091) **GREEN 2/6** (Ubuntu 3.11/3.12); **IN PROGRESS 4/6** (Ubuntu 3.13 and Windows 3.11/3.12/3.13); no final six-job conclusion claimed. A separately pushed checkpoint automatically triggers its own CI; no manual duplicate workflow runs.
+
+## Frozen contracts, limitations and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher code/contracts/evaluation evidence unchanged. PR #5/#8/#9 remain open Draft/unmerged; protected V2 final evaluation closed. PR #9 new UI and its frontend unchanged; UI work remains paused. No external GPU/paid services or APIs, Candidate adapter/weight generation/training, Candidate promotion, real tool execution, credentials, physical-PC action, destructive change, unauthorized reviewer decision or main merge. Synthetic hash/CAS/SQLite signatures never imply trusted consent or external effect exactly-once.
+
+**Still NOT_PASSED:** Memory/ActionAudit last-WAL/SHM-client-close and pathname-to-open races, independent witness custody and COMMIT-UNKNOWN/cross-store atomicity, Planner durable UNKNOWN/manual-only resolution, trusted-clock registry+PermissionGate one-shot authorization, audit-before-action and external exactly-once. Cross-process privacy-veto error requires exact reproduction without weakening fail-closed admission.
+
+## Next plan / 今後の方針
+
+1. **Resolve exact latest source and checkpoint HEAD CI** for all six Ubuntu/Windows/Python jobs; investigate and minimally fix actual test failures using only normal safe GitHub Contents writes. Never infer current PASS from prior SHA.
+2. **Isolate cross-process privacy revocation loser rejection** (CI #43596487033) with no private data, retaining all alias/sidecar and no-retry gates. Continue disposable Memory/ActionAudit WAL/SHM final-close and COMMIT-UNKNOWN research.
+3. Strengthen **Planner UNKNOWN/manual recovery and Memory coherent CAS/expiry snapshots**, without promoting uncertain external work.
+4. Work independent **Personal Context retention/revocation, proactive and observation back-end contracts** using only local synthetic fixtures.
+5. Connect **immutable ToolRegistry, exact-type PermissionGate, durable occurrence/audit-before-action and disconnected mock executor** only after lower-level exact-HEAD GREEN, keeping real effects and Candidate gates closed.
+
+---
+
 # LATEST — ARK AI Run871 non-UI CI repair and bounded WRITE slot bootstrap
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T21:22:28.302+09:00** (observed pre-write reporting wall clock, **NOT** trusted audit time, issuer identity, user consent, physical-PC evidence or authenticated execution). **Overall ARK/JARVIS: NOT_PASSED**; free-only, disconnected/reversible; **ALL NEW UI/FRONTEND DEVELOPMENT REMAINS PAUSED**.
