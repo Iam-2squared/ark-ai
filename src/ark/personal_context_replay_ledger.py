@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -27,6 +28,10 @@ _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _REQUEST = re.compile(r"ctxreq_[0-9a-f]{64}\Z")
 _DOMAIN = b"ARK-disconnected-context-request-replay-ledger-v1\0"
 _MAX_ROWS = 512
+_MAX_DB_PATH_BYTES = 4096
+_ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
 _DDL = (
     "CREATE TABLE context_requests ("
     "seq INTEGER PRIMARY KEY, request_id TEXT NOT NULL UNIQUE, "
@@ -250,13 +255,28 @@ def _check_binding(binding: object) -> tuple[str, str, str, str]:
 
 
 def _check_path(path: object, *, create: bool) -> Path:
+    # Reject unsafe native pathname/longest SQLite journal sibling before
+    # lstat, a caller callback, or any private context ledger connection.
+    if (
+        os is not _ORIGINAL_OS
+        or os.fsencode is not _ORIGINAL_FSENCODE
+        or type(_MAX_DB_PATH_BYTES) is not int
+        or _MAX_DB_PATH_BYTES != _ORIGINAL_MAX_DB_PATH_BYTES
+    ):
+        raise OfflineContextReplayRejected("context ledger path admission changed")
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
         or ".." in path.parts
-        or len(str(path)) > 4096
+        or "\x00" in str(path)
+        or path.name in ("", ".", "..")
     ):
         raise OfflineContextReplayRejected("exact absolute local context ledger path required")
+    try:
+        if len(os.fsencode(path)) + len(b"-journal") > _MAX_DB_PATH_BYTES:
+            raise OfflineContextReplayRejected("context ledger path byte budget exceeded")
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise OfflineContextReplayRejected("context ledger path encoding unavailable") from exc
     try:
         for ancestor in path.parents:
             info = ancestor.lstat()
@@ -298,6 +318,15 @@ def _check_path(path: object, *, create: bool) -> Path:
 def _schema(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise OfflineContextReplayRejected("unknown context ledger schema version")
+    # Limit private DDL hydration inside the caller's current read/write TX.
+    # This is a size/type preflight, not an authenticated source seal.
+    schema_count, ddl_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (type(schema_count) is not int or type(ddl_bytes) is not int
+            or not 0 <= schema_count <= 8 or not 0 <= ddl_bytes <= 8192):
+        raise OfflineContextReplayRejected("context ledger schema drift: SQL preflight budget")
     with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         sql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
