@@ -1,3 +1,45 @@
+# LATEST — ARK AI Run863 non-UI bounded SQLite diagnostics and abrupt Planner recovery
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T13:48:52.236+09:00** (observed reporting wall clock immediately before the GitHub Contents API checkpoint preparation; NOT trusted issuer, audit, consent, approval, action, or model evidence time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, disconnected, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), verified open/Draft/unmerged. **Initial work-basis HEAD:** `d673d09b09e8d586ce4a3b63f7e83cf5b24a4320` (Run862 checkpoint). **Latest executable source+test HEAD:** `3f920f9bbccd963382f91c1cce9c677f2adf60fd`. **Detailed technical report HEAD / checkpoint-write-basis HEAD:** `b9024e319b325f82d716965ccbf2b2498257f713`; re-read immediately before this checkpoint write. **Previous PROJECT_STATUS blob SHA:** `56ccb2587b784d8235212d869eb24a684bc151b2`. **Checkpoint-result HEAD UNKNOWN BEFORE WRITE**; returned commit and current PR/branch HEAD must be separately verified post-write, never guessed or self-referenced.
+
+## NEW — four independent non-UI work packages and 15 authored regression cases
+
+1. **Memory SQLite bounded quick-check** `1013df5b2dab57aad9698ac4cee0a080ed72dc3a`: hydrate at most two SQLite integrity diagnostics before exact frozen v1 schema verification; no change to DDL, events, source identity or audit authority.
+2. **ActionAudit SQLite bounded quick-check** `d4587af316635b1f0a0b2763afa1392da35bc6b7`: same bounded result admission and strict rejection for extra/invalid results; frozen audit v1 schema unchanged.
+3. **Synthetic Memory/ActionAudit review and Planner cold restart**: `4c96ce969247f803077a74ff8347df777a795206` added **8** synthetic quick-check cases (explicit `fetchmany(2)`, forbids unbounded `fetchall`, preserves stored schema); `6427ca5c2758d10a34b49ab48997bd22472c392d` added **4** independent spawned-interpreter `os._exit(0)` Planner recovery cases across RUNNING, SUCCEEDED, FAILED, CANCELLED. RUNNING stays manual-only UNKNOWN; no dependent replay or real ToolBackend call. Strict Ruff line-width fixes `f9ba6103cd848bc122f38d3362969fdc2048bb68` and `e32a6c79479933fa987622104cdb7fbe342c1669` retain semantics.
+4. **Personal Context SQLite bounded quick-check** `9e9381544bb96a8e0944f6f397d50d00d91336b0`; `3f920f9bbccd963382f91c1cce9c677f2adf60fd` added **3** isolated synthetic integrity checks. No stored private content exported or consent/revocation granted; the existing schema and early data hydration bounds remain intact.
+
+**15 test cases AUTHORED, not yet 6/6-PASS verified**. Local syntax compilation for authored tests passed; on-GitHub file line-width checks found no line beyond 88 chars. Full local pytest/Ruff, physical Windows and GGUF gates NOT RUN. [Run863 detailed technical report](https://github.com/Iam-2squared/ark-ai/blob/b9024e319b325f82d716965ccbf2b2498257f713/docs/JARVIS_RUN863_NON_UI_BOUNDED_SQLITE_DIAGNOSTICS_AND_ABRUPT_PLANNER_RECOVERY.md).
+
+## CI — exact-head evidence (no retroactive PASS)
+
+- Prior Run862 checkpoint `d673d09b09e8d586ce4a3b63f7e83cf5b24a4320`: [CI #43553826606](https://github.com/Iam-2squared/ark-ai/actions/runs/43553826606) **GREEN 6/6** Windows/Ubuntu × Python 3.11–3.13. This is prior-head evidence only.
+- Run863 Memory source `1013df5b`: [#43558011078](https://github.com/Iam-2squared/ark-ai/actions/runs/43558011078) **IN PROGRESS** at last checked snapshot.
+- Audit source `d4587af3`: [#43558031068](https://github.com/Iam-2squared/ark-ai/actions/runs/43558031068) **IN PROGRESS**.
+- Shared regression source `4c96ce96`: [#43558106657](https://github.com/Iam-2squared/ark-ai/actions/runs/43558106657) **IN PROGRESS**.
+- Abrupt Planner test `6427ca5c`: [#43558189519](https://github.com/Iam-2squared/ark-ai/actions/runs/43558189519) **IN PROGRESS**.
+- Planner formatting `e32a6c79`: [#43558244340](https://github.com/Iam-2squared/ark-ai/actions/runs/43558244340) **QUEUED**.
+- Personal Context source `9e938154`: [#43558312754](https://github.com/Iam-2squared/ark-ai/actions/runs/43558312754) **QUEUED**.
+- Latest executable head `3f920f9b`: [#43558354078](https://github.com/Iam-2squared/ark-ai/actions/runs/43558354078) **QUEUED**. Report/checkpoint commits may also trigger automatic CI. **No latest checkpoint 6/6 GREEN claim; no manual duplicate workflows launched.**
+
+## Frozen evidence and authority boundaries
+
+V1/V2/Local UI/Launcher frozen evidence and contracts unchanged. PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) and [#9](https://github.com/Iam-2squared/ark-ai/pull/9) untouched, Draft/unmerged; PR #8 Draft/unmerged. No frontend/UI work, paid API/service/GPU, real Candidate/adapter/weights, promotion, protected final evaluation, credentials, external account, irreversible operation, real tool dispatch, trusted consent/clock/issuer, or main merge.
+
+**NOT_PASSED:** Memory/ActionAudit WAL/SHM last-close and pathname-to-open races; authenticated independent COMMIT-UNKNOWN attribution; Planner recovered RUNNING manual-only; multi-store atomicity, trusted-clock audit-before-action, single-use durable permission, and exactly-once external action effects. A SQLite clean diagnostic cannot establish these authorities.
+
+## Next plan / 今後の方針
+
+1. Check exact final PR/branch/checkpoint SHA and CI 6-job matrix; inspect failures and make minimal fail-closed corrections, switch independent lanes while CI runs.
+2. Bound remaining `PRAGMA quick_check` result hydration in Planner, WRITE Slot Ledger and atomic preaction after relevant CI and focused fixture tests. Do not touch frozen contracts.
+3. Probe disposable Memory/ActionAudit WAL/SHM last-close and name/descriptor races, with no automatic retry or sidecar relaxation.
+4. Strengthen Memory COMMIT-UNKNOWN witnesses, Planner persistent UNKNOWN/terminal propagation, Personal Context privacy/expiry/revocation, scheduler and observation offline fixtures.
+5. Integrate immutable ToolRegistry, exact PermissionGate, occurrence/audit-before-action and disconnected Mock Executor **only** after corresponding lower-level exact-head GREEN evidence, never promoting local evidence into real authorization.
+
+---
+
 # LATEST — ARK AI Run862 non-UI SQLite catalog admission and process terminal CAS
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T12:52:16.515+09:00** (reporting wall clock observed before normal GitHub Contents API write; NOT trusted approval, issuer, audit, action, consent or evidence time). **Overall ARK/JARVIS: NOT_PASSED.** Local-first, free-only, disconnected and reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
