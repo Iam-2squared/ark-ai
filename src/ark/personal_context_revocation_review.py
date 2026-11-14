@@ -154,10 +154,21 @@ def _check_local_revocation_path(path: Path) -> None:
                 details = sidecar.lstat()
             except FileNotFoundError:
                 continue
-            if (
-                not main_exists or not stat.S_ISREG(details.st_mode)
-                or details.st_nlink != 1
-            ):
+            if not main_exists or not stat.S_ISREG(details.st_mode):
+                raise SyntheticContextRevocationRejected(
+                    "unsafe revocation SQLite sidecar"
+                )
+            if details.st_nlink == 0:
+                # An independent SQLite writer may unlink its rollback
+                # journal between pathname lookup and this lstat result.
+                # Only an ALREADY-unlinked regular inode gets one fresh
+                # pathname observation. Never retry symlinks, hardlinks,
+                # orphan sidecars, directories or other special files.
+                try:
+                    details = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
+            if not stat.S_ISREG(details.st_mode) or details.st_nlink != 1:
                 raise SyntheticContextRevocationRejected(
                     "unsafe revocation SQLite sidecar"
                 )
