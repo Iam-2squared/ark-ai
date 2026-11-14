@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run865 non-UI bounded SQLite catalog/receipt/sequence/due ingress
+
+**Saved at (Asia/Tokyo/JST): 2026-11-14T15:55:28.420+09:00** (observed reporting wall clock immediately before normal GitHub Contents API checkpoint write; NOT trusted issuer, approval, consent, action, audit or model evidence time). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, local-first, disconnected, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged (verified immediately before update); PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) and [#9](https://github.com/Iam-2squared/ark-ai/pull/9) remain Draft/open/unmerged and untouched. **Initial work-basis HEAD:** `f1ea98c74b19e5993f261d40659ee6a0584434dd` (Run864 checkpoint). **Latest complete executable source+test HEAD before report/repair:** `6940f6b5f12735937b3a57b5ae4ab07e51eae2d6`. **Technical report commit:** `0e32a88bfdd3de5c08e8ff9bd57be6dff4321548`. **Latest repair HEAD / checkpoint-write-basis HEAD:** `02a7cfd9ca95a334360b463dcff3ec4b9163119a` (re-read GitHub branch ref immediately before this write). **Previous PROJECT_STATUS blob SHA:** `1005fe45837a28758ef9110174d62f31ddf85e85`. **Checkpoint-result HEAD UNKNOWN BEFORE WRITE**, must be confirmed from GitHub's returned commit and independent PR/branch ref reread afterward; not self-referential.
+
+## NEW — four compatible, non-UI work packages; 28 authored synthetic regressions
+
+1. **Disconnected proposal SQLite schema admission**: source `004dcb78efd63abeae3425507b9aaca6ba79e190`, tests `d81c720405145402b9617c2e7fd90ef1212758e8` (**6** parametrized/synthetic cases). Require exact two-object (table + UNIQUE index), max 4096 SQL DDL bytes within SQLite before Python catalog hydration; two-row maximum quick-check diagnostics, exactly one clean row. Oversized-DDL fixture repaired `186ea6086d812fbf406e239b48944ba10d20d787` after local SQLite probe; existing test diagnostic semantics retained by `802925c36527eeabca2c089c6117dd6c2c7b9a54` (schema changed). No human approval or Candidate authority introduced.
+2. **Detached READ journal**: source `eaec9dcbc2fffc1150870f35efed184c96e36a3e`, tests `7f2703721ac00983c230ee1193024d2d72086586` (**8** cases). Exact three-object/4096-byte DDL preflight, two-row bounded quick-check, marker read max 2, receipt read max 129 with fail-closed 128-row capacity. Oversized synthetic DDL corrected `7bc51e884a87de12d252d38aae84fde2ac6cdf3f`; legacy schema-changed diagnostic restored `960182feafea4adfa8a02cd6dadf67373d80ce49`; fake cleanup-test cursor updated for bounded `fetchmany(2)` `2ed54634355b4377816fa2c2b4b631a6c7092b21`. No READ tool dispatch or replay authorization.
+3. **Memory v1 / ActionAudit v1 AUTOINCREMENT custody**: Memory `75e58bc7fd6ec2ef43df74758b0aea9c79673138`, audit `5e1d6c9e03b60c52f75d50305ac1d279b3d7d339`, shared synthetic tests `5be0c252321cbad92be684e2fd2aa7ef50565df3` (**8** cases). Read at most 2 `sqlite_sequence` high-water marker rows; still reject empty-history forged markers, duplicates, missing/mismatched committed tails. Frozen V1 table definitions and historical events unchanged. Local consistency is NOT independent integrity/authentication.
+4. **Proactive due-slot fixture**: source `6836630d5ad7bab60897c7e0e33b0caca66e9f3f`, tests `6940f6b5f12735937b3a57b5ae4ab07e51eae2d6` (**6** cases). Two-object/4096-byte SQL-side catalog preflight and two-row bounded quick-check; exact original due-slot DDL, no real schedule dispatch, clock, notification or consent authority. Existing `schema drift` diagnostic retained by `02a7cfd9ca95a334360b463dcff3ec4b9163119a`.
+
+**28 regression cases AUTHORed, not yet latest-head 6/6 PASS-verified.** Isolated local Python `sqlite3` probes confirmed expected 2/3 table-index catalog counts and legal oversized DDL syntax using synthetic long columns placed before table-level UNIQUE constraints; isolated probes are NOT full pytest/Ruff, Windows, target-PC GGUF, or model evidence. [Run865 technical report](https://github.com/Iam-2squared/ark-ai/blob/0e32a88bfdd3de5c08e8ff9bd57be6dff4321548/docs/JARVIS_RUN865_NON_UI_SQLITE_HYDRATION_ADMISSION.md).
+
+## CI — exact-head evidence and identified failures
+
+- Previous Run864 checkpoint `f1ea98c74b19e5993f261d40659ee6a0584434dd`: [Actions #43563646004](https://github.com/Iam-2squared/ark-ai/actions/runs/43563646004) **GREEN 6/6** (Windows/Ubuntu × Python 3.11–3.13). This is prior-HEAD evidence only.
+- Intermediate proposal test `d81c7204`: [#43567783932](https://github.com/Iam-2squared/ark-ai/actions/runs/43567783932) observed **Ubuntu failures**: preflight exception diagnostic differed from legacy `schema changed` regex (two existing cases), and oversized synthetic DDL placed a column after table-level UNIQUE (one new case). Both causes repaired at later distinct HEADs.
+- Intermediate READ test `7f270372`: [#43567912586](https://github.com/Iam-2squared/ark-ai/actions/runs/43567912586) observed **Ubuntu failures**: inherited proposal failures plus READ schema diagnostic mismatch, READ oversized DDL syntax, and a synthetic cleanup FakeConnection providing only `fetchall` where production now correctly uses `fetchmany`. Corrected in separate focused commits above. Prior failing runs are historical and not claimed GREEN.
+- New source+test head `6940f6b5`: [#43568311407](https://github.com/Iam-2squared/ark-ai/actions/runs/43568311407) **QUEUED** at this snapshot; newer repairs change its exact HEAD.
+- Latest repair source HEAD `02a7cfd9ca95a334360b463dcff3ec4b9163119a`: [Actions #43568555157](https://github.com/Iam-2squared/ark-ai/actions/runs/43568555157) **QUEUED** at this snapshot. The pending checkpoint commit will also generate its own exact-head CI. **No latest checkpoint-head GREEN claim**; no manually duplicated workflow runs.
+
+## Frozen contracts, boundaries, blockers
+
+V1/V2/Local UI/Launcher frozen contracts/evidence unchanged, no PR #5 or #9 edits, no UI/frontend tests/source, no paid service/API/GPU, real Candidate adapter/weights/training/promotion, protected evaluation opening, new secrets/accounts, destructive/irreversible operation, physical Windows action, live tool execution or main merge.
+
+**Still NOT_PASSED:** Memory/ActionAudit WAL/SHM last-client-close and pathname-to-open races; authenticated independent COMMIT-UNKNOWN attribution; Planner recovered UNKNOWN/manual-only replay fence; cross-store atomicity; trusted-clock/issuer/consent; durable exactly-once permission; audit-before-action external coupling; and external exactly-once effects. No local SQLite validation grants an external action.
+
+## Next plan / 今後の方針
+
+1. **Repair/verify latest exact-head CI** across six jobs after the diagnostic/fixture corrections; inspect any additional FAIL and make minimal semantics-preserving fixes, switch other independent lanes while CI runs.
+2. Strengthen disposable Memory/ActionAudit WAL/SHM final-close and path-to-open probes; preserve independent COMMIT-UNKNOWN uncertainty and never replay ambiguous effects automatically.
+3. Expand Planner durable UNKNOWN isolation/terminal propagation; Memory coherent read snapshot/CAS/expiry event lineage.
+4. Continue Personal Context retention/revocation and proactive/observation offline fixture data minimization, keeping no real private content exported.
+5. Integrate immutable ToolRegistry, exact PermissionGate, durable occurrence, trusted-clock audit-before-action, startup readiness and disconnected Mock Executor **only after exact lower-level GREEN evidence**; never authorize real external effects.
+
+---
+
 # LATEST — ARK AI Run864 non-UI bounded preaction/WRITE slot/Planner SQLite admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T14:52:55.472+09:00** (observed reporting wall clock before normal GitHub Contents API write, NOT a trusted issuer, action, audit, approval or consent timestamp). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, local-first, disconnected, reversible; **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED**.
