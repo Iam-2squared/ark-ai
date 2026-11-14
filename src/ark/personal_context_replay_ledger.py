@@ -352,11 +352,16 @@ def _inspect(conn: sqlite3.Connection) -> OfflineContextReplayWitness:
         raise OfflineContextReplayRejected("context replay persisted row budget exceeded")
     malformed = conn.execute(
         "SELECT 1 FROM context_requests WHERE "
-        "typeof(request_id)!='text' OR length(request_id)!=71 OR "
-        "typeof(owner_digest)!='text' OR length(owner_digest)!=64 OR "
-        "typeof(context_digest)!='text' OR length(context_digest)!=64 OR "
-        "typeof(binding_digest)!='text' OR length(binding_digest)!=64 OR "
-        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 LIMIT 1"
+        "typeof(request_id)!='text' "
+        "OR length(CAST(request_id AS BLOB))!=71 OR "
+        "typeof(owner_digest)!='text' "
+        "OR length(CAST(owner_digest AS BLOB))!=64 OR "
+        "typeof(context_digest)!='text' "
+        "OR length(CAST(context_digest AS BLOB))!=64 OR "
+        "typeof(binding_digest)!='text' "
+        "OR length(CAST(binding_digest AS BLOB))!=64 OR "
+        "typeof(chain_sha256)!='text' "
+        "OR length(CAST(chain_sha256 AS BLOB))!=64 LIMIT 1"
     ).fetchone()
     if malformed is not None:
         raise OfflineContextReplayRejected(
