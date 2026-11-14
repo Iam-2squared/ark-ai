@@ -69,3 +69,46 @@ def test_cli_reports_no_disposable_paths_or_authority(capsys, kind: str) -> None
     assert receipt["private_paths_exported"] is False
     assert "fixture.sqlite" not in payload
     assert "ark-disposable-wal-" not in payload
+
+
+@pytest.mark.parametrize("invalid", (None, True, 1, 1.0, b"1"))
+def test_disposable_iteration_parser_requires_exact_text(invalid: object) -> None:
+    with pytest.raises(argparse.ArgumentTypeError, match="1..4"):
+        _DIAG["bounded_count"](invalid)
+
+
+@pytest.mark.parametrize("invalid", (None, False, 1, b"memory", ["memory"]))
+def test_disposable_probe_nonexact_store_fails_before_temporary_paths(
+    monkeypatch, invalid: object,
+) -> None:
+    def forbidden_temp_directory(*_args, **_kwargs):
+        raise AssertionError("nonexact store opened a disposable source")
+
+    monkeypatch.setattr(
+        _DIAG["tempfile"], "TemporaryDirectory", forbidden_temp_directory,
+    )
+    with pytest.raises(ValueError, match="unknown disposable store kind"):
+        _DIAG["probe_ark_store"](kind=invalid, keeper=False)
+
+
+@pytest.mark.parametrize("invalid", (None, 0, 1, "false", []))
+def test_disposable_probe_nonexact_keeper_fails_before_temporary_paths(
+    monkeypatch, invalid: object,
+) -> None:
+    def forbidden_temp_directory(*_args, **_kwargs):
+        raise AssertionError("nonexact keeper opened a disposable source")
+
+    monkeypatch.setattr(
+        _DIAG["tempfile"], "TemporaryDirectory", forbidden_temp_directory,
+    )
+    with pytest.raises(ValueError, match="keeper must be an exact boolean"):
+        _DIAG["probe_ark_store"](kind="memory", keeper=invalid)
+
+
+def test_disposable_probe_refuses_custom_kind_hash_hook() -> None:
+    class DeceptiveKind:
+        def __hash__(self) -> int:
+            raise AssertionError("caller hash hook must not execute")
+
+    with pytest.raises(ValueError, match="unknown disposable store kind"):
+        _DIAG["probe_ark_store"](kind=DeceptiveKind(), keeper=False)
