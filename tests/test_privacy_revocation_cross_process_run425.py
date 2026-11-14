@@ -87,6 +87,40 @@ def test_disconnected_revocation_has_one_persistent_winner_across_processes(
             if process.poll() is None:
                 process.kill()
                 process.communicate()
+    # Keep the exact strict loser contract. If a separate process fails,
+    # expose only a short denial category and a coherent count/time snapshot
+    # so CI output does not elide the actual WAL/SHM race behind pytest repr.
+    # A durable veto after a failed response is UNKNOWN, never retry consent.
+    if any(process.returncode != 0 for process in processes):
+        for index, (_stdout, stderr) in enumerate(replies):
+            detail = next(
+                (
+                    line.partition("LOSER_REJECTION_DETAIL:")[2]
+                    for line in stderr.splitlines()
+                    if "LOSER_REJECTION_DETAIL:" in line
+                ),
+                "<no classified rejection>",
+            )
+            print(
+                f"REVOCATION_RACE[{index}] exit={processes[index].returncode} "
+                f"reason={detail[:180]}",
+                file=sys.stderr, flush=True,
+            )
+        try:
+            with sqlite3.connect(path) as conn:
+                summary = conn.execute(
+                    "SELECT COUNT(*),MIN(revoked_at_ms),MAX(revoked_at_ms) "
+                    "FROM synthetic_context_revocations"
+                ).fetchone()
+            print(
+                f"REVOCATION_RACE durable_count_time={summary!r}",
+                file=sys.stderr, flush=True,
+            )
+        except sqlite3.Error as error:
+            print(
+                f"REVOCATION_RACE snapshot_unavailable={type(error).__name__}",
+                file=sys.stderr, flush=True,
+            )
     assert all(process.returncode == 0 for process in processes), replies
     outputs = [stdout.strip() for stdout, _stderr in replies]
     assert outputs.count("ALREADY") == 1
