@@ -205,7 +205,7 @@ def _validate(conn: sqlite3.Connection) -> None:
         or not 0 <= budget[0] <= _MAX_FIXTURE_ROWS
         or type(budget[1]) is not int or budget[1] != 0
     ):
-        raise SyntheticReplayRejected("synthetic reservation row preflight failed")
+        raise SyntheticReplayRejected("synthetic reservation row integrity preflight failed")
 
     # SQLite's quick_check verifies storage and CHECK constraints, but it
     # cannot certify the canonical identity and time relationships in rows.
