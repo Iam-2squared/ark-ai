@@ -17,6 +17,10 @@ from .memory.contracts import MemoryRecord, MemoryScope
 from .memory.sqlite_store import deterministic_memory_id
 
 _MAX_INT = 2**63 - 1
+# Cap optional Personal Context projection, leaving frozen Memory v1 intact.
+_MAX_CONTEXT_ITEM_BYTES = 65_536
+_MAX_CONTEXT_INPUT_BYTES = 1_048_576
+_ORIGINAL_CONTEXT_BUDGETS = (_MAX_CONTEXT_ITEM_BYTES, _MAX_CONTEXT_INPUT_BYTES)
 _HEX = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -123,6 +127,14 @@ def review_personal_context(
     record_epoch = []
     pinned = []
     seen: set[str] = set()
+    scanned_content_bytes = 0
+    if (
+        type(_MAX_CONTEXT_ITEM_BYTES) is not int
+        or type(_MAX_CONTEXT_INPUT_BYTES) is not int
+        or (_MAX_CONTEXT_ITEM_BYTES, _MAX_CONTEXT_INPUT_BYTES)
+        != _ORIGINAL_CONTEXT_BUDGETS
+    ):
+        raise PersonalContextReviewRejected("context plaintext budget changed")
     for scope, candidates in zip(scopes, rows, strict=True):
         if type(candidates) is not tuple or len(candidates) > 100:
             raise PersonalContextReviewRejected("snapshot candidate container invalid")
@@ -131,6 +143,30 @@ def review_personal_context(
         for record in candidates:
             if type(record) is not MemoryRecord:
                 raise PersonalContextReviewRejected("noncanonical memory record")
+            # Frozen records can still be reflectively modified. Refuse
+            # oversized sensitive plaintext before UTF-8 allocation, hashing
+            # or inclusion in an ephemeral synthetic context bundle.
+            if (
+                type(record.content) is not str
+                or len(record.content) > _MAX_CONTEXT_ITEM_BYTES
+            ):
+                raise PersonalContextReviewRejected(
+                    "context plaintext item budget exceeded"
+                )
+            try:
+                encoded_content = record.content.encode("utf-8", errors="strict")
+            except UnicodeEncodeError as exc:
+                raise PersonalContextReviewRejected(
+                    "context plaintext is not valid UTF-8"
+                ) from exc
+            scanned_content_bytes += len(encoded_content)
+            if (
+                len(encoded_content) > _MAX_CONTEXT_ITEM_BYTES
+                or scanned_content_bytes > _MAX_CONTEXT_INPUT_BYTES
+            ):
+                raise PersonalContextReviewRejected(
+                    "context plaintext input budget exceeded"
+                )
             if (
                 type(record.scope) is not MemoryScope or record.scope != scope
                 or type(record.memory_id) is not str
@@ -147,7 +183,7 @@ def review_personal_context(
                     type(record.expires_at_ms) is not int
                     or record.expires_at_ms <= snapshot.read_at_ms
                 )
-                or hashlib.sha256(record.content.encode("utf-8")).hexdigest()
+                or hashlib.sha256(encoded_content).hexdigest()
                 != record.content_sha256
             ):
                 raise PersonalContextReviewRejected("memory record integrity/freshness changed")
