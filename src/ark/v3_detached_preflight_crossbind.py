@@ -182,7 +182,12 @@ def _device(value: object) -> str:
 
 
 def _digest(value: object) -> str:
-    if type(value) is not str or _SHA.fullmatch(value) is None:
+    # The detached cross-binding API also accepts direct synthetic carriers,
+    # not just the 4 KiB packet parser. Bound token labels before regex work.
+    if (
+        type(value) is not str or len(value) != 64
+        or _SHA.fullmatch(value) is None
+    ):
         raise DetachedV3PreflightRejected("invalid V3 tokenizer probe digest")
     return value
 
