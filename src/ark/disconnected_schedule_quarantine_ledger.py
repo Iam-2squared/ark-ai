@@ -259,10 +259,11 @@ def _path(value: object, *, create: bool) -> Path:
             or value.name in ("", ".", "..")):
         raise ScheduleQuarantineRejected("absolute exact fixture path required")
     try:
-        if len(os.fsencode(value)) + len(b"-journal") > _MAX_DB_PATH:
-            raise ScheduleQuarantineRejected("quarantine SQLite path byte budget exceeded")
+        encoded_length = len(os.fsencode(value))
     except (UnicodeError, ValueError, OSError) as exc:
         raise ScheduleQuarantineRejected("invalid quarantine SQLite path encoding") from exc
+    if encoded_length + len(b"-journal") > _MAX_DB_PATH:
+        raise ScheduleQuarantineRejected("quarantine SQLite path byte budget exceeded")
     try:
         for parent in value.parents:
             info = parent.lstat()
