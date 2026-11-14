@@ -437,11 +437,21 @@ def _require_safe_journal_path(path: Path) -> None:
                 sidecar_meta = sidecar.lstat()
             except FileNotFoundError:
                 continue
-            if (
-                not path.exists()
-                or not stat.S_ISREG(sidecar_meta.st_mode)
-                or sidecar_meta.st_nlink != 1
-            ):
+            # A sidecar observed during SQLite's final unlink can report
+            # an already-unlinked *regular* inode (nlink=0). Do not mistake
+            # it for a durable alias: only re-observe that pathname ONCE.
+            # Existing orphan, symlink, hardlink and special-file denials
+            # remain strict; this is not descriptor-held pathname custody.
+            if not path.exists():
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal sidecar unsafe or orphaned"
+                )
+            if stat.S_ISREG(sidecar_meta.st_mode) and sidecar_meta.st_nlink == 0:
+                try:
+                    sidecar_meta = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
+            if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal sidecar unsafe or orphaned"
                 )
