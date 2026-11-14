@@ -293,8 +293,11 @@ def _snapshot(
     # valid-looking first marker while a second forged marker remains.
     # Snapshot the *entire* marker set before any row is interpreted or
     # any generation-fenced WRITE is admitted.
+    # sqlite_sequence.name is not UNIQUE: a two-row probe is sufficient
+    # to detect a duplicate marker without hydrating an attacker-controlled
+    # number of forged sequence rows into Python before any row CAS check.
     sequences = conn.execute(
-        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events' LIMIT 2"
     ).fetchall()
     if (
         type(count) is not int or count < 0
