@@ -79,6 +79,20 @@ def _normalized_ddl(sql: str | None) -> str | None:
 
 
 def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    # The local audit catalog is untrusted SQLite content. Count objects and
+    # DDL bytes inside the same snapshot before hydrating their SQL text.
+    # Frozen v1 DDL is unchanged; oversized or extra DDL is never repaired.
+    object_count, ddl_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(object_count) is not int
+        or type(ddl_bytes) is not int
+        or not 0 <= object_count <= 16
+        or not 0 <= ddl_bytes <= 16_384
+    ):
+        raise ActionAuditSchemaError("action audit schema catalog preflight budget exceeded")
     rows = conn.execute(
         "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
     ).fetchall()
