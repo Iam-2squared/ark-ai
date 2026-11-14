@@ -55,6 +55,8 @@ _TABLES = {
 
 
 def bounded_count(raw: str) -> int:
+    if type(raw) is not str:
+        raise argparse.ArgumentTypeError("iterations must be 1..4")
     try:
         value = int(raw)
     except ValueError as exc:
@@ -76,8 +78,13 @@ def _category(info: os.stat_result) -> str:
 
 def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
     """Measure last SQLite client close using an actual inert ARK v1 schema."""
-    if kind not in _TABLES:
+    # Refuse caller-defined equality/hash and truth-value hooks before
+    # creating even a disposable database or subprocess. CLI parsing already
+    # supplies exact str/bool values; direct fixture users get the same fence.
+    if type(kind) is not str or kind not in _TABLES:
         raise ValueError("unknown disposable store kind")
+    if type(keeper) is not bool:
+        raise ValueError("keeper must be an exact boolean")
     if os.name != "posix" or not getattr(os, "O_NOFOLLOW", 0):
         return {"status": "UNSUPPORTED", "kind": kind, "keeper": keeper}
     with tempfile.TemporaryDirectory(prefix="ark-disposable-wal-") as root:
