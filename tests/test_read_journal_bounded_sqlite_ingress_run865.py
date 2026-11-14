@@ -110,7 +110,10 @@ def test_read_journal_oversize_ddl_rejected_at_exact_object_count() -> None:
     with sqlite3.connect(":memory:", factory=_NoDDLHydration) as conn:
         conn.execute(read._MARKER_DDL)
         long_name = "z" * 5_000
-        conn.execute(read._RECEIPT_DDL[:-1] + ', "' + long_name + '" TEXT)')
+        conn.execute(read._RECEIPT_DDL.replace(
+            "UNIQUE(request_id, step_id)",
+            '"' + long_name + '" TEXT, UNIQUE(request_id, step_id)',
+        ))
         count, sql_bytes = conn.execute(
             "SELECT COUNT(*),SUM(length(CAST(sql AS BLOB))) FROM sqlite_master"
         ).fetchone()
