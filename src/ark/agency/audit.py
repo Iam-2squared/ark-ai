@@ -107,7 +107,10 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
         quick = conn.execute("PRAGMA quick_check").fetchmany(2)
         if len(quick) != 1 or tuple(quick[0]) != ("ok",):
             raise ActionAuditSchemaError("action audit SQLite quick_check failed")
-        with sqlite3.connect(":memory:") as expected:
+        # sqlite3.Connection.__exit__ commits/rolls back but never closes.
+        # Release this throwaway schema oracle on success and all rejection
+        # paths so repeated audit writes do not retain hidden SQLite handles.
+        with closing(sqlite3.connect(":memory:")) as expected:
             expected.executescript(_AUDIT_SCHEMA_V1_SQL)
             if _schema_objects(conn) != _schema_objects(expected):
                 raise ActionAuditSchemaError(
