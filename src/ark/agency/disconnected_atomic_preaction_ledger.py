@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -44,6 +45,8 @@ _AUDITS = (
 # or opening a SQLite fixture. These checks cannot authenticate provenance.
 _ORIGINAL_SQLITE3 = sqlite3
 _ORIGINAL_CONNECT = sqlite3.connect
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -129,6 +132,8 @@ def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
     if (
         sqlite3 is not _ORIGINAL_SQLITE3
         or sqlite3.connect is not _ORIGINAL_CONNECT
+        or os is not _ORIGINAL_OS
+        or os.fsencode is not _ORIGINAL_FSENCODE
         or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
@@ -215,11 +220,23 @@ def _path(value: object, *, create: bool) -> Path:
     if (
         type(value) is not type(Path())
         or len(str(value)) > _MAX_PATH
+        or "\x00" in str(value)
+        or not value.name
         or ".." in value.parts
     ):
         raise AtomicPreactionRejected("unsafe intent ledger path")
     path = value.absolute()
     if len(str(path)) > _MAX_PATH:
+        raise AtomicPreactionRejected("unsafe intent ledger path")
+    # Both the caller-provided name and the normalized absolute DB plus the
+    # longest rollback-journal name must fit the native filesystem byte limit
+    # before lstat, SQLite connection, or any synthetic intent reservation.
+    try:
+        raw_bytes = len(os.fsencode(value))
+        absolute_bytes = len(os.fsencode(path))
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise AtomicPreactionRejected("unsafe intent ledger path encoding") from exc
+    if raw_bytes > _MAX_PATH or absolute_bytes + len(b"-journal") > _MAX_PATH:
         raise AtomicPreactionRejected("unsafe intent ledger path")
     try:
         for parent in path.parents:
