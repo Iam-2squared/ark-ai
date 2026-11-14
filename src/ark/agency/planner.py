@@ -51,7 +51,11 @@ def _admit_graph_label(value: object) -> None:
     This is a boundary of the standalone PlanGraph, NOT a change to the
     frozen PlanStep/ToolCall dataclasses or a source of execution authority.
     """
-    if type(value) is not str or len(value) > _MAX_GRAPH_LABEL_BYTES:
+    if type(value) is not str:
+        # Preserve the existing fail-closed error classification for
+        # reflected non-text carriers, including callback-bearing objects.
+        raise PlanConflictError("plan step carrier changed before admission")
+    if len(value) > _MAX_GRAPH_LABEL_BYTES:
         raise PlanConflictError("plan graph identifier budget exceeded")
     if not value.strip():
         raise PlanConflictError("plan graph identifier must be nonblank")
