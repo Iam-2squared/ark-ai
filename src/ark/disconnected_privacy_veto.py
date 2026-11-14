@@ -324,18 +324,49 @@ def _path(value: object, *, exists: bool) -> Path:
 def _schema(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise OfflinePrivacyVetoRejected("veto ledger version changed")
+    # Bound catalog metadata before hydrating any potentially hostile DDL.
+    catalog = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(catalog) is not tuple or len(catalog) != 2
+        or type(catalog[0]) is not int or not 0 <= catalog[0] <= 8
+        or type(catalog[1]) is not int or not 0 <= catalog[1] <= 8_192
+    ):
+        raise OfflinePrivacyVetoRejected("veto ledger schema preflight failed")
     with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(query)) != tuple(expected.execute(query)):
             raise OfflinePrivacyVetoRejected("veto ledger schema changed")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    if conn.execute("PRAGMA quick_check").fetchmany(2) != [("ok",)]:
         raise OfflinePrivacyVetoRejected("veto ledger integrity check failed")
 
 
 def _inspect(conn: sqlite3.Connection) -> OfflinePrivacyVetoWitness:
     _assert_original_witness_carrier()
     _schema(conn)
+    # Reject oversized history and invalid SQLite storage classes BEFORE
+    # reading arbitrary owner/scope digest columns into Python memory.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(CASE WHEN "
+        "typeof(seq)='integer' AND seq BETWEEN 1 AND ? "
+        "AND typeof(owner_sha256)='text' "
+        "AND length(CAST(owner_sha256 AS BLOB))=64 "
+        "AND typeof(scope_sha256)='text' "
+        "AND length(CAST(scope_sha256 AS BLOB))=64 "
+        "AND typeof(recorded_at_ms)='integer' "
+        "AND recorded_at_ms BETWEEN 0 AND ? "
+        "THEN 0 ELSE 1 END),0) FROM synthetic_privacy_veto",
+        (_MAX_ROWS, _MAX_MS),
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or not 0 <= budget[0] <= _MAX_ROWS
+        or type(budget[1]) is not int or budget[1] != 0
+    ):
+        raise OfflinePrivacyVetoRejected("malformed or rewritten veto history")
     rows: list[tuple[object, ...]] = []
     previous = -1
     identities: set[tuple[str, str]] = set()
@@ -391,7 +422,7 @@ class DisconnectedPrivacyVetoLedger:
                         raise OfflinePrivacyVetoRejected(
                             "existing veto ledger is not initialized"
                         )
-                    if tuple(conn.execute("SELECT name FROM sqlite_master")):
+                    if conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone() is not None:
                         raise OfflinePrivacyVetoRejected("nonempty unversioned veto ledger")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
