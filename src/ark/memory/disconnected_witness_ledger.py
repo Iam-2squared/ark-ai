@@ -219,6 +219,31 @@ def _inspect(
     conn: sqlite3.Connection,
 ) -> tuple[MemoryLedgerWitness, AtomicMemoryEpochReview | None]:
     _schema(conn)
+    # Reject oversized or mistyped persisted rows while they are still inside
+    # SQLite. The existing 257-row SELECT must never hydrate attacker-sized
+    # TEXT/BLOB values or trust a row count truncated by its LIMIT.
+    admission = conn.execute(
+        "SELECT COUNT(*), "
+        "COALESCE(SUM(length(CAST(payload_json AS BLOB))),0), "
+        "COALESCE(MAX(length(CAST(payload_json AS BLOB))),0), "
+        "COALESCE(MAX(length(CAST(status AS BLOB))),0), "
+        "COALESCE(MAX(length(CAST(chain_sha256 AS BLOB))),0), "
+        "COALESCE(SUM(CASE WHEN typeof(payload_json)!='text' "
+        "OR typeof(status)!='text' OR typeof(chain_sha256)!='text' "
+        "THEN 1 ELSE 0 END),0) "
+        "FROM retained_memory_epochs"
+    ).fetchone()
+    if (
+        type(admission) is not tuple or len(admission) != 6
+        or any(type(value) is not int for value in admission)
+        or not 0 <= admission[0] <= _MAX_EPOCHS
+        or not 0 <= admission[1] <= _MAX_EPOCHS * 4096
+        or not 0 <= admission[2] <= 4096
+        or not 0 <= admission[3] <= 128
+        or not 0 <= admission[4] <= 64
+        or admission[5] != 0
+    ):
+        raise MemoryWitnessLedgerRejected("witness history admission failed")
     witness = genesis_memory_ledger_witness()
     previous = None
     try:
