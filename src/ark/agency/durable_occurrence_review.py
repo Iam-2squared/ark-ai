@@ -148,11 +148,23 @@ def _assert_receipt_denials() -> None:
 
 
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    # One table and exactly two SQLite-generated uniqueness indexes.
+    # Refuse oversized/foreign catalog entries before Python receives DDL.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 3
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 8_192
+    ):
+        raise SyntheticReplayRejected("synthetic reservation schema changed")
     return tuple(
-        tuple(row)
-        for row in conn.execute(
-            "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
-        ).fetchall()
+        tuple(row) for row in conn.execute(
+            "SELECT type,name,tbl_name,sql FROM sqlite_master "
+            "ORDER BY type,name LIMIT 3"
+        )
     )
 
 
@@ -164,8 +176,36 @@ def _validate(conn: sqlite3.Connection) -> None:
         expected.execute(_TABLE)
         if _objects(conn) != _objects(expected):
             raise SyntheticReplayRejected("synthetic reservation schema changed")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    if conn.execute("PRAGMA quick_check").fetchmany(2) != [("ok",)]:
         raise SyntheticReplayRejected("synthetic reservation storage failed quick_check")
+
+    # Admit only bounded, exact-storage-class rows before Python hydration.
+    # The later regex/timestamp replay remains authoritative for row identity.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(CASE WHEN "
+        "typeof(token_digest)='text' AND length(CAST(token_digest AS BLOB))=64 "
+        "AND typeof(occurrence_id)='text' "
+        "AND length(CAST(occurrence_id AS BLOB))=68 "
+        "AND typeof(registry_revision)='text' "
+        "AND length(CAST(registry_revision AS BLOB))=70 "
+        "AND typeof(bound_action_id)='text' "
+        "AND length(CAST(bound_action_id AS BLOB))=70 "
+        "AND typeof(request_id)='text' "
+        "AND length(CAST(request_id AS BLOB))=68 "
+        "AND typeof(reserved_at_ms)='integer' "
+        "AND typeof(expires_at_ms)='integer' "
+        "AND reserved_at_ms >= 0 AND reserved_at_ms < expires_at_ms "
+        "AND expires_at_ms <= ? THEN 0 ELSE 1 END),0) "
+        "FROM synthetic_occurrence_reservations",
+        (_MAX,),
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int
+        or not 0 <= budget[0] <= _MAX_FIXTURE_ROWS
+        or type(budget[1]) is not int or budget[1] != 0
+    ):
+        raise SyntheticReplayRejected("synthetic reservation row preflight failed")
 
     # SQLite's quick_check verifies storage and CHECK constraints, but it
     # cannot certify the canonical identity and time relationships in rows.
@@ -254,7 +294,9 @@ class SyntheticOccurrenceStore:
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
-                    if _objects(conn):
+                    if conn.execute(
+                        "SELECT 1 FROM sqlite_master LIMIT 1"
+                    ).fetchone() is not None:
                         raise SyntheticReplayRejected(
                             "synthetic ledger is nonempty without a schema version"
                         )
