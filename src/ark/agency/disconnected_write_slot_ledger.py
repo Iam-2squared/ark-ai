@@ -401,8 +401,12 @@ class DisconnectedWriteSlotLedger:
             conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
-                    if (conn.execute("PRAGMA user_version").fetchone() != (0,)
-                            or tuple(conn.execute("SELECT name FROM sqlite_master"))):
+                    if (
+                        conn.execute("PRAGMA user_version").fetchone() != (0,)
+                        or conn.execute(
+                            "SELECT 1 FROM sqlite_master LIMIT 1"
+                        ).fetchone() is not None
+                    ):
                         raise WriteSlotLedgerRejected("nonempty new ledger")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
