@@ -256,7 +256,7 @@ def _schema(conn: sqlite3.Connection) -> None:
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
     ):
         raise DisconnectedProposalStoreRejected(
-            "proposal schema catalog preflight failed"
+            "proposal schema catalog preflight failed (schema changed)"
         )
     with closing(sqlite3.connect(":memory:")) as reference:
         reference.execute(_DDL)
