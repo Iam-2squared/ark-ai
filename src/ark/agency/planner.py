@@ -56,6 +56,12 @@ class PlanGraph:
             raise TypeError("steps must be a tuple of exact PlanStep values")
         if any(type(step.depends_on) is not tuple for step in steps):
             raise PlanConflictError("plan dependency carrier must be a tuple")
+        # Check the total edge budget BEFORE creating per-step dependency
+        # sets. A frozen PlanStep can be reflectively mutated to carry an
+        # enormous duplicate tuple after its constructor validated it.
+        # Reject such input without allocating a giant duplicate-detection set.
+        if sum(len(step.depends_on) for step in steps) > _MAX_PLAN_GRAPH_EDGES:
+            raise ValueError("plan dependency budget exceeded")
         # Frozen PlanStep fields can be reflectively replaced after their
         # constructor validates them. Check exact primitive identities before
         # constructing a dict/set (which could invoke hostile __hash__/__eq__)
@@ -73,8 +79,6 @@ class PlanGraph:
                 raise PlanConflictError("plan step carrier changed before admission")
             if len(set(step.depends_on)) != len(step.depends_on):
                 raise PlanConflictError("plan dependency carrier has duplicate IDs")
-        if sum(len(step.depends_on) for step in steps) > _MAX_PLAN_GRAPH_EDGES:
-            raise ValueError("plan dependency budget exceeded")
         step_map = {step.step_id: step for step in steps}
         if len(step_map) != len(steps):
             raise ValueError("plan step IDs must be unique")
