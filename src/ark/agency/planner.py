@@ -42,6 +42,25 @@ _ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
 # memory during recovery/readiness diagnosis before reaching any policy gate.
 _MAX_PLAN_GRAPH_STEPS = 4096
 _MAX_PLAN_GRAPH_EDGES = 65536
+_MAX_GRAPH_LABEL_BYTES = 4096
+
+
+def _admit_graph_label(value: object) -> None:
+    """Reject reflected overlong IDs before sets, maps and request hashes.
+
+    This is a boundary of the standalone PlanGraph, NOT a change to the
+    frozen PlanStep/ToolCall dataclasses or a source of execution authority.
+    """
+    if type(value) is not str or len(value) > _MAX_GRAPH_LABEL_BYTES:
+        raise PlanConflictError("plan graph identifier budget exceeded")
+    if not value.strip():
+        raise PlanConflictError("plan graph identifier must be nonblank")
+    try:
+        size = len(value.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise PlanConflictError("plan graph identifier is not valid UTF-8") from exc
+    if size > _MAX_GRAPH_LABEL_BYTES:
+        raise PlanConflictError("plan graph identifier budget exceeded")
 
 
 class PlanGraph:
@@ -67,16 +86,17 @@ class PlanGraph:
         # constructing a dict/set (which could invoke hostile __hash__/__eq__)
         # or reading the ToolCall to build a retained plan epoch.
         for step in steps:
-            if (
-                type(step.step_id) is not str
-                or not step.step_id.strip()
-                or type(step.call) is not ToolCall
-                or any(
-                    type(dep) is not str or not dep.strip()
-                    for dep in step.depends_on
-                )
-            ):
+            _admit_graph_label(step.step_id)
+            if type(step.call) is not ToolCall:
                 raise PlanConflictError("plan step carrier changed before admission")
+            for dep in step.depends_on:
+                _admit_graph_label(dep)
+            # The frozen ToolCall contract is unchanged; bound its current
+            # reflected identity before request_id hashing and dict creation.
+            for label in (
+                step.call.tool, step.call.capability, step.call.scope,
+            ):
+                _admit_graph_label(label)
             if len(set(step.depends_on)) != len(step.depends_on):
                 raise PlanConflictError("plan dependency carrier has duplicate IDs")
         step_map = {step.step_id: step for step in steps}
