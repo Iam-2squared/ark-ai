@@ -179,13 +179,20 @@ def _hash(payload: object) -> str:
 
 
 def _path(value: object) -> Path:
+    if type(value) is not type(Path(".")):
+        raise SQLiteSidecarCustodyRejected("exact absolute fixture database Path required")
+    # Invalid native filesystem text must fail as a bounded custody rejection,
+    # not leak a raw UnicodeError or permit any directory or SQLite probe.
+    try:
+        encoded_length = len(os.fsencode(value))
+    except (UnicodeError, OSError, ValueError) as exc:
+        raise SQLiteSidecarCustodyRejected("SQLite fixture path encoding unavailable") from exc
     if (
-        type(value) is not type(Path("."))
-        or not value.is_absolute()
+        not value.is_absolute()
         or "\x00" in str(value)
         # POSIX path limits are byte limits. A bounded number of Unicode
         # code points can still exceed the filesystem's encoded path budget.
-        or len(os.fsencode(value)) + len(_SUFFIXES[-1]) > _MAX_PATH
+        or encoded_length + len(_SUFFIXES[-1]) > _MAX_PATH
         or len(value.parts) < 2
         or ".." in value.parts
         or any(part in ("", ".", "..") for part in value.parts[1:])
