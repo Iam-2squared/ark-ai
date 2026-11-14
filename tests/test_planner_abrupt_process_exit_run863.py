@@ -37,7 +37,8 @@ def _commit_then_exit(path: str, final: StepState) -> None:
 
 
 @pytest.mark.parametrize(
-    "last", (StepState.RUNNING, StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED),
+    "last",
+    (StepState.RUNNING, StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED),
 )
 def test_recovery_after_abrupt_worker_exit_never_grants_dispatch(
     tmp_path: Path, last: StepState,
@@ -61,7 +62,10 @@ def test_recovery_after_abrupt_worker_exit_never_grants_dispatch(
     assert recovered.tail.event_count == expected_count
     assert recovered.dispatch_authorized is False
     assert recovered.automatic_replay_authorized is False
-    states = {name: (status, revision) for name, status, revision in recovered.step_statuses}
+    states = {
+        name: (status, revision)
+        for name, status, revision in recovered.step_statuses
+    }
     assert states["root"] == (last.value, expected_count)
     assert states["other"] == ("pending", 0)
     assert states["child"] == (
