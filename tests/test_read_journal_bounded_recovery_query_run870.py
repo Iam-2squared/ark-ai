@@ -34,7 +34,7 @@ def test_read_recovery_sql_is_bounded_and_preserves_digest_only_order(tmp_path, 
         reader._connection.set_trace_callback(sql.append)
         snapshot = reader.recover_receipts(witness)
 
-    queries = [s for s in sql if "FROM receipts ORDER BY seq" in s]
+    queries = [s for s in sql if "SELECT request_id,step_id,operation," in s]
     assert len(queries) == 1
     assert "LIMIT 129" in queries[0]
     assert snapshot.receipts == tuple(_receipt(i + 1) for i in range(count))
