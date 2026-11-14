@@ -336,6 +336,22 @@ def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -
     ).fetchone()
     if malformed is not None:
         raise ScheduleQuarantineRejected("quarantine persisted storage type or width changed")
+    # A two-row cursor caps row count, but it does not cap the size of a
+    # single private policy value. Reject oversized or noninteger SQLite
+    # storage classes before even one policy row reaches Python.
+    invalid_policy = conn.execute(
+        "SELECT 1 FROM policy WHERE "
+        "typeof(policy_sha256)!='text' "
+        "OR length(CAST(policy_sha256 AS BLOB))!=64 "
+        "OR typeof(first_ms)!='integer' "
+        "OR typeof(interval_ms)!='integer' "
+        "OR typeof(count)!='integer' "
+        "OR typeof(grace_ms)!='integer' LIMIT 1"
+    ).fetchone()
+    if invalid_policy is not None:
+        raise ScheduleQuarantineRejected(
+            "quarantine policy hydration admission failed"
+        )
     # A malformed store can have many distinct policy rows. Examine at most
     # two: any second row is a failure, never an unbounded tuple materialization.
     if tuple(conn.execute("SELECT * FROM policy").fetchmany(2)) != (epoch,):
