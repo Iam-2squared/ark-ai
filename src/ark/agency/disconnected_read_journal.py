@@ -537,8 +537,10 @@ class DisconnectedReadJournal:
                 raise ReadJournalRejected("READ recovery retained tip mismatch")
             saved = connection.execute(
                 "SELECT request_id,step_id,operation,input_digest,result_digest "
-                "FROM receipts ORDER BY seq"
+                "FROM receipts ORDER BY seq LIMIT ?", (_MAX_ROWS + 1,),
             ).fetchall()
+            if len(saved) > _MAX_ROWS:
+                raise ReadJournalRejected("READ recovery row count exceeds budget")
             _require_original_read_carriers()
             rows = tuple(ReadReceipt(*item) for item in saved)
             if len(rows) != actual.count:
