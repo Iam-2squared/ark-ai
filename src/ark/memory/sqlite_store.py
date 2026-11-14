@@ -100,6 +100,20 @@ def _normalized_ddl(sql: str | None) -> str | None:
 
 
 def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    # Validate SQLite catalog size in the caller's current snapshot BEFORE
+    # bringing arbitrary DDL into Python. A malformed foreign owner/schema
+    # must not force unbounded materialization or normalization at startup.
+    object_count, ddl_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(object_count) is not int
+        or type(ddl_bytes) is not int
+        or not 0 <= object_count <= 16
+        or not 0 <= ddl_bytes <= 16_384
+    ):
+        raise MemorySchemaError("memory v1 schema catalog preflight budget exceeded")
     rows = conn.execute(
         "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
     ).fetchall()
