@@ -466,7 +466,7 @@ class SyntheticPlanJournal:
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
-                    if _objects(conn):
+                    if conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone() is not None:
                         raise SyntheticPlanJournalRejected(
                             "unversioned synthetic plan database is not empty"
                         )
