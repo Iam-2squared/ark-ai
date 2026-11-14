@@ -406,7 +406,7 @@ class DisconnectedScheduleQuarantineLedger:
             try:
                 if create:
                     if (conn.execute("PRAGMA user_version").fetchone() != (0,)
-                            or tuple(conn.execute("SELECT name FROM sqlite_master"))):
+                            or conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone() is not None):
                         raise ScheduleQuarantineRejected("nonempty quarantine ledger")
                     for statement in _DDL:
                         conn.execute(statement)
