@@ -57,4 +57,4 @@ def test_character_and_utf8_byte_limits_remain_independent(
 
 def test_unpaired_surrogate_is_rejected_as_invalid_utf8() -> None:
     with pytest.raises(ValueError, match="not valid UTF-8 text"):
-        _envelope(adapter_id="invalid\\ud800")
+        _envelope(adapter_id="invalid" + chr(0xD800))
