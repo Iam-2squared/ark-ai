@@ -324,15 +324,15 @@ def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
         raise AtomicPreactionRejected("oversized or malformed pre-action intent set")
     bad_intent = conn.execute(
         "SELECT 1 FROM intents WHERE "
-        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=68 OR "
-        "typeof(bound_action_id)!='text' OR length(bound_action_id)!=70 OR "
-        "typeof(request_sha256)!='text' OR length(request_sha256)!=64 OR "
-        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 LIMIT 1"
+        "typeof(occurrence_id)!='text' OR length(CAST(occurrence_id AS BLOB))!=68 OR "
+        "typeof(bound_action_id)!='text' OR length(CAST(bound_action_id AS BLOB))!=70 OR "
+        "typeof(request_sha256)!='text' OR length(CAST(request_sha256 AS BLOB))!=64 OR "
+        "typeof(chain_sha256)!='text' OR length(CAST(chain_sha256 AS BLOB))!=64 LIMIT 1"
     ).fetchone()
     bad_audit = conn.execute(
         "SELECT 1 FROM preaction_audit WHERE "
-        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=68 OR "
-        "typeof(audit_sha256)!='text' OR length(audit_sha256)!=64 LIMIT 1"
+        "typeof(occurrence_id)!='text' OR length(CAST(occurrence_id AS BLOB))!=68 OR "
+        "typeof(audit_sha256)!='text' OR length(CAST(audit_sha256 AS BLOB))!=64 LIMIT 1"
     ).fetchone()
     if bad_intent is not None or bad_audit is not None:
         raise AtomicPreactionRejected("pre-action persisted identity width or type changed")
