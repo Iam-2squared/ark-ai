@@ -169,6 +169,41 @@ def _require_dense_committed_memory_events(conn: sqlite3.Connection) -> None:
         raise MemorySchemaError("global memory event append high-water mismatch")
 
 
+def _require_memory_page_hydration_admission(
+    conn: sqlite3.Connection,
+    owner_id: str,
+    namespace: str,
+    after_event_id: int,
+    limit: int,
+) -> None:
+    """Preflight only the selected event page inside its pinned SQLite snapshot.
+
+    Every legitimate MemoryScope identifier is at most 256 codepoints, hence
+    at most 1024 UTF-8 bytes. Digests and operation labels have fixed bytes.
+    This never authenticates a writer or authorizes memory disclosure.
+    """
+    malformed = conn.execute(
+        "WITH selected AS (SELECT * FROM memory_events "
+        "WHERE owner_id=? AND namespace=? AND event_id>? "
+        "ORDER BY event_id LIMIT ?) "
+        "SELECT 1 FROM selected WHERE "
+        "typeof(event_id)!='integer' "
+        "OR typeof(memory_id)!='text' "
+        "OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' "
+        "OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' "
+        "OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(operation)!='text' "
+        "OR length(CAST(operation AS BLOB))!=6 "
+        "OR typeof(revision)!='integer' "
+        "OR typeof(occurred_at_ms)!='integer' LIMIT 1",
+        (owner_id, namespace, after_event_id, limit),
+    ).fetchone()
+    if malformed is not None:
+        raise MemorySchemaError("memory event page hydration admission failed")
+
+
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
@@ -976,6 +1011,11 @@ class SQLiteMemoryStore:
             _validate_v1_schema(conn)
             assert_events_epoch()
             _require_dense_committed_memory_events(conn)
+            assert_events_epoch()
+            _require_memory_page_hydration_admission(
+                conn, pinned_scope.owner_id, pinned_scope.namespace,
+                after_event_id, limit,
+            )
             assert_events_epoch()
             cursor = conn.execute(
                 """SELECT * FROM memory_events
