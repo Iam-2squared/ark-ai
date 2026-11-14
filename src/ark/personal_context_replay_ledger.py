@@ -273,10 +273,11 @@ def _check_path(path: object, *, create: bool) -> Path:
     ):
         raise OfflineContextReplayRejected("exact absolute local context ledger path required")
     try:
-        if len(os.fsencode(path)) + len(b"-journal") > _MAX_DB_PATH_BYTES:
-            raise OfflineContextReplayRejected("context ledger path byte budget exceeded")
+        encoded_length = len(os.fsencode(path))
     except (UnicodeError, ValueError, OSError) as exc:
         raise OfflineContextReplayRejected("context ledger path encoding unavailable") from exc
+    if encoded_length + len(b"-journal") > _MAX_DB_PATH_BYTES:
+        raise OfflineContextReplayRejected("context ledger path byte budget exceeded")
     try:
         for ancestor in path.parents:
             info = ancestor.lstat()
