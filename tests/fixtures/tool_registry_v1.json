@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "tools": [
+    {
+      "name": "files.read",
+      "capability": "files.read",
+      "effect": "read",
+      "backend_id": "mock.files.read:v1"
+    },
+    {
+      "name": "files.write",
+      "capability": "files.write",
+      "effect": "write",
+      "backend_id": "mock.files.write:v1"
+    }
+  ],
+  "expected_registry_revision": "tools_e3fec8092546d8f7a67eee140d90ca4fcb076965953031ec176d5be4a605f146"
+}

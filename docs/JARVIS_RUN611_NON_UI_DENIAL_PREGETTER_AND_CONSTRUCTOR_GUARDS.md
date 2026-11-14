@@ -1,0 +1,25 @@
+# Run611 — Non-UI exact original deny-only getter and constructor custody
+
+Work basis: `012cb868a0fd0aac9a3a4acc3ea329914ff21f31` (prior Run610 checkpoint, independently confirmed [CI 41871973008](https://github.com/Iam-2squared/ark-ai/actions/runs/41871973008) Ubuntu/Windows Python 3.11–3.13 **6/6 GREEN**). Branch: `research/jarvis-foundations`, Draft PR #8. This is a synthetic, detached review; **not** a runtime execution approval.
+
+## Four distinct changes — 31 new parameter-expanded tests authored, not local PASS
+
+1. **Disconnected observation chain review:** [source `f2452a45d0dd4f6f8db97bc51bb1c1d0069dd7ff`](https://github.com/Iam-2squared/ark-ai/commit/f2452a45d0dd4f6f8db97bc51bb1c1d0069dd7ff) and [five test cases `dfd04d0b819a89c5b1e3b60218ec044cc4d8e3e7`](https://github.com/Iam-2squared/ark-ai/commit/dfd04d0b819a89c5b1e3b60218ec044cc4d8e3e7). An output-field callback can replace a deny-only property after the prior original-implementation check. Recheck the original descriptors immediately before the authority getter and after each callback; test three reflected-field substitutions, one chained getter substitution, and the normal deny-only path.
+2. **Synthetic proactive trigger freshness:** [source `c38bf195092b40f4a5ba691c3e8d757d74a56430`](https://github.com/Iam-2squared/ark-ai/commit/c38bf195092b40f4a5ba691c3e8d757d74a56430) and [six test cases `644db082b957d5ec462c7614b0a0e86d23b7a486`](https://github.com/Iam-2squared/ark-ai/commit/644db082b957d5ec462c7614b0a0e86d23b7a486). Fail closed before a counterfeit result constructor and before any substituted False-returning authority getter. Includes late field/earlier getter substitution and normal read-only behavior.
+3. **Memory retained SQLite event-prefix reviewer:** [source `671d63dea99f24c4a20856a2f119cd8583fdfbdd`](https://github.com/Iam-2squared/ark-ai/commit/671d63dea99f24c4a20856a2f119cd8583fdfbdd) and [eleven test cases `073adfebf222e3743a4ab81eaba7b08f36ebf9ea`](https://github.com/Iam-2squared/ark-ai/commit/073adfebf222e3743a4ab81eaba7b08f36ebf9ea). Pin both witness and comparison original deny-only descriptors. Verify before/after every possibly executable False getter, including reflective substitution during receipt-field inspection. Preserve original append-high-water, event lifecycle, and no-authenticated-writer semantics.
+4. **Disconnected fixture request binding:** [source `2ab2a7b899d6449a5556ec33ac1bfdab95df1da9`](https://github.com/Iam-2squared/ark-ai/commit/2ab2a7b899d6449a5556ec33ac1bfdab95df1da9) and [nine test cases `4b0c80ed968ce2e1aab0da604fa65305e6ebb1af`](https://github.com/Iam-2squared/ark-ai/commit/4b0c80ed968ce2e1aab0da604fa65305e6ebb1af). Use a pinned original binding result class, reject constructor substitution during hashing, and verify each deny-only property *before* its getter can run, including reentrant result-field substitution.
+
+**Authored:** 5 + 6 + 11 + 9 = **31 parameter-expanded cases**. No claim of local Python tests: this execution did not run a local checkout, physical PC, or real backend. GitHub Actions on each exact HEAD must independently demonstrate Ruff/pytest outcome; QUEUED is neither PASS nor FAIL. No duplicate rerun requested.
+
+## Reconciliation and boundaries
+
+The compared commit range `012cb868a0fd0aac9a3a4acc3ea329914ff21f31...4b0c80ed968ce2e1aab0da604fa65305e6ebb1af` contains exactly eight files: four non-UI source files and four targeted new tests; no UI, main, frozen contracts, V3 branch, or application interface edits. Memory v1 contract Blob `b6e93821ecd69270a7634aceb20775dc36e9953c` unchanged. Main `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 `805b377697472268db02650a89c7a94b1c5337c8` Draft/unmerged; PR #9 `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` Draft/unmerged, UI PAUSED.
+
+These checks reject malicious/reentrant Python callbacks **in synthetic local review only**. They do not provide a trusted clock, authenticated writer, independent custody, user consent, real side-effect exactly-once semantics, privacy erasure, or dispatch rights. In particular, a matching Memory prefix cannot attribute an unknown COMMIT to its caller. Unknown WRITE/COMMIT remains quarantined, with no automatic retry. No paid/potentially billable services, external GPUs, account connections, candidate weights, evaluation gates, real tools, destructive changes, or main merge.
+
+## Next plan / 今後の方針
+
+1. Examine exact HEAD GitHub Actions Ubuntu/Windows 3.11–3.13 jobs when available; if FAIL, use actual logs for the smallest safe correction, with unrelated free work during CI.
+2. Memory generation CAS unknown-COMMIT, event/row coherent custody and source-generation drift; preserve manual-only triage.
+3. Planner crash recovery + immutable ToolRegistry/PermissionGate and audit-before-*mock*-action/occurrence fencing, only after exact lower-layer GREEN.
+4. Disconnected proactive/observation contracts, privacy-safe Personal Context and reversible V3 free approval/path/identity/reproducibility guards. Continue UI PAUSED, PR #5/#8/#9 Draft/unmerged, ARK/JARVIS/V3 NOT_PASSED.
