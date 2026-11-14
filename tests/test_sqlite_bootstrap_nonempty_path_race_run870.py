@@ -9,8 +9,8 @@ import sqlite3
 
 import pytest
 
-import ark.personal_context_replay_ledger as personal
 import ark.disconnected_schedule_quarantine_ledger as schedule
+import ark.personal_context_replay_ledger as personal
 
 
 @pytest.mark.parametrize("kind", ("personal", "quarantine"))
