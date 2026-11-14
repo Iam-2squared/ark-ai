@@ -523,7 +523,10 @@ class SyntheticPlanJournal:
     ) -> tuple[PlanGraph, tuple[SyntheticPlanTail, ...]]:
         _schema_check(conn)
         graph = PlanGraph(self._steps)
-        headers = conn.execute(_HEADER).fetchall()
+        # The frozen header schema permits exactly one row. A malformed or
+        # substituted cursor must never hydrate an unbounded result during
+        # cold recovery; two rows suffice to reject ambiguity.
+        headers = conn.execute(_HEADER).fetchmany(2)
         if len(headers) != 1:
             raise SyntheticPlanJournalRejected("synthetic plan header missing or duplicated")
         topology, initial, count, tail_hash, status_digest, last_at = headers[0]
