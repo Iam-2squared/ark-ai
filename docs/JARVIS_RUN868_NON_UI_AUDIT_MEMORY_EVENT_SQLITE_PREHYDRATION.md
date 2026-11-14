@@ -51,9 +51,25 @@ data, training, Candidate, paid GPU/API or protected final evaluation.
   owner's stored event into the current owner's disclosed data.
   Read operations still enforce on-row canonical scope/identity checks.
 
+## Package C: disconnected WRITE slot UTF-8 byte-width admission
+
+- Source `6e7f82ce85549d3ad2de464a9b5a7a9a32c03464`,
+  test `7ad964363713509a5b179d2058b09de1dd8496e6`
+  (**6 authored cases**, five Unicode byte/character mismatch and a
+  legitimate ASCII reservation). Independent from in-flight Audit/Memory CI.
+- Keep the original synthetic slot/plan/step/request/chain length and digest
+  rules, but replace SQLite `length(TEXT)` codepoint counts with
+  `length(CAST(... AS BLOB))` **native UTF-8 byte widths** in the
+  prehydration predicate. A forged `é`-filled identity whose character
+  length mimics 69/21/64 no longer reaches the Python row-hydration loop.
+- Synthetic SQL trace fixture checks the prehydration predicate runs and
+  the full `SELECT seq,slot_id,...` never executes for malformed rows.
+  The valid original ASCII reservation remains accepted. This is a
+  disconnected reservation, not durable real-user approval or WRITE dispatch.
+
 ## Test and safety interpretation
 
-All 17 new test cases are **authored**, not automatically proven to pass by
+All 23 new test cases are **authored**, not automatically proven to pass by
 earlier successful runs. GitHub Actions is triggered automatically by each
 normal Contents-API write; no manual duplicate workflow dispatch was used.
 CI from intermediate source/test commits may fail independently of later
