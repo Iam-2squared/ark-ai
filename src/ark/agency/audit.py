@@ -344,11 +344,19 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
                 continue
             if not main_exists:
                 raise ActionAuditSchemaError("orphaned audit SQLite sidecar refused")
+            if stat.S_ISREG(sidecar_info.st_mode) and sidecar_info.st_nlink == 0:
+                # A separate SQLite writer may unlink a WAL/SHM or rollback
+                # journal after the pathname was looked up. Re-lstat ONCE
+                # only for this already-unlinked regular inode. Never adopt
+                # a hardlink, symlink, orphan or other nonregular sidecar.
+                try:
+                    sidecar_info = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
             if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
                 # Report bounded metadata only. Never include the audit DB
                 # pathname, request identifiers, arguments or row contents.
-                # This identifies the rejected file class in a real process
-                # race without relaxing the no-alias policy or retrying I/O.
+                # Keep strict fail-closed denial after the bounded recheck.
                 raise ActionAuditSchemaError(
                     "audit SQLite sidecar alias refused "
                     f"(suffix={suffix}, file_type={stat.S_IFMT(sidecar_info.st_mode):#o}, "
