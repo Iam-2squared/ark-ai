@@ -37,8 +37,10 @@ def _snapshot(root: Path):
 
 
 def _cold(root: Path):
+    # A synthetic later review time does not make a newly written row in the
+    # cached-at-100 inventory period valid: keep fixture write time at 100.
     return (
-        SQLiteMemoryStore(root / "retention.sqlite", clock_ms=lambda: 151),
+        SQLiteMemoryStore(root / "retention.sqlite", clock_ms=lambda: 100),
         SyntheticContextRevocationLedger(root / "revocation.sqlite"),
     )
 
