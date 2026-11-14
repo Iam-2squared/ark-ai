@@ -58,15 +58,19 @@ def _require_original_registry_digest() -> None:
 
 def _text(name: str, value: object) -> str:
     _require_original_registry_limits()
-    if type(value) is not str or not value.strip():
+    if type(value) is not str:
+        raise ValueError(f"{name} must be a non-empty exact string")
+    # The constant-time codepoint cap must precede strip() and NUL search:
+    # a reflected or caller-provided multi-megabyte identity is rejected
+    # before any linear scan or backend descriptor inspection.
+    if len(value) > _MAX_REGISTRATION_TEXT:
+        raise ValueError(f"{name} exceeds registry identifier budget")
+    if not value.strip():
         raise ValueError(f"{name} must be a non-empty exact string")
     # Native and shell-facing identities must not embed NUL separators.
     # Refuse before inspecting backend.execute or serializing a revision.
     if "\x00" in value:
         raise ValueError(f"{name} contains a NUL separator")
-
-    if len(value) > _MAX_REGISTRATION_TEXT:
-        raise ValueError(f"{name} exceeds registry identifier budget")
     # Revision and bound-action identities serialize as UTF-8. Restrict the
     # actual byte budget and reject lone surrogate code points at ingress,
     # before a backend descriptor, registry digest or policy gate is touched.
