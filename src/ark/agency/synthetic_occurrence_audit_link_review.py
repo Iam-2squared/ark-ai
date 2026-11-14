@@ -70,9 +70,21 @@ _GENESIS = _hash("ARK-audit-link-genesis-v1", ())
 
 
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
+    # One table and two generated uniqueness indexes; inspect no foreign DDL.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 3
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 8_192
+    ):
+        raise SyntheticAuditLinkRejected("synthetic link schema changed")
     return tuple(
         tuple(row) for row in conn.execute(
-            "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+            "SELECT type,name,tbl_name,sql FROM sqlite_master "
+            "ORDER BY type,name LIMIT 3"
         )
     )
 
@@ -153,10 +165,42 @@ def _replay(conn: sqlite3.Connection) -> tuple[SyntheticAuditLinkWitness, ...]:
         expected.execute(_DDL)
         if _objects(conn) != _objects(expected):
             raise SyntheticAuditLinkRejected("synthetic link schema changed")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    if conn.execute("PRAGMA quick_check").fetchmany(2) != [("ok",)]:
         raise SyntheticAuditLinkRejected("synthetic link SQLite integrity failed")
+    # Reject oversized/corrupt rows within SQLite before materializing any
+    # occurrence, registry or audit identity in Python.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(CASE WHEN "
+        "typeof(seq)='integer' AND seq BETWEEN 1 AND ? "
+        "AND typeof(occurrence_id)='text' "
+        "AND length(CAST(occurrence_id AS BLOB))=68 "
+        "AND typeof(registry_revision)='text' "
+        "AND length(CAST(registry_revision AS BLOB))=70 "
+        "AND typeof(bound_action_id)='text' "
+        "AND length(CAST(bound_action_id AS BLOB))=70 "
+        "AND typeof(request_id)='text' "
+        "AND length(CAST(request_id AS BLOB))=68 "
+        "AND typeof(audit_event_id)='integer' "
+        "AND audit_event_id BETWEEN 1 AND ? "
+        "AND typeof(audit_event_digest)='text' "
+        "AND length(CAST(audit_event_digest AS BLOB))=70 "
+        "AND typeof(linked_at_ms)='integer' "
+        "AND linked_at_ms BETWEEN 0 AND ? "
+        "AND typeof(previous_hash)='text' "
+        "AND length(CAST(previous_hash AS BLOB))=70 "
+        "AND typeof(link_hash)='text' "
+        "AND length(CAST(link_hash AS BLOB))=70 "
+        "THEN 0 ELSE 1 END),0) FROM synthetic_occurrence_audit_links",
+        (_MAX, _MAX, _MAX),
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or not 0 <= budget[0] <= _LIMIT
+        or type(budget[1]) is not int or budget[1] != 0
+    ):
+        raise SyntheticAuditLinkRejected("synthetic link row preflight failed")
     prefixes = [SyntheticAuditLinkWitness(0, _GENESIS, -1)]
-    for row in conn.execute(_SELECT):
+    for row in conn.execute(_SELECT + " LIMIT 10001"):
         if len(prefixes) > _LIMIT:
             raise SyntheticAuditLinkRejected("synthetic link review budget exceeded")
         seq, occ, revision, bound, request, event_id, event_hash, at, previous, link = row
@@ -246,7 +290,9 @@ class SyntheticOccurrenceAuditLinkStore:
             try:
                 version = conn.execute("PRAGMA user_version").fetchone()[0]
                 if version == 0:
-                    if _objects(conn):
+                    if conn.execute(
+                        "SELECT 1 FROM sqlite_master LIMIT 1"
+                    ).fetchone() is not None:
                         raise SyntheticAuditLinkRejected("unversioned link database is nonempty")
                     conn.execute(_DDL)
                     conn.execute("PRAGMA user_version=1")
