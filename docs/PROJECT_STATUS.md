@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run883 disconnected observation, Planner/Context bounds, SQLite veto sidecar
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T08:53:59.321+09:00** — observed runtime wall clock only, **NOT** trusted-time provenance, consent or human review. **Overall ARK/JARVIS: NOT_PASSED. ALL NEW UI/FRONTEND DEVELOPMENT PAUSED. ZERO new paid/external compute.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. PR [#5](https://github.com/Iam-2squared/ark-ai/pull/5) still Draft and protected-gate blocked; PR [#9](https://github.com/Iam-2squared/ark-ai/pull/9) still Draft, UI-paused and untouched. **Initial exact work-basis HEAD:** `ae77fa2b2486a9f95a77f07b604b6ec41f49c4b8` (Run882 checkpoint). **Complete Run883 source/test, CI-repair and technical-report HEAD / checkpoint-write-basis HEAD:** `d89f24b3b32d849ed16615a704e199b92bd852d3` (PR head re-read before normal Contents API checkpoint write). **Previous status Blob SHA:** `f9460709b6cce1731dc2e8fa4ae65c2e2b539da6`. **Checkpoint-result HEAD UNKNOWN at authoring**; use update_file API result, then verify fresh PR head and status Blob. Do not infer future SHA.
+
+## NEW — 4 non-UI packages, one semantics-preserving CI repair, 39 authored synthetic parameter cases
+
+1. **Disconnected observation fixture:** `src/ark/disconnected_observation_fixture.py` + `tests/test_disconnected_observation_fixture_run883.py` at source/test HEAD `56e507fc3ec3409cf447d0ca8b2308c8edf03734`. Optional exact-bytes 1..65,536 in-memory synthetic fixture adapter creates only a SHA-256 content-minimized ObservationEnvelope with fixed disconnected adapter ID; no live camera/mic/screen/file/network execution, provenance, consent or dispatch. 14 authored cases.
+2. **Planner reflected graph identity budget:** `src/ark/agency/planner.py` + `tests/test_planner_reflected_identifier_budget_run883.py` at initial package HEAD `4b4cb45229a16ff534e263d649b7a4864a43bfa1`. 4,096 UTF-8-byte cap on optional standalone PlanGraph step/dependency/action labels **before** set/map/request hash allocation, with invalid surrogate rejection. 11 authored cases. Historical [CI #43654623189](https://github.com/Iam-2squared/ark-ai/actions/runs/43654623189) exposed two existing non-text-carrier tests expecting the established `before admission` error; latest correction `2d4a02905b00cf48aa6dc9c10bd52f2890bad33e` restores this **error classification** without weakening rejection. Its six-job GREEN is not yet confirmed.
+3. **Personal Context privacy:** `src/ark/personal_context_review.py` + `tests/test_personal_context_plaintext_budget_run883.py`, source/test HEAD `e5b6a6b2292859240867145791aac2ad53aa8dd9`. Optional ephemeral projection caps scanned candidate plaintext at **65,536 UTF-8 bytes per row**, **1,048,576 UTF-8 bytes total**, before hashing or projection. Bad Unicode and tampered budget refused. Frozen Memory v1 storage/schema unchanged; no export or consent inference. 6 authored cases.
+4. **Disconnected privacy veto SQLite sidecar:** `src/ark/disconnected_privacy_veto.py` + `tests/test_privacy_veto_last_close_sidecar_run883.py` at `d89f24b3b32d849ed16615a704e199b92bd852d3`. One bounded re-lstat for already-unlinked *regular* SQLite -wal/-shm/-journal after main-file existence check; missing main, symlink/hardlink/special/orphan and persistent unlinked inode remain rejected. Local synthetic path-only fixtures, no consent or live data mutation. 8 authored cases. This is a bounded race mitigation **NOT** root-cause proof for reported Windows last-close or Privacy Revocation failures.
+
+**Run883 source/test count = 39 authored cases, NOT 39 verified passes.** Exact compare `ae77fa2...d89f24b`: ten commits, eight non-UI source/test paths (four sources, four tests) and [one grounded technical report](https://github.com/Iam-2squared/ark-ai/blob/22680fc0d1b90c5a5bffd87e91058f3b65ff31f4/docs/JARVIS_RUN883_NON_UI_DISCONNECTED_FIXTURE_PLANNER_CONTEXT_BOUNDS.md). No frozen, UI, PR #5 or PR #9 paths changed. No local pytest/Ruff: public checkout DNS unavailable from execution container; GitHub Actions is integrated test evidence.
+
+## Exact-head CI at last observed check (never promote an earlier GREEN to latest)
+
+- Inherited Run882 checkpoint `ae77fa2b2486a9f95a77f07b604b6ec41f49c4b8`: [CI #43650333364](https://github.com/Iam-2squared/ark-ai/actions/runs/43650333364) **GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13, all individual jobs checked.
+- Observation package HEAD `56e507fc3ec3409cf447d0ca8b2308c8edf03734`: [CI #43654542494](https://github.com/Iam-2squared/ark-ai/actions/runs/43654542494) **3 GREEN / 3 IN PROGRESS**.
+- Planner pre-repair HEAD `4b4cb45229a16ff534e263d649b7a4864a43bfa1`: [CI #43654623189](https://github.com/Iam-2squared/ark-ai/actions/runs/43654623189) **3 FAIL / 3 IN PROGRESS**, confirmed original test-message mismatch on Ubuntu 3.12; **does NOT apply to repaired HEAD**.
+- Three-package earlier HEAD `e5b6a6b2292859240867145791aac2ad53aa8dd9`: [CI #43654952382](https://github.com/Iam-2squared/ark-ai/actions/runs/43654952382) **3 IN PROGRESS / 3 QUEUED**.
+- Planner error-classification repair HEAD `2d4a02905b00cf48aa6dc9c10bd52f2890bad33e`: [CI #43655160779](https://github.com/Iam-2squared/ark-ai/actions/runs/43655160779) **QUEUED 6/6**.
+- Final complete Run883 source/test HEAD `d89f24b3b32d849ed16615a704e199b92bd852d3`: [CI #43655368348](https://github.com/Iam-2squared/ark-ai/actions/runs/43655368348) **QUEUED 6/6** at last check. Exact-head GREEN is **UNCONFIRMED**. Normal checkpoint commit will trigger separate PR CI. No duplicate manually rerun workflows.
+
+## Frozen evidence, blockers, authorization restrictions
+
+V1/V2/Local UI/Launcher frozen evidence and controlling contracts preserved; protected V2 final evaluation unopened. Memory v1 and other frozen schemas unchanged; Planner UNKNOWN is never automatically replayed. PR #5/#8/#9 Draft/unmerged; **no new UI/frontend**. No paid/external GPU compute, API/service/subscription, real V3 Candidate adapter/weights/training/promotion, protected evaluation opening, secret/account connection, physical target-PC action, real ToolBackend dispatch, trusted-clock claim, user consent or human review, destructive change or main merge.
+
+**Unresolved:** Windows SQLite WAL/SHM transient `link_count=0` last-client-close and Privacy Revocation losing process; COMMIT-UNKNOWN/cross-store exactly-once ambiguity; independent source/history witness custody; privacy revocation continuity; trusted time; physical GGUF target PC. New bounded retry is **not** proof of concurrency correctness; no ambiguous WRITE auto-retry.
+
+## Next plan / 今後の方針
+
+1. Resolve **latest repaired exact-head** Windows/Ubuntu × Python 3.11–3.13 full six-job CI, inspect any FAIL and repair only via normal GitHub file safety path. While CI runs, independently advance another non-UI lane, never duplicate identical workflow.
+2. Investigate Privacy Revocation multiple processes and Windows WAL/SHM last-close with restart-verifiable evidence; preserve strict symlink/hardlink/orphan denial, COMMIT-UNKNOWN quarantine.
+3. Strengthen Memory generation-fenced CAS, expiry coherent snapshots and event custody; Planner durable UNKNOWN recovery, terminal dependency propagation.
+4. Stage registry-bound immutable ToolRegistry + exact-type PermissionGate + durable occurrence + audit-before-action + disconnected Mock Executor integration **only after relevant exact-head GREEN**, never real dispatch.
+5. Develop privacy-safe Personal Context, proactive backend attention, disconnected observation fixture lineage and detached free-only V3 approval/path/reproducibility guards. **UI pause and all payment/frozen approval gates stay in force.**
+
+---
+
 # LATEST — ARK AI Run882 non-UI CI repairs, Observation/V3 bounded-first identities
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T07:52:13.184+09:00** (observed runtime wall clock only; NOT a trusted clock, provenance, consent or review). **Overall ARK/JARVIS: NOT_PASSED**. **All new UI/frontend development PAUSED**. No paid/external compute.
