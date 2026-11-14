@@ -1,8 +1,8 @@
 """Bound registry names before backend inspection or linear text scanning."""
 import pytest
 
-from ark.agency.contracts import Effect
 from ark.agency import registry as registry_module
+from ark.agency.contracts import Effect
 
 
 class _DisconnectedBackend:
