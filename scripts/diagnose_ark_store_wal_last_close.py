@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import closing
 from pathlib import Path
 
 from ark.agency.audit import SQLiteActionAudit
@@ -104,7 +105,7 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                 # without changing production persistence or authorization.
                 store = SyntheticContextRevocationLedger(db)
                 scope = MemoryScope("disposable-owner", "profile")
-                with sqlite3.connect(db) as setup:
+                with closing(sqlite3.connect(db)) as setup:
                     if setup.execute("PRAGMA journal_mode=WAL").fetchone() != ("wal",):
                         return {"status": "NO_WAL", "kind": kind, "keeper": keeper}
                 original = store.revoke(scope, at_ms=100)
