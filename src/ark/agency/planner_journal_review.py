@@ -523,6 +523,61 @@ class SyntheticPlanJournal:
     ) -> tuple[PlanGraph, tuple[SyntheticPlanTail, ...]]:
         _schema_check(conn)
         graph = PlanGraph(self._steps)
+        # Admission runs inside this replay transaction before either header
+        # or event values enter Python. Existing schema integrity and chained
+        # state validation still run after this resource/SQLite-type fence.
+        bad_header = conn.execute(
+            "SELECT 1 FROM synthetic_plan_header WHERE "
+            "typeof(topology_digest)!='text' "
+            "OR length(CAST(topology_digest AS BLOB))!=69 "
+            "OR typeof(initial_status_digest)!='text' "
+            "OR length(CAST(initial_status_digest AS BLOB))!=71 "
+            "OR typeof(tail_hash)!='text' "
+            "OR length(CAST(tail_hash AS BLOB))!=69 "
+            "OR typeof(status_digest)!='text' "
+            "OR length(CAST(status_digest AS BLOB))!=71 "
+            "OR typeof(event_count)!='integer' "
+            "OR typeof(last_at_ms)!='integer' LIMIT 1"
+        ).fetchone()
+        if bad_header is not None:
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan header hydration admission failed"
+            )
+        event_count = conn.execute(
+            "SELECT COUNT(*) FROM synthetic_plan_events"
+        ).fetchone()
+        if (
+            type(event_count) is not tuple or len(event_count) != 1
+            or type(event_count[0]) is not int
+            or not 0 <= event_count[0] <= _MAX_EVENTS
+        ):
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan event hydration row budget exceeded"
+            )
+        max_step_bytes = max(len(step_id.encode("utf-8")) for step_id in graph.steps)
+        bad_event = conn.execute(
+            "SELECT 1 FROM synthetic_plan_events WHERE "
+            "typeof(seq)!='integer' OR typeof(step_id)!='text' "
+            "OR length(CAST(step_id AS BLOB)) > ? "
+            "OR typeof(from_state)!='text' "
+            "OR length(CAST(from_state AS BLOB))>16 "
+            "OR typeof(to_state)!='text' "
+            "OR length(CAST(to_state AS BLOB))>16 "
+            "OR typeof(expected_revision)!='integer' "
+            "OR typeof(resulting_revision)!='integer' "
+            "OR typeof(occurred_at_ms)!='integer' "
+            "OR typeof(post_status_digest)!='text' "
+            "OR length(CAST(post_status_digest AS BLOB))!=71 "
+            "OR typeof(previous_hash)!='text' "
+            "OR length(CAST(previous_hash AS BLOB))!=69 "
+            "OR typeof(event_hash)!='text' "
+            "OR length(CAST(event_hash AS BLOB))!=69 LIMIT 1",
+            (max_step_bytes,),
+        ).fetchone()
+        if bad_event is not None:
+            raise SyntheticPlanJournalRejected(
+                "synthetic plan event hydration admission failed"
+            )
         # The frozen header schema permits exactly one row. A malformed or
         # substituted cursor must never hydrate an unbounded result during
         # cold recovery; two rows suffice to reject ambiguity.
