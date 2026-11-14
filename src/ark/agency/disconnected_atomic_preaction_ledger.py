@@ -257,7 +257,19 @@ def _path(value: object, *, create: bool) -> Path:
                 meta = sidecar.lstat()
             except FileNotFoundError:
                 continue
-            if create or not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+            # Never adopt a sidecar on first creation, nor retry a special
+            # inode. SQLite's last-close cleanup can unlink an otherwise
+            # ordinary regular inode between lstat lookup and its snapshot.
+            # Re-observe only that already-unlinked regular case ONCE; the
+            # second observation must be absent or a new single-link regular.
+            if create or not stat.S_ISREG(meta.st_mode):
+                raise AtomicPreactionRejected("unsafe intent ledger sidecar")
+            if meta.st_nlink == 0:
+                try:
+                    meta = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
+            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise AtomicPreactionRejected("unsafe intent ledger sidecar")
     except OSError as exc:
         raise AtomicPreactionRejected("intent ledger path cannot be inspected") from exc
