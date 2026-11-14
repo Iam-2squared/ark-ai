@@ -243,12 +243,30 @@ def _schema(conn: sqlite3.Connection) -> None:
     _protocol()
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise DisconnectedProposalStoreRejected("proposal schema version mismatch")
+    # A foreign SQLite catalog may carry unbounded DDL. Enforce the exact
+    # table + generated UNIQUE index and a byte budget in this transaction
+    # before any catalog SQL is materialized in Python.
+    budget = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 2
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+    ):
+        raise DisconnectedProposalStoreRejected(
+            "proposal schema catalog preflight failed"
+        )
     with closing(sqlite3.connect(":memory:")) as reference:
         reference.execute(_DDL)
         query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(query)) != tuple(reference.execute(query)):
             raise DisconnectedProposalStoreRejected("proposal schema changed")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    # Reject even a valid first diagnostic followed by corruption; do not
+    # hydrate an unbounded SQLite error inventory from a malformed store.
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise DisconnectedProposalStoreRejected("proposal SQLite integrity failure")
 
 
