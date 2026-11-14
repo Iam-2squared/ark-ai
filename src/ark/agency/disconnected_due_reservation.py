@@ -298,7 +298,7 @@ def _schema(conn: sqlite3.Connection) -> None:
         or type(budget[0]) is not int or budget[0] != 2
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
     ):
-        raise DueReservationRejected("due ledger schema catalog preflight failed")
+        raise DueReservationRejected("due ledger schema catalog preflight failed (schema drift)")
     with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
