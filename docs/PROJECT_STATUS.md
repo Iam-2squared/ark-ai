@@ -1,3 +1,40 @@
+# LATEST — ARK AI Run874 non-UI occurrence + audit-link SQLite admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T00:00:54+09:00** (actual report-writing wall clock; NOT trusted audit time, consent, identity, physical-PC or external-effect evidence). **Overall ARK/JARVIS: NOT_PASSED.** Offline/disconnected, free-only, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT PAUSED.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/Draft/unmerged checked immediately before this write. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused UI [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) separately rechecked Draft/open/unmerged and untouched. **Initial work-basis HEAD:** `cb45d20d883efa9128901cc7d090278c3db8b775` (Run873 checkpoint). **Latest complete source+tests/diagnostic HEAD:** `609ed54392daf28fec194203b33766dcbfd7120f`. **Technical evidence report HEAD / checkpoint-write-basis HEAD:** `d58cea16e13afdce644840730eb637203fb1e732`. This prewrite PR HEAD is separately re-read immediately before the normal Contents API update. **Previous status blob:** `4d22c55bc386abadf03debaf60d73e28db8c9189`. **Checkpoint-result HEAD is UNKNOWN at authoring**; use the update API's actual result and independent PR/ref/blob reread to establish it. Do not invent a future SHA.
+
+## NEW — three non-UI work packages, 10 authored synthetic regression cases
+
+1. **Registry-bound disconnected WRITE occurrence reservation:** `src/ark/agency/durable_occurrence_review.py` now bounds exact SQLite schema object count and DDL size before Python hydration, quick_check to 2 rows, and same-snapshot SQL-side row count/type/UTF-8 storage-byte/time preflight before raw identity hydration. Create-only unversioned bootstrap uses a one-row SQL existence probe. Existing hash, restart, no-dispatch, token uniqueness and replay denial retained. Commits `595ad8539756e260c8e17ba1297f202160a7cec3`, `2c0569ee0fe14a688780eeeb67827ad109e3bfdc`, `609ed54392daf28fec194203b33766dcbfd7120f`. Last correction preserves exact historical `row integrity failed` diagnostic while adding SQL-preflight context.
+2. **Disconnected occurrence-to-audit links:** `src/ark/agency/synthetic_occurrence_audit_link_review.py` preflights exact schema/byte budget, bounds quick_check, checks 10,000-row and exact identifier storage byte widths inside SQLite, limits replay SELECT to 10,001 and replaces foreign unversioned catalog enumeration with a one-row existence probe. Hash-chain, original audit evidence, cross-store uncertainty, clock order, and inert authorization denials unchanged. Commit `52ab5d4556fa923e7115ce4cefe18c637869c0a1`.
+3. **Synthetic tests and privacy race evidence:** new `tests/test_occurrence_audit_link_sqlite_prehydration_run874.py` authors **10** parametric cases covering normal/bad bounded diagnostics, TABLE/VIEW foreign bootstrap rejection without modification, and 131,072-byte BLOB denial before Python row hydration. `tests/test_privacy_revocation_cross_process_run425.py` preserves the original strict race assertion and adds bounded sanitized loser category and a single durable COUNT/MIN/MAX snapshot *only on failure*. No permission, skip, replay, or approval conditions relaxed. Commits `5803cede72470ec6348abed8b3212097ba406fbd` and `fb0fa75434dc79ae5bfcd9e2c53909d835561f24`.
+
+[Run874 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/d58cea16e13afdce644840730eb637203fb1e732/docs/JARVIS_RUN874_NON_UI_OCCURRENCE_LINK_SQLITE_ADMISSION.md). GitHub compare Run873 → source+tests HEAD confirms exactly two non-UI Python modules and two tests changed. Local isolated SQLite smoke for both schemas: 3 catalog objects; valid synthetic row aggregate (1,0); malformed BLOB row (1,1). **No complete local pytest/Ruff, physical Windows, actual GGUF, independent custody, real tools or trusted user approval**; 10 cases are AUTHORED, not yet all-PASS-proven.
+
+## CI — exact HEAD, no inference across source revisions
+
+- Previous Run873 checkpoint `cb45d20d883efa9128901cc7d090278c3db8b775`: [#43602764426](https://github.com/Iam-2squared/ark-ai/actions/runs/43602764426) **GREEN 6/6** Ubuntu/Windows Python 3.11–3.13, prior HEAD only.
+- Initial uncorrected occurrence source `595ad853...`: [#43606765822](https://github.com/Iam-2squared/ark-ai/actions/runs/43606765822) **FAIL confirmed Ubuntu 3.11/3.13**, seven existing row-integrity message assertions. Source+test `5803cede...`: [#43607060931](https://github.com/Iam-2squared/ark-ai/actions/runs/43607060931) **FAIL Ubuntu 3/3 on same known message mismatch**, remaining Windows not finalized at observation. First intermediate repair `2c0569ee...`: [#43607258316](https://github.com/Iam-2squared/ark-ai/actions/runs/43607258316) had Ubuntu 3.11 FAIL while others pending; message still did not contain the contiguous historical regex.
+- **Final corrected source/test/diagnostic HEAD `609ed54392daf28fec194203b33766dcbfd7120f`:** [#43607435427](https://github.com/Iam-2squared/ark-ai/actions/runs/43607435427) last exact job observation had **0/6 GREEN, 0/6 FAIL, 2/6 IN PROGRESS, 4/6 QUEUED**. Do NOT infer PASS from older SHA. Technical report HEAD `d58cea16...`: [#43607668906](https://github.com/Iam-2squared/ark-ai/actions/runs/43607668906) QUEUED. This checkpoint write starts another automatic CI; no manual duplicate workflow runs.
+- Independently examined historical [#43596487033](https://github.com/Iam-2squared/ark-ai/actions/runs/43596487033) confirmed Ubuntu Python 3.13 privacy revocation loser rejection and Windows Python 3.11 a transient `memory SQLite sidecar ... link_count=0` WAL close/open race. **Unresolved**: no relaxation of alias/path/UNKNOWN safety tests or claims of definitive root-cause mitigation.
+
+## Frozen evidence / authorization hard boundary
+
+Frozen V1/V2/Local UI/Launcher contracts and evaluation evidence unchanged, protected V2 final evaluation closed; PR #5/#8/#9 remain Draft/unmerged; UI PR #9 and frontend untouched. No paid external compute/GPU/APIs, secrets/credentials, real Candidate adapter/weight generation/training/promotion, destructive actions, physical user-PC operation, real backend effect, main merge or invented reviewer decision. Synthetic local approval/token and SQLite success do not prove trusted consent, independently witnessed audit, cross-store atomicity or external exactly-once.
+
+**Still NOT_PASSED:** Memory/ActionAudit COMMIT-UNKNOWN, WAL/SHM last-client-close/pathname-to-open races, independent witness custody; Planner manual-only UNKNOWN/terminal propagation; registry-bound exact PermissionGate + restart-safe occurrence/audit-before-action trusted clock; privacy race loser root cause and external effect uncertainty.
+
+## Next plan / 今後の方針
+
+1. **Conclude current complete source+tests and checkpoint HEAD 6-job CI**. Investigate actual new FAILs, make minimal semantics-preserving normal Contents API repair, then move to independent non-UI work while CI runs. Do not manually duplicate runs.
+2. **Privacy / Memory WAL/SHM race**: obtain bounded loser denial category and single durable snapshot, reproduce final-close `link_count=0` without weakening a single path/alias denial or automatic retry prohibition.
+3. **Planner / Memory**: strengthen restart-UNKNOWN, terminal propagation, generation-fenced CAS and coherent expiry under true concurrent WAL snapshots.
+4. **Personal Context / proactive / observation**: continue privacy-safe retention/expiration and backend fixtures, no UI.
+5. Only after prerequisites GREEN, connect immutable ToolRegistry, exact PermissionGate, durable audit-before-action and disconnected mock-only executor. No real execution, Candidate or protected-eval authorization.
+
+---
+
 # LATEST — ARK AI Run873 non-UI Privacy SQLite admission + Planner bootstrap
 
 **Saved at (Asia/Tokyo/JST): 2026-11-14T23:02:20.768+09:00** (actual report-writing wall clock, NOT trusted audit, consent, user action, identity, training or physical-PC evidence). **Overall ARK/JARVIS: NOT_PASSED.** Free-only, disconnected, reversible. **ALL NEW UI/FRONTEND DEVELOPMENT REMAINS PAUSED.**
