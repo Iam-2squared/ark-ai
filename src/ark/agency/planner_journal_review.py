@@ -96,7 +96,10 @@ def _schema_check(conn: sqlite3.Connection) -> None:
         raise SyntheticPlanJournalRejected(
             "synthetic plan schema changed: preflight budget exceeded"
         )
-    with sqlite3.connect(":memory:") as expected:
+    # A SQLite connection context manager commits or rolls back but does
+    # NOT close the handle. Close this throwaway schema oracle on both valid
+    # recovery and malformed-catalog rejection (including Windows runners).
+    with closing(sqlite3.connect(":memory:")) as expected:
         for ddl in _SCHEMA:
             expected.execute(ddl)
         if _objects(conn) != _objects(expected):
