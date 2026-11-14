@@ -25,6 +25,25 @@ class ReadinessState(StrEnum):
 _MAX_COMPONENTS = 10_000
 _MAX_DEPENDENCIES_PER_COMPONENT = 4_096
 _MAX_DEPENDENCY_EDGES = 65_536
+# These are import-time admission limits. A replaced module global must not
+# expand a caller-controlled graph or allow a cached oversized READY witness.
+_ORIGINAL_READINESS_BUDGETS = (
+    _MAX_COMPONENTS, _MAX_DEPENDENCIES_PER_COMPONENT, _MAX_DEPENDENCY_EDGES,
+)
+
+
+def _require_original_readiness_budgets() -> None:
+    observed = (
+        _MAX_COMPONENTS, _MAX_DEPENDENCIES_PER_COMPONENT, _MAX_DEPENDENCY_EDGES,
+    )
+    if (
+        any(type(limit) is not int for limit in observed)
+        or observed != _ORIGINAL_READINESS_BUDGETS
+    ):
+        raise ValueError("readiness admission budgets changed")
+
+
+_ORIGINAL_READINESS_BUDGET_CHECK = _require_original_readiness_budgets
 
 
 def _identifier(value: object, label: str) -> str:
@@ -335,6 +354,11 @@ _ORIGINAL_CARRIER_HOOKS = tuple(
 
 
 def _assert_original_startup_constructors() -> None:
+    # Perform constant and verifier custody checks before inspecting a
+    # reflectively mutable probe, cached snapshot, or caller generator.
+    if _require_original_readiness_budgets is not _ORIGINAL_READINESS_BUDGET_CHECK:
+        raise ValueError("readiness admission budgets changed")
+    _ORIGINAL_READINESS_BUDGET_CHECK()
     if (
         StartupComponent is not _STARTUP_COMPONENT_TYPE
         or ComponentResult is not _COMPONENT_RESULT_TYPE
