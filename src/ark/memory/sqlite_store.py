@@ -133,7 +133,9 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
     quick = conn.execute("PRAGMA quick_check").fetchmany(2)
     if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise MemorySchemaError("memory SQLite quick_check failed")
-    with sqlite3.connect(":memory:") as expected:
+    # SQLite transaction context managers do not close their connections.
+    # Release the DDL comparison handle even on mismatch or injected failure.
+    with closing(sqlite3.connect(":memory:")) as expected:
         expected.executescript(_SCHEMA_V1_SQL)
         if _schema_objects(conn) != _schema_objects(expected):
             raise MemorySchemaError("memory v1 schema objects differ from frozen DDL")
