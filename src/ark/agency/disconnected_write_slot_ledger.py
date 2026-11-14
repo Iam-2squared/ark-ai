@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -132,6 +133,10 @@ _ORIGINAL_RECEIPT_HOOKS = tuple(
 # a signed approval or trusted evidence against a compromised interpreter.
 _ORIGINAL_SQLITE3 = sqlite3
 _ORIGINAL_CONNECT = sqlite3.connect
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
+_MAX_DB_PATH_BYTES = 4096
+_ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
 _ORIGINAL_MAX_ROWS = _MAX_ROWS
 _ORIGINAL_MAX_BATCH = _MAX_BATCH
 _ORIGINAL_HASHLIB = hashlib
@@ -150,6 +155,10 @@ def _require_original_constructors() -> None:
     if (
         sqlite3 is not _ORIGINAL_SQLITE3
         or sqlite3.connect is not _ORIGINAL_CONNECT
+        or os is not _ORIGINAL_OS
+        or os.fsencode is not _ORIGINAL_FSENCODE
+        or type(_MAX_DB_PATH_BYTES) is not int
+        or _MAX_DB_PATH_BYTES != _ORIGINAL_MAX_DB_PATH_BYTES
         or type(_MAX_ROWS) is not int or _MAX_ROWS != _ORIGINAL_MAX_ROWS
         or type(_MAX_BATCH) is not int or _MAX_BATCH != _ORIGINAL_MAX_BATCH
         or hashlib is not _ORIGINAL_HASHLIB
@@ -255,9 +264,19 @@ def _check_witness(value: object) -> None:
 
 def _check_path(value: object, *, create: bool) -> Path:
     if (type(value) is not type(Path(".")) or not value.is_absolute()
-            or ".." in value.parts or len(str(value)) > 4096
+            or ".." in value.parts or len(str(value)) > _MAX_DB_PATH_BYTES
+            or "\x00" in str(value)
             or value.name in ("", ".", "..")):
         raise WriteSlotLedgerRejected("exact absolute fixture path required")
+    # SQLite may access the longest rollback-journal sidecar, even if the main
+    # pathname fits a Unicode character count. Bound native filesystem bytes
+    # before lstat, SQLite connect or any attempted reservation.
+    try:
+        path_bytes = len(os.fsencode(value))
+    except (UnicodeError, ValueError, OSError) as exc:
+        raise WriteSlotLedgerRejected("invalid native reservation path") from exc
+    if path_bytes + len(b"-journal") > _MAX_DB_PATH_BYTES:
+        raise WriteSlotLedgerRejected("reservation SQLite path byte budget exceeded")
     try:
         for ancestor in value.parents:
             info = ancestor.lstat()
