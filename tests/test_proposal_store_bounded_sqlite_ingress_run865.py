@@ -89,7 +89,10 @@ def test_proposal_extra_catalog_object_rejected_without_hydrating_ddl() -> None:
 def test_proposal_oversize_ddl_rejected_with_original_object_count() -> None:
     with sqlite3.connect(":memory:", factory=_NoDDLHydration) as conn:
         long_name = "x" * 5_000
-        conn.execute(proposals._DDL[:-1] + ', "' + long_name + '" TEXT)')
+        conn.execute(proposals._DDL.replace(
+            "UNIQUE(proposal_id,revision)",
+            '"' + long_name + '" TEXT, UNIQUE(proposal_id,revision)',
+        ))
         conn.execute("PRAGMA user_version=1")
         count, ddl_bytes = conn.execute(
             "SELECT COUNT(*),SUM(length(CAST(sql AS BLOB))) FROM sqlite_master"
