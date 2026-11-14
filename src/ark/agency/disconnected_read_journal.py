@@ -276,7 +276,20 @@ def _safe_path(path: Path, *, must_exist: bool) -> None:
 
 
 def _verify_schema(connection: sqlite3.Connection) -> None:
-    """No foreign tables, triggers, views or changed constraints permitted."""
+    """Bound SQL catalog hydration; require exactly the frozen local schema."""
+    # Two tables and the autoindex for UNIQUE(request_id, step_id).
+    # Check the count and *encoded* SQL DDL bytes in SQLite's snapshot
+    # BEFORE copying foreign DDL text into Python.
+    budget = connection.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(budget) is not tuple or len(budget) != 2
+        or type(budget[0]) is not int or budget[0] != 3
+        or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+    ):
+        raise ReadJournalRejected("synthetic READ schema catalog preflight failed")
     expected = sqlite3.connect(":memory:")
     try:
         expected.execute(_MARKER_DDL)
@@ -286,6 +299,9 @@ def _verify_schema(connection: sqlite3.Connection) -> None:
             raise ReadJournalRejected("synthetic READ journal schema changed")
     finally:
         expected.close()
+    quick = connection.execute("PRAGMA quick_check").fetchmany(2)
+    if len(quick) != 1 or tuple(quick[0]) != ("ok",):
+        raise ReadJournalRejected("synthetic READ journal SQLite integrity failure")
 
 
 class DisconnectedReadJournal:
@@ -331,7 +347,7 @@ class DisconnectedReadJournal:
                 # Marker, schema and chain must come from ONE SQLite snapshot.
                 # No claim of cross-process custody or writer authentication.
                 connection.execute("BEGIN")
-                rows = connection.execute("SELECT revision FROM marker").fetchall()
+                rows = connection.execute("SELECT revision FROM marker").fetchmany(2)
                 if rows != [(_SCHEMA,)]:
                     raise ReadJournalRejected("foreign journal marker")
                 _verify_schema(connection)
@@ -359,13 +375,13 @@ class DisconnectedReadJournal:
         """Scan in the caller's transaction, enforcing contiguous hash linkage."""
         _require_original_read_carriers()
         _verify_schema(self._connection)
-        marker = self._connection.execute("SELECT revision FROM marker").fetchall()
+        marker = self._connection.execute("SELECT revision FROM marker").fetchmany(2)
         if marker != [(_SCHEMA,)]:
             raise ReadJournalRejected("foreign journal marker")
         rows = self._connection.execute(
             "SELECT seq, request_id, step_id, operation, input_digest, "
             "result_digest, previous_sha, chain_sha FROM receipts ORDER BY seq"
-        ).fetchall()
+        ).fetchmany(_MAX_ROWS + 1)
         if len(rows) > _MAX_ROWS:
             raise ReadJournalRejected("journal row budget exceeded")
         tip = _GENESIS
