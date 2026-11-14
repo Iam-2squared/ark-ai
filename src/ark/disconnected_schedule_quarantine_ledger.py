@@ -329,8 +329,10 @@ def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -
         raise ScheduleQuarantineRejected("quarantine persisted row budget exceeded")
     malformed = conn.execute(
         "SELECT 1 FROM quarantines WHERE "
-        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=69 OR "
-        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 OR "
+        "typeof(occurrence_id)!='text' OR "
+        "length(CAST(occurrence_id AS BLOB))!=69 OR "
+        "typeof(chain_sha256)!='text' OR "
+        "length(CAST(chain_sha256 AS BLOB))!=64 OR "
         "typeof(seq)!='integer' OR typeof(due_ms)!='integer' OR "
         "typeof(observed_ms)!='integer' LIMIT 1"
     ).fetchone()
