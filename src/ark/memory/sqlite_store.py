@@ -128,7 +128,9 @@ def _validate_v1_schema(conn: sqlite3.Connection) -> None:
     """
     if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
         raise MemorySchemaError("memory v1 schema version changed")
-    quick = conn.execute("PRAGMA quick_check").fetchall()
+    # Bound the number of SQLite error diagnostics hydrated into Python.
+    # Invalid databases need only a denial, never a complete error inventory.
+    quick = conn.execute("PRAGMA quick_check").fetchmany(2)
     if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise MemorySchemaError("memory SQLite quick_check failed")
     with sqlite3.connect(":memory:") as expected:
