@@ -302,14 +302,40 @@ def _path(value: object, *, create: bool) -> Path:
 def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -> QuarantineWitness:
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise ScheduleQuarantineRejected("quarantine schema version changed")
+    # Inspect DDL size and object count inside the caller's single SQLite
+    # transaction, before hydrating a potentially huge or attacker-altered
+    # sqlite_master into Python.
+    schema_rows, ddl_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (type(schema_rows) is not int or type(ddl_bytes) is not int
+            or not 0 <= schema_rows <= 8 or not 0 <= ddl_bytes <= 8192):
+        raise ScheduleQuarantineRejected("quarantine schema preflight budget exceeded")
     with closing(sqlite3.connect(":memory:")) as expected:
         for statement in _DDL:
             expected.execute(statement)
         q = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(q)) != tuple(expected.execute(q)):
             raise ScheduleQuarantineRejected("quarantine schema drift")
-    if conn.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+    if conn.execute("PRAGMA quick_check").fetchmany(2) != [("ok",)]:
         raise ScheduleQuarantineRejected("quarantine SQLite integrity failure")
+    # Reject excessive or malformed persisted rows in SQLite before Python
+    # receives occurrence identifiers and digest-bearing private metadata.
+    persisted_count = conn.execute(
+        "SELECT COUNT(*) FROM quarantines"
+    ).fetchone()[0]
+    if type(persisted_count) is not int or persisted_count > _MAX_ROWS:
+        raise ScheduleQuarantineRejected("quarantine persisted row budget exceeded")
+    malformed = conn.execute(
+        "SELECT 1 FROM quarantines WHERE "
+        "typeof(occurrence_id)!='text' OR length(occurrence_id)!=69 OR "
+        "typeof(chain_sha256)!='text' OR length(chain_sha256)!=64 OR "
+        "typeof(seq)!='integer' OR typeof(due_ms)!='integer' OR "
+        "typeof(observed_ms)!='integer' LIMIT 1"
+    ).fetchone()
+    if malformed is not None:
+        raise ScheduleQuarantineRejected("quarantine persisted storage type or width changed")
     # A malformed store can have many distinct policy rows. Examine at most
     # two: any second row is a failure, never an unbounded tuple materialization.
     if tuple(conn.execute("SELECT * FROM policy").fetchmany(2)) != (epoch,):
