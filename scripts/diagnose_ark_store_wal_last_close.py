@@ -1,4 +1,4 @@
-"""Disposable actual ARK Memory/ActionAudit WAL last-close diagnostic.
+"""Disposable actual ARK Memory/ActionAudit/revocation WAL last-close diagnostic.
 
 This is a path-free, disconnected two-process fixture. It uses only new
 TemporaryDirectory databases and preexisting READ APIs; no backend, approval,
@@ -22,6 +22,10 @@ from pathlib import Path
 from ark.agency.audit import SQLiteActionAudit
 from ark.agency.contracts import ToolCall
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
+from ark.personal_context_revocation_review import (
+    SyntheticContextRevocationLedger,
+    SyntheticContextRevocationRejected,
+)
 
 _CHILD = """
 import sqlite3
@@ -42,7 +46,11 @@ try:
 finally:
     conn.close()
 """
-_TABLES = {"memory": "memory_events", "audit": "action_events"}
+_TABLES = {
+    "memory": "memory_events",
+    "audit": "action_events",
+    "revocation": "synthetic_context_revocations",
+}
 
 
 def bounded_count(raw: str) -> int:
@@ -84,12 +92,22 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                 store = SQLiteMemoryStore(db, clock_ms=lambda: 100)
                 scope = MemoryScope("disposable-owner")
                 original = store.put(MemoryWrite(scope, "source", "inert"))
-            else:
+            elif kind == "audit":
                 store = SQLiteActionAudit(db, clock_ms=lambda: 100)
                 original = store.append(
                     ToolCall("fixture.read", "fixture.read", "fixture-scope", {}),
                     outcome="synthetic_only",
                 )
+            else:
+                # Only this disposable fixture opts the normally non-WAL veto
+                # ledger into WAL, so a last-client-close race can be measured
+                # without changing production persistence or authorization.
+                store = SyntheticContextRevocationLedger(db)
+                scope = MemoryScope("disposable-owner", "profile")
+                with sqlite3.connect(db) as setup:
+                    if setup.execute("PRAGMA journal_mode=WAL").fetchone() != ("wal",):
+                        return {"status": "NO_WAL", "kind": kind, "keeper": keeper}
+                original = store.revoke(scope, at_ms=100)
             conn = sqlite3.connect(db)
             if conn.execute("PRAGMA journal_mode").fetchone() != ("wal",):
                 return {"status": "NO_WAL", "kind": kind, "keeper": keeper}
@@ -140,10 +158,20 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                 cold = SQLiteMemoryStore(db, clock_ms=lambda: 101)
                 recovered = cold.get(original.memory_id, scope, include_expired=True)
                 data_intact = recovered == original
-            else:
+            elif kind == "audit":
                 cold = SQLiteActionAudit(db, clock_ms=lambda: 101)
                 restored = cold.events()
                 data_intact = len(restored) == 1 and restored[0] == original
+            else:
+                # A cold restart must still veto the exact synthetic scope.
+                # A durable marker never authorizes an automatic replay.
+                cold = SyntheticContextRevocationLedger(db, require_existing=True)
+                try:
+                    cold.assert_not_revoked((scope,))
+                except SyntheticContextRevocationRejected as error:
+                    data_intact = "revoked" in str(error) and len(original) == 64
+                else:
+                    data_intact = False
             return {
                 "status": "OK", "kind": kind, "keeper": keeper,
                 "before_child_close": before,
