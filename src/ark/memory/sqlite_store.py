@@ -37,6 +37,13 @@ _MAX_NAMESPACE_SEARCH_ROWS = 10_000
 # attacker-controlled nested structures from a corrupted SQLite TEXT cell.
 # This is a parser budget, not a pre-SELECT SQLite hydration/IO guarantee.
 _MAX_METADATA_JSON_CHARS = 3_200_000
+# Bound SQLite TEXT byte hydration before SELECT * materializes rows. Valid
+# content/metadata can contain four-byte UTF-8 scalars; this preflight is
+# deliberately looser than the subsequent codepoint/canonicality checks.
+_MAX_MEMORY_ROW_CONTENT_BYTES = 4_000_000
+_MAX_MEMORY_ROW_METADATA_BYTES = 4 * _MAX_METADATA_JSON_CHARS
+_MAX_MEMORY_ROW_SOURCE_BYTES = 4 * 512
+_MAX_MEMORY_SEARCH_HYDRATION_BYTES = 64 * 1024 * 1024
 _BOOTSTRAP_LOCK = RLock()  # protects same-process first-open preflights and WAL setup
 # Preserve original result classes across synthetic constructor injection.
 _MEMORY_EVENT_RESULT_TYPE = MemoryEvent
@@ -210,6 +217,59 @@ def _require_memory_page_hydration_admission(
     ).fetchone()
     if malformed is not None:
         raise MemorySchemaError("memory event page hydration admission failed")
+
+
+def _require_memory_text_hydration_budget(
+    conn: sqlite3.Connection,
+    owner_id: str,
+    namespace: str,
+    *,
+    memory_id: str | None = None,
+) -> None:
+    """Bound selected SQLite TEXT bytes before any Python row hydration.
+
+    The preflight runs in the same BEGIN snapshot as the caller's SELECT *.
+    SQLite computes BLOB byte lengths without returning the TEXT values to
+    Python. This is a bounded-read guard, not proof of trusted persistence.
+    """
+    if memory_id is None:
+        selected = (
+            "SELECT content,metadata_json,source_id FROM memories "
+            "WHERE owner_id=? AND namespace=? LIMIT ?"
+        )
+        params = (owner_id, namespace, _MAX_NAMESPACE_SEARCH_ROWS + 1)
+    else:
+        selected = (
+            "SELECT content,metadata_json,source_id FROM memories "
+            "WHERE memory_id=? AND owner_id=? AND namespace=? LIMIT 1"
+        )
+        params = (memory_id, owner_id, namespace)
+    count, total_bytes, content_bytes, metadata_bytes, source_bytes = conn.execute(
+        "SELECT COUNT(*), "
+        "COALESCE(SUM(length(CAST(content AS BLOB)) "
+        "+ length(CAST(metadata_json AS BLOB)) "
+        "+ length(CAST(source_id AS BLOB))), 0), "
+        "COALESCE(MAX(length(CAST(content AS BLOB))), 0), "
+        "COALESCE(MAX(length(CAST(metadata_json AS BLOB))), 0), "
+        "COALESCE(MAX(length(CAST(source_id AS BLOB))), 0) "
+        "FROM (" + selected + ")",
+        params,
+    ).fetchone()
+    if (
+        type(count) is not int or type(total_bytes) is not int
+        or type(content_bytes) is not int
+        or type(metadata_bytes) is not int
+        or type(source_bytes) is not int
+        or content_bytes > _MAX_MEMORY_ROW_CONTENT_BYTES
+        or metadata_bytes > _MAX_MEMORY_ROW_METADATA_BYTES
+        or source_bytes > _MAX_MEMORY_ROW_SOURCE_BYTES
+    ):
+        raise MemorySchemaError("stored memory row exceeds MemoryWrite bounds")
+    if memory_id is None and (
+        count > _MAX_NAMESPACE_SEARCH_ROWS
+        or total_bytes > _MAX_MEMORY_SEARCH_HYDRATION_BYTES
+    ):
+        raise MemorySchemaError("memory search namespace hydration budget exceeded")
 
 
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
@@ -610,6 +670,11 @@ class SQLiteMemoryStore:
             assert_scope_carrier()
             _validate_v1_schema(conn)
             assert_scope_carrier()
+            _require_memory_text_hydration_budget(
+                conn, pinned_scope.owner_id, pinned_scope.namespace,
+                memory_id=memory_id,
+            )
+            assert_scope_carrier()
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
@@ -688,6 +753,10 @@ class SQLiteMemoryStore:
             conn.execute("BEGIN")
             assert_query_epoch()
             _validate_v1_schema(conn)
+            assert_query_epoch()
+            _require_memory_text_hydration_budget(
+                conn, pinned_scope.owner_id, pinned_scope.namespace,
+            )
             assert_query_epoch()
             # The SELECT anchors the SQLite snapshot before the clock. A
             # concurrent writer in the clock callback cannot mix epochs.
@@ -1319,7 +1388,7 @@ def _record(row: sqlite3.Row) -> MemoryRecord:
         raise MemorySchemaError("stored metadata JSON exceeds MemoryWrite bounds")
     try:
         metadata = json.loads(metadata_json)
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, RecursionError, OverflowError) as exc:
         raise MemorySchemaError("stored metadata JSON is invalid") from exc
     if not isinstance(metadata, dict) or not all(
         type(k) is str and type(v) is str for k, v in metadata.items()
