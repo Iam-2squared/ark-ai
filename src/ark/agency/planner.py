@@ -510,14 +510,18 @@ class PlanGraph:
         # Advance the detached state epoch only after all affected statuses
         # have been committed in memory, including a terminal BLOCKED cascade.
         self._status_epoch = self._capture_status_epoch()
-        # Detaching the return value invokes a replace() callback after the
-        # in-memory state epoch was published. Recheck the authoritative
-        # graph and the returned carrier: no caller may observe a forged
-        # success while a reflected callback corrupted another step or
-        # changed the transition result. A rejection is NOT a rollback.
+        # A valid nested transition during the *final* detached-copy callback
+        # can advance the graph without breaking its internal consistency.
+        # A receipt for the older epoch must not silently appear current.
+        # Rejection after publication is never a rollback or retry authority.
+        committed_status_epoch = self._status_epoch
         detached = replace(updated)
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        if self._status_epoch is not committed_status_epoch:
+            raise PlanConflictError(
+                "plan status advanced during final transition snapshot"
+            )
         if (
             type(detached) is not PlanStepStatus
             or detached is updated
