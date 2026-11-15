@@ -139,6 +139,27 @@ def _parse_reply(output: str) -> dict[str, str]:
     return decoded
 
 
+def _sidecars_are_single_link_files(path: Path) -> bool:
+    """Refuse synthetic WAL/SHM aliases before and after independent readback.
+
+    Sidecars may legitimately appear or disappear as SQLite readers close;
+    their pathname presence is not itself evidence of a durable veto. This
+    is deliberately only lexical/path preflight, not atomic handle custody.
+    """
+    try:
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = path.with_name(path.name + suffix)
+            try:
+                metadata = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+                return False
+    except (OSError, ValueError):
+        return False
+    return True
+
+
 def _verify_row(path: Path) -> bool:
     """Independent read-only verification; a child's status is not proof."""
     # Only two rows, three catalog objects and two quick-check messages
@@ -149,7 +170,11 @@ def _verify_row(path: Path) -> bool:
         # row in an aliased file is not custody of this disposable case.
         # These path probes are intentionally NOT atomic open-handle identity.
         initial = path.lstat()
-        if not stat.S_ISREG(initial.st_mode) or initial.st_nlink != 1:
+        if (
+            not stat.S_ISREG(initial.st_mode)
+            or initial.st_nlink != 1
+            or not _sidecars_are_single_link_files(path)
+        ):
             return False
         with closing(sqlite3.connect(path.absolute().as_uri() + "?mode=ro", uri=True)) as conn:
             conn.execute("PRAGMA query_only=ON")
@@ -170,6 +195,7 @@ def _verify_row(path: Path) -> bool:
             not stat.S_ISREG(final.st_mode)
             or final.st_nlink != 1
             or (initial.st_dev, initial.st_ino) != (final.st_dev, final.st_ino)
+            or not _sidecars_are_single_link_files(path)
         ):
             return False
         return (
