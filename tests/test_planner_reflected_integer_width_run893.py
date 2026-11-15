@@ -30,6 +30,7 @@ def _reflected(value: object) -> PlanStep:
         -(1 << 20_000),
         MappingProxyType({"nested": 1 << 20_000}),
     ),
+    ids=("positive-oversize", "negative-oversize", "nested-oversize"),
 )
 def test_oversized_reflected_integer_is_denied_before_json_callback(
     replacement, monkeypatch,
