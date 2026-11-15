@@ -1,3 +1,41 @@
+# LATEST — ARK AI Run895 non-UI privacy DDL custody, Planner diamond, Memory expiry, schedule no-replay
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T20:58:29+09:00** — observed ordinary wall clock near this Contents API write; **NOT** a trusted execution clock, source identity, consent, authorization or model evidence. **Overall ARK/JARVIS: NOT_PASSED.** New UI/frontend work PAUSED. Zero authorized spending, paid/external GPU/API/compute.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5), paused [Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain Draft, unmerged and untouched. **Initial exact work-basis HEAD:** `26f47891872dafd2d5bd4c877358c63ec6049c18` (Run894 checkpoint). **Complete new source/test HEAD:** `0150ec8337e24cbe5351e11af6d7dbb158a457fa`. **Technical report / checkpoint write-basis HEAD:** `a77ad96cc641d167a56741f5547e61909aecaffc`, freshly rechecked against PR #8 immediately before this Contents API update. **Prior PROJECT_STATUS blob:** `9b2fb11f10807865ba28b348435711feb1ec6315`. **Checkpoint-result HEAD cannot be prewritten into its own committed content**: obtain commit SHA from the GitHub Contents API write response, then verify the resulting branch ref and PR HEAD, and status blob independently. This is the sole PROJECT_STATUS update this invocation.
+
+## NEW — five non-UI packages, thirteen authored regression cases
+
+1. **Privacy diagnostic exact DDL custody**: `scripts/diagnose_revocation_wal_processes.py` [source `f160cdda...`](https://github.com/Iam-2squared/ark-ai/commit/f160cdda242d9add048b7b95fed1ad79c3b882e2), plus [four regression cases `0150ec83...`](https://github.com/Iam-2squared/ark-ai/commit/0150ec8337e24cbe5351e11af6d7dbb158a457fa) in `tests/test_revocation_wal_ddl_oracle_run895.py`. The old disposable verifier checked matching schema names/types and one row but did not enforce the `sqlite_master.sql` constraints; a same-named table without `NOT NULL` could have been falsely verified. Now it compares the independent exact v1 DDL oracle. Tests include three altered schemas with the same autoindex/table identity and one valid canonical ledger. This is not a trusted/provenance/consent witness and does not solve WAL/SHM races.
+2. **Planner diamond terminal/fan-in**: [`d425c895...`](https://github.com/Iam-2squared/ark-ai/commit/d425c895c25d06093ddfd8a72970794786fb89d9), `tests/test_planner_terminal_diamond_run895.py`, **4 cases** for FAILED/CANCELLED cascades, shared descendants blocked exactly once, unaffected independent work, correct fan-in and durable-neutral status/topology identities. Synthetic READ only, no ToolBackend.
+3. **Memory multi-scope expiry and independent process refresh**: [`c84eb99c...`](https://github.com/Iam-2squared/ark-ai/commit/c84eb99c609ab97fc5f2d8a9bdda192d5a1ed0c8), `tests/test_memory_multiscope_expiry_process_run895.py`, **2 cases**. Scoped purge leaves another expired namespace untouched; a committed cross-process CAS refresh survives global purge of the other namespace, with globally dense event IDs. Disposable SQLite only, frozen Memory v1 DDL unchanged.
+4. **Proactive synthetic grace-edge and restart no-replay**: [`71a62670...`](https://github.com/Iam-2squared/ark-ai/commit/71a6267071cae65d0070a35840ed40fd18ea200e), `tests/test_schedule_grace_restart_no_replay_run895.py`, **3 cases**. Due grace boundary, overdue restart cursor retained, and caller-asserted advancement cannot grant notification, execution, trusted-clock, consent or automatic-replay authority.
+5. **Report**: [Run895 technical evidence](https://github.com/Iam-2squared/ark-ai/blob/a77ad96cc641d167a56741f5547e61909aecaffc/docs/JARVIS_RUN895_NON_UI_DDL_PLANNER_MEMORY_SCHEDULER.md) distinguishes code change from test assertions and documents exact limitations, CI run IDs and unresolved WAL/SHM risks.
+
+**All thirteen new cases are AUTHORED only until the latest exact HEAD completes six-job CI.** Do not extrapolate the earlier baseline GREEN to new heads. No equivalent workflow was manually dispatched; PR commits trigger their own CI.
+
+## CI — exact source/test heads (last sampled; no borrowed GREEN)
+
+- **Starting `26f47891872dafd2d5bd4c877358c63ec6049c18`:** [#43706172082](https://github.com/Iam-2squared/ark-ai/actions/runs/43706172082) **GREEN all six**, individually verified Windows/Ubuntu × Python 3.11–3.13.
+- [CI #43710841179](https://github.com/Iam-2squared/ark-ai/actions/runs/43710841179) — `f160cdda242d9add048b7b95fed1ad79c3b882e2`, **IN_PROGRESS** (last observed).
+- [CI #43710927177](https://github.com/Iam-2squared/ark-ai/actions/runs/43710927177) — `d425c895c25d06093ddfd8a72970794786fb89d9`, **IN_PROGRESS** (last observed).
+- [CI #43711035541](https://github.com/Iam-2squared/ark-ai/actions/runs/43711035541) — `c84eb99c609ab97fc5f2d8a9bdda192d5a1ed0c8`, **IN_PROGRESS** (last observed).
+- [CI #43711147851](https://github.com/Iam-2squared/ark-ai/actions/runs/43711147851) — `71a6267071cae65d0070a35840ed40fd18ea200e`, **IN_PROGRESS** (last observed).
+- [CI #43711210075](https://github.com/Iam-2squared/ark-ai/actions/runs/43711210075) — `0150ec8337e24cbe5351e11af6d7dbb158a457fa`, **QUEUED** (last observed).
+- [CI #43711323792](https://github.com/Iam-2squared/ark-ai/actions/runs/43711323792) — `a77ad96cc641d167a56741f5547e61909aecaffc`, **QUEUED** (last observed).
+
+A checkpoint write automatically triggers another PR CI whose ID and resulting commit SHA are unknown before this write. The latest six-job matrix PASS is **NOT CERTIFIED** as of this snapshot. Inspect failures before any dependent integration; never rerun an equivalent workflow redundantly.
+
+## Frozen boundaries, blockers, Next plan / 今後の方針
+
+**Unchanged:** frozen V1/V2/Local UI/Launcher evaluation contracts/evidence, Memory v1 schema and direct Observation v1 semantics, protected V2 final evaluation and V3 Candidate/authorization/reproducibility gates, Draft PR #5, and paused Draft PR #9. No UI/frontend tests/features/integration, main merge, spending, paid/external GPU/API, real Candidate weights/training/promotion, physical-PC action, new credentials, private data ingestion, human review, live ToolBackend or WRITE execution, destructive action or automatic replay of COMMIT-UNKNOWN.
+
+**Unresolved:** Windows SQLite WAL/SHM last-close/disappearing inode race; losing revocation process refusal even when winner has committed a durable veto; cross-store COMMIT-UNKNOWN/exactly-once, trusted-clock and independent consent/privacy custody. Never relax sidecar alias refusal or retry an ambiguous irreversible write. A synthetic one-row schema hash is not authenticated provenance.
+
+**Next plan / 今後の方針 (priority):** (1) certify all six jobs at exact complete source/test and checkpoint HEADs, minimally fix any FAIL; (2) isolate WAL/SHM loser refusal versus durable veto winner with bounded privacy-safe diagnostics; (3) improve Planner UNKNOWN journal recovery and Memory CAS/expiry/coherent snapshots; (4) connect registry-bound PermissionGate, audit-before-action and disconnected Mock READ only after lower-level exact-head GREEN; (5) continue privacy-safe Personal Context, proactive/observation contracts and detached free-only V3 guards without changing frozen contracts or UI.
+
+---
+
 # LATEST — ARK AI Run894 non-UI Planner proxy custody, Memory expiry restart CAS, bounded privacy verification
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T19:52:24.163+09:00** — ordinary observed wall clock only, **NOT trusted execution time, approval, consent, source custody or model/runtime evidence.** **ARK/JARVIS overall: NOT_PASSED.** All new UI/frontend work PAUSED, free-only/no paid or external GPU/API/compute.
