@@ -3,6 +3,9 @@
 All fixtures are in-memory synthetic READ computations, not ToolBackend calls.
 """
 
+import subprocess
+import sys
+
 import pytest
 
 from ark.agency import disconnected_fixture_binding as binding
@@ -19,7 +22,7 @@ def _pair():
     return request, execute_disconnected_fixture_tool(request)
 
 
-@pytest.mark.parametrize("hook", ("__init__", "__new__"))
+@pytest.mark.parametrize("hook", ("__init__",))
 def test_replaced_exact_class_constructor_never_executes(
     monkeypatch: pytest.MonkeyPatch, hook: str,
 ) -> None:
@@ -39,6 +42,39 @@ def test_replaced_exact_class_constructor_never_executes(
     ):
         binding.bind_disconnected_fixture_result(request, result)
     assert executed == []
+
+
+def test_replaced_new_is_rejected_without_poisoning_other_tests() -> None:
+    """CPython caches __new__ slots after pytest monkeypatch undo.
+
+    Exercise this hostile constructor in a disposable interpreter so that its
+    class-slot side effects cannot break unrelated tests in this process.
+    """
+    probe = """
+from ark.agency import disconnected_fixture_binding as binding
+from ark.agency.disconnected_toolbox import (
+    DisconnectedToolRequest, execute_disconnected_fixture_tool,
+)
+request = DisconnectedToolRequest('req_' + 'a' * 32, 'math.sum', '{"values":[1,2]}')
+result = execute_disconnected_fixture_tool(request)
+executed = []
+def adversarial(*args, **kwargs):
+    executed.append('new')
+    raise AssertionError('forged constructor executed')
+binding.DisconnectedFixtureBinding.__new__ = adversarial
+try:
+    binding.bind_disconnected_fixture_result(request, result)
+except binding.DisconnectedFixtureBindingRejected as exc:
+    assert 'constructed binding' in str(exc)
+else:
+    raise AssertionError('forged __new__ replacement was accepted')
+assert executed == []
+"""
+    child = subprocess.run(
+        [sys.executable, "-c", probe],
+        capture_output=True, text=True, timeout=20, check=False,
+    )
+    assert child.returncode == 0, child.stderr
 
 
 @pytest.mark.parametrize("field", (
