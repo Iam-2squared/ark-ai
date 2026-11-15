@@ -93,6 +93,35 @@ def _hash(label: str, payload: object) -> str:
     return hashlib.sha256(label.encode("utf-8") + b"\0" + encoded).hexdigest()
 
 
+def _validated_context_metadata(metadata: object) -> bool:
+    """Fail closed before sorting or hashing mutable-aliased Memory metadata.
+
+    A MappingProxyType can wrap a mutable dict. Recheck this bounded predicate
+    after every reentrant digest callback, not only on initial admission.
+    """
+    if (
+        type(metadata) is not MappingProxyType
+        or len(metadata) > 64
+        or any(
+            type(key) is not str or len(key) > 4096
+            or type(value) is not str or len(value) > 4096
+            for key, value in metadata.items()
+        )
+    ):
+        raise PersonalContextReviewRejected("context metadata shape/budget invalid")
+    try:
+        oversized = any(
+            len(key.encode("utf-8", errors="strict")) > 4096
+            or len(value.encode("utf-8", errors="strict")) > 4096
+            for key, value in metadata.items()
+        )
+    except UnicodeEncodeError as exc:
+        raise PersonalContextReviewRejected("context metadata is not valid UTF-8") from exc
+    if oversized:
+        raise PersonalContextReviewRejected("context metadata UTF-8 byte budget exceeded")
+    return True
+
+
 def review_personal_context(
     snapshot: CoherentSnapshotReview,
     policy: ContextSelectionPolicy,
@@ -158,37 +187,7 @@ def review_personal_context(
             # mapping with an unbounded or executable carrier. Validate its
             # exact, bounded scalar shape before sorting, hashing, or reading
             # sensitive content. Memory v1 storage/DDL is left unchanged.
-            metadata = record.metadata
-            if (
-                type(metadata) is not MappingProxyType
-                or len(metadata) > 64
-                or any(
-                    type(key) is not str or len(key) > 4096
-                    or type(value) is not str or len(value) > 4096
-                    for key, value in metadata.items()
-                )
-            ):
-                raise PersonalContextReviewRejected(
-                    "context metadata shape/budget invalid"
-                )
-            # A 4096-codepoint label can exceed the byte limit or include
-            # unpaired surrogates. Refuse it before hashing private content;
-            # only the optional context projection is more restrictive than
-            # the unchanged Memory v1 record/storage contract.
-            try:
-                oversized_metadata = any(
-                    len(key.encode("utf-8", errors="strict")) > 4096
-                    or len(value.encode("utf-8", errors="strict")) > 4096
-                    for key, value in metadata.items()
-                )
-            except UnicodeEncodeError as exc:
-                raise PersonalContextReviewRejected(
-                    "context metadata is not valid UTF-8"
-                ) from exc
-            if oversized_metadata:
-                raise PersonalContextReviewRejected(
-                    "context metadata UTF-8 byte budget exceeded"
-                )
+            _validated_context_metadata(record.metadata)
             # Frozen records can still be reflectively modified. Refuse
             # oversized sensitive plaintext before UTF-8 allocation, hashing
             # or inclusion in an ephemeral synthetic context bundle.
@@ -285,6 +284,7 @@ def review_personal_context(
                         record.created_at_ms, record.updated_at_ms,
                         record.expires_at_ms, record.revision, record.content_sha256,
                     ) == original_values
+                    and _validated_context_metadata(record.metadata)
                     and tuple(sorted(record.metadata.items())) == metadata_values
                     for group, epochs in zip(rows, record_epoch, strict=True)
                     for record, (
@@ -295,7 +295,7 @@ def review_personal_context(
                     )
                 )
             )
-        except (AttributeError, TypeError, ValueError):
+        except (AttributeError, TypeError, ValueError, PersonalContextReviewRejected):
             stable = False
         if not stable:
             raise PersonalContextReviewRejected("context input changed during selection")
