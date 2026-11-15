@@ -45,6 +45,15 @@ class ContextSelectionPolicy:
             or not self.policy_revision.strip()
         ):
             raise ValueError("invalid exact Personal Context budget/policy")
+        # Policy identifiers become part of derived hashes. Refuse malformed
+        # Unicode and multibyte text beyond the 128-byte encoding budget
+        # before inspecting any private Memory snapshot rows.
+        try:
+            encoded_revision = self.policy_revision.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("Personal Context policy revision is not UTF-8") from exc
+        if len(encoded_revision) > 128:
+            raise ValueError("Personal Context policy revision exceeds UTF-8 byte budget")
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +118,7 @@ def review_personal_context(
         or not 1 <= len(snapshot.scopes) <= 16
         or len(snapshot.scopes) != len(snapshot.records)
         or type(snapshot.provenance_sha256) is not str
+        or len(snapshot.provenance_sha256) != 64
         or not _HEX.fullmatch(snapshot.provenance_sha256)
     ):
         raise PersonalContextReviewRejected("coherent snapshot shape changed")
@@ -173,6 +183,7 @@ def review_personal_context(
                 or type(record.source_id) is not str
                 or type(record.content) is not str
                 or type(record.content_sha256) is not str
+                or len(record.content_sha256) != 64
                 or not _HEX.fullmatch(record.content_sha256)
                 or type(record.revision) is not int or record.revision < 1
                 or type(record.created_at_ms) is not int
