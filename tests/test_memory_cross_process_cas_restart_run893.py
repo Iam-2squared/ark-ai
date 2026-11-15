@@ -102,3 +102,49 @@ def test_child_cas_does_not_modify_same_source_in_different_namespace(tmp_path):
     assert resumed.get(second.memory_id, private).content == "private"
     assert [event.event_id for event in resumed.events(notes)] == [1, 3]
     assert [event.event_id for event in resumed.events(private)] == [2]
+
+
+def test_child_refresh_before_expiry_purge_preserves_new_revision(tmp_path):
+    # A second interpreter refreshes an expired-at-150 row. A stale parent
+    # must not delete the now non-expiring revision or forge an expire event.
+    path = tmp_path / "refresh-before-expire.sqlite"
+    scope = memory.MemoryScope("offline-owner", "notes")
+    original = _store(path, now=100).put(
+        memory.MemoryWrite(
+            scope, "shared-source", "old", expires_at_ms=150,
+        ),
+        expected_revision=0,
+    )
+    assert _child(path, "notes", 1, "refreshed") == "REVISION=2"
+    resumed = _store(path, now=200)
+    assert resumed.purge_expired(scope=scope) == 0
+    record = resumed.get(original.memory_id, scope)
+    assert record is not None
+    assert (record.content, record.revision, record.expires_at_ms) == (
+        "refreshed", 2, None,
+    )
+    assert [(event.event_id, event.operation) for event in resumed.events(scope)] == [
+        (1, "create"), (2, "update"),
+    ]
+
+
+def test_expiry_delete_is_terminal_to_stale_child_cas(tmp_path):
+    # A cross-process update with a prior revision cannot resurrect an
+    # expired row whose terminal delete is already committed to SQLite.
+    path = tmp_path / "expired-then-stale-child.sqlite"
+    scope = memory.MemoryScope("offline-owner", "notes")
+    original = _store(path, now=100).put(
+        memory.MemoryWrite(
+            scope, "shared-source", "expired", expires_at_ms=150,
+        ),
+        expected_revision=0,
+    )
+    purger = _store(path, now=200)
+    assert purger.purge_expired(scope=scope) == 1
+    assert _child(path, "notes", 1, "stale-resurrection") == "CONFLICT"
+    resumed = _store(path, now=200)
+    assert resumed.get(original.memory_id, scope, include_expired=True) is None
+    assert [
+        (event.event_id, event.operation, event.revision)
+        for event in resumed.events(scope)
+    ] == [(1, "create", 1), (2, "expire", 1)]
