@@ -41,9 +41,13 @@ def test_reentrant_status_advance_does_not_get_overwritten(
         return original_replace(value, **changes)
 
     monkeypatch.setattr(planner_module, "replace", reentrant_replace)
-    with pytest.raises(
-        PlanConflictError, match="status advanced during transition staging",
-    ):
+    # Same-step reentry already fails the staged revision comparison; a
+    # different-step reentry reaches the new cross-step epoch fence.
+    expected_error = (
+        "invalid staged plan transition result"
+        if same_step else "status advanced during transition staging"
+    )
+    with pytest.raises(PlanConflictError, match=expected_error):
         graph.transition("alpha", StepState.RUNNING, expected_revision=0)
 
     assert invoked
