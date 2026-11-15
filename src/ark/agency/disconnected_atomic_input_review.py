@@ -58,7 +58,20 @@ def _original_carriers() -> None:
 
 
 def _matches(value: object, pattern: re.Pattern[str]) -> bool:
-    return type(value) is str and pattern.fullmatch(value) is not None
+    # A reflected frozen claim may contain a multi-megabyte text field.
+    # Constrain exact ASCII digest grammar *before* invoking regex on it.
+    # The canonical ledger already uses these widths at its own boundary.
+    if type(value) is not str:
+        return False
+    if pattern is _OCCURRENCE:
+        expected = 68
+    elif pattern is _BOUND:
+        expected = 70
+    elif pattern is _SHA:
+        expected = 64
+    else:
+        return False
+    return len(value) == expected and pattern.fullmatch(value) is not None
 
 
 _ORIGINAL_CARRIER_GATE = _original_carriers
