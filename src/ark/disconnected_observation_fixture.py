@@ -67,6 +67,15 @@ def make_disconnected_fixture(
         raise DisconnectedFixtureRejected("exact synthetic observation kind required")
     if type(payload) is not bytes or not 1 <= len(payload) <= _MAX_FIXTURE_BYTES:
         raise DisconnectedFixtureRejected("fixture payload must be 1..65536 exact bytes")
+    # The disconnected adapter accepts only strict fixture labels. Direct
+    # ObservationEnvelope v1 intentionally allows escaped NUL identities;
+    # do not change that frozen contract. Reject NUL only at this optional
+    # adapter boundary, before any synthetic payload reaches SHA-256.
+    if any(
+        type(label) is str and "\x00" in label
+        for label in (source_id, privacy_scope)
+    ):
+        raise DisconnectedFixtureRejected("fixture metadata contains NUL separator")
     # First validate the entire public metadata contract using a detached,
     # inert envelope and a fixed digest sentinel. Invalid privacy/source
     # labels, clocks and parent links never cause even a local hashing pass
