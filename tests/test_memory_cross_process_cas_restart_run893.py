@@ -6,7 +6,6 @@ no external executor, credentials, user data, or authority to share memory.
 
 from ark import memory
 
-
 _CHILD = """
 import sys
 from pathlib import Path
