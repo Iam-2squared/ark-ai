@@ -173,6 +173,10 @@ def _verify_json(raw: str) -> bytes:
     _require_original_result_carriers()
     if type(raw) is not str:
         raise DisconnectedResultsRejected("result JSON must be an exact string")
+    # A source-controlled result fixture can be very large. Refuse its
+    # code-point size before allocating a UTF-8 copy or invoking JSON.
+    if len(raw) > _MAX_STEP_BYTES:
+        raise DisconnectedResultsRejected("READ result byte budget exceeded")
     try:
         payload = raw.encode("utf-8", errors="strict")
         if not 0 < len(payload) <= _MAX_STEP_BYTES:
@@ -210,7 +214,8 @@ def seal_detached_read_results(
     """
     _require_original_result_carriers()
     if (
-        type(request_id) is not str or _REQ.fullmatch(request_id) is None
+        type(request_id) is not str or len(request_id) != 36
+        or _REQ.fullmatch(request_id) is None
         or type(expected_steps) is not tuple or not 1 <= len(expected_steps) <= 24
         or type(results) is not tuple or len(results) != len(expected_steps)
         or any(type(row) is not DetachedReadResult for row in results)
@@ -257,11 +262,15 @@ def seal_detached_read_results(
         step, operation = expected
         row_step, row_operation, raw, provided_hash = fields
         if (
-            type(step) is not str or _STEP.fullmatch(step) is None
+            type(step) is not str or len(step) != 21 or _STEP.fullmatch(step) is None
             or step in seen or type(operation) is not str or operation not in _OPS
-            or row_step != step or row_operation != operation
+            # Exact types before comparisons: a reflected subclass could
+            # otherwise execute __eq__/__ne__ before identity admission.
             or type(row_step) is not str or type(row_operation) is not str
-            or type(provided_hash) is not str or _SHA.fullmatch(provided_hash) is None
+            or type(provided_hash) is not str or len(provided_hash) != 64
+            or row_step != step or row_operation != operation
+            or len(row_step) != 21 or _STEP.fullmatch(row_step) is None
+            or _SHA.fullmatch(provided_hash) is None
         ):
             raise DisconnectedResultsRejected("READ membership identity mismatch")
         seen.add(step)
