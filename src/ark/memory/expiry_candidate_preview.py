@@ -17,11 +17,11 @@ from pathlib import Path
 
 from .contracts import MemoryRecord, MemorySchemaError, MemoryScope
 from .sqlite_store import (
-    SQLiteMemoryStore,
     _MAX_MEMORY_ROW_CONTENT_BYTES,
     _MAX_MEMORY_ROW_METADATA_BYTES,
     _MAX_MEMORY_ROW_SOURCE_BYTES,
     _MAX_MEMORY_SEARCH_HYDRATION_BYTES,
+    SQLiteMemoryStore,
     _record,
     _validate_v1_schema,
 )
