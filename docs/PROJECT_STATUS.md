@@ -1,3 +1,36 @@
+# LATEST — ARK AI Run897 non-UI WAL durable-loser classification and bounded Planner journal ingress
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T22:57:35.806+09:00**, observed ordinary wall clock only; **NOT** a trusted authorization/consent/identity/provenance clock. **Overall ARK/JARVIS: NOT_PASSED**. New UI/frontend development PAUSED. No paid API, external GPU/compute or new potentially billable service.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain Draft/unmerged and untouched. **Exact initial work-basis HEAD:** `2d195182e0f14e3af83f7e11dbcffc02bb66f307` (Run896 checkpoint). **Latest complete code/test HEAD:** `fde56a5d098959f6604c001cb0f13ae1d9078324`. **Report / checkpoint write-basis HEAD:** `e02c1dd7ad8b92cee615aca18bfe80c1e76aeaf7`, rechecked against Draft PR #8 immediately before this normal Contents API update. **Prior PROJECT_STATUS blob SHA:** `c31cf18ff13acffa5ca69afb684dce65edc339d7`. **Checkpoint-result HEAD cannot be written inside its own commit's bytes:** use the Contents API update response, then verify PR/branch HEAD and checkpoint blob afterward. This is the **sole canonical PROJECT_STATUS update this invocation**.
+
+## NEW — two non-UI implementation+test packages and technical evidence, 10 authored regression cases
+
+1. **Synthetic revocation SQLite WAL diagnostic, durable winner versus refusing loser:** [source `97dadef6`](https://github.com/Iam-2squared/ark-ai/commit/97dadef6fea3deba34b3c847a97c0c07ecf05e75); [5-case test `480fe428`](https://github.com/Iam-2squared/ark-ai/commit/480fe4289bafa6e19a20c93eae906e0623bde81f). `scripts/diagnose_revocation_wal_processes.py` now separately aggregates `durable_ambiguous_phase_patterns` and `unverified_phase_patterns` using only allowlisted phase/status combinations. A winning durable veto plus losing SIDECAR_REFUSED remains **anomaly/FAIL**; even both success replies cannot PASS without independently readable synthetic durable row. No private path or child stderr exported; no retry/permission/sidecar gate relaxed.
+2. **Synthetic Planner journal ingress before SQLite/step iteration:** [source `ecae864a`](https://github.com/Iam-2squared/ark-ai/commit/ecae864a0e6149d8ee5a3dcb773a8f73d12729ea); [five tests `8304b7b7`](https://github.com/Iam-2squared/ark-ai/commit/8304b7b7bbde7ee38ac1dfc716870fd9144dbbf2); [expectation-only fix `fde56a5d`](https://github.com/Iam-2squared/ark-ai/commit/fde56a5d098959f6604c001cb0f13ae1d9078324). `SyntheticPlanJournal.append` reuses existing `PlanGraph` exact-string/4,096 UTF-8-byte ID admission before retained-plan lookup or SQLite, blocking long ASCII/multibyte IDs, invalid Unicode and foreign objects. A valid synthetic READ step remains RUNNING/UNKNOWN after cold recovery and is never authorized for replay. Frozen PlanStep/ToolCall contracts and persistent journal v1 schema unchanged.
+3. **Grounded technical report:** [Run897 WAL/Planner evidence and limitations](https://github.com/Iam-2squared/ark-ai/blob/e02c1dd7ad8b92cee615aca18bfe80c1e76aeaf7/docs/JARVIS_RUN897_NON_UI_WAL_AMBIGUITY_PLANNER_JOURNAL_ADMISSION.md) documents commit boundaries, synthetic-only scope and unresolved Windows WAL/SHM/provenance/replay risks. **Ten tests are authored; latest-head GREEN remains unverified.** No UI or frozen evidence source touched.
+
+## CI — exact-head status near this checkpoint
+
+- Starting basis `2d195182...`: [CI #43716659129](https://github.com/Iam-2squared/ark-ai/actions/runs/43716659129) **GREEN 6/6**, individually verified Windows/Ubuntu × Python 3.11–3.13. Only this exact baseline earned GREEN at the start.
+- WAL diagnostic source `97dadef6...`: [#43721045251](https://github.com/Iam-2squared/ark-ai/actions/runs/43721045251) **IN PROGRESS** at latest sample.
+- WAL diagnostic tests `480fe428...`: [#43721117479](https://github.com/Iam-2squared/ark-ai/actions/runs/43721117479) **IN PROGRESS**.
+- Planner journal source `ecae864a...`: [#43721246269](https://github.com/Iam-2squared/ark-ai/actions/runs/43721246269) **IN PROGRESS**.
+- Initial Planner tests `8304b7b7...`: [#43721303865](https://github.com/Iam-2squared/ark-ai/actions/runs/43721303865) **IN PROGRESS**, with a known expected-state capitalization error corrected by the next commit.
+- Corrected complete source/test `fde56a5d...`: [#43721341913](https://github.com/Iam-2squared/ark-ai/actions/runs/43721341913) **QUEUED**.
+- Technical report `e02c1dd7...`: [#43721560476](https://github.com/Iam-2squared/ark-ai/actions/runs/43721560476) **QUEUED**.
+- This checkpoint write automatically triggers PR CI; its future run ID and exact new HEAD are not known beforehand. No equivalent workflow was manually dispatched. **No latest-HEAD all-six GREEN claim.**
+
+## Frozen boundaries, blockers, Next plan / 今後の方針
+
+**Unchanged:** V1/V2/Local UI/Launcher frozen contracts/evidence, Memory v1 and Observation v1 contracts, protected V2 final evaluation, Draft V3 PR #5 Candidate/authorization/reproducibility gates, paused Draft UI PR #9, main. No frontend source/tests/integration, paid or potentially billable compute/API/GPU, new credentials/accounts, protected real Candidate/training/promotion, real tool WRITE, private data ingestion, physical-PC action, destructive step or approval-gated main merge.
+
+**Known blockers:** Windows SQLite WAL/SHM last-close sidecar race and independent durable veto custody; even a readable winning row cannot authorize retry of a refusing child. Cross-store COMMIT-UNKNOWN/exactly-once, trusted execution clock, independently retained authorization, consent and provenance, target physical-PC GGUF/offline review and protected V3 identity/cost approval are unresolved.
+
+**Next plan / 今後の方針 (priority):** (1) certify the corrected complete-source/test and latest checkpoint six-job CI; fix any FAIL by normal Contents API only and shift lanes while runs execute; (2) classify synthetic Windows WAL/SHM refusal versus durable winner without using pathname observations as trusted custody; (3) strengthen Planner UNKNOWN recovery and Memory CAS/expiry/coherent snapshots; (4) only after lower-level exact-head GREEN, integrate immutable ToolRegistry, exact-type PermissionGate, durable audit-before-action and disconnected Mock READ, while COMMIT-UNKNOWN remains non-replayable; (5) continue privacy-safe Personal Context, proactive scheduler, Observation fixtures and detached free V3 approval/identity guards on reversible independent non-UI lanes. No spending or protected gate crossing.
+
+---
+
 # LATEST — ARK AI Run896 non-UI revocation alias, Planner restart/fan-in, Memory coherent WAL, registry-bound intent
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T21:58:48+09:00** — observed ordinary local clock near this normal Contents API checkpoint write; **NOT** a trusted execution clock, human approval, consent, source provenance or model evidence. **Overall ARK/JARVIS: NOT_PASSED.** New UI/frontend work PAUSED, zero paid/external GPU/API/compute.
