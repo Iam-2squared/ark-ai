@@ -74,7 +74,10 @@ def test_search_total_hydration_budget_is_scoped_and_read_only(
 
 def test_deep_corrupt_metadata_is_classified_as_schema_error(tmp_path):
     path, store, scope, record = _fixture(tmp_path)
-    deep_json = "[" * 1500 + "0" + "]" * 1500
+    # Valid nested arrays can parse on newer Python versions and then fail
+    # the mapping check instead. Use genuinely invalid JSON at every depth
+    # so this asserts the parser-error boundary on Python 3.11–3.13.
+    deep_json = "[" * 1500 + "not-json" + "]" * 1500
     with sqlite3.connect(path) as conn:
         conn.execute(
             "UPDATE memories SET metadata_json=? WHERE memory_id=?",
