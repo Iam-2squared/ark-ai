@@ -4,9 +4,9 @@ All context strings are synthetic, local and non-identifying. A rehashed
 fixture never asserts consent, live revocation freshness or external export.
 """
 
-from dataclasses import replace
 import hashlib
 import json
+from dataclasses import replace
 
 import pytest
 
