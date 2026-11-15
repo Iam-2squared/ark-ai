@@ -35,6 +35,7 @@ _ORIGINAL_FIXTURE_DOMAIN = fixture._DOMAIN
 _ORIGINAL_FIXTURE_RESULT = fixture.DisconnectedToolResult
 _ORIGINAL_FIXTURE_REQUEST = fixture.DisconnectedToolRequest
 _ORIGINAL_FIXTURE_REQUEST_GUARD = fixture._require_original_request_carrier
+_ORIGINAL_FIXTURE_RESULT_GUARD = fixture._require_original_result_denials
 
 
 class DisconnectedReadToolBridgeRejected(ValueError):
@@ -107,6 +108,7 @@ def _protocol() -> None:
         or fixture.DisconnectedToolResult is not _ORIGINAL_FIXTURE_RESULT
         or fixture.DisconnectedToolRequest is not _ORIGINAL_FIXTURE_REQUEST
         or fixture._require_original_request_carrier is not _ORIGINAL_FIXTURE_REQUEST_GUARD
+        or fixture._require_original_result_denials is not _ORIGINAL_FIXTURE_RESULT_GUARD
         or type(_MAX_STEPS) is not int
         or _MAX_STEPS != _ORIGINAL_MAX_STEPS
         or DetachedReadToolBinding is not _BINDING_TYPE
@@ -128,6 +130,15 @@ def _protocol() -> None:
     # The fixture request carries caller-private JSON. Its class-level slots
     # can be rebound independently of the intact exported class identity.
     _ORIGINAL_FIXTURE_REQUEST_GUARD()
+    # The fixture already pins original result slots/denial properties, but
+    # the composite bridge previously checked only its class identity. A
+    # substituted result getter must never run during receipt inspection.
+    try:
+        _ORIGINAL_FIXTURE_RESULT_GUARD()
+    except fixture.DisconnectedToolRejected as exc:
+        raise DisconnectedReadToolBridgeRejected(
+            "mock fixture result descriptor changed"
+        ) from exc
 
 
 def derive_disconnected_read_fixture_id(request_id: str, step_id: str) -> str:
