@@ -4,13 +4,6 @@ Only synthetic scopes and a disposable local database. A child process has
 no external executor, credentials, user data, or authority to share memory.
 """
 
-from __future__ import annotations
-
-import subprocess
-import sys
-
-import pytest
-
 from ark import memory
 
 
@@ -35,6 +28,9 @@ else:
 
 
 def _child(path, namespace: str, revision: int, text: str) -> str:
+    import subprocess
+    import sys
+
     completed = subprocess.run(
         [sys.executable, "-c", _CHILD, str(path), namespace, str(revision), text],
         capture_output=True,
@@ -59,11 +55,15 @@ def test_child_commit_updates_parent_view_and_contiguous_global_events(tmp_path)
     )
     assert _child(path, "notes", 1, "child-second") == "REVISION=2"
     assert parent.get(initial.memory_id, scope).content == "child-second"
-    with pytest.raises(memory.MemoryConflictError):
+    try:
         parent.put(
             memory.MemoryWrite(scope, "shared-source", "parent-stale"),
             expected_revision=1,
         )
+    except memory.MemoryConflictError:
+        pass
+    else:
+        raise AssertionError("stale cross-process CAS unexpectedly succeeded")
     events = _store(path).events(scope)
     assert [(event.event_id, event.operation, event.revision) for event in events] == [
         (1, "create", 1), (2, "update", 2),
