@@ -16,7 +16,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .contracts import MemoryRecord, MemorySchemaError, MemoryScope
-from .sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
+from .sqlite_store import (
+    SQLiteMemoryStore,
+    _MAX_MEMORY_ROW_CONTENT_BYTES,
+    _MAX_MEMORY_ROW_METADATA_BYTES,
+    _MAX_MEMORY_ROW_SOURCE_BYTES,
+    _MAX_MEMORY_SEARCH_HYDRATION_BYTES,
+    _record,
+    _validate_v1_schema,
+)
 
 _DOMAIN = b"ARK-read-only-memory-expiry-preview-v1\0"
 _MAX_ROWS = 1_000
@@ -340,6 +348,41 @@ def review_memory_expiry_candidates(
             try:
                 _validate_v1_schema(conn)
                 stable()
+                # Inspect only the *due page*, inside the same BEGIN snapshot,
+                # before SELECT * hydrates arbitrary persisted TEXT into Python.
+                # This is read-only and does not certify source custody or
+                # grant permission to erase any candidate.
+                metrics = tuple(conn.execute(
+                    "SELECT COUNT(*), "
+                    "COALESCE(SUM(length(CAST(content AS BLOB)) "
+                    "+length(CAST(metadata_json AS BLOB)) "
+                    "+length(CAST(source_id AS BLOB))),0), "
+                    "COALESCE(MAX(length(CAST(content AS BLOB))),0), "
+                    "COALESCE(MAX(length(CAST(metadata_json AS BLOB))),0), "
+                    "COALESCE(MAX(length(CAST(source_id AS BLOB))),0), "
+                    "COALESCE(SUM(CASE WHEN typeof(content)='text' "
+                    "AND typeof(metadata_json)='text' "
+                    "AND typeof(source_id)='text' THEN 0 ELSE 1 END),0) "
+                    "FROM (SELECT content,metadata_json,source_id FROM memories "
+                    "WHERE owner_id=? AND namespace=? "
+                    "AND expires_at_ms IS NOT NULL AND expires_at_ms<=? "
+                    "ORDER BY memory_id LIMIT ?)",
+                    (owner, namespace, now_ms, limit + 1),
+                ).fetchone())
+                stable()
+                if (
+                    len(metrics) != 6
+                    or any(type(value) is not int or value < 0 for value in metrics)
+                    or metrics[0] > limit + 1
+                    or metrics[1] > _MAX_MEMORY_SEARCH_HYDRATION_BYTES
+                    or metrics[2] > _MAX_MEMORY_ROW_CONTENT_BYTES
+                    or metrics[3] > _MAX_MEMORY_ROW_METADATA_BYTES
+                    or metrics[4] > _MAX_MEMORY_ROW_SOURCE_BYTES
+                    or metrics[5] != 0
+                ):
+                    raise MemoryExpiryPreviewRejected(
+                        "expiry candidate page hydration budget exceeded"
+                    )
                 rows = conn.execute(
                     """SELECT * FROM memories WHERE owner_id=? AND namespace=?
                        AND expires_at_ms IS NOT NULL AND expires_at_ms<=?
