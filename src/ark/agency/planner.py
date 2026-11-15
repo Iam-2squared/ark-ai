@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from collections.abc import Mapping
 from dataclasses import replace
 from types import MappingProxyType
@@ -67,6 +68,61 @@ def _admit_graph_label(value: object) -> None:
         raise PlanConflictError("plan graph identifier budget exceeded")
 
 
+
+def _admit_frozen_arguments(value: object) -> None:
+    """Preflight exact nested JSON carriers before ToolCall request hashing.
+
+    ToolCall.__post_init__ creates MappingProxyType/tuple recursively. A
+    reflected replacement can preserve that outer mapping type while hiding
+    a foreign nested mapping with executable .items()/iteration callbacks.
+    This admission is not a signature or original-argument provenance proof.
+    """
+    nodes = 0
+    text_bytes = 0
+
+    def visit(item: object, depth: int) -> None:
+        nonlocal nodes, text_bytes
+        nodes += 1
+        if nodes > 4096 or depth > 32:
+            raise PlanConflictError("plan step carrier changed before admission")
+        kind = type(item)
+        if kind is str:
+            if len(item) > 65536:
+                raise PlanConflictError("plan step carrier changed before admission")
+            try:
+                text_bytes += len(item.encode("utf-8", errors="strict"))
+            except UnicodeEncodeError as exc:
+                raise PlanConflictError(
+                    "plan step carrier changed before admission"
+                ) from exc
+            if text_bytes > 256 * 1024:
+                raise PlanConflictError("plan step carrier changed before admission")
+        elif kind is MappingProxyType:
+            if len(item) > 4096:
+                raise PlanConflictError("plan step carrier changed before admission")
+            for key, child in item.items():
+                if type(key) is not str:
+                    raise PlanConflictError(
+                        "plan step carrier changed before admission"
+                    )
+                visit(key, depth + 1)
+                visit(child, depth + 1)
+        elif kind is tuple:
+            if len(item) > 4096:
+                raise PlanConflictError("plan step carrier changed before admission")
+            for child in item:
+                visit(child, depth + 1)
+        elif kind is float:
+            if not math.isfinite(item):
+                raise PlanConflictError("plan step carrier changed before admission")
+        elif item is not None and kind not in (bool, int):
+            raise PlanConflictError("plan step carrier changed before admission")
+
+    if type(value) is not MappingProxyType:
+        raise PlanConflictError("plan step carrier changed before admission")
+    visit(value, 0)
+
+
 class PlanGraph:
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
         if type(steps) is not tuple:
@@ -98,8 +154,7 @@ class PlanGraph:
             # always freezes arguments to an exact MappingProxyType. Refuse
             # foreign mapping carriers before the request_id digest, DAG
             # allocation or any user-controlled mapping traversal.
-            if type(step.call.arguments) is not MappingProxyType:
-                raise PlanConflictError("plan step carrier changed before admission")
+            _admit_frozen_arguments(step.call.arguments)
             for dep in step.depends_on:
                 _admit_graph_label(dep)
             # The frozen ToolCall contract is unchanged; bound its current
