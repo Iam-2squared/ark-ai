@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from .memory.coherent_snapshot_review import CoherentSnapshotReview
 from .memory.contracts import MemoryRecord, MemoryScope
@@ -153,6 +154,23 @@ def review_personal_context(
         for record in candidates:
             if type(record) is not MemoryRecord:
                 raise PersonalContextReviewRejected("noncanonical memory record")
+            # A reflected MemoryRecord may replace its canonical metadata
+            # mapping with an unbounded or executable carrier. Validate its
+            # exact, bounded scalar shape before sorting, hashing, or reading
+            # sensitive content. Memory v1 storage/DDL is left unchanged.
+            metadata = record.metadata
+            if (
+                type(metadata) is not MappingProxyType
+                or len(metadata) > 64
+                or any(
+                    type(key) is not str or len(key) > 4096
+                    or type(value) is not str or len(value) > 4096
+                    for key, value in metadata.items()
+                )
+            ):
+                raise PersonalContextReviewRejected(
+                    "context metadata shape/budget invalid"
+                )
             # Frozen records can still be reflectively modified. Refuse
             # oversized sensitive plaintext before UTF-8 allocation, hashing
             # or inclusion in an ephemeral synthetic context bundle.
