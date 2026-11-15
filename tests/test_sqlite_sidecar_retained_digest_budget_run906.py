@@ -12,7 +12,6 @@ import pytest
 
 from ark import disconnected_sqlite_sidecar_custody as mod
 
-
 _SUFFIXES = ("-wal", "-shm", "-journal")
 
 
