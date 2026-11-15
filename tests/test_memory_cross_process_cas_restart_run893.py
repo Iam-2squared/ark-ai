@@ -11,7 +11,12 @@ import sys
 
 import pytest
 
-from ark.memory import MemoryConflictError, MemoryScope, MemoryWrite, SQLiteMemoryStore
+from ark.memory import (
+    MemoryConflictError,
+    MemoryScope,
+    MemoryWrite,
+    SQLiteMemoryStore,
+)
 
 
 _CHILD = """
