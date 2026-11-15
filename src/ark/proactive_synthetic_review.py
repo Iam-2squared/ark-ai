@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -291,7 +292,18 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
     """
     if type(path) is not type(Path(".")) or ".." in path.parts:
         raise SyntheticTriggerRejected("proactive ledger path changed")
-    target = path if path.is_absolute() else path.absolute()
+    # SQLite appends WAL/SHM/journal suffixes and uses native path encoding.
+    # Reject NUL and over-budget paths before ancestor lstat or sqlite3.connect.
+    # This is a lexical fence, not atomic filesystem/path custody.
+    raw = str(path)
+    if "\x00" in raw or len(raw) > 4096:
+        raise SyntheticTriggerRejected("proactive ledger path exceeds SQLite limits")
+    try:
+        target = path if path.is_absolute() else path.absolute()
+        if len(os.fsencode(target)) + len(b"-journal") > 4096:
+            raise SyntheticTriggerRejected("proactive ledger path exceeds SQLite limits")
+    except (UnicodeError, ValueError) as exc:
+        raise SyntheticTriggerRejected("proactive ledger path encoding unavailable") from exc
     try:
         for ancestor in target.parents:
             parent = ancestor.lstat()
