@@ -421,6 +421,10 @@ class PlanGraph:
     ) -> PlanStepStatus:
         self._assert_plan_epoch()
         self._assert_status_epoch()
+        # A valid nested transition can advance _status_epoch inside a
+        # replace() fault hook. Preserve that newer state instead of
+        # publishing a staged transition from an obsolete preflight.
+        entry_status_epoch = self._status_epoch
         if type(step_id) is not str or not step_id.strip():
             raise TypeError("step_id must be a non-empty exact string")
         # Transition IDs arrive independently of the constructor-bound DAG.
@@ -500,6 +504,8 @@ class PlanGraph:
                 or candidate.revision != prior.revision + 1
             ):
                 raise PlanConflictError("invalid staged plan transition result")
+        if self._status_epoch is not entry_status_epoch:
+            raise PlanConflictError("plan status advanced during transition staging")
         self._status.update(staged)
         # Advance the detached state epoch only after all affected statuses
         # have been committed in memory, including a terminal BLOCKED cascade.
