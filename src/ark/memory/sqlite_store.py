@@ -31,6 +31,12 @@ SQLITE_INT_MAX = (1 << 63) - 1
 # Match the opt-in coherent snapshot row bound. A ranked lexical search must
 # never hydrate an unbounded namespace before applying its small result limit.
 _MAX_NAMESPACE_SEARCH_ROWS = 10_000
+# Metadata v1: at most 64 key/value pairs of 4096 codepoints each.
+# Worst-case JSON control-character escapes consume six chars/codepoint;
+# admit a conservative 3.2M-character ceiling before json.loads can allocate
+# attacker-controlled nested structures from a corrupted SQLite TEXT cell.
+# This is a parser budget, not a pre-SELECT SQLite hydration/IO guarantee.
+_MAX_METADATA_JSON_CHARS = 3_200_000
 _BOOTSTRAP_LOCK = RLock()  # protects same-process first-open preflights and WAL setup
 # Preserve original result classes across synthetic constructor injection.
 _MEMORY_EVENT_RESULT_TYPE = MemoryEvent
@@ -1309,6 +1315,8 @@ def _record(row: sqlite3.Row) -> MemoryRecord:
         raise MemorySchemaError("stored content exceeds MemoryWrite bounds")
     if content_sha != hashlib.sha256(content.encode()).hexdigest():
         raise MemorySchemaError("stored memory content digest does not match")
+    if len(metadata_json) > _MAX_METADATA_JSON_CHARS:
+        raise MemorySchemaError("stored metadata JSON exceeds MemoryWrite bounds")
     try:
         metadata = json.loads(metadata_json)
     except (TypeError, ValueError) as exc:
