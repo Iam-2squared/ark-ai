@@ -262,6 +262,9 @@ def review_disconnected_sqlite_schema(
     if (
         type(retained) is not DisconnectedSQLiteSchemaSeal
         or type(retained.schema_sha256) is not str
+        # A retained, reflectively changed hash can be megabytes long.
+        # Refuse it before invoking regex or touching caller-opened SQLite.
+        or len(retained.schema_sha256) != 64
         or _SHA.fullmatch(retained.schema_sha256) is None
         or any(type(x) is not int for x in (
             retained.object_count, retained.user_version, retained.schema_version,
