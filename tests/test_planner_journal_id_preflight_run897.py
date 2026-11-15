@@ -66,6 +66,6 @@ def test_bounded_known_id_can_still_append_and_restart_without_replay(tmp_path):
     cold = SyntheticPlanJournal(path, steps)
     review = cold.recover(retained=initial.tail)
     assert review.ambiguous_running_steps == ("root",)
-    assert review.step_statuses == (("root", "RUNNING", 1),)
+    assert review.step_statuses == (("root", "running", 1),)
     assert review.dispatch_authorized is False
     assert review.automatic_replay_authorized is False
