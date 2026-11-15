@@ -65,6 +65,42 @@ class OfflinePcmMono16:
 
 
 _RESULT_TYPE = OfflinePcmMono16
+_RESULT_FIELDS = (
+    "owner_sha256", "privacy_sha256", "source_sha256", "output_sha256",
+    "inventory_sha256", "sample_rate_hz", "source_channels",
+    "source_bits_per_sample", "frame_count", "pcm16_mono",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_RESULT_DENIALS = (
+    "source_authenticated", "consent_verified",
+    "audio_disclosure_authorized", "speech_recognized",
+)
+_ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[n] for n in _RESULT_FIELDS)
+_ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT_TYPE).get(n) for n in _RESULT_HOOKS)
+_ORIGINAL_RESULT_DENIALS = tuple(vars(_RESULT_TYPE)[n] for n in _RESULT_DENIALS)
+
+
+def _require_original_result_carrier() -> None:
+    # A frozen, slotted audio result is not an immutable Python *class*.
+    # Reject replaced constructors, raw-audio slots and false-only permission
+    # properties BEFORE any of them can receive/inspect private PCM bytes.
+    if (
+        OfflinePcmMono16 is not _RESULT_TYPE
+        or any(
+            vars(_RESULT_TYPE).get(name) is not saved
+            for names, originals in (
+                (_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS),
+                (_RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS),
+                (_RESULT_DENIALS, _ORIGINAL_RESULT_DENIALS),
+            )
+            for name, saved in zip(names, originals, strict=True)
+        )
+    ):
+        raise OfflinePcmConvertRejected(
+            "offline PCM result carrier changed before private bytes"
+        )
+
+
 # Pin exact request slots before reading private PCM or owner/scope identity.
 # Frozen dataclasses still permit executable class-level getter replacement.
 _REQUEST_TYPE = OfflinePcmConvertRequest
@@ -123,7 +159,8 @@ def _require_original_codec() -> None:
 
 
 def _sha(x: object) -> bool:
-    return type(x) is str and _SHA.fullmatch(x) is not None
+    # Do not ask a regex engine to scan huge attacker-supplied identities.
+    return type(x) is str and len(x) == 64 and _SHA.fullmatch(x) is not None
 
 
 def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmMono16:
@@ -137,6 +174,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     if type(request) is not OfflinePcmConvertRequest:
         raise OfflinePcmConvertRejected("exact conversion request required")
     _require_original_codec()
+    _require_original_result_carrier()
     _require_original_request_carrier()
     pinned = (
         request.owner_sha256, request.privacy_sha256, request.source_sha256,
@@ -146,6 +184,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
 
     def epoch() -> None:
         _require_original_codec()
+        _require_original_result_carrier()
         _require_original_request_carrier()
         current = (
             request.owner_sha256, request.privacy_sha256, request.source_sha256,
@@ -213,6 +252,9 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     _require_original_codec()
     inventory_sha = hashlib.sha256(_DOMAIN + canonical).hexdigest()
     epoch()
+    # The constructor receives private PCM. Its exact class/slots/denials
+    # must remain original at the last possible pre-construction boundary.
+    _require_original_result_carrier()
     result = OfflinePcmMono16(
         owner, privacy, claimed, output_sha, inventory_sha,
         rate, channels, bits, frames, output_bytes,
@@ -240,6 +282,7 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
 
     assert_result_epoch()
     epoch()
+    _require_original_result_carrier()
     if (
         result.source_authenticated is not False
         or result.consent_verified is not False
@@ -251,4 +294,5 @@ def convert_offline_pcm_mono16(request: OfflinePcmConvertRequest) -> OfflinePcmM
     # digest, scope, raw byte carrier or provenance marker from a mixed epoch.
     assert_result_epoch()
     epoch()
+    _require_original_result_carrier()
     return result
