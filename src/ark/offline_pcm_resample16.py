@@ -100,10 +100,15 @@ def resample_pcm16(
     _require_original_pcm_dependencies()
     if type(pcm) is not bytes or not pcm or len(pcm) % 2 or len(pcm) > MAX_PCM_BYTES:
         raise OfflineResampleRejected("invalid raw mono16 input")
-    if type(expected_sha256) is not str or _SHA256.fullmatch(expected_sha256) is None:
+    if (
+        type(expected_sha256) is not str
+        or len(expected_sha256) != 64
+        or _SHA256.fullmatch(expected_sha256) is None
+    ):
         raise OfflineResampleRejected("invalid source digest")
-    if hashlib.sha256(pcm).hexdigest() != expected_sha256:
-        raise OfflineResampleRejected("source digest mismatch")
+    # Admit all caller metadata and derived allocation/duration budgets
+    # BEFORE hashing private PCM. Invalid rates or an impossible output must
+    # never require a content digest pass merely to be refused.
     if type(source_rate) is not int or source_rate not in _RATES:
         raise OfflineResampleRejected("unsupported source rate")
     if type(target_rate) is not int or target_rate not in _RATES:
@@ -114,6 +119,8 @@ def resample_pcm16(
     output_samples = (source_samples * target_rate + source_rate - 1) // source_rate
     if output_samples * 2 > MAX_PCM_BYTES:
         raise OfflineResampleRejected("resampled output exceeds budget")
+    if hashlib.sha256(pcm).hexdigest() != expected_sha256:
+        raise OfflineResampleRejected("source digest mismatch")
     if source_rate == target_rate:
         output = pcm
     else:
