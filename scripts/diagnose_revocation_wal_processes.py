@@ -119,6 +119,13 @@ def _parse_reply(output: str) -> dict[str, str]:
         or decoded["status"] not in _ALLOWED
         or decoded["status"] in {"EXIT_FAILURE", "TIMEOUT", "INVALID_REPLY"}
         or decoded["phase"] not in {"BOOTSTRAP", "REVOKE"}
+        # A child cannot report a completed (or duplicate) revocation before
+        # it crossed its synthetic REVOKE gate. Treat such a reply as invalid
+        # even when both scalar fields have otherwise recognized values.
+        or (
+            decoded["status"] in {"REVOKED", "ALREADY"}
+            and decoded["phase"] != "REVOKE"
+        )
     ):
         return invalid
     return decoded
