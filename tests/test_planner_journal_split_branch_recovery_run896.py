@@ -76,7 +76,9 @@ def test_restart_unknown_branch_blocks_fanin_but_not_independent_progress(tmp_pa
     assert cold.recover(retained=genesis) == snapshot
     cold.append("spare", StepState.RUNNING, expected_revision=0, at_ms=23)
     later = SyntheticPlanJournal(path, _steps()).recover(retained=snapshot.tail)
-    assert later.ambiguous_running_steps == ("alpha",)
+    # A newly started independent RUNNING step is also ambiguous on a cold
+    # restart. Do not silently clear it while checking alpha's quarantine.
+    assert later.ambiguous_running_steps == ("alpha", "spare")
     assert _state(later)["spare"] == ("running", 1)
     assert _state(later)["join"] == ("pending", 0)
 
