@@ -82,6 +82,35 @@ _DENIALS = (
     "backend_dispatched", "external_result_proven", "write_authorized",
     "replay_authorized", "trusted_clock_or_consent_proven",
 )
+# A registered READ link is a negative-authority receipt, not a capability.
+# Guard the import-original constructor, slots and denial descriptors before
+# invoking a frozen dataclass or reading a potentially substituted getter.
+_RESULT_FIELDS = (
+    "step_id", "action_request_id", "fixture_request_id",
+    "registry_revision", "bound_action_id", "request_bound_digest",
+    "result_digest", "link_sha256",
+)
+_RESULT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RESULT_CARRIER = tuple(
+    vars(_RESULT).get(name)
+    for name in (*_RESULT_FIELDS, *_DENIALS, *_RESULT_HOOKS)
+)
+
+
+def _require_original_registered_link() -> None:
+    if (
+        RegisteredFixtureLink is not _RESULT
+        or any(
+            vars(_RESULT).get(name) is not original
+            for name, original in zip(
+                (*_RESULT_FIELDS, *_DENIALS, *_RESULT_HOOKS),
+                _ORIGINAL_RESULT_CARRIER, strict=True,
+            )
+        )
+    ):
+        raise RegisteredFixtureLinkRejected(
+            "registered fixture link result carrier changed"
+        )
 
 
 def review_registered_disconnected_fixture(
@@ -101,6 +130,7 @@ def review_registered_disconnected_fixture(
     The companion receipt is recomputed but NOT persisted here. This leaves
     the existing SQLite CAS/unknown-outcome boundary in the separate bridge.
     """
+    _require_original_registered_link()
     if (
         type(registry) is not ToolRegistry
         or type(gate) is not PermissionGate
@@ -262,12 +292,15 @@ def review_registered_disconnected_fixture(
     ).hexdigest()
     stable()
     stable_preflight()
+    _require_original_registered_link()
     joined = _RESULT(*payload[:7], digest)
+    _require_original_registered_link()
     stable()
     stable_preflight()
     expected = (*payload[:7], digest)
 
     def stable_join() -> None:
+        _require_original_registered_link()
         fields = (
             joined.step_id, joined.action_request_id, joined.fixture_request_id,
             joined.registry_revision, joined.bound_action_id,
@@ -290,5 +323,6 @@ def review_registered_disconnected_fixture(
     stable_join()
     stable()
     stable_preflight()
+    _require_original_registered_link()
     stable_join()
     return joined
