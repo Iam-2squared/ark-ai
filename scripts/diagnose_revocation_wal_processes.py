@@ -26,6 +26,13 @@ _SCOPE_DIGEST = hashlib.sha256(
     b"ARK-context-revocation-scope-v1\0"
     + b'["synthetic-diagnostic","profile"]'
 ).hexdigest()
+# Independent diagnostic oracle for the frozen synthetic v1 schema. A table
+# with the same name/autoindex but weakened NOT NULL constraints must NOT
+# be accepted as a durable veto merely because the one expected row exists.
+_EXPECTED_DDL = """CREATE TABLE synthetic_context_revocations(
+    scope_digest TEXT PRIMARY KEY NOT NULL,
+    revoked_at_ms INTEGER NOT NULL
+)"""
 
 _CHILD = r"""
 import json
@@ -147,7 +154,7 @@ def _verify_row(path: Path) -> bool:
                 "SELECT scope_digest,revoked_at_ms FROM synthetic_context_revocations"
             ).fetchmany(2)
             objects = conn.execute(
-                "SELECT type,name,tbl_name FROM sqlite_master ORDER BY type,name"
+                "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
             ).fetchmany(3)
             check = conn.execute("PRAGMA quick_check").fetchmany(2)
         return (
@@ -155,9 +162,9 @@ def _verify_row(path: Path) -> bool:
             and rows == [(_SCOPE_DIGEST, 2000)]
             and objects == [
                 ("index", "sqlite_autoindex_synthetic_context_revocations_1",
-                 "synthetic_context_revocations"),
+                 "synthetic_context_revocations", None),
                 ("table", "synthetic_context_revocations",
-                 "synthetic_context_revocations"),
+                 "synthetic_context_revocations", _EXPECTED_DDL),
             ]
             and check == [("ok",)]
         )
