@@ -400,6 +400,20 @@ class PermissionGate:
             raise PermissionDenied("registered recheck must be callable")
         if type(spec) is not ToolSpec or type(call) is not ToolCall:
             raise PermissionDenied("authorization requires exact ToolSpec and ToolCall")
+        # Frozen dataclass instances are not immune to object.__setattr__.
+        # A reflected WRITE -> non-Effect mutation must not fall through
+        # the WRITE branch and become an implicit unprotected READ. Check
+        # primitive identities before comparing labels (which can call a
+        # foreign __eq__) or touching any caller grant/token iterator.
+        if (
+            type(spec.name) is not str
+            or type(spec.capability) is not str
+            or type(spec.effect) is not Effect
+            or type(call.tool) is not str
+            or type(call.capability) is not str
+            or type(call.scope) is not str
+        ):
+            raise PermissionDenied("authorization requires exact tool identity and effect")
         if one_shot is not None and type(one_shot) is not OneShotAuthorization:
             raise PermissionDenied("one-shot authorization must be an exact value")
         if spec.name != call.tool or spec.capability != call.capability:
