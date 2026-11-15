@@ -274,6 +274,54 @@ def _probe(path: Path, *, wal_keeper: bool = False) -> tuple[list[dict[str, str]
             keeper.close()
 
 
+
+def _admit_probe_result(result: object) -> tuple[list[dict[str, str]], bool]:
+    """Bound every diagnostic aggregation key, even if a probe is substituted.
+
+    Raw child replies pass through _parse_reply, but a diagnostic hook can
+    replace the whole probe result. Never echo arbitrary path/private text as
+    a Counter key or mistake an integer truth value for durable evidence.
+    This is a synthetic diagnostics guard, NOT an authenticated readback.
+    """
+    invalid = {"status": "INVALID_REPLY", "phase": "UNKNOWN"}
+    if type(result) is not tuple or len(result) != 2:
+        return [invalid.copy(), invalid.copy()], False
+    replies, durable = result
+    if type(replies) is not list or len(replies) != 2:
+        return [invalid.copy(), invalid.copy()], False
+    admitted: list[dict[str, str]] = []
+    for reply in replies:
+        if (
+            type(reply) is not dict
+            or len(reply) != 2
+            or any(type(key) is not str for key in reply)
+            or set(reply) != {"status", "phase"}
+        ):
+            admitted.append(invalid.copy())
+            continue
+        status, phase = reply["status"], reply["phase"]
+        if (
+            type(status) is not str
+            or type(phase) is not str
+            or status not in _ALLOWED
+            or (
+                status in {"REVOKED", "ALREADY"} and phase != "REVOKE"
+            )
+            or (
+                status in {"SIDECAR_REFUSED", "OTHER_DENIAL", "OTHER_ERROR"}
+                and phase not in {"BOOTSTRAP", "REVOKE"}
+            )
+            or (
+                status in {"EXIT_FAILURE", "TIMEOUT", "INVALID_REPLY"}
+                and phase != "UNKNOWN"
+            )
+        ):
+            admitted.append(invalid.copy())
+        else:
+            admitted.append({"status": status, "phase": phase})
+    return admitted, durable if type(durable) is bool else False
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--iterations", type=_iterations, default=4)
@@ -297,9 +345,9 @@ def main(argv: list[str] | None = None) -> int:
         for index in range(options.iterations):
             case = Path(directory) / f"case-{index}"
             case.mkdir()
-            replies, durable = _probe(
+            replies, durable = _admit_probe_result(_probe(
                 case / "revocation.sqlite", wal_keeper=options.wal_keeper,
-            )
+            ))
             for reply in replies:
                 counts[reply["status"]] += 1
                 phase_counts[f'{reply["phase"]}:{reply["status"]}'] += 1
