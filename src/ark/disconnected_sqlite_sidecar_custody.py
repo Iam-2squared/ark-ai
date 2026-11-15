@@ -130,8 +130,10 @@ def _seal_snapshot(seal: object) -> tuple[object, ...]:
     )
     states = seal.sidecars
     if (
-        any(type(digest) is not str or _SHA.fullmatch(digest) is None
-            for digest in head)
+        # A retained caller-supplied seal can contain unbounded text despite
+        # its dataclass shape. Refuse before invoking the digest regex.
+        any(type(digest) is not str or len(digest) != 64
+            or _SHA.fullmatch(digest) is None for digest in head)
         or type(states) is not tuple or len(states) != len(_SUFFIXES)
     ):
         raise SQLiteSidecarCustodyRejected("malformed retained SQLite sidecar seal")
@@ -143,6 +145,7 @@ def _seal_snapshot(seal: object) -> tuple[object, ...]:
             or type(state.present) is not bool
             or (state.present and (
                 type(state.identity_sha256) is not str
+                or len(state.identity_sha256) != 64
                 or _SHA.fullmatch(state.identity_sha256) is None
             ))
             or (not state.present and state.identity_sha256 is not None)
