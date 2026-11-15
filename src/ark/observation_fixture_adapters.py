@@ -75,14 +75,18 @@ def _preflight_fixture_metadata(
         ("source_id", source_id),
         ("privacy_scope", privacy_scope),
     ):
-        if type(value) is not str or not value.strip():
+        if type(value) is not str:
             raise ValueError(f"{name} must be a non-empty exact string")
-        # NUL in source/privacy labels is ambiguous at native adapter
-        # boundaries. Reject before even hashing caller-private fixture bytes.
-        if "\x00" in value:
-            raise ValueError(f"{name} contains a NUL separator")
+        # Reject pathological private labels before strip() allocates a
+        # potentially enormous copy or a native adapter inspects the value.
         if len(value) > 1024:
             raise ValueError(f"{name} exceeds observation identifier budget")
+        if not value.strip():
+            raise ValueError(f"{name} must be a non-empty exact string")
+        # NUL in source/privacy labels is ambiguous at native adapter
+        # boundaries. Reject before hashing caller-private fixture bytes.
+        if "\x00" in value:
+            raise ValueError(f"{name} contains a NUL separator")
         try:
             nbytes = len(value.encode("utf-8", errors="strict"))
         except UnicodeError as exc:
