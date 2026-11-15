@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .contracts import PlanConflictError, PlanStep, StepState
-from .planner import PlanGraph
+from .planner import PlanGraph, _admit_graph_label
 
 _MAX_INT = 2**63 - 1
 _MAX_EVENTS = 10_000
@@ -847,10 +847,17 @@ class SyntheticPlanJournal:
         # Fail closed before opening SQLite. PlanGraph.transition also checks
         # these, but only AFTER replay, which is unnecessary for malformed or
         # nonexistent caller-supplied step/revision identities.
-        if (
-            type(step_id) is not str or not step_id.strip()
-            or step_id not in (step.step_id for step in self._steps)
-        ):
+        # This disconnected journal shares PlanGraph's bounded UTF-8 step
+        # identifier contract. Admit a caller-supplied ID BEFORE traversing
+        # retained steps, opening SQLite or comparing any foreign identifiers.
+        # This cannot grant dispatch or retry authority.
+        try:
+            _admit_graph_label(step_id)
+        except PlanConflictError as exc:
+            raise SyntheticPlanJournalRejected(
+                "unknown or invalid synthetic plan step"
+            ) from exc
+        if step_id not in (step.step_id for step in self._steps):
             raise SyntheticPlanJournalRejected("unknown or invalid synthetic plan step")
         if (
             type(expected_revision) is not int
