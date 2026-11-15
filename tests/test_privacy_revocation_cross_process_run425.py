@@ -19,6 +19,7 @@ from ark.personal_context_revocation_review import (
 
 _CHILD = r"""
 import pathlib
+import stat
 import sys
 import time
 
@@ -42,7 +43,31 @@ while not gate.exists():
 try:
     digest = ledger.revoke(scope, at_ms=2000)
 except SyntheticContextRevocationRejected as error:
-    # Preserve the exact unexpected rejection in CI without relaxing the test.
+    # Capture only synthetic fixture file classes/link counts, never private
+    # source path, owner, digest or SQLite contents. This is a post-failure
+    # pathname observation, NOT proof of the inode that caused rejection.
+    statuses = []
+    for name, suffix in (
+        ("main", ""), ("wal", "-wal"), ("shm", "-shm"),
+        ("journal", "-journal"),
+    ):
+        candidate = path.with_name(path.name + suffix)
+        try:
+            info = candidate.lstat()
+        except FileNotFoundError:
+            status = "missing"
+        except OSError as check_error:
+            status = "stat-error:" + type(check_error).__name__
+        else:
+            kind = (
+                "regular" if stat.S_ISREG(info.st_mode)
+                else "symlink" if stat.S_ISLNK(info.st_mode)
+                else "directory" if stat.S_ISDIR(info.st_mode)
+                else "other"
+            )
+            status = f"{kind}:nlink={info.st_nlink}:inode={info.st_ino}"
+        statuses.append(f"{name}={status}")
+    print("LOSER_SIDECAR_OBSERVATION:" + ";".join(statuses), file=sys.stderr, flush=True)
     print("LOSER_REJECTION_DETAIL:" + repr(str(error)), file=sys.stderr, flush=True)
     assert "already revoked" in str(error)
     print("ALREADY", flush=True)
@@ -93,6 +118,19 @@ def test_disconnected_revocation_has_one_persistent_winner_across_processes(
     # A durable veto after a failed response is UNKNOWN, never retry consent.
     if any(process.returncode != 0 for process in processes):
         for index, (_stdout, stderr) in enumerate(replies):
+            sidecar_state = next(
+                (
+                    line.partition("LOSER_SIDECAR_OBSERVATION:")[2]
+                    for line in stderr.splitlines()
+                    if "LOSER_SIDECAR_OBSERVATION:" in line
+                ),
+                "<no sidecar observation>",
+            )
+            print(
+                f"REVOCATION_RACE[{index}] post_failure_sidecars="
+                f"{sidecar_state[:360]}",
+                file=sys.stderr, flush=True,
+            )
             detail = next(
                 (
                     line.partition("LOSER_REJECTION_DETAIL:")[2]
