@@ -34,6 +34,7 @@ _ORIGINAL_MAX_STEPS = _MAX_STEPS
 _ORIGINAL_FIXTURE_DOMAIN = fixture._DOMAIN
 _ORIGINAL_FIXTURE_RESULT = fixture.DisconnectedToolResult
 _ORIGINAL_FIXTURE_REQUEST = fixture.DisconnectedToolRequest
+_ORIGINAL_FIXTURE_REQUEST_GUARD = fixture._require_original_request_carrier
 
 
 class DisconnectedReadToolBridgeRejected(ValueError):
@@ -105,6 +106,7 @@ def _protocol() -> None:
         or fixture._DOMAIN is not _ORIGINAL_FIXTURE_DOMAIN
         or fixture.DisconnectedToolResult is not _ORIGINAL_FIXTURE_RESULT
         or fixture.DisconnectedToolRequest is not _ORIGINAL_FIXTURE_REQUEST
+        or fixture._require_original_request_carrier is not _ORIGINAL_FIXTURE_REQUEST_GUARD
         or type(_MAX_STEPS) is not int
         or _MAX_STEPS != _ORIGINAL_MAX_STEPS
         or DetachedReadToolBinding is not _BINDING_TYPE
@@ -123,6 +125,9 @@ def _protocol() -> None:
         )
     ):
         raise DisconnectedReadToolBridgeRejected("mock bridge protocol changed")
+    # The fixture request carries caller-private JSON. Its class-level slots
+    # can be rebound independently of the intact exported class identity.
+    _ORIGINAL_FIXTURE_REQUEST_GUARD()
 
 
 def derive_disconnected_read_fixture_id(request_id: str, step_id: str) -> str:
@@ -167,6 +172,14 @@ def preview_disconnected_read_tools(
         for s in steps
     )
     binding_epoch = tuple((b.step_id, b.request) for b in bindings)
+    # Bind the private request field identities before schedule/digest hooks.
+    # A frozen request object may be reflectively modified without replacing
+    # the binding's request reference. Never accept a later input epoch.
+    if any(type(request) is not _ORIGINAL_FIXTURE_REQUEST for _, request in binding_epoch):
+        raise DisconnectedReadToolBridgeRejected("exact READ fixture request required")
+    request_epoch = tuple((
+        request, request.request_id, request.operation, request.canonical_args_json,
+    ) for _, request in binding_epoch)
 
     def stable() -> None:
         _protocol()
@@ -185,6 +198,15 @@ def preview_disconnected_read_tools(
                 for b, old, fields in zip(
                     bindings, input_bindings, binding_epoch, strict=True,
                 )
+            )
+            or any(
+                type(request) is not _ORIGINAL_FIXTURE_REQUEST
+                or binding.request is not request
+                or request.request_id is not saved_id
+                or request.operation is not saved_operation
+                or request.canonical_args_json is not saved_json
+                for binding, (request, saved_id, saved_operation, saved_json)
+                in zip(bindings, request_epoch, strict=True)
             )
         ):
             raise DisconnectedReadToolBridgeRejected("bridge input changed")
