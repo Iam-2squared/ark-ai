@@ -33,14 +33,14 @@ def test_invalid_rates_rejected_before_digest_comparison(source, target, reason)
 
 def test_duration_budget_precedes_digest_comparison():
     # 120 seconds + 1 sample at 8 kHz, below the PCM byte capacity.
-    raw = b"\\x00\\x00" * (8_000 * 120 + 1)
+    raw = b"\x00\x00" * (8_000 * 120 + 1)
     with pytest.raises(OfflineResampleRejected, match="duration"):
         resample_pcm16(raw, "0" * 64, 8_000, 8_000)
 
 
 def test_derived_output_budget_precedes_digest_comparison():
     # This valid-duration input expands past the 2-MiB output allocation cap.
-    raw = b"\\x00\\x00" * 200_000
+    raw = b"\x00\x00" * 200_000
     with pytest.raises(OfflineResampleRejected, match="output"):
         resample_pcm16(raw, "0" * 64, 8_000, 48_000)
 
