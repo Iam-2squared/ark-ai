@@ -115,7 +115,16 @@ def _admit_frozen_arguments(value: object) -> None:
         elif kind is float:
             if not math.isfinite(item):
                 raise PlanConflictError("plan step carrier changed before admission")
-        elif item is not None and kind not in (bool, int):
+        elif kind is int:
+            # A reflected, otherwise exact Python int can contain millions of
+            # digits. Reject it before ToolCall.request_id JSON encoding: on
+            # Python 3.11+ even a much smaller decimal exceeds the default
+            # 4,300-digit conversion budget. 14,000 bits (<4,300 decimal
+            # digits) keeps the standalone Planner within that limit without
+            # changing the frozen ToolCall constructor or valid small hashes.
+            if item.bit_length() > 14_000:
+                raise PlanConflictError("plan step carrier changed before admission")
+        elif item is not None and kind is not bool:
             raise PlanConflictError("plan step carrier changed before admission")
 
     if type(value) is not MappingProxyType:
