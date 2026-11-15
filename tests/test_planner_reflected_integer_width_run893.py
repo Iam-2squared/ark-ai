@@ -37,9 +37,12 @@ def test_oversized_reflected_integer_is_denied_before_json_callback(
     def forbidden_hash(_value):
         raise AssertionError("private reflected JSON reached the digest callback")
 
+    # Construct the valid ToolCall BEFORE replacing its hash boundary.
+    # The injector is only meant to prove PlanGraph denies reflected values.
+    step = _reflected(replacement)
     monkeypatch.setattr(contracts, "_canonical_json", forbidden_hash)
     with pytest.raises(PlanConflictError, match="carrier changed"):
-        PlanGraph((_reflected(replacement),))
+        PlanGraph((step,))
 
 
 def test_bounded_reflected_integer_remains_usable_in_read_only_plan():
