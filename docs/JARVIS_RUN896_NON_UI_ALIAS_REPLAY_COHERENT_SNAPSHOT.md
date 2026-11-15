@@ -46,9 +46,25 @@ protected evaluation, external compute, or merging any Draft PR.
   include-expired modes; a cold subsequent review sees both new revisions.
   Only disposable SQLite, synthetic scopes and local WAL are used.
 
-Total: **three coherent non-UI packages, nine AUTHORED regression cases**.
+- **Package D — registry-bound inert WRITE identity**:
+  [`c36b3574`](https://github.com/Iam-2squared/ark-ai/commit/c36b3574792dba5c124d837123c5e250f7b8b398)
+  adds `tests/test_registered_atomic_revision_effect_fence_run896.py`,
+  **three authored cases**. Distinct backend IDs produce distinct bound
+  action claims with the same request digest; a READ-only registration cannot
+  be converted into a WRITE intent; and reflective Effect.READ → WRITE drift
+  fails closed. The test backend raises if invoked and no backend is executed.
+- **Semantics-preserving Planner test correction**:
+  [`a10b3d13`](https://github.com/Iam-2squared/ark-ai/commit/a10b3d13d29f22ee87dc2a2c5d724ebb72cdc1c3)
+  fixes the test's initially incorrect expectation: after starting a
+  second independent step `spare`, its RUNNING status is **also ambiguous**
+  on cold restart, alongside `alpha`. The journal correctly preserves both;
+  neither is an automatic replay grant. This is an assertion correction, not
+  a production code change or safety-policy relaxation.
+
+Total: **four coherent non-UI packages, twelve AUTHORED regression cases**.
 New source changes are confined to the independent disposable revocation
-diagnostic; the Planner and Memory schemas and frozen contracts are unchanged.
+diagnostic; the Planner, Registry and Memory schemas and frozen contracts are
+unchanged.
 
 ## CI / integrity distinctions
 
@@ -60,9 +76,11 @@ manual workflows. Last observed while work was in progress:
 | `56ad48e1...` | [#43715274454](https://github.com/Iam-2squared/ark-ai/actions/runs/43715274454) | IN_PROGRESS |
 | `8e6e63f1...` | [#43715358642](https://github.com/Iam-2squared/ark-ai/actions/runs/43715358642) | IN_PROGRESS |
 | `31c11371...` | [#43715476426](https://github.com/Iam-2squared/ark-ai/actions/runs/43715476426) | IN_PROGRESS |
-| `8983901c...` | [#43715589249](https://github.com/Iam-2squared/ark-ai/actions/runs/43715589249) | IN_PROGRESS / QUEUED jobs |
+| `8983901c...` | [#43715589249](https://github.com/Iam-2squared/ark-ai/actions/runs/43715589249) | FAIL: inherited original Planner test expectation (not a Memory failure) |
+| `c36b3574...` | [#43715969331](https://github.com/Iam-2squared/ark-ai/actions/runs/43715969331) | QUEUED at latest sampling |
+| `a10b3d13...` | [#43716034217](https://github.com/Iam-2squared/ark-ai/actions/runs/43716034217) | QUEUED at latest sampling |
 
-**The new exact source/test HEAD is NOT CERTIFIED GREEN in this document.**
+**The earlier Planner-test HEAD #43715476426 FAIL** (Ubuntu 3.11–3.13): it incorrectly expected only `alpha` to remain ambiguous after `spare` was explicitly transitioned to RUNNING. The `a10b3d13` normal-path assertion correction preserves the stricter correct behavior. **The latest exact source/test HEAD is NOT CERTIFIED GREEN in this document.**
 The checkpoint may record subsequent independently verified job outcomes.
 Do not count authored tests as green without their actual jobs.
 
