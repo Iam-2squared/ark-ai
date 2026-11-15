@@ -258,6 +258,12 @@ def main(argv: list[str] | None = None) -> int:
     # denial after the child crossed its synthetic revocation gate. The
     # report never includes private paths, raw stderr or child payloads.
     phase_counts: Counter[str] = Counter()
+    # A durable veto can coexist with a losing process that refused at the
+    # WAL/SHM gate. Keep only bounded phase/status *categories*, never child
+    # payloads, exception texts, paths or personal scope identifiers. This
+    # distinguishes durable-but-ambiguous from absent readback evidence.
+    durable_ambiguous_patterns: Counter[str] = Counter()
+    unverified_patterns: Counter[str] = Counter()
     durable_verified = 0
     durable_ambiguous = 0
     anomalies = 0
@@ -274,10 +280,18 @@ def main(argv: list[str] | None = None) -> int:
             expected = sorted(item["status"] for item in replies) == [
                 "ALREADY", "REVOKED",
             ]
+            # Only a pair of fixed allowlisted child status/phase labels can
+            # enter this aggregate; there is no user/path-derived dimension.
+            pattern = " + ".join(sorted(
+                f'{item["phase"]}:{item["status"]}' for item in replies
+            ))
             if durable:
                 durable_verified += 1
                 if not expected:
                     durable_ambiguous += 1
+                    durable_ambiguous_patterns[pattern] += 1
+            else:
+                unverified_patterns[pattern] += 1
             if not expected or not durable:
                 anomalies += 1
     print(json.dumps({
@@ -287,6 +301,10 @@ def main(argv: list[str] | None = None) -> int:
         "status_phase_counts": dict(sorted(phase_counts.items())),
         "durable_verified_iterations": durable_verified,
         "durable_with_ambiguous_reply_iterations": durable_ambiguous,
+        "durable_ambiguous_phase_patterns": dict(sorted(
+            durable_ambiguous_patterns.items()
+        )),
+        "unverified_phase_patterns": dict(sorted(unverified_patterns.items())),
         "anomalous_iterations": anomalies,
         "private_paths_exported": False,
         "safety_checks_relaxed": False,
