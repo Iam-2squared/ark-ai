@@ -41,7 +41,7 @@ def test_forged_audio_permission_or_recognition_is_rejected(monkeypatch, flag):
     monkeypatch.setattr(
         pcm.OfflinePcmMono16, flag, property(lambda _: True),
     )
-    with pytest.raises(pcm.OfflinePcmConvertRejected, match="acquired authority"):
+    with pytest.raises(pcm.OfflinePcmConvertRejected, match="result carrier"):
         pcm.convert_offline_pcm_mono16(fixture())
 
 
@@ -76,9 +76,10 @@ def test_final_false_audio_denial_cannot_replace_output_epoch(
         pcm.OfflinePcmMono16, "speech_recognized",
         property(mutate_after_last_check),
     )
-    with pytest.raises(pcm.OfflinePcmConvertRejected, match="result changed"):
+    with pytest.raises(pcm.OfflinePcmConvertRejected, match="result carrier"):
         pcm.convert_offline_pcm_mono16(fixture())
-    assert changed
+    # Stronger pre-constructor gate rejects the substituted getter before call.
+    assert changed == []
 
 
 def test_audio_source_retargeting_by_false_denial_fails(monkeypatch):
@@ -95,8 +96,11 @@ def test_audio_source_retargeting_by_false_denial_fails(monkeypatch):
         pcm.OfflinePcmMono16, "speech_recognized",
         property(retarget_source),
     )
-    with pytest.raises(pcm.OfflinePcmConvertRejected, match="request changed"):
+    original_privacy = request.privacy_sha256
+    with pytest.raises(pcm.OfflinePcmConvertRejected, match="result carrier"):
         pcm.convert_offline_pcm_mono16(request)
+    # A false-valued forged getter cannot mutate the caller's private request.
+    assert request.privacy_sha256 is original_privacy
 
 
 def test_substituted_result_constructor_cannot_forge_equal_output_carrier(monkeypatch):
@@ -110,5 +114,5 @@ def test_substituted_result_constructor_cannot_forge_equal_output_carrier(monkey
         return result
 
     monkeypatch.setattr(pcm, "OfflinePcmMono16", forged)
-    with pytest.raises(pcm.OfflinePcmConvertRejected, match="result changed"):
+    with pytest.raises(pcm.OfflinePcmConvertRejected, match="result carrier"):
         pcm.convert_offline_pcm_mono16(fixture())
