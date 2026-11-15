@@ -122,14 +122,20 @@ class SyntheticPlanTail:
 
     def assert_shape(self) -> None:
         if (
+            # Retained tails can be reflectively rewritten after their
+            # constructor ran. Enforce exact digest widths before regex
+            # evaluation or any SQLite lookup; no replay authority is gained.
             type(self.topology_digest) is not str
-            or not _PLAN.fullmatch(self.topology_digest)
+            or len(self.topology_digest) != 69
+            or _PLAN.fullmatch(self.topology_digest) is None
             or type(self.event_count) is not int
             or not 0 <= self.event_count <= _MAX_EVENTS
             or type(self.event_hash) is not str
-            or not _HEX.fullmatch(self.event_hash)
+            or len(self.event_hash) != 69
+            or _HEX.fullmatch(self.event_hash) is None
             or type(self.status_digest) is not str
-            or not _STATE.fullmatch(self.status_digest)
+            or len(self.status_digest) != 71
+            or _STATE.fullmatch(self.status_digest) is None
             or type(self.last_at_ms) is not int
             or not -1 <= self.last_at_ms <= _MAX_INT
             or (self.event_count == 0) != (self.last_at_ms == -1)
