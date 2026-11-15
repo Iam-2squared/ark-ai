@@ -1,3 +1,41 @@
+# LATEST — ARK AI Run886 non-UI observation fixture CI repair, Personal Context metadata UTF-8 and disconnected binding constructor custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T11:46:09+09:00**, current runtime wall clock only (also observed 2026-11-15T02:46:09.966Z). **Not** a trusted-time attestation, human review, source provenance or permission. **Overall ARK/JARVIS: NOT_PASSED; UI development PAUSED; ZERO new paid/external compute.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), still open/unmerged. Protected [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/unmerged, untouched this invocation. **Initial exact work-basis HEAD:** `6488e07c72910ee0e00351a403ce0a5438960079` (Run885 checkpoint). **Complete Run886 source/test HEAD:** `ceac12b5c2e504a878a619e885a09776637c471e`. **Technical report / checkpoint-write-basis HEAD:** `444329d09a60b47e1e59204faf4597ee98a149a4` (PR head re-read freshly before normal Contents API write). **Previous PROJECT_STATUS blob:** `43521f9a8c8ca7faf43197d0f2c7992c57265f4c`. **Checkpoint-result HEAD UNKNOWN at authoring**; use normal update_file result and verify latest PR/branch and new status blob after write. Do not forecast future SHAs.
+
+## NEW — three independent non-UI work packages, 20 newly authored regression cases
+
+1. **Repair observed six-platform CI regression without changing frozen direct Observation v1.** [Run885 exact-head CI #43665496926](https://github.com/Iam-2squared/ark-ai/actions/runs/43665496926) was **FAIL 6/6**; Ubuntu 3.12 and Windows 3.12 job logs each exposed exactly two failures: disconnected fixture accepted source/privacy NUL labels despite existing prehash-denial tests. The direct v1 ObservationEnvelope *intentionally allows* escaped NUL identities and its source blob **remains `10c3b6e1d9f4635394e44dfa8893d3a5b9fccb30`**. Non-frozen optional fixture `src/ark/disconnected_observation_fixture.py` now denies NUL in exact source/privacy strings before SHA-256 of private synthetic bytes, commit `c89c3fcbbbbbc877794d14ca5ed13ecea269e73f`. Existing Run885 seven-case distinction test was retained. **CI after repair NOT YET GREEN-confirmed.**
+2. **Private Memory metadata UTF-8 projection bound:** Optional ephemeral `src/ark/personal_context_review.py` source commit `b068665621191a1681eb9e355230eb653372c49f`, `tests/test_personal_context_metadata_utf8_budget_run886.py` commit `68724e0aabd7d3854f0830220b5f3605aaf1d1e4`. Reject reflected MappingProxyType key/value unpaired surrogates and >4096 UTF-8-byte metadata **before sensitive-content digest**, in addition to prior exact-type/64-entry/4096-codepoint checks. **12 new synthetic test cases**: 8 invalid/prehash denials, 4 exact-byte-boundary inert success. Frozen Memory v1 DDL/write schema unchanged.
+3. **No executable substituted receipt constructor/field:** Disconnected `src/ark/agency/disconnected_fixture_binding.py` commit `c90f76cefc01f642a4a344ac0edcda93b091c54e`, new `tests/test_disconnected_binding_constructor_slot_custody_run886.py` commit `ceac12b5c2e504a878a619e885a09776637c471e`. Import-original `__init__`, `__new__` and five field descriptors pinned before constructing an offline READ binding. **8 new synthetic cases**: 2 constructor interception denials, 5 getter denials, 1 normal negative-authority receipt. No ToolBackend execute, new credentials, remote actions or automatic replay.
+
+**Total new authored tests: 20; no new PASS claimed until this exact-head CI finishes.** Run886 source/test changes: **3 non-UI Python implementation paths + 2 new non-UI test paths**, plus an evidence-based [technical report](https://github.com/Iam-2squared/ark-ai/blob/444329d09a60b47e1e59204faf4597ee98a149a4/docs/JARVIS_RUN886_NON_UI_NUL_METADATA_UTF8_AND_BINDING_CONSTRUCTOR.md), saved as commit `444329d09a60b47e1e59204faf4597ee98a149a4`. No frozen paths or UI/frontend changed. No local exact-repo pytest/Ruff (container could not resolve GitHub DNS); GitHub Actions remains the test authority.
+
+## CI evidence and custody (not promoted across heads)
+
+- Inherited previous Run885 checkpoint `6488e07c72910ee0e00351a403ce0a5438960079`: [CI #43665496926](https://github.com/Iam-2squared/ark-ai/actions/runs/43665496926) **FAIL 6/6**, exact two NUL fixture cases in each platform job.
+- Fixture-only correction: [CI #43668846035](https://github.com/Iam-2squared/ark-ai/actions/runs/43668846035) **IN_PROGRESS** at observed timestamp; head c89c3fcbbbbbc877794d14ca5ed13ecea269e73f.
+- Complete new source/test HEAD: [CI #43669079067](https://github.com/Iam-2squared/ark-ai/actions/runs/43669079067) **QUEUED** at observed timestamp; head ceac12b5c2e504a878a619e885a09776637c471e.
+- Technical report HEAD / checkpoint-write-basis: [CI #43669228150](https://github.com/Iam-2squared/ark-ai/actions/runs/43669228150) **QUEUED** at observed timestamp; head 444329d09a60b47e1e59204faf4597ee98a149a4.
+- Checkpoint update automatically triggers its own CI. **Latest checkpoint exact-head six-job GREEN UNCONFIRMED** until individual Windows/Ubuntu Python 3.11–3.13 jobs prove completion. No duplicate manual workflow.
+
+## Frozen contracts, blockers and authorization restrictions
+
+Preserve V1/V2/Local UI/Launcher frozen evidence, direct ObservationEnvelope v1 JSON-escaped NUL identity, Memory v1 schema, V3 Candidate/evaluation boundaries and controlling approvals. Draft PRs #5/#8/#9 unmerged. **No new UI/frontend, paid API/service/subscription, external GPU, real Candidate weights/training/promotion, protected final evaluation, credentials, physical-PC action, real tool dispatch, automatic UNKNOWN replay, destructive change or main merge.** Synthetic hashes are not independent provenance, consent or trusted-clock evidence.
+
+**Open blockers:** cross-process Privacy Revocation and Windows SQLite WAL/SHM last-close transient sidecar race; independent source/privacy custody; COMMIT-UNKNOWN and cross-store exactly-once uncertainties; trusted clock; target hardware GGUF gate.
+
+## Next plan / 今後の方針
+
+1. Confirm exact repaired/latest source/test/checkpoint **six-job** CI, inspect any FAIL and apply minimal non-weakening normal-API fix; while CI runs, use independent back-end lanes. Never change frozen direct Observation v1 to satisfy optional fixture tests.
+2. Reproduce and classify Privacy Revocation/SQLite WAL-SHM multi-process race with privacy-safe path inode diagnostics, preserving hardlink/symlink/orphan veto and no automatic ambiguous WRITE replay.
+3. Improve Memory generation-fenced CAS, coherent expiry, event custody and Planner UNKNOWN crash recovery / terminal propagation; ground integration on exact-head GREEN evidence.
+4. Integrate registry-bound ToolRegistry, exact-type PermissionGate, restart-safe occurrence and audit-before-action, disconnected Mock Executor without external dispatch only after dependencies are verified.
+5. Continue privacy-safe Personal Context, proactive schedule state, synthetic observation fixture lineage and detached free-only V3 approval/reproducibility guards. UI remains paused until explicit authorization.
+
+---
+
 # LATEST — ARK AI Run885 non-UI Personal Context metadata admission, frozen Observation CI repair and revocation forensics
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T10:57:35.700+09:00** — observed runtime wall clock only, NOT trusted-clock, human review, source authentication, privacy consent or physical-PC evidence. **ARK/JARVIS overall: NOT_PASSED. All NEW UI/frontend development PAUSED. ZERO paid or external compute.**
