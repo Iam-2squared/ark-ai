@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run894 non-UI Planner proxy custody, Memory expiry restart CAS, bounded privacy verification
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T19:52:24.163+09:00** — ordinary observed wall clock only, **NOT trusted execution time, approval, consent, source custody or model/runtime evidence.** **ARK/JARVIS overall: NOT_PASSED.** All new UI/frontend work PAUSED, free-only/no paid or external GPU/API/compute.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain open/unmerged and untouched. **Exact initial work-basis HEAD:** `ba1700618096061d70da08acf1751f8b8cf2eb64` (Run893 checkpoint). **Complete new source/test HEAD:** `dceb4c9d1f90f852c029d9ff60c91e7579ad4007`. **Latest technical report / checkpoint-write basis HEAD:** `f13b03b6d806c269646e98e72c32c9c3a9037a44`, read fresh from PR #8 immediately before this normal Contents API update. **Prior PROJECT_STATUS blob:** `003b95514fdfc0c5d37f41277480294c24a93ccf`. **Checkpoint-result HEAD cannot be known inside its own committed text**: use this API write response to verify the new branch PR ref + checkpoint blob externally. This is the **only** PROJECT_STATUS update in this invocation.
+
+## NEW — three independent non-UI packages, 14 authored regression cases
+
+1. **Planner exact nested retained proxy custody:** source [`df54f2d6...`](https://github.com/Iam-2squared/ark-ai/commit/df54f2d65d57c891929d742fd7b1a4beabf1be25); tests `tests/test_planner_mutable_proxy_backing_run894.py` [`af2a13f9...`](https://github.com/Iam-2squared/ark-ai/commit/af2a13f9b285e48d0dcb002c72a386c86b1dc43e), **9 authored cases**. PlanGraph rechecks exact nested JSON shapes before later request-id digest, even if a reflectively installed MappingProxyType still points to a mutated backing dict. No real tool execution, frozen ToolCall/PlanStep change or original-caller provenance proof.
+2. **Memory cross-process expiry and stale CAS:** tests `tests/test_memory_cross_process_cas_restart_run893.py` [`b5b1b049...`](https://github.com/Iam-2squared/ark-ai/commit/b5b1b04975995e8b8e61aaf919277afe26b16546), **2 authored cases**. An independent child process refreshes an expiring row; a later purge cannot delete it or forge an expiration event. After a committed expiry event, a stale child CAS cannot resurrect the removed memory or consume an event ID. Synthetic scope, disposable SQLite only; no Memory v1 DDL change.
+3. **Privacy bounded readback:** source `scripts/diagnose_revocation_wal_processes.py` [`0cf3f07f...`](https://github.com/Iam-2squared/ark-ai/commit/0cf3f07fc6a81106ac0922091ba7c2c265efc242); tests `tests/test_revocation_wal_bounded_readback_run894.py` [`dceb4c9d...`](https://github.com/Iam-2squared/ark-ai/commit/dceb4c9d1f90f852c029d9ff60c91e7579ad4007), **3 authored cases**. Disposable WAL durable-veto verifier now hydrates at most two scope rows, three schema rows, and two quick-check diagnostics, enough to reject any unexpected extra row/DDL/corruption without materializing unbounded foreign SQLite state. No user database, new authority, loosened sidecar gate or retry.
+
+**Grounded report:** [Run894 technical evidence and explicit limitations](https://github.com/Iam-2squared/ark-ai/blob/f13b03b6d806c269646e98e72c32c9c3a9037a44/docs/JARVIS_RUN894_NON_UI_PLANNER_PROXY_EPOCH_MEMORY_EXPIRY_PRIVACY_READBACK.md). The 14 cases are **AUTHORED**, not counted as CI PASS until exact-head full-suite verification.
+
+## CI — exact HEAD and job statuses (last observed; no transferred GREEN)
+
+- **Starting work-basis `ba170061...`:** [#43702380216](https://github.com/Iam-2squared/ark-ai/actions/runs/43702380216) **GREEN all six** Windows/Ubuntu × Python 3.11–3.13, individually verified.
+- **Planner source `df54f2d6...`:** [#43705481082](https://github.com/Iam-2squared/ark-ai/actions/runs/43705481082) **IN PROGRESS** at sampled point; Ubuntu 3.11/3.13 GREEN, remaining four unverified.
+- **Memory test `b5b1b049...`:** [#43705564682](https://github.com/Iam-2squared/ark-ai/actions/runs/43705564682) **IN PROGRESS** at sampled point; Ubuntu 3.12/3.13 GREEN.
+- **Planner test `af2a13f9...`:** [#43705636027](https://github.com/Iam-2squared/ark-ai/actions/runs/43705636027) **IN PROGRESS** at sampled point; Ubuntu 3.11 GREEN.
+- **Privacy source `0cf3f07f...`:** [#43705788638](https://github.com/Iam-2squared/ark-ai/actions/runs/43705788638) **IN PROGRESS** at sampled point.
+- **Latest complete source/test `dceb4c9d...`:** [#43705837371](https://github.com/Iam-2squared/ark-ai/actions/runs/43705837371) **QUEUED** at sampled point.
+- **Technical-report HEAD `f13b03b6...`:** [#43706043777](https://github.com/Iam-2squared/ark-ai/actions/runs/43706043777) **QUEUED** at sampled point. This checkpoint triggers another automatic PR CI with initially unknown run ID and commit SHA. No equivalent workflow manually dispatched.
+
+**Latest-head six-job GREEN remains NOT CERTIFIED.** If a new test or CI fails, review exact job logs and repair with only semantics-preserving normal GitHub Contents writes; do not pretend earlier green evidence covers later heads.
+
+## Frozen boundaries, blockers, Next plan / 今後の方針
+
+**Unchanged:** frozen V1/V2/Local UI/Launcher contracts/evidence, Memory v1 schema, direct Observation v1 semantics, protected V2 final evaluation, V3 Candidate/auth/reproducibility gates, Draft PR #5, and paused Draft UI PR #9. No frontend source/test/integration, main merge, spending, GPU, external billable API, credentials, new account, real Candidate/training/evaluation/promotion, physical PC, private data ingestion, human review, live WRITE/ToolBackend dispatch, destructive action or automatic replay of unknown commits. Synthetic hashes and local clock never grant consent or permission.
+
+**Blockers:** Windows SQLite WAL/SHM transient last-close/inode race; multi-process privacy-veto loser refusal despite a durable winner; cross-store COMMIT-UNKNOWN/exactly-once, independent approval and trusted-clock custody, physical offline GGUF and later explicit gates. Do not bypass SQLite sidecar refusal or retry an ambiguous irreversible write.
+
+**Next plan / 今後の方針 (priority):** (1) certify all six jobs at the latest exact source/test and checkpoint HEAD, minimally repair any FAIL; (2) isolate durable-winning-veto versus refusing-loser WAL/SHM race with bounded no-private-data forensics; (3) continue Planner retained inputs/UNKNOWN restart journal, Memory CAS/expiry/coherent snapshots; (4) integrate ToolRegistry/PermissionGate, immutable action identity, durable audit-before-action and disconnected Mock READ only after exact-head foundational GREEN; (5) continue privacy-safe Personal Context/Proactive/Observation back-end and detached free V3 guards without touching frozen contracts or UI.
+
+---
+
 # LATEST — ARK AI Run893 non-UI Planner integer, Memory process CAS and WAL-phase diagnostics
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T19:05:26.542+09:00** — observed ordinary wall clock only; **not a trusted clock, consent, execution/provenance authority, human approval or V3 authorization.** **Overall ARK/JARVIS: NOT_PASSED.** New UI/frontend development PAUSED. Zero paid/external GPU, APIs or compute.
