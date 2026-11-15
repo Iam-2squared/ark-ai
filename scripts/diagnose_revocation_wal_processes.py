@@ -133,6 +133,9 @@ def _parse_reply(output: str) -> dict[str, str]:
 
 def _verify_row(path: Path) -> bool:
     """Independent read-only verification; a child's status is not proof."""
+    # Only two rows, three catalog objects and two quick-check messages
+    # are sufficient to disprove this disposable one-row/two-object claim.
+    # Never hydrate an unbounded foreign SQLite catalog into diagnostics.
     if path.is_symlink() or not path.is_file():
         return False
     try:
@@ -142,11 +145,11 @@ def _verify_row(path: Path) -> bool:
             version = conn.execute("PRAGMA user_version").fetchone()
             rows = conn.execute(
                 "SELECT scope_digest,revoked_at_ms FROM synthetic_context_revocations"
-            ).fetchall()
+            ).fetchmany(2)
             objects = conn.execute(
                 "SELECT type,name,tbl_name FROM sqlite_master ORDER BY type,name"
-            ).fetchall()
-            check = conn.execute("PRAGMA quick_check").fetchall()
+            ).fetchmany(3)
+            check = conn.execute("PRAGMA quick_check").fetchmany(2)
         return (
             version == (1,)
             and rows == [(_SCOPE_DIGEST, 2000)]
