@@ -229,6 +229,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--wal-keeper", action="store_true")
     options = parser.parse_args(argv)
     counts: Counter[str] = Counter()
+    # Phase-labelled aggregates distinguish an unsafe bootstrap/open from
+    # denial after the child crossed its synthetic revocation gate. The
+    # report never includes private paths, raw stderr or child payloads.
+    phase_counts: Counter[str] = Counter()
+    durable_verified = 0
+    durable_ambiguous = 0
     anomalies = 0
     with tempfile.TemporaryDirectory(prefix="ark-disposable-revocation-") as directory:
         for index in range(options.iterations):
@@ -239,12 +245,23 @@ def main(argv: list[str] | None = None) -> int:
             )
             for reply in replies:
                 counts[reply["status"]] += 1
-            if sorted(item["status"] for item in replies) != ["ALREADY", "REVOKED"] or not durable:
+                phase_counts[f'{reply["phase"]}:{reply["status"]}'] += 1
+            expected = sorted(item["status"] for item in replies) == [
+                "ALREADY", "REVOKED",
+            ]
+            if durable:
+                durable_verified += 1
+                if not expected:
+                    durable_ambiguous += 1
+            if not expected or not durable:
                 anomalies += 1
     print(json.dumps({
         "iterations": options.iterations,
         "wal_keeper": options.wal_keeper,
         "status_counts": dict(sorted(counts.items())),
+        "status_phase_counts": dict(sorted(phase_counts.items())),
+        "durable_verified_iterations": durable_verified,
+        "durable_with_ambiguous_reply_iterations": durable_ambiguous,
         "anomalous_iterations": anomalies,
         "private_paths_exported": False,
         "safety_checks_relaxed": False,
