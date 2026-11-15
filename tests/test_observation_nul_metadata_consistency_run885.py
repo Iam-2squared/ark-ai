@@ -1,6 +1,8 @@
-"""Direct and synthetic observations share one NUL-free metadata boundary.
+"""Frozen direct NUL identity vs strict synthetic adapter preflight.
 
-In-memory synthetic bytes only. No sensor, filesystem, network or tool use.
+The direct ObservationEnvelope contract deliberately retains NUL-safe JSON
+hash framing, while fixture adapters refuse NUL before private-byte hashing.
+No sensor, filesystem, network or tool use.
 """
 
 import hashlib
@@ -26,9 +28,14 @@ def _direct(field: str, value: str) -> observations.ObservationEnvelope:
 
 
 @pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
-def test_direct_observation_rejects_embedded_nul(field: str) -> None:
-    with pytest.raises(ValueError, match="NUL separator"):
-        _direct(field, "trusted\x00untrusted")
+def test_frozen_direct_envelope_retains_nul_escaped_identity(field: str) -> None:
+    # Frozen v1 direct metadata must remain valid and correctly escaped in
+    # its JSON identity; do not make its contract match stricter adapters.
+    direct = _direct(field, "trusted\x00untrusted")
+    without_nul = _direct(field, "trusteduntrusted")
+    assert direct.observation_id.startswith("obs_")
+    assert len(direct.observation_id) == 68
+    assert direct.observation_id != without_nul.observation_id
 
 
 @pytest.mark.parametrize("field", ("source_id", "privacy_scope"))
