@@ -250,6 +250,40 @@ def _validate(conn: sqlite3.Connection) -> None:
     quick = conn.execute("PRAGMA quick_check").fetchmany(2)
     if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise SyntheticTriggerRejected("trigger fixture integrity failed")
+    # Bound the persisted row count and *SQLite storage bytes* before Python
+    # hydrates any untrusted TEXT/BLOB. A corrupt 100-MB digest would otherwise
+    # become a Python string just to be rejected by the regex below. Keep
+    # the existing canonical per-row/identity checks after this preflight.
+    row_budget = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(CASE WHEN "
+        "typeof(trigger_id)='text' "
+        "AND length(CAST(trigger_id AS BLOB))=72 "
+        "AND typeof(scope_digest)='text' "
+        "AND length(CAST(scope_digest AS BLOB))=64 "
+        "AND typeof(policy_digest)='text' "
+        "AND length(CAST(policy_digest AS BLOB))=64 "
+        "AND typeof(source_digest)='text' "
+        "AND length(CAST(source_digest AS BLOB))=64 "
+        "AND typeof(observation_digest)='text' "
+        "AND length(CAST(observation_digest AS BLOB))=64 "
+        "AND typeof(observed_at_ms)='integer' "
+        "AND observed_at_ms BETWEEN 0 AND ? "
+        "AND typeof(prepared_at_ms)='integer' "
+        "AND prepared_at_ms BETWEEN observed_at_ms AND ? "
+        "THEN 0 ELSE 1 END),0) "
+        "FROM synthetic_prepared_triggers",
+        (_MAX, _MAX),
+    ).fetchone()
+    if (
+        type(row_budget) is not tuple or len(row_budget) != 2
+        or type(row_budget[0]) is not int or row_budget[0] < 0
+        or type(row_budget[1]) is not int or row_budget[1] < 0
+    ):
+        raise SyntheticTriggerRejected("persisted trigger row integrity failed")
+    if row_budget[0] > _MAX_PREPARATIONS:
+        raise SyntheticTriggerRejected("trigger fixture review budget exceeded")
+    if row_budget[1] != 0:
+        raise SyntheticTriggerRejected("persisted trigger row integrity failed")
     rows = conn.execute(
         """SELECT trigger_id,scope_digest,policy_digest,source_digest,
                   observation_digest,observed_at_ms,prepared_at_ms
