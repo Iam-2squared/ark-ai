@@ -265,10 +265,10 @@ def _require_memory_text_hydration_budget(
         or source_bytes > _MAX_MEMORY_ROW_SOURCE_BYTES
     ):
         raise MemorySchemaError("stored memory row exceeds MemoryWrite bounds")
-    if memory_id is None and (
-        count > _MAX_NAMESPACE_SEARCH_ROWS
-        or total_bytes > _MAX_MEMORY_SEARCH_HYDRATION_BYTES
-    ):
+    if memory_id is None and count > _MAX_NAMESPACE_SEARCH_ROWS:
+        # Preserve the existing scan-cap diagnostic for legacy callers.
+        raise MemorySchemaError("memory search namespace scan budget exceeded")
+    if memory_id is None and total_bytes > _MAX_MEMORY_SEARCH_HYDRATION_BYTES:
         raise MemorySchemaError("memory search namespace hydration budget exceeded")
 
 
