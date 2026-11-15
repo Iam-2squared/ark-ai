@@ -60,13 +60,18 @@ class CoherentSnapshotRequest:
         # much later in the query digest after a full SQLite snapshot scan.
         try:
             self.owner_id.encode("utf-8", errors="strict")
-            self.text.encode("utf-8", errors="strict")
+            encoded_query = self.text.encode("utf-8", errors="strict")
             for namespace in self.namespaces:
                 namespace.encode("utf-8", errors="strict")
         except UnicodeError as exc:
             raise ValueError(
                 "snapshot request text must be UTF-8 encodable"
             ) from exc
+        # A bounded Python character count is not a bounded SQLite/search
+        # parameter: multibyte text may occupy up to four times the memory.
+        # Refuse oversized search input before any private SQLite read.
+        if len(encoded_query) > 4096:
+            raise ValueError("snapshot search text exceeds 4096 UTF-8 bytes")
 
 
 @dataclass(frozen=True, slots=True)
