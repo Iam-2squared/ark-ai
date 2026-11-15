@@ -273,13 +273,27 @@ def _valid_witness(witness: object) -> bool:
 
 
 def _path(value: object, *, exists: bool) -> Path:
+    if type(value) is not type(Path(".")):
+        raise OfflinePrivacyVetoRejected("exact absolute fixture path required")
+    raw = str(value)
+    # Fail before lstat or SQLite sees an embedded NUL, malformed UTF-8 or
+    # a path whose -journal companion exceeds the same filesystem budget.
+    # This is lexical ingress only, never proof of atomic handle custody.
     if (
-        type(value) is not type(Path("."))
-        or len(str(value)) > _MAX_PATH
-        or not value.is_absolute()
+        not value.is_absolute()
         or ".." in value.parts
+        or "\x00" in raw
+        or len(raw) > _MAX_PATH
     ):
         raise OfflinePrivacyVetoRejected("exact absolute fixture path required")
+    try:
+        path_bytes = len(raw.encode("utf-8", errors="strict"))
+    except UnicodeError as exc:
+        raise OfflinePrivacyVetoRejected(
+            "fixture path is not valid UTF-8"
+        ) from exc
+    if path_bytes + len("-journal") > _MAX_PATH:
+        raise OfflinePrivacyVetoRejected("fixture SQLite path budget exceeded")
     # An ordinary parent.is_symlink() check misses symbolic GRANDPARENTS.
     # Refuse symlinked or non-directory ancestors before SQLite can create
     # or reopen a ledger through a redirected fixture path. This is not an
