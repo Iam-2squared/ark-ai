@@ -29,7 +29,7 @@ class _NoRegex:
 
 class _BoundedSHA:
     def __init__(self):
-        self.original = re.compile(r"[0-9a-f]{64}\\Z")
+        self.original = re.compile(r"[0-9a-f]{64}\Z")
         self.seen: list[int] = []
 
     def fullmatch(self, text):
