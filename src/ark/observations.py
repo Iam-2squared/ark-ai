@@ -40,11 +40,6 @@ class ObservationEnvelope:
             # multibyte UTF-8 text; neither check grants media access.
             if len(value) > 1024:
                 raise ValueError(f"{name} exceeds observation identifier budget")
-            # Native adapter metadata must not embed a NUL separator: other
-            # offline fixture adapters already refuse it before hashing.
-            # Keep that boundary identical for directly built envelopes too.
-            if "\x00" in value:
-                raise ValueError(f"{name} contains a NUL separator")
             if not value.strip():
                 raise ValueError(f"{name} must be a non-empty exact string")
             # Inert fixture metadata must not carry unbounded raw media or
