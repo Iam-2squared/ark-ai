@@ -11,12 +11,7 @@ import sys
 
 import pytest
 
-from ark.memory import (
-    MemoryConflictError,
-    MemoryScope,
-    MemoryWrite,
-    SQLiteMemoryStore,
-)
+from ark import memory
 
 
 _CHILD = """
@@ -52,21 +47,21 @@ def _child(path, namespace: str, revision: int, text: str) -> str:
 
 
 def _store(path, now=100):
-    return SQLiteMemoryStore(path, clock_ms=lambda: now)
+    return memory.SQLiteMemoryStore(path, clock_ms=lambda: now)
 
 
 def test_child_commit_updates_parent_view_and_contiguous_global_events(tmp_path):
     path = tmp_path / "isolated-cas.sqlite"
     parent = _store(path)
-    scope = MemoryScope("offline-owner", "notes")
+    scope = memory.MemoryScope("offline-owner", "notes")
     initial = parent.put(
-        MemoryWrite(scope, "shared-source", "first"), expected_revision=0,
+        memory.MemoryWrite(scope, "shared-source", "first"), expected_revision=0,
     )
     assert _child(path, "notes", 1, "child-second") == "REVISION=2"
     assert parent.get(initial.memory_id, scope).content == "child-second"
-    with pytest.raises(MemoryConflictError):
+    with pytest.raises(memory.MemoryConflictError):
         parent.put(
-            MemoryWrite(scope, "shared-source", "parent-stale"),
+            memory.MemoryWrite(scope, "shared-source", "parent-stale"),
             expected_revision=1,
         )
     events = _store(path).events(scope)
@@ -77,15 +72,15 @@ def test_child_commit_updates_parent_view_and_contiguous_global_events(tmp_path)
 
 def test_failed_child_cas_consumes_no_event_id_after_restart(tmp_path):
     path = tmp_path / "stale-cas.sqlite"
-    scope = MemoryScope("offline-owner", "notes")
+    scope = memory.MemoryScope("offline-owner", "notes")
     parent = _store(path)
-    parent.put(MemoryWrite(scope, "shared-source", "one"), expected_revision=0)
+    parent.put(memory.MemoryWrite(scope, "shared-source", "one"), expected_revision=0)
     assert _child(path, "notes", 0, "stale") == "CONFLICT"
     assert [(event.event_id, event.revision) for event in _store(path).events(scope)] == [
         (1, 1),
     ]
     winner = parent.put(
-        MemoryWrite(scope, "shared-source", "two"), expected_revision=1,
+        memory.MemoryWrite(scope, "shared-source", "two"), expected_revision=1,
     )
     assert winner.revision == 2
     assert [event.event_id for event in _store(path).events(scope)] == [1, 2]
@@ -94,13 +89,13 @@ def test_failed_child_cas_consumes_no_event_id_after_restart(tmp_path):
 def test_child_cas_does_not_modify_same_source_in_different_namespace(tmp_path):
     path = tmp_path / "scope-cas.sqlite"
     parent = _store(path)
-    notes = MemoryScope("offline-owner", "notes")
-    private = MemoryScope("offline-owner", "private")
+    notes = memory.MemoryScope("offline-owner", "notes")
+    private = memory.MemoryScope("offline-owner", "private")
     first = parent.put(
-        MemoryWrite(notes, "shared-source", "notes"), expected_revision=0,
+        memory.MemoryWrite(notes, "shared-source", "notes"), expected_revision=0,
     )
     second = parent.put(
-        MemoryWrite(private, "shared-source", "private"), expected_revision=0,
+        memory.MemoryWrite(private, "shared-source", "private"), expected_revision=0,
     )
     assert _child(path, "notes", 1, "notes-updated") == "REVISION=2"
     resumed = _store(path)
