@@ -93,6 +93,13 @@ class PlanGraph:
             _admit_graph_label(step.step_id)
             if type(step.call) is not ToolCall:
                 raise PlanConflictError("plan step carrier changed before admission")
+            # A reflectively replaced ToolCall.arguments mapping may have
+            # executable items()/iteration hooks. The original ToolCall
+            # always freezes arguments to an exact MappingProxyType. Refuse
+            # foreign mapping carriers before the request_id digest, DAG
+            # allocation or any user-controlled mapping traversal.
+            if type(step.call.arguments) is not MappingProxyType:
+                raise PlanConflictError("plan step carrier changed before admission")
             for dep in step.depends_on:
                 _admit_graph_label(dep)
             # The frozen ToolCall contract is unchanged; bound its current
