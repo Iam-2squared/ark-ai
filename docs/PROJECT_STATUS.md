@@ -1,3 +1,36 @@
+# LATEST — ARK AI Run904 four non-UI safety packages: Proactive/Memory SQLite prehydration, PCM metadata, Atomic input
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T06:00:19.714+09:00** (observed wall clock, NOT trusted action time, user consent, runtime identity or human-review evidence). **Overall ARK/JARVIS: NOT_PASSED.** Free-only/no-new-potentially-billable-service restriction enforced; UI/frontend work **PAUSED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. [Protected Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and [paused UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain Draft/unmerged/untouched. **Exact initial work-basis HEAD:** `e80b08ca8d047985c2f4ee6a1a365b2c660af02f`. **Latest complete source+test HEAD:** `043140926a9a738f1b14ad387d15d1667ff7399b` (**CI not yet six-job certified**). **Technical report/checkpoint write-basis HEAD:** `8843a456885f3187511e203c002b13373e4927a9`, re-read from PR #8 immediately before this normal GitHub Contents API write. **Previous PROJECT_STATUS blob SHA:** `8a8c96e3d880ef989d63605dc0439da5859be7ce`. **Checkpoint-result HEAD cannot be embedded in the commit's own file bytes:** obtain the new SHA from the normal Contents API response and verify separately against updated PR/branch HEAD and the resulting content blob. This is the **single canonical PROJECT_STATUS update for Run904**.
+
+## NEW — Four independent source+test packages, 31 authored regression cases
+
+1. **Proactive synthetic SQL pre-hydration fence:** source [`ba32b173`](https://github.com/Iam-2squared/ark-ai/commit/ba32b17338d4ec6a5e408283f411d413b9e1fbc2), 8 tests [`589319b2`](https://github.com/Iam-2squared/ark-ai/commit/589319b2894b7be85d1644fe3c8289139dab183a). SQL COUNT/typeof/BLOB-byte width admission rejects corrupt oversized trigger history before Python hydration; retained identity/history checks and no-dispatch semantics unchanged.
+2. **Offline PCM16 pre-hash admission:** source [`6b3b936b`](https://github.com/Iam-2squared/ark-ai/commit/6b3b936b14081eea46dc64d91ba40fa8b6894d2c), 8 tests with corrected zero-sample source literal [`74d83419`](https://github.com/Iam-2squared/ark-ai/commit/74d83419bd3c06bc240d3cdd5e002ecf3a193a33). Rate/duration/output-memory and exact SHA syntax checked before hashing private fixture bytes; valid interpolation retains digest binding. No recording, ASR, consent, real tool.
+3. **Detached preaction identity bounded before regex:** source [`ee4c0a2f`](https://github.com/Iam-2squared/ark-ai/commit/ee4c0a2f71ec3587faed70e97e01adbabaabc89b), 9 tests [`9dc5bc51`](https://github.com/Iam-2squared/ark-ai/commit/9dc5bc512af3505486ab04a02dd24cf984ed9a08). Exact occurrence/bound/request digest widths 68/70/64 reject huge reflected input before parser; NO durable approval, backend dispatch or exactly-once effect proof.
+4. **Memory expiry due-page prehydration:** source [`bd361c47`](https://github.com/Iam-2squared/ark-ai/commit/bd361c4746e006af27f23304db99a2531eb6bf51), 6 tests [`04314092`](https://github.com/Iam-2squared/ark-ai/commit/043140926a9a738f1b14ad387d15d1667ff7399b). In one read-only SQLite snapshot, due page's TEXT classes/per-field BLOB byte limits/total 64-MiB cap admitted before SELECT */Python row hydration. Non-due rows remain outside due page. Memory v1 schema and event/expiry authority unchanged.
+
+**Technical report:** [Run904 details](https://github.com/Iam-2squared/ark-ai/blob/8843a456885f3187511e203c002b13373e4927a9/docs/JARVIS_RUN904_NON_UI_PROACTIVE_MEMORY_PCM_ATOMIC.md). **31 cases AUTHORED, NOT 31 certified PASS.** All standard GitHub Contents API writes re-read PR #8 HEAD immediately beforehand; no force push/raw object bypass/CI manual duplicate run. Actual new source/test files and report saved, no checkpoint-only commit.
+
+## CI — exact head only; baseline is not Run904 evidence
+
+- Run903 start `e80b08ca8d047985c2f4ee6a1a365b2c660af02f`: [#43755875792](https://github.com/Iam-2squared/ark-ai/actions/runs/43755875792) **GREEN 6/6** Windows/Ubuntu × Python 3.11–3.13, **baseline only**.
+- Proactive code+tests `589319b2...` [#43760081584](https://github.com/Iam-2squared/ark-ai/actions/runs/43760081584): **IN PROGRESS**, Ubuntu 3/3 GREEN, Windows 3/3 running at last check.
+- Corrected PCM test `74d83419...` [#43760179878](https://github.com/Iam-2squared/ark-ai/actions/runs/43760179878): **IN PROGRESS**, Ubuntu 3.11/3.12 GREEN, Ubuntu 3.13 and Windows 3 jobs running at last check.
+- Atomic `9dc5bc51...` [#43760425349](https://github.com/Iam-2squared/ark-ai/actions/runs/43760425349): **QUEUED** 6/6 at last check.
+- Latest complete source/test HEAD `043140926a9a738f1b14ad387d15d1667ff7399b` [#43760871712](https://github.com/Iam-2squared/ark-ai/actions/runs/43760871712): **QUEUED** 6/6 at last check. Report and checkpoint commits trigger normal CI; their latest run IDs/outcomes cannot be known in advance. **No latest-head 6/6 PASS claim**.
+
+## Frozen boundaries, blockers and Next plan / 今後の方針
+
+**Untouched:** frozen V1/V2/Local UI/Launcher contracts and evidence, V2 protected final evaluation, Draft V3 PR #5 dataset/reviewer/provenance/spend/identity/Candidate gates, paused Draft UI PR #9, main. **Not done:** paid/external GPU, billable APIs/subscriptions, new credentials/accounts, real model weight/Candidate training or promotion, protected evaluation opening, user physical-PC operation, actual device capture, personal data export, real ToolBackend, destructive data changes or approval-required main merge. Local mock timestamps/digests/receipts do not authenticate consent or guarantee exactly-once.
+
+**Genuine blockers:** intermittent Windows AND Ubuntu SQLite WAL/SHM last-close cross-process revocation loser race (durable row alongside denied contender is UNKNOWN/failure, never two successful replies); Planner COMMIT-UNKNOWN cross-store reconstruction; independent retained Memory provenance/CAS witness; trusted clock and irreversible audit-before-action; user PC GGUF offline gate; protected V3 human approvals and billing caps. Fail-closed standards remain strict; never auto-retry a disputed WRITE.
+
+**Next plan:** (1) review final exact HEAD six-job CI, inspect failures and fix only genuine regressions via normal Contents API, while working independent modules; (2) isolate SQLite sidecar inode/close-race without relaxing denial; (3) harden Planner UNKNOWN and Memory CAS/expiry event proof; (4) integrate immutable Registry, exact PermissionGate, restart-safe audit, disconnected Mock executor only when dependencies have GREEN; (5) continue Personal Context privacy, proactive/observation non-UI contracts and free V3 guard fixtures. **Overall ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run903 Planner/Proactive native ingress, mock crash recovery, Memory CAS/expiry and mixed Observation
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T05:03:28.495+09:00** (observed wall clock only; NOT trusted action time, consent, reviewer identity, runtime provenance or independent witness). **Overall ARK/JARVIS: NOT_PASSED**. UI/frontend work remains **PAUSED**. Free-only/no-new-billable-service rule remains in force.
