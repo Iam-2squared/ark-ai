@@ -113,10 +113,18 @@ _ORIGINAL_BUNDLE_HOOKS = tuple(
 
 
 def _assert_original_context_results() -> None:
+    # Preserve established failure classifications for substituted exported
+    # result names, while still blocking them BEFORE executable callbacks.
+    if SyntheticContextItem is not _ITEM_RESULT_TYPE:
+        raise PersonalContextReviewRejected(
+            "context selection result changed during construction"
+        )
+    if SyntheticContextBundle is not _BUNDLE_RESULT_TYPE:
+        raise PersonalContextReviewRejected(
+            "context bundle result changed during construction"
+        )
     if (
-        SyntheticContextItem is not _ITEM_RESULT_TYPE
-        or SyntheticContextBundle is not _BUNDLE_RESULT_TYPE
-        or vars(_ITEM_RESULT_TYPE).get("__init__") is not _ORIGINAL_ITEM_INIT
+        vars(_ITEM_RESULT_TYPE).get("__init__") is not _ORIGINAL_ITEM_INIT
         or vars(_BUNDLE_RESULT_TYPE).get("__init__") is not _ORIGINAL_BUNDLE_INIT
         or any(
             vars(_ITEM_RESULT_TYPE).get(name) is not original
