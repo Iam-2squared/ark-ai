@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run891 non-UI Planner transition, Memory CAS and Privacy path/cold-veto integrity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T16:55:52.547+09:00** — observed runtime wall clock only; NOT trusted time, user authorization, source provenance or consent. **Overall ARK/JARVIS: NOT_PASSED.** All new UI/frontend work PAUSED; no paid/external compute.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain open, unmerged and untouched. **Exact initial work-basis HEAD:** `1df7af250a78b4d95886a477eb8f77425c7dbb8c` (Run890 checkpoint, validated CI). **Exact complete Run891 source/test HEAD:** `6cb908b2ebed99f86eef7fff00f66d32e54e800c`. **Report/checkpoint-write-basis HEAD:** `48b574da010fecfbf15e9ab9ffc19ae6cabaf6d1`, freshly checked against Draft PR #8 immediately before this normal Contents API update. **Prior PROJECT_STATUS blob:** `6d04e1fe0e95b54485072c37f200b0f3e54fa23e`. **Checkpoint-result HEAD is not knowable inside the checkpoint's own committed text**: take the exact commit SHA from the Contents API update response and verify it externally against the branch, PR and status blob; no future SHA is invented.
+
+## NEW — four independent non-UI work packages, 14 authored synthetic tests
+
+1. **Planner ID admission:** source commit `ae6c84bee5d3716c70808d8200e1ebaeed0c8e48`; regression commit `31a914bba9bd77325b5e6fb9f02a107018d2a9fc`, 5 cases. `PlanGraph.transition` now applies the pre-existing 4096-UTF-8-byte label guard before its dict membership lookup; rejects giant ASCII/multibyte IDs, invalid surrogate and hash-bearing str subclass; a legal max-byte ID still transitions. No frozen ToolCall/PlanStep change, backend call or nested-argument provenance claim.
+2. **Memory cross-connection CAS audit:** `c143f781f68a3056400cbe4dbc7e681c0e4681d3`, 3 tests. Separate SQLiteMemoryStore objects, stale expected-revision failures and globally ordered scoped event history, multi-namespace source isolation and scoped expiry purge without survivor revision reset. Frozen v1 DDL unchanged.
+3. **Privacy path preflight:** source `564be8632083ead8baa57108b4fc9b034c2e594c`; regression `47e02161f6c7d246ad27da8f3bebd3019a5b7730`, 4 tests. NUL/oversized/encoded-long revocation DB paths denied before filesystem read/open; reserve SQLite journal suffix bytes; ordinary local veto/restart remains supported. Not a fix for cross-process WAL/SHM last-close, not atomic filesystem ownership.
+4. **Planner UNKNOWN × privacy veto integration:** `6cb908b2ebed99f86eef7fff00f66d32e54e800c`, 2 tests. Synthetic retained RUNNING journal remains ambiguous after restart, no dispatch/auto replay; revoked private Memory context stays unavailable even with a retained local record, unrelated notes are an inert preview. No account, model, notification, true consent or backend execution.
+
+**Technical report:** [Run891 implementation/evidence/limitations](https://github.com/Iam-2squared/ark-ai/blob/48b574da010fecfbf15e9ab9ffc19ae6cabaf6d1/docs/JARVIS_RUN891_NON_UI_TRANSITION_PRIVACY_PATH_CAS_COLD_VETO.md). Two permitted non-UI source changes, four new tests, one evidence report. **14 AUTHORED is not 14 CI PASS.** Local clone/full pytest and Ruff unavailable (container DNS for github.com failed).
+
+## CI/evidence — no later HEAD silently inherits earlier GREEN
+
+- Initial checkpoint `1df7af250a78b4d95886a477eb8f77425c7dbb8c`: [CI #43687825354](https://github.com/Iam-2squared/ark-ai/actions/runs/43687825354) **GREEN 6/6**, individually verified on Windows and Ubuntu × Python 3.11–3.13.
+- Planner source `ae6c84be...`: [#43691604264](https://github.com/Iam-2squared/ark-ai/actions/runs/43691604264) **IN PROGRESS** at last read.
+- Planner tests `31a914bb...`: [#43691629683](https://github.com/Iam-2squared/ark-ai/actions/runs/43691629683) **IN PROGRESS**.
+- Memory tests `c143f781...`: [#43691715111](https://github.com/Iam-2squared/ark-ai/actions/runs/43691715111) **IN PROGRESS**.
+- Privacy source `564be863...`: [#43691785625](https://github.com/Iam-2squared/ark-ai/actions/runs/43691785625) **QUEUED**.
+- Privacy tests `47e02161...`: [#43691842705](https://github.com/Iam-2squared/ark-ai/actions/runs/43691842705) **QUEUED**.
+- Complete source/test `6cb908b2...`: [#43691968662](https://github.com/Iam-2squared/ark-ai/actions/runs/43691968662) **QUEUED**.
+- Report `48b574da...`: [#43692056956](https://github.com/Iam-2squared/ark-ai/actions/runs/43692056956) **QUEUED**. This checkpoint will create its own new PR CI run (ID unknown until recorded by GitHub). No duplicate manual CI started. **Run891 latest exact-head GREEN 6/6 NOT YET CERTIFIED**.
+
+## Unchanged hard boundaries / blockers / Next plan / 今後の方針
+
+**Unchanged:** frozen V1/V2/Local UI/Launcher contracts/evidence, Memory v1 schema, direct Observation v1, PR #5 protected V2 final-evaluation and V3 spend/candidate restrictions; Draft #5/#8/#9 unmerged and UI #9 paused without modification. No paid/external GPU/service/API, Candidate training/weight export/promotion, protected evaluation opening, new credentials, physical-PC actions, private-user data, real ToolBackend dispatch/WRITE, main merge or destructive operations. Internal hashes, fake clocks and empty revocation queries do not confer user consent or authority.
+
+**Blockers:** Windows SQLite WAL/SHM disappearing inode last-close race; privacy multi-process loser denial even after another writer persisted a veto; multi-store COMMIT-UNKNOWN/exactly-once, trusted clock and independent privacy custody/consent, physical GGUF evidence. Do not blanket retry unknown writes or relax symlink/hardlink/orphan checks.
+
+**Next plan:** (1) verify all six jobs of Run891 final exact-head CI; diagnose/repair failures by the normal write path while maintaining rejection semantics; (2) isolate SQLite sidecar and revocation multi-process failures with bounded non-sensitive diagnostics; (3) continue Memory CAS/expiry global event continuity and Planner UNKNOWN/terminal journal correctness; (4) connect immutable Registry/PermissionGate/durable one-shot audit-before-action/Mock offline only after lower-level exact-head GREEN; (5) continue privacy-safe Context, Observation, proactive backend and detached free-only V3 guards. Do not resume UI work without explicit authorization.
+
+---
+
 # LATEST — ARK AI Run890 non-UI Planner pre-hash admission, Memory global audit, privacy expiry and cold registered READ
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T15:58:22.704+09:00** — runtime wall-clock observation only, NOT trusted-time, data provenance, consent or human approval. **Overall ARK/JARVIS: NOT_PASSED.** All NEW UI/FRONTEND development PAUSED; no paid/external compute.
