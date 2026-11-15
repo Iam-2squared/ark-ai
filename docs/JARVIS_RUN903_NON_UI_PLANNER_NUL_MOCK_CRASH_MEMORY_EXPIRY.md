@@ -10,7 +10,9 @@
 - **Memory expiry/CAS multi-handle:** [2-case regression `19ebb419`](https://github.com/Iam-2squared/ark-ai/commit/19ebb419fb14d1876355e4cea8281d341070f8db) checks that an old CAS cannot recreate a row purged by another handle, that unrelated namespace data persists, and that bounded expiry over restarts yields one event per deleted row without duplicate expiration. Synthetic clock and fixture contents only; no external data or physical machine action.
 - **Mixed-modality Observation chain:** [5-case regression `f82bc92f`](https://github.com/Iam-2squared/ark-ai/commit/f82bc92f579e09ea475096b4510fb1f5b1772deb) links synthetic TEXT → IMAGE → TRANSCRIPT → SCREEN envelopes by content digest in one strictly ordered, source/scope-bound closed chain; denies swapped order, privacy retarget, clock regression and duplicate content. The digest-only review explicitly lacks source authentication, consent, dispatch, device acquisition and durable media custody.
 
-**Total:** four coherent non-UI packages, one production ingress hardening, and **19 authored tests** (7 + 5 + 2 + 5). No claim that new tests or latest HEAD are GREEN until verified by GitHub CI. Package write basis was re-read from PR #8 before each normal Contents API operation. No force-push or raw Git object update.
+- **Proactive SQLite native path ingress:** [source `34c6451b`](https://github.com/Iam-2squared/ark-ai/commit/34c6451b8f6389ccba1d65dcb4e63220bdd57894) rejects NUL, overlong codepoint and overlong UTF-8 absolute paths including SQLite `-journal` suffix before ancestor filesystem checks or SQLite open, while preserving original schema and valid local initialization. [4-case test `d9a48516`](https://github.com/Iam-2squared/ark-ai/commit/d9a48516921ba5c03c227520ce73e68759df650c) checks three invalid carriers and a valid disposable local store. Native path preflight is not atomic filesystem custody.
+
+**Total:** five coherent non-UI packages, two production ingress hardenings, and **23 authored tests** (7 + 5 + 2 + 5 + 4). No claim that new tests or latest HEAD are GREEN until verified by GitHub CI. Package write basis was re-read from PR #8 before each normal Contents API operation. No force-push or raw Git object update.
 
 ## Invariants and boundaries
 
@@ -29,3 +31,5 @@
 **Technical report write-basis HEAD:** `19ebb419fb14d1876355e4cea8281d341070f8db`. The GitHub commit resulting from writing this report must be obtained from the standard API response.
 
 **Observation addendum write-basis HEAD:** `f82bc92f579e09ea475096b4510fb1f5b1772deb`. CI for this head was QUEUED when the report was revised; check the exact-head run independently.
+
+**Proactive addendum write-basis HEAD:** `d9a48516921ba5c03c227520ce73e68759df650c`. Latest-head CI was not certified GREEN when this addendum was written.
