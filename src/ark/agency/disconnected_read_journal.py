@@ -203,7 +203,8 @@ def _check_witness(witness: ReadJournalWitness) -> None:
     original_tip = witness.tip_sha256
     if (
         type(original_count) is not int or not 0 <= original_count <= _MAX_ROWS
-        or type(original_tip) is not str or _SHA.fullmatch(original_tip) is None
+        or type(original_tip) is not str or len(original_tip) != 64
+        or _SHA.fullmatch(original_tip) is None
     ):
         raise ReadJournalRejected("invalid retained witness")
     # A False-valued substitute is still an unreviewed authority descriptor.
@@ -230,11 +231,17 @@ def _check_receipt(row: ReadReceipt) -> None:
     _require_original_read_carriers()
     if (
         type(row) is not _RECEIPT_TYPE
-        or type(row.request_id) is not str or _REQUEST.fullmatch(row.request_id) is None
-        or type(row.step_id) is not str or _STEP.fullmatch(row.step_id) is None
+        or type(row.request_id) is not str or len(row.request_id) != 36
+        or _REQUEST.fullmatch(row.request_id) is None
+        or type(row.step_id) is not str or len(row.step_id) != 21
+        or _STEP.fullmatch(row.step_id) is None
         or type(row.operation) is not str or row.operation not in _OPS
-        or type(row.input_digest) is not str or _SHA.fullmatch(row.input_digest) is None
-        or type(row.result_digest) is not str or _SHA.fullmatch(row.result_digest) is None
+        # Bound reflected input before touching the digest regex; SQLite
+        # hydration already applies the same widths for persisted rows.
+        or type(row.input_digest) is not str or len(row.input_digest) != 64
+        or _SHA.fullmatch(row.input_digest) is None
+        or type(row.result_digest) is not str or len(row.result_digest) != 64
+        or _SHA.fullmatch(row.result_digest) is None
     ):
         raise ReadJournalRejected("invalid synthetic READ receipt")
 
@@ -450,7 +457,7 @@ class DisconnectedReadJournal:
             identity = (request, step)
             if seq != i or identity in seen or previous != tip:
                 raise ReadJournalRejected("missing, reordered, or duplicated receipt")
-            if type(stored) is not str or _SHA.fullmatch(stored) is None:
+            if type(stored) is not str or len(stored) != 64 or _SHA.fullmatch(stored) is None:
                 raise ReadJournalRejected("invalid stored chain digest")
             tip = _chain(tip, i, row)
             if stored != tip:
