@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -126,6 +127,25 @@ def _check_local_revocation_path(path: Path) -> None:
         raise SyntheticContextRevocationRejected(
             "revocation path must be an exact local Path"
         )
+    # Reject oversize, NUL and unencodable paths before any lstat, resolve,
+    # SQLite connect or directory traversal. Reserve the longest SQLite
+    # journal suffix and measure encoded absolute bytes, not codepoints.
+    # This is a local admission bound, not atomic ownership of the pathname.
+    raw = str(path)
+    if "\x00" in raw or len(raw) > 4096:
+        raise SyntheticContextRevocationRejected(
+            "revocation path exceeds local SQLite limits"
+        )
+    try:
+        target = path if path.is_absolute() else path.absolute()
+        if len(os.fsencode(target)) + len(b"-journal") > 4096:
+            raise SyntheticContextRevocationRejected(
+                "revocation path exceeds local SQLite limits"
+            )
+    except (UnicodeError, ValueError) as exc:
+        raise SyntheticContextRevocationRejected(
+            "revocation path encoding invalid"
+        ) from exc
     try:
         for parent in path.parents:
             info = parent.lstat()
