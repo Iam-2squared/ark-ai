@@ -1,3 +1,46 @@
+# LATEST — ARK AI Run884 non-UI Context/Observation/Memory UTF-8 budget admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-15T09:55:38.529+09:00** — observed runtime wall clock only; **NOT** trusted-clock provenance, human approval, consent or evidence of physical GGUF execution. **ARK/JARVIS overall: NOT_PASSED. All NEW UI/frontend development PAUSED. ZERO paid/external compute.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) protected Draft/unmerged, [PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) Draft/unmerged, explicitly UI-paused/untouched. **Initial exact work-basis HEAD:** `9000fc45a35769d5f96a175b98244ec723e31c64` (Run883 checkpoint). **Complete Run884 source/test HEAD:** `3327add81b8222682ba26f4851f23ad2e2bbe20a`. **Technical report / checkpoint-write-basis HEAD:** `186ae7afc763675f252e9e259fd54399d2b0351c` (fresh PR HEAD re-read before normal Contents API write). **Previous status Blob SHA:** `4049c3446031fba75d68f2fc3734b613e3a39c3a`. **Checkpoint-result HEAD unknown at authoring**; obtain from normal update API result and verify PR/branch/Blob after write. Never infer future SHA.
+
+## NEW — three coherent, independent non-UI packages + separate concurrency evidence audit
+
+1. **Personal Context, ephemeral policy and identifier bounds:** `src/ark/personal_context_review.py`, `tests/test_personal_context_utf8_digest_budget_run884.py` (initial source HEAD `ee19a11f2187cbb3b583495b536f8082aef36830`; source/test `06658fe20bf7a284c3926715c7e2f1311bf62380`). Valid exact policy revisions must fit **128 UTF-8 bytes**, including rejection of malformed surrogate encoding. Snapshot and Memory row digest regex checks run only after exact **64-character SHA width**. **9 synthetic test cases authored**, not independently passed. No Memory v1 DDL/contract change, context release authority or user-data access.
+2. **Disconnected synthetic Observation preflight:** `src/ark/disconnected_observation_fixture.py`, `tests/test_disconnected_fixture_metadata_preflight_run884.py` (source HEAD `88150bff1a5211b8e41dfcf884b631c938d46cf1`; source/test `c7cde5f2886f3c257b84c30931c5d8e10093614b`). Validate exact source/privacy labels, time and parent digest with a non-persisted, inert sentinel envelope **before SHA-256 sees up to 65,536 synthetic payload bytes**. The returned envelope remains digest-only; no device, network or real tool access. **11 synthetic cases authored**, including prehash C-call profiling under invalid metadata; not yet exact-head PASS.
+3. **Memory coherent query UTF-8 expansion:** `src/ark/memory/coherent_snapshot_review.py`, `tests/test_coherent_snapshot_search_byte_budget_run884.py` (source HEAD `478751ba354cc25bacf8565f03718d1ae1fa1f13`; source/test `3327add81b8222682ba26f4851f23ad2e2bbe20a`). Existing 4,096-character request ceiling now also enforces a **4,096 UTF-8-byte** query ceiling before any private SQLite access. No Memory v1 storage, CAS, expiry, frozen contract or schema change. **9 synthetic test cases authored**.
+
+**Total new authored cases: 29; NO claim of 29 verified passes.** GitHub exact compare `9000fc45...3327add81`: six normal file-write commits, three non-UI source and three new test paths. Grounded [Run884 technical report](https://github.com/Iam-2squared/ark-ai/blob/186ae7afc763675f252e9e259fd54399d2b0351c/docs/JARVIS_RUN884_NON_UI_CONTEXT_OBSERVATION_SNAPSHOT_BYTE_ADMISSION.md) saved with normal GitHub Contents API at `186ae7afc763675f252e9e259fd54399d2b0351c`. No local checkout/pytest/Ruff: execution container could not resolve public GitHub DNS. No direct tools, physical PC or model training.
+
+## Exact-head CI observed (no older GREEN promoted)
+
+- Inherited checkpoint HEAD `9000fc45a35769d5f96a175b98244ec723e31c64`: [CI #43655512248](https://github.com/Iam-2squared/ark-ai/actions/runs/43655512248) **GREEN 6/6 individual Windows/Ubuntu × Python 3.11–3.13 jobs**, confirmed.
+- Context source `ee19a11f...`: [CI #43659967525](https://github.com/Iam-2squared/ark-ai/actions/runs/43659967525) **IN PROGRESS** at last check.
+- Context source/test `06658fe...`: [CI #43660028330](https://github.com/Iam-2squared/ark-ai/actions/runs/43660028330) **IN PROGRESS**.
+- Observation source `88150bff...`: [CI #43660101827](https://github.com/Iam-2squared/ark-ai/actions/runs/43660101827) **IN PROGRESS**.
+- Observation source/test `c7cde5f...`: [CI #43660179473](https://github.com/Iam-2squared/ark-ai/actions/runs/43660179473) **IN PROGRESS**.
+- Memory source `478751ba...`: [CI #43660264394](https://github.com/Iam-2squared/ark-ai/actions/runs/43660264394) **QUEUED**.
+- Latest complete Run884 source/test `3327add81...`: [CI #43660310802](https://github.com/Iam-2squared/ark-ai/actions/runs/43660310802) **QUEUED**. Six-job latest-head result **UNCONFIRMED**.
+- Report HEAD `186ae7afc763675f252e9e259fd54399d2b0351c`: [CI #43660546170](https://github.com/Iam-2squared/ark-ai/actions/runs/43660546170) **QUEUED**. Subsequent checkpoint commit triggers another automatic PR CI. No redundant manual workflow launch.
+
+## Independent historical concurrency evidence
+
+[CI #43634279883](https://github.com/Iam-2squared/ark-ai/actions/runs/43634279883), Ubuntu/Python 3.12, had **1 fail / 15,657 pass / 1 skip**. The exact `test_privacy_revocation_cross_process_run425.py[0]` failure showed one contender rejected as `unsafe revocation SQLite sidecar`, a competing process printed `REVOKED`, and diagnostic durable state showed `(count=1, min=2000, max=2000)`. A durable denial survived, but strict losing-process behavior did not pass. Do **not** treat it as root cause or claim that bounded re-lstat fixes solved it; preserve symlink/hardlink/orphan refusal and UNKNOWN/no-auto-retry.
+
+## Frozen evidence, authorization boundaries and blockers
+
+V1/V2/Local UI/Launcher frozen evidence, Memory v1 schema, controlling contracts and protected evaluation unchanged. PR #5/#8/#9 remain Draft/unmerged. No UI/frontend development, paid API/service/subscription, external GPU, V3 Candidate adapter/weights/training/promotion, protected V2 final evaluation, new secret/account, user consent inference, real ToolBackend execution, unsafe replays, destructive action or main merge. **Still blocked:** Windows SQLite WAL/SHM last-close and Privacy Revocation multi-process transient sidecar safety; exact-source independent provenance/custody; COMMIT-UNKNOWN and restart-safe exactly-once ambiguity; trusted clock; target physical PC/GGUF evidence.
+
+## Next plan / 今後の方針
+
+1. Confirm full **latest exact-head** Windows/Ubuntu × Python 3.11–3.13 CI, investigate FAIL via job logs and fix only the minimal non-weakening semantics via ordinary file API; don't duplicate runs. Work independent non-UI lanes while CI runs.
+2. Reproduce/classify revocation multi-process sidecar race and Memory/ActionAudit WAL last-close under restart and cross-process handles, preserving strict alias/orphan denials and ambiguous WRITE quarantine.
+3. Strengthen Memory CAS/expiry coherent snapshots and Planner terminal/UNKNOWN durable recovery.
+4. Connect Registry-bound immutable ToolRegistry, exact-type PermissionGate, durable occurrence + trusted-clock-aware audit-before-action and disconnected Mock Executor **only after relevant exact-head GREEN**, no real tool dispatch.
+5. Extend privacy-safe Personal Context, proactive scheduler, synthetic observation/fixture lineage and detached free-only V3 path/identity/approval/reproducibility guards. No UI until explicit resumption; no payment/frozen-gate bypass.
+
+---
+
 # LATEST — ARK AI Run883 disconnected observation, Planner/Context bounds, SQLite veto sidecar
 
 **Saved at (Asia/Tokyo/JST): 2026-11-15T08:53:59.321+09:00** — observed runtime wall clock only, **NOT** trusted-time provenance, consent or human review. **Overall ARK/JARVIS: NOT_PASSED. ALL NEW UI/FRONTEND DEVELOPMENT PAUSED. ZERO new paid/external compute.**
