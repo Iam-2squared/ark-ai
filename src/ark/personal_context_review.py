@@ -171,6 +171,24 @@ def review_personal_context(
                 raise PersonalContextReviewRejected(
                     "context metadata shape/budget invalid"
                 )
+            # A 4096-codepoint label can exceed the byte limit or include
+            # unpaired surrogates. Refuse it before hashing private content;
+            # only the optional context projection is more restrictive than
+            # the unchanged Memory v1 record/storage contract.
+            try:
+                oversized_metadata = any(
+                    len(key.encode("utf-8", errors="strict")) > 4096
+                    or len(value.encode("utf-8", errors="strict")) > 4096
+                    for key, value in metadata.items()
+                )
+            except UnicodeEncodeError as exc:
+                raise PersonalContextReviewRejected(
+                    "context metadata is not valid UTF-8"
+                ) from exc
+            if oversized_metadata:
+                raise PersonalContextReviewRejected(
+                    "context metadata UTF-8 byte budget exceeded"
+                )
             # Frozen records can still be reflectively modified. Refuse
             # oversized sensitive plaintext before UTF-8 allocation, hashing
             # or inclusion in an ephemeral synthetic context bundle.
