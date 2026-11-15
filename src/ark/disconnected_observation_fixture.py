@@ -67,8 +67,29 @@ def make_disconnected_fixture(
         raise DisconnectedFixtureRejected("exact synthetic observation kind required")
     if type(payload) is not bytes or not 1 <= len(payload) <= _MAX_FIXTURE_BYTES:
         raise DisconnectedFixtureRejected("fixture payload must be 1..65536 exact bytes")
-    # Construct the envelope after hash calculation, never passing payload to
-    # its constructor, __repr__, identifiers, logs or audit metadata.
+    # First validate the entire public metadata contract using a detached,
+    # inert envelope and a fixed digest sentinel. Invalid privacy/source
+    # labels, clocks and parent links never cause even a local hashing pass
+    # over the caller's private synthetic payload. The preflight object is
+    # neither returned nor persisted; the actual digest is filled in below.
+    preflight = _ORIGINAL_ENVELOPE(
+        kind=kind,
+        source_id=source_id,
+        adapter_id=_ADAPTER_ID,
+        privacy_scope=privacy_scope,
+        ingested_at_ms=ingested_at_ms,
+        content_sha256="0" * 64,
+        parent_sha256=parent_sha256,
+    )
+    _require_fixture_boundary()
+    if (
+        type(preflight) is not _ORIGINAL_ENVELOPE
+        or preflight.kind is not kind
+        or preflight.content_sha256 != "0" * 64
+        or preflight.adapter_id != _ADAPTER_ID
+    ):
+        raise DisconnectedFixtureRejected("synthetic fixture metadata changed")
+    # No raw payload enters the envelope, its identity, logging or audit.
     content_hash = hashlib.sha256(payload).hexdigest()
     _require_fixture_boundary()
     envelope = _ORIGINAL_ENVELOPE(
