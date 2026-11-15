@@ -14,6 +14,7 @@ import argparse
 import hashlib
 import json
 import sqlite3
+import stat
 import subprocess
 import sys
 import tempfile
@@ -143,9 +144,13 @@ def _verify_row(path: Path) -> bool:
     # Only two rows, three catalog objects and two quick-check messages
     # are sufficient to disprove this disposable one-row/two-object claim.
     # Never hydrate an unbounded foreign SQLite catalog into diagnostics.
-    if path.is_symlink() or not path.is_file():
-        return False
     try:
+        # Refuse a hard-linked synthetic ledger, not just a symlink. A matching
+        # row in an aliased file is not custody of this disposable case.
+        # These path probes are intentionally NOT atomic open-handle identity.
+        initial = path.lstat()
+        if not stat.S_ISREG(initial.st_mode) or initial.st_nlink != 1:
+            return False
         with closing(sqlite3.connect(path.absolute().as_uri() + "?mode=ro", uri=True)) as conn:
             conn.execute("PRAGMA query_only=ON")
             conn.execute("BEGIN")
@@ -157,6 +162,16 @@ def _verify_row(path: Path) -> bool:
                 "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
             ).fetchmany(3)
             check = conn.execute("PRAGMA quick_check").fetchmany(2)
+        # A different pathname target after verification must not be
+        # reported as the same durable veto. This does not resolve races
+        # where the pathname is replaced and restored between inspections.
+        final = path.lstat()
+        if (
+            not stat.S_ISREG(final.st_mode)
+            or final.st_nlink != 1
+            or (initial.st_dev, initial.st_ino) != (final.st_dev, final.st_ino)
+        ):
+            return False
         return (
             version == (1,)
             and rows == [(_SCOPE_DIGEST, 2000)]
