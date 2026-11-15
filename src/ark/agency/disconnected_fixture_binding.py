@@ -49,6 +49,18 @@ class DisconnectedFixtureBinding:
 
 
 _BINDING_TYPE = DisconnectedFixtureBinding
+# Frozen instances do not freeze their exact class constructor or slot
+# descriptors. Refuse executable replacements before constructing a binding
+# receipt; this local check does not attest external tool provenance.
+_BINDING_FIELD_NAMES = (
+    "request_id", "operation", "input_digest", "result_digest",
+    "request_bound_digest",
+)
+_ORIGINAL_BINDING_FIELDS = tuple(
+    vars(_BINDING_TYPE)[name] for name in _BINDING_FIELD_NAMES
+)
+_ORIGINAL_BINDING_INIT = vars(_BINDING_TYPE)["__init__"]
+_ORIGINAL_BINDING_NEW = vars(_BINDING_TYPE).get("__new__")
 _BINDING_DENIALS = (
     "dispatch_authorized", "external_outcome_verified",
     "automatic_replay_authorized",
@@ -59,10 +71,21 @@ _BINDING_ORIGINAL_DENIALS = tuple(
 
 
 def _assert_original_binding() -> None:
-    if DisconnectedFixtureBinding is not _BINDING_TYPE or any(
-        vars(_BINDING_TYPE).get(name) is not original
-        for name, original in zip(
-            _BINDING_DENIALS, _BINDING_ORIGINAL_DENIALS, strict=True,
+    if (
+        DisconnectedFixtureBinding is not _BINDING_TYPE
+        or vars(_BINDING_TYPE).get("__init__") is not _ORIGINAL_BINDING_INIT
+        or vars(_BINDING_TYPE).get("__new__") is not _ORIGINAL_BINDING_NEW
+        or any(
+            vars(_BINDING_TYPE).get(name) is not original
+            for name, original in zip(
+                _BINDING_FIELD_NAMES, _ORIGINAL_BINDING_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_BINDING_TYPE).get(name) is not original
+            for name, original in zip(
+                _BINDING_DENIALS, _BINDING_ORIGINAL_DENIALS, strict=True,
+            )
         )
     ):
         raise DisconnectedFixtureBindingRejected("constructed binding changed")
