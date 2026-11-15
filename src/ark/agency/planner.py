@@ -354,6 +354,10 @@ class PlanGraph:
         self._assert_status_epoch()
         if type(step_id) is not str or not step_id.strip():
             raise TypeError("step_id must be a non-empty exact string")
+        # Transition IDs arrive independently of the constructor-bound DAG.
+        # Reject oversized/invalid UTF-8 strings before dict hashing or
+        # attempting a state transition. This grants no execution authority.
+        _admit_graph_label(step_id)
         if step_id not in self._status:
             raise KeyError(step_id)
         if type(to_state) is not StepState:
