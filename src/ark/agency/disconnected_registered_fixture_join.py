@@ -109,7 +109,7 @@ def _require_original_registered_link() -> None:
         )
     ):
         raise RegisteredFixtureLinkRejected(
-            "registered fixture link result carrier changed"
+            "registered fixture link result carrier changed; no authority"
         )
 
 
