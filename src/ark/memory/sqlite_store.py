@@ -588,6 +588,11 @@ class SQLiteMemoryStore:
         path_epoch = self.path
 
         def assert_scope_carrier() -> None:
+            # The opened SQLite handle, BEGIN, row hydration and clock are
+            # separate reentrant boundaries. A transient source retarget
+            # restored by the next callback must not produce a clean read.
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory get source changed during read")
             if (scope.owner_id is not original_owner
                     or scope.namespace is not original_namespace):
                 raise MemorySchemaError("memory get scope changed during read")
