@@ -81,8 +81,75 @@ class SyntheticContextBundle:
         return False
 
 
-# A replaced fixture constructor must not substitute an altered context bundle.
+# Context output is a non-authorizing, ephemeral projection. Frozen dataclass
+# instances do not freeze their class constructors or slot descriptors. Verify
+# their import-original identities before invoking any synthetic constructor or
+# authority-denial getter; a post-construction type check is too late.
+_ITEM_RESULT_TYPE = SyntheticContextItem
 _BUNDLE_RESULT_TYPE = SyntheticContextBundle
+_ITEM_RESULT_FIELDS = (
+    "memory_id", "namespace", "content", "revision", "provenance_id",
+)
+_BUNDLE_RESULT_FIELDS = ("items", "bundle_id", "snapshot_digest")
+_BUNDLE_DENIAL_FIELDS = ("dispatch_authorized", "action_authorized")
+_RESULT_HOOK_NAMES = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_ITEM_INIT = vars(_ITEM_RESULT_TYPE)["__init__"]
+_ORIGINAL_BUNDLE_INIT = vars(_BUNDLE_RESULT_TYPE)["__init__"]
+_ORIGINAL_ITEM_FIELDS = tuple(
+    vars(_ITEM_RESULT_TYPE)[name] for name in _ITEM_RESULT_FIELDS
+)
+_ORIGINAL_BUNDLE_FIELDS = tuple(
+    vars(_BUNDLE_RESULT_TYPE)[name] for name in _BUNDLE_RESULT_FIELDS
+)
+_ORIGINAL_BUNDLE_DENIALS = tuple(
+    vars(_BUNDLE_RESULT_TYPE)[name] for name in _BUNDLE_DENIAL_FIELDS
+)
+_ORIGINAL_ITEM_HOOKS = tuple(
+    vars(_ITEM_RESULT_TYPE).get(name) for name in _RESULT_HOOK_NAMES
+)
+_ORIGINAL_BUNDLE_HOOKS = tuple(
+    vars(_BUNDLE_RESULT_TYPE).get(name) for name in _RESULT_HOOK_NAMES
+)
+
+
+def _assert_original_context_results() -> None:
+    if (
+        SyntheticContextItem is not _ITEM_RESULT_TYPE
+        or SyntheticContextBundle is not _BUNDLE_RESULT_TYPE
+        or vars(_ITEM_RESULT_TYPE).get("__init__") is not _ORIGINAL_ITEM_INIT
+        or vars(_BUNDLE_RESULT_TYPE).get("__init__") is not _ORIGINAL_BUNDLE_INIT
+        or any(
+            vars(_ITEM_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _ITEM_RESULT_FIELDS, _ORIGINAL_ITEM_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_BUNDLE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _BUNDLE_RESULT_FIELDS, _ORIGINAL_BUNDLE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_BUNDLE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _BUNDLE_DENIAL_FIELDS, _ORIGINAL_BUNDLE_DENIALS, strict=True,
+            )
+        )
+        or any(
+            vars(_ITEM_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_HOOK_NAMES, _ORIGINAL_ITEM_HOOKS, strict=True,
+            )
+        )
+        or any(
+            vars(_BUNDLE_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _RESULT_HOOK_NAMES, _ORIGINAL_BUNDLE_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise PersonalContextReviewRejected("context result carrier changed")
 
 
 def _hash(label: str, payload: object) -> str:
@@ -136,6 +203,7 @@ def review_personal_context(
         or type(policy) is not ContextSelectionPolicy
     ):
         raise PersonalContextReviewRejected("exact context inputs required")
+    _assert_original_context_results()
     policy.__post_init__()
     pinned_policy = (
         policy.total_limit, policy.per_namespace_limit, policy.policy_revision,
@@ -327,9 +395,21 @@ def review_personal_context(
             pinned_policy[2], len(selected),
         ))
         assert_snapshot_epoch()
-        selected.append(SyntheticContextItem(
+        _assert_original_context_results()
+        item = _ITEM_RESULT_TYPE(
             memory_id, namespace, content, revision, provenance,
-        ))
+        )
+        _assert_original_context_results()
+        if (
+            type(item) is not _ITEM_RESULT_TYPE
+            or item.memory_id is not memory_id
+            or item.namespace is not namespace
+            or item.content is not content
+            or item.revision is not revision
+            or item.provenance_id is not provenance
+        ):
+            raise PersonalContextReviewRejected("context result carrier changed")
+        selected.append(item)
         assert_snapshot_epoch()
     assert_snapshot_epoch()
     # Keep the original selected-item carriers across the final hash and
@@ -365,7 +445,9 @@ def review_personal_context(
     ))
     assert_snapshot_epoch()
     assert_selected_epoch()
-    result = SyntheticContextBundle(selected_items, bundle, snapshot_epoch[1])
+    _assert_original_context_results()
+    result = _BUNDLE_RESULT_TYPE(selected_items, bundle, snapshot_epoch[1])
+    _assert_original_context_results()
     assert_snapshot_epoch()
     assert_selected_epoch()
     if (
@@ -377,4 +459,11 @@ def review_personal_context(
         raise PersonalContextReviewRejected(
             "context bundle result changed during construction"
         )
+    for denial in _BUNDLE_DENIAL_FIELDS:
+        _assert_original_context_results()
+        if getattr(result, denial) is not False:
+            raise PersonalContextReviewRejected("context result acquired authority")
+        _assert_original_context_results()
+        assert_snapshot_epoch()
+        assert_selected_epoch()
     return result
