@@ -175,6 +175,11 @@ def _doc_id(value: object) -> bool:
 def _encode_text(value: object, maximum: int, *, empty_allowed: bool) -> bytes:
     if type(value) is not str or (not value and not empty_allowed):
         raise OfflineIndexRejected("expected exact local text")
+    # Each Unicode scalar contributes at least one UTF-8 byte. This cheap
+    # exact-str codepoint bound rejects oversized private fixtures before a
+    # potentially huge temporary encoded allocation is attempted.
+    if len(value) > maximum:
+        raise OfflineIndexRejected("local text budget exceeded")
     try:
         encoded = value.encode("utf-8", errors="strict")
     except UnicodeError as exc:
