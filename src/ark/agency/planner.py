@@ -292,6 +292,11 @@ class PlanGraph:
                 or call.arguments is not arguments
             ):
                 raise PlanConflictError("plan step input changed after construction")
+            # MappingProxyType pins the mapping object, not an external backing
+            # dict substituted through reflection before graph construction.
+            # Recheck every nested exact JSON carrier before the frozen
+            # ToolCall's request-id serializer can traverse a later mutation.
+            _admit_frozen_arguments(arguments)
             try:
                 current_request_id = call.request_id
             except (TypeError, ValueError, AttributeError) as exc:
