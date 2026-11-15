@@ -6,17 +6,14 @@ Only synthetic in-memory math fixtures. No ToolBackend.execute invocation.
 import pytest
 
 from ark.agency import disconnected_registered_fixture_join as join
-from ark.agency.contracts import CapabilityGrant
-from ark.agency.contracts import Effect
-from ark.agency.contracts import ToolCall
+from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
 from ark.agency.disconnected_fixture_binding import bind_disconnected_fixture_result
 from ark.agency.disconnected_toolbox import (
     DisconnectedToolRequest,
     execute_disconnected_fixture_tool,
 )
 from ark.agency.policy import PermissionGate
-from ark.agency.registry import ToolRegistration
-from ark.agency.registry import ToolRegistry
+from ark.agency.registry import ToolRegistration, ToolRegistry
 
 
 class _NoDispatch:
