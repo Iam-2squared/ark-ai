@@ -60,6 +60,11 @@ def _admit_graph_label(value: object) -> None:
         raise PlanConflictError("plan graph identifier budget exceeded")
     if not value.strip():
         raise PlanConflictError("plan graph identifier must be nonblank")
+    # SQLite/native boundaries must not receive embedded NUL identity bytes.
+    # This rejects both original and post-init-reflected graph labels without
+    # altering the frozen PlanStep/ToolCall constructor contracts.
+    if "\x00" in value:
+        raise PlanConflictError("plan graph identifier contains NUL separator")
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
