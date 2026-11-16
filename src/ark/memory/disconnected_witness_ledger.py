@@ -138,16 +138,22 @@ def _schema(conn: sqlite3.Connection) -> None:
     try:
         if conn.execute("PRAGMA user_version").fetchone() != (1,):
             raise MemoryWitnessLedgerRejected("unknown witness schema version")
-        # SQL-side admission bounds catalog hydration within the SAME SQLite
-        # read/write transaction. Exactly one table is the original DDL.
-        objects, ddl_bytes = conn.execute(
-            "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+        # SQL-side admission bounds *all* hydrated catalog text within the
+        # SAME SQLite transaction. A malformed identifier can be enormous
+        # even when one table's stored DDL is tiny.
+        objects, ddl_bytes, identifier_bytes = conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0), "
+            "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+            "+ COALESCE(length(CAST(name AS BLOB)),0) "
+            "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
             "FROM sqlite_master"
         ).fetchone()
         if (
             type(objects) is not int or objects != 1
             or type(ddl_bytes) is not int
             or not 0 <= ddl_bytes <= _MAX_SCHEMA_DDL_BYTES
+            or type(identifier_bytes) is not int
+            or not 0 <= identifier_bytes <= _MAX_SCHEMA_DDL_BYTES
         ):
             raise MemoryWitnessLedgerRejected("witness schema drift")
         with closing(sqlite3.connect(":memory:")) as expected:
