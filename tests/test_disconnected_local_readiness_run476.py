@@ -195,3 +195,29 @@ def test_reentrant_read_cannot_replace_inert_startup_descriptor(
     with pytest.raises(mod.DisconnectedLocalReadinessRejected, match="authority"):
         _review(args)
     assert backend.calls == 0
+
+
+@pytest.mark.parametrize(
+    "member",
+    ("capability", "scope", "expires_at_ms", "__post_init__", "__getattribute__"),
+)
+def test_startup_rejects_changed_grant_descriptor_before_any_private_getter(
+    case, monkeypatch, member,
+):
+    args, backend = case
+
+    def should_not_run(*_args, **_kwargs):
+        pytest.fail("startup invoked unreviewed capability grant descriptor")
+
+    replacement = (
+        property(should_not_run)
+        if member in ("capability", "scope", "expires_at_ms")
+        else should_not_run
+    )
+    monkeypatch.setattr(CapabilityGrant, member, replacement)
+    with pytest.raises(
+        mod.DisconnectedLocalReadinessRejected,
+        match="startup capability grant descriptor changed",
+    ):
+        _review(args)
+    assert backend.calls == 0
