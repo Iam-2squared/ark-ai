@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run915: multirow Memory atomicity, Planner cold terminal fanout, SQLite catalog budgets, inert ToolRegistry
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T17:06:43.978+09:00** (observed wall clock only, NOT a trusted approval/audit clock). **Overall ARK/JARVIS: NOT_PASSED.** UI/frontend development **PAUSED**. Free/local-first non-UI work only.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain untouched, Draft/unmerged at this invocation's read. **main** `7a843f17eb96ed13d66f23b58b06406b3002e405` not modified. **Initial work-basis HEAD** `c953610e5c5d52aefa3a89457005711a5969d4be`; **complete source/test HEAD** `15bee17e7117d4e2e8136aedfb995d64a7157f4b`; **technical report / checkpoint write-basis HEAD** `d59f5b90f7ed3d058db378b0f9b5d1e8efdd182e`, verified from PR #8 immediately before ordinary Contents write. **Previous status blob** `fbc9c6b9b71b83d006bd63756effc137ac314a8b`. The checkpoint-result commit SHA cannot be included inside its own file; verify the returned commit SHA against branch/PR HEAD and its blob. Exactly one canonical status update this invocation, after meaningful test/report commits.
+
+## NEW this invocation — 4 independent non-UI regression packages (12 newly authored synthetic cases)
+
+1. **Memory multirow transaction rollback** — [2 tests](https://github.com/Iam-2squared/ark-ai/blob/15bee17e7117d4e2e8136aedfb995d64a7157f4b/tests/test_memory_multiscope_expiry_rollback_run915.py), commit `a654fcf785b15919afa311677c857af99160a073`: inject an exception at the second expiry event in scoped/global due-page deletion; verify independent SQLite reader still sees old rows and event histories, then a fresh explicit purge has no event-ID gap and preserves future rows.
+2. **Planner terminal crash recovery** — [2 tests](https://github.com/Iam-2squared/ark-ai/blob/15bee17e7117d4e2e8136aedfb995d64a7157f4b/tests/test_planner_terminal_fanout_cold_recovery_run915.py), commit `2841b233a2e2110d4bc9d55486717dc02ae4e8ac`: FAILED/CANCELLED root fanout through BLOCKED dependent DAG descendants remains terminal after cold restart; stale RUNNING retries do not append and independent sibling remains non-authorizing/UNKNOWN if explicitly started.
+3. **SQLite catalog cumulative/UTF-8 identity bounds** — [4 tests](https://github.com/Iam-2squared/ark-ai/blob/15bee17e7117d4e2e8136aedfb995d64a7157f4b/tests/test_sqlite_catalog_cumulative_utf8_run915.py), commit `249c83532aa58239e3009ad13bd138fa5d4a4a1c`: split sub-threshold catalog names and multibyte names exceed fixed aggregate BLOB-byte budgets before Python hydration; only synthetic `:memory:` SQLite writable-schema fault fixtures used. Frozen v1 schema untouched.
+4. **Inert ToolRegistry identity** — [4 tests](https://github.com/Iam-2squared/ark-ai/blob/15bee17e7117d4e2e8136aedfb995d64a7157f4b/tests/test_registry_inert_ordered_binding_run915.py), commit `15bee17e7117d4e2e8136aedfb995d64a7157f4b`: registration-order invariant revision/bound ID, reflected registration drift and mismatched capability denials; no mock backend `execute` calls.
+
+**Technical evidence report:** [Run915 report](https://github.com/Iam-2squared/ark-ai/blob/d59f5b90f7ed3d058db378b0f9b5d1e8efdd182e/docs/JARVIS_RUN915_NON_UI_MEMORY_PLANNER_CATALOG_REGISTRY_REGRESSIONS.md). **12 cases AUTHORED**, not a claim of 12 all-platform PASS. Four new test files and one evidence file; no production source, public API, migrations, fixed contracts or frontend changed.
+
+## Exact CI snapshot at this checkpoint
+
+- Prior Run914 checkpoint HEAD `c953610e...`: [#43821247158](https://github.com/Iam-2squared/ark-ai/actions/runs/43821247158) **GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13, applies to **old HEAD only**.
+- [#43827989875](https://github.com/Iam-2squared/ark-ai/actions/runs/43827989875) `d59f5b90f7ed3d058db378b0f9b5d1e8efdd182e` — **IN_PROGRESS**, pull_request trigger.
+- [#43827743869](https://github.com/Iam-2squared/ark-ai/actions/runs/43827743869) `15bee17e7117d4e2e8136aedfb995d64a7157f4b` — **IN_PROGRESS**, pull_request trigger.
+- [#43827591063](https://github.com/Iam-2squared/ark-ai/actions/runs/43827591063) `249c83532aa58239e3009ad13bd138fa5d4a4a1c` — **IN_PROGRESS**, pull_request trigger.
+- [#43827465454](https://github.com/Iam-2squared/ark-ai/actions/runs/43827465454) `2841b233a2e2110d4bc9d55486717dc02ae4e8ac` — **IN_PROGRESS**, pull_request trigger.
+- [#43827383025](https://github.com/Iam-2squared/ark-ai/actions/runs/43827383025) `a654fcf785b15919afa311677c857af99160a073` — **IN_PROGRESS**, pull_request trigger.
+- CI for the new checkpoint commit will be triggered separately. **Run915 final exact HEAD all-six GREEN NOT YET CERTIFIED** in this checkpoint; no manual duplicate run launched. Any new CI FAIL must be investigated with full job logs before claiming a fix.
+
+## Frozen evidence and hard boundaries
+
+Unchanged: V1/V2/Local UI/Launcher frozen contracts and evidence, protected V2 final-evaluation gate, Draft V3 PR #5 Candidate/path/identity/provenance/reviewer/approval/reproducibility barriers, paused UI PR #9 and main. No paid/external compute/API/GPU, credentials, account connections, subscriptions, purchases, real training/Candidate/adapter/weights, Candidate promotion, evaluation opening, physical-PC action, private-data acquisition/export, destructive operation, real backend/tool execution or notification, automatic UNKNOWN retry, force push/raw Git bypass or main merge. Only synthetic/disconnected local test fixtures.
+
+**Open blockers:** Windows/Ubuntu SQLite WAL/SHM last-close process-alias/race **UNKNOWN/FAIL**, independent provenance/sidecar custody, Memory inter-process CAS/expiry/event proof, Planner cross-store COMMIT-UNKNOWN/exactly-once effects, trusted clock/real user consent, free V3 runtime identity/physical offline GGUF gate. Nothing is authorized for real external effects. Overall **NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Confirm all six jobs on the exact complete source/test and checkpoint HEADs; fix real failures only with a normal Contents API semantics-preserving change and do independent non-UI work during CI.
+2. Separate disposable WAL/SHM last-close constructor/open/read/alias failure phases with two-process evidence while preserving strict refusal and no automatic replay.
+3. Prove Memory CAS+expiry+event high-water under failures and Planner terminal/COMMIT-UNKNOWN recovery, then attempt reversible registry-bound PermissionGate + pre-action audit + disconnected Mock Executor integration after source-level exact-HEAD GREEN.
+4. Continue privacy-safe Personal Context, proactive/observation backend fixtures, and zero-cost V3 approval/path/identity guards, retaining Draft PRs and paused UI.
+
+---
+
 # LATEST — ARK AI Run914: quarantine CI repair; Memory + Planner bounded SQLite catalog identity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T16:04:43.459+09:00** (observed wall clock only; **NOT** a trusted action clock, consent, independent witness or external-effect evidence). **Overall ARK/JARVIS: NOT_PASSED.** Continue free/local-first **NON-UI** development, UI/frontend development **PAUSED**.
