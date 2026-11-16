@@ -180,6 +180,26 @@ def _verify_row(path: Path) -> bool:
             conn.execute("PRAGMA query_only=ON")
             conn.execute("BEGIN")
             version = conn.execute("PRAGMA user_version").fetchone()
+            # A corrupted SQLite catalog can carry short object counts and
+            # very large SQL/identifier fields. Bound their combined UTF-8
+            # bytes *inside SQLite* before Python hydrates catalog rows or
+            # reads even the synthetic revocation table. The v1 oracle has
+            # exactly one table and one autoindex; no extra object is valid.
+            catalog = conn.execute(
+                "SELECT COUNT(*), COALESCE(SUM("
+                "COALESCE(length(CAST(type AS BLOB)), 0) + "
+                "COALESCE(length(CAST(name AS BLOB)), 0) + "
+                "COALESCE(length(CAST(tbl_name AS BLOB)), 0) + "
+                "COALESCE(length(CAST(sql AS BLOB)), 0)), 0) "
+                "FROM sqlite_master"
+            ).fetchone()
+            if (
+                type(catalog) is not tuple or len(catalog) != 2
+                or type(catalog[0]) is not int or catalog[0] != 2
+                or type(catalog[1]) is not int
+                or not 0 <= catalog[1] <= 4096
+            ):
+                return False
             rows = conn.execute(
                 "SELECT scope_digest,revoked_at_ms FROM synthetic_context_revocations"
             ).fetchmany(2)
