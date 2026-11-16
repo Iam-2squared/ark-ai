@@ -6,8 +6,8 @@ and cannot establish identity, consent, or disclosure authority.
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
-from dataclasses import replace
 
 import pytest
 
@@ -46,10 +46,10 @@ def test_oversized_text_rejected_as_budget_not_digest_mismatch(
 ) -> None:
     request = _query()
     if field == "query":
-        request = replace(request, query=text)
+        request = dataclasses.replace(request, query=text)
     else:
-        forged_doc = replace(request.documents[0], text=text)
-        request = replace(request, documents=(forged_doc,))
+        forged_doc = dataclasses.replace(request.documents[0], text=text)
+        request = dataclasses.replace(request, documents=(forged_doc,))
     with pytest.raises(index.OfflineIndexRejected, match="local text budget exceeded"):
         index.search_offline_text(request)
 
