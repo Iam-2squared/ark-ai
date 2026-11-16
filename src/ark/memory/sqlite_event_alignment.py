@@ -279,7 +279,11 @@ def review_memory_event_alignment(
                 # rewrite sqlite_sequence can still erase this indication;
                 # an independently retained witness remains essential.
                 sequences = conn.execute(
-                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                    # Only zero, one, or multiple markers matter. Bounding
+                    # SQLite hydration to two rows detects all duplicates
+                    # without collecting a tampered unbounded marker tail.
+                    "SELECT seq FROM sqlite_sequence "
+                    "WHERE name='memory_events' LIMIT 2"
                 ).fetchall()
                 if count == 0:
                     if sequences:
