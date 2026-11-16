@@ -20,9 +20,14 @@ _MAX_ITEMS = 128
 _MAX_DDL_BYTES = 65_536
 _MAX_VERSION = 2**31 - 1
 _QUERY = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
-# SQL-side count and byte budget before any private DDL is hydrated by Python.
+# SQL-side count and total metadata/DDL byte budget before Python hydration.
+# sqlite_master names can be much larger than the stored SQL when catalog
+# cells are corrupted. Preserve the existing SQL-only budget as a subset.
 _PREFLIGHT_QUERY = (
     "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+    "+ COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)), 0) "
+    "+ COALESCE(length(CAST(name AS BLOB)), 0) "
+    "+ COALESCE(length(CAST(tbl_name AS BLOB)), 0)), 0) "
     "FROM sqlite_master"
 )
 
