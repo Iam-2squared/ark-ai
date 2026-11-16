@@ -214,9 +214,12 @@ def review_audit_continuity(
             # Capture AUTOINCREMENT's local high-water inside this same
             # read snapshot. A missing terminal event leaves no ID gap in
             # the surviving rows but still advances sqlite_sequence.
-            sequence_row = conn.execute(
-                "SELECT seq FROM sqlite_sequence WHERE name='action_events'"
-            ).fetchone()
+            # sqlite_sequence.name is not unique. A forged duplicate can
+            # hide behind fetchone(), including when the first row matches
+            # the audit tail. Read at most two markers, reject ambiguity.
+            sequence_rows = conn.execute(
+                "SELECT seq FROM sqlite_sequence WHERE name='action_events' LIMIT 2"
+            ).fetchall()
             assert_epoch()
             conn.rollback()
     except sqlite3.DatabaseError as exc:
@@ -251,10 +254,10 @@ def review_audit_continuity(
     # truncation even without a separate retained prefix; it does NOT
     # authenticate a writer who can also rewrite sqlite_sequence.
     if (
-        (count == 0 and sequence_row is not None)
+        (count == 0 and sequence_rows)
         or (count > 0 and (
-            sequence_row is None or type(sequence_row[0]) is not int
-            or sequence_row[0] != tail
+            len(sequence_rows) != 1 or type(sequence_rows[0][0]) is not int
+            or sequence_rows[0][0] != tail
         ))
     ):
         raise ActionAuditSchemaError("audit append-only high-water mismatch")
