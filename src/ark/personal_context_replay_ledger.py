@@ -321,13 +321,27 @@ def _schema(conn: sqlite3.Connection) -> None:
         raise OfflineContextReplayRejected("unknown context ledger schema version")
     # Limit private DDL hydration inside the caller's current read/write TX.
     # This is a size/type preflight, not an authenticated source seal.
-    schema_count, ddl_bytes = conn.execute(
-        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+    # SQL alone does not bound stored catalog identifiers. A malformed or
+    # forged sqlite_master name/type/tbl_name can remain huge despite short
+    # DDL; bound their cumulative UTF-8 bytes in SQLite before Python
+    # materializes even one such private schema row.
+    schema_count, ddl_bytes, identity_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
-    if (type(schema_count) is not int or type(ddl_bytes) is not int
-            or not 0 <= schema_count <= 8 or not 0 <= ddl_bytes <= 8192):
-        raise OfflineContextReplayRejected("context ledger schema drift: SQL preflight budget")
+    if (
+        type(schema_count) is not int or type(ddl_bytes) is not int
+        or type(identity_bytes) is not int
+        or not 0 <= schema_count <= 8
+        or not 0 <= ddl_bytes <= 8192
+        or not 0 <= identity_bytes <= 8192
+    ):
+        raise OfflineContextReplayRejected(
+            "context ledger schema drift: SQL preflight budget"
+        )
     with closing(sqlite3.connect(":memory:")) as expected:
         expected.execute(_DDL)
         sql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
