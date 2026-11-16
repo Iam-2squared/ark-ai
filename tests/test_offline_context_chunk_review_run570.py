@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -120,7 +121,10 @@ def test_mutated_record_during_join_receipt_digestion_is_rejected(monkeypatch):
             object.__setattr__(records[0], "expires_at_ms", 99)
         return original(data)
 
-    monkeypatch.setattr(joined.hashlib, "sha256", mutate)
+    # Isolate this fault to the join receipt. Replacing the process-global
+    # hashlib.sha256 is now rejected by the guarded child index before the
+    # join can exercise its own post-digest record-epoch check.
+    monkeypatch.setattr(joined, "hashlib", SimpleNamespace(sha256=mutate))
     with pytest.raises(joined.ContextLexicalRejected, match="epoch changed"):
         joined.review_context_chunk_index(records, bundle, "apple", **options)
     assert changed[0]
