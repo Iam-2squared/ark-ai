@@ -196,6 +196,19 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                     data_intact = "revoked" in str(error) and len(original) == 64
                 else:
                     data_intact = False
+            # A completed constructor/read that silently loses its retained
+            # evidence is a diagnostic failure, not a successful probe.
+            # Otherwise CLI main() would exit 0 merely because no exception
+            # was raised, even though cold_read_intact is false.
+            if not data_intact:
+                return {
+                    "status": "COLD_READ_MISMATCH", "kind": kind,
+                    "keeper": keeper, "phase": "cold_restart_read",
+                    "auto_retry_authorized": False,
+                    "real_tool_dispatched": False,
+                    "alias_checks_relaxed": False,
+                    "user_paths_exported": False,
+                }
             return {
                 "status": "OK", "kind": kind, "keeper": keeper,
                 "before_child_close": before,
