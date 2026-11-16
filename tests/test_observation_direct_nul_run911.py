@@ -1,7 +1,8 @@
-"""Direct observation envelopes and fixture adapters share a NUL boundary.
+"""Frozen direct ObservationEnvelope NUL semantics versus fixture adapter denial.
 
-Synthetic labels only; no camera, microphone, file acquisition, private
-source, external authorization or real observation capture is involved.
+Direct v1 identity JSON must escape embedded NUL. Stricter disconnected
+fixture ingress rejects NUL before hashing private synthetic input. No actual
+camera, microphone, files, private data or external backend are accessed.
 """
 
 from __future__ import annotations
@@ -10,12 +11,12 @@ import hashlib
 
 import pytest
 
+from ark.observation_fixture_adapters import fixture_text_observation
 from ark.observations import ObservationEnvelope, ObservationKind
 
 
-@pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
-def test_direct_observation_refuses_embedded_native_nul(field):
-    kwargs = {
+def _direct():
+    return {
         "kind": ObservationKind.TEXT,
         "source_id": "synthetic-source",
         "adapter_id": "synthetic-adapter",
@@ -23,20 +24,38 @@ def test_direct_observation_refuses_embedded_native_nul(field):
         "ingested_at_ms": 100,
         "content_sha256": hashlib.sha256(b"fixture").hexdigest(),
     }
-    kwargs[field] = "safe" + "\x00" + "unsafe"
+
+
+@pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
+def test_direct_v1_nul_json_identity_compatible_with_frozen_contract(field):
+    fields = _direct()
+    baseline = ObservationEnvelope(**fields)
+    fields[field] = "safe\x00unsafe"
+    with_nul = ObservationEnvelope(**fields)
+    assert with_nul.observation_id.startswith("obs_")
+    assert len(with_nul.observation_id) == 68
+    assert with_nul.observation_id == with_nul.observation_id
+    assert with_nul.observation_id != baseline.observation_id
+
+
+@pytest.mark.parametrize("field", ("source_id", "privacy_scope"))
+def test_fixture_adapter_rejects_nul_without_restricting_direct_v1(field):
+    fields = _direct()
+    fields[field] = "safe\x00unsafe"
+    direct = ObservationEnvelope(**fields)
+    assert direct.observation_id.startswith("obs_")
+    kwargs = {
+        "kind": ObservationKind.TEXT,
+        "source_id": fields["source_id"],
+        "privacy_scope": fields["privacy_scope"],
+        "ingested_at_ms": 100,
+    }
     with pytest.raises(ValueError, match="NUL separator"):
-        ObservationEnvelope(**kwargs)
+        fixture_text_observation("private-synthetic-fixture", **kwargs)
 
 
-def test_exact_boundary_labels_still_bind_inert_identity():
-    receipt = ObservationEnvelope(
-        kind=ObservationKind.TRANSCRIPT,
-        source_id="synthetic-stream",
-        adapter_id="mock-microphone-no-access",
-        privacy_scope="private-fixture",
-        ingested_at_ms=100,
-        content_sha256=hashlib.sha256(b"synthetic-transcript").hexdigest(),
-    )
-    assert receipt.observation_id.startswith("obs_")
-    assert len(receipt.observation_id) == 68
-    assert receipt.observation_id == receipt.observation_id
+def test_unmodified_metadata_identity_matches_fixture_digest():
+    fields = _direct()
+    direct = ObservationEnvelope(**fields)
+    assert len(direct.observation_id) == 68
+    assert direct.observation_id == direct.observation_id
