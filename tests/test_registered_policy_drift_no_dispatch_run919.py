@@ -9,7 +9,11 @@ from __future__ import annotations
 import pytest
 
 from ark.agency.contracts import (
-    CapabilityGrant, Effect, OneShotAuthorization, PermissionDenied, ToolCall,
+    CapabilityGrant,
+    Effect,
+    OneShotAuthorization,
+    PermissionDenied,
+    ToolCall,
 )
 from ark.agency.policy import PermissionGate
 from ark.agency.registry import ToolRegistration, ToolRegistry
