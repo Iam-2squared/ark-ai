@@ -90,3 +90,21 @@ def test_cli_rejects_unavailable_disposable_probe(
     result = json.loads(capsys.readouterr().out)
     assert result["observations"][0]["status"] == "FIXTURE_ERROR"
     assert result["automatic_retry_authorized"] is False
+
+
+@pytest.mark.parametrize("raw", ("8" * 5000, 1, type("UserStr", (str,), {})("2")))
+def test_fd_probe_rejects_nonexact_or_huge_iterations_before_parse(raw) -> None:
+    with pytest.raises(argparse.ArgumentTypeError, match="iterations must be 1..8"):
+        _DIAG._bounded_iterations(raw)
+
+
+@pytest.mark.parametrize("keeper", (1, "yes", object()))
+def test_fd_probe_rejects_nonexact_keeper_without_creating_tempdir(
+    monkeypatch: pytest.MonkeyPatch, keeper,
+) -> None:
+    def should_not_run(*args, **kwargs):
+        pytest.fail("unreviewed disposable probe started")
+
+    monkeypatch.setattr(_DIAG.tempfile, "TemporaryDirectory", should_not_run)
+    with pytest.raises(ValueError, match="keeper must be an exact boolean"):
+        _DIAG.probe_disposable_last_close(keeper=keeper)
