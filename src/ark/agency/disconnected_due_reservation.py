@@ -287,16 +287,22 @@ def _schema(conn: sqlite3.Connection) -> None:
     _require_original_due_digest()
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise DueReservationRejected("due ledger schema version changed")
-    # Inspect catalog size in SQLite before hydrating untrusted schema SQL.
-    # The frozen DDL contains one table and its generated UNIQUE index.
+    # Inspect both DDL and catalog identifiers inside SQLite before Python
+    # hydrates potentially huge stored names. The frozen DDL contains one
+    # table and its generated UNIQUE index. SQLite length(TEXT) counts
+    # characters, so explicitly cast to BLOB to enforce UTF-8 byte budgets.
     budget = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(budget) is not tuple or len(budget) != 2
+        type(budget) is not tuple or len(budget) != 3
         or type(budget[0]) is not int or budget[0] != 2
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+        or type(budget[2]) is not int or not 0 <= budget[2] <= 4_096
     ):
         raise DueReservationRejected("due ledger schema catalog preflight failed (schema drift)")
     with closing(sqlite3.connect(":memory:")) as expected:
