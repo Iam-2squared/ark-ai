@@ -54,6 +54,11 @@ def _identifier(value: object, label: str) -> str:
     """
     if type(value) is not str or len(value) > 256 or not value.strip():
         raise ValueError(f"{label} must be nonempty bounded exact text")
+    # A NUL separator is not a valid cross-component identity. Reject it
+    # before retaining the disconnected diagnostic in a future native/SQLite
+    # bridge; this changes no frozen runtime contracts or dispatch authority.
+    if "\x00" in value:
+        raise ValueError(f"{label} contains NUL separator")
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
