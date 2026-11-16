@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 
-
 _DIAG = runpy.run_path(
     str(Path(__file__).resolve().parents[1] / "scripts"
         / "diagnose_ark_store_wal_last_close.py")
