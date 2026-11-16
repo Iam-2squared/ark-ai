@@ -4,8 +4,6 @@ All inputs here are synthetic and memory-only; results contain no document text
 and cannot establish identity, consent, or disclosure authority.
 """
 
-from __future__ import annotations
-
 import dataclasses
 import hashlib
 
