@@ -348,6 +348,12 @@ def verify_offline_context_preview(
         or len(report.local_digest) != 64
         or _DIGEST.fullmatch(report.local_digest) is None
         or type(fixtures) is not tuple
+        # A retained preview contains at most 32 records. Refuse oversized
+        # or non-exact batches *before* capturing any private fixture fields,
+        # allocating a duplicate tuple, or invoking the context builder.
+        or not 1 <= len(fixtures) <= _MAX_RECORDS
+        or len(fixtures) != len(report.record_ids)
+        or any(type(item) is not OfflineContextFixture for item in fixtures)
     ):
         raise OfflineContextPreviewRejected("exact retained context preview required")
     # A retained receipt must at least be self-consistent before accessing any
