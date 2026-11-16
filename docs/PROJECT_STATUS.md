@@ -1,3 +1,49 @@
+# LATEST — ARK AI Run922: five-store SQLite catalog prehydration integrity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T02:01:20.723+09:00** (exact *observed reporting wall clock near this Contents write*, NOT trusted authorization/audit/action time). **Overall ARK/JARVIS: NOT_PASSED.** **UI/Frontend development PAUSED.** Free-only, isolated disconnected non-UI foundation work.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. [V3 Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5), [paused UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) both confirmed Draft, open, unmerged, untouched. **main/base HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405`; not modified. **Exact invocation work-basis HEAD:** `62560a377cc3dc14e1012c760a79b652dd8047c3`. **Complete source/test HEAD:** `d217db1a380ed27ee19655acfbeec40966f8aefc`. **Technical-report/checkpoint write-basis HEAD:** `951c1a953d069d9496d4d61f8f03cc8bff0ec846`. **Previous PROJECT_STATUS blob:** `12a927796c6764d103eed99286394816955c07a9`. This text cannot contain its own GitHub checkpoint-result commit SHA; the normal Contents write result and branch HEAD are independently checked *after* the write.
+
+## NEW this invocation — five independent non-UI source+test packages, 30 regression cases AUTHORED
+
+1. **Personal Context replay**: `fb04355b` source, `e5628603` six tests. Reject oversized `sqlite_master` type/name/table-name UTF-8 identity totals before Python schema row hydration.
+2. **Synthetic proposal store**: `2a187658` source, `06e489dc` six tests. Bound encoded catalog identifiers at proposal replay/append admission; no human review or Candidate permission inferred.
+3. **Detached READ journal**: `88c3f481` source, `4e5907c5` six tests, `22684fa1` test-only recovery fixture correction. Limit cumulative catalog identifier bytes; preserve genesis cold recovery and deny-only receipt semantics.
+4. **Memory witness history**: `aa044297` source, `f88bc6b4` six tests. Close malformed short-DDL/huge-identifier prehydration gap without modifying Memory v1 schema or witness authority.
+5. **Synthetic WRITE slot reservation**: `f7899fbf` source, `d217db1a` six tests. Refuse oversized catalog identity before any WRITE-slot history scan; never grant external effects or automatic UNKNOWN replay.
+
+**Coherent invariant:** original SQLite object counts, SQL byte ceilings, full frozen-schema comparison, quick_check and later row/digest/CAS checks all remain; extra cumulative UTF-8 `type`+`name`+`tbl_name` preflight inside the same SQLite transaction. Test fixtures mutate only disposable/in-memory catalog tables and assert that malformed identifiers never reach Python materialization; healthy cold openings still keep denied authorization flags.
+
+**Technical report:** [Run922 five-store catalog integrity](https://github.com/Iam-2squared/ark-ai/blob/951c1a953d069d9496d4d61f8f03cc8bff0ec846/docs/JARVIS_RUN922_NON_UI_SQLITE_CATALOG_IDENTITY_COHERENCE.md). **No full local ARK pytest run**, no real GGUF/target PC or privacy-data ingestion; SQL-only in-memory Python 3.13 / SQLite 3.46.1 micro-probe confirmed the vulnerable short-DDL/huge-identifier shape but is not a full validation. Cases are **AUTHORED**, not certified PASS on the newest HEAD.
+
+## CI snapshot — latest exact-HEAD six-matrix GREEN NOT YET CERTIFIED
+
+- Prior work-basis [CI #43905632857](https://github.com/Iam-2squared/ark-ai/actions/runs/43905632857): **GREEN 6/6** (Ubuntu/Windows Python 3.11–3.13), verified after invocation start. Covers Run921 work-basis, **not** Run922.
+- Personal Context test HEAD `e5628603273a`: [#43911502363](https://github.com/Iam-2squared/ark-ai/actions/runs/43911502363) **IN_PROGRESS**.
+- Proposal test HEAD `06e489dc94ad`: [#43911929074](https://github.com/Iam-2squared/ark-ai/actions/runs/43911929074) **IN_PROGRESS**.
+- READ test HEAD `22684fa17381`: [#43912384970](https://github.com/Iam-2squared/ark-ai/actions/runs/43912384970) **QUEUED**.
+- Memory Witness test HEAD `f88bc6b4f4ba`: [#43912730955](https://github.com/Iam-2squared/ark-ai/actions/runs/43912730955) **QUEUED**.
+- WRITE Slot test HEAD `d217db1a380e`: [#43913161745](https://github.com/Iam-2squared/ark-ai/actions/runs/43913161745) **QUEUED**.
+- Report write-basis HEAD `951c1a953d06` [#43913543269](https://github.com/Iam-2squared/ark-ai/actions/runs/43913543269) **QUEUED**. This status checkpoint will trigger its own automatic GitHub CI. No manual duplicate runs dispatched. **No newest-head PASS asserted.**
+
+## Preserved freezes, blockers, authorization boundaries
+
+Unchanged: frozen V1/V2/Local UI/Launcher contracts/evidence, protected V2 final-eval boundary, V3 Draft PR #5 Candidate/model identity/approval/provenance/regression/reproducibility gates, paused Draft UI PR #9, main, Memory v1 persisted schema, Planner journal semantics, exactly-once and audit-before-action denial boundaries.
+
+No spending, paid API/GPU/subscription/purchase, real Candidate weights/adapter/training/promotion, protected final evaluation, credentials or new account connections, physical PC actions, irreversible deletion, private-data export, real ToolBackend WRITE, automatic UNKNOWN retry, force/raw Git bypass, or main merge.
+
+**Open blockers:** Run922 exact-HEAD CI still not complete; SQLite WAL/SHM cross-process last-close/alias race unresolved; no independent retained audit time or authorization-token durable exactly-once proof; Planner COMMIT-UNKNOWN cold recovery and Memory CAS/event lineage require additional evidence; V3 real model/PC gates absent. **JARVIS NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Certify exact latest six-job CI; inspect failure logs and repair smallest semantics-preserving regression through ordinary Contents writes while unrelated lanes continue.
+2. Reproduce the ARK two-process WAL/SHM last-close/alias issue on disposable stores, with path-free diagnostics; do not autoverify or auto-retry ambiguous commits.
+3. Strengthen Memory coherent CAS/row/event/expiry and Planner detached terminal/COMMIT-UNKNOWN restoration; preserve independent witness requirement.
+4. Only after lower-layer exact-head GREEN, link pinned immutable ToolRegistry, exact PermissionGate, durable occurrence and trusted-clock audit-before-action with disconnected Mock Executor. Expand privacy-safe Personal Context and proactive observation contracts, free V3 guard review.
+5. Keep PR #5/#8/#9 Draft/unmerged; UI frozen.
+
+---
+
 # LATEST — ARK AI Run921: startup dependency admission, Memory/Audit sequence coherence, observation pinned hasher
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T01:16:02.879+09:00** (observed reporting wall time, **NOT** trusted authorization, audit or execution time). **Overall ARK/JARVIS: NOT_PASSED.** New UI/Frontend development **PAUSED**. Only free/local-first, disconnected non-UI foundation work.
