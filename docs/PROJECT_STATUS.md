@@ -1,3 +1,41 @@
+# LATEST — ARK AI Run923: fail-closed WAL sidecar, privacy replay and revocation prehydration
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T02:58:01.566+09:00** (observed reporting wall clock only; **NOT** a trusted execution/authorization clock). **Overall ARK/JARVIS: NOT_PASSED.** **UI/Frontend development PAUSED**. Free-only, isolated, reversible non-UI source/test work.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) open/unmerged; [protected V3 Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and [paused UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) open/unmerged, untouched. **main/base HEAD** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. **Exact invocation work-basis HEAD:** `9c0d43f0fb892d8113985f6941822db6bf6cc360`. **Complete source/test HEAD:** `8b602461808ff3a9a56b03659802da57a2017383`. **Technical report / checkpoint write-basis HEAD:** `9c61b40dcb169b5ca2a14462ce42fbf0b379805c`. **Previous PROJECT_STATUS blob:** `d84caba024ed92029c5351426c696a9339b270e9`. This checkpoint cannot embed its own resulting GitHub commit SHA; verify the **checkpoint-result HEAD** from the normal GitHub Contents write independently against the branch and PR HEAD after saving.
+
+## NEW in this invocation — three independent source+test packages, 31 synthetic regression cases AUTHORED
+
+1. **Actual ARK WAL/SHM last-close diagnostic:** source [`ed97362f`](https://github.com/Iam-2squared/ark-ai/commit/ed97362f4659795c95aa597d5e4bbbfd02178076), test [`fb5e0e07`](https://github.com/Iam-2squared/ark-ai/commit/fb5e0e0719106ddfc8de01159c0355d798b344d1). Twelve failure-injected Memory/Audit/revocation held-FD lifecycle cases now assert no spurious `OK` when sidecar unlink/link observations drift; reject **before cold reopen**; three oversized CLI argument cases. Returned error is content-free, never grants a retry/real tool/path relaxation.
+2. **Personal Context retained preview pre-access:** source [`9a91601d`](https://github.com/Iam-2squared/ark-ai/commit/9a91601d01dbe27c333f37dd469d5dd6f1895c9a), test [`21e9adbb`](https://github.com/Iam-2squared/ark-ai/commit/21e9adbb98f13c9427a01fdcfb111a5a32294212). Enforce exact synthetic record tuple, maximum 32 entries and retained report cardinality **before** private field capture/rebuild; five malformed fixtures and one healthy case, with consent/export authority remaining false.
+3. **Disposable revocation WAL readback:** source [`aa6f0eab`](https://github.com/Iam-2squared/ark-ai/commit/aa6f0eab85062ad10fb1b00e9b94d9b968234004), test [`8b602461`](https://github.com/Iam-2squared/ark-ai/commit/8b602461808ff3a9a56b03659802da57a2017383). SQL-side exact two-object catalog and 4,096-byte combined UTF-8 identity/DDL ceiling before Python row/catalog hydration; nine malformed catalog cases and one legitimate synthetic veto. Existing exact v1 DDL, linkage, quick-check and authority denials retained.
+
+**Technical evidence:** [Run923 source/test report](https://github.com/Iam-2squared/ark-ai/blob/9c61b40dcb169b5ca2a14462ce42fbf0b379805c/docs/JARVIS_RUN923_NON_UI_WAL_PRIVACY_CATALOG_PREFLIGHT.md). **31 cases authored, not yet latest-HEAD matrix-certified**. No full local pytest, GPU/GGUF/physical PC, live personal context, external tool action, real revocation or user data operation.
+
+## CI / verification — latest exact-HEAD 6/6 GREEN not yet certified
+
+- **Prior work-basis** [CI #43913953014](https://github.com/Iam-2squared/ark-ai/actions/runs/43913953014): **GREEN**, Windows/Ubuntu × Python 3.11–3.13; covers Run922 original work basis **only**, not Run923 source/test.
+- WAL diagnostic source [#43921920549](https://github.com/Iam-2squared/ark-ai/actions/runs/43921920549): **IN_PROGRESS**; test [#43922042522](https://github.com/Iam-2squared/ark-ai/actions/runs/43922042522): **IN_PROGRESS**.
+- Personal Context source [#43922334209](https://github.com/Iam-2squared/ark-ai/actions/runs/43922334209): **IN_PROGRESS**; test [#43922481000](https://github.com/Iam-2squared/ark-ai/actions/runs/43922481000): **IN_PROGRESS**.
+- Revocation diagnostic source [#43922854668](https://github.com/Iam-2squared/ark-ai/actions/runs/43922854668): **IN_PROGRESS**; test/latest complete source HEAD [#43922982927](https://github.com/Iam-2squared/ark-ai/actions/runs/43922982927): **QUEUED**.
+- Report write-basis [#43923464028](https://github.com/Iam-2squared/ark-ai/actions/runs/43923464028): **QUEUED**. This checkpoint push will trigger another automatic CI; no duplicate equivalent workflow manually dispatched. Final job statuses can change after this read.
+
+## Unchanged freezes, blockers, free-only boundaries
+
+Preserve frozen V1/V2/Local UI/Launcher evidence and contracts; protected V2 final evaluation, V3 Candidate approval/identity/provenance/regression/reproducibility gates, Draft PR #5, Draft PR #9, unchanged main; non-authorizing disconnected mocks. No paid/external compute or API, subscriptions, purchases, new secrets/account connections, external GPU/training, real Candidate generation/promotion, protected eval, real ToolBackend WRITE, automatic UNKNOWN/revocation retry, fabricated hashes, unauthorized private-data export, irreversible action, force/raw Git bypass or main merge.
+
+**Open blockers:** newest source/test exact-HEAD six-job CI pending; cross-process SQLite WAL/SHM last-close alias and reopen race unresolved, no independently retained trusted audit clock or authenticated consent; no restart-safe real WRITE one-shot authorization proof; Planner COMMIT-UNKNOWN and Memory CAS/row/event/expiry need continuing evidence; physical-PC/GGUF and protected V3 gates remain unavailable. **JARVIS NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Verify newest exact-HEAD six-job CI; on FAIL inspect job logs, land smallest non-weakening fix, switch to an independent module during the new CI.
+2. Isolate real WAL/SHM held-descriptor/path lifecycle and cold-read mismatch with disposable stores; never infer safe reuse from sidecar unlink or auto-retry UNKNOWN outcomes.
+3. Expand Memory coherent CAS/events/expiry and Planner cold recovery independently; bind durable audit and retained authorization only after independent exact-head GREEN.
+4. Review ToolRegistry → exact PermissionGate → occurrence → trusted-clock audit-before-action → disconnected Mock Executor integration without enabling live tools. Independently advance Personal Context privacy, proactive observation and free-only V3 guards.
+5. Keep PR #5/#8/#9 Draft/unmerged; UI paused; no spending.
+
+---
+
 # LATEST — ARK AI Run922: five-store SQLite catalog prehydration integrity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T02:01:20.723+09:00** (exact *observed reporting wall clock near this Contents write*, NOT trusted authorization/audit/action time). **Overall ARK/JARVIS: NOT_PASSED.** **UI/Frontend development PAUSED.** Free-only, isolated disconnected non-UI foundation work.
