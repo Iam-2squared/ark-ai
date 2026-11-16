@@ -12,8 +12,8 @@ from contextlib import closing
 import pytest
 
 from ark.personal_context_revocation_review import (
-    SyntheticContextRevocationRejected,
     _TABLE,
+    SyntheticContextRevocationRejected,
     _validate,
 )
 
