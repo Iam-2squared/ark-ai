@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run918: Memory prefix/retention prehydration, Planner COMMIT-UNKNOWN, PermissionGate restart gap
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T21:35:11.076+09:00** (observed wall clock only; **NOT** a trusted action, approval or audit clock). **Overall ARK/JARVIS: NOT_PASSED.** All new UI/frontend work **PAUSED**; free/local-first non-UI research, synthetic tests and diagnostic source only.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open and unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain Draft/unmerged and unchanged this invocation. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged. **Initial exact work-basis HEAD:** `fa1ad3b9c47369687fb3e50b1cf2cd7e1ca13109`; **complete source/test/CI repair HEAD:** `313e3dc1fed12d0fcfb1951f49b4beef71412144`; **report / checkpoint write-basis HEAD:** `8934a155f8122676b02eb9f1dab5c08a59b794aa`; **prior PROJECT_STATUS blob:** `480e36e9d4eedaefc74a38f49918631cd46b5975`. The **checkpoint-result commit SHA cannot appear in its own contents**; verify normal Contents write result against final PR/branch HEAD and fetched blob. Exactly **one canonical status update** this invocation, after meaningful work.
+
+## NEW this invocation — 4 coherent non-UI packages, 21 new synthetic regression cases authored, 1 CI compatibility repair
+
+1. **Memory event prefix read hydration** — [source `5e95f12d`](https://github.com/Iam-2squared/ark-ai/commit/5e95f12d1e8d4c4f400744aebb2edb621d972c88) + [7 tests `4371166d`](https://github.com/Iam-2squared/ark-ai/commit/4371166d0c243de5106152b315161889fee40376): same-transaction SQLite-side event row type/UTF-8 BLOB byte guard before Python iteration, exact 64-character retained digest before regex. Private event data not emitted. Existing event lifecycle rules and frozen schema unchanged.
+2. **Planner COMMIT-UNKNOWN response loss** — [3 tests `7ab8c0a7`](https://github.com/Iam-2squared/ark-ai/commit/7ab8c0a7ea9814c63c4b5565a36a0087884ea96d): lost response *after* local journal COMMIT leaves event+header durable; cold restart preserves RUNNING unknown / SUCCEEDED terminal and refuses stale CAS/replay; precommit exception rolls back. No real external exactly-once claim.
+3. **Personal Context privacy retention** — [source `743de60c`](https://github.com/Iam-2squared/ark-ai/commit/743de60c720647ba7df13220b9ba64c99a099f0c) + [6 tests `8365e990`](https://github.com/Iam-2squared/ark-ai/commit/8365e990f757634a23800ec70fb41ac4d5a2c039): same-snapshot bounded Memory private-row hydration admission before direct retention `SELECT *`; invalid TEXT/BLOB, huge content/ID/source, and normal expiry tested. No deletion/consent authority.
+4. **PermissionGate local authority limitation** — [5 tests `1d504936`](https://github.com/Iam-2squared/ark-ai/commit/1d5049366a5f81638dc923afe441ec8e5fa9e660): invalid grant iteration never spends local token; an independently constructed new gate has no old token-spend history. **Restart-safe persisted authorization remains BLOCKED**, not solved.
+5. **CI failure and semantics-preserving fix** — [repair `313e3dc1`](https://github.com/Iam-2squared/ark-ai/commit/313e3dc1fed12d0fcfb1951f49b4beef71412144): early new source CI hit one preexisting test expecting rejection text `stored event`; new prehydration message omitted that phrase. Preserve old diagnostic while retaining stronger denial; no guard relaxed.
+
+**Technical evidence:** [Run918 report](https://github.com/Iam-2squared/ark-ai/blob/8934a155f8122676b02eb9f1dab5c08a59b794aa/docs/JARVIS_RUN918_NON_UI_EVENT_PREFIX_PLANNER_RETENTION_POLICY.md). **21 tests AUTHORED** is not a claim of 21 PASS on newest HEAD. No direct local full suite, real GGUF, training, target-PC test, or live tool dispatch occurred.
+
+## Exact CI snapshot — source/test HEAD versus checkpoint distinction
+
+- Previous Run917 HEAD `fa1ad3b9...`: [#43844301821](https://github.com/Iam-2squared/ark-ai/actions/runs/43844301821) **GREEN 6/6** Windows/Ubuntu Python 3.11–3.13, **old HEAD only**.
+- Early prehydration source [#43865546951](https://github.com/Iam-2squared/ark-ai/actions/runs/43865546951) and tests [#43865665860](https://github.com/Iam-2squared/ark-ai/actions/runs/43865665860): observed **Ubuntu 3/3 FAIL**, one legacy test diagnostic assertion, source and tests otherwise broadly passing (Ubuntu Python 3.11: 16,457 / 16,464 PASS with 1 skip); Windows pending at failure inspection. The cause is addressed by later source commit, not a reason to redefine PASS.
+- Planner fixture [#43865988547](https://github.com/Iam-2squared/ark-ai/actions/runs/43865988547): observed Ubuntu 3.13 FAIL with the same inherited Memory diagnostic assertion; other jobs were in progress.
+- Context source [#43866340110](https://github.com/Iam-2squared/ark-ai/actions/runs/43866340110), context tests [#43866461834](https://github.com/Iam-2squared/ark-ai/actions/runs/43866461834), policy [#43866721900](https://github.com/Iam-2squared/ark-ai/actions/runs/43866721900): **IN PROGRESS / QUEUED** at last read; cannot certify full six-job GREEN.
+- Repaired source/test HEAD `313e3dc1...`: [#43867129226](https://github.com/Iam-2squared/ark-ai/actions/runs/43867129226) **QUEUED** at last read, all six jobs pending.
+- Technical report HEAD `8934a155...`: [#43867492034](https://github.com/Iam-2squared/ark-ai/actions/runs/43867492034) **QUEUED** at last read. This checkpoint separately triggers CI. **Latest exact HEAD all-6 GREEN NOT CERTIFIED.** No duplicate manual workflow dispatch.
+
+## Frozen evidence / strict zero-cost boundaries / unresolved blockers
+
+**Unchanged:** frozen V1/V2/Local UI/Launcher evidence/contracts, V2 protected evaluation, V3 PR #5 fixed Candidate/identity/path/provenance/reproducibility/human-review/approval gates, PR #9 and UI pause, main, Memory persisted v1 schema, Planner nonreplay and registry-bound exact PermissionGate checks. No paid/external GPU/compute/APIs, new subscriptions/service/credentials/account connections, real Candidate/adapter/weight generation/training/promotion, real user data access/export, trusted human approval, irreversible action, actual ToolBackend WRITE, automatic UNKNOWN retry, external notification, physical-PC actions, force push or raw Git workaround, protected gate opening, or main merge.
+
+**Open blockers:** repaired exact-head six-job CI pending; two-process WAL/SHM last-close sidecar/alias race remains **UNKNOWN/FAIL**, not resolved; no independent retained custody, trusted clock, real external exactly-once effect or restart-safe token authorization; Memory cross-process CAS/event continuity and Planner COMMIT-UNKNOWN integration need further cross-store proof; real V3 model/weight byte identity, legal/approval constraints and offline target-PC GGUF gate remain absent. Overall **NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Certify latest complete code/test/report/checkpoint HEAD CI across Windows+Ubuntu × Python 3.11–3.13. On FAIL read exact job logs, repair through normal Contents API without weakening semantics, and switch to independent non-UI lanes during CI.
+2. Isolate disposable cross-process SQLite WAL/SHM last-close failure stages (constructor/open/read/sidecar custody) without unsafe alias relaxation or automatic retries.
+3. Expand Memory CAS/expiry/event high-water and Planner cold COMMIT-UNKNOWN proofs; after lower-layer exact-head GREEN, bind immutable ToolRegistry and exact PermissionGate to durable authorization, audit-before-action, occurrence ledger and disconnected mock execution.
+4. Continue privacy-safe Personal Context, proactive/observation backend contracts and free-only V3 path/identity/approval guards. Keep PR #5/#8/#9 Draft/unmerged and UI paused.
+
+---
+
 # LATEST — ARK AI Run917: quarantine CI repair, inert Registry, Memory CAS/ABA and generation prehydration
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T18:55:05+09:00** (observed local wall clock only; **NOT** trusted audit/action time). **Overall ARK/JARVIS: NOT_PASSED**. All new UI/frontend work **PAUSED**; disconnected, zero-new-cost non-UI foundation development only.
