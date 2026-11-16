@@ -99,19 +99,22 @@ def test_context_false_spoof_during_hash_callback_refused(monkeypatch):
 
 def test_index_false_spoof_during_hash_callback_refused(monkeypatch):
     request = lexical_query()
-    original = index.hashlib.sha256
+    original = index._digest
     changed = [False]
 
-    def swap(data):
-        if not changed[0] and data.startswith(index._DOMAIN):
+    def swap(label, payload):
+        # Keep the genuine SHA-256 dependency intact: substituting the global
+        # hasher is now rejected at ingress, before any digest callback.
+        # The isolated inventory callback exercises the later deny-only gate.
+        if not changed[0] and label == "inventory":
             changed[0] = True
             monkeypatch.setattr(
                 index.OfflineIndexResult,
                 "revocation_verified", property(lambda _: False),
             )
-        return original(data)
+        return original(label, payload)
 
-    monkeypatch.setattr(index.hashlib, "sha256", swap)
+    monkeypatch.setattr(index, "_digest", swap)
     with pytest.raises(
         index.OfflineIndexRejected, match="original index authority",
     ):
