@@ -51,6 +51,13 @@ class SyntheticReadinessRequirement:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid UTF-8 {label} requirement"
                 ) from exc
+            # NUL is not a valid component or schema identity even though
+            # it fits the UTF-8 byte budget. Refuse before reading any
+            # readiness snapshot or matching a required component.
+            if "\x00" in value:
+                raise SyntheticStartupLeaseRejected(
+                    f"invalid NUL {label} requirement"
+                )
             if byte_count > 256:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid UTF-8 {label} requirement byte budget"
