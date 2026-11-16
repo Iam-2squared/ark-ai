@@ -1,3 +1,41 @@
+# LATEST — ARK AI Run913: Memory due-page prehydration, detached scheduler identity, WAL phase diagnostics
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T14:52:57.931+09:00** (wall clock observed immediately before this permitted Contents API write, **NOT** a trusted action clock, user consent, provenance, independent witness or external effect). **Overall ARK/JARVIS: NOT_PASSED.** Continue **zero-cost/local-first NON-UI** backend work. All new UI/frontend development **PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. Protected [V3 Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) verified Draft/unmerged, untouched. Main/base `7a843f17eb96ed13d66f23b58b06406b3002e405` at last branch inspection. **Initial exact work-basis HEAD:** `9cc6fa2e74cfad080339b94c4fd36998b47520ef`. **Complete source+tests HEAD:** `44e5169df02128595261a4c2e896e4d707ae552f`. **Technical report/checkpoint write-basis HEAD:** `8a8a64f81775951ae618c1405047e9abbc8abac6`, re-read against PR #8 just before writing. **Previous canonical status blob:** `9d0780eb73f21c0b70d782e69e06e0ad57d702da`. The result commit SHA cannot be included in the contents of its own commit; read it from this Contents update and independently verify branch/PR HEAD and blob. Exactly **one** canonical checkpoint update this invocation after meaningful source/test/report commits; never checkpoint-only.
+
+## NEW this invocation — 4 coherent non-UI packages, 24 synthetic regression cases AUTHORED
+
+1. **Memory expiry SQL due-page admission:** [`a34056cb`](https://github.com/Iam-2squared/ark-ai/commit/a34056cb8fdebb4f946d0ec523158bb250026fa1) + [8-test `f508b8b8`](https://github.com/Iam-2squared/ark-ai/commit/f508b8b860123421ec50a814af09cb3e45590adb). The same SQLite writer transaction and deterministic due-page query check exact SQLite TEXT type and per-row UTF-8/BLOB byte maxima **before** `SELECT *`, protecting local expired Memory from oversized/BLOB persisted corruption without partial deletions/events. Correct scoped/global, bounded/unbounded, future-row and multilingual behavior retained. Frozen Memory v1 schema, row-image CAS and event atomicity unchanged. Standalone local SQLite-only SQL validity smoke was observed; **no complete ARK test PASS asserted**.
+2. **Disconnected due-reservation source pin:** [`9968b8c0`](https://github.com/Iam-2squared/ark-ai/commit/9968b8c00c8768084e45231ce8c7d45ad4a37576) + [test `fecd9d05`](https://github.com/Iam-2squared/ark-ai/commit/fecd9d05fa953b7f00e18776f227b4da27632ad7) / [`852c7d18`](https://github.com/Iam-2squared/ark-ai/commit/852c7d18441b4c5eb38ce52b2e3fa836c8562ff9). **5 cases** forbid initialized `Path` rebinding—even to a value-equal new carrier—before a subsequent SQLite open, while normal synthetic receipt/read-only restart still denies execution, notifications and replay. This does **not** prove independent custody.
+3. **Disposable WAL last-close diagnostics:** [`119bcc29`](https://github.com/Iam-2squared/ark-ai/commit/119bcc29e1c1dd4e8a4ef3c4c6087a30708ca00e) + [4-test `75ea5f30`](https://github.com/Iam-2squared/ark-ai/commit/75ea5f30132f58eab3dd48ada71864881dfbb9f8). Differentiate `cold_restart_construct` from `cold_restart_read`, without exposing exception text, private paths or payload. Known Windows/Ubuntu WAL/SHM cross-process close/revocation race is **NOT** fixed, remains UNKNOWN/FAIL, no retries or sidecar relaxations.
+4. **Proactive quarantine source+policy pins:** [`43bd4fa6`](https://github.com/Iam-2squared/ark-ai/commit/43bd4fa64ba68664a5a530a43984cbc095395cd1) + [7-test `44e5169d`](https://github.com/Iam-2squared/ark-ai/commit/44e5169df02128595261a4c2e896e4d707ae552f). Exact original SQLite `Path` and scheduling policy tuple carriers must persist between operations; changed/value-equal rebuilt carriers are refused before re-open. Normal disconnected restart/quarantine remains non-authorizing. No policy or SQLite schema migration.
+
+**Run913 technical report:** [`docs/JARVIS_RUN913_NON_UI_MEMORY_DUE_SCHEDULER_WAL_CARRIER.md`](https://github.com/Iam-2squared/ark-ai/blob/8a8a64f81775951ae618c1405047e9abbc8abac6/docs/JARVIS_RUN913_NON_UI_MEMORY_DUE_SCHEDULER_WAL_CARRIER.md). **24 test cases AUTHORED** (8+5+4+7), not 24 verified PASS. No direct user content or physical device accessed.
+
+## Exact CI snapshot; do NOT promote earlier HEAD to latest GREEN
+
+- **Previous Run912 checkpoint** `9cc6fa2e...`: [#43807110372](https://github.com/Iam-2squared/ark-ai/actions/runs/43807110372) **GREEN 6/6** Windows/Ubuntu × Python 3.11–3.13 (prior HEAD only).
+- **Memory full-package** `f508b8b8...`: [#43811925979](https://github.com/Iam-2squared/ark-ai/actions/runs/43811925979) **IN PROGRESS** at last observation.
+- **Due-reservation suite** `852c7d18...`: [#43812224976](https://github.com/Iam-2squared/ark-ai/actions/runs/43812224976) **QUEUED** at last observation.
+- **WAL diagnostics** `75ea5f30...`: [#43812494796](https://github.com/Iam-2squared/ark-ai/actions/runs/43812494796) **QUEUED** at last observation.
+- **Latest complete source/test** `44e5169d...`: [#43812760789](https://github.com/Iam-2squared/ark-ai/actions/runs/43812760789) **QUEUED** at last observation. Report/checkpoint produce later CI. **Latest exact HEAD all-six GREEN NOT ESTABLISHED**. No duplicate manual workflow run triggered.
+
+## Frozen contracts/evidence, blockers and authorization boundary
+
+Unchanged: V1/V2/Local UI/Launcher frozen contracts and evidence, V2 protected final-evaluation gate, V3 PR #5 fixed Candidate/provenance/human-review/reproducibility/identity/approval barriers, Memory/Planner v1 persisted contracts, main, paused UI PR #9 and all three Draft PRs. No paid/external compute/API/GPU, subscriptions or purchases, new credentials or account links, real Candidate/training/weights, promotion, protected V2 opening, unreviewed data capture, real private-context export, physical PC access, irreversible/destructive actions, real ToolBackend WRITE or notification, automatic UNKNOWN replay, main merge, force push or raw-Git safety bypass. The latest code is **synthetic fixture work only**.
+
+**Open blockers:** intermittent WAL/SHM process-last-close alias/race and independent historical source/sidecar custody, Planner cross-store COMMIT-UNKNOWN/effect exactly-once proof, Memory CAS/expiry/event consistency under failures, trusted audit clock/real consent, V3 runtime/model pin/reviewer/cost approval and physical GGUF/offline gate. A durable REVOKED marker with a SIDECAR_REFUSED second observation remains **UNKNOWN/FAIL**, never inferred success. **ARK/JARVIS NOT_PASSED**.
+
+## Prioritized Next plan / 今後の方針
+
+1. Verify all six Windows/Ubuntu × Python 3.11–3.13 jobs for exact new source/test and checkpoint HEAD; inspect real CI logs before any smallest semantics-preserving repair, while overlapping work on independent non-UI paths.
+2. Use safe phase-separated disposable WAL diagnostics to isolate constructor/open/read versus last-close sidecar behavior; no sidecar alias exemption or automatic replay.
+3. Extend Memory coherent CAS/expiry/event high-water and Planner crash terminal/COMMIT-UNKNOWN recovery, then integrate immutable ToolRegistry, exact PermissionGate, durable occurrence/trusted audit-before-action and disconnected mock executor **only after lower-layer exact-head GREEN**.
+4. Maintain privacy-safe Personal Context, proactive/observation contracts and free-only V3 guard evidence; keep protected gates and UI paused, PR #5/#8/#9 Draft/unmerged and main untouched.
+
+---
+
 # LATEST — ARK AI Run912: repaired SQLite schema fixture transaction; retained Context privacy + registry-bound clock admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T13:56:43.256+09:00** (observed wall-clock only; **NOT** a trusted audit/action clock, consent, reviewer attestation, external effect, or independent provenance). **Overall ARK/JARVIS: NOT_PASSED.** Continue free-only/local-first **non-UI backend only**; all new UI/frontend development **PAUSED**.
