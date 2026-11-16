@@ -272,6 +272,47 @@ def _require_memory_text_hydration_budget(
         raise MemorySchemaError("memory search namespace hydration budget exceeded")
 
 
+
+def _require_expiry_purge_hydration_admission(
+    conn: sqlite3.Connection, now: int, scope: MemoryScope | None,
+    limit: int | None,
+) -> None:
+    """Reject corrupt due-page TEXT before SELECT * hydrates private rows.
+
+    The SQL-side admission uses the identical scope, clock and deterministic
+    memory-ID page as the subsequent DELETE transaction.  It does not cap the
+    historical unbounded purge mode or authorize expiry on its own.
+    """
+    selected = (
+        "SELECT content,metadata_json,source_id FROM memories "
+        "WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=?"
+    )
+    params: tuple[object, ...] = (now,)
+    if scope is not None:
+        selected += " AND owner_id=? AND namespace=?"
+        params += (scope.owner_id, scope.namespace)
+    selected += " ORDER BY memory_id"
+    if limit is not None:
+        selected += " LIMIT ?"
+        params += (limit,)
+    invalid = conn.execute(
+        "SELECT 1 FROM (" + selected + ") AS due WHERE "
+        "typeof(content)!='text' "
+        "OR length(CAST(content AS BLOB))>? "
+        "OR typeof(metadata_json)!='text' "
+        "OR length(CAST(metadata_json AS BLOB))>? "
+        "OR typeof(source_id)!='text' "
+        "OR length(CAST(source_id AS BLOB))>? LIMIT 1",
+        params + (
+            _MAX_MEMORY_ROW_CONTENT_BYTES,
+            _MAX_MEMORY_ROW_METADATA_BYTES,
+            _MAX_MEMORY_ROW_SOURCE_BYTES,
+        ),
+    ).fetchone()
+    if invalid is not None:
+        raise MemorySchemaError("memory expiry page hydration admission failed")
+
+
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
@@ -969,6 +1010,19 @@ class SQLiteMemoryStore:
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory purge scope changed during clock")
+            # Preflight the exact due page under the same writer snapshot;
+            # never SELECT * or decode corrupt private TEXT before admission.
+            _require_expiry_purge_hydration_admission(
+                conn, now, pinned_scope, limit,
+            )
+            if self.path is not path_epoch or (
+                scope is not None
+                and (scope.owner_id, scope.namespace)
+                != (pinned_scope.owner_id, pinned_scope.namespace)
+            ):
+                raise MemorySchemaError(
+                    "memory purge input changed during hydration admission"
+                )
             # The bounded mode never hydrates more than one configured page
             # before validating each row and appending its matching event.
             # The suffix is a fixed SQL fragment, never caller-provided text.
