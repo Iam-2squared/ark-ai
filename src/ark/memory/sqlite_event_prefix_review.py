@@ -278,7 +278,7 @@ def _scan(
                 ).fetchone()
                 if oversized is not None:
                     raise MemoryEventPrefixRejected(
-                        "Memory event prefix hydration admission denied"
+                        "invalid stored event prefix hydration admission denied"
                     )
                 stable_source()
                 for event in conn.execute(
