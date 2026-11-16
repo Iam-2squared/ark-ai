@@ -374,6 +374,9 @@ class DisconnectedDueReservations:
         if type(require_existing) is not bool:
             raise DueReservationRejected("exact existing-only flag required")
         self._path = _check_path(path, exists=require_existing)
+        # Bind this fixture to its original Path carrier across later calls.
+        # A different but value-equal Path is not the initialized ledger.
+        self._source_path_epoch = self._path
         mode = "ro" if require_existing else "rwc"
         with closing(sqlite3.connect(
             self._path.as_uri() + "?mode=" + mode,
@@ -442,6 +445,10 @@ class DisconnectedDueReservations:
         return store
 
     def _open(self, *, read_only: bool) -> sqlite3.Connection:
+        # Refuse caller-side source retargeting before filesystem metadata or
+        # SQLite access, including before an otherwise valid genesis file.
+        if self._path is not self._source_path_epoch:
+            raise DueReservationRejected("due ledger source identity changed")
         path = _check_path(self._path, exists=True)
         mode = "ro" if read_only else "rw"
         return sqlite3.connect(
