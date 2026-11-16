@@ -253,14 +253,19 @@ def _require_memory_text_hydration_budget(
             "WHERE memory_id=? AND owner_id=? AND namespace=? LIMIT 1"
         )
         params = (memory_id, owner_id, namespace)
-    count, total_bytes, content_bytes, metadata_bytes, source_bytes = conn.execute(
+    count, total_bytes, content_bytes, metadata_bytes, source_bytes, wrong_types = conn.execute(
         "SELECT COUNT(*), "
         "COALESCE(SUM(length(CAST(content AS BLOB)) "
         "+ length(CAST(metadata_json AS BLOB)) "
         "+ length(CAST(source_id AS BLOB))), 0), "
         "COALESCE(MAX(length(CAST(content AS BLOB))), 0), "
         "COALESCE(MAX(length(CAST(metadata_json AS BLOB))), 0), "
-        "COALESCE(MAX(length(CAST(source_id AS BLOB))), 0) "
+        "COALESCE(MAX(length(CAST(source_id AS BLOB))), 0), "
+        "COALESCE(SUM(CASE WHEN "
+        "typeof(content)!='text' "
+        "OR typeof(metadata_json)!='text' "
+        "OR typeof(source_id)!='text' "
+        "THEN 1 ELSE 0 END), 0) "
         "FROM (" + selected + ")",
         params,
     ).fetchone()
@@ -269,6 +274,7 @@ def _require_memory_text_hydration_budget(
         or type(content_bytes) is not int
         or type(metadata_bytes) is not int
         or type(source_bytes) is not int
+        or type(wrong_types) is not int or wrong_types != 0
         or content_bytes > _MAX_MEMORY_ROW_CONTENT_BYTES
         or metadata_bytes > _MAX_MEMORY_ROW_METADATA_BYTES
         or source_bytes > _MAX_MEMORY_ROW_SOURCE_BYTES
