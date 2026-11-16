@@ -46,6 +46,10 @@ except Exception:
 
 
 def _bounded_iterations(value: str) -> int:
+    # Bound hostile direct-call values before Python's integer parser.
+    # This CLI must never allocate or start subprocesses on oversized input.
+    if type(value) is not str or len(value) > 16:
+        raise argparse.ArgumentTypeError("iterations must be 1..8")
     try:
         number = int(value)
     except ValueError as exc:
@@ -86,6 +90,8 @@ def probe_disposable_last_close(*, keeper: bool) -> dict[str, object]:
     This is a Linux/POSIX forensic observation, not a replacement for ARK's
     fail-closed descriptor, no-follow, single-link or schema validation.
     """
+    if type(keeper) is not bool:
+        raise ValueError("keeper must be an exact boolean")
     if (
         os.name != "posix"
         or not getattr(os, "O_NOFOLLOW", 0)
