@@ -27,6 +27,11 @@ def test_other_planner_handle_never_observes_precommit_event_header_pair(
     original = planner_module._checked_snapshot
 
     def observe_before_commit(graph, tail):
+        # The nested reader also calls _checked_snapshot. Let it use the
+        # original reviewer for the initial zero-event snapshot; otherwise
+        # the fault-injection hook would recursively read itself.
+        if tail.event_count == 0:
+            return original(graph, tail)
         # The writer already inserted both its event and header update in an
         # open BEGIN IMMEDIATE transaction. A distinct read-only connection
         # must see the old committed prefix, not either tentative new row.
