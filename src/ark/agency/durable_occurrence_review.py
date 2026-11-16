@@ -149,15 +149,20 @@ def _assert_receipt_denials() -> None:
 
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
     # One table and exactly two SQLite-generated uniqueness indexes.
-    # Refuse oversized/foreign catalog entries before Python receives DDL.
+    # Refuse excessive DDL AND stored catalog names before Python hydration.
+    # SQLite TEXT length counts code points, not encoded bytes.
     budget = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(budget) is not tuple or len(budget) != 2
+        type(budget) is not tuple or len(budget) != 3
         or type(budget[0]) is not int or budget[0] != 3
         or type(budget[1]) is not int or not 0 <= budget[1] <= 8_192
+        or type(budget[2]) is not int or not 0 <= budget[2] <= 8_192
     ):
         raise SyntheticReplayRejected("synthetic reservation schema changed")
     return tuple(
