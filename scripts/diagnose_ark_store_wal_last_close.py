@@ -57,6 +57,10 @@ _TABLES = {
 def bounded_count(raw: str) -> int:
     if type(raw) is not str:
         raise argparse.ArgumentTypeError("iterations must be 1..4")
+    # Reject unbounded raw input before Python's integer parser does work.
+    # Preserve the existing accepted numeric spellings for bounded strings.
+    if len(raw) > 16:
+        raise argparse.ArgumentTypeError("iterations must be 1..4")
     try:
         value = int(raw)
     except ValueError as exc:
@@ -172,6 +176,26 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
             # Inspect these before a subsequent WAL reopen can create another
             # pathname. An unlinked old descriptor is not a retained witness.
             final_name_absent = not shm.exists()
+            # A last-close sidecar anomaly cannot be called OK merely
+            # because an independent cold read happens to succeed. Reject
+            # the mismatch *before* reopening the SQLite pathname: a new
+            # connection could replace the old -shm and hide the evidence.
+            expected_after_child = "SINGLE_LINK" if keeper else "UNLINKED"
+            if (
+                before != "SINGLE_LINK"
+                or after_child != expected_after_child
+                or after_final != "UNLINKED"
+                or not final_name_absent
+            ):
+                return {
+                    "status": "SIDECAR_LIFECYCLE_MISMATCH",
+                    "kind": kind, "keeper": keeper,
+                    "phase": "after_final_close",
+                    "auto_retry_authorized": False,
+                    "real_tool_dispatched": False,
+                    "alias_checks_relaxed": False,
+                    "user_paths_exported": False,
+                }
             # Split a failed cold restart into open/constructor versus
             # evidence read; no exception or private pathname is exported.
             phase = "cold_restart_construct"
