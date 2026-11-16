@@ -73,8 +73,8 @@ def test_cumulative_small_catalog_identifiers_denied(tmp_path) -> None:
 
 def test_clean_read_journal_recovers_without_execution_permission(tmp_path) -> None:
     path = tmp_path / "detached-read.sqlite"
-    with read_journal.DisconnectedReadJournal.create(path) as created:
-        expected = created.witness()
+    with read_journal.DisconnectedReadJournal.create(path):
+        expected = read_journal.genesis_witness()
     with read_journal.DisconnectedReadJournal.open(path) as reopened:
         recovered = reopened.recover_receipts(expected)
     assert recovered.witness == expected
