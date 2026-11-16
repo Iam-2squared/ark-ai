@@ -139,12 +139,20 @@ def review_schedule_unknown_quarantine(
         or type(occurrence_id) is not str
     ):
         raise ScheduleUnknownQuarantineRejected("exact schedule triage inputs required")
+    # A plain Python ledger can shadow its _open method per instance while
+    # the class method and global SQLite connector remain unchanged. Require
+    # only the two declared state fields before touching caller policy data.
+    instance_state = object.__getattribute__(ledger, "__dict__")
+    if type(instance_state) is not dict or set(instance_state) != {"_path", "_epoch"}:
+        raise ScheduleUnknownQuarantineRejected("quarantine triage ledger instance changed")
+    original_path = instance_state["_path"]
+    original_epoch = instance_state["_epoch"]
     try:
         epoch = _ORIGINAL_POLICY(policy)
         _ORIGINAL_WITNESS(before)
         old = (before.count, before.chain_sha256)
         if (
-            ledger._epoch != epoch
+            original_epoch != epoch
             or not 0 <= index < epoch[3]
             or not 0 <= observed_ms <= module._MAX_MS
             or observed_ms <= epoch[1] + index * epoch[2] + epoch[4]
@@ -156,22 +164,22 @@ def review_schedule_unknown_quarantine(
             if old != (genesis.count, genesis.chain_sha256):
                 raise ScheduleUnknownQuarantineRejected("retained genesis mismatch")
 
-        original_path = ledger._path
-        original_epoch = ledger._epoch
-
         def stable() -> None:
             _protocol()
             _ORIGINAL_WITNESS(before)
+            current_state = object.__getattribute__(ledger, "__dict__")
             if (
-                (before.count, before.chain_sha256) != old
+                type(current_state) is not dict
+                or set(current_state) != {"_path", "_epoch"}
+                or current_state["_path"] is not original_path
+                or current_state["_epoch"] is not original_epoch
+                or (before.count, before.chain_sha256) != old
                 or _ORIGINAL_POLICY(policy) != epoch
-                or ledger._path is not original_path
-                or ledger._epoch is not original_epoch
             ):
                 raise ScheduleUnknownQuarantineRejected("quarantine triage epoch changed")
 
         stable()
-        with closing(ledger._open(read_only=True)) as conn:
+        with closing(_ORIGINAL_OPEN(ledger, read_only=True)) as conn:
             conn.execute("BEGIN")
             stable()
             current = _ORIGINAL_VALIDATE(conn, epoch)
