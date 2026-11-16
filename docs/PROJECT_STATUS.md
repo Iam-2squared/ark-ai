@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run920: WAL cold-mismatch denial, privacy-erasure bounded claims, startup NUL identity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T23:56:27.418+09:00** (observed wall-time near this checkpoint write, **NOT** a trusted authorization, audit or action clock). **Overall ARK/JARVIS: NOT_PASSED.** New UI/frontend development **PAUSED**. Only zero-new-cost local-first disconnected non-UI work.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) (protected V3) and [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) (UI paused) checked Draft/unmerged and **not modified**. **main/base HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged in this invocation. **Exact work-basis HEAD:** `b57d971e2efc2370542efa1da2709aa62676ad60`. **Complete source/test HEAD:** `afadf164880c6375296ea6428a43f0d87cf2e19e`. **Technical-report/checkpoint write-basis HEAD:** `70c02d49bc2f191ef58e2ed69e557dc18fcededb`. **Previous PROJECT_STATUS blob:** `a14f8f13825b3f5d5b50225af6fcc2bee58906cf`. **Checkpoint-result HEAD cannot be included in its own content**; verify normal Contents update's exact commit SHA against current Draft PR branch HEAD, and fetch status blob after the write. Exactly **one** status update this invocation after meaningful source/test/report changes.
+
+## NEW this invocation — three independent non-UI packages, 29 authored synthetic regression cases
+
+1. **WAL/SHM diagnostic false-positive fix.** [source `466ccde0`](https://github.com/Iam-2squared/ark-ai/commit/466ccde05c8a23ff6df331747c6f639c0b2b1809) + [7 tests `90b8fc35`](https://github.com/Iam-2squared/ark-ai/commit/90b8fc35dac59bffa92977212c927fbf93b9f233). An actual disposable ARK store can reopen without raising, yet yield wrong/no evidence. Report `COLD_READ_MISMATCH` with path-free read phase and nonzero CLI exit, never `OK` or retry permission. Three store types × keeper modes inject silent loss. Standalone local SQLite two-process keeper/no-keeper fixture, 8 trials each, observed expected SHM unlink at final client close; **not** proof of ARK's intermittent sidecar race.
+2. **Privacy-erasure input preflight resource bound.** [source `452d1cec`](https://github.com/Iam-2squared/ark-ai/commit/452d1cec4c34d2e4770184b5aa798238fcc713f7) + [13 tests `b72b3313`](https://github.com/Iam-2squared/ark-ai/commit/b72b33135231f6d00d072da18b118ba4d0d02dc0). Validate retained claim digest length 64 and vocabulary label length <=32 **before** regex/set hashing; reject oversized or subclass hook-bearing erasure claims; preserve accepted values and unconditional forensic-erasure/cleanup denials.
+3. **Disconnected startup identity NUL fence.** [source `19f17eaf`](https://github.com/Iam-2squared/ark-ai/commit/19f17eaf4702f08b840a074d8c105efe953e89ed) + [9 tests `afadf164`](https://github.com/Iam-2squared/ark-ai/commit/afadf164880c6375296ea6428a43f0d87cf2e19e). Exact startup component/dependency/failure-code/schema identifiers cannot embed NUL; invalid foreign carriers cannot invoke hash/equality hooks; normal synthetic readiness unchanged and no dispatch authority.
+
+**Detailed evidence:** [Run920 technical report](https://github.com/Iam-2squared/ark-ai/blob/70c02d49bc2f191ef58e2ed69e557dc18fcededb/docs/JARVIS_RUN920_NON_UI_WAL_ERASURE_STARTUP_ADMISSION.md). **29 cases AUTHORED**, not 29 PASS on latest HEAD. No local ARK full pytest, real GGUF, target PC or physical hardware operation. Read-only audit: mixed-plan reserved WRITE precedence is explicitly tested, remains non-authorizing, and was **not** changed without contract reconciliation.
+
+## CI snapshot — latest exact-HEAD GREEN NOT CERTIFIED
+
+- Previous baseline Run919 checkpoint `b57d971e` [#43872251702](https://github.com/Iam-2squared/ark-ai/actions/runs/43872251702) **GREEN 6/6** Ubuntu/Windows Python 3.11–3.13, observed at invocation start. **Not** the new HEAD.
+- WAL source `466ccde0` [#43889443438](https://github.com/Iam-2squared/ark-ai/actions/runs/43889443438): **IN PROGRESS** during this invocation.
+- WAL test `90b8fc35` [#43889625224](https://github.com/Iam-2squared/ark-ai/actions/runs/43889625224): Ubuntu **GREEN 3/3**, Windows **IN PROGRESS** at last job read.
+- Privacy source `452d1cec` [#43889866948](https://github.com/Iam-2squared/ark-ai/actions/runs/43889866948): **IN PROGRESS**.
+- Privacy tests `b72b3313` [#43889982078](https://github.com/Iam-2squared/ark-ai/actions/runs/43889982078): **IN PROGRESS**.
+- Startup source `19f17eaf` [#43890439311](https://github.com/Iam-2squared/ark-ai/actions/runs/43890439311): **QUEUED / IN PROGRESS**.
+- Startup tests `afadf164` [#43890527650](https://github.com/Iam-2squared/ark-ai/actions/runs/43890527650): **QUEUED** at last job read.
+- Tech report HEAD `70c02d49` and this final checkpoint each independently trigger GitHub CI; final six-job GREEN **UNKNOWN**, no manual duplicate dispatch.
+
+## Immutable evidence / zero-new-cost / unresolved gates
+
+**Unchanged:** frozen V1/V2/Local UI/Launcher evidence/contracts; protected V2 final evaluation; V3 PR #5 Candidate/adapter/path/model identity/approval/provenance/reproducibility gate; UI PR #9 and UI pause; main; Memory persisted v1 schema; existing external side-effect/once-only authorization boundaries. No paid compute, external GPU/API/subscriptions/purchases, real Candidate/adapter/weights/training/promotion, protected evaluation, new credentials/connections, real private-data ingestion/export, human-review fabrication, real backend WRITE, automatic UNKNOWN retry, irreversible action, physical PC, raw Git bypass/force push, or main merge.
+
+**Open blockers:** exact latest six-matrix CI not complete; two-process ARK WAL/SHM last-close/alias race unresolved; no trusted retained audit clock, external effect exactly-once or persisted PermissionGate token spend; Memory cross-store CAS/event continuity and Planner cold COMMIT-UNKNOWN dependency integration require further proof; V3 real model byte identity and offline target-PC GGUF gate absent. **JARVIS NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Verify full six-job CI on the exact newest branch HEAD; on any FAIL, inspect job logs and repair the smallest semantics-preserving regression, while working independent free lanes during CI.
+2. Narrow ARK-specific WAL/SHM last-close mismatch using disposable two-process fixture phases; do not relax aliases, conceal UNKNOWN, or auto-retry writes.
+3. Strengthen Memory row/event/CAS/expiry global high-water and Planner COMMIT-UNKNOWN/terminal recovery. Only after lower-layer exact-head GREEN, integrate pinned Registry + exact PermissionGate + durable occurrence + trusted-clock audit-before-action + disconnected mock execution.
+4. Continue privacy-safe Personal Context, proactive/observation backend contracts and free-only V3 reproducibility guards; PR #5/#8/#9 remain Draft/unmerged, UI remains paused.
+
+---
+
 # LATEST — ARK AI Run919: Planner carrier preaccess, registered policy, WAL input and Observation privacy
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T22:02:21.154+09:00** (observed reporting wall time, **NOT** a trusted authorization/action/audit clock). **Overall ARK/JARVIS: NOT_PASSED.** New UI/frontend development **PAUSED**. Only zero-new-cost local-first disconnected non-UI work.
