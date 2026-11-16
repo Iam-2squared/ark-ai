@@ -125,6 +125,49 @@ def _charge(digest: object, entry: tuple[object, ...]) -> None:
     )
 
 
+
+def _preflight_alignment_hydration(conn: sqlite3.Connection) -> None:
+    """Check every row's TEXT byte budget inside the pinned SQLite snapshot.
+
+    The alignment audit streams whole rows across SQLite/Python. Its existing
+    post-hydration record validation cannot protect that boundary when a
+    corrupted text cell is enormous. These maxima are deliberately no tighter
+    than MemoryWrite's v1 codepoint limits at four UTF-8 bytes per scalar.
+    The preflight neither repairs data nor authenticates its writer.
+    """
+    if conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0] > _MAX_ROWS:
+        raise MemoryEventAlignmentRejected("Memory audit row budget exceeded")
+    if conn.execute("SELECT COUNT(*) FROM memory_events").fetchone()[0] > _MAX_EVENTS:
+        raise MemoryEventAlignmentRejected("Memory audit event budget exceeded")
+    malformed_rows = conn.execute(
+        "SELECT 1 FROM memories WHERE "
+        "typeof(memory_id)!='text' OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(source_id)!='text' OR length(CAST(source_id AS BLOB))>2048 "
+        "OR typeof(content)!='text' OR length(CAST(content AS BLOB))>4000000 "
+        "OR typeof(metadata_json)!='text' "
+        "OR length(CAST(metadata_json AS BLOB))>12800000 "
+        "OR typeof(content_sha256)!='text' "
+        "OR length(CAST(content_sha256 AS BLOB))!=64 LIMIT 1"
+    ).fetchone()
+    if malformed_rows is not None:
+        raise MemoryEventAlignmentRejected("Memory audit row hydration preflight failed")
+    malformed_events = conn.execute(
+        "SELECT 1 FROM memory_events WHERE "
+        "typeof(event_id)!='integer' OR typeof(memory_id)!='text' "
+        "OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(operation)!='text' "
+        "OR length(CAST(operation AS BLOB))!=6 "
+        "OR typeof(revision)!='integer' "
+        "OR typeof(occurred_at_ms)!='integer' LIMIT 1"
+    ).fetchone()
+    if malformed_events is not None:
+        raise MemoryEventAlignmentRejected("Memory audit event hydration preflight failed")
+
+
 def review_memory_event_alignment(
     store: SQLiteMemoryStore,
 ) -> MemoryEventAlignmentReview:
@@ -157,6 +200,8 @@ def review_memory_event_alignment(
             conn.execute("BEGIN")
             try:
                 _validate_v1_schema(conn)
+                stable_source()
+                _preflight_alignment_hydration(conn)
                 stable_source()
                 current: dict[str, tuple[str, str, int, int, int]] = {}
                 scopes: set[tuple[str, str]] = set()
