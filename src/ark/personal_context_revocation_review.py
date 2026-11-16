@@ -349,6 +349,9 @@ class SyntheticContextRevocationLedger:
 
     def revoke(self, scope: MemoryScope, *, at_ms: int) -> str:
         """Persist a veto marker; no implicit regrant or personal data deletion."""
+        # Read no private scope descriptor until the frozen validator and
+        # descriptors have been verified in their original identity.
+        _require_original_scope_digest()
         source_path = self.path
         self._assert_source_path(source_path)
         # The initial digest computation is an overridable Python boundary.
@@ -359,6 +362,7 @@ class SyntheticContextRevocationLedger:
         scope_epoch = (scope.owner_id, scope.namespace)
 
         def assert_scope_epoch() -> None:
+            _require_original_scope_digest()
             if (
                 type(scope) is not MemoryScope
                 or scope.owner_id is not scope_epoch[0]
@@ -429,6 +433,7 @@ class SyntheticContextRevocationLedger:
 
     def assert_not_revoked(self, scopes: tuple[MemoryScope, ...]) -> None:
         """Inspect one read-only snapshot; absence is not proof of consent."""
+        _require_original_scope_digest()
         if type(scopes) is not tuple or not 1 <= len(scopes) <= 16:
             raise SyntheticContextRevocationRejected("exact bounded scopes required")
         # Reject foreign objects *before* inspecting owner_id/namespace.
@@ -446,6 +451,7 @@ class SyntheticContextRevocationLedger:
 
         def assert_epoch() -> None:
             self._assert_source_path(source_path)
+            _require_original_scope_digest()
             if any(
                 type(scope) is not MemoryScope
                 or scope.owner_id is not owner
