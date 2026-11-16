@@ -58,9 +58,10 @@ def test_untouched_ledger_receipt_and_readonly_restart(tmp_path):
     )
     assert receipt.witness.count == before.count + 1
     assert receipt.witness.independent_custody_proven is False
-    assert receipt.execution_authorized is False if hasattr(
-        receipt, "execution_authorized"
-    ) else True
+    assert receipt.execution_authorized is False
+    assert receipt.notification_authorized is False
+    assert receipt.automatic_replay_authorized is False
+    assert receipt.trusted_clock_verified is False
     reopened = DisconnectedDueReservations.reopen_with_witness(
         path, retained=receipt.witness,
     )
