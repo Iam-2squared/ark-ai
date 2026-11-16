@@ -89,7 +89,8 @@ def test_postcommit_source_epoch_drift_blocks_receipt_without_replaying(
 
         patch.setattr(ledger, "_open", replace_epoch_on_read)
         with pytest.raises(
-            ScheduleQuarantineRejected, match="quarantine write carrier changed",
+            ScheduleQuarantineRejected,
+            match="quarantine (?:write carrier|source or policy identity) changed",
         ):
             _advance(ledger, policy, prior)
 
