@@ -253,17 +253,22 @@ def _schema(conn: sqlite3.Connection) -> None:
     _protocol()
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise DisconnectedProposalStoreRejected("proposal schema version mismatch")
-    # A foreign SQLite catalog may carry unbounded DDL. Enforce the exact
-    # table + generated UNIQUE index and a byte budget in this transaction
-    # before any catalog SQL is materialized in Python.
+    # Frozen table/index DDL is small, but sqlite_master identifiers can
+    # be forged or abnormally large even when the SQL remains short. Bound
+    # cumulative UTF-8 bytes of type/name/tbl_name in the SAME transaction
+    # before any untrusted catalog values are materialized in Python.
     budget = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(budget) is not tuple or len(budget) != 2
+        type(budget) is not tuple or len(budget) != 3
         or type(budget[0]) is not int or budget[0] != 2
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+        or type(budget[2]) is not int or not 0 <= budget[2] <= 4_096
     ):
         raise DisconnectedProposalStoreRejected(
             "proposal schema catalog preflight failed (schema changed)"
