@@ -53,7 +53,7 @@ def test_stable_freshness_diagnostic_is_never_execution_approval(tmp_path: Path)
 
 
 @pytest.mark.parametrize("target", ["receipt", "path", "retained"])
-def test_reflected_mid_review_evidence_drift_is_denied(
+def test_replaced_policy_identity_is_rejected_before_reflected_drift(
     tmp_path: Path, monkeypatch, target: str,
 ):
     state = _fixture(tmp_path)
@@ -75,9 +75,17 @@ def test_reflected_mid_review_evidence_drift_is_denied(
         return epoch
 
     monkeypatch.setattr(SyntheticTriggerPolicy, "identity", change_on_final_identity)
-    with pytest.raises(SyntheticTriggerRejected, match="evidence changed"):
+    # A replaced policy method now fails at the pregetter contract boundary:
+    # no injected callback may run, even to manufacture the old drift signal.
+    original_path = ledger.path
+    original_prepared = receipt.prepared_at_ms
+    original_rows = retained.row_hashes
+    with pytest.raises(SyntheticTriggerRejected, match="policy contract changed"):
         _review(state, retained=retained)
-    assert len(calls) == 2
+    assert calls == []
+    assert ledger.path is original_path
+    assert receipt.prepared_at_ms == original_prepared
+    assert retained.row_hashes is original_rows
 
 
 def test_stale_receipt_fails_before_disk_read(tmp_path: Path):
