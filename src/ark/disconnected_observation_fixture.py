@@ -99,7 +99,10 @@ def make_disconnected_fixture(
     ):
         raise DisconnectedFixtureRejected("synthetic fixture metadata changed")
     # No raw payload enters the envelope, its identity, logging or audit.
-    content_hash = hashlib.sha256(payload).hexdigest()
+    # Use the imported original callable, not a fresh mutable module lookup.
+    # A reentrant swap between preflight and hashing must never receive even
+    # synthetic private bytes; the post-hash check still rejects that drift.
+    content_hash = _ORIGINAL_SHA256(payload).hexdigest()
     _require_fixture_boundary()
     envelope = _ORIGINAL_ENVELOPE(
         kind=kind,
