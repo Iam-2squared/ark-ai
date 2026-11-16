@@ -1,3 +1,41 @@
+# LATEST — ARK AI Run914: quarantine CI repair; Memory + Planner bounded SQLite catalog identity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T16:04:43.459+09:00** (observed wall clock only; **NOT** a trusted action clock, consent, independent witness or external-effect evidence). **Overall ARK/JARVIS: NOT_PASSED.** Continue free/local-first **NON-UI** development, UI/frontend development **PAUSED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain open/unmerged and untouched. **main** `7a843f17eb96ed13d66f23b58b06406b3002e405` untouched. **Initial exact work-basis HEAD** `77a9250232fa973365db8aa5e51d3eff99cfc66e`; **complete corrected source+test HEAD** `fcb62ed61366598394e67fcc6cb62e91c69b4788`; **technical report / checkpoint write-basis HEAD** `755130772c003c747a8a62223f9294255619e2cd`, re-read against PR #8 just before this normal Contents API update. **Previous canonical status blob** `935e97d17adcf615dc140277504b3bdee8588be0`. The result commit SHA **cannot** be embedded within its own file; verify the ordinary Contents API result, branch/PR head and returned blob after writing. One canonical status update for this invocation, **after** substantive source/test/report commits.
+
+## NEW this invocation — 3 independent non-UI packages, 8 authored regression cases, one legacy test expectation repaired
+
+1. **CI repair / quarantine source custody:** Previous Run913 final [#43813106625](https://github.com/Iam-2squared/ark-ai/actions/runs/43813106625) **FAIL 6/6** (Ubuntu 3.11 log: 22 failed, 16,377 passed, 1 skipped). New pinned ledger carries `_source_path_epoch` and `_source_policy_epoch` but the existing read-only triage still required exactly two private fields and rejected legitimate restart inspection. [Source fix `893ab8c7`](https://github.com/Iam-2squared/ark-ai/commit/893ab8c7b21a8a213a631cb960cf2f37856574f6) permits **only** four declared fields, checks original path/policy **object identity** before access and through the SQLite snapshot, and still refuses extra instance state / value-equal replacement. [Regression assertion `6b0384d2`](https://github.com/Iam-2squared/ark-ai/commit/6b0384d2460a9e379c809e96e28b002f41046557) accepts the stricter *earlier* source-identity denial after COMMIT while preserving durability/no-replay checks. No policy relaxation or automatic retry.
+2. **Memory SQL schema identity preflight:** [Source `0cdb65cf`](https://github.com/Iam-2squared/ark-ai/commit/0cdb65cf61dca5ea104f2faf3988639f2ff48b65) and [4-test `c7e09e58`](https://github.com/Iam-2squared/ark-ai/commit/c7e09e5882c6257bdc04b729ca58022a2e913ca6): SQLite-side 16,384-byte metadata cap for catalog `type`, `name`, `tbl_name` in addition to frozen DDL/object-count rules **before** Python catalog hydration. Valid schema fixture retained; 3 malformed in-memory cases authored. [`96bc5e36`](https://github.com/Iam-2squared/ark-ai/commit/96bc5e367a085273afffceff83b74777fbe796c1) corrected new test import ordering after a Ruff `I001` intermediate failure. Disposable standalone SQLite measurements confirmed short DDL may coexist with >16KB identity metadata; **not** a full ARK PASS.
+3. **Planner journal SQL schema identity preflight:** [Source `2d252213`](https://github.com/Iam-2squared/ark-ai/commit/2d252213544aa6e64c3af7c2b06e35b570678ac3) and [4-test `fcb62ed6`](https://github.com/Iam-2squared/ark-ai/commit/fcb62ed61366598394e67fcc6cb62e91c69b4788): bounded 4,096-byte catalog `type`/`name`/`tbl_name` aggregate in the same read epoch before `_objects`, while preserving existing exactly two tables and 4,096-byte DDL caps, journal hashes and COMMIT-UNKNOWN no-replay semantics. In-memory malformed fixtures yielded 4,170–4,186 metadata bytes with 579-byte SQL, not Python-suite PASS.
+
+**Run914 evidence:** [`docs/JARVIS_RUN914_NON_UI_CI_REPAIR_MEMORY_PLANNER_CATALOG.md`](https://github.com/Iam-2squared/ark-ai/blob/755130772c003c747a8a62223f9294255619e2cd/docs/JARVIS_RUN914_NON_UI_CI_REPAIR_MEMORY_PLANNER_CATALOG.md), with exact changes and CI limitations. **8 new cases AUTHORED**, not 8 confirmed all-platform PASS.
+
+## CI verification (exact HEAD, never infer later GREEN)
+
+- Run913 latest `77a92502...`: [#43813106625](https://github.com/Iam-2squared/ark-ai/actions/runs/43813106625) **FAIL 6/6**; 22 quarantine triage/expectation regression failures on Ubuntu 3.11.
+- Repair `6b0384d2...`: [#43819539166](https://github.com/Iam-2squared/ark-ai/actions/runs/43819539166) **IN PROGRESS** at last observation; Ubuntu 3/3 GREEN, Windows 3.13 GREEN; Windows 3.11/3.12 in progress.
+- Memory test intermediate `c7e09e58...`: [#43820044912](https://github.com/Iam-2squared/ark-ai/actions/runs/43820044912) **FAIL**, Ruff I001; fixed via normal Contents update.
+- Planner intermediate `2d252213...`: [#43820443308](https://github.com/Iam-2squared/ark-ai/actions/runs/43820443308) **FAIL 6/6**, inherited same now-corrected memory test import issue.
+- Memory corrected `96bc5e36...`: [#43820497522](https://github.com/Iam-2squared/ark-ai/actions/runs/43820497522) **IN PROGRESS**; Ubuntu 3.13 GREEN at last observation, remaining jobs in progress.
+- Complete source/test `fcb62ed6...`: [#43820540642](https://github.com/Iam-2squared/ark-ai/actions/runs/43820540642) **IN PROGRESS** at last observation. Technical report `75513077...` and this checkpoint generate additional CI. **Final exact HEAD all-six GREEN NOT CERTIFIED.** No duplicate workflow run manually launched.
+
+## Frozen contracts/evidence and safety boundaries
+
+Unchanged: V1/V2/Local UI/Launcher frozen evidence/contracts, protected V2 final-evaluation gate, V3 Candidate / identity / provenance / reviewer / reproducibility / cost approvals on Draft PR #5, Memory/Planner persisted v1 schema and event semantics, paused UI PR #9, main, exact PermissionGate/ToolRegistry rules and UNKNOWN no-replay policy. No paid/external GPU/compute/API, subscriptions or purchases, new credentials/account connections, real training/Candidate/adapter/weights, protected evaluation opening, candidate promotion, physical-PC interaction, private-data acquisition/export, live backend/tool execution or notification, destructive operation, force push/raw Git bypass, or main merge. All tests use in-memory/synthetic fixtures.
+
+**Open blockers:** intermittent Windows/Ubuntu WAL/SHM last-close cross-process sidecar alias/revocation race (**UNKNOWN/FAIL**, never success or automatic retry); independent historical/provenance/path custody; Memory CAS/expiry/row/event consistency under faults; Planner cross-store COMMIT-UNKNOWN/effect exactly-once proof; trusted audit clock and real consent; V3 runtime identity and physical GGUF offline gate. **ARK/JARVIS NOT_PASSED**.
+
+## Prioritized Next plan / 今後の方針
+
+1. Verify the exact final complete source/test and checkpoint Windows/Ubuntu × Python 3.11–3.13 CI matrix; fix any confirmed failure via the smallest normal Contents API change, overlap other independent non-UI lanes while CI runs.
+2. Diagnose disposable SQLite WAL/SHM last-close phase/sidecar identity race without relaxing alias rejection or inferring an external effect.
+3. Strengthen Memory transactional CAS+expiry+event high-water and Planner terminal/cold recovery/COMMIT-UNKNOWN, then connect immutable ToolRegistry, exact PermissionGate, durable occurrence and trusted audit-before-action with disconnected/mock executor **only after exact-head GREEN**.
+4. Continue privacy-safe Personal Context, proactive/observation backend fixtures, and free-only V3 independent identity/approval/reproducibility gates. Keep PR #5/#8/#9 Draft/unmerged, main unchanged, and all new UI work paused.
+
+---
+
 # LATEST — ARK AI Run913: Memory due-page prehydration, detached scheduler identity, WAL phase diagnostics
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T14:52:57.931+09:00** (wall clock observed immediately before this permitted Contents API write, **NOT** a trusted action clock, user consent, provenance, independent witness or external effect). **Overall ARK/JARVIS: NOT_PASSED.** Continue **zero-cost/local-first NON-UI** backend work. All new UI/frontend development **PAUSED**.
