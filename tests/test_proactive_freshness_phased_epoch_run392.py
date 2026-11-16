@@ -92,7 +92,7 @@ def test_validate_phase_transient_drift_cannot_hide_in_next_digest(
         _check(state, retained=witness)
 
 
-def test_continuity_callback_swap_before_final_identity_is_denied(
+def test_identity_replacement_blocks_continuity_callback_before_evidence_read(
     tmp_path, monkeypatch,
 ):
     state = _fixture(tmp_path)
@@ -119,6 +119,11 @@ def test_continuity_callback_swap_before_final_identity_is_denied(
     monkeypatch.setattr(
         SyntheticTriggerPolicy, "identity", restore_at_final_identity,
     )
-    with pytest.raises(SyntheticTriggerRejected, match="evidence changed"):
+    # The current policy pregetter vetoes the patched identity method before
+    # either injected callback runs. A later evidence-restoration path is no
+    # longer reachable, which is stronger than the previous drift-only check.
+    original_prepared = receipt.prepared_at_ms
+    with pytest.raises(SyntheticTriggerRejected, match="policy contract changed"):
         _check(state, retained=witness)
-    assert calls == 1
+    assert calls == 0
+    assert receipt.prepared_at_ms == original_prepared
