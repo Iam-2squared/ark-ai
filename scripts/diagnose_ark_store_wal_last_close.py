@@ -95,6 +95,9 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
         conn: sqlite3.Connection | None = None
         child: subprocess.Popen[bytes] | None = None
         held_fd: int | None = None
+        # Content-free failure-phase evidence for the intermittent last-close
+        # race. Never expose temporary paths, SQLite values or exception text.
+        phase = "schema_setup"
         try:
             if kind == "memory":
                 store = SQLiteMemoryStore(db, clock_ms=lambda: 100)
@@ -116,6 +119,7 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                     if setup.execute("PRAGMA journal_mode=WAL").fetchone() != ("wal",):
                         return {"status": "NO_WAL", "kind": kind, "keeper": keeper}
                 original = store.revoke(scope, at_ms=100)
+            phase = "wal_open"
             conn = sqlite3.connect(db)
             if conn.execute("PRAGMA journal_mode").fetchone() != ("wal",):
                 return {"status": "NO_WAL", "kind": kind, "keeper": keeper}
@@ -125,9 +129,11 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
             ).fetchone()[0]
             if count != 1 or not shm.is_file():
                 return {"status": "NO_SHM", "kind": kind, "keeper": keeper}
+            phase = "shm_hold"
             held_fd = os.open(shm, os.O_RDONLY | os.O_NOFOLLOW)
             if _category(os.fstat(held_fd)) != "SINGLE_LINK":
                 return {"status": "NONSTANDARD_SHM", "kind": kind, "keeper": keeper}
+            phase = "child_start"
             child = subprocess.Popen(
                 [
                     sys.executable, "-c", _CHILD, str(db), _TABLES[kind],
@@ -136,6 +142,7 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
+            phase = "child_ready"
             deadline = time.monotonic() + 8
             while not ready.exists() and child.poll() is None:
                 if time.monotonic() > deadline:
@@ -146,6 +153,7 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
             if not keeper:
                 conn.close()
                 conn = None
+            phase = "child_release"
             before = _category(os.fstat(held_fd))
             release.touch()
             try:
@@ -154,14 +162,17 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                 return {"status": "CHILD_TIMEOUT", "kind": kind, "keeper": keeper}
             if child_exit != 0:
                 return {"status": "CHILD_FAILED", "kind": kind, "keeper": keeper}
+            phase = "after_child_close"
             after_child = _category(os.fstat(held_fd))
             if conn is not None:
                 conn.close()
                 conn = None
+            phase = "after_final_close"
             after_final = _category(os.fstat(held_fd))
             # Inspect these before a subsequent WAL reopen can create another
             # pathname. An unlinked old descriptor is not a retained witness.
             final_name_absent = not shm.exists()
+            phase = "cold_restart"
             if kind == "memory":
                 cold = SQLiteMemoryStore(db, clock_ms=lambda: 101)
                 recovered = cold.get(original.memory_id, scope, include_expired=True)
@@ -193,7 +204,10 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
                 "user_paths_exported": False,
             }
         except (OSError, sqlite3.Error, ValueError, RuntimeError):
-            return {"status": "PROBE_ERROR", "kind": kind, "keeper": keeper}
+            return {
+                "status": "PROBE_ERROR", "kind": kind, "keeper": keeper,
+                "phase": phase,
+            }
         finally:
             release.touch()
             if child is not None and child.poll() is None:
