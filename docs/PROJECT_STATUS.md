@@ -1,3 +1,44 @@
+# LATEST — ARK AI Run917: quarantine CI repair, inert Registry, Memory CAS/ABA and generation prehydration
+
+**Saved at (Asia/Tokyo/JST): 2026-11-16T18:55:05+09:00** (observed local wall clock only; **NOT** trusted audit/action time). **Overall ARK/JARVIS: NOT_PASSED**. All new UI/frontend work **PAUSED**; disconnected, zero-new-cost non-UI foundation development only.
+
+**Branch / PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged at last write-basis read. Protected [V3 Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain open, Draft and unmerged; neither changed this invocation. **main** remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. **Initial exact work-basis HEAD:** `c03a3fef124d5ed9541680205a287e90bfb8a020`. **Complete source+test HEAD:** `f8d402af740b4cf2bd180f720f74c01e0fcc47d8`. **Technical report / checkpoint write-basis HEAD:** `f005222294787d0a9205cfe048541dbc81570cdb`. **Prior status blob:** `02202bf52f4203ff6d44d0995455b45932d3a3fb`. The checkpoint-result commit SHA cannot be included within its own content; verify the ordinary Contents API result against current PR/branch HEAD and fetched status blob. **One** canonical status update this invocation after meaningful source, tests and technical report.
+
+## NEW this invocation — 4 non-UI work packages, 15 new regression cases authored
+
+1. **Repair Run916 CI failure:** Latest Run916 [#43836800587](https://github.com/Iam-2squared/ark-ai/actions/runs/43836800587) **FAIL 6/6**. Ubuntu Python 3.11: **1 failed, 16,442 passed, 1 skipped**. The sole failing unchanged-catalog positive test specified a synthetic quarantine policy interval of `100` ms while the existing frozen policy contract requires **at least 1,000 ms**. [Test-only correction `8ac21b8c`](https://github.com/Iam-2squared/ark-ai/commit/8ac21b8c544d2426ed1112a742fe86218d99c600) uses `1_000`; no production guard or scheduler contract weakened.
+2. **Registry static backend identity:** [`1b2582f2`](https://github.com/Iam-2squared/ark-ai/commit/1b2582f2235c2990d3aa735900e1fc78ab290ef1) adds **6** isolated tests for property-based execute rejection without getter execution, post-registration callable mutation across bind/resolve/revision and reflected backend/effect drift. All test backends remain inert; this is not authenticating a real backend or granting execution.
+3. **Memory cross-handle CAS / generation ABA:** [`54befb5a`](https://github.com/Iam-2squared/ark-ai/commit/54befb5a4a16c9690eaf289ffbc7d62b2dfa9751) adds **4** tests for stale update/delete denial without event append, and old numeric revision reuse after delete/recreate remaining explicitly ambiguous and non-authorizing.
+4. **Memory generation review private hydration:** [Source `6a9f3084`](https://github.com/Iam-2squared/ark-ai/commit/6a9f3084e351ed7816c2366d4ed9fe13e0ba0705) + [5-test `f8d402af`](https://github.com/Iam-2squared/ark-ai/commit/f8d402af740b4cf2bd180f720f74c01e0fcc47d8) add same-read-transaction SQLite-side bounded text checks before the generation reviewer's direct private row `SELECT *` / event `fetchall`. Fault fixtures exercise oversized content, owner label, non-TEXT metadata and oversized event owner; intact single generation is a positive control. All fixtures use disposable local files. No Memory v1 DDL, schema version, migration or external provenance changed.
+
+**Technical evidence:** [Run917 report](https://github.com/Iam-2squared/ark-ai/blob/f005222294787d0a9205cfe048541dbc81570cdb/docs/JARVIS_RUN917_NON_UI_CI_REPAIR_REGISTRY_MEMORY_CAS_GENERATION.md). **15 cases AUTHORED**, not an assertion that the newest HEAD has passed across six environments. No direct local full suite or target-PC GGUF test executed in this invocation.
+
+## Exact CI snapshot — no stale-head promotion
+
+- Prior Run915 `7414ef79...`: [#43828669061](https://github.com/Iam-2squared/ark-ai/actions/runs/43828669061) **GREEN 6/6**, old HEAD only.
+- Run916 `c03a3fef...`: [#43836800587](https://github.com/Iam-2squared/ark-ai/actions/runs/43836800587) **FAIL 6/6** (quarantine synthetic positive-control fixture).
+- Quarantine correction `8ac21b8c...`: [#43842588106](https://github.com/Iam-2squared/ark-ai/actions/runs/43842588106) **IN PROGRESS**, Ubuntu 3/3 GREEN, Windows 3 pending at last read.
+- Registry `1b2582f2...`: [#43842934612](https://github.com/Iam-2squared/ark-ai/actions/runs/43842934612) **IN PROGRESS**, Ubuntu 3/3 GREEN, Windows 3 pending at last read.
+- Memory CAS `54befb5a...`: [#43843177933](https://github.com/Iam-2squared/ark-ai/actions/runs/43843177933) **IN PROGRESS**, Ubuntu 3.11 GREEN, five pending at last read.
+- Generation source `6a9f3084...`: [#43843501999](https://github.com/Iam-2squared/ark-ai/actions/runs/43843501999) **IN PROGRESS**, no observed completed job at last read.
+- Complete source+test `f8d402af...`: [#43843638622](https://github.com/Iam-2squared/ark-ai/actions/runs/43843638622) **QUEUED/IN PROGRESS**, no observed completed job at last read.
+- Report `f0052222...`: [#43843995702](https://github.com/Iam-2squared/ark-ai/actions/runs/43843995702) **QUEUED**. This checkpoint separately triggers an additional CI run; **Run917 latest exact-head GREEN NOT CERTIFIED**. No duplicate manual workflow dispatch.
+
+## Unchanged frozen evidence / safety gates and open blockers
+
+**Unchanged:** frozen V1/V2/Local UI/Launcher contracts and evaluations; protected V2 final evaluation; V3 PR #5 frozen Contract, Candidate/path/identity/provenance/approval/human-review/reproducibility gates; paused UI PR #9; main; registry exact-type authority rules; Planner COMMIT-UNKNOWN no automatic replay. No paid/external GPU/API/compute, new services, purchases/subscriptions, new credentials or account connections, real training/Candidate/adapter/weight generation, Candidate promotion, real tool/WRITE backend, external notification, physical-PC action, protected-evaluation opening, private user data acquisition/export, destructive/irreversible operation, force push/raw-Git workaround, or main merge.
+
+**Open:** exact latest HEAD CI still in progress; SQLite WAL/SHM last-close two-process sidecar/alias race remains **UNKNOWN/FAIL**; no independent retained custody/provenance, trusted clock, real human approval or externally verified exactly-once WRITE; Memory cross-process CAS/event lineage and Planner COMMIT-UNKNOWN end-to-end remain unproven; V3 real byte identity and offline GGUF target-PC gate absent. Overall **NOT_PASSED**.
+
+## Next plan / 今後の方針
+
+1. Confirm full six-job Python 3.11–3.13 Windows/Ubuntu CI on the complete source/test/report/checkpoint HEAD. For a failure, inspect job logs and fix only the semantics-preserving cause through permitted Contents writes; switch to independent modules while CI runs.
+2. Cut the disposable WAL/SHM last-close race into exact constructor/open/read/sidecar phases, retaining alias/refusal checks and no automatic retries.
+3. Extend independent Memory event high-water/CAS/ABA proof and Planner COMMIT-UNKNOWN cold restart; only after verified lower-layer GREEN wire registry-bound PermissionGate, durable authorization, trusted audit-before-action and disconnected mock integration.
+4. Continue local-first privacy-safe Personal Context, proactive/observation backend fixtures and free V3 identity/path/approval guards. Keep PR #5/#8/#9 Draft/unmerged; UI development paused.
+
+---
+
 # LATEST — ARK AI Run916: four disconnected SQLite catalog identity prehydration guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-16T18:06:26.716+09:00** (observed wall clock only, **NOT** trusted action/audit time). **Overall ARK/JARVIS: NOT_PASSED.** All new UI/frontend development **PAUSED**. Free/local-first non-UI work only.
