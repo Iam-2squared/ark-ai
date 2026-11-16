@@ -302,15 +302,24 @@ def _path(value: object, *, create: bool) -> Path:
 def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -> QuarantineWitness:
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise ScheduleQuarantineRejected("quarantine schema version changed")
-    # Inspect DDL size and object count inside the caller's single SQLite
-    # transaction, before hydrating a potentially huge or attacker-altered
-    # sqlite_master into Python.
-    schema_rows, ddl_bytes = conn.execute(
-        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+    # Bound both schema DDL and stored catalog identifiers inside SQLite,
+    # within the same caller transaction, before Python can hydrate hostile
+    # names. CAST AS BLOB enforces UTF-8 bytes, not character counts.
+    schema_rows, ddl_bytes, identity_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
-    if (type(schema_rows) is not int or type(ddl_bytes) is not int
-            or not 0 <= schema_rows <= 8 or not 0 <= ddl_bytes <= 8192):
+    if (
+        type(schema_rows) is not int
+        or type(ddl_bytes) is not int
+        or type(identity_bytes) is not int
+        or not 0 <= schema_rows <= 8
+        or not 0 <= ddl_bytes <= 8192
+        or not 0 <= identity_bytes <= 8192
+    ):
         raise ScheduleQuarantineRejected("quarantine schema preflight budget exceeded")
     with closing(sqlite3.connect(":memory:")) as expected:
         for statement in _DDL:
