@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run928: proactive CI pregetter compatibility repair, detached V3 packet custody, Memory CAS restart
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T06:56:12.910+09:00** (reporting wall-clock observed immediately before normal GitHub Contents write, **NOT** a trusted authorization/audit clock). **Overall ARK/JARVIS NOT_PASSED; non-UI core only; new UI/Frontend PAUSED; free-only.** No protected final evaluation, Candidate promotion or real tool action authorized.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) open/unmerged at write basis. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused UI [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain untouched/unmerged. **main HEAD `7a843f17eb96ed13d66f23b58b06406b3002e405`** inspected independently; no main write. **Exact invocation work-basis HEAD:** `42906296ba8702c09715a2990b790e56987ec468` (Run927 checkpoint). **Complete Run928 source/test HEAD:** `febf802cd0342f4c40f4dc4f9c70a5bbc184bd33`. **Technical report / checkpoint-write-basis HEAD:** `7c0204c5974bab2e25245fda6bc0a3349551f76e`. **Previous PROJECT_STATUS blob:** `6a663914607455aa978b8b5ce140dc42f60b3230`. **Checkpoint-result HEAD cannot be embedded self-referentially:** verify returned normal Contents commit SHA, PR #8 HEAD and saved PROJECT_STATUS blob after this write.
+
+## NEW this invocation — three independent non-UI packages, 11 new synthetic cases and 4 old failure expectations repaired
+
+1. **Actual CI regression repair (4 existing cases corrected, no source changed):** Run927's proactive policy pregetter rejects a monkeypatched `SyntheticTriggerPolicy.identity` before calling it. Previous tests demanded a *later* `evidence changed` exception after the injected method ran; under the safer early veto, 3 parametrized freshness cases and 1 phased continuity case failed on all observed Ubuntu Python versions. Maintained stronger fail-closed policy and changed only test expectations to `policy contract changed`, zero injected callbacks and unchanged retained input carriers. Normal Contents commits [`7ef777e8`](https://github.com/Iam-2squared/ark-ai/commit/7ef777e87b3ab1c6a38c3774370b9d0cbd4b23bf), [`c932bf63`](https://github.com/Iam-2squared/ark-ai/commit/c932bf637d4882886dea0a03554194c84c20008b). No production policy weakening or change to frozen contract.
+2. **V3 detached packet custody (8 NEW cases):** [`08805aa8`](https://github.com/Iam-2squared/ark-ai/commit/08805aa8b27880b6da8763254ba252f9a40fbf6b) adds seven independently varied valid synthetic preflight evidence fields and one same-semantics/different-packet-bytes identity check. Exact bytes SHA-256 and normalized crossbind digest stay distinct evidence concepts; all `paid_compute_authorized`, `training_authorized`, `candidate_promotion_authorized` and provenance outcomes remain FALSE. **No paid GPU, new provider, Candidate or protected gate invoked.**
+3. **Memory scope/CAS cold restart (3 NEW cases):** [`febf802c`](https://github.com/Iam-2squared/ark-ai/commit/febf802cd0342f4c40f4dc4f9c70a5bbc184bd33) verifies same-source different-scope isolation (two parametrizations), wrong-scope read/delete denial, separate event histories, reopened contents; two SQLite instances test revision-2 win, stale revision-1 update/delete denial, and exact reopened create/update events. Disposable pytest temp database only. Not authenticated provenance, privacy consent or general multi-process concurrency proof.
+
+**Technical report:** [Run928 non-UI source and limitation notes](https://github.com/Iam-2squared/ark-ai/blob/7c0204c5974bab2e25245fda6bc0a3349551f76e/docs/JARVIS_RUN928_NON_UI_PROACTIVE_CI_V3_PACKET_MEMORY_CAS.md). **11 tests AUTHORed, not confirmed exact-head PASS. 4 previously failing cases corrected, not new tests.** No full local pytest, user-PC/GGUF or real external effects.
+
+## CI — exact SHAs and status at pre-checkpoint GitHub snapshot
+
+- Previous Run927 [#43960492431](https://github.com/Iam-2squared/ark-ai/actions/runs/43960492431), SHA `42906296`: **Ubuntu 3/3 FAIL** (3.11 job `133626270075`: `4 failed, 16742 passed, 1 skipped`); Windows still **IN PROGRESS** at log inspection. Older Run927 source [#43959294740](https://github.com/Iam-2squared/ark-ai/actions/runs/43959294740) and source/test [#43959425252](https://github.com/Iam-2squared/ark-ai/actions/runs/43959425252) **FAIL**. Last previously verified six-job GREEN was Atomic [#43958824248](https://github.com/Iam-2squared/ark-ai/actions/runs/43958824248) at SHA `7f8bde49`, **not** at Run927 head.
+- This run repaired first test SHA `7ef777e8` [#43963475823](https://github.com/Iam-2squared/ark-ai/actions/runs/43963475823) **IN PROGRESS**; complete repair SHA `c932bf63` [#43963537128](https://github.com/Iam-2squared/ark-ai/actions/runs/43963537128) **IN PROGRESS**.
+- V3 SHA `08805aa8` [#43963682796](https://github.com/Iam-2squared/ark-ai/actions/runs/43963682796) **IN PROGRESS**; Memory SHA `febf802c` [#43964014776](https://github.com/Iam-2squared/ark-ai/actions/runs/43964014776) **IN PROGRESS**; technical-report SHA `7c0204c5` [#43964699038](https://github.com/Iam-2squared/ark-ai/actions/runs/43964699038) **QUEUED**. This checkpoint write will itself trigger standard CI; no duplicate equivalent workflow launched.
+- **Latest exact-head Windows/Ubuntu × Python 3.11–3.13 CI GREEN 6/6 NOT YET VERIFIED.** Review current statuses by their SHAs, never infer from an earlier green or queued run.
+
+## Frozen controls and blockers
+
+Frozen V1/V2/Local UI/Launcher evidence and contracts, Observation v1 direct semantics, protected V2 final evaluation, V3 identity/consent/provenance/reproducibility and approval gates unchanged; PR #5/#8/#9 Draft/unmerged; UI paused. No paid compute/API/service, external GPU, Candidate/adapters/weights, credentials/new account connections, real ToolBackend WRITE, automatic UNKNOWN replay, privacy export, human-approval invention, physical-PC action, raw Git safeguard bypass, force push, destructive mutation or main merge. **JARVIS NOT_PASSED.**
+
+Open blockers: actual SQLite WAL/SHM process/alias last-close race; Memory concurrent CAS/coherent events and expiry; Planner COMMIT-UNKNOWN external outcome manual resolution; restart-safe single-use permission, independent consent/provenance and trusted-clock audit-before-action; GGUF/real PC gates. Synthetic isolated tests are no proof of remote effects or independently authenticated authorization.
+
+## Next plan / 今後の方針
+
+1. Establish six-job GREEN for the actual newest source/test/checkpoint SHA; inspect any FAIL by job logs and repair the smallest non-weakening semantics issue; do independent read-only audits during CI rather than polling or stacking invalidating source.
+2. Continue disposable WAL/SHM held-handle/alias and Memory row/event/snapshot/CAS/expiry coherence work, with no real databases or unauthorized purge.
+3. Continue Planner crash retention and COMMIT-UNKNOWN *manual-only* evidence. Integrate registry-bound ToolRegistry → exact PermissionGate → durable occurrence/authorization → trusted-clock audit-before-action → disconnected mock only after each lower-level exact-head GREEN.
+4. Continue privacy-safe Personal Context, proactive scheduling and Observation back-end contracts and free V3 guards. Keep UI paused, PR #5/#9 untouched, main unchanged and all costs at zero.
+
+---
+
 # LATEST — ARK AI Run927: Planner replay admission, COMMIT-UNKNOWN carrier custody, proactive policy pregetter
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T06:28:36+09:00** (observed reporting wall-clock near normal GitHub Contents write, **not** an independently trusted tool/action clock). **ARK/JARVIS NOT_PASSED; new UI/Frontend PAUSED; free-only non-UI development.** Protected V2 final evaluation and Candidate gate unopened.
