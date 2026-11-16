@@ -11,15 +11,36 @@ from types import MappingProxyType
 
 from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState, ToolCall
 
+# A local Planner hash is only useful while its serializer and SHA-256
+# implementation are the same ones that established the original topology.
+# These process-local pins are NOT independently authenticated provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+
+
+def _require_original_plan_digest() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+    ):
+        raise PlanConflictError("plan digest dependencies changed")
+
 
 def _plan_digest(prefix: str, payload: object) -> str:
+    _require_original_plan_digest()
     encoded = (
         json.dumps(
             payload, ensure_ascii=False, sort_keys=True,
             separators=(",", ":"), allow_nan=False,
         ) + "\n"
     ).encode("utf-8")
-    return prefix + hashlib.sha256(encoded).hexdigest()
+    value = prefix + hashlib.sha256(encoded).hexdigest()
+    _require_original_plan_digest()
+    return value
 
 
 _ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
@@ -139,6 +160,7 @@ def _admit_frozen_arguments(value: object) -> None:
 
 class PlanGraph:
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
+        _require_original_plan_digest()
         if type(steps) is not tuple:
             raise TypeError("steps must be a tuple of exact PlanStep values")
         if not steps:
@@ -197,6 +219,7 @@ class PlanGraph:
         # A MappingProxyType protects the mapping, not its frozen dataclass
         # values against object.__setattr__ reflection. Pin exact plan inputs.
         self._step_mapping_epoch = self.steps
+        _require_original_plan_digest()
         self._step_epoch = tuple(
             (
                 step_id, step, step.step_id, step.call, step.depends_on,
@@ -210,6 +233,7 @@ class PlanGraph:
         # of the live carrier; only successful transitions advance this epoch.
         self._status_mapping_epoch = self._status
         self._status_epoch = self._capture_status_epoch()
+        _require_original_plan_digest()
 
     def _capture_status_epoch(
         self,
@@ -262,6 +286,7 @@ class PlanGraph:
                 raise PlanConflictError("plan status changed outside transition")
 
     def _assert_plan_epoch(self) -> None:
+        _require_original_plan_digest()
         if (
             type(self.steps) is not MappingProxyType
             or self.steps is not self._step_mapping_epoch
@@ -308,6 +333,7 @@ class PlanGraph:
                 raise PlanConflictError("plan action input is invalid") from exc
             if current_request_id != request_id:
                 raise PlanConflictError("plan action identity changed after construction")
+        _require_original_plan_digest()
 
     def topology_digest(self) -> str:
         """Canonical input identity for future *disconnected* journal replay.
