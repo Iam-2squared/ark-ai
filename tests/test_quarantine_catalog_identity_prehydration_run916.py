@@ -90,7 +90,7 @@ def test_unchanged_quarantine_catalog_is_accepted_by_local_constructor(tmp_path)
     policy = quarantine.QuarantinePolicy(
         policy_sha256="f" * 64,
         first_ms=1_000,
-        interval_ms=100,
+        interval_ms=1_000,  # Policy requires at least 1,000 ms; test intact catalog.
         count=5,
         grace_ms=10,
     )
