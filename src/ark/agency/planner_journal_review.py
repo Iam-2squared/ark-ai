@@ -84,14 +84,21 @@ def _schema_check(conn: sqlite3.Connection) -> None:
         raise SyntheticPlanJournalRejected("synthetic plan schema version changed")
     # Bound SQLite metadata inside the caller's existing replay/append
     # transaction before hydrating any untrusted DDL into Python.
+    # The SQL text alone does not bound hydrated sqlite_master identifiers.
+    # A malformed stored name/tbl_name/type can be huge even with short DDL.
+    # Admit all identity fields in SQLite before _objects transfers them.
     budget = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(budget) is not tuple or len(budget) != 2
+        type(budget) is not tuple or len(budget) != 3
         or type(budget[0]) is not int or budget[0] != 2
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+        or type(budget[2]) is not int or not 0 <= budget[2] <= 4_096
     ):
         raise SyntheticPlanJournalRejected(
             "synthetic plan schema changed: preflight budget exceeded"
