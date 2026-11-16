@@ -139,14 +139,22 @@ def review_schedule_unknown_quarantine(
         or type(occurrence_id) is not str
     ):
         raise ScheduleUnknownQuarantineRejected("exact schedule triage inputs required")
-    # A plain Python ledger can shadow its _open method per instance while
-    # the class method and global SQLite connector remain unchanged. Require
-    # only the two declared state fields before touching caller policy data.
+    # The ledger now pins both initialized source carriers. Keep its four
+    # declared fields and their exact identities before touching policy data.
+    # This also refuses an instance-local _open shadow or extra state.
     instance_state = object.__getattribute__(ledger, "__dict__")
-    if type(instance_state) is not dict or set(instance_state) != {"_path", "_epoch"}:
+    source_fields = {
+        "_path", "_epoch", "_source_path_epoch", "_source_policy_epoch",
+    }
+    if type(instance_state) is not dict or set(instance_state) != source_fields:
         raise ScheduleUnknownQuarantineRejected("quarantine triage ledger instance changed")
     original_path = instance_state["_path"]
     original_epoch = instance_state["_epoch"]
+    if (
+        original_path is not instance_state["_source_path_epoch"]
+        or original_epoch is not instance_state["_source_policy_epoch"]
+    ):
+        raise ScheduleUnknownQuarantineRejected("quarantine triage source changed")
     try:
         epoch = _ORIGINAL_POLICY(policy)
         _ORIGINAL_WITNESS(before)
@@ -170,9 +178,11 @@ def review_schedule_unknown_quarantine(
             current_state = object.__getattribute__(ledger, "__dict__")
             if (
                 type(current_state) is not dict
-                or set(current_state) != {"_path", "_epoch"}
+                or set(current_state) != source_fields
                 or current_state["_path"] is not original_path
                 or current_state["_epoch"] is not original_epoch
+                or current_state["_source_path_epoch"] is not original_path
+                or current_state["_source_policy_epoch"] is not original_epoch
                 or (before.count, before.chain_sha256) != old
                 or _ORIGINAL_POLICY(policy) != epoch
             ):
