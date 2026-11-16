@@ -116,15 +116,24 @@ def _schema_objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
     # Validate SQLite catalog size in the caller's current snapshot BEFORE
     # bringing arbitrary DDL into Python. A malformed foreign owner/schema
     # must not force unbounded materialization or normalization at startup.
-    object_count, ddl_bytes = conn.execute(
-        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0) "
+    # SQLite catalog identity columns are not included in DDL length. An
+    # attacker-controlled long name/tbl_name/type could otherwise cross the
+    # Python boundary despite the DDL budget. Include all hydrated metadata
+    # in the SQL-side budget before selecting any sqlite_master rows.
+    object_count, ddl_bytes, identity_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
         type(object_count) is not int
         or type(ddl_bytes) is not int
+        or type(identity_bytes) is not int
         or not 0 <= object_count <= 16
         or not 0 <= ddl_bytes <= 16_384
+        or not 0 <= identity_bytes <= 16_384
     ):
         raise MemorySchemaError("memory v1 schema catalog preflight budget exceeded")
     rows = conn.execute(
