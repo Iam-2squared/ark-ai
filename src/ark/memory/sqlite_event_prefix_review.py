@@ -203,6 +203,7 @@ def _witness_epoch(value: object) -> tuple[object, ...]:
     if (
         type(count) is not int or not 0 <= count <= _MAX_EVENTS
         or type(tail) is not int or not 0 <= tail <= SQLITE_INT_MAX
+        or type(digest) is not str or len(digest) != 64
         # This v1 journal uses dense AUTOINCREMENT IDs from genesis.
         # A retained tip with tail > count is noncanonical even if its
         # caller supplies a syntactically valid digest. Refuse it before I/O.
@@ -254,6 +255,31 @@ def _scan(
             conn.execute("BEGIN")
             try:
                 _validate_v1_schema(conn)
+                stable_source()
+                # The event scanner validates decoded values below, but a
+                # damaged SQLite cell could otherwise hydrate megabytes of
+                # private text into Python before that check. Reject invalid
+                # types and UTF-8 byte widths inside this read transaction.
+                # The v1 API permits at most 256 code points per scope label
+                # (1024 bytes of UTF-8) and exactly six ASCII operation bytes.
+                oversized = conn.execute(
+                    "SELECT 1 FROM memory_events WHERE "
+                    "typeof(memory_id)!='text' "
+                    "OR length(CAST(memory_id AS BLOB))!=68 "
+                    "OR typeof(owner_id)!='text' "
+                    "OR length(CAST(owner_id AS BLOB))>1024 "
+                    "OR typeof(namespace)!='text' "
+                    "OR length(CAST(namespace AS BLOB))>1024 "
+                    "OR typeof(operation)!='text' "
+                    "OR length(CAST(operation AS BLOB))!=6 "
+                    "OR typeof(event_id)!='integer' "
+                    "OR typeof(revision)!='integer' "
+                    "OR typeof(occurred_at_ms)!='integer' LIMIT 1"
+                ).fetchone()
+                if oversized is not None:
+                    raise MemoryEventPrefixRejected(
+                        "Memory event prefix hydration admission denied"
+                    )
                 stable_source()
                 for event in conn.execute(
                     "SELECT event_id,memory_id,owner_id,namespace,operation,"
