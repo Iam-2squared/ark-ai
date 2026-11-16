@@ -218,6 +218,50 @@ def review_memory_revision_reuse(
                     raise MemoryGenerationReviewRejected(
                         "Memory generation global event high-water mismatch"
                     )
+                # The generation reviewer uses a private SELECT * outside the
+                # store's normal get() preflight. Bound corrupt SQLite TEXT
+                # *inside this same BEGIN snapshot* before Python hydration.
+                # These are local v1 resource limits, not retention custody.
+                invalid_row = conn.execute(
+                    "SELECT 1 FROM memories WHERE memory_id=? AND ("
+                    "typeof(owner_id)!='text' "
+                    "OR length(CAST(owner_id AS BLOB))>1024 "
+                    "OR typeof(namespace)!='text' "
+                    "OR length(CAST(namespace AS BLOB))>1024 "
+                    "OR typeof(source_id)!='text' "
+                    "OR length(CAST(source_id AS BLOB))>2048 "
+                    "OR typeof(content)!='text' "
+                    "OR length(CAST(content AS BLOB))>4000000 "
+                    "OR typeof(metadata_json)!='text' "
+                    "OR length(CAST(metadata_json AS BLOB))>12800000 "
+                    "OR typeof(content_sha256)!='text' "
+                    "OR length(CAST(content_sha256 AS BLOB))!=64"
+                    ") LIMIT 1",
+                    (memory_id,),
+                ).fetchone()
+                stable()
+                if invalid_row is not None:
+                    raise MemoryGenerationReviewRejected(
+                        "Memory generation row hydration admission failed"
+                    )
+                # A bounded event count alone does not bound TEXT bytes.
+                # Refuse oversized associated event labels before fetchall().
+                invalid_event = conn.execute(
+                    "SELECT 1 FROM memory_events WHERE memory_id=? AND ("
+                    "typeof(owner_id)!='text' "
+                    "OR length(CAST(owner_id AS BLOB))>1024 "
+                    "OR typeof(namespace)!='text' "
+                    "OR length(CAST(namespace AS BLOB))>1024 "
+                    "OR typeof(operation)!='text' "
+                    "OR length(CAST(operation AS BLOB))>6"
+                    ") LIMIT 1",
+                    (memory_id,),
+                ).fetchone()
+                stable()
+                if invalid_event is not None:
+                    raise MemoryGenerationReviewRejected(
+                        "Memory generation event hydration admission failed"
+                    )
                 row = conn.execute(
                     "SELECT * FROM memories WHERE memory_id=?",
                     (memory_id,),
