@@ -109,7 +109,8 @@ def _image(witness: SyntheticOccurrenceFrontier) -> tuple[int, str, int]:
     )
     if (
         type(image[0]) is not int or not 0 <= image[0] <= _MAX_ROWS
-        or type(image[1]) is not str or _SHA.fullmatch(image[1]) is None
+        or type(image[1]) is not str or len(image[1]) != 64
+        or _SHA.fullmatch(image[1]) is None
         or type(image[2]) is not int or not -1 <= image[2] <= _MAX_CLOCK
         or (image[0] == 0) != (image[2] == -1)
     ):
