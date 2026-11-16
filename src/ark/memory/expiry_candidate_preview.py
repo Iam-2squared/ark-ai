@@ -182,8 +182,11 @@ def _check_global_event_highwater(conn: sqlite3.Connection) -> None:
     # sqlite_sequence.name is NOT UNIQUE. A forged duplicate can hide behind
     # fetchone() even when SQLite quick_check reports a healthy database.
     # Read all high-water markers inside the same candidate snapshot.
+    # sqlite_sequence.name is not unique. Two markers are sufficient to
+    # reject ambiguity; fetching every forged duplicate would bypass the
+    # bounded candidate/event budgets before this local review can fail.
     seq_rows = conn.execute(
-        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events' LIMIT 2"
     ).fetchall()
     if (
         type(count) is not int or count < 0
