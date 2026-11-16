@@ -165,12 +165,21 @@ def review_synthetic_erasure_evidence(
     )
     epoch = tuple(getattr(observations, name) for name in names)
     if (
-        type(epoch[0]) is not str or _HEX.fullmatch(epoch[0]) is None
-        or type(epoch[1]) is not str or epoch[1] not in _ROW
-        or type(epoch[2]) is not str or epoch[2] not in _READERS
-        or type(epoch[3]) is not str or epoch[3] not in _CHECKPOINT
-        or type(epoch[4]) is not str or epoch[4] not in _SECURE_DELETE
-        or type(epoch[5]) is not str or epoch[5] not in _BACKUPS
+        # Reject reflected megabyte-size exact strings BEFORE regex matching
+        # or set membership hashing. All allowed policy words are <= 32 bytes.
+        # This is an ingress resource fence, never deletion evidence.
+        type(epoch[0]) is not str or len(epoch[0]) != 64
+        or _HEX.fullmatch(epoch[0]) is None
+        or type(epoch[1]) is not str or len(epoch[1]) > 32
+        or epoch[1] not in _ROW
+        or type(epoch[2]) is not str or len(epoch[2]) > 32
+        or epoch[2] not in _READERS
+        or type(epoch[3]) is not str or len(epoch[3]) > 32
+        or epoch[3] not in _CHECKPOINT
+        or type(epoch[4]) is not str or len(epoch[4]) > 32
+        or epoch[4] not in _SECURE_DELETE
+        or type(epoch[5]) is not str or len(epoch[5]) > 32
+        or epoch[5] not in _BACKUPS
         or epoch[6] is not None and (type(epoch[6]) is not int or not 0 <= epoch[6] <= 2**63-1)
     ):
         raise SyntheticErasureRejected("malformed erasure observations")
