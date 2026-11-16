@@ -26,6 +26,28 @@ from .disconnected_due_reservation import (
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _MAX_ROWS = 512
 _DOMAIN = b"ARK-due-restart-triage-v2\0"
+# This wrapper contributes its own digest and domain to the retained-prefix
+# result. Lower-level due-ledger pins do not protect this review's domain.
+# These are only process-local definition checks, not signed custody.
+_ORIGINAL_REVIEW_DOMAIN = _DOMAIN
+_ORIGINAL_REVIEW_HASHLIB = hashlib
+_ORIGINAL_REVIEW_JSON = json
+_ORIGINAL_REVIEW_SHA256 = hashlib.sha256
+_ORIGINAL_REVIEW_DUMPS = json.dumps
+
+
+def _require_original_recovery_digest() -> None:
+    if (
+        _DOMAIN is not _ORIGINAL_REVIEW_DOMAIN
+        or hashlib is not _ORIGINAL_REVIEW_HASHLIB
+        or json is not _ORIGINAL_REVIEW_JSON
+        or hashlib.sha256 is not _ORIGINAL_REVIEW_SHA256
+        or json.dumps is not _ORIGINAL_REVIEW_DUMPS
+    ):
+        raise DisconnectedDueRecoveryRejected(
+            "due restart digest authority changed"
+        )
+
 _LEDGER_TYPE = DisconnectedDueReservations
 _WITNESS_TYPE = DueReservationWitness
 
@@ -144,6 +166,7 @@ def review_restarted_due_reservations(
     Same-count rewrites and count regression are refused. Increased history
     is flagged UNVERIFIED rather than silently treated as a safe replay.
     """
+    _require_original_recovery_digest()
     if type(ledger) is not _LEDGER_TYPE:
         raise DisconnectedDueRecoveryRejected("exact disconnected due ledger required")
     prior = _checked(retained)
@@ -257,6 +280,7 @@ def review_restarted_due_reservations(
     # This is still only a *local* claim, never authenticated history.
     observed_epoch()
     stable_prefix()
+    _require_original_recovery_digest()
     payload = json.dumps(
         (prior, current, status, prefix_epoch[4]),
         separators=(",", ":"), ensure_ascii=True,
@@ -264,12 +288,14 @@ def review_restarted_due_reservations(
     observed_epoch()
     stable_prefix()
     digest = hashlib.sha256(_DOMAIN + payload).hexdigest()
+    _require_original_recovery_digest()
     observed_epoch()
     stable_prefix()
     result = DisconnectedDueRecoveryReview(prior[0], current[0], status, digest)
     result_epoch = (prior[0], current[0], status, digest)
 
     def stable_result() -> None:
+        _require_original_recovery_digest()
         observed_epoch()
         stable_prefix()
         if (
