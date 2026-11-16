@@ -60,15 +60,23 @@ def _validate(conn: sqlite3.Connection) -> None:
     # A schema and row preflight executes inside the caller's active SQLite
     # transaction. Never hydrate unbounded private DDL or scope digests into
     # Python before confirming their stored sizes and storage classes.
+    # Catalog DDL can be short while name/tbl_name/type are arbitrarily
+    # large in a tampered database. Enforce the combined UTF-8 identity
+    # budget inside SQLite before hydrating the comparison rows in Python.
     schema_budget = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+COALESCE(length(CAST(name AS BLOB)),0) "
+        "+COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(schema_budget) is not tuple or len(schema_budget) != 2
+        type(schema_budget) is not tuple or len(schema_budget) != 3
         or type(schema_budget[0]) is not int or schema_budget[0] != 2
         or type(schema_budget[1]) is not int
         or not 0 <= schema_budget[1] <= 4_096
+        or type(schema_budget[2]) is not int
+        or not 0 <= schema_budget[2] <= 4_096
     ):
         raise SyntheticContextRevocationRejected(
             "revocation schema preflight budget exceeded"
