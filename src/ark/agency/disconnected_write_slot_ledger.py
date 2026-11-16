@@ -325,16 +325,22 @@ def _check_path(value: object, *, create: bool) -> Path:
 def _schema(conn: sqlite3.Connection) -> None:
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise WriteSlotLedgerRejected("unknown SQLite ledger version")
-    # Validate the untrusted catalog inside the caller's SQLite snapshot
-    # BEFORE allocating its DDL. Frozen fixture DDL has one table and two
-    # SQLite-generated UNIQUE indexes, exactly three catalog objects.
-    object_count, ddl_bytes = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+    # Validate catalog SQL *and* every catalog identity inside the same
+    # SQLite snapshot before Python hydrates any rows. An attacker can alter
+    # name/type/tbl_name without increasing the stored DDL byte count.
+    # Frozen fixture DDL has one table and two generated UNIQUE indexes.
+    object_count, ddl_bytes, identity_bytes = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
         type(object_count) is not int or object_count != 3
         or type(ddl_bytes) is not int or not 0 <= ddl_bytes <= 4_096
+        or type(identity_bytes) is not int
+        or not 0 <= identity_bytes <= 4_096
     ):
         raise WriteSlotLedgerRejected("reservation schema catalog preflight failed")
     with closing(sqlite3.connect(":memory:")) as expected:
