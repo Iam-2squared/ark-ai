@@ -1,3 +1,40 @@
+# LATEST — ARK AI Run925: due restart digest, privacy veto, Memory sequence bounded audit
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T05:02:59.841+09:00** (observed reporting wall clock near this Contents write, **not** trusted action/audit time). **Overall ARK/JARVIS NOT_PASSED. UI/Frontend PAUSED.** Zero-cost non-UI work only, no protected evaluation.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), open/unmerged. [Protected Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5), [paused UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) unmerged/untouched. **main/base HEAD `7a843f17eb96ed13d66f23b58b06406b3002e405`**, unchanged. **Exact invocation work-basis HEAD:** `48a0a9d3a6c4eccbc80b3bc1d1cb64332d747a0f`. **Complete Run925 source/test HEAD:** `343322d7e07735ecab714571fddea4e82930f2c4`. **Report + checkpoint-write-basis HEAD:** `a0bde9366ab884f1a26e4e3c33a447f74ab6ae11`. **Previous PROJECT_STATUS blob:** `76c223f60f1672e2e03685e09800bc314ca20657`. **Checkpoint-result HEAD:** cannot self-embed; check the returned normal Contents commit SHA, branch HEAD and Draft PR #8 HEAD after write. Do not confuse a prior source/test HEAD with the checkpoint-result HEAD.
+
+## NEW — three independent non-UI source+test packages; 19 regression cases AUTHORED
+
+1. **Synthetic due-restart digest (6 cases).** Source commit `57d3a44a19c89cb3dabb465c9acfbda67716978a`, test commit `84ae7fd21694f634f908caee04186888709980a2`. Import-time pin of local digest domain, JSON, SHA callbacks, validated before ledger read, post-prefix and before returning inert review. Equal-byte domain replacement and reentrant mutation denied; normal restart remains denial-only. No trusted-clock, notification or execution authority.
+2. **Personal Context revocation scope/digest custody (7 cases).** Source `4ed8093eb67bb06f96b5e74032d8e64dd1078131`, test `41911d6c43effddf0959883e06d5ecb4c6b84493`. Pin exact frozen MemoryScope v1 validator, slot descriptors and lookup hooks, JSON/SHA prior to private scope hash. Reject mutated definitions without appending synthetic revocation; healthy restart stays revoked. Frozen MemoryScope itself, schema and consent/export rules unchanged.
+3. **Memory event alignment bounded SQLite high-water read (6 cases).** Source `6e8ee97675a84ff75a4ce876a42ac4b7321ed093`, test `343322d7e07735ecab714571fddea4e82930f2c4`. `sqlite_sequence` diagnostic now reads at most two markers using `LIMIT 2`; zero/one/multiple corruption decision, nonrepair behavior and healthy restart preserved. No Memory v1 persistence/schema/CAS change.
+
+**Run925 technical report:** [full evidence and synthetic cases](https://github.com/Iam-2squared/ark-ai/blob/a0bde9366ab884f1a26e4e3c33a447f74ab6ae11/docs/JARVIS_RUN925_NON_UI_DUE_PRIVACY_MEMORY_DIGEST_CUSTODY.md). 19 is tests **authored**, NOT passed or independently authenticated. No full local pytest, actual GGUF or user-PC evidence.
+
+## Exact-head CI snapshot
+
+- Prior Run924 checkpoint `48a0a9d3`, [CI #43935432737](https://github.com/Iam-2squared/ark-ai/actions/runs/43935432737): **GREEN 6/6** Windows/Ubuntu × Python 3.11–3.13, prior work only.
+- Due source [#43943730161](https://github.com/Iam-2squared/ark-ai/actions/runs/43943730161): **IN_PROGRESS**; due source+test [#43943832319](https://github.com/Iam-2squared/ark-ai/actions/runs/43943832319): **IN_PROGRESS**.
+- Privacy source [#43944025465](https://github.com/Iam-2squared/ark-ai/actions/runs/43944025465): **IN_PROGRESS**; privacy source+test [#43944122980](https://github.com/Iam-2squared/ark-ai/actions/runs/43944122980): **IN_PROGRESS**.
+- Memory source [#43944299278](https://github.com/Iam-2squared/ark-ai/actions/runs/43944299278): **IN_PROGRESS**; complete source/test `343322d7`, [#43944429073](https://github.com/Iam-2squared/ark-ai/actions/runs/43944429073): **QUEUED**.
+- Run925 report HEAD `a0bde936`, [CI #43945036248](https://github.com/Iam-2squared/ark-ai/actions/runs/43945036248): **QUEUED**. Checkpoint pushes auto-CI; no duplicate manual equivalent runs. **Full latest exact-head matrix GREEN NOT YET VERIFIED.**
+
+## Frozen controls and outstanding blockers
+
+V1/V2/Local UI/Launcher freezes unchanged; ObservationEnvelope direct v1 semantics restored/unchanged; protected V2 final-eval and free-only V3 approval, identity, provenance, contamination and reproducibility gates unopened. PR #5/#8/#9 Draft/unmerged. No UI changes, paid GPU/API/service, subscriptions, secrets/new credentials/account connections, physical-PC actions, real Candidate/weights/adapters, Candidate promotion, real ToolBackend WRITE, privacy export, fabricated consent/human review, automatic UNKNOWN replay, irreversible action, force/raw Git safeguard bypass or main merge.
+
+**Blockers:** newest exact-HEAD CI pending; actual SQLite WAL/SHM multiprocess path/alias last-close race unresolved; trusted audit-clock authority and restart-safe one-shot WRITE permission unproven; Memory CAS/coherent event/expiry, Planner COMMIT-UNKNOWN manual recovery, consent and PC/GGUF gates require further evidence. **JARVIS NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Verify latest exact-head six CI jobs; on FAIL inspect logs and land smallest semantics-preserving correction while continuing an independent lane during CI.
+2. Continue disposable WAL/SHM held-handle/alias tests with no unknown-outcome auto-replay or real action.
+3. Deepen Memory coherent CAS/event/expiry and Planner crash/COMMIT-UNKNOWN retained review, then integrate ToolRegistry → PermissionGate → durable occurrence → independently trusted audit-before-action → disconnected mock only after prerequisite GREEN.
+4. Continue privacy-safe Personal Context, proactive/Observation backend and free-only V3 guards on isolated lanes. No UI work, main merge, paid compute or protected gate opening.
+
+---
+
 # LATEST — ARK AI Run924 (CI-corrected): frozen observation semantics restored; revocation, registered policy, Planner
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T04:04:04.253+09:00** (correction of this invocation's original 2026-11-17T03:59:27.560+09:00 checkpoint following real CI failures; wall-clock reporting time **NOT** a trusted action/audit clock). **ARK/JARVIS NOT_PASSED. UI/Frontend PAUSED.** Zero-cost isolated non-UI development, no protected gates opened.
