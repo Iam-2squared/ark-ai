@@ -395,6 +395,11 @@ class DisconnectedScheduleQuarantineLedger:
             raise ScheduleQuarantineRejected("exact create flag required")
         self._path = _path(path, create=create)
         self._epoch = _policy_epoch(policy)
+        # Pin both original carriers across separate calls/restarts. A new
+        # value-equal path or policy tuple cannot silently redirect this
+        # already-initialized local-only fixture ledger.
+        self._source_path_epoch = self._path
+        self._source_policy_epoch = self._epoch
         # Existing-ledger startup is inspection-only. Do not reserve a
         # SQLite writer slot or permit mutation merely to validate a restart.
         mode = "rwc" if create else "ro"
@@ -421,6 +426,13 @@ class DisconnectedScheduleQuarantineLedger:
                 raise
 
     def _open(self, *, read_only: bool) -> sqlite3.Connection:
+        if (
+            self._path is not self._source_path_epoch
+            or self._epoch is not self._source_policy_epoch
+        ):
+            raise ScheduleQuarantineRejected(
+                "quarantine source or policy identity changed"
+            )
         path = _path(self._path, create=False)
         return sqlite3.connect(
             path.as_uri() + ("?mode=ro" if read_only else "?mode=rw"),
