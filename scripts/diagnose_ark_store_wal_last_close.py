@@ -172,19 +172,24 @@ def probe_ark_store(*, kind: str, keeper: bool) -> dict[str, object]:
             # Inspect these before a subsequent WAL reopen can create another
             # pathname. An unlinked old descriptor is not a retained witness.
             final_name_absent = not shm.exists()
-            phase = "cold_restart"
+            # Split a failed cold restart into open/constructor versus
+            # evidence read; no exception or private pathname is exported.
+            phase = "cold_restart_construct"
             if kind == "memory":
                 cold = SQLiteMemoryStore(db, clock_ms=lambda: 101)
+                phase = "cold_restart_read"
                 recovered = cold.get(original.memory_id, scope, include_expired=True)
                 data_intact = recovered == original
             elif kind == "audit":
                 cold = SQLiteActionAudit(db, clock_ms=lambda: 101)
+                phase = "cold_restart_read"
                 restored = cold.events()
                 data_intact = len(restored) == 1 and restored[0] == original
             else:
                 # A cold restart must still veto the exact synthetic scope.
                 # A durable marker never authorizes an automatic replay.
                 cold = SyntheticContextRevocationLedger(db, require_existing=True)
+                phase = "cold_restart_read"
                 try:
                     cold.assert_not_revoked((scope,))
                 except SyntheticContextRevocationRejected as error:
