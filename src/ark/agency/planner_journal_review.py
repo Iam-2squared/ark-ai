@@ -870,6 +870,17 @@ class SyntheticPlanJournal:
             raise SyntheticPlanJournalRejected(
                 "unknown or invalid synthetic plan step"
             ) from exc
+        # The persisted topology carrier is mutable in Python even after
+        # construction. Do not enumerate an injected list, tuple subclass, or
+        # foreign object whose step_id getter can run arbitrary code BEFORE
+        # journal recovery and topology custody checks. The size check also
+        # precedes any per-step attribute access.
+        if (
+            type(self._steps) is not tuple
+            or not 1 <= len(self._steps) <= 4096
+            or any(type(step) is not PlanStep for step in self._steps)
+        ):
+            raise SyntheticPlanJournalRejected("synthetic plan topology is invalid")
         if step_id not in (step.step_id for step in self._steps):
             raise SyntheticPlanJournalRejected("unknown or invalid synthetic plan step")
         if (
