@@ -28,6 +28,8 @@ _MAX_TOTAL_ROWS = 1_616  # Include one overflow row for every scope.
 _MAX_EVENT_SCAN = 40_000
 _MAX_SCOPE_BYTES = 256  # Local preview ingress bound; no frozen store schema change.
 _MAX_TIME = (1 << 63) - 1
+# One combined memory ceiling across every scope in this SQLite snapshot.
+_MAX_TOTAL_HYDRATION_BYTES = 64 * 1024 * 1024
 _DOMAIN = b"ARK-coherent-expiry-snapshot-v1\0"
 
 _ORIGINAL_HELPERS = (
@@ -42,7 +44,8 @@ _ORIGINAL_HELPERS = (
     hashlib.sha256,
 )
 _ORIGINAL_BOUNDS = (_MAX_SCOPES, _MAX_ROWS_PER_SCOPE, _MAX_TOTAL_ROWS,
-                    _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME, _DOMAIN)
+                    _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME,
+                    _MAX_TOTAL_HYDRATION_BYTES, _DOMAIN)
 
 
 class CoherentExpirySnapshotRejected(ValueError):
@@ -101,15 +104,18 @@ def _protocol() -> None:
         hashlib.sha256,
     )
     if (
-        any(current is not original for current, original in zip(
+        _preflight_due_page is not _ORIGINAL_PAGE_PREFLIGHT
+        or any(current is not original for current, original in zip(
             now, _ORIGINAL_HELPERS, strict=True,
         ))
         or any(type(value) is not int for value in (
             _MAX_SCOPES, _MAX_ROWS_PER_SCOPE, _MAX_TOTAL_ROWS,
             _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME,
+            _MAX_TOTAL_HYDRATION_BYTES,
         ))
         or (_MAX_SCOPES, _MAX_ROWS_PER_SCOPE, _MAX_TOTAL_ROWS,
-            _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME, _DOMAIN) != _ORIGINAL_BOUNDS
+            _MAX_EVENT_SCAN, _MAX_SCOPE_BYTES, _MAX_TIME,
+            _MAX_TOTAL_HYDRATION_BYTES, _DOMAIN) != _ORIGINAL_BOUNDS
         or CoherentExpirySnapshot is not _RESULT
         or any(vars(_RESULT).get(name) is not old for name, old in zip(
             _RESULT_NAMES, _ORIGINAL_RESULT, strict=True,
@@ -118,6 +124,60 @@ def _protocol() -> None:
         raise CoherentExpirySnapshotRejected("coherent expiry protocol changed")
     preview_module._assert_original_authority()
     cohort_module._protocol()
+
+
+def _preflight_due_page(
+    conn: sqlite3.Connection,
+    owner: str,
+    namespace: str,
+    now_ms: int,
+    limit: int,
+    remaining_bytes: int,
+) -> int:
+    """Bound the selected due page before SELECT * materializes private TEXT.
+
+    The caller charges bytes against one cross-scope budget in the same
+    SQLite read transaction; this is not evidence of independent custody.
+    """
+    metrics = conn.execute(
+        "SELECT COUNT(*), "
+        "COALESCE(SUM(length(CAST(content AS BLOB)) "
+        "+length(CAST(metadata_json AS BLOB)) "
+        "+length(CAST(source_id AS BLOB))),0), "
+        "COALESCE(MAX(length(CAST(content AS BLOB))),0), "
+        "COALESCE(MAX(length(CAST(metadata_json AS BLOB))),0), "
+        "COALESCE(MAX(length(CAST(source_id AS BLOB))),0), "
+        "COALESCE(SUM(CASE WHEN typeof(content)='text' "
+        "AND typeof(metadata_json)='text' "
+        "AND typeof(source_id)='text' THEN 0 ELSE 1 END),0) "
+        "FROM (SELECT content,metadata_json,source_id FROM memories "
+        "WHERE owner_id=? AND namespace=? "
+        "AND expires_at_ms IS NOT NULL AND expires_at_ms<=? "
+        "ORDER BY memory_id LIMIT ?)",
+        (owner, namespace, now_ms, limit + 1),
+    ).fetchone()
+    limits = (
+        store_module._MAX_MEMORY_ROW_CONTENT_BYTES,
+        store_module._MAX_MEMORY_ROW_METADATA_BYTES,
+        store_module._MAX_MEMORY_ROW_SOURCE_BYTES,
+    )
+    if (
+        len(metrics) != 6
+        or any(type(value) is not int or value < 0 for value in metrics)
+        or metrics[0] > limit + 1
+        or metrics[1] > remaining_bytes
+        or metrics[2] > limits[0]
+        or metrics[3] > limits[1]
+        or metrics[4] > limits[2]
+        or metrics[5] != 0
+    ):
+        raise CoherentExpirySnapshotRejected(
+            "coherent expiry due-page hydration budget exceeded"
+        )
+    return metrics[1]
+
+
+_ORIGINAL_PAGE_PREFLIGHT = _preflight_due_page
 
 
 def review_coherent_expiry_snapshot(
@@ -192,6 +252,7 @@ def review_coherent_expiry_snapshot(
     pages = []
     total_rows = 0
     remaining_events = _MAX_EVENT_SCAN
+    remaining_bytes = _MAX_TOTAL_HYDRATION_BYTES
     try:
         with closing(store._connect_readonly()) as conn:
             conn.execute("BEGIN")
@@ -200,6 +261,10 @@ def review_coherent_expiry_snapshot(
                 store_module._validate_v1_schema(conn)
                 preview_module._check_global_event_highwater(conn)
                 for _, owner, namespace in original_scopes:
+                    stable()
+                    remaining_bytes -= _preflight_due_page(
+                        conn, owner, namespace, now_ms, limit, remaining_bytes,
+                    )
                     stable()
                     rows = conn.execute(
                         "SELECT * FROM memories WHERE owner_id=? AND namespace=? "
