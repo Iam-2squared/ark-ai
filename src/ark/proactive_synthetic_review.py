@@ -77,6 +77,9 @@ class SyntheticTriggerPolicy:
     max_preparations_per_window: int
 
     def __post_init__(self) -> None:
+        # Before reading any reflected policy field, reject replaced slots or
+        # lookup hooks. The authoritative originals are pinned at import.
+        _require_original_policy_contract()
         # Validation hooks can be reentrant in offline fixture reviews. Pin
         # the entire original policy before the first hook, and check after
         # EACH field; a later field must not hide temporary identity drift.
@@ -103,6 +106,9 @@ class SyntheticTriggerPolicy:
             assert_policy_epoch()
 
     def identity(self) -> tuple[object, ...]:
+        # This path can be called on a retained policy after class-level
+        # mutation. Never invoke an unreviewed descriptor on first read.
+        _require_original_policy_contract()
         original = (
             self.owner, self.namespace, self.definition_id, self.revision,
             self.policy_revision, self.minimum_interval_ms,
