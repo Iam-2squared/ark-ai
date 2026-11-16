@@ -4,8 +4,8 @@ No user database, private Memory content, migration or destructive operation.
 The fixture uses only disposable in-memory SQLite catalog fault injection.
 """
 
-from contextlib import closing
 import sqlite3
+from contextlib import closing
 
 import pytest
 
