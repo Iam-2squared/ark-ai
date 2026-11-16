@@ -267,7 +267,12 @@ class PlanGraph:
                 raise PlanConflictError("plan status epoch identifier changed")
             current = self._status.get(name)
             if current is not None and (
-                type(current) is not PlanStepStatus or current.step_id != name
+                type(current) is not PlanStepStatus
+                # Frozen dataclass fields can be reflectively overwritten.
+                # Do not invoke a foreign __eq__/__ne__ while checking status
+                # identity; refuse its non-string carrier first.
+                or type(current.step_id) is not str
+                or current.step_id != name
             ):
                 raise PlanConflictError(
                     "plan status identity changed outside transition"
