@@ -296,16 +296,21 @@ def _safe_path(path: Path, *, must_exist: bool) -> None:
 def _verify_schema(connection: sqlite3.Connection) -> None:
     """Bound SQL catalog hydration; require exactly the frozen local schema."""
     # Two tables and the autoindex for UNIQUE(request_id, step_id).
-    # Check the count and *encoded* SQL DDL bytes in SQLite's snapshot
-    # BEFORE copying foreign DDL text into Python.
+    # Count, DDL and all catalog identity UTF-8 bytes must fit the reviewed
+    # budget *inside* the SQLite snapshot before Python reads schema strings.
+    # A short SQL declaration alone does not bound forged object names.
     budget = connection.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),0) "
+        "+ COALESCE(length(CAST(name AS BLOB)),0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)),0)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(budget) is not tuple or len(budget) != 2
+        type(budget) is not tuple or len(budget) != 3
         or type(budget[0]) is not int or budget[0] != 3
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+        or type(budget[2]) is not int or not 0 <= budget[2] <= 4_096
     ):
         raise ReadJournalRejected("synthetic READ schema catalog preflight failed (schema changed)")
     expected = sqlite3.connect(":memory:")
