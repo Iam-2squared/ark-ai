@@ -27,6 +27,12 @@ def test_corrupted_large_catalog_name_rejected_before_python_rows(column):
             ("s" * 66_000,),
         )
         conn.execute("PRAGMA writable_schema=OFF")
+        # The fault-injection UPDATE starts an implicit write transaction.
+        # Commit the synthetic corrupted catalog first: the production probe
+        # intentionally refuses non-idle connections before inspecting data.
+        assert conn.in_transaction
+        conn.commit()
+        assert not conn.in_transaction
         conn.execute("PRAGMA query_only=ON")
         statements = []
         conn.set_trace_callback(statements.append)
