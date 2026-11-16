@@ -457,6 +457,13 @@ def evaluate_startup_readiness(
             raise ValueError("readiness graph exceeds local review budget")
         if type(entry) is not StartupComponent:
             raise TypeError("startup requires exact StartupComponent entries")
+        # A reflected replacement can install an arbitrary __len__ hook in
+        # dependencies after StartupComponent.__post_init__. Validate the
+        # exact tuple BEFORE consulting its size or adding graph edges.
+        if type(entry.dependencies) is not tuple:
+            raise TypeError("dependencies must be an exact tuple")
+        if len(entry.dependencies) > _MAX_DEPENDENCIES_PER_COMPONENT:
+            raise ValueError("readiness per-component dependency budget exceeded")
         edge_count += len(entry.dependencies)
         if edge_count > _MAX_DEPENDENCY_EDGES:
             raise ValueError("readiness graph dependency budget exceeded")
