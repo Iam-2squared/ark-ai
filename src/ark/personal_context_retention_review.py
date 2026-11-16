@@ -14,8 +14,13 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-from .memory.contracts import MemoryScope
-from .memory.sqlite_store import SQLiteMemoryStore, _record, _validate_v1_schema
+from .memory.contracts import MemorySchemaError, MemoryScope
+from .memory.sqlite_store import (
+    SQLiteMemoryStore,
+    _record,
+    _require_memory_text_hydration_budget,
+    _validate_v1_schema,
+)
 from .personal_context_revocation_continuity_review import (
     SyntheticRevocationWitness,
     review_revocation_continuity,
@@ -101,6 +106,7 @@ _ORIGINAL_INVENTORY_DESCRIPTORS = tuple(
 # before the first call and after every other callback boundary. This is an
 # in-process fail-closed review, not a sandbox or authenticated provenance.
 _ORIGINAL_RECORD = _record
+_ORIGINAL_MEMORY_HYDRATION = _require_memory_text_hydration_budget
 _ORIGINAL_SCHEMA_CHECK = _validate_v1_schema
 _ORIGINAL_SCOPE_DIGEST = _scope_digest
 _ORIGINAL_REVOCATION_REVIEW = review_revocation_continuity
@@ -124,6 +130,7 @@ _ORIGINAL_SCOPE_CARRIERS = tuple(
 def _require_original_retention_contract() -> None:
     if (
         _record is not _ORIGINAL_RECORD
+        or _require_memory_text_hydration_budget is not _ORIGINAL_MEMORY_HYDRATION
         or _validate_v1_schema is not _ORIGINAL_SCHEMA_CHECK
         or _scope_digest is not _ORIGINAL_SCOPE_DIGEST
         or review_revocation_continuity is not _ORIGINAL_REVOCATION_REVIEW
@@ -270,6 +277,32 @@ def review_synthetic_retention_inventory(
         conn.execute("BEGIN")
         try:
             _validate_v1_schema(conn)
+            assert_sources()
+            # This direct retention SELECT bypasses Memory.get/search. A
+            # damaged private row must not enter Python as a multi-megabyte
+            # TEXT/BLOB before _record checks its canonical Memory v1 shape.
+            # Read the admission counters in this same BEGIN snapshot.
+            try:
+                _require_memory_text_hydration_budget(conn, *epoch)
+            except MemorySchemaError as exc:
+                raise SyntheticRetentionRejected(
+                    "retention Memory hydration admission denied"
+                ) from exc
+            malformed = conn.execute(
+                "SELECT 1 FROM memories WHERE owner_id=? AND namespace=? "
+                "AND (typeof(memory_id)!='text' "
+                "OR length(CAST(memory_id AS BLOB))!=68 "
+                "OR typeof(content_sha256)!='text' "
+                "OR length(CAST(content_sha256 AS BLOB))!=64 "
+                "OR typeof(content)!='text' "
+                "OR typeof(metadata_json)!='text' "
+                "OR typeof(source_id)!='text') LIMIT 1",
+                epoch,
+            ).fetchone()
+            if malformed is not None:
+                raise SyntheticRetentionRejected(
+                    "retention Memory identity hydration admission denied"
+                )
             assert_sources()
             rows = conn.execute(
                 """SELECT * FROM memories WHERE owner_id=? AND namespace=?
