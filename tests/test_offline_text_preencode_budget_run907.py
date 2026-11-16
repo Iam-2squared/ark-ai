@@ -11,7 +11,6 @@ import pytest
 
 from ark import offline_text_index as index
 
-
 _OWNER = "a" * 64
 _SCOPE = "b" * 64
 _DOC_ID = "doc_" + "c" * 16
