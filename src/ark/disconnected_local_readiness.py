@@ -81,6 +81,18 @@ _REPORT_DENIALS = (
     "startup_authorized", "dispatch_authorized",
     "source_authenticated", "cross_store_atomicity_proven",
 )
+# Caller grants are exact dataclass instances, but their slot descriptors
+# and lookup hooks remain class-mutable. Admission must refuse changed grant
+# definitions BEFORE snapshotting private capability/scope fields.
+_STARTUP_GRANT_TYPE = CapabilityGrant
+_STARTUP_GRANT_MEMBERS = (
+    "capability", "scope", "expires_at_ms",
+    "__init__", "__post_init__", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_STARTUP_GRANT_MEMBERS = tuple(
+    vars(_STARTUP_GRANT_TYPE).get(name) for name in _STARTUP_GRANT_MEMBERS
+)
+
 # Snapshot descriptors before any SQLite or registered-READ callback. A
 # substituted False-returning property must never become the new baseline.
 _ORIGINAL_SCHEMA_DENIALS = tuple(vars(_SCHEMA_TYPE)[n] for n in _SCHEMA_DENIALS)
@@ -122,6 +134,19 @@ _ORIGINAL_PREFLIGHT_CARRIERS = tuple(
 
 
 def _require_original_denials() -> None:
+    if (
+        CapabilityGrant is not _STARTUP_GRANT_TYPE
+        or any(
+            vars(_STARTUP_GRANT_TYPE).get(name) is not original
+            for name, original in zip(
+                _STARTUP_GRANT_MEMBERS, _ORIGINAL_STARTUP_GRANT_MEMBERS,
+                strict=True,
+            )
+        )
+    ):
+        raise DisconnectedLocalReadinessRejected(
+            "startup capability grant descriptor changed"
+        )
     if (
         any(
             vars(_SCHEMA_TYPE).get(name) is not pinned
