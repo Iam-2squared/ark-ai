@@ -43,15 +43,61 @@ class SyntheticContextRevocationRejected(RuntimeError):
     """A local revocation fence cannot safely provide a context projection."""
 
 
+# This local veto hashes private scope identities. The frozen MemoryScope
+# contract is not changed: reject late substitutions of its validator and
+# slot descriptors before reading private fields or calling digest hooks.
+_ORIGINAL_SCOPE = MemoryScope
+_ORIGINAL_SCOPE_POST_INIT = vars(_ORIGINAL_SCOPE)["__post_init__"]
+_SCOPE_FIELDS = ("owner_id", "namespace")
+_SCOPE_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_SCOPE_FIELDS = tuple(vars(_ORIGINAL_SCOPE)[name] for name in _SCOPE_FIELDS)
+_ORIGINAL_SCOPE_HOOKS = tuple(vars(_ORIGINAL_SCOPE).get(name) for name in _SCOPE_HOOKS)
+_ORIGINAL_SCOPE_HASHLIB = hashlib
+_ORIGINAL_SCOPE_JSON = json
+_ORIGINAL_SCOPE_SHA256 = hashlib.sha256
+_ORIGINAL_SCOPE_DUMPS = json.dumps
+
+
+def _require_original_scope_digest() -> None:
+    if (
+        MemoryScope is not _ORIGINAL_SCOPE
+        or vars(_ORIGINAL_SCOPE).get("__post_init__") is not _ORIGINAL_SCOPE_POST_INIT
+        or any(
+            vars(_ORIGINAL_SCOPE).get(name) is not original
+            for name, original in zip(
+                _SCOPE_FIELDS, _ORIGINAL_SCOPE_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_ORIGINAL_SCOPE).get(name) is not original
+            for name, original in zip(
+                _SCOPE_HOOKS, _ORIGINAL_SCOPE_HOOKS, strict=True,
+            )
+        )
+        or hashlib is not _ORIGINAL_SCOPE_HASHLIB
+        or json is not _ORIGINAL_SCOPE_JSON
+        or hashlib.sha256 is not _ORIGINAL_SCOPE_SHA256
+        or json.dumps is not _ORIGINAL_SCOPE_DUMPS
+    ):
+        raise SyntheticContextRevocationRejected(
+            "revocation scope digest implementation changed"
+        )
+
+
 def _scope_digest(scope: MemoryScope) -> str:
+    _require_original_scope_digest()
     if type(scope) is not MemoryScope:
         raise SyntheticContextRevocationRejected("exact MemoryScope required")
     scope.__post_init__()
+    _require_original_scope_digest()
     payload = json.dumps(
         (scope.owner_id, scope.namespace), ensure_ascii=True,
         separators=(",", ":"),
     ).encode("utf-8")
-    return hashlib.sha256(b"ARK-context-revocation-scope-v1\0" + payload).hexdigest()
+    _require_original_scope_digest()
+    digest = hashlib.sha256(b"ARK-context-revocation-scope-v1\0" + payload).hexdigest()
+    _require_original_scope_digest()
+    return digest
 
 
 def _validate(conn: sqlite3.Connection) -> None:
