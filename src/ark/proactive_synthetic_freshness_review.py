@@ -27,6 +27,7 @@ from .proactive_synthetic_review import (
     SyntheticTriggerReceipt,
     SyntheticTriggerRejected,
     _hash,
+    _require_original_policy_contract,
     _validate,
 )
 
@@ -121,6 +122,10 @@ def review_prepared_trigger_freshness(
     cannot rule out replacement of all unfenced local evidence.
     """
     _assert_original_freshness_carriers()
+    # A swapped identity method is executable code; check the pinned class
+    # contract before any reflected policy field or identity lookup. A late
+    # check inside the original identity method cannot guard its replacement.
+    _require_original_policy_contract()
     if (
         type(ledger) is not SyntheticProactiveLedger
         or type(receipt) is not SyntheticTriggerReceipt
