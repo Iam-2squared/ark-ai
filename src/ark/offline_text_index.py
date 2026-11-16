@@ -117,11 +117,47 @@ _ORIGINAL_QUERY_HOOKS = tuple(
 _ORIGINAL_DOCUMENT_HOOKS = tuple(
     vars(_DOCUMENT_TYPE).get(name) for name in _INPUT_HOOKS
 )
+# Offline lexical search sees privacy-scoped fixture bytes. Pin the text
+# normalizer, tokenizer, hash/JSON functions and policy budgets before any
+# private query/document is normalized or included in a digest. These checks
+# detect local fault injection, not external provenance or a security sandbox.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_NORMALIZE = unicodedata.normalize
+_ORIGINAL_COUNTER = Counter
+_ORIGINAL_PATTERNS = (_SHA, _DOC, _WORD)
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_BUDGETS = (
+    _MAX_DOCS, _MAX_TEXT_BYTES, _MAX_TOTAL_BYTES,
+    _MAX_QUERY_BYTES, _MAX_QUERY_TOKENS, _MAX_TOKENS,
+)
 
 
 def _require_original_denials() -> None:
     if (
-        OfflineIndexResult is not _RESULT_TYPE
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or unicodedata is not _ORIGINAL_UNICODEDATA
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+        or unicodedata.normalize is not _ORIGINAL_NORMALIZE
+        or Counter is not _ORIGINAL_COUNTER
+        or any(a is not b for a, b in zip(
+            (_SHA, _DOC, _WORD), _ORIGINAL_PATTERNS, strict=True,
+        ))
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or any(type(value) is not int for value in (
+            _MAX_DOCS, _MAX_TEXT_BYTES, _MAX_TOTAL_BYTES,
+            _MAX_QUERY_BYTES, _MAX_QUERY_TOKENS, _MAX_TOKENS,
+        ))
+        or (
+            _MAX_DOCS, _MAX_TEXT_BYTES, _MAX_TOTAL_BYTES,
+            _MAX_QUERY_BYTES, _MAX_QUERY_TOKENS, _MAX_TOKENS,
+        ) != _ORIGINAL_BUDGETS
+        or OfflineIndexResult is not _RESULT_TYPE
         or OfflineIndexHit is not _HIT_TYPE
         or OfflineIndexQuery is not _QUERY_TYPE
         or OfflineIndexDocument is not _DOCUMENT_TYPE
