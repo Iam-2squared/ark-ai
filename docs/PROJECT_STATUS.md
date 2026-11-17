@@ -1,4 +1,43 @@
-# LATEST — ARK AI Run940: WAL IPC marker race fixed; independent Observation, Planner and Context offline regressions
+# LATEST — ARK AI Run941: atomic WAL IPC marker; bounded proactive catalog; Planner/preaction UNKNOWN; private Observation admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T19:54:00.690+09:00** (sampled immediately before the normal GitHub Contents checkpoint write; this is a reporting time, **not** a trusted audit, approval, consent or action clock). **Overall ARK/JARVIS NOT_PASSED.** All new UI/frontend development **PAUSED**; free-only non-UI synthetic/disconnected work only.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED at prewrite read. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged at start. Protected [Draft V3 PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **Exact work-basis HEAD:** `04c49dcca44b83d521fa64c7ba8d54ee4adacc11` (Run940 checkpoint). **Latest executable source/test HEAD:** `e1c94453b5914098fe7da7ab5e4edd7fdca1a174`. **Run941 technical-report and checkpoint-write-basis HEAD:** `6b1a71bff80455993149c1315f0574b2d6aa3987`. **Previous PROJECT_STATUS blob:** `37697114bbb3d59026be9b0fd72f9b081d2228de`. The eventual checkpoint-result commit SHA cannot self-embed in the committed bytes: obtain it from the normal GitHub Contents write result and verify by a fresh PR HEAD/blob read. This paragraph does not assert an unobserved postwrite SHA.
+
+## NEW this invocation — four independent coherent non-UI packages
+
+1. **WAL subprocess marker atomicity:** [`2c71e257`](https://github.com/Iam-2squared/ark-ai/commit/2c71e257721738264271b9a5cdc060263567d206) fixes an analogous child `observed.write_text` / parent existence-barrier race in `tests/test_memory_cross_process_wal_reader_last_close_run935.py` using a fully written same-directory `.pending` file and `Path.replace`. No Memory CAS, event, WAL snapshot or last-close assertion was weakened; no production Memory source changed.
+2. **Proactive durable ledger catalog guard:** [`db98a86a`](https://github.com/Iam-2squared/ark-ai/commit/db98a86a8ff0fb554ae88f5d33dae7ea58c42f60) bounds cumulative UTF-8 encoded SQLite `type/name/tbl_name` catalog identity bytes (and NULL) **inside SQLite** before returning `sqlite_master` rows to Python; prevents short-DDL / huge-name fault payload hydration. [`3b44e7c2`](https://github.com/Iam-2squared/ark-ai/commit/3b44e7c20d621d2d57363564133cc7c714f0a638) adds **6** synthetic regression cases: three catalog fields, multibyte identity, split-column overflow and pristine schema. Local standalone in-memory SQLite SQL predicate smoke was observed; this is not full pytest or six-job proof.
+3. **Planner + atomic preaction crash ambiguity:** [`852bb982`](https://github.com/Iam-2squared/ark-ai/commit/852bb98246ec9e8c6d903bbfa8f5c3c63c53221d) adds **2** spawn/process-exit cases with reversed two-store commit order. Cold Planner RUNNING stays ambiguous, atomic local occurrence stays only locally recorded, and both independently deny dispatch/automatic replay. This is not a cross-store transaction or external exactly-once guarantee.
+4. **Private Observation fixture input contract:** [`e1c94453`](https://github.com/Iam-2squared/ark-ai/commit/e1c94453b5914098fe7da7ab5e4edd7fdca1a174) adds **16** synthetic no-capture cases denying NUL/source, invalid UTF-8 privacy, boolean timestamp and deceptive payload types without leaking private bytes or calling custom `__len__`/`__bytes__` hooks.
+
+**New:** 24 regression cases (6+2+16), plus correction of one existing WAL signal test. One narrow production Proactive catalog guard, no other production source changes. [Run941 technical report](https://github.com/Iam-2squared/ark-ai/blob/6b1a71bff80455993149c1315f0574b2d6aa3987/docs/JARVIS_RUN941_NON_UI_IPC_PROACTIVE_CATALOG_PLANNER_OBSERVATION.md) saved before this checkpoint. No whole-repository local pytest, physical GGUF test or synthetic-to-real dispatch claimed.
+
+## CI / evidence — exact-head state at last verification
+
+- **Run940 checkpoint `04c49dcca44b83d521fa64c7ba8d54ee4adacc11`:** [CI #44059949120](https://github.com/Iam-2squared/ark-ai/actions/runs/44059949120) **COMPLETED GREEN, 6/6** Windows/Ubuntu × Python 3.11/3.12/3.13. Explicitly prior-head evidence.
+- **Run941 WAL IPC fix:** [#44067998773](https://github.com/Iam-2squared/ark-ai/actions/runs/44067998773) **IN PROGRESS** at last read.
+- **Run941 Proactive source hardening:** [#44068116947](https://github.com/Iam-2squared/ark-ai/actions/runs/44068116947) **IN PROGRESS** at last read.
+- **Run941 Proactive regression fixture:** [#44068240657](https://github.com/Iam-2squared/ark-ai/actions/runs/44068240657) **IN PROGRESS** at last read.
+- **Run941 Planner dual-ledger crash tests:** [#44068566264](https://github.com/Iam-2squared/ark-ai/actions/runs/44068566264) **QUEUED** at last read.
+- **Run941 Observation private ingress:** [#44068763867](https://github.com/Iam-2squared/ark-ai/actions/runs/44068763867) **QUEUED** at last read.
+- **Run941 technical-report HEAD:** [#44068903303](https://github.com/Iam-2squared/ark-ai/actions/runs/44068903303) **QUEUED** at last read.
+- The new distinct checkpoint commit may start CI; its run ID/outcome is unknown before saving. **Latest executable HEAD / checkpoint-result HEAD all-six GREEN NOT VERIFIED.** No duplicate equivalent workflow run launched.
+
+## Frozen evidence / costs / authority boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence and all controlling contracts, frozen Observation v1, V3 Contract #1, contamination/provenance/regression/reproducibility and Candidate promotion gates, protected V2 final evaluation are **unchanged**. PR #5 and paused UI PR #9 remain Draft/unmerged; main unmodified. No paid compute/API/subscription, external GPU, new credentials/account connections, physical Windows-PC action, Candidate adapter/weight generation or promotion, protected evaluation opening, real ToolBackend/notification/action, user-data deletion, irreversible architecture change or unapproved main merge. Synthetic fixtures and SQLite journals do **not** establish independent audit custody, trusted clock, authenticated human consent, cross-store atomicity, external effect identity or exactly-once dispatch. Physical offline GGUF gate still pending user-side hardware.
+
+## Next plan / 今後の方針
+
+1. Resolve all Run941 **exact-head** CI outcomes (Windows/Ubuntu × 3.11/3.12/3.13). Inspect actual failing job logs; correct any defect without relaxing safety. Never re-run duplicate equivalent workflows or claim latest-head PASS based on a different SHA.
+2. Extend Memory WAL/SHM pinned-reader last-close, CAS/ABA, scoped expiry and coherent event history under independent process faults; do not hydrate/repair foreign corrupted data.
+3. Strengthen Planner COMMIT-UNKNOWN manual-only recovery and atomic preaction/audit proof boundaries, immutable ToolRegistry/PermissionGate and trusted-clock review; integrate a disconnected Mock Executor only after lower-level exact-head GREEN evidence, without real tools.
+4. Extend privacy-safe Personal Context, proactive scheduling/observation backend contracts and free-only V3 guards while preserving frozen gates and UI pause. **ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run940: WAL IPC marker race fixed; independent Observation, Planner and Context offline regressions
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T18:54:52+09:00** (sampled immediately before the standard GitHub Contents write; reporting timestamp, **not** a trusted audit/consent/action clock). **Overall ARK/JARVIS NOT_PASSED.** All new UI/frontend development **PAUSED**, free-only non-UI synthetic/disconnected work.
 
