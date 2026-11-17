@@ -35,7 +35,7 @@ def test_nontext_persisted_memory_is_rejected_at_sql_hydration_boundary(
         )
 
     reopened = SQLiteMemoryStore(path, clock_ms=lambda: 1235)
-    with pytest.raises(MemorySchemaError, match="hydration"):
+    with pytest.raises(MemorySchemaError, match="stored memory row exceeds MemoryWrite bounds"):
         if operation == "get":
             reopened.get(record.memory_id, scope, include_expired=True)
         else:
