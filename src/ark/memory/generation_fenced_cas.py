@@ -218,7 +218,10 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
         raise MemoryGenerationCASRejected("exact generation scope required")
     for name in ("owner_id", "namespace"):
         value = getattr(scope, name)
-        if (\n            type(value) is not str or not value.strip() or "\x00" in value\n            or len(value) > 256\n        ):
+        if (
+            type(value) is not str or not value.strip() or "\x00" in value
+            or len(value) > 256
+        ):
             raise MemoryGenerationCASRejected("exact bounded generation scope required")
         try:
             size = len(value.encode("utf-8", errors="strict"))
