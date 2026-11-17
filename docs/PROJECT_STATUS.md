@@ -1,4 +1,41 @@
-# LATEST — ARK AI Run936: READ receipt preaccess, cross-process Memory CAS and COMMIT-UNKNOWN quarantine
+# LATEST — ARK AI Run937: scoped Memory expiry, cross-process Proactive, Planner input admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T15:50:39+09:00** (reporting clock sampled before normal GitHub Contents checkpoint write; **not** a trusted action/permission/audit clock). **ARK/JARVIS overall NOT_PASSED.** Free-only disconnected core; all new frontend/UI work **PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED as checked before this write. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405`; protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remained open/Draft/unmerged at `805b377697472268db02650a89c7a94b1c5337c8`; paused UI [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) open/Draft/unmerged at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **Exact Run937 work-basis HEAD:** `b726e98babfdd531d50a907d80159bbc510c8897` (Run936 checkpoint). **Last source/test HEAD:** `932984145d012d01f775af94a61ffa798167b9ca`. **Run937 technical report/checkpoint-write-basis HEAD:** `23c8613542bcfe1d9ace0903c80e373d46960c57`. **Previous PROJECT_STATUS blob:** `b690ea964397e67843f40d2ad39e6d163df13ce5`. **Checkpoint-result HEAD cannot self-embed:** the normal GitHub Contents API response commit SHA, a subsequent PR HEAD read and resulting blob SHA are the authority. These distinct work-basis, last test, report and checkpoint SHAs must not be conflated.
+
+## NEW this invocation — three independent non-UI regression packages
+
+1. [Memory expiry isolation `2ce52a18`](https://github.com/Iam-2squared/ark-ai/commit/2ce52a189dfb6dc81614836d657ec7d67d231cc7): **6 new parameterized cases** in `tests/test_memory_scoped_expiry_foreign_blob_run937.py`. A bounded due-page purge for one owner/namespace must delete only its own expired row and append one corresponding event, leaving a malformed BLOB field in another owner/namespace unchanged across cold reopen. The tests check storage-class preservation; no quarantine/recovery authorization or real user data.
+2. [Proactive cross-process interval `e9d8849e`](https://github.com/Iam-2squared/ark-ai/commit/e9d8849e629360d21cbc7ba7b84f03c47c05e524): **2 new parameterized cases** in `tests/test_proactive_cross_process_interval_run937.py`. Two independent subprocesses compete at the same synthetic policy interval; expect one content-minimized preparation and one denial, then verify cold restart and a distinct later preparation. Synthetic receipts remain false for notification, dispatch and replay authorization.
+3. [Planner nested argument admission `93298414`](https://github.com/Iam-2squared/ark-ai/commit/932984145d012d01f775af94a61ffa798167b9ca): **4 new cases** in `tests/test_planner_reflected_nested_argument_admission_run937.py`. Post-constructor reflected nested hostile containers/oversized integer are refused before executing callbacks; valid deeply nested canonical JSON still permits an inert ready PlanGraph. This does not create agent tool execution permission.
+
+**12 NEW cases AUTHORED (6+2+4); production implementation, V1/V2/Local UI/Launcher freezes and frozen contracts unchanged.** All operations use disposable/synthetic SQLite, mock/no-dispatch code and the ordinary GitHub Contents path. [Run937 technical report](https://github.com/Iam-2squared/ark-ai/blob/23c8613542bcfe1d9ace0903c80e373d46960c57/docs/JARVIS_RUN937_NON_UI_MEMORY_EXPIRY_PROACTIVE_PROCESS_PLANNER_ADMISSION.md) is saved. There was **no local full pytest or new exact-head GREEN verification**.
+
+## CI evidence (exact SHA, no inferred PASS)
+
+- **Prior Run936 checkpoint** `b726e98babfdd531d50a907d80159bbc510c8897`: [CI #44027382574](https://github.com/Iam-2squared/ark-ai/actions/runs/44027382574) **COMPLETED / six of six GREEN**, Windows and Ubuntu Python 3.11–3.13 individually inspected this invocation; this is **prior-head** evidence, not Run937.
+- Memory `2ce52a18`: [#44033708420](https://github.com/Iam-2squared/ark-ai/actions/runs/44033708420), **IN PROGRESS** on the inspected 6-job snapshot.
+- Proactive `e9d8849e`: [#44033817860](https://github.com/Iam-2squared/ark-ai/actions/runs/44033817860), **IN PROGRESS** on the inspected 6-job snapshot.
+- Planner `93298414`: [#44033980526](https://github.com/Iam-2squared/ark-ai/actions/runs/44033980526) **IN_PROGRESS**.
+- Technical report `23c8613542bcfe1d9ace0903c80e373d46960c57`: [#44034065688](https://github.com/Iam-2squared/ark-ai/actions/runs/44034065688) **QUEUED**.
+- A checkpoint commit generates a new CI workflow after the write; its run ID/status cannot be pre-recorded. **Latest Run937 all-six GREEN NOT VERIFIED.** No manual duplicate workflow dispatch. Any test failure requires inspection of that job's actual logs and semantics-preserving repair.
+
+## Frozen evidence and authorization/cost boundaries
+
+V1/V2/Local UI/Launcher frozen evidence, V3 protected Contract #1/provenance/contamination/reproducibility and protected final V2 evaluation, Observation v1 semantics, PR #5 approval gate, UI PR #9 paused/unmodified and main merge boundary unchanged. There was no paid/external GPU compute, Candidate/weight/adapter generation/promotion, protected scoring, credentials/new connected accounts, physical-PC action, real tool dispatch, irrevocable deletion or main merge. The required offline physical Windows GGUF gate remains pending. Local SQLite transaction evidence and process-local synthetic fixtures do **not** prove authenticated consent, trusted clock, independent audit custody, cross-store atomicity, or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Complete **exact final HEAD** 6-job Windows/Ubuntu × Python 3.11–3.13 CI verification. If any test fails, inspect precise logs and correct via the normal permitted write path while using independent non-UI workstreams; do not weaken fail-closed production rules.
+2. Continue scoped Memory expiry/CAS/ABA, WAL/SHM independent-process and close/restart event high-water correctness, ensuring no silent foreign-data repair or automatic uncertain retry.
+3. Advance Planner persisted COMMIT-UNKNOWN manual-only recovery and terminal propagation; only connect immutable ToolRegistry, exact-type PermissionGate, durable occurrence, audit-before-action and disconnected Mock Executor after independently GREEN lower-level evidence.
+4. Advance privacy-safe Personal Context, proactive/observation backends, startup readiness and V3 free-only guard fixtures; no UI work.
+5. Preserve free-only and protected evaluations/Candidate/real hardware/main merge approval boundaries. **ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run936: READ receipt preaccess, cross-process Memory CAS and COMMIT-UNKNOWN quarantine
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T14:53:38.820+09:00** (reporting wall-clock sampled before the normal GitHub Contents checkpoint write; **NOT** trusted action/audit time). **Overall ARK/JARVIS NOT_PASSED.** Free-only, disconnected **non-UI core**; new UI/frontend work **PAUSED**.
 
