@@ -1,4 +1,41 @@
-# LATEST — ARK AI Run943: immutable offline mock helper custody, pinned schema-reader vector, cold SQLite/WAL and mock process regression
+# LATEST — ARK AI Run944: Memory CAS/WAL race isolation, synthetic proactive NUL guard, free-only V3 cold-packet custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T22:54:06.633+09:00** (reporting wall clock sampled immediately before this normal GitHub Contents checkpoint update; **NOT** a trusted action, authorization, audit or expiry time). **Overall ARK/JARVIS NOT_PASSED.** No new UI/frontend work; all code/tests and diagnostics remain local-first, synthetic/disconnected and zero-new-paid-service.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite inspection. **Exact work-basis HEAD:** `b2f7d572fa640adc0a5dc2afc4c65b479ee498f2` (Run943 checkpoint). **Latest executable source/test HEAD:** `c04a4433aa4efda9516b2c8a7b182c9bfa17b5e0`. **Exact checkpoint-write basis HEAD:** `9d81ca23a50db05c4ce7d45983779fd5fc510c20` (Run944 technical report); **previous PROJECT_STATUS blob:** `8a2b4d9e7cfb61287a6b328a7ae618c4284b0d14`. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (no main write). [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/DRAFT/UNMERGED/UNTOUCHED at `805b377697472268db02650a89c7a94b1c5337c8`; paused [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/DRAFT/UNMERGED/UNTOUCHED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. The checkpoint-result HEAD cannot be embedded in its own Git blob; use the Contents write response and independent PR/branch/blob postwrite verification.
+
+## NEW this invocation — 4 coherent non-UI work packages, one production ingress guard, 20 new tests
+
+1. **Memory cross-process CAS/WAL race isolation**: [`734b4fe`](https://github.com/Iam-2squared/ark-ai/commit/734b4fe0141c73ff06d1348abac1179b3e26b2a6) adjusts the existing `test_memory_cross_process_cas_run424.py` fixture to retain an actual WAL reader through child startup and the CAS barrier. It separates a process-close `-shm` unlinked-inode `lstat` race from the target one-winner/one-event revision CAS assertion. It does **not** modify production Memory path security, ignore an unsafe sidecar, automatically retry an action, or assert that a historical alias was safe.
+2. **Synthetic Proactive policy NUL ingress hardening**: [source `5a54abf`](https://github.com/Iam-2squared/ark-ai/commit/5a54abfcb097c49658844291d24c1db59a764f70) denies `U+0000`-bearing policy string identities before hashing/persistence. [test `5cf2be1`](https://github.com/Iam-2squared/ark-ai/commit/5cf2be1a9aabf369dc1fb7321c52945bed5a9c24) adds **13** cases (12 invalid owner/namespace/definition/revision placements + one valid Unicode inert receipt); [`d897f02`](https://github.com/Iam-2squared/ark-ai/commit/d897f0297c986f2da4e94b2b649a0139d8f37d2b) fixes an escaped test-vector spelling to exercise actual NUL characters. No scheduling/notification dispatch, authenticated clock or consent.
+3. **V3 free-only detached packet cold-process custody**: [test `a6ffe78`](https://github.com/Iam-2squared/ark-ai/commit/a6ffe7889907ce43f9f40046f7aae5e6758abb80) adds **7** subprocess cases (three valid exact packet/crossbind digest comparisons and four malformed-packet refusals) with all paid/training/promotion/provenance flags False; [`c04a443`](https://github.com/Iam-2squared/ark-ai/commit/c04a4433aa4efda9516b2c8a7b182c9bfa17b5e0) fixes newline/NUL fixture literals. Synthetic JSON is **not** a V3 evaluation or compute-approval token.
+4. **Root-cause and gate documentation**: [`9d81ca2`](https://github.com/Iam-2squared/ark-ai/commit/9d81ca23a50db05c4ce7d45983779fd5fc510c20) adds [Run944 technical report](https://github.com/Iam-2squared/ark-ai/blob/9d81ca23a50db05c4ce7d45983779fd5fc510c20/docs/JARVIS_RUN944_NON_UI_WAL_CAS_PROACTIVE_NUL_V3_COLD_PACKET.md), distinguishing an unlinked regular WAL/SHM inode from a persistent alias attack, retaining expected fail-closed behavior and next integration gates.
+
+**20 new authored test cases** + one existing concurrency fixture modified. No local full-suite pytest/physical model validation claimed; **latest exact-head six-job GREEN is NOT YET VERIFIED**.
+
+## CI / exact-HEAD evidence and unresolved failure
+
+- **Previous Run943 latest executable source/test HEAD `04260df957f7a4a83b3e78e943ae92eb686ce211`:** [CI #44087822584](https://github.com/Iam-2squared/ark-ai/actions/runs/44087822584) **COMPLETED GREEN 6/6** (Windows/Ubuntu × Python 3.11/3.12/3.13), verified at invocation start. This is **previous-HEAD evidence only**.
+- **Previous Run943 checkpoint HEAD `b2f7d572fa640adc0a5dc2afc4c65b479ee498f2`:** [CI #44088190412](https://github.com/Iam-2squared/ark-ai/actions/runs/44088190412) **COMPLETED FAIL 1/6**: Ubuntu/Python 3.11 failed while starting a CAS child before the barrier due to a transient regular `-shm` inode with `st_nlink == 0`. Five other matrix jobs were GREEN. Its job log reports `1 failed, 17063 passed, 1 skipped`. Production Memory alias guard unchanged.
+- **Run944 patched Memory test HEAD `734b4fe...`:** [CI #44095998325](https://github.com/Iam-2squared/ark-ai/actions/runs/44095998325) **IN PROGRESS** at checkpoint prewrite check.
+- **Run944 corrected Proactive test HEAD `d897f02...`:** [CI #44096362348](https://github.com/Iam-2squared/ark-ai/actions/runs/44096362348) **IN PROGRESS** at checkpoint prewrite check.
+- **Run944 latest executable source/test HEAD `c04a443...`:** [CI #44096675572](https://github.com/Iam-2squared/ark-ai/actions/runs/44096675572) **QUEUED** at checkpoint prewrite check; all-six result not claimed.
+- **Run944 technical report HEAD `9d81ca2...`:** [CI #44097028434](https://github.com/Iam-2squared/ark-ai/actions/runs/44097028434) **QUEUED** at checkpoint prewrite check. This checkpoint commit itself may trigger another distinct CI; run ID/status cannot be known beforehand. **No manually duplicated equivalent workflow**.
+
+## Frozen evidence, authorization and remaining blockers
+
+Frozen V1/V2, Local UI/Launcher, Observation v1, V3 Contract #1, contamination/provenance/regression/reproducibility gates, protected V2 final evaluation and Candidate promotion rules remain unchanged; UI development remains PAUSED and PR #9 untouched. PR #5 stays Draft/unmerged. No paid/external GPU/compute/APIs, subscriptions, secrets/accounts, actual Candidate adapter/weights, promotion, live ToolBackend, destructive personal-data action, protected evaluation opening, physical Windows/GGUF gate execution, or user-approval-gated main merge. The real offline GGUF gate still requires the owner's physical machine. Neither a SHA, WAL result nor synthetic receipt provides independently authenticated source, trusted clock, consent, cross-store atomicity or exactly-once external dispatch.
+
+## Next plan / 今後の方針
+
+1. Settle **latest exact-HEAD** 6-job Windows/Ubuntu Python 3.11–3.13 CI. Inspect specific failing job logs if present; minimal test/source correction via normal Contents writes only. In particular ensure the WAL reader fixture isolates CAS without concealing unrelated alias violations. No duplicate equivalent reruns or previous-head PASS substitution.
+2. Improve Memory WAL/SHM last-close diagnosis, scope-isolated CAS/ABA, expiry-event prefix and retained coherent snapshots; never hydrate foreign corrupt rows or auto-repair untrusted storage.
+3. Advance Planner crash/COMMIT-UNKNOWN manual-only quarantine, registry-bound immutable ToolRegistry, exact-type PermissionGate and occurrence-scoped durable approval, and trusted-clock audit-before-action. Attach disconnected Mock Executor only after exact-head GREEN of each lower-level invariant. Never activate a real action.
+4. Continue Personal Context privacy/revocation, proactive synthetic scheduler, observation fixture adapters, and V3 free-only artifact/identity review on isolated reversible non-UI lanes. **Overall ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run943: immutable offline mock helper custody, pinned schema-reader vector, cold SQLite/WAL and mock process regression
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T21:58:38.463+09:00** (reporting wall clock sampled immediately before this normal GitHub Contents update; not a trusted action, approval, expiry or audit timestamp). **Overall ARK/JARVIS NOT_PASSED.** New UI/frontend development remains **PAUSED**; all work stayed local-first, synthetic/disconnected and free-only.
 
