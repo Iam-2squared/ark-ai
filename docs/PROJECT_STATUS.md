@@ -1,4 +1,45 @@
-# LATEST — ARK AI Run934: Memory scoped CAS, detached Context, WAL audit, Planner branch CAS
+# LATEST — ARK AI Run935: corrected Context digest; Memory WAL; Registry audit; Planner process CAS
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T13:54:00.145+09:00** (reporting wall clock sampled before normal GitHub Contents write, **not trusted audit/permission time**). **ARK/JARVIS overall NOT_PASSED.** Non-UI free-only/disconnected; all new frontend/UI work **PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED (re-read immediately before checkpoint). **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (independently verified). Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains at `805b377697472268db02650a89c7a94b1c5337c8`, Draft/unmerged; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, Draft/unmerged and untouched. **Exact Run935 work-basis HEAD:** `5e13743b7e64101f59683a2b94bdc36d05e5802e` (Run934 checkpoint). **Last source/test HEAD:** `7d12eb020cd8591b9be5f8712529174a5d3054f4`. **Technical report/checkpoint-write-basis HEAD:** `4576ccf83e2a3c7eb1319d64e20c21652ae5fe39`. **Previous status blob:** `a055a0776c13c0b803e9614626369bad5d688a00`. **Checkpoint-result HEAD cannot be self-embedded**; use normal GitHub Contents response commit SHA and re-read PR/branch HEAD and new status blob. Work-basis and checkpoint-result HEAD are distinct.
+
+## NEW this invocation — four coherent non-UI packages, 8 new tests and 6 corrected fixture cases
+
+1. [Personal Context digest fix `3f846a72`](https://github.com/Iam-2squared/ark-ai/commit/3f846a72817e0668cc3a573947c033897c1cf1e2): corrected six previously authored detached-preview tests' private hash domain from backslash-zero to canonical NUL, then added a positive digest-equality assertion against the unmodified producer output. Six existing cases are now aimed at self-consistently rehashed receipt/fixture rebinding, not a false digest mismatch. No production source changed.
+2. [Memory cross-process WAL `322a273c`](https://github.com/Iam-2squared/ark-ai/commit/322a273c6d9a999fa7c0be4d41b9ae3824111610): **2 new cases** with an independent SQLite snapshot reader while a second Memory handle performs generation-fenced row/event CAS. Reader-old/writer-new coherence, stale token refusal and post-last-close recovery are checked with disposable DBs.
+3. [Registry/PermissionGate/atomic `f24e8eba`](https://github.com/Iam-2squared/ark-ai/commit/f24e8eba67d4c2178e4a519f114e07e385969639): **4 new cases** enforce READ-vs-WRITE identity, deny WRITE grant without one-shot, show that an inert WRITE claim can be stored yet never authorizes a tool, and verify backend/effect revision drift. Never-execute backend.
+4. [Planner cross-process CAS `7d12eb02`](https://github.com/Iam-2squared/ark-ai/commit/7d12eb020cd8591b9be5f8712529174a5d3054f4): **2 new cases** for same-step stale CAS vs independent branch appends from a common prefix, recovered RUNNING quarantine and false-only dispatch/replay authority. Synthetic local journal only.
+
+**8 NEW parameterized cases AUTHORED; six old cases FIXED, NOT latest-HEAD PASS claims.** All changes on Draft PR #8, test-only; ARK production code, frozen contracts, V1/V2/Local UI/Launcher evidence, protected eval, V3 branch, UI branch and main unchanged. Evidence report: [Run935](https://github.com/Iam-2squared/ark-ai/blob/4576ccf83e2a3c7eb1319d64e20c21652ae5fe39/docs/JARVIS_RUN935_NON_UI_CONTEXT_DOMAIN_MEMORY_WAL_REGISTRY_PLANNER.md).
+
+## CI evidence / exact-SHA attribution
+
+- Previous checkpoint `5e13743b7e64101f59683a2b94bdc36d05e5802e`, [Run934 CI #44013582148](https://github.com/Iam-2squared/ark-ai/actions/runs/44013582148): **COMPLETED / 6 of 6 GREEN**, Windows/Ubuntu × Python 3.11–3.13 individually inspected; this is **prior-HEAD evidence only**.
+- [CI #44019456968](https://github.com/Iam-2squared/ark-ai/actions/runs/44019456968): {"in_progress":3,"success":3} by individual 6-job GitHub read; **not exact-head 6/6 GREEN** unless all six completed success.
+- [CI #44019571242](https://github.com/Iam-2squared/ark-ai/actions/runs/44019571242): {"in_progress":5,"success":1} by individual 6-job GitHub read; **not exact-head 6/6 GREEN** unless all six completed success.
+- [CI #44019680263](https://github.com/Iam-2squared/ark-ai/actions/runs/44019680263): {"in_progress":4,"success":2} by individual 6-job GitHub read; **not exact-head 6/6 GREEN** unless all six completed success.
+- [CI #44019752023](https://github.com/Iam-2squared/ark-ai/actions/runs/44019752023): {"in_progress":6} by individual 6-job GitHub read; **not exact-head 6/6 GREEN** unless all six completed success.
+- [CI #44020008228](https://github.com/Iam-2squared/ark-ai/actions/runs/44020008228): {"in_progress":2,"queued":4} by individual 6-job GitHub read; **not exact-head 6/6 GREEN** unless all six completed success.
+- CI attribution: `44019456968` belongs to Context `3f846a72`, `44019571242` to Memory `322a273c`, `44019680263` to Registry `f24e8eba`, `44019752023` to Planner `7d12eb02`, and `44020008228` to technical-report `4576ccf83e2a3c7eb1319d64e20c21652ae5fe39`. A new checkpoint-result SHA will start its own workflow after this write; its CI ID/result is not fabricated. **Exact final Run935 HEAD all-six GREEN NOT VERIFIED**.
+
+## Frozen contracts, authority and cost limits
+
+Draft PR #5 remains protected/unmerged under its explicit pre-paid-compute gate, PR #9 UI paused/unmerged, main unchanged. Frozen V1/V2/Local UI/Launcher evidence, V3 Contract #1/provenance/contamination/reproducibility, Observation v1 semantics and protected final V2 evaluation untouched. No billable services, external GPU, Candidate/weight/adapter generation, protected scoring, user secrets/new accounts, physical-PC action, real tool action, notification, irreversible deletion, main merge or authorization claim. Local context digest, SQLite receipt, synthetic token or PermissionGate check does **not** prove authenticated consent, trusted clock, independent path custody, cross-store atomicity or exactly-once external effects. Windows real GGUF/offline gate still pending.
+
+## Next plan / 今後の方針
+
+1. Review latest exact-head six-job CI and all new subprocess cases; if FAIL, inspect logs and make minimum semantics-preserving correction via ordinary GitHub path while switching to an independent safe lane. Never claim partially completed six-job PASS.
+2. Continue disposable Memory SQLite WAL/SHM cross-process last-close/alias race, scoped corruption, CAS/ABA, expiry and coherent row/event evidence; no silent repair or path-custody overclaim.
+3. Strengthen Planner COMMIT-UNKNOWN manual-only recovery, terminal propagation and independent branch persistence; never auto-replay an ambiguous WRITE.
+4. Only after exact-head GREEN, verify registry-bound immutable ToolRegistry + exact PermissionGate + durable occurrence + trusted-clock audit-before-action + disconnected Mock Executor integration. Real WRITE remains disabled.
+5. Continue privacy-safe Personal Context, proactive and observation back-end contracts and free-only V3 approval/path/identity guards. Preserve blocked paid, hardware, protected-eval, Candidate, frozen-contract and approval-gated merge lanes.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run934: Memory scoped CAS, detached Context, WAL audit, Planner branch CAS
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T12:55:25.558+09:00** (reporting wall-clock sampled immediately before normal GitHub Contents write; **NOT** a trusted permission/audit timestamp). **Overall ARK/JARVIS NOT_PASSED**. Free-only, disconnected **non-UI core**; all new UI/frontend development **PAUSED**.
 
