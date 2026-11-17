@@ -42,12 +42,6 @@ class ObservationEnvelope:
                 raise ValueError(f"{name} exceeds observation identifier budget")
             if not value.strip():
                 raise ValueError(f"{name} must be a non-empty exact string")
-            # A direct envelope (unlike fixture adapters) previously accepted
-            # NUL in provenance/privacy labels. Reject native separators
-            # before identity serialization or downstream binding.
-            if "\x00" in value:
-                raise ValueError(f"{name} contains a NUL separator")
-
             # Inert fixture metadata must not carry unbounded raw media or
             # arbitrary-sized identifiers into hashes and downstream reviewers.
             # The envelope crosses digest/serialization boundaries in UTF-8.
