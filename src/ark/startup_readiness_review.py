@@ -59,6 +59,11 @@ def _identifier(value: object, label: str) -> str:
     # bridge; this changes no frozen runtime contracts or dispatch authority.
     if "\x00" in value:
         raise ValueError(f"{label} contains NUL separator")
+    # Startup IDs and failure diagnostics may be copied to human-visible
+    # reports. Refuse C0/DEL controls (including CR/LF and tabs), which can
+    # split or spoof diagnostics, before retaining any readiness assertion.
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise ValueError(f"{label} contains ASCII control character")
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
