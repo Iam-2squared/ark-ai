@@ -1,4 +1,43 @@
-# LATEST — ARK AI Run938: Memory due-page atomicity, preaction corruption quarantine, Planner independence, Context privacy
+# LATEST — ARK AI Run939: bounded pre-action catalog identity, scoped WAL expiry, Observation/Context process-restart integrity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T17:51:51.696+09:00** (reporting wall-clock sampled before the normal GitHub Contents checkpoint write; this is **not** a trusted audit, approval, retention or action clock). **Overall ARK/JARVIS NOT_PASSED.** All new UI/frontend development **PAUSED**; non-UI, free-only synthetic/disconnected development only.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at final prewrite read; **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Protected V3 [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; paused UI [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **Exact Run939 work-basis HEAD:** `4d9434469f2be40e2cff0498d927df5008449e01` (Run938 checkpoint). **Last executable test/source HEAD:** `4c586eff68ad48057e60d4aa43e590c42b18f2a0`. **Technical-report HEAD and checkpoint-write-basis HEAD:** `650f027be27cc30c3cc5aaa5fd61fe07a186316c`. **Previous PROJECT_STATUS blob:** `dcc65a9aff34176ce20d42cc1675fd85193ded18`. The checkpoint-result commit SHA cannot self-embed in its own committed content; the normal GitHub Contents result commit SHA, followed by fresh PR HEAD/blob verification, identifies it separately.
+
+## NEW this invocation — four coherent non-UI core packages; 22 new regression cases
+
+1. **Preaction source hardening** [`5499ac7e`](https://github.com/Iam-2squared/ark-ai/commit/5499ac7ef083aeefbf629a3d056a4e916e181d71): close a concrete SQL hydration gap in the *synthetic atomic pre-action* ledger. SQLite catalog type/name/table identity byte lengths now have a cumulative 4,096-byte SQL preflight bound, in addition to the existing object count and DDL-byte budget, before any `sqlite_master` text is returned to Python. No schema, contract, receipt authority or live dispatch change.
+2. **Preaction adversarial tests** [`78945b2f`](https://github.com/Iam-2squared/ark-ai/commit/78945b2fde8d674e6ff55595bbf01593d282bb4d): **6 tests**, covering oversized `name`/`tbl_name`/`type`, UTF-8 byte expansion, cumulative split-field overflow and pristine v1 catalog success; no forged catalog is repaired or executed. Synthetic memory-only SQLite fault injection.
+3. **Memory WAL process expiry** [`315c3e8f`](https://github.com/Iam-2squared/ark-ai/commit/315c3e8f6576b57a1b17564bc3703a4f0d99b4de): **4 tests**, independent read-only/readwrite WAL reader × foreign owner/namespace. Scoped expiry commits row+event atomically while another process retains its old snapshot; unrelated scope survives, stale generation CAS is denied, cold last-close retains the new event history. Disposable SQLite, synthetic time; no authenticated retention policy.
+4. **Observation process identity** [`590550b1`](https://github.com/Iam-2squared/ark-ai/commit/590550b1b258f9abd9ec2220613d5154098e02d4): **8 tests** across four fixture kinds and optional parent hash, requiring deterministic local digest/envelope identity after a separate-process reconstruction, privacy-scoped IDs, unchanged content digest and no raw fixture output. Zero sensor access.
+5. **Personal Context process restart** [`4c586eff`](https://github.com/Iam-2squared/ark-ai/commit/4c586eff68ad48057e60d4aa43e590c42b18f2a0): **4 tests** for matching detached preview re-verification and refusal of changed content, out-of-scope data or expired data across a local subprocess; private fixture data stays out of printed diagnostics and consent/export/dispatch/retention booleans remain False.
+6. [Run939 detailed technical report](https://github.com/Iam-2squared/ark-ai/blob/650f027be27cc30c3cc5aaa5fd61fe07a186316c/docs/JARVIS_RUN939_NON_UI_PREACTION_CATALOG_WAL_OBSERVATION_CONTEXT.md) saved at `650f027be27cc30c3cc5aaa5fd61fe07a186316c`, before this canonical checkpoint.
+
+**22 new cases AUTHORED (6+4+8+4), targeted source guard added.** A locally reproduced SQLite forged-catalog smoke check confirmed that the target schema has four objects and the new SQL byte predicate flags the oversized identities; it is not a substitute for full repository tests. No full local pytest, real-model benchmark or exact-current-HEAD all-six CI PASS claimed.
+
+## CI evidence / exact-head limitations
+
+- Prior checkpoint `4d9434469f2be40e2cff0498d927df5008449e01`: [CI #44041996027](https://github.com/Iam-2squared/ark-ai/actions/runs/44041996027) **COMPLETED, all six jobs GREEN** (Windows/Ubuntu × Python 3.11, 3.12, 3.13, independently checked at start). This is prior-head evidence.
+- Source guard [#44049384833](https://github.com/Iam-2squared/ark-ai/actions/runs/44049384833) and preaction tests [#44049465146](https://github.com/Iam-2squared/ark-ai/actions/runs/44049465146): **IN PROGRESS** on last read.
+- Memory WAL cases [#44049626836](https://github.com/Iam-2squared/ark-ai/actions/runs/44049626836): **IN PROGRESS** on last read.
+- Observation cases [#44049735180](https://github.com/Iam-2squared/ark-ai/actions/runs/44049735180), Context cases [#44049914211](https://github.com/Iam-2squared/ark-ai/actions/runs/44049914211), report [#44050110415](https://github.com/Iam-2squared/ark-ai/actions/runs/44050110415): **QUEUED** on last read.
+- A distinct CI run will arise after this checkpoint commit; its ID/outcome cannot be pre-recorded. **New 22 cases and latest checkpoint HEAD six-job GREEN NOT YET VERIFIED.** Never use earlier-HEAD success as latest-head evidence; no duplicate manual runs.
+
+## Frozen evidence, blockers, authorization
+
+Frozen V1/V2/Local UI/Launcher evidence and contracts, Observation v1, protected V2 final evaluation, V3 Contract #1 contamination/provenance/regression/reproducibility and Candidate promotion gates remain unchanged. Draft PR #5 and Draft paused UI PR #9 unmerged/untouched, main unchanged. No paid or external GPU compute, paid APIs, new credentials or connections, generated Candidate weights/adapters, protected evaluation opening, real model operation, live ToolBackend or external execution, action consent, destructive user data actions, material irreversible architecture change or main merge. Synthetic SQLite WAL and local preaction audits do **not** prove independent custody, trusted clock, cross-store atomicity, authenticated human consent, or exactly-once external effects. Offline physical Windows GGUF gate still requires owner hardware action.
+
+## Next plan / 今後の方針
+
+1. Confirm **post-source-and-regression exact HEAD** six-job CI and inspect real job logs for any failure; make the minimum semantics-preserving correction through normal GitHub Contents, switching to independent non-UI work while CI runs.
+2. Extend Memory bounded expiry/CAS/ABA, WAL/SHM last-close and event high-water under independent processes; never silently repair damaged or foreign rows.
+3. Advance Planner persisted COMMIT-UNKNOWN manual-only recovery, terminal propagation, durable registry-bound approval and audit-before-action, then connect disconnected Mock Executor only after each lower-level invariant has exact-head GREEN.
+4. Extend Personal Context privacy/revocation, proactive scheduler lifecycle, Observation fixture adapters and free-only V3 approval/path/reproducibility guards with no UI development.
+5. Keep protected evaluation, training, physical-PC and main-merge human-approval boundaries. **ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run938: Memory due-page atomicity, preaction corruption quarantine, Planner independence, Context privacy
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T16:50:42+09:00** (reporting clock sampled immediately before the normal GitHub Contents checkpoint; not a trusted approval/audit/action clock). **Overall ARK/JARVIS NOT_PASSED.** Non-UI, free-only disconnected work. All new frontend/UI development remains **PAUSED**.
 
