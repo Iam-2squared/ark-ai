@@ -421,6 +421,15 @@ class ToolRegistry:
         # Capture the ORIGINAL caller-owned scalar carriers before ToolCall
         # construction, which may itself be a synthetic callback boundary.
         original = (call.tool, call.capability, call.scope, call.arguments)
+        # Frozen ToolCall v1 accepts opaque labels, but this opt-in registry
+        # must not bind native NUL separators or malformed UTF-8 scopes into
+        # a supposedly exact backend identity. Preserve ToolCall v1 unchanged.
+        if "\x00" in original[2]:
+            raise ValueError("registered ToolCall scope contains NUL separator")
+        try:
+            original[2].encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("registered ToolCall scope is not valid UTF-8") from exc
         stable = ToolCall(*original)
         _require_original_toolcall_contract()
         epoch = (stable.tool, stable.capability, stable.scope, stable.request_id)
