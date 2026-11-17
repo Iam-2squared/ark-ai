@@ -82,12 +82,14 @@ def test_fresh_recheck_denial_getter_cannot_swap_equal_type_field(
     registry, gate, call, grant, backend = _fixture()
     retained = _receipt(registry, gate, call, grant)
     expected = replace(retained)
+    callback_reached = []
     monkeypatch.setattr(
         recheck, "review_disconnected_registered_read",
         lambda *args, **kwargs: expected,
     )
 
     def late_change(self):
+        callback_reached.append(True)
         if self is expected:
             original = getattr(self, field)
             replacement = (" " + original)[1:]
@@ -100,10 +102,13 @@ def test_fresh_recheck_denial_getter_cannot_swap_equal_type_field(
         "durable_permission_proven",
         property(late_change),
     )
-    with pytest.raises(recheck.DisconnectedReadReceiptRejected, match="differs"):
+    with pytest.raises(recheck.DisconnectedReadReceiptRejected, match="epoch changed"):
         recheck.verify_disconnected_registered_read_receipt(
             retained, registry, gate, call, (grant,), now_ms=100,
         )
+    # The stronger entry preflight rejects the substituted class property
+    # before the late getter or fresh reviewer can run.
+    assert callback_reached == []
     assert backend.calls == 0
     assert not gate._consumed_tokens
 
