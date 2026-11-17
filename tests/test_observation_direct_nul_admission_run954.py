@@ -1,4 +1,9 @@
-"""Direct observation ingress must match privacy-safe fixture NUL admission."""
+"""Compatibility regression: frozen direct NUL identity versus fixture veto.
+
+Frozen direct ObservationEnvelope v1 encodes NUL unambiguously into JSON and
+must retain that behavior. Only opt-in fixture adapters reject native NUL.
+No media acquisition, dispatch or real private data is involved.
+"""
 
 import pytest
 
@@ -20,17 +25,19 @@ def _envelope(**overrides: object) -> ObservationEnvelope:
 
 
 @pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
-def test_direct_observation_rejects_native_nul_identity(field: str) -> None:
-    with pytest.raises(ValueError, match="NUL separator"):
-        _envelope(**{field: "clean\x00hidden"})
+def test_frozen_direct_v1_retains_nul_as_distinct_json_identity(field: str) -> None:
+    nul = _envelope(**{field: "clean\x00hidden"})
+    plain = _envelope(**{field: "cleanhidden"})
+    assert nul.observation_id != plain.observation_id
+    assert nul.observation_id.startswith("obs_")
 
 
 @pytest.mark.parametrize("field", ("source_id", "adapter_id", "privacy_scope"))
-def test_reflected_nul_is_rejected_before_direct_identity_hash(field: str) -> None:
+def test_reflected_nul_change_remains_distinct_in_frozen_identity(field: str) -> None:
     observation = _envelope()
+    before = observation.observation_id
     object.__setattr__(observation, field, "clean\x00hidden")
-    with pytest.raises(ValueError, match="NUL separator"):
-        _ = observation.observation_id
+    assert observation.observation_id != before
 
 
 def test_valid_multibyte_provenance_remains_deterministic_without_raw_media() -> None:
@@ -46,7 +53,7 @@ def test_valid_multibyte_provenance_remains_deterministic_without_raw_media() ->
     assert not hasattr(a, "authorization")
 
 
-def test_existing_disconnected_fixture_enforces_same_nul_boundary() -> None:
+def test_optin_disconnected_fixture_rejects_nul_without_changing_v1() -> None:
     with pytest.raises(ValueError, match="NUL separator"):
         fixture_text_observation(
             "synthetic only",
