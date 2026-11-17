@@ -64,6 +64,14 @@ def test_simultaneous_processes_have_one_cas_winner_and_one_audited_update(
     scope = MemoryScope("offline-owner", "private")
     initial = SQLiteMemoryStore(path, clock_ms=lambda: 1000)
     record = initial.put(MemoryWrite(scope, "single-source", "version-one"))
+    # Keep an actual WAL reader open during child startup. Otherwise SQLite
+    # may unlink its final -shm inode between another process's lstat and
+    # link-count inspection. That fail-closed *startup* refusal is valid, but
+    # this test must isolate competing revision-CAS operations, not race the
+    # unrelated last-connection WAL cleanup. Never relax the sidecar guard.
+    keeper = sqlite3.connect(path)
+    keeper.execute("BEGIN")
+    keeper.execute("SELECT COUNT(*) FROM memories").fetchone()
     gate = root / "start"
     processes = []
     for index in range(2):
@@ -100,6 +108,7 @@ def test_simultaneous_processes_have_one_cas_winner_and_one_audited_update(
             if process.poll() is None:
                 process.kill()
                 process.communicate()
+        keeper.close()
     assert all(process.returncode == 0 for process in processes), responses
     outcomes = sorted(output.strip() for output, _error in responses)
     # Under genuine cross-process WAL sidecar turnover, the custody gate may
