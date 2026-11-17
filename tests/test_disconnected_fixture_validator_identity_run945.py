@@ -56,39 +56,32 @@ def test_metadata_validator_rebinding_is_denied_before_callback(
 @pytest.mark.parametrize(
     "helper_name", ("_digest", "_require_original_identity_carrier"),
 )
-def test_interleaved_validator_rebinding_aborts_before_synthetic_hash(
+def test_interleaved_validator_rebinding_aborts_before_final_envelope(
     monkeypatch: pytest.MonkeyPatch, helper_name: str,
 ) -> None:
     original_check = fixture._require_fixture_boundary
-    actual_hash = fixture._ORIGINAL_SHA256
     checks = 0
-    hashes = 0
+    invoked: list[tuple[object, ...]] = []
 
-    def observed_hash(data: bytes):
-        nonlocal hashes
-        hashes += 1
-        return actual_hash(data)
+    def hostile(*args: object, **kwargs: object) -> None:
+        invoked.append(args)
+        raise AssertionError("mutated validator reached private metadata")
 
-    # Hashing itself is deliberately NOT substituted: the fixture module
-    # pins its SHA callable, and a fake hash would not model the same protocol.
     def interleaved_check() -> None:
         nonlocal checks
         original_check()
         checks += 1
-        if checks == 1:
-            def hostile(*args: object, **kwargs: object):
-                raise AssertionError("mutated validator reached private metadata")
-
+        # The second boundary is immediately after the original preflight
+        # constructor. Substitution here must be rejected on the next guard,
+        # before constructing the final payload-bearing envelope.
+        if checks == 2:
             monkeypatch.setattr(observations, helper_name, hostile)
 
     monkeypatch.setattr(fixture, "_require_fixture_boundary", interleaved_check)
-    # Keep a non-executable local witness to distinguish guard invocation
-    # from untrusted hashing, without replacing the pinned SHA implementation.
-    observed_hash(b"sentinel")
     with pytest.raises(fixture.DisconnectedFixtureRejected, match="boundary changed"):
         _make()
-    assert checks == 1
-    assert hashes == 1
+    assert checks == 2
+    assert invoked == []
 
 
 def test_original_helpers_still_produce_content_minimized_envelope() -> None:
