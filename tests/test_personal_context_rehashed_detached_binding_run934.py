@@ -23,7 +23,7 @@ _OWNER = "a" * 64
 _SCOPE = "b" * 64
 _OTHER_SCOPE = "c" * 64
 _SECRET = "SYNTHETIC-SENSITIVE-CONTEXT-NO-USER-DATA"
-_DOMAIN = b"ARK-local-context-fixture-preview-v1\\0"
+_DOMAIN = b"ARK-local-context-fixture-preview-v1" + bytes((0,))
 
 
 def _fixture() -> OfflineContextFixture:
@@ -47,6 +47,10 @@ def test_rehashed_detached_preview_cannot_rebind_original_fixture(
         observed_at_ms=1_000,
     )
     # This is an exact, valid fixture preview; its authority flags are false.
+    # Prove our private test digest uses the production NUL-domain protocol.
+    assert hashlib.sha256(
+        _DOMAIN + original.canonical_local_json.encode("utf-8"),
+    ).hexdigest() == original.local_digest
     assert verify_offline_context_preview(
         original, fixtures, owner_digest=_OWNER,
         allowed_scope_digests=scopes, observed_at_ms=1_000,
