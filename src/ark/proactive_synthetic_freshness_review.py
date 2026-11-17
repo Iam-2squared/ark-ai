@@ -163,6 +163,11 @@ def review_prepared_trigger_freshness(
 
     def assert_epoch() -> None:
         _assert_original_freshness_carriers()
+        # Any retained-witness/SQLite/history hook may replace identity()
+        # *after* initial admission. Reject that new code before the next
+        # policy field lookup or identity call; a changed contract is not a
+        # valid continuation of the originally reviewed policy epoch.
+        _require_original_policy_contract()
         current_carriers = tuple(getattr(policy, name) for name in policy_fields)
         current_policy = tuple((type(value), value) for value in current_carriers)
         if (
