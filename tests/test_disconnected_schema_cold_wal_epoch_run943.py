@@ -19,7 +19,6 @@ from ark.disconnected_sqlite_schema_probe import (
     review_disconnected_sqlite_schema,
 )
 
-
 _CHILD = """
 import json
 import sqlite3
