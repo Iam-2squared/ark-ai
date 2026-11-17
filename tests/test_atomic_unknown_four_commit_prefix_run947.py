@@ -54,14 +54,14 @@ def _claim(letter: str) -> AtomicIntentClaim:
 
 @pytest.mark.parametrize(("prefix_count", "target", "expected"), (
     (0, "a", "LOCALLY_RECORDED"),
-    (0, "z", "ADVANCED_OTHER"),
+    (0, "e", "ADVANCED_OTHER"),
     (1, "a", "PREEXISTING"),
     (1, "d", "LOCALLY_RECORDED"),
     (3, "b", "PREEXISTING"),
     (3, "d", "LOCALLY_RECORDED"),
-    (3, "z", "ADVANCED_OTHER"),
+    (3, "e", "ADVANCED_OTHER"),
     (4, "d", "PREEXISTING"),
-    (4, "z", "UNCHANGED"),
+    (4, "e", "UNCHANGED"),
 ))
 def test_four_commit_local_prefix_classification_is_cold_and_denied(
     tmp_path, prefix_count: int, target: str, expected: str,
