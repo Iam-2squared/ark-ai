@@ -186,7 +186,7 @@ def _require_bounded_source_id(source_id: object) -> None:
     generation-CAS path must not treat a multibyte identifier as a bounded
     512-byte identity or let unpaired surrogates escape as encoding errors.
     """
-    if type(source_id) is not str or not source_id.strip():
+    if type(source_id) is not str or not source_id.strip() or "\x00" in source_id:
         raise MemoryGenerationCASRejected("exact nonblank generation source required")
     # Preserve the original cheap character cap before any UTF-8 allocation.
     # A direct observation caller is not required to construct MemoryWrite.
@@ -218,7 +218,7 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
         raise MemoryGenerationCASRejected("exact generation scope required")
     for name in ("owner_id", "namespace"):
         value = getattr(scope, name)
-        if type(value) is not str or not value.strip() or len(value) > 256:
+        if (\n            type(value) is not str or not value.strip() or "\x00" in value\n            or len(value) > 256\n        ):
             raise MemoryGenerationCASRejected("exact bounded generation scope required")
         try:
             size = len(value.encode("utf-8", errors="strict"))
