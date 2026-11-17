@@ -1,4 +1,45 @@
-# LATEST — ARK AI Run944: Memory CAS/WAL race isolation, synthetic proactive NUL guard, free-only V3 cold-packet custody
+# LATEST — ARK AI Run945: disconnected Observation validator custody, unknown WRITE retained-prefix and free-only V3 mismatch guards
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T23:53:27.003+09:00** (reporting wall-clock sample shortly before normal GitHub Contents checkpoint write, **NOT** an authenticated action/audit/expiry clock). **Overall ARK/JARVIS NOT_PASSED.** New UI/frontend remains PAUSED. All activity is non-UI, disconnected/synthetic and zero-new-paid-service.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite. **Exact work-basis HEAD:** `04781c26aa00ad74ae90bd59f3b33e6b1d9126fb` (Run944 checkpoint). **Latest executable source/test HEAD:** `2cd795805939d3d10887f628d5ce0bec1b48e110`. **Checkpoint-write basis HEAD:** `8389628cecd2be4613b8a43c91ff56af28098b44` (Run945 technical report); **previous PROJECT_STATUS blob:** `3657541fc1c547d9283925bbe15e0940092e34ca`. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (unchanged). PR #5 OPEN/DRAFT/UNMERGED/UNTOUCHED; PR #9 OPEN/DRAFT/UNMERGED/UNTOUCHED. The resulting checkpoint commit SHA cannot be embedded in its own blob: verify it from the normal Contents response and postwrite GitHub PR/ref/blob reads, not from a forecast.
+
+## NEW this invocation — four implementation/test packages plus grounded report
+
+1. **Observation optional adapter production guard**: `bb903297cb7d7562ccb0d55089e4ab29f45d2f43` pins the import-original private metadata validators `observations._require_original_identity_carrier`, `_require_original_digest_implementation`, and `_digest` before preflight. Rebound module callables are refused without invoking them on source/privacy metadata. `c8533704c41ede00c26aa8cbee37036a5693cbba` adds six regression variants; `b00fad2f990ea9bd013f27d18ac8607d567b33d1` corrects the reentrant fault-injection timing to *after* benign preflight. Neither a local digest nor a Python module guard authenticates a sensor, process or user.
+2. **Atomic pre-action unknown-outcome retained-prefix matrix**: `260959995f21cb4fdedd04f1a9de9ee54c3a7329` adds 12 new test variants for genesis/first/second retained prefixes across `PREEXISTING`, `LOCALLY_RECORDED`, `ADVANCED_OTHER`, `UNCHANGED`, and tampered tip refusal. A locally recorded intent NEVER confirms an external side effect or authorizes a retry.
+3. **Registered WRITE identity/replay protection**: `a63c7a87aaa8245c0be2af474abd271959ce876d` adds four test variants. A same-occurrence WRITE rebinding to new backend revision, scope or arguments is refused by the disconnected unknown-outcome reviewer. A capability grant alone still cannot authorize a registered WRITE; the deliberately non-executable backend has zero calls.
+4. **V3 free-only cold-process numeric/identity guards**: `2cd795805939d3d10887f628d5ce0bec1b48e110` adds seven independent subprocess variants: canonical JSON with a device, capacity, tokenizer, VRAM ordering/capacity, elapsed time, or exact-integer precision mismatch must fail closed. No GPU, V2 protected evaluation, Candidate weight/adapter or promotion is opened.
+5. **Run945 focused threat-model/evidence record**: `8389628cecd2be4613b8a43c91ff56af28098b44` adds [Run945 technical report](https://github.com/Iam-2squared/ark-ai/blob/8389628cecd2be4613b8a43c91ff56af28098b44/docs/JARVIS_RUN945_NON_UI_OBSERVATION_ATOMIC_UNKNOWN_REGISTERED_V3.md), distinguishing process-local mutation custody, local SQLite presence and synthetic V3 checks from authenticated authority.
+
+**29 new authored tests** (6 + 12 + 4 + 7) and one production source hardening; the test count is **NOT** evidence that these tests passed. No local whole-suite pytest, real model evaluation or physical device validation claimed.
+
+## CI evidence (exact-HEAD only)
+
+- **Run944 checkpoint HEAD `04781c26...`:** [CI #44097401425](https://github.com/Iam-2squared/ark-ai/actions/runs/44097401425) **COMPLETED GREEN 6/6**, verified on all Windows/Ubuntu × Python 3.11/3.12/3.13 jobs at Run945 start. This is **previous-head evidence**, NOT Run945 acceptance. Run944 intermediary CI #44095998325, #44096362348, #44096675572, #44097028434 also **COMPLETED GREEN 6/6** at Run945 start.
+- **Run945 source `bb903297...`:** [CI #44106924613](https://github.com/Iam-2squared/ark-ai/actions/runs/44106924613) IN PROGRESS (Ubuntu 3.12 GREEN, remaining jobs in progress at last inspected check).
+- **Run945 corrected Observation test `b00fad2f...`:** [CI #44107105901](https://github.com/Iam-2squared/ark-ai/actions/runs/44107105901) IN PROGRESS at last check.
+- **Run945 atomic-prefix test `260959995...`:** [CI #44107257890](https://github.com/Iam-2squared/ark-ai/actions/runs/44107257890) IN PROGRESS (one job QUEUED at last check).
+- **Run945 registered-WRITE test `a63c7a87...`:** [CI #44107450869](https://github.com/Iam-2squared/ark-ai/actions/runs/44107450869) QUEUED.
+- **Run945 latest executable test HEAD `2cd79580...`:** [CI #44107798118](https://github.com/Iam-2squared/ark-ai/actions/runs/44107798118) QUEUED at last check.
+- **Run945 report HEAD `8389628c...`:** [CI #44107965954](https://github.com/Iam-2squared/ark-ai/actions/runs/44107965954) QUEUED at last check. This checkpoint result may trigger a distinct run after its write; no fabricated ID/result or manual duplicate rerun.
+
+**Exact latest-HEAD six-job GREEN NOT YET VERIFIED.** Do not cite an earlier commit's green checks as proof that the new guard and 29 tests pass.
+
+## Frozen evidence, authorization and blockers
+
+Frozen V1/V2/Local UI/Launcher/Observation v1 evidence, V3 Contract #1, contamination, provenance, reproducibility, regression and protected V2 evaluation gates are unchanged. Draft PR #5 remains unmerged; paused UI Draft PR #9 remains unmodified/unmerged. No main merge, UI/frontend development, paid/external compute, GPU, paid API, subscription, purchase, secrets/account connection, real Candidate generation/weight/adapter, promotion, external ToolBackend, notifications, irreversible data destruction, physical owner-PC action or protected evaluation opening. The actual GGUF hardware gate requires the owner's device. A synthetic fixture, local SQLite chain, cold subprocess or passing SHA-256 is not independent custody, consent, trusted time, cross-store atomicity or exactly-once external effect evidence.
+
+## Next plan / 今後の方針
+
+1. Verify **latest exact-HEAD** CI all 6 OS/Python matrix jobs. Inspect failing step logs if any; patch the smallest actual defect via normal GitHub Contents only, never bypass blocked writes or dilute the protected gate. Do not rerun equivalent workflows.
+2. Keep Memory WAL/SHM last-close and CAS/ABA + expiry event-chain integrity first, including scope-isolated coherent snapshots and process-independent rollback denial.
+3. Advance Planner COMMIT-UNKNOWN recovery, immutable registered ToolRegistry, exact-type PermissionGate, durable occurrence-scoped authorization and authenticated-clock audit-before-action only as reversible disconnected contracts; no automatic replay or actual ToolBackend.
+4. Continue Personal Context retention/erasure, proactive scheduling, observation fixtures and free-only V3 identity/provenance reviews in independent lanes. Integrate components only after lower-level exact-head GREEN. **Overall ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run944: Memory CAS/WAL race isolation, synthetic proactive NUL guard, free-only V3 cold-packet custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T22:54:06.633+09:00** (reporting wall clock sampled immediately before this normal GitHub Contents checkpoint update; **NOT** a trusted action, authorization, audit or expiry time). **Overall ARK/JARVIS NOT_PASSED.** No new UI/frontend work; all code/tests and diagnostics remain local-first, synthetic/disconnected and zero-new-paid-service.
 
