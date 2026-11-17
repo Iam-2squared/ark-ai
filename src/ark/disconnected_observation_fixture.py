@@ -22,6 +22,13 @@ _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_KIND = ObservationKind
 _ORIGINAL_ENVELOPE = ObservationEnvelope
+# The envelope's private metadata validators are imported helpers, not class
+# descriptors. Their module bindings must remain original before construction
+# reads a source/scope/parent label; replacing them can bypass validation or
+# execute a caller-installed callback on those private strings.
+_ORIGINAL_IDENTITY_GUARD = observations._require_original_identity_carrier
+_ORIGINAL_DIGEST_GUARD = observations._require_original_digest_implementation
+_ORIGINAL_DIGEST_VALIDATOR = observations._digest
 
 
 class DisconnectedFixtureRejected(ValueError):
@@ -39,12 +46,15 @@ def _require_fixture_boundary() -> None:
         or ObservationEnvelope is not _ORIGINAL_ENVELOPE
         or observations.ObservationEnvelope is not _ORIGINAL_ENVELOPE
         or observations.ObservationKind is not _ORIGINAL_KIND
+        or observations._require_original_identity_carrier is not _ORIGINAL_IDENTITY_GUARD
+        or observations._require_original_digest_implementation is not _ORIGINAL_DIGEST_GUARD
+        or observations._digest is not _ORIGINAL_DIGEST_VALIDATOR
     ):
         raise DisconnectedFixtureRejected("disconnected fixture boundary changed")
     # Class descriptor guards prevent a patched dataclass getter/constructor
     # from being accepted as the original fixture envelope implementation.
-    observations._require_original_identity_carrier()
-    observations._require_original_digest_implementation()
+    _ORIGINAL_IDENTITY_GUARD()
+    _ORIGINAL_DIGEST_GUARD()
 
 
 def make_disconnected_fixture(
