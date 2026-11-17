@@ -1,4 +1,42 @@
-# LATEST — ARK AI Run949: generation-CAS expiry, cold Planner terminal, proactive cursor and privacy-veto rollback regressions
+# LATEST — ARK AI Run950: Memory UTF-8 generation CAS, interleaved Planner revision, Observation kind/time identity, proactive int64 bounds
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T04:52:33.618+09:00** (wall-clock reporting sample immediately before ordinary Contents write; **NOT** trusted consent/audit/expiry/execution time). **Overall ARK/JARVIS NOT_PASSED.** Non-UI, synthetic, zero-new-cost, disconnected testing only.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), re-read OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `731bf6698c81a9b9f3f06737eeccf87f2a785b4f` (Run949 checkpoint). **Latest source/test HEAD:** `2aa2e5fec203f0caba303bf6b8f5242f438ae0d0`. **Checkpoint-write basis HEAD:** `d5533b44d9a9f3b0e638ec81a13563fc6f0c3d10` (Run950 report). **Previous PROJECT_STATUS blob:** `550b480e93b1e82b312f80e1f8a6740f438461b6`. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` from PR base, not modified. **PR #5:** OPEN/DRAFT/UNMERGED/UNTOUCHED `805b377697472268db02650a89c7a94b1c5337c8`; **paused UI PR #9:** OPEN/DRAFT/UNMERGED/UNTOUCHED `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` (read at invocation start). **Checkpoint-result-HEAD cannot be embedded in its own blob**; independently verify GitHub Contents response SHA with branch/PR HEAD and checkpoint blob afterward. No unapproved merge.
+
+## NEW this invocation — four independent coherent non-UI packages
+
+1. **Memory strict UTF-8 generation CAS** [`ce8a75ef`](https://github.com/Iam-2squared/ark-ai/commit/ce8a75ef07fe2586d69f0f52ac8d35255664a898), `tests/test_memory_generation_utf8_byte_edges_run950.py`: **6** byte-boundary cases, owner/namespace 256 vs 260, source 512 vs 516; reject over-budget opt-in CAS with intact cold SQLite event history and deny-only tokens. Frozen Memory v1 unchanged.
+2. **Planner interleaved independent roots** [`78af5051`](https://github.com/Iam-2squared/ark-ai/commit/78af5051d46a51b0f908045b72ae20a99ffcf134), `tests/test_planner_interleaved_revision_cas_run950.py`: **6** FAILED/CANCELLED/SUCCEEDED and root-order cases. A valid historical journal prefix cannot erase stale per-step expected-revision denial; unrelated RUNNING remains ambiguous/manual-only after accepted transition.
+3. **Observation synthetic identity** [`8670d969`](https://github.com/Iam-2squared/ark-ai/commit/8670d969b8d18b2525f01d651d78a6720609e9e1), `tests/test_observation_kind_clock_identity_run950.py`: **12** kind/time separation cases for equal synthetic content digest and parent, minimizing content and forbidding capture.
+4. **Proactive int64 recurrence** [`2aa2e5fe`](https://github.com/Iam-2squared/ark-ai/commit/2aa2e5fec203f0caba303bf6b8f5242f438ae0d0), `tests/test_proactive_int64_policy_edges_run950.py`: **10** overflowing/over-budget policy denials and valid maximum-int64 occurrence forecasts; no notification/dispatch/replay authority.
+
+**Total 34 newly authored parameterized tests.** No production-core source changes, frozen-contract/evaluation changes, UI/frontend edits, local full pytest, real owner-PC GGUF, real tool or external computation. [Run950 technical report](https://github.com/Iam-2squared/ark-ai/blob/d5533b44d9a9f3b0e638ec81a13563fc6f0c3d10/docs/JARVIS_RUN950_NON_UI_MEMORY_PLANNER_OBSERVATION_PROACTIVE.md) records exact paths, scope and limitations. Tests are **AUTHORED, not yet certified GREEN** on this invocation's latest HEAD.
+
+## Exact CI/job status (prior-head GREEN is not transferable)
+
+- **Previous Run949 checkpoint** `731bf669`: [CI #44151579893](https://github.com/Iam-2squared/ark-ai/actions/runs/44151579893) **COMPLETED GREEN 6/6** (Windows/Ubuntu × Python 3.11–3.13; each exact-head job independently inspected).
+- **Memory** `ce8a75ef`: [CI #44162667718](https://github.com/Iam-2squared/ark-ai/actions/runs/44162667718) **IN PROGRESS** at sample.
+- **Planner** `78af5051`: [CI #44162741943](https://github.com/Iam-2squared/ark-ai/actions/runs/44162741943) **IN PROGRESS** at sample.
+- **Observation** `8670d969`: [CI #44162809567](https://github.com/Iam-2squared/ark-ai/actions/runs/44162809567) **IN PROGRESS** at sample.
+- **Proactive** `2aa2e5fe`: [CI #44162930536](https://github.com/Iam-2squared/ark-ai/actions/runs/44162930536) **QUEUED** at sample.
+- **Technical report** `d5533b44`: [CI #44163111320](https://github.com/Iam-2squared/ark-ai/actions/runs/44163111320) **QUEUED** at sample. Resulting checkpoint HEAD may initiate a distinct workflow; do not invent its run number or conclusion.
+- **LATEST EXACT-HEAD 6/6 GREEN NOT VERIFIED.** No manual duplicate workflow starts, test outcomes, hashes or physical-runtime identities fabricated.
+
+## Frozen contracts, authorization limits and blockers
+
+V1/V2/Local UI/Launcher freezes, V3 Contract #1 and protected V2 final evaluation, contamination/provenance/reproducibility/regression, human-review and Candidate-promotion gates unchanged. PR #5/#8/#9 remain Draft/unmerged; **PR #9 paused UI untouched**. No paid/external GPU, paid API/service/subscription/purchase, new credentials/account connection, real Candidate adapter/weights, protected final evaluation opening, UI work, real ToolBackend, audio/video/screen capture, actual external effect, destructive/irreversible data change, owner-PC physical action, Github safety bypass or unapproved main merge. Physical owner-PC offline GGUF, real consent, trusted-clock audit, independently retained provenance, cross-store atomicity and exactly-once external effects remain unproven/blocked. A synthetic token/hash/durable local SQLite witness cannot grant those.
+
+## Next plan / 今後の方針
+
+1. Check the **latest exact-head** 6-job Windows/Ubuntu Python 3.11–3.13 CI; inspect actual FAIL logs before any narrow normal-Contents repair. Do not wait/poll repeatedly or launch duplicates.
+2. Continue Memory WAL/SHM last-close, generation CAS/ABA, expiry coherence and event-history bounds without modifying frozen Memory v1.
+3. Advance Planner COMMIT-UNKNOWN persistence/recovery and immutable ToolRegistry/exact PermissionGate, restart-safe one-shot approval, trusted-clock audit-before-action and disconnected mock after lower-level exact-head GREEN.
+4. Continue Personal Context privacy/revocation/erasure veto, proactive occurrence state, Observation contract/fixture lineage and free-only V3 identity/path/approval guards. **UI remains paused. ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run949: generation-CAS expiry, cold Planner terminal, proactive cursor and privacy-veto rollback regressions
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T03:47:04.221+09:00** (reporting wall-clock sample before normal GitHub Contents update only; **not** a trusted action/consent/audit/expiry clock). **Overall ARK/JARVIS NOT_PASSED.** Changes this invocation are synthetic, offline, no external effects, non-UI and zero-new-service.
 
