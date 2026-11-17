@@ -1,4 +1,41 @@
-# LATEST — ARK AI Run946: foreign Memory CAS isolation, cold COMMIT-UNKNOWN triage, private disconnected receipts, Planner terminal wave separation
+# LATEST — ARK AI Run947: generation-CAS NUL admission, two-wave Planner quarantine, four-commit atomic triage and privacy veto churn
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T01:57:25.722+09:00** (reporting wall-clock sample immediately before ordinary GitHub Contents write; **NOT** an authenticated approval/expiry/audit/execution clock). **Overall ARK/JARVIS NOT_PASSED.** All work non-UI, free-only, synthetic, offline and non-executing.
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED before checkpoint. **Exact work-basis HEAD:** `e006401e24f91c16491fe0d65fe8fa54c91e79a0` (Run946 checkpoint). **Latest source/test HEAD:** `2993cdb310715e52c3b1810951b5c95cb877004f`. **Checkpoint-write basis HEAD:** `134e5ed2f0a34f496acdc21f8a91900c0955b905` (Run947 report). **Previous PROJECT_STATUS blob:** `00bf56c590a2fc6647d8c5a164e56e23ba4c8604`. **main base SHA:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, no main write. PR #5 stays Draft/unmerged at `805b377697472268db02650a89c7a94b1c5337c8`; UI PR #9 stays Draft/unmerged/untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. Resulting checkpoint HEAD cannot appear in its own blob; verify from Contents result and postwrite GitHub PR/ref/blob checks.
+
+## NEW this invocation — four coherent non-UI packages, two CI-driven repairs
+
+1. **Optional Memory generation CAS:** [`d458f127`](https://github.com/Iam-2squared/ark-ai/commit/d458f1273e808e028ec1840530c68b6e6c63d966) adds early embedded-NUL rejection for owner/namespace/source identity. Frozen Memory v1 API/schema untouched. Initial CI exposed our literal escaped-newline Python syntax error; [`9197ff40`](https://github.com/Iam-2squared/ark-ai/commit/9197ff40b5b7ffd131323a02f99b5f4078348d53) corrected it without weakening denial. [`2993cdb3`](https://github.com/Iam-2squared/ark-ai/commit/2993cdb310715e52c3b1810951b5c95cb877004f) adds **10 cases** (9 rejected NUL identities, one valid multibyte CAS control), checking no event/row mutation on rejected inputs.
+2. **Planner terminal waves:** [`88c335d7`](https://github.com/Iam-2squared/ark-ai/commit/88c335d74b34b71bf44d8fb189835cb90135a5c3) adds **9 cases** of two independent FAILED/CANCELLED/BLOCKED terminal waves sharing a blocked fan-in; blocked revisions are not incremented twice and stale transitions remain denied.
+3. **Atomic COMMIT-UNKNOWN:** [`9fce44b7`](https://github.com/Iam-2squared/ark-ai/commit/9fce44b7a4457b3f1b6ed32c8678360e5fee2692) adds **9 cases** of retained prefixes/claims across four synthetic local commits, including independent Python subprocess verification and no dispatch/replay/effect authority. CI exposed test-only Ruff I001 extra import-spacing; [`a5300f24`](https://github.com/Iam-2squared/ark-ai/commit/a5300f2402592fbe1ba2848c018498eba245ce79) corrected it through normal Contents API.
+4. **Personal Context privacy:** [`e255fc64`](https://github.com/Iam-2squared/ark-ai/commit/e255fc642a44aefd3d74f0baa9171812cf066268) adds **6 cases** of revoked-scoped memory update/delete/append × unrelated owner/namespace, cold reopened SQLite handles, veto retention and no synthetic private content in repr. No completed erasure or cross-store atomicity claimed.
+5. [Run947 technical report](https://github.com/Iam-2squared/ark-ai/blob/134e5ed2f0a34f496acdc21f8a91900c0955b905/docs/JARVIS_RUN947_NON_UI_NUL_TERMINAL_PREFIX_PRIVACY.md) records scope, failures, and trust boundaries.
+
+**34 newly authored tests (10+9+9+6)**. Not claimed locally pytest-passed, not executed on owner's Windows PC, no real Candidate/ToolBackend. No manual duplicate CI runs.
+
+## CI evidence (exact commit scope)
+
+- Previous Run946 checkpoint `e006401e`: [CI #44118887877](https://github.com/Iam-2squared/ark-ai/actions/runs/44118887877) **GREEN 6/6** (Windows/Ubuntu × Python 3.11/3.12/3.13), **PREVIOUS HEAD ONLY**.
+- Run947 initial `d458f127`: [CI #44129957088](https://github.com/Iam-2squared/ark-ai/actions/runs/44129957088) **FAIL 6/6**, syntax fault introduced with source NUL patch. Intermediate `88c335d7`: [CI #44130111880](https://github.com/Iam-2squared/ark-ai/actions/runs/44130111880) **FAIL 6/6**, same syntax fault.
+- Run947 corrected-source `9197ff40`: [CI #44130399999](https://github.com/Iam-2squared/ark-ai/actions/runs/44130399999) **FAIL 6/6**, newly authored Atomic test Ruff I001 spacer; repaired by `a5300f24`.
+- **Latest source/test HEAD `2993cdb3`:** [CI #44130943727](https://github.com/Iam-2squared/ark-ai/actions/runs/44130943727) IN_PROGRESS at checkpoint prewrite. **If pending or failed, latest exact-HEAD 6/6 GREEN NOT VERIFIED.**
+- **Report HEAD `134e5ed2`:** [CI #44131206184](https://github.com/Iam-2squared/ark-ai/actions/runs/44131206184) IN_PROGRESS at checkpoint prewrite. The checkpoint commit will be new and may have its own independently checked CI.
+
+## Frozen gates, blockers and authorization boundaries
+
+V1/V2/Local UI/Launcher frozen contracts/evidence and V3 Contract #1, provenance/contamination/reproducibility/regression and protected V2 final evaluation remain unchanged. PR #5 stays Draft/unmerged, UI PR #9 remains Draft/unmerged/untouched, frontend PAUSED, main unchanged. No paid/external GPUs, paid APIs/subscriptions, additional account connections/secrets, actual Candidate weights/adapters or promotion, protected evaluation, physical owner-PC work, real external tool execution, irreversible actions, human approval fabrication, or GitHub safeguard bypass. A synthetic memory CAS token, local audit/retention digest or cold-process review cannot prove consent, authenticated identity, trusted time, cross-store atomicity or exactly-once external effects. Physical offline GGUF gate remains owner-PC-dependent.
+
+## Next plan / 今後の方針
+
+1. Verify **latest exact-head** six-job CI; analyze concrete FAIL logs and make smallest normal Contents safety-preserving fix. Never substitute prior-head GREEN or manually rerun duplicate equivalent workflows.
+2. Continue Memory WAL/SHM close races, CAS/ABA, expiry, dense event high-water and coherent scoped snapshots without modifying frozen V1 semantics.
+3. Isolate Planner crash/COMMIT-UNKNOWN recovery, durable occurrence keys, immutable ToolRegistry/exact-type PermissionGate and trusted-clock audit-before-action; integrate only on exact-HEAD GREEN foundations.
+4. Continue Personal Context revocation/erasure, proactive scheduling, Observation fixtures and free-only V3 path/identity/reproducibility guards. Keep all UI work paused and real external execution disabled. **Overall ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run946: foreign Memory CAS isolation, cold COMMIT-UNKNOWN triage, private disconnected receipts, Planner terminal wave separation
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T00:50:09.866+09:00** (reporting wall-clock snapshot directly before normal Contents write, **NOT** an authenticated action/approval/expiry/audit clock). **Overall ARK/JARVIS NOT_PASSED**. UI/frontend work remains PAUSED; this run added synthetic non-UI tests only with no new paid service.
 
