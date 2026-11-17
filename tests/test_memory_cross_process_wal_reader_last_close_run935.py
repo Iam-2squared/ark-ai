@@ -52,7 +52,12 @@ while not written.exists():
         sys.exit("writer did not signal")
     time.sleep(0.02)
 assert snapshot() == (1, 1)
-observed.write_text("old-snapshot", encoding="ascii")
+# Publish a completed payload, not merely a created-but-empty file. The
+# parent waits on existence before reading the marker; direct write_text
+# exposes an empty file transiently on slower Windows/CI filesystems.
+pending = observed.with_name(observed.name + ".pending")
+pending.write_text("old-snapshot", encoding="ascii")
+pending.replace(observed)
 while not release.exists():
     if time.monotonic() >= deadline:
         sys.exit("release did not arrive")
