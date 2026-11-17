@@ -27,6 +27,37 @@ _FLAGS = (
     "durable_permission_proven",
 )
 
+# Capture the retained receipt's original class-level accessors at import
+# time, not after touching a caller-supplied frozen dataclass instance.
+# A swapped field slot or false-looking denial property must never execute
+# before the verifier's first boundary check. This is process-local tamper
+# detection, not authenticated provenance or permission to dispatch.
+_RECEIPT_FIELDS = (
+    "registry_revision", "bound_action_id", "request_id",
+    "tool_name", "capability",
+)
+_RECEIPT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_RECEIPT_FIELDS = tuple(vars(_RECEIPT).get(k) for k in _RECEIPT_FIELDS)
+_ORIGINAL_RECEIPT_HOOKS = tuple(vars(_RECEIPT).get(k) for k in _RECEIPT_HOOKS)
+_ORIGINAL_RECEIPT_DENIALS = tuple(vars(_RECEIPT).get(k) for k in _FLAGS)
+
+
+def _require_original_retained_receipt() -> None:
+    if (
+        DisconnectedReadPreflight is not _RECEIPT
+        or any(
+            vars(_RECEIPT).get(key) is not original
+            for keys, originals in (
+                (_RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
+                (_RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
+                (_FLAGS, _ORIGINAL_RECEIPT_DENIALS),
+            )
+            for key, original in zip(keys, originals, strict=True)
+        )
+    ):
+        raise DisconnectedReadReceiptRejected("READ receipt or input epoch changed")
+
+
 
 class DisconnectedReadReceiptRejected(ValueError):
     """A locally retained READ diagnostic cannot be re-established."""
@@ -61,6 +92,7 @@ def verify_disconnected_registered_read_receipt(
     ):
         raise DisconnectedReadReceiptRejected("exact bounded READ receipt inputs required")
 
+    _require_original_retained_receipt()
     receipt_epoch = (
         receipt.registry_revision,
         receipt.bound_action_id,
@@ -81,6 +113,7 @@ def verify_disconnected_registered_read_receipt(
         raise DisconnectedReadReceiptRejected("invalid registry epoch") from exc
 
     def stable() -> None:
+        _require_original_retained_receipt()
         try:
             if (
                 type(receipt) is not _RECEIPT
@@ -179,6 +212,7 @@ def verify_disconnected_registered_read_receipt(
     )
 
     def expected_stable() -> None:
+        _require_original_retained_receipt()
         fields = (
             expected.registry_revision, expected.bound_action_id,
             expected.request_id, expected.tool_name, expected.capability,
@@ -216,5 +250,6 @@ def verify_disconnected_registered_read_receipt(
     expected_stable()
     stable()
     expected_stable()
+    _require_original_retained_receipt()
     # No execution token, receipt, or dispatch hook is returned.
     return None
