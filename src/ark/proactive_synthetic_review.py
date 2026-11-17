@@ -226,14 +226,22 @@ def _require_original_receipt_authority() -> None:
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
     # A trigger fixture has exactly one table and its PRIMARY KEY index.
     # Admit catalog size in SQLite before hydrating potentially hostile DDL.
+    # A hostile writable_schema row can keep its DDL short while inflating
+    # type/name/tbl_name. Bound the encoded catalog identity in SQL BEFORE
+    # materializing any of those untrusted values in Python.
     budget = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0),"
+        "COALESCE(SUM("
+        "COALESCE(length(CAST(type AS BLOB)),4097)+"
+        "COALESCE(length(CAST(name AS BLOB)),4097)+"
+        "COALESCE(length(CAST(tbl_name AS BLOB)),4097)),0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
-        type(budget) is not tuple or len(budget) != 2
+        type(budget) is not tuple or len(budget) != 3
         or type(budget[0]) is not int or budget[0] != 2
         or type(budget[1]) is not int or not 0 <= budget[1] <= 4_096
+        or type(budget[2]) is not int or not 0 <= budget[2] <= 4_096
     ):
         raise SyntheticTriggerRejected("trigger fixture schema changed")
     return tuple(
