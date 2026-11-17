@@ -1,4 +1,45 @@
-# LATEST — ARK AI Run945: disconnected Observation validator custody, unknown WRITE retained-prefix and free-only V3 mismatch guards
+# LATEST — ARK AI Run946: foreign Memory CAS isolation, cold COMMIT-UNKNOWN triage, private disconnected receipts, Planner terminal wave separation
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T00:50:09.866+09:00** (reporting wall-clock snapshot directly before normal Contents write, **NOT** an authenticated action/approval/expiry/audit clock). **Overall ARK/JARVIS NOT_PASSED**. UI/frontend work remains PAUSED; this run added synthetic non-UI tests only with no new paid service.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED immediately before this checkpoint. **Exact work-basis HEAD:** `20d917cdc7410bfe7b2bae97e7d09a5f2debf65c` (Run945 checkpoint). **Latest executable source/test HEAD:** `67c77c1f0adf986f8b9d1ebee46135489cc85796` (Run946 Planner tests; no production source modifications this run). **Checkpoint-write basis HEAD:** `0ba7a0bcc5576617fc730bad29ccbeb87178476d` (Run946 technical report); **previous PROJECT_STATUS Blob:** `a067a84107ad73c0615b1886dd2a905de543ab11`. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (no main write). PR #5 OPEN/DRAFT/UNMERGED/UNTOUCHED at `805b377697472268db02650a89c7a94b1c5337c8`; UI PR #9 OPEN/DRAFT/UNMERGED/UNTOUCHED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. The checkpoint resulting commit SHA cannot be embedded in its own content: verify separately from normal Contents response and postwrite PR/ref/blob reads, rather than forecasting it.
+
+## NEW this invocation — four independent non-UI test packages, one CI-driven correction and grounded report
+
+1. **Memory CAS foreign append** [`c9fbb89f`](https://github.com/Iam-2squared/ark-ai/commit/c9fbb89f339da447756ef4f8514a2511292a0b21): 5 cases assert an unrelated owner/namespace/source create/update/delete AFTER the primary generation token is observed does not spuriously consume that row's CAS token. Confirm same generation create-event, primary revision advance, global dense append IDs; no authentication or external authority implied.
+2. **Atomic COMMIT-UNKNOWN cold reviewer** [`aff330da`](https://github.com/Iam-2squared/ark-ai/commit/aff330da0c68cddc7ea20fc464e259b37132cddf): 4 cross-interpreter classifications after two local paired records; all remain manual-only, dispatch/replay/outcome/custody denied. Initial CI exposed test-only Ruff I001 import spacing, corrected via normal Contents [`e91e33e6`](https://github.com/Iam-2squared/ark-ai/commit/e91e33e67c55f95939d2ca404f5dc588d95801cf) with no relaxed guard.
+3. **Disconnected Mock privacy** [`a82a9708`](https://github.com/Iam-2squared/ark-ai/commit/a82a97087ec41f2b6ff9559ce4675d6d7e3e3817): 8 refusal/error-redaction variants + 4 success receipts ensure synthetic private sentinel absent from repr/error/derived JSON; no dispatch, replay, external outcome authority.
+4. **Planner independent DAG terminal waves** [`67c77c1f`](https://github.com/Iam-2squared/ark-ai/commit/67c77c1f0adf986f8b9d1ebee46135489cc85796): 3 FAILED/CANCELLED/BLOCKED cases; transitive dependent fan-in blocked, independent branch remains runnable via revision-guarded transitions with stable topology digest.
+5. **Technical evidence** [Run946 report](https://github.com/Iam-2squared/ark-ai/blob/0ba7a0bcc5576617fc730bad29ccbeb87178476d/docs/JARVIS_RUN946_NON_UI_CAS_UNKNOWN_MOCK_DAG.md) records exact scope, failure correction, trust boundaries and safe future integration gates.
+
+**24 newly authored cases** (5+4+12+3), no whole-suite local pytest or real model/owner-PC execution claimed. Source contract and frozen evaluation were not modified.
+
+## CI evidence (exact commit scope; no previous-head PASS substitution)
+
+- **Previous Run945 checkpoint HEAD `20d917cd...`:** [CI #44108351635](https://github.com/Iam-2squared/ark-ai/actions/runs/44108351635) **COMPLETED GREEN 6/6**, independently checked Windows/Ubuntu × Python 3.11/3.12/3.13 at Run946 start. This covers PREVIOUS HEAD ONLY.
+- **Run946 Memory test HEAD `c9fbb89f...`:** [CI #44117310783](https://github.com/Iam-2squared/ark-ai/actions/runs/44117310783) **IN PROGRESS** at checkpoint prewrite sampling (3/6 jobs GREEN; 3 still running).
+- **Run946 initial Atomic test HEAD `aff330da...`:** [CI #44117413077](https://github.com/Iam-2squared/ark-ai/actions/runs/44117413077) **FAIL 6/6**, Ruff I001 in test-only import whitespace (not a proven production failure).
+- **Run946 source/test with mock HEAD `a82a9708...`:** [CI #44117527288](https://github.com/Iam-2squared/ark-ai/actions/runs/44117527288) **FAIL 6/6** on same pre-fix Atomic test import lint.
+- **Run946 corrected Atomic test HEAD `e91e33e6...`:** [CI #44117989701](https://github.com/Iam-2squared/ark-ai/actions/runs/44117989701) **IN PROGRESS** (6/6 jobs running at last sample).
+- **Run946 latest executable source/test HEAD `67c77c1f...`:** [CI #44118152367](https://github.com/Iam-2squared/ark-ai/actions/runs/44118152367) **IN PROGRESS** (6/6 jobs running at last sample).
+- **Run946 technical report HEAD `0ba7a0bc...`:** workflow status not yet independently verified at checkpoint prewrite; a distinct checkpoint HEAD may trigger CI and must not be assigned an invented ID or result.
+
+**Latest exact-HEAD six-job GREEN NOT VERIFIED.** No duplicate equivalent CI workflows were manually launched. The 24 new tests are not labeled passed until applicable exact-head CI evidence is available.
+
+## Frozen boundaries, blockers, authorization
+
+Frozen V1/V2/Local UI/Launcher/Observation v1 evidence, V3 Contract #1, contamination/provenance/regression/reproducibility and V2 protected final-evaluation gates remain unchanged. PR #5 stays Draft/unmerged under its gate. UI Draft PR #9 stays untouched/unmerged and frontend PAUSED. No paid/external GPU or APIs/services, subscriptions/purchases, Credential/account connection, real Candidate generation or promotion, protected evaluation, actual ToolBackend, destructive/irreversible actions, physical owner-PC operation, human approval fabrication or unapproved main merge. The offline GGUF gate requires the owner's physical Windows hardware. A local event history/digest, synthetic pre-action journal, cold process, or in-memory DAG cannot prove trusted time, consent, external effect, independent provenance, cross-store atomicity or exactly-once dispatch.
+
+## Next plan / 今後の方針
+
+1. Resolve **Run946 exact latest-HEAD** Windows/Ubuntu Python 3.11–3.13 CI; if a concrete FAILURE, inspect its actual failing job log and fix only observed semantics/test issue through normal GitHub Contents writes. Do not bypass refused executable writes or rerun equivalent workflows.
+2. Continue non-UI Memory WAL/SHM last-close, generation CAS/ABA, expiry and event-history snapshot integrity, including scope isolation and fail-closed foreign corruption handling.
+3. Advance Planner crash/recovery/COMMIT-UNKNOWN with durable occurrence keys, immutable ToolRegistry, exact-type PermissionGate, trusted-clock audit-before-action and restart-safe authorization as disconnected reversible stages, integration only after exact-head GREEN.
+4. Continue Personal Context revocation/erasure, Proactive Scheduler occurrence state, Observation fixtures and free-only V3 path/identity guards on independent lanes. No UI work, candidate promotion or real external execution. **Overall ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run945: disconnected Observation validator custody, unknown WRITE retained-prefix and free-only V3 mismatch guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T23:53:27.003+09:00** (reporting wall-clock sample shortly before normal GitHub Contents checkpoint write, **NOT** an authenticated action/audit/expiry clock). **Overall ARK/JARVIS NOT_PASSED.** New UI/frontend remains PAUSED. All activity is non-UI, disconnected/synthetic and zero-new-paid-service.
 
