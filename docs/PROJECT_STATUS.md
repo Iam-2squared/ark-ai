@@ -1,4 +1,39 @@
-# LATEST — ARK AI Run941: atomic WAL IPC marker; bounded proactive catalog; Planner/preaction UNKNOWN; private Observation admission
+# LATEST — ARK AI Run942: synthetic observation scope/lineage, cold startup digest and bounded Context JSON escaping
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T20:51:12.120+09:00** (reporting wall clock sampled before this GitHub Contents checkpoint write; **not** a trusted clock or authorization timestamp). **Overall ARK/JARVIS NOT_PASSED.** New UI/frontend development PAUSED; free-only synthetic/disconnected non-UI work only.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED at final prewrite read, HEAD `89601bf375cf507bdd16dc6b69e2e1f1dd67e232`. **Exact work-basis HEAD:** `104f2839f31bae1e34e256ba253bb8277369ff47` (Run941 checkpoint). **Latest executable test HEAD:** `89601bf375cf507bdd16dc6b69e2e1f1dd67e232`. **Previous canonical PROJECT_STATUS blob:** `cf448195088a38c71da1b7fb566c3d59b704d073`. The resulting checkpoint commit SHA cannot be embedded in its own content: use the normal GitHub Contents write response and postwrite HEAD/blob confirmation; no unobserved result SHA is claimed here. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` was unchanged at run start; no main writes attempted. PR #5 Draft/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`, PR #9 Draft/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`.
+
+## NEW this invocation — three independent test packages, two narrowly corrected fixture mistakes
+
+1. **Observation local scope + parent lineage identity**: [`42873eee`](https://github.com/Iam-2squared/ark-ai/commit/42873eee5bec385c7e022cd009918868c9570546) adds **28 synthetic test cases**: same private payload hash under different sources/owner scopes must have different observation IDs (8); optional parent lineage must separate IDs without changing raw-content digest (4); malformed parent digests fail closed without returning/logging fixture bytes (16). [`f109dd26`](https://github.com/Iam-2squared/ark-ai/commit/f109dd265f06ee05b23aa643844309fc11da00fb) corrects an extra blank line in the test import block after initial all-six Ruff failures. Frozen `observations.py` contract and production adapter untouched.
+2. **Startup cold-interpreter readiness**: [`850507f9`](https://github.com/Iam-2squared/ark-ai/commit/850507f93a9c024f897e7bcb0e4e63df5367d961) adds **7** independent Python-process deterministic digest and root-blocker checks across reordered dependency graphs, two fault configurations, local DEGRADED state and synthetic schema revision. A probe's READY value does not attest to hardware, consent or safe dispatch.
+3. **Personal Context escaped JSON privacy capacity**: [`531faa85`](https://github.com/Iam-2squared/ark-ai/commit/531faa85ede815b5b5229a0b582aa0f823c70bf6) adds **10** synthetic tests: 4,096-byte per-record content may grow to six ASCII characters per byte when escaped, so the 65,536-byte serialized budget must veto multi-row expansion, while bounded control/ordinary text remains independently verifiable without granting consent/export/retention/tool authority. [`89601bf3`](https://github.com/Iam-2squared/ark-ai/commit/89601bf375cf507bdd16dc6b69e2e1f1dd67e232) fixes a test-only mistake: Python test vectors now use actual control characters rather than literal backslash sequences. No production Context source was modified.
+
+**45 regression cases authored** (28+7+10); these are **not yet asserted all-six GREEN**. No whole-suite local pytest or physical-PC GGUF validation claimed. No production source, frozen contracts, UI or V3 training path changed. No real observations, credentials, requests or private user records read.
+
+## CI / exact-head evidence and limitations
+
+- **Previous Run941 checkpoint `104f2839f31bae1e34e256ba253bb8277369ff47`:** [CI #44069076483](https://github.com/Iam-2squared/ark-ai/actions/runs/44069076483) **GREEN 6/6**, Windows/Ubuntu × Python 3.11/3.12/3.13. This is *previous-head* evidence only, verified at run start.
+- **Initial Observation test HEAD `42873eee...`:** [CI #44076652483](https://github.com/Iam-2squared/ark-ai/actions/runs/44076652483) **FAIL 6/6** (Ruff I001 import blank line). **Startup test HEAD `850507f9...`:** [CI #44076843967](https://github.com/Iam-2squared/ark-ai/actions/runs/44076843967) **FAIL 6/6** from the inherited same Observation test lint issue; no separate Startup semantics failure observed in those logs.
+- **Fixed Observation import HEAD `f109dd26...`:** [CI #44076986501](https://github.com/Iam-2squared/ark-ai/actions/runs/44076986501) **IN PROGRESS** at prewrite run query.
+- **Initial Context vectors HEAD `531faa85...`:** [CI #44077158473](https://github.com/Iam-2squared/ark-ai/actions/runs/44077158473) **IN PROGRESS**; known literal-escape test-vector error corrected subsequently, so it must not be treated as successful validation of intended control cases.
+- **Corrected Context test HEAD `89601bf3...`:** [CI #44077434062](https://github.com/Iam-2squared/ark-ai/actions/runs/44077434062) **IN PROGRESS**. This run is the latest executable-test HEAD. A distinct checkpoint commit will trigger its own new CI; run ID/outcome cannot be known before this write. **Latest checkpoint-result all-six GREEN NOT VERIFIED**. No duplicate equivalent CI launched.
+
+## Authority / frozen boundaries
+
+Preserve all frozen V1/V2/Local UI/Launcher evidence and contracts, Observation v1, V3 Contract #1, reproducibility/provenance/contamination/regression, protected V2 final evaluation, Candidate promotion and user-only main merge approval. Protected [PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain Draft/unmerged. No paid/external compute, paid APIs, purchases, secrets, external GPU, new connections, Candidate weight/adapter generation, promotion, protected evaluation opening, real backend execution, user-data deletion, physical Windows-PC action, or any main merge. All identity and readiness artifacts are synthetic diagnostics, not source attestation, authenticated consent, independent audit custody, trusted time, atomic cross-store effects or external exactly-once delivery.
+
+## Next plan / 今後の方針
+
+1. Confirm corrected **exact-head** Windows/Ubuntu Python 3.11–3.13 CI for new test packages; if any FAIL, inspect job logs and make the smallest semantics-preserving fix. Never carry forward previous-HEAD GREEN or manually duplicate a workflow.
+2. Return to Memory WAL/SHM pinned-reader last close, CAS/generation and scoped expiry/event coherence with independent process faults. Refuse foreign corrupted data hydration or repair.
+3. Advance Planner COMMIT-UNKNOWN manual-only recovery, durable exact-type Registry/PermissionGate and pre-action audit; integrate only disconnected Mock Executor after lower-level exact-head GREEN evidence and never enable real tool actions.
+4. Continue privacy-safe Personal Context, Proactive Scheduler, Observation and free V3 identity/reproducibility review. Keep UI paused, PR #5/#8/#9 Draft/unmerged and ARK/JARVIS **NOT_PASSED**.
+
+---
+
+# HISTORY — ARK AI Run941: atomic WAL IPC marker; bounded proactive catalog; Planner/preaction UNKNOWN; private Observation admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T19:54:00.690+09:00** (sampled immediately before the normal GitHub Contents checkpoint write; this is a reporting time, **not** a trusted audit, approval, consent or action clock). **Overall ARK/JARVIS NOT_PASSED.** All new UI/frontend development **PAUSED**; free-only non-UI synthetic/disconnected work only.
 
