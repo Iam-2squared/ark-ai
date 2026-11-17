@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
+from types import MappingProxyType
 
 _ID = re.compile(r"req_[0-9a-f]{32}\Z")
 _OPERATIONS = frozenset(("math.sum", "text.stats", "text.find", "json.inspect"))
@@ -114,7 +115,8 @@ def _require_original_fixture_primitives() -> None:
                (_MAX_INPUT, _MAX_TEXT, _MAX_DEPTH, _MIN_INT, _MAX_INT))
         or (_MAX_INPUT, _MAX_TEXT, _MAX_DEPTH, _MIN_INT, _MAX_INT)
            != _ORIGINAL_LIMITS
-        or any(globals()[name] is not original
+        or _ORIGINAL_HELPERS is not _PINNED_HELPERS
+        or any(globals().get(name) is not original
                for name, original in _ORIGINAL_HELPERS.items())
     ):
         raise DisconnectedToolRejected(
@@ -292,13 +294,14 @@ def _run(operation: str, args: object) -> dict[str, object]:
 # A nested JSON hook, validator or tool-function replacement could otherwise
 # receive decoded caller-private arguments despite the top-level SHA/JSON pin.
 # These exact helpers never dispatch; replacing them is not a supported API.
-_ORIGINAL_HELPERS = {
+_ORIGINAL_HELPERS = MappingProxyType({
     name: globals()[name]
     for name in (
         "_unique_pairs", "_integer", "_reject_number", "_json", "_canonical",
         "_text", "_validate_tree", "_run",
     )
-}
+})
+_PINNED_HELPERS = _ORIGINAL_HELPERS
 
 
 def execute_disconnected_fixture_tool(
