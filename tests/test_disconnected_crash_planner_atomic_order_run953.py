@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-from ark.agency import PlanStep, StepState, ToolCall
+from ark.agency import PlanStep, ToolCall
 from ark.agency.disconnected_atomic_preaction_ledger import (
     AtomicPreactionWitness,
     DisconnectedAtomicPreactionLedger,
