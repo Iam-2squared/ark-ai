@@ -1,4 +1,40 @@
-# LATEST — ARK AI Run942: synthetic observation scope/lineage, cold startup digest and bounded Context JSON escaping
+# LATEST — ARK AI Run943: immutable offline mock helper custody, pinned schema-reader vector, cold SQLite/WAL and mock process regression
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T21:58:38.463+09:00** (reporting wall clock sampled immediately before this normal GitHub Contents update; not a trusted action, approval, expiry or audit timestamp). **Overall ARK/JARVIS NOT_PASSED.** New UI/frontend development remains **PAUSED**; all work stayed local-first, synthetic/disconnected and free-only.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite check. **Exact work-basis HEAD:** `a8d05319b55aacb45168dcbff00df31ee83f9a0d` (Run942 checkpoint). **Latest executable source/test HEAD and checkpoint write basis HEAD:** `04260df957f7a4a83b3e78e943ae92eb686ce211`. **Previous PROJECT_STATUS blob:** `c42d73aa02b645602665fedaefff0975d32ad590`. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (no main write). [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/DRAFT/UNMERGED at `805b377697472268db02650a89c7a94b1c5337c8`; paused [UI Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/DRAFT/UNMERGED/UNTOUCHED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. The checkpoint-result commit SHA cannot be embedded within its own content; it must be taken from this normal Contents write response and independently verified against the PR HEAD and blob.
+
+## NEW this invocation — four coherent free-only non-UI packages, two narrow production source hardenings and 22 new pytest cases
+
+1. **Disconnected Mock Tool helper custody**: source commit [`1d13b200`](https://github.com/Iam-2squared/ark-ai/commit/1d13b200de98b0c64eee8c7197ff66fcb7f32c39) makes the import-time helper map read-only with `MappingProxyType`, pins the original mapping identity, and uses `globals().get` to produce a typed fail-closed denial when an expected helper is missing (rather than a raw `KeyError`). [`1bba881e`](https://github.com/Iam-2squared/ark-ai/commit/1bba881e94fd6e890dba7e2d4ac6dfa794323d1e) adds **11** regression cases: eight deleted helpers, unmodifiable baseline, replaced baseline, and intact deterministic deny-only mock execution. No ToolBackend or user command execution.
+2. **Disconnected SQLite schema-reader helper-vector custody**: source [`b17a5f03`](https://github.com/Iam-2squared/ark-ai/commit/b17a5f0369456b75d7fd0da60ad691877d17c458) pins original `_SCHEMA_HELPER_NAMES` tuple identity before reading SQLite metadata; a reflected alias/reorder cannot remove the original reader from the helper integrity check. [`edfdb5be`](https://github.com/Iam-2squared/ark-ai/commit/edfdb5beeffedbe491ad4e017b614ca7c524f313) adds **4** regressions for vector drift, alias attacks, and genuine read-only digest-only schema capture.
+3. **Cold SQLite schema/WAL isolation**: [`61219888`](https://github.com/Iam-2squared/ark-ai/commit/612198881f6ef3160c9d4c0120d8010cdedf41f2) adds **3** synthetic cases: two schema variants must have matching detached digest/version/object counts across independently started Python interpreters, and a WAL DDL must remain invisible before COMMIT but invalidate an old seal after COMMIT. [`53714f39`](https://github.com/Iam-2squared/ark-ai/commit/53714f397c7e44078872a44a654c250d669a519b) corrects a Ruff I001 test-only import-spacing issue without altering any assertions or source guards.
+4. **Disconnected Mock cross-process receipt determinism**: [`04260df9`](https://github.com/Iam-2squared/ark-ai/commit/04260df957f7a4a83b3e78e943ae92eb686ce211) adds **4** cold-interpreter cases for `math.sum`, `text.stats`, `text.find`, and `json.inspect`: digest identities must match while dispatch, automatic replay, and external-outcome flags stay strictly False; child output contains only synthetic IDs/hashes/denials.
+
+**22 new cases authored (11+4+3+4), not yet claimed six-job GREEN.** Two isolated opt-in implementation preaccess guards hardened; no frozen contract, real app integration, UI path, model runtime or protected V3 source changed. No full local repository pytest or physical GGUF measurement was run. This is a process-local diagnostic hardening, not authenticated provenance or a secure interpreter sandbox.
+
+## CI / exact-HEAD evidence and limitations
+
+- Previous Run942 checkpoint `a8d05319b55aacb45168dcbff00df31ee83f9a0d`: [CI #44077746402](https://github.com/Iam-2squared/ark-ai/actions/runs/44077746402) **COMPLETED GREEN 6/6** (Windows/Ubuntu × Python 3.11/3.12/3.13), freshly verified at this invocation start. **Previous-head evidence only**.
+- Earlier Run943 source/test intermediary runs [#44087010573](https://github.com/Iam-2squared/ark-ai/actions/runs/44087010573) and [#44087118660](https://github.com/Iam-2squared/ark-ai/actions/runs/44087118660) **COMPLETED FAIL 6/6**; the Ubuntu 3.12 log on #44087118660 explicitly identified Ruff I001 in the new schema cold-process test import block. Test-only spacing corrected at `53714f39`. These failures are **not proof of source semantic rejection**.
+- Corrected schema test HEAD `53714f39...`: [CI #44087482715](https://github.com/Iam-2squared/ark-ai/actions/runs/44087482715) **IN_PROGRESS** at this checkpoint prewrite query.
+- Latest executable test HEAD `04260df957f7a4a83b3e78e943ae92eb686ce211`: [CI #44087822584](https://github.com/Iam-2squared/ark-ai/actions/runs/44087822584) **IN_PROGRESS** at this checkpoint prewrite query. This is the correct latest source-and-test HEAD, but **all-six CI PASS NOT YET VERIFIED**. A new checkpoint-result commit can trigger its own distinct CI with unknown run ID/outcome at write time; never substitute earlier-run GREEN or launch duplicate equivalent workflows.
+
+## Frozen evidence / blockers / authorization
+
+Frozen V1/V2/Local UI/Launcher evidence and contracts, frozen Observation v1, V3 Contract #1, contamination/provenance/regression/reproducibility gates, protected V2 final evaluation, Candidate promotion gate and human-only main merge remain unchanged. Protected PR #5 is Draft/unmerged; paused UI PR #9 is Draft/unmerged and untouched. No paid/external compute or services, GPU, new credentials/connections, training, Candidate generation/weights/adapter, promotion, external API, real backend execution, file/user-record destructive operation, protected evaluation opening, physical Windows-PC action or unapproved main merge. The offline GGUF physical-machine gate still needs the owner device. A local Python process/SQLite hash, a preflight or a mock receipt does **not** establish independently authenticated source/custody, trusted clock, consent, cross-store transaction integrity or exactly-once external dispatch.
+
+## Next plan / 今後の方針
+
+1. Resolve Run943 latest exact-HEAD six-job Windows/Ubuntu Python 3.11–3.13 CI; inspect actual failing job logs and apply the smallest fail-closed semantics-preserving correction through normal Contents writes; avoid duplicate equivalent reruns.
+2. Advance Memory SQLite WAL/SHM last-close, scoped CAS/ABA, expiry/event coherence and durable read snapshots; refuse corrupted foreign-scope hydration or automatic repair.
+3. Advance Planner COMMIT-UNKNOWN manual-only recovery, immutable registry/PermissionGate, durable occurrence-bound approval and trusted-clock audit-before-action. Join disconnected Mock Executor to readiness only after lower-level exact-HEAD GREEN, without real actions.
+4. Continue privacy-safe Personal Context, proactive scheduler, observation fixture backends and free-only V3 identity/reproducibility review while leaving all frozen evaluations and UI development paused. **ARK/JARVIS NOT_PASSED.**
+
+
+---
+
+# HISTORY — ARK AI Run942: synthetic observation scope/lineage, cold startup digest and bounded Context JSON escaping
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T20:51:12.120+09:00** (reporting wall clock sampled before this GitHub Contents checkpoint write; **not** a trusted clock or authorization timestamp). **Overall ARK/JARVIS NOT_PASSED.** New UI/frontend development PAUSED; free-only synthetic/disconnected non-UI work only.
 
