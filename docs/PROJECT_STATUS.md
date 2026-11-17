@@ -1,4 +1,41 @@
-# LATEST — ARK AI Run948: atomic unknown-outcome hex-fixture repair, disconnected Planner/pre-action/privacy cold veto
+# LATEST — ARK AI Run949: generation-CAS expiry, cold Planner terminal, proactive cursor and privacy-veto rollback regressions
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T03:47:04.221+09:00** (reporting wall-clock sample before normal GitHub Contents update only; **not** a trusted action/consent/audit/expiry clock). **Overall ARK/JARVIS NOT_PASSED.** Changes this invocation are synthetic, offline, no external effects, non-UI and zero-new-service.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), inspected **OPEN/DRAFT/UNMERGED**. **Exact work-basis HEAD:** `8e5d54a354637c29847cb2c970150d56b207bff2` (Run948 checkpoint). **Latest executable/test HEAD:** `acf00447dedc7a4932948810746a1d1760956854` (Run949 privacy test). **Checkpoint-write basis HEAD:** `9c43ef17e021d7361c0f44bbcd51ca504ac2db94` (Run949 technical report). **Previous PROJECT_STATUS blob:** `e309032f7554e10af6815f345da86d74888476bd`. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (not modified). **V3 PR #5:** OPEN/DRAFT/UNMERGED/UNTOUCHED `805b377697472268db02650a89c7a94b1c5337c8`. **Paused UI PR #9:** OPEN/DRAFT/UNMERGED/UNTOUCHED `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **Checkpoint-result-HEAD:** the new commit SHA cannot be embedded into its own content; it must be obtained from the GitHub Contents response and independently rechecked against the branch/PR HEAD and this blob.
+
+## NEW work — four independent coherent non-UI test packages
+
+1. **Memory expiry and retained CAS** [`11bd500f`](https://github.com/Iam-2squared/ark-ai/commit/11bd500ff7cea2f93e28cdbf1781731dd28aae12): **7 cases**; refuse clearing/extending finite expiry, token reuse, expired-row revival and regressed caller clock, with cold SQLite row/event readback.
+2. **Planner durable terminal cascade** [`16649e87`](https://github.com/Iam-2squared/ark-ai/commit/16649e873faf2d965ef78c9ffc5b01cb2fbdf2d3): **4 cases**; FAILED/CANCELLED independent waves and BLOCKED fan-in remain quarantined across SQLite reopen and a detached Python process; never authorize dispatch/replay.
+3. **Proactive synthetic cursor** [`ad8960b1`](https://github.com/Iam-2squared/ark-ai/commit/ad8960b1311887331cc1ecabf58d810f7d6187fb): **12 cases**; cold occurrence ID/fingerprint, due/grace classification, prior-ID policy binding, exhausted state and strict non-bool caller time. No OS timer, notification or backend.
+4. **Personal Context privacy history** [`acf00447`](https://github.com/Iam-2squared/ark-ai/commit/acf00447dedc7a4932948810746a1d1760956854): **5 cases**; independently retained veto detects simulated row deletion/time rewrite/replacement; benign unrelated append leaves prior prefix valid.
+
+**Total: 28 new parametrized test cases; no production-source or frozen-contract changes.** [Run949 technical report](https://github.com/Iam-2squared/ark-ai/blob/9c43ef17e021d7361c0f44bbcd51ca504ac2db94/docs/JARVIS_RUN949_NON_UI_CAS_PLAN_SCHEDULE_PRIVACY.md) provides exact test paths, distinctions and limits. No owner-PC physical GGUF, real tool, live clock/approval, paid services or local full pytest executed.
+
+## Exact CI/job scope (do not transfer prior-head GREEN)
+
+- **Previous Run948 checkpoint** `8e5d54a3`: [CI #44141099359](https://github.com/Iam-2squared/ark-ai/actions/runs/44141099359) **COMPLETED GREEN 6/6** (Windows/Ubuntu × Python 3.11–3.13).
+- **Memory test HEAD** `11bd500f`: [CI #44150617771](https://github.com/Iam-2squared/ark-ai/actions/runs/44150617771) **IN PROGRESS** at last sample.
+- **Planner test HEAD** `16649e87`: [CI #44150798593](https://github.com/Iam-2squared/ark-ai/actions/runs/44150798593) **IN PROGRESS** at last sample.
+- **Proactive test HEAD** `ad8960b1`: [CI #44150906878](https://github.com/Iam-2squared/ark-ai/actions/runs/44150906878) **IN PROGRESS** at last sample.
+- **Privacy test HEAD** `acf00447`: [CI #44151064476](https://github.com/Iam-2squared/ark-ai/actions/runs/44151064476) **QUEUED** at last sample.
+- **Report HEAD** `9c43ef17`: [CI #44151383524](https://github.com/Iam-2squared/ark-ai/actions/runs/44151383524) **QUEUED** at last sample. The checkpoint write yields another HEAD; do not invent an associated run/result. **Latest exact-HEAD six-job PASS NOT VERIFIED.** No manual duplicate runs.
+
+## Frozen evidence, authorization limits and remaining blockers
+
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract #1 and V2 protected final evaluation remain unmodified; no contamination/provenance/regression/reproducibility gate weakened. PR #5 stays Draft/unmerged under pre-paid-compute controls. PR #8 stays Draft/unmerged. PR #9 stays Draft/unmerged and **ALL frontend/UI development PAUSED**. Unresolved pre-paid V3 identity, human review and billing/approval gates remain blocked; owner-PC offline GGUF gate remains physical-device dependent. Local synthetic receipts cannot prove authenticated consent, independent custody, a trusted clock, actual erasure, cross-store atomicity or external exactly-once effects. No paid/external GPU, paid APIs/services/subscriptions, new accounts/credentials, Candidate production/promotion, protected evaluation, real backend execution, irreversible operation, frozen-contract modification, GitHub safety bypass or unapproved main merge.
+
+## Next plan / 今後の方針
+
+1. Check the **latest exact-HEAD** Windows/Ubuntu Python 3.11–3.13 CI job results. For FAIL, read the actual failing logs, fix narrowly through normal GitHub Contents and switch lanes while CI runs.
+2. Continue Memory WAL/SHM last-close, generation CAS/ABA, coherent expiry/event-prefix and corruption fences, preserving v1 schema/API.
+3. Advance durable Planner COMMIT-UNKNOWN recovery with immutable ToolRegistry/PermissionGate, restart-safe one-shot approval, trusted-clock audit-before-action and disconnected mock only after lower-layer exact-HEAD GREEN.
+4. Continue privacy veto/retention lifecycle, proactive and observation backend fixtures and free V3 identity/path/reproducibility hardening. UI remains paused. **Overall ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run948: atomic unknown-outcome hex-fixture repair, disconnected Planner/pre-action/privacy cold veto
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T02:48:51+09:00** (wall-clock report sample immediately before ordinary Contents write; **NOT** a trusted approval/audit/expiry/execution clock). **Overall ARK/JARVIS NOT_PASSED.** All changes non-UI, free-only, synthetic, disconnected and non-executing.
 
