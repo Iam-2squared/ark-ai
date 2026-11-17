@@ -1,4 +1,45 @@
-# LATEST — ARK AI Run933: scoped Memory integrity, cold Planner UNKNOWN isolation, ToolRegistry effect drift
+# LATEST — ARK AI Run934: Memory scoped CAS, detached Context, WAL audit, Planner branch CAS
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T12:55:25.558+09:00** (reporting wall-clock sampled immediately before normal GitHub Contents write; **NOT** a trusted permission/audit timestamp). **Overall ARK/JARVIS NOT_PASSED**. Free-only, disconnected **non-UI core**; all new UI/frontend development **PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED, live PR HEAD and branch HEAD read immediately before checkpoint. [Protected Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused UI [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remain open/Draft/unmerged, not written. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (read independently at checkpoint). **Exact Run934 work-basis HEAD:** `ad5e4b0fdede3aeefab5bf6970ea2caea9d7928b` (Run933 checkpoint). **Last source/test HEAD:** `f7f3eb20a99f10dddfa0887ffaedc24503a37a10`. **Report HEAD / checkpoint-write-basis HEAD:** `5cc86bcbf3dfd602a9d7e465dffc961716884977`. **Previous PROJECT_STATUS blob:** `4c98dade2facb71c992f87f801248a607fb13850`. **Checkpoint-result HEAD is intentionally NOT embedded in these contents**: use normal GitHub Contents response commit SHA and verify new live PR/branch HEAD and saved PROJECT_STATUS blob afterward. This write-basis HEAD is not the checkpoint-result HEAD.
+
+## NEW this invocation — four independent non-UI test packages, 17 parameterized cases authored
+
+1. [Memory cross-scope CAS test `cba2a684`](https://github.com/Iam-2squared/ark-ai/commit/cba2a6843629788a659e3fab00e98c1663611b48): **6 cases** in `tests/test_memory_foreign_blob_cas_write_run934.py`. Valid owner/namespace CAS update and stale-revision denial must not hydrate/repair a foreign persisted SQLite BLOB. Event count and foreign storage class checked after restart.
+2. [Personal Context detached proof test `494cd302`](https://github.com/Iam-2squared/ark-ai/commit/494cd302d8208a98cfc8de7bfb2a87afc32fb913): **6 cases authored** in `tests/test_personal_context_rehashed_detached_binding_run934.py`. Synthetic owner/scope/id/content/schema changes. **KNOWN TEST QUALITY LIMITATION:** the private test `_DOMAIN` mistakenly uses a literal backslash plus zero rather than the protocol's NUL delimiter, so the six expected rejections can occur at retained-digest preflight. They must **NOT** be claimed to prove rejection of a self-consistently rehashed foreign receipt. Correct this fixture in the next allowed test-lane write after its existing CI finishes, then rerun exact-head CI; no production guard was weakened.
+3. [Atomic pre-action WAL snapshot test `6e091b56`](https://github.com/Iam-2squared/ark-ai/commit/6e091b564ad189fd8b7cba7e4d34b0fa9c9862dd): **2 cases** in `tests/test_atomic_preaction_wal_reader_cas_run934.py`. Old SQLite WAL reader sees coherent old one-intent/one-audit pair; a second handle's committed pair must invalidate stale CAS for fresh handles. No real WRITE or replay permission.
+4. [Planner disjoint prefix / terminal fan-in test `f7f3eb20`](https://github.com/Iam-2squared/ark-ai/commit/f7f3eb20a99f10dddfa0887ffaedc24503a37a10): **3 cases** in `tests/test_planner_shared_prefix_disjoint_terminal_run934.py`. Distinct branch transitions may use an older valid retained prefix, while duplicate same-step revision is denied; cold SUCCEEDED/FAILED/CANCELLED recovery controls dependent joins and never grants dispatch.
+
+**17 new parameterized cases AUTHORED, not 17 GREEN claims.** Test files and [Run934 evidence report](https://github.com/Iam-2squared/ark-ai/blob/5cc86bcbf3dfd602a9d7e465dffc961716884977/docs/JARVIS_RUN934_NON_UI_SCOPE_CAS_CONTEXT_WAL_PLANNER.md) are saved on Draft PR #8; ARK production source, frozen contracts, protected eval, new UI/frontend and main were not changed. No local full checkout/pytest or target-PC GGUF verification claimed.
+
+## CI evidence / exact SHA attribution
+
+- [Run933 checkpoint CI #44005982177](https://github.com/Iam-2squared/ark-ai/actions/runs/44005982177), SHA `ad5e4b0fdede3aeefab5bf6970ea2caea9d7928b`: **COMPLETED / 6 of 6 GREEN**; Windows/Ubuntu × Python 3.11, 3.12 and 3.13, each job inspected.
+- [Run934 CI #44013479483](https://github.com/Iam-2squared/ark-ai/actions/runs/44013479483), SHA `5cc86bcbf3dfd602a9d7e465dffc961716884977`: **QUEUED** at checkpoint preflight.
+- [Run934 CI #44012859174](https://github.com/Iam-2squared/ark-ai/actions/runs/44012859174), SHA `f7f3eb20a99f10dddfa0887ffaedc24503a37a10`: **IN_PROGRESS** at checkpoint preflight.
+- [Run934 CI #44012735089](https://github.com/Iam-2squared/ark-ai/actions/runs/44012735089), SHA `6e091b564ad189fd8b7cba7e4d34b0fa9c9862dd`: **IN_PROGRESS** at checkpoint preflight.
+- [Run934 CI #44012656090](https://github.com/Iam-2squared/ark-ai/actions/runs/44012656090), SHA `494cd302d8208a98cfc8de7bfb2a87afc32fb913`: **IN_PROGRESS** at checkpoint preflight.
+- [Run934 CI #44012593519](https://github.com/Iam-2squared/ark-ai/actions/runs/44012593519), SHA `cba2a6843629788a659e3fab00e98c1663611b48`: **IN_PROGRESS** at checkpoint preflight.
+- This status checkpoint creates a new automatic workflow at its own result HEAD. **New checkpoint-result SHA CI ID/result cannot be observed until after saving. Latest test/checkpoint HEAD 6/6 GREEN NOT VERIFIED**. No duplicate manually dispatched workflows. Do not conflate prior SHA GREEN with current SHA or the six Personal Context cases' limited test oracle.
+
+## Freeze, paid boundaries, blockers
+
+Frozen V1/V2/Local UI/Launcher evidence, protected V2 final evaluation, V3 frozen Contract/provenance/reproducibility gates, and Observation v1 semantics unchanged. Draft PR #5 and paused UI Draft PR #9 unmodified, no main merge. Zero chargeable compute/API/external GPU, real Candidate weights/training/promotion, account/secret, physical-PC action, irreversible erasure, real tool backend dispatch, externally authenticated human approval or notification. SQLite path preflight does not prove atomic directory-handle custody; mock receipts/local digests do not prove consent, trusted time, cross-store atomicity or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Inspect all Run934 GitHub CI runs, six jobs per exact SHA. For FAIL, inspect logs and fix without weakening semantics; **first correct the detached-preview private NUL-domain test fixture once its in-flight path CI is complete**, prove that an actually self-consistent digest still fails fixture-semantic rebinding.
+2. Investigate independent-owner SQLite WAL/SHM process race in disposable cross-process Memory fixtures; preserve strict alias/sidecar refusal and avoid silent repair or arbitrary retries.
+3. Continue Memory row/event CAS/ABA and coherent expiry snapshots; Planner COMMIT-UNKNOWN quarantines, terminal persistence/recovery; never auto-replay uncertain WRITE.
+4. After lower-level exact-head GREEN, integrate immutable ToolRegistry, exact PermissionGate, durable occurrence, audit-before-action/trusted clock and disconnected Mock Executor/startup veto. No real dispatch.
+5. Advance privacy-safe Personal Context/proactive/observation backend contracts and free-only V3 path/approval/identity/reproducibility checks. Stop affected lane for paid, credentials, frozen, physical, irreversible or approval-gated merges, continuing safe free lanes.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run933: scoped Memory integrity, cold Planner UNKNOWN isolation, ToolRegistry effect drift
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T11:50:33.587+09:00** (reporting wall-clock sampled immediately before the normal GitHub Contents checkpoint write; **NOT** a trusted approval/audit clock). **Overall ARK/JARVIS NOT_PASSED**. Free-only, disconnected **non-UI core**; all new UI/frontend development **PAUSED**.
 
