@@ -49,6 +49,11 @@ def _text(name: str, value: object) -> None:
         raise ValueError(f"{name} must be a nonempty exact string")
     if len(value) > 512:
         raise ValueError(f"{name} exceeds policy string budget")
+    # Reject native NUL separators in schedule policy identities before
+    # hashing or opening durable fixture storage. This is a local admission
+    # rule, not evidence of user consent or trigger authorization.
+    if "\x00" in value:
+        raise ValueError(f"{name} contains a NUL separator")
     # The persisted trigger digest serializes policy text in UTF-8. Treat a
     # 512-character multibyte label as over-budget and reject unpaired
     # surrogates before hashing, SQLite access or scheduler decisions.
