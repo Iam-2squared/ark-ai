@@ -46,9 +46,10 @@ def test_corrupt_second_due_row_is_confined_to_selected_page(
             cold.purge_expired(scope=scope, limit=2)
         assert cold.get(healthy.memory_id, scope, include_expired=True) is not None
 
-    # The next page includes the malformed row, so it must fail closed.
+    # Recheck the selected page: both the next single-row page and the
+    # original two-row page contain the malformed row and must fail closed.
     with pytest.raises(MemorySchemaError):
-        cold.purge_expired(scope=scope, limit=1)
+        cold.purge_expired(scope=scope, limit=limit)
 
     expected_ops = ["create", "create"] + (["expire"] if limit == 1 else [])
     assert [event.operation for event in cold.events(scope)] == expected_ops
@@ -69,4 +70,4 @@ def test_corrupt_second_due_row_is_confined_to_selected_page(
     reopened = SQLiteMemoryStore(path, clock_ms=lambda: 201)
     assert [event.operation for event in reopened.events(scope)] == expected_ops
     with pytest.raises(MemorySchemaError):
-        reopened.purge_expired(scope=scope, limit=1)
+        reopened.purge_expired(scope=scope, limit=limit)
