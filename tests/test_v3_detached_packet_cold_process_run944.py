@@ -95,8 +95,8 @@ def test_cold_exact_packet_and_crossbind_are_deterministic_and_inert(
     "invalid",
     (
         b'{"evidence":{},"evidence":{},"snapshot":{}}',
-        _packet() + b"\\n",
-        b"\\x00" + _packet(),
+        _packet() + b"\n",
+        b"\x00" + _packet(),
         b"x" * 4097,
     ),
 )
