@@ -1,4 +1,41 @@
-# LATEST — ARK AI Run951: global Memory high-water, atomic audit corruption, Planner cold journal, detached V3 mismatches
+# LATEST — ARK AI Run952: Memory ABA, two-handle audit CAS, abrupt-exit Atomic and Planner recovery
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T06:52:42+09:00** (sampled reporting clock immediately before standard GitHub Contents write; **not** a trusted approval, audit, expiry, or external execution clock). **Overall ARK/JARVIS NOT_PASSED.** Work this invocation is synthetic, disconnected, non-UI, free-only, and not a physical-system validation.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), inspected OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `dc5ba5b128014fe0d0d67eea24c110380f4ab82c` (Run951 checkpoint). **Latest source/test HEAD:** `a7217f05591a467473612eb35bb0a90a14c3dce3` (4th test package; **no production-source changes**). **Checkpoint-write basis HEAD:** `25e7f1cfc388cf6fb960f71b9a8b5292c4f5c7cf` (Run952 technical report). **Previous PROJECT_STATUS blob:** `56cd72040d043a724b0c50d1df47f458e361c578`. **main base:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (no main write). **PR #5:** OPEN/DRAFT/UNMERGED/UNTOUCHED `805b377697472268db02650a89c7a94b1c5337c8`. **UI PR #9:** OPEN/DRAFT/UNMERGED/UNTOUCHED `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **Checkpoint-result HEAD cannot be embedded in the document itself**; read the resulting standard Contents response SHA and verify PR HEAD/blob afterward.
+
+## NEW work this invocation — 4 coherent, non-UI test packages (12 authored tests)
+
+1. **Memory lifetime ABA** [`220e6bed`](https://github.com/Iam-2squared/ark-ai/commit/220e6bed0d51eaab208e3db9a1ddd782baead7cc), `tests/test_memory_generation_aba_restart_run952.py`: **4** cases; delete/recreate the same deterministic memory ID with equal/different content and optional foreign append, reject old-generation CAS after a cold reopen, allow a newly observed local CAS without approval authority.
+2. **Atomic two-handle persistence** [`687612ef`](https://github.com/Iam-2squared/ark-ai/commit/687612ef47c3ac24c2cdc3d1a605c759319d258b), `tests/test_atomic_two_handle_cas_occurrence_run952.py`: **3** cases; stale writer/duplicate-occurrence rejection must leave both intent and audit rows unchanged while a current prefix may add a distinct local-only reservation.
+3. **Atomic postcommit abrupt exit** [`f4d6af81`](https://github.com/Iam-2squared/ark-ai/commit/f4d6af815750b0c44546d78ca0850f2886c2aa1e), `tests/test_atomic_postcommit_abrupt_exit_run952.py`: **3** cases; a detached Python process exits forcibly after one to three local durable reservations. Cold recovery denies stale and duplicate replays and reports no dispatch or independently retained proof.
+4. **Planner abrupt RUNNING exit** [`a7217f05`](https://github.com/Iam-2squared/ark-ai/commit/a7217f05591a467473612eb35bb0a90a14c3dce3), `tests/test_planner_postcommit_running_abrupt_exit_run952.py`: **2** cases; after forced child exit, cold journal recovery retains the RUNNING step as ambiguous with replay/dispatch denied, while an independent PENDING root survives and a stale revision cannot be reapplied.
+
+[Run952 technical report](https://github.com/Iam-2squared/ark-ai/blob/25e7f1cfc388cf6fb960f71b9a8b5292c4f5c7cf/docs/JARVIS_RUN952_NON_UI_ABA_ATOMIC_CRASH_PLANNER.md) documents exact fixtures and limitations. No full local pytest, real-PC GGUF, real tools, training, Candidate work, paid compute, or UI edits. Tests are **AUTHORED, NOT YET LATEST-HEAD CERTIFIED GREEN**.
+
+## Exact-head CI and job evidence
+
+- Prior Run951 checkpoint `dc5ba5b1`: [CI #44173718717](https://github.com/Iam-2squared/ark-ai/actions/runs/44173718717) **COMPLETED GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13.
+- Memory `220e6bed`: [CI #44183541636](https://github.com/Iam-2squared/ark-ai/actions/runs/44183541636) **IN PROGRESS**, Ubuntu 3.11 GREEN, remaining five jobs not concluded at last sample.
+- Atomic handles `687612ef`: [CI #44183654459](https://github.com/Iam-2squared/ark-ai/actions/runs/44183654459) **IN PROGRESS 0/6 concluded** at last sample.
+- Atomic abrupt exit `f4d6af81`: [CI #44183828150](https://github.com/Iam-2squared/ark-ai/actions/runs/44183828150) **IN PROGRESS 0/6 concluded** at last sample.
+- Planner abrupt exit `a7217f05`: [CI #44183907642](https://github.com/Iam-2squared/ark-ai/actions/runs/44183907642) **IN PROGRESS / QUEUED jobs**, 0/6 concluded at last sample.
+- The technical report and checkpoint may each trigger distinct automatic CI runs; do not invent run IDs or pass status, and do not rerun equivalent workflows manually. **LATEST EXACT-HEAD GREEN 6/6 NOT VERIFIED**.
+
+## Frozen evidence and hard boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence, V3 Contract #1, protected V2 final evaluation and contamination/provenance/regression/reproducibility/human-review gates unchanged. PR #5/#8/#9 remain Draft/unmerged; PR #9 UI development remains PAUSED and its branch untouched. No paid/external GPU or billable compute, paid API/service/subscription/purchase, new credential/account connection, Candidate weights/adapter/promotion, protected evaluation, real ToolBackend, physical owner-PC action, destructive/irreversible action, unapproved main merge, or safeguard bypass. Synthetic audit-before-action, retained hash, and caller clock are not independent custody, authenticated consent, cross-store atomicity, actual privacy erasure or exactly-once external effect.
+
+## Next plan / 今後の方針
+
+1. Confirm exact-head Windows/Ubuntu Python 3.11–3.13 CI 6/6 for all new packages. If FAIL, diagnose the specific job log and narrowly correct through standard GitHub Contents. While CI is running, work independent modules, not the exact in-flight code path.
+2. Extend Memory WAL/SHM last-close, lifetime CAS/ABA, event/expiry provenance and coherent privacy-safe snapshots, preserving frozen Memory v1.
+3. Advance Planner COMMIT-UNKNOWN journal recovery plus immutable ToolRegistry/PermissionGate, single-use durable approvals and trusted-clock audit-before-action with **disconnected mock only** after lower-layer exact-head GREEN. Do not auto-replay a RUNNING step.
+4. Continue Personal Context revocation/retention, proactive occurrence and Observation fixture contracts, and free-only V3 path/identity/reproducibility guards. UI paused; **ARK/JARVIS NOT_PASSED**.
+
+---
+
+# HISTORY — ARK AI Run951: global Memory high-water, atomic audit corruption, Planner cold journal, detached V3 mismatches
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T05:51:30.239+09:00** (reporting wall-clock sampled immediately before normal GitHub Contents write; **NOT** a trusted action, consent, audit or expiry clock). **Overall ARK/JARVIS NOT_PASSED.** All new work is synthetic, local fixture-only, disconnected, non-UI, zero-new-cost; not an authorization or completed physical-system evaluation.
 
