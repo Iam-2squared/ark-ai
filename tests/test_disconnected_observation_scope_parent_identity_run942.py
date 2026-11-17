@@ -13,7 +13,6 @@ import pytest
 from ark.disconnected_observation_fixture import make_disconnected_fixture
 from ark.observations import ObservationKind
 
-
 _PAYLOAD = b"synthetic confidential fixture - no real user content"
 _PARENT = hashlib.sha256(b"synthetic parent fixture").hexdigest()
 
