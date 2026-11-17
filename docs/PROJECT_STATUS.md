@@ -1,4 +1,50 @@
-# LATEST — ARK AI Run935: corrected Context digest; Memory WAL; Registry audit; Planner process CAS
+# LATEST — ARK AI Run936: READ receipt preaccess, cross-process Memory CAS and COMMIT-UNKNOWN quarantine
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T14:53:38.820+09:00** (reporting wall-clock sampled before the normal GitHub Contents checkpoint write; **NOT** trusted action/audit time). **Overall ARK/JARVIS NOT_PASSED.** Free-only, disconnected **non-UI core**; new UI/frontend work **PAUSED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED (PR HEAD freshly re-read before checkpoint). **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged at last verification. [Protected Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remained open/Draft/unmerged at `805b377697472268db02650a89c7a94b1c5337c8`; paused UI [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) open/Draft/unmerged at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. **Exact Run936 work-basis HEAD:** `72702885183077f694f16138ca1320c7388537cb` (Run935 checkpoint). **Last source/test and technical-report/fix HEAD / checkpoint-write basis HEAD:** `921d81c410af1fcf5650677b4ef6860b74f03805`. **Previous PROJECT_STATUS blob:** `7d482ace3401f933836c6d054548bd965e3c460f`. **Checkpoint-result HEAD cannot be self-embedded**: use ordinary GitHub Contents API commit SHA followed by PR/branch HEAD and resulting status blob verification. These distinct work-basis, report, and checkpoint-result SHAs must not be conflated.
+
+## NEW this invocation — three coherent non-UI packages, 17 new cases, and CI corrections
+
+1. [Retained READ source preaccess hardening `2f269569`](https://github.com/Iam-2squared/ark-ai/commit/2f2695690a5e531f0227c704d91b0da1ceb67450): `src/ark/agency/disconnected_registered_read_recheck.py` now pins original five identity field descriptors, access hooks and five false-only authority getters at import time and rejects replacements **before reading** the caller-retained local receipt. Added rechecks at callback/return boundaries. An in-process descriptor identity is not authentication, external READ/WRITE authority or a permission.
+2. [READ regression tests `57255eba`](https://github.com/Iam-2squared/ark-ai/commit/57255eba27712c0b05a5077368b8694bae3ccf52): **12 new cases**: five replaced field slot getters, five false-looking denial getters, replaced class lookup hook and matching inert receipt. Tests demand zero invocation of malicious properties, zero token spend and zero backend dispatch. A `ruff I001` import-order error was corrected by ordinary path in [`4eb4e434`](https://github.com/Iam-2squared/ark-ai/commit/4eb4e434f296b701a7a9c3bb895143b7660f632c), with unchanged safety assertions.
+3. [Cross-process Memory generation CAS `30aef49b`](https://github.com/Iam-2squared/ark-ai/commit/30aef49b38be41400f5bd8135bbffcd6e07c28bf): **2 new cases**. Two independent spawned Python writers first pin local generation tokens, then race on one row (one success/one stale conflict expected) or disjoint rows (both may succeed). Cold row/event history after restart is asserted. The prior import-order lint error was inherited in its earlier CI, not evidence this race is failing.
+4. [Atomic COMMIT-UNKNOWN subprocess `6d0e6f2c`](https://github.com/Iam-2squared/ark-ai/commit/6d0e6f2c3ea886129f128a3923b5cbd4803e30ec): **3 new cases** for a synthetic child that exits after its local SQLite preaction commit but before returning any response; cold local classifications `LOCALLY_RECORDED`, `ADVANCED_OTHER`, and `UNCHANGED` remain manual-only, with no actual external effect or retry authorization.
+5. **Observed pytest correction at unchanged production safety boundary.** The corrected lint CI [#44026253001](https://github.com/Iam-2squared/ark-ai/actions/runs/44026253001) exposed six inherited *old test expectation* failures on Ubuntu Python 3.13: the new stronger early-denial produces `READ receipt or input epoch changed` instead of later `differs`/fresh-review errors. In [`cb41202e`](https://github.com/Iam-2squared/ark-ai/commit/cb41202e758538a14848f5e44408c7785e8aefd5) five parameterized preexisting tests now require the early error and explicitly prove the malicious getter is **not called**. In [`921d81c4`](https://github.com/Iam-2squared/ark-ai/commit/921d81c410af1fcf5650677b4ef6860b74f03805) the sixth inherited test verifies that no fresh review/getter executes. No live policy or denial weakened.
+6. [Run936 technical report](https://github.com/Iam-2squared/ark-ai/blob/38d20e58f9bb264460dddb8f16e5613d239a23a8/docs/JARVIS_RUN936_NON_UI_READ_PREACCESS_MEMORY_RACE_ATOMIC_UNKNOWN.md) saved at `38d20e58f9bb264460dddb8f16e5613d239a23a8`, before the two old-expectation repairs; **this latest checkpoint supersedes its CI snapshot**.
+
+**17 NEW parameterized cases AUTHORED** (12+2+3), **six inherited assertion expectations improved**; no full local pytest or exact-final-HEAD GREEN claim. All tests use synthetic/mock/temporary local data; source code changes limited to reversible READ preflight safety, not frozen contracts or executable backend integration.
+
+## CI exact-SHA evidence and caveats
+
+- Prior-HEAD `72702885183077f694f16138ca1320c7388537cb`: [Run935 CI #44020330603](https://github.com/Iam-2squared/ark-ai/actions/runs/44020330603) **COMPLETED / 6 of 6 GREEN**, independently checked for Windows/Ubuntu × Python 3.11–3.13. **This is not Run936 exact-head evidence.**
+- New source `2f269569...`: [#44025927161](https://github.com/Iam-2squared/ark-ai/actions/runs/44025927161) **IN PROGRESS** at latest list read; later source inherited old tests' message mismatch.
+- New READ tests `57255eba...`: [#44026003302](https://github.com/Iam-2squared/ark-ai/actions/runs/44026003302) **COMPLETED / six FAIL** at `ruff I001` before pytest.
+- Memory race `30aef49b...`: [#44026134575](https://github.com/Iam-2squared/ark-ai/actions/runs/44026134575) **COMPLETED / FAIL** from same inherited import-order ruff failure.
+- Lint repair `4eb4e434...`: [#44026253001](https://github.com/Iam-2squared/ark-ai/actions/runs/44026253001) **IN PROGRESS** as of latest run list, with verified Ubuntu 3.13 pytest six old-expectation FAIL; precisely fixed in later commits, not a passed run.
+- Atomic child fixture `6d0e6f2c...`: [#44026573813](https://github.com/Iam-2squared/ark-ai/actions/runs/44026573813) **IN PROGRESS** at latest run list.
+- Technical-report `38d20e58...`: [#44026693430](https://github.com/Iam-2squared/ark-ai/actions/runs/44026693430) **IN PROGRESS** at latest run list.
+- First inherited-test repair `cb41202e...`: [#44027100033](https://github.com/Iam-2squared/ark-ai/actions/runs/44027100033) **QUEUED** at latest run list.
+- Second inherited-test repair `921d81c4...`: [#44027160108](https://github.com/Iam-2squared/ark-ai/actions/runs/44027160108) **QUEUED** at latest run list.
+- New checkpoint-result SHA triggers its own CI after write, therefore its CI ID/result cannot be pre-recorded. **Run936 final HEAD six-job GREEN NOT VERIFIED.** No duplicate workflows manually dispatched. If the later tests fail, inspect exact logs and preserve stronger fail-closed semantics.
+
+## Frozen evidence, safety/authorization and remaining blockers
+
+V1/V2/Local UI/Launcher evidence, V3 protected Contract #1/provenance/contamination/reproducibility and final V2 protected evaluation, Observation v1 and PR #5 controlled gate unchanged. UI PR #9 paused/unmodified. main unchanged. No billable compute, external GPU, Candidate/weight/adapter training/promotion, new credentials/accounts, protected scoring, real backend or computer control, real approval, irreversible deletion, or main merge. Local SQLite event success cannot prove cross-store atomicity, independent evidence custody, true consent, a trusted clock, or exactly-once external effects. Required physical Windows GGUF offline gate still pending.
+
+## Next plan / 今後の方針
+
+1. Complete exact-SHA CI inspection on the *post-fix* HEAD and inspect all six Windows/Ubuntu jobs. Fix any remaining test errors via normal GitHub path without weakening production guards; do not retry duplicate equivalent workflows or claim incomplete PASS.
+2. Expand Memory WAL/SHM independent-process/last-close, event high-water, expiry/CAS/ABA and scoped corruption isolation; no silent repair or uncertain automated retry.
+3. Continue Planner persisted COMMIT-UNKNOWN quarantine, terminal propagation and independent branches; reconnect ToolRegistry, exact-type PermissionGate, durable occurrence, audit-before-action and disconnected Mock Executor **only after lower-level exact-head GREEN**.
+4. Advance privacy-safe Personal Context, proactive/observation backend, startup readiness and free-only V3 path/approval/reproducibility guard review on independent non-UI lanes.
+5. Preserve no-pay/no-GPU, protected evaluation/Candidate, frozen contracts and main-merge approval boundaries; JARVIS full PASS is still not achieved.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run935: corrected Context digest; Memory WAL; Registry audit; Planner process CAS
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T13:54:00.145+09:00** (reporting wall clock sampled before normal GitHub Contents write, **not trusted audit/permission time**). **ARK/JARVIS overall NOT_PASSED.** Non-UI free-only/disconnected; all new frontend/UI work **PAUSED**.
 
