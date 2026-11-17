@@ -106,13 +106,13 @@ def test_fresh_last_denial_cannot_grant_permission_on_final_check(monkeypatch):
         DisconnectedReadPreflight, "durable_permission_proven",
         property(malicious),
     )
-    # The registered preflight now rejects the preinstalled False-looking
-    # denial descriptor before constructing a fresh receipt. This earlier
-    # denial is stronger than allowing the malicious second callback to run.
+    # The retained verifier now rejects the preinstalled False-looking
+    # class descriptor before calling the fresh review or any denial getter.
     with pytest.raises(
-        mod.DisconnectedReadReceiptRejected, match="fresh registry READ review denied",
+        mod.DisconnectedReadReceiptRejected, match="epoch changed",
     ):
         _verify(values)
+    assert fresh == []
     assert checks[0] == 0
     assert values[-1].calls == 0
 
