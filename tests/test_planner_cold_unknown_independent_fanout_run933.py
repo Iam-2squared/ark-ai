@@ -13,7 +13,6 @@ import pytest
 from ark.agency.contracts import PlanConflictError, PlanStep, StepState, ToolCall
 from ark.agency.planner_journal_review import SyntheticPlanJournal
 
-
 _CALL = ToolCall("fixture.inert", "fixture.write", "local", {"n": 1})
 _STEPS = (
     PlanStep("uncertain", _CALL),
