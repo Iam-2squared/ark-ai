@@ -126,6 +126,7 @@ def _require_original_schema_probe() -> None:
         or (_MAX_ITEMS, _MAX_DDL_BYTES, _MAX_VERSION) != _ORIGINAL_LIMITS
         # A substituted read/receipt helper can forge schema evidence while
         # appearing to use the original digest and deny-only carrier type.
+        or _SCHEMA_HELPER_NAMES is not _ORIGINAL_SCHEMA_HELPER_NAMES
         or any(
             globals().get(name) is not original
             for name, original in zip(
@@ -232,6 +233,7 @@ def _state(connection: sqlite3.Connection) -> tuple[str, int, int, int]:
 # authentication, data disclosure or an authenticated WAL snapshot.
 _SCHEMA_HELPER_NAMES = ("_state", "_seal_fields", "_assert_inert_seal")
 _ORIGINAL_SCHEMA_HELPERS = tuple(globals()[name] for name in _SCHEMA_HELPER_NAMES)
+_ORIGINAL_SCHEMA_HELPER_NAMES = _SCHEMA_HELPER_NAMES
 
 
 def capture_disconnected_sqlite_schema(
