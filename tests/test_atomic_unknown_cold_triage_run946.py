@@ -22,7 +22,6 @@ from ark.agency.disconnected_atomic_unknown_outcome_review import (
     review_atomic_unknown_outcome,
 )
 
-
 _CHILD = """
 import json
 import sys
