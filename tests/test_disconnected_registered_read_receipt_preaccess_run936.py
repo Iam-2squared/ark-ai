@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import pytest
 
+from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
 from ark.agency.disconnected_registered_read_preflight import (
     DisconnectedReadPreflight,
     review_disconnected_registered_read,
@@ -16,7 +17,6 @@ from ark.agency.disconnected_registered_read_recheck import (
     DisconnectedReadReceiptRejected,
     verify_disconnected_registered_read_receipt,
 )
-from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
 from ark.agency.policy import PermissionGate
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
