@@ -48,7 +48,12 @@ while not written.exists():
         sys.exit("expiry writer never signaled")
     time.sleep(0.02)
 assert snapshot() == (1, 2)
-observed.write_text("pinned-old-snapshot", encoding="ascii")
+# Publish the completed marker atomically: touch/existence is not a content barrier.
+# A non-atomic write_text creates an empty file before writing, which makes
+# parent-side exists() checks intermittently observe an empty marker on CI.
+pending = observed.with_name(observed.name + ".pending")
+pending.write_text("pinned-old-snapshot", encoding="ascii")
+pending.replace(observed)
 while not release.exists():
     if time.monotonic() >= deadline:
         sys.exit("reader release never signaled")
