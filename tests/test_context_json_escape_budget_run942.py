@@ -34,7 +34,7 @@ def _records(character: str, count: int) -> tuple[OfflineContextFixture, ...]:
 
 
 @pytest.mark.parametrize("count", (1, 2, 3, 4))
-@pytest.mark.parametrize("character", ("\\x00", "\\x1f"))
+@pytest.mark.parametrize("character", ("\x00", "\x1f"))
 def test_json_control_escaping_respects_serialized_budget(
     character: str, count: int,
 ) -> None:
@@ -68,7 +68,7 @@ def test_json_control_escaping_respects_serialized_budget(
     assert report.retention_authorized is False
 
 
-@pytest.mark.parametrize("character", ("\\n", "x"))
+@pytest.mark.parametrize("character", ("\n", "x"))
 def test_four_rows_below_escaped_limit_remain_verifiable(character: str) -> None:
     rows = _records(character, 4)
     report = build_offline_context_preview(
