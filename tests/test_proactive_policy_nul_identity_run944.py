@@ -24,7 +24,7 @@ def _policy() -> SyntheticTriggerPolicy:
     "field", ("owner", "namespace", "definition_id", "policy_revision"),
 )
 @pytest.mark.parametrize(
-    "value", ("\\x00fixture", "fixture\\x00identity", "fixture\\x00"),
+    "value", ("\x00fixture", "fixture\x00identity", "fixture\x00"),
 )
 def test_synthetic_policy_nul_text_is_rejected_before_store(
     field: str, value: str, tmp_path,
