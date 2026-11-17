@@ -1,4 +1,46 @@
-# LATEST — ARK AI Run937: scoped Memory expiry, cross-process Proactive, Planner input admission
+# LATEST — ARK AI Run938: Memory due-page atomicity, preaction corruption quarantine, Planner independence, Context privacy
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T16:50:42+09:00** (reporting clock sampled immediately before the normal GitHub Contents checkpoint; not a trusted approval/audit/action clock). **Overall ARK/JARVIS NOT_PASSED.** Non-UI, free-only disconnected work. All new frontend/UI development remains **PAUSED**.
+
+**Branch/PR:** research/jarvis-foundations / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at the prewrite check. **Main HEAD:** 7a843f17eb96ed13d66f23b58b06406b3002e405. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) OPEN/DRAFT/UNMERGED at 805b377697472268db02650a89c7a94b1c5337c8. Paused [Draft UI PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) OPEN/DRAFT/UNMERGED at 3b49048dd70eebcb6268299b9ecef4e301bbc0fd. **Run938 exact work-basis HEAD:** e60c65b592d94e0edeb42e5a8f33c227e30f4a2c (Run937 checkpoint). **Last test/fix and checkpoint-write-basis HEAD:** e553f20786fd00624944cc231d4277864ebe6373. **Technical-report HEAD:** c0ab857fc92f65163c28838cd063436d04e8c3a3 (before test correction). **Previous PROJECT_STATUS blob:** 5c7375a171a1444183c1598dfc5d56dadd5f70f7. The checkpoint-result HEAD cannot self-embed in this same commit; GitHub Contents result SHA, a subsequent PR HEAD read and the resulting PROJECT_STATUS blob establish that separately.
+
+## NEW this invocation — four non-UI regression packages, 16 new cases, plus observed CI correction
+
+1. [Memory bounded expiry due-page atomicity 78f01af5](https://github.com/Iam-2squared/ark-ai/commit/78f01af5965269f85306705deaab053218734e3a): six tests across three corrupted TEXT columns and two page sizes. A malformed second due row within the same scope must not poison a bounded valid first page; a two-row page must fail transactionally without deleting a healthy row. No silent repair, off-page data hydration or false expiry event.
+2. [Atomic intent/audit corruption quarantine 794d1d71](https://github.com/Iam-2squared/ark-ai/commit/794d1d71920401edcb92fa5901147259ce9dc034): four tests for mismatched digest/chain/identity and missing audit row; restart, retained inspection and append deny, preserving damaged synthetic SQLite bytes for manual review.
+3. [Planner terminal independence 5fb9d76e](https://github.com/Iam-2squared/ark-ai/commit/5fb9d76ee8988790062c4a5b32f751d81624f192): two tests for FAILED/CANCELLED terminal descendant cascade; stale completion/blocked-child retry cannot alter state digest, while independent pending work may advance without changing topology or dispatching anything.
+4. [Personal Context private diagnostics 9ea29606](https://github.com/Iam-2squared/ark-ai/commit/9ea296063bcf058d27e56a76fc1ee0928009d3ac): four tests for positive fixture preview and negative digest/scope/expiry; private synthetic content excluded from reprs and errors, and all action/export/consent/retention authority flags stay False.
+5. **Observed CI failure, minimally corrected:** [first Memory CI #44041134252](https://github.com/Iam-2squared/ark-ai/actions/runs/44041134252) Ubuntu Python 3.11 showed three new test expectation failures (16,914 PASS, 3 FAIL, 1 SKIP). The test incorrectly expected a one-row retry to reach the corrupt second row after an earlier two-row *failed* purge left the healthy first row intact. Corrected the test to retry the same page size in [e553f207](https://github.com/Iam-2squared/ark-ai/commit/e553f20786fd00624944cc231d4277864ebe6373); the production safety/expiry logic and event assertions were NOT relaxed. Other earlier-head runs inherit this failure, and their conclusions are not latest-head results.
+6. [Technical report](https://github.com/Iam-2squared/ark-ai/blob/c0ab857fc92f65163c28838cd063436d04e8c3a3/docs/JARVIS_RUN938_NON_UI_DUE_PAGE_ATOMIC_PLANNER_CONTEXT.md) was saved before repair and documents the four original packages; this latest checkpoint supersedes its initial CI snapshot.
+
+**16 NEW cases AUTHORED (6+4+2+4), 3 parametrized expectations repaired.** Test-only; production code and existing frozen V1/V2/Local UI/Launcher contracts/evidence unchanged. No local full pytest, physical GGUF, protected evaluation or exact-current-HEAD GREEN claimed.
+
+## CI evidence — exact commits and observed runs
+
+- Prior Run937 checkpoint at e60c65b592d94e0edeb42e5a8f33c227e30f4a2c: [CI #44034230497](https://github.com/Iam-2squared/ark-ai/actions/runs/44034230497) COMPLETED, all six Windows/Ubuntu x Python 3.11–3.13 jobs GREEN (independently read at invocation start). **Prior-head only**.
+- Initial Memory test HEAD 78f01af5: [#44041134252](https://github.com/Iam-2squared/ark-ai/actions/runs/44041134252); failed Ubuntu 3.11 due to the specific test fixture logic noted above; older jobs may still be running.
+- Atomic test HEAD 794d1d71: [#44041196679](https://github.com/Iam-2squared/ark-ai/actions/runs/44041196679); earlier Ubuntu job failures inherit the same three Memory test expectations; this does not validate/certify Atomic green.
+- Planner test HEAD 5fb9d76e: [#44041257823](https://github.com/Iam-2squared/ark-ai/actions/runs/44041257823), IN PROGRESS at latest snapshot.
+- Context test HEAD 9ea29606: [#44041413536](https://github.com/Iam-2squared/ark-ai/actions/runs/44041413536), IN PROGRESS/QUEUED at latest snapshot.
+- Report HEAD c0ab857f: [#44041641302](https://github.com/Iam-2squared/ark-ai/actions/runs/44041641302), QUEUED at initial check.
+- Repair HEAD e553f207: [#44041717107](https://github.com/Iam-2squared/ark-ai/actions/runs/44041717107), QUEUED at initial check. It is the first corrected source/test HEAD; **not yet GREEN**.
+- A successful checkpoint write triggers another CI run after this text is committed. Never invent its ID or interpret earlier jobs as exact checkpoint-result evidence. No manually dispatched duplicate runs.
+
+## Frozen evidence, blocker and authorization boundaries
+
+V1/V2/Local UI/Launcher freezes, V3 protected Contract #1 and provenance/contamination/reproducibility guards, protected final V2 evaluation, Observation v1, PR #5 Draft approval gate and paused UI PR #9 unchanged. main untouched. No billable services, paid/external GPU, real Candidate/adapter/weight generation or promotion, protected scoring, new credentials/accounts, physical hardware action, destructive actual-user data action, real backend dispatch, real user data, automatic ambiguous WRITE retry, or main merge. Synthetic local SQLite integrity does not prove trusted clock, authenticated consent, independent custody, cross-store atomicity or exactly-once external effects. Required offline physical Windows GGUF gate still pending.
+
+## Next plan / 今後の方針
+
+1. Complete **post-repair exact HEAD** Windows/Ubuntu six-job CI verification and investigate any new failure using actual job logs. Make the smallest safe fix via normal GitHub Contents only, without weakening production denial.
+2. Extend bounded Memory expiry, process-level WAL/SHM last-close race, scoped CAS/ABA, event high-water and restart coherence without silent repair.
+3. Continue Planner persisted COMMIT-UNKNOWN manual-only recovery, terminal propagation, durable registry-bound authorization and audit-before-action; connect only once each lower-level head has exact-green evidence, then use disconnected Mock Executor only.
+4. Continue privacy-safe Personal Context and proactive/observation non-UI contracts, startup readiness and free-only V3 identity/approval/reproducibility guards.
+5. Preserve UI pause, all protected evaluation/training/Candidate/physical-PC and main-merge approvals. **ARK/JARVIS NOT_PASSED.**
+
+---
+
+# HISTORY — ARK AI Run937: scoped Memory expiry, cross-process Proactive, Planner input admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T15:50:39+09:00** (reporting clock sampled before normal GitHub Contents checkpoint write; **not** a trusted action/permission/audit clock). **ARK/JARVIS overall NOT_PASSED.** Free-only disconnected core; all new frontend/UI work **PAUSED**.
 
