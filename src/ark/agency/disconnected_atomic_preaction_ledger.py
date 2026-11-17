@@ -288,13 +288,20 @@ def _schema(conn: sqlite3.Connection) -> None:
     # Check SQLite's catalog inside the caller's transaction BEFORE bringing
     # any persisted DDL into Python. Two UNIQUE indexes are auto-generated,
     # so the frozen v1 fixture has exactly four catalog entries.
-    object_count, ddl_bytes = conn.execute(
-        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0) "
+    # Catalog name/type/table identifiers can be rewritten without growing
+    # the original DDL. Budget their UTF-8 bytes inside SQLite as well,
+    # before hydrating any sqlite_master row into Python.
+    object_count, ddl_bytes, identity_bytes = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(length(CAST(sql AS BLOB))), 0), "
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)), 0) "
+        "+ COALESCE(length(CAST(name AS BLOB)), 0) "
+        "+ COALESCE(length(CAST(tbl_name AS BLOB)), 0)), 0) "
         "FROM sqlite_master"
     ).fetchone()
     if (
         type(object_count) is not int or object_count != 4
         or type(ddl_bytes) is not int or not 0 <= ddl_bytes <= 4_096
+        or type(identity_bytes) is not int or not 0 <= identity_bytes <= 4_096
     ):
         raise AtomicPreactionRejected("pre-action schema catalog preflight failed")
     query = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
