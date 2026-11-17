@@ -1,3 +1,44 @@
+# LATEST — ARK AI Run932: disconnected READ fan-in, occurrence replay, Planner diamond, private Context batch
+
+**Saved at (Asia/Tokyo/JST): 2026-11-17T10:54:35.137+09:00** (wall-clock sampled immediately before GitHub Contents checkpoint write; **NOT a trusted approval/audit clock**). **Overall ARK/JARVIS NOT_PASSED**. Free-only, disconnected non-UI backend; no new frontend/UI development.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) open/unmerged, PR HEAD checked immediately before checkpoint. Protected [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) and paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) are untouched/unmerged. **main HEAD:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, verified unchanged before checkpoint. **Work-basis HEAD:** `8f95819c6524258246d902aab3ca6bbbf5b9af01` (Run931). **Complete new source/test HEAD:** `7e0262e82737f50dc714641784ef36821cb008a2` (tests-only; no core source modifications). **Technical-report/checkpoint-write-basis HEAD:** `aed880db124bfad9627ef340bc635ba58187b84f`. **Previous status blob SHA:** `985122e4d637302b1816878d8116dc01aeea4611`. **Checkpoint-result HEAD is intentionally not self-embedded**: use returned normal Contents commit SHA, then separately verify current PR #8 branch HEAD and resulting PROJECT_STATUS blob. Report/source/test HEADs are not the checkpoint-result commit.
+
+## NEW in this invocation — four independent coherent packages
+
+1. [READ fan-in mock-only `dadab876`](https://github.com/Iam-2squared/ark-ai/commit/dadab876b10d344cf1613f180a8af32636e90f06) — **11 new parameterized tests** for UNKNOWN/RUNNING/FAILED/NOT_STARTED/SUCCEEDED mixed-predecessor diamond recovery, unrelated safe synthetic mock branch, transitive hold/wait, quarantine-only binding rejection, and different input bytes vs derived receipt digest.
+2. [Occurrence restart and expiry `1ed0403a`](https://github.com/Iam-2squared/ark-ai/commit/1ed0403a894ee2fa2440b84eb20ebf26708769d2) — **6 new tests** for duplicate synthetic one-shot token refusal across SQLite restart, attempted expiry refresh, expired token, caller-time rollback, separately authorized equivalent requests producing distinct occurrence IDs, and changed registered effect from WRITE to READ. Never dispatches a backend or authenticates consent.
+3. [Planner terminal diamond CAS `7ba20565`](https://github.com/Iam-2squared/ark-ai/commit/7ba20565c3d1c1b7590134d3111c9b74bb14f528) — **7 new tests** for terminal failure/cancellation/blocking propagation through a two-branch DAG join, independent branch progress, no automatic terminal replay, and failed exact-CAS nonmutation.
+4. [Personal Context fail-all privacy `7e0262e8`](https://github.com/Iam-2squared/ark-ai/commit/7e0262e82737f50dc714641784ef36821cb008a2) — **11 new tests** for fabricated two-scope local preview/reverification; reject mixed-owner, missing scope consent proxy, expired, digest-changed, duplicate/out-of-order records; retained owner/allowlist/expiry/digest drift. Fake strings only; no live user data, Memory DB or external export.
+
+**35 NEW parameterized regression cases AUTHORED** (11+6+7+11). No local full pytest or live PC/GGUF run. Test addition does NOT mean latest exact-head CI PASS. Technical evidence and limitations: [Run932 report](https://github.com/Iam-2squared/ark-ai/blob/aed880db124bfad9627ef340bc635ba58187b84f/docs/JARVIS_RUN932_NON_UI_READ_OCCURRENCE_PLANNER_CONTEXT.md). No production dispatch, real permission, external side effects, protected evaluation or new UI code.
+
+## CI snapshot at checkpoint preparation
+
+- Previous Run931 exact HEAD `8f95819c6524258246d902aab3ca6bbbf5b9af01`: [#43991993254](https://github.com/Iam-2squared/ark-ai/actions/runs/43991993254) **COMPLETED, 6/6 GREEN** (Ubuntu/Windows × Python 3.11/3.12/3.13); observed all six individual jobs. This validates the prior HEAD, not new tests.
+- READ [#43998481377](https://github.com/Iam-2squared/ark-ai/actions/runs/43998481377), SHA `dadab876`: **IN_PROGRESS**.
+- Occurrence [#43998544469](https://github.com/Iam-2squared/ark-ai/actions/runs/43998544469), SHA `1ed0403a`: **IN_PROGRESS**.
+- Planner [#43998651552](https://github.com/Iam-2squared/ark-ai/actions/runs/43998651552), SHA `7ba20565`: **IN_PROGRESS**.
+- Personal Context [#43998847070](https://github.com/Iam-2squared/ark-ai/actions/runs/43998847070), SHA `7e0262e8`: **QUEUED**.
+- Report [#43998936336](https://github.com/Iam-2squared/ark-ai/actions/runs/43998936336), SHA `aed880db`: **QUEUED**.
+- Normal checkpoint write may start another CI on its resulting SHA; no duplicate manual run. **Latest checkpoint-result HEAD 6/6 GREEN is NOT VERIFIED**.
+
+## Frozen contracts, blockers and authority boundaries
+
+V1/V2/Local UI/Launcher frozen contracts/evidence, Observation v1 semantics and protected V2 final-evaluation gate remain unchanged. V3 provenance/contamination/consent/reproducibility controls unchanged. PR #5/#8/#9 Draft/unmerged; PR #9 UI branch untouched. main unchanged. No paid/external GPU compute, subscription/API, Candidate weight/adapter production, protected evaluation, real WRITE, credentials/account connections, destructive operations, user-PC action, raw Git safety bypass, force push, or main merge. Source/test writes used normal GitHub Contents safety path.
+
+Remaining blockers: WAL/SHM process/alias last-close races; Memory cross-process CAS, expiry and independently retained/verified event snapshots; Planner COMMIT-UNKNOWN manual-only recovery; authenticated durable one-shot authorization and consent, trusted-clock audit-before-action, cross-store atomicity, and physical Windows/GGUF model proof. Local synthetic token, registry, SQLite hash or mock fixture is never real authority. **ARK/JARVIS NOT_PASSED.**
+
+## Next plan / 今後の方針
+
+1. Resolve newest exact-head Windows+Ubuntu Python 3.11–3.13 **6/6 CI**, diagnose FAIL logs and apply minimal semantics-preserving repair. Continue independent work during in-flight checks.
+2. Reproduce disposable SQLite WAL/SHM last-close/alias process races and strengthen Memory CAS/expiry, privacy erase witnesses, dense events/coherent snapshots.
+3. Strengthen Planner persisted RUNNING/UNKNOWN terminal propagation and COMMIT-UNKNOWN quarantine. Never blind-replay an uncertain external effect.
+4. Integrate immutable registry → exact-type PermissionGate → authenticated durable one-shot occurrence → trusted-clock audit-before-action → **disconnected mock only**, after exact lower-layer GREEN; no real effects until separate human authorization.
+5. Continue privacy-safe Personal Context, proactive and Observation backend, and free-only V3 guard hardening. No UI/frontend additions; maintain PR #5/#9 and main freezes.
+
+---
+
 # LATEST — ARK AI Run931: verified CI failure repair, proactive late-policy veto, durable fixture replay
 
 **Saved at (Asia/Tokyo/JST): 2026-11-17T09:58:58.636+09:00** (reporting wall-clock measured just before ordinary GitHub Contents checkpoint write, **NOT** a trusted audit/approval clock). **Overall ARK/JARVIS NOT_PASSED.** Only free, disconnected, non-UI work; new frontend/UI development PAUSED. No real external effect, protected evaluation, Candidate promotion or paid compute authorized.
