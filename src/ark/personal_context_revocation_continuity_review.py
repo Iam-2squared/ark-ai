@@ -89,6 +89,12 @@ _ORIGINAL_WITNESS_FIELDS = tuple(vars(_WITNESS_TYPE)[key] for key in _WITNESS_FI
 _ORIGINAL_WITNESS_HOOKS = tuple(
     vars(_WITNESS_TYPE).get(key) for key in _WITNESS_HOOKS
 )
+# A caller-rebound/shortened field or hook vector cannot become the new
+# comparison baseline and skip a reflected executable witness descriptor.
+_WITNESS_VECTOR_EPOCH = (
+    _WITNESS_FIELDS, _WITNESS_HOOKS,
+    _ORIGINAL_WITNESS_FIELDS, _ORIGINAL_WITNESS_HOOKS,
+)
 
 
 def _require_original_witness_carrier() -> None:
@@ -113,6 +119,14 @@ def _require_original_witness_carrier() -> None:
     if (
         SyntheticRevocationWitness is not _WITNESS_TYPE
         or vars(_WITNESS_TYPE).get("assert_integrity") is not _ORIGINAL_WITNESS_VALIDATOR
+        or any(
+            now is not before
+            for now, before in zip(
+                (_WITNESS_FIELDS, _WITNESS_HOOKS,
+                 _ORIGINAL_WITNESS_FIELDS, _ORIGINAL_WITNESS_HOOKS),
+                _WITNESS_VECTOR_EPOCH, strict=True,
+            )
+        )
         or any(
             vars(_WITNESS_TYPE).get(name) is not original
             for names, originals in (
