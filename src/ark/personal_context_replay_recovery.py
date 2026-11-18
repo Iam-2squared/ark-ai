@@ -116,6 +116,12 @@ _RESULT_DENIALS = (
 _ORIGINAL_RESULT_DENIALS = tuple(
     vars(_RESULT_TYPE)[name] for name in _RESULT_DENIALS
 )
+# Freeze guard vectors: shortened zip inputs must not make newly executable
+# denial getters, result descriptors or ledger access hooks invisible.
+_ORIGINAL_RESULT_FIELDS_VECTOR = _RESULT_FIELDS
+_ORIGINAL_RESULT_HOOKS_VECTOR = _RESULT_HOOKS
+_ORIGINAL_RESULT_DENIALS_VECTOR = _RESULT_DENIALS
+_ORIGINAL_LEDGER_ACCESS_HOOKS_VECTOR = _LEDGER_ACCESS_HOOKS
 
 
 def _assert_result_denials() -> None:
@@ -127,6 +133,9 @@ def _assert_result_denials() -> None:
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _RESULT_FIELDS is not _ORIGINAL_RESULT_FIELDS_VECTOR
+        or _RESULT_HOOKS is not _ORIGINAL_RESULT_HOOKS_VECTOR
+        or _RESULT_DENIALS is not _ORIGINAL_RESULT_DENIALS_VECTOR
     ):
         raise OfflineContextRecoveryRejected(
             "context replay digest implementation changed"
@@ -162,6 +171,7 @@ def _assert_result_denials() -> None:
 def _assert_ledger_access_hooks() -> None:
     if (
         DisconnectedContextReplayLedger is not _LEDGER_TYPE
+        or _LEDGER_ACCESS_HOOKS is not _ORIGINAL_LEDGER_ACCESS_HOOKS_VECTOR
         or _check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS
         or _ledger_module._inspect is not _ORIGINAL_LEDGER_INSPECT
         or _ledger_module._check_witness is not _ORIGINAL_LEDGER_CHECK_WITNESS
