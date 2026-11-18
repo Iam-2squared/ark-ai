@@ -484,13 +484,14 @@ class DisconnectedReadJournal:
         if type(count) is not int or not 0 <= count <= _MAX_ROWS:
             raise ReadJournalRejected("journal row budget exceeded")
         malformed = self._connection.execute(
-            "SELECT 1 FROM receipts WHERE typeof(seq)!='integer' "
+            "SELECT 1 FROM receipts WHERE typeof(seq)!='integer' OR seq<1 "
             "OR typeof(request_id)!='text' "
             "OR length(CAST(request_id AS BLOB))!=36 "
             "OR typeof(step_id)!='text' "
             "OR length(CAST(step_id AS BLOB))!=21 "
             "OR typeof(operation)!='text' "
             "OR length(CAST(operation AS BLOB)) NOT BETWEEN 1 AND 32 "
+            "OR operation NOT IN ('math.sum','text.stats','text.find','json.inspect') "
             "OR typeof(input_digest)!='text' "
             "OR length(CAST(input_digest AS BLOB))!=64 "
             "OR typeof(result_digest)!='text' "
