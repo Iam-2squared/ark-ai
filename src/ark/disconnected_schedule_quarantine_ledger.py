@@ -131,18 +131,30 @@ _RECEIPT_CARRIER_NAMES = (
 _ORIGINAL_RECEIPT_CARRIER = tuple(
     vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_CARRIER_NAMES
 )
+# Preserve the entire vector as well as each descriptor; a truncated name
+# tuple must never make a paired zip silently skip a hostile receipt getter.
+_RECEIPT_NAMES_EPOCH = _RECEIPT_CARRIER_NAMES
+_RECEIPT_ORIGINALS_EPOCH = _ORIGINAL_RECEIPT_CARRIER
 
 
 def _require_original_quarantine_receipt_carrier() -> None:
     _require_original_quarantine_protocol()
     if (
         QuarantineReceipt is not _RECEIPT_TYPE
+        or _RECEIPT_CARRIER_NAMES is not _RECEIPT_NAMES_EPOCH
+        or _ORIGINAL_RECEIPT_CARRIER is not _RECEIPT_ORIGINALS_EPOCH
         or any(
             vars(_RECEIPT_TYPE).get(name) is not original
             for name, original in zip(
                 _RECEIPT_CARRIER_NAMES, _ORIGINAL_RECEIPT_CARRIER, strict=True,
             )
         )
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in _ORIGINAL_RECEIPT_DENIALS
+        )
+        or vars(_WITNESS_INPUT_TYPE).get("independently_authenticated")
+        is not _ORIGINAL_WITNESS_DENIAL
     ):
         raise ScheduleQuarantineRejected(
             "quarantine receipt constructor or field descriptor changed"
@@ -180,6 +192,12 @@ _WITNESS_INPUT_ORIGINALS = tuple(
     vars(_WITNESS_INPUT_TYPE).get(name)
     for name in (*_WITNESS_INPUT_FIELDS, *_INPUT_HOOKS)
 )
+# Bind complete input field/hook vectors before any retained policy or witness
+# metadata can be read; equality of a shortened list is not enough.
+_INPUT_VECTOR_EPOCH = (
+    _POLICY_INPUT_FIELDS, _WITNESS_INPUT_FIELDS, _INPUT_HOOKS,
+    _POLICY_INPUT_ORIGINALS, _WITNESS_INPUT_ORIGINALS,
+)
 
 
 def _require_original_quarantine_input_carriers() -> None:
@@ -187,6 +205,14 @@ def _require_original_quarantine_input_carriers() -> None:
     if (
         QuarantinePolicy is not _POLICY_INPUT_TYPE
         or QuarantineWitness is not _WITNESS_INPUT_TYPE
+        or any(
+            current is not original
+            for current, original in zip(
+                (_POLICY_INPUT_FIELDS, _WITNESS_INPUT_FIELDS, _INPUT_HOOKS,
+                 _POLICY_INPUT_ORIGINALS, _WITNESS_INPUT_ORIGINALS),
+                _INPUT_VECTOR_EPOCH, strict=True,
+            )
+        )
         or any(
             vars(cls).get(name) is not original
             for cls, fields, originals in (
