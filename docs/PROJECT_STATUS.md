@@ -1,3 +1,49 @@
+# LATEST — ARK AI Run976: opt-in observation/proactive/context control-label admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T06:03:29.391+09:00** (reporting time only; NOT a trusted audit, consent, expiry or schedule clock). **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at prewrite check. **Exact work-basis HEAD:** `43ec54c31d59c67bb081b9847170cb13e2602649` (Run975 checkpoint, verified GREEN 6/6). **Latest executable source/test HEAD:** `7eff4eb4663c30d727085860dbc4f5e9bb9154e4`. **Technical report and checkpoint write-basis HEAD:** `96c54a71b68562447f50a72bc01b7500c8bf8ffc`. **Checkpoint-result HEAD:** obtain from the GitHub Contents API commit SHA and subsequent live branch/PR SHA; the commit cannot embed its own SHA in its tracked text.
+
+**Protected baseline:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 gated Draft `805b377697472268db02650a89c7a94b1c5337c8`; PR #9 paused UI Draft `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; all OPEN/DRAFT/UNMERGED and untouched. All frozen V1/V2/Local UI/Launcher evidence, protected evaluation, Memory v1/ToolCall v1/Observation Envelope v1 contracts unchanged.
+
+## NEW this invocation — 3 non-UI implementation+test packages, 94 authored cases
+
+1. **Observation in-memory fixture prehash labels** — source [`e8dc0dba5`](https://github.com/Iam-2squared/ark-ai/commit/e8dc0dba5286a1f25ec0aa3e1bbe9671d65dbda6) + tests [`066447c8f`](https://github.com/Iam-2squared/ark-ai/commit/066447c8fe364cce1f6932c72e832dd0a850b0d5). **34** authored cases. Reject ASCII controls/DEL, C1/Unicode format/bidi/zero-width/line-separator labels before content hashing. Clean multilingual digest-only fixtures remain admitted. Direct frozen ObservationEnvelope v1 semantics unchanged.
+2. **Proactive synthetic policy identifiers** — source [`2aab70673`](https://github.com/Iam-2squared/ark-ai/commit/2aab706739913bbd6abf212caa9161c9b7c224ac) + tests [`743985a8c`](https://github.com/Iam-2squared/ark-ai/commit/743985a8c3977b7285e5236e16a4b9383b440823). **41** authored cases. Reject ambiguous owner/namespace/definition/revision labels before digest or SQLite marker; test reflected mutation with **zero persisted rows**, and a permitted inert multilingual marker. No notifications or trusted-clock claims.
+3. **Ephemeral Personal Context selection revision** — source [`2917c54ab`](https://github.com/Iam-2squared/ark-ai/commit/2917c54ababd33538538890581055fff045c7580) + tests [`7eff4eb46`](https://github.com/Iam-2squared/ark-ai/commit/7eff4eb4663c30d727085860dbc4f5e9bb9154e4). **19** authored cases. Refuse control-bearing policy revisions before private snapshot review and hashing, including reflected mutations, preserving clean UTF-8 Japanese policy names. No private data extracted.
+
+[Run976 full technical report](https://github.com/Iam-2squared/ark-ai/blob/96c54a71b68562447f50a72bc01b7500c8bf8ffc/docs/JARVIS_RUN976_NON_UI_IDENTITY_ADMISSION.md) · [Preserved history through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## Tests / CI / evidence — exact commits, latest observed
+
+- **Prior Run975 exact checkpoint** `43ec54c31d59c67bb081b9847170cb13e2602649`: [CI #44385071884](https://github.com/Iam-2squared/ark-ai/actions/runs/44385071884) **GREEN 6/6** — Ubuntu/Windows × Python 3.11–3.13.
+- **Observation source** `e8dc0dba5`: [CI #44394775595](https://github.com/Iam-2squared/ark-ai/actions/runs/44394775595), **IN PROGRESS** at latest observed job check (3 Ubuntu SUCCESS, 3 Windows pending, 0 known FAIL).
+- **Proactive source** `2aab70673`: [CI #44395056771](https://github.com/Iam-2squared/ark-ai/actions/runs/44395056771), **IN PROGRESS** (3 Ubuntu SUCCESS, 3 Windows pending, 0 known FAIL).
+- **Observation tests** `066447c8f`: [CI #44395616909](https://github.com/Iam-2squared/ark-ai/actions/runs/44395616909), **IN PROGRESS** (3 Ubuntu SUCCESS, 3 Windows pending, 0 known FAIL).
+- **Proactive tests** `743985a8c`: [CI #44395873684](https://github.com/Iam-2squared/ark-ai/actions/runs/44395873684), **IN PROGRESS** (3 Ubuntu SUCCESS, 3 Windows pending, 0 known FAIL).
+- **Personal Context latest source/test** `7eff4eb46`: [CI #44396483982](https://github.com/Iam-2squared/ark-ai/actions/runs/44396483982), **IN PROGRESS** (0/6 complete at observed job check).
+- **Report HEAD** `96c54a71b`: [CI #44396895600](https://github.com/Iam-2squared/ark-ai/actions/runs/44396895600), **QUEUED/IN PROGRESS** at observed check. The checkpoint itself may start an automatic run. **Latest exact HEAD 6/6 GREEN is UNVERIFIED.** Never infer a new HEAD result from prior success.
+- No manually dispatched duplicate CI. The 94 tests are authored synthetic regression vectors, not independently authenticated source/consent/hardware evidence. No physical Windows/GGUF/offline PC validation.
+
+## Frozen contracts / blockers and authorization boundaries
+
+All frozen V1/V2/Local UI/Launcher artifacts and V3 provenance/contamination/regression/reproducibility gates intact. PR #5 stays gated Draft, PR #8 Draft, PR #9 paused UI Draft; no frontend, main merge, Candidate training, model weights, protected final evaluation or real tool action. No paid service/API/GPU, subscriptions, new secrets/accounts, destructive operation or COMMIT-UNKNOWN replay.
+
+Open gates: authenticated consent/trusted clock/independent provenance, safe WAL/SHM and cross-store crash custody, genuine device-side validation, mock-to-production integration, durable external exactly-once action outcome proof. A synthetic digest does not establish a trusted actor or authorization.
+
+## Next plan / 今後の方針
+
+1. Confirm **exact latest source/test and checkpoint HEAD** Windows+Ubuntu × 3.11–3.13 CI; diagnose failures via logs and only permitted normal GitHub writes, overlapping independent non-UI lanes.
+2. Memory WAL/SHM races, generation CAS/ABA, dense events, expiry snapshots, COMMIT-UNKNOWN manual/no-replay recovery.
+3. Planner durable terminal/restart; ToolRegistry immutable identity and exact-type PermissionGate, durable one-shot approval and audit-before-action, disconnected/mock executor only after exact-head GREEN.
+4. Privacy-first Personal Context revocation/reuse, proactive occurrence/replay/trusted-clock blockers, Observation fixture contracts and free-only V3 identity/path/reproducibility protections. **UI remains paused.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run975 (verbatim preserved below)
+
 # LATEST — ARK AI Run975: Memory complete-row prehydration, alignment numeric storage, registry scope budgets
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T04:52:44.023+09:00** (reporting timestamp, NOT trusted expiry/consent/audit clock). **Overall ARK/JARVIS: NOT_PASSED.**
