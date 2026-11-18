@@ -86,6 +86,12 @@ def _admit_graph_label(value: object) -> None:
     # altering the frozen PlanStep/ToolCall constructor contracts.
     if "\x00" in value:
         raise PlanConflictError("plan graph identifier contains NUL separator")
+    # The frozen PlanStep/ToolCall contracts allow control-bearing strings.
+    # Standalone Planner must refuse C0/DEL log or journal delimiters before
+    # computing a request digest, constructing a DAG or persisting an ID.
+    # Keep NUL's established error classification above unchanged.
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise PlanConflictError("plan graph identifier contains ASCII control delimiter")
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
