@@ -1,3 +1,40 @@
+# LATEST — ARK AI Run957: Proactive source UTF-8 byte guard, Memory mutation scalar admission, privacy veto restart
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T11:43:23.345+09:00** (ordinary reporting clock only; NOT a trusted clock for audit, consent, expiry, authorizations or provenance). **Overall ARK/JARVIS NOT_PASSED.** Zero-new-cost, disconnected/synthetic, non-UI core only. No live tool backend, real owner-PC GGUF gate, hardware, externally paid services or protected evaluation.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint preflight. **Exact work-basis HEAD:** `3422bd6335a34c9b2689f31c993d6b1d5d48732b` (Run956 latest source/test repair, [CI #44221983516](https://github.com/Iam-2squared/ark-ai/actions/runs/44221983516) **COMPLETED GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13). **Latest Run957 source/test HEAD:** `216f55a94d542e6cd6a071ce0745921e65c9bbfb`. **Checkpoint-write basis HEAD:** `90c7f5000047d9afa55f0e3a7035635155b19c10` (Run957 technical report). **Previous PROJECT_STATUS blob:** `840f367abc16b574588dcb5f71595c04fe846543`. **Checkpoint-result HEAD cannot be embedded in its own blob**; verify returned Contents commit, branch/PR HEAD and checkpoint blob after the write. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged; Draft **PR #5** `805b377697472268db02650a89c7a94b1c5337c8`, paused Draft **UI PR #9** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, both OPEN/UNMERGED/UNTOUCHED.
+
+## NEW work — three non-UI packages, 28 authored cases and narrow CI lint repair
+
+1. **Proactive Observation synthetic source UTF-8 admission:** [`699761e0`](https://github.com/Iam-2squared/ark-ai/commit/699761e0b6611b34b480824bafdf1b0d88a573d6) rejects source identifiers exceeding **1024 encoded UTF-8 bytes before hashing**, matching existing frozen ObservationEnvelope v1 byte budget rather than the previous 1024-codepoint-only budget. No observation contract, sensor, capture, notification, runtime or backend change. [`f0be32f0`](https://github.com/Iam-2squared/ark-ai/commit/f0be32f018c5c1be99776545f00056edc8e03e14) adds **14** exact-byte/bad UTF-8/blank/foreign-type prehash tests.
+2. **Memory mutation corrupt persisted scalar types:** [`8044bd72`](https://github.com/Iam-2squared/ark-ai/commit/8044bd7278b1d6cba5996021b15fd99dd5510a7a) adds **7** cold-store tests for corrupt BLOB scope/source/expiry/revision, short digest, no post-rejection memory/event mutation and a healthy expiry update/delete roundtrip. Initial [CI #44224339148](https://github.com/Iam-2squared/ark-ai/actions/runs/44224339148) **FAIL 6/6** at Ruff F841 (unused test variable), before pytest; [`d0902626`](https://github.com/Iam-2squared/ark-ai/commit/d09026265937502cf7696fbe8561f80a5da2ae9a) fixes with *additional assertions* of the original row revision/expiry, no weakened gate.
+3. **Privacy durable veto and restart clock partitions:** [`216f55a9`](https://github.com/Iam-2squared/ark-ai/commit/216f55a94d542e6cd6a071ce0745921e65c9bbfb) adds **7** cases that reject invalid timestamp types/ranges and a cold-regressed revocation clock without changing older digest-only vetoes; independently revoked scopes remain revoked across handle restart, equal timestamps may record separate vetoes, and unrelated scope is unaffected. This is NOT verified consent, deletion or cross-store atomicity.
+
+**Technical report:** [Run957](https://github.com/Iam-2squared/ark-ai/blob/90c7f5000047d9afa55f0e3a7035635155b19c10/docs/JARVIS_RUN957_NON_UI_SOURCE_BYTES_MEMORY_SCALARS_PRIVACY_VETO.md). **28 cases AUTHORED; exact latest source/test HEAD GREEN 6/6 UNVERIFIED.** No local full pytest. No manual duplicate workflow runs.
+
+## CI exact-HEAD evidence — sampled at checkpoint preflight
+
+- Run956 repaired `3422bd6`: [CI #44221983516](https://github.com/Iam-2squared/ark-ai/actions/runs/44221983516) **COMPLETED GREEN 6/6**. This applies only to that HEAD.
+- Run957 production `699761e`: [#44224107127](https://github.com/Iam-2squared/ark-ai/actions/runs/44224107127) **IN PROGRESS**, no full six-job result yet.
+- Run957 Proactive test `f0be32f`: [#44224182697](https://github.com/Iam-2squared/ark-ai/actions/runs/44224182697) **IN PROGRESS**; Ubuntu 3/3 GREEN at last sampled job inspection, Windows three pending.
+- Run957 first Memory test `8044bd7`: [#44224339148](https://github.com/Iam-2squared/ark-ai/actions/runs/44224339148) **FAIL 6/6**, Ruff F841, fixed only in later HEAD `d0902626`.
+- Run957 repaired Memory test `d090262`: [#44224523215](https://github.com/Iam-2squared/ark-ai/actions/runs/44224523215) **IN PROGRESS**, Ubuntu 3.13 GREEN at last job inspection.
+- Run957 privacy `216f55a`: [#44224652273](https://github.com/Iam-2squared/ark-ai/actions/runs/44224652273) **IN PROGRESS**.
+- Run957 report `90c7f50`: [#44225056753](https://github.com/Iam-2squared/ark-ai/actions/runs/44225056753) **IN PROGRESS** at preflight. The checkpoint commit may auto-trigger its own CI. **Exact checkpoint HEAD six-job GREEN UNVERIFIED.** Do not promote earlier green to this new HEAD.
+
+## Frozen evidence, blockers, Next plan / 今後の方針
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract #1, final protected V2 evaluation, contamination/provenance/regression/reproducibility/human-review/Candidate-promotion gates unchanged. **PAUSE ALL UI work**, PR #9 unmodified and Draft; PR #5 Draft/unmerged. No new cost, paid API/subscription/external GPU compute, real Candidate or weight generation, protected evaluation, live tool dispatch, hardware/credentials, externally trusted consent/clock, irreversible deletion, main merge, force-push, or raw-Git bypass. Local SQLite receipt/hash cannot establish independent custody or exactly-once real effects, and two independent stores cannot establish cross-store atomicity.
+
+1. Complete Run957 repaired source/test/checkpoint HEAD CI 6/6; if failing, triage exact job logs, fix only via normal GitHub contents safety path, then switch to an independent non-UI lane while new CI runs.
+2. Advance Memory WAL/SHM close/reopen race, corrupt row/event hydration, generation-CAS/ABA, expiry and privacy-coherent snapshots without weakening frozen v1 semantics.
+3. Advance Planner RUNNING/COMMIT-UNKNOWN quarantine, ToolRegistry immutable identity, exact PermissionGate, restart-safe one-shot occurrence and audit-before-action mock joins; never auto-replay uncertain WRITE or interpret local preaction as execution authority.
+4. Advance Context privacy-veto/retention continuity, Proactive cold recurrence, Observation fixture-only lineage, and free V3 approval/path/identity/reproducibility guards. Human PC actions, protected evaluation, live tools, Candidate promotion, new billing and main merge remain explicitly blocked.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run956: Memory mutation prehydration, registered WRITE quarantine, Observation partition and Proactive policy isolation
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T11:05:11.219+09:00** (ordinary report clock only; not authenticated consent, audit, expiry, trusted action time or provenance). **Overall ARK/JARVIS NOT_PASSED.** Non-UI, disconnected/synthetic, zero-new-cost only; no real GGUF owner-PC gate, hardware, backend execution, protected evaluation or paid actions.
