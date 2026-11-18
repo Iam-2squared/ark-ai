@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run967: opt-in file carrier custody and invisible Observation identity guards
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T20:58:09.150+09:00** (ordinary reporting clock only, **NOT** trusted action/consent/expiry clock). **ARK/JARVIS NOT_PASSED.** Source, tests and diagnostic report are disconnected/non-UI; exact latest checkpoint CI GREEN **not established**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at write preflight. **Exact work-basis HEAD:** `0f0f49f95d0ce303bceaa3d1a9e2f738385348ed` (Run966 checkpoint; [CI #44290072462](https://github.com/Iam-2squared/ark-ai/actions/runs/44290072462) **SUCCESS 6/6** only for that earlier SHA). **Newest source/test HEAD:** `900500ce969703c1e9f2b3cf2a862179fa128ac5`. **Report HEAD / checkpoint-write basis:** `284ec13625df8180ce3d9ddc3c18706f0881454c`. **Prior canonical PROJECT_STATUS blob:** `c059d748fed688a78ce7e253290b8cd2a8461768`. **Checkpoint-result HEAD cannot be encoded inside the commit's own content**; obtain GitHub Contents result and compare with live branch/PR head. **main preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged. Protected PR #5 `805b377697472268db02650a89c7a94b1c5337c8` and paused UI PR #9 `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` remain Draft/unmerged/untouched.
+
+## NEW — Run967, 3 independent non-UI packages with 3 source fixes and 93 authored regression cases
+
+1. **Disconnected source pin:** [source `dc387e5f`](https://github.com/Iam-2squared/ark-ai/commit/dc387e5f5b589e22219a6e54294c7d2746981df6) binds original field/authority/hook vectors, class slots, local metadata codec and path bounds before retained-field reads or filesystem `lstat`; checks again after scans. [25 synthetic tests `12ff8984`](https://github.com/Iam-2squared/ark-ai/commit/12ff8984ec2aea8863b15de15b2462b1613ec62d) cover mutated vectors/getters/hooks, reentrant parent scan, unchanged no-authority capture/review.
+2. **POSIX descriptor seal:** [source `9532dfda`](https://github.com/Iam-2squared/ark-ai/commit/9532dfda42c92f23ab27bd1f7afdbfa82b2631ce) pins frozen field/denial/hook/equality carriers and byte/digest budgets before descriptor reads and retained reflection, then rechecks after pathname stat. [28 synthetic tests `edea9dc6`](https://github.com/Iam-2squared/ark-ai/commit/edea9dc65c542c394041333c540445e2e15a1637) cover substitution, reentrant mutation and ordinary read-only flow; unsupported Windows cases SKIP.
+3. **Observation fixture labels:** [source `db6021b5`](https://github.com/Iam-2squared/ark-ai/commit/db6021b5fd430d3f2f808e1d330e3d04aa640d6a) rejects 18 additional invisible Unicode scalars in opt-in synthetic source/privacy labels ahead of payload digest; direct frozen Envelope v1 untouched. [40 synthetic tests `900500ce`](https://github.com/Iam-2squared/ark-ai/commit/900500ce969703c1e9f2b3cf2a862179fa128ac5) cover 18×2 negative matrix, permitted Unicode and frozen constructor compatibility.
+
+**93 tests AUTHORED, not 93 verified PASSes.** [Technical report](https://github.com/Iam-2squared/ark-ai/blob/284ec13625df8180ce3d9ddc3c18706f0881454c/docs/JARVIS_RUN967_NON_UI_SOURCE_PIN_POSIX_OBSERVATION.md) contains boundaries. No local full pytest/Ruff, paid compute, physical-PC or actual filesystem user-data verification.
+
+## CI evidence — exact SHA/status only
+
+- Run966 checkpoint [#44290072462](https://github.com/Iam-2squared/ark-ai/actions/runs/44290072462) **COMPLETED SUCCESS 6/6**, does **not** certify Run967.
+- [#44298747365](https://github.com/Iam-2squared/ark-ai/actions/runs/44298747365) exact `900500ce`: **QUEUED** at sample.
+- [#44298497623](https://github.com/Iam-2squared/ark-ai/actions/runs/44298497623) exact `edea9dc6`: **IN_PROGRESS** at sample.
+- [#44298222664](https://github.com/Iam-2squared/ark-ai/actions/runs/44298222664) exact `12ff8984`: **IN_PROGRESS** at sample.
+- Latest source/test `900500ce` was QUEUED at last observed CI sample. Any CI automatically launched by technical-report/checkpoint commits also requires its own exact-head GREEN; **do not infer PASS from previous SHAs**. No duplicate manual workflow dispatch.
+
+## Frozen controls, authorization limits and status
+
+Frozen V1/V2/Memory-v1/Observation Envelope v1/Local UI/Launcher/V3 Contract 1 and contamination/provenance/regression/reproducibility gates remain unchanged. PR #5 protected Draft/unmerged, PR #9 paused Draft/unmerged/untouched; PR #8 Draft/unmerged; main unchanged. No UI frontend, live device/action, paid or billable compute/GPU/API/service, subscriptions, Candidate adapter/weight generation/promotion, protected final-evaluation opening, credentials/account connection, human-review claim, destructive/irreversible action, raw Git bypass, force push or main merge.
+
+**File hashes, path/inode metadata, SQLite and synthetic clocks do not independently prove consent, authenticated provenance, durable source control, exact-once external effects or action trust.**
+
+## Next plan / 今後の方針
+
+1. Confirm exact latest Run967 checkpoint HEAD CI Windows/Ubuntu × Python 3.11–3.13. On FAIL, inspect exact job logs and minimally repair through normal permitted GitHub Contents writes; pipeline independent non-UI lanes while CI runs.
+2. Memory WAL/SHM, CAS/ABA, generation event/row/expiry coherence and ambiguous-COMMIT reconciliation; never silently rewrite frozen v1 or claim recovered external effect.
+3. Planner cold RUNNING/UNKNOWN/terminal recovery, immutable ToolRegistry + exact-type PermissionGate, durable one-shot and audit-before-action; integrate mock-only after exact-head lower-level GREEN.
+4. Personal Context privacy revocation/reuse, Proactive occurrence/replay/clock fences, Observation/startup fixtures and free-only V3 identity/approval/path/reproducibility guards. No UI. Preserve all user-approval boundaries.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run966: guard-vector fail-closed hardening; bounded Memory CAS review; atomic type corruption
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T19:56:21.926+09:00** (reporting timestamp, **NOT** trusted action/consent/expiry clock). **ARK/JARVIS NOT_PASSED**; isolated opt-in, offline/mock-only core; no UI/frontend changes.
