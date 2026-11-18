@@ -1,3 +1,46 @@
+# LATEST — ARK AI Run978: protocol-custody CI repair + proactive vector protection
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T07:59:34.212+09:00**. Reporting time only, NOT an authenticated audit/expiry/consent/scheduler clock. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at prewrite. **Exact work-basis HEAD:** `dadd82faf033edf9ca05b412dbbbbfa4da83ff81` (Run977 checkpoint). **Latest executable source/test HEAD:** `54cee6b5c4bd823edea3eb3243c9d20b789194cc`. **Technical-report and checkpoint-write-basis HEAD:** `91ee4c5f2e01faa02311c073d5596c5250a61086`. **Checkpoint-result HEAD:** must use the GitHub Contents API commit SHA and independently re-read live PR/branch after this write; a tracked file cannot contain its own final commit SHA. Do not mistake write-basis HEAD for checkpoint-result HEAD.
+
+**Protected baseline unchanged at prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 gated Draft `805b377697472268db02650a89c7a94b1c5337c8`; PR #9 paused UI Draft `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5/#9 OPEN/DRAFT/UNMERGED as separately checked this invocation. All frozen V1/V2/Local UI/Launcher evidence, Memory v1, PlanStep/ToolCall v1, Observation Envelope v1 and protected V2/V3 evaluation contracts unchanged.
+
+## NEW this invocation — 2 non-UI packages, 16 authored tests
+
+1. **Fail-closed CI compatibility repair:** The previous Run977 [CI #44405903296](https://github.com/Iam-2squared/ark-ai/actions/runs/44405903296) completed **FAIL 6/6**; Ubuntu Python 3.11: **18,637 passed / 7 failed / 1 skipped**. Five READ tests and two Personal Context replay tests expected legacy downstream rejection after replacing import-pinned `_REQUEST`/`_STEP`/`_SHA` or `_MAX_ROWS`. The new source correctly rejects forged protocol constants before private ingress/SQLite. Updated seven older assertions, retained deny-before-callback and persisted-witness integrity, and added **five** unpatched oversized-input cases. Commits: [`fd2b7ddb`](https://github.com/Iam-2squared/ark-ai/commit/fd2b7ddb704c02e2b0cc6adfb64b8a4573486317), [`a61688de`](https://github.com/Iam-2squared/ark-ai/commit/a61688dea7fa95850dc9f2c56ed3f6f3f675b446), [`4b104784`](https://github.com/Iam-2squared/ark-ai/commit/4b104784c9bd56f9c59777a5f3b80a20d43b9609). No source guard weakened, no tests deleted.
+2. **Independent proactive recurrence control-vector custody:** [source `3c4436b4`](https://github.com/Iam-2squared/ark-ai/commit/3c4436b4f81b44640f71af93739022965d8b8262) pins scheduler admission vectors and descriptor matrices at import before untrusted input/occurrence callback; [tests `54cee6b5`](https://github.com/Iam-2squared/ark-ai/commit/54cee6b5c4bd823edea3eb3243c9d20b789194cc) add **eleven** cases checking same-value rebinds, shortened vectors, callback never called, and normal denial-only due-state. No timer, notifier, dispatch or trusted time.
+
+[Run978 technical report](https://github.com/Iam-2squared/ark-ai/blob/91ee4c5f2e01faa02311c073d5596c5250a61086/docs/JARVIS_RUN978_NON_UI_READ_REPLAY_CI_REPAIR_PROACTIVE_VECTOR_CUSTODY.md) · [Historical archive through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## Tests / CI evidence
+
+- Previous Run976 exact checkpoint `3db9f4f2fc1fb9a126b5d428801f2255af88b1b9`: [CI #44397552241](https://github.com/Iam-2squared/ark-ai/actions/runs/44397552241), **GREEN 6/6** only for that HEAD.
+- Run977 exact checkpoint `dadd82faf033edf9ca05b412dbbbbfa4da83ff81`: [CI #44405903296](https://github.com/Iam-2squared/ark-ai/actions/runs/44405903296), **FAIL 6/6** at pytest; Ruff passed.
+- Run978 repair source/test `4b104784c9bd56f9c59777a5f3b80a20d43b9609`: [CI #44415504665](https://github.com/Iam-2squared/ark-ai/actions/runs/44415504665) **IN PROGRESS** at latest observed check.
+- Run978 proactive latest source/test `54cee6b5c4bd823edea3eb3243c9d20b789194cc`: [CI #44416089881](https://github.com/Iam-2squared/ark-ai/actions/runs/44416089881) **QUEUED** at latest observed check.
+- Technical report HEAD `91ee4c5f2e01faa02311c073d5596c5250a61086`: [CI #44416404198](https://github.com/Iam-2squared/ark-ai/actions/runs/44416404198) **QUEUED** at latest observed check.
+- Checkpoint-result HEAD CI may start automatically after write. **Latest exact HEAD six-job GREEN UNVERIFIED.** These 16 cases are authored tests, not proven CI PASS; no local PC/GGUF or user evidence claimed.
+
+## Frozen boundaries / unresolved blockers
+
+No UI/frontend code/test, PR #9 update, PR #5 gate change, main merge, paid compute/API/service, GPU, protected V2 final evaluation, Candidate training/promotion, real tool action, new secrets/credentials, irreversible operation or replay. Local SHA/digests do not authenticate user intent, consent, time or external effects. Import-level pointer pinning is not hostile-code isolation.
+
+Blockers: cross-process Memory WAL/SHM and CAS/ABA, coherent restart events/expiry, manual/no-replay COMMIT-UNKNOWN uncertainty, independent provenance and authenticated consent/revocation/trusted clock, mock-to-production authority integration, physical device gate.
+
+## Next plan / 今後の方針
+
+1. Confirm **exact latest checkpoint HEAD** Windows/Ubuntu × Python 3.11–3.13 CI; inspect logs for any FAIL, repair via normal permitted writes, overlap independent non-UI work.
+2. Memory concurrency/expiry/CAS and crash-unknown recovery, before cross-store guarantees.
+3. Planner durable terminal/crash recovery, immutable ToolRegistry, exact-type PermissionGate, one-shot authorization, audit-before-action, disconnected/mock integration once lower-level CI is GREEN.
+4. Personal Context privacy/revocation, proactive occurrence/replay fences, Observation fixtures, free-only V3 guards. **UI remains paused.**
+
+**Overall JARVIS/ARK: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run977 (verbatim preserved below)
+
 # LATEST — ARK AI Run977: disconnected replay and READ hash-chain custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T06:52:10.167+09:00** (reporting timestamp only, NOT a trusted audit/consent/expiry/scheduler clock). **Overall ARK/JARVIS: NOT_PASSED.**
