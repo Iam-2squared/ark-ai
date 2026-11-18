@@ -11,7 +11,6 @@ import pytest
 from ark.agency.contracts import PlanConflictError, PlanStep, ToolCall
 from ark.agency.planner import PlanGraph
 
-
 _INVISIBLE_SCALARS = (
     0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
     0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
