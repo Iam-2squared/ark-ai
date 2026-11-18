@@ -39,6 +39,51 @@ class ReadJournalRejected(ValueError):
     """The detached READ receipt stream is unsafe, stale, or inconsistent."""
 
 
+# Bind the synthetic READ journal's deterministic chain format at import.
+# A replaced serializer/hash function could receive private receipt digests
+# or forge the retained SQLite chain before validation. This does not assert
+# source authenticity, trusted time, external effects or independent custody.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_GENESIS = _GENESIS
+_ORIGINAL_PATTERNS = (_REQUEST, _STEP, _SHA)
+_ORIGINAL_OPS = _OPS
+_ORIGINAL_SCHEMA = _SCHEMA
+_ORIGINAL_DDL = (_MARKER_DDL, _RECEIPT_DDL)
+_ORIGINAL_MAX_ROWS = _MAX_ROWS
+
+
+def _require_original_read_protocol() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _GENESIS is not _ORIGINAL_GENESIS
+        or any(
+            now is not original
+            for now, original in zip(
+                (_REQUEST, _STEP, _SHA), _ORIGINAL_PATTERNS, strict=True,
+            )
+        )
+        or _OPS is not _ORIGINAL_OPS
+        or _SCHEMA is not _ORIGINAL_SCHEMA
+        or any(
+            now is not original
+            for now, original in zip(
+                (_MARKER_DDL, _RECEIPT_DDL), _ORIGINAL_DDL, strict=True,
+            )
+        )
+        or type(_MAX_ROWS) is not int
+        or _MAX_ROWS != _ORIGINAL_MAX_ROWS
+    ):
+        raise ReadJournalRejected("synthetic READ hash-chain protocol changed")
+
+
 @dataclass(frozen=True, slots=True)
 class ReadReceipt:
     request_id: str
@@ -191,11 +236,13 @@ def _require_original_read_carriers() -> None:
 
 def genesis_witness() -> ReadJournalWitness:
     """The single valid starting witness for a new, empty local journal."""
+    _require_original_read_protocol()
     _require_original_read_carriers()
     return ReadJournalWitness(0, _GENESIS)
 
 
 def _check_witness(witness: ReadJournalWitness) -> None:
+    _require_original_read_protocol()
     _require_original_read_carriers()
     if type(witness) is not _WITNESS_TYPE:
         raise ReadJournalRejected("invalid retained witness")
@@ -228,6 +275,7 @@ def _check_witness(witness: ReadJournalWitness) -> None:
 
 
 def _check_receipt(row: ReadReceipt) -> None:
+    _require_original_read_protocol()
     _require_original_read_carriers()
     if (
         type(row) is not _RECEIPT_TYPE
@@ -247,16 +295,21 @@ def _check_receipt(row: ReadReceipt) -> None:
 
 
 def _chain(previous: str, index: int, row: ReadReceipt) -> str:
+    _require_original_read_protocol()
     payload = json.dumps(
         {"index": index, "previous": previous, "request_id": row.request_id,
          "step_id": row.step_id, "operation": row.operation,
          "input_digest": row.input_digest, "result_digest": row.result_digest},
         ensure_ascii=True, sort_keys=True, separators=(",", ":"),
     )
-    return hashlib.sha256(_DOMAIN + payload.encode("ascii")).hexdigest()
+    _require_original_read_protocol()
+    digest = hashlib.sha256(_DOMAIN + payload.encode("ascii")).hexdigest()
+    _require_original_read_protocol()
+    return digest
 
 
 def _safe_path(path: Path, *, must_exist: bool) -> None:
+    _require_original_read_protocol()
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -295,6 +348,7 @@ def _safe_path(path: Path, *, must_exist: bool) -> None:
 
 def _verify_schema(connection: sqlite3.Connection) -> None:
     """Bound SQL catalog hydration; require exactly the frozen local schema."""
+    _require_original_read_protocol()
     # Two tables and the autoindex for UNIQUE(request_id, step_id).
     # Count, DDL and all catalog identity UTF-8 bytes must fit the reviewed
     # budget *inside* the SQLite snapshot before Python reads schema strings.
@@ -329,6 +383,7 @@ def _verify_schema(connection: sqlite3.Connection) -> None:
 
 def _require_stored_marker_admission(connection: sqlite3.Connection) -> None:
     """Reject oversized or non-TEXT revision before retrieving marker rows."""
+    _require_original_read_protocol()
     try:
         bad = connection.execute(
             "SELECT 1 FROM marker WHERE typeof(revision)!='text' "
