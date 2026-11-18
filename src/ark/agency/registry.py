@@ -76,12 +76,13 @@ def _text(name: str, value: object) -> str:
     # frozen generic ToolCall v1 identity contract.
     if any(ord(character) < 0x20 or ord(character) == 0x7f for character in value):
         raise ValueError(f"{name} contains a control character")
-    # Unicode directional marks/isolates/overrides and non-ASCII line
-    # separators can visually forge a different audit or permission identity.
-    # Reject ONLY these format controls at the optional registry boundary,
+    # C1 terminal controls, Unicode directional marks and alternate line
+    # separators can visually forge audit/permission identities.
+    # Reject these controls only at the opt-in registry boundary,
     # preserving meaningful multilingual letters and frozen ToolCall v1.
     if any(
-        codepoint in (0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        0x80 <= codepoint <= 0x9F
+        or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
         or 0x202A <= codepoint <= 0x202E
         or 0x2066 <= codepoint <= 0x2069
         or codepoint in (
@@ -456,7 +457,8 @@ class ToolRegistry:
         # must not bind bidi controls or alternate line separators into a
         # visually misleading permission/audit scope identity.
         if any(
-            code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            0x80 <= code <= 0x9f
+            or code in (0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
             or 0x202a <= code <= 0x202e
             or 0x2066 <= code <= 0x2069
             or code in (
@@ -543,7 +545,8 @@ class ToolRegistry:
         # must not bind bidi controls or alternate line separators into a
         # visually misleading permission/audit scope identity.
         if any(
-            code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            0x80 <= code <= 0x9f
+            or code in (0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
             or 0x202a <= code <= 0x202e
             or 0x2066 <= code <= 0x2069
             or code in (
