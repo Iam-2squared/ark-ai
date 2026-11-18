@@ -152,8 +152,9 @@ def _require_original_quarantine_receipt_carrier() -> None:
         is not _ORIGINAL_WITNESS_DENIAL
     ):
         raise ScheduleQuarantineRejected(
-            "original denial changed; potential gained authority blocked "
-            "before post-commit result epoch / history review"
+            "quarantine receipt constructor or field descriptor changed: "
+            "original denial; potential gained authority blocked before "
+            "post-commit result epoch / history review"
         )
     if (
         QuarantineReceipt is not _RECEIPT_TYPE
