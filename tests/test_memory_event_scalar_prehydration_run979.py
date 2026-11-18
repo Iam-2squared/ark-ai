@@ -10,9 +10,9 @@ import sqlite3
 
 import pytest
 
+import ark.memory.sqlite_store as memory_store
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
 from ark.memory.contracts import MemorySchemaError
-import ark.memory.sqlite_store as memory_store
 
 
 class ForeignString(str):
@@ -53,7 +53,8 @@ def test_oversized_direct_id_refused_before_regex_or_sqlite(tmp_path, monkeypatc
     def no_sqlite(*args, **kwargs):
         pytest.fail("oversized ID reached SQLite")
 
-    monkeypatch.setattr(memory_store, "re", type("FakeRE", (), {"fullmatch": staticmethod(no_regex)})())
+    fake_regex = type("FakeRE", (), {"fullmatch": staticmethod(no_regex)})()
+    monkeypatch.setattr(memory_store, "re", fake_regex)
     monkeypatch.setattr(store, "_connect_readonly", no_sqlite)
     monkeypatch.setattr(store, "_connect", no_sqlite)
     for action in (
