@@ -1,3 +1,48 @@
+# LATEST — ARK AI Run974: bounded Atomic audit, Memory expiry, Proactive marker admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T03:54:38.680+09:00** (reporting timestamp only; NOT a trusted audit/consent/retention clock). **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at exact prewrite check. **Run974 work-basis exact HEAD:** `6b08f6171bb3e3eafc6bf40a88686900ec278040` (Run973 checkpoint; its 6-job CI GREEN). **Last executable source/test HEAD:** `7db271bc26bbcaaee40a21face1700694e0cd976`. **Run974 technical report and checkpoint write-basis HEAD:** `494036439b494436ded99213d4096bf5f87ccc0c`. **Checkpoint-result HEAD** is the GitHub Contents API returned commit SHA and live PR/branch SHA after this update; a Git commit cannot contain its own hash in its tracked text. No CI verdict is inferred from a different HEAD.
+
+**Protected baseline:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 Draft/open/unmerged `805b377697472268db02650a89c7a94b1c5337c8` and paused UI PR #9 Draft/open/unmerged `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` both untouched at prewrite check. All frozen contracts and archived evidence remain unchanged.
+
+## NEW this invocation — 3 independent non-UI source+test packages, 16 authored cases
+
+1. **Atomic pre-action paired audit cardinality admission:** [source `91a1c56`](https://github.com/Iam-2squared/ark-ai/commit/91a1c56ea4b58a4a27e22635fc3ba5f09005132b) + [tests `dbffb29`](https://github.com/Iam-2squared/ark-ai/commit/dbffb29fd0dc8203d97fa842ce76cc3c8e6733bf), **5 authored tests**. `_scan` checks audit count equality immediately after bounded intents count, **before** scanning malformed private identity payloads or JOIN rows. Missing, orphan, oversized audit histories reject, clean local pairs remain inert and non-authorizing.
+2. **Memory expiry due-row whole-image SQL admission:** [source `97b6fd5`](https://github.com/Iam-2squared/ark-ai/commit/97b6fd5fca44f50bfb1a77e16e79c780a40e0d4d) + [tests `607bb22`](https://github.com/Iam-2squared/ark-ai/commit/607bb2297acf10fcedb775a701b3373fa456d93e), **8 authored tests**. Corrupted SQLite storage class/bytes for identity, owner/namespace, digest, times, revision are refused before `purge_expired`'s `SELECT *` Python hydration; valid separate-scope expiry still works. Frozen Memory v1 schema/API untouched.
+3. **Synthetic Proactive Scheduler bounded count-first scan:** [source `a2628fc`](https://github.com/Iam-2squared/ark-ai/commit/a2628fc9ad691556f432d6bf9ca7f82a6b0df85d) + [tests `7db271b`](https://github.com/Iam-2squared/ark-ai/commit/7db271bc26bbcaaee40a21face1700694e0cd976), **3 authored tests**. Over-capacity SQLite history rejects at `COUNT(*)` before expensive per-row aggregate or Python hydration; under-cap corrupt identities still reject. No real notification or dispatch.
+
+[Complete Run974 technical report](https://github.com/Iam-2squared/ark-ai/blob/494036439b494436ded99213d4096bf5f87ccc0c/docs/JARVIS_RUN974_NON_UI_ATOMIC_MEMORY_EXPIRY_PROACTIVE_CARDINALITY.md) · [Run973 exact checkpoint](https://github.com/Iam-2squared/ark-ai/blob/6b08f6171bb3e3eafc6bf40a88686900ec278040/docs/PROJECT_STATUS.md) · [Unmodified historical archive through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## Tests / CI / evidence — observed at checkpoint, exact commits only
+
+- **Previous Run973 exact checkpoint** `6b08f6171bb3e3eafc6bf40a88686900ec278040`: [CI #44364128959](https://github.com/Iam-2squared/ark-ai/actions/runs/44364128959) **GREEN (6/6)** — Ubuntu/Windows × Python 3.11, 3.12, 3.13. Applies only to the previous HEAD, not these new code/tests.
+- **Atomic source** `91a1c56`: [CI #44372876208](https://github.com/Iam-2squared/ark-ai/actions/runs/44372876208) **IN PROGRESS** at last observation.
+- **Atomic tests** `dbffb29`: [CI #44373033404](https://github.com/Iam-2squared/ark-ai/actions/runs/44373033404) **IN PROGRESS**; 3 Ubuntu jobs SUCCESS, 3 Windows jobs still in progress at last job check.
+- **Memory source** `97b6fd5`: [CI #44373468314](https://github.com/Iam-2squared/ark-ai/actions/runs/44373468314) **IN PROGRESS** at last observation.
+- **Memory tests** `607bb22`: [CI #44373611059](https://github.com/Iam-2squared/ark-ai/actions/runs/44373611059) **IN PROGRESS**; all 6 jobs in progress at last job check.
+- **Proactive source** `a2628fc`: [CI #44373722439](https://github.com/Iam-2squared/ark-ai/actions/runs/44373722439) **QUEUED** at last observation.
+- **Proactive tests / last executable HEAD** `7db271b`: [CI #44373857971](https://github.com/Iam-2squared/ark-ai/actions/runs/44373857971) **QUEUED**, 6 jobs waiting at last check.
+- **Technical report HEAD / checkpoint write basis** `4940364`: [CI #44374527227](https://github.com/Iam-2squared/ark-ai/actions/runs/44374527227) **QUEUED** at observation. New checkpoint may spawn another automatic run. **Latest HEAD full six-job CI PASS is UNVERIFIED; authored tests are not claimed PASS.**
+- No duplicate manually dispatched workflow. No physical PC GGUF/model validation. All local SQLite cases are fixtures and grant neither consent nor external effect proof.
+
+## Frozen boundaries / blockers
+
+V1/V2/Local UI/Launcher frozen evidence and controlling contracts, Memory v1, Observation Envelope v1, PlanStep/ToolCall v1, V3 contamination/provenance/reproducibility gates, protected final evaluation remain unchanged. PR #5 gated Draft, PR #8 Draft, PR #9 UI paused and untouched; no main merge or frontend code/tests/integration. No real tools, live capture, notifications, payments, new paid service/GPU, Candidate adapter/weights/promotion, secrets, external accounts, hardware actions, automatic uncertain WRITE replay, or bypass of normal GitHub write safeguards. Trustworthy clock and approvals, externally authenticated custody, cross-store atomicity, independent actor provenance and production integration remain open; no JARVIS PASS.
+
+## Next plan / 今後の方針
+
+1. Confirm **exact newest executable/checkpoint HEAD** Windows+Ubuntu × Python 3.11–3.13 CI. Inspect failure logs and perform smallest normal-write repair if needed; while CI runs develop only independent non-UI lanes. Do not manually duplicate workflow runs.
+2. Memory: WAL/SHM cross-process races, CAS/ABA, event high-water and expiry recovery, COMMIT-UNKNOWN no-retry triage and coherent privacy-safe snapshots.
+3. Planner/restart + immutable ToolRegistry + exact-type PermissionGate + restart-safe one-shot authorization + audit-before-action, all through disconnected mock and exact-head CI, without real WRITE authority.
+4. Personal Context revocation/reuse, Proactive occurrence/replay and privacy lifecycle, Observation fixture adapters and free-only V3 guards. **No UI development until user resumes.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run973 (preserved verbatim)
+
 # LATEST — ARK AI Run973: fix CI Ruff, proactive witness aliases, Memory CAS row hydration
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T02:55:58.973+09:00** (reporting timestamp only; never a trusted audit/consent/expiry clock). **Overall JARVIS / ARK completion: NOT_PASSED.**
