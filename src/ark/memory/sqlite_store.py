@@ -292,15 +292,16 @@ def _require_expiry_purge_hydration_admission(
     conn: sqlite3.Connection, now: int, scope: MemoryScope | None,
     limit: int | None,
 ) -> None:
-    """Reject corrupt due-page TEXT before SELECT * hydrates private rows.
+    """Reject corrupt due-page storage classes/widths before private hydration.
 
     The SQL-side admission uses the identical scope, clock and deterministic
     memory-ID page as the subsequent DELETE transaction.  It does not cap the
     historical unbounded purge mode or authorize expiry on its own.
     """
     selected = (
-        "SELECT content,metadata_json,source_id FROM memories "
-        "WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=?"
+        "SELECT memory_id,owner_id,namespace,source_id,content,metadata_json,"
+        "content_sha256,created_at_ms,updated_at_ms,expires_at_ms,revision "
+        "FROM memories WHERE expires_at_ms IS NOT NULL AND expires_at_ms<=?"
     )
     params: tuple[object, ...] = (now,)
     if scope is not None:
@@ -312,16 +313,25 @@ def _require_expiry_purge_hydration_admission(
         params += (limit,)
     invalid = conn.execute(
         "SELECT 1 FROM (" + selected + ") AS due WHERE "
-        "typeof(content)!='text' "
+        "typeof(memory_id)!='text' OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(source_id)!='text' "
+        "OR length(CAST(source_id AS BLOB))>? "
+        "OR typeof(content)!='text' "
         "OR length(CAST(content AS BLOB))>? "
         "OR typeof(metadata_json)!='text' "
         "OR length(CAST(metadata_json AS BLOB))>? "
-        "OR typeof(source_id)!='text' "
-        "OR length(CAST(source_id AS BLOB))>? LIMIT 1",
+        "OR typeof(content_sha256)!='text' "
+        "OR length(CAST(content_sha256 AS BLOB))!=64 "
+        "OR typeof(created_at_ms)!='integer' "
+        "OR typeof(updated_at_ms)!='integer' "
+        "OR typeof(expires_at_ms)!='integer' "
+        "OR typeof(revision)!='integer' LIMIT 1",
         params + (
+            _MAX_MEMORY_ROW_SOURCE_BYTES,
             _MAX_MEMORY_ROW_CONTENT_BYTES,
             _MAX_MEMORY_ROW_METADATA_BYTES,
-            _MAX_MEMORY_ROW_SOURCE_BYTES,
         ),
     ).fetchone()
     if invalid is not None:
