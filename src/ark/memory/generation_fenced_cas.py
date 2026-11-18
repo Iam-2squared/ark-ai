@@ -198,7 +198,7 @@ def _require_bounded_source_id(source_id: object) -> None:
     # Reject ASCII separators, bidi formatting and Unicode line separators
     # at the opt-in boundary; frozen Memory v1 contracts remain unchanged.
     if any(
-        code < 0x20 or code == 0x7f
+        code < 0x20 or 0x7f <= code <= 0x9f
         or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
         or 0x202a <= code <= 0x202e
         or 0x2066 <= code <= 0x2069
@@ -240,7 +240,7 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
         ):
             raise MemoryGenerationCASRejected("exact bounded generation scope required")
         if any(
-            code < 0x20 or code == 0x7f
+            code < 0x20 or 0x7f <= code <= 0x9f
             or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
             or 0x202a <= code <= 0x202e
             or 0x2066 <= code <= 0x2069
