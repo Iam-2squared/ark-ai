@@ -30,3 +30,15 @@
 4. Privacy-safe Personal Context, proactive occurrence fences, Observation fixtures/startup readiness and free-only V3 identity/path approvals. UI remains paused.
 
 **ARK/JARVIS NOT_PASSED.**
+
+## Follow-up after the first Run969 checkpoint — discovered legacy pre/post-commit mismatch
+
+[Exact corrected-test CI #44318323464](https://github.com/Iam-2squared/ark-ai/actions/runs/44318323464), job Ubuntu Python 3.11 `134850262812`, progressed through Ruff and pytest and reported **18,292 PASS, 15 FAIL, 1 SKIP**. The 15 failures were exclusively older proactive/quarantine tests expecting a committed event or a legacy post-commit message after a preinstalled counterfeit receipt authority property. Run968 had deliberately established a stricter **pre-commit fail-closed** barrier: `tests/test_schedule_quarantine_vectors_run968.py` requires **zero** appended events when a receipt/witness authority descriptor changes. The earlier legacy expectations and this new stricter invariant are incompatible.
+
+**Semantics-preserving safety resolution (not weakening any negative gate):**
+
+- [`9d956ae4`](https://github.com/Iam-2squared/ark-ai/commit/9d956ae4435623c570d0fdfc4974ad894f994a2f) and [`91ccef02`](https://github.com/Iam-2squared/ark-ai/commit/91ccef026ddb7746223ede7aa00b099c527e7fa8) retain pre-commit refusal and include precise denial-specific diagnostics without invoking counterfeit getter code, while keeping Run968's generic carrier rejection marker.
+- [`b8c9073a`](https://github.com/Iam-2squared/ark-ai/commit/b8c9073aaa56890999ca2806b834ab336f133688) updates six legacy `test_quarantine_original_denial_descriptors_run588.py` negative cases to require **zero** quarantine writes and retained genesis witness (rather than accepting an append before denial).
+- [`470fad02`](https://github.com/Iam-2squared/ark-ai/commit/470fad026310c15734a10749aea78256993b38d6) updates nine `test_schedule_quarantine_postcommit_denial_run528.py` negative cases to require **zero** writes. Positive recovery tests remain unchanged.
+
+No assertions were deleted, no precommit guard weakened, no synthetic backend executed. These are tighter no-effect invariants for the opt-in quarantine adapter. Their exact post-fix HEAD CI across all six OS/Python jobs remains **UNVERIFIED** until fresh Actions finish. The first Run969 checkpoint `2f74ddb7` predates this discovered failure and corrective work; update canonical status after this report through normal GitHub Contents and confirm the result HEAD. Protected PRs/main/frozen interfaces remain unchanged.
