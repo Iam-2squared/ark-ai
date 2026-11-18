@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run964: detached READ label bounds; free V3 numerical fences; inert atomic audit quarantine
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T17:56:11.864+09:00** (ordinary reporting clock, NOT trusted action, consent, expiry or authorization time). **ARK/JARVIS NOT_PASSED.** No new UI/frontend work, paid/external GPU/API/compute/service, real model/weights, protected evaluation or live tools.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint preflight. **Exact work-basis HEAD:** `f41e9d94137e2baabc6b8e3c1639b5f5e3fb49c0` (Run963 checkpoint). **Latest source/test HEAD:** `3b17a7debb57785f6281428eede844c6abe88c96`. **Checkpoint-write basis HEAD:** `ba40f81ea8b86094bef0772448d2f00e81dd9b54` (Run964 report commit). **Previous status blob:** `901c5502e5d8f626b2ae7fb2a24f2d019cc1019d`. **Checkpoint-result HEAD is necessarily unavailable inside its own content:** verify returned GitHub Contents commit SHA and live PR/branch HEAD/blob immediately after this save. **main at preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, untouched. **PR #5 protected Draft** `805b377697472268db02650a89c7a94b1c5337c8` unchanged; **PR #9 paused UI Draft** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` unchanged.
+
+## NEW — 4 non-UI packages, 1 opt-in source guard change, 30 authored regression cases
+
+1. **Disconnected READ recovery source** [`cdd1a0e1`](https://github.com/Iam-2squared/ark-ai/commit/cdd1a0e190e11c181384d56ae2bff4ed81c957ae): hard-bound exact request/step/digest grammar, operation/state and dependency ID width **before** regex/sorting on detached synthetic input; preserve valid READ quarantine, no dispatch.
+2. **Free V3 detached review** [`ead98988`](https://github.com/Iam-2squared/ark-ai/commit/ead9898822ebb106e53cfb4ae273506b46c05e2b): **15** direct numeric overflow, precision, type and exact-limit tests. No GPU, Candidate or cost authorization.
+3. **Local atomic audit** [`29449140`](https://github.com/Iam-2squared/ark-ai/commit/294491400c0800bc1edb41235cf908fa836026c6): **5** tests on first-row intent/audit corruption, cold quarantine, no self-repair or subsequent reservation; intact multi-row prefix remains deny-only.
+4. **READ recovery regressions** [`3b17a7de`](https://github.com/Iam-2squared/ark-ai/commit/3b17a7debb57785f6281428eede844c6abe88c96): **10** long/surrogate label and valid UNKNOWN/RUNNING quarantine tests with independent mock-only readiness. No live effect.
+
+[Run964 technical report](https://github.com/Iam-2squared/ark-ai/blob/ba40f81ea8b86094bef0772448d2f00e81dd9b54/docs/JARVIS_RUN964_NON_UI_READ_RECOVERY_V3_ATOMIC.md). **30 cases AUTHORED, not yet an exact-head CI PASS claim.** No full local pytest/Ruff, physical-PC/GGUF, paid compute or manually dispatched duplicate CI.
+
+## CI exact-SHA evidence sampled before checkpoint
+
+- Prior Run963 `f41e9d94`: [#44265818707](https://github.com/Iam-2squared/ark-ai/actions/runs/44265818707) **5/6 GREEN**, Windows Python 3.13 still IN PROGRESS at last job sample.
+- READ source `cdd1a0e1`: [#44270218285](https://github.com/Iam-2squared/ark-ai/actions/runs/44270218285) **1/6 GREEN**, remaining 5 IN PROGRESS at last sample.
+- V3 tests `ead98988`: [#44270403367](https://github.com/Iam-2squared/ark-ai/actions/runs/44270403367) **1/6 GREEN**, remaining 5 IN PROGRESS at last sample.
+- Atomic tests `29449140`: [#44270646085](https://github.com/Iam-2squared/ark-ai/actions/runs/44270646085) **0/6 completed**, all IN PROGRESS at last sample.
+- READ tests `3b17a7de`: [#44270786460](https://github.com/Iam-2squared/ark-ai/actions/runs/44270786460) **0/6 completed**, QUEUED at previous run sample. Report/checkpoint CI may auto-start separately.
+- **Exact newest checkpoint HEAD GREEN 6/6 remains UNVERIFIED.** A prior-HEAD CI success is not evidence for newer changes. Any FAIL needs exact job logs and minimal semantics-preserving repair.
+
+## Frozen evidence, authorization boundaries and blockers
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1; contamination/provenance/regression/reproducibility and human-review gates unchanged. PR #5 protected and PR #9 UI paused, Draft/unmerged/untouched; PR #8 Draft/unmerged; main untouched. No paid/external compute/API/GPU/subscription, Candidate generation/training/promotion, protected V2 final evaluation, secrets/accounts, destructive erasure, physical PC, live tools, new UI, external notification or main merge. **Synthetic tokens, local SHA and SQLite witnesses are not independently authenticated approval, trusted time, privacy consent or exactly-once external effects.**
+
+## Next plan / 今後の方針
+
+1. Confirm all 6 GitHub CI jobs at exact newest HEAD, then investigate specific failures via logs; do not bypass normal GitHub Contents safety or weaken tests.
+2. Advance Memory WAL/SHM, CAS/ABA, row/event/expiry integrity and COMMIT-UNKNOWN coherence; Planner durable RUNNING/UNKNOWN quarantine and terminal propagation.
+3. After proven dependency boundaries, bind immutable ToolRegistry + exact PermissionGate + one-shot/audit-before-action to an **inert disconnected/mock-only** executor, never live dispatch.
+4. Continue Personal Context revocation and privacy lifecycle, Proactive recurrence/occurrence, Observation fixtures/startup readiness and V3 free-only reproducibility/path/identity guards without changing frozen gates.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run963: Memory generation identity fencing; Privacy WAL and Proactive quarantine; Registry CI repair
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T17:18:03.286+09:00** (ordinary reporting clock, NOT trusted consent, approval, expiry or action time). **Overall ARK/JARVIS NOT_PASSED.** All work synthetic/disconnected/mock-only, non-UI and zero-new-cost.
