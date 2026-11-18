@@ -485,6 +485,16 @@ class ToolRegistry:
         # value-equal mapping after resolve() has finished its own checks.
         # That is a new caller input epoch even when request_id is unchanged.
         original = (call.tool, call.capability, call.scope, call.arguments)
+        # Apply resolve()'s opt-in scope admission *before* reconstructing
+        # ToolCall. Its frozen v1 request-id serializer would otherwise raise
+        # a raw UnicodeEncodeError for a surrogate (and touch invalid data).
+        # This changes no frozen ToolCall contract or backend dispatch.
+        if "\x00" in original[2]:
+            raise ValueError("registered ToolCall scope contains NUL separator")
+        try:
+            original[2].encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("registered ToolCall scope is not valid UTF-8") from exc
         stable = ToolCall(*original)
         _require_original_toolcall_contract()
         original_request_id = stable.request_id
