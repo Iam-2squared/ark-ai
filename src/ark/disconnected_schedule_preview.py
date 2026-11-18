@@ -115,12 +115,27 @@ _ORIGINAL_CARRIER_DESCRIPTORS = tuple(
 )
 
 
+# Preserve the entire control-name and carrier matrix identity. Merely
+# checking the entries of a mutable/rebound vector permits a shortened audit
+# to skip security-relevant descriptors (or leak an unclassified zip error).
+_ORIGINAL_CARRIER_FIELDS_VECTOR = _CARRIER_FIELDS
+_ORIGINAL_CARRIER_HOOKS_VECTOR = _CARRIER_HOOKS
+_ORIGINAL_DENIAL_NAMES_VECTOR = _DENIAL_NAMES
+_ORIGINAL_CARRIER_MATRIX = _ORIGINAL_CARRIER_DESCRIPTORS
+_ORIGINAL_DENIAL_MATRIX = _ORIGINAL_DENIAL_DESCRIPTORS
+
+
 def _require_original_denials() -> None:
     # Pin all three constructors, not only the result's False properties.
     # A rebound input type may accept a counterfeit object, and a rebound
     # result constructor can execute code before postconstruction validation.
     if (
-        hashlib is not _ORIGINAL_HASHLIB
+        _CARRIER_FIELDS is not _ORIGINAL_CARRIER_FIELDS_VECTOR
+        or _CARRIER_HOOKS is not _ORIGINAL_CARRIER_HOOKS_VECTOR
+        or _DENIAL_NAMES is not _ORIGINAL_DENIAL_NAMES_VECTOR
+        or _ORIGINAL_CARRIER_DESCRIPTORS is not _ORIGINAL_CARRIER_MATRIX
+        or _ORIGINAL_DENIAL_DESCRIPTORS is not _ORIGINAL_DENIAL_MATRIX
+        or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
