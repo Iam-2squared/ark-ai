@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-11-18T05:56:30.234Z (UTC ordinary report clock only; no authenticated clock/consent, expiry or approval authority). **Branch:** `research/jarvis-foundations`, [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at report preflight. **Work-basis HEAD:** `dbd28693c16c43a7a207be952a4ba37559b72ea7` (Run959 checkpoint). Run959 [CI #44240870985](https://github.com/Iam-2squared/ark-ai/actions/runs/44240870985) was verified **6/6 completed GREEN** on Windows/Ubuntu × Python 3.11–3.13 before Run960 edits. This does not certify Run960.
 
-## NEW independent non-UI packages: 1 narrow production hardening + 47 authored test cases
+## NEW independent non-UI packages: 1 narrow production hardening + 62 authored test cases
 
 1. **Registry control-byte admission (source).** Commit [`92517bf3`](https://github.com/Iam-2squared/ark-ai/commit/92517bf36f09cf8b27d2c4de48c5609d78e60e62) updates only `src/ark/agency/registry.py`. The optional registry's bounded identity validator now refuses C0 (0x00–0x1f) and DEL (0x7f) in tool names, capabilities and backend IDs. `ToolRegistry.resolve/bind` reject control characters in exact input scopes **before ToolCall reconstruction and identity hashing**. The frozen generic ToolCall v1 and pre-existing digest vectors are unchanged for valid inputs. This is fail-closed local backend registration hygiene, NOT a live tool adapter, authenticated backend or policy authority.
 2. **Persistent Planner fan-in (4 cases).** Commit [`fa7a9709`](https://github.com/Iam-2squared/ark-ai/commit/fa7a9709d8ed24ee9f755c5a773ac7c4388ea988) adds `tests/test_planner_journal_fanin_restart_run960.py`: FAILED/CANCELLED × sibling-first/last; new SQLite handle per journal append; cold replay requires join and leaf BLOCKED even after alternate dependency success, independent step still progresses. Journal counts and lack of dispatch/replay authority are asserted.
@@ -10,7 +10,9 @@
 4. **Registry regression and WRITE-token isolation (37 cases).** Commit [`3f939a58`](https://github.com/Iam-2squared/ark-ai/commit/3f939a581e8a9fe9ee7995cfbe9c59c6a4966bef) adds `tests/test_registry_control_character_fences_run960.py`: 6 control delimiters × 3 registration fields + 6 × resolve/bind + 6 invalid WRITE scopes that must leave an independent local one-shot token unconsumed + one valid Unicode roundtrip. Backend execute is an inert method with an invocation counter; no actual backend is invoked.
 5. **Privacy-veto child exit (2 cases).** Commit [`b90f5630`](https://github.com/Iam-2squared/ark-ai/commit/b90f56305b0b2ca199c4c36315776ab5fd39ab95) adds `tests/test_privacy_veto_cold_child_commit_run960.py`: two synthetic owner digests; subprocess exits abruptly **after** a local veto commit, obsolete global witness cannot append or review, cold same-file witness continues deny-only. This does **not** prove independent custody, user identity, authenticated consent or deletion.
 
-All fixtures are disposable, disconnected and local-only. **47 cases are AUTHORED, not declared exact-new-head GREEN.** No production source beyond registry changed; no PlanGraph/Memory/Privacy frozen contract or schema was modified. No full local pytest was available (container cannot reach GitHub; GitHub connector supplies authoritative branch reads/writes). No manual duplicate workflow dispatched; push-driven CI only.
+6. **V3 synthetic packet resource cross-binding (15 cases).** Commit [`56983862`](https://github.com/Iam-2squared/ark-ai/commit/569838626ce45ddfb16cf63c40e0daf6fa644a1b) adds `tests/test_v3_detached_packet_crossbind_limits_run960.py`: 14 malformed or inconsistent synthetic device/VRAM/time/tokenizer/capacity/boolean claims rejected by the exact-byte detached JSON review plus one exact 8 GiB/600-second boundary success with every paid-compute/training/promotion/provenance flag still False. No GPU probing, Candidate or protected evaluation. [CI #44247997813](https://github.com/Iam-2squared/ark-ai/actions/runs/44247997813) QUEUED at report update sample.
+
+All fixtures are disposable, disconnected and local-only. **62 cases are AUTHORED, not declared exact-new-head GREEN.** No production source beyond registry changed; no PlanGraph/Memory/Privacy frozen contract or schema was modified. No full local pytest was available (container cannot reach GitHub; GitHub connector supplies authoritative branch reads/writes). No manual duplicate workflow dispatched; push-driven CI only.
 
 ## CI observed at report time (not a final certification)
 
@@ -19,7 +21,8 @@ All fixtures are disposable, disconnected and local-only. **47 cases are AUTHORE
 - Planner `fa7a9709`: [#44247034755](https://github.com/Iam-2squared/ark-ai/actions/runs/44247034755) **IN_PROGRESS**, Ubuntu Python 3.11 GREEN at last sample.
 - Memory `ddc2265f`: [#44247174083](https://github.com/Iam-2squared/ark-ai/actions/runs/44247174083) **IN_PROGRESS**, no completed job at last sample.
 - Registry test `3f939a58`: [#44247360253](https://github.com/Iam-2squared/ark-ai/actions/runs/44247360253) **QUEUED/IN_PROGRESS**, no completed job at last sample.
-- Privacy `b90f5630`: [#44247518798](https://github.com/Iam-2squared/ark-ai/actions/runs/44247518798) **QUEUED** at last sample. A report/checkpoint commit may start further CI, which must be checked against its own SHA.
+- Privacy `b90f5630`: [#44247518798](https://github.com/Iam-2squared/ark-ai/actions/runs/44247518798) **QUEUED** at last sample.
+- V3 `56983862`: [#44247997813](https://github.com/Iam-2squared/ark-ai/actions/runs/44247997813) **QUEUED** at last sample. A report/checkpoint commit may start further CI, which must be checked against its own SHA.
 
 ## Constraints and next gate
 
