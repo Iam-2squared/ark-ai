@@ -71,6 +71,11 @@ def _text(name: str, value: object) -> str:
     # Refuse before inspecting backend.execute or serializing a revision.
     if "\x00" in value:
         raise ValueError(f"{name} contains a NUL separator")
+    # Control characters can forge audit/log fields or yield ambiguous native
+    # backend labels. This bounded scan is intentionally stricter than the
+    # frozen generic ToolCall v1 identity contract.
+    if any(ord(character) < 0x20 or ord(character) == 0x7f for character in value):
+        raise ValueError(f"{name} contains a control character")
     # Revision and bound-action identities serialize as UTF-8. Restrict the
     # actual byte budget and reject lone surrogate code points at ingress,
     # before a backend descriptor, registry digest or policy gate is touched.
@@ -426,6 +431,11 @@ class ToolRegistry:
         # a supposedly exact backend identity. Preserve ToolCall v1 unchanged.
         if "\x00" in original[2]:
             raise ValueError("registered ToolCall scope contains NUL separator")
+        if any(
+            ord(character) < 0x20 or ord(character) == 0x7f
+            for character in original[2]
+        ):
+            raise ValueError("registered ToolCall scope contains control character")
         try:
             original[2].encode("utf-8", errors="strict")
         except UnicodeEncodeError as exc:
@@ -491,6 +501,11 @@ class ToolRegistry:
         # This changes no frozen ToolCall contract or backend dispatch.
         if "\x00" in original[2]:
             raise ValueError("registered ToolCall scope contains NUL separator")
+        if any(
+            ord(character) < 0x20 or ord(character) == 0x7f
+            for character in original[2]
+        ):
+            raise ValueError("registered ToolCall scope contains control character")
         try:
             original[2].encode("utf-8", errors="strict")
         except UnicodeEncodeError as exc:
