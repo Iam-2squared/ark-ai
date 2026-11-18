@@ -96,6 +96,20 @@ def make_disconnected_fixture(
         for label in (source_id, privacy_scope)
     ):
         raise DisconnectedFixtureRejected("fixture metadata contains ASCII control delimiter")
+    # The opt-in fixture source/privacy labels must also reject Unicode bidi
+    # override/isolate markers and non-ASCII line separators. They can make a
+    # diagnostic identity visually disagree with the bytes used for hashing.
+    # Do not tighten the public/frozen ObservationEnvelope v1 constructor.
+    if any(
+        type(label) is str and any(
+            codepoint in (0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+            or 0x202A <= codepoint <= 0x202E
+            or 0x2066 <= codepoint <= 0x2069
+            for codepoint in map(ord, label)
+        )
+        for label in (source_id, privacy_scope)
+    ):
+        raise DisconnectedFixtureRejected("fixture metadata contains Unicode formatting control")
     # First validate the entire public metadata contract using a detached,
     # inert envelope and a fixed digest sentinel. Invalid privacy/source
     # labels, clocks and parent links never cause even a local hashing pass
