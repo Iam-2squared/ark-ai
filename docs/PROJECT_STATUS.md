@@ -1,4 +1,50 @@
-# LATEST — ARK AI Run970: three disconnected recovery vector fixes, complete status-history archive
+# LATEST — ARK AI Run971: C1 control admission across four non-UI foundations
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T00:54:14+09:00** (reporting timestamp only; **not** a trusted consent/expiry/audit clock). **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), **OPEN/DRAFT/UNMERGED** on final pre-write head check. **Exact work-basis HEAD:** `8eeedfbc571231db4e6805760cf482e0e1401be0` (Run970 checkpoint). **Last new source/test HEAD:** `d1183465ee5753f3f3edfc4b8f5c7e5cfa836d57`. **Run971 technical-report HEAD / checkpoint-write basis HEAD:** `31114740616aa0d6ab8d4cc70a5be0d19af7f1d8`. **Checkpoint-result HEAD is the returned Contents API commit SHA/live PR+branch HEAD after this write, not a self-referential literal in this file.**
+
+**main** `7a843f17eb96ed13d66f23b58b06406b3002e405` verified unchanged. Protected PR #5 `805b377697472268db02650a89c7a94b1c5337c8` and paused UI PR #9 `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` both OPEN/DRAFT/UNMERGED/untouched at final pre-write check.
+
+## NEW in this invocation — saved, not yet latest-HEAD CI certified
+
+1. **ToolRegistry/PermissionGate:** `bc8b0091` fixes C1 U+0080–U+009F admission for registered name/capability/backend and resolve/bind scopes. `e8cf0b79` adds **33** test cases including rejected WRITE not consuming unrelated local one-shot and zero mock backend dispatch.
+2. **Observation synthetic fixture:** `229fd039` rejects C1 source/privacy aliases before fixture hashing. `bd285bc7` adds **14** cases; frozen ObservationEnvelope v1 direct input semantics deliberately unchanged. No capture.
+3. **Memory read-only generation review:** `9d50f2b0` rejects C1 owner/namespace/source aliases before private path/SQLite access. `6b223100` adds **19** cases; frozen Memory v1 unchanged. No WRITE/erasure.
+4. **Standalone Planner:** `6c466bc3` rejects C1 graph step/dependency/tool/capability/scope aliases before DAG hashing. `d1183465` adds **33** cases; frozen PlanStep/ToolCall v1 unchanged. No dispatch.
+
+**4 meaningful source hardening packages / 99 authored new parametrized tests.** This is not a measured 99 PASS. Positive fixtures retain multilingual identity and public frozen API compatibility. Source and test commits are saved; no physical-PC or local full-suite tests claimed.
+
+[Run971 technical report](https://github.com/Iam-2squared/ark-ai/blob/31114740616aa0d6ab8d4cc70a5be0d19af7f1d8/docs/JARVIS_RUN971_NON_UI_C1_IDENTITY_GUARDS.md). [Complete status history through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md), exact retained blob `f3fc02bb663b813157350bcc0498925ef10f6db8`. Previous Run970 short checkpoint preserved below.
+
+## Tests / CI — exact SHA, sampled states only
+
+- Previous Run970 checkpoint `8eeedfbc571231db4e6805760cf482e0e1401be0`: [#44328854791](https://github.com/Iam-2squared/ark-ai/actions/runs/44328854791) **GREEN / SUCCESS (all six Ubuntu/Windows × Python 3.11/3.12/3.13 jobs)**. It cannot certify Run971.
+- Run971 Registry source [#44339558634](https://github.com/Iam-2squared/ark-ai/actions/runs/44339558634) and Registry test [#44339673606](https://github.com/Iam-2squared/ark-ai/actions/runs/44339673606): **IN PROGRESS** last observed, some jobs SUCCESS, no observed failure.
+- Observation source [#44339746182](https://github.com/Iam-2squared/ark-ai/actions/runs/44339746182), test [#44339819302](https://github.com/Iam-2squared/ark-ai/actions/runs/44339819302): **IN PROGRESS** last observed.
+- Memory source [#44339959293](https://github.com/Iam-2squared/ark-ai/actions/runs/44339959293), test [#44340025318](https://github.com/Iam-2squared/ark-ai/actions/runs/44340025318): **QUEUED** last observed.
+- Planner source [#44340161160](https://github.com/Iam-2squared/ark-ai/actions/runs/44340161160), test [#44340233475](https://github.com/Iam-2squared/ark-ai/actions/runs/44340233475): **QUEUED** last observed.
+- Report `31114740` [#44340502032](https://github.com/Iam-2squared/ark-ai/actions/runs/44340502032): **QUEUED** last observed. This checkpoint may trigger another run. **Latest exact-head all-six GREEN is NOT yet established.** No duplicate equivalent workflow was manually launched. No test failure observed at last sampling; pending is not PASS.
+
+## Frozen contracts / blockers / authorizations
+
+Frozen V1/V2, Local UI, Launcher, Memory v1, Observation Envelope v1, PlanStep/ToolCall v1, V3 contract/evaluation evidence and provenance/contamination/regression/reproducibility gates unchanged. PR #5 protected Draft/unmerged; PR #9 UI paused Draft/unmerged/untouched; PR #8 Draft/unmerged. No paid service/external GPU/paid API, real Candidate generation/promotion, protected V2 final evaluation, new credentials/connections, physical-PC changes, irreversible/destructive operation, real backend dispatch, automatic unknown-WRITE retry, unauthorized merge, bypass/force push. Hashes and mock tests do not establish trusted clock, consent provenance, or real external exactly-once semantics. There is no authorization to resume frontend/UI development.
+
+## Next plan / 今後の方針
+
+1. Verify latest source+test/checkpoint CI on Windows/Ubuntu × Python 3.11–3.13, respond to real FAIL with minimal safe correction; do not infer newer PASS from older results.
+2. Advance Memory WAL/SHM lifecycle, CAS/ABA, expiry coherent-snapshot row/event integrity and COMMIT-UNKNOWN manual-only review.
+3. Continue Planner crash/terminal recovery and registry-bound immutable ToolRegistry / exact-type PermissionGate → restart-safe authorization → audited mock executor, only after relevant exact-head GREEN.
+4. Continue privacy-safe Personal Context, Proactive occurrence/replay/clock state, Observation fixture contracts and free-only V3 guardrails. UI remains PAUSED.
+
+**ARK/JARVIS completion: NOT_PASSED.**
+
+
+---
+
+## Historical Run970 checkpoint (retained verbatim except its heading level)
+
+### Run970 — preserved earlier checkpoint
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T23:51:01+09:00** (reporting time only, **not** a trusted consent, audit, occurrence, or expiry clock). **Overall ARK/JARVIS: NOT_PASSED.**
 
