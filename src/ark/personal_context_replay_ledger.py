@@ -45,6 +45,42 @@ class OfflineContextReplayRejected(ValueError):
     """An offline context request already occurred or its receipt is unsafe."""
 
 
+# Local hash-chain rules are part of the persisted replay protocol. Reject
+# monkey-patched callbacks, format constants and budgets BEFORE path inventory,
+# SQLite access, hash input serialization or a retained witness scalar read.
+# This is an in-process instrumentation fence, not verified consent, writer
+# identity, clock trust or independent storage custody.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_RE = re
+_ORIGINAL_SHA = _SHA
+_ORIGINAL_REQUEST = _REQUEST
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_DDL = _DDL
+_ORIGINAL_MAX_ROWS = _MAX_ROWS
+
+
+def _require_original_replay_protocol() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or re is not _ORIGINAL_RE
+        or _SHA is not _ORIGINAL_SHA
+        or _REQUEST is not _ORIGINAL_REQUEST
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _DDL is not _ORIGINAL_DDL
+        or type(_MAX_ROWS) is not int
+        or _MAX_ROWS != _ORIGINAL_MAX_ROWS
+    ):
+        raise OfflineContextReplayRejected(
+            "context replay protocol authority changed"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class OfflineContextReplayWitness:
     count: int
@@ -150,10 +186,14 @@ def _require_original_receipt_constructor() -> None:
 
 
 def _hash(value: tuple[object, ...]) -> str:
+    _require_original_replay_protocol()
     encoded = json.dumps(
         value, separators=(",", ":"), ensure_ascii=True,
     ).encode("ascii")
-    return hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    _require_original_replay_protocol()
+    digest = hashlib.sha256(_DOMAIN + encoded).hexdigest()
+    _require_original_replay_protocol()
+    return digest
 
 
 def genesis_offline_context_replay_witness() -> OfflineContextReplayWitness:
@@ -191,6 +231,7 @@ def _require_original_witness_carrier() -> None:
 
 
 def _check_witness(witness: object) -> tuple[int, str]:
+    _require_original_replay_protocol()
     # Capture values once and recheck after the denial getter. Even a local
     # synthetic witness may be altered reentrantly; no permission is inferred.
     _require_original_witness_carrier()
@@ -211,6 +252,7 @@ def _check_witness(witness: object) -> tuple[int, str]:
 
 
 def _check_binding(binding: object) -> tuple[str, str, str, str]:
+    _require_original_replay_protocol()
     # The context receipt is hash-only, but exact-class descriptors can be
     # modified into executable callbacks. Reject BEFORE any field/authority
     # access, including on the read-only/restart and CAS reservation paths.
@@ -255,6 +297,7 @@ def _check_binding(binding: object) -> tuple[str, str, str, str]:
 
 
 def _check_path(path: object, *, create: bool) -> Path:
+    _require_original_replay_protocol()
     # Reject unsafe native pathname/longest SQLite journal sibling before
     # lstat, a caller callback, or any private context ledger connection.
     if (
@@ -317,6 +360,7 @@ def _check_path(path: object, *, create: bool) -> Path:
 
 
 def _schema(conn: sqlite3.Connection) -> None:
+    _require_original_replay_protocol()
     if conn.execute("PRAGMA user_version").fetchone() != (1,):
         raise OfflineContextReplayRejected("unknown context ledger schema version")
     # Limit private DDL hydration inside the caller's current read/write TX.
@@ -354,6 +398,7 @@ def _schema(conn: sqlite3.Connection) -> None:
 
 
 def _inspect(conn: sqlite3.Connection) -> OfflineContextReplayWitness:
+    _require_original_replay_protocol()
     _require_original_witness_carrier()
     _schema(conn)
     # Fail closed on malformed/off-budget persisted identifiers before Python
