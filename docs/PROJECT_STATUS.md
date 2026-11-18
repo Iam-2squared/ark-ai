@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run968: Run967 CI repair, proactive quarantine, privacy and startup vector custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T22:01:38+09:00** (ordinary reporting clock only, **NOT trusted action/consent/expiry time**). **Overall ARK/JARVIS NOT_PASSED.** Three new independent disconnected/non-UI source+test packages and failed-CI recovery were saved; **latest exact-head CI GREEN NOT ESTABLISHED**.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at write preflight. **Exact work-basis HEAD:** `b0d1b6a6a30dfd7603093d0125423b887838af32` (Run967 checkpoint). **Latest source/test HEAD:** `e9a67a815d70bf6ceb94b3c21aad197f99e60c04` (including source-pin/POSIX CI corrections). **Report HEAD / checkpoint-write basis:** `fd57aa5d08d38fdcd977f0e0a928af2dcd177258`. **Previous canonical PROJECT_STATUS blob:** `888ffa3f930b331577aeb56edba9e41b01ab454b`. **Checkpoint-result HEAD cannot appear inside the same commit's content**; obtain the returned Contents commit SHA, then compare it with live branch/PR HEAD. **main preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged. Protected Draft PR #5 `805b377697472268db02650a89c7a94b1c5337c8` and paused UI Draft PR #9 `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` remained untouched.
+
+## NEW — Run968, 3 opt-in non-UI packages / 44 authored regression cases
+
+1. **Proactive expired-occurrence quarantine:** source [`18aa1656`](https://github.com/Iam-2squared/ark-ai/commit/18aa1656f99d1b32aafae6a53378cfea135b1209) pins original policy/witness input vectors, receipt carrier vectors and all denial-only receipt/witness descriptors before a synthetic SQLite append. Test [`966143c3`](https://github.com/Iam-2squared/ark-ai/commit/966143c3a11a07700018d45aeed78ddb41c29b02): **18 authored cases** on shortened vectors, poisoned descriptors and unchanged non-authorizing restart. No actual scheduling, notification, external replay or trusted clock.
+2. **Personal Context revocation continuity:** source [`07e9f2b3`](https://github.com/Iam-2squared/ark-ai/commit/07e9f2b34145bc033ec1712109b7d9aff713df5e) pins complete retained-witness field and lookup vectors before private synthetic SQLite review. Test [`1ecab5d4`](https://github.com/Iam-2squared/ark-ai/commit/1ecab5d4a396b257b65d3d3d75d6de4e92b024b2): **9 authored cases**, including benign local cold-restart. No context disclosure, revocation reversal, consent claim or erasure claim.
+3. **Disconnected startup READ readiness:** source [`8521a675`](https://github.com/Iam-2squared/ark-ai/commit/8521a67581629b89c6d74aa4540facad80e83449) retains exact grant/schema/READ/result/denial/hook vectors before any caller capability or SQLite review access. Test [`5c286b67`](https://github.com/Iam-2squared/ark-ai/commit/5c286b6744ce56d5fd5cc744ad9d103475709199): **17 authored cases**, including equal-valued vector clone rejection. No real tool dispatch, live device or integrated readiness PASS.
+
+**44 test cases AUTHORED, not 44 verified PASSES.** [Run968 technical report](https://github.com/Iam-2squared/ark-ai/blob/fd57aa5d08d38fdcd977f0e0a928af2dcd177258/docs/JARVIS_RUN968_NON_UI_PROACTIVE_PRIVACY_STARTUP_CI_REPAIR.md) describes code/test boundaries and CI evidence.
+
+## CI investigation and corrective writes — exact SHAs
+
+- Run967 checkpoint `b0d1b6a6` [CI #44299489918](https://github.com/Iam-2squared/ark-ai/actions/runs/44299489918): **COMPLETED FAILURE 6/6**; all six blocked by Ruff I001 in `tests/test_disconnected_observation_invisible_labels_run967.py`; pytest not reached.
+- [`2784b692`](https://github.com/Iam-2squared/ark-ai/commit/2784b692627fc5ad5523dfd0822ec704c978ad55) fixed that import-block spacing through normal Contents API. Its [CI #44307447371](https://github.com/Iam-2squared/ark-ai/actions/runs/44307447371) passed Ruff on Ubuntu Python 3.11, but pytest found **12 failures / 18,068 passed / 1 skipped** on that job: four legacy SourcePin denial-message matches and eight Run967 source/handle-seal failures after a CPython `__new__` hook substitution contaminated subsequent tests. Other jobs were still in progress at sample.
+- **No test deletion or assertion relaxation:** [`a4b469a8`](https://github.com/Iam-2squared/ark-ai/commit/a4b469a81f39ef2f5c5ff246db6a0d098c7fc858) now reports both legacy `acquired authority` and new `boundary changed` denial markers before path access; [`96cdcc28`](https://github.com/Iam-2squared/ark-ai/commit/96cdcc2831a27ca99f9c75072941c17fb51bc653) and [`e9a67a81`](https://github.com/Iam-2squared/ark-ai/commit/e9a67a815d70bf6ceb94b3c21aad197f99e60c04) isolate the unchanged negative `__new__` attack assertions in disposable child interpreters for SourcePin and POSIX seal respectively.
+- Other intermediate CI sample: [#44307920915](https://github.com/Iam-2squared/ark-ai/actions/runs/44307920915) **IN PROGRESS** at `966143c3`; [#44308132458](https://github.com/Iam-2squared/ark-ai/actions/runs/44308132458) **IN PROGRESS** at `1ecab5d4`; [#44308385699](https://github.com/Iam-2squared/ark-ai/actions/runs/44308385699) **QUEUED** at `5c286b67`; [#44308828814](https://github.com/Iam-2squared/ark-ai/actions/runs/44308828814) **QUEUED** at `e9a67a81`. [Report-head CI #44309119826](https://github.com/Iam-2squared/ark-ai/actions/runs/44309119826) **QUEUED** at last check, and checkpoint may auto-launch another exact-head run. **No latest Run968 all-six PASS claim.** Prior Run966 [#44290072462](https://github.com/Iam-2squared/ark-ai/actions/runs/44290072462) **SUCCESS 6/6** is historical only. No local full pytest/Ruff or target-PC run; no duplicate manual workflow dispatch.
+
+## Frozen contracts, risk and authorization boundaries
+
+Frozen V1/V2, Memory v1, Observation Envelope v1, Local UI, Launcher, V3 Contract 1, contamination/provenance/regression/reproducibility gates unchanged. PR #5 protected Draft/unmerged, PR #9 UI paused Draft/unmerged/untouched; PR #8 Draft/unmerged; main unchanged. No billable/paid/external compute/API/GPU, subscription, Candidate adapter/weights/promotion, protected final evaluation, credential/account connection, physical-PC action, actual tool effect, destructive/irreversible action, hidden Git/force push or main merge. In-process descriptor/SQLite hash checks are local diagnostics, **not** authenticated provenance, durable independent consent, trusted-clock evidence or exactly-once external-effect proof.
+
+## Next plan / 今後の方針
+
+1. Check **latest exact checkpoint-result HEAD CI** across Windows/Ubuntu × Python 3.11–3.13, inspect exact failure logs if RED, make smallest permitted fix; pipeline independent non-UI areas during in-flight CI.
+2. Advance Memory WAL/SHM, CAS/ABA, row/event/expiry integrity and ambiguous-COMMIT review without modifying frozen Memory v1 or auto-replaying external effects.
+3. Advance Planner cold/terminal/UNKNOWN recovery, immutable registry-bound identity, exact-type PermissionGate, durable one-shot/audit-before-action and disconnected/mock executor integration only after exact-head lower-level GREEN.
+4. Continue Personal Context privacy veto, Proactive occurrence/replay fences, Observation fixtures/startup readiness and free V3 identity/path/approval/reproducibility guards. No UI; maintain all spend, frozen and irreversible gates.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run967: opt-in file carrier custody and invisible Observation identity guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T20:58:09.150+09:00** (ordinary reporting clock only, **NOT** trusted action/consent/expiry clock). **ARK/JARVIS NOT_PASSED.** Source, tests and diagnostic report are disconnected/non-UI; exact latest checkpoint CI GREEN **not established**.
