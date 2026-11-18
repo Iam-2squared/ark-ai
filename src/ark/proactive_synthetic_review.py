@@ -269,10 +269,18 @@ def _validate(conn: sqlite3.Connection) -> None:
     quick = conn.execute("PRAGMA quick_check").fetchmany(2)
     if len(quick) != 1 or tuple(quick[0]) != ("ok",):
         raise SyntheticTriggerRejected("trigger fixture integrity failed")
-    # Bound the persisted row count and *SQLite storage bytes* before Python
-    # hydrates any untrusted TEXT/BLOB. A corrupt 100-MB digest would otherwise
-    # become a Python string just to be rejected by the regex below. Keep
-    # the existing canonical per-row/identity checks after this preflight.
+    # Reject oversized history before evaluating storage-class and byte
+    # predicates on each row. COUNT does not hydrate private marker payloads;
+    # the more expensive relational integrity sweep below is therefore
+    # bounded by the fixture's existing maximum of 10,000 preparations.
+    count = conn.execute(
+        "SELECT COUNT(*) FROM synthetic_prepared_triggers"
+    ).fetchone()[0]
+    if type(count) is not int or not 0 <= count <= _MAX_PREPARATIONS:
+        raise SyntheticTriggerRejected("trigger fixture review budget exceeded")
+    # Bound *SQLite storage bytes* before Python hydrates any TEXT/BLOB.
+    # A corrupt 100-MB digest must not become a Python string just to be
+    # rejected by the regex below. Keep canonical per-row identity checks.
     row_budget = conn.execute(
         "SELECT COUNT(*), COALESCE(SUM(CASE WHEN "
         "typeof(trigger_id)='text' "
