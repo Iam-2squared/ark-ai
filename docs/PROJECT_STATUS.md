@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run959: Planner terminal fan-in, WAL-pinned Memory CAS, V3 packet identity, global privacy veto witnesses
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T13:57:29.731+09:00** (ordinary report clock only; NOT an authenticated action, consent, expiry, authorization or approval clock). **Overall ARK/JARVIS NOT_PASSED.** Local/disconnected/synthetic, zero-new-cost and **non-UI only**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED on preflight. **Exact work-basis HEAD:** `484a56a6b281fd59eed7bdbff241a69e1d5f62ab` (Run958 canonical checkpoint, [CI #44232897340](https://github.com/Iam-2squared/ark-ai/actions/runs/44232897340) COMPLETED **GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13). **Latest new test HEAD:** `4729c818027ac356b316aced9af8de883c156a3d`. **Checkpoint-write basis HEAD:** `fa663b2c46205dad100060efda01f39ed9f11b91` (Run959 technical report). **Previous PROJECT_STATUS blob:** `c1decf471ddb351e6ce0315e7669d2c390e058b7`. **Checkpoint-result HEAD cannot be embedded in this blob**; verify returned Contents commit, branch/PR and resulting blob after writing. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` untouched. **Draft PR #5:** `805b377697472268db02650a89c7a94b1c5337c8` and paused **Draft UI PR #9:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` OPEN/UNMERGED/UNTOUCHED.
+
+## NEW work — four independent non-UI regression packages, 17 parametrized cases AUTHORED
+
+1. **Planner terminal fan-in (4 cases):** [`198d22e0`](https://github.com/Iam-2squared/ark-ai/commit/198d22e0fe2694ec69664b3edc0b6d83d5d4784d), FAIL/CANCELLED terminal root × alternate successful sibling ordering. Once join/leaf are BLOCKED, later dependency success must not resurrect their execution, stale revisions must fail, independent branch remains runnable and old snapshots detached.
+2. **Memory WAL historical readers + generation CAS (2 cases):** [`f0bf1f84`](https://github.com/Iam-2squared/ark-ai/commit/f0bf1f84170e81adacbeeb621a17de09c04e011c), one/two pinned historical readers versus independent WAL writer; PASSIVE checkpoint; stale CAS denial, updated cold view and exact event pair. A read snapshot is never authority to write.
+3. **Detached V3 packet byte identity (9 cases):** [`99dd9790`](https://github.com/Iam-2squared/ark-ai/commit/99dd9790ed791b3e565f6dd6a9df58dd11470a1c), reject duplicate keys/ambiguous escapes/numeric overflow/NaN/BOM/bad UTF-8/oversize/NUL and keep distinct canonical byte fingerprints for numerically equivalent packets. No actual GPU, Candidate, training or approval.
+4. **Privacy veto global witness, two handles (2 cases):** [`4729c818`](https://github.com/Iam-2squared/ark-ai/commit/4729c818027ac356b316aced9af8de883c156a3d), stale global retained digest cannot be used to review or append while separate owners share a scope. Cold restart sees both revocations; unrelated scope being locally unseen never equals consent or permission.
+
+[Run959 technical report](https://github.com/Iam-2squared/ark-ai/blob/fa663b2c46205dad100060efda01f39ed9f11b91/docs/JARVIS_RUN959_NON_UI_PLANNER_WAL_V3_PRIVACY.md). [Exact four-file comparison](https://github.com/Iam-2squared/ark-ai/compare/484a56a6b281fd59eed7bdbff241a69e1d5f62ab...4729c818027ac356b316aced9af8de883c156a3d): only four `tests/` files added. **No production source or frozen contract changed. 17 cases AUTHORED, latest source/test/checkpoint HEAD GREEN 6/6 UNVERIFIED.** No full local pytest or manual duplicate CI dispatch.
+
+## CI — exact commits, sampled before checkpoint
+
+- Run958 checkpoint `484a56a6`: [#44232897340](https://github.com/Iam-2squared/ark-ai/actions/runs/44232897340) **COMPLETED GREEN 6/6**. Only validates the Run958 basis, not these new tests.
+- Planner `198d22e0`: [#44240085323](https://github.com/Iam-2squared/ark-ai/actions/runs/44240085323) **IN_PROGRESS** (all jobs running at last sample).
+- Memory `f0bf1f84`: [#44240160266](https://github.com/Iam-2squared/ark-ai/actions/runs/44240160266) **IN_PROGRESS**; Ubuntu 3.11 GREEN at last sample, five jobs pending.
+- V3 `99dd9790`: [#44240240806](https://github.com/Iam-2squared/ark-ai/actions/runs/44240240806) **IN_PROGRESS**, six jobs pending.
+- Privacy `4729c818`: [#44240360979](https://github.com/Iam-2squared/ark-ai/actions/runs/44240360979) **QUEUED** at workflow level (some Ubuntu jobs running).
+- Technical report `fa663b2c`: [#44240527995](https://github.com/Iam-2squared/ark-ai/actions/runs/44240527995) **QUEUED**. Checkpoint commit may auto-trigger further CI; this is NOT prior-HEAD GREEN evidence.
+
+## Frozen contracts, authorization boundaries and blockers
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1 and contamination/provenance/regression/reproducibility/human-review/Candidate promotion gates unchanged. Draft PR #5 protected and unmerged; Draft UI PR #9 paused and untouched. No new UI code, frontend tests, external paid GPU/compute/API/service/subscription, actual training or model weights, Candidate adapter/promotion, protected final V2 evaluation, real hardware tasks, tool dispatch, external credentials, unreviewed privacy disclosure, destructive erasure, main merge, force push or raw-Git safeguard bypass. **Local SQLite snapshots/digests do NOT prove independent custody, real consent or exactly-once real-world effects.**
+
+## Next plan / 今後の方針
+
+1. Finish exact latest HEAD Windows/Ubuntu × Python 3.11–3.13 CI; if FAIL inspect exact job logs and fix narrowly via ordinary permitted GitHub contents safety path, moving to another independent non-UI lane while new CI runs.
+2. Memory WAL/SHM last-close race, CAS/ABA generation lifetime, event/row prehydration, expiry/coherent snapshots and uncertain COMMIT handling.
+3. Planner persistent RUNNING/COMMIT-UNKNOWN quarantine; immutable ToolRegistry and exact PermissionGate; restart-safe one-shot occurrence + audit-before-action with **disconnected/mock-only execution** and lower-level exact-head GREEN before joining.
+4. Privacy-safe Personal Context retention/veto, Proactive recurrence, Observation fixture-only lineage and free V3 approval/path/identity/reproducibility safeguards. Human authorization remains required at paid/protected/irreversible boundaries.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run958: durable proactive/privacy quarantine, registry WRITE token isolation, Memory WAL CAS
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T12:47:39.735+09:00** (ordinary report clock only; not a trusted action/consent/expiry/approval clock). **Overall ARK/JARVIS NOT_PASSED.** Zero-new-cost, disconnected/mock, **non-UI core only**.
