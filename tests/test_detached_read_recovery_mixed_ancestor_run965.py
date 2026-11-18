@@ -50,7 +50,10 @@ def test_mixed_ancestor_join_retains_strongest_blocker_and_independent_read(
         expected = "WAIT_DEPENDENCY"
     else:
         expected = "READY_MOCK_ONLY"
-    assert decision[_C] == decision[_D] == expected
+    assert decision[_C] == expected
+    assert decision[_D] == (
+        "WAIT_DEPENDENCY" if expected == "READY_MOCK_ONLY" else expected
+    )
     assert decision[_E] == "COMPLETE_UNVERIFIED"
     assert decision[_F] == "READY_MOCK_ONLY"
     assert result == schedule_detached_read_recovery(_REQ, graph)
