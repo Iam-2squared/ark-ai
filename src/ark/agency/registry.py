@@ -105,6 +105,26 @@ def _text(name: str, value: object) -> str:
     return value
 
 
+def _registry_scope_budget(value: object) -> None:
+    """Bound optional registry scope before scanning or hashing a ToolCall.
+
+    ToolCall v1 intentionally remains unchanged. A reflected scope may have
+    grown far beyond its original string, so the exact carrier and codepoint
+    bound must be checked before any linear Unicode/control inspection.
+    """
+    if type(value) is not str or len(value) > 4096:
+        raise ValueError("registered ToolCall scope exceeds registry budget")
+    try:
+        byte_count = len(value.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise ValueError("registered ToolCall scope is not valid UTF-8") from exc
+    if byte_count > 4096:
+        raise ValueError("registered ToolCall scope exceeds registry budget")
+
+
+_ORIGINAL_REGISTRY_SCOPE_BUDGET = _registry_scope_budget
+
+
 def _canonical_json(value: object) -> bytes:
     _require_original_registry_digest()
     return (
@@ -446,6 +466,9 @@ class ToolRegistry:
         # Frozen ToolCall v1 accepts opaque labels, but this opt-in registry
         # must not bind native NUL separators or malformed UTF-8 scopes into
         # a supposedly exact backend identity. Preserve ToolCall v1 unchanged.
+        if _registry_scope_budget is not _ORIGINAL_REGISTRY_SCOPE_BUDGET:
+            raise ValueError("registry scope admission changed")
+        _registry_scope_budget(original[2])
         if "\x00" in original[2]:
             raise ValueError("registered ToolCall scope contains NUL separator")
         if any(
@@ -534,6 +557,9 @@ class ToolRegistry:
         # ToolCall. Its frozen v1 request-id serializer would otherwise raise
         # a raw UnicodeEncodeError for a surrogate (and touch invalid data).
         # This changes no frozen ToolCall contract or backend dispatch.
+        if _registry_scope_budget is not _ORIGINAL_REGISTRY_SCOPE_BUDGET:
+            raise ValueError("registry scope admission changed")
+        _registry_scope_budget(original[2])
         if "\x00" in original[2]:
             raise ValueError("registered ToolCall scope contains NUL separator")
         if any(
