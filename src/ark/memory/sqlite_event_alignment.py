@@ -149,7 +149,15 @@ def _preflight_alignment_hydration(conn: sqlite3.Connection) -> None:
         "OR typeof(metadata_json)!='text' "
         "OR length(CAST(metadata_json AS BLOB))>12800000 "
         "OR typeof(content_sha256)!='text' "
-        "OR length(CAST(content_sha256 AS BLOB))!=64 LIMIT 1"
+        "OR length(CAST(content_sha256 AS BLOB))!=64 "
+        # SQLite's dynamic storage typing also permits large BLOBs in
+        # numerically declared columns; row hydration must reject these
+        # before SELECT * just as scoped reads and expiry already do.
+        "OR typeof(created_at_ms)!='integer' "
+        "OR typeof(updated_at_ms)!='integer' "
+        "OR (expires_at_ms IS NOT NULL "
+        "AND typeof(expires_at_ms)!='integer') "
+        "OR typeof(revision)!='integer' LIMIT 1"
     ).fetchone()
     if malformed_rows is not None:
         raise MemoryEventAlignmentRejected("Memory audit row hydration preflight failed")
