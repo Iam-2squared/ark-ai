@@ -17,7 +17,6 @@ from ark.disconnected_observation_fixture import (
 )
 from ark.observations import ObservationEnvelope, ObservationKind
 
-
 _PAYLOAD = b"SYNTHETIC_PRIVATE_BYTES_NOT_CAPTURED"
 _FORMAT_CONTROLS = (
     "\u0085", "\u061c", "\u200e", "\u200f",
