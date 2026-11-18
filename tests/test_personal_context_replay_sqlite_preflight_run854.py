@@ -79,17 +79,21 @@ def test_malformed_local_replay_row_denied_before_digest_callback(
 def test_sqlite_count_over_budget_denied_before_hydration(
     tmp_path, monkeypatch,
 ):
-    ledger, _ = _stored(tmp_path)
-    monkeypatch.setattr(replay, "_MAX_ROWS", 0)
+    ledger, retained = _stored(tmp_path)
 
     def forbidden_hash(*_args, **_kwargs):
-        pytest.fail("over-budget context requests reached Python hashing")
+        pytest.fail("changed replay budget reached Python hashing")
 
-    monkeypatch.setattr(replay, "_hash", forbidden_hash)
-    with pytest.raises(
-        replay.OfflineContextReplayRejected, match="persisted row budget",
-    ):
-        ledger.witness()
+    # The row limit itself is pinned at import. Mutating it must not allow
+    # private record hydration or the unreviewed hash callback to run.
+    with monkeypatch.context() as patch:
+        patch.setattr(replay, "_MAX_ROWS", 0)
+        patch.setattr(replay, "_hash", forbidden_hash)
+        with pytest.raises(
+            replay.OfflineContextReplayRejected, match="protocol authority changed",
+        ):
+            ledger.witness()
+    assert ledger.witness() == retained
 
 
 def test_healthy_request_prefix_remains_read_only_and_deny_only(tmp_path):
