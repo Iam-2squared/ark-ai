@@ -64,11 +64,19 @@ def synthetic_observation_source_digest(source_id: str) -> str:
     ):
         raise SyntheticObservationTriggerRejected("exact bounded observation source required")
     try:
-        source_id.encode("utf-8")
+        encoded_source = source_id.encode("utf-8", errors="strict")
     except UnicodeError as exc:
         raise SyntheticObservationTriggerRejected(
             "observation source must be valid UTF-8"
         ) from exc
+    # The frozen ObservationEnvelope identity contract admits at most 1024
+    # UTF-8 bytes, not 1024 Unicode scalars. The independently callable
+    # trigger digest must apply the same byte ceiling before hashing any
+    # caller-supplied source, including when no envelope was constructed.
+    if len(encoded_source) > 1024:
+        raise SyntheticObservationTriggerRejected(
+            "bounded observation source exceeds UTF-8 byte budget"
+        )
     return _hash("ARK-untrusted-observation-source-v1", source_id)
 
 
