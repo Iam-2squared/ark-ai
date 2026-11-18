@@ -18,6 +18,7 @@ from pathlib import Path
 from .proactive_synthetic_review import (
     SyntheticProactiveLedger,
     SyntheticTriggerRejected,
+    _refuse_aliased_proactive_path,
     _validate,
 )
 
@@ -66,6 +67,7 @@ _ORIGINAL_WITNESS_VALIDATOR = SyntheticTriggerWitness.assert_integrity
 # including one installed reentrantly after the first source observation,
 # must be denied before any private rows are passed into it.
 _ORIGINAL_SCHEMA_VALIDATE = _validate
+_ORIGINAL_PATH_PREFLIGHT = _refuse_aliased_proactive_path
 # Private trigger rows are serialized and SHA-256 hashed under an exact local
 # codec. Accept a smaller test-only row budget, never a larger production one.
 _ORIGINAL_HASHLIB = hashlib
@@ -94,6 +96,7 @@ def _require_original_witness_carrier() -> None:
     if (
         SyntheticTriggerWitness is not _WITNESS_TYPE
         or _validate is not _ORIGINAL_SCHEMA_VALIDATE
+        or _refuse_aliased_proactive_path is not _ORIGINAL_PATH_PREFLIGHT
         or hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
@@ -180,7 +183,7 @@ def read_proactive_witness(
     # any injectable validation/row-hydration callback. An equal-path object
     # replacement and a different valid retained witness are both drift.
     path_epoch = ledger.path
-    if not isinstance(path_epoch, Path):
+    if type(path_epoch) is not type(Path(".")):
         raise SyntheticTriggerRejected("proactive witness requires a Path source")
     retained_rows_carrier = None if retained is None else retained.row_hashes
     retained_digest = None if retained is None else retained.digest
@@ -213,6 +216,12 @@ def read_proactive_witness(
     # Path resolution, URI construction, SQLite handle creation and BEGIN
     # are distinct reentrant boundaries. The next callback must not be able
     # to restore a transiently retargeted source or retained witness.
+    # Unlike initial fixture creation, a retained ledger path can be
+    # reflectively replaced after construction. Never resolve a symlink or
+    # hardlink into a different private SQLite database during readback.
+    # This is a pre-open alias veto, not an atomic filesystem identity proof.
+    _refuse_aliased_proactive_path(path_epoch)
+    assert_epoch()
     resolved = path_epoch.resolve()
     assert_epoch()
     uri = resolved.as_uri() + "?mode=ro"
