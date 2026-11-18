@@ -57,9 +57,53 @@ _DENIALS = (
     "memory_release_authorized", "file_mutation_authorized",
 )
 _ORIGINAL_DENIALS = tuple(getattr(_PIN_TYPE, key) for key in _DENIALS)
+_PIN_HOOK_NAMES = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_PIN_FIELDS = _PIN_FIELDS
+_ORIGINAL_DENIAL_NAMES = _DENIALS
+_ORIGINAL_DENIAL_DESCRIPTORS = _ORIGINAL_DENIALS
+_ORIGINAL_HOOK_NAMES = _PIN_HOOK_NAMES
+_ORIGINAL_FIELDS_HELPER = fields
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_MAX_PATH = _MAX_PATH
+_ORIGINAL_DESCRIPTORS = tuple(
+    vars(_PIN_TYPE).get(name)
+    for name in (*_PIN_FIELDS, *_DENIALS, *_PIN_HOOK_NAMES)
+)
+
+
+def _require_original_source_pin_boundary() -> None:
+    """Pin local diagnostic carriers before any retained value or path access.
+
+    These same-process checks are fail-closed diagnostics, not independent
+    attestation, durable consent, or a grant to open private contents.
+    """
+    if (
+        DisconnectedSourcePin is not _PIN_TYPE
+        or fields is not _ORIGINAL_FIELDS_HELPER
+        or _PIN_FIELDS is not _ORIGINAL_PIN_FIELDS
+        or _DENIALS is not _ORIGINAL_DENIAL_NAMES
+        or _ORIGINAL_DENIALS is not _ORIGINAL_DENIAL_DESCRIPTORS
+        or _PIN_HOOK_NAMES is not _ORIGINAL_HOOK_NAMES
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _MAX_PATH is not _ORIGINAL_MAX_PATH
+        or any(
+            vars(_PIN_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_PIN_FIELDS, *_DENIALS, *_PIN_HOOK_NAMES),
+                _ORIGINAL_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedSourceRejected("local source pin boundary changed")
+
 
 
 def _pin_values(pin: DisconnectedSourcePin) -> tuple[object, ...]:
+    _require_original_source_pin_boundary()
     if type(pin) is not _PIN_TYPE:
         raise DisconnectedSourceRejected("exact source pin required")
     return tuple(getattr(pin, name) for name in _PIN_FIELDS)
@@ -67,6 +111,7 @@ def _pin_values(pin: DisconnectedSourcePin) -> tuple[object, ...]:
 
 def _assert_denied(pin: DisconnectedSourcePin, original: tuple[object, ...]) -> None:
     """Deny-only properties are callbacks; verify each surviving field epoch."""
+    _require_original_source_pin_boundary()
     if _pin_values(pin) != original:
         raise DisconnectedSourceRejected("source pin changed during denial")
     for key, descriptor in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True):
@@ -89,6 +134,7 @@ def _digest(value: object) -> str:
 
 
 def _validated_path(path: object) -> Path:
+    _require_original_source_pin_boundary()
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -100,6 +146,7 @@ def _validated_path(path: object) -> Path:
 
 
 def _scan(path: Path) -> DisconnectedSourcePin:
+    _require_original_source_pin_boundary()
     # Explicit lstat on each ancestor rejects symlinked parent directories,
     # without following the final path's symlink as Path.stat() would do.
     ancestors = tuple(reversed(path.parents))
@@ -119,6 +166,7 @@ def _scan(path: Path) -> DisconnectedSourcePin:
         raise DisconnectedSourceRejected("source must be singly linked regular file")
     if source.st_size < 0 or source.st_mtime_ns < 0:
         raise DisconnectedSourceRejected("invalid source file metadata")
+    _require_original_source_pin_boundary()
     return DisconnectedSourcePin(
         path_sha256=_digest(("path", str(path))),
         parent_chain_sha256=_digest(("ancestors", tuple(chain))),
@@ -147,6 +195,7 @@ def capture_disconnected_source(path: Path) -> DisconnectedSourcePin:
         raise DisconnectedSourceRejected("file identity changed during capture")
     _assert_denied(second, second_values)
     _assert_denied(first, first_values)
+    _require_original_source_pin_boundary()
     return first
 
 
@@ -191,4 +240,5 @@ def review_disconnected_source(
     _assert_denied(first, first_values)
     assert_retained_epoch()
     _assert_denied(retained, pinned)
+    _require_original_source_pin_boundary()
     return second
