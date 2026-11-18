@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run958: durable proactive/privacy quarantine, registry WRITE token isolation, Memory WAL CAS
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T12:47:39.735+09:00** (ordinary report clock only; not a trusted action/consent/expiry/approval clock). **Overall ARK/JARVIS NOT_PASSED.** Zero-new-cost, disconnected/mock, **non-UI core only**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED on preflight. **Exact work-basis HEAD:** `f06f0d20eb12f8ad2053f73adc9a3d18e2b43709` (Run957 canonical checkpoint, [CI #44225551315](https://github.com/Iam-2squared/ark-ai/actions/runs/44225551315) **COMPLETED GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13). **Latest new source/test HEAD:** `4e296f95fc4e550a8d7574682ec727e114ea7818`. **Checkpoint-write basis HEAD:** `ee557437df513d95662af7c8c864884d96172964` (Run958 evidence report committed). **Prior PROJECT_STATUS blob:** `58314ff5dcd5708f834818f664b694c91d203fc7`. **Result HEAD cannot be embedded in its own blob**; verify returned commit and PR/branch after writing. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` untouched. **Draft PR #5** `805b377697472268db02650a89c7a94b1c5337c8` and paused **Draft UI PR #9** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` OPEN, UNMERGED, UNTOUCHED.
+
+## NEW work — 4 independent, non-UI test packages, 20 parameterized cases authored
+
+1. **7 cases:** Proactive SQLite persisted marker fields: cold constructor/count/prepare quarantine on malformed digest/clock/identity; no silent repair or dispatch. [Commit `b263ca9b5`](https://github.com/Iam-2squared/ark-ai/commit/b263ca9b5c5051ccc17eac7b3aa317ded80cc3cd).
+2. **7 cases:** Personal Context digest-only revocation rows: malformed cold veto never reenrolls, reads or writes fail closed; healthy monotone restart. [Commit `af88c0a38`](https://github.com/Iam-2squared/ark-ai/commit/af88c0a38508e20a61180d1f5745903ebd976bd2).
+3. **3 cases:** Registry/PermissionGate: NUL, malformed UTF-8 and multibyte-over-budget scope rejects WRITE before consuming unrelated process-local token. [Commit `cb686af5f`](https://github.com/Iam-2squared/ark-ai/commit/cb686af5f683f8a49fda98e4d6a8a22f64f1842f).
+4. **3 cases:** Memory Generation-CAS: PASSIVE/FULL/TRUNCATE WAL checkpoints must preserve exact event prefix and stale-token denial on cold restart. [Commit `4e296f95f`](https://github.com/Iam-2squared/ark-ai/commit/4e296f95fc4e550a8d7574682ec727e114ea7818).
+
+**Technical report:** [Run958](https://github.com/Iam-2squared/ark-ai/blob/ee557437df513d95662af7c8c864884d96172964/docs/JARVIS_RUN958_NON_UI_PROACTIVE_PRIVACY_REGISTRY_MEMORY_WAL.md). No production source, fixed contract, frontend, hardware, protected eval or real executor changed. A synthetic local digest/receipt is not user consent, deletion proof, independent retained custody, trusted clock or durable authority. **20 cases AUTHORED; latest exact-HEAD GREEN 6/6 not established at this checkpoint.**
+
+## CI — exact commit evidence sampled before checkpoint
+
+- Prior checkpoint `f06f0d20`: [CI #44225551315](https://github.com/Iam-2squared/ark-ai/actions/runs/44225551315) **COMPLETED GREEN 6/6**; this is only the Run957 basis.
+- Package 1, `b263ca9b5`: [CI #44232114844](https://github.com/Iam-2squared/ark-ai/actions/runs/44232114844) **IN_PROGRESS** (this run applies only to this SHA).
+- Package 2, `af88c0a38`: [CI #44232172759](https://github.com/Iam-2squared/ark-ai/actions/runs/44232172759) **IN_PROGRESS** (this run applies only to this SHA).
+- Package 3, `cb686af5f`: [CI #44232290469](https://github.com/Iam-2squared/ark-ai/actions/runs/44232290469) **IN_PROGRESS** (this run applies only to this SHA).
+- Package 4, `4e296f95f`: [CI #44232505230](https://github.com/Iam-2squared/ark-ai/actions/runs/44232505230) **IN_PROGRESS** (this run applies only to this SHA).
+- Report `ee557437d`: [CI #44232675777](https://github.com/Iam-2squared/ark-ai/actions/runs/44232675777) **QUEUED**. The checkpoint commit may trigger CI; **latest checkpoint HEAD CI UNVERIFIED**. No manual duplicate workflows or local full pytest were run.
+
+## Frozen contracts and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1 and all contamination/provenance/regression/reproducibility/human-review constraints unchanged. PR #5 remains Draft under its controlling gate, PR #9 paused Draft without UI/frontend work. No paid/external GPU/API/service/subscription, Candidate adapter/weights/training/promotion, protected V2 final evaluation, real owner-PC tasks, live backend dispatch, untrusted authority escalation, destructive erasure, credentials, main merge, force-push or Git safeguard bypass. SQLite paths and two-store observations do not prove atomic independent physical custody or real-world exactly-once effects.
+
+## Next plan / 今後の方針
+
+1. Verify latest exact HEAD CI six jobs and diagnose any failure using job logs, correcting only the smallest safe test/source semantics, immediately shifting to an independent non-UI lane during CI.
+2. Memory WAL/SHM race, row/event prehydration, ABA/generation CAS, expiry/coherent snapshots; retain fail-closed behavior across restart and lost COMMIT response.
+3. Planner terminal/COMMIT-UNKNOWN recovery and independent mock execution; connect immutable ToolRegistry, exact-type PermissionGate, durable occurrence and audit-before-action only after lower-level exact-head GREEN.
+4. Privacy-safe Personal Context and retained witness custody, Proactive/Observation fixture-only backends, startup readiness, V3 free-only identity/path/approval/reproducibility safeguards. Human approval required at any paid, protected or irreversible boundary.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run957: Proactive source UTF-8 byte guard, Memory mutation scalar admission, privacy veto restart
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T11:43:23.345+09:00** (ordinary reporting clock only; NOT a trusted clock for audit, consent, expiry, authorizations or provenance). **Overall ARK/JARVIS NOT_PASSED.** Zero-new-cost, disconnected/synthetic, non-UI core only. No live tool backend, real owner-PC GGUF gate, hardware, externally paid services or protected evaluation.
