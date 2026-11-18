@@ -139,6 +139,22 @@ _RECEIPT_ORIGINALS_EPOCH = _ORIGINAL_RECEIPT_CARRIER
 
 def _require_original_quarantine_receipt_carrier() -> None:
     _require_original_quarantine_protocol()
+    # A denial-only property was installed before this call. Reject it prior
+    # to SQLite work, retaining the historical denial-specific diagnostics:
+    # the subsequent post-commit getter must never run to reveal or mutate a
+    # witness, result epoch, or stored quarantine history.
+    if (
+        any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in _ORIGINAL_RECEIPT_DENIALS
+        )
+        or vars(_WITNESS_INPUT_TYPE).get("independently_authenticated")
+        is not _ORIGINAL_WITNESS_DENIAL
+    ):
+        raise ScheduleQuarantineRejected(
+            "original denial changed; potential gained authority blocked "
+            "before post-commit result epoch / history review"
+        )
     if (
         QuarantineReceipt is not _RECEIPT_TYPE
         or _RECEIPT_CARRIER_NAMES is not _RECEIPT_NAMES_EPOCH
