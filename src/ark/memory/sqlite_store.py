@@ -328,6 +328,40 @@ def _require_expiry_purge_hydration_admission(
         raise MemorySchemaError("memory expiry page hydration admission failed")
 
 
+
+def _require_memory_mutation_row_hydration_admission(
+    conn: sqlite3.Connection, memory_id: str,
+) -> None:
+    """Bound corrupt mutation targets before Python materializes SELECT *.
+
+    Unlike scope-filtered readers, put/delete match the deterministic row ID.
+    A damaged owner/namespace must not evade preflight. This is only a local
+    transaction guard; it neither authenticates writers nor repairs history.
+    """
+    malformed = conn.execute(
+        "SELECT 1 FROM memories WHERE memory_id=? AND ("
+        "typeof(memory_id)!='text' OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(source_id)!='text' OR length(CAST(source_id AS BLOB))>2048 "
+        "OR typeof(content)!='text' OR length(CAST(content AS BLOB))>? "
+        "OR typeof(metadata_json)!='text' "
+        "OR length(CAST(metadata_json AS BLOB))>? "
+        "OR typeof(content_sha256)!='text' "
+        "OR length(CAST(content_sha256 AS BLOB))!=64 "
+        "OR typeof(created_at_ms)!='integer' "
+        "OR typeof(updated_at_ms)!='integer' "
+        "OR (expires_at_ms IS NOT NULL "
+        "AND typeof(expires_at_ms)!='integer') "
+        "OR typeof(revision)!='integer') LIMIT 1",
+        (memory_id, _MAX_MEMORY_ROW_CONTENT_BYTES,
+         _MAX_MEMORY_ROW_METADATA_BYTES),
+    ).fetchone()
+    if malformed is not None:
+        raise MemorySchemaError("memory mutation row hydration admission failed")
+
+
+
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
@@ -534,6 +568,9 @@ class SQLiteMemoryStore:
                 raise MemorySchemaError("memory write changed during clock") from exc
             if not stable:
                 raise MemorySchemaError("memory write changed during clock")
+            _require_memory_mutation_row_hydration_admission(conn, memory_id)
+            if self.path is not path_epoch:
+                raise MemorySchemaError("memory put source changed during preflight")
             current = conn.execute(
                 "SELECT * FROM memories WHERE memory_id = ?",
                 (memory_id,),
@@ -923,6 +960,12 @@ class SQLiteMemoryStore:
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory delete scope changed during clock")
+            _require_memory_mutation_row_hydration_admission(conn, memory_id)
+            if self.path is not path_epoch or (
+                scope.owner_id is not original_owner
+                or scope.namespace is not original_namespace
+            ):
+                raise MemorySchemaError("memory delete input changed during preflight")
             row = conn.execute(
                 """SELECT * FROM memories
                 WHERE memory_id=? AND owner_id=? AND namespace=?""",
