@@ -17,9 +17,9 @@ _PRIVATE = b"PRIVATE_SYNTHETIC_FIXTURE_NO_EXTERNAL_CAPTURE"
 _KINDS = tuple(ObservationKind)
 
 
-def _make(kind: ObservationKind, **overrides: object):
+def _make(initial_kind: ObservationKind, **overrides: object):
     fields = {
-        "kind": kind,
+        "kind": initial_kind,
         "source_id": "fixture-source",
         "privacy_scope": "private:fixture",
         "ingested_at_ms": 100,
