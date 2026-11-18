@@ -70,6 +70,7 @@ _FIELDS = (
     "__getattribute__", "__getattr__",
 )
 _ORIGINAL_FIELDS = tuple(vars(_RESULT).get(field) for field in _FIELDS)
+_ORIGINAL_FIELDS_VECTOR = _FIELDS
 
 
 def _protocol() -> None:
@@ -82,6 +83,7 @@ def _protocol() -> None:
         or json.dumps is not _ORIGINAL_JSON
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or CoherentExpiryRestartReview is not _RESULT
+        or _FIELDS is not _ORIGINAL_FIELDS_VECTOR
         or any(
             vars(_RESULT).get(field) is not original
             for field, original in zip(_FIELDS, _ORIGINAL_FIELDS, strict=True)
