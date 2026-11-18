@@ -194,6 +194,19 @@ def _require_bounded_source_id(source_id: object) -> None:
         raise MemoryGenerationCASRejected(
             "generation source exceeds 512 UTF-8 bytes"
         )
+    # Generation-CAS identities can appear in audit/recovery diagnostics.
+    # Reject ASCII separators, bidi formatting and Unicode line separators
+    # at the opt-in boundary; frozen Memory v1 contracts remain unchanged.
+    if any(
+        code < 0x20 or code == 0x7f
+        or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+        or 0x202a <= code <= 0x202e
+        or 0x2066 <= code <= 0x2069
+        for code in map(ord, source_id)
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation source contains a formatting control"
+        )
     try:
         size = len(source_id.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
@@ -223,6 +236,16 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
             or len(value) > 256
         ):
             raise MemoryGenerationCASRejected("exact bounded generation scope required")
+        if any(
+            code < 0x20 or code == 0x7f
+            or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            or 0x202a <= code <= 0x202e
+            or 0x2066 <= code <= 0x2069
+            for code in map(ord, value)
+        ):
+            raise MemoryGenerationCASRejected(
+                "generation scope contains a formatting control"
+            )
         try:
             size = len(value.encode("utf-8", errors="strict"))
         except UnicodeEncodeError as exc:
