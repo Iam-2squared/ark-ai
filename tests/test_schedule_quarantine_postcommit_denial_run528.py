@@ -2,6 +2,7 @@
 
 All mutations affect only a temporary fixture SQLite file; no notifications,
 Tools, real scheduler dispatch, or external effects are performed.
+Preinstalled counterfeit receipt getters are refused before any append.
 """
 
 from __future__ import annotations
@@ -45,7 +46,8 @@ def test_postcommit_authority_forgery_never_enables_overdue_execution(
     with pytest.raises(mod.ScheduleQuarantineRejected, match="gained authority"):
         _write(ledger, policy, retained)
     with sqlite3.connect(ledger._path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
+        # A counterfeit receipt descriptor is now refused BEFORE COMMIT.
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (0,)
 
 
 @pytest.mark.parametrize("mutation", ("witness", "policy"))
@@ -67,7 +69,8 @@ def test_false_final_getter_cannot_mutate_returned_quarantine_epoch(
     with pytest.raises(mod.ScheduleQuarantineRejected, match="post-commit|carrier"):
         _write(ledger, policy, retained)
     with sqlite3.connect(ledger._path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
+        # A counterfeit receipt descriptor is now refused BEFORE COMMIT.
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (0,)
 
 
 def test_false_final_getter_cannot_silently_change_durable_history(
@@ -86,7 +89,8 @@ def test_false_final_getter_cannot_silently_change_durable_history(
     with pytest.raises(mod.ScheduleQuarantineRejected, match="chain altered|history"):
         _write(ledger, policy, retained)
     with sqlite3.connect(ledger._path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
+        # A counterfeit receipt descriptor is now refused BEFORE COMMIT.
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (0,)
 
 
 def test_false_final_getter_cannot_rebind_denial_descriptor(
@@ -105,6 +109,8 @@ def test_false_final_getter_cannot_rebind_denial_descriptor(
     )
     with pytest.raises(mod.ScheduleQuarantineRejected, match="result epoch"):
         _write(ledger, policy, retained)
+    with sqlite3.connect(ledger._path) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (0,)
 
 
 def test_normal_quarantine_restarts_as_only_history_not_dispatch(tmp_path):
