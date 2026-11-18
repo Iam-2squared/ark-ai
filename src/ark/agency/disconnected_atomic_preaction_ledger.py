@@ -343,6 +343,14 @@ def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
     count = conn.execute("SELECT COUNT(*) FROM intents").fetchone()[0]
     if type(count) is not int or not 0 <= count <= _MAX:
         raise AtomicPreactionRejected("oversized or malformed pre-action intent set")
+    # Check the paired table cardinality BEFORE scanning potentially hostile
+    # audit payloads or hydrating a JOIN into Python. An orphan audit set may
+    # be arbitrarily large despite a tiny, valid intent table.
+    audit_count = conn.execute(
+        "SELECT COUNT(*) FROM preaction_audit"
+    ).fetchone()[0]
+    if type(audit_count) is not int or audit_count != count:
+        raise AtomicPreactionRejected("orphan, missing or oversized pre-action audit")
     bad_intent = conn.execute(
         "SELECT 1 FROM intents WHERE "
         "typeof(occurrence_id)!='text' OR length(CAST(occurrence_id AS BLOB))!=68 OR "
@@ -363,8 +371,7 @@ def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
         "FROM intents i LEFT JOIN preaction_audit a ON a.seq=i.seq "
         "ORDER BY i.seq LIMIT ?", (_MAX + 1,),
     ).fetchall()
-    audit_count = conn.execute("SELECT COUNT(*) FROM preaction_audit").fetchone()[0]
-    if len(rows) > _MAX or audit_count != len(rows):
+    if len(rows) != count:
         raise AtomicPreactionRejected("orphan, missing or oversized pre-action audit")
     tip = _GENESIS
     occurrences: list[str] = []
