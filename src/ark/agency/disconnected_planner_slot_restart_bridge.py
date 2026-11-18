@@ -81,6 +81,7 @@ _FIELDS = (
     "external_outcome_verified",
 )
 _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _FIELDS)
+_ORIGINAL_RESULT_FIELDS_VECTOR = _FIELDS
 
 
 def _valid_step_id(value: object) -> bool:
@@ -124,6 +125,7 @@ _INPUT_DESCRIPTORS = tuple(
     tuple(vars(cls).get(name) for name in (*fields, *_INPUT_HOOKS))
     for cls, fields in zip(_INPUT_TYPES, _INPUT_FIELD_NAMES, strict=True)
 )
+_ORIGINAL_INPUT_VECTORS = (_INPUT_TYPES, _INPUT_FIELD_NAMES, _INPUT_HOOKS)
 
 
 def _protocol() -> None:
@@ -132,6 +134,13 @@ def _protocol() -> None:
         or type(_MAX_STEPS) is not int or _MAX_STEPS != 24
         or type(_MAX_STEP_ID_BYTES) is not int or _MAX_STEP_ID_BYTES != 256
         or _valid_step_id is not _ORIGINAL_STEP_ID_CHECK
+        or _FIELDS is not _ORIGINAL_RESULT_FIELDS_VECTOR
+        or any(
+            value is not original for value, original in zip(
+                (_INPUT_TYPES, _INPUT_FIELD_NAMES, _INPUT_HOOKS),
+                _ORIGINAL_INPUT_VECTORS, strict=True,
+            )
+        )
         or any(
             now is not original
             for now, original in zip(
