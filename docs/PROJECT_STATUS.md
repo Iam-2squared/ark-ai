@@ -1,3 +1,40 @@
+# LATEST — ARK AI Run969 corrective final checkpoint: CI-tested no-append proactive denial hardening
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T23:03:43+09:00** — reporting clock ONLY, not trusted consent/action/expiry time. **Overall ARK / JARVIS NOT_PASSED.** This is a same-invocation correction of the earlier Run969 checkpoint because the late CI exposed historical test expectations incompatible with a stricter pre-commit protection. This checkpoint is now the single canonical latest status; all earlier Run969/Run968 material is preserved below.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) OPEN/DRAFT/UNMERGED on write preflight. **Original work-basis HEAD:** `eb73c94218b856d98d4b355708984930141a264a` (Run968 checkpoint). **Last source/test HEAD:** `470fad026310c15734a10749aea78256993b38d6`. **Technical-report HEAD / final checkpoint-write basis:** `125c2fb809025b1f4376d257156780211d297f36`. **Prior (early Run969) checkpoint HEAD:** `2f74ddb7ea57600d57babd159a2ab9e1f368a73d`; **prior PROJECT_STATUS blob:** `cca816b3e0aac76261c1d1f21b9a33c0818550f1`. **Checkpoint-result HEAD is obtained from the Contents write response and cannot be literally embedded into its own commit.** **main preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Draft PR #5 protected/unmerged `805b377697472268db02650a89c7a94b1c5337c8`, Draft PR #9 UI paused/unmerged/untouched `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`.
+
+## NEW in this invocation — saved, not falsely PASS-certified
+
+1. **Planner (opt-in non-UI)** `645b733e`: reject 18 invisible Unicode identifier scalars before DAG and request hashing in five positions (step ID, depends_on, tool, capability, scope). New `36379435` **92 authored** negative/positive regression cases; no frozen ToolCall/PlanStep change.
+2. **ToolRegistry (opt-in non-UI)** `2e8c8532`: reject the same 18 scalars in registration fields and directly bound permission scope, both resolve and bind. New `005a62e7` **91 authored** tests, inert mock only, no backend dispatch.
+3. **CI lint repair:** Run968 [#44309582973](https://github.com/Iam-2squared/ark-ai/actions/runs/44309582973) **FAILURE 6/6** on Ruff I001 (startup test import-to-constant spacing); first attempted fix [#44317642122](https://github.com/Iam-2squared/ark-ai/actions/runs/44317642122) **FAILURE 6/6**; intermediate Planner [#44317944978](https://github.com/Iam-2squared/ark-ai/actions/runs/44317944978) **FAILURE 6/6** for two I001 errors. Only excess whitespace was corrected at three test files (`dc51f9fc`, `3434a163`, `100a2684`); all assertions preserved.
+4. **Late failure-driven Proactive correction:** [#44318323464](https://github.com/Iam-2squared/ark-ai/actions/runs/44318323464), Ubuntu Python 3.11: Ruff passed; pytest **18,292 PASS / 15 FAIL / 1 SKIP**. All 15 FAIL were legacy Run528/Run588 tests expecting a quarantine append before refusal when an authority getter had been preinstalled as counterfeit; Run968's stricter precommit receipt authority fence intentionally rejects the *write itself*. Source `9d956ae4` then `91ccef02` retains **pre-commit** rejection with denial-specific and original marker diagnostics, without calling a counterfeit getter. Six old Run588 negative cases changed from expected **one append to zero append** (`b8c9073a`); nine old Run528 negatives likewise strengthened to zero append (`470fad02`); no tests removed or weakened. This preserves Run968 no-commit negative gates. All expected external-effect/authorization denials remain; no scheduler dispatch.
+5. **Evidence**: [Run969 report](https://github.com/Iam-2squared/ark-ai/blob/125c2fb809025b1f4376d257156780211d297f36/docs/JARVIS_RUN969_NON_UI_PLANNER_REGISTRY_INVISIBLE_CI_REPAIR.md) created and amended at `125c2fb809025b1f4376d257156780211d297f36`, records core changes, failures and corrective evidence. **183 new tests authored, not 183 proven PASS on latest exact HEAD**.
+
+## CI exact-HEAD caution
+
+- Run968 checkpoint `eb73c942`: #44309582973 **FAILURE 6/6** (Ruff).
+- `1a1f2562`: #44317642122 **FAILURE 6/6** (Ruff). `36379435`: #44317944978 **FAILURE 6/6** (Ruff).
+- `100a2684`: [#44318323464](https://github.com/Iam-2squared/ark-ai/actions/runs/44318323464) **Ubuntu3.11 FAIL** after 18,292 PASS / 15 FAIL / 1 SKIP (old proactive expectations); other jobs IN PROGRESS at last sampled status. No claim of global GREEN.
+- Early denial diagnostic correction `9d956ae4`: [#44319223233](https://github.com/Iam-2squared/ark-ai/actions/runs/44319223233) **IN PROGRESS** at last sample.
+- Final proactive test correction `470fad02`: [#44319564959](https://github.com/Iam-2squared/ark-ai/actions/runs/44319564959) **QUEUED** at last sample. Report HEAD `125c2fb809025b1f4376d257156780211d297f36`: [#44319736792](https://github.com/Iam-2squared/ark-ai/actions/runs/44319736792) **QUEUED** at last sample. New checkpoint may automatically create a separate run; **the latest exact checkpoint CI all-six GREEN remains UNVERIFIED**. No manual duplicate workflow runs, no local full pytest or physical-PC verification.
+
+## Frozen contracts / blockers / authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher, Memory v1, Observation Envelope v1, V3 Contract 1 and protected final evaluation, contamination, provenance, regression and reproducibility gates unchanged. PR #5 Draft/unmerged gate preserved; PR #9 paused UI Draft/unmerged/untouched; PR #8 Draft/unmerged; main unchanged. No paid/billable action/external GPU/API/compute/services, Candidate weights/adapters/promotion, new credentials/connections, protected eval opening, irreversible action, physical-PC operation, real tool dispatch, main merge, hidden Git bypass or force push. Local hashes/SQLite tests do not prove independent consent, trusted clock, historical authorship or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Verify **exact corrected checkpoint-result HEAD** CI across six Windows/Ubuntu × Python 3.11–3.13 jobs. Inspect any failure logs, apply smallest safe Contents-path repair and overlap independent non-UI work.
+2. Continue Memory WAL/SHM, CAS/ABA, coherent row/event/expiry and manual-only ambiguous COMMIT outcome triage; frozen Memory v1 unchanged.
+3. Continue Planner terminal/UNKNOWN recovery and immutable ToolRegistry / exact-type PermissionGate / one-shot/audit-before-action, mock only until lower-level exact-head GREEN.
+4. Continue privacy-safe Personal Context, Proactive occurrence/replay/clock fences, Observation fixtures, startup readiness and free-only V3 path/identity guards. Do not resume UI.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run969: Planner/Registry invisible-identity admission; Run968 CI import repair
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T22:56:57+09:00** (reporting timestamp only; NOT consent/expiry/action trusted clock). **ARK/JARVIS NOT_PASSED.** Three coherent non-UI packages: two opt-in source+test sets and failure-driven CI repair; latest exact-head CI all-six GREEN **NOT ESTABLISHED**.
