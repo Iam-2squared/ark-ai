@@ -181,7 +181,8 @@ def schedule_detached_read_recovery(
     """
     _assert_original_denials()
     if (
-        type(request_id) is not str or _REQUEST.fullmatch(request_id) is None
+        type(request_id) is not str or len(request_id) != 36
+        or _REQUEST.fullmatch(request_id) is None
         or type(steps) is not tuple or not 1 <= len(steps) <= 24
         or any(type(row) is not ReadRecoveryStep for row in steps)
     ):
@@ -231,15 +232,20 @@ def schedule_detached_read_recovery(
         epoch()
         stable_decisions()
         if (
-            type(name) is not str or _STEP.fullmatch(name) is None
+            type(name) is not str or len(name) != 21
+            or _STEP.fullmatch(name) is None
             or name in prior_states or type(operation) is not str
+            or len(operation) > 12
             or operation not in _OPS or type(deps) is not tuple
-            or len(deps) > 16 or any(type(dep) is not str for dep in deps)
+            or len(deps) > 16
+            or any(type(dep) is not str or len(dep) != 21 for dep in deps)
             or deps != tuple(sorted(set(deps)))
             or any(dep not in prior_states for dep in deps)
-            or type(state) is not str or state not in _STATES
+            or type(state) is not str or len(state) > 11
+            or state not in _STATES
             or (state == "SUCCEEDED") != (
-                type(digest) is str and _SHA.fullmatch(digest) is not None
+                type(digest) is str and len(digest) == 64
+                and _SHA.fullmatch(digest) is not None
             )
             or (state != "SUCCEEDED" and digest is not None)
         ):
