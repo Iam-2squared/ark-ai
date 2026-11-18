@@ -229,6 +229,12 @@ def test_configured_capacity_prevents_another_reservation(tmp_path, monkeypatch)
     first = db.reserve(
         _binding(), retained=replay.genesis_offline_context_replay_witness(),
     )
-    monkeypatch.setattr(replay, "_MAX_ROWS", 1)
-    with pytest.raises(replay.OfflineContextReplayRejected, match="full"):
-        db.reserve(_binding(2), retained=first.witness)
+    # The persisted capacity is protocol-pinned. A lowered runtime budget
+    # must deny BEFORE any reservation rather than silently changing policy.
+    with monkeypatch.context() as patch:
+        patch.setattr(replay, "_MAX_ROWS", 1)
+        with pytest.raises(
+            replay.OfflineContextReplayRejected, match="protocol authority changed",
+        ):
+            db.reserve(_binding(2), retained=first.witness)
+    assert db.witness() == first.witness
