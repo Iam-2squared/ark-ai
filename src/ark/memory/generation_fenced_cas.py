@@ -202,6 +202,9 @@ def _require_bounded_source_id(source_id: object) -> None:
         or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
         or 0x202a <= code <= 0x202e
         or 0x2066 <= code <= 0x2069
+        or code in (0x00ad, 0x034f, 0x180e, 0x200b, 0x200c, 0x200d,
+                    0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xfeff)
+        or 0x206a <= code <= 0x206f
         for code in map(ord, source_id)
     ):
         raise MemoryGenerationCASRejected(
@@ -241,6 +244,9 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
             or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
             or 0x202a <= code <= 0x202e
             or 0x2066 <= code <= 0x2069
+            or code in (0x00ad, 0x034f, 0x180e, 0x200b, 0x200c, 0x200d,
+                        0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xfeff)
+            or 0x206a <= code <= 0x206f
             for code in map(ord, value)
         ):
             raise MemoryGenerationCASRejected(
