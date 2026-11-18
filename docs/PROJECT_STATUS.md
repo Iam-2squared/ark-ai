@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run963: Memory generation identity fencing; Privacy WAL and Proactive quarantine; Registry CI repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T17:18:03.286+09:00** (ordinary reporting clock, NOT trusted consent, approval, expiry or action time). **Overall ARK/JARVIS NOT_PASSED.** All work synthetic/disconnected/mock-only, non-UI and zero-new-cost.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at write preflight. **Exact work-basis HEAD:** `13028018015fadc1db511afa2d2d8b1d73f509ac` (Run962 technical-report HEAD, ten commits after Run961). **Latest new source/test HEAD:** `1b511ee1676bde86dd8a9a9d18ef00346520dcf8`. **Checkpoint-write basis HEAD:** `3a902f3a1113e9962e3f7317355659ad4fff5b0f` (Run963 technical report). **Prior canonical status blob:** `8504be5b1e9547f1e10b584ac8a065daa2a914ca`. **Checkpoint-result HEAD cannot be embedded in its own content**; verify returned GitHub Contents commit and live Draft PR HEAD/blob afterward. **main basis:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, untouched. **Protected Draft PR #5:** `805b377697472268db02650a89c7a94b1c5337c8`, untouched/open/draft/unmerged. **Paused UI Draft PR #9:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, untouched/open/draft/unmerged.
+
+## NEW work — 4 coherent non-UI packages, 2 production guard changes, 72 regression cases authored
+
+1. **Memory:** [source `62e44f6b`](https://github.com/Iam-2squared/ark-ai/commit/62e44f6b2e8b739b97928fde1008b041cfcc87a6) rejects C0/DEL and 15 Unicode bidi/line formatting controls at *opt-in* generation-CAS source/scope ingress before hash or private SQLite; frozen Memory v1 unchanged. [58 tests `dc34ec68`](https://github.com/Iam-2squared/ark-ai/commit/dc34ec68562f1c246d54854fe4bd07776e466949) cover 19 controls × 3 identity fields plus safe multilingual update; no action authority.
+2. **Privacy / WAL:** [8 tests `ea30d521`](https://github.com/Iam-2squared/ark-ai/commit/ea30d5210511d7e9e06e5cf0b21101497dcc91be) cover one/two owners × four WAL checkpoints with pinned historical readers, stale veto witness rejection, cold retained deny-only review. Local digest is not independent custody or consent.
+3. **Proactive:** [6 tests `c5186271`](https://github.com/Iam-2squared/ark-ai/commit/c518627193ec92876c4004f1ef6f63e7823820cd), [WAL fixture correction `1b511ee1`](https://github.com/Iam-2squared/ark-ai/commit/1b511ee1676bde86dd8a9a9d18ef00346520dcf8) cover bounded 1–3 recurrence slots × PASSIVE/TRUNCATE, no out-of-order replay or automatic notification/execution. WAL explicitly activated in corrected test; first test revision lacked that mode assertion.
+4. **Registry / PermissionGate:** [source fix `94964c3f`](https://github.com/Iam-2squared/ark-ai/commit/94964c3fc71df7a8fc3266e9df6dfc66225df0ed) inserts the missing Unicode formatting-control scope rejection in both `ToolRegistry.resolve` and `bind`, while frozen ToolCall and registration rules remain untouched. Root cause [Run962 #44263561593](https://github.com/Iam-2squared/ark-ai/actions/runs/44263561593): Ubuntu jobs FAIL on **33 cases** (30 scope bypasses + 3 indirect one-shot diagnostics), not a formatting-only failure. No tests weakened or removed; corrected CI remains pending.
+
+[Run963 full technical report](https://github.com/Iam-2squared/ark-ai/blob/3a902f3a1113e9962e3f7317355659ad4fff5b0f/docs/JARVIS_RUN963_NON_UI_MEMORY_PRIVACY_PROACTIVE_REGISTRY.md). **72 cases AUTHORED, not yet an exact-head PASS claim.** All writes through ordinary GitHub Contents create/update; no force push, raw Git object writes, workflow dispatch or duplicate reruns.
+
+## CI and evidence — exact HEAD only, sampled before checkpoint
+
+- Run961 `44ddda22`: [CI #44254482936](https://github.com/Iam-2squared/ark-ai/actions/runs/44254482936) **COMPLETED GREEN 6/6**, validating *only* Run961.
+- Run962 `13028018`: [CI #44263561593](https://github.com/Iam-2squared/ark-ai/actions/runs/44263561593) **FAIL observed on 3/6 Ubuntu**, Registry format-scope source defect. Corrected at `94964c3f`; [CI #44265212141](https://github.com/Iam-2squared/ark-ai/actions/runs/44265212141) **QUEUED** at sample.
+- Memory source `62e44f6b`: [#44264571069](https://github.com/Iam-2squared/ark-ai/actions/runs/44264571069) **IN PROGRESS** at sample. Memory test `dc34ec68`: [#44264691007](https://github.com/Iam-2squared/ark-ai/actions/runs/44264691007) **prior-HEAD FAIL observed** on registry's unfixed 33 cases; the log did *not* establish a new Memory test failure. Only the later Registry-fix HEAD can validate the combined stack.
+- Privacy test `ea30d521`: [#44264854573](https://github.com/Iam-2squared/ark-ai/actions/runs/44264854573) **prior-HEAD FAIL observed** on the same unfixed 33 registry cases, not evidence of a Privacy-specific failure.
+- Proactive initial `c5186271`: [#44265072253](https://github.com/Iam-2squared/ark-ai/actions/runs/44265072253) **QUEUED** at sample; corrected fixture `1b511ee1`: [#44265261934](https://github.com/Iam-2squared/ark-ai/actions/runs/44265261934) **QUEUED** at sample.
+- Latest technical report `3a902f3a`: [#44265537393](https://github.com/Iam-2squared/ark-ai/actions/runs/44265537393) **QUEUED** at last sample. Checkpoint push may auto-trigger another run. **Exact latest checkpoint HEAD GREEN 6/6 remains UNVERIFIED.** No local full pytest or physical-PC verification.
+
+## Frozen contracts, safety boundaries, blockers
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1, contamination/provenance/regression/reproducibility, human review, protected V2 final evaluation, and Candidate/paid-compute approval gates unchanged. PR #5 Draft remains under its explicit gate; PR #9 UI remains PAUSED/Draft/unmerged/untouched. No paid services/API/external GPU, model training/weights, Candidate promotion, new credentials/secrets, physical-PC action, backend live tool execution, capture of media, destructive operations, protected eval, main merge or user-approval invention. **Local hashes, SQLite witnesses, caller clocks, and synthetic tokens establish no independent custody, real consent, trusted time or exactly-once external effects.**
+
+## Next plan / 今後の方針
+
+1. Certify **exact latest-head** CI across Windows/Ubuntu × Python 3.11–3.13; if FAIL, inspect the specific job logs and make the smallest safety-preserving fix via normal Contents write, then work an independent lane while CI runs.
+2. Memory WAL/SHM last-close, CAS/ABA, prehydration and event/row integrity, coherent expiry and unknown-COMMIT reconciliation.
+3. Planner durable RUNNING/COMMIT-UNKNOWN quarantine; immutable Registry/PermissionGate/durable one-shot and trusted-clock audit-before-action. Connect to disconnected/mock executor **only** once underlying exact-head evidence is GREEN; no live actions.
+4. Privacy-safe Personal Context retained revocation, Proactive occurrence/recurrence, Observation synthetic provenance, startup readiness and V3 free-only identity/path/reproducibility guard hardening.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run961: opt-in Planner/Observation control identity fences, cross-scope WAL CAS, cold Proactive quarantine
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T15:51:41.810+09:00** (ordinary report clock only; NOT an authenticated consent, expiration, approval or action clock). **Overall ARK/JARVIS NOT_PASSED.** Synthetic/disconnected/mock-only and zero new cost. New UI/frontend work remains PAUSED.
