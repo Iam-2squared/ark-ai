@@ -30,6 +30,7 @@ from .sqlite_store import (
     SQLITE_INT_MAX,
     SQLiteMemoryStore,
     _record,
+    _require_memory_mutation_row_hydration_admission,
     _validate_v1_schema,
     deterministic_memory_id,
 )
@@ -352,6 +353,10 @@ def _snapshot(
         raise MemoryGenerationCASRejected(
             "Memory generation global event high-water mismatch"
         )
+    # A corrupted local row may contain arbitrarily large TEXT/BLOB cells.
+    # Reuse the Memory v1 mutation preflight inside this same SQLite snapshot
+    # before SELECT * materializes any private target bytes in Python.
+    _require_memory_mutation_row_hydration_admission(conn, memory_id)
     row = conn.execute("SELECT * FROM memories WHERE memory_id=?", (memory_id,)).fetchone()
     if row is None:
         raise MemoryConflictError("generation-fenced update requires an existing row")
