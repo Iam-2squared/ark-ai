@@ -59,12 +59,71 @@ class PosixHandleSeal:
         return False
 
 
+_SEAL_TYPE = PosixHandleSeal
+_SEAL_FIELD_NAMES = tuple(item.name for item in fields(_SEAL_TYPE))
+_SEAL_DENIAL_NAMES = (
+    "independent_custody_proven", "source_authenticated",
+    "durable_snapshot_proven", "file_mutation_authorized",
+    "tool_execution_authorized",
+)
+_SEAL_HOOK_NAMES = (
+    "__init__", "__new__", "__getattribute__", "__getattr__", "__eq__",
+)
+_ORIGINAL_FIELD_NAMES = _SEAL_FIELD_NAMES
+_ORIGINAL_DENIAL_NAMES = _SEAL_DENIAL_NAMES
+_ORIGINAL_HOOK_NAMES = _SEAL_HOOK_NAMES
+_ORIGINAL_FIELDS_HELPER = fields
+_ORIGINAL_SEAL_DESCRIPTORS = tuple(
+    vars(_SEAL_TYPE).get(name)
+    for name in (*_SEAL_FIELD_NAMES, *_SEAL_DENIAL_NAMES, *_SEAL_HOOK_NAMES)
+)
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_MAX_BYTES = _MAX_BYTES
+_ORIGINAL_MAX_PATH = _MAX_PATH
+_ORIGINAL_CHUNK = _CHUNK
+
+
+def _require_original_posix_carrier() -> None:
+    """Fail closed before reading fixture or retained fields after a hook swap.
+
+    Identity checks are local diagnostics, not source authentication or
+    permission to use the file, its digest, or any connected device.
+    """
+    if (
+        PosixHandleSeal is not _SEAL_TYPE
+        or fields is not _ORIGINAL_FIELDS_HELPER
+        or _SEAL_FIELD_NAMES is not _ORIGINAL_FIELD_NAMES
+        or _SEAL_DENIAL_NAMES is not _ORIGINAL_DENIAL_NAMES
+        or _SEAL_HOOK_NAMES is not _ORIGINAL_HOOK_NAMES
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _MAX_BYTES is not _ORIGINAL_MAX_BYTES
+        or _MAX_PATH is not _ORIGINAL_MAX_PATH
+        or _CHUNK is not _ORIGINAL_CHUNK
+        or any(
+            vars(_SEAL_TYPE).get(name) is not descriptor
+            for name, descriptor in zip(
+                (*_SEAL_FIELD_NAMES, *_SEAL_DENIAL_NAMES, *_SEAL_HOOK_NAMES),
+                _ORIGINAL_SEAL_DESCRIPTORS, strict=True,
+            )
+        )
+    ):
+        raise PosixHandleSealRejected("posix fixture carrier boundary changed")
+
+
 def _digest(value: object) -> str:
+    _require_original_posix_carrier()
     encoded = json.dumps(value, separators=(",", ":"), ensure_ascii=True).encode("ascii")
     return hashlib.sha256(_DOMAIN + encoded).hexdigest()
 
 
 def _validate_path(path: object) -> Path:
+    _require_original_posix_carrier()
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -107,6 +166,7 @@ def _directory_identity(info: os.stat_result) -> tuple[int, int]:
 
 
 def _once(path: Path) -> PosixHandleSeal:
+    _require_original_posix_carrier()
     _require_posix()
     # Retain *every* ancestor descriptor until the final pathname recheck.
     # Closing a parent earlier would defeat the directory-relative evidence.
@@ -165,7 +225,8 @@ def _once(path: Path) -> PosixHandleSeal:
             raise PosixHandleSealRejected(
                 "held fixture descriptor changed during final pathname inspection"
             )
-        return PosixHandleSeal(
+        _require_original_posix_carrier()
+        result = PosixHandleSeal(
             path_sha256=_digest(("path", str(path))),
             directories_sha256=_digest(("dirs", tuple(zip(names, identities, strict=True)))),
             content_sha256=digest.hexdigest(),
@@ -175,6 +236,10 @@ def _once(path: Path) -> PosixHandleSeal:
             mtime_ns=original[3],
             ctime_ns=original[4],
         )
+        _require_original_posix_carrier()
+        if type(result) is not _SEAL_TYPE:
+            raise PosixHandleSealRejected("posix fixture carrier changed")
+        return result
     except (OSError, ValueError) as exc:
         if isinstance(exc, PosixHandleSealRejected):
             raise
@@ -192,15 +257,17 @@ def capture_posix_handle_seal(path: Path) -> PosixHandleSeal:
     first = _once(path)
     if _once(path) != first:
         raise PosixHandleSealRejected("source changed between descriptor reads")
+    _require_original_posix_carrier()
     return first
 
 
 def review_posix_handle_seal(path: Path, retained: PosixHandleSeal) -> PosixHandleSeal:
     """Compare twice against a separately retained seal; never grant authority."""
     path = _validate_path(path)
-    if type(retained) is not PosixHandleSeal:
+    _require_original_posix_carrier()
+    if type(retained) is not _SEAL_TYPE:
         raise PosixHandleSealRejected("exact retained seal type required")
-    original = tuple(getattr(retained, item.name) for item in fields(retained))
+    original = tuple(getattr(retained, name) for name in _SEAL_FIELD_NAMES)
     if (
         any(type(x) is not str or _SHA.fullmatch(x) is None for x in original[:3])
         or any(type(x) is not int or x < 0 for x in original[3:])
@@ -209,9 +276,10 @@ def review_posix_handle_seal(path: Path, retained: PosixHandleSeal) -> PosixHand
         raise PosixHandleSealRejected("retained seal has invalid fields")
 
     def epoch() -> None:
+        _require_original_posix_carrier()
         if any(
-            getattr(retained, item.name) is not earlier
-            for item, earlier in zip(fields(retained), original, strict=True)
+            getattr(retained, name) is not earlier
+            for name, earlier in zip(_SEAL_FIELD_NAMES, original, strict=True)
         ):
             raise PosixHandleSealRejected("retained seal changed during inspection")
 
@@ -221,4 +289,5 @@ def review_posix_handle_seal(path: Path, retained: PosixHandleSeal) -> PosixHand
     if first != retained or _once(path) != first:
         raise PosixHandleSealRejected("current descriptor custody differs from prior seal")
     epoch()
+    _require_original_posix_carrier()
     return first
