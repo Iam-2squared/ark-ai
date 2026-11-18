@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-import ark.disconnected_local_readiness as readiness
+from ark import disconnected_local_readiness as readiness
 
 
 _VECTOR_NAMES = (
