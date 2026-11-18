@@ -46,6 +46,27 @@ class ContextSelectionPolicy:
             or not self.policy_revision.strip()
         ):
             raise ValueError("invalid exact Personal Context budget/policy")
+        # Policy revisions enter content-derived identities and review
+        # diagnostics. Refuse visually spoofable labels before accessing a
+        # private Memory snapshot, without changing frozen Memory v1.
+        if any(
+            ord(char) < 32 or ord(char) == 127
+            for char in self.policy_revision
+        ):
+            raise ValueError("Personal Context policy revision contains control delimiter")
+        if any(
+            0x80 <= codepoint <= 0x9F
+            or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+            or 0x202A <= codepoint <= 0x202E
+            or 0x2066 <= codepoint <= 0x2069
+            or codepoint in (
+                0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+                0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+            )
+            or 0x206A <= codepoint <= 0x206F
+            for codepoint in map(ord, self.policy_revision)
+        ):
+            raise ValueError("Personal Context policy revision contains Unicode formatting control")
         # Policy identifiers become part of derived hashes. Refuse malformed
         # Unicode and multibyte text beyond the 128-byte encoding budget
         # before inspecting any private Memory snapshot rows.
