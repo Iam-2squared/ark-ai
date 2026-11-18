@@ -1,8 +1,8 @@
 """Original deny-only quarantine descriptors remain immutable in fixture results.
 
 This test never dispatches, notifies, executes tools, or authenticates a caller.
-A failed post-commit receipt review must not roll back or auto-retry the
-already persisted synthetic quarantine event.
+A preinstalled counterfeit denial descriptor must be rejected before
+any synthetic quarantine append or automatic retry.
 """
 
 from __future__ import annotations
@@ -57,9 +57,9 @@ def test_preinstalled_false_receipt_descriptor_not_accepted(
     with pytest.raises(ScheduleQuarantineRejected, match="original denial"):
         _append(ledger, policy, prior)
     with sqlite3.connect(path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
-    with pytest.raises(ScheduleQuarantineRejected, match="stale"):
-        ledger.inspect(retained=prior)
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (0,)
+    # A denied attempt cannot advance the retained historical witness.
+    assert ledger.inspect(retained=prior) == prior
 
 
 def test_preinstalled_false_witness_authentication_descriptor_not_accepted(
@@ -73,7 +73,7 @@ def test_preinstalled_false_witness_authentication_descriptor_not_accepted(
     with pytest.raises(ScheduleQuarantineRejected, match="original denial"):
         _append(ledger, policy, prior)
     with sqlite3.connect(path) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (1,)
+        assert conn.execute("SELECT COUNT(*) FROM quarantines").fetchone() == (0,)
 
 
 def test_original_quarantine_receipt_remains_deny_only_after_restart(tmp_path):
