@@ -74,6 +74,7 @@ _FIELDS = (
     "independent_custody_verified", "cross_scope_atomicity_proven",
 )
 _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _FIELDS)
+_ORIGINAL_FIELDS_VECTOR = _FIELDS
 
 
 def _protocol() -> None:
@@ -90,6 +91,7 @@ def _protocol() -> None:
             cohort_module.aggregate_memory_expiry_cohort,
             cohort_module.compare_memory_expiry_cohorts,
         ) != _ORIGINAL_CALLEES
+        or _FIELDS is not _ORIGINAL_FIELDS_VECTOR
         or MemoryExpiryRestartReceipt is not _RESULT
         or any(
             vars(_RESULT).get(name) is not original
