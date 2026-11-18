@@ -1,3 +1,39 @@
+# LATEST — ARK AI Run969: Planner/Registry invisible-identity admission; Run968 CI import repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T22:56:57+09:00** (reporting timestamp only; NOT consent/expiry/action trusted clock). **ARK/JARVIS NOT_PASSED.** Three coherent non-UI packages: two opt-in source+test sets and failure-driven CI repair; latest exact-head CI all-six GREEN **NOT ESTABLISHED**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at final write preflight. **Exact work-basis HEAD:** `eb73c94218b856d98d4b355708984930141a264a` (Run968 checkpoint, CI failed). **Last source/test HEAD:** `100a268446bc64a10e923a064ca15165ecbfd644`. **Report HEAD / checkpoint-write basis:** `81bc0db318adf617fa4863d0122bc1ea5e2f74a3`. **Previous canonical PROJECT_STATUS blob:** `cb86f6227b5e15862170300bf0b1827f8a7d3b42`. The **checkpoint-result HEAD cannot be embedded in the same commit**: use the returned normal Contents API commit SHA and compare against live branch/PR HEAD. **main preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405`, unchanged from Run968. Protected Draft PR #5 `805b377697472268db02650a89c7a94b1c5337c8` and paused UI Draft PR #9 `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` remain OPEN/DRAFT/UNMERGED/UNTOUCHED.
+
+## NEW — Run969 saved work and authored tests
+
+1. **CI failure recovery**: Run968 `eb73c942` [CI #44309582973](https://github.com/Iam-2squared/ark-ai/actions/runs/44309582973) completed **FAILURE 6/6**, Ruff I001 import-to-constant spacing in startup readiness regression. An intermediate `1a1f2562` import refactor did not resolve it ([#44317642122](https://github.com/Iam-2squared/ark-ai/actions/runs/44317642122) **FAILURE 6/6**). Planner test CI at `36379435` [#44317944978](https://github.com/Iam-2squared/ark-ai/actions/runs/44317944978) **FAILURE 6/6** also showed a second identical spacing issue. Three normal Contents edits `dc51f9fc`, `3434a163`, `100a2684` removed ONLY the excess blank line before top-level constants in startup, Planner and Registry tests. Assertions preserved. No duplicate workflow dispatch or bypass.
+2. **Optional Planner ID coherence**: source [`645b733e`](https://github.com/Iam-2squared/ark-ai/commit/645b733ee2f146999393751025534db7c60b6127) rejects 18 invisible Unicode scalar aliases before DAG allocation, hash or dependency processing across step IDs, dependencies and ToolCall tool/capability/scope. Test [`36379435`](https://github.com/Iam-2squared/ark-ai/commit/36379435196b4a71f0cbb025288cbca15963e12c) **92 authored cases** (18×5 negative and 2 independent boundary/positive checks). Frozen PlanStep/ToolCall contracts unchanged; no dispatch.
+3. **Immutable ToolRegistry ID coherence**: source [`2e8c8532`](https://github.com/Iam-2squared/ark-ai/commit/2e8c853287f114e570a822299cd7c97963abdb8e) rejects same invisible scalars from opt-in tool name, capability, backend ID and direct `resolve`/`bind` exact permission scope. Test [`005a62e7`](https://github.com/Iam-2squared/ark-ai/commit/005a62e7474d0568f44d59636f7e08a7a66d6ea1) **91 authored cases** (18×3 registration, 18×2 binding and 1 multilingual positive). Mock backend does not execute.
+
+**183 new test cases AUTHORED, NOT 183 verified passes**. See [Run969 technical report](https://github.com/Iam-2squared/ark-ai/blob/81bc0db318adf617fa4863d0122bc1ea5e2f74a3/docs/JARVIS_RUN969_NON_UI_PLANNER_REGISTRY_INVISIBLE_CI_REPAIR.md). No full local pytest/Ruff or physical-PC verification.
+
+## CI and exact-head evidence
+
+- Run968 latest checkpoint `eb73c942`: [#44309582973](https://github.com/Iam-2squared/ark-ai/actions/runs/44309582973) **COMPLETED FAILURE 6/6**, Ruff I001 before pytest.
+- First import refactor `1a1f2562`: [#44317642122](https://github.com/Iam-2squared/ark-ai/actions/runs/44317642122) **COMPLETED FAILURE 6/6**, same Ruff I001.
+- Intermediate Planner source/test `36379435`: [#44317944978](https://github.com/Iam-2squared/ark-ai/actions/runs/44317944978) **COMPLETED FAILURE 6/6**, two Ruff I001 test spacing failures.
+- Last corrected test HEAD `100a2684`: [#44318323464](https://github.com/Iam-2squared/ark-ai/actions/runs/44318323464) **IN PROGRESS** (all six jobs running at observed sample). Run969 report HEAD `81bc0db318adf617fa4863d0122bc1ea5e2f74a3`: [#44318736261](https://github.com/Iam-2squared/ark-ai/actions/runs/44318736261) **IN PROGRESS** at sample. Checkpoint commit may auto-start its own CI. No source/test/canonical checkpoint exact-head 6/6 GREEN claim. Historical Run966 green does not certify current work.
+
+## Frozen contracts / unresolved authorization and safety boundaries
+
+Frozen V1/V2, Memory v1, Local UI, Launcher, Observation Envelope v1, V3 Contract 1, protected V2 evaluation, contamination/provenance/regression/reproducibility/human-review gates unchanged. PR #5 protected Draft/unmerged; PR #9 paused UI Draft/unmerged/untouched; PR #8 Draft/unmerged; main unchanged. Public repository; no billable action, paid/external GPU/API/service, Candidate weights/adapters/generation/promotion, protected final evaluation, secret/account connection, user-device action, live tool dispatch, destructive/irreversible work, force push, hidden Git bypass or main merge. A Unicode identity guard is only input admission, **not** authenticated provenance, independent consent or replay proof.
+
+## Next plan / 今後の方針
+
+1. Confirm **exact checkpoint-result HEAD CI** all six Windows/Ubuntu × Python 3.11–3.13. If RED, inspect tracebacks and make smallest semantics-preserving normal Contents fix; use independent lanes while CI is running.
+2. Memory WAL/SHM, CAS/ABA, coherent row/event/snapshot/expiry and ambiguous COMMIT manual triage; no frozen Memory v1 changes.
+3. Planner cold UNKNOWN/terminal crash recovery; integration with immutable ToolRegistry, exact-type PermissionGate, durable authorization and audit-before-action only after lower-level exact-head GREEN. Mock/disconnected effects only.
+4. Personal Context privacy veto, Proactive Scheduler occurrence/replay and trusted-clock fences, Observation back-end fixtures/startup readiness, free-only V3 approval/path/reproducibility. UI work remains PAUSED.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run968: Run967 CI repair, proactive quarantine, privacy and startup vector custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T22:01:38+09:00** (ordinary reporting clock only, **NOT trusted action/consent/expiry time**). **Overall ARK/JARVIS NOT_PASSED.** Three new independent disconnected/non-UI source+test packages and failed-CI recovery were saved; **latest exact-head CI GREEN NOT ESTABLISHED**.
