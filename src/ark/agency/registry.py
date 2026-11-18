@@ -447,6 +447,18 @@ class ToolRegistry:
             for character in original[2]
         ):
             raise ValueError("registered ToolCall scope contains control character")
+        # Frozen ToolCall v1 accepts opaque Unicode. The opt-in registry
+        # must not bind bidi controls or alternate line separators into a
+        # visually misleading permission/audit scope identity.
+        if any(
+            code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            or 0x202a <= code <= 0x202e
+            or 0x2066 <= code <= 0x2069
+            for code in map(ord, original[2])
+        ):
+            raise ValueError(
+                "registered ToolCall scope contains Unicode formatting control"
+            )
         try:
             original[2].encode("utf-8", errors="strict")
         except UnicodeEncodeError as exc:
@@ -517,6 +529,18 @@ class ToolRegistry:
             for character in original[2]
         ):
             raise ValueError("registered ToolCall scope contains control character")
+        # Frozen ToolCall v1 accepts opaque Unicode. The opt-in registry
+        # must not bind bidi controls or alternate line separators into a
+        # visually misleading permission/audit scope identity.
+        if any(
+            code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            or 0x202a <= code <= 0x202e
+            or 0x2066 <= code <= 0x2069
+            for code in map(ord, original[2])
+        ):
+            raise ValueError(
+                "registered ToolCall scope contains Unicode formatting control"
+            )
         try:
             original[2].encode("utf-8", errors="strict")
         except UnicodeEncodeError as exc:
