@@ -334,6 +334,24 @@ def _snapshot(
     ):
         raise MemoryGenerationCASRejected("Memory generation row identity changed")
 
+    # Reject oversized or non-TEXT event identities inside the same pinned
+    # transaction BEFORE SELECT hydrates private event rows into Python.
+    # Frozen Memory v1 permits 256 Unicode codepoints per scope (at most
+    # 1,024 UTF-8 bytes); every operation label is exactly six ASCII bytes.
+    # This is local corruption admission, not authenticated event custody.
+    unbounded = conn.execute(
+        "SELECT 1 FROM memory_events WHERE memory_id=? AND ("
+        "typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(operation)!='text' OR length(CAST(operation AS BLOB))!=6 "
+        "OR typeof(revision)!='integer' "
+        "OR typeof(occurred_at_ms)!='integer') LIMIT 1",
+        (memory_id,),
+    ).fetchone()
+    if unbounded is not None:
+        raise MemoryGenerationCASRejected(
+            "Memory generation event hydration denied"
+        )
     events = conn.execute(
         "SELECT event_id,owner_id,namespace,operation,revision,occurred_at_ms "
         "FROM memory_events WHERE memory_id=? ORDER BY event_id LIMIT ?",
