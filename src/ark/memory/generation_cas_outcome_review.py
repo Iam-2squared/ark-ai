@@ -157,8 +157,10 @@ def _check_global_memory_event_highwater(conn: sqlite3.Connection) -> None:
     ).fetchone()
     # sqlite_sequence.name has no UNIQUE constraint. Require exactly one
     # committed marker, rather than accepting an arbitrary fetchone() row.
+    # A bounded two-row probe detects duplicate sequence markers without
+    # hydrating an attacker-controlled sqlite_sequence set into Python.
     markers = conn.execute(
-        "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+        "SELECT seq FROM sqlite_sequence WHERE name='memory_events' LIMIT 2"
     ).fetchall()
     if (
         type(count) is not int or count < 0
