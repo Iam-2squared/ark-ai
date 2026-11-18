@@ -10,7 +10,6 @@ import pytest
 
 from ark import disconnected_local_readiness as readiness
 
-
 _VECTOR_NAMES = (
     "_STARTUP_GRANT_MEMBERS",
     "_SCHEMA_DENIALS",
