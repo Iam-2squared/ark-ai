@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run961: opt-in Planner/Observation control identity fences, cross-scope WAL CAS, cold Proactive quarantine
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T15:51:41.810+09:00** (ordinary report clock only; NOT an authenticated consent, expiration, approval or action clock). **Overall ARK/JARVIS NOT_PASSED.** Synthetic/disconnected/mock-only and zero new cost. New UI/frontend work remains PAUSED.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED on write preflight. **Exact work-basis HEAD:** `7202dbf9fa44d76edb15a1fd0fa9956cc264c95c` (Run960 canonical checkpoint; [CI #44248379342](https://github.com/Iam-2squared/ark-ai/actions/runs/44248379342) **COMPLETED GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13, strictly **prior** HEAD). **Latest new source/test HEAD:** `c8f4928f834d1aa4ec4d4b6b761dba879a566b63`. **Checkpoint-write basis HEAD:** `6a29c2156e5afe0aac682eee510ed8e0e6e3f048` (Run961 technical report). **Previous PROJECT_STATUS blob:** `a5764e7ab00565a011bb1b2cc33b8b2a6ff74493`. **Checkpoint-result HEAD cannot be embedded into its own blob**; verify Contents response and live PR/branch after committing. **main at preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (untouched). **Protected Draft PR #5:** `805b377697472268db02650a89c7a94b1c5337c8`, OPEN/UNMERGED/UNTOUCHED. **Paused Draft UI PR #9:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/UNMERGED/UNTOUCHED.
+
+## NEW work — 4 independent non-UI work packages, 2 opt-in source guard changes + 58 test cases authored
+
+1. **Planner ingress C0/DEL guard:** [source `dfbca5fe`](https://github.com/Iam-2squared/ark-ai/commit/dfbca5fec696706a3abb51cf45f5c9acb4d00aff) and [33 tests `9df050ab`](https://github.com/Iam-2squared/ark-ai/commit/9df050ab8d22044783e8d20ebed3137af3e2435b). Exact step/dependency/tool/capability/scope labels reject control delimiters before plan hashing/journal allocation. Frozen `PlanStep`/`ToolCall` constructors unchanged.
+2. **Observation synthetic fixture C0/DEL guard:** [source `12c61d26`](https://github.com/Iam-2squared/ark-ai/commit/12c61d268d89c839401ae064c8d93bad8f2cd9dc) and [13 tests `afabbb71`](https://github.com/Iam-2squared/ark-ai/commit/afabbb719089a6ab78e91297c94332365d75ee1b). Refuse control-bearing optional source/privacy labels before private payload hash while leaving frozen `ObservationEnvelope` v1 intact. Synthetic in-memory bytes only; no media access.
+3. **Memory foreign-scope ABA under WAL:** [8 tests `b9fa5a96`](https://github.com/Iam-2squared/ark-ai/commit/b9fa5a96bcef40b1c45b0699b7d0a9601fe0fb39) cover foreign owner/namespace delete-recreate, identical/different content and pinned readwrite/query-only snapshots. Stale foreign token must deny; unrelated primary token remains scoped. No new Memory schema or source mutation.
+4. **Proactive post-crash quarantine prefix:** [4 tests `c8f4928f`](https://github.com/Iam-2squared/ark-ai/commit/c8f4928f834d1aa4ec4d4b6b761dba879a566b63) test child abrupt exit before/after commit × PASSIVE/TRUNCATE WAL checkpoint, stale retained witness refusal and no automatic replay, notification or dispatch.
+
+[Run961 full technical report](https://github.com/Iam-2squared/ark-ai/blob/6a29c2156e5afe0aac682eee510ed8e0e6e3f048/docs/JARVIS_RUN961_NON_UI_PLANNER_OBSERVATION_MEMORY_PROACTIVE.md). **58 cases AUTHORED, not exact latest HEAD 6/6 passed.** No local full pytest, physical PC, live adapter or duplicate manually dispatched workflow.
+
+## CI exact-SHA evidence — last inspected before checkpoint
+
+- Prior `7202dbf9`: [#44248379342](https://github.com/Iam-2squared/ark-ai/actions/runs/44248379342) **COMPLETED GREEN 6/6**. Validates Run960 only.
+- Planner test `9df050ab`: [#44253723971](https://github.com/Iam-2squared/ark-ai/actions/runs/44253723971) **IN PROGRESS**, 2/6 GREEN, 4 running, 0 observed FAIL.
+- Observation test `afabbb71`: [#44253839391](https://github.com/Iam-2squared/ark-ai/actions/runs/44253839391) **IN PROGRESS**, 0/6 GREEN, 5 running and 1 queued.
+- Memory `b9fa5a96`: [#44253954517](https://github.com/Iam-2squared/ark-ai/actions/runs/44253954517) **QUEUED**, 6 pending.
+- Proactive `c8f4928f`: [#44254135498](https://github.com/Iam-2squared/ark-ai/actions/runs/44254135498) **QUEUED**, 6 pending.
+- Report `6a29c2156e5afe0aac682eee510ed8e0e6e3f048` and this checkpoint may auto-trigger new CI; **final exact checkpoint HEAD GREEN 6/6 UNVERIFIED** until those jobs finish.
+
+## Frozen evidence, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1 and protected contamination, provenance, regression, reproducibility, human review, paid-compute and Candidate promotion gates unchanged. Draft PR #5 protected; Draft UI PR #9 still PAUSED and untouched. No new frontend, paid/external API/GPU/compute/service/subscription, model training/weights, Candidate promotion, protected V2 final evaluation, secrets/account access, human approval invention, real tool execution, destructive changes, raw Git write path, force push or main merge. **A local hash, reconstructed SQLite witness, fake observation, or caller-clock does NOT certify consent, custody, trusted time, execution permission or exactly-once effects.**
+
+## Next plan / 今後の方針
+
+1. Confirm all six CI jobs at the **exact newest checkpoint HEAD**; on failure inspect job logs and minimally repair via ordinary permitted Contents write; switch to independent non-UI lanes while CI runs.
+2. Memory WAL/SHM last-close, event-row integrity, CAS/ABA, coherent expiry and unknown COMMIT recovery.
+3. Planner persistent RUNNING/COMMIT-UNKNOWN quarantine and safe registry-bound PermissionGate + audit-before-action with **disconnected/mock-only** executor, joined only after exact-head GREEN evidence.
+4. Privacy-safe Personal Context retained revocation, Proactive recurrence/state, Observation synthetic provenance, startup readiness and V3 free-only identity/path/resource guards. Block paid/protected/irreversible lanes pending explicit user review.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run960: registry C0/DEL guards, cold Planner fan-in, Memory WAL ABA, privacy child exit, free V3 bounds
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T15:02:01.749+09:00** (ordinary report clock only; NOT an authenticated action, authorization, consent, expiry or approval clock). **Overall ARK/JARVIS NOT_PASSED.** Disconnected/mock/synthetic-only, **zero new cost and non-UI development only**.
