@@ -131,9 +131,25 @@ _ORIGINAL_SCHEMA_CARRIERS = tuple(
 _ORIGINAL_PREFLIGHT_CARRIERS = tuple(
     vars(_PREFLIGHT_TYPE).get(name) for name in _PREFLIGHT_CARRIER_NAMES
 )
+# Entire field/denial/hook vectors are part of the startup authority boundary.
+# A shortened vector must not silently omit a forged class descriptor.
+_STARTUP_VECTOR_EPOCH = (
+    _STARTUP_GRANT_MEMBERS, _SCHEMA_DENIALS, _PREFLIGHT_DENIALS,
+    _REPORT_DENIALS, _REPORT_FIELDS, _REPORT_HOOKS,
+    _SCHEMA_CARRIER_NAMES, _PREFLIGHT_CARRIER_NAMES,
+)
 
 
 def _require_original_denials() -> None:
+    if any(
+        current is not original for current, original in zip(
+            (_STARTUP_GRANT_MEMBERS, _SCHEMA_DENIALS, _PREFLIGHT_DENIALS,
+             _REPORT_DENIALS, _REPORT_FIELDS, _REPORT_HOOKS,
+             _SCHEMA_CARRIER_NAMES, _PREFLIGHT_CARRIER_NAMES),
+            _STARTUP_VECTOR_EPOCH, strict=True,
+        )
+    ):
+        raise DisconnectedLocalReadinessRejected("startup guard vector changed")
     if (
         CapabilityGrant is not _STARTUP_GRANT_TYPE
         or any(
