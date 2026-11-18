@@ -80,6 +80,11 @@ def _strict_utf8_identity(value: object, max_bytes: int) -> bool:
     """Bound optional read-only generation identities before private row access."""
     if type(value) is not str or not value.strip() or len(value) > max_bytes:
         return False
+    # This opt-in diagnostic must not echo C1 terminal control labels into
+    # retained history identities or troubleshooting output. Memory v1 keeps
+    # its frozen schema and direct scope acceptance unchanged.
+    if any(0x80 <= ord(char) <= 0x9F for char in value):
+        return False
     try:
         return len(value.encode("utf-8", errors="strict")) <= max_bytes
     except UnicodeError:
