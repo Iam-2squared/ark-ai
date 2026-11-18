@@ -220,8 +220,9 @@ def _require_memory_page_hydration_admission(
         "OR length(CAST(namespace AS BLOB))>1024 "
         "OR typeof(operation)!='text' "
         "OR length(CAST(operation AS BLOB))!=6 "
-        "OR typeof(revision)!='integer' "
-        "OR typeof(occurred_at_ms)!='integer' LIMIT 1",
+        "OR operation NOT IN ('create','update','delete','expire') "
+        "OR typeof(revision)!='integer' OR revision<1 "
+        "OR typeof(occurred_at_ms)!='integer' OR occurred_at_ms<0 LIMIT 1",
         (owner_id, namespace, after_event_id, limit),
     ).fetchone()
     if malformed is not None:
@@ -1565,7 +1566,14 @@ def _expired(record: MemoryRecord, now: int) -> bool:
 
 
 def _memory_id(value: object) -> None:
-    if not isinstance(value, str) or re.fullmatch(r"mem_[0-9a-f]{64}", value) is None:
+    # Validate the exact fixed-width carrier before regex execution or any
+    # SQLite access. A str subclass or unbounded reflected input is not a
+    # canonical Memory v1 identifier even if it compares equal as text.
+    if (
+        type(value) is not str
+        or len(value) != 68
+        or re.fullmatch(r"mem_[0-9a-f]{64}", value) is None
+    ):
         raise ValueError("memory_id must be a canonical deterministic memory ID")
 
 
