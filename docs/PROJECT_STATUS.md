@@ -1,3 +1,38 @@
+# LATEST — ARK AI Run955: Memory event prehydration, restart witness carrier and registry CI repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T09:50:50.090+09:00** (ordinary reporting clock only; not authenticated audit, consent, action or expiry time). **Overall ARK/JARVIS NOT_PASSED.** Synthetic, disconnected, zero-new-cost, non-UI work only. No owner-PC GGUF validation or real ToolBackend execution.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint preflight. **Exact work-basis HEAD:** `c01532f51d87e4f95b530a93cbe1473a0cc95ab7` (Run954 checkpoint). **Latest source/test HEAD:** `c92988cbbfac15d5714310437ecc0e0bee2753a4` (three packages). **Checkpoint-write basis HEAD:** `6e194282a344f6100d79864adf3b364bfb20de61` (Run955 technical report). **Previous PROJECT_STATUS blob:** `83ee30717118bc980cf207a8dde300cfc9f7a174`. **Checkpoint-result HEAD cannot be recorded inside its own blob**; verify resulting Contents commit, PR/branch HEAD and Blob after write. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` (unmodified). **PR #5:** `805b377697472268db02650a89c7a94b1c5337c8` OPEN/DRAFT/UNMERGED, untouched; **paused UI PR #9:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` OPEN/DRAFT/UNMERGED, untouched.
+
+## NEW work — three coherent non-UI packages, 10 authored tests, 3 production-source corrections
+
+1. **Memory opt-in generation CAS prehydration:** [4228c892](https://github.com/Iam-2squared/ark-ai/commit/4228c8929c7dad2c6c3f319ceaa51fa61b6d51b0) rejects oversized/non-TEXT scoped event identities and noninteger event fields in the same pinned SQLite transaction BEFORE Python event hydration, without altering frozen Memory v1. [dad76b80](https://github.com/Iam-2squared/ark-ai/commit/dad76b80f2acc04f0038793bd3fd7b45c433cfa1) adds **4** corruption cases, asserting observer and writer deny with no new local row/event. This does NOT authenticate writer custody or grant permission.
+2. **Disconnected startup witness carrier:** [1c9387f3](https://github.com/Iam-2squared/ark-ai/commit/1c9387f34566a377422b8b96088421cdeded7164) pins Memory/Context/Proactive retained witness slots and lookup hooks before private witness reads. [8cb3d605](https://github.com/Iam-2squared/ark-ai/commit/8cb3d60553e5173cde943486add9a1897f81ad68) adds **6** substitution cases and checks clean synthetic restart reports still deny startup, dispatch and automatic replay.
+3. **Run954 CI triage, exact scope fix:** [CI #44204595192](https://github.com/Iam-2squared/ark-ai/actions/runs/44204595192) showed 5/6 jobs failed when sampled; Ubuntu 3.11 had **17,326 PASS, 1 SKIP, 1 FAIL** at `test_registry_scope_admission_run954.py[bind]`. The opt-in registry `bind()` reconstructed frozen ToolCall before rejecting an unpaired-surrogate scope, leaking raw `UnicodeEncodeError` instead of required `ValueError`. [c92988cb](https://github.com/Iam-2squared/ark-ai/commit/c92988cbbfac15d5714310437ecc0e0bee2753a4) moves the existing `resolve()` NUL/strict-UTF8 guard ahead of bind's reconstruction. No weakening of assertion, PermissionGate or frozen ToolCall-v1; no backend call.
+
+[Run955 technical report](https://github.com/Iam-2squared/ark-ai/blob/6e194282a344f6100d79864adf3b364bfb20de61/docs/JARVIS_RUN955_NON_UI_GENERATION_STARTUP_REGISTRY.md). **New tests are AUTHORED; latest exact-head GREEN 6/6 remains UNVERIFIED.** No local full pytest.
+
+## CI / exact-head evidence — sampled at checkpoint 2026-11-18T09:50:50.090+09:00
+
+- Previous Run954 `c01532f5`: [#44204595192](https://github.com/Iam-2squared/ark-ai/actions/runs/44204595192) **FAIL** (five jobs completed FAILED; sixth running when checked). The registry surrogate bind failure is fixed only at later source HEAD `c92988cb`. Do not borrow any earlier GREEN.
+- Memory source `4228c892`: [#44210140012](https://github.com/Iam-2squared/ark-ai/actions/runs/44210140012) **IN PROGRESS**, Ubuntu 3.11 FAILED due to inherited Run954 registry bug (verified log), not a proven Memory failure.
+- Startup source `1c9387f3`: [#44210343825](https://github.com/Iam-2squared/ark-ai/actions/runs/44210343825) **IN PROGRESS** at last check.
+- Memory test `dad76b80`: [#44210441300](https://github.com/Iam-2squared/ark-ai/actions/runs/44210441300) **IN PROGRESS** at last check.
+- Startup test `8cb3d605`: [#44210505325](https://github.com/Iam-2squared/ark-ai/actions/runs/44210505325) **IN PROGRESS/QUEUED** at last check.
+- Registry repair `c92988cb`: [#44210721776](https://github.com/Iam-2squared/ark-ai/actions/runs/44210721776) **QUEUED** at last check.
+- Report/checkpoint HEADs may each trigger distinct CI; no duplicate manual workflow launch. **Exact repaired latest source/test HEAD six-job PASS NOT YET VERIFIED.** Intermediate failures before `c92988cb` do not invalidate the later fix, but only later exact-head GREEN can validate it.
+
+## Frozen boundaries, blockers and Next plan / 今後の方針
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract #1, protected V2 final evaluation, contamination/provenance/regression/reproducibility/human-review gates, and V3 Draft PR #5 all untouched. UI PR #9 remains fully PAUSED and unmerged; no frontend changes or tests. No paid API, subscription, external GPU/compute, real Candidate/training/export, protected evaluation, real tools/sensors/notification, credentials or new account connections, privacy erasure claim, irreversible action, force-push, bypass or main merge. Local SQLite hashes and read-only witnesses are not authenticated consent, trusted time, distributed transactions or exactly-once external effects.
+
+1. **Confirm exact repaired HEAD CI** all six Windows/Ubuntu × Python 3.11–3.13; use narrow normal-path fix for concrete FAIL while shifting nonconflicting lanes during CI.
+2. **Memory:** inspect generation-CAS row `SELECT *` hydration separately, WAL/SHM last-close competition, scoped CAS/ABA, expiry/event high-water, privacy-safe snapshots. Do not change code already being validated.
+3. **Planner/Actions:** COMMIT-UNKNOWN cold recovery, immutable ToolRegistry and exact PermissionGate binding, durable occurrence, audit-before-action; test mock/disconnected only, integrate only after lower-layer exact-head GREEN.
+4. **Context/proactive/Observation/free V3:** synthetic revocation/retention, duplicate occurrence/restart custody, noncapturing fixtures and free-only identity/path guards. Continue isolated reversible core work. **ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run954: frozen-compatible Observation, startup diagnostics, Planner fan-in and registered scope
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T09:03:10.353+09:00** (ordinary report clock sampled immediately before normal GitHub Contents update; **NOT** an authenticated consent, audit, execution or expiry clock). **Overall ARK/JARVIS NOT_PASSED.** All new work was local-first, disconnected synthetic non-UI and within zero-new-cost boundaries. No physical owner-PC GGUF validation.
