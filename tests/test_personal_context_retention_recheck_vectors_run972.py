@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import pytest
 
+from ark import personal_context_retention_recheck_review as review
 from ark.memory import MemoryScope, SQLiteMemoryStore
 from ark.personal_context_retention_recheck_review import (
     SyntheticRetentionRecheckRejected,
 )
-from ark import personal_context_retention_recheck_review as review
 
 
 @pytest.mark.parametrize("field", ("_DENIAL_NAMES", "_RESULT_FIELDS", "_RESULT_HOOKS"))
