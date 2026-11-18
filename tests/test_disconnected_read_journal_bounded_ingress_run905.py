@@ -51,19 +51,19 @@ def test_valid_synthetic_receipt_and_genesis_are_non_authorizing():
 
 def test_oversized_witness_tip_refused_before_digest_regex(monkeypatch):
     monkeypatch.setattr(mod, "_SHA", _NoRegex())
-    with pytest.raises(mod.ReadJournalRejected, match="witness"):
+    with pytest.raises(mod.ReadJournalRejected, match="protocol changed"):
         mod._check_witness(mod.ReadJournalWitness(0, "f" * 200_000))
 
 
 def test_oversized_request_refused_before_regex(monkeypatch):
     monkeypatch.setattr(mod, "_REQUEST", _NoRegex())
-    with pytest.raises(mod.ReadJournalRejected, match="receipt"):
+    with pytest.raises(mod.ReadJournalRejected, match="protocol changed"):
         mod._check_receipt(_receipt(request="req_" + "a" * 200_000))
 
 
 def test_oversized_step_refused_before_regex(monkeypatch):
     monkeypatch.setattr(mod, "_STEP", _NoRegex())
-    with pytest.raises(mod.ReadJournalRejected, match="receipt"):
+    with pytest.raises(mod.ReadJournalRejected, match="protocol changed"):
         mod._check_receipt(_receipt(step="step_" + "f" * 200_000))
 
 
@@ -73,9 +73,10 @@ def test_oversized_digest_refused_before_regex(monkeypatch, field):
     monkeypatch.setattr(mod, "_SHA", checked)
     huge = "c" * 200_000
     data = {field: huge}
-    with pytest.raises(mod.ReadJournalRejected, match="receipt"):
+    with pytest.raises(mod.ReadJournalRejected, match="protocol changed"):
         mod._check_receipt(_receipt(**data))
-    assert len(checked.seen) <= 1
+    # Reject the substituted regex before calling it, even for a huge field.
+    assert checked.seen == []
 
 
 @pytest.mark.parametrize("bad", [True, -1, 129, 1.0])
@@ -89,3 +90,19 @@ def test_invalid_digest_grammar_still_rejected():
         mod._check_receipt(_receipt(input_digest="G" * 64))
     with pytest.raises(mod.ReadJournalRejected, match="witness"):
         mod._check_witness(mod.ReadJournalWitness(0, "G" * 64))
+
+
+@pytest.mark.parametrize("field,oversized", [
+    ("request", "req_" + "a" * 200_000),
+    ("step", "step_" + "f" * 200_000),
+    ("input_digest", "c" * 200_000),
+    ("result_digest", "c" * 200_000),
+])
+def test_original_protocol_rejects_oversized_receipt_without_patch(field, oversized):
+    with pytest.raises(mod.ReadJournalRejected, match="receipt"):
+        mod._check_receipt(_receipt(**{field: oversized}))
+
+
+def test_original_protocol_rejects_oversized_witness_without_patch():
+    with pytest.raises(mod.ReadJournalRejected, match="witness"):
+        mod._check_witness(mod.ReadJournalWitness(0, "f" * 200_000))
