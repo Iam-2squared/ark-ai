@@ -111,6 +111,12 @@ _ORIGINAL_STEP = _STEP
 _ORIGINAL_SHA = _SHA
 _ORIGINAL_OPS = _OPS
 _ORIGINAL_STATES = _STATES
+# Prevent shortened/reordered guard vectors from silently skipping field,
+# allocation-hook or denial descriptors in strict zipped comparisons.
+_ORIGINAL_RESULT_HOOKS_VECTOR = _RESULT_HOOKS
+_ORIGINAL_DECISION_FIELDS_VECTOR = _DECISION_FIELDS
+_ORIGINAL_SCHEDULE_FIELDS_VECTOR = _SCHEDULE_FIELDS
+_ORIGINAL_DENIAL_NAMES_VECTOR = _DENIAL_NAMES
 
 
 def _assert_original_denials() -> None:
@@ -129,6 +135,10 @@ def _assert_original_denials() -> None:
         or ReadRecoveryStep is not _STEP_TYPE
         or _STEP_FIELDS is not _ORIGINAL_STEP_FIELDS_VECTOR
         or _STEP_HOOKS is not _ORIGINAL_STEP_HOOKS_VECTOR
+        or _RESULT_HOOKS is not _ORIGINAL_RESULT_HOOKS_VECTOR
+        or _DECISION_FIELDS is not _ORIGINAL_DECISION_FIELDS_VECTOR
+        or _SCHEDULE_FIELDS is not _ORIGINAL_SCHEDULE_FIELDS_VECTOR
+        or _DENIAL_NAMES is not _ORIGINAL_DENIAL_NAMES_VECTOR
         or any(
             vars(_STEP_TYPE).get(field) is not original
             for field, original in zip(_STEP_FIELDS, _ORIGINAL_STEP_SLOTS, strict=True)
