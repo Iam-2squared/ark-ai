@@ -7,6 +7,8 @@ independent content provenance, durable authorization, or tool execution.
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 
 import pytest
 
@@ -60,6 +62,40 @@ def test_vector_or_budget_replacement_denied_before_descriptor_open(
 def test_descriptor_or_callback_swap_cannot_read_fixture(
     tmp_path, monkeypatch, name,
 ):
+    # Rebinding dataclass tp_new may persist in the interpreter despite
+    # monkeypatch cleanup. Use a child process for the same allocator attack.
+    if name == "__new__":
+        script = """
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from ark import disconnected_posix_handle_seal as mod
+with TemporaryDirectory() as directory:
+    path = Path(directory) / "synthetic-descriptor-source.bin"
+    path.write_bytes(b"local synthetic bytes only")
+    prior = mod.capture_posix_handle_seal(path)
+    calls = []
+    def poisoned(*args, **kwargs):
+        calls.append(True)
+        raise AssertionError("substituted seal allocator invoked")
+    mod.PosixHandleSeal.__new__ = poisoned
+    for action in (
+        lambda: mod.capture_posix_handle_seal(path),
+        lambda: mod.review_posix_handle_seal(path, prior),
+    ):
+        try:
+            action()
+        except mod.PosixHandleSealRejected as exc:
+            assert "carrier boundary changed" in str(exc), str(exc)
+        else:
+            raise AssertionError("substituted seal allocator was admitted")
+    assert calls == []
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", script], text=True, capture_output=True,
+            check=False, timeout=30,
+        )
+        assert result.returncode == 0, result.stdout + "\n" + result.stderr
+        return
     path = _fixture(tmp_path)
     prior = mod.capture_posix_handle_seal(path)
     called = []
