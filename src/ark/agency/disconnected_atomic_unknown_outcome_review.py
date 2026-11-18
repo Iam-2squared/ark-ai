@@ -29,6 +29,7 @@ _ORIGINAL_LEDGER_HOOKS = tuple(
     vars(DisconnectedAtomicPreactionLedger).get(name)
     for name in _LEDGER_HOOK_NAMES
 )
+_ORIGINAL_LEDGER_HOOK_NAMES_VECTOR = _LEDGER_HOOK_NAMES
 _RESULT_STATES = ("UNCHANGED", "LOCALLY_RECORDED", "PREEXISTING", "ADVANCED_OTHER")
 
 
@@ -74,6 +75,7 @@ _RESULT_FIELDS = (
     "__getattr__",
 )
 _ORIGINAL_RESULT = tuple(vars(_RESULT).get(name) for name in _RESULT_FIELDS)
+_ORIGINAL_RESULT_FIELDS_VECTOR = _RESULT_FIELDS
 # SQLite is both the exception boundary and the source of local history.
 # Rebound module handles or disposition sets must never redefine this reviewer.
 _ORIGINAL_SQLITE = sqlite3
@@ -86,6 +88,8 @@ def _protocol() -> None:
         sqlite3 is not _ORIGINAL_SQLITE
         or ledger_module.sqlite3 is not _ORIGINAL_LEDGER_SQLITE
         or _RESULT_STATES is not _ORIGINAL_STATES
+        or _LEDGER_HOOK_NAMES is not _ORIGINAL_LEDGER_HOOK_NAMES_VECTOR
+        or _RESULT_FIELDS is not _ORIGINAL_RESULT_FIELDS_VECTOR
         or ledger_module._scan is not _ORIGINAL_SCAN
         or ledger_module._check_claim is not _ORIGINAL_CLAIM
         or ledger_module._witness_image is not _ORIGINAL_WITNESS
