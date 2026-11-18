@@ -7,6 +7,8 @@ authenticated provenance, or permission to access private data.
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 
 import pytest
 
@@ -70,6 +72,41 @@ def test_replaced_vector_codec_or_reflection_denied_before_scan(
 def test_substituted_dataclass_slot_or_hook_denied_without_invocation(
     tmp_path, monkeypatch, name,
 ):
+    # Reassigning built-in tp_new on a Python dataclass can leave the type's
+    # allocation slot changed after monkeypatch undo. Isolate that same
+    # negative case in a child interpreter; keep all denial checks intact.
+    if name == "__new__":
+        script = """
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from ark import disconnected_local_source_pin as mod
+with TemporaryDirectory() as directory:
+    path = Path(directory) / "synthetic-local-metadata.db"
+    path.write_bytes(b"synthetic metadata fixture")
+    retained = mod.capture_disconnected_source(path)
+    calls = []
+    def poisoned(*args, **kwargs):
+        calls.append(True)
+        raise AssertionError("substituted allocator invoked")
+    mod.DisconnectedSourcePin.__new__ = poisoned
+    for action in (
+        lambda: mod.capture_disconnected_source(path),
+        lambda: mod.review_disconnected_source(path, retained),
+    ):
+        try:
+            action()
+        except mod.DisconnectedSourceRejected as exc:
+            assert "boundary changed" in str(exc), str(exc)
+        else:
+            raise AssertionError("modified allocator was admitted")
+    assert calls == []
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", script], text=True, capture_output=True,
+            check=False, timeout=30,
+        )
+        assert result.returncode == 0, result.stdout + "\n" + result.stderr
+        return
     path = _fixture(tmp_path)
     retained = mod.capture_disconnected_source(path)
     calls = []
