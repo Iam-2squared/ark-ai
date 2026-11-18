@@ -54,6 +54,24 @@ def _text(name: str, value: object) -> None:
     # rule, not evidence of user consent or trigger authorization.
     if "\x00" in value:
         raise ValueError(f"{name} contains a NUL separator")
+    # Opt-in offline scheduling identities must be unambiguous in persisted
+    # diagnostics and policy digests. Scan only after the 512-codepoint cap;
+    # do not alter any frozen action/observation identity contracts.
+    if any(ord(char) < 32 or ord(char) == 127 for char in value):
+        raise ValueError(f"{name} contains an ASCII control delimiter")
+    if any(
+        0x80 <= codepoint <= 0x9F
+        or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= codepoint <= 0x202E
+        or 0x2066 <= codepoint <= 0x2069
+        or codepoint in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x206A <= codepoint <= 0x206F
+        for codepoint in map(ord, value)
+    ):
+        raise ValueError(f"{name} contains a Unicode formatting control")
     # The persisted trigger digest serializes policy text in UTF-8. Treat a
     # 512-character multibyte label as over-budget and reject unpaired
     # surrogates before hashing, SQLite access or scheduler decisions.
