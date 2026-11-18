@@ -87,11 +87,16 @@ _ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[key] for key in _RESULT_FIELD
 _ORIGINAL_RESULT_HOOKS = tuple(
     vars(_RESULT_TYPE).get(key) for key in _RESULT_HOOKS
 )
+_ORIGINAL_RECHECK_VECTORS = (_DENIAL_NAMES, _RESULT_FIELDS, _RESULT_HOOKS)
 
 
 def _assert_original_denials() -> None:
     if (
-        SyntheticRetentionRecheck is not _RESULT_TYPE
+        any(current is not original for current, original in zip(
+            (_DENIAL_NAMES, _RESULT_FIELDS, _RESULT_HOOKS),
+            _ORIGINAL_RECHECK_VECTORS, strict=True,
+        ))
+        or SyntheticRetentionRecheck is not _RESULT_TYPE
         or any(
             vars(_RESULT_TYPE).get(key) is not descriptor
             for names, originals in (
