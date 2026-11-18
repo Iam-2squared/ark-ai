@@ -86,6 +86,16 @@ def make_disconnected_fixture(
         for label in (source_id, privacy_scope)
     ):
         raise DisconnectedFixtureRejected("fixture metadata contains NUL separator")
+    # Preserve the direct, frozen ObservationEnvelope v1 semantics. Only the
+    # opt-in synthetic fixture adapter refuses control-bearing source/privacy
+    # labels before envelope construction or hashing private fixture bytes.
+    # This avoids ambiguous delimiters in detached review/diagnostic labels.
+    if any(
+        type(label) is str
+        and any(ord(char) < 32 or ord(char) == 127 for char in label)
+        for label in (source_id, privacy_scope)
+    ):
+        raise DisconnectedFixtureRejected("fixture metadata contains ASCII control delimiter")
     # First validate the entire public metadata contract using a detached,
     # inert envelope and a fixed digest sentinel. Invalid privacy/source
     # labels, clocks and parent links never cause even a local hashing pass
