@@ -100,6 +100,15 @@ def _admit_graph_label(value: object) -> None:
         codepoint in (0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
         or 0x202A <= codepoint <= 0x202E
         or 0x2066 <= codepoint <= 0x2069
+        # Identifiers in plans, tool bindings and dependency edges must
+        # remain visually distinguishable in local recovery/audit records.
+        # These default-ignorable scalars do not change the frozen
+        # ToolCall/PlanStep contracts; this is optional PlanGraph admission.
+        or codepoint in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x206A <= codepoint <= 0x206F
         for codepoint in map(ord, value)
     ):
         raise PlanConflictError("plan graph identifier contains Unicode formatting control")
