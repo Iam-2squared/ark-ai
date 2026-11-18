@@ -27,6 +27,8 @@ def test_finite_schedule_exhaustion_persists_without_cursor_rewind(
     path = tmp_path / "synthetic-finite-schedule.sqlite"
     policy = QuarantinePolicy("a" * 64, 10_000, 5_000, length, 500)
     ledger = DisconnectedScheduleQuarantineLedger(path, policy=policy, create=True)
+    with sqlite3.connect(path) as conn:
+        assert conn.execute("PRAGMA journal_mode=WAL").fetchone() == ("wal",)
     retained = genesis_quarantine_witness(policy)
     original = retained
 
