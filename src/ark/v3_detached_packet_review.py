@@ -63,6 +63,11 @@ _HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_FIELDS = tuple(
     vars(_REPORT).get(k) for k in (*_REPORT_FIELDS, *_DENIALS, *_HOOKS)
 )
+# Deny in-place policy-list shrinkage by pinning the immutable field vectors
+# as well as individual descriptors. A shortened zip is not a complete audit.
+_ORIGINAL_REPORT_FIELDS_VECTOR = _REPORT_FIELDS
+_ORIGINAL_DENIALS_VECTOR = _DENIALS
+_ORIGINAL_HOOKS_VECTOR = _HOOKS
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON = json
@@ -115,6 +120,9 @@ def _protocol() -> None:
         or _SNAPSHOT is not _ORIGINAL_SNAPSHOT
         or _EVIDENCE is not _ORIGINAL_EVIDENCE
         or DetachedV3PacketReview is not _REPORT
+        or _REPORT_FIELDS is not _ORIGINAL_REPORT_FIELDS_VECTOR
+        or _DENIALS is not _ORIGINAL_DENIALS_VECTOR
+        or _HOOKS is not _ORIGINAL_HOOKS_VECTOR
         or any(
             vars(_REPORT).get(name) is not original
             for name, original in zip(
