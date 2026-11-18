@@ -96,14 +96,15 @@ def make_disconnected_fixture(
         for label in (source_id, privacy_scope)
     ):
         raise DisconnectedFixtureRejected("fixture metadata contains ASCII control delimiter")
-    # Opt-in fixture identities also deny invisible Unicode formatting,
-    # bidi override/isolate markers and non-ASCII line separators. Zero-width
+    # Opt-in fixture identities also deny C1 terminal controls, invisible
+    # Unicode formatting, bidi override/isolate markers and line separators. Zero-width
     # identifiers can look identical while producing distinct digest inputs.
     # The public/frozen ObservationEnvelope v1 contract remains unchanged.
     # Do not tighten the public/frozen ObservationEnvelope v1 constructor.
     if any(
         type(label) is str and any(
-            codepoint in (0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+            0x80 <= codepoint <= 0x9F
+            or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
             or 0x202A <= codepoint <= 0x202E
             or 0x2066 <= codepoint <= 0x2069
             or codepoint in (
