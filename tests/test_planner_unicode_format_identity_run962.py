@@ -11,7 +11,6 @@ import pytest
 from ark.agency.contracts import PlanConflictError, PlanStep, ToolCall
 from ark.agency.planner import PlanGraph
 
-
 _FORMAT_CONTROLS = (
     "\u0085", "\u061c", "\u200e", "\u200f",
     "\u2028", "\u2029", "\u202a", "\u202b", "\u202c",
