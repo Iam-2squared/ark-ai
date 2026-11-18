@@ -1,3 +1,46 @@
+# LATEST — ARK AI Run975: Memory complete-row prehydration, alignment numeric storage, registry scope budgets
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T04:52:44.023+09:00** (reporting timestamp, NOT trusted expiry/consent/audit clock). **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at exact prewrite check. **Exact Run975 work-basis HEAD:** `e2e63b541b73061c85b2f2d3e9a3a147b20d850c` (Run974 checkpoint, confirmed 6/6 green). **Latest executable source/test HEAD:** `48752f04cbc87792e8676ad10d7ff3a11e991ded`. **Run975 report and checkpoint write-basis HEAD:** `c837b1fcc314b0c71090e9f5b4fb61f20985bf22`. **Checkpoint-result HEAD:** the GitHub Contents API returned new commit SHA and subsequent live branch/PR SHA, not an embedded self-reference; a commit cannot record its own SHA in tracked text.
+
+**Protected baseline at prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`, PR #5 gated Draft `805b377697472268db02650a89c7a94b1c5337c8`, PR #9 paused UI Draft `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All three unchanged, unmerged, and untouched.
+
+## NEW this invocation — 3 safe non-UI source+test packages, 16 authored tests
+
+1. **Memory get/search complete-row admission** — [source `61c37214e`](https://github.com/Iam-2squared/ark-ai/commit/61c37214ea2bdceedfbd7e6aafb74078b2f5d9aa) + [tests `760a670e1`](https://github.com/Iam-2squared/ark-ai/commit/760a670e19b26f595de6e26469a0d247f5fd37b2), **6 tests**. Prevent Python `SELECT *` hydration of corrupt digest, identity or dynamically typed SQLite timestamp/revision columns; preserve scoped filtering and Unicode rows. Bound the exact selected rows in one pinned read transaction; no disclosure authority.
+2. **Memory read-only all-scope event alignment preflight** — [source `f26685151`](https://github.com/Iam-2squared/ark-ai/commit/f26685151e556e68fe431a6388ee43b5a9f5bed7) + [tests `d06f7f54a`](https://github.com/Iam-2squared/ark-ai/commit/d06f7f54abcb640fe84caa4419e78ccbdc923c44), **5 tests**. Refuse corrupt REAL/BLOB numeric row carriers before full-row streaming; preserve global event/row continuity and local-only provenance limits.
+3. **ToolRegistry optional scope budget** — [source `1f74eeb91`](https://github.com/Iam-2squared/ark-ai/commit/1f74eeb91348de299cb0d400a336b62ad8c40981) + [tests `48752f04c`](https://github.com/Iam-2squared/ark-ai/commit/48752f04cbc87792e8676ad10d7ff3a11e991ded), **5 tests**. Restrict opt-in registry bound scope to 4096 codepoints and UTF-8 bytes, refuse reflected huge scope before scanning/hashing, and pin its admission function. The frozen ToolCall v1 contract and backend behavior are unchanged.
+
+[Run975 complete technical report](https://github.com/Iam-2squared/ark-ai/blob/c837b1fcc314b0c71090e9f5b4fb61f20985bf22/docs/JARVIS_RUN975_NON_UI_MEMORY_READ_ALIGNMENT_REGISTRY_SCOPE.md) · [Unmodified Run969 historical archive](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## Tests / CI / evidence — exact SHA, latest observed
+
+- **Previous Run974 exact checkpoint** `e2e63b541b73061c85b2f2d3e9a3a147b20d850c`: [CI #44374822229](https://github.com/Iam-2squared/ark-ai/actions/runs/44374822229) **GREEN 6/6** on Ubuntu/Windows × Python 3.11–3.13. Only certifies the prior HEAD.
+- **Memory alignment test head** `d06f7f54a`: [CI #44383669384](https://github.com/Iam-2squared/ark-ai/actions/runs/44383669384) **IN PROGRESS** (Ubuntu Python 3.11 SUCCESS, five jobs still in progress at last job inspection). Not certification for later HEADs.
+- **Latest executable source/test HEAD** `48752f04c`: [CI #44384624860](https://github.com/Iam-2squared/ark-ai/actions/runs/44384624860) — **44384624860: IN_PROGRESS** at prewrite observation.
+- **Technical report HEAD** `c837b1fcc`: [CI #44384740238](https://github.com/Iam-2squared/ark-ai/actions/runs/44384740238) — **44384740238: IN_PROGRESS** at prewrite observation. This checkpoint itself may launch automatic CI. **Latest HEAD full 6/6 PASS remains UNVERIFIED.** No duplicate workflows dispatched.
+- All tests are authored synthetic regression cases, not independently authenticated external-world evidence. No physical Windows/GGUF/offline native action executed.
+
+## Frozen contracts, blockers and approvals
+
+Frozen V1/V2/Local UI/Launcher artifacts and contracts, Memory v1 schema/API, PlanStep/ToolCall v1, Observation Envelope v1, protected V2/V3 evaluation and V3 contamination/provenance/reproducibility gates unchanged. PR #5 gated Draft/unmerged, PR #8 Draft/unmerged, PR #9 UI paused and untouched. No UI/frontend features or tests; no main merge. No paid/external GPU compute, paid APIs, new accounts/credentials, real Candidate/weights or promotion, real WRITE/tool execution, hardware operations, irreversible data deletion or replay of COMMIT-UNKNOWN actions.
+
+**Open gates:** trustworthy clock/consent/provenance, independent journal custody, file/WAL/SHM race protection, cross-store atomicity, physical-PC validation and mock-to-production integration. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Confirm exact latest executable and checkpoint HEAD six-job CI; inspect any failure logs, make only semantics-preserving normal-write fixes, and overlap CI with independent non-UI work.
+2. Memory WAL/SHM cross-process and CAS/ABA races, coherent row/event/expiry snapshots, high-water and COMMIT-UNKNOWN manual triage.
+3. Planner durable terminal/restart recovery, immutable registry-bound ToolRegistry, exact-type PermissionGate and durable one-shot approval plus audit-before-action through disconnected/mock executor **only after exact-head GREEN**.
+4. Personal Context privacy/revocation/reuse, proactive scheduler occurrence/replay and trusted-clock blockers, observation fixture adapters, zero-cost V3 path/reproducibility guards. **Keep UI paused.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run974 (preserved verbatim)
+
 # LATEST — ARK AI Run974: bounded Atomic audit, Memory expiry, Proactive marker admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T03:54:38.680+09:00** (reporting timestamp only; NOT a trusted audit/consent/retention clock). **Overall ARK/JARVIS: NOT_PASSED.**
