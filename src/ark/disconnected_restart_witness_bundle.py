@@ -107,6 +107,25 @@ _ORIGINAL_WITNESS_DENIALS = (
     vars(_CONTEXT_WITNESS)["independent_custody_proven"],
     vars(_DUE_WITNESS)["independent_custody_proven"],
 )
+# A caller-retained exact dataclass instance is not sufficient if its class
+# slot or lookup hook was replaced before this review. Reject a substituted
+# field/property BEFORE reading private retained witness values. The local
+# SQLite tips still supply no authenticated custody or startup permission.
+_WITNESS_CARRIER_NAMES = (
+    ("epochs", "chain_sha256", "__init__", "__new__",
+     "__getattribute__", "__getattr__"),
+    ("count", "chain_sha256", "__init__", "__new__",
+     "__getattribute__", "__getattr__"),
+    ("count", "fingerprint", "__init__", "__new__",
+     "__getattribute__", "__getattr__"),
+)
+_ORIGINAL_WITNESS_CARRIERS = tuple(
+    tuple(vars(cls).get(name) for name in names)
+    for cls, names in zip(
+        (_MEMORY_WITNESS, _CONTEXT_WITNESS, _DUE_WITNESS),
+        _WITNESS_CARRIER_NAMES, strict=True,
+    )
+)
 
 
 def _assert_original_authority() -> None:
@@ -135,6 +154,14 @@ def _assert_original_authority() -> None:
         is not _ORIGINAL_WITNESS_DENIALS[1]
         or vars(_DUE_WITNESS).get("independent_custody_proven")
         is not _ORIGINAL_WITNESS_DENIALS[2]
+        or any(
+            vars(cls).get(name) is not original
+            for cls, names, originals in zip(
+                (_MEMORY_WITNESS, _CONTEXT_WITNESS, _DUE_WITNESS),
+                _WITNESS_CARRIER_NAMES, _ORIGINAL_WITNESS_CARRIERS, strict=True,
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
     ):
         raise OfflineRestartWitnessRejected(
             "restart report or retained witness authority definition changed"
