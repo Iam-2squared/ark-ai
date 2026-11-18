@@ -1,3 +1,45 @@
+# LATEST — ARK AI Run960: registry C0/DEL guards, cold Planner fan-in, Memory WAL ABA, privacy child exit, free V3 bounds
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T15:02:01.749+09:00** (ordinary report clock only; NOT an authenticated action, authorization, consent, expiry or approval clock). **Overall ARK/JARVIS NOT_PASSED.** Disconnected/mock/synthetic-only, **zero new cost and non-UI development only**.
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at write preflight. **Exact work-basis HEAD:** `dbd28693c16c43a7a207be952a4ba37559b72ea7` (Run959 canonical checkpoint, [CI #44240870985](https://github.com/Iam-2squared/ark-ai/actions/runs/44240870985) **COMPLETED GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13). **Latest Run960 source/test HEAD:** `569838626ce45ddfb16cf63c40e0daf6fa644a1b`. **Checkpoint-write basis HEAD:** `966e4bf0d46e2569d10cbff591c352c7bcc056b4` (Run960 technical report). **Previous PROJECT_STATUS blob:** `abfc7286376a02bfce99348acba7385ad593517b`. **Checkpoint-result HEAD cannot be embedded in this blob**; verify returned Contents commit and PR/branch/blob afterward. **main:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged at branch preflight. **Draft PR #5:** `805b377697472268db02650a89c7a94b1c5337c8`, protected, OPEN/DRAFT/UNMERGED. **Draft paused UI PR #9:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED/UNTOUCHED.
+
+## NEW work — five independent non-UI lanes; one registry source guard + 62 new parametrized test cases AUTHORED
+
+1. **ToolRegistry / PermissionGate.** [`92517bf3`](https://github.com/Iam-2squared/ark-ai/commit/92517bf36f09cf8b27d2c4de48c5609d78e60e62) hardens only optional `src/ark/agency/registry.py`: reject ASCII C0 and DEL controls in names, capabilities, backend IDs and bound scopes before constructing/binding request identity. Frozen ToolCall v1 API stays intact. [`3f939a58`](https://github.com/Iam-2squared/ark-ai/commit/3f939a581e8a9fe9ee7995cfbe9c59c6a4966bef) adds **37** param cases (registration/resolve/bind admission, unrelated process-local WRITE one-shot nonconsumption, valid UTF-8 identity). No backend execution.
+2. **Planner persistent terminal fan-in.** [`fa7a9709`](https://github.com/Iam-2squared/ark-ai/commit/fa7a9709d8ed24ee9f755c5a773ac7c4388ea988) adds **4** cases: FAILED/CANCELLED root × sibling-success order; cold journal handles never revive BLOCKED join/leaf, while unrelated step can advance.
+3. **Memory generation-CAS WAL/ABA.** [`ddc2265f`](https://github.com/Iam-2squared/ark-ai/commit/ddc2265f99a1473e9514306405b583adedbf3f08) adds **4** cases: pinned readwrite/query-only SQLite historical WAL snapshots × same/different replacement bytes. Delete/recreate cannot reuse a predelete generation token even with same memory ID/revision; cold event chronology remains exact.
+4. **Privacy retained veto after subprocess exit.** [`b90f5630`](https://github.com/Iam-2squared/ark-ai/commit/b90f56305b0b2ca199c4c36315776ab5fd39ab95) adds **2** synthetic owner permutations: child exits after committed veto; stale parent global retained witness cannot append/review and cold witnesses remain deny-only. No independent custody/consent/deletion claim.
+5. **V3 detached free-only packet bounds.** [`56983862`](https://github.com/Iam-2squared/ark-ai/commit/569838626ce45ddfb16cf63c40e0daf6fa644a1b) adds **15** cases rejecting device/tokenizer/capacity/VRAM/timeout/boolean inconsistencies; exact conservative resource boundary still grants zero authority. No GPU, paid compute, Candidate or protected V2 evaluation.
+
+[Run960 technical report](https://github.com/Iam-2squared/ark-ai/blob/966e4bf0d46e2569d10cbff591c352c7bcc056b4/docs/JARVIS_RUN960_NON_UI_REGISTRY_PLANNER_MEMORY_PRIVACY.md). These are **62 authored cases**, not a claim of passed exact latest HEAD; no local full pytest available. All writes used normal GitHub Contents create/update; no force push, Git raw object bypass or duplicate workflow dispatch.
+
+## CI exact-SHA progress — sampled before checkpoint
+
+- Prior Run959 `dbd28693`: [#44240870985](https://github.com/Iam-2squared/ark-ai/actions/runs/44240870985) **COMPLETED GREEN 6/6**; validates only the prior baseline.
+- Registry source `92517bf3`: [#44246822527](https://github.com/Iam-2squared/ark-ai/actions/runs/44246822527) **IN_PROGRESS**, sampled 4/6 GREEN, 2 pending, 0 observed FAIL.
+- Planner `fa7a9709`: [#44247034755](https://github.com/Iam-2squared/ark-ai/actions/runs/44247034755) **IN_PROGRESS**, 3/6 GREEN, 3 pending.
+- Memory `ddc2265f`: [#44247174083](https://github.com/Iam-2squared/ark-ai/actions/runs/44247174083) **IN_PROGRESS**, 3/6 GREEN, 3 pending.
+- Registry tests `3f939a58`: [#44247360253](https://github.com/Iam-2squared/ark-ai/actions/runs/44247360253) **IN_PROGRESS**, 1/6 GREEN, 5 pending.
+- Privacy `b90f5630`: [#44247518798](https://github.com/Iam-2squared/ark-ai/actions/runs/44247518798) **QUEUED/IN_PROGRESS** across jobs, 0/6 GREEN at sample.
+- V3 `56983862`: [#44247997813](https://github.com/Iam-2squared/ark-ai/actions/runs/44247997813) **QUEUED**, no completed job at sample.
+- Original report `32bc1562`: [#44247723701](https://github.com/Iam-2squared/ark-ai/actions/runs/44247723701) **QUEUED**, superseded by revised report. The revised report/checkpoint may auto-trigger fresh runs; **latest exact checkpoint HEAD six-job GREEN is UNVERIFIED**.
+
+## Frozen evidence and hard boundaries
+
+V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1 and contamination/provenance/regression/reproducibility/human-review gates remain unchanged. Draft PR #5 remains at its controlling protection gate; UI PR #9 remains paused/untouched. No new UI/frontend tests, production tool dispatch, paid service/API/external GPU, Candidate adapter/weight/training/promotion, protected final V2 evaluation, physical PC work, new secrets/connections, destructive operations, main merge or fabricated CI/model/data/approval evidence. **Local hashes, tokens and single-file SQLite witnesses do not establish independent provenance, real consent, durable action authority or exactly-once external effects.**
+
+## Next plan / 今後の方針
+
+1. Verify exact latest HEAD Windows/Ubuntu × Python 3.11–3.13 CI all six. On failure, inspect relevant job logs and minimally fix only through normal contents safety path; move to independent non-UI lane while the new run executes.
+2. Memory WAL/SHM cold last-close and ABA/corrupt-row/event/expiry integrity; coherent snapshots and unknown COMMIT outcomes.
+3. Planner durable RUNNING/COMMIT-UNKNOWN quarantine; immutable ToolRegistry and exact-type PermissionGate; restart-safe occurrence and audit-before-action. Only connect to a disconnected mock with lower-level exact-head GREEN; no live adapter.
+4. Personal Context privacy/veto and retention, Proactive schedule occurrence, Observation bounded fixture provenance, startup readiness and V3 free-only identity/path/reproducibility guards. Require explicit human authority at protected, paid or irreversible boundaries.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run959: Planner terminal fan-in, WAL-pinned Memory CAS, V3 packet identity, global privacy veto witnesses
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T13:57:29.731+09:00** (ordinary report clock only; NOT an authenticated action, consent, expiry, authorization or approval clock). **Overall ARK/JARVIS NOT_PASSED.** Local/disconnected/synthetic, zero-new-cost and **non-UI only**.
