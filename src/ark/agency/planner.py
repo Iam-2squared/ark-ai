@@ -92,12 +92,13 @@ def _admit_graph_label(value: object) -> None:
     # Keep NUL's established error classification above unchanged.
     if any(ord(character) < 32 or ord(character) == 127 for character in value):
         raise PlanConflictError("plan graph identifier contains ASCII control delimiter")
-    # Unicode direction overrides/isolates and line separators also allow a
-    # printed/audited step or tool identity to display differently from the
+    # C1 terminal controls, Unicode direction overrides and line separators
+    # allow printed/audited step identities to display differently from the
     # exact string that was hashed. Keep this stricter optional graph admission
     # separate from the frozen PlanStep/ToolCall construction contracts.
     if any(
-        codepoint in (0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        0x80 <= codepoint <= 0x9F
+        or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
         or 0x202A <= codepoint <= 0x202E
         or 0x2066 <= codepoint <= 0x2069
         # Identifiers in plans, tool bindings and dependency edges must
