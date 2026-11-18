@@ -6,7 +6,6 @@ authorize memory disclosure or establish cross-process WAL custody.
 
 from __future__ import annotations
 
-import re
 import sqlite3
 
 import pytest
