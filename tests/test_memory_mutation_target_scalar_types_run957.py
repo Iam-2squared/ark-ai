@@ -69,6 +69,8 @@ def test_valid_scalar_and_expiry_update_remains_compatible(tmp_path) -> None:
     first = SQLiteMemoryStore(path, clock_ms=lambda: 100).put(
         MemoryWrite(scope, "source", "content", expires_at_ms=250),
     )
+    assert first.revision == 1
+    assert first.expires_at_ms == 250
     cold = SQLiteMemoryStore(path, clock_ms=lambda: 110)
     second = cold.put(
         MemoryWrite(scope, "source", "changed", expires_at_ms=300),
