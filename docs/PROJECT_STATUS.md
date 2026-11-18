@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run965: invisible Memory generation IDs; mixed READ recovery; late audit corruption; free V3 packet bytes
+
+**Saved at (Asia/Tokyo/JST): 2026-11-18T18:51:27.858+09:00** (ordinary reporting clock only; **NOT** trusted action/approval/consent/expiry time). **Overall ARK/JARVIS NOT_PASSED.** No UI/frontend, paid/external compute, GPU, model training, protected evaluation or live tool action.
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at write preflight. **Exact work-basis HEAD:** `61a878ff47ee23903e97eaafdeaad2809e0003e5` (Run964 checkpoint; CI #44271296158 completed SUCCESS only for that prior HEAD). **Latest source/test HEAD / checkpoint-write basis:** `b45565c1b14fe9a8d3c9ef8136e07bcdc1f67b99` (test correction). **Previous canonical PROJECT_STATUS blob:** `620bbda0cfee468df9ade3c078b84975b2927f7b`. **Checkpoint-result HEAD cannot be known inside its own commit content**: use the GitHub Contents response SHA and re-read live PR/head/blob after save. **main preflight:** `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Protected Draft PR #5 `805b377697472268db02650a89c7a94b1c5337c8` unchanged; paused UI Draft PR #9 `3b49048dd70eebcb6268299b9ecef4e301bbc0fd` unchanged.
+
+## NEW — five compatible non-UI work packages; one opt-in production guard + 96 authored regression cases
+
+1. **Memory generation identity source** [`a633aee9`](https://github.com/Iam-2squared/ark-ai/commit/a633aee9aecd22e0df38f7449e360e9103ef395d): reject additional visually invisible UTF-8 scalar codepoints (soft hyphen, grapheme joiner, zero-width and word joiner, deprecated formatting codes, BOM) in *opt-in* generation-CAS owner, namespace and source before identity hashing/private SQLite. Frozen Memory v1 constructor, schema and behavior remain unchanged. [54 regression cases `0a10f7f1`](https://github.com/Iam-2squared/ark-ai/commit/0a10f7f1d6f3522c62eb2119ec3d8a9de6796723): 18 scalars x 3 fields, observation/write refusal, original event prefix retained; no local account/private capture.
+2. **Disconnected READ recovery** [25 matrix cases `3c9ed436`](https://github.com/Iam-2squared/ark-ai/commit/3c9ed436be5da8c8db17740e8449aaf8169d468a) on FAILED/UNKNOWN/RUNNING/NOT_STARTED/SUCCEEDED ancestor pair. Terminal failures dominate uncertain fan-in; ready mock diagnostics never dispatch. [Assertion correction `b45565c1`](https://github.com/Iam-2squared/ark-ai/commit/b45565c1b14fe9a8d3c9ef8136e07bcdc1f67b99) correctly retains WAIT_DEPENDENCY for a child of a mock-ready (still NOT_STARTED) predecessor. No Planner production-source changes.
+3. **Atomic pre-action audit** [10 cases `09cc91b4`](https://github.com/Iam-2squared/ark-ai/commit/09cc91b41555e6935e3a224fa55aca586bce056c): corruption at second/third local intent/audit entry, missing row, forged digest/identity/request or shifted sequence all cold-deny without self-repair or further reservation. Synthetic SQLite digest-only, never actual external action.
+4. **Free V3 detached packet** [7 cases `f834c2e9`](https://github.com/Iam-2squared/ark-ai/commit/f834c2e9a8106a555a58d90320386bb395021b65): escaped duplicate JSON keys, noncanonical key/numerical representation, and exact-packet/crossbind digest separation for synthetic changed wall-time values. No Candidate, GPU, training or spending.
+5. **Memory retained-prefix confirmation**: new case package is independent of the unchanged frozen v1 schema, bound to the source guard in item 1; old WAL/event checks retained. **96 cases AUTHORED, not a full exact-head PASS claim.**
+
+## CI evidence — exact commit only, last sampled before checkpoint
+
+- Prior Run964 exact HEAD `61a878ff`: [#44271296158](https://github.com/Iam-2squared/ark-ai/actions/runs/44271296158) **COMPLETED SUCCESS**, validating Run964 only.
+- Memory source `a633aee9`: [#44278813483](https://github.com/Iam-2squared/ark-ai/actions/runs/44278813483) **IN PROGRESS** at last sample, 6 jobs running.
+- Planner cases original `3c9ed436`: [#44278989326](https://github.com/Iam-2squared/ark-ai/actions/runs/44278989326) **IN PROGRESS** at last sample; its original descendant expectation was subsequently corrected, so it cannot certify the corrected test.
+- Atomic cases `09cc91b4`: [#44279106000](https://github.com/Iam-2squared/ark-ai/actions/runs/44279106000) **IN PROGRESS** at last sample.
+- V3 cases `f834c2e9`: [#44279272402](https://github.com/Iam-2squared/ark-ai/actions/runs/44279272402) **QUEUED** at last sample.
+- Memory 54 cases `0a10f7f1`: [#44279408307](https://github.com/Iam-2squared/ark-ai/actions/runs/44279408307) **QUEUED** at last sample.
+- Planner correction `b45565c1`: [#44279518060](https://github.com/Iam-2squared/ark-ai/actions/runs/44279518060) **QUEUED** at last sample.
+- **Newest HEAD 6/6 GREEN not established.** Automatic CI for this checkpoint may be enqueued; no manual duplicate dispatch. Full local pytest/Ruff and physical-PC verification were not performed. If CI FAIL, inspect exact job logs and minimally fix without weakening safety checks.
+
+## Frozen controls and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher/Observation-v1/V3 Contract 1, contamination/provenance/regression/reproducibility, Candidate promotion and protected evaluation gates unchanged. PR #5 protected Draft/unmerged, PR #9 paused UI Draft/unmerged/untouched; PR #8 Draft/unmerged and main unchanged. Zero new cost: no external GPU, paid API, provider, model/weight generation, subscriptions, protected evaluation, credential/account connection, physical PC, live tools, destructive operations, raw Git write, force push or main merge. **Local hashes/SQLite witnesses/caller clocks are not independent consent, trusted action time, authenticated provenance, or exactly-once external-effect proof.**
+
+## Next plan / 今後の方針
+
+1. Confirm **all 6 CI jobs at exact latest checkpoint HEAD** (Windows/Ubuntu x Python 3.11–3.13), isolate any FAIL from exact logs; semantics-preserving fixes through ordinary GitHub Contents only.
+2. Advance Memory WAL/SHM last-close, event/row/expiry coherence, CAS/ABA and unknown-COMMIT reconciliation; avoid altering frozen v1.
+3. Planner RUNNING/UNKNOWN cold recovery, terminal propagation, immutable ToolRegistry-bound PermissionGate/one-shot + audit-before-action. Integrate only after lower-level exact-head GREEN and still **mock/disconnected-only**, never live execution.
+4. Continue privacy-safe Personal Context, Proactive recurrence/occurrence replay denial, Observation fixtures/startup readiness and free-only V3 identity/path/reproducibility review. Stop only lanes requiring explicit spending, credentials, real hardware, irreversible change, protected evaluation, candidate promotion, or merge authorization; continue safe independent work.
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run964: detached READ label bounds; free V3 numerical fences; inert atomic audit quarantine
 
 **Saved at (Asia/Tokyo/JST): 2026-11-18T17:56:11.864+09:00** (ordinary reporting clock, NOT trusted action, consent, expiry or authorization time). **ARK/JARVIS NOT_PASSED.** No new UI/frontend work, paid/external GPU/API/compute/service, real model/weights, protected evaluation or live tools.
