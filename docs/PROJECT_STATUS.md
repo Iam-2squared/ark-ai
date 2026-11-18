@@ -1,3 +1,49 @@
+# LATEST — ARK AI Run977: disconnected replay and READ hash-chain custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T06:52:10.167+09:00** (reporting timestamp only, NOT a trusted audit/consent/expiry/scheduler clock). **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch / PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite. **Exact work-basis HEAD:** `3db9f4f2fc1fb9a126b5d428801f2255af88b1b9` (Run976 checkpoint, [CI #44397552241](https://github.com/Iam-2squared/ark-ai/actions/runs/44397552241) GREEN 6/6). **Latest executable source/test HEAD:** `1351f3df786506e9122029828cb97b1931b4982e`. **Technical report / checkpoint write-basis HEAD:** `476d707031a8afc7376200f34beda690151ad1db`. **Checkpoint-result HEAD:** the GitHub Contents API returned commit SHA plus subsequent live branch/PR SHA; the tracked file cannot contain its own commit SHA.
+
+**Frozen/protected baseline at prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; PR #5 gated Draft `805b377697472268db02650a89c7a94b1c5337c8`; PR #9 paused UI Draft `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All OPEN/DRAFT/UNMERGED where applicable and unchanged. V1/V2/Local UI/Launcher evidence, Memory v1, PlanStep/ToolCall v1, Observation Envelope v1 and protected V2/V3 evaluation contracts unchanged.
+
+## NEW this invocation — 2 non-UI implementation+test packages, 39 authored cases
+
+1. **Personal Context disconnected replay ledger protocol custody** — [source `73c48b4df`](https://github.com/Iam-2squared/ark-ai/commit/73c48b4df169b786a46dc1037c4541f12660a8fc) + [tests `60cc19b8c`](https://github.com/Iam-2squared/ark-ai/commit/60cc19b8c9639fcec8be78770dc3ad6d2d7d4485). **17** authored cases. Pin JSON/SHA-256, digest domain, regex identifiers, DDL and row budget at import. Fail closed before private path/SQLite/witness data or an unreviewed digest callback; recheck before/after codec operations. Valid cold read and genesis remain deny-only.
+2. **Disconnected READ journal protocol custody** — [source `904546b9f`](https://github.com/Iam-2squared/ark-ai/commit/904546b9f53d0d38934c11f8bf3c6bd566e545c5) + [tests `1351f3df`](https://github.com/Iam-2squared/ark-ai/commit/1351f3df786506e9122029828cb97b1931b4982e). **22** authored cases. Pin genesis/format, SHA-256/JSON, marker DDL, operation list, regexes and count limit before hash-only READ journal access. Exercise create/open/verify/recover/append, and valid SQLite restart with no dispatch/replay authority.
+
+**Independent read-only Memory WAL/SHM audit:** inspected `sqlite_store.py` first-open and path custody plus Run913/923 synthetic cold-restart tests. Confirmed best-effort alias/sidecar checks and same-process bootstrap locking, not cross-process custody or atomic external side effects. No unsafe "fix", migration, auto-replay or fabricated proof.
+
+[Run977 complete technical report](https://github.com/Iam-2squared/ark-ai/blob/476d707031a8afc7376200f34beda690151ad1db/docs/JARVIS_RUN977_NON_UI_CONTEXT_REPLAY_READ_JOURNAL_CUSTODY.md) · [Historical status archive through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## Tests / CI / evidence — exact HEAD observed
+
+- Previous Run976 exact checkpoint `3db9f4f2fc1fb9a126b5d428801f2255af88b1b9`: [CI #44397552241](https://github.com/Iam-2squared/ark-ai/actions/runs/44397552241) **GREEN 6/6**, Ubuntu/Windows × Python 3.11–3.13. This is only evidence for the previous HEAD.
+- [CI #44404755907](https://github.com/Iam-2squared/ark-ai/actions/runs/44404755907) `73c48b4df169b786a46dc1037c4541f12660a8fc`: **IN_PROGRESS** (observed at checkpoint preparation).
+- [CI #44404855612](https://github.com/Iam-2squared/ark-ai/actions/runs/44404855612) `60cc19b8c9639fcec8be78770dc3ad6d2d7d4485`: **IN_PROGRESS** (observed at checkpoint preparation).
+- [CI #44405133171](https://github.com/Iam-2squared/ark-ai/actions/runs/44405133171) `904546b9f53d0d38934c11f8bf3c6bd566e545c5`: **IN_PROGRESS** (observed at checkpoint preparation).
+- [CI #44405217019](https://github.com/Iam-2squared/ark-ai/actions/runs/44405217019) `1351f3df786506e9122029828cb97b1931b4982e`: **IN_PROGRESS** (observed at checkpoint preparation).
+- [CI #44405642020](https://github.com/Iam-2squared/ark-ai/actions/runs/44405642020) `476d707031a8afc7376200f34beda690151ad1db`: **QUEUED** (observed at checkpoint preparation).
+- Latest source/test and checkpoint **6/6 GREEN UNVERIFIED** at preparation. Tests were authored and committed; no independently attested local hardware/model/consent/clock/source evidence. CI is automatically triggered by branch writes; no duplicate manual dispatch.
+
+## Frozen contracts / blockers / authorization
+
+No UI/frontend work (PR #9 untouched), no main merge, no protected Contract/evaluation change, no Candidate generation/promotion, no protected V2 final-evaluation opening, no physical Windows/GGUF activity, no secrets/new accounts, no real tool dispatch, no automatic WRITE/replay, no paid APIs or external GPU. PR #5 remains gated Draft/unmerged; PR #8 Draft/unmerged.
+
+Open blockers: external immutable witness/provenance, trusted time and consent/revocation authentication, cross-process WAL/SHM races and pre/post-handle custody, cross-store COMMIT-UNKNOWN proof, device-side validation, and mock-to-production authority integration. Local hash chains do NOT authenticate an actor or authorize future actions.
+
+## Next plan / 今後の方針
+
+1. Confirm the **exact latest source/test and checkpoint HEAD** CI across six environments; diagnose failures using job logs and repair only by normal permitted GitHub source/test writes. Overlap nonconflicting lanes, not obsoleting in-flight CI paths.
+2. Memory WAL/SHM process races, CAS/ABA, coherent event/expiry snapshots and manual/no-replay COMMIT-UNKNOWN recovery.
+3. Planner crash-safe terminal propagation, registry-bound immutable ToolRegistry, exact-type PermissionGate, restart-safe one-shot authorization and trusted-clock audit-before-action, initially disconnected/mock only after exact-head GREEN.
+4. Privacy-first Personal Context revocation/reuse, proactive occurrence/replay, Observation fixture contracts and free-only V3 path/approval/identity/reproducibility gates. **UI development stays paused.**
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run976 (verbatim preserved below)
+
 # LATEST — ARK AI Run976: opt-in observation/proactive/context control-label admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T06:03:29.391+09:00** (reporting time only; NOT a trusted audit, consent, expiry or schedule clock). **Overall ARK/JARVIS: NOT_PASSED.**
