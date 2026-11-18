@@ -13,7 +13,6 @@ import pytest
 from ark.disconnected_observation_fixture import make_disconnected_fixture
 from ark.observations import ObservationKind
 
-
 _PRIVATE = b"PRIVATE_SYNTHETIC_FIXTURE_NO_EXTERNAL_CAPTURE"
 _KINDS = tuple(ObservationKind)
 
