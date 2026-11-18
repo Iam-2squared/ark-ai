@@ -76,6 +76,17 @@ def _text(name: str, value: object) -> str:
     # frozen generic ToolCall v1 identity contract.
     if any(ord(character) < 0x20 or ord(character) == 0x7f for character in value):
         raise ValueError(f"{name} contains a control character")
+    # Unicode directional marks/isolates/overrides and non-ASCII line
+    # separators can visually forge a different audit or permission identity.
+    # Reject ONLY these format controls at the optional registry boundary,
+    # preserving meaningful multilingual letters and frozen ToolCall v1.
+    if any(
+        codepoint in (0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= codepoint <= 0x202E
+        or 0x2066 <= codepoint <= 0x2069
+        for codepoint in map(ord, value)
+    ):
+        raise ValueError(f"{name} contains a Unicode formatting control")
     # Revision and bound-action identities serialize as UTF-8. Restrict the
     # actual byte budget and reject lone surrogate code points at ingress,
     # before a backend descriptor, registry digest or policy gate is touched.
