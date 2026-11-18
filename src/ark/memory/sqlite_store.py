@@ -286,6 +286,34 @@ def _require_memory_text_hydration_budget(
     if memory_id is None and total_bytes > _MAX_MEMORY_SEARCH_HYDRATION_BYTES:
         raise MemorySchemaError("memory search namespace hydration budget exceeded")
 
+    # The earlier aggregate guards user-controlled content/metadata/source
+    # bytes. SELECT * also hydrates the *other* persisted columns. In
+    # particular, SQLite's dynamic typing permits a multi-megabyte BLOB in
+    # a timestamp or content_sha256 cell. Refuse those corrupt row images
+    # before either a scoped get or a namespace search crosses into Python.
+    # This uses exactly the same bounded selection and BEGIN snapshot.
+    selected_identity = selected.replace(
+        "SELECT content,metadata_json,source_id FROM memories ",
+        "SELECT memory_id,owner_id,namespace,content_sha256,"
+        "created_at_ms,updated_at_ms,expires_at_ms,revision FROM memories ",
+    )
+    malformed = conn.execute(
+        "SELECT 1 FROM (" + selected_identity + ") AS chosen WHERE "
+        "typeof(memory_id)!='text' OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(content_sha256)!='text' "
+        "OR length(CAST(content_sha256 AS BLOB))!=64 "
+        "OR typeof(created_at_ms)!='integer' "
+        "OR typeof(updated_at_ms)!='integer' "
+        "OR (expires_at_ms IS NOT NULL "
+        "AND typeof(expires_at_ms)!='integer') "
+        "OR typeof(revision)!='integer' LIMIT 1",
+        params,
+    ).fetchone()
+    if malformed is not None:
+        raise MemorySchemaError("memory read row hydration admission failed")
+
 
 
 def _require_expiry_purge_hydration_admission(
