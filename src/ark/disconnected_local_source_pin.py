@@ -79,6 +79,21 @@ def _require_original_source_pin_boundary() -> None:
     These same-process checks are fail-closed diagnostics, not independent
     attestation, durable consent, or a grant to open private contents.
     """
+    # Preserve the historical denial-specific error while refusing a
+    # substituted False-looking descriptor before any file or witness read.
+    # New original-carrier tests also require the boundary error marker.
+    if (
+        DisconnectedSourcePin is _PIN_TYPE
+        and _DENIALS is _ORIGINAL_DENIAL_NAMES
+        and _ORIGINAL_DENIALS is _ORIGINAL_DENIAL_DESCRIPTORS
+        and any(
+            vars(_PIN_TYPE).get(name) is not original
+            for name, original in zip(_DENIALS, _ORIGINAL_DENIALS, strict=True)
+        )
+    ):
+        raise DisconnectedSourceRejected(
+            "local source pin boundary changed: source pin acquired authority"
+        )
     if (
         DisconnectedSourcePin is not _PIN_TYPE
         or fields is not _ORIGINAL_FIELDS_HELPER
