@@ -53,6 +53,9 @@ _DISPOSITIONS = {
         "MATCHING_ROW_MANUAL_REVIEW",
     ("INDETERMINATE", "DIVERGED_OBSERVED"): "DIVERGED_MANUAL_REVIEW",
 }
+_ORIGINAL_SHA_PATTERN = _SHA
+_ORIGINAL_DISPOSITION_MAP = _DISPOSITIONS
+_ORIGINAL_DISPOSITION_ITEMS = tuple(_DISPOSITIONS.items())
 
 
 class MemoryAmbiguityPairRejected(ValueError):
@@ -119,6 +122,16 @@ _ORIGINAL_OUTCOME_FIELDS = tuple(vars(_OUTCOME)[name] for name in _OUTCOME_FIELD
 _ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT).get(name) for name in _CARRIER_HOOKS)
 _ORIGINAL_TRIAGE_HOOKS = tuple(vars(_TRIAGE).get(name) for name in _CARRIER_HOOKS)
 _ORIGINAL_OUTCOME_HOOKS = tuple(vars(_OUTCOME).get(name) for name in _CARRIER_HOOKS)
+# Pair classification and the full carrier/denial field inventories are
+# security policy, not mutable convenience tables. Catch deletions, reordered
+# vectors and equal-valued rebinding before touching caller-private SQLite.
+_ORIGINAL_REVIEW_VECTORS = (
+    _TRIAGE_DENIALS, _OUTCOME_DENIALS, _DENIALS,
+    _RESULT_FIELDS, _TRIAGE_FIELDS, _OUTCOME_FIELDS, _CARRIER_HOOKS,
+    _ORIGINAL_RESULT_FIELDS, _ORIGINAL_TRIAGE_FIELDS, _ORIGINAL_OUTCOME_FIELDS,
+    _ORIGINAL_RESULT_HOOKS, _ORIGINAL_TRIAGE_HOOKS, _ORIGINAL_OUTCOME_HOOKS,
+    _TRIAGE_ORIGINALS, _OUTCOME_ORIGINALS, _ORIGINALS,
+)
 
 
 def _require_original_review_carriers() -> None:
@@ -128,6 +141,28 @@ def _require_original_review_carriers() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _SHA is not _ORIGINAL_SHA_PATTERN
+        or _DISPOSITIONS is not _ORIGINAL_DISPOSITION_MAP
+        or type(_DISPOSITIONS) is not dict or len(_DISPOSITIONS) != 3
+        or any(
+            type(key) is not tuple or len(key) != 2
+            or any(type(label) is not str for label in key)
+            or type(value) is not str
+            for key, value in _DISPOSITIONS.items()
+        )
+        or tuple(_DISPOSITIONS.items()) != _ORIGINAL_DISPOSITION_ITEMS
+        or any(
+            current is not original
+            for current, original in zip(
+                (_TRIAGE_DENIALS, _OUTCOME_DENIALS, _DENIALS,
+                 _RESULT_FIELDS, _TRIAGE_FIELDS, _OUTCOME_FIELDS, _CARRIER_HOOKS,
+                 _ORIGINAL_RESULT_FIELDS, _ORIGINAL_TRIAGE_FIELDS,
+                 _ORIGINAL_OUTCOME_FIELDS, _ORIGINAL_RESULT_HOOKS,
+                 _ORIGINAL_TRIAGE_HOOKS, _ORIGINAL_OUTCOME_HOOKS,
+                 _TRIAGE_ORIGINALS, _OUTCOME_ORIGINALS, _ORIGINALS),
+                _ORIGINAL_REVIEW_VECTORS, strict=True,
+            )
+        )
     ):
         raise MemoryAmbiguityPairRejected(
             "Memory reconciliation digest implementation or domain changed"
