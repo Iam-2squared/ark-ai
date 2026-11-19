@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import stat
@@ -24,6 +25,8 @@ _MAX_LATENESS_MS = 60_000
 _DOMAIN = b"ARK-detached-synthetic-due-slot-v1\0"
 _ORIGINAL_SQLITE3 = sqlite3
 _ORIGINAL_CONNECT = sqlite3.connect
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_DOMAIN = _DOMAIN
@@ -44,6 +47,8 @@ def _require_original_due_digest() -> None:
     if (
         sqlite3 is not _ORIGINAL_SQLITE3
         or sqlite3.connect is not _ORIGINAL_CONNECT
+        or os is not _ORIGINAL_OS
+        or os.fsencode is not _ORIGINAL_FSENCODE
         or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
@@ -240,6 +245,21 @@ def _check_path(path: object, *, exists: bool) -> Path:
         or ".." in path.parts
     ):
         raise DueReservationRejected("absolute local fixture Path required")
+    # Lexical length is not a filesystem-byte bound: a multi-byte fixture
+    # name may pass 4096 characters but fail or redirect when SQLite creates
+    # its longer -journal sidecar. Reject malformed UTF-8/NUL as well, before
+    # any lstat, SQLite open or private path-derived diagnostic.
+    try:
+        display_path = str(path)
+        display_path.encode("utf-8", errors="strict")
+        path_bytes = len(os.fsencode(path))
+    except (UnicodeError, OSError, ValueError) as exc:
+        raise DueReservationRejected("due path encoding unavailable") from exc
+    if (
+        "\x00" in display_path
+        or path_bytes + len(b"-journal") > 4096
+    ):
+        raise DueReservationRejected("due path/sidecar byte budget exceeded")
     # Checking only path.parent.is_symlink() accepts a redirected grandparent.
     # Validate every ancestor before SQLite opens or creates a fixture file.
     # No filesystem path check alone can eliminate concurrent path swaps.
