@@ -71,9 +71,10 @@ def _validate_outcome(value: object, *, persisted: bool = False) -> str:
     ):
         raise ActionAuditSchemaError("action audit outcome budget changed")
     error = ActionAuditSchemaError if persisted else ValueError
+    if type(value) is not str:
+        raise error("audit outcome must be an exact string")
     if (
-        type(value) is not str
-        or not value
+        not value
         or len(value) > _MAX_AUDIT_OUTCOME_CHARS
         or not value.strip()
     ):
@@ -271,6 +272,7 @@ def _require_audit_row_hydration_admission(
         "WHEN typeof(occurred_at_ms)!='integer' THEN 'clock' "
         "WHEN typeof(tool)!='text' OR typeof(capability)!='text' "
         "OR typeof(scope)!='text' OR typeof(outcome)!='text' "
+        "OR length(CAST(outcome AS BLOB))<1 "
         "THEN 'identity' ELSE 'digest' END, event_id "
         "FROM action_events WHERE "
         "typeof(event_id)!='integer' "
