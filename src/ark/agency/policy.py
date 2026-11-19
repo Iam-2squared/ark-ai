@@ -56,6 +56,10 @@ _GRANT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_GRANT_HOOKS = tuple(
     vars(_GRANT_TYPE).get(name) for name in _GRANT_HOOKS
 )
+_GRANT_VECTOR_EPOCH = (
+    _GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS,
+    _GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS,
+)
 
 
 def _require_original_grant_validator() -> None:
@@ -67,6 +71,14 @@ def _require_original_grant_validator() -> None:
         raise PermissionDenied("capability grant budget contract changed")
     if (
         CapabilityGrant is not _GRANT_TYPE
+        or any(
+            current is not original
+            for current, original in zip(
+                (_GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS,
+                 _GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS),
+                _GRANT_VECTOR_EPOCH, strict=True,
+            )
+        )
         or vars(_GRANT_TYPE).get("__init__") is not _ORIGINAL_GRANT_INIT
         or vars(_GRANT_TYPE).get("__post_init__") is not _ORIGINAL_GRANT_POST_INIT
         or any(
@@ -100,9 +112,30 @@ _ORIGINAL_TOKEN_METHODS = tuple(vars(_TOKEN_TYPE)[key] for key in _TOKEN_METHODS
 _ORIGINAL_TOKEN_HOOKS = tuple(
     vars(_TOKEN_TYPE).get(key) for key in _TOKEN_HOOKS
 )
+# A shortened or reordered class field inventory can skip a substituted
+# descriptor and allow a token/grant getter to run before admission. Preserve
+# the inventory objects themselves, including equal-valued new tuple bindings.
+_SPEC_TOKEN_VECTOR_EPOCH = (
+    _SPEC_FIELDS, _SPEC_METHODS, _SPEC_HOOKS,
+    _ORIGINAL_SPEC_FIELDS, _ORIGINAL_SPEC_METHODS, _ORIGINAL_SPEC_HOOKS,
+    _TOKEN_FIELDS, _TOKEN_METHODS, _TOKEN_HOOKS,
+    _ORIGINAL_TOKEN_FIELDS, _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS,
+)
 
 
 def _require_original_spec_and_token() -> None:
+    if any(
+        current is not original
+        for current, original in zip(
+            (_SPEC_FIELDS, _SPEC_METHODS, _SPEC_HOOKS,
+             _ORIGINAL_SPEC_FIELDS, _ORIGINAL_SPEC_METHODS,
+             _ORIGINAL_SPEC_HOOKS, _TOKEN_FIELDS, _TOKEN_METHODS,
+             _TOKEN_HOOKS, _ORIGINAL_TOKEN_FIELDS,
+             _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS),
+            _SPEC_TOKEN_VECTOR_EPOCH, strict=True,
+        )
+    ):
+        raise PermissionDenied("tool/token validator inventory changed")
     if (
         ToolSpec is not _SPEC_TYPE
         or any(
