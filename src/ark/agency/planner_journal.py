@@ -326,7 +326,10 @@ class PlannerJournal:
         ).fetchall()
         if any(type(row) is not tuple or len(row) != 3 for row in rows):
             raise PlannerJournalSchemaError("Planner journal schema catalog is malformed")
-        if any(row[0] != "table" or type(row[1]) is not str or type(row[2]) is not str for row in rows):
+        if any(
+            row[0] != "table" or type(row[1]) is not str or type(row[2]) is not str
+            for row in rows
+        ):
             raise PlannerJournalSchemaError("unexpected Planner journal schema object")
         actual = {row[1]: row[2] for row in rows}
         if set(actual) != set(_EXPECTED_SCHEMA):
@@ -464,7 +467,9 @@ class PlannerJournal:
                 ):
                     raise PlannerJournalCorruptError("Planner journal event fields are malformed")
                 if stored_previous != previous_hash:
-                    raise PlannerJournalCorruptError("Planner journal hash-chain predecessor changed")
+                    raise PlannerJournalCorruptError(
+                        "Planner journal hash-chain predecessor changed"
+                    )
                 wanted_hash = _event_hash(
                     plan_id=plan_id,
                     sequence=sequence,
@@ -594,7 +599,9 @@ class PlannerJournal:
             if supplied_status != replayed.status_digest():
                 raise PlannerJournalConflictError("supplied PlanGraph is stale")
             if expected_sequence != last_sequence:
-                raise PlannerJournalConflictError("Planner journal sequence compare-and-swap failed")
+                raise PlannerJournalConflictError(
+                    "Planner journal sequence compare-and-swap failed"
+                )
             if previous_hash != stored_hash:
                 raise PlannerJournalCorruptError("Planner journal hash frontier changed")
             current = replayed.statuses().get(step_id)
