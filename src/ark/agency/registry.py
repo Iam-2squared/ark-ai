@@ -205,6 +205,12 @@ _ORIGINAL_REGISTRATION_METHODS = tuple(
 _ORIGINAL_REGISTRATION_HOOKS = tuple(
     vars(_REGISTRATION_TYPE).get(name) for name in _REGISTRATION_HOOKS
 )
+# Pin the complete descriptor inventories, not only their zipped values.
+# Rebinding a name tuple to an empty or reordered vector cannot suppress a
+# class-hook or registered-identity inspection before backend access.
+_ORIGINAL_REGISTRATION_FIELDS_VECTOR = _REGISTRATION_FIELDS
+_ORIGINAL_REGISTRATION_METHODS_VECTOR = _REGISTRATION_METHODS
+_ORIGINAL_REGISTRATION_HOOKS_VECTOR = _REGISTRATION_HOOKS
 
 
 def _require_original_registration_contract() -> None:
@@ -215,6 +221,10 @@ def _require_original_registration_contract() -> None:
     This local identity check is not remote backend attestation.
     """
     if (
+        _REGISTRATION_FIELDS is not _ORIGINAL_REGISTRATION_FIELDS_VECTOR
+        or _REGISTRATION_METHODS is not _ORIGINAL_REGISTRATION_METHODS_VECTOR
+        or _REGISTRATION_HOOKS is not _ORIGINAL_REGISTRATION_HOOKS_VECTOR
+        or
         ToolRegistration is not _REGISTRATION_TYPE
         or any(
             vars(_REGISTRATION_TYPE).get(name) is not original
@@ -257,11 +267,22 @@ _TOOL_CALL_LOOKUP_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_TOOL_CALL_LOOKUP_HOOKS = tuple(
     vars(_TOOL_CALL_TYPE).get(name) for name in _TOOL_CALL_LOOKUP_HOOKS
 )
+_ORIGINAL_BOUND_FIELDS_VECTOR = _BOUND_FIELDS
+_ORIGINAL_BOUND_HOOKS_VECTOR = _BOUND_HOOKS
+_ORIGINAL_TOOL_CALL_ORIGINALS_VECTOR = _TOOL_CALL_ORIGINALS
+_ORIGINAL_TOOL_CALL_INPUT_FIELDS_VECTOR = _TOOL_CALL_INPUT_FIELDS
+_ORIGINAL_TOOL_CALL_LOOKUP_HOOKS_VECTOR = _TOOL_CALL_LOOKUP_HOOKS
 
 
 def _require_original_toolcall_contract() -> None:
     # Dataclass initialization invokes __post_init__ dynamically. A patched
     # constructor/property must not run before registry identity validation.
+    if (
+        _TOOL_CALL_ORIGINALS is not _ORIGINAL_TOOL_CALL_ORIGINALS_VECTOR
+        or _TOOL_CALL_INPUT_FIELDS is not _ORIGINAL_TOOL_CALL_INPUT_FIELDS_VECTOR
+        or _TOOL_CALL_LOOKUP_HOOKS is not _ORIGINAL_TOOL_CALL_LOOKUP_HOOKS_VECTOR
+    ):
+        raise ValueError("ToolCall registry policy vector changed")
     if (
         ToolCall is not _TOOL_CALL_TYPE
     ):
@@ -298,6 +319,11 @@ def _require_original_toolcall_contract() -> None:
 def _require_original_bound_constructor() -> None:
     # A class-level constructor can be monkeypatched even for frozen slots.
     # Reject the replacement before any injected code can execute.
+    if (
+        _BOUND_FIELDS is not _ORIGINAL_BOUND_FIELDS_VECTOR
+        or _BOUND_HOOKS is not _ORIGINAL_BOUND_HOOKS_VECTOR
+    ):
+        raise ValueError("registry bound policy vector changed")
     if (
         BoundAction is not _BOUND_TYPE
         or vars(_BOUND_TYPE).get("__init__") is not _ORIGINAL_BOUND_INIT
