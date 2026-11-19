@@ -9,7 +9,6 @@ from __future__ import annotations
 import pytest
 
 from ark.memory import MemoryScope
-
 from ark.personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
     SyntheticContextRevocationRejected,
