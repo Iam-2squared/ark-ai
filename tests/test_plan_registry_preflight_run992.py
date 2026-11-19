@@ -76,8 +76,7 @@ def test_valid_plan_binds_every_step_to_one_registry_revision_without_dispatch()
     assert tuple(item.step_id for item in result.bindings) == ("first", "second")
     assert result.bindings[0].effect is Effect.READ
     assert result.bindings[1].effect is Effect.WRITE
-    assert all(item.registry_revision if hasattr(item, "registry_revision") else True
-               for item in result.bindings)
+    assert all(item.registry_revision is result.registry_revision for item in result.bindings)
     assert len(result.fingerprint) == 64
     assert result.permission_granted is False
     assert result.dispatch_authorized is False
