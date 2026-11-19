@@ -94,11 +94,28 @@ _REQUEST_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_REQUEST_SLOTS = tuple(
     vars(_REQUEST_TYPE).get(name) for name in (*_REQUEST_FIELDS, *_REQUEST_HOOKS)
 )
+# Detached review carriers must also be import-original before touching IDAT.
+# A forged result constructor or denial descriptor is an executable boundary.
+_AUDIT_TYPE = OfflineScanlineAudit
+_AUDIT_FIELDS = (
+    "idat_sha256", "reconstructed_sha256", "width", "height",
+    "inflated_bytes", "filters_used",
+)
+_AUDIT_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_AUDIT_SLOTS = tuple(
+    vars(_AUDIT_TYPE).get(name) for name in (*_AUDIT_FIELDS, *_AUDIT_HOOKS)
+)
+_ORIGINAL_REQUEST_VECTOR = (_REQUEST_FIELDS, _REQUEST_HOOKS, _ORIGINAL_REQUEST_SLOTS)
+_ORIGINAL_AUDIT_VECTOR = (_AUDIT_FIELDS, _AUDIT_HOOKS, _ORIGINAL_AUDIT_SLOTS)
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_ZLIB = zlib
 
 
 def _require_original_scanline_inputs() -> None:
     if (
-        hashlib.sha256 is not _ORIGINAL_SHA256
+        hashlib is not _ORIGINAL_HASHLIB
+        or zlib is not _ORIGINAL_ZLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
         or zlib.decompressobj is not _ORIGINAL_DECOMPRESSOBJ
         or _SHA is not _ORIGINAL_SHA_PATTERN
         or type(_DEPTHS) is not dict
@@ -124,6 +141,30 @@ def _require_original_scanline_inputs() -> None:
             for value in (_MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_RAW)
         )
         or (_MAX_SOURCE, _MAX_PIXELS, _MAX_SIDE, _MAX_RAW) != _ORIGINAL_BUDGETS
+        or (_REQUEST_FIELDS, _REQUEST_HOOKS, _ORIGINAL_REQUEST_SLOTS)
+        != _ORIGINAL_REQUEST_VECTOR
+        or (_AUDIT_FIELDS, _AUDIT_HOOKS, _ORIGINAL_AUDIT_SLOTS)
+        != _ORIGINAL_AUDIT_VECTOR
+        or OfflineScanlineAudit is not _AUDIT_TYPE
+        or any(
+            vars(_AUDIT_TYPE).get(name) is not original
+            for name, original in zip(
+                (*_AUDIT_FIELDS, *_AUDIT_HOOKS),
+                _ORIGINAL_AUDIT_SLOTS, strict=True,
+            )
+        )
+        or _SCANLINE_DENIALS is not _ORIGINAL_SCANLINE_DENIAL_NAMES
+        or _SCANLINE_DENIAL_DESCRIPTORS
+        is not _ORIGINAL_SCANLINE_DENIAL_DESCRIPTORS
+        or any(
+            vars(_AUDIT_TYPE).get(name) is not original
+            for name, original in zip(
+                _SCANLINE_DENIALS, _SCANLINE_DENIAL_DESCRIPTORS,
+                strict=True,
+            )
+        )
+        or _sha is not _ORIGINAL_SHA_HELPER
+        or _paeth is not _ORIGINAL_PAETH_HELPER
         or OfflineScanlineRequest is not _REQUEST_TYPE
         or any(
             vars(_REQUEST_TYPE).get(name) is not original
@@ -148,6 +189,10 @@ def _paeth(left: int, above: int, upper_left: int) -> int:
     if a <= b and a <= c:
         return left
     return above if b <= c else upper_left
+
+
+_ORIGINAL_SHA_HELPER = _sha
+_ORIGINAL_PAETH_HELPER = _paeth
 
 
 def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineScanlineAudit:
@@ -253,14 +298,43 @@ def inspect_offline_png_scanlines(request: OfflineScanlineRequest) -> OfflineSca
         digest.update(reconstructed)
         previous = reconstructed
     assert_epoch()
-    return OfflineScanlineAudit(
+    _require_original_scanline_inputs()
+    expected_digest = digest.hexdigest()
+    expected_filters = tuple(filtered_counts)
+    result = OfflineScanlineAudit(
         idat_sha256=declared,
-        reconstructed_sha256=digest.hexdigest(),
+        reconstructed_sha256=expected_digest,
         width=width,
         height=height,
         inflated_bytes=expected,
-        filters_used=tuple(filtered_counts),
+        filters_used=expected_filters,
     )
+    _require_original_scanline_inputs()
+    fields = (
+        result.idat_sha256, result.reconstructed_sha256,
+        result.width, result.height, result.inflated_bytes,
+        result.filters_used,
+    )
+    if (
+        type(result) is not _AUDIT_TYPE
+        or fields != (
+            declared, expected_digest, width, height, expected,
+            expected_filters,
+        )
+        or any(getattr(result, name) is not False for name in _SCANLINE_DENIALS)
+    ):
+        raise OfflineScanlineRejected("constructed scanline audit changed or gained authority")
+    _require_original_scanline_inputs()
+    if (
+        type(result) is not _AUDIT_TYPE
+        or (
+            result.idat_sha256, result.reconstructed_sha256,
+            result.width, result.height, result.inflated_bytes,
+            result.filters_used,
+        ) != fields
+    ):
+        raise OfflineScanlineRejected("scanline audit changed after denied authority")
+    return result
 
 
 
@@ -275,6 +349,8 @@ _SCANLINE_DENIALS = (
 _SCANLINE_DENIAL_DESCRIPTORS = tuple(
     getattr(OfflineScanlineAudit, name) for name in _SCANLINE_DENIALS
 )
+_ORIGINAL_SCANLINE_DENIAL_NAMES = _SCANLINE_DENIALS
+_ORIGINAL_SCANLINE_DENIAL_DESCRIPTORS = _SCANLINE_DENIAL_DESCRIPTORS
 
 
 def verify_offline_png_scanlines(
