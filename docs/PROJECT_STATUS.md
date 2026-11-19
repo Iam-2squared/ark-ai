@@ -1,3 +1,55 @@
+# LATEST — ARK AI Run1001: audit/scheduler regression repairs, Memory WAL crash test, V3 reparse-point guard
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T02:51:23+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** research/jarvis-foundations / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1001 work-basis HEAD:** 0049080e49a5a83e0cb5a439a0ad2924389b910f (Run1000 checkpoint; exact-head CI #44570769559 GREEN 6/6). **Checkpoint write-basis HEAD:** 0049080e49a5a83e0cb5a439a0ad2924389b910f, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and independently confirmed by a post-write PR/branch read; its exact SHA is reported in the invocation result because a commit cannot contain its own SHA.
+
+**Protected refs and child workstreams:** main 7a843f17eb96ed13d66f23b58b06406b3002e405; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) 805b377697472268db02650a89c7a94b1c5337c8; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) 3b49048dd70eebcb6268299b9ecef4e301bbc0fd; [Draft PR #16](https://github.com/Iam-2squared/ark-ai/pull/16) 83364e3c60276a233c0c724f410b7e1898624abd; [Draft PR #20](https://github.com/Iam-2squared/ark-ai/pull/20) ca094cb5d1050d00eeb97960e676697b766f23f4 (child of #19); [Draft PR #21](https://github.com/Iam-2squared/ark-ai/pull/21) 85ab741c746e925168c1bfaa904741bc6747746c (child of #8); [Draft PR #22](https://github.com/Iam-2squared/ark-ai/pull/22) 8dd522befb15e39b805a417744dd2fc89db49331 (child of #19); [Draft PR #23](https://github.com/Iam-2squared/ark-ai/pull/23) 5a4213bfd357af58cceb2dce0b3ff838c4a6da04 and [Draft PR #24](https://github.com/Iam-2squared/ark-ai/pull/24) fd4c6d7ce93b86fb40539593d00021b65d520d8f (separate children of #22); [Draft PR #25](https://github.com/Iam-2squared/ark-ai/pull/25) ff3f2b05dc4937e32aea953089dac690937dcb67 (test-only child of #8); [Draft PR #26](https://github.com/Iam-2squared/ark-ai/pull/26) ae2df6c0d5bf6305051dc68a7ba1e885e4a6a779 (free-only child of #16, which targets gated #5). All remain OPEN/DRAFT/UNMERGED. No main merge, PR #5 gate opening, PR #9/UI branch mutation, or child promotion into PR #8.
+
+## NEW — Run1001 non-UI work
+
+1. **PR #24 pre-action audit COMMIT-UNKNOWN regression repair — test-only.** The first fixture monkeypatched the ActionAudit instance's _connect method. The disconnected executor intentionally pins that method identity and correctly rejected the fixture before append, so the test never reached the claimed lost-acknowledgement boundary. The corrected fixture intercepts sqlite3.connect only for the exact audit read/write URI, forwards connection attributes such as row_factory, and leaves the pinned ActionAudit method untouched. It now exercises the original append implementation committing mock_pre_action before the synthetic acknowledgement loss; the backend must remain uncalled and restart reuse must be denied by the durable occurrence reservation. Latest head fd4c6d7ce93b86fb40539593d00021b65d520d8f; exact-head CI #44580457286 IN PROGRESS. Superseded head 8939b37bcf63453c44348cbc76370b8697e432a4 failed in #44570495031 because the guard correctly rejected the invalid monkeypatch; production guard was not relaxed.
+
+2. **PR #21 schedule-resume regression repair — test-only.** The preview callback appends a new expired quarantine occurrence and retains the returned updated witness. After the review correctly rejects the changed prefix, the test re-inspects with that new witness rather than the stale pre-mutation witness. Latest head 85ab741c746e925168c1bfaa904741bc6747746c; exact-head CI #44580724794 IN PROGRESS. Superseded head c067ca08c63114a7afcf286b527489df8d726786 failed in #44569992281 when the test itself used the stale witness; production quarantine rejection remains unchanged.
+
+3. **PR #25 Memory WAL pinned-reader process-crash regression — test-only.** A spawned read-only or read/write reader pins revision 1 and its event prefix; a separate managed writer commits revision 2 plus its event; the reader verifies its historical snapshot and exits via os._exit without rollback or close. Cold recovery must retain the committed row/event pair, complete a non-busy TRUNCATE checkpoint, pass quick_check, and reject the stale generation token. Latest head ff3f2b05dc4937e32aea953089dac690937dcb67; exact-head CI #44581004662 IN PROGRESS. No Memory source, v1 schema or public API changed.
+
+4. **PR #26 V3 Windows reparse-point path guard — source + synthetic test.** The local identity traversal now detects FILE_ATTRIBUTE_REPARSE_POINT in no-follow stat results, rejects reparse-point ancestors/root/entries before traversal, and retains existing symlink, path-budget and epoch checks. The synthetic junction fixture leaves is_symlink() false and asserts the target directory is never scanned. Latest head ae2df6c0d5bf6305051dc68a7ba1e885e4a6a779; exact-head CI #44581436218 QUEUED. PR #16 and gated PR #5 remain untouched; no frozen V3 contract or paid/runtime path changed. This remains best-effort path admission, not atomic dirfd custody.
+
+5. **Rechecked independent child evidence.** PR #20's exact head ca094cb5d1050d00eeb97960e676697b766f23f4 is GREEN 6/6 in CI #44570039196. PR #23's exact head 5a4213bfd357af58cceb2dce0b3ff838c4a6da04 is GREEN 6/6 in CI #44570265573. Their parent/base green results are not substituted for child evidence.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 canonical work-basis head 0049080e49a5a83e0cb5a439a0ad2924389b910f: CI #44570769559 GREEN 6/6 (Ubuntu/Windows × Python 3.11–3.13).
+- PR #16 head 83364e3c60276a233c0c724f410b7e1898624abd: CI #44549618760 GREEN 6/6.
+- PR #20 head ca094cb5d1050d00eeb97960e676697b766f23f4: CI #44570039196 GREEN 6/6.
+- PR #21 latest head 85ab741c746e925168c1bfaa904741bc6747746c: CI #44580724794 IN PROGRESS; superseded head c067ca08c63114a7afcf286b527489df8d726786 failed in #44569992281.
+- PR #22 head 8dd522befb15e39b805a417744dd2fc89db49331: CI #44560895025 GREEN 6/6.
+- PR #23 head 5a4213bfd357af58cceb2dce0b3ff838c4a6da04: CI #44570265573 GREEN 6/6.
+- PR #24 latest head fd4c6d7ce93b86fb40539593d00021b65d520d8f: CI #44580457286 IN PROGRESS; superseded head 8939b37bcf63453c44348cbc76370b8697e432a4 failed in #44570495031.
+- PR #25 head ff3f2b05dc4937e32aea953089dac690937dcb67: CI #44581004662 IN PROGRESS.
+- PR #26 head ae2df6c0d5bf6305051dc68a7ba1e885e4a6a779: CI #44581436218 QUEUED.
+- Supporting lower-level exact-head evidence remains: PR #18 CI #44538278870 GREEN 6/6; PR #19 CI #44549000547 GREEN 6/6; PR #14 CI #44528750916 GREEN 6/6; PR #15 CI #44530235330 GREEN 6/6.
+- No local pytest, physical-PC/Windows/GGUF, live capture, real ToolBackend, live notification, external-effect, GPU/runtime, paid service or Candidate result is claimed. A green parent/base run never certifies a child head. This checkpoint write may trigger another PR #8 workflow; its run ID/result is not known at write time.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration. PRs #20–26 remain isolated Draft/unmerged; no main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. Local SQLite hashes, process-local identities and caller-supplied time are not authenticated consent, trusted time, independent custody, anti-rollback proof, cross-store atomicity or external-effect evidence. V3 local path checks remain best-effort against hostile concurrent filesystem mutation. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PRs #21, #24, #25 and #26 when complete. For failures, inspect the failing job/log, make the smallest semantics-preserving normal-write repair, then immediately switch to a non-conflicting free lane while CI runs.
+2. Review PR #23 terminal COMMIT-UNKNOWN and PR #24 pre-action audit COMMIT-UNKNOWN together. Preserve terminal/ambiguous non-dispatchability, manual recovery, no automatic replay, and explicit absence of cross-store atomicity or real external-effect proof.
+3. Continue Memory WAL/SHM last-close, CAS/ABA, expiry/event snapshot coherence, event-prefix/high-water integrity and COMMIT-UNKNOWN manual-only recovery.
+4. Continue privacy-safe Personal Context revocation/retention/reuse, proactive restart/occurrence state and Observation fixture lifecycle; do not imply live capture or production dispatch.
+5. Continue free-only V3 approval/path/identity/reproducibility guards without opening protected evaluation or starting runtime/compute. Keep PR #5 gated, PR #9 paused, frozen contracts unchanged, and main unmerged.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1000: COMMIT-UNKNOWN boundaries and exact-head CI repairs
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T01:50:48+09:00.** Reporting/checkpoint metadata only; this is not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
