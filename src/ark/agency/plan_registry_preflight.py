@@ -71,6 +71,7 @@ class PlanRegistryBinding:
     backend_id: str
     request_id: str
     bound_action_id: str
+    registry_revision: str
 
     @property
     def permission_granted(self) -> bool:
@@ -127,7 +128,7 @@ _RESULT_FIELDS = (
 )
 _BINDING_RESULT_FIELDS = (
     "step_id", "tool_name", "capability", "effect",
-    "backend_id", "request_id", "bound_action_id",
+    "backend_id", "request_id", "bound_action_id", "registry_revision",
 )
 _RESULT_DENIALS = (
     "permission_granted", "dispatch_authorized", "tool_execution_authorized",
@@ -296,6 +297,7 @@ def review_plan_registry_preflight(
                 backend_id=registration.backend_id,
                 request_id=step.call.request_id,
                 bound_action_id=bound.bound_action_id,
+                registry_revision=bound.registry_revision,
             ))
         except (AttributeError, TypeError, ValueError) as exc:
             if isinstance(exc, PlanRegistryPreflightRejected):
@@ -338,6 +340,7 @@ def review_plan_registry_preflight(
         (
             item.step_id, item.tool_name, item.capability, item.effect.value,
             item.backend_id, item.request_id, item.bound_action_id,
+            item.registry_revision,
         )
         for item in bindings
     )
