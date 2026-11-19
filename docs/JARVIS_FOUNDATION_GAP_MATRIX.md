@@ -1,5 +1,34 @@
 # ARK JARVIS Foundation Gap Matrix
 
+## Current source audit — Run991
+
+**Verified source basis:** Draft PR #8 checkpoint HEAD `44a428c337eef2ce26a3655356657ee63675e87e` (Run990). This is a source-level reconciliation, not a JARVIS PASS or an independent execution attestation. PR #13 is a separate child branch; its Run991 compatibility repair is recorded in PROJECT_STATUS, not treated as part of this base.
+
+The older baseline table is preserved below for history. Do not schedule work from its old “not yet landed” statements without applying these current corrections.
+
+| Area | Verified current implementation | Remaining boundary / next work |
+| --- | --- | --- |
+| Planner topology and transitions | `PlanStep` requires an exact `ToolCall`; contract identity text and JSON keys use exact primitive types; `PlanGraph.transition` validates exact step IDs/revisions and pins the immutable transition policy. Terminal failure/cancellation/blocking cascades to pending descendants. See `src/ark/agency/contracts.py`, `src/ark/agency/planner.py`, and `tests/test_planner_transition_policy_custody_run988.py`. | Core in-memory topology is implemented. A single durable journal that binds canonical topology, status revisions, retained prefixes, and restart recovery still needs exact-head evidence. Never replay a recovered ambiguous WRITE. |
+| Memory identity and content | Store ingress snapshots and revalidates exact write/scope fields; `_record` recomputes deterministic memory identity and content SHA-256, validates SQLite storage classes, and requires canonical bounded metadata JSON. | Local consistency only. SQLite/SHA checks do not authenticate writers, prevent offline rollback, or prove independent erasure. |
+| Memory CAS and expiry | Mutations reserve `BEGIN IMMEDIATE` before clock sampling; CAS predicates bind revision; expiry purge admits the due page in the same writer snapshot and deletes the full selected row image with its matching event in one transaction. | Continue cross-process WAL/SHM and COMMIT-UNKNOWN failure triage. Do not automatically retry an uncertain committed WRITE. |
+| Memory read coherence and events | `get`/`search` pin a read transaction and snapshot before sampling the local clock; event pages enforce global dense event IDs and bounded typed row hydration. | The base Memory clock is synthetic/local and intentionally need not be monotonic: `tests/test_memory_event_timestamp_alignment_run530.py` verifies backward local clock acceptance. Do not turn this into trusted-time enforcement; trusted action time belongs at a later executor boundary. |
+| Memory bootstrap and schema | First-open initialization is serialized, WAL is negotiated only during bootstrap, schema creation runs inside a reserved writer transaction, and exact v1 DDL/catalog plus version bounds are checked. | Continue multiprocess first-open and sidecar lifecycle verification; path preflights remain subject to filesystem TOCTOU limits. |
+| ToolRegistry | Immutable registration mapping, deterministic registry revision, exact registration/ToolCall binding, and static backend-interface inspection are implemented. Frozen revision/bound-action vectors and non-dispatch behavior are covered by `tests/test_tool_registry_committed_vectors_run142.py` and `tests/test_tool_registry_reference_vectors.py`. | Registry identity is not remote backend attestation and does not itself authorize execution. Keep backend dispatch disconnected. |
+| PermissionGate | Exact typed registry/call/grant/token ingress and registry rebinding around the local authorization boundary are implemented. | The in-process consumed-token set is not restart-safe durable authorization. Next: durable one-shot token-digest/occurrence ledger with fail-closed recovery, then audit-before-action over mocks only. |
+| Action Audit | Base branch contains local SQLite schema/tail/sequence checks and canonical request identity validation. Run991's bounded outcome-label compatibility fix is on separate Draft PR #13, not this base. | Confirm PR #13 latest-head CI before claiming its new bounds. Neither branch proves trusted time, authenticated custody, cross-store atomicity, or an external effect. |
+| Observation / multimodal fixtures | `src/ark/observation_fixture_adapters.py` provides explicit in-memory text/transcript/image/screen fixture adapters that return content-minimized envelopes; `tests/test_observation_fixture_production_adapters.py` covers the fixture contract. | Live camera/microphone/screen capture remains disconnected. Fixture digests do not prove source authenticity, consent, or dispatch permission. |
+| Personal Context | Local scope/revocation and retained-history checks exist, with an isolated final-veto child branch. | A final local veto is not an atomic downstream-use lease or proof of erasure/consent. Keep model/tool/export/notification consumers disconnected until a coherent authority model is proven. |
+| Proactive scheduling | Disconnected schedule/quarantine, due-slot, occurrence, and recovery review modules exist. | Do not describe these as an integrated production scheduler or dispatch authority until persistent occurrence state, restart recovery, trusted freshness, and no-duplicate execution are proven together. |
+| V3 free-only guards | PR #11/#12 isolate output-path preflight and ancestry/symlink checks before runtime probing; PR #12 exact head has separate 6/6 CI evidence. | These checks are not race-free directory-handle custody and do not authorize torch/GPU execution. Keep PR #5 gated and all paid/runtime work blocked. |
+
+**Current priority order:** (1) Memory WAL/SHM cross-process lifecycle, CAS/ABA and COMMIT-UNKNOWN triage; (2) Planner durable journal and crash recovery; (3) durable restart-safe one-shot authorization + occurrence/replay ledger; (4) trusted-clock audit-before-action executor over disconnected mocks; (5) privacy-safe Personal Context and proactive restart state; (6) observation fixture lifecycle; (7) free-only V3 approval/path/identity/reproducibility guards. UI remains paused.
+
+---
+
+## Historical baseline — work basis `a8a97123d4a4738385fc04f75b5f705448132f75`
+
+The table below is retained as a historical baseline. Its unresolved-gap statements are superseded by the Run991 source audit above wherever they conflict.
+
 Work basis: `a8a97123d4a4738385fc04f75b5f705448132f75`
 
 This matrix records the current repository implementation against the already-defined JARVIS foundation contracts. It is a development queue, not a roadmap PASS record.
