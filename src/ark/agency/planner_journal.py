@@ -413,19 +413,36 @@ class PlannerJournal:
         self._bootstrap()
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
-        path = Path(self._path)
+        # Pin the exact source string and derived Path object across admission,
+        # SQLite open and the post-open check. A reentrant connect callback
+        # must not redirect self._path while this handle still targets the old DB.
+        path_value = self._path
+        path = Path(path_value)
         _require_safe_journal_path(path, create=create)
         connection: sqlite3.Connection | None = None
         try:
-            connection = sqlite3.connect(
-                self._path,
-                timeout=10.0,
-                isolation_level=None,
-            )
-            # Recheck after open. This narrows, but does not eliminate, the
-            # pathname TOCTOU window because sqlite3 does not expose its file
-            # descriptor for an atomic no-follow identity comparison.
+            if create:
+                connection = sqlite3.connect(
+                    path_value,
+                    timeout=10.0,
+                    isolation_level=None,
+                )
+            else:
+                # Do not silently recreate a journal removed after preflight.
+                # URI mode=rw also preserves literal '?' and '#' path characters.
+                connection = sqlite3.connect(
+                    path.as_uri() + "?mode=rw",
+                    uri=True,
+                    timeout=10.0,
+                    isolation_level=None,
+                )
+            # Recheck the exact path used for this handle before any PRAGMA.
+            # SQLite does not expose its descriptor for atomic identity custody.
             _require_safe_journal_path(path, create=False)
+            if self._path is not path_value:
+                raise PlannerJournalPathError(
+                    "Planner journal source changed during SQLite open"
+                )
         except Exception:
             if connection is not None:
                 connection.close()
