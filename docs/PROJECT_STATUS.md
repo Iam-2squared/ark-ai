@@ -1,3 +1,56 @@
+# LATEST — ARK AI Run994: durable Planner journal + exact-head evidence reconciliation
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T22:59:36+09:00.** This is checkpoint/report metadata only, not trusted consent, scheduler, action, authorization, expiry or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** \`research/jarvis-foundations\` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run994 work-basis HEAD at invocation start:** \`326001af654078227641546a8f30c6954fcea4a3\` (Run991 checkpoint). **Checkpoint write-basis HEAD:** \`ea62ec10c54abaea7b02c0d685faf95ad73012f9\` (Run994 foundation gap-matrix reconciliation). **Checkpoint-result HEAD:** the normal GitHub Contents API commit returned by this update and independently fetched after the write; its SHA is reported in the Run994 invocation result because a commit cannot contain its own SHA.
+
+**Protected refs / child workstreams at checkpoint prewrite:** main \`7a843f17eb96ed13d66f23b58b06406b3002e405\`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) \`805b377697472268db02650a89c7a94b1c5337c8\`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) \`3b49048dd70eebcb6268299b9ecef4e301bbc0fd\`; [Draft PR #10](https://github.com/Iam-2squared/ark-ai/pull/10) \`52f457687e34dfc9f1a7f4fc017336a8a02edaf7\`; [Draft PR #11](https://github.com/Iam-2squared/ark-ai/pull/11) \`97e5225f6d11723cd333dd6d86d4582c89bfb2b9\`; [Draft PR #12](https://github.com/Iam-2squared/ark-ai/pull/12) \`fb741b67d9819cc19a147f2afc67bbccbf72ba50\`; [Draft PR #13](https://github.com/Iam-2squared/ark-ai/pull/13) latest head \`b940525c43d3e3a858352c8702dc4202598597e3\`; [Draft PR #18](https://github.com/Iam-2squared/ark-ai/pull/18) head \`976aea9d1b5573045ebc18045b3b2ce9d879b9c2\`. PRs #14–#17 are also open child workstreams; their branch names and file scopes were inspected, but the available PR-search result did not expose their head SHAs, so no head SHA is guessed. PR #18 is based on PR #8 head \`326001af654078227641546a8f30c6954fcea4a3\`. No main merge or UI branch mutation.
+
+## NEW — Run994 non-UI work
+
+1. **Durable Planner journal — Draft PR #18.** Created isolated branch \`research/planner-durable-journal-run994\`, with \`src/ark/agency/planner_journal.py\`, \`tests/test_planner_journal_run994.py\` and \`docs/JARVIS_RUN994_PLANNER_DURABLE_JOURNAL.md\`.
+   - Append-only SQLite genesis binds plan ID, canonical PlanGraph topology digest and initial all-PENDING status digest.
+   - Each transition binds sequence CAS, exact step revision, from/to state, resulting full status digest, predecessor hash and domain-separated event hash. Event insert and metadata frontier update share one \`BEGIN IMMEDIATE\` transaction.
+   - Exact managed schema, SQLite row types/domains, hash-chain continuity and the full retained transition prefix are validated before recovery or another append. Replay uses the existing PlanGraph transition policy; no second transition state machine is introduced.
+   - A successful transition returns a new PlanGraph; the caller's old graph is not mutated. A stale graph/sequence/revision fails closed.
+   - Recovered RUNNING steps remain explicitly ambiguous. They are not reset, treated as completed, dispatched or automatically replayed. Uncertain COMMIT raises a manual recovery boundary; blind retry is prohibited.
+   - No raw ToolCall arguments, tool results or timestamps are stored. This is local consistency/durability, not authenticated custody, anti-rollback evidence, trusted time, consent or external-effect proof.
+   - Eleven synthetic tests were authored, including a two-connection CAS race, terminal descendant blocking, stale-state rejection, schema/hash tampering and RUNNING quarantine. **Tests are authored, not yet CI-certified.**
+
+2. **Foundation gap-matrix reconciliation — Draft PR #8.** Updated \`docs/JARVIS_FOUNDATION_GAP_MATRIX.md\` at commit \`ea62ec10c54abaea7b02c0d685faf95ad73012f9\`. The current source-audit header now uses PR #8 checkpoint basis \`326001af654078227641546a8f30c6954fcea4a3\`; it distinguishes PR #18's isolated implementation from the still-unintegrated base and records its pending exact-head CI. The historical baseline table remains intact. The matrix also records PR #13's exact-head GREEN result without treating the child branch as merged or integrated.
+
+3. **Action Audit exact-head CI resolution.** PR #13 head \`b940525c43d3e3a858352c8702dc4202598597e3\` is now confirmed by [CI #44518002802](https://github.com/Iam-2squared/ark-ai/actions/runs/44518002802) with all six Windows/Ubuntu × Python 3.11–3.13 jobs SUCCESS. This certifies only PR #13's exact head; it does not integrate that child branch into PR #8.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #13 \`b940525c43d3e3a858352c8702dc4202598597e3\`: [CI #44518002802](https://github.com/Iam-2squared/ark-ai/actions/runs/44518002802) **GREEN 6/6**.
+- PR #18 \`976aea9d1b5573045ebc18045b3b2ce9d879b9c2\`: [CI #44538278870](https://github.com/Iam-2squared/ark-ai/actions/runs/44538278870) **IN PROGRESS** at checkpoint prewrite. No latest-head PASS claim.
+- PR #8 gap-matrix reconciliation commit \`ea62ec10c54abaea7b02c0d685faf95ad73012f9\`: [CI #44538806605](https://github.com/Iam-2squared/ark-ai/actions/runs/44538806605) **IN PROGRESS** at checkpoint prewrite.
+- Prior PR #8 checkpoint Run991 commit \`326001af654078227641546a8f30c6954fcea4a3\` includes the Run991 status checkpoint; its earlier gap-matrix basis \`d8146b75ea1ca2bd314ea873fd4e8288c4895b9d\` had [CI #44519470714](https://github.com/Iam-2squared/ark-ai/actions/runs/44519470714) **GREEN**.
+- PR #10 \`52f457687e34dfc9f1a7f4fc017336a8a02edaf7\`: [CI #44500056645](https://github.com/Iam-2squared/ark-ai/actions/runs/44500056645) **GREEN 6/6**.
+- PR #11 \`97e5225f6d11723cd333dd6d86d4582c89bfb2b9\`: [CI #44500347265](https://github.com/Iam-2squared/ark-ai/actions/runs/44500347265) **GREEN 6/6**.
+- PR #12 \`fb741b67d9819cc19a147f2afc67bbccbf72ba50\`: [CI #44509778580](https://github.com/Iam-2squared/ark-ai/actions/runs/44509778580) **GREEN 6/6**.
+- PR #14/#15 descriptions report exact-head CI not yet run; PR #16/#17 descriptions report exact-head CI pending. Their latest branch SHAs and CI states were not exposed by the available search responses in this invocation; no SHA or result is invented.
+- No local pytest, physical Windows/GGUF, GPU/runtime or real backend result is claimed. No duplicate equivalent workflow was dispatched. The checkpoint update below may start another PR #8 CI run; its run ID is not known at write time.
+
+## Frozen contracts, blockers and approvals
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration. PRs #10–#18 remain isolated/unmerged; no child branch is promoted into PR #8 or main.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credential/account connection, physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay, or main merge. Local SQLite hashes and process-local identities are not independent provenance or authenticated consent. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Inspect PR #18 exact-head CI #44538278870 once it completes; fix only observed failures with the smallest semantics-preserving change. Keep PR #18 Draft/unmerged until its exact-head evidence is GREEN and reviewed.
+2. Continue Memory WAL/SHM cross-process lifecycle, CAS/ABA, expiry/event snapshot coherence and COMMIT-UNKNOWN manual-only recovery; verify PR #17's exact head and CI when exposed.
+3. Continue Planner restart-recovery tests around interrupted commits, event-prefix truncation and ambiguous RUNNING WRITE quarantine; do not connect the journal to real dispatch.
+4. Advance restart-safe one-shot authorization and occurrence/replay ledger, then trusted-clock audit-before-action over disconnected mocks only. Keep separate SQLite stores' lack of cross-store atomicity explicit.
+5. Continue privacy-safe Personal Context, proactive scheduler restart state, Observation fixture lifecycle and free-only V3 approval/path/identity/reproducibility guards. UI remains paused.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run991: Action Audit compatibility repair + foundation gap reconciliation
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T21:01:13+09:00.** This checkpoint timestamp is reporting metadata only, not trusted consent, scheduler, action, authorization, expiry, or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
