@@ -108,7 +108,7 @@ def test_write_reserves_durable_occurrence_before_mock_and_audits(tmp_path):
 
 def test_restarted_gate_cannot_reuse_durably_reserved_write_token(tmp_path):
     (
-        backend, registry, _, audit, occurrences, executor,
+        backend, registry, _, audit, _, executor,
         call, grant, _, occurrence_path,
     ) = _stack(tmp_path, Effect.WRITE)
     token = OneShotAuthorization("synthetic-token-restart", call.request_id, 500)
@@ -213,7 +213,11 @@ def test_shadowed_audit_method_cannot_bypass_pre_action_gate(tmp_path):
     backend, _, _, audit, _, executor, call, grant, _, _ = _stack(
         tmp_path, Effect.READ,
     )
-    audit.append = lambda *_args, **_kwargs: None
+
+    def bypass(*_args, **_kwargs):
+        return None
+
+    audit.append = bypass
 
     with pytest.raises(
         DisconnectedMockExecutionRejected,
