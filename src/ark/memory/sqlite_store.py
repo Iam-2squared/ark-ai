@@ -193,6 +193,13 @@ def _require_dense_committed_memory_events(conn: sqlite3.Connection) -> None:
         raise MemorySchemaError("global memory event append high-water mismatch")
 
 
+# Keep writer admission independent from instrumentation on the separate
+# read-only event scanner. Its callback can open another WAL writer while
+# a read snapshot remains pinned; a nested call under BEGIN IMMEDIATE must
+# use this reviewed original, not reenter the instrumented reader hook.
+_ORIGINAL_MUTATION_EVENT_FRONTIER = _require_dense_committed_memory_events
+
+
 def _require_memory_page_hydration_admission(
     conn: sqlite3.Connection,
     owner_id: str,
@@ -611,7 +618,7 @@ class SQLiteMemoryStore:
             # substituted historical event must not be followed by a new
             # row/event mutation, even when the target row itself is intact.
             # Check the dense AUTOINCREMENT frontier under this writer snapshot.
-            _require_dense_committed_memory_events(conn)
+            _ORIGINAL_MUTATION_EVENT_FRONTIER(conn)
             _require_memory_mutation_row_hydration_admission(conn, memory_id)
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory put source changed during preflight")
@@ -1004,7 +1011,7 @@ class SQLiteMemoryStore:
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory delete scope changed during clock")
-            _require_dense_committed_memory_events(conn)
+            _ORIGINAL_MUTATION_EVENT_FRONTIER(conn)
             _require_memory_mutation_row_hydration_admission(conn, memory_id)
             if self.path is not path_epoch or (
                 scope.owner_id is not original_owner
@@ -1115,7 +1122,7 @@ class SQLiteMemoryStore:
                 raise MemorySchemaError("memory purge scope changed during clock")
             # A missing or rewound global event frontier vetoes any
             # destructive expiry sweep before selecting private due rows.
-            _require_dense_committed_memory_events(conn)
+            _ORIGINAL_MUTATION_EVENT_FRONTIER(conn)
             # Preflight the exact due page under the same writer snapshot;
             # never SELECT * or decode corrupt private TEXT before admission.
             _require_expiry_purge_hydration_admission(
