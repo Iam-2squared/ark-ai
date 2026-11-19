@@ -20,7 +20,7 @@
 ## Validation and limits
 
 - **Prior exact work-basis CI [#44461239304](https://github.com/Iam-2squared/ark-ai/actions/runs/44461239304): all six jobs SUCCESS**, Windows/Ubuntu × Python 3.11–3.13.
-- Initial new test CI exposed **Ruff I001** in the Memory regression import block (failed at lint before pytest); the test import block was corrected in `7db350a0`. Do not infer newest-head GREEN until its own six jobs finish.
+- Early new test CI exposed **Ruff I001** before pytest. An import restructuring at `7db350a0` and aliased-import split at [`46df2ba2`](https://github.com/Iam-2squared/ark-ai/commit/46df2ba29db2d0dfcb1689a77d20f92882b2c8d2) did not remove the I001 finding: the remaining cause was an extra blank line between imports and the `_HIDDEN` fixture constant. [`053a9767`](https://github.com/Iam-2squared/ark-ai/commit/053a9767126ca812ab40804a7c0f60d210e9b339) corrected that exact spacing. [CI #44468693383](https://github.com/Iam-2squared/ark-ai/actions/runs/44468693383) was **IN PROGRESS** at this report update. This is not yet an exact-head GREEN certification.
 - Total **50 newly authored parametrized tests**, no deletion or relaxation of prior denials, no local full pytest, no real GGUF/PC/hardware evaluation.
 - No work on UI/frontend Draft PR #9, gated V3 Draft PR #5, main, frozen evaluations/evidence or external compute. No authorization/credentials, billable actions, model training, Candidate creation/promotion, irreversible deletion, or executable backend tool effect.
 
