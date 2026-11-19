@@ -87,6 +87,13 @@ _ORIGINAL_ASSESSMENT_CARRIER = tuple(
     vars(_ASSESSMENT_TYPE).get(name)
     for name in (*_ASSESSMENT_FIELDS, *_CARRIER_HOOKS)
 )
+# The policy vectors themselves are part of the denial-only protocol.
+# Pin original tuple identities so a shortened or reordered zip cannot omit
+# a field, class hook or authority property from the inspection.
+_ORIGINAL_AUTHORITY_NAMES_VECTOR = _AUTHORITY_NAMES
+_ORIGINAL_OBSERVATION_FIELDS_VECTOR = _OBSERVATION_FIELDS
+_ORIGINAL_ASSESSMENT_FIELDS_VECTOR = _ASSESSMENT_FIELDS
+_ORIGINAL_CARRIER_HOOKS_VECTOR = _CARRIER_HOOKS
 
 
 
@@ -105,6 +112,13 @@ _ORIGINAL_ERASURE_CHOICES = (
 
 
 def _assert_original_authority() -> None:
+    if (
+        _AUTHORITY_NAMES is not _ORIGINAL_AUTHORITY_NAMES_VECTOR
+        or _OBSERVATION_FIELDS is not _ORIGINAL_OBSERVATION_FIELDS_VECTOR
+        or _ASSESSMENT_FIELDS is not _ORIGINAL_ASSESSMENT_FIELDS_VECTOR
+        or _CARRIER_HOOKS is not _ORIGINAL_CARRIER_HOOKS_VECTOR
+    ):
+        raise SyntheticErasureRejected("erasure assessment policy vector changed")
     if (
         hashlib is not _ORIGINAL_ERASURE_HASHLIB
         or json is not _ORIGINAL_ERASURE_JSON
