@@ -19,7 +19,6 @@ from .contracts import (
     OneShotAuthorization,
     PlanStep,
     StepState,
-    ToolRegistration,
 )
 from .disconnected_mock_executor import (
     DisconnectedMockExecutor,
@@ -38,7 +37,7 @@ from .planner_journal import (
     PlannerJournalRecovery,
     PlannerJournalTransition,
 )
-from .registry import ToolRegistry
+from .registry import ToolRegistration, ToolRegistry
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
