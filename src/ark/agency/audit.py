@@ -434,7 +434,8 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
                 or _is_reparse_point(meta)
             ):
                 raise ActionAuditSchemaError(
-                    "audit path must have one regular-file link and be regular non-reparse file link; symbolic aliases are refused"
+                    "audit path must have one regular-file link and be regular "
+                    "non-reparse file link; symbolic aliases are refused"
                 )
         # SQLite can open a journal, WAL or shared-memory sidecar even when
         # its main file has a safe pathname. Refuse aliased special sidecars
