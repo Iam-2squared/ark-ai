@@ -43,6 +43,7 @@ from .registry import ToolRegistry
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _MAX_MS = 2**63 - 1
+_MAX_SEQUENCE = 100_000
 
 
 class PlannerMockCycleRejected(RuntimeError):
@@ -219,7 +220,7 @@ def execute_one_mock_step(
         or type(recovery.graph) is not PlanGraph
         or recovery.plan_id != plan_id
         or type(recovery.sequence) is not int
-        or not 0 <= recovery.sequence <= 100_000
+        or not 0 <= recovery.sequence < _MAX_SEQUENCE - 1
         or type(recovery.ambiguous_running_step_ids) is not tuple
         or recovery.dispatch_authorized is not False
         or recovery.automatic_replay_authorized is not False
@@ -308,7 +309,7 @@ def execute_one_mock_step(
         status is None
         or status.state is not StepState.PENDING
         or type(status.revision) is not int
-        or not 0 <= status.revision < _MAX_MS
+        or not 0 <= status.revision < _MAX_MS - 1
     ):
         raise PlannerMockCycleRejected("requested step is not in a pending state")
 
