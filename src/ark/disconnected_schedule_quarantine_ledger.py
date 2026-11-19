@@ -449,8 +449,11 @@ class DisconnectedScheduleQuarantineLedger:
     def __init__(self, path: Path, *, policy: QuarantinePolicy, create: bool = False) -> None:
         if type(create) is not bool:
             raise ScheduleQuarantineRejected("exact create flag required")
-        self._path = _path(path, create=create)
+        # Refuse an invalid recurrence or replaced policy carrier before
+        # inspecting any filesystem ancestor/sidecar, let alone opening SQLite.
+        # The policy is a local fixture assertion, never a dispatch grant.
         self._epoch = _policy_epoch(policy)
+        self._path = _path(path, create=create)
         # Pin both original carriers across separate calls/restarts. A new
         # value-equal path or policy tuple cannot silently redirect this
         # already-initialized local-only fixture ledger.
