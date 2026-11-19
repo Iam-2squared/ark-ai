@@ -59,7 +59,7 @@ _ORIGINAL_ID_PATTERNS = (
 )
 
 
-def _is_reparse_point(metadata: os.stat_result) -> bool:
+def _is_reparse_point(metadata: object) -> bool:
     attributes = getattr(metadata, "st_file_attributes", 0)
     return type(attributes) is not int or bool(
         attributes & _FILE_ATTRIBUTE_REPARSE_POINT
