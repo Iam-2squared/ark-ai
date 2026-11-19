@@ -34,7 +34,29 @@ _ORIGINAL_TOOLCALL_JSON = _contracts._canonical_json
 _ORIGINAL_TOOLCALL_FREEZE = _contracts._freeze_json
 _ORIGINAL_JSON_DUMPS = _contracts.json.dumps
 _SQLITE_INT_MAX = 2**63 - 1
-_AUDIT_BOOTSTRAP_LOCK = RLock()  # same-process path preflight and WAL bootstrap
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
+_AUDIT_BOOTSTRAP_LOCK = RLock()
+
+
+def _is_reparse_point(metadata: os.stat_result) -> bool:
+    """Reject Windows junction/reparse metadata even with ordinary mode bits."""
+    attributes = getattr(metadata, "st_file_attributes", 0)
+    return type(attributes) is not int or bool(
+        attributes & _FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+
+
+def _require_original_audit_path_policy() -> None:
+    if (
+        type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+        or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
+    ):
+        raise ActionAuditSchemaError("audit path admission policy changed")  # same-process path preflight and WAL bootstrap
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -358,6 +380,7 @@ def _require_original_event_constructor(phase: str = "") -> None:
 
 
 def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
+    _require_original_audit_path_policy()
     """Refuse local audit path aliases before any SQLite open or mkdir.
 
     Existing ancestors must be real directories, not symbolic links. Bootstrap
@@ -390,15 +413,29 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
                 if allow_new_parents:
                     continue
                 raise ActionAuditSchemaError("audit ancestor unavailable") from None
-            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
-                raise ActionAuditSchemaError("audit symbolic or nondirectory ancestor refused")
-        if target.is_symlink():
-            raise ActionAuditSchemaError("audit symbolic path refused")
-        main_exists = target.exists()
-        if main_exists:
+            if (
+                not stat.S_ISDIR(meta.st_mode)
+                or stat.S_ISLNK(meta.st_mode)
+                or _is_reparse_point(meta)
+            ):
+                raise ActionAuditSchemaError(
+                    "audit symbolic, reparse or nondirectory ancestor refused"
+                )
+        try:
             meta = target.lstat()
-            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
-                raise ActionAuditSchemaError("audit path must have one regular-file link")
+        except FileNotFoundError:
+            main_exists = False
+        else:
+            main_exists = True
+            if (
+                not stat.S_ISREG(meta.st_mode)
+                or stat.S_ISLNK(meta.st_mode)
+                or meta.st_nlink != 1
+                or _is_reparse_point(meta)
+            ):
+                raise ActionAuditSchemaError(
+                    "audit path must have one regular non-reparse file link"
+                )
         # SQLite can open a journal, WAL or shared-memory sidecar even when
         # its main file has a safe pathname. Refuse aliased special sidecars
         # and do not adopt orphaned journal bytes when bootstrapping.
@@ -420,7 +457,11 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
                     sidecar_info = sidecar.lstat()
                 except FileNotFoundError:
                     continue
-            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
+            if (
+                not stat.S_ISREG(sidecar_info.st_mode)
+                or sidecar_info.st_nlink != 1
+                or _is_reparse_point(sidecar_info)
+            ):
                 # Report bounded metadata only. Never include the audit DB
                 # pathname, request identifiers, arguments or row contents.
                 # Keep strict fail-closed denial after the bounded recheck.
@@ -757,22 +798,39 @@ class SQLiteActionAudit:
         _require_safe_audit_path(self.path, allow_new_parents=False)
         # Explicit bootstrap may create a new SQLite file. Ordinary audit
         # appends MUST NOT recreate an empty replacement after a file moves.
-        if create:
-            conn = sqlite3.connect(self.path)
-        else:
-            conn = sqlite3.connect(
-                self.path.resolve().as_uri() + "?mode=rw", uri=True
-            )
+        conn: sqlite3.Connection | None = None
+        try:
+            if create:
+                conn = sqlite3.connect(self.path)
+            else:
+                conn = sqlite3.connect(
+                    self.path.resolve().as_uri() + "?mode=rw", uri=True
+                )
+            # Recheck before row_factory, PRAGMA or any audit query. This
+            # narrows pathname TOCTOU but is not descriptor identity custody.
+            _require_safe_audit_path(self.path, allow_new_parents=False)
+        except BaseException:
+            if conn is not None:
+                conn.close()
+            raise
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
     def _connect_readonly(self) -> sqlite3.Connection:
         _require_safe_audit_path(self.path, allow_new_parents=False)
+        conn: sqlite3.Connection | None = None
         try:
             conn = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True)
+            _require_safe_audit_path(self.path, allow_new_parents=False)
         except sqlite3.DatabaseError as exc:
+            if conn is not None:
+                conn.close()
             raise ActionAuditSchemaError("action audit read-only file is unavailable") from exc
+        except BaseException:
+            if conn is not None:
+                conn.close()
+            raise
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
