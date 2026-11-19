@@ -67,6 +67,8 @@ def test_rebound_registry_control_vector_cannot_skip_descriptor_custody(
 def test_shortened_registration_fields_cannot_hide_callback_backend(
     monkeypatch,
 ):
+    registered, _ = _fixture()
+    original = registered.get("math.sum")
     called = []
 
     def forged(self):
@@ -77,9 +79,7 @@ def test_shortened_registration_fields_cannot_hide_callback_backend(
         patch.setattr(registry, "_REGISTRATION_FIELDS", ())
         patch.setattr(registry.ToolRegistration, "backend", property(forged))
         with pytest.raises(ValueError, match="tool registration contract changed"):
-            registry.ToolRegistration(
-                "math.extra", "math", Effect.READ, "mock-only", Backend(),
-            )
+            registry.ToolRegistry((original,))
     assert called == []
 
 
