@@ -88,6 +88,10 @@ class PlannerJournalNotFoundError(PlannerJournalError):
     """The requested plan has no journal genesis record."""
 
 
+class PlannerJournalPathError(PlannerJournalError):
+    """The local database path is missing, aliased or not a regular file."""
+
+
 class PlannerJournalCommitUnknown(PlannerJournalError):
     """A SQLite COMMIT outcome is uncertain; callers must recover, never retry."""
 
