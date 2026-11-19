@@ -1,3 +1,52 @@
+# LATEST — ARK AI Run998: Planner COMMIT-UNKNOWN, schedule restart review, mock-only Planner composition
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T01:00:06+09:00.** This is reporting/checkpoint metadata only; it is not a trusted clock, consent, authorization, provenance, scheduler or action timestamp. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run998 work-basis HEAD:** `c1d88da0ac9bd9b793911f8607b9a04390926302` (Run995 checkpoint; exact-head CI #44550194612 GREEN 6/6). **Checkpoint write-basis HEAD:** `c1d88da0ac9bd9b793911f8607b9a04390926302`, re-read immediately before this normal GitHub Contents API write. **Checkpoint-result HEAD:** the commit SHA returned by the normal Contents API update and independently fetched after the write; its exact SHA is reported in the Run998 invocation result because a commit cannot contain its own SHA.
+
+**Protected refs / relevant child workstreams at checkpoint prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; Planner journal parent [Draft PR #19](https://github.com/Iam-2squared/ark-ai/pull/19) `c08c7e9e6c836285362da96663dee903479da98a`; new [Draft PR #20](https://github.com/Iam-2squared/ark-ai/pull/20) `ed0df185a95255ec5c2eb73a289228b302b34841`, child of #19; new [Draft PR #21](https://github.com/Iam-2squared/ark-ai/pull/21) `83d1cd5b23b5646878baecb9a75657ecf7c5f135), child of #8; new [Draft PR #22](https://github.com/Iam-2squared/ark-ai/pull/22) `8dd522befb15e39b805a417744dd2fc89db49331`, isolated child of #19. All remain OPEN/DRAFT/UNMERGED. No main merge, PR #5 gate opening, or PR #9/UI branch mutation.
+
+## NEW — Run998 non-UI work
+
+1. **Planner COMMIT-UNKNOWN and event-prefix truncation regressions — Draft PR #20.** Based on exact PR #19 head `c08c7e9e6c836285362da96663dee903479da98a`, whose path-fenced journal CI #44549000547 is GREEN 6/6. Added `tests/test_planner_journal_commit_unknown_run996.py` and `docs/JARVIS_RUN996_PLANNER_COMMIT_UNKNOWN_RECOVERY.md`. A proxy commits through the real disposable SQLite connection and then simulates loss of the caller's COMMIT acknowledgement. Tests cover uncertain genesis and transition, cold recovery of the durable result, duplicate/stale retry rejection, recovered RUNNING ambiguity/no replay, and rejection of interior and tail event-prefix deletion. PR #20 exact head `ed0df185a95255ec5c2eb73a289228b302b34841`: CI #44559278093 **IN PROGRESS**; no PASS claim.
+
+2. **Offline proactive schedule restart review — Draft PR #21.** Based on PR #8 exact head `c1d88da0ac9bd9b793911f8607b9a04390926302`. Added direct tests for the existing read-only `review_offline_schedule_resume` bridge and report `docs/JARVIS_RUN997_OFFLINE_SCHEDULE_RESUME_REVIEW.md`: NOT_DUE/DUE_UNVERIFIED/EXPIRED_QUARANTINE/EXHAUSTED classifications; no cursor or quarantine advancement; denial-only authority; stale cursor/prefix rejection; caller-clock rollback below the last persisted observation; and a reentrant second quarantine append detected by the final history recheck. PR #21 exact head `83d1cd5b23b5646878baecb9a75657ecf7c5f135`: CI #44559690114 **IN PROGRESS**; no PASS claim.
+
+3. **Isolated Planner / registry / mock composition — Draft PR #22.** Based on PR #19 exact GREEN head `c08c7e9e6c836285362da96663dee903479da98a`. Copied PR #14's mock-only executor source/tests and PR #15's read-only registry-preflight source/tests unchanged, then added `src/ark/agency/planner_mock_cycle.py`, `tests/test_planner_mock_cycle_run998.py`, and `docs/JARVIS_RUN998_PLANNER_MOCK_COMPOSITION.md`. The new one-step cycle cold-recovers the Planner journal, preflights all steps against one registry revision, rejects non-ready/wrong-effect/non-mock inputs before RUNNING, writes RUNNING, invokes only the exact in-process MockToolBackend, and writes SUCCEEDED only after a matching mock receipt. Any exception after RUNNING propagates and leaves the step ambiguous; no automatic retry or loop. Tests cover a dependent READ→WRITE mock chain, non-ready rejection, invalid READ/WRITE inputs, non-mock backend rejection, and pre-action audit failure with no backend call and no replay. PR #22 exact head `8dd522befb15e39b805a417744dd2fc89db49331`: CI #44560895025 **IN PROGRESS**; no PASS claim. The audit and occurrence stores remain separate, so this is not cross-store atomicity or exactly-once external-effect proof.
+
+4. **CI pipelining:** after PR #20 and #21 entered CI, work continued on independent schedule and mock-composition lanes without changing their in-flight source/test paths. PR #22 was launched as a separate exact-head validation. No duplicate workflow run was dispatched.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 basis `c1d88da0ac9bd9b793911f8607b9a04390926302`: CI #44550194612 GREEN 6/6.
+- PR #14 exact head `00fee30e4004a56bb73d7161070c6a31661bc9e3`: CI #44528750916 GREEN 6/6.
+- PR #15 exact head `75680991e1f48d047d5f48aa51d4ceec99393eb8`: CI #44530235330 GREEN 6/6.
+- PR #18 exact head `976aea9d1b5573045ebc18045b3b2ce9d879b9c2`: CI #44538278870 GREEN 6/6.
+- PR #19 exact head `c08c7e9e6c836285362da96663dee903479da98a`: CI #44549000547 GREEN 6/6.
+- PR #20 exact head `ed0df185a95255ec5c2eb73a289228b302b34841`: CI #44559278093 IN PROGRESS.
+- PR #21 exact head `83d1cd5b23b5646878baecb9a75657ecf7c5f135`: CI #44559690114 IN PROGRESS.
+- PR #22 exact head `8dd522befb15e39b805a417744dd2fc89db49331`: CI #44560895025 IN PROGRESS.
+- No local pytest, physical-PC, Windows/GGUF, real ToolBackend, live notification, GPU/runtime, external-effect or Candidate result is claimed. Exact-head CI is the only pending validation for the three new child PRs. The checkpoint write itself may start another PR #8 workflow; its run ID/result is not known at write time.
+
+## Frozen contracts, blockers and approvals
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration. PRs #14/#15/#18/#19 and new PRs #20–#22 remain isolated Draft/unmerged; no child branch is promoted into PR #8 or main.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay, or main merge. Local SQLite hashes, process-local identities and caller-supplied time are not authenticated consent, independent custody, anti-rollback proof, trusted time, cross-store atomicity or external-effect evidence. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Inspect PR #20 CI #44559278093, PR #21 CI #44559690114 and PR #22 CI #44560895025 when completed. If any fails, inspect the exact failing job/log and make the smallest semantics-preserving normal-write repair; do not poll repeatedly or duplicate workflows.
+2. Review PR #20's lost-COMMIT and truncation cases; retain the manual-only recovery boundary. Keep PR #20 Draft/unmerged pending exact-head GREEN.
+3. Review PR #21's restart cursor, clock-floor and final-history recheck cases; do not convert the preview into a live scheduler or notification path.
+4. Review PR #22 only as a mock-only integration experiment. Any failure after RUNNING remains ambiguous; no real backend, auto-replay, cross-store atomicity or exactly-once claim. Keep Draft/unmerged.
+5. Continue Memory WAL/SHM last-close, pinned-reader CAS/ABA, expiry/event snapshot coherence and COMMIT-UNKNOWN manual-only recovery; then privacy-safe Personal Context, proactive occurrence state, Observation fixture lifecycle and free-only V3 path/identity/reproducibility guards.
+6. UI remains paused. Preserve PR #5's gate, PR #9's untouched Draft foundation, all frozen contracts, and main's no-merge boundary.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run995: V3 path portability + Planner journal path custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T00:01:46+09:00.** This checkpoint timestamp is reporting metadata only, not trusted consent, scheduler, action, authorization, expiry or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
