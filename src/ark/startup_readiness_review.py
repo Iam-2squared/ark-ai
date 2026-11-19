@@ -64,6 +64,19 @@ def _identifier(value: object, label: str) -> str:
     # split or spoof diagnostics, before retaining any readiness assertion.
     if any(ord(character) < 32 or ord(character) == 127 for character in value):
         raise ValueError(f"{label} contains ASCII control character")
+    # These identities become diagnostic keys and dependency edges. Avoid
+    # visually indistinguishable or terminal-reinterpreted component names;
+    # this stricter opt-in probe rule does not change frozen runtime contracts.
+    if any(
+        0x80 <= point <= 0x9F
+        or point in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
+        or 0x200B <= point <= 0x200D
+        or 0x202A <= point <= 0x202E
+        or 0x2060 <= point <= 0x206F
+        or point in (0x2028, 0x2029, 0xFEFF)
+        for point in map(ord, value)
+    ):
+        raise ValueError(f"{label} contains Unicode formatting control")
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
