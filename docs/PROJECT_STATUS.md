@@ -1,3 +1,46 @@
+# LATEST — ARK AI Run988: offline PCM/PNG result custody and Planner terminal policy fence
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T18:03:17.648+09:00 (checkpoint prewrite).** Only a status/report timestamp; **NOT** trusted consent, scheduler, source, action or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact invocation work-basis HEAD:** `911c1265429008dd968e94401fab95f98bc1fdc1` (Run987 checkpoint). **Latest executable source/test/compatibility-repair HEAD:** `b055622392bb797a7ffc7cf285571912b3030de3`. **Latest report/checkpoint-write-basis HEAD:** `f32fe4eaca380f4266893618845d879de2eee412`. **Checkpoint-result HEAD:** the next normal GitHub Contents API commit; independently verified afterward against the live branch and PR. This file cannot embed its own unknown future commit SHA.
+
+**Protected ref custody at checkpoint prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All remain Draft/unmerged; no main/UI/V3-gated ref write. Frozen V1/V2/Local UI/Launcher, Memory v1 schema/contract, ToolCall/PlanStep v1 and Observation Envelope v1, protected V2 final evaluation and V3 approvals unchanged.
+
+## NEW — three independent non-UI packages, 56 new synthetic regression cases authored
+
+1. **Offline PCM full result-vector custody** — [source `0b09ef06`](https://github.com/Iam-2squared/ark-ai/commit/0b09ef063313b774f9a6b1bd7cb4bbb8a6f1422f) and [9 tests `10ced9bc`](https://github.com/Iam-2squared/ark-ai/commit/10ced9bc2c7f07cc0301ab895414dee22699ce61). Protect complete import-original private PCM result fields and class lookup hooks before fixture payload reads; deny paired truncation of validation-name and descriptor vectors. Deterministic mono16 resampling preserved. No real microphone or speech recognition.
+2. **Offline PNG scanline audit and denied-authority custody** — [source `9dc1b969`](https://github.com/Iam-2squared/ark-ai/commit/9dc1b9690a9ba0d1171d81dd7631de31baddfd8a) and [21 tests `34a3e005`](https://github.com/Iam-2squared/ark-ai/commit/34a3e0056340f598b26cdffb213372e2bcf3655). Pin audit/request class/field/hook vectors, hash and predictor helper, original denied-authority descriptors before private synthetic IDAT. Recheck returned report and denial after construction. No camera/capture/consent/tool authority.
+3. **Standalone Planner transition-policy binding** — [source `5de8c711`](https://github.com/Iam-2squared/ark-ai/commit/5de8c7112737915aafd98106a23cedced80da42e) and [26 tests `14033a05`](https://github.com/Iam-2squared/ark-ai/commit/14033a053ebe9e67e37fb4257c0063b3fe3f965a). Pin import-original allowed transition mapping and complete rows at graph construction, epoch review, and before state transitions. Reject direct `PENDING -> SUCCEEDED`, terminal reactivation and equal-but-rebound policy; retain legitimate FAILED-to-BLOCKED dependency propagation. No ToolBackend effect or durable authorization claimed.
+
+**CI-discovered compatibility repair:** [`b0556223`](https://github.com/Iam-2squared/ark-ai/commit/b055622392bb797a7ffc7cf285571912b3030de3) adjusts **12 existing PNG negative-test expectations** to the new **earlier preaccess rejection**, explicitly verifying malicious getters were never invoked and original private source/result/denial carriers remained unchanged. No checks or test cases removed, no relaxed production denial. [Technical report](https://github.com/Iam-2squared/ark-ai/blob/f32fe4eaca380f4266893618845d879de2eee412/docs/JARVIS_RUN988_NON_UI_PCM_PNG_PLANNER_AUTHORITY_VECTORS.md).
+
+All source/test/report writes through normal GitHub Contents API with latest branch HEAD reread before each mutation; no raw Git object bypass, force-push, manual duplicate workflow, protected merge or physical-PC action.
+
+## CI / evidence (observed at checkpoint prewrite)
+
+- Previous Run987 exact HEAD `911c1265429008dd968e94401fab95f98bc1fdc1`: [CI #44482667301](https://github.com/Iam-2squared/ark-ai/actions/runs/44482667301) **GREEN 6/6** (Windows/Ubuntu × Python 3.11–3.13). **Applies only to that older basis.**
+- Intermediate PNG implementation `9dc1b969...`: [CI #44491260782](https://github.com/Iam-2squared/ark-ai/actions/runs/44491260782) Ubuntu 3.13 **FAIL 12 old assertion-message expectations**; intermediate PNG test `34a3e005...`: [CI #44491472377](https://github.com/Iam-2squared/ark-ai/actions/runs/44491472377) Ubuntu 3.11 **19,063 PASS / 12 FAIL / 1 SKIP**. Actual callback denial occurred earlier than old expected diagnostic; repaired at `b0556223`.
+- Last repaired executable/test exact HEAD `b0556223...`: [CI #44492316807](https://github.com/Iam-2squared/ark-ai/actions/runs/44492316807) **QUEUED**, no full-six GREEN attested.
+- Technical-report exact HEAD `f32fe4eaca380f4266893618845d879de2eee412`: [CI #44492673131](https://github.com/Iam-2squared/ark-ai/actions/runs/44492673131) **QUEUED**. The checkpoint commit may start an additional workflow; **latest checkpoint HEAD 6/6 GREEN NOT YET VERIFIED**.
+- **56 parameterized regression cases authored, NOT PASS-certified on the new latest HEAD.** No full local pytest, physical Windows/GGUF hardware execution, authenticated external action/identity, trusted clock, consent proof or protected final evaluation claimed.
+
+## Blockers and authorization boundaries
+
+No billable service/API/subscription, external GPU/training, real Candidate adapter/weight generation, Candidate promotion, protected evaluation opening, frozen-contract edits, secret/account connection, unavailable physical-PC action, main merge, UI/front-end, real ToolBackend READ/WRITE, automatic COMMIT-UNKNOWN replay or irreversible privacy deletion. In-process object/descriptor custody does not attest a compromised interpreter, trusted provenance, independent historical witness, physical sensor ownership, consent or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Resolve exact latest 6-job CI for the repaired PNG + PCM + Planner source/test HEAD; read any failing job logs, make minimal semantics-preserving repair, then work an independent non-UI lane while CI is in flight.
+2. Strengthen Memory WAL/SHM races, CAS/ABA retained generations, coherent expiry snapshots and manual COMMIT-UNKNOWN triage without weakened provenance.
+3. Develop Planner crash/terminal persistence, immutable registry-bound PermissionGate, one-shot occurrence/replay protection and audit-before-action over **disconnected mocks only**, integrating only after exact-head GREEN lower-layer evidence.
+4. Continue privacy-scoped Personal Context revocation/retention, proactive occurrence freshness, Observation fixtures, detached free-only V3 gates. **UI paused; PR #9 untouched.**
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run987 (verbatim below)
+
 # LATEST — ARK AI Run987: global Memory mutation frontier, quarantine admission, READ noncreating cold-open
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T16:50:02.620+09:00 (checkpoint prewrite).** This is a checkpoint/report timestamp only, **not** trusted consent, scheduler, action or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
