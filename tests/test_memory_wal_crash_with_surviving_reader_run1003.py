@@ -82,6 +82,7 @@ def test_crashed_wal_reader_does_not_release_surviving_reader_lock(
     # This independent parent connection is deliberately kept open after the
     # child dies. Its read transaction must continue to see the old snapshot.
     keeper = sqlite3.connect(database, timeout=10, isolation_level=None)
+    keeper_open = True
     keeper.execute("PRAGMA query_only=ON")
     keeper.execute("BEGIN")
     assert _snapshot(keeper) == ((1, "before"), [("create", 1)])
@@ -121,6 +122,7 @@ def test_crashed_wal_reader_does_not_release_surviving_reader_lock(
 
         keeper.rollback()
         keeper.close()
+        keeper_open = False
 
         # Once the final reader closes, a cold managed store must recover the
         # committed pair and a TRUNCATE checkpoint must finish without a busy
@@ -157,8 +159,7 @@ def test_crashed_wal_reader_does_not_release_surviving_reader_lock(
         if process.is_alive():
             process.terminate()
             process.join(timeout=5)
-        if not keeper.in_transaction:
-            keeper.close()
-        else:
-            keeper.rollback()
+        if keeper_open:
+            if keeper.in_transaction:
+                keeper.rollback()
             keeper.close()
