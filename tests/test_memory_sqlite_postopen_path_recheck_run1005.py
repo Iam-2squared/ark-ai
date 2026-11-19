@@ -8,8 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ark.memory import MemorySchemaError, MemoryScope, MemoryWrite, SQLiteMemoryStore
-from ark.memory import sqlite_store
+from ark.memory import MemorySchemaError, MemoryScope, MemoryWrite, SQLiteMemoryStore, sqlite_store
 
 
 def _mark_reparse_point(monkeypatch, target: Path) -> None:
