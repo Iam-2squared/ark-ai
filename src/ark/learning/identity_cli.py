@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .execution import canonical_json, sha256_bytes
 from .chat_template_probe import build_chat_template_probe
+from .execution import canonical_json, sha256_bytes
 from .identity import build_code_tree_identity, build_hf_snapshot_identity, build_tool_identity
 
 _MODEL_ID = "Qwen/Qwen3-4B-Instruct-2507"

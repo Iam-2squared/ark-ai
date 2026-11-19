@@ -13,12 +13,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from ark.learning.execution import canonical_json, sha256_bytes
 from ark.learning.chat_template_probe import (
     ChatTemplateProbeRejected,
     build_chat_template_probe,
     verify_chat_template_probe,
 )
+from ark.learning.execution import canonical_json, sha256_bytes
 
 
 class FakeTokenizer:

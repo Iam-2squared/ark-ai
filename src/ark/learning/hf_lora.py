@@ -13,10 +13,10 @@ import math
 import time
 from pathlib import Path
 
+from .chat_template_probe import verify_chat_template_probe
 from .dataset import digest
 from .execution import validate_experiment_001
 from .identity import build_hf_snapshot_identity
-from .chat_template_probe import verify_chat_template_probe
 from .preflight import PreflightEvidence
 from .run_manifest import write_candidate_run_manifest
 from .runtime_guard import WallTimeBudget
@@ -242,7 +242,9 @@ class HfLoRAPreflightBackend:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("preflight-local-identity")
-        torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir, self.chat_template_probe)
+        torch, tokenizer, model = _build_model_and_tokenizer(
+            snapshot, self.base_dir, self.chat_template_probe,
+        )
         wall_budget.check("preflight-model-load")
         encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
         _verify_runtime_chat_template(tokenizer, snapshot, self.chat_template_probe)
