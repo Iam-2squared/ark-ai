@@ -214,3 +214,82 @@ def test_executor_failure_after_running_is_ambiguous_and_never_auto_replayed(
         )
     assert journal.recover("fixture-plan", steps).sequence == 1
     assert backend.calls == 0
+
+
+def test_read_step_rejects_write_authorization_before_running(tmp_path):
+    (
+        backend, registry, audit, occurrences, executor, journal,
+        steps, read_call, _, grants, _,
+    ) = _stack(tmp_path)
+
+    with pytest.raises(
+        PlannerMockCycleRejected,
+        match="READ steps cannot carry WRITE authorization inputs",
+    ):
+        execute_one_mock_step(
+            journal, "fixture-plan", steps, registry, executor,
+            "read", grants, now_ms=10,
+            one_shot=OneShotAuthorization(
+                "wrong-effect-token", read_call.request_id, 500,
+            ),
+            occurrence_id="occ_" + "a" * 64,
+        )
+
+    assert journal.recover("fixture-plan", steps).sequence == 0
+    assert backend.calls == 0
+    assert audit.events() == []
+    assert occurrences.count_synthetic() == 0
+
+
+def test_non_mock_registry_backend_is_rejected_before_running_or_audit(tmp_path):
+    class ExternalLikeBackend:
+        def __init__(self):
+            self.calls = 0
+
+        def execute(self, _call):
+            self.calls += 1
+            raise AssertionError("external-like backend must never be called")
+
+    backend = ExternalLikeBackend()
+    call = ToolCall(
+        "fixture.external-like",
+        "capability.read",
+        "synthetic:private",
+        {"value": "must-not-dispatch"},
+    )
+    registry = ToolRegistry((
+        ToolRegistration(
+            "fixture.external-like",
+            "capability.read",
+            Effect.READ,
+            "not-a-mock-backend",
+            backend,
+        ),
+    ))
+    audit = SQLiteActionAudit(
+        tmp_path / "external-like-audit.sqlite3",
+        clock_ms=lambda: 100,
+    )
+    executor = DisconnectedMockExecutor(registry, PermissionGate(), audit)
+    steps = (PlanStep("root", call),)
+    journal = PlannerJournal(tmp_path / "external-like-planner.sqlite3")
+    journal.create_plan("external-like-plan", PlanGraph(steps))
+
+    with pytest.raises(
+        PlannerMockCycleRejected,
+        match="only the exact disconnected mock backend",
+    ):
+        execute_one_mock_step(
+            journal,
+            "external-like-plan",
+            steps,
+            registry,
+            executor,
+            "root",
+            (CapabilityGrant("capability.read", "synthetic:private"),),
+            now_ms=10,
+        )
+
+    assert journal.recover("external-like-plan", steps).sequence == 0
+    assert backend.calls == 0
+    assert audit.events() == []
