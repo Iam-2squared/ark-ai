@@ -59,6 +59,22 @@ _ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
 )
 
 
+# Preserve the import-original transition graph. Rebinding this mapping can
+# otherwise turn PENDING directly into SUCCEEDED or resurrect terminal states,
+# bypassing planner recovery and dependency policy without touching a PlanStep.
+_ORIGINAL_ALLOWED_POLICY = _ALLOWED
+_ORIGINAL_ALLOWED_ROWS = tuple(_ALLOWED.items())
+
+
+def _require_original_transition_policy() -> None:
+    if (
+        _ALLOWED is not _ORIGINAL_ALLOWED_POLICY
+        or type(_ALLOWED) is not MappingProxyType
+        or tuple(_ALLOWED.items()) != _ORIGINAL_ALLOWED_ROWS
+    ):
+        raise PlanConflictError("plan transition policy changed")
+
+
 # Bound standalone PlanGraph ingress as well as the narrower durable journal.
 # A dependency-rich but acyclic graph can otherwise consume unbounded CPU and
 # memory during recovery/readiness diagnosis before reaching any policy gate.
@@ -187,6 +203,7 @@ def _admit_frozen_arguments(value: object) -> None:
 
 class PlanGraph:
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
+        _require_original_transition_policy()
         _require_original_plan_digest()
         if type(steps) is not tuple:
             raise TypeError("steps must be a tuple of exact PlanStep values")
@@ -318,6 +335,7 @@ class PlanGraph:
                 raise PlanConflictError("plan status changed outside transition")
 
     def _assert_plan_epoch(self) -> None:
+        _require_original_transition_policy()
         _require_original_plan_digest()
         if (
             type(self.steps) is not MappingProxyType
@@ -511,7 +529,10 @@ class PlanGraph:
             raise PlanConflictError(
                 f"revision mismatch: expected {expected_revision}, actual {current.revision}"
             )
-        if to_state not in _ALLOWED[current.state]:
+        _require_original_transition_policy()
+        # Use the exact immutable import-original mapping, never an injected
+        # replacement with expanded or reordered terminal transitions.
+        if to_state not in _ORIGINAL_ALLOWED_POLICY[current.state]:
             raise PlanConflictError(
                 f"invalid transition: {current.state.value} -> {to_state.value}"
             )
