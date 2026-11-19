@@ -1,8 +1,8 @@
 # ARK AI Run981 — Planner CI compatibility and non-UI policy-vector safety
 
-**Prepared at (Asia/Tokyo/JST): 2026-11-19T10:45:14.341+09:00.** Reporting clock only; NOT an authenticated audit/expiry/consent/scheduler/provenance time.
+**Updated at (Asia/Tokyo/JST): 2026-11-19T10:50:30.481+09:00.** Reporting clock only; NOT an authenticated audit/expiry/consent/scheduler/provenance time.
 
-**Invocation work-basis HEAD:** `d03d1eebd53536429e62e2e466f374ea2377875f` (Run980 checkpoint, Draft PR #8 on `research/jarvis-foundations`). **Latest executable source+test HEAD at report prewrite:** `774d37c18bced2843459e7a90f2b34d5af41c6a7`. **ARK/JARVIS overall NOT_PASSED.** No real tool dispatch or external compute.
+**Invocation work-basis HEAD:** `d03d1eebd53536429e62e2e466f374ea2377875f` (Run980 checkpoint, Draft PR #8 on `research/jarvis-foundations`). **Latest executable source+test HEAD after fifth work package:** `cb51383649051093c4a1243424be817af0f19960`. **ARK/JARVIS overall NOT_PASSED.** No real tool dispatch or external compute.
 
 ## Four coherent non-UI work packages
 
@@ -11,7 +11,9 @@
 3. **Memory v1 read-only expiry preview** — [source `50030a72`](https://github.com/Iam-2squared/ark-ai/commit/50030a723f603b57914ff9138e42ba6c84487b26) + [tests `8b3ea25e`](https://github.com/Iam-2squared/ark-ai/commit/8b3ea25ed47ec41753118faac52afeda80f7a269). Import-pin all five deny-only receipt property names and complete receipt field/hook vectors; refuse a missing/reordered/rebound vector before private SQLite access on both preview and retained verification. **20 authored disposable local-fixture regression cases.** No schema change, purge, authenticated owner consent or trusted-clock claims.
 4. **Disconnected mixed READ/WRITE recovery fence** — [source `a9380e39`](https://github.com/Iam-2squared/ark-ai/commit/a9380e39ddee9e3334fef72c4b7dacc3c3e8648f) + [tests `774d37c1`](https://github.com/Iam-2squared/ark-ai/commit/774d37c18bced2843459e7a90f2b34d5af41c6a7). Import-pin all Step, Disposition, Fence and denied-authority vectors to block shortened zip inspections before reading untrusted synthetic recovery claims. **15 authored cases** including forged replay property, counterfeit claim getter and intact UNKNOWN-WRITE quarantine. No real Planner dispatch/replay or WRITE.
 
-**Total: 50 newly authored parametrized cases plus correction of four existing parametrized assertions.** Only static checks on the changed exact-head files (no >100-column lines) were performed locally; no local full pytest run. These cases are **not yet certified CI PASS**. Each source/test write triggers ordinary CI; no duplicate manual workflow dispatch.
+5. **Immutable ToolRegistry identity-vector custody** — [source `8b7e6171`](https://github.com/Iam-2squared/ark-ai/commit/8b7e6171c39faa46e2420bdac8ed2e2ef5d6738a), [formatting-only follow-up `f5d4df79`](https://github.com/Iam-2squared/ark-ai/commit/f5d4df792cd749baef5d692dcc962657e3ecae5c), [regression tests `9abcb394`](https://github.com/Iam-2squared/ark-ai/commit/9abcb3940f7991fc4647796c321bf9451169e0bc), [fixture specificity `cb513836`](https://github.com/Iam-2squared/ark-ai/commit/cb51383649051093c4a1243424be817af0f19960). The optional local registry now checks original tuple identity for its three registration descriptor inventories, three ToolCall constructor/input/hook inventories and two BoundAction inventories before registry admission, resolve or bind. **26 authored cases** (8 vector inventories ×3 mutations, early rejection of forged backend property, valid mock-only bind). No registered backend execute(), PermissionGate authorization, real READ/WRITE, or frozen ToolCall v1 contract change.
+
+**Total: 76 newly authored parametrized cases across four hardening packages plus correction of four existing parametrized Planner assertions.** Only static length checks on changed exact-head source/test lines (no >100-column lines) were performed; no local full pytest run. These cases are **not yet certified CI PASS**. Each source/test write triggers ordinary CI; no duplicate manual workflow dispatch.
 
 ## CI evidence as observed during this invocation
 
@@ -19,6 +21,7 @@
 - Previous exact source/test [#44431379089](https://github.com/Iam-2squared/ark-ai/actions/runs/44431379089): **GREEN 6/6** on an older startup-readiness commit, not this newer code.
 - Repair [#44438525772](https://github.com/Iam-2squared/ark-ai/actions/runs/44438525772) IN PROGRESS; privacy source [#44438676343](https://github.com/Iam-2squared/ark-ai/actions/runs/44438676343) IN PROGRESS and privacy tests [#44438739867](https://github.com/Iam-2squared/ark-ai/actions/runs/44438739867) IN PROGRESS at last observation.
 - Memory source [#44438839228](https://github.com/Iam-2squared/ark-ai/actions/runs/44438839228), Memory tests [#44438893901](https://github.com/Iam-2squared/ark-ai/actions/runs/44438893901), recovery source [#44438962550](https://github.com/Iam-2squared/ark-ai/actions/runs/44438962550) and newest source/test HEAD [#44438997464](https://github.com/Iam-2squared/ark-ai/actions/runs/44438997464): **QUEUED** at last observation.
+- Registry source and test workflow runs [#44439471870](https://github.com/Iam-2squared/ark-ai/actions/runs/44439471870), [#44439518656](https://github.com/Iam-2squared/ark-ai/actions/runs/44439518656), [#44439591735](https://github.com/Iam-2squared/ark-ai/actions/runs/44439591735), [#44439635332](https://github.com/Iam-2squared/ark-ai/actions/runs/44439635332) were **QUEUED** at latest observed CI snapshot; #44439635332 corresponds to exact fifth-package source/test HEAD `cb513836`.
 - **Latest exact code/test and future report/checkpoint CI all-six GREEN remains UNVERIFIED.** Branch checks may have concurrent updates after observation. Failures require direct log confirmation before any fix or PASS claim.
 
 ## Frozen boundaries and unresolved blockers
