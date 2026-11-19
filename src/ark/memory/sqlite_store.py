@@ -607,6 +607,11 @@ class SQLiteMemoryStore:
                 raise MemorySchemaError("memory write changed during clock") from exc
             if not stable:
                 raise MemorySchemaError("memory write changed during clock")
+            # The event append log is global across owners. A deleted or
+            # substituted historical event must not be followed by a new
+            # row/event mutation, even when the target row itself is intact.
+            # Check the dense AUTOINCREMENT frontier under this writer snapshot.
+            _require_dense_committed_memory_events(conn)
             _require_memory_mutation_row_hydration_admission(conn, memory_id)
             if self.path is not path_epoch:
                 raise MemorySchemaError("memory put source changed during preflight")
@@ -999,6 +1004,7 @@ class SQLiteMemoryStore:
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory delete scope changed during clock")
+            _require_dense_committed_memory_events(conn)
             _require_memory_mutation_row_hydration_admission(conn, memory_id)
             if self.path is not path_epoch or (
                 scope.owner_id is not original_owner
@@ -1107,6 +1113,9 @@ class SQLiteMemoryStore:
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
                 raise MemorySchemaError("memory purge scope changed during clock")
+            # A missing or rewound global event frontier vetoes any
+            # destructive expiry sweep before selecting private due rows.
+            _require_dense_committed_memory_events(conn)
             # Preflight the exact due page under the same writer snapshot;
             # never SELECT * or decode corrupt private TEXT before admission.
             _require_expiry_purge_hydration_admission(
