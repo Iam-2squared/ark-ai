@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sqlite3
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -85,6 +86,10 @@ class PlannerJournalConflictError(PlannerJournalError):
 
 class PlannerJournalNotFoundError(PlannerJournalError):
     """The requested plan has no journal genesis record."""
+
+
+class PlannerJournalPathError(PlannerJournalError):
+    """The local database path is missing, aliased or not a regular file."""
 
 
 class PlannerJournalCommitUnknown(PlannerJournalError):
@@ -281,6 +286,78 @@ def _event_hash(
     )
 
 
+def _require_safe_journal_path(path: Path, *, create: bool) -> None:
+    """Reject path aliases before SQLite can create, read or mutate a database.
+
+    This is a repeated local lstat preflight, not atomic dirfd custody or
+    protection against a hostile concurrent rename between inspection/open.
+    """
+    if type(path) is not type(Path(".")) or ".." in path.parts:
+        raise PlannerJournalPathError("Planner journal path type or traversal refused")
+    raw = os.fspath(path)
+    if type(raw) is not str or not path.name or "\0" in raw or len(raw) > 4096:
+        raise PlannerJournalPathError("Planner journal path exceeds local limits")
+    try:
+        target = path if path.is_absolute() else path.absolute()
+        if len(os.fsencode(target)) + len(b"-journal") > 4096:
+            raise PlannerJournalPathError("Planner journal path/sidecar byte budget exceeded")
+        for ancestor in target.parents:
+            try:
+                metadata = ancestor.lstat()
+            except FileNotFoundError:
+                raise PlannerJournalPathError(
+                    "Planner journal parent directory is unavailable"
+                ) from None
+            if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+                raise PlannerJournalPathError(
+                    "Planner journal symbolic or non-directory ancestor refused"
+                )
+
+        main_absent = False
+        try:
+            metadata = target.lstat()
+        except FileNotFoundError:
+            main_absent = True
+            if not create:
+                raise PlannerJournalPathError(
+                    "Planner journal database is unavailable; recreation is refused"
+                ) from None
+        else:
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+                raise PlannerJournalPathError(
+                    "Planner journal database must be one regular unaliased file"
+                )
+
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = target.with_name(target.name + suffix)
+            try:
+                sidecar_metadata = sidecar.lstat()
+            except FileNotFoundError:
+                continue
+            if main_absent:
+                raise PlannerJournalPathError(
+                    "orphaned Planner journal SQLite sidecar refused"
+                )
+            if stat.S_ISREG(sidecar_metadata.st_mode) and sidecar_metadata.st_nlink == 0:
+                try:
+                    sidecar_metadata = sidecar.lstat()
+                except FileNotFoundError:
+                    continue
+            if (
+                not stat.S_ISREG(sidecar_metadata.st_mode)
+                or sidecar_metadata.st_nlink != 1
+            ):
+                raise PlannerJournalPathError(
+                    "Planner journal SQLite sidecar must be one regular unaliased file"
+                )
+    except PlannerJournalPathError:
+        raise
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise PlannerJournalPathError(
+            "Planner journal path custody cannot be verified"
+        ) from exc
+
+
 class PlannerJournal:
     """Append-only local journal; transition returns a new recovered PlanGraph.
 
@@ -296,15 +373,31 @@ class PlannerJournal:
         path_value = os.fspath(path)
         if type(path_value) is not str or not path_value or "\0" in path_value:
             raise ValueError("journal path is invalid")
-        self._path = path_value
+        if ".." in path.parts:
+            raise PlannerJournalPathError("Planner journal path traversal refused")
+        # Pin a lexical absolute path without resolving or following symlinks.
+        self._path = os.fspath(path.absolute())
+        _require_safe_journal_path(Path(self._path), create=True)
         self._bootstrap()
 
-    def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(
-            self._path,
-            timeout=10.0,
-            isolation_level=None,
-        )
+    def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        path = Path(self._path)
+        _require_safe_journal_path(path, create=create)
+        connection: sqlite3.Connection | None = None
+        try:
+            connection = sqlite3.connect(
+                self._path,
+                timeout=10.0,
+                isolation_level=None,
+            )
+            # Recheck after open. This narrows, but does not eliminate, the
+            # pathname TOCTOU window because sqlite3 does not expose its file
+            # descriptor for an atomic no-follow identity comparison.
+            _require_safe_journal_path(path, create=False)
+        except Exception:
+            if connection is not None:
+                connection.close()
+            raise
         connection.execute("PRAGMA busy_timeout = 10000")
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA synchronous = FULL")
@@ -339,7 +432,7 @@ class PlannerJournal:
                 raise PlannerJournalSchemaError(f"Planner journal table changed: {name}")
 
     def _bootstrap(self) -> None:
-        connection = self._connect()
+        connection = self._connect(create=True)
         try:
             connection.execute("BEGIN IMMEDIATE")
             version_row = connection.execute("PRAGMA user_version").fetchone()
@@ -725,6 +818,7 @@ __all__ = [
     "PlannerJournalCorruptError",
     "PlannerJournalError",
     "PlannerJournalNotFoundError",
+    "PlannerJournalPathError",
     "PlannerJournalReceipt",
     "PlannerJournalRecovery",
     "PlannerJournalSchemaError",
