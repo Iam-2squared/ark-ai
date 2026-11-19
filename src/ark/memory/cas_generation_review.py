@@ -80,10 +80,21 @@ def _strict_utf8_identity(value: object, max_bytes: int) -> bool:
     """Bound optional read-only generation identities before private row access."""
     if type(value) is not str or not value.strip() or len(value) > max_bytes:
         return False
-    # This opt-in diagnostic must not echo C1 terminal control labels into
-    # retained history identities or troubleshooting output. Memory v1 keeps
-    # its frozen schema and direct scope acceptance unchanged.
-    if any(0x80 <= ord(char) <= 0x9F for char in value):
+    # Read-only diagnostics share the opt-in generation CAS's strict label
+    # admission: C0/C1, bidi, invisible separators and line formatting can
+    # disguise different retained lifetime identities in human review.
+    # Frozen Memory v1 accepts opaque strings; its contract is unchanged.
+    if any(
+        code < 0x20 or 0x7F <= code <= 0x9F
+        or code in (0x061C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= code <= 0x202E
+        or 0x2066 <= code <= 0x206F
+        or code in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        for code in map(ord, value)
+    ):
         return False
     try:
         return len(value.encode("utf-8", errors="strict")) <= max_bytes
@@ -202,8 +213,12 @@ def review_memory_revision_reuse(
                 ).fetchone()
                 # sqlite_sequence.name is not UNIQUE. Refuse a second forged
                 # marker even if the first marker matches the live event tip.
+                # sqlite_sequence.name is not UNIQUE. Only two rows are
+                # needed to reject duplicate markers; never hydrate an
+                # attacker-sized forged marker set during a read-only review.
                 sequences = conn.execute(
-                    "SELECT seq FROM sqlite_sequence WHERE name='memory_events'"
+                    "SELECT seq FROM sqlite_sequence "
+                    "WHERE name='memory_events' LIMIT 2"
                 ).fetchall()
                 stable()
                 if (
