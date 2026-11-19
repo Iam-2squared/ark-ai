@@ -20,6 +20,7 @@ from .contracts import (
     CapabilityGrant,
     Effect,
     OneShotAuthorization,
+    PermissionDenied,
     ToolCall,
 )
 from .durable_occurrence_review import (
@@ -34,6 +35,12 @@ _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _RESULT_DOMAIN = b"ARK-disconnected-mock-result-v1\0"
 _PRE_ACTION_OUTCOME = "mock_pre_action"
 _COMPLETED_OUTCOME = "mock_completed"
+_ORIGINAL_EXECUTOR_CONSTANTS = (
+    _MAX_INT, _OCCURRENCE, _RESULT_DOMAIN,
+    _PRE_ACTION_OUTCOME, _COMPLETED_OUTCOME,
+)
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
 
 
 class DisconnectedMockExecutionRejected(RuntimeError):
@@ -121,6 +128,112 @@ class MockToolBackend:
         return MockToolResult(request_id, digest)
 
 
+# Pin the only backend implementation and every foundation method this
+# composition invokes. Exact object types alone do not prevent instance
+# method shadowing or a class-level replacement before registry construction.
+_MOCK_BACKEND_TYPE = MockToolBackend
+_MOCK_BACKEND_METHODS = (
+    "__init__", "execute", "calls", "__new__", "__getattribute__", "__getattr__",
+)
+_ORIGINAL_MOCK_BACKEND_METHODS = tuple(
+    vars(_MOCK_BACKEND_TYPE).get(name) for name in _MOCK_BACKEND_METHODS
+)
+_MOCK_RESULT_TYPE = MockToolResult
+_MOCK_RESULT_FIELDS = ("request_id", "result_sha256", "external_effect_proven")
+_ORIGINAL_MOCK_RESULT_MEMBERS = tuple(
+    vars(_MOCK_RESULT_TYPE).get(name) for name in _MOCK_RESULT_FIELDS
+)
+_ORIGINAL_MOCK_RESULT_INIT = vars(_MOCK_RESULT_TYPE)["__init__"]
+_ORIGINAL_MOCK_EXECUTE = vars(_MOCK_BACKEND_TYPE)["execute"]
+
+_ORIGINAL_REGISTRY_BIND = vars(ToolRegistry)["bind"]
+_ORIGINAL_REGISTRY_RESOLVE = vars(ToolRegistry)["resolve"]
+_ORIGINAL_REGISTRY_GET = vars(ToolRegistry)["get"]
+_ORIGINAL_REGISTRY_REVISION = vars(ToolRegistry)["revision"]
+_ORIGINAL_REGISTRY_EPOCH = vars(ToolRegistry)["_assert_registration_epoch"]
+_ORIGINAL_GATE_REGISTERED = vars(PermissionGate)["authorize_registered"]
+_ORIGINAL_GATE_AUTHORIZE = vars(PermissionGate)["authorize"]
+_ORIGINAL_AUDIT_APPEND = vars(SQLiteActionAudit)["append"]
+_ORIGINAL_AUDIT_CONNECT = vars(SQLiteActionAudit)["_connect"]
+_ORIGINAL_AUDIT_NOW = vars(SQLiteActionAudit)["_now"]
+_ORIGINAL_OCCURRENCE_RESERVE = vars(SyntheticOccurrenceStore)["reserve_synthetic"]
+_ORIGINAL_OCCURRENCE_CONNECT = vars(SyntheticOccurrenceStore)["_connect"]
+
+
+def _require_original_components(
+    registry: ToolRegistry,
+    gate: PermissionGate,
+    audit: SQLiteActionAudit,
+    occurrences: SyntheticOccurrenceStore | None,
+) -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or (
+            _MAX_INT, _OCCURRENCE, _RESULT_DOMAIN,
+            _PRE_ACTION_OUTCOME, _COMPLETED_OUTCOME,
+        ) != _ORIGINAL_EXECUTOR_CONSTANTS
+    ):
+        raise DisconnectedMockExecutionRejected(
+            "disconnected mock executor codec or limits changed"
+        )
+    if (
+        MockToolBackend is not _MOCK_BACKEND_TYPE
+        or any(
+            vars(_MOCK_BACKEND_TYPE).get(name) is not original
+            for name, original in zip(
+                _MOCK_BACKEND_METHODS, _ORIGINAL_MOCK_BACKEND_METHODS,
+                strict=True,
+            )
+        )
+        or MockToolResult is not _MOCK_RESULT_TYPE
+        or vars(_MOCK_RESULT_TYPE).get("__init__") is not _ORIGINAL_MOCK_RESULT_INIT
+        or any(
+            vars(_MOCK_RESULT_TYPE).get(name) is not original
+            for name, original in zip(
+                _MOCK_RESULT_FIELDS, _ORIGINAL_MOCK_RESULT_MEMBERS, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedMockExecutionRejected(
+            "mock backend or result definition changed"
+        )
+    if (
+        vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND
+        or vars(ToolRegistry).get("resolve") is not _ORIGINAL_REGISTRY_RESOLVE
+        or vars(ToolRegistry).get("get") is not _ORIGINAL_REGISTRY_GET
+        or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
+        or vars(ToolRegistry).get("_assert_registration_epoch") is not _ORIGINAL_REGISTRY_EPOCH
+        or any(name in vars(registry) for name in ("bind", "resolve", "get", "revision"))
+    ):
+        raise DisconnectedMockExecutionRejected("ToolRegistry method identity changed")
+    if (
+        vars(PermissionGate).get("authorize_registered") is not _ORIGINAL_GATE_REGISTERED
+        or vars(PermissionGate).get("authorize") is not _ORIGINAL_GATE_AUTHORIZE
+        or any(name in vars(gate) for name in ("authorize_registered", "authorize"))
+    ):
+        raise DisconnectedMockExecutionRejected("PermissionGate method identity changed")
+    if (
+        vars(SQLiteActionAudit).get("append") is not _ORIGINAL_AUDIT_APPEND
+        or vars(SQLiteActionAudit).get("_connect") is not _ORIGINAL_AUDIT_CONNECT
+        or vars(SQLiteActionAudit).get("_now") is not _ORIGINAL_AUDIT_NOW
+        or any(name in vars(audit) for name in ("append", "_connect", "_now"))
+    ):
+        raise DisconnectedMockExecutionRejected("ActionAudit method identity changed")
+    if occurrences is not None and (
+        vars(SyntheticOccurrenceStore).get("reserve_synthetic")
+        is not _ORIGINAL_OCCURRENCE_RESERVE
+        or vars(SyntheticOccurrenceStore).get("_connect") is not _ORIGINAL_OCCURRENCE_CONNECT
+        or any(
+            name in vars(occurrences)
+            for name in ("reserve_synthetic", "_connect")
+        )
+    ):
+        raise DisconnectedMockExecutionRejected(
+            "synthetic occurrence store method identity changed"
+        )
+
+
 class DisconnectedMockExecutor:
     """Compose local policy and audit around an exact deterministic mock only.
 
@@ -130,7 +243,11 @@ class DisconnectedMockExecutor:
     fails, callers must inspect local evidence; this class never retries.
     """
 
-    __slots__ = ("_registry", "_gate", "_audit", "_occurrences")
+    __slots__ = (
+        "_registry", "_gate", "_audit", "_occurrences",
+        "_registry_revision_epoch", "_audit_path_epoch",
+        "_occurrence_path_epoch", "_component_epoch",
+    )
 
     def __init__(
         self,
@@ -149,10 +266,36 @@ class DisconnectedMockExecutor:
             )
         ):
             raise TypeError("mock executor requires exact local foundation components")
+        _require_original_components(registry, gate, audit, occurrences)
         self._registry = registry
         self._gate = gate
         self._audit = audit
         self._occurrences = occurrences
+        self._registry_revision_epoch = registry.revision
+        self._audit_path_epoch = audit.path
+        self._occurrence_path_epoch = (
+            occurrences._path if occurrences is not None else None
+        )
+        self._component_epoch = (registry, gate, audit, occurrences)
+
+    def _assert_component_epoch(self) -> None:
+        registry, gate, audit, occurrences = self._component_epoch
+        if (
+            self._registry is not registry
+            or self._gate is not gate
+            or self._audit is not audit
+            or self._occurrences is not occurrences
+            or self._registry.revision is not self._registry_revision_epoch
+            or self._audit.path is not self._audit_path_epoch
+            or (
+                occurrences is not None
+                and occurrences._path is not self._occurrence_path_epoch
+            )
+        ):
+            raise DisconnectedMockExecutionRejected(
+                "mock executor component identity changed"
+            )
+        _require_original_components(registry, gate, audit, occurrences)
 
     def execute(
         self,
@@ -164,6 +307,7 @@ class DisconnectedMockExecutor:
         occurrence_id: str | None = None,
     ) -> MockExecutionReceipt:
         """Run one mock-only operation; now_ms is synthetic, never trusted time."""
+        self._assert_component_epoch()
         if type(call) is not ToolCall:
             raise DisconnectedMockExecutionRejected("call must be an exact ToolCall")
         if type(now_ms) is not int or not 0 <= now_ms <= _MAX_INT:
@@ -178,15 +322,17 @@ class DisconnectedMockExecutor:
             raise DisconnectedMockExecutionRejected("occurrence identity is invalid")
 
         try:
-            initial = self._registry.bind(call)
-        except (KeyError, TypeError, ValueError) as exc:
+            initial = _ORIGINAL_REGISTRY_BIND(self._registry, call)
+        except Exception as exc:
             raise DisconnectedMockExecutionRejected(
                 "mock registry binding failed"
             ) from exc
+        self._assert_component_epoch()
         if (
             type(initial) is not BoundAction
             or initial.call is not call
-            or type(initial.registration.backend) is not MockToolBackend
+            or type(initial.registration.backend) is not _MOCK_BACKEND_TYPE
+            or vars(_MOCK_BACKEND_TYPE).get("execute") is not _ORIGINAL_MOCK_EXECUTE
         ):
             raise DisconnectedMockExecutionRejected(
                 "only the exact disconnected MockToolBackend is accepted"
@@ -213,24 +359,26 @@ class DisconnectedMockExecutor:
             raise DisconnectedMockExecutionRejected("registered effect is unsupported")
 
         try:
-            authorized = self._gate.authorize_registered(
+            authorized = _ORIGINAL_GATE_REGISTERED(
+                self._gate,
                 self._registry,
                 call,
                 grants,
                 now_ms=now_ms,
                 one_shot=one_shot,
             )
-        except (PermissionError, TypeError, ValueError, KeyError) as exc:
+        except Exception as exc:
             raise DisconnectedMockExecutionRejected(
                 "local PermissionGate denied the mock operation"
             ) from exc
+        self._assert_component_epoch()
         if (
             type(authorized) is not BoundAction
             or authorized.call is not call
             or authorized.registration is not initial.registration
             or authorized.registry_revision != initial.registry_revision
             or authorized.bound_action_id != initial.bound_action_id
-            or type(authorized.registration.backend) is not MockToolBackend
+            or type(authorized.registration.backend) is not _MOCK_BACKEND_TYPE
             or authorized.registration.backend is not backend
         ):
             raise DisconnectedMockExecutionRejected(
@@ -240,17 +388,19 @@ class DisconnectedMockExecutor:
         if effect is Effect.WRITE:
             assert self._occurrences is not None
             try:
-                reservation = self._occurrences.reserve_synthetic(
+                reservation = _ORIGINAL_OCCURRENCE_RESERVE(
+                    self._occurrences,
                     self._registry,
                     call,
                     one_shot,
                     occurrence_id=occurrence_id,
                     now_ms=now_ms,
                 )
-            except (RuntimeError, TypeError, ValueError, KeyError) as exc:
+            except Exception as exc:
                 raise DisconnectedMockExecutionRejected(
                     "durable synthetic occurrence reservation failed"
                 ) from exc
+            self._assert_component_epoch()
             if (
                 type(reservation) is not SyntheticReservationReceipt
                 or reservation.occurrence_id != occurrence_id
@@ -265,17 +415,20 @@ class DisconnectedMockExecutor:
         # This commit is a hard gate: if audit append fails, execute is never
         # called. The audit and occurrence databases remain separate stores.
         try:
-            pre_action = self._audit.append(
-                call, outcome=_PRE_ACTION_OUTCOME,
+            pre_action = _ORIGINAL_AUDIT_APPEND(
+                self._audit, call, outcome=_PRE_ACTION_OUTCOME,
             )
-        except (RuntimeError, TypeError, ValueError, OSError) as exc:
+        except Exception as exc:
             raise DisconnectedMockExecutionRejected(
                 "pre-action audit failed; mock backend was not called"
             ) from exc
+        self._assert_component_epoch()
         if (
             type(pre_action) is not ActionAuditEvent
             or pre_action.request_id != call.request_id
             or pre_action.outcome != _PRE_ACTION_OUTCOME
+            or type(pre_action.event_id) is not int
+            or pre_action.event_id < 1
         ):
             raise DisconnectedMockExecutionRejected(
                 "pre-action audit receipt is inconsistent"
@@ -284,11 +437,12 @@ class DisconnectedMockExecutor:
         # Rebind after the audit callback and immediately before the only
         # dispatch point. A changed registry or call cannot reach the mock.
         try:
-            final = self._registry.bind(call)
-        except (KeyError, TypeError, ValueError) as exc:
+            final = _ORIGINAL_REGISTRY_BIND(self._registry, call)
+        except Exception as exc:
             raise DisconnectedMockExecutionRejected(
                 "mock binding changed after pre-action audit"
             ) from exc
+        self._assert_component_epoch()
         if (
             type(final) is not BoundAction
             or final.call is not call
@@ -296,15 +450,16 @@ class DisconnectedMockExecutor:
             or final.registry_revision != initial.registry_revision
             or final.bound_action_id != initial.bound_action_id
             or final.registration.backend is not backend
-            or type(final.registration.backend) is not MockToolBackend
+            or type(final.registration.backend) is not _MOCK_BACKEND_TYPE
         ):
             raise DisconnectedMockExecutionRejected(
                 "mock action identity changed before backend call"
             )
 
-        result = backend.execute(call)
+        result = _ORIGINAL_MOCK_EXECUTE(backend, call)
+        self._assert_component_epoch()
         if (
-            type(result) is not MockToolResult
+            type(result) is not _MOCK_RESULT_TYPE
             or result.request_id != call.request_id
             or type(result.result_sha256) is not str
             or re.fullmatch(r"[0-9a-f]{64}", result.result_sha256) is None
@@ -315,19 +470,22 @@ class DisconnectedMockExecutor:
             )
 
         try:
-            completed = self._audit.append(
-                call, outcome=_COMPLETED_OUTCOME,
+            completed = _ORIGINAL_AUDIT_APPEND(
+                self._audit, call, outcome=_COMPLETED_OUTCOME,
             )
-        except (RuntimeError, TypeError, ValueError, OSError) as exc:
+        except Exception as exc:
             # The mock already ran. Do not retry or claim that the completion
             # audit can retroactively undo it. No real external effect exists.
             raise DisconnectedMockExecutionRejected(
                 "completion audit failed after mock-only execution"
             ) from exc
+        self._assert_component_epoch()
         if (
             type(completed) is not ActionAuditEvent
             or completed.request_id != call.request_id
             or completed.outcome != _COMPLETED_OUTCOME
+            or type(completed.event_id) is not int
+            or completed.event_id <= pre_action.event_id
         ):
             raise DisconnectedMockExecutionRejected(
                 "completion audit receipt is inconsistent"
