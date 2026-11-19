@@ -303,7 +303,9 @@ class HfLoRAFullRun:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("training-local-identity")
-        torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        torch, tokenizer, model = _build_model_and_tokenizer(
+            snapshot, self.base_dir, self.chat_template_probe,
+        )
         wall_budget.check("training-model-load")
         ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
         encoded_rows = _pretokenize(tokenizer, ordered)
