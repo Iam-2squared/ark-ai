@@ -194,12 +194,18 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                         raise ValueError("snapshot path inventory exceeds local budget")
 
                     try:
+                        # DirEntry.is_symlink() also recognizes Windows reparse
+                        # point symlinks whose lstat mode may still look like a
+                        # directory. Reject before classifying or descending.
+                        if entry.is_symlink():
+                            raise ValueError("snapshot contains a symlink entry")
                         info = entry.stat(follow_symlinks=False)
+                        path_info = path.lstat()
                     except OSError as exc:
                         raise ValueError(
                             "snapshot entry disappeared during enumeration"
                         ) from exc
-                    if stat.S_ISLNK(info.st_mode):
+                    if stat.S_ISLNK(info.st_mode) or stat.S_ISLNK(path_info.st_mode):
                         raise ValueError("snapshot contains a symlink entry")
                     if stat.S_ISDIR(info.st_mode):
                         is_dir = True
@@ -208,12 +214,31 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                     else:
                         raise ValueError(f"unsupported snapshot entry: {path}")
 
-                    expected_epoch = (
-                        info.st_dev, info.st_ino, info.st_mode, info.st_size,
-                        info.st_mtime_ns, info.st_ctime_ns, info.st_nlink,
-                    )
+                    # Path.lstat and DirEntry.stat can report different
+                    # ctime semantics on Windows (creation vs change time).
+                    # Compare file identity and portable metadata across
+                    # sources, then compare the full path epoch against itself.
+                    if (
+                        not os.path.samestat(info, path_info)
+                        or info.st_size != path_info.st_size
+                        or info.st_mtime_ns != path_info.st_mtime_ns
+                        or info.st_nlink != path_info.st_nlink
+                        or (
+                            os.name != "nt"
+                            and (
+                                info.st_mode != path_info.st_mode
+                                or info.st_ctime_ns != path_info.st_ctime_ns
+                            )
+                        )
+                    ):
+                        raise ValueError("snapshot entry changed during enumeration")
                     observed_epoch = _entry_epoch(path, is_dir=is_dir)
-                    if observed_epoch != expected_epoch:
+                    path_epoch = (
+                        path_info.st_dev, path_info.st_ino, path_info.st_mode,
+                        path_info.st_size, path_info.st_mtime_ns,
+                        path_info.st_ctime_ns, path_info.st_nlink,
+                    )
+                    if observed_epoch != path_epoch:
                         raise ValueError("snapshot entry changed during enumeration")
                     paths.append((relative, path, is_dir, observed_epoch))
                     if is_dir:
