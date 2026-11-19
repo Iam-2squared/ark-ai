@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+
+import os
 
 import pytest
 
@@ -66,18 +69,22 @@ def test_windows_snapshot_epoch_uses_path_identity_not_direntry_file_id(
     tmp_path, monkeypatch,
 ):
     learning = _fake_project(tmp_path)
-    # Keep pathlib's already-selected POSIX path class while simulating the
-    # Windows branch used by _snapshot_entries on the Windows CI runners.
-    path_type = identity.Path
-    monkeypatch.setattr(identity, "Path", path_type)
-    monkeypatch.setattr(identity.os, "name", "nt")
-
+    # Simulate only the os surface used by _snapshot_entries. Replacing the
+    # global os.name would also change pathlib's platform-specific path factory.
     def forbidden_samestat(*_args):
         raise AssertionError(
             "Windows snapshot enumeration must not compare DirEntry and Path file IDs"
         )
 
-    monkeypatch.setattr(identity.os.path, "samestat", forbidden_samestat)
+    monkeypatch.setattr(
+        identity,
+        "os",
+        SimpleNamespace(
+            name="nt",
+            scandir=os.scandir,
+            path=SimpleNamespace(samestat=forbidden_samestat),
+        ),
+    )
     entries = identity._snapshot_entries(learning)
 
     assert [(relative, is_dir) for relative, _, is_dir, _ in entries] == [
