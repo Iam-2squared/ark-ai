@@ -436,7 +436,14 @@ class DisconnectedReadJournal:
         """Reopen an existing marked journal without migrating any schema."""
         _safe_path(path, must_exist=True)
         try:
-            connection = sqlite3.connect(path, timeout=10, isolation_level=None)
+            # The lexical exists/lstat check is not atomic with SQLite open.
+            # mode=rw refuses a file removed between checks and connection,
+            # rather than silently creating a new unmarked READ journal.
+            # No writer/dispatch authority is conferred by this recovery URI.
+            connection = sqlite3.connect(
+                path.as_uri() + "?mode=rw", uri=True,
+                timeout=10, isolation_level=None,
+            )
             try:
                 connection.execute("PRAGMA busy_timeout=10000")
                 # Marker, schema and chain must come from ONE SQLite snapshot.
