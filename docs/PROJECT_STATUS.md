@@ -1,3 +1,47 @@
+# LATEST — ARK AI Run1002: V3 export input separation and exact-head CI reconciliation
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T03:48:53+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1002 work-basis HEAD:** `9550be217a4dd9a493f787f7c493032116943d8f` (Run1001 checkpoint-result HEAD; exact-head CI #44581759022 GREEN 6/6). **Checkpoint write-basis HEAD:** `9550be217a4dd9a493f787f7c493032116943d8f`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and confirmed by the post-write branch read; its exact SHA is reported in the invocation result because a commit cannot contain its own SHA.
+
+**Protected refs and child workstreams:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; [Draft PR #27](https://github.com/Iam-2squared/ark-ai/pull/27) `e2d151ad8fc3d83090de92d363aa889b4105e56a` (free-only child of #5). PRs #8, #10–#27 remain OPEN/DRAFT/UNMERGED; no child promotion into #8 or #5 and no main merge.
+
+## NEW — Run1002 non-UI work
+
+1. **PR #27 — V3 export source path separation (source + synthetic tests + report).** Based on exact PR #5 head `805b377697472268db02650a89c7a94b1c5337c8`. The non-executing export-plan guard now requires existing non-aliased local base/Candidate source roots, rejects equal or nested/overlapping roots after canonical resolution, and rejects a Current deployed model equal to or inside the merged-Candidate source. Existing output/input and deployed-output collision checks remain. Checks occur before converter/quantizer identity hashing. Exact PR #27 head `e2d151ad8fc3d83090de92d363aa889b4105e56a`; CI #44591480005 GREEN 6/6 (Ubuntu/Windows × Python 3.11–3.13). Synthetic filesystem only. This is local path admission, not atomic dirfd custody, hostile-writer protection or hash-then-use TOCTOU proof. No converter, quantizer, model, GPU or training was run.
+2. **Exact-head CI reconciliation.** Newly completed GREEN results: PR #8 head `9550be217a4dd9a493f787f7c493032116943d8f` CI #44581759022; PR #21 head `85ab741c746e925168c1bfaa904741bc6747746c` CI #44580724794; PR #24 head `fd4c6d7ce93b86fb40539593d00021b65d520d8f` CI #44580457286; PR #25 head `ff3f2b05dc4937e32aea953089dac690937dcb67` CI #44581004662; PR #26 head `ae2df6c0d5bf6305051dc68a7ba1e885e4a6a779` CI #44581436218. Each run has six successful Windows/Ubuntu Python 3.11–3.13 jobs. Prior exact-head child results remain distinct: PR #20 CI #44570039196 GREEN, PR #23 CI #44570265573 GREEN, PR #22 CI #44560895025 GREEN, PR #19 CI #44549000547 GREEN, PR #18 CI #44538278870 GREEN, PR #17 CI #44534579783 GREEN, PR #16 CI #44549618760 GREEN, PR #15 CI #44530235330 GREEN, PR #14 CI #44528750916 GREEN, and PR #10 CI #44500056645 GREEN. These results certify only their named exact heads; no parent result is substituted for a child.
+3. **Read-only V3 source audit.** On PR #5 exact head `805b377697472268db02650a89c7a94b1c5337c8`, `verify_preflight_measurements()` already cross-binds evidence device/VRAM to the measured runtime, tokenizer probe to the frozen snapshot, allocated/reserved/measured VRAM ordering, and measured wall time to the frozen budget. `build_preflight_report()` calls this validator. The corresponding cross-binding item in the older `V3_FREE_GUARD_REVIEW.md` is stale for this exact PR #5 head; no training or authorization is implied. The remaining V3 concerns include hash-then-use TOCTOU, runtime-rendered tokenizer probe binding, and durable attempt/finalization receipts.
+4. **Read-only startup/authority boundary audit.** Startup readiness remains a disconnected synthetic graph evaluator; it does not yet prove real store open/recovery or grant a production capability. Registry/permission/occurrence/audit/planner composition remains mock-only and its separate SQLite stores are not cross-store atomic. No real backend or external effect is authorized.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 work-basis head `9550be217a4dd9a493f787f7c493032116943d8f`: CI #44581759022 GREEN 6/6.
+- PR #27 head `e2d151ad8fc3d83090de92d363aa889b4105e56a`: CI #44591480005 GREEN 6/6.
+- PR #21 head `85ab741c746e925168c1bfaa904741bc6747746c`: CI #44580724794 GREEN 6/6.
+- PR #24 head `fd4c6d7ce93b86fb40539593d00021b65d520d8f`: CI #44580457286 GREEN 6/6.
+- PR #25 head `ff3f2b05dc4937e32aea953089dac690937dcb67`: CI #44581004662 GREEN 6/6. This proves process-death/WAL recovery after a committed write in a synthetic local database, not power-loss/fsync durability.
+- PR #26 head `ae2df6c0d5bf6305051dc68a7ba1e885e4a6a779`: CI #44581436218 GREEN 6/6. This is best-effort no-follow path admission, not atomic filesystem custody.
+- No local pytest, physical-PC/Windows/GGUF, live capture, real ToolBackend, live notification, external-effect, GPU/runtime, paid-service or Candidate result is claimed. This checkpoint write may trigger another PR #8 workflow; its run ID/result is not known at write time.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration. PRs #10–#27 remain isolated Draft/unmerged; no main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. Local SQLite hashes, process-local identities and caller-supplied time are not authenticated consent, trusted time, independent custody, anti-rollback proof, cross-store atomicity or external-effect evidence. V3 local path checks remain best-effort against hostile concurrent filesystem mutation. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Preserve PR #27 Draft/unmerged and inspect only its exact-head evidence if a later regression or CI failure appears; do not open the PR #5 gate or execute export/training.
+2. Continue Memory WAL/SHM last-close, pinned-reader/process-death, CAS/ABA, expiry/event snapshot coherence and COMMIT-UNKNOWN manual-only recovery. Keep process-crash evidence distinct from power-loss durability.
+3. Continue Planner path custody, terminal propagation, journal COMMIT-UNKNOWN recovery and retained-prefix truncation checks. RUNNING/unknown outcomes remain quarantined and never auto-replayed.
+4. Continue restart-safe authorization, trusted-clock audit-before-action and occurrence/replay work over disconnected mocks only. Resolve cross-store atomicity before any real backend integration; do not make an irreversible store/transaction architecture choice without explicit authorization.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive restart/occurrence state and Observation fixture lifecycle. Keep live camera/microphone/screen capture disconnected; startup readiness must consume verified local store results before any real capability is exposed.
+6. Continue free-only V3 approval/path/identity/reproducibility guards, especially byte binding between review and later use, runtime tokenizer-template measurement, and durable attempt/finalization receipts. No external compute or protected V2 evaluation.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1001: audit/scheduler regression repairs, Memory WAL crash test, V3 reparse-point guard
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T02:51:23+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
