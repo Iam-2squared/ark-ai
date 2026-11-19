@@ -16,6 +16,31 @@ from .execution import canonical_json, sha256_bytes
 
 _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
+# Windows directory junctions are name-surrogate reparse points but are not
+# necessarily reported by DirEntry.is_symlink() or stat.S_ISLNK().
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    attributes = getattr(info, "st_file_attributes", 0)
+    return (
+        type(attributes) is int
+        and bool(attributes & _FILE_ATTRIBUTE_REPARSE_POINT)
+    )
+
+
+def _has_symlink_or_reparse_ancestor(path: Path) -> bool:
+    """Inspect ancestors with lstat so junctions cannot redirect a local path."""
+    for parent in path.parents:
+        try:
+            info = parent.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise ValueError("identity path ancestor became unavailable") from exc
+        if stat.S_ISLNK(info.st_mode) or _is_reparse_point(info):
+            return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -102,8 +127,8 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     if ".." in path.parts:
         raise ValueError("identity path may not traverse parent aliases")
     try:
-        if any(parent.is_symlink() for parent in path.parents):
-            raise ValueError("symlinked identity file ancestors are forbidden")
+        if _has_symlink_or_reparse_ancestor(path):
+            raise ValueError("symlinked or reparse-point identity ancestors are forbidden")
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"identity path must be one regular non-symlink file: {path}")
         before = path.stat(follow_symlinks=False)
@@ -138,7 +163,8 @@ def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     except OSError as exc:
         raise ValueError("snapshot entry disappeared during enumeration") from exc
     if (
-        (is_dir and not stat.S_ISDIR(info.st_mode))
+        _is_reparse_point(info)
+        or (is_dir and not stat.S_ISDIR(info.st_mode))
         or (not is_dir and not stat.S_ISREG(info.st_mode))
     ):
         raise ValueError("snapshot entry type changed during enumeration")
@@ -158,13 +184,11 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     dirfd custody or protection from a hostile concurrent filesystem writer.
     """
     root = Path(root)
-    if (
-        ".." in root.parts
-        or any(parent.is_symlink() for parent in root.parents)
-    ):
+    if ".." in root.parts or _has_symlink_or_reparse_ancestor(root):
         raise ValueError("snapshot root must be a non-aliased local directory")
     try:
-        if not stat.S_ISDIR(root.lstat().st_mode):
+        root_info = root.lstat()
+        if not stat.S_ISDIR(root_info.st_mode) or _is_reparse_point(root_info):
             raise ValueError("snapshot root must be a non-aliased local directory")
     except OSError as exc:
         raise ValueError("snapshot root became unavailable") from exc
@@ -205,8 +229,13 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                         raise ValueError(
                             "snapshot entry disappeared during enumeration"
                         ) from exc
-                    if stat.S_ISLNK(info.st_mode) or stat.S_ISLNK(path_info.st_mode):
-                        raise ValueError("snapshot contains a symlink entry")
+                    if (
+                        stat.S_ISLNK(info.st_mode)
+                        or stat.S_ISLNK(path_info.st_mode)
+                        or _is_reparse_point(info)
+                        or _is_reparse_point(path_info)
+                    ):
+                        raise ValueError("snapshot contains a symlink or reparse-point entry")
                     if stat.S_ISDIR(info.st_mode):
                         is_dir = True
                     elif stat.S_ISREG(info.st_mode):
