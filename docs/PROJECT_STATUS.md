@@ -1,4 +1,48 @@
-# LATEST — ARK AI Run990: V3 preflight path ancestry + Action Audit outcome boundary
+# LATEST — ARK AI Run991: Action Audit compatibility repair + foundation gap reconciliation
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T21:01:13+09:00.** This checkpoint timestamp is reporting metadata only, not trusted consent, scheduler, action, authorization, expiry, or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run991 work-basis HEAD at invocation start:** `44a428c337eef2ce26a3655356657ee63675e87e` (Run990 checkpoint). **Checkpoint write-basis HEAD:** `d8146b75ea1ca2bd314ea873fd4e8288c4895b9d` (Run991 gap-matrix reconciliation). **Checkpoint-result HEAD:** the normal GitHub Contents API commit returned by this update and verified after the write; it is not embedded here because a commit cannot contain its own SHA.
+
+**Protected refs / current workstreams at checkpoint prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; [Draft PR #10](https://github.com/Iam-2squared/ark-ai/pull/10) `52f457687e34dfc9f1a7f4fc017336a8a02edaf7`; [Draft PR #11](https://github.com/Iam-2squared/ark-ai/pull/11) `97e5225f6d11723cd333dd6d86d4582c89bfb2b9`; [Draft PR #12](https://github.com/Iam-2squared/ark-ai/pull/12) `fb741b67d9819cc19a147f2afc67bbccbf72ba50`; [Draft PR #13](https://github.com/Iam-2squared/ark-ai/pull/13) latest head `b940525c43d3e3a858352c8702dc4202598597e3`. All remain OPEN/DRAFT/UNMERGED at checkpoint prewrite. PR #10 is a child of PR #8; PR #12 is a child of PR #11; PR #13 is a child of PR #8. No main merge or UI branch mutation.
+
+## NEW — Run991 non-UI work
+
+1. **Action Audit backward-compatibility repair — Draft PR #13.** Work basis was `a5d0146e4eb1f0f5434420b481065c38ff5edcb1`; current source head is `b940525c43d3e3a858352c8702dc4202598597e3` on `research/action-audit-outcome-bounds-run990`. The first Run990 implementation caused two existing diagnostic compatibility tests to fail: a non-exact `str` subclass did not receive the established “exact string” ValueError wording, and an empty persisted outcome was classified as a generic digest/hydration failure rather than malformed identity. The repair separates exact-type rejection from non-empty/budget validation and classifies an empty persisted outcome as identity-malformed in the SQLite-side prehydration CASE. Outcome vocabulary, Action Audit v1 schema/public fields, accepted valid values, and fail-closed behavior are unchanged.
+   - Initial head `dd210bcf42236e3a84cbdfc6899b4ed10678a590`: [CI #44510665496](https://github.com/Iam-2squared/ark-ai/actions/runs/44510665496) observed 4/6 failures at Ruff E501.
+   - Formatting-only repair head `a5d0146e4eb1f0f5434420b481065c38ff5edcb1`: [CI #44510791570](https://github.com/Iam-2squared/ark-ai/actions/runs/44510791570) **FAIL 6/6 at pytest**, with the two backward-compatibility failures above.
+   - Current head `b940525c43d3e3a858352c8702dc4202598597e3`: [CI #44518002802](https://github.com/Iam-2squared/ark-ai/actions/runs/44518002802) **3/6 SUCCESS, 3/6 IN PROGRESS** at checkpoint prewrite. No latest-head PASS claim.
+
+2. **JARVIS foundation gap-matrix reconciliation — Draft PR #8.** Updated `docs/JARVIS_FOUNDATION_GAP_MATRIX.md` at commit `d8146b75ea1ca2bd314ea873fd4e8288c4895b9d`, based on Run990 HEAD `44a428c337eef2ce26a3655356657ee63675e87e`. Added a current source-audit table and retained the old matrix as historical baseline. Corrected stale “not landed” statements for Planner exact topology/transition policy, Memory identity/content/storage/expiry/read-snapshot integrity, immutable ToolRegistry, exact local PermissionGate ingress, and disconnected Observation fixture adapters. Explicitly preserves the remaining gaps: durable Planner journal/recovery, restart-safe durable one-shot authorization, trusted-clock audit-before-action executor, integrated proactive occurrence state, live capture, and external provenance/consent proof. This is documentation reconciliation, not a new PASS or a contract change.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 prior source checkpoint HEAD `dda7c191546a348a606b31f7f0f4287de8f64183`: [CI #44500768380](https://github.com/Iam-2squared/ark-ai/actions/runs/44500768380) **GREEN 6/6**. Run991 documentation commit `d8146b75ea1ca2bd314ea873fd4e8288c4895b9d`: [CI #44519470714](https://github.com/Iam-2squared/ark-ai/actions/runs/44519470714) **6/6 IN PROGRESS** at checkpoint prewrite. The status checkpoint write below is expected to trigger another branch CI; its run ID/result is not known at write time.
+- PR #10 head `52f457687e34dfc9f1a7f4fc017336a8a02edaf7`: [CI #44500056645](https://github.com/Iam-2squared/ark-ai/actions/runs/44500056645) **GREEN 6/6**.
+- PR #11 head `97e5225f6d11723cd333dd6d86d4582c89bfb2b9`: [CI #44500347265](https://github.com/Iam-2squared/ark-ai/actions/runs/44500347265) **GREEN 6/6**.
+- PR #12 head `fb741b67d9819cc19a147f2afc67bbccbf72ba50`: [CI #44509778580](https://github.com/Iam-2squared/ark-ai/actions/runs/44509778580) **GREEN 6/6**.
+- PR #13 latest head `b940525c43d3e3a858352c8702dc4202598597e3`: [CI #44518002802](https://github.com/Iam-2squared/ark-ai/actions/runs/44518002802) **3/6 SUCCESS, 3/6 IN PROGRESS**. The earlier all-six pytest failure belongs only to head `a5d0146...`; the repair is not yet CI-certified.
+- No duplicate equivalent workflow was dispatched. No local test result is claimed; no physical Windows/GGUF/runtime test was performed.
+
+## Frozen contracts, blockers and approvals
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credential/account connection, physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain WRITE replay, or main merge. Local SHA/SQLite evidence is not independent provenance or authenticated consent. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Confirm PR #13 latest-head CI `b940525...` across all six Windows/Ubuntu × Python 3.11–3.13 jobs; inspect any real failure and make the smallest semantics-preserving fix.
+2. Continue Memory WAL/SHM cross-process lifecycle, CAS/ABA, coherent expiry/event snapshots and COMMIT-UNKNOWN manual-only triage.
+3. Implement and validate a durable Planner journal bound to canonical topology/status revisions and retained-prefix recovery; keep ambiguous recovered WRITE states quarantined.
+4. Advance restart-safe one-shot authorization and occurrence/replay ledger, then trusted-clock audit-before-action over disconnected mocks only. Do not connect real backends.
+5. Continue privacy-safe Personal Context, proactive scheduler restart state, Observation fixture lifecycle and free-only V3 approval/path/identity/reproducibility guards. UI remains paused.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — ARK AI Run990: V3 preflight path ancestry + Action Audit outcome boundary
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T20:01:08+09:00.** This is a checkpoint/report timestamp only, **not** a trusted scheduler, consent, action, authorization, expiry or provenance clock. **Overall ARK/JARVIS: NOT_PASSED.**
 
