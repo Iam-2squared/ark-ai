@@ -105,14 +105,14 @@ def _stack(tmp_path):
     journal = PlannerJournal(tmp_path / "planner-journal.sqlite3")
     journal.create_plan("fixture-plan", PlanGraph(steps))
     grants = (CapabilityGrant("capability.read", "synthetic:private"),)
-    return backend, audit, occurrences, executor, journal, steps, grants
+    return backend, audit, occurrences, registry, executor, journal, steps, grants
 
 
 @pytest.mark.parametrize("commit_persists", (True, False))
 def test_uncertain_succeeded_commit_recovers_without_mock_replay(
     tmp_path, monkeypatch, commit_persists: bool,
 ):
-    backend, audit, occurrences, executor, journal, steps, grants = _stack(tmp_path)
+    backend, audit, occurrences, registry, executor, journal, steps, grants = _stack(tmp_path)
     real_connect = sqlite3.connect
 
     def connect(database, *args, **kwargs):
@@ -136,15 +136,7 @@ def test_uncertain_succeeded_commit_recovers_without_mock_replay(
             journal,
             "fixture-plan",
             steps,
-            ToolRegistry((
-                ToolRegistration(
-                    "fixture.read",
-                    "capability.read",
-                    Effect.READ,
-                    "ark.mock.fixture.v1",
-                    backend,
-                ),
-            )),
+            registry,
             executor,
             "read",
             grants,
