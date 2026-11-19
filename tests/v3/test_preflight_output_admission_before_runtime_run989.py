@@ -11,11 +11,16 @@ import ark.learning.training_cli as cli
 
 @pytest.mark.parametrize(
     "path_kind",
-    ("existing", "missing_parent", "parent_symlink", "dangling_symlink", "parent_traversal", "oversized"),
+    (
+        "existing", "missing_parent", "parent_symlink",
+        "dangling_symlink", "parent_traversal", "oversized",
+    ),
 )
 def test_invalid_report_destination_is_rejected_before_runtime_probe(
     tmp_path, monkeypatch, path_kind,
 ):
+    real_parent = None
+    dangling_target = None
     if path_kind == "existing":
         report = tmp_path / "already-exists.json"
         report.write_text("preserve", encoding="utf-8")
@@ -32,8 +37,9 @@ def test_invalid_report_destination_is_rejected_before_runtime_probe(
         report = linked_parent / "report.json"
     elif path_kind == "dangling_symlink":
         report = tmp_path / "dangling-report.json"
+        dangling_target = tmp_path / "not-created.json"
         try:
-            report.symlink_to(tmp_path / "not-created.json")
+            report.symlink_to(dangling_target)
         except OSError as exc:
             pytest.skip(f"file symlink unavailable: {exc}")
     elif path_kind == "parent_traversal":
@@ -71,5 +77,14 @@ def test_invalid_report_destination_is_rejected_before_runtime_probe(
     assert runtime_calls == []
     if path_kind == "existing":
         assert report.read_text(encoding="utf-8") == "preserve"
-    else:
+    elif path_kind == "missing_parent":
         assert not report.parent.exists()
+    elif path_kind == "parent_symlink":
+        assert real_parent is not None
+        assert not (real_parent / "report.json").exists()
+    elif path_kind == "dangling_symlink":
+        assert dangling_target is not None
+        assert report.is_symlink()
+        assert not dangling_target.exists()
+    elif path_kind == "parent_traversal":
+        assert not (tmp_path / "report.json").exists()
