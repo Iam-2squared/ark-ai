@@ -369,3 +369,41 @@ def test_unbounded_observation_inventory_rejected_before_recovery_review(tmp_pat
         match="inexact restart bridge inputs",
     ):
         bridge.review_disconnected_planner_slot_restart(**data)
+
+
+@pytest.mark.parametrize(
+    "marker",
+    ("\n", "\x7f", "\u0085", "\u200b", "\u202e", "\u2066", "\ufeff"),
+)
+@pytest.mark.parametrize("carrier", ("claim", "offline", "observation", "independent"))
+def test_invisible_step_identity_rejected_at_restart_bridge_ingress(
+    tmp_path, marker, carrier,
+):
+    data = _setup(tmp_path)
+    forged = _WRITE + marker
+    assert not bridge._valid_step_id(forged)
+    if carrier == "claim":
+        data["claims"] = (
+            replace(data["claims"][0], step_id=forged), data["claims"][1],
+        )
+    elif carrier == "offline":
+        data["offline_steps"] = (
+            replace(data["offline_steps"][0], step_id=forged),
+            data["offline_steps"][1],
+        )
+    elif carrier == "observation":
+        data["observations"] = (
+            replace(data["observations"][0], step_id=forged),
+        )
+    else:
+        data["independently_expected_write_ids"] = (forged,)
+    with pytest.raises(
+        bridge.DisconnectedPlannerSlotBridgeRejected,
+        match="inexact restart bridge inputs",
+    ):
+        bridge.review_disconnected_planner_slot_restart(**data)
+
+
+def test_local_restart_step_id_keeps_plain_multilingual_names():
+    assert bridge._valid_step_id("step_通常_検証")
+    assert bridge._valid_step_id("界" * 85)
