@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run1005: Memory and Planner SQLite path custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T06:51:32+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/memory-sqlite-postopen-recheck-run1005` / [Draft PR #37](https://github.com/Iam-2squared/ark-ai/pull/37), OPEN/DRAFT/UNMERGED; PR #37 is a child of Draft PR #35, which is a child of Draft PR #8. **Run1005 work-basis HEAD:** `06d25cabb34acaaf76f9f3dc4fb84439cce8659e` (PR #37 exact code head before this checkpoint; CI #44622844882 QUEUED). **Checkpoint write-basis HEAD:** `06d25cabb34acaaf76f9f3dc4fb84439cce8659e`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and confirmed by the post-write branch read; its exact SHA is reported in the invocation result because a commit cannot contain its own SHA.
+
+**Protected refs and child workstreams:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) `11917b99e177e4601fae5a6f2787ddc548aca91c`; [Draft PR #19](https://github.com/Iam-2squared/ark-ai/pull/19) `c08c7e9e6c836285362da96663dee903479da98a`; [Draft PR #35](https://github.com/Iam-2squared/ark-ai/pull/35) `5f629d7746bfb2e6ca6124e419ccc43bbb3e1f6f`; [Draft PR #36](https://github.com/Iam-2squared/ark-ai/pull/36) `e8f89704b3de5d55daaf58463a11aee140ca9cca`; [Draft PR #37](https://github.com/Iam-2squared/ark-ai/pull/37) `06d25cabb34acaaf76f9f3dc4fb84439cce8659e`. Existing PRs #27–#34 remain OPEN/DRAFT/UNMERGED. No child promotion, PR #5 gate opening, PR #9 UI resumption or main merge.
+
+## NEW — Run1005 non-UI work
+
+1. **PR #35 — Memory SQLite Windows reparse-point admission (source + tests + note).** Based on PR #8 exact head `11917b99e177e4601fae5a6f2787ddc548aca91c`. Added a pinned `FILE_ATTRIBUTE_REPARSE_POINT` predicate and checks for ancestors, main database and `-wal`/`-shm`/`-journal` sidecars before SQLite open. Synthetic tests cover each path position, predicate rebinding and exact attribute typing. The first exact-head run #44621953154 on superseded head `0f1721f053197a70284893591a7953d3465f4764` FAILED at Ruff only (`I001` import organization and `F401` unused `sqlite3` import; pytest was skipped). Removed the unused import, combined imports, and restored the path helper's docstring-first ordering. Current PR #35 head `5f629d7746bfb2e6ca6124e419ccc43bbb3e1f6f`; exact-head CI #44622583411 IN PROGRESS. No PASS is claimed.
+
+2. **PR #36 — Planner journal Windows reparse-point admission (source + tests + note).** Based on PR #19 exact head `c08c7e9e6c836285362da96663dee903479da98a` (CI #44549000547 GREEN 6/6). Added a pinned reparse-point predicate and checks for Planner journal ancestors, main database and SQLite sidecars before connection open. Six synthetic tests cover path positions, policy rebinding, exact attribute typing and valid-path compatibility. Planner DDL, transition/CAS rules, COMMIT-UNKNOWN handling and recovery quarantine are unchanged. Exact PR #36 head `e8f89704b3de5d55daaf58463a11aee140ca9cca`; CI #44622369804 IN PROGRESS.
+
+3. **PR #37 — Memory SQLite post-open path recheck (source + tests + note).** Based on PR #35 exact head `5f629d7746bfb2e6ca6124e419ccc43bbb3e1f6f`. Both read/write and read-only connection paths now repeat the path admission after `sqlite3.connect()`, before PRAGMAs or queries, and close the just-opened connection if the second check fails. Synthetic tests inject a reparse-point stat result after open and verify the handle is closed. This narrows the lstat/open race but does not establish descriptor identity or eliminate TOCTOU. Exact PR #37 head `06d25cabb34acaaf76f9f3dc4fb84439cce8659e`; CI #44622844882 QUEUED.
+
+4. **Independent CI reconciliation.** PR #8 exact head `11917b99e177e4601fae5a6f2787ddc548aca91c`: CI #44613533201 GREEN 6/6. PR #19 exact head `c08c7e9e6c836285362da96663dee903479da98a`: CI #44549000547 GREEN 6/6. PR #33 exact head `0d5edfd6c6a9070cfd81b58c96fa03860d56ac3d`: CI #44612867628 GREEN 6/6. PR #34 exact head `2ac894cfda27b3c92031d7aa97471f96282f6d84`: CI #44613208267 GREEN 6/6. PR #29 exact head `53097c6d04c3275d0c3b5638cf894a3357f881c1`: CI #44613414747 FAIL; five jobs passed and Windows/Python 3.13 failed in the existing `tests/ui/test_server.py::test_cross_origin_reads_and_writes_rejected[headers3]` with `ConnectionAbortedError: [WinError 10053]`. PR #29's diff contains only Personal Context revocation and Memory WAL fixture files, not UI changes. No UI branch, frontend test or UI source was modified; the unrelated failure is preserved without a UI fix.
+
+No local full-repository pytest or physical-Windows junction test is claimed. PR #35's latest exact-head CI is IN PROGRESS; PR #36 is IN PROGRESS; PR #37 is QUEUED. This documentation checkpoint may trigger a new PR #37 workflow run; its run ID/result is not known at write time.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration. PRs #8, #19, #27–#37 remain isolated Draft/unmerged; no main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. Reparse-point checks and post-open path rechecks are best-effort local admission, not atomic dirfd custody, authenticated storage or TOCTOU proof. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile PR #35, #36 and #37 by exact head/run ID. If any CI fails, inspect only the failing job, make the smallest semantics-preserving normal-write fix, then switch immediately to a non-conflicting lane while the next CI runs.
+2. Keep Memory WAL/SHM last-close, pinned-reader/process-death, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only recovery moving forward.
+3. Continue Planner terminal propagation, COMMIT-UNKNOWN recovery on commit and rollback outcomes, completion-audit uncertainty and retained-prefix truncation checks. RUNNING/unknown outcomes remain quarantined and never auto-replayed.
+4. Continue trusted-clock audit-before-action and restart-safe occurrence/replay protection over disconnected mocks only. Resolve cross-store atomicity before any real backend integration.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive scheduler restart state and Observation fixture lifecycle. Keep live camera/microphone/screen capture disconnected.
+6. Continue free-only V3 approval/path/identity/reproducibility guards. No external compute, real Candidate adapter/weights, protected V2 opening or promotion.
+7. Keep JARVIS foundations isolated/reversible until their own exact-head GREEN evidence and explicit integration gates exist. **No UI/frontend work.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1004: Memory WAL cleanup, Planner completion-audit quarantine, V3 and scheduler reparse guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T05:54:35+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
