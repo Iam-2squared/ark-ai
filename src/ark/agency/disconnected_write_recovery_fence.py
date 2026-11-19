@@ -102,6 +102,13 @@ _FENCE_DENIAL_NAMES = (
 _ORIGINAL_FENCE_DENIALS = tuple(
     vars(_FENCE_TYPE)[name] for name in _FENCE_DENIAL_NAMES
 )
+# Keep every identity/denial descriptor in the policy. A shortened vector
+# would otherwise make the zip-based comparison silently skip a dangerous
+# class hook or authority getter, even with strict=True.
+_ORIGINAL_STEP_MEMBERS_VECTOR = _STEP_MEMBERS
+_ORIGINAL_DISPOSITION_MEMBERS_VECTOR = _DISPOSITION_MEMBERS
+_ORIGINAL_FENCE_MEMBERS_VECTOR = _FENCE_MEMBERS
+_ORIGINAL_FENCE_DENIAL_NAMES_VECTOR = _FENCE_DENIAL_NAMES
 # A synthetic recovery digest is not external-execution evidence, but a
 # substituted hash/serializer/domain must never bless an unreviewed claim.
 # Snapshot their original definitions before any reentrant result callback.
@@ -125,6 +132,13 @@ def _require_original_fence_denials() -> None:
     # Do not run a substituted getter even if it returns False. Report type
     # identity matters: copied original descriptors do not authenticate an
     # arbitrary new report constructor.
+    if (
+        _STEP_MEMBERS is not _ORIGINAL_STEP_MEMBERS_VECTOR
+        or _DISPOSITION_MEMBERS is not _ORIGINAL_DISPOSITION_MEMBERS_VECTOR
+        or _FENCE_MEMBERS is not _ORIGINAL_FENCE_MEMBERS_VECTOR
+        or _FENCE_DENIAL_NAMES is not _ORIGINAL_FENCE_DENIAL_NAMES_VECTOR
+    ):
+        raise OfflineRecoveryFenceRejected("mixed-plan policy vector changed")
     if (
         OfflineRecoveryStepClaim is not _STEP_TYPE
         or OfflineRecoveryFence is not _FENCE_TYPE
