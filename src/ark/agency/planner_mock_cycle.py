@@ -11,7 +11,6 @@ This is a reversible local integration experiment, not a production dispatcher.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
 from dataclasses import dataclass
 
 from .contracts import (
@@ -41,7 +40,8 @@ from .planner_journal import (
 )
 from .registry import ToolRegistry
 
-_SHA = re.compile(r"[0-9a-f]{64}\\Z")
+_SHA = re.compile(r"[0-9a-f]{64}\Z")
+_OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _MAX_MS = 2**63 - 1
 
 
