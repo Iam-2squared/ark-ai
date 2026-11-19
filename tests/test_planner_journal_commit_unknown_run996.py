@@ -152,7 +152,8 @@ def test_transition_commit_acknowledgement_loss_recovers_running_as_ambiguous(
 def test_recovery_rejects_interior_or_tail_event_prefix_truncation(
     tmp_path, removed_sequence: int,
 ):
-    journal = PlannerJournal(tmp_path / "planner.sqlite3")
+    path = tmp_path / "planner.sqlite3"
+    journal = PlannerJournal(path)
     steps = _steps()
     graph = PlanGraph(steps)
     journal.create_plan("truncated-prefix", graph)
@@ -174,7 +175,7 @@ def test_recovery_rejects_interior_or_tail_event_prefix_truncation(
     )
     assert completed.receipt.sequence == 2
 
-    with closing(sqlite3.connect(journal._path)) as connection:
+    with closing(sqlite3.connect(path)) as connection:
         connection.execute(
             "DELETE FROM planner_journal_events WHERE plan_id=? AND sequence=?",
             ("truncated-prefix", removed_sequence),
