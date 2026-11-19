@@ -40,6 +40,12 @@ _RESULT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_RESULT_INIT = vars(_RESULT_TYPE)["__init__"]
 _ORIGINAL_RESULT_FIELDS = tuple(vars(_RESULT_TYPE)[f] for f in _RESULT_FIELDS)
 _ORIGINAL_RESULT_HOOKS = tuple(vars(_RESULT_TYPE).get(h) for h in _RESULT_HOOKS)
+# Freeze complete field/hook vectors as well as their descriptors. Otherwise a
+# paired truncation of names and originals could omit the private PCM slot.
+_RESULT_FIELDS_EPOCH = _RESULT_FIELDS
+_RESULT_HOOKS_EPOCH = _RESULT_HOOKS
+_ORIGINAL_RESULT_FIELDS_EPOCH = _ORIGINAL_RESULT_FIELDS
+_ORIGINAL_RESULT_HOOKS_EPOCH = _ORIGINAL_RESULT_HOOKS
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_STRUCT = struct
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -70,6 +76,10 @@ def _require_original_pcm_dependencies() -> None:
         or _SHA256 is not _ORIGINAL_SHA_PATTERN
         or MAX_PCM_BYTES is not _ORIGINAL_MAX_PCM_BYTES
         or _round_ratio_away_from_zero is not _ORIGINAL_ROUND
+        or _RESULT_FIELDS is not _RESULT_FIELDS_EPOCH
+        or _RESULT_HOOKS is not _RESULT_HOOKS_EPOCH
+        or _ORIGINAL_RESULT_FIELDS is not _ORIGINAL_RESULT_FIELDS_EPOCH
+        or _ORIGINAL_RESULT_HOOKS is not _ORIGINAL_RESULT_HOOKS_EPOCH
         or ResampledPcm is not _RESULT_TYPE
         or vars(_RESULT_TYPE).get("__init__") is not _ORIGINAL_RESULT_INIT
         or any(
