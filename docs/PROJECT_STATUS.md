@@ -1,3 +1,44 @@
+# LATEST — ARK AI Run982: independent PCM resampling integrity + Planner restart input admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T11:52:33.534+09:00.** Reporting clock only; not authenticated audit/consent/scheduler/provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite. **Exact invocation work-basis HEAD:** `be8414085fd0f73bb9354d3539b19cd0ba0a07c3` (Run981 checkpoint). **Latest executable source/test HEAD:** `182a8e693dee938a2fb06575ebeec982b384d5e5`. **Technical report and checkpoint-write-basis HEAD:** `af519010e73622e748df60243391092079a32737`. **Checkpoint-result HEAD:** the subsequent normal GitHub Contents API commit SHA, independently verified against live PR and branch HEAD; a tracked file cannot contain its own future commit SHA.
+
+**Protected refs verified before checkpoint:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All remain unchanged, OPEN/DRAFT/UNMERGED; no frontend/UI changes or main merge. Frozen V1/V2/Local UI/Launcher evidence, Memory v1/ToolCall v1/PlanStep v1/Observation Envelope v1 and protected V2/V3 evaluation/approval contracts are unchanged.
+
+## NEW — two independent free-only non-UI packages
+
+1. **Observation PCM integrity:** [source `ea6e7f70`](https://github.com/Iam-2squared/ark-ai/commit/ea6e7f7035a6d6ba64c1bf4b4fb2c72f1252f43e), [tests `84330844`](https://github.com/Iam-2squared/ark-ai/commit/84330844024f0dd78029209c7ff5cd9f34291544). Exact `ResampledPcm` and source/target metadata verified; independent integer interpolation checks every output sample against original mono16 WAV bytes, including a final post-callback recheck. Closes the digest-consistent forged-output gap in activity previews. **25 authored synthetic cases** (6 valid rates + 18 forged child reports + 1 boundary oracle). No anti-alias quality claim, microphone, audio disclosure, network or consent.
+2. **Planner restart admission:** [source `71cd21da`](https://github.com/Iam-2squared/ark-ai/commit/71cd21da77dd059222ca84980fe7b216f67782d9), [tests `182a8e69`](https://github.com/Iam-2squared/ark-ai/commit/182a8e693dee938a2fb06575ebeec982b384d5e5). Exact enum/str/tuple and bounded dependencies/observations are admitted before potentially hostile Python subclass comparisons and detached SQLite reviewer callbacks. **14 authored cases**; no WRITE release, real tool dispatch, automatic restart replay or cross-store proof.
+
+**39 newly authored parametrized regression cases**, with no deleted tests or weakened approval gates. Writes used normal GitHub Contents API only. No local full pytest, unavailable physical target-PC/GGUF test, real network/tool action or GPU execution claimed.
+
+[Run982 detailed technical report](https://github.com/Iam-2squared/ark-ai/blob/af519010e73622e748df60243391092079a32737/docs/JARVIS_RUN982_NON_UI_RESAMPLE_PROJECTION_PLANNER_INGRESS.md) · [Historical archive through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## CI evidence / current gates
+
+- Previous Run981 checkpoint exact HEAD `be8414085fd0f73bb9354d3539b19cd0ba0a07c3`: [CI #44440142656](https://github.com/Iam-2squared/ark-ai/actions/runs/44440142656) **GREEN all 6/6** Windows/Ubuntu × Python 3.11–3.13. **Only this older exact HEAD is certified GREEN.**
+- Run982 observation test HEAD `84330844024f0dd78029209c7ff5cd9f34291544`: [CI #44446521135](https://github.com/Iam-2squared/ark-ai/actions/runs/44446521135) **IN PROGRESS** at last observation.
+- Run982 Planner test HEAD `182a8e693dee938a2fb06575ebeec982b384d5e5`: [CI #44446784977](https://github.com/Iam-2squared/ark-ai/actions/runs/44446784977) **IN PROGRESS** at last observation.
+- Technical report HEAD `af519010e73622e748df60243391092079a32737`: [CI #44447254592](https://github.com/Iam-2squared/ark-ai/actions/runs/44447254592) **QUEUED** at last observation. This checkpoint can trigger a newer run. **Latest exact checkpoint HEAD six-job GREEN is NOT YET CERTIFIED.** No duplicate equivalent workflow dispatch.
+
+## Blockers / authorization boundaries
+
+No UI/frontend work on Draft PR #9, no gated PR #5 preflight/training or main merge, no billable external GPU/API/subscription/service, credential creation, Candidate/adapter/weight generation or promotion, protected final V2 opening, actual ToolBackend READ/WRITE, destructive erasure, physical-PC acts, automatic uncertain-WRITE replay or contract changes. Local SHA evidence is neither independent custody nor trusted time; disconnected audio and Planner artifacts cannot elevate authority. Memory WAL/SHM concurrency, CAS/ABA, coherent expiry/event snapshots, cross-store COMMIT-UNKNOWN ambiguity, trusted consent/revocation and physical target validation remain unresolved.
+
+## Next plan / 今後の方針
+
+1. Confirm **newest exact source/test/checkpoint HEAD** CI on Windows/Ubuntu Python 3.11–3.13. Repair observed FAIL with minimal semantics-preserving patch; overlap independent free non-UI lanes.
+2. Harden Memory WAL/SHM handle races, generation CAS/ABA, expiry/event coherent snapshots and manual-only post-COMMIT uncertainty quarantine.
+3. Extend Planner terminal crash/restart recovery and Registry/PermissionGate/exactly-once approval/audit-before-action **only after** lower-level exact-head GREEN, using disconnected mock execution.
+4. Continue Personal Context privacy/retention/revocation, proactive occurrence/replay, observation fixture backend, and V3 free-only identity/path/reproducibility guard. **UI stays PAUSED.**
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run981 (verbatim preserved below)
+
 # LATEST — ARK AI Run981: Planner CI repair + four non-UI policy-vector safety packages
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T10:51:20.659+09:00** (reporting clock only; not authenticated audit, approval, expiry, privacy, scheduler, identity or provenance time). **Overall ARK/JARVIS: NOT_PASSED.**
