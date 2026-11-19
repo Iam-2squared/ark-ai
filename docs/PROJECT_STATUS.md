@@ -1,3 +1,46 @@
+# LATEST — ARK AI Run983: non-UI Memory scalar due-page admission, Planner hidden step ID, privacy-veto path fence
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T12:51:27.309+09:00.** This is reporting/checkpoint time, NOT authenticated action/audit/consent/scheduler/provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite. **Exact invocation work-basis HEAD:** `1236de889f62659d7009a34c2b125acf2c99452b` (Run982 checkpoint). **Latest executable source/test HEAD:** `1cb0977d60c7837c6d31f6669793765eed201ccf`. **Technical-report/checkpoint-write-basis HEAD:** `bc1029bbf684b9599395ff6f33c233672e187529`. **Checkpoint-result HEAD:** the subsequent normal GitHub Contents API commit SHA, verified after writing against live PR/branch HEAD and checkpoint Blob; a tracked checkpoint cannot contain its own future commit SHA.
+
+**Preserved refs checked before checkpoint:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`, gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`, paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All remain OPEN/DRAFT/UNMERGED and untouched; no UI/Frontend or main merge. Frozen V1/V2/Local UI/Launcher evidence and Memory v1, ToolCall/PlanStep v1, Observation Envelope v1 and protected V2/V3 evaluation/approval gates remain unchanged.
+
+## NEW — three independent free-only non-UI packages
+
+1. **Memory coherent expiry scalar row preflight** — [source `09d85c23`](https://github.com/Iam-2squared/ark-ai/commit/09d85c23653e32dc85b5464319378bc18a67f00a) + [tests `d05f9b45`](https://github.com/Iam-2squared/ark-ai/commit/d05f9b45a372ac19e51e112a4779ed580d617547). Under the same pinned read snapshot/due-page, reject corrupt SQLite scalar identity, digest, timestamps and revision before Python full-row hydration. **6 newly authored synthetic cases:** five 1-MB corrupted BLOB variants and one valid isolated scope with unrelated damaged foreign scope. Does not guarantee atomic file/sidecar custody or authenticate writers.
+2. **Disconnected Planner hidden step-ID admission** — [source `88b53978`](https://github.com/Iam-2squared/ark-ai/commit/88b539782fbcaedbdceb648bf930a889f3641088) + [tests `7d254723`](https://github.com/Iam-2squared/ark-ai/commit/7d2547236d6e605fd7b08a84c240240c242d490f). Reject C0/C1, invisible Unicode/bidi and formatting controls in restart reviewer step IDs before hashing/sorting/cross-review, while retaining ordinary multilingual IDs. **29 newly authored parametrized cases.** No real ToolBackend action, WRITE release or automatic uncertain replay.
+3. **Privacy / Personal Context revocation path fence** — [source `26be21c1`](https://github.com/Iam-2squared/ark-ai/commit/26be21c1ce67490befde9c041febd5edcf506ce9), [tests `76472af2`](https://github.com/Iam-2squared/ark-ai/commit/76472af2447e40f5d3f900ed56e86e6560cc45f3) and [import refinement `1cb0977d`](https://github.com/Iam-2squared/ark-ai/commit/1cb0977d60c7837c6d31f6669793765eed201ccf). Refuse lexical `..` SQLite source traversal, check absolute parent chain instead of only relative path parents; maintain ordinary local relative fixture. **5 newly authored cases.** This is raceable path preflight, not signed privacy consent or erasure.
+
+**Total: 3 coherent production/test packages, 40 newly authored cases**; no deleted tests, no weakened denials, no frozen contract/schema change. Saved through permitted normal GitHub Contents API only, no raw-object write/force push. Full local pytest and physical PC/GGUF unavailable/not performed; tests are **authored, NOT YET certified green** at newest HEAD.
+
+[Run983 detailed technical report](https://github.com/Iam-2squared/ark-ai/blob/bc1029bbf684b9599395ff6f33c233672e187529/docs/JARVIS_RUN983_NON_UI_MEMORY_DUE_SCALAR_PLANNER_STEP_PRIVACY_PATH.md) · [Historical archive through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## CI evidence / current gates
+
+- **Prior Run982 exact checkpoint HEAD `1236de889f62659d7009a34c2b125acf2c99452b`: [#44447458824](https://github.com/Iam-2squared/ark-ai/actions/runs/44447458824) GREEN 6/6**, Windows/Ubuntu × Python 3.11–3.13. This is older HEAD only, not new code proof.
+- Memory source [#44453305702](https://github.com/Iam-2squared/ark-ai/actions/runs/44453305702), Memory test [#44453363632](https://github.com/Iam-2squared/ark-ai/actions/runs/44453363632): **IN PROGRESS** at last snapshot.
+- Planner source [#44453555068](https://github.com/Iam-2squared/ark-ai/actions/runs/44453555068) **IN PROGRESS**, Planner test [#44453595181](https://github.com/Iam-2squared/ark-ai/actions/runs/44453595181) **IN PROGRESS** at last snapshot.
+- Privacy source [#44453899012](https://github.com/Iam-2squared/ark-ai/actions/runs/44453899012), tests [#44453933821](https://github.com/Iam-2squared/ark-ai/actions/runs/44453933821), test import adjustment [#44453958830](https://github.com/Iam-2squared/ark-ai/actions/runs/44453958830) **QUEUED** at last snapshot.
+- Technical report HEAD `bc1029bbf684b9599395ff6f33c233672e187529`: [CI #44454224237](https://github.com/Iam-2squared/ark-ai/actions/runs/44454224237) **QUEUED** at last snapshot. Checkpoint may trigger its own newer CI. **No certified latest checkpoint exact-head GREEN**, no duplicate equivalent dispatch.
+
+## Blockers / authorization boundaries
+
+No UI work on paused PR #9, gated PR #5 preflight/training, main merge, billable service/external GPU/paid API, new credential/secret/account connection, real Candidate adapter/weights generation or promotion, frozen final V2 opening, actual ToolBackend READ/WRITE, real camera/mic, irreversible erasure, autonomous COMMIT-UNKNOWN replay, or protected-contract change. Local SQLite/SHA256 cannot prove real owner consent, trusted clock, independent provenance, external action effects or cross-store atomicity. WAL/SHM aliases/open-handle races, generation ABA, coherent expiry/event snapshots, Planner recovery boundaries and physical target validation remain unresolved.
+
+## Next plan / 今後の方針
+
+1. Establish **newest source/test/checkpoint exact HEAD** Windows/Ubuntu × Python 3.11–3.13 CI; inspect any FAIL logs and repair smallest semantics-preserving defect through permitted normal API while overlapping independent work.
+2. Memory WAL/SHM path/open races, CAS/ABA retained generations, coherent expiry/event snapshots and COMMIT-UNKNOWN manual-only quarantine.
+3. Planner terminal restart recovery, immutable ToolRegistry, exact PermissionGate, one-time durable authorization, trusted-clock audit-before-action; mock-only integration after dependent exact-head GREEN.
+4. Personal Context privacy/retention/revocation, proactive occurrence replay prevention, observation fixtures and free-only V3 reproducibility/path/identity guards. **UI stays PAUSED.**
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run982 (verbatim preserved below)
+
 # LATEST — ARK AI Run982: independent PCM resampling integrity + Planner restart input admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T11:52:33.534+09:00.** Reporting clock only; not authenticated audit/consent/scheduler/provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
