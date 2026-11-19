@@ -25,7 +25,11 @@ from .offline_pcm_mono16 import (
     OfflinePcmMono16,
     convert_offline_pcm_mono16,
 )
-from .offline_pcm_resample16 import OfflineResampleRejected, resample_pcm16
+from .offline_pcm_resample16 import (
+    OfflineResampleRejected,
+    ResampledPcm,
+    resample_pcm16,
+)
 from .offline_pcm_wav import (
     OfflineWaveRejected,
     OfflineWaveRequest,
@@ -121,6 +125,48 @@ def _verify_mono_projection(
             total // channels
         ).to_bytes(2, "little", signed=True)
     return bytes(independent) == claimed
+
+
+
+def _verify_resample_projection(
+    source: bytes, source_rate: int, target_rate: int, claimed: bytes,
+) -> bool:
+    """Independently reconstruct exact integer PCM interpolation.
+
+    SHA-256 of substituted output alone only proves internal consistency, not
+    correspondence to the original WAV samples. This bounded local oracle
+    checks the entire byte sequence, including endpoint clamp and tie rounding.
+    """
+    if (
+        type(source) is not bytes or type(claimed) is not bytes
+        or not source or len(source) % 2
+        or len(source) > _MAX_MONO_INPUT_BYTES
+        or type(source_rate) is not int or type(target_rate) is not int
+        or source_rate <= 0 or target_rate <= 0
+    ):
+        return False
+    source_samples = len(source) // 2
+    expected_samples = (
+        source_samples * target_rate + source_rate - 1
+    ) // source_rate
+    if (
+        len(claimed) != expected_samples * 2
+        or len(claimed) > _MAX_MONO_INPUT_BYTES
+    ):
+        return False
+    for index in range(expected_samples):
+        left, remainder = divmod(index * source_rate, target_rate)
+        first = struct.unpack_from("<h", source, min(left, source_samples - 1) * 2)[0]
+        if left >= source_samples - 1:
+            expected = first
+        else:
+            second = struct.unpack_from("<h", source, (left + 1) * 2)[0]
+            numerator = first * (target_rate - remainder) + second * remainder
+            magnitude = (2 * abs(numerator) + target_rate) // (2 * target_rate)
+            expected = -magnitude if numerator < 0 else magnitude
+        if struct.unpack_from("<h", claimed, index * 2)[0] != expected:
+            return False
+    return True
 
 
 def preview_offline_wav_energy(
@@ -263,10 +309,18 @@ def preview_offline_wav_energy(
         )
         stable_request()
         if (
-            normalized.source_sha256 != converted.output_sha256
+            type(normalized) is not ResampledPcm
+            or normalized.source_sha256 != converted.output_sha256
+            or normalized.source_rate != wave.sample_rate_hz
+            or normalized.target_rate != _TARGET_RATE
+            or normalized.source_samples != wave.frame_count
             or normalized.output_samples * 2 != len(normalized.pcm)
             or hashlib.sha256(normalized.pcm).hexdigest()
             != normalized.output_sha256
+            or not _verify_resample_projection(
+                converted.pcm16_mono, wave.sample_rate_hz,
+                _TARGET_RATE, normalized.pcm,
+            )
         ):
             raise OfflineWavePipelineRejected("normalized PCM identity mismatch")
         reviewed = detect_activity_regions(
@@ -353,6 +407,14 @@ def preview_offline_wav_energy(
             reviewed, normalized.pcm, normalized.output_sha256, _TARGET_RATE,
             frame_ms=20, rms_threshold=rms_threshold,
         )
+        if (
+            hashlib.sha256(normalized.pcm).hexdigest() != normalized.output_sha256
+            or not _verify_resample_projection(
+                converted.pcm16_mono, wave.sample_rate_hz,
+                _TARGET_RATE, normalized.pcm,
+            )
+        ):
+            raise OfflineWavePipelineRejected("normalized PCM changed after callbacks")
         stable_result()
         return result
     except (
