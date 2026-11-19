@@ -1,3 +1,48 @@
+# LATEST — ARK AI Run981: Planner CI repair + four non-UI policy-vector safety packages
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T10:51:20.659+09:00** (reporting clock only; not authenticated audit, approval, expiry, privacy, scheduler, identity or provenance time). **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite. **Exact invocation work-basis HEAD:** `d03d1eebd53536429e62e2e466f374ea2377875f` (Run980 checkpoint). **Latest executable source/test HEAD:** `cb51383649051093c4a1243424be817af0f19960`. **Technical-report and checkpoint-write-basis HEAD:** `a237992c582d67a98a1b8c87e40addbf821015c6`. **Checkpoint-result HEAD:** must be taken from the *subsequent normal GitHub Contents API* commit SHA and verified against live PR/branch HEAD; the tracked file cannot contain its own future commit SHA.
+
+**Protected refs at checkpoint prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused UI [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All three remain unmerged and untouched this invocation. Frozen V1/V2/Local UI/Launcher evidence, Memory v1, ToolCall/PlanStep v1, Observation Envelope v1 and protected V2/V3 final-evaluation gates unchanged.
+
+## NEW — five coherent free-only, non-UI packages
+
+1. **Planner terminal CI repair:** [`e1ac5186`](https://github.com/Iam-2squared/ark-ai/commit/e1ac51868ce4cf6741735022577b12ae57cd2f8b) updates only the four parameterized old fixture assertions expecting a later error. Run980 checkpoint [CI #44432224876](https://github.com/Iam-2squared/ark-ai/actions/runs/44432224876) was **FAIL 6/6**, Ubuntu 3.11 **18,717 PASS / 4 FAIL / 1 SKIP**. New import-pinned terminal policy denies a modified property **before replay** using `terminal receipt changed: policy vector`. Test still proves no injected getter ran; no production guard or evaluation weakened.
+2. **Privacy erasure no-action assessment:** [source `2a9213d6`](https://github.com/Iam-2squared/ark-ai/commit/2a9213d670987814f6e9893f66f5dfad2063be5f), [tests `e374c98c`](https://github.com/Iam-2squared/ark-ai/commit/e374c98c9bcede07da7835df80b678fbb1f91710). Import-pin denial, observation/assessment and hook name vectors; reject reflected truncation, order changes, equal-value rebinds or forged privacy/cleanup getters before untrusted private claims. **15 synthetic parametrized cases.** Never authorizes erasure.
+3. **Memory read-only expiry preview:** [source `50030a72`](https://github.com/Iam-2squared/ark-ai/commit/50030a723f603b57914ff9138e42ba6c84487b26), [tests `8b3ea25e`](https://github.com/Iam-2squared/ark-ai/commit/8b3ea25ed47ec41753118faac52afeda80f7a269). Import-pin all expiry denial and result carrier descriptor vectors so altered inventories are refused before private SQLite read on preview and verification. **20 disposable local-fixture cases.** No purge or trusted clock.
+4. **Disconnected mixed-plan recovery:** [source `a9380e39`](https://github.com/Iam-2squared/ark-ai/commit/a9380e39ddee9e3334fef72c4b7dacc3c3e8648f), [tests `774d37c1`](https://github.com/Iam-2squared/ark-ai/commit/774d37c18bced2843459e7a90f2b34d5af41c6a7). Import-pin Step/Disposition/Fence and all replay/WRITE denial vectors; synthetic UNKNOWN WRITE remains quarantined. **15 cases.** No real executor/auto-replay.
+5. **Immutable ToolRegistry:** [source `8b7e6171`](https://github.com/Iam-2squared/ark-ai/commit/8b7e6171c39faa46e2420bdac8ed2e2ef5d6738a), [format-only `f5d4df79`](https://github.com/Iam-2squared/ark-ai/commit/f5d4df792cd749baef5d692dcc962657e3ecae5c), [tests `9abcb394`](https://github.com/Iam-2squared/ark-ai/commit/9abcb3940f7991fc4647796c321bf9451169e0bc), [test refinement `cb513836`](https://github.com/Iam-2squared/ark-ai/commit/cb51383649051093c4a1243424be817af0f19960). Import-pin complete registered tool, ToolCall and BoundAction field/hook inventories; refuse early descriptor swaps before backend inspection. **26 synthetic mock-only cases**; no execute or permission grant.
+
+**76 newly authored parametrized regression cases** total, plus four repaired existing fixture assertions. All writes used normal GitHub Contents API, no force push or duplicate workflow dispatch. Source/test line-length checks were performed, but **latest exact-head all-six CI GREEN is NOT certified**. Neither local full pytest nor physical PC/GGUF/offline end-to-end tests were executed this invocation.
+
+[Run981 detailed technical report](https://github.com/Iam-2squared/ark-ai/blob/a237992c582d67a98a1b8c87e40addbf821015c6/docs/JARVIS_RUN981_NON_UI_CI_REPAIR_ERASURE_EXPIRY_RECOVERY_POLICY_VECTORS.md) · [Historical archive through Run969](https://github.com/Iam-2squared/ark-ai/blob/3105cc40f542e930a0fd0ed622753ea226cd8e1b/docs/PROJECT_STATUS_ARCHIVE_THROUGH_RUN969.md).
+
+## CI evidence / current gates
+
+- Previous Run980 checkpoint `d03d1eebd53536429e62e2e466f374ea2377875f`: [CI #44432224876](https://github.com/Iam-2squared/ark-ai/actions/runs/44432224876) **FAIL 6/6** at four Planner terminal fixture expectation assertions.
+- Earlier startup source/test `0315d3e9...`: [CI #44431379089](https://github.com/Iam-2squared/ark-ai/actions/runs/44431379089) **GREEN 6/6**, only for that older HEAD.
+- Run981 Planner compatibility repair [CI #44438525772](https://github.com/Iam-2squared/ark-ai/actions/runs/44438525772) **IN PROGRESS** at last observed snapshot; privacy source/test [#44438676343](https://github.com/Iam-2squared/ark-ai/actions/runs/44438676343), [#44438739867](https://github.com/Iam-2squared/ark-ai/actions/runs/44438739867) **IN PROGRESS**.
+- Memory source/test [#44438839228](https://github.com/Iam-2squared/ark-ai/actions/runs/44438839228), [#44438893901](https://github.com/Iam-2squared/ark-ai/actions/runs/44438893901) **IN PROGRESS** at last snapshot; recovery [#44438997464](https://github.com/Iam-2squared/ark-ai/actions/runs/44438997464) **QUEUED**; Registry latest source/test `cb513836...` [#44439635332](https://github.com/Iam-2squared/ark-ai/actions/runs/44439635332) **QUEUED**; technical-report `a237992c...` [#44439972410](https://github.com/Iam-2squared/ark-ai/actions/runs/44439972410) **QUEUED**.
+- This checkpoint write may independently trigger its own six-job CI. **No newer exact checkpoint HEAD GREEN, immutable provenance, user approval, trusted timing or physical gate claim.**
+
+## Blockers / authorization boundaries
+
+No UI/Frontend development or changes to PR #9, no PR #5 training/preflight gate opening, no main merge, no billable API/service/GPU/external compute, new credentials or connections, Candidate or weights/training/export/promotion, protected final V2 evaluation, actual tool READ/WRITE execution, irreversible erasure, synthetic-to-real authority elevation or automatic COMMIT-UNKNOWN replay. Local SQLite and SHA-256 receipts are not independently authenticated custody, external result witnesses or trusted approval/clock/consent. Memory WAL/SHM/path alias races, CAS/ABA, cross-store uncertain commits, Planner restart integration, consent/revocation, device validation remain unresolved.
+
+## Next plan / 今後の方針
+
+1. Establish **exact newest code/test/checkpoint HEAD** Windows/Ubuntu × Python 3.11–3.13 CI state. If red, diagnose job logs and make smallest semantics-preserving repair through permitted normal GitHub write while progressing independent non-UI lanes.
+2. Memory concurrent WAL/SHM lifecycle, CAS/ABA/generation fencing, expiry-event coherent snapshots and COMMIT-UNKNOWN manual no-replay quarantine.
+3. Planner persistent terminal/restart recovery; immutable ToolRegistry plus exact PermissionGate, one-use durable authorization, trusted-clock pre-action audit and disconnected/mock executor only after lower-level exact-head GREEN evidence.
+4. Personal Context privacy, retention/revocation, proactive occurrence/replay, Observation fixture contracts and free-only V3 path/identity/provenance guards. **UI stays PAUSED.**
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run980 (verbatim preserved below)
+
 # LATEST — ARK AI Run980: memory CI fixture repair, startup Unicode and Planner terminal policy
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T09:49:33.765+09:00** (reporting clock, NOT authenticated scheduler, approval, expiry, audit or provenance time). **Overall ARK/JARVIS: NOT_PASSED.**
