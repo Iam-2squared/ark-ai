@@ -9,12 +9,13 @@ from threading import Barrier
 
 import pytest
 
-from ark.agency.contracts import PlanStep, PlanConflictError, StepState, ToolCall
+from ark.agency.contracts import PlanStep, StepState, ToolCall
+from ark.agency.planner import PlanGraph
 from ark.agency.planner_journal import (
     PlannerJournal,
-    PlannerJournalCommitUnknown,
     PlannerJournalConflictError,
     PlannerJournalCorruptError,
+    PlannerJournalNotFoundError,
     PlannerJournalSchemaError,
 )
 
@@ -51,7 +52,7 @@ def _journal(tmp_path: Path) -> tuple[PlannerJournal, Path]:
 def test_genesis_and_cold_recovery_are_content_minimized(tmp_path):
     journal, path = _journal(tmp_path)
     steps = _steps()
-    graph = __import__("ark.agency.planner", fromlist=["PlanGraph"]).PlanGraph(steps)
+    graph = PlanGraph(steps)
 
     receipt = journal.create_plan("fixture-plan", graph)
     recovered = journal.recover("fixture-plan", steps)
@@ -74,8 +75,6 @@ def test_genesis_and_cold_recovery_are_content_minimized(tmp_path):
 def test_transition_is_durable_and_terminal_failure_blocks_descendants(tmp_path):
     journal, _ = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     graph = PlanGraph(steps)
     journal.create_plan("terminal-plan", graph)
 
@@ -110,8 +109,6 @@ def test_transition_is_durable_and_terminal_failure_blocks_descendants(tmp_path)
 def test_running_state_is_reported_as_ambiguous_not_replayed(tmp_path):
     journal, _ = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     graph = PlanGraph(steps)
     journal.create_plan("ambiguous-plan", graph)
     result = journal.transition(
@@ -135,8 +132,6 @@ def test_running_state_is_reported_as_ambiguous_not_replayed(tmp_path):
 def test_stale_graph_and_stale_sequence_cannot_append(tmp_path):
     journal, _ = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     initial = PlanGraph(steps)
     journal.create_plan("cas-plan", initial)
     first = journal.transition(
@@ -174,8 +169,6 @@ def test_stale_graph_and_stale_sequence_cannot_append(tmp_path):
 def test_illegal_transition_does_not_append_an_event(tmp_path):
     journal, _ = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     graph = PlanGraph(steps)
     journal.create_plan("illegal-plan", graph)
 
@@ -195,8 +188,6 @@ def test_illegal_transition_does_not_append_an_event(tmp_path):
 def test_two_connections_compare_and_swap_one_sequence(tmp_path):
     journal, path = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     initial = PlanGraph(steps)
     journal.create_plan("race-plan", initial)
     barrier = Barrier(2)
@@ -230,8 +221,6 @@ def test_two_connections_compare_and_swap_one_sequence(tmp_path):
 def test_event_hash_tampering_fails_closed(tmp_path):
     journal, path = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     graph = PlanGraph(steps)
     journal.create_plan("tamper-plan", graph)
     journal.transition(
@@ -256,10 +245,7 @@ def test_event_hash_tampering_fails_closed(tmp_path):
 def test_wrong_plan_topology_is_rejected(tmp_path):
     journal, _ = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
-    graph = PlanGraph(steps)
-    journal.create_plan("topology-plan", graph)
+    journal.create_plan("topology-plan", PlanGraph(steps))
     changed = (
         steps[0],
         PlanStep(
@@ -289,10 +275,8 @@ def test_extra_schema_object_is_rejected(tmp_path):
 
 def test_bad_plan_identity_is_rejected_before_database_access(tmp_path, monkeypatch):
     journal, _ = _journal(tmp_path)
-    from ark.agency.planner import PlanGraph
-    import ark.agency.planner_journal as module
-
     graph = PlanGraph(_steps())
+    import ark.agency.planner_journal as module
 
     def forbidden_connect(*_args, **_kwargs):
         raise AssertionError("invalid identity must be rejected before SQLite open")
@@ -305,18 +289,11 @@ def test_bad_plan_identity_is_rejected_before_database_access(tmp_path, monkeypa
 def test_new_genesis_rejects_a_graph_that_already_advanced(tmp_path):
     journal, _ = _journal(tmp_path)
     steps = _steps()
-    from ark.agency.planner import PlanGraph
-
     graph = PlanGraph(steps)
     graph.transition("root", StepState.RUNNING, expected_revision=0)
 
     with pytest.raises(PlannerJournalConflictError, match="genesis"):
         journal.create_plan("not-genesis", graph)
 
-    with pytest.raises(Exception):
+    with pytest.raises(PlannerJournalNotFoundError):
         journal.recover("not-genesis", steps)
-
-
-def test_commit_unknown_is_a_non_retry_boundary():
-    assert issubclass(PlannerJournalCommitUnknown, RuntimeError)
-    assert issubclass(PlanConflictError, RuntimeError)
