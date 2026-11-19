@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
-
 import pytest
 
 from ark.agency import (
@@ -50,7 +48,7 @@ def _stack(tmp_path):
     ))
     audit = SQLiteActionAudit(
         tmp_path / "action-audit.sqlite3",
-        clock_ms=lambda: next(itertools.count(1_000)),
+        clock_ms=lambda: 1_000,
     )
     occurrences = SyntheticOccurrenceStore(tmp_path / "occurrences.sqlite3")
     executor = DisconnectedMockExecutor(
@@ -60,13 +58,13 @@ def _stack(tmp_path):
     journal = PlannerJournal(tmp_path / "planner-journal.sqlite3")
     journal.create_plan("fixture-plan", PlanGraph(steps))
     grants = (CapabilityGrant("capability.read", "synthetic:private"),)
-    return backend, audit, executor, journal, steps, grants
+    return backend, audit, registry, executor, journal, steps, grants
 
 
 def test_completion_audit_failure_after_mock_call_quarantines_step_without_replay(
     tmp_path,
 ):
-    backend, audit, executor, journal, steps, grants = _stack(tmp_path)
+    backend, audit, registry, executor, journal, steps, grants = _stack(tmp_path)
     clock_calls = 0
 
     def fail_second_audit_clock_sample() -> int:
@@ -88,7 +86,7 @@ def test_completion_audit_failure_after_mock_call_quarantines_step_without_repla
             journal,
             "fixture-plan",
             steps,
-            executor._registry,
+            registry,
             executor,
             "read",
             grants,
