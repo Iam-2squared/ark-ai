@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import stat
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -33,18 +35,44 @@ class ExportPlan:
         return sha256_bytes(self.canonical_bytes())
 
 
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    attributes = getattr(info, "st_file_attributes", 0)
+    return (
+        type(attributes) is int
+        and bool(attributes & _FILE_ATTRIBUTE_REPARSE_POINT)
+    )
+
+
+def _has_symlink_or_reparse_ancestor(path: Path) -> bool:
+    """Inspect path ancestors without following symlinks or Windows junctions."""
+    for parent in path.parents:
+        try:
+            info = parent.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise ValueError("export path ancestor cannot be safely inspected") from exc
+        if stat.S_ISLNK(info.st_mode) or _is_reparse_point(info):
+            return True
+    return False
+
+
 def _canonical_input_directory(path: Path, *, label: str) -> Path:
-    """Return one existing local input root without lexical/symlink aliases."""
+    """Return one existing local input root without lexical or reparse aliases."""
     value = Path(path)
     if (
         ".." in value.parts
         or len(str(value)) > 4096
-        or value.is_symlink()
-        or any(parent.is_symlink() for parent in value.parents)
-        or not value.is_dir()
+        or _has_symlink_or_reparse_ancestor(value)
     ):
         raise ValueError(f"{label} input must be a non-aliased local directory")
     try:
+        info = value.lstat()
+        if not stat.S_ISDIR(info.st_mode) or _is_reparse_point(info):
+            raise ValueError(f"{label} input must be a non-aliased local directory")
         resolved = value.resolve(strict=True)
     except (OSError, RuntimeError) as exc:
         raise ValueError(f"{label} input directory cannot be safely resolved") from exc
@@ -73,7 +101,7 @@ def _validate_export_output_path(
         or output.exists()
         or output.is_symlink()
         or not output.parent.is_dir()
-        or any(parent.is_symlink() for parent in output.parents)
+        or _has_symlink_or_reparse_ancestor(output)
     ):
         raise ValueError("export output requires a new directory under safe parents")
     try:
