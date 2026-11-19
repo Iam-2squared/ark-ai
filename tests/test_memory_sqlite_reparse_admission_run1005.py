@@ -5,14 +5,12 @@ Synthetic stat metadata only: no privileged junctions or private databases.
 
 from __future__ import annotations
 
-import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-from ark.memory import MemorySchemaError, MemoryScope, SQLiteMemoryStore
-from ark.memory import sqlite_store
+from ark.memory import MemorySchemaError, MemoryScope, SQLiteMemoryStore, sqlite_store
 
 
 def _store(path: Path) -> SQLiteMemoryStore:
