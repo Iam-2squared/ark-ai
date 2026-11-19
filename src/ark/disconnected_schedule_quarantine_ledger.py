@@ -353,7 +353,7 @@ def _path(value: object, *, create: bool) -> Path:
                 or info.st_nlink != 1
                 or _is_reparse_point(info)
             ):
-                raise ScheduleQuarantineRejected("aliased or existing quarantine ledger")
+                raise ScheduleQuarantineRejected("nonempty, aliased or existing quarantine ledger")
         # SQLite also opens these known sibling paths. Do not adopt orphaned
         # journals on create, or follow an aliased sidecar on later reads/writes.
         # This is a lexical lstat preflight, not race-free dirfd custody.
