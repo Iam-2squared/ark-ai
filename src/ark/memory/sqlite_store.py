@@ -305,11 +305,11 @@ def _require_memory_text_hydration_budget(
         "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
         "OR typeof(content_sha256)!='text' "
         "OR length(CAST(content_sha256 AS BLOB))!=64 "
-        "OR typeof(created_at_ms)!='integer' "
-        "OR typeof(updated_at_ms)!='integer' "
+        "OR typeof(created_at_ms)!='integer' OR created_at_ms<0 "
+        "OR typeof(updated_at_ms)!='integer' OR updated_at_ms<0 "
         "OR (expires_at_ms IS NOT NULL "
-        "AND typeof(expires_at_ms)!='integer') "
-        "OR typeof(revision)!='integer' LIMIT 1",
+        "AND (typeof(expires_at_ms)!='integer' OR expires_at_ms<0)) "
+        "OR typeof(revision)!='integer' OR revision<1 LIMIT 1",
         params,
     ).fetchone()
     if malformed is not None:
@@ -353,10 +353,10 @@ def _require_expiry_purge_hydration_admission(
         "OR length(CAST(metadata_json AS BLOB))>? "
         "OR typeof(content_sha256)!='text' "
         "OR length(CAST(content_sha256 AS BLOB))!=64 "
-        "OR typeof(created_at_ms)!='integer' "
-        "OR typeof(updated_at_ms)!='integer' "
-        "OR typeof(expires_at_ms)!='integer' "
-        "OR typeof(revision)!='integer' LIMIT 1",
+        "OR typeof(created_at_ms)!='integer' OR created_at_ms<0 "
+        "OR typeof(updated_at_ms)!='integer' OR updated_at_ms<0 "
+        "OR typeof(expires_at_ms)!='integer' OR expires_at_ms<0 "
+        "OR typeof(revision)!='integer' OR revision<1 LIMIT 1",
         params + (
             _MAX_MEMORY_ROW_SOURCE_BYTES,
             _MAX_MEMORY_ROW_CONTENT_BYTES,
@@ -388,11 +388,11 @@ def _require_memory_mutation_row_hydration_admission(
         "OR length(CAST(metadata_json AS BLOB))>? "
         "OR typeof(content_sha256)!='text' "
         "OR length(CAST(content_sha256 AS BLOB))!=64 "
-        "OR typeof(created_at_ms)!='integer' "
-        "OR typeof(updated_at_ms)!='integer' "
+        "OR typeof(created_at_ms)!='integer' OR created_at_ms<0 "
+        "OR typeof(updated_at_ms)!='integer' OR updated_at_ms<0 "
         "OR (expires_at_ms IS NOT NULL "
-        "AND typeof(expires_at_ms)!='integer') "
-        "OR typeof(revision)!='integer') LIMIT 1",
+        "AND (typeof(expires_at_ms)!='integer' OR expires_at_ms<0)) "
+        "OR typeof(revision)!='integer' OR revision<1) LIMIT 1",
         (memory_id, _MAX_MEMORY_ROW_CONTENT_BYTES,
          _MAX_MEMORY_ROW_METADATA_BYTES),
     ).fetchone()
