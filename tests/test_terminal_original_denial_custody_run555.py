@@ -78,7 +78,7 @@ def test_verifier_rejects_preinstalled_false_getter_before_projection(
                       property(replaced))
         with pytest.raises(
             terminal.DisconnectedBatchTerminalRejected,
-            match="changed before replay",
+            match="terminal receipt changed: policy vector",
         ):
             terminal.verify_disconnected_batch_terminals(
                 receipt, plan, schedule, retained_digest=plan.plan_digest,
