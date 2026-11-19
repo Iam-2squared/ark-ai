@@ -18,8 +18,8 @@ from ark.agency import disconnected_due_reservation as due
     ("tail", "expected"),
     (
         ("界" * 1400 + ".db", "byte budget"),
-        ("invalid-\\ud800.db", "encoding"),
-        ("native\\x00separator.db", "byte budget"),
+        ("invalid-\ud800.db", "encoding"),
+        ("native\x00separator.db", "byte budget"),
     ),
 )
 def test_due_rejects_unusable_fixture_path_before_lstat(
