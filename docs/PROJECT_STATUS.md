@@ -1,3 +1,50 @@
+# LATEST — ARK AI Run1007: reconcile Run1006 path-epoch CI failures
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T08:54:56+09:00.** This is reporting metadata only, not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1007 work-basis exact HEAD:** `4126915a51a9826585b0ebf908acb5868548849e` (PR #8; exact-head CI #44632838424 / run #6624 completed successfully, six matrix jobs). **Checkpoint write-basis HEAD:** `4126915a51a9826585b0ebf908acb5868548849e`, re-read immediately before this Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update; it is the resulting checkpoint commit and cannot contain its own SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. No main merge or child promotion.
+
+## NEW — Run1007: three CI-driven, non-UI corrections
+
+1. **PR #38 — schedule-quarantine bootstrap diagnostic compatibility.** Work basis `fae6ef7bbe1a9763652638bfe2e01ce257b24f42`; source commit `973fab1700c29810453c90b6368795fc7df08157`. The existing foreign-schema race regression expected the established `nonempty` denial diagnostic; the post-open path guard correctly rejected the raced file earlier but used a different message. The diagnostic now preserves both `nonempty` and `aliased or existing` wording. Rejection behavior is unchanged.
+
+2. **PR #39 — Action Audit path-denial diagnostic compatibility.** Work basis `701ea968997c939cf49255f75e1d82988dd6f6b4`; diagnostic commit `7c6257c2821c62edc0d5eece64079a263e66bccc`; formatting-only Ruff correction `5b5e57aee4bed927df978324e83229294c9b63d8`. Existing symlink/hardlink tests require the legacy `symbolic` and `one regular-file link` diagnostic fragments, while the new post-open regression requires `regular non-reparse file link`. The message now preserves all three without changing path admission or handle-close semantics. The first correction CI failed only Ruff E501; the line-wrap correction is the current exact head.
+
+3. **PR #40 — occurrence-ledger pre-open source-epoch veto.** Work basis `49c60b7806fb715b856ba02a48e6b120e4767339`; source commit `6320b8c2ab147a542e641db222f9616d41eeb61a`. The inherited regression showed that a reentrant `Path.resolve()` could replace the store's Path object before SQLite was called. The read-only connector now checks the pinned source epoch immediately after URI resolution and before `sqlite3.connect`, while retaining the post-open check and close-on-rejection behavior. The source-change diagnostic preserves the existing `during count` test contract.
+
+## Tests / CI / evidence — exact HEADs only
+
+- Canonical PR #8 `4126915a51a9826585b0ebf908acb5868548849e`: CI #44632838424 / run #6624 **GREEN** (six jobs; existing UI tests are unchanged CI coverage, not new UI work).
+- PR #41 `daad75fd7fd39ad3982f3365226d5f67b5637ebb`: CI #44632387507 / run #6619 **GREEN** (six jobs).
+- PR #42 `a0b35f14beb4af759ba1eb042b09d839025f856b`: CI #44632619818 / run #6622 **GREEN** (six jobs).
+- PR #29 `53097c6d04c3275d0c3b5638cf894a3357f881c1`: CI #44613414747 / run #6608 **GREEN**.
+- PR #26 `ae2df6c0d5bf6305051dc68a7ba1e885e4a6a779`: CI #44581436218 / run #6590 **GREEN**.
+- PR #38 `973fab1700c29810453c90b6368795fc7df08157`: CI #44641046318 / run #6626 **IN PROGRESS**. Superseded run #44632230565 failed one inherited diagnostic assertion; corrected as above.
+- PR #39 `5b5e57aee4bed927df978324e83229294c9b63d8`: CI #44641268571 / run #6628 **IN PROGRESS**. Superseded run #44632671559 failed three inherited diagnostic assertions; run #44641034866 then failed Ruff E501 only; the current head contains the formatting-only fix.
+- PR #40 `6320b8c2ab147a542e641db222f9616d41eeb61a`: CI #44641069114 / run #6627 **IN PROGRESS**. Superseded run #44632458612 failed four inherited source-epoch assertions; the current head adds the pre-open veto and preserves close-on-post-open-rejection.
+- No local full-suite pytest, physical Windows junction, user-PC, real ToolBackend, external effect, live capture, GPU/runtime or Candidate result is claimed. No current PR #38–#40 exact-head GREEN is claimed.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, feature, polish, test addition or integration. PRs #38–#42 remain isolated Draft/unmerged. No main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. The new path checks are best-effort local pathname/source-epoch checks, not atomic dirfd custody, authenticated storage, trusted time, consent, cross-store atomicity or proof of exactly-once external effects. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #6626/#6627/#6628 once complete. For any failure, inspect the failing job/log, apply the smallest semantics-preserving normal Contents API fix, then switch to a non-conflicting lane while CI runs.
+2. Continue Memory WAL/SHM last-close, cross-process pinned-reader crash, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only triage.
+3. Continue Planner retained-prefix/truncation, terminal propagation, restart recovery and COMMIT-UNKNOWN commit/rollback outcomes. Missing or ambiguous RUNNING work remains quarantined; never auto-replay.
+4. Advance restart-safe one-shot authorization, trusted-clock audit-before-action and occurrence/replay protection over disconnected mocks only; resolve cross-store atomicity before any real backend integration.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive scheduler restart state and Observation fixture lifecycle; advance free-only V3 approval/path/identity/reproducibility guards without opening protected gates.
+6. Keep JARVIS foundations isolated/reversible until lower-level invariants have exact-head GREEN evidence and explicit integration gates. **UI remains PAUSED.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1006: Memory, Planner, Action Audit and scheduler SQLite path epochs
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T07:53:24+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
