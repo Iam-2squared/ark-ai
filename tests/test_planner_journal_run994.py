@@ -269,7 +269,7 @@ def test_extra_schema_object_is_rejected(tmp_path):
     with sqlite3.connect(path) as connection:
         connection.execute("CREATE TABLE unexpected_local_table (value TEXT)")
 
-    with pytest.raises(PlannerJournalSchemaError, match="schema object"):
+    with pytest.raises(PlannerJournalSchemaError, match="managed tables"):
         PlannerJournal(path)
 
 
