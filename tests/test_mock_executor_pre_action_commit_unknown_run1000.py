@@ -32,6 +32,12 @@ class _CommitThenLoseAcknowledgement:
         self._pre_action_inserted = False
         self._lost = False
 
+    def __setattr__(self, name, value):
+        if name in {"_connection", "_pre_action_inserted", "_lost"}:
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self._connection, name, value)
+
     def __enter__(self):
         self._connection.__enter__()
         return self
@@ -111,14 +117,20 @@ def test_lost_pre_action_audit_commit_blocks_backend_and_restart_replay(
     )
     occurrence_id = "occ_" + "d" * 64
 
-    original_connect = audit._connect
-    monkeypatch.setattr(
-        audit,
-        "_connect",
-        lambda **kwargs: _CommitThenLoseAcknowledgement(
-            original_connect(**kwargs),
-        ),
-    )
+    original_connect = sqlite3.connect
+    audit_uri = audit_path.resolve().as_uri() + "?mode=rw"
+
+    def connect(*args, **kwargs):
+        database = args[0] if args else kwargs.get("database")
+        connection = original_connect(*args, **kwargs)
+        if type(database) is str and database == audit_uri:
+            return _CommitThenLoseAcknowledgement(connection)
+        return connection
+
+    # Inject below the pinned ActionAudit method identity. The executor must
+    # still call the original append implementation and reject only after the
+    # native SQLite context manager has committed the pre-action row.
+    monkeypatch.setattr(sqlite3, "connect", connect)
 
     with pytest.raises(
         DisconnectedMockExecutionRejected,
