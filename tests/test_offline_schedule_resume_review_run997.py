@@ -130,7 +130,7 @@ def test_restart_review_rejects_cursor_not_bound_to_retained_prefix(tmp_path, cu
 
 def test_restart_review_rejects_clock_regression_below_quarantine_floor(tmp_path):
     ledger, _, policy, cursor, witness = _fixture(tmp_path, 1)
-    with pytest.raises(ScheduleResumeRejected, match="verification rejected"):
+    with pytest.raises(ScheduleResumeRejected, match="regressed below quarantine floor"):
         review_offline_schedule_resume(
             ledger,
             policy,
