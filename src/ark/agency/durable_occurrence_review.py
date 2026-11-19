@@ -394,15 +394,19 @@ class SyntheticOccurrenceStore:
     ) -> sqlite3.Connection:
         source = self._path if pinned_path is None else pinned_path
         _require_safe_occurrence_path(source, create=False)
+        resolved_uri = source.resolve().as_uri() + "?mode=ro"
+        if self._path is not source:
+            raise SyntheticReplayRejected(
+                "synthetic occurrence source changed during count"
+            )
         connection = sqlite3.connect(
-            source.resolve().as_uri() + "?mode=ro",
-            uri=True, isolation_level=None,
+            resolved_uri, uri=True, isolation_level=None,
         )
         try:
             _require_safe_occurrence_path(source, create=False)
             if self._path is not source:
                 raise SyntheticReplayRejected(
-                    "synthetic occurrence source changed during read-only open"
+                    "synthetic occurrence source changed during count (read-only open)"
                 )
         except BaseException:
             connection.close()
