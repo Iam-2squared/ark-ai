@@ -461,13 +461,13 @@ def _require_original_memory_path_policy() -> None:
 
 
 def _require_safe_memory_path(path: Path, *, create: bool) -> None:
-    _require_original_memory_path_policy()
     """Fail closed on local SQLite path aliases before any directory or DB I/O.
 
     Rechecking every open limits accidental symbolic/hardlink redirection; this
     process-local preflight is NOT atomic dirfd custody, authenticated storage,
     or protection from a concurrent owner-controlled rename after inspection.
     """
+    _require_original_memory_path_policy()
     if type(path) is not type(Path()) or ".." in path.parts:
         raise MemorySchemaError("memory path type or traversal refused")
     # Do not pass an overlong or NUL-containing private path to mkdir/lstat or
