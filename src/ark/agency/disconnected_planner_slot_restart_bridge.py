@@ -221,13 +221,41 @@ def review_disconnected_planner_slot_restart(
                for step_id in independently_expected_write_ids)
         or not 1 <= len(claims) <= _MAX_STEPS
         or len(offline_steps) != len(claims)
+        or len(observations) > _MAX_STEPS
         or any(type(item) is not DisconnectedDependencyClaim for item in claims)
         or any(type(item) is not OfflineRecoveryStepClaim for item in offline_steps)
-        or any(not _valid_step_id(item.step_id) for item in claims)
-        or any(not _valid_step_id(item.step_id) for item in offline_steps)
+        or any(
+            not _valid_step_id(item.step_id)
+            or type(item.effect) is not Effect
+            or type(item.state) is not StepState
+            or type(item.depends_on) is not tuple
+            or len(item.depends_on) > _MAX_STEPS
+            or any(not _valid_step_id(dep) for dep in item.depends_on)
+            for item in claims
+        )
+        or any(
+            not _valid_step_id(item.step_id)
+            or type(item.effect) is not str
+            or type(item.state) is not str
+            or type(item.depends_on) is not tuple
+            or len(item.depends_on) > _MAX_STEPS
+            or any(not _valid_step_id(dep) for dep in item.depends_on)
+            or (item.result_sha256 is not None
+                and type(item.result_sha256) is not str)
+            or (item.reservation_id is not None
+                and type(item.reservation_id) is not str)
+            for item in offline_steps
+        )
         or any(
             type(item) is not SyntheticWriteStoreObservation
             or not _valid_step_id(item.step_id)
+            or any(
+                type(value) is not str or len(value) > 1024
+                for value in (
+                    item.plan_state, item.reservation,
+                    item.preaction_audit, item.audit_link,
+                )
+            )
             for item in observations
         )
     ):
