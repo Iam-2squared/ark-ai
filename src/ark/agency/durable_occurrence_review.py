@@ -20,6 +20,8 @@ from .contracts import Effect, OneShotAuthorization, ToolCall
 from .registry import ToolRegistry
 
 _MAX = 2**63 - 1
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
 _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _TOKEN_DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _REGISTRY_ID = re.compile(r"tools_[0-9a-f]{64}\Z")
@@ -57,6 +59,16 @@ _ORIGINAL_ID_PATTERNS = (
 )
 
 
+def _is_reparse_point(metadata: os.stat_result) -> bool:
+    attributes = getattr(metadata, "st_file_attributes", 0)
+    return type(attributes) is not int or bool(
+        attributes & _FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+
+
 def _require_original_digest() -> None:
     if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
         raise SyntheticReplayRejected(
@@ -74,6 +86,9 @@ def _require_original_protocol() -> None:
     if (
         _TABLE is not _ORIGINAL_TABLE
         or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
+        or type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+        or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
         or any(
             current is not original
             for current, original in zip(
@@ -239,11 +254,12 @@ def _validate(conn: sqlite3.Connection) -> None:
 
 
 def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
-    """Reject symlinked/nonregular local reservation ledger paths pre-open.
+    """Reject symlink/reparse aliases before local reservation ledger opens.
 
-    This repeated local lstat preflight cannot defeat concurrent path renames
-    by a filesystem owner. It conveys neither trust nor execution authority.
+    Repeated lstat checks are best-effort path admission, not atomic dirfd
+    custody or protection against concurrent owner-controlled replacement.
     """
+    _require_original_protocol()
     if type(path) is not type(Path()) or ".." in path.parts:
         raise SyntheticReplayRejected("synthetic occurrence path alias refused")
     target = path if path.is_absolute() else path.absolute()
@@ -255,8 +271,14 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
                 raise SyntheticReplayRejected(
                     "synthetic occurrence ancestor unavailable"
                 ) from None
-            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
-                raise SyntheticReplayRejected("synthetic occurrence ancestor unsafe")
+            if (
+                not stat.S_ISDIR(meta.st_mode)
+                or stat.S_ISLNK(meta.st_mode)
+                or _is_reparse_point(meta)
+            ):
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence ancestor symlink/reparse unsafe"
+                )
         main_absent = False
         try:
             meta = target.lstat()
@@ -267,8 +289,15 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
                     "synthetic occurrence storage missing"
                 ) from None
         else:
-            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
-                raise SyntheticReplayRejected("synthetic occurrence ledger path unsafe")
+            if (
+                not stat.S_ISREG(meta.st_mode)
+                or stat.S_ISLNK(meta.st_mode)
+                or meta.st_nlink != 1
+                or _is_reparse_point(meta)
+            ):
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence ledger regular/reparse path unsafe"
+                )
         # A legitimate main DB can still be redirected through an aliased
         # SQLite journal or WAL file. Refuse unsafe -wal/-shm/-journal entries
         # before SQLite reads or writes; do not adopt any orphaned journal
@@ -291,8 +320,14 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
                     sidecar_info = sidecar.lstat()
                 except FileNotFoundError:
                     continue
-            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
-                raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
+            if (
+                not stat.S_ISREG(sidecar_info.st_mode)
+                or sidecar_info.st_nlink != 1
+                or _is_reparse_point(sidecar_info)
+            ):
+                raise SyntheticReplayRejected(
+                    "occurrence SQLite sidecar alias/reparse refused"
+                )
     except OSError as exc:
         raise SyntheticReplayRejected("synthetic occurrence path cannot be verified") from exc
     return path
@@ -330,13 +365,49 @@ class SyntheticOccurrenceStore:
     ) -> sqlite3.Connection:
         source = self._path if pinned_path is None else pinned_path
         _require_safe_occurrence_path(source, create=create)
-        if create:
-            # Only explicit fixture initialization may create storage.
-            return sqlite3.connect(source, timeout=10, isolation_level=None)
-        # A stale store must not recreate a deleted/moved reservation ledger.
-        # URI mode=rw also preserves literal special path characters.
-        uri = source.resolve().as_uri() + "?mode=rw"
-        return sqlite3.connect(uri, uri=True, timeout=10, isolation_level=None)
+        connection: sqlite3.Connection | None = None
+        try:
+            if create:
+                # Only explicit fixture initialization may create storage.
+                connection = sqlite3.connect(
+                    source, timeout=10, isolation_level=None,
+                )
+            else:
+                # A stale store must not recreate a moved reservation ledger.
+                uri = source.resolve().as_uri() + "?mode=rw"
+                connection = sqlite3.connect(
+                    uri, uri=True, timeout=10, isolation_level=None,
+                )
+            _require_safe_occurrence_path(source, create=False)
+            if self._path is not source:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence source changed during open"
+                )
+        except BaseException:
+            if connection is not None:
+                connection.close()
+            raise
+        return connection
+
+    def _connect_readonly(
+        self, *, pinned_path: Path | None = None,
+    ) -> sqlite3.Connection:
+        source = self._path if pinned_path is None else pinned_path
+        _require_safe_occurrence_path(source, create=False)
+        connection = sqlite3.connect(
+            source.resolve().as_uri() + "?mode=ro",
+            uri=True, isolation_level=None,
+        )
+        try:
+            _require_safe_occurrence_path(source, create=False)
+            if self._path is not source:
+                raise SyntheticReplayRejected(
+                    "synthetic occurrence source changed during read-only open"
+                )
+        except BaseException:
+            connection.close()
+            raise
+        return connection
 
     def reserve_synthetic(
         self,
@@ -572,13 +643,7 @@ class SyntheticOccurrenceStore:
         # separate reentrant boundaries. Reject an equal-path replacement
         # before querying a possibly unrelated private reservation ledger.
         assert_source_epoch()
-        _require_safe_occurrence_path(path_epoch, create=False)
-        assert_source_epoch()
-        resolved = path_epoch.resolve()
-        assert_source_epoch()
-        uri = resolved.as_uri() + "?mode=ro"
-        assert_source_epoch()
-        with closing(sqlite3.connect(uri, uri=True, isolation_level=None)) as conn:
+        with closing(self._connect_readonly(pinned_path=path_epoch)) as conn:
             assert_source_epoch()
             conn.execute("BEGIN")
             assert_source_epoch()
