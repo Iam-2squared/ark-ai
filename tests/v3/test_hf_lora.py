@@ -96,7 +96,7 @@ def test_wall_time_guard_aborts_full_run_before_candidate_save(monkeypatch, tmp_
     monkeypatch.setattr(
         module,
         "_build_model_and_tokenizer",
-        lambda snapshot, base_dir: (FakeTorch(), object(), FakeModel()),
+        lambda snapshot, base_dir, chat_template_probe: (FakeTorch(), object(), FakeModel()),
     )
     monkeypatch.setattr(module, "_pretokenize", lambda tokenizer, ordered: [(None, None)] * 120)
     monkeypatch.setattr(
