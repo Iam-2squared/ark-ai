@@ -56,7 +56,7 @@ def _require_original_audit_path_policy() -> None:
         or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
         or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
     ):
-        raise ActionAuditSchemaError("audit path admission policy changed")  # same-process path preflight and WAL bootstrap
+        raise ActionAuditSchemaError("audit path admission policy changed")
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
