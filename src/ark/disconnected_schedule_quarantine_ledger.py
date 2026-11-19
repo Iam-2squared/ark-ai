@@ -353,7 +353,7 @@ def _path(value: object, *, create: bool) -> Path:
                 or info.st_nlink != 1
                 or _is_reparse_point(info)
             ):
-                raise ScheduleQuarantineRejected("aliased or existing quarantine ledger")
+                raise ScheduleQuarantineRejected("nonempty, aliased or existing quarantine ledger")
         # SQLite also opens these known sibling paths. Do not adopt orphaned
         # journals on create, or follow an aliased sidecar on later reads/writes.
         # This is a lexical lstat preflight, not race-free dirfd custody.
@@ -373,6 +373,28 @@ def _path(value: object, *, create: bool) -> Path:
     except OSError as exc:
         raise ScheduleQuarantineRejected("quarantine path unavailable") from exc
     return value
+
+
+def _connect_checked(path: Path, *, mode: str) -> sqlite3.Connection:
+    """Open after path admission and recheck before any SQLite operation.
+
+    The post-open lstat narrows the pathname race; it is not descriptor identity
+    verification or atomic dirfd custody. A failed recheck always closes the
+    just-opened handle before the error escapes.
+    """
+    if type(mode) is not str or mode not in ("rwc", "ro", "rw"):
+        raise ScheduleQuarantineRejected("invalid quarantine SQLite open mode")
+    _path(path, create=mode == "rwc")
+    connection = sqlite3.connect(
+        path.as_uri() + "?mode=" + mode, uri=True,
+        isolation_level=None, timeout=10,
+    )
+    try:
+        _path(path, create=False)
+    except BaseException:
+        connection.close()
+        raise
+    return connection
 
 
 def _validate(conn: sqlite3.Connection, epoch: tuple[str, int, int, int, int]) -> QuarantineWitness:
@@ -491,10 +513,7 @@ class DisconnectedScheduleQuarantineLedger:
         # Existing-ledger startup is inspection-only. Do not reserve a
         # SQLite writer slot or permit mutation merely to validate a restart.
         mode = "rwc" if create else "ro"
-        with closing(sqlite3.connect(
-            self._path.as_uri() + "?mode=" + mode, uri=True,
-            isolation_level=None, timeout=10,
-        )) as conn:
+        with closing(_connect_checked(self._path, mode=mode)) as conn:
             conn.execute("BEGIN IMMEDIATE" if create else "BEGIN")
             try:
                 if create:
@@ -521,11 +540,19 @@ class DisconnectedScheduleQuarantineLedger:
             raise ScheduleQuarantineRejected(
                 "quarantine source or policy identity changed"
             )
-        path = _path(self._path, create=False)
-        return sqlite3.connect(
-            path.as_uri() + ("?mode=ro" if read_only else "?mode=rw"),
-            uri=True, isolation_level=None, timeout=10,
-        )
+        path = self._path
+        source_policy = self._epoch
+        mode = "ro" if read_only else "rw"
+        connection = _connect_checked(path, mode=mode)
+        try:
+            if self._path is not path or self._epoch is not source_policy:
+                raise ScheduleQuarantineRejected(
+                    "quarantine source or policy identity changed"
+                )
+        except BaseException:
+            connection.close()
+            raise
+        return connection
 
     def inspect(self, *, retained: QuarantineWitness) -> QuarantineWitness:
         self._check_witness(retained)
