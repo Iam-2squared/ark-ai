@@ -20,10 +20,12 @@ from .contracts import (
     OneShotAuthorization,
     PlanStep,
     StepState,
+    ToolRegistration,
 )
 from .disconnected_mock_executor import (
     DisconnectedMockExecutor,
     MockExecutionReceipt,
+    MockToolBackend,
 )
 from .plan_registry_preflight import (
     PlanRegistryBinding,
@@ -113,6 +115,7 @@ _EXECUTOR_TYPE = DisconnectedMockExecutor
 _ORIGINAL_EXECUTOR_EXECUTE = vars(_EXECUTOR_TYPE).get("execute")
 _ORIGINAL_EXECUTOR_EPOCH = vars(_EXECUTOR_TYPE).get("_assert_component_epoch")
 _REGISTRY_TYPE = ToolRegistry
+_ORIGINAL_REGISTRY_GET = vars(_REGISTRY_TYPE).get("get")
 _PREFLIGHT_TYPE = PlanRegistryPreflight
 _BINDING_TYPE = PlanRegistryBinding
 _ORIGINAL_PREFLIGHT = review_plan_registry_preflight
@@ -140,6 +143,7 @@ def _require_original_protocol() -> None:
         or vars(_EXECUTOR_TYPE).get("execute") is not _ORIGINAL_EXECUTOR_EXECUTE
         or vars(_EXECUTOR_TYPE).get("_assert_component_epoch") is not _ORIGINAL_EXECUTOR_EPOCH
         or ToolRegistry is not _REGISTRY_TYPE
+        or vars(_REGISTRY_TYPE).get("get") is not _ORIGINAL_REGISTRY_GET
         or PlanRegistryPreflight is not _PREFLIGHT_TYPE
         or PlanRegistryBinding is not _BINDING_TYPE
         or review_plan_registry_preflight is not _ORIGINAL_PREFLIGHT
@@ -158,7 +162,7 @@ def execute_one_mock_step(
     registry: ToolRegistry,
     executor: DisconnectedMockExecutor,
     step_id: str,
-    grants: Iterable[CapabilityGrant],
+    grants: tuple[CapabilityGrant, ...],
     *,
     now_ms: int,
     one_shot: OneShotAuthorization | None = None,
@@ -178,6 +182,9 @@ def execute_one_mock_step(
         or type(steps) is not tuple
         or any(type(step) is not PlanStep for step in steps)
         or type(registry) is not ToolRegistry
+        or type(grants) is not tuple
+        or len(grants) > 1024
+        or any(type(grant) is not CapabilityGrant for grant in grants)
         or type(executor) is not DisconnectedMockExecutor
         or executor._registry is not registry
         or type(step_id) is not str
@@ -268,6 +275,34 @@ def execute_one_mock_step(
         or not binding.backend_id
     ):
         raise PlannerMockCycleRejected("requested step registry identity changed")
+    registration = _ORIGINAL_REGISTRY_GET(registry, step.call.tool)
+    if (
+        type(registration) is not ToolRegistration
+        or type(registration.backend) is not MockToolBackend
+        or registration.name != binding.tool_name
+        or registration.capability != binding.capability
+        or registration.effect is not binding.effect
+        or registration.backend_id != binding.backend_id
+    ):
+        raise PlannerMockCycleRejected(
+            "only the exact disconnected mock backend is accepted"
+        )
+    if binding.effect is Effect.READ:
+        if one_shot is not None or occurrence_id is not None:
+            raise PlannerMockCycleRejected("READ steps cannot carry WRITE authorization inputs")
+    elif binding.effect is Effect.WRITE:
+        if (
+            type(one_shot) is not OneShotAuthorization
+            or type(occurrence_id) is not str
+            or len(occurrence_id) != 68
+            or _OCCURRENCE.fullmatch(occurrence_id) is None
+        ):
+            raise PlannerMockCycleRejected(
+                "WRITE steps require exact one-shot and occurrence inputs"
+            )
+    else:
+        raise PlannerMockCycleRejected("registered step effect is unsupported")
+
     status = graph.statuses().get(step_id)
     if (
         status is None
