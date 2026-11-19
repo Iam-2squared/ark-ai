@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -89,4 +90,52 @@ def test_export_rejects_lexical_alias_to_current_model_inside_candidate(tmp_path
 
     with pytest.raises(ValueError, match="Candidate source overlaps Current deployed model"):
         _check(output, base, candidate, current_model=alias)
+    assert not output.exists()
+
+
+def _mark_reparse_point(monkeypatch, target: Path) -> None:
+    original_lstat = Path.lstat
+
+    def marked_lstat(path):
+        info = original_lstat(path)
+        if path == target:
+            return SimpleNamespace(st_mode=info.st_mode, st_file_attributes=0x400)
+        return info
+
+    monkeypatch.setattr(Path, "lstat", marked_lstat)
+
+
+def test_export_rejects_reparse_point_source_root(tmp_path, monkeypatch) -> None:
+    base, candidate, output = _roots(tmp_path)
+    _mark_reparse_point(monkeypatch, candidate)
+
+    with pytest.raises(ValueError, match="non-aliased local directory"):
+        _check(output, base, candidate)
+    assert not output.exists()
+
+
+def test_export_rejects_reparse_point_source_ancestor(tmp_path, monkeypatch) -> None:
+    base = tmp_path / "base-model"
+    base.mkdir()
+    candidate_parent = tmp_path / "candidate-parent"
+    candidate_parent.mkdir()
+    candidate = candidate_parent / "merged-candidate"
+    candidate.mkdir()
+    output = tmp_path / "export"
+    _mark_reparse_point(monkeypatch, candidate_parent)
+
+    with pytest.raises(ValueError, match="non-aliased local directory"):
+        _check(output, base, candidate)
+    assert not output.exists()
+
+
+def test_export_rejects_reparse_point_output_parent(tmp_path, monkeypatch) -> None:
+    base, candidate, _ = _roots(tmp_path)
+    output_parent = tmp_path / "output-parent"
+    output_parent.mkdir()
+    output = output_parent / "export"
+    _mark_reparse_point(monkeypatch, output_parent)
+
+    with pytest.raises(ValueError, match="export output requires a new directory"):
+        _check(output, base, candidate)
     assert not output.exists()
