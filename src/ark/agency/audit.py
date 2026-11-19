@@ -36,7 +36,7 @@ _ORIGINAL_JSON_DUMPS = _contracts.json.dumps
 _SQLITE_INT_MAX = 2**63 - 1
 _FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
-_AUDIT_BOOTSTRAP_LOCK = RLock()
+_AUDIT_BOOTSTRAP_LOCK = RLock()  # same-process path preflight and WAL bootstrap
 
 
 def _is_reparse_point(metadata: os.stat_result) -> bool:
