@@ -35,6 +35,8 @@ Core documents:
   Candidate. Full training remains exactly one separately authorized Candidate run.
 - Candidate/export lineage manifests and a deterministic paired Current/Candidate Q4_K_M export
   plan using pinned tool identities.
+- Export-plan path admission rejects symlink and Windows reparse-point aliases for source roots and
+  output parents; this is best-effort local validation, not atomic filesystem custody.
 - Validation-only paired comparison that cannot open historical V2 or authorize promotion.
 - Create-only run directory, append-only candidate registry snapshots with hash chain, lineage
   and artifact-hash validation.
