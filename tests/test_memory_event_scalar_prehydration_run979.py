@@ -89,7 +89,9 @@ def test_malformed_event_scalar_denied_before_event_page_hydration(
             self.actual = actual
 
         def execute(self, sql, *args):
-            if "SELECT * FROM memory_events" in sql:
+            # The admission CTE may project memory_events internally but
+            # returns only a scalar; reject only the full-row Python hydration.
+            if sql.lstrip().startswith("SELECT * FROM memory_events"):
                 pytest.fail("corrupt event passed SQL-side admission")
             return self.actual.execute(sql, *args)
 
