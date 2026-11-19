@@ -98,10 +98,22 @@ _ORIGINAL_BOUNDS = (_MAX_ROWS, _MAX_EVENT_SCAN, _MAX_TIME)
 _AUTHORITY_DESCRIPTORS = tuple(
     getattr(_RECEIPT_TYPE, flag) for flag in _FLAGS
 )
+# Preserve the complete import-time vectors. Descriptor comparisons using
+# zip(strict=True) are not complete if an attacker also shortens a vector and
+# a matching baseline; reject the vector swap before private SQLite access.
+_ORIGINAL_FLAGS_VECTOR = _FLAGS
+_ORIGINAL_RECEIPT_FIELDS_VECTOR = _RECEIPT_FIELDS
+_ORIGINAL_RECEIPT_HOOKS_VECTOR = _RECEIPT_HOOKS
 
 
 def _assert_original_authority() -> None:
     """Deny substituted authority callbacks before touching Memory SQLite."""
+    if (
+        _FLAGS is not _ORIGINAL_FLAGS_VECTOR
+        or _RECEIPT_FIELDS is not _ORIGINAL_RECEIPT_FIELDS_VECTOR
+        or _RECEIPT_HOOKS is not _ORIGINAL_RECEIPT_HOOKS_VECTOR
+    ):
+        raise MemoryExpiryPreviewRejected("expiry authority policy vector changed")
     if (
         hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
