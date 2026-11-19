@@ -1454,12 +1454,22 @@ class SQLiteMemoryStore:
         # mutators must not create a plausible empty replacement database if
         # the original Memory store has been moved or removed after startup.
         _require_safe_memory_path(self.path, create=create)
-        if create:
-            conn = sqlite3.connect(self.path)
-        else:
-            conn = sqlite3.connect(
-                self.path.resolve().as_uri() + "?mode=rw", uri=True
-            )
+        conn: sqlite3.Connection | None = None
+        try:
+            if create:
+                conn = sqlite3.connect(self.path)
+            else:
+                conn = sqlite3.connect(
+                    self.path.resolve().as_uri() + "?mode=rw", uri=True
+                )
+            # Narrow the lstat/open race before any row access or PRAGMA.
+            # SQLite does not expose the opened descriptor here, so this is
+            # still not atomic path-to-handle custody or TOCTOU protection.
+            _require_safe_memory_path(self.path, create=False)
+        except Exception:
+            if conn is not None:
+                conn.close()
+            raise
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
@@ -1468,8 +1478,17 @@ class SQLiteMemoryStore:
         # Reading evidence must never recreate a missing initialized SQLite file.
         # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
         _require_safe_memory_path(self.path, create=False)
-        uri = self.path.resolve().as_uri() + "?mode=ro"
-        conn = sqlite3.connect(uri, uri=True)
+        conn: sqlite3.Connection | None = None
+        try:
+            uri = self.path.resolve().as_uri() + "?mode=ro"
+            conn = sqlite3.connect(uri, uri=True)
+            # Recheck before any query is issued. This narrows, but cannot
+            # eliminate, pathname TOCTOU without descriptor-level custody.
+            _require_safe_memory_path(self.path, create=False)
+        except Exception:
+            if conn is not None:
+                conn.close()
+            raise
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         return conn
