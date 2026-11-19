@@ -181,6 +181,13 @@ def _check_local_revocation_path(path: Path) -> None:
         raise SyntheticContextRevocationRejected(
             "revocation path must be an exact local Path"
         )
+    # Reject lexical traversal even when the resulting path happens to
+    # resolve inside the expected directory. Relative paths and symlinked
+    # parents must not normalize away an unreviewed SQLite source.
+    if ".." in path.parts:
+        raise SyntheticContextRevocationRejected(
+            "revocation path traversal is forbidden"
+        )
     # Reject oversize, NUL and unencodable paths before any lstat, resolve,
     # SQLite connect or directory traversal. Reserve the longest SQLite
     # journal suffix and measure encoded absolute bytes, not codepoints.
@@ -201,7 +208,7 @@ def _check_local_revocation_path(path: Path) -> None:
             "revocation path encoding invalid"
         ) from exc
     try:
-        for parent in path.parents:
+        for parent in target.parents:
             info = parent.lstat()
             if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
                 raise SyntheticContextRevocationRejected(
