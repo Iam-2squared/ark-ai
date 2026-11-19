@@ -268,7 +268,11 @@ def _policy_epoch(policy: object) -> tuple[str, int, int, int, int]:
             or not 1_000 <= interval <= _MAX_INTERVAL_MS
             or not 1 <= count <= _MAX_OCCURRENCES
             or not 0 <= grace < interval or grace > 60_000
-            or first + (count - 1) * interval > _MAX_MS):
+            or first + (count - 1) * interval > _MAX_MS
+            # An expired occurrence requires a strictly later int64 clock
+            # than due+grace. Avoid accepting a finite synthetic policy whose
+            # final slot can never be classified expired, even at MAX_MS.
+            or first + (count - 1) * interval + grace >= _MAX_MS):
         raise ScheduleQuarantineRejected("invalid bounded synthetic schedule")
     return values
 
