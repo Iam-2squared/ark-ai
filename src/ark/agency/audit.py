@@ -87,7 +87,10 @@ def _validate_outcome(value: object, *, persisted: bool = False) -> str:
         or any(
             ord(character) < 0x20
             or 0x7F <= ord(character) <= 0x9F
-            or ord(character) in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F, 0x2028, 0x2029, 0xFEFF)
+            or ord(character) in (
+                0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F,
+                0x2028, 0x2029, 0xFEFF,
+            )
             or 0x200B <= ord(character) <= 0x200D
             or 0x202A <= ord(character) <= 0x202E
             or 0x2060 <= ord(character) <= 0x206F
