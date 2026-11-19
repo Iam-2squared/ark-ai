@@ -24,6 +24,8 @@ _MAX_SQLITE_INT = (1 << 63) - 1
 _MAX_PLAN_ID_BYTES = 256
 _MAX_STEP_ID_BYTES = 4096
 _MAX_EVENTS = 100_000
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
 _DOMAIN = b"ARK-planner-journal-v1\0"
 _HASH = re.compile(r"[0-9a-f]{64}\Z")
 _TOPOLOGY = re.compile(r"plan_[0-9a-f]{64}\Z")
@@ -286,12 +288,33 @@ def _event_hash(
     )
 
 
+def _is_reparse_point(metadata: os.stat_result) -> bool:
+    """Detect Windows reparse points even when their mode is directory/file."""
+    attributes = getattr(metadata, "st_file_attributes", 0)
+    return type(attributes) is not int or bool(
+        attributes & _FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+
+
+def _require_original_journal_path_policy() -> None:
+    if (
+        type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+        or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
+    ):
+        raise PlannerJournalPathError("Planner journal path admission policy changed")
+
+
 def _require_safe_journal_path(path: Path, *, create: bool) -> None:
     """Reject path aliases before SQLite can create, read or mutate a database.
 
     This is a repeated local lstat preflight, not atomic dirfd custody or
     protection against a hostile concurrent rename between inspection/open.
     """
+    _require_original_journal_path_policy()
     if type(path) is not type(Path(".")) or ".." in path.parts:
         raise PlannerJournalPathError("Planner journal path type or traversal refused")
     raw = os.fspath(path)
@@ -308,7 +331,11 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
                 raise PlannerJournalPathError(
                     "Planner journal parent directory is unavailable"
                 ) from None
-            if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+            if (
+                not stat.S_ISDIR(metadata.st_mode)
+                or stat.S_ISLNK(metadata.st_mode)
+                or _is_reparse_point(metadata)
+            ):
                 raise PlannerJournalPathError(
                     "Planner journal symbolic or non-directory ancestor refused"
                 )
@@ -323,7 +350,11 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
                     "Planner journal database is unavailable; recreation is refused"
                 ) from None
         else:
-            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_nlink != 1
+                or _is_reparse_point(metadata)
+            ):
                 raise PlannerJournalPathError(
                     "Planner journal database must be one regular unaliased file"
                 )
@@ -346,6 +377,7 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
             if (
                 not stat.S_ISREG(sidecar_metadata.st_mode)
                 or sidecar_metadata.st_nlink != 1
+                or _is_reparse_point(sidecar_metadata)
             ):
                 raise PlannerJournalPathError(
                     "Planner journal SQLite sidecar must be one regular unaliased file"
