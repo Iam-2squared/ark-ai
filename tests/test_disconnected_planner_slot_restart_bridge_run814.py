@@ -301,3 +301,71 @@ def test_restart_step_id_accepts_exact_boundary_without_granting_authority():
     assert not bridge._valid_step_id("界" * 86)
     assert not bridge._valid_step_id("")
     assert not bridge._valid_step_id("\x00")
+
+
+@pytest.mark.parametrize(
+    "carrier,field,value",
+    (
+        ("claim", "effect", object()),
+        ("claim", "state", object()),
+        ("claim", "depends_on", "step"),
+        ("claim", "depends_on", ("trap",)),
+        ("offline", "effect", "WRITE"),
+        ("offline", "state", "RUNNING"),
+        ("offline", "depends_on", ("trap",)),
+        ("offline", "result_sha256", "f" * 64),
+        ("offline", "reservation_id", _SLOT),
+        ("observation", "plan_state", "running"),
+        ("observation", "reservation", "present"),
+        ("observation", "preaction_audit", "absent"),
+        ("observation", "audit_link", "unavailable"),
+    ),
+)
+def test_non_id_restart_fields_reject_forged_types_before_comparison(
+    tmp_path, carrier, field, value,
+):
+    """No untrusted equality/hash is invoked before source inventory validation."""
+    data = _setup(tmp_path)
+    called = []
+
+    class Trap(str):
+        def __eq__(self, other):
+            called.append("eq")
+            raise AssertionError("untrusted equality ran")
+
+        def __hash__(self):
+            called.append("hash")
+            raise AssertionError("untrusted hashing ran")
+
+    if carrier == "claim":
+        original = data["claims"][0]
+        forged = (Trap(_WRITE),) if value == ("trap",) else value
+        changed = replace(original, **{field: forged})
+        data["claims"] = (changed, *data["claims"][1:])
+    elif carrier == "offline":
+        original = data["offline_steps"][0]
+        forged = (Trap(_READ),) if value == ("trap",) else (
+            Trap(value) if type(value) is str else value
+        )
+        changed = replace(original, **{field: forged})
+        data["offline_steps"] = (changed, *data["offline_steps"][1:])
+    else:
+        original = data["observations"][0]
+        data["observations"] = (replace(original, **{field: Trap(value)}),)
+
+    with pytest.raises(
+        bridge.DisconnectedPlannerSlotBridgeRejected,
+        match="inexact restart bridge inputs",
+    ):
+        bridge.review_disconnected_planner_slot_restart(**data)
+    assert called == []
+
+
+def test_unbounded_observation_inventory_rejected_before_recovery_review(tmp_path):
+    data = _setup(tmp_path)
+    data["observations"] = data["observations"] * 25
+    with pytest.raises(
+        bridge.DisconnectedPlannerSlotBridgeRejected,
+        match="inexact restart bridge inputs",
+    ):
+        bridge.review_disconnected_planner_slot_restart(**data)
