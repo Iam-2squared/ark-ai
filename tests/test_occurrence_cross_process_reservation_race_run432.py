@@ -53,9 +53,20 @@ try:
         now_ms=20,
     )
 except SyntheticReplayRejected as exc:
-    if "already reserved" not in str(exc):
+    message = str(exc)
+    if (
+        "already reserved" not in message
+        and message != "occurrence SQLite sidecar alias refused"
+    ):
         raise
-    print("REPLAY", flush=True)
+    # During simultaneous opens, the conservative sidecar path fence may
+    # reject the losing process before it reaches the duplicate-row check.
+    # Both outcomes are fail-closed; neither process can dispatch a backend.
+    print(
+        "SAFE_DENIAL" if message == "occurrence SQLite sidecar alias refused"
+        else "REPLAY",
+        flush=True,
+    )
 else:
     assert not receipt.dispatch_authorized
     assert not receipt.outcome_known
@@ -103,7 +114,11 @@ def test_two_process_reservations_have_one_durable_winner(tmp_path, conflict):
                 process.kill()
                 process.communicate()
     assert all(process.returncode == 0 for process in processes), responses
-    assert sorted(output.strip() for output, _ in responses) == ["REPLAY", "SUCCESS"]
+    outcomes = sorted(output.strip() for output, _ in responses)
+    assert outcomes in (
+        ["REPLAY", "SUCCESS"],
+        ["SAFE_DENIAL", "SUCCESS"],
+    )
     restarted = SyntheticOccurrenceStore(path)
     assert restarted.count_synthetic() == 1
     with sqlite3.connect(path) as conn:
