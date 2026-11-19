@@ -19,7 +19,7 @@ _MODEL_ID = "Qwen/Qwen3-4B-Instruct-2507"
 _MAX_TEMPLATE_BYTES = 65_536
 _MAX_RENDERED_BYTES = 65_536
 _MAX_PROBE_FILE_BYTES = 262_144
-_SHA256 = re.compile(r"[0-9a-f]{64}\\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 _USER_TEXT = "ARK V3 chat-template identity probe"
 _ASSISTANT_TEXT = "Probe response; no training data."
