@@ -1,3 +1,42 @@
+# LATEST — ARK AI Run986: impossible expiry admission and Memory negative scalar prehydration
+
+**Saved at (Asia/Tokyo/JST): 2026-11-19T15:47:14.342+09:00.** This is only the checkpoint/report clock, **NOT** a trusted scheduler, consent, action or provenance time. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED at checkpoint prewrite. **Exact invocation work-basis HEAD:** `8df5782c5bb22a42a45404bf7d9b9c122267d5c9` (Run985 checkpoint). **Latest source/test HEAD and checkpoint-write-basis HEAD:** `923d7136c6137ad3fe0dc44eedf13e452374fec1`. **Checkpoint-result HEAD:** the subsequent permitted GitHub Contents API commit SHA, verified afterward against live PR and branch. This tracked file cannot truthfully contain its own future commit SHA.
+
+**Protected ref custody at checkpoint prewrite:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All open, Draft, unmerged and untouched. Frozen V1/V2/Local UI/Launcher evidence, Memory v1 schema/contracts, ToolCall/PlanStep v1, Observation Envelope v1 and protected final evaluation/approval gates unchanged.
+
+## NEW — two non-UI development packages (20 authored regression cases)
+
+1. **Proactive synthetic expired-slot representability** — [source `f1b6a657`](https://github.com/Iam-2squared/ark-ai/commit/f1b6a6574d3263bf8487938ae9661c395ac4b3fa), [tests `e3152488`](https://github.com/Iam-2squared/ark-ai/commit/e315248844c10a9efa2199984cc431e0026d77a1). An int64 policy whose *last* due instant plus grace leaves no later representable observation time cannot be classified expired. Reject it during disconnected quarantine policy admission, before creating a SQLite ledger. Four invalid int64 edge policies and the last valid clock-at-`INT64_MAX` restart case = **5 authored cases**. Does not change frozen recurrence preview protocol, which may still classify a terminal instant `DUE_UNVERIFIED`; quarantine never dispatches.
+2. **Memory persisted scalar ingress** — [source `bda067ca`](https://github.com/Iam-2squared/ark-ai/commit/bda067cab7fe16975545ff92bbbf34ca0550042b), [tests `923d7136`](https://github.com/Iam-2squared/ark-ai/commit/923d7136c6137ad3fe0dc44eedf13e452374fec1). In the same transaction preflight, reject negative persisted `created_at_ms`, `updated_at_ms`, `expires_at_ms` and nonpositive `revision` before `SELECT *` private row hydration, for scoped get/search, CAS put/delete and expiry purge paths. Existing V1 schema and public contract unchanged. Trace assertion plus durable row/event preservation for three corrupt timestamp fields × five operations = **15 authored cases**. No data repair, automatic purge, authorization or write retry.
+
+Both implementation/test packages saved using **normal GitHub Contents API** with branch re-read immediately before each write; no raw Git object, force push, merge, protected branch write or manual duplicate workflow dispatch. **20 new parameterized regression cases are authored, not yet certified PASS** on the new HEAD; no local full pytest or target-PC/GGUF run claimed.
+
+## CI / evidence (observed before checkpoint)
+
+- **Run985 exact work-basis HEAD** `8df5782c5bb22a42a45404bf7d9b9c122267d5c9`: [CI #44468899226](https://github.com/Iam-2squared/ark-ai/actions/runs/44468899226) **SUCCESS / 6 of 6** (Ubuntu/Windows × Python 3.11–3.13). This applies only to the older work basis, not Run986 changes.
+- Proactive package source CI [#44473924691](https://github.com/Iam-2squared/ark-ai/actions/runs/44473924691): **IN PROGRESS** at last inspection; test HEAD [#44473975679](https://github.com/Iam-2squared/ark-ai/actions/runs/44473975679): **IN PROGRESS**.
+- Memory source CI [#44474075354](https://github.com/Iam-2squared/ark-ai/actions/runs/44474075354): **IN PROGRESS**; **latest executable source/test HEAD** `923d7136...` CI [#44474241026](https://github.com/Iam-2squared/ark-ai/actions/runs/44474241026): **QUEUED**. All six jobs at latest exact HEAD remain **NOT VERIFIED GREEN**; new checkpoint may trigger its own further run.
+- Only GitHub CI after each normal contents commit; no manual duplicate run. There is **no independent authenticated execution or provenance evidence** from these tests.
+
+## Blockers / authorization boundaries
+
+No paid/potentially billable service, external GPU, training or real Candidate/adapter/weight generation, automatic Candidate promotion, protected V2 final opening, V3 approval/training action, new secrets/accounts, physical-PC action, main merge, UI/frontend changes, real ToolBackend READ/WRITE, irreversible erasure or automatic COMMIT-UNKNOWN recovery. Local SQLite / SHA witnesses cannot authenticate human consent, stable external action effects, independent clocks, rollback prevention or atomic WAL/SHM path custody. Proactive terminal policies with no representable expiry are now rejected **only** by the optional quarantine journal; this does not purport to alter already-frozen previews.
+
+## Next plan / 今後の方針
+
+1. Certify newest exact source/test/checkpoint HEAD CI across all six Ubuntu/Windows Python jobs. If failure, inspect real logs and repair narrowly; avoid launching equivalent duplicate workflows.
+2. Memory WAL/SHM path/open races, generation CAS/ABA, coherent expiry/event snapshots, append-and-review retained witness and manual-only COMMIT-UNKNOWN reconciliation.
+3. Planner crash/terminal recovery and registry-bound PermissionGate, durable one-shot authorization, trusted-clock audit-before-action with **disconnected/mock only**, after exact-head GREEN prerequisites.
+4. Privacy-safe Personal Context retention/revocation, proactive occurrence replay/freshness, offline Observation fixtures and free-only V3 path/identity/reproducibility guards. **UI remains PAUSED; PR #9 untouched.**
+
+**Overall ARK/JARVIS: NOT_PASSED.**
+
+---
+
+## HISTORICAL CHECKPOINT — Run985 (verbatim below)
+
 # LATEST — ARK AI Run985: bounded Memory generation review + synthetic scheduler native-path admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-19T14:59:11.792+09:00.** Timestamp is for this checkpoint report only, never a trusted action/consent/scheduler/identity clock. **Overall ARK/JARVIS: NOT_PASSED.**
