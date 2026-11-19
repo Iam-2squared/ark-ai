@@ -61,3 +61,39 @@ def test_nonaliased_existing_revocation_database_remains_reopenable(tmp_path):
     reopened = SyntheticContextRevocationLedger(original)
     assert first.path == reopened.path
     assert original.is_file()
+
+
+@pytest.mark.parametrize("relative", (False, True))
+@pytest.mark.parametrize("existing_required", (False, True))
+def test_revocation_traversal_denied_before_database_access(
+    tmp_path, monkeypatch, relative, existing_required,
+):
+    from pathlib import Path
+
+    folder = tmp_path / "sub"
+    folder.mkdir()
+    target = tmp_path / "veto.sqlite"
+    if relative:
+        monkeypatch.chdir(tmp_path)
+        untrusted = Path("sub") / ".." / "veto.sqlite"
+    else:
+        untrusted = folder / ".." / "veto.sqlite"
+    with pytest.raises(SyntheticContextRevocationRejected, match="traversal"):
+        SyntheticContextRevocationLedger(
+            untrusted, require_existing=existing_required,
+        )
+    assert not target.exists()
+
+
+def test_nonaliased_relative_revocation_path_still_bootstraps(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    monkeypatch.chdir(tmp_path)
+    path = Path("relative-veto.sqlite")
+    ledger = SyntheticContextRevocationLedger(path)
+    assert path.is_file()
+    ledger.assert_not_revoked((
+        __import__("ark.memory", fromlist=["MemoryScope"]).MemoryScope(
+            "offline-owner", "private",
+        ),
+    ))
