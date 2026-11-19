@@ -224,8 +224,7 @@ def _require_original_registration_contract() -> None:
         _REGISTRATION_FIELDS is not _ORIGINAL_REGISTRATION_FIELDS_VECTOR
         or _REGISTRATION_METHODS is not _ORIGINAL_REGISTRATION_METHODS_VECTOR
         or _REGISTRATION_HOOKS is not _ORIGINAL_REGISTRATION_HOOKS_VECTOR
-        or
-        ToolRegistration is not _REGISTRATION_TYPE
+        or ToolRegistration is not _REGISTRATION_TYPE
         or any(
             vars(_REGISTRATION_TYPE).get(name) is not original
             for names, originals in (
