@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from .audit import SQLiteActionAudit
 from .contracts import (
@@ -20,7 +20,6 @@ from .contracts import (
     CapabilityGrant,
     Effect,
     OneShotAuthorization,
-    PermissionDenied,
     ToolCall,
 )
 from .durable_occurrence_review import (
