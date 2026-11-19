@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import stat
 import subprocess
 from pathlib import Path
 
@@ -169,6 +171,65 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         raise RuntimeError("preflight report measurements are inconsistent") from exc
 
 
+_MAX_PREFLIGHT_REPORT_PATH_BYTES = 4096
+
+
+def _admit_new_preflight_report_path(value: object) -> Path:
+    """Admit a new report file only beneath existing real directories.
+
+    This is a bounded lexical/symlink preflight before any runtime probe. It
+    does not provide atomic directory-handle custody against a later rename.
+    The final exclusive create still prevents overwriting an existing file.
+    """
+    if type(value) is not type(Path(".")):
+        raise RuntimeError("preflight report path must be an exact local Path")
+    raw = str(value)
+    if (
+        not raw
+        or len(raw) > _MAX_PREFLIGHT_REPORT_PATH_BYTES
+        or chr(0) in raw
+        or not value.name
+        or ".." in value.parts
+    ):
+        raise RuntimeError(
+            "preflight report path must be a new file under real non-symlink directories"
+        )
+    try:
+        encoded = os.fsencode(value)
+        target = value if value.is_absolute() else Path.cwd() / value
+        target = target.absolute()
+        if (
+            len(encoded) > _MAX_PREFLIGHT_REPORT_PATH_BYTES
+            or len(os.fsencode(target)) > _MAX_PREFLIGHT_REPORT_PATH_BYTES
+        ):
+            raise RuntimeError(
+                "preflight report path must be a new file under real non-symlink directories"
+            )
+        # Check every existing component without following symlinks. Missing
+        # parents are denied rather than created by this evidence-writing path.
+        for ancestor in reversed(target.parents):
+            metadata = ancestor.lstat()
+            if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+                raise RuntimeError(
+                    "preflight report path must be a new file under real non-symlink directories"
+                )
+        try:
+            target.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            raise RuntimeError(
+                "preflight report path must be a new file under real non-symlink directories"
+            )
+    except RuntimeError:
+        raise
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise RuntimeError(
+            "preflight report path must be a new file under real non-symlink directories"
+        ) from exc
+    return value
+
+
 def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Authorization and every exact identity must close before importing torch/GPU runtime.
@@ -183,9 +244,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
     # Reject an unusable output destination before importing torch or
     # initializing a local accelerator runtime. This is only path admission;
     # it does not authorize preflight or external compute.
-    report_path = Path(args.report)
-    if report_path.exists() or report_path.is_symlink() or not report_path.parent.is_dir():
-        raise RuntimeError("preflight report path must be a new file under an existing directory")
+    report_path = _admit_new_preflight_report_path(Path(args.report))
     runtime_identity = _verify_actual_runtime(snapshot)
     backend = HfLoRAPreflightBackend(
         base_dir=args.base_dir,
