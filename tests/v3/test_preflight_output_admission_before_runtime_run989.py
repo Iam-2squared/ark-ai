@@ -9,15 +9,37 @@ import pytest
 import ark.learning.training_cli as cli
 
 
-@pytest.mark.parametrize("path_kind", ("existing", "missing_parent"))
+@pytest.mark.parametrize(
+    "path_kind",
+    ("existing", "missing_parent", "parent_symlink", "dangling_symlink", "parent_traversal", "oversized"),
+)
 def test_invalid_report_destination_is_rejected_before_runtime_probe(
     tmp_path, monkeypatch, path_kind,
 ):
     if path_kind == "existing":
         report = tmp_path / "already-exists.json"
         report.write_text("preserve", encoding="utf-8")
-    else:
+    elif path_kind == "missing_parent":
         report = tmp_path / "missing-parent" / "report.json"
+    elif path_kind == "parent_symlink":
+        real_parent = tmp_path / "real-parent"
+        real_parent.mkdir()
+        linked_parent = tmp_path / "linked-parent"
+        try:
+            linked_parent.symlink_to(real_parent, target_is_directory=True)
+        except OSError as exc:
+            pytest.skip(f"directory symlink unavailable: {exc}")
+        report = linked_parent / "report.json"
+    elif path_kind == "dangling_symlink":
+        report = tmp_path / "dangling-report.json"
+        try:
+            report.symlink_to(tmp_path / "not-created.json")
+        except OSError as exc:
+            pytest.skip(f"file symlink unavailable: {exc}")
+    elif path_kind == "parent_traversal":
+        report = tmp_path / "missing" / ".." / "report.json"
+    else:
+        report = cli.Path("x" * 4097)
 
     args = SimpleNamespace(
         snapshot=tmp_path / "snapshot.json",
@@ -42,7 +64,7 @@ def test_invalid_report_destination_is_rejected_before_runtime_probe(
     monkeypatch.setattr(cli, "_verify_actual_runtime", forbidden_runtime_probe)
     with pytest.raises(
         RuntimeError,
-        match="preflight report path must be a new file under an existing directory",
+        match="preflight report path must be a new file under real non-symlink directories",
     ):
         cli.run_preflight(args)
 
