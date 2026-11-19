@@ -214,22 +214,18 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                     else:
                         raise ValueError(f"unsupported snapshot entry: {path}")
 
-                    # Path.lstat and DirEntry.stat can report different
-                    # ctime semantics on Windows (creation vs change time).
-                    # Compare file identity and portable metadata across
-                    # sources, then compare the full path epoch against itself.
-                    if (
+                    # Windows DirEntry.stat and Path.lstat can expose
+                    # different file IDs for the same entry. Both observations
+                    # are still no-follow; use the path's repeated lstat epoch
+                    # below for Windows identity, while POSIX compares both
+                    # independent observations in full.
+                    if os.name != "nt" and (
                         not os.path.samestat(info, path_info)
                         or info.st_size != path_info.st_size
                         or info.st_mtime_ns != path_info.st_mtime_ns
                         or info.st_nlink != path_info.st_nlink
-                        or (
-                            os.name != "nt"
-                            and (
-                                info.st_mode != path_info.st_mode
-                                or info.st_ctime_ns != path_info.st_ctime_ns
-                            )
-                        )
+                        or info.st_mode != path_info.st_mode
+                        or info.st_ctime_ns != path_info.st_ctime_ns
                     ):
                         raise ValueError("snapshot entry changed during enumeration")
                     observed_epoch = _entry_epoch(path, is_dir=is_dir)
