@@ -86,7 +86,23 @@ _ORIGINAL_RESULT_FIELDS_VECTOR = _FIELDS
 
 def _valid_step_id(value: object) -> bool:
     """Reject forged inputs before dict/set/equality or journal/SQLite callbacks."""
-    if type(value) is not str or not value or "\x00" in value:
+    if type(value) is not str or not value or len(value) > _MAX_STEP_ID_BYTES:
+        return False
+    # These labels become dict keys, sort keys and persistent reconciliation
+    # diagnostics. Hidden controls can disguise two distinct step identities
+    # in human review even when their hashes and Unicode are well-formed.
+    # Retain ordinary UTF-8/CJK step labels; no frozen Planner ID is changed.
+    if any(
+        ord(char) < 32 or 0x7F <= ord(char) <= 0x9F
+        or ord(char) in (
+            0x00AD, 0x034F, 0x061C, 0x180E, 0x200B, 0x200C,
+            0x200D, 0x200E, 0x200F, 0x2028, 0x2029,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x202A <= ord(char) <= 0x202E
+        or 0x2066 <= ord(char) <= 0x206F
+        for char in value
+    ):
         return False
     try:
         return len(value.encode("utf-8", errors="strict")) <= _MAX_STEP_ID_BYTES
