@@ -18,7 +18,6 @@ from ark.memory import (
     cas_generation_review as review,
 )
 
-
 _HIDDEN = (
     "\x00", "\n", "\x7f", "\x85", "\u00ad", "\u034f",
     "\u061c", "\u200b", "\u200d", "\u2028", "\u202e",
