@@ -146,17 +146,19 @@ def test_restart_review_rejects_quarantine_change_after_preview_before_return(
 ):
     ledger, quarantine_policy, policy, cursor, witness = _fixture(tmp_path, 1)
     original_preview = resume_review.preview_disconnected_schedule
+    updated_witnesses = []
 
     def append_after_preview(*args, **kwargs):
         preview = original_preview(*args, **kwargs)
         index = 1
         due = quarantine_policy.first_ms + index * quarantine_policy.interval_ms
-        ledger.quarantine_expired(
+        receipt = ledger.quarantine_expired(
             index=index,
             occurrence_id=derive_quarantined_occurrence(quarantine_policy, index),
             observed_ms=due + quarantine_policy.grace_ms + 1,
             retained=witness,
         )
+        updated_witnesses.append(receipt.witness)
         return preview
 
     # The mutation occurs after the preview has been computed, immediately
@@ -173,6 +175,8 @@ def test_restart_review_rejects_quarantine_change_after_preview_before_return(
             observed_now_ms=15_000,
         )
 
-    updated = ledger.inspect(retained=witness)
+    assert len(updated_witnesses) == 1
+    updated = ledger.inspect(retained=updated_witnesses[0])
+    assert updated == updated_witnesses[0]
     assert updated.count == witness.count + 1
     assert updated.chain_sha256 != witness.chain_sha256
