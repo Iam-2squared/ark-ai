@@ -1,3 +1,57 @@
+# LATEST — ARK AI Run1006: Memory, Planner, Action Audit and scheduler SQLite path epochs
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T07:53:24+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1006 work-basis exact HEAD:** `11917b99e177e4601fae5a6f2787ddc548aca91c` (PR #8 head; exact-head CI #44613533201 GREEN). **Checkpoint write-basis HEAD:** `11917b99e177e4601fae5a6f2787ddc548aca91c`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and confirmed by the post-write branch read; the exact SHA is reported in the invocation result because a commit cannot contain its own SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and #9 remain OPEN/DRAFT/UNMERGED and untouched. New child PRs #38–#42 are also OPEN/DRAFT/UNMERGED; no child promotion or main merge.
+
+## NEW — Run1006: five free-only non-UI source/test packages
+
+1. **PR #38 — schedule quarantine post-open SQLite path check.** Exact head `fae6ef7bbe1a9763652638bfe2e01ce257b24f42`; source `f83adc0dd9f40633173239181793766dfd498c95`, tests `bc6a199928f10592490c9328aa63b4e1c4be1dc3`, report `fae6ef7`; **4 parameterized synthetic cases**. A shared opener rechecks constructor, read-only and read/write paths after SQLite open and closes the handle before rejecting. [Draft PR #38](https://github.com/Iam-2squared/ark-ai/pull/38). CI #44632230565 **IN PROGRESS**.
+
+2. **PR #39 — Action Audit reparse-point and post-open path checks.** Latest exact head `701ea968997c939cf49255f75e1d82988dd6f6b4`; source `6b05e979d46de6e1f9bf661906bfbb4d5b19b2e4`, tests `2aeff0bb3b141e3775c0e9f7a353b7facd4bc186`, report `48f558022da75f074bf0f9b80b081901ac84cd46`, followed by two semantics-preserving Ruff-line-placement corrections `820b26f` and `701ea96`; **7 synthetic cases**. Rejects reparse-point ancestors/main/sidecars, rechecks both connection modes after open, and closes rejected handles. [Draft PR #39](https://github.com/Iam-2squared/ark-ai/pull/39). Latest CI #44632671559 **QUEUED**. Superseded runs #44632235306 and #44632449603 **FAIL** on Ruff E501 only; the misplaced comment was then removed from the long line. No test or policy gate was relaxed.
+
+3. **PR #40 — disconnected occurrence-ledger reparse and post-open checks.** Latest exact head `49c60b7806fb715b856ba02a48e6b120e4767339`; source `ab1cc4c8300ddcff3e399813818aaced34246bf7`, tests `e38784d78e123bf9b1cc88a2b7f4209c4887e33e`, report `43a8f1bfec85afa6f207f32d30d6b33fcd9af54b`, followed by the annotation-only Ruff fix `49c60b7`; **7 synthetic cases**. Adds reparse rejection and checked read/write/read-only opens while preserving the non-authorizing fixture. [Draft PR #40](https://github.com/Iam-2squared/ark-ai/pull/40). CI #44632458612 **IN PROGRESS**. Superseded run #44632238927 **FAIL** on Ruff F821 (an annotation referenced an unimported `os`); the annotation now uses `object`.
+
+4. **PR #41 — Memory SQLite source-Path epoch pin.** Exact head `daad75fd7fd39ad3982f3365226d5f67b5637ebb`; source `3ce3a5dabf0e846e3b7510d79668f466013a56c7`, tests `81ac6ca25fcb7edb6605e258d29effdf66dfecf7`, report `daad75f`; **4 synthetic cases**. Both Memory open modes now use the exact same Path object for preflight, URI/open and post-open check, reject equal-valued or different-valued `self.path` replacement, and close the original handle. [Draft PR #41](https://github.com/Iam-2squared/ark-ai/pull/41). CI #44632387507 **IN PROGRESS**.
+
+5. **PR #42 — Planner journal source epoch and no-recreate open.** Exact head `a0b35f14beb4af759ba1eb042b09d839025f856b`; source `1031ca7e0b240a7fd20034525c872194d42df26b`, tests `ebf5423133081c4e057687eb19aa3d907c20d4d8`, report `a0b35f1`; **2 synthetic cases**. Pins the exact source string across preflight/open/recheck and uses SQLite URI `mode=rw` for non-create opens so a raced deletion cannot silently create a replacement journal. [Draft PR #42](https://github.com/Iam-2squared/ark-ai/pull/42). CI #44632619818 **QUEUED**.
+
+**Run1006 authored regression coverage: 24 parameterized synthetic cases.** These are not yet certified PASS: no local full-suite pytest was run in this automation environment, and only the exact-head CI states above are reported.
+
+## Tests / CI / evidence — exact HEADs only
+
+- Canonical PR #8 head `11917b99e177e4601fae5a6f2787ddc548aca91c`: CI #44613533201 **GREEN**.
+- Parent PR #34 head `2ac894cfda27b3c92031d7aa97471f96282f6d84`: CI #44613208267 **GREEN**; parent PR #13 head `b940525c43d3e3a858352c8702dc4202598597e3` and PR #14 head `00fee30e4004a56bb73d7161070c6a31661bc9e3` each had exact-head checks **GREEN 6/6**.
+- Parent PR #37 head `712e295d490af74e6725aad99dee64359d9cda47`: CI #44622976063 **GREEN 6/6**. Parent PR #36 head `e8f89704b3de5d55daaf58463a11aee140ca9cca`: CI #44622369804 **GREEN 6/6**.
+- PR #38 head `fae6ef7`: CI #44632230565 **IN PROGRESS** (six matrix jobs).
+- PR #39 superseded heads `48f5580` and `820b26f`: CI #44632235306 / #44632449603 **FAIL** on Ruff E501 only. Corrected head `701ea96`: CI #44632671559 **QUEUED**.
+- PR #40 superseded head `43a8f1b`: CI #44632238927 **FAIL** on Ruff F821 only. Corrected head `49c60b7`: CI #44632458612 **IN PROGRESS** (six matrix jobs).
+- PR #41 head `daad75f`: CI #44632387507 **IN PROGRESS** (six matrix jobs). PR #42 head `a0b35f1`: CI #44632619818 **QUEUED**.
+- Existing Personal Context PR #29 rerun #44613414747 remains **IN PROGRESS**: five matrix jobs are SUCCESS and the Windows Python 3.13 job is still running after a transient socket `ConnectionAbortedError` in an existing test. Only that failed job was rerun; no UI source, frontend test or UI branch was changed. This is not a PASS yet.
+
+No local full-suite pytest, physical Windows junction, user-PC, GGUF/model, live capture, real ToolBackend, real notification, external effect, GPU/runtime or Candidate result is claimed.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, feature, polish, test addition or integration. PRs #38–#42 remain isolated Draft/unmerged. No main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. The new pathname checks narrow local races only: they are not atomic dirfd custody, descriptor identity authentication, trusted time, consent, cross-store atomicity, authenticated storage or proof of exactly-once external effects. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI for PRs #38–#42 and the PR #29 rerun. Inspect any failing job/log, apply only the smallest semantics-preserving normal-write fix, then switch immediately to a non-conflicting lane while CI runs.
+2. Continue Memory WAL/SHM last-close, cross-process pinned-reader, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only triage.
+3. Continue Planner retained-prefix/truncation, terminal propagation, restart recovery and COMMIT-UNKNOWN outcomes. Missing/ambiguous RUNNING work remains quarantined; never auto-replay.
+4. Advance restart-safe authorization, trusted-clock audit-before-action and occurrence/replay protection over disconnected mocks only. Resolve cross-store atomicity before any real backend integration.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive scheduler recovery and Observation fixture lifecycle, plus free-only V3 approval/path/identity/reproducibility guards.
+6. Keep JARVIS foundations isolated/reversible until exact-head GREEN evidence and explicit integration gates exist. **UI remains PAUSED.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1004: Memory WAL cleanup, Planner completion-audit quarantine, V3 and scheduler reparse guards
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T05:54:35+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
