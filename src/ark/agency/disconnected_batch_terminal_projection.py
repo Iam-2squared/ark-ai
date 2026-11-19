@@ -63,6 +63,32 @@ _RECEIPT_TYPE = DisconnectedBatchTerminalReceipt
 _ORIGINAL_TERMINAL_DENIALS = tuple(
     getattr(_RECEIPT_TYPE, name) for name in _FLAGS
 )
+_ORIGINAL_FLAGS = _FLAGS
+_ORIGINAL_STATES = _STATES
+_ORIGINAL_DOMAIN = _DOMAIN
+_ORIGINAL_RECEIPT_TYPE = _RECEIPT_TYPE
+_ORIGINAL_DENIAL_VECTOR = _ORIGINAL_TERMINAL_DENIALS
+
+
+def _require_original_terminal_policy() -> None:
+    # A shortened/reordered denial vector otherwise skips checks via zip().
+    # Snapshot it before evaluating private plan steps or cached outcomes.
+    if (
+        _FLAGS is not _ORIGINAL_FLAGS
+        or _STATES is not _ORIGINAL_STATES
+        or _DOMAIN is not _ORIGINAL_DOMAIN
+        or _RECEIPT_TYPE is not _ORIGINAL_RECEIPT_TYPE
+        or DisconnectedBatchTerminalReceipt is not _ORIGINAL_RECEIPT_TYPE
+        or _ORIGINAL_TERMINAL_DENIALS is not _ORIGINAL_DENIAL_VECTOR
+        or len(_FLAGS) != len(_ORIGINAL_DENIAL_VECTOR)
+        or any(
+            vars(_RECEIPT_TYPE).get(name) is not original
+            for name, original in zip(
+                _FLAGS, _ORIGINAL_DENIAL_VECTOR, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedBatchTerminalRejected("terminal receipt changed: policy vector")
 
 
 def _digest(payload: object) -> str:
@@ -81,6 +107,7 @@ def project_disconnected_batch_terminals(
     failed_step_ids: tuple[str, ...] = (),
 ) -> DisconnectedBatchTerminalReceipt:
     """Propagate synthetic failures to descendants without executing anything."""
+    _require_original_terminal_policy()
     verify_disconnected_batch_plan(plan, retained_digest=retained_digest)
     verify_disconnected_batch_schedule(schedule, plan, retained_digest=retained_digest)
     if (
@@ -106,6 +133,7 @@ def project_disconnected_batch_terminals(
         raise DisconnectedBatchTerminalRejected("unknown hypothetical failure step")
 
     def stable() -> None:
+        _require_original_terminal_policy()
         if (
             any(now is not old for now, old in zip(
                 (plan.request_id, plan.steps, plan.canonical_plan_json, plan.plan_digest),
@@ -174,6 +202,7 @@ def project_disconnected_batch_terminals(
     descriptors = _ORIGINAL_TERMINAL_DENIALS
 
     def stable_report() -> None:
+        _require_original_terminal_policy()
         if (
             type(report) is not _RECEIPT_TYPE
             or any(
@@ -226,6 +255,7 @@ def verify_disconnected_batch_terminals(
     retained_digest: str,
 ) -> None:
     """Recompute caller-declared hypothetical failures; never infer real outcomes."""
+    _require_original_terminal_policy()
     if type(receipt) is not _RECEIPT_TYPE:
         raise DisconnectedBatchTerminalRejected("exact terminal receipt required")
     # Keep the original caller-supplied receipt epoch independently of the
@@ -239,6 +269,7 @@ def verify_disconnected_batch_terminals(
     descriptors = _ORIGINAL_TERMINAL_DENIALS
 
     def stable_receipt() -> bool:
+        _require_original_terminal_policy()
         return (
             type(receipt) is _RECEIPT_TYPE
             and all(
