@@ -9,8 +9,12 @@ import sqlite3
 
 import pytest
 
-from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
-from ark.memory import cas_generation_review as review
+from ark.memory import (
+    MemoryScope,
+    MemoryWrite,
+    SQLiteMemoryStore,
+    cas_generation_review as review,
+)
 
 
 _HIDDEN = (
