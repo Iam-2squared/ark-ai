@@ -4,8 +4,7 @@ from types import MappingProxyType
 
 import pytest
 
-from ark.agency import PlanConflictError, PlanGraph, PlanStep, StepState, ToolCall
-from ark.agency import planner
+from ark.agency import PlanConflictError, PlanGraph, PlanStep, StepState, ToolCall, planner
 
 
 def _steps():
