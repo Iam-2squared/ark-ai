@@ -174,6 +174,31 @@ def _preflight_due_page(
         raise CoherentExpirySnapshotRejected(
             "coherent expiry due-page hydration budget exceeded"
         )
+    # The page SELECT * also materializes identity, digest and numeric columns.
+    # A damaged SQLite row can hide a huge BLOB in a revision or timestamp
+    # while the content/metadata/source aggregate above remains within budget.
+    # Screen the SAME due page under this transaction before Python hydration.
+    malformed = conn.execute(
+        "SELECT 1 FROM (SELECT memory_id,owner_id,namespace,content_sha256,"
+        "created_at_ms,updated_at_ms,expires_at_ms,revision "
+        "FROM memories WHERE owner_id=? AND namespace=? "
+        "AND expires_at_ms IS NOT NULL AND expires_at_ms<=? "
+        "ORDER BY memory_id LIMIT ?) AS due WHERE "
+        "typeof(memory_id)!='text' OR length(CAST(memory_id AS BLOB))!=68 "
+        "OR typeof(owner_id)!='text' OR length(CAST(owner_id AS BLOB))>1024 "
+        "OR typeof(namespace)!='text' OR length(CAST(namespace AS BLOB))>1024 "
+        "OR typeof(content_sha256)!='text' "
+        "OR length(CAST(content_sha256 AS BLOB))!=64 "
+        "OR typeof(created_at_ms)!='integer' OR created_at_ms<0 "
+        "OR typeof(updated_at_ms)!='integer' OR updated_at_ms<0 "
+        "OR typeof(expires_at_ms)!='integer' OR expires_at_ms<0 "
+        "OR typeof(revision)!='integer' OR revision<1 LIMIT 1",
+        (owner, namespace, now_ms, limit + 1),
+    ).fetchone()
+    if malformed is not None:
+        raise CoherentExpirySnapshotRejected(
+            "coherent expiry scalar hydration admission failed"
+        )
     return metrics[1]
 
 
