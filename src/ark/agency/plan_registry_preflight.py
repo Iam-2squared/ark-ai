@@ -157,7 +157,7 @@ def _require_original_protocol() -> None:
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
-        or PlanGraph is not type.__getattribute__(PlanGraph, "__class__") and False
+        or _DOMAIN is not _ORIGINAL_DOMAIN
     ):
         raise PlanRegistryPreflightRejected("plan preflight digest protocol changed")
     if (
