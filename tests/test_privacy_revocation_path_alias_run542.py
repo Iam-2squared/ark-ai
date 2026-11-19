@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import pytest
 
+from ark.memory import MemoryScope
+
 from ark.personal_context_revocation_review import (
     SyntheticContextRevocationLedger,
     SyntheticContextRevocationRejected,
@@ -92,8 +94,4 @@ def test_nonaliased_relative_revocation_path_still_bootstraps(tmp_path, monkeypa
     path = Path("relative-veto.sqlite")
     ledger = SyntheticContextRevocationLedger(path)
     assert path.is_file()
-    ledger.assert_not_revoked((
-        __import__("ark.memory", fromlist=["MemoryScope"]).MemoryScope(
-            "offline-owner", "private",
-        ),
-    ))
+    ledger.assert_not_revoked((MemoryScope("offline-owner", "private"),))
