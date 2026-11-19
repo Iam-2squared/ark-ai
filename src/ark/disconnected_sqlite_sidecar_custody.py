@@ -100,12 +100,28 @@ _SEAL_ORIGINALS = tuple(
     vars(_SEAL_TYPE).get(key)
     for key in _SEAL_FIELDS + _CARRIER_HOOKS + _DENIAL_FIELDS
 )
+# Keep the complete carrier inventories themselves bound to the import-time
+# epoch. Shortening a vector could otherwise silently omit a replaced slot or
+# denial descriptor; reordering can mismatch checks, and an equal-value
+# replacement is still an unreviewed policy rebinding.
+_CARRIER_INVENTORY_EPOCH = (
+    _STATE_FIELDS, _SEAL_FIELDS, _DENIAL_FIELDS, _CARRIER_HOOKS,
+    _STATE_ORIGINALS, _SEAL_ORIGINALS,
+)
 
 
 def _require_original_carriers() -> None:
     if (
         DetachedSQLiteSidecarState is not _STATE_TYPE
         or DetachedSQLiteSidecarSeal is not _SEAL_TYPE
+        or any(
+            current is not original
+            for current, original in zip(
+                (_STATE_FIELDS, _SEAL_FIELDS, _DENIAL_FIELDS, _CARRIER_HOOKS,
+                 _STATE_ORIGINALS, _SEAL_ORIGINALS),
+                _CARRIER_INVENTORY_EPOCH, strict=True,
+            )
+        )
         or any(
             vars(cls).get(key) is not original
             for cls, keys, originals in (
