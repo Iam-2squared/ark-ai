@@ -1,3 +1,56 @@
+# LATEST — ARK AI Run1003: Memory WAL, privacy veto, Planner/audit COMMIT-UNKNOWN and V3 tokenizer identity
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T04:54:23+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1003 work-basis HEAD:** `88c90920f1ef245012839e2a1bf17b8cea7a86b0` (Memory WAL surviving-reader crash test commit; exact-head CI #44601297754 IN PROGRESS). **Checkpoint write-basis HEAD:** `88c90920f1ef245012839e2a1bf17b8cea7a86b0`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and confirmed by the post-write branch read; its exact SHA is reported in the invocation result because a commit cannot contain its own SHA.
+
+**Protected refs and child workstreams:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; [Draft PR #28](https://github.com/Iam-2squared/ark-ai/pull/28) `a56081bf7e9bcd21701817fb7811eaa430535ffe` (child of gated #5); [Draft PR #29](https://github.com/Iam-2squared/ark-ai/pull/29) `5fa808ac0e6944c7e4d3762261a6cb4f28132a61` (child of #8); [Draft PR #30](https://github.com/Iam-2squared/ark-ai/pull/30) `0857045761bb50c7d1549025c5fa7959af6e95f5` (child of #20); [Draft PR #31](https://github.com/Iam-2squared/ark-ai/pull/31) `e228d599dc78fe635fbaa596169d9a035fe0c07b` (child of #24). All are OPEN/DRAFT/UNMERGED. No child promotion, no main merge, no PR #5 gate opening and no PR #9/UI branch mutation.
+
+## NEW — Run1003 non-UI work
+
+1. **PR #8 — Memory WAL surviving-reader process-crash test (test-only).** A spawned read-only or read/write reader pins revision 1 and its event prefix while a second independent reader remains open. A managed writer commits revision 2 and its event; the spawned reader verifies its historical snapshot and exits via `os._exit` without rollback/close. The surviving reader must continue to hold the old snapshot and prevent a complete TRUNCATE checkpoint. After its final close, cold recovery must return the committed row/event pair, complete a non-busy TRUNCATE checkpoint, pass `quick_check`, and reject the stale generation token. No Memory source, v1 schema or public API changed. Synthetic temporary SQLite only; not power-loss/fsync proof.
+
+2. **PR #28 — V3 runtime-rendered tokenizer probe binding (source + tests + docs; free-only).** Added a deterministic probe artifact containing the exact local `tokenizer.chat_template` digest and two fixed synthetic rendering cases (user generation prompt and completed user/assistant turn). Added an offline `ark-v3-identity chat-template-probe` subcommand using only an already-materialized tokenizer with `local_files_only=True` and `trust_remote_code=False`. The runtime checks the actual tokenizer against the retained probe before model-weight loading and rechecks after preflight encoding/full-run pretokenization. Fake-tokenizer tests cover drift, digest rejection, create-only output and rejection before model-weight loading. No real tokenizer, model weights, CUDA, training, download or provider was invoked. Frozen V3 Contract 1 and the execution-snapshot template are unchanged; unresolved immutable Hub revision, file manifests, dataset, environment, hardware and human authorization remain unresolved.
+
+   Exact current head `a56081bf7e9bcd21701817fb7811eaa430535ffe`. Earlier exact-head CI failures were diagnosed and corrected: #6595 failed Ruff import ordering/line length; #6597 failed because the full-run call omitted the new probe argument; #6599 failed because the existing wall-time test's fake tokenizer was not isolated from the new guard. The fixes are on the current head; CI #6601 is QUEUED and not yet GREEN.
+
+3. **PR #29 — Personal Context final revocation veto recheck rebased onto current #8.** Rebased the prior isolated PR #10 correction onto exact PR #8 work-basis head `88c90920f1ef245012839e2a1bf17b8cea7a86b0`. After retained-history continuity replay, a final local revocation check and context-bundle epoch check run before the projection is returned. A veto appended during the history replay must prevent projection return. This is not an atomic downstream lease, physical erasure proof or external consent. Original PR #10 exact head `52f457687e34dfc9f1a7f4fc017336a8a02edaf7` had CI #44500056645 GREEN 6/6; that result does not certify this rebased head. Current PR #29 CI #44602157762 is IN PROGRESS.
+
+4. **PR #30 — Planner journal rollback-side COMMIT-UNKNOWN tests (test-only).** Complements PR #20's commit-then-lost-acknowledgement fixture with the opposite outcome: a synthetic SQLite wrapper raises before the native COMMIT executes, then connection close rolls the transaction back. Both genesis and transition cases must be resolved by recovery; no absent row/event is silently retried, and recovered state grants neither dispatch nor automatic replay. PR #20 exact base head `ca094cb5d1050d00eeb97960e676697b766f23f4` had CI #44570039196 GREEN 6/6. Current PR #30 CI #44602592796 is IN PROGRESS.
+
+5. **PR #31 — pre-action audit rollback-side COMMIT-UNKNOWN test (test-only).** Complements PR #24's commit-then-lost-acknowledgement fixture. A synthetic SQLite wrapper fails before the pre-action audit COMMIT executes; the outer closer rolls back the audit row. The already committed durable occurrence reservation remains, the mock WRITE backend is never called, and restart reuse of the occurrence is rejected. PR #24 exact base head `fd4c6d7ce93b86fb40539593d00021b65d520d8f` had CI #44580457286 GREEN 6/6. Current PR #31 CI #44602931504 is QUEUED.
+
+All new tests use synthetic local fixtures. No real backend, live capture, notification, external action, real Candidate, training, GPU or paid service was used. No local pytest result is claimed.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 current head `88c90920f1ef245012839e2a1bf17b8cea7a86b0`: CI #44601297754 **IN PROGRESS**. Previous PR #8 head `963515b93f45ad0361bc91630ce9126b3ad377e3` CI #44591894195 GREEN 6/6; that prior result does not certify the current Memory test head.
+- PR #28 current head `a56081bf7e9bcd21701817fb7811eaa430535ffe`: CI #44602989029 **QUEUED**. Superseded exact-head runs #44601989524, #44602371695 and #44602668534 failed for the specific issues listed above; the fixes are included in the current head.
+- PR #29 current head `5fa808ac0e6944c7e4d3762261a6cb4f28132a61`: CI #44602157762 **IN PROGRESS**. Prior PR #10 head CI #44500056645 GREEN 6/6 applies only to that original base/head.
+- PR #30 current head `0857045761bb50c7d1549025c5fa7959af6e95f5`: CI #44602592796 **IN PROGRESS**. PR #20 base head CI #44570039196 GREEN 6/6.
+- PR #31 current head `e228d599dc78fe635fbaa596169d9a035fe0c07b`: CI #44602931504 **QUEUED**. PR #24 base head CI #44580457286 GREEN 6/6.
+- No local pytest, physical-PC/Windows/GGUF, live capture, real ToolBackend, live notification, external-effect, GPU/runtime, paid-service or Candidate result is claimed. A green parent/base run never certifies a child head. This checkpoint write may trigger another PR #8 workflow; its run ID/result is not known at write time.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; ToolCall/PlanStep v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched: no UI/frontend source, tests, polish or integration. PRs #8 and #28–#31 remain isolated Draft/unmerged; PRs #10, #20 and #24 remain unchanged as historical child workstreams. No main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. The new V3 tokenizer probe is synthetic design/code only; it does not resolve the immutable upstream revision, model/tokenizer hashes, dataset, runtime/hardware identity or human authorization. Startup readiness remains a disconnected synthetic graph evaluator and does not yet prove real store open/recovery or grant a production capability. Separate SQLite stores are not cross-store atomic. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile CI for PRs #8 and #28–#31 by exact head/run ID. For failures, inspect the failing job/log, make the smallest semantics-preserving normal-write fix, then immediately switch to another non-conflicting free lane while CI runs. Never let an older green run certify a newer head.
+2. Continue Memory WAL/SHM last-close, pinned-reader/process-death, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only recovery. Keep process-crash evidence distinct from power-loss durability.
+3. Continue Planner journal path custody, terminal propagation, COMMIT-UNKNOWN recovery on both commit and rollback outcomes, and retained-prefix truncation checks. RUNNING/unknown outcomes remain quarantined and never auto-replayed.
+4. Continue trusted-clock audit-before-action, durable occurrence/replay protection and restart-safe exactly-once authorization over disconnected mocks only. Resolve cross-store atomicity before any real backend integration.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive scheduler restart state and Observation fixture lifecycle. Keep live camera/microphone/screen capture disconnected.
+6. Continue free-only V3 approval/path/identity/reproducibility guards. No external compute, real Candidate adapter/weights, protected V2 opening or promotion.
+7. Keep all new JARVIS foundations isolated/reversible until their own exact-head GREEN evidence and explicit integration gates exist. **No UI/frontend work.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1002: V3 export input separation and exact-head CI reconciliation
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T03:48:53+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
