@@ -18,10 +18,19 @@ from .planner import PlanGraph
 from .registry import BoundAction, ToolRegistration, ToolRegistry
 
 _DOMAIN = b"ARK-plan-registry-preflight-v1\0"
+_ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON = json
 _ORIGINAL_DUMPS = json.dumps
+
+_PLAN_GRAPH_TYPE = PlanGraph
+_REGISTRY_TYPE = ToolRegistry
+_REGISTRATION_TYPE = ToolRegistration
+_BOUND_ACTION_TYPE = BoundAction
+_PLAN_STEP_TYPE = PlanStep
+_TOOL_CALL_TYPE = ToolCall
+_EFFECT_TYPE = Effect
 
 _PLAN_METHODS = (
     "__init__", "_assert_plan_epoch", "_assert_status_epoch",
@@ -159,6 +168,13 @@ def _require_original_protocol() -> None:
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
         or _DOMAIN is not _ORIGINAL_DOMAIN
+        or PlanGraph is not _PLAN_GRAPH_TYPE
+        or ToolRegistry is not _REGISTRY_TYPE
+        or ToolRegistration is not _REGISTRATION_TYPE
+        or BoundAction is not _BOUND_ACTION_TYPE
+        or PlanStep is not _PLAN_STEP_TYPE
+        or ToolCall is not _TOOL_CALL_TYPE
+        or Effect is not _EFFECT_TYPE
     ):
         raise PlanRegistryPreflightRejected("plan preflight digest protocol changed")
     if (
@@ -214,7 +230,7 @@ def _require_original_protocol() -> None:
 
 def _require_instances(graph: PlanGraph, registry: ToolRegistry) -> None:
     _require_original_protocol()
-    if type(graph) is not PlanGraph or type(registry) is not ToolRegistry:
+    if type(graph) is not _PLAN_GRAPH_TYPE or type(registry) is not _REGISTRY_TYPE:
         raise PlanRegistryPreflightRejected("exact PlanGraph and ToolRegistry required")
     if any(name in vars(graph) for name in _PLAN_METHODS):
         raise PlanRegistryPreflightRejected("PlanGraph method shadowing rejected")
