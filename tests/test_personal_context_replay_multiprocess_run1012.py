@@ -7,6 +7,7 @@ A replay reservation is never disclosure, consent, or Tool dispatch authority.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import pathlib
 import sqlite3
 import subprocess
@@ -15,10 +16,14 @@ import time
 
 import pytest
 
-from ark import (
-    personal_context_offline_preview,
-    personal_context_replay_ledger,
-    personal_context_request_binding,
+personal_context_offline_preview = importlib.import_module(
+    "ark.personal_context_offline_preview"
+)
+personal_context_replay_ledger = importlib.import_module(
+    "ark.personal_context_replay_ledger"
+)
+personal_context_request_binding = importlib.import_module(
+    "ark.personal_context_request_binding"
 )
 
 
