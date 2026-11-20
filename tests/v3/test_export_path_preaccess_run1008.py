@@ -60,7 +60,7 @@ def test_export_rejects_path_subclasses_before_fspath_callbacks(
         "current_model_path": None,
     }
     if position == "output":
-        arguments["output"] = wrapped
+        arguments["output_dir"] = wrapped
     elif position == "base":
         arguments["base_dir"] = wrapped
     elif position == "candidate":
