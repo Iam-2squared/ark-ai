@@ -1,3 +1,64 @@
+# LATEST — ARK AI Run1026: Personal Context final veto integrated; four crash-boundary regression packages rebased
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T02:52:00+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1026 work-basis exact HEAD:** `2c0353775baf602a8aa646d51dfa1530c96d799a`. **Checkpoint write-basis HEAD:** `2c0353775baf602a8aa646d51dfa1530c96d799a`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. Main, PR #5 and PR #9 remain unchanged. UI/Frontend work remains PAUSED. PR #8 remains OPEN/DRAFT/UNMERGED.
+
+## NEW — Run1026 work packages
+
+1. **Integrated PR #49 Personal Context final revocation veto into the Draft PR #8 foundation branch.** PR #49 exact head `d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72` had exact-head CI #44662795576 GREEN (6/6). After re-reading PR #8 and PR #49 heads, PR #49 was marked ready and squash-merged into `research/jarvis-foundations` only. Integration commit / current PR #8 head: `2c0353775baf602a8aa646d51dfa1530c96d799a`. PR #49 is CLOSED/MERGED. No main merge occurred.
+
+   The change repeats the local revocation veto after retained-history continuity replay, then revalidates the review and bundle epochs before returning a synthetic Personal Context projection. It narrows a local return-time race only; it is not an atomic cross-store snapshot, authenticated consent, trusted time, a downstream-use lease, or proof of erasure. No live personal data was read.
+
+2. **PR #93 — proactive quarantine pre-COMMIT rollback regression, rebased.** Draft child of the current PR #8 head `2c0353775baf602a8aa646d51dfa1530c96d799a`; branch `research/proactive-quarantine-rollback-rebase-run1026`; exact head `9d2a3bc3b9e3c0b7dbe534ab11c5423505f65e8c`. Adds only a synthetic SQLite test and evidence note: failure before native COMMIT must roll back, preserve the retained witness, persist no quarantine row, and leave `quick_check` clean. Original package CI #44722795092 was GREEN (6/6) on its earlier base; rebased exact-head CI #44787027172 is IN_PROGRESS.
+
+3. **PR #94 — Planner terminal COMMIT rollback/lost-acknowledgement regression, rebased.** Draft child of PR #8 head `2c0353775baf602a8aa646d51dfa1530c96d799a`; branch `research/planner-terminal-commit-outcome-rebase-run1026`; exact head `7f356185d548b5dc124298fcd040828fa2d4b503`. Adds only a synthetic test and evidence note distinguishing pre-COMMIT rollback (recovered RUNNING remains ambiguous) from native-COMMIT success with lost acknowledgement (terminal FAILED persists and only dependent work is blocked). Dispatch and automatic replay remain false. Original package CI #44731076172 was GREEN (6/6) on its earlier base; rebased exact-head CI #44787154979 is IN_PROGRESS.
+
+4. **PR #95 — Memory expiry purge COMMIT rollback/lost-acknowledgement regression, rebased.** Draft child of PR #8 head `2c0353775baf602a8aa646d51dfa1530c96d799a`; branch `research/memory-expiry-commit-outcome-rebase-run1026`; exact head `3d702c6232dda4fec2f20ab4f2dd0b0fef9fa00a`. Adds only a synthetic test and evidence note distinguishing rollback (expired row and create event remain) from committed purge (row absent and exactly one expire event); independent-scope data and event ordering are preserved. Original package CI #44731230494 was GREEN (6/6) on its earlier base; rebased exact-head CI #44787245581 is QUEUED.
+
+5. **PR #96 — Action Audit COMMIT rollback/lost-acknowledgement regression, rebased.** Draft child of PR #8 head `2c0353775baf602a8aa646d51dfa1530c96d799a`; branch `research/action-audit-commit-outcome-rebase-run1026`; exact head `8eb7925fd5206178c90ab517cec47eaa50bb07ab`. Adds only a synthetic test distinguishing unchanged prior prefix from exactly one committed event after lost acknowledgement; checks event IDs, timestamps, argument digests, SQLite integrity and absence of a private argument marker in durable bytes. Original package CI #44742382170 was GREEN (6/6) on its earlier base; rebased exact-head CI #44787310889 is QUEUED.
+
+## Tests / CI / evidence — exact HEADs only
+
+- Current PR #8 after PR #49 integration: `2c0353775baf602a8aa646d51dfa1530c96d799a` / CI #44786847150: IN_PROGRESS.
+- PR #93 proactive quarantine: `9d2a3bc3b9e3c0b7dbe534ab11c5423505f65e8c` / CI #44787027172: IN_PROGRESS.
+- PR #94 Planner terminal: `7f356185d548b5dc124298fcd040828fa2d4b503` / CI #44787154979: IN_PROGRESS.
+- PR #95 Memory expiry purge: `3d702c6232dda4fec2f20ab4f2dd0b0fef9fa00a` / CI #44787245581: QUEUED.
+- PR #96 Action Audit: `8eb7925fd5206178c90ab517cec47eaa50bb07ab` / CI #44787310889: QUEUED.
+- PR #8 immediately preceding checkpoint head `50737aed461b6ca56a9ce3b9c9143212c1854091` / CI #44777104758: GREEN (6/6); superseded by the PR #49 integration head.
+- PR #90 passive V3 inventory protocol pins: `c5ad10df28152830b52f06b8b1dafddf59895b29` / CI #44776899749: GREEN (6/6). Remains isolated under gated PR #5.
+- PR #92 startup lease guard-vector root pin: `ed1c48a610f30abcbcd7348d7ebf128c09d53a58` / CI #44776544950: GREEN (6/6). Its parent PR #91 exact head `177c827f3d2da6061dd74046177830ff9c3d5dac` / CI #44767087487: GREEN (6/6). These remain isolated; no startup or dispatch authority is granted.
+- No local pytest/Ruff PASS is claimed. CI results from earlier base heads are not transferred to the rebased PR #93–#96 heads.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher reviewed evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. Their previously recorded PASS states remain as frozen evidence; overall ARK/JARVIS remains NOT_PASSED. PR #5 remains gated Draft/unmerged; PR #9 remains paused and untouched. PR #8 remains Draft/unmerged.
+
+No paid/external compute, paid API/service, subscription, purchase, credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, or main merge occurred. No trusted-clock, human-review, independent-custody, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- PR #8's post-PR49 exact-head CI is still in progress. No subsequent child package is integrated until that result is GREEN.
+- PR #93–#96 are independent test-only rebased children. Their original CI runs validate only their original base heads. Each rebased head must complete its own exact-head six-job CI before integration.
+- Memory expiry remains based on configured local-clock semantics; a wall-clock rollback can reverse read-time visibility until explicit purge. No trusted persistent time/high-water authority or Memory v1 DDL/API change is introduced.
+- Planner recovered RUNNING and uncertain external effects remain non-replayable without a new explicit authorization and safe reconciliation.
+- Personal Context remains a local synthetic projection/revocation review, not a cross-store atomic snapshot or consent lease.
+- Real runtime identity, Candidate adapter/weight generation, protected evaluation and promotion remain blocked by explicit free-only and authorization gates.
+
+## Next plan / 今後の方針
+
+1. Recheck exact-head CI #44786847150 (PR #8), #44787027172 (PR #93), #44787154979 (PR #94), #44787245581 (PR #95) and #44787310889 (PR #96). Inspect failures and make only the smallest semantics-preserving normal-path repair; do not launch duplicate equivalent workflows.
+2. After PR #8 current head is GREEN, integrate one child at a time. Before each integration, re-read latest PR #8 and child heads, rebase the child onto the latest foundation head if needed, and require GREEN CI on that exact rebased head. Priority: proactive quarantine (#93), Planner terminal COMMIT (#94), Memory expiry purge (#95), Action Audit COMMIT (#96).
+3. Continue Personal Context replay process-exit coverage, startup lease ordering/custody and restart-safe authorization; keep startup children isolated until their parent contracts are integrated and exact-head validated.
+4. Continue non-UI Memory schema/row/event integrity, Planner persistence/recovery, immutable ToolRegistry/PermissionGate identity, durable authorization, audit-before-action, disconnected/mock execution, privacy-safe Personal Context, proactive scheduling, observation contracts/fixtures, and free-only V3 guards.
+5. Keep PR #5 gated Draft/unmerged, PR #9 untouched and all UI work paused. Do not open protected V2 evaluation, generate/promote Candidate weights, use paid/external compute, or merge PR #8 to main without the required explicit approval.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1025: Memory expiry boundary integrated; V3 denial assertions and startup lease root pin advanced
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T01:48:15+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
