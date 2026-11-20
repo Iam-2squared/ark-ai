@@ -7,20 +7,17 @@ A replay reservation is never disclosure, consent, or Tool dispatch authority.
 from __future__ import annotations
 
 import hashlib
+import pathlib
 import sqlite3
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 import pytest
 
+import ark.personal_context_offline_preview as preview
 import ark.personal_context_replay_ledger as replay
-from ark.personal_context_offline_preview import (
-    OfflineContextFixture,
-    build_offline_context_preview,
-)
-from ark.personal_context_request_binding import bind_offline_context_request
+import ark.personal_context_request_binding as binding
 
 
 _OWNER = "a" * 64
@@ -35,7 +32,7 @@ def _binding():
 
 
 def _binding_for(request_id: str):
-    item = OfflineContextFixture(
+    item = preview.OfflineContextFixture(
         _RECORD,
         _OWNER,
         _SCOPE,
@@ -43,13 +40,13 @@ def _binding_for(request_id: str):
         hashlib.sha256(_PAYLOAD.encode("utf-8")).hexdigest(),
         1000,
     )
-    preview = build_offline_context_preview(
+    preview = preview.build_offline_context_preview(
         (item,),
         owner_digest=_OWNER,
         allowed_scope_digests=(_SCOPE,),
         observed_at_ms=100,
     )
-    return bind_offline_context_request(request_id, preview)
+    return binding.bind_offline_context_request(request_id, preview)
 
 
 _CHILD = """
@@ -105,7 +102,7 @@ sys.exit(0)
 
 
 def test_two_processes_reserve_one_context_request_at_most_once(
-    tmp_path: Path,
+    tmp_path: pathlib.Path,
 ) -> None:
     path = tmp_path / "context-replay-multiprocess.sqlite3"
     ledger = replay.DisconnectedContextReplayLedger(path, create=True)
