@@ -72,7 +72,7 @@ def test_rebound_digest_or_snapshot_dependency_is_rejected_before_callback(
         else:
             patch.setattr(inv, "_assert_json_tree_epoch", forbidden)
         with pytest.raises(
-            inv.OfflineReadinessRejected, match="protocol changed",
+            inv.OfflineReadinessRejected, match="authority descriptor changed",
         ):
             inv.inventory_unapproved_v3_readiness(_snapshot())
 
