@@ -19,8 +19,8 @@ def _call(number: int = 1) -> ToolCall:
 @pytest.mark.parametrize(
     "outcome",
     (
-        "", " ", "x" * 257, "é" * 129, "line\\nbreak", "c1\\u0085",
-        "bidi\\u202e", "\\ud800", None, True,
+        "", " ", "x" * 257, "é" * 129, "line\nbreak", "c1\u0085",
+        "bidi\u202e", "\ud800", None, True,
     ),
 )
 def test_invalid_outcome_is_rejected_before_database_or_clock(
@@ -49,7 +49,7 @@ def test_bounded_unicode_outcome_at_utf8_byte_boundary_round_trips(tmp_path):
     assert audit.events() == [event]
 
 
-@pytest.mark.parametrize("outcome", ("x" * 257, "line\\nbreak", "bidi\\u202e"))
+@pytest.mark.parametrize("outcome", ("x" * 257, "line\nbreak", "bidi\u202e"))
 def test_corrupt_persisted_outcome_fails_closed_without_clock_or_repair(
     tmp_path, outcome,
 ):
