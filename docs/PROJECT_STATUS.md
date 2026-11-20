@@ -1,3 +1,56 @@
+# LATEST — ARK AI Run1033: four non-UI durability regressions rebased; exact-head CI launched
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T07:46:07+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1033 work-basis exact HEAD:** `c92ef6d65df5e79349e3fa534902117bdfcf263b`. **Checkpoint write-basis HEAD:** `c92ef6d65df5e79349e3fa534902117bdfcf263b`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write PR #8 branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs before this checkpoint write:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `29c6bc2f64a6f7a5c6960a1d109c719aa023ed7c`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED. PR #9 is untouched; UI/Frontend work remains PAUSED.
+
+## NEW — Run1033 work packages
+
+Four fresh test-only child PRs were based on PR #8 exact HEAD `c92ef6d65df5e79349e3fa534902117bdfcf263b`. Each is OPEN/DRAFT/UNMERGED; no child has been integrated, and no production source or frozen contract changed.
+
+1. **PR #126 — proactive quarantine pre-COMMIT rollback.** Branch `research/run1033-proactive-rollback`, exact head `a40e12169fe234a232c37730ad3839e5a9740464`; CI #44831333274 (run 6797): **IN PROGRESS**. Reapplies the synthetic rollback-before-native-COMMIT test; verifies one attempted COMMIT, rollback, no receipt/quarantine row, unchanged retained genesis witness, and clean SQLite quick_check.
+2. **PR #127 — Planner terminal COMMIT outcome matrix.** Branch `research/run1033-planner-terminal-commit`, exact head `cb253476d94fcf2391e11797e4cdf7e1295f9d34`; CI #44831422369 (run 6798): **IN PROGRESS**. Cold recovery distinguishes rollback (ambiguous RUNNING remains) from committed acknowledgement loss (FAILED persists and only dependent work is BLOCKED); independent DAG work and false-only dispatch/replay remain.
+3. **PR #128 — Memory expiry COMMIT outcome matrix.** Branch `research/run1033-memory-expiry-commit`, exact head `b3d3c3f505be68bc50673eecb95deb374e2f7e1d`; CI #44831468494 (run 6799): **IN PROGRESS**. Cold readback distinguishes rollback from committed expiry, preserves independent scope/global event order, checks SQLite integrity, and prevents duplicate expiry events.
+4. **PR #129 — Personal Context replay process-crash boundary.** Branch `research/run1033-personal-context-replay-crash`, exact head `0b2f64c1619c04a302c16be31f1ad87ffdeb45bd`; CI #44831517976 (run 6800): **QUEUED**. A spawned process exits after native COMMIT before receipt return; cold recovery sees one hash-only reservation, denies stale/duplicate requests, and verifies synthetic private fixture text is absent from durable bytes.
+
+The previous-base PRs #119/#123/#124/#125 each had GREEN 6/6 CI on parent `7e7d737195229154775d06baa5b1d8e5c230882b`; those results are historical and do not transfer. The fresh children above are the current Run1033 candidates. The old-base PRs remain open until fresh exact-head CI is GREEN; close them as superseded only after confirming the corresponding fresh PR is green.
+
+## CI and evidence
+
+- PR #8 work-basis HEAD `c92ef6d65df5e79349e3fa534902117bdfcf263b`, CI #44824056734: **GREEN, 6/6** (Windows/Linux × Python 3.11–3.13). This run includes the repository's existing CI steps; it is not a separate UI development task.
+- PR #5 exact head `29c6bc2f64a6f7a5c6960a1d109c719aa023ed7c`, CI #44823824171: **GREEN, 6/6**. PR #5 remains gated Draft/unmerged.
+- PR #126/#127/#128 exact-head CI #44831333274/#44831422369/#44831468494: **IN PROGRESS**; PR #129 CI #44831517976: **QUEUED**. Do not launch duplicate equivalent runs.
+- Previous-base CI for PR #119/#123/#124/#125: GREEN 6/6 on their respective old child heads only; no result transfers to Run1033.
+- No local pytest/Ruff PASS is claimed in this invocation; evidence listed here is GitHub exact-head CI only.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher reviewed evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains paused and untouched.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, or main merge occurred. No trusted-clock, human-review, independent-custody, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- PR #126–#129 require their fresh exact-head six-job CI. The previous Run1032 CI results do not transfer.
+- This checkpoint write advances PR #8 beyond `c92ef6d65df5e79349e3fa534902117bdfcf263b`; therefore PR #126–#129 must be re-read and rebased one child at a time onto the checkpoint-result HEAD, with fresh exact-head CI, before integration. Do not integrate old-base branches.
+- PR #119/#123/#124/#125 remain old-base historical candidates until their corresponding fresh PR is GREEN; then close as superseded.
+- Planner recovered RUNNING and uncertain external effects remain non-replayable without safe reconciliation and a new explicit authorization. Memory expiry remains configured local-clock semantics, not trusted time, secure erasure, backup deletion or retention authorization. Personal Context evidence remains synthetic and denial-only, not consent, disclosure permission, independent custody or atomic cross-store state.
+- PR #5 remains passive/validation-only under its controlling gate. No preflight compute, Candidate generation, protected V2 opening, or promotion is authorized.
+
+## Next plan / 今後の方針
+
+1. Inspect existing PR #126–#129 CI without duplicate launches; repair any failure with the smallest semantics-preserving change while keeping independent lanes moving.
+2. Re-read PR #8 after this checkpoint and rebase **one child at a time** onto its exact resulting HEAD: proactive quarantine (#126), Planner terminal recovery (#127), Memory expiry (#128), Personal Context replay crash (#129). Require fresh Windows/Linux × Python 3.11–3.13 CI before integration.
+3. After each fresh child CI is GREEN, integrate only into Draft PR #8, then re-read the new parent HEAD before the next child; close its superseded old-base PR.
+4. Continue independent non-UI ToolRegistry/PermissionGate, restart-safe authorization, audit-before-action, disconnected mock execution, Personal Context privacy, proactive scheduler and observation fixture work.
+5. Keep PR #5 gated Draft/unmerged, PR #9 untouched, all UI work paused, frozen evidence unchanged, and all work within the zero-cost boundary. Do not open protected V2 evaluation, generate/promote Candidate artifacts, or merge PR #5/#8 to main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1032: V3 exact-identity hardening and non-UI durability rebases
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T06:51:29+09:00.** This is a reporting/checkpoint timestamp only, not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
