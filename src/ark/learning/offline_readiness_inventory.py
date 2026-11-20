@@ -98,8 +98,7 @@ _ORIGINAL_INVENTORY_DENIALS = tuple(
 def _assert_original_inventory_protocol() -> None:
     """Pin passive inventory fields, denial carriers and digest dependencies."""
     if (
-        OfflineReadinessInventory is not _ORIGINAL_INVENTORY_TYPE
-        or _SECTIONS is not _ORIGINAL_SECTIONS
+        _SECTIONS is not _ORIGINAL_SECTIONS
         or type(_SECTIONS) is not type(_ORIGINAL_SECTIONS)
         or _PLACEHOLDERS is not _ORIGINAL_PLACEHOLDERS
         or _DENIED is not _ORIGINAL_DENIED
@@ -110,15 +109,29 @@ def _assert_original_inventory_protocol() -> None:
         or json.dumps is not _ORIGINAL_DUMPS
         or _pin_json_tree is not _ORIGINAL_PIN_JSON_TREE
         or _assert_json_tree_epoch is not _ORIGINAL_ASSERT_JSON_TREE_EPOCH
-        or any(
-            vars(_ORIGINAL_INVENTORY_TYPE).get(name) is not original
-            for name, original in zip(
-                _INVENTORY_PINNED_NAMES, _ORIGINAL_INVENTORY_CARRIERS,
-                strict=True,
-            )
-        )
     ):
         raise OfflineReadinessRejected("readiness inventory protocol changed")
+    if OfflineReadinessInventory is not _ORIGINAL_INVENTORY_TYPE:
+        raise OfflineReadinessRejected("readiness inventory result descriptor changed")
+    field_and_hook_names = _INVENTORY_FIELDS + _INVENTORY_HOOKS
+    field_and_hook_originals = (
+        _ORIGINAL_INVENTORY_CARRIERS[:len(_INVENTORY_FIELDS)]
+        + _ORIGINAL_INVENTORY_CARRIERS[-len(_INVENTORY_HOOKS):]
+    )
+    if any(
+        vars(_ORIGINAL_INVENTORY_TYPE).get(name) is not original
+        for name, original in zip(
+            field_and_hook_names, field_and_hook_originals, strict=True,
+        )
+    ):
+        raise OfflineReadinessRejected("readiness inventory result descriptor changed")
+    if any(
+        vars(_ORIGINAL_INVENTORY_TYPE).get(name) is not original
+        for name, original in zip(
+            _AUTHORITY, _ORIGINAL_INVENTORY_DENIALS, strict=True,
+        )
+    ):
+        raise OfflineReadinessRejected("readiness authority descriptor changed")
 
 
 def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInventory:
