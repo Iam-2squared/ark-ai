@@ -16,6 +16,24 @@ from .execution import canonical_json, sha256_bytes
 
 _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    """Detect symlinks and Windows junction/other reparse-point entries."""
+    attributes = getattr(info, "st_file_attributes", 0)
+    return stat.S_ISLNK(info.st_mode) or (
+        type(attributes) is int
+        and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    )
+
+
+def _has_reparse_ancestor(path: Path) -> bool:
+    """Inspect every parent without following a symlink or junction."""
+    for parent in path.parents:
+        if _is_reparse_point(parent.lstat()):
+            return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -29,6 +47,8 @@ class FileIdentity:
 def _hash_file(path: Path) -> tuple[str, int]:
     """Reject a redirected open and metadata changes to the opened file."""
     before = path.lstat()
+    if _is_reparse_point(before):
+        raise ValueError("identity file changed during hashing")
 
     def epoch(info: os.stat_result) -> tuple[int, ...]:
         return (
@@ -102,12 +122,16 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     if ".." in path.parts:
         raise ValueError("identity path may not traverse parent aliases")
     try:
-        if any(parent.is_symlink() for parent in path.parents):
+        if _has_reparse_ancestor(path):
             raise ValueError("symlinked identity file ancestors are forbidden")
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"identity path must be one regular non-symlink file: {path}")
         before = path.stat(follow_symlinks=False)
-        if not path.is_file() or before.st_nlink != 1:
+        if (
+            not path.is_file()
+            or before.st_nlink != 1
+            or _is_reparse_point(path.lstat())
+        ):
             raise ValueError("identity file must have one regular-file link")
         sha, size = _hash_file(path)
         after = path.stat(follow_symlinks=False)
@@ -122,7 +146,8 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
         )
 
     if (
-        path.is_symlink()
+        _is_reparse_point(path.lstat())
+        or path.is_symlink()
         or not path.is_file()
         or size != before.st_size
         or epoch(before) != epoch(after)
@@ -138,7 +163,8 @@ def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     except OSError as exc:
         raise ValueError("snapshot entry disappeared during enumeration") from exc
     if (
-        (is_dir and not stat.S_ISDIR(info.st_mode))
+        _is_reparse_point(info)
+        or (is_dir and not stat.S_ISDIR(info.st_mode))
         or (not is_dir and not stat.S_ISREG(info.st_mode))
     ):
         raise ValueError("snapshot entry type changed during enumeration")
@@ -156,10 +182,15 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     remains a best-effort local check, NOT a hostile-writer-safe snapshot.
     """
     root = Path(root)
+    try:
+        root_info = root.lstat()
+        parent_reparse = _has_reparse_ancestor(root)
+    except OSError as exc:
+        raise ValueError("snapshot root must be a non-aliased local directory") from exc
     if (
-        not root.is_dir()
-        or root.is_symlink()
-        or any(parent.is_symlink() for parent in root.parents)
+        not stat.S_ISDIR(root_info.st_mode)
+        or _is_reparse_point(root_info)
+        or parent_reparse
         or ".." in root.parts
     ):
         raise ValueError("snapshot root must be a non-aliased local directory")
@@ -169,6 +200,14 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     paths = []
     path_bytes = 0
     for path in root.rglob("*"):
+        # Check the yielded directory entry before asking rglob for another
+        # item, so a junction is rejected before recursive descent.
+        try:
+            entry_info = path.lstat()
+        except OSError as exc:
+            raise ValueError("snapshot entry disappeared during enumeration") from exc
+        if _is_reparse_point(entry_info):
+            raise ValueError("snapshot contains a symlink or reparse-point entry")
         if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
             raise ValueError("snapshot entry count exceeds local budget")
         relative = path.relative_to(root).as_posix()
@@ -230,8 +269,16 @@ def build_code_tree_identity(root: Path) -> dict:
     """
     root = Path(root)
     learning_root = root / "src" / "ark" / "learning"
-    if not learning_root.is_dir() or learning_root.is_symlink():
-        raise ValueError("runtime code root is missing src/ark/learning")
+    try:
+        learning_info = learning_root.lstat()
+        if (
+            not stat.S_ISDIR(learning_info.st_mode)
+            or _is_reparse_point(learning_info)
+            or _has_reparse_ancestor(learning_root)
+        ):
+            raise ValueError("runtime code root is missing src/ark/learning")
+    except OSError as exc:
+        raise ValueError("runtime code root is missing src/ark/learning") from exc
     entries = _snapshot_entries(learning_root)
     paths = [root / "pyproject.toml"] + [
         path for _, path, is_dir, _ in entries if not is_dir and path.suffix == ".py"
