@@ -73,7 +73,7 @@ _IDENTITY_FIELDS = tuple(RuntimeIdentity.__dataclass_fields__)
 _EVIDENCE_FIELDS_VECTOR = _EVIDENCE_FIELDS
 _EVIDENCE_CLASS_HOOKS = (
     "__init__", "__new__", "__getattribute__", "__getattr__",
-    "__setattr__", "__post_init__", "validate",
+    "__setattr__", "__post_init__",
 )
 _EVIDENCE_FIELD_MISSING = object()
 _ORIGINAL_EVIDENCE_DATACLASS_FIELDS = _EVIDENCE_TYPE.__dataclass_fields__
@@ -130,6 +130,19 @@ def _require_original_evidence_contract() -> None:
 def _validate_preflight_evidence(evidence: object) -> None:
     if type(evidence) is not _EVIDENCE_TYPE:
         raise ValueError("exact PreflightEvidence required")
+    _require_original_evidence_contract()
+    if "validate" in vars(evidence):
+        raise ValueError("preflight evidence instance validator shadowed")
+    public_validator = vars(_EVIDENCE_TYPE).get(
+        "validate", _EVIDENCE_FIELD_MISSING,
+    )
+    if not callable(public_validator):
+        raise ValueError("preflight evidence validator is not callable")
+    # Preserve the public callback epoch used by existing mutation regressions,
+    # but never let a replacement validator be the final acceptance check.
+    public_validator(evidence)
+    if vars(_EVIDENCE_TYPE).get("validate", _EVIDENCE_FIELD_MISSING) is not public_validator:
+        raise ValueError("preflight evidence validator changed during validation")
     _require_original_evidence_contract()
     _ORIGINAL_EVIDENCE_VALIDATOR(evidence)
 
