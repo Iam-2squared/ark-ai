@@ -54,10 +54,10 @@ def _require_python_executable(value: object) -> str:
         raise ValueError("python executable must be an exact non-empty string")
     if not 1 <= len(value) <= _MAX_PYTHON_EXECUTABLE_BYTES:
         raise ValueError("python executable exceeds the bounded identity budget")
-    if not value.strip() or any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
-        raise ValueError("python executable contains blank or control text")
     if "\x00" in value:
         raise ValueError("python executable contains a NUL separator")
+    if not value.strip() or any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+        raise ValueError("python executable contains blank or control text")
     try:
         encoded = value.encode("utf-8", errors="strict")
     except UnicodeError as exc:
