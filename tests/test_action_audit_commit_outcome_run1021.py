@@ -8,7 +8,9 @@ import sqlite3
 
 import pytest
 
-from ark.agency import SQLiteActionAudit, ToolCall
+import ark.agency.audit as audit_module
+from ark.agency.audit import SQLiteActionAudit
+from ark.agency.contracts import ToolCall
 
 
 _PRIVATE = "audit-payload-must-never-be-persisted"
@@ -94,6 +96,7 @@ def test_action_audit_commit_outcome_requires_cold_readback_not_duplicate_append
 
     cold = SQLiteActionAudit(path, clock_ms=lambda: 202)
     events = cold.events()
+    assert all(type(event) is audit_module.ActionAuditEvent for event in events)
     assert events[0] == first
     assert [event.event_id for event in events] == ([1, 2] if durable else [1])
     assert sum(event.request_id == second_call.request_id for event in events) == (
