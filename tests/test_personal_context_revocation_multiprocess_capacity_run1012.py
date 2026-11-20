@@ -14,10 +14,14 @@ import time
 
 import pytest
 
-from ark import (
-    memory,
-    personal_context_revocation_continuity_review,
-    personal_context_revocation_review,
+import importlib
+
+memory_contracts = importlib.import_module("ark.memory.contracts")
+personal_context_revocation_continuity_review = importlib.import_module(
+    "ark.personal_context_revocation_continuity_review"
+)
+personal_context_revocation_review = importlib.import_module(
+    "ark.personal_context_revocation_review"
 )
 
 
@@ -58,7 +62,9 @@ def test_two_processes_cannot_overrun_the_last_revocation_capacity_slot(
     tmp_path: pathlib.Path,
 ) -> None:
     path = tmp_path / "synthetic-revocation-capacity.sqlite3"
-    initial_ledger = personal_context_revocation_review.SyntheticContextRevocationLedger(path)
+    initial_ledger = personal_context_revocation_review.SyntheticContextRevocationLedger(
+        path,
+    )
     retained = personal_context_revocation_continuity_review.review_revocation_continuity(
         initial_ledger,
     )
