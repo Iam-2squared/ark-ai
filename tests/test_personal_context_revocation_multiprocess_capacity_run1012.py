@@ -6,17 +6,17 @@ The ledger is a negative-use fence, never consent or proof of erasure.
 
 from __future__ import annotations
 
+import pathlib
 import sqlite3
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 import pytest
 
+import ark.memory.contracts as memory_contracts
+import ark.personal_context_revocation_continuity_review as continuity
 import ark.personal_context_revocation_review as revocation
-from ark.memory.contracts import MemoryScope
-from ark.personal_context_revocation_continuity_review import review_revocation_continuity
 
 
 _CHILD = """
@@ -41,7 +41,7 @@ while not release.exists():
     time.sleep(0.01)
 try:
     ledger.revoke(
-        MemoryScope("synthetic-owner", namespace),
+        memory_contracts.MemoryScope("synthetic-owner", namespace),
         at_ms=100,
     )
 except module.SyntheticContextRevocationRejected as exc:
@@ -53,11 +53,11 @@ sys.exit(0)
 
 
 def test_two_processes_cannot_overrun_the_last_revocation_capacity_slot(
-    tmp_path: Path,
+    tmp_path: pathlib.Path,
 ) -> None:
     path = tmp_path / "synthetic-revocation-capacity.sqlite3"
     initial_ledger = revocation.SyntheticContextRevocationLedger(path)
-    retained = review_revocation_continuity(initial_ledger)
+    retained = continuity.review_revocation_continuity(initial_ledger)
     assert retained.rows == ()
 
     release = tmp_path / "release"
