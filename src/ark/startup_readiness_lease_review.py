@@ -202,7 +202,16 @@ def _require_original_lease_result() -> None:
         )
 
 
-def _require_original_lease_protocol() -> None:
+def _require_original_lease_protocol(
+    _original_guard_vector_references: tuple[object, ...] = _ORIGINAL_GUARD_VECTOR_REFERENCES,
+) -> None:
+    # The carrier tuple is itself a module-level safety input. Capture its
+    # import-original identity in this function's default arguments and reject
+    # an empty/equal-valued rebind before reading any snapshot or requirement.
+    if _ORIGINAL_GUARD_VECTOR_REFERENCES is not _original_guard_vector_references:
+        raise SyntheticStartupLeaseRejected(
+            "startup lease guard-vector reference changed"
+        )
     # Pin descriptor-name vectors and the tuples that carry their original
     # class descriptors before any snapshot, requirement or result access.
     # Otherwise an empty/equal-valued replacement can make zip() skip checks.
@@ -221,7 +230,7 @@ def _require_original_lease_protocol() -> None:
     if any(
         current is not original
         for current, original in zip(
-            current_vectors, _ORIGINAL_GUARD_VECTOR_REFERENCES, strict=True,
+            current_vectors, _original_guard_vector_references, strict=True,
         )
     ):
         raise SyntheticStartupLeaseRejected("startup lease guard vector changed")
