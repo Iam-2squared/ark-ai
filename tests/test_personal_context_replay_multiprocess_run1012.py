@@ -15,11 +15,11 @@ from pathlib import Path
 
 import pytest
 
-import ark.personal_context_replay_ledger as replay
 from ark.personal_context_offline_preview import (
     OfflineContextFixture,
     build_offline_context_preview,
 )
+import ark.personal_context_replay_ledger as replay
 from ark.personal_context_request_binding import (
     bind_offline_context_request,
 )
