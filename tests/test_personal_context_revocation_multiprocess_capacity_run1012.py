@@ -14,9 +14,9 @@ import time
 
 import pytest
 
-import ark.memory.contracts as memory_contracts
-import ark.personal_context_revocation_continuity_review as continuity
-import ark.personal_context_revocation_review as revocation
+import ark.memory.contracts
+import ark.personal_context_revocation_continuity_review
+import ark.personal_context_revocation_review
 
 
 _CHILD = """
@@ -56,8 +56,8 @@ def test_two_processes_cannot_overrun_the_last_revocation_capacity_slot(
     tmp_path: pathlib.Path,
 ) -> None:
     path = tmp_path / "synthetic-revocation-capacity.sqlite3"
-    initial_ledger = revocation.SyntheticContextRevocationLedger(path)
-    retained = continuity.review_revocation_continuity(initial_ledger)
+    initial_ledger = ark.personal_context_revocation_review.SyntheticContextRevocationLedger(path)
+    retained = ark.personal_context_revocation_continuity_review.review_revocation_continuity(initial_ledger)
     assert retained.rows == ()
 
     release = tmp_path / "release"
@@ -108,25 +108,25 @@ def test_two_processes_cannot_overrun_the_last_revocation_capacity_slot(
     assert b"context-a" not in raw
     assert b"context-b" not in raw
 
-    cold = revocation.SyntheticContextRevocationLedger(
+    cold = ark.personal_context_revocation_review.SyntheticContextRevocationLedger(
         path, require_existing=True,
     )
-    observed = continuity.review_revocation_continuity(cold, retained=retained)
+    observed = ark.personal_context_revocation_continuity_review.review_revocation_continuity(cold, retained=retained)
     assert len(observed.rows) == 1
     assert observed.rows[0][1] == 100
 
     candidates = tuple(
-        memory_contracts.MemoryScope("synthetic-owner", namespace) for namespace in namespaces
+        ark.memory.contracts.MemoryScope("synthetic-owner", namespace) for namespace in namespaces
     )
     revoked = tuple(
         scope for scope in candidates
-        if revocation._scope_digest(scope) == rows[0][0]
+        if ark.personal_context_revocation_review._scope_digest(scope) == rows[0][0]
     )
     allowed_only_as_unrevoked_fixture = tuple(
         scope for scope in candidates
-        if revocation._scope_digest(scope) != rows[0][0]
+        if ark.personal_context_revocation_review._scope_digest(scope) != rows[0][0]
     )
     assert len(revoked) == len(allowed_only_as_unrevoked_fixture) == 1
-    with pytest.raises(revocation.SyntheticContextRevocationRejected, match="revoked"):
+    with pytest.raises(ark.personal_context_revocation_review.SyntheticContextRevocationRejected, match="revoked"):
         cold.assert_not_revoked(revoked)
     cold.assert_not_revoked(allowed_only_as_unrevoked_fixture)
