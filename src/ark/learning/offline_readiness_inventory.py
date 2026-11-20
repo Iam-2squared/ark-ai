@@ -10,10 +10,13 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
-_SECTIONS = {
+# MappingProxyType plus immutable tuple values prevent in-place field omission.
+# These are passive diagnostic field names, never execution authorization.
+_SECTIONS = MappingProxyType({
     "code": ("git_sha", "manifest_sha256"),
     "base": ("revision", "file_sha256_manifest"),
     "tokenizer": ("file_sha256_manifest", "chat_template_probe_sha256"),
@@ -30,7 +33,7 @@ _SECTIONS = {
     "export": (
         "llama_cpp_revision", "converter_identity", "quantizer_identity",
     ),
-}
+})
 _PLACEHOLDERS = frozenset(("UNRESOLVED", "USER_APPROVAL_REQUIRED"))
 _DENIED = (
     "external_compute_authorized", "preflight_authorized",
@@ -41,6 +44,16 @@ _AUTHORITY = (
     "external_compute_authorized", "candidate_generation_authorized",
     "protected_evaluation_authorized", "promotion_authorized",
 )
+_ORIGINAL_SECTIONS = _SECTIONS
+_ORIGINAL_PLACEHOLDERS = _PLACEHOLDERS
+_ORIGINAL_DENIED = _DENIED
+_ORIGINAL_AUTHORITY = _AUTHORITY
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_PIN_JSON_TREE = _pin_json_tree
+_ORIGINAL_ASSERT_JSON_TREE_EPOCH = _assert_json_tree_epoch
 
 
 class OfflineReadinessRejected(ValueError):
@@ -70,9 +83,42 @@ class OfflineReadinessInventory:
         return False
 
 
-_ORIGINAL_INVENTORY_DENIALS = tuple(
-    getattr(OfflineReadinessInventory, name) for name in _AUTHORITY
+_ORIGINAL_INVENTORY_TYPE = OfflineReadinessInventory
+_INVENTORY_FIELDS = ("snapshot_sha256", "unresolved_paths", "unresolved_count")
+_INVENTORY_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_INVENTORY_PINNED_NAMES = _INVENTORY_FIELDS + _AUTHORITY + _INVENTORY_HOOKS
+_ORIGINAL_INVENTORY_CARRIERS = tuple(
+    vars(_ORIGINAL_INVENTORY_TYPE).get(name) for name in _INVENTORY_PINNED_NAMES
 )
+_ORIGINAL_INVENTORY_DENIALS = tuple(
+    vars(_ORIGINAL_INVENTORY_TYPE)[name] for name in _AUTHORITY
+)
+
+
+def _assert_original_inventory_protocol() -> None:
+    """Pin passive inventory fields, denial carriers and digest dependencies."""
+    if (
+        OfflineReadinessInventory is not _ORIGINAL_INVENTORY_TYPE
+        or _SECTIONS is not _ORIGINAL_SECTIONS
+        or type(_SECTIONS) is not type(_ORIGINAL_SECTIONS)
+        or _PLACEHOLDERS is not _ORIGINAL_PLACEHOLDERS
+        or _DENIED is not _ORIGINAL_DENIED
+        or _AUTHORITY is not _ORIGINAL_AUTHORITY
+        or hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_DUMPS
+        or _pin_json_tree is not _ORIGINAL_PIN_JSON_TREE
+        or _assert_json_tree_epoch is not _ORIGINAL_ASSERT_JSON_TREE_EPOCH
+        or any(
+            vars(_ORIGINAL_INVENTORY_TYPE).get(name) is not original
+            for name, original in zip(
+                _INVENTORY_PINNED_NAMES, _ORIGINAL_INVENTORY_CARRIERS,
+                strict=True,
+            )
+        )
+    ):
+        raise OfflineReadinessRejected("readiness inventory protocol changed")
 
 
 def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInventory:
@@ -82,22 +128,14 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
     The five current authorization flags must ALL be exact False. The output
     intentionally exposes field names only, not private path/content values.
     """
+    _assert_original_inventory_protocol()
     if type(snapshot) is not dict:
         raise OfflineReadinessRejected("exact snapshot mapping required")
-    # The denial definitions were fixed when this module was imported.
-    # A preinstalled False-only property is not an original denial: capturing
-    # it as the baseline at call time would launder a replaced callback.
-    if any(
-        getattr(OfflineReadinessInventory, key, None) is not original
-        for key, original in zip(
-            _AUTHORITY, _ORIGINAL_INVENTORY_DENIALS, strict=True,
-        )
-    ):
-        raise OfflineReadinessRejected("readiness authority descriptor changed")
     try:
         epoch = _pin_json_tree(snapshot)
 
         def stable() -> None:
+            _assert_original_inventory_protocol()
             _assert_json_tree_epoch(snapshot, epoch)
 
         stable()
