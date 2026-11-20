@@ -33,6 +33,37 @@ class ExportPlan:
         return sha256_bytes(self.canonical_bytes())
 
 
+_NATIVE_PATH_TYPE = type(Path("."))
+
+
+def _require_native_path(value: object, name: str) -> Path:
+    """Reject caller-owned PathLike callbacks before pathlib invokes __fspath__."""
+    if type(value) is not _NATIVE_PATH_TYPE:
+        raise ValueError(f"{name} must be an exact native Path")
+    return value
+
+
+def _require_export_path_inputs(
+    *,
+    base_dir: object,
+    merged_candidate_dir: object,
+    converter_path: object,
+    quantizer_path: object,
+    output_dir: object,
+    current_model_path: object | None,
+) -> None:
+    for name, value in (
+        ("base_dir", base_dir),
+        ("merged_candidate_dir", merged_candidate_dir),
+        ("converter_path", converter_path),
+        ("quantizer_path", quantizer_path),
+        ("output_dir", output_dir),
+    ):
+        _require_native_path(value, name)
+    if current_model_path is not None:
+        _require_native_path(current_model_path, "current_model_path")
+
+
 def _validate_export_output_path(
     output_dir: Path,
     *,
@@ -45,7 +76,15 @@ def _validate_export_output_path(
     Reject input-tree overlap, aliasing and deployed-model identity collisions.
     This is a preflight path check, not an OS-handle/TOCTOU-proof guarantee.
     """
-    output = Path(output_dir)
+    _require_export_path_inputs(
+        base_dir=base_dir,
+        merged_candidate_dir=merged_candidate_dir,
+        converter_path=Path("."),
+        quantizer_path=Path("."),
+        output_dir=output_dir,
+        current_model_path=current_model_path,
+    )
+    output = output_dir
     if (
         ".." in output.parts
         or len(str(output)) > 4096
@@ -62,13 +101,13 @@ def _validate_export_output_path(
             raise ValueError("export output parent resolves through an alias")
         candidate_dir = resolved_parent / output.name
         protected_dirs = (
-            Path(base_dir).resolve(strict=False),
-            Path(merged_candidate_dir).resolve(strict=False),
+            base_dir.resolve(strict=False),
+            merged_candidate_dir.resolve(strict=False),
         )
         if any(candidate_dir.is_relative_to(root) for root in protected_dirs):
             raise ValueError("export output overlaps protected input tree")
         if current_model_path is not None:
-            deployed = Path(current_model_path).resolve(strict=False)
+            deployed = current_model_path.resolve(strict=False)
             names = (
                 "paired-current-f16.gguf", "paired-current-Q4_K_M.gguf",
                 "candidate-f16.gguf", "candidate-Q4_K_M.gguf",
@@ -91,9 +130,16 @@ def build_export_plan(
     current_model_path: Path | None = None,
 ) -> ExportPlan:
     """Build commands only. No subprocess, conversion, quantization, or file write occurs."""
+    _require_export_path_inputs(
+        base_dir=base_dir,
+        merged_candidate_dir=merged_candidate_dir,
+        converter_path=converter_path,
+        quantizer_path=quantizer_path,
+        output_dir=output_dir,
+        current_model_path=current_model_path,
+    )
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="none")
     # Resolve output custody before hashing converter/quantizer input bytes.
-    output_dir = Path(output_dir)
     _validate_export_output_path(
         output_dir, base_dir=base_dir,
         merged_candidate_dir=merged_candidate_dir,
