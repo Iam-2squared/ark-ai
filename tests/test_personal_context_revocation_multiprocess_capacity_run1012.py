@@ -41,7 +41,7 @@ while not release.exists():
     time.sleep(0.01)
 try:
     ledger.revoke(
-        memory_contracts.MemoryScope("synthetic-owner", namespace),
+        MemoryScope("synthetic-owner", namespace),
         at_ms=100,
     )
 except module.SyntheticContextRevocationRejected as exc:
