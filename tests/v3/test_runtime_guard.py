@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+import ark.learning.runtime_guard as runtime_guard
 from ark.learning.runtime_guard import (
     RuntimeIdentity,
     RuntimeIdentityMismatch,
@@ -119,3 +120,54 @@ def test_runtime_text_identity_must_not_coerce_non_strings():
 def test_vram_tolerance_must_be_finite_non_negative(bad_tolerance):
     with pytest.raises(ValueError, match="finite non-negative VRAM tolerance"):
         verify_runtime_identity(snapshot(), actual(), vram_tolerance_gib=bad_tolerance)
+
+
+@pytest.mark.parametrize(
+    "phase",
+    ("", "   ", "x" * 129, "bad\x00phase", "line\nbreak", "\ud800", "é" * 65),
+    ids=(
+        "empty", "blank", "codepoint-budget", "nul", "control",
+        "invalid-utf8", "utf8-byte-budget",
+    ),
+)
+def test_invalid_phase_label_is_denied_without_rewinding_clock_cursor(phase):
+    budget = WallTimeBudget(1.0, started=100.0)
+    with pytest.raises(RuntimeError, match="phase"):
+        budget.check(phase, now=110.0)
+    # Invalid diagnostic input still consumes the monotonic sample; it cannot
+    # be used to hide a later clock rollback or retry an earlier phase.
+    with pytest.raises(RuntimeError, match="backwards"):
+        budget.check("valid-phase", now=109.0)
+    budget.check("valid-phase", now=111.0)
+
+
+def test_hostile_phase_formatters_never_run_and_cannot_hide_timeout():
+    class HostilePhase:
+        def __str__(self):
+            raise AssertionError("phase __str__ callback ran")
+
+        def __format__(self, _spec):
+            raise AssertionError("phase __format__ callback ran")
+
+    budget = WallTimeBudget(1.0, started=100.0)
+    with pytest.raises(RuntimeError, match="phase"):
+        budget.check(HostilePhase(), now=110.0)
+    with pytest.raises(RuntimeError, match="timeout exceeded"):
+        budget.check(HostilePhase(), now=161.0)
+    assert budget._timed_out is True
+    with pytest.raises(RuntimeError, match="already exceeded"):
+        budget.check("valid-phase", now=159.0)
+
+
+def test_phase_budget_rebinding_denies_label_but_still_advances_clock(monkeypatch):
+    budget = WallTimeBudget(1.0, started=100.0)
+    monkeypatch.setattr(runtime_guard, "_MAX_WALL_TIME_PHASE_BYTES", 129)
+    with pytest.raises(RuntimeError, match="phase"):
+        budget.check("valid-phase", now=110.0)
+    with pytest.raises(RuntimeError, match="backwards"):
+        budget.check("valid-phase", now=109.0)
+
+
+def test_exact_utf8_phase_byte_boundary_is_accepted():
+    budget = WallTimeBudget(1.0, started=100.0)
+    budget.check("é" * 64, now=110.0)
