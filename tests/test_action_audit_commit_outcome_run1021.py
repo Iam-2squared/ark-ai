@@ -8,7 +8,6 @@ import sqlite3
 
 import pytest
 
-
 _PRIVATE = "audit-payload-must-never-be-persisted"
 
 
