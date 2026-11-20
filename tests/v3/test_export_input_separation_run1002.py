@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import ark.learning.export_plan as export_plan
 from ark.learning.export_plan import _validate_export_output_path
 
 
@@ -102,6 +103,13 @@ def _mark_reparse_point(monkeypatch, target: Path) -> None:
             return SimpleNamespace(st_mode=info.st_mode, st_file_attributes=0x400)
         return info
 
+    # This is a test-only filesystem oracle. Register its exact descriptor as
+    # the expected import-time Path.lstat identity so the new custody guard
+    # admits the fixture and the test reaches the downstream reparse policy.
+    names = export_plan._PATH_METHOD_NAMES
+    originals = list(export_plan._ORIGINAL_PATH_METHODS)
+    originals[names.index("lstat")] = marked_lstat
+    monkeypatch.setattr(export_plan, "_ORIGINAL_PATH_METHODS", tuple(originals))
     monkeypatch.setattr(Path, "lstat", marked_lstat)
 
 

@@ -13,19 +13,82 @@ from .identity import build_tool_identity
 _PATH_MAX_BYTES = 4096
 _ORIGINAL_PATH_FACTORY = Path
 _ORIGINAL_PATH_TYPE = type(Path("."))
+_ORIGINAL_PATH_FSPATH = _ORIGINAL_PATH_TYPE.__fspath__
 _ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_OS_FSPATH = os.fspath
+_ORIGINAL_OS_LSTAT = os.lstat
+_ORIGINAL_OS_STAT = os.stat
+_ORIGINAL_OS_GETCWD = os.getcwd
+_ORIGINAL_OS_PATH = os.path
+_PATH_OS_PATH_NAMES = ("abspath", "join", "realpath")
+_ORIGINAL_PATH_OS_PATH_NAMES = _PATH_OS_PATH_NAMES
+_ORIGINAL_PATH_OS_PATH_FUNCTIONS = tuple(
+    getattr(_ORIGINAL_OS_PATH, name) for name in _PATH_OS_PATH_NAMES
+)
+_PATH_METHOD_NAMES = (
+    "__fspath__", "absolute", "exists", "is_dir", "is_relative_to",
+    "lstat", "resolve", "name", "parent", "parents", "parts",
+)
+_ORIGINAL_PATH_METHOD_NAMES = _PATH_METHOD_NAMES
+_ORIGINAL_PATH_METHODS = tuple(
+    getattr(_ORIGINAL_PATH_TYPE, name) for name in _PATH_METHOD_NAMES
+)
 _ORIGINAL_PATH_MAX_BYTES = _PATH_MAX_BYTES
+
+
+def _require_original_path_codec(label: str) -> None:
+    """Pin dependencies that pathlib may call while os.fsencode invokes __fspath__."""
+    if (
+        Path is not _ORIGINAL_PATH_FACTORY
+        or _ORIGINAL_PATH_TYPE.__fspath__ is not _ORIGINAL_PATH_FSPATH
+        or os.fsencode is not _ORIGINAL_FSENCODE
+        or os.fspath is not _ORIGINAL_OS_FSPATH
+        or _PATH_OS_PATH_NAMES is not _ORIGINAL_PATH_OS_PATH_NAMES
+        or os.path is not _ORIGINAL_OS_PATH
+        or any(
+            getattr(_ORIGINAL_OS_PATH, name) is not original
+            for name, original in zip(
+                _PATH_OS_PATH_NAMES, _ORIGINAL_PATH_OS_PATH_FUNCTIONS, strict=True,
+            )
+        )
+    ):
+        raise ValueError(f"{label} path inspection dependencies changed")
+
+
+def _require_original_path_contract(label: str) -> None:
+    """Pin filesystem inspection methods before any path I/O."""
+    if (
+        Path is not _ORIGINAL_PATH_FACTORY
+        or _PATH_METHOD_NAMES is not _ORIGINAL_PATH_METHOD_NAMES
+        or _PATH_OS_PATH_NAMES is not _ORIGINAL_PATH_OS_PATH_NAMES
+        or any(
+            getattr(_ORIGINAL_PATH_TYPE, name) is not original
+            for name, original in zip(
+                _PATH_METHOD_NAMES, _ORIGINAL_PATH_METHODS, strict=True,
+            )
+        )
+        or os.fsencode is not _ORIGINAL_FSENCODE
+        or os.fspath is not _ORIGINAL_OS_FSPATH
+        or os.lstat is not _ORIGINAL_OS_LSTAT
+        or os.stat is not _ORIGINAL_OS_STAT
+        or os.getcwd is not _ORIGINAL_OS_GETCWD
+        or os.path is not _ORIGINAL_OS_PATH
+        or any(
+            getattr(_ORIGINAL_OS_PATH, name) is not original
+            for name, original in zip(
+                _PATH_OS_PATH_NAMES, _ORIGINAL_PATH_OS_PATH_FUNCTIONS, strict=True,
+            )
+        )
+        or type(_PATH_MAX_BYTES) is not int
+        or _PATH_MAX_BYTES != _ORIGINAL_PATH_MAX_BYTES
+    ):
+        raise ValueError(f"{label} path inspection dependencies changed")
 
 
 def _exact_local_path(value: object, *, label: str) -> Path:
     """Reject path subclasses and oversized native encodings before path I/O."""
-    if (
-        Path is not _ORIGINAL_PATH_FACTORY
-        or os.fsencode is not _ORIGINAL_FSENCODE
-        or type(_PATH_MAX_BYTES) is not int
-        or _PATH_MAX_BYTES != _ORIGINAL_PATH_MAX_BYTES
-        or type(value) is not _ORIGINAL_PATH_TYPE
-    ):
+    _require_original_path_codec(label)
+    if type(value) is not _ORIGINAL_PATH_TYPE:
         raise ValueError(f"{label} must be an exact local pathlib.Path")
     try:
         encoded = os.fsencode(value)
@@ -38,6 +101,7 @@ def _exact_local_path(value: object, *, label: str) -> Path:
         or len(encoded) > _PATH_MAX_BYTES
     ):
         raise ValueError(f"{label} path exceeds native byte budget")
+    _require_original_path_contract(label)
     return value
 
 
