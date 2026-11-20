@@ -1,3 +1,58 @@
+# LATEST — ARK AI Run1016: V3 path-custody repair, Action Audit outcome bounds, startup lease controls
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T16:54:42+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1016 work-basis exact HEAD:** `aac9ae76df364fe0b8230e36933bf1f0404e0add`. **Checkpoint write-basis HEAD:** `aac9ae76df364fe0b8230e36933bf1f0404e0add`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the post-write branch read; a commit cannot embed its own resulting SHA in the tracked file.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. No main merge, child promotion or Candidate promotion.
+
+## NEW — Run1016: four non-UI work packages
+
+1. **PR #52 — V3 export path codec preflight repair.** Branch `research/v3-export-path-method-custody-run1011`, new exact head `16f321b322f35f32c2f33914f9ba88db4d3fa428`. Prior head `ad42c35618a3d839d9d5c0e887134ae103e9d7b0` / CI #44691199500 **FAIL**: `os.path.join` was reached indirectly by `Path.__fspath__` during `os.fsencode`, before the later path-inspection check. The smallest source fix now pins `os.path` identity and the already-selected `abspath/join/realpath` functions in the pre-encoding codec check. No path guard was weakened. New exact-head CI [#44697363788](https://github.com/Iam-2squared/ark-ai/actions/runs/44697363788) **GREEN 6/6**. PR remains Draft/unmerged.
+
+2. **PR #58 — Planner terminal hard-exit evidence note correction.** Test-bearing head `7b4ce4809e33b699061a69bd7963f07defd65d6c` / CI #44690231075 **GREEN 6/6**. The test's actual Planner-journal order is bootstrap/schema COMMIT #1, RUNNING COMMIT #2, terminal SUCCEEDED COMMIT #3. Documentation now states that exact order. Documentation-update head `acb80c82dccb6b3e6d57185ae9be3e5146132f87` / CI [#44697663962](https://github.com/Iam-2squared/ark-ai/actions/runs/44697663962) **IN PROGRESS**. No production or test-path change in the correction.
+
+3. **PR #60 — Action Audit outcome admission on the current foundation base.** New Draft child branch `research/action-audit-outcome-bounds-run1016`, exact head `33a38f60e8503b52bd77b6016777f7d5ffebd676`; CI [#44698108036](https://github.com/Iam-2squared/ark-ai/actions/runs/44698108036) **IN PROGRESS**. Bounds outcome labels to 256 code points / 256 UTF-8 bytes, rejects control/format characters and invalid UTF-8 before SQLite open/clock sampling, and preflights oversized persisted TEXT before Python hydration. Adds caller, UTF-8 boundary, and corrupt-row/no-repair regressions. Action Audit v1 schema/public fields and open outcome vocabulary are unchanged. Earlier isolated PR #13 head `b940525c43d3e3a858352c8702dc4202598597e3` / CI #44518002802 GREEN is prior-base evidence only, not a PASS for #60.
+
+4. **PR #61 — startup readiness lease identifier controls.** New Draft child branch `research/startup-lease-identifier-controls-run1016`, exact head `4cce61ec799d5cae8a99c955025d5d73f7fb4751`; CI [#44698322968](https://github.com/Iam-2squared/ark-ai/actions/runs/44698322968) **IN PROGRESS**. The disconnected readiness requirement now rejects ASCII C0/DEL, C1, bidi and Unicode formatting controls before snapshot matching while preserving valid multilingual identifiers. A lease remains diagnostic, not startup or dispatch authority. Earlier isolated PR #56 head `8bade104459330439443e256bebea3eab429d3e7` / CI #44685093660 GREEN is prior-base evidence only.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 work-basis head `aac9ae76df364fe0b8230e36933bf1f0404e0add` / CI #44691519840 **GREEN 6/6** before this checkpoint update. This checkpoint commit may schedule a new PR #8 workflow; its run ID is not known at write time.
+- PR #52 `16f321b322f35f32c2f33914f9ba88db4d3fa428` / #44697363788 **GREEN 6/6**.
+- PR #58 `acb80c82dccb6b3e6d57185ae9be3e5146132f87` / #44697663962 **IN PROGRESS**.
+- PR #60 `33a38f60e8503b52bd77b6016777f7d5ffebd676` / #44698108036 **IN PROGRESS**.
+- PR #61 `4cce61ec799d5cae8a99c955025d5d73f7fb4751` / #44698322968 **IN PROGRESS** (was queued at first inspection).
+- PR #59 Observation metadata-before-hash `c8fb9e849113bfa5183ada7dfcb40a733bdbeb20` / #44690842675 **GREEN 6/6**.
+- PR #57 exact ToolRegistry/PermissionGate composition `7bc217d78059a5fc91bcada9378ded7b12a769aa` / #44687035602 **GREEN 6/6**.
+- PR #56 startup requirement identity `8bade104459330439443e256bebea3eab429d3e7` / #44685093660 **GREEN 6/6**.
+- PR #55 Personal Context replay `25c4431ecd179a86a24e408120c051e920bcd4a9` / #44685811546 **GREEN 6/6**.
+- PR #54 Personal Context revocation `3fc59526c1d1f5d009b697a2e1a3b089acbcdf90` / #44686516737 **GREEN 6/6**.
+- PR #53 proactive quarantine `a75fde1bae11383fad8663992f922fc1c2681b07` / #44676888071 **GREEN 6/6**.
+- PR #51 Planner journal hard-process boundary `9ce928b87b5d69d0cf5ae23f137d769d49552a53` / #44669861991 **GREEN 6/6**.
+
+No local full-suite pytest, physical-PC, real ToolBackend, live personal data/sensor, trusted-clock, independent-custody, external-effect, GPU/runtime, Candidate or paid-service result is claimed.
+
+## Frozen contracts, current ARK state and authorization boundaries
+
+ARK remains **NOT_PASSED**. V1/V2/Local UI/Launcher frozen evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PR #8 and all child PRs remain isolated Draft/unmerged. Main remains unchanged.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. No live personal data or sensor capture was used. Synthetic clocks and local ledgers do not establish trusted time, consent, authenticated provenance, independent custody, power-loss durability, cross-store atomicity or external effects. UI remains PAUSED.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44697663962 (PR #58), #44698108036 (PR #60), and #44698322968 (PR #61). Inspect failed jobs only; make the smallest semantics-preserving normal-path repair and immediately switch to a non-conflicting lane. Do not duplicate workflows or claim PASS before exact-head GREEN.
+2. After PR #60 exact-head GREEN, continue the restart-safe registry-bound authorization / occurrence / audit-before-action chain. Keep process-local PermissionGate consumption distinct from durable synthetic reservation and from authenticated consent; no real dispatch.
+3. Continue Planner crash recovery, retained-prefix/truncation and COMMIT-UNKNOWN/manual reconciliation. RUNNING/UNKNOWN remains quarantined; never auto-replay.
+4. Continue Memory CAS/ABA, WAL/SHM last-close, coherent row/event/expiry snapshots and cross-process integrity on an independent lane.
+5. Continue Personal Context revocation/retention/replay and privacy-safe projection; continue Observation fixture identity, metadata-before-hash and byte-budget boundaries without live capture.
+6. Continue free-only V3 path/provenance/identity/reproducibility guard hardening. PR #5 remains protected Draft; no training, export, model load, Candidate or paid compute.
+7. Preserve frozen V1/V2/Local UI/Launcher evidence, keep PR #9 untouched, keep all PRs Draft/unmerged, and do not merge main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1015: Observation prehash boundary, V3 fixture repair and Planner terminal-crash correction
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T15:56:42+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
