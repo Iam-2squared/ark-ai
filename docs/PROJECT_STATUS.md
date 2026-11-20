@@ -1,3 +1,51 @@
+# LATEST — ARK AI Run1014: exact-instance registry composition and Planner terminal crash recovery
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T15:27:42+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1014 work-basis exact HEAD:** `789973bf9c77a42755e8af8266e15639e02153b1`. **Checkpoint write-basis HEAD:** `789973bf9c77a42755e8af8266e15639e02153b1`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the post-write branch read; a commit cannot embed its own resulting SHA in the tracked file.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. No main merge, child promotion or Candidate promotion.
+
+## NEW — Run1014: three meaningful non-UI work packages
+
+1. **PR #54 — Personal Context revocation multiprocess test lint repair.** Branch `research/personal-context-revocation-multiprocess-run1012`, exact head `3fc59526c1d1f5d009b697a2e1a3b089acbcdf90`. The prior exact-head run #44685786250 failed Ruff F821 because the test referenced `memory.contracts.MemoryScope` although the imported module alias was `memory_contracts`. The saved repair uses the imported `memory_contracts.MemoryScope`; no test semantics or privacy/authority boundary changed. New exact-head CI [#44686516737](https://github.com/Iam-2squared/ark-ai/actions/runs/44686516737) is **IN PROGRESS**. No PASS claimed.
+
+2. **PR #57 — exact-instance ToolRegistry + PermissionGate composition.** Branch `research/registry-permission-composition-run1014`, exact head `7bc217d78059a5fc91bcada9378ded7b12a769aa`, Draft child of PR #8 work-basis `789973bf9c77a42755e8af8266e15639e02153b1`. Reapplies the exact-instance guards independently validated by PR #47 exact head `b1165eeccdec65c7079894d21d8d7062976c4ef5` / CI #44662380123 GREEN and PR #46 exact head `0edc1c4eb44d306d38bddafea44b14d82964c23e` / CI #44656557280 GREEN. Adds their regression tests and a composition test that binds/locally authorizes one synthetic registered WRITE, rejects token reuse, and proves the backend is never called. This is not restart-safe authorization or production dispatch. Exact-head CI [#44687035602](https://github.com/Iam-2squared/ark-ai/actions/runs/44687035602) is **IN PROGRESS**.
+
+3. **PR #58 — Planner/mock terminal COMMIT hard-exit recovery.** Branch `research/planner-mock-terminal-crash-run1014`, exact head `ac060365b37fc0ff0b64436d36ef42832fb24001`, Draft test-only child of PR #22 exact head `8dd522befb15e39b805a417744dd2fc89db49331`. A spawned process exits immediately before or after the second Planner journal COMMIT, after the disconnected mock WRITE has returned. Cold recovery must report RUNNING/ambiguous before terminal COMMIT or SUCCEEDED after terminal COMMIT; neither state may auto-replay. Both cases retain the synthetic occurrence and pre-action/completion audit rows, and a fresh backend is not called. Lower-level PR #22 CI #44560895025, PR #51 CI #44669861991, PR #43 CI #44648800414 and PR #45 CI #44656403662 were GREEN on their cited exact heads. This new child still needs its own validation: CI [#44687790115](https://github.com/Iam-2squared/ark-ai/actions/runs/44687790115) is **IN PROGRESS**. No external-effect, power-loss, cross-store atomicity, trusted-time or consent proof is claimed.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 canonical foundation head `789973bf9c77a42755e8af8266e15639e02153b1`: CI [#44685559493](https://github.com/Iam-2squared/ark-ai/actions/runs/44685559493) **IN PROGRESS**.
+- PR #54 head `3fc59526c1d1f5d009b697a2e1a3b089acbcdf90`: CI #44686516737 **IN PROGRESS**. Superseded head `bf745b6f80ed8ecb28aedd7c19bfb7caeeea8561` failed Ruff F821; the failure was corrected on the new head. No exact-head PASS yet.
+- PR #55 head `25c4431ecd179a86a24e408120c051e920bcd4a9`: CI [#44685811546](https://github.com/Iam-2squared/ark-ai/actions/runs/44685811546) **IN PROGRESS**. Earlier superseded attempts failed Ruff; latest head not yet certified.
+- PR #56 head `8bade104459330439443e256bebea3eab429d3e7`: CI [#44685093660](https://github.com/Iam-2squared/ark-ai/actions/runs/44685093660) **IN PROGRESS**.
+- PR #57 head `7bc217d78059a5fc91bcada9378ded7b12a769aa`: CI #44687035602 **IN PROGRESS**.
+- PR #58 head `ac060365b37fc0ff0b64436d36ef42832fb24001`: CI #44687790115 **IN PROGRESS**.
+- Prior lower-level exact-head evidence remains as cited above; no older GREEN run is inherited as a PASS for a new composition head.
+- PR #52 V3 path-method-custody branch remains blocked after two normal GitHub `update_file` attempts returned HTTP 409. No raw Git object, force push, alternate write route or safeguard bypass was attempted.
+- This checkpoint is documentation/reporting only. The status-file update may trigger a new PR #8 workflow; its run ID is not yet assigned at write time. No local full-suite pytest, physical-PC, real ToolBackend, live personal data/sensor, real model, external effect, GPU/runtime or Candidate result is claimed.
+
+## Frozen contracts, current ARK state and authorization boundaries
+
+ARK remains **NOT_PASSED**. V1/V2/Local UI/Launcher frozen evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PRs #54–#58 remain isolated Draft children; none is merged or promoted. Main remains unchanged.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. No live personal data or sensor capture was used. Synthetic clocks and local ledgers do not establish trusted time, consent, authenticated provenance, independent custody, power-loss durability or external effects. Separate Planner, occurrence and Action Audit stores are not made atomic by this test. UI remains PAUSED.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44687790115, #44687035602, #44686516737, #44685811546, #44685093660 and #44685559493. Inspect only failed jobs/logs; apply the smallest semantics-preserving normal GitHub repair, then immediately switch to an independent lane while CI runs. Do not duplicate equivalent workflows or claim PASS before exact-head GREEN.
+2. If PR #57 is exact-head GREEN, continue registry-bound identity and restart-safe authorization review. Keep process-local PermissionGate tokens distinct from durable consent/authorization; no real dispatch.
+3. If PR #58 is exact-head GREEN, extend Planner terminal/unknown-outcome recovery only where a distinct uncovered invariant exists. RUNNING/UNKNOWN remains quarantined; never auto-replay.
+4. Reconcile Personal Context revocation/replay process races (#54/#55) and startup requirement identity (#56); then continue retention/revocation continuity and privacy-safe projection.
+5. Continue Memory WAL/SHM last-close, CAS/ABA, coherent row/event/expiry snapshots and event-prefix integrity on a non-conflicting lane.
+6. Continue proactive scheduler quarantine state, observation fixture/lineage contracts and free-only V3 approval/path/identity/reproducibility guards. PR #52's 409 blocker may be retried only through the normal GitHub write path after conflict resolution.
+7. Preserve frozen V1/V2/Local UI/Launcher evidence, keep PR #5 and PR #9 untouched, keep all child PRs Draft/unmerged, and do not merge main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1013: Personal Context process-CAS and startup-lease identity hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T15:05:29+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
