@@ -8,12 +8,15 @@
 
 The Run1008 export preflight admitted exact pathlib.Path instances and pinned the Path factory plus os.fsencode, but it did not pin the inspection methods used after admission. A class-level replacement of Path.lstat/resolve/is_dir/absolute/__fspath__, or a replacement of selected os/os.path primitives, could execute substituted code before the local path checks completed.
 
-The preflight now checks an import-original method/primitive inventory before encoding or inspecting any supplied path:
+The preflight now uses two ordered checks so path encoding remains bounded before filesystem inspection:
+
+- Before os.fsencode can invoke Path.__fspath__, pin the Path factory, the original __fspath__ descriptor, os.fsencode and os.fspath.
+- After exact concrete-type admission and the native byte-budget check, pin the remaining Path inspection methods and selected os/os.path primitives before any filesystem I/O.
 
 - pathlib Path factory and concrete path type.
-- Path __fspath__, absolute, exists, is_dir, is_relative_to, lstat, resolve, and path-shape descriptors.
-- os.fsencode, os.fspath, os.lstat, os.stat, os.getcwd, and os.path identity.
-- os.path abspath, join and realpath function identities.
+- Path __fspath__ and the filesystem codec are pinned before native encoding.
+- After the byte budget passes, Path absolute, exists, is_dir, is_relative_to, lstat, resolve, and path-shape descriptors are checked.
+- os.lstat, os.stat, os.getcwd, os.path identity, and os.path abspath/join/realpath are checked before filesystem inspection.
 - The captured method-name vectors and native path-byte limit.
 
 If a pinned dependency changes, admission fails before the replaced callback is invoked. This remains a local process integrity check, not a Python sandbox or protection against arbitrary code that can rewrite all module/class globals.
