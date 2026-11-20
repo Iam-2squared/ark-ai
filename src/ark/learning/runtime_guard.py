@@ -239,6 +239,32 @@ def verify_runtime_identity(
     assert_identity_epoch()
 
 
+_MAX_WALL_TIME_PHASE_BYTES = 128
+_ORIGINAL_MAX_WALL_TIME_PHASE_BYTES = _MAX_WALL_TIME_PHASE_BYTES
+
+
+def _wall_time_phase_label(value: object) -> str | None:
+    """Return only bounded exact diagnostic text; never coerce caller objects."""
+    if (
+        type(_MAX_WALL_TIME_PHASE_BYTES) is not int
+        or _MAX_WALL_TIME_PHASE_BYTES is not _ORIGINAL_MAX_WALL_TIME_PHASE_BYTES
+        or type(value) is not str
+        or not 1 <= len(value) <= _MAX_WALL_TIME_PHASE_BYTES
+    ):
+        return None
+    if "\x00" in value or not value.strip():
+        return None
+    if any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+        return None
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeError:
+        return None
+    if len(encoded) > _MAX_WALL_TIME_PHASE_BYTES:
+        return None
+    return value
+
+
 class WallTimeBudget:
     """Soft fail-closed wall-time guard checked at every controlled runtime boundary."""
 
@@ -275,6 +301,10 @@ class WallTimeBudget:
         self._epoch_invalidated = False
 
     def check(self, phase: str, *, now: float | None = None) -> None:
+        # Never interpolate a caller-owned phase object on the timeout path.
+        # Invalid labels still pass through the monotonic clock update below,
+        # so they cannot hide an elapsed timeout or rewind the cursor.
+        phase_label = _wall_time_phase_label(phase)
         if self._timed_out:
             raise RuntimeError("approved wall-clock timeout already exceeded")
         if self._epoch_invalidated:
@@ -303,7 +333,16 @@ class WallTimeBudget:
         self._last_checked_at = current
         if elapsed > self.timeout_seconds:
             self._timed_out = True
+            if phase_label is None:
+                raise RuntimeError(
+                    "approved wall-clock timeout exceeded during invalid phase label: "
+                    f"{elapsed:.1f}s > {self.timeout_seconds:.1f}s"
+                )
             raise RuntimeError(
-                f"approved wall-clock timeout exceeded during {phase}: "
+                f"approved wall-clock timeout exceeded during {phase_label}: "
                 f"{elapsed:.1f}s > {self.timeout_seconds:.1f}s"
+            )
+        if phase_label is None:
+            raise RuntimeError(
+                "wall-clock phase must be an exact bounded UTF-8 string"
             )
