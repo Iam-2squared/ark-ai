@@ -35,7 +35,7 @@ def _exact_local_path(value: object, *, label: str) -> Path:
     if (
         type(encoded) is not bytes
         or not encoded
-        or b"\\x00" in encoded
+        or b"\x00" in encoded
         or len(encoded) > _PATH_MAX_BYTES
     ):
         raise ValueError(f"{label} path exceeds native byte budget")
