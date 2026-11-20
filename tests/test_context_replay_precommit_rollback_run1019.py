@@ -65,17 +65,12 @@ def test_precommit_failure_rolls_back_reservation_and_cold_readback_is_unchanged
         def __init__(self, connection: sqlite3.Connection) -> None:
             self.connection = connection
 
-        def __enter__(self):
-            return self
-
-        def __exit__(self, exc_type, exc, traceback):
-            if exc_type is None:
-                # Fail at the COMMIT boundary without invoking native COMMIT.
-                commit_attempts.append(True)
-                raise sqlite3.OperationalError(
-                    "synthetic COMMIT failure before native commit",
-                )
-            return self.connection.__exit__(exc_type, exc, traceback)
+        def commit(self) -> None:
+            # Fail at the COMMIT boundary without invoking native COMMIT.
+            commit_attempts.append(True)
+            raise sqlite3.OperationalError(
+                "synthetic COMMIT failure before native commit",
+            )
 
         def execute(self, *args, **kwargs):
             return self.connection.execute(*args, **kwargs)
