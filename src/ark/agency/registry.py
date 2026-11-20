@@ -470,11 +470,21 @@ class ToolRegistry:
 
     @property
     def revision(self) -> str:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         self._assert_registration_epoch()
         return self._revision
 
     @property
     def registrations(self) -> Mapping[str, ToolRegistration]:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         self._assert_registration_epoch()
         return self._registrations
 
