@@ -1,3 +1,51 @@
+# LATEST — ARK AI Run1015: Observation prehash boundary, V3 fixture repair and Planner terminal-crash correction
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T15:56:42+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1015 work-basis exact HEAD:** `d016a99114aded926951070e7854ace63b4a1aff`. **Checkpoint write-basis HEAD:** `d016a99114aded926951070e7854ace63b4a1aff`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the post-write PR #8 branch read; a commit cannot embed its own resulting SHA in the tracked file.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. No main merge, child promotion or Candidate promotion.
+
+## NEW — Run1015: three independent non-UI work packages and two CI repairs
+
+1. **PR #58 — Planner terminal hard-exit test counter correction.** Branch `research/planner-mock-terminal-crash-run1014`, exact head `7b4ce4809e33b699061a69bd7963f07defd65d6c`. Exact-head CI [#44690231075](https://github.com/Iam-2squared/ark-ai/actions/runs/44690231075) is **IN PROGRESS**. The previous exact-head run #44687790115 failed because the test counted the PlannerJournal constructor bootstrap COMMIT as if it were the RUNNING transition: observed COMMIT #1 was bootstrap, #2 was RUNNING, and the test terminated before the mock executor. The corrected test now targets COMMIT #3 (terminal SUCCEEDED), after bootstrap and RUNNING; it expects the mock to have been called once. No production source changed. The Run1014 report still describes the terminal transition as the second COMMIT; update that explanatory note after this exact-head CI finishes, without invalidating the in-flight run. No PASS claimed.
+
+2. **PR #52 — V3 path-custody reparse fixture adaptation.** Branch `research/v3-export-path-method-custody-run1011`, exact head `ad42c35618a3d839d9d5c0e887134ae103e9d7b0`. Exact-head CI [#44691199500](https://github.com/Iam-2squared/ark-ai/actions/runs/44691199500) is **IN PROGRESS**. The prior run #44690546000 failed three inherited reparse-point tests because their test helper replaced `Path.lstat` after PR #52 had pinned that descriptor; the new custody guard correctly rejected the substituted method before the reparse-policy fixture ran. The test-only repair registers its synthetic `Path.lstat` oracle as the expected descriptor within that fixture, so it can reach the downstream reparse policy while the separate method-substitution tests continue to verify that unregistered replacements are rejected. No production path guard was weakened. Earlier HTTP 409 on the normal Contents update was resolved by re-reading the exact branch HEAD and current blob SHA; the successful update used the normal GitHub path only. No PASS claimed.
+
+3. **PR #59 — Observation fixture metadata-before-hash regression.** New branch `research/observation-metadata-prehash-run1015`, exact head `c8fb9e849113bfa5183ada7dfcb40a733bdbeb20), Draft child of PR #50 exact head `56e3163ce0404eeabbc8bcf68771cc1fffedfccc` (parent exact-head CI #44662927894 GREEN). New exact-head CI [#44690842675](https://github.com/Iam-2squared/ark-ai/actions/runs/44690842675) is **IN PROGRESS**. Adds test/report only: both text and binary fixture adapters reject malformed source/privacy labels, control/format characters, invalid UTF-8, boolean timestamps and invalid parent digests before private SHA-256 receives content; sentinels verify rebound digest entrypoints receive no payload. Frozen Observation Envelope v1 and production adapter source are unchanged. Synthetic in-memory fixtures only. No PASS claimed.
+
+4. **Exact-head CI reconciliation:** PR #54 revocation `3fc59526c1d1f5d009b697a2e1a3b089acbcdf90` / run #44686516737 **GREEN 6/6**; PR #55 replay `25c4431ecd179a86a24e408120c051e920bcd4a9` / run #44685811546 **GREEN 6/6**; PR #56 startup requirement identity `8bade104459330439443e256bebea3eab429d3e7` / run #44685093660 **GREEN 6/6**; PR #57 exact ToolRegistry/PermissionGate composition `7bc217d78059a5fc91bcada9378ded7b12a769aa` / run #44687035602 **GREEN 6/6**. PR #8 checkpoint work-basis `d016a99114aded926951070e7854ace63b4a1aff` / run #44688068051 **GREEN 6/6**. Prior PR #53 proactive quarantine `a75fde1bae11383fad8663992f922fc1c2681b07` / run #44676888071 **GREEN 6/6** and PR #51 Planner journal hard-process boundaries `9ce928b87b5d69d0cf5ae23f137d769d49552a53` / run #44669861991 **GREEN 6/6** remain exact-head evidence only.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 `d016a99114aded926951070e7854ace63b4a1aff`: CI #44688068051 **GREEN 6/6** before this checkpoint update. This reporting-only update may start a new PR #8 workflow; its run ID is not known at write time.
+- PR #52 `ad42c35618a3d839d9d5c0e887134ae103e9d7b0`: CI #44691199500 **IN PROGRESS**. Superseded head `8c1bd61d321600348c11c016350a1aa62e51ca30` / run #44690546000 **FAIL** on three inherited reparse fixture expectations; corrected fixture is on the current head.
+- PR #58 `7b4ce4809e33b699061a69bd7963f07defd65d6c`: CI #44690231075 **IN PROGRESS**. Superseded head `ac060365b37fc0ff0b64436d36ef42832fb24001` / run #44687790115 **FAIL** because the terminal-COMMIT counter intercepted bootstrap plus RUNNING, before mock execution; corrected to target the third observed COMMIT.
+- PR #59 `c8fb9e849113bfa5183ada7dfcb40a733bdbeb20`: CI #44690842675 **IN PROGRESS**; new test-only child, no PASS.
+- PR #54 `3fc59526c1d1f5d009b697a2e1a3b089acbcdf90` / #44686516737, PR #55 `25c4431ecd179a86a24e408120c051e920bcd4a9` / #44685811546, PR #56 `8bade104459330439443e256bebea3eab429d3e7` / #44685093660, and PR #57 `7bc217d78059a5fc91bcada9378ded7b12a769aa` / #44687035602 are **GREEN 6/6** on their exact current heads.
+- No local full-suite pytest, physical-PC, real ToolBackend, live personal data/sensor, real model, external effect, GPU/runtime, Candidate or paid-service result is claimed.
+
+## Frozen contracts, current ARK state and authorization boundaries
+
+ARK remains **NOT_PASSED**. V1/V2/Local UI/Launcher frozen evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PRs #52, #54–#59 remain isolated Draft children; none is merged or promoted. Main remains unchanged.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. No live personal data or sensor capture was used. Synthetic clocks and local ledgers do not establish trusted time, consent, authenticated provenance, independent custody, power-loss durability, cross-store atomicity or external effects. UI remains PAUSED.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44691199500 (PR #52), #44690231075 (PR #58) and #44690842675 (PR #59). Inspect only failed jobs/logs; apply the smallest semantics-preserving normal GitHub repair, then immediately switch to a non-conflicting lane. Do not duplicate equivalent workflows or claim PASS before exact-head GREEN.
+2. After PR #58 CI completes, correct its technical note to distinguish bootstrap COMMIT #1, RUNNING COMMIT #2 and terminal SUCCEEDED COMMIT #3. Do not change the test path while its current validation is in flight.
+3. Continue registry-bound Tool identity and restart-safe one-shot authorization only after #57 exact-head GREEN. Keep process-local PermissionGate tokens distinct from durable consent/authorization; no real dispatch.
+4. Continue Planner terminal/unknown-outcome recovery, retained-prefix/truncation and process restart evidence. RUNNING/UNKNOWN remains quarantined; never auto-replay.
+5. Continue Memory WAL/SHM last-close, CAS/ABA, coherent row/event/expiry snapshots and event-prefix integrity on a non-conflicting lane. Local SQLite evidence is not power-loss/fsync or independent-custody evidence.
+6. Continue Personal Context revocation/retention/replay and privacy-safe projection; continue Observation fixture identity, byte budgets and lineage contracts without live capture.
+7. Continue free-only V3 approval/path/identity/reproducibility guards. PR #5 remains protected and Draft; no training, export, model load, Candidate or paid compute.
+8. Preserve frozen V1/V2/Local UI/Launcher evidence, keep PR #9 untouched, keep all child PRs Draft/unmerged, and do not merge main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1014: exact-instance registry composition and Planner terminal crash recovery
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T15:27:42+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
