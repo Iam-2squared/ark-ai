@@ -142,6 +142,58 @@ _MAX_EXECUTION_SNAPSHOT_BYTES = 1_048_576
 _MAX_EXECUTION_SNAPSHOT_DEPTH = 128
 
 
+def _require_exact_json_tree(value: object) -> None:
+    """Reject non-JSON carriers before validation can invoke their callbacks.
+
+    Direct in-memory callers receive the same exact built-in JSON value
+    boundary as the local snapshot loader. Shared mutable containers are
+    rejected because JSON cannot represent aliases and validation must not
+    read one object through multiple changing paths.
+    """
+    pending = [(value, 0)]
+    seen_containers: set[int] = set()
+    while pending:
+        current, depth = pending.pop()
+        if depth > _MAX_EXECUTION_SNAPSHOT_DEPTH:
+            raise ExecutionBlocked("execution snapshot JSON nesting budget exceeded")
+        kind = type(current)
+        if kind is dict:
+            identity = id(current)
+            if identity in seen_containers:
+                raise ExecutionBlocked("execution snapshot JSON containers must not be aliased")
+            seen_containers.add(identity)
+            for key, child in current.items():
+                if type(key) is not str:
+                    raise ExecutionBlocked(
+                        "execution snapshot JSON object keys require exact strings"
+                    )
+                try:
+                    key.encode("utf-8", errors="strict")
+                except UnicodeError as exc:
+                    raise ExecutionBlocked(
+                        "execution snapshot JSON key is not valid UTF-8"
+                    ) from exc
+                pending.append((child, depth + 1))
+        elif kind is list:
+            identity = id(current)
+            if identity in seen_containers:
+                raise ExecutionBlocked("execution snapshot JSON containers must not be aliased")
+            seen_containers.add(identity)
+            pending.extend((child, depth + 1) for child in current)
+        elif kind is str:
+            try:
+                current.encode("utf-8", errors="strict")
+            except UnicodeError as exc:
+                raise ExecutionBlocked("execution snapshot JSON string is not valid UTF-8") from exc
+        elif kind is float:
+            # Field-specific numeric validators preserve their precise diagnostics.
+            continue
+        elif current is None or kind is bool or kind is int:
+            continue
+        else:
+            raise ExecutionBlocked("execution snapshot must contain exact JSON value types")
+
+
 def _require_bounded_snapshot_nesting(raw: bytes) -> None:
     """Reject excessive container depth without relying on Python recursion."""
     depth = 0
@@ -291,17 +343,17 @@ def unresolved_paths(value: object, prefix: str = "") -> list[str]:
 
 
 def _require_sha256(value: object, field: str) -> None:
-    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+    if type(value) is not str or re.fullmatch(r"[0-9a-f]{64}", value) is None:
         raise ExecutionBlocked(f"exact SHA-256 required: {field}")
 
 
 def _require_git_sha(value: object, field: str) -> None:
-    if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{40}", value) is None:
+    if type(value) is not str or re.fullmatch(r"[0-9a-f]{40}", value) is None:
         raise ExecutionBlocked(f"exact git commit SHA required: {field}")
 
 
 def _require_text(value: object, field: str) -> None:
-    if not isinstance(value, str) or not value.strip():
+    if type(value) is not str or not value.strip():
         raise ExecutionBlocked(f"exact identity required: {field}")
 
 
@@ -326,8 +378,8 @@ def _require_positive_number(value: object, field: str) -> None:
 
 def _require_exact_section_shape(snapshot: dict, section: str) -> None:
     value = snapshot.get(section)
-    if not isinstance(value, dict):
-        raise ExecutionBlocked(f"snapshot section must be an object: {section}")
+    if type(value) is not dict:
+        raise ExecutionBlocked(f"snapshot section must be an exact object: {section}")
     expected = _REQUIRED_SECTION_KEYS[section]
     missing = sorted(expected - value.keys())
     unexpected = sorted(value.keys() - expected)
@@ -352,6 +404,7 @@ def validate_experiment_001(
         raise ValueError("invalid authorization scope")
     if type(snapshot) is not dict:
         raise ExecutionBlocked("exact execution snapshot mapping required")
+    _require_exact_json_tree(snapshot)
     missing = sorted(_REQUIRED_TOP - snapshot.keys())
     if missing:
         raise ExecutionBlocked(f"snapshot missing sections: {', '.join(missing)}")
@@ -363,6 +416,7 @@ def validate_experiment_001(
     if (
         type(snapshot.get("schema_version")) is not int
         or snapshot.get("schema_version") != 1
+        or type(snapshot.get("experiment_id")) is not str
         or snapshot.get("experiment_id") != "v3-format-compliance-001"
     ):
         raise ExecutionBlocked("unexpected snapshot schema/experiment")
@@ -384,7 +438,7 @@ def validate_experiment_001(
         "optimizer_eps",
         "optimizer_weight_decay",
     )
-    if any(isinstance(method.get(key), bool) for key in numeric_method_fields):
+    if any(type(method.get(key)) not in (int, float) for key in numeric_method_fields):
         raise ExecutionBlocked("experiment-001 numeric method fields may not be booleans")
     boolean_method_fields = (
         "optimizer_amsgrad",

@@ -216,3 +216,71 @@ def test_snapshot_requires_plain_decoded_mapping_not_dict_subclass():
     value = resolved_snapshot()
     with pytest.raises(ExecutionBlocked, match="exact execution snapshot mapping"):
         validate_experiment_001(type("UntrustedMapping", (dict,), {})(value))
+
+
+class _LyingExperimentText(str):
+    comparisons = 0
+
+    def __eq__(self, other):
+        type(self).comparisons += 1
+        return True
+
+    def __ne__(self, other):
+        type(self).comparisons += 1
+        return False
+
+    __hash__ = str.__hash__
+
+
+class _HostileSection(dict):
+    callbacks = 0
+
+    def items(self):
+        type(self).callbacks += 1
+        raise AssertionError("section callback must not run")
+
+    def get(self, *args, **kwargs):
+        type(self).callbacks += 1
+        raise AssertionError("section callback must not run")
+
+
+class _HostileList(list):
+    callbacks = 0
+
+    def __iter__(self):
+        type(self).callbacks += 1
+        raise AssertionError("list callback must not run")
+
+
+def test_experiment_identity_subclass_is_rejected_before_equality_callback():
+    value = resolved_snapshot()
+    _LyingExperimentText.comparisons = 0
+    value["experiment_id"] = _LyingExperimentText("not-the-frozen-experiment")
+    with pytest.raises(ExecutionBlocked, match="exact JSON value types"):
+        validate_experiment_001(value)
+    assert _LyingExperimentText.comparisons == 0
+
+
+def test_nested_section_subclass_is_rejected_before_mapping_callbacks():
+    value = resolved_snapshot()
+    _HostileSection.callbacks = 0
+    value["method"] = _HostileSection(value["method"])
+    with pytest.raises(ExecutionBlocked, match="exact JSON value types"):
+        validate_experiment_001(value)
+    assert _HostileSection.callbacks == 0
+
+
+def test_nested_list_subclass_is_rejected_before_iteration_callback():
+    value = resolved_snapshot()
+    _HostileList.callbacks = 0
+    value["method"]["target_modules"] = _HostileList(["q_proj", "v_proj"])
+    with pytest.raises(ExecutionBlocked, match="exact JSON value types"):
+        validate_experiment_001(value)
+    assert _HostileList.callbacks == 0
+
+
+def test_shared_mutable_json_container_is_rejected():
+    value = resolved_snapshot()
+    value["method"]["optimizer_betas"] = value["method"]["target_modules"]
+    with pytest.raises(ExecutionBlocked, match="must not be aliased"):
+        validate_experiment_001(value)
