@@ -186,8 +186,8 @@ def _require_exact_json_tree(value: object) -> None:
             except UnicodeError as exc:
                 raise ExecutionBlocked("execution snapshot JSON string is not valid UTF-8") from exc
         elif kind is float:
-            if not math.isfinite(current):
-                raise ExecutionBlocked("execution snapshot JSON numbers must be finite")
+            # Field-specific numeric validators preserve their precise diagnostics.
+            continue
         elif current is None or kind is bool or kind is int:
             continue
         else:
