@@ -1,3 +1,48 @@
+# LATEST — ARK AI Run1008: durable occurrence crash boundary and V3 export path preflight
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T09:56:10+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** \`research/jarvis-foundations\` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1008 work-basis exact HEAD:** \`62c18441730f4eb376e5006f6070db2352f4acb1\`. **Checkpoint write-basis HEAD:** \`62c18441730f4eb376e5006f6070db2352f4acb1\`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and verified by the post-write branch read; a commit cannot contain its own SHA.
+
+**Protected refs:** main \`7a843f17eb96ed13d66f23b58b06406b3002e405\`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains \`805b377697472268db02650a89c7a94b1c5337c8\`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains \`3b49048dd70eebcb6268299b9ecef4e301bbc0fd\`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. No UI/frontend work, main merge, child promotion or Candidate promotion.
+
+## NEW — Run1008: two independent non-UI packages
+
+1. **PR #43 — hard process crash after durable occurrence COMMIT, before Action Audit.** Test-only child of Draft PR #31, based on exact head \`e228d599dc78fe635fbaa596169d9a035fe0c07b\`; new head \`67426ce2de9f0d70a848d83018deb258823a90fc\`. Added \`tests/test_mock_executor_occurrence_commit_crash_run1008.py\` and \`docs/JARVIS_RUN1008_OCCURRENCE_COMMIT_CRASH_BOUNDARY.md\`. A spawned process exits immediately after the native occurrence-ledger COMMIT and before the separate pre-action audit append or mock backend call. Cold reopen must find the token digest reservation, no audit event, and no plaintext token; a fresh PermissionGate must not replay that token with either the same or a different occurrence ID. This intentionally documents the existing two-store non-atomic gap: a committed reservation with no audit is quarantined, never released or retried. It does not claim atomicity or exactly-once real-world effects. Exact-head CI #44648800414 / run #6630 is **IN PROGRESS**.
+
+2. **PR #44 — exact V3 export path admission before filesystem access.** Free-only child of Draft PR #32, based on exact head \`2fc3a711f1f532e80fec7287c0db0acd778c11be\`; current head \`c9e3457b7431c8b0fcd79140921a3a2b53e52137\`. Modified only \`src/ark/learning/export_plan.py\`, added \`tests/v3/test_export_path_preaccess_run1008.py\` and \`docs/JARVIS_V3_RUN1008_EXPORT_PATH_ADMISSION.md\`. Exact concrete Path types and a 4,096-byte native path budget are checked before snapshot callbacks or filesystem probes; output ancestors are no-follow inspected before the leaf, and final-leaf \`lstat\` rejects dangling symlinks. Eight parameter-expanded cases cover callback-bearing Path subclasses, byte-budget preflight, symlink ancestor ordering and dangling output symlinks. The first CI #44649395797 / run #6631 failed all six jobs at Ruff I001 only (extra blank line between imports and the first module-level constant); the spacing-only correction is commit \`c9e3457b7431c8b0fcd79140921a3a2b53e52137\`. Follow-up exact-head CI #44649707265 / run #6632 is **IN PROGRESS**. No model load, Candidate generation, converter/quantizer execution, training, export or GPU action occurred.
+
+## Tests / CI / evidence — exact HEADs only
+
+- Canonical PR #8 head \`62c18441730f4eb376e5006f6070db2352f4acb1\`: CI #44641578937 / run #6629 **GREEN**, six matrix jobs.
+- PR #38 head \`973fab1700c29810453c90b6368795fc7df08157\`: CI #44641046318 / run #6626 **GREEN**, six matrix jobs.
+- PR #39 head \`5b5e57aee4bed927df978324e83229294c9b63d8\`: CI #44641268571 / run #6628 **GREEN**, six matrix jobs.
+- PR #40 head \`6320b8c2ab147a542e641db222f9616d41eeb61a\`: CI #44641069114 / run #6627 **GREEN**, six matrix jobs.
+- PR #41 head \`daad75fd7fd39ad3982f3365226d5f67b5637ebb\`: CI #44632387507 / run #6619 **GREEN**, six matrix jobs.
+- PR #42 head \`a0b35f14beb4af759ba1eb042b09d839025f856b\`: CI #44632619818 / run #6622 **GREEN**, six matrix jobs.
+- PR #43 head \`67426ce2de9f0d70a848d83018deb258823a90fc\`: CI #44648800414 / run #6630 **IN PROGRESS**.
+- PR #44 current head \`c9e3457b7431c8b0fcd79140921a3a2b53e52137\`: CI #44649707265 / run #6632 **IN PROGRESS**; superseded head \`5316c16540ffedb22431f447272af10a4a244f79\` failed only Ruff I001, corrected as above.
+- No local full-suite pytest, physical-PC, real ToolBackend, external effect, live capture, GPU/runtime or Candidate result is claimed. Authored cases are not represented as PASS until exact-head CI completes.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched. PRs #43 and #44 are isolated Draft children of #31 and #32 respectively; all ancestors remain Draft/unmerged. No main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. The occurrence/audit databases remain separate and non-atomic. The V3 path checks are best-effort local path admission, not atomic directory-handle custody. Synthetic clocks and local ledgers do not establish trusted time, consent, authenticated provenance or external effects. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #6630 and #6632 when complete. If either fails, inspect the failing job/log and make the smallest semantics-preserving normal Contents API fix; do not duplicate workflow runs or stack changes onto the path being validated.
+2. Continue Memory WAL/SHM last-close, cross-process pinned-reader crash, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only triage.
+3. Continue Planner retained-prefix/truncation, terminal propagation, restart recovery and commit/rollback ambiguity. RUNNING/UNKNOWN work remains quarantined; never auto-replay.
+4. Advance registry-bound durable authorization, exact-type PermissionGate, trusted-clock audit-before-action and occurrence/replay protection over disconnected mocks only; resolve cross-store atomicity before any real backend integration.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive scheduler restart state and Observation fixture lifecycle; advance free-only V3 approval/path/identity/reproducibility guards without opening protected gates.
+6. Keep JARVIS foundations isolated/reversible until lower-level invariants have exact-head GREEN evidence and explicit integration gates. **UI remains PAUSED.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1007: reconcile Run1006 path-epoch CI failures
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T08:54:56+09:00.** This is reporting metadata only, not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
