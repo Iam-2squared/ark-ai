@@ -33,6 +33,26 @@ class ExportPlan:
         return sha256_bytes(self.canonical_bytes())
 
 
+def _canonical_input_directory(path: Path, *, label: str) -> Path:
+    """Return one existing local input root without lexical/symlink aliases."""
+    value = Path(path)
+    if (
+        ".." in value.parts
+        or len(str(value)) > 4096
+        or value.is_symlink()
+        or any(parent.is_symlink() for parent in value.parents)
+        or not value.is_dir()
+    ):
+        raise ValueError(f"{label} input must be a non-aliased local directory")
+    try:
+        resolved = value.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError(f"{label} input directory cannot be safely resolved") from exc
+    if not resolved.is_dir():
+        raise ValueError(f"{label} input must resolve to a directory")
+    return resolved
+
+
 def _validate_export_output_path(
     output_dir: Path,
     *,
@@ -40,10 +60,10 @@ def _validate_export_output_path(
     merged_candidate_dir: Path,
     current_model_path: Path | None,
 ) -> None:
-    """Validation-only export destination check; never creates or executes it.
+    """Validate paired source/destination separation; never creates or executes.
 
-    Reject input-tree overlap, aliasing and deployed-model identity collisions.
-    This is a preflight path check, not an OS-handle/TOCTOU-proof guarantee.
+    This is local path admission, not atomic directory-handle custody or a
+    guarantee against a hostile concurrent filesystem writer.
     """
     output = Path(output_dir)
     if (
@@ -57,18 +77,42 @@ def _validate_export_output_path(
     ):
         raise ValueError("export output requires a new directory under safe parents")
     try:
+        base_root = _canonical_input_directory(base_dir, label="base")
+        candidate_root = _canonical_input_directory(
+            merged_candidate_dir, label="merged Candidate",
+        )
+        if (
+            base_root == candidate_root
+            or base_root.is_relative_to(candidate_root)
+            or candidate_root.is_relative_to(base_root)
+        ):
+            raise ValueError(
+                "base and merged Candidate input trees must be distinct and non-overlapping"
+            )
+
         resolved_parent = output.parent.resolve(strict=True)
         if resolved_parent != output.parent.absolute():
             raise ValueError("export output parent resolves through an alias")
         candidate_dir = resolved_parent / output.name
-        protected_dirs = (
-            Path(base_dir).resolve(strict=False),
-            Path(merged_candidate_dir).resolve(strict=False),
-        )
-        if any(candidate_dir.is_relative_to(root) for root in protected_dirs):
+        if any(
+            candidate_dir.is_relative_to(root)
+            for root in (base_root, candidate_root)
+        ):
             raise ValueError("export output overlaps protected input tree")
         if current_model_path is not None:
             deployed = Path(current_model_path).resolve(strict=False)
+            if (
+                deployed == candidate_root
+                or deployed.is_relative_to(candidate_root)
+                or (
+                    deployed.exists()
+                    and deployed.is_dir()
+                    and candidate_root.is_relative_to(deployed)
+                )
+            ):
+                raise ValueError(
+                    "merged Candidate source overlaps Current deployed model"
+                )
             names = (
                 "paired-current-f16.gguf", "paired-current-Q4_K_M.gguf",
                 "candidate-f16.gguf", "candidate-Q4_K_M.gguf",
@@ -76,7 +120,7 @@ def _validate_export_output_path(
             if any(deployed == candidate_dir / name for name in names):
                 raise ValueError("Current deployed model path may never be an export output")
     except (OSError, RuntimeError) as exc:
-        raise ValueError("export output path cannot be safely resolved") from exc
+        raise ValueError("export path cannot be safely resolved") from exc
 
 
 def build_export_plan(
