@@ -79,6 +79,36 @@ def test_rebound_guard_vectors_rejected_before_snapshot_integrity_callback(
     assert callbacks == []
 
 
+@pytest.mark.parametrize("mutation", ("empty", "equal-valued-clone"))
+def test_rebound_guard_vector_root_is_rejected_before_snapshot_callback(
+    mutation, monkeypatch,
+):
+    snapshot, requirements = _fixture()
+    original = lease._ORIGINAL_GUARD_VECTOR_REFERENCES
+    replacement = (
+        () if mutation == "empty" else tuple(list(original))
+    )
+    if mutation == "equal-valued-clone":
+        assert replacement == original
+    assert replacement is not original
+    callbacks = []
+
+    def forbidden(_self):
+        callbacks.append("snapshot integrity")
+        raise AssertionError("snapshot integrity must not run before root admission")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(lease, "_ORIGINAL_GUARD_VECTOR_REFERENCES", replacement)
+        patch.setattr(StartupSnapshot, "_assert_integrity", forbidden)
+        with pytest.raises(
+            lease.SyntheticStartupLeaseRejected,
+            match="startup lease guard-vector reference changed",
+        ):
+            _review(snapshot, requirements)
+
+    assert callbacks == []
+
+
 def test_original_startup_lease_remains_diagnostic_only():
     result = _review(*_fixture())
     assert result.required_components == ("memory", "planner")
