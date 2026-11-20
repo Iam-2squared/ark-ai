@@ -70,7 +70,8 @@ def test_action_audit_commit_outcome_requires_cold_readback_not_duplicate_append
     tmp_path, monkeypatch, durable: bool,
 ) -> None:
     path = tmp_path / "action-audit-commit-outcome.sqlite3"
-    audit = SQLiteActionAudit(path, clock_ms=lambda: 200)
+    clock_values = iter((200, 201))
+    audit = SQLiteActionAudit(path, clock_ms=lambda: next(clock_values))
     first = audit.append(_call(1), outcome="synthetic_before_mock")
     second_call = _call(2)
     original_connect = audit._connect
