@@ -7,8 +7,8 @@ are used. A reservation is not consent, disclosure or Tool dispatch authority.
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -18,7 +18,6 @@ from ark.personal_context_offline_preview import (
     build_offline_context_preview,
 )
 from ark.personal_context_request_binding import bind_offline_context_request
-
 
 _OWNER = "a" * 64
 _SCOPE = "b" * 64
