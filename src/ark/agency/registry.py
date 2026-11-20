@@ -348,6 +348,11 @@ class ToolRegistry:
     _SCHEMA_VERSION = 1
 
     def __init__(self, registrations: Iterable[ToolRegistration]) -> None:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registration_contract()
         _require_original_registry_digest()
         # Registrations can arrive from caller-controlled generators. Never
@@ -421,6 +426,11 @@ class ToolRegistry:
         This is only a local drift check; it is NOT backend attestation against
         malicious in-process rewriting of every private reference.
         """
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registration_contract()
         _require_original_registry_digest()
         if (
@@ -460,15 +470,30 @@ class ToolRegistry:
 
     @property
     def revision(self) -> str:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         self._assert_registration_epoch()
         return self._revision
 
     @property
     def registrations(self) -> Mapping[str, ToolRegistration]:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         self._assert_registration_epoch()
         return self._registrations
 
     def get(self, name: str) -> ToolRegistration:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         _text("tool name", name)
         self._assert_registration_epoch()
         try:
@@ -477,6 +502,11 @@ class ToolRegistry:
             raise KeyError(f"unknown tool: {name}") from exc
 
     def resolve(self, call: ToolCall) -> ToolRegistration:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registration_contract()
         _require_original_registry_digest()
         if type(call) is not ToolCall:
@@ -564,6 +594,11 @@ class ToolRegistry:
         return registration
 
     def bind(self, call: ToolCall) -> BoundAction:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registration_contract()
         _require_original_registry_digest()
         # Call objects are frozen, but reflected mutation is still possible
@@ -699,3 +734,7 @@ class ToolRegistry:
             ],
         }
         return "tools_" + hashlib.sha256(_canonical_json(payload)).hexdigest()
+
+
+# Public registry operations reject subclasses with alternate lookup semantics.
+_ORIGINAL_TOOL_REGISTRY_TYPE = ToolRegistry
