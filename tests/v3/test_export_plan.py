@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 
 import ark.learning.export_plan as export_plan
-
 from ark.learning.export_plan import build_export_plan
 from ark.learning.identity import build_tool_identity
 
