@@ -6,6 +6,7 @@ A replay reservation is never disclosure, consent, or Tool dispatch authority.
 
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 import subprocess
 import sys
@@ -22,7 +23,9 @@ from ark.personal_context_replay_ledger import (
     DisconnectedContextReplayLedger,
     OfflineContextReplayRejected,
 )
-from ark.personal_context_request_binding import bind_offline_context_request
+from ark.personal_context_request_binding import (
+    bind_offline_context_request,
+)
 
 
 _OWNER = "a" * 64
@@ -42,7 +45,7 @@ def _binding_for(request_id: str):
         _OWNER,
         _SCOPE,
         _PAYLOAD,
-        __import__("hashlib").sha256(_PAYLOAD.encode("utf-8")).hexdigest(),
+        hashlib.sha256(_PAYLOAD.encode("utf-8")).hexdigest(),
         1000,
     )
     preview = build_offline_context_preview(
@@ -58,6 +61,7 @@ _CHILD = """
 import sys
 import time
 from pathlib import Path
+import hashlib
 from ark.personal_context_offline_preview import (
     OfflineContextFixture, build_offline_context_preview,
 )
@@ -72,7 +76,6 @@ scope = "b" * 64
 record = "rec_" + "c" * 32
 request_id = "ctxreq_" + "d" * 64
 payload = "synthetic-only-private-context"
-import hashlib
 item = OfflineContextFixture(
     record, owner, scope, payload,
     hashlib.sha256(payload.encode("utf-8")).hexdigest(), 1000,
