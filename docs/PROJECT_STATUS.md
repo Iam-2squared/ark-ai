@@ -1,3 +1,51 @@
+# LATEST — ARK AI Run1023: bounded V3 command identity and wall-time diagnostics
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T23:55:14+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1023 work-basis exact HEAD:** `f74ea1f2a31de36fde8ea4a72312453c6cadaf75`. **Checkpoint write-basis HEAD:** `f74ea1f2a31de36fde8ea4a72312453c6cadaf75`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5, PR #9 and main remain unchanged. PR #8 remains OPEN/DRAFT/UNMERGED. UI/Frontend work remains PAUSED.
+
+## NEW — Run1023: isolated free-only validation packages
+
+1. **PR #87 — exact V3 export Python executable identity.** Validation-only child of Draft PR #84, based on exact source head `ed1ca1c38ccdd72d5a310481737ba2fedcb6f961`. Current branch/PR head: `99ef7ef2e893ffb44970d82c67ce1df1240b7e9c`. Requires `python_executable` to be an exact built-in UTF-8 string, bounded to 4096 bytes/codepoints before snapshot validation or converter/quantizer identity reads; rejects blank, NUL, control, invalid UTF-8, oversized and string-subclass values; preserves valid paths with spaces as one argv item. The export plan remains data-only and non-executing. Initial CI #44756920401 failed only at Ruff import ordering; the import block was corrected without semantic changes. Exact corrected-head CI #44757673921: **IN PROGRESS**.
+
+2. **PR #88 — bounded V3 wall-time phase diagnostics.** Validation-only child of Draft PR #82, based on exact source head `6af60b86444ed3ab6eb2c910ee5fb10c49218a2d`. Current branch/PR head: `47ba7764e3c012b712a0c67cf73cc60c80967fb8`. Requires exact bounded UTF-8 phase labels and never formats caller-owned objects. Invalid labels still consume the monotonic clock sample; an over-limit reading remains terminal and uses a fixed diagnostic. This remains a soft local wall-time guard, not trusted time or authorization. Initial CI #44757430164 failed only at Ruff import ordering/line length; formatting was corrected without semantic changes. Exact corrected-head CI #44757838409: **IN PROGRESS**.
+
+Both packages use synthetic local fixtures only. No converter, quantizer, subprocess, model, GPU, training, Candidate adapter/weights, paid service, protected V2 evaluation, frozen contract, UI, or main merge is invoked. No local pytest/Ruff PASS is claimed.
+
+## Tests / CI / evidence — exact HEADs
+
+- PR #8 foundation head `f74ea1f2a31de36fde8ea4a72312453c6cadaf75` / CI #44746396153: **GREEN 6/6**.
+- PR #82 V3 preflight validator head `6af60b86444ed3ab6eb2c910ee5fb10c49218a2d` / CI #44745837177: **GREEN 6/6**.
+- PR #86 V3 preflight validator tests head `93ad3d70ecadac65ad66fa1d2938a3f2d9b92884` / CI #44745953621: **GREEN 6/6**.
+- PR #84 V3 export exact-path carrier head `ed1ca1c38ccdd72d5a310481737ba2fedcb6f961` / CI #44745421149: **GREEN 6/6**.
+- PR #85 V3 export path callback tests head `0a3ce74726d483405a4f1fa97bb755ec8be8a74e` / CI #44745554160: **GREEN 6/6**.
+- PR #87 corrected head `99ef7ef2e893ffb44970d82c67ce1df1240b7e9c` / CI #44757673921: **IN PROGRESS**; prior lint-only failure corrected.
+- PR #88 corrected head `47ba7764e3c012b712a0c67cf73cc60c80967fb8` / CI #44757838409: **IN PROGRESS**; prior lint-only failure corrected.
+- Existing Run1022 Planner, Memory, Personal Context, action-audit and write-slot exact-head evidence remains historical and unchanged.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged. PR #9 remains untouched and Draft/unmerged. PR #5 remains gated Draft/unmerged. No protected V2 final evaluation was opened; no Candidate was generated, promoted or run. No trusted-clock identity, human-review decision, dataset/file hash or runtime identity was fabricated. No paid/external compute, API, subscription, purchase or potentially billable action was started. No main merge or destructive operation occurred.
+
+## Blockers / authorization boundaries
+
+- Real runtime identity collection and Candidate execution remain blocked by the explicit free-only boundary and the absence of a user-authorized local runtime; this run did not attempt them.
+- The new wall-time phase guard is diagnostic input hardening only; it does not establish a trusted clock.
+- Memory expiry currently relies on the configured clock callback. A durable cross-process expiry high-water would require a separately reviewed additive design; no frozen Memory schema/contract was changed in this run.
+- PR #5 protected evaluation, Candidate adapter/weights and promotion remain closed pending their explicit gates.
+
+## Next plan / 今後の方針
+
+1. Recheck exact-head CI #44757673921 (PR #87) and #44757838409 (PR #88); inspect failures if any and make only the smallest semantics-preserving repairs.
+2. Review Memory expiry under clock rollback and cross-process restart. Keep any persistent high-water proposal isolated until it can preserve the frozen v1 schema/contract and be proven without claiming trusted time.
+3. Continue Planner terminal recovery, immutable ToolRegistry/PermissionGate identity, restart-safe exactly-once authorization, audit-before-action and disconnected/mock executor composition only after lower-level exact-head GREEN evidence.
+4. Continue privacy-safe Personal Context revocation/retention and observation fixture contracts with synthetic local data only.
+5. Continue free-only V3 approval/path/identity/reproducibility guard hardening. Keep PR #5 Draft/unmerged and all UI work paused.
+
+---
+
 # LATEST — ARK AI Run1022: V3 preflight validator custody and export path admission
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T22:39:36+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
