@@ -13,7 +13,7 @@ from .identity import build_tool_identity
 _PATH_MAX_BYTES = 4096
 _ORIGINAL_PATH_FACTORY = Path
 _ORIGINAL_PATH_TYPE = type(Path("."))
-_ORIGINAL_PATH_FSPATH = getattr(_ORIGINAL_PATH_TYPE, "__fspath__")
+_ORIGINAL_PATH_FSPATH = _ORIGINAL_PATH_TYPE.__fspath__
 _ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_OS_FSPATH = os.fspath
 _ORIGINAL_OS_LSTAT = os.lstat
@@ -40,7 +40,7 @@ def _require_original_path_codec(label: str) -> None:
     """Pin the filesystem-path codec before os.fsencode invokes __fspath__."""
     if (
         Path is not _ORIGINAL_PATH_FACTORY
-        or getattr(_ORIGINAL_PATH_TYPE, "__fspath__") is not _ORIGINAL_PATH_FSPATH
+        or _ORIGINAL_PATH_TYPE.__fspath__ is not _ORIGINAL_PATH_FSPATH
         or os.fsencode is not _ORIGINAL_FSENCODE
         or os.fspath is not _ORIGINAL_OS_FSPATH
     ):
