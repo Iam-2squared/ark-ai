@@ -164,11 +164,15 @@ def _require_exact_json_tree(value: object) -> None:
             seen_containers.add(identity)
             for key, child in current.items():
                 if type(key) is not str:
-                    raise ExecutionBlocked("execution snapshot JSON object keys require exact strings")
+                    raise ExecutionBlocked(
+                        "execution snapshot JSON object keys require exact strings"
+                    )
                 try:
                     key.encode("utf-8", errors="strict")
                 except UnicodeError as exc:
-                    raise ExecutionBlocked("execution snapshot JSON key is not valid UTF-8") from exc
+                    raise ExecutionBlocked(
+                        "execution snapshot JSON key is not valid UTF-8"
+                    ) from exc
                 pending.append((child, depth + 1))
         elif kind is list:
             identity = id(current)
