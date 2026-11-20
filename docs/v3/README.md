@@ -25,6 +25,9 @@ Core documents:
 - Offline `ark-v3-identity` capture for already-materialized HF base/tokenizer bytes, chat-template
   probe, V3 runtime source tree, and pinned llama.cpp converter/quantizer files. It does not
   download models or contact external services.
+- The `ark-v3-identity chat-template-probe` subcommand renders two fixed synthetic cases from an
+  already-materialized local tokenizer and writes a create-only probe artifact. The authorized
+  runtime must reproduce that artifact before model-weight loading and again after tokenization.
 - Strict experiment-001 execution-snapshot validation, runtime code-tree identity, measured
   environment/hardware checks, numeric safety checks and wall-clock timeout enforcement.
 - Separate preflight and full-training authorization scopes plus a hash-addressed authorization

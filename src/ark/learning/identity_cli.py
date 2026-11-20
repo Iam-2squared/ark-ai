@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .chat_template_probe import build_chat_template_probe
 from .execution import canonical_json, sha256_bytes
 from .identity import build_code_tree_identity, build_hf_snapshot_identity, build_tool_identity
 
@@ -43,6 +44,13 @@ def _parser() -> argparse.ArgumentParser:
     hf.add_argument("--chat-template-probe", type=Path, required=True)
     hf.add_argument("--output", type=Path, required=True)
 
+    probe = sub.add_parser(
+        "chat-template-probe",
+        help="render a fixed probe from an already-materialized local tokenizer",
+    )
+    probe.add_argument("--root", type=Path, required=True)
+    probe.add_argument("--output", type=Path, required=True)
+
     tool = sub.add_parser("tool", help="hash a pinned export tool file")
     tool.add_argument("--path", type=Path, required=True)
     tool.add_argument("--revision", required=True)
@@ -62,7 +70,24 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    if args.command == "hf-snapshot":
+    if args.command == "chat-template-probe":
+        try:
+            from transformers import AutoTokenizer
+        except ImportError as exc:
+            raise RuntimeError(
+                "local chat-template probe requires the installed transformers package"
+            ) from exc
+        tokenizer = AutoTokenizer.from_pretrained(
+            str(args.root),
+            local_files_only=True,
+            trust_remote_code=False,
+        )
+        payload = build_chat_template_probe(tokenizer)
+        artifact_sha = _write_new_json(args.output, payload)
+        print(f"identity_artifact_sha256={artifact_sha}")
+        print(f"chat_template_probe_sha256={artifact_sha}")
+        return 0
+    elif args.command == "hf-snapshot":
         payload = build_hf_snapshot_identity(
             args.root,
             model_id=_MODEL_ID,

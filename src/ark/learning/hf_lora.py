@@ -13,6 +13,7 @@ import math
 import time
 from pathlib import Path
 
+from .chat_template_probe import verify_chat_template_probe
 from .dataset import digest
 from .execution import validate_experiment_001
 from .identity import build_hf_snapshot_identity
@@ -104,6 +105,19 @@ def _verify_local_identities(
     return _load_dataset(dataset_path, snapshot["dataset"]["canonical_sha256"])
 
 
+def _verify_runtime_chat_template(tokenizer, snapshot: dict, probe_path: Path) -> None:
+    try:
+        verify_chat_template_probe(
+            tokenizer,
+            probe_path,
+            snapshot["tokenizer"]["chat_template_probe_sha256"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LoRARuntimeError(
+            "runtime tokenizer does not reproduce the frozen chat-template probe"
+        ) from exc
+
+
 def _runtime_imports():
     try:
         import torch
@@ -114,7 +128,9 @@ def _runtime_imports():
     return torch, LoraConfig, get_peft_model, AutoModelForCausalLM, AutoTokenizer
 
 
-def _build_model_and_tokenizer(snapshot: dict, base_dir: Path):
+def _build_model_and_tokenizer(
+    snapshot: dict, base_dir: Path, chat_template_probe: Path,
+):
     torch, LoraConfig, get_peft_model, AutoModelForCausalLM, AutoTokenizer = _runtime_imports()
     if not torch.cuda.is_available():
         raise LoRARuntimeError("authorized experiment-001 runtime requires CUDA GPU")
@@ -126,6 +142,8 @@ def _build_model_and_tokenizer(snapshot: dict, base_dir: Path):
         local_files_only=True,
         trust_remote_code=False,
     )
+    # Bind the actual local tokenizer renderer before loading any model weights.
+    _verify_runtime_chat_template(tokenizer, snapshot, chat_template_probe)
     model = AutoModelForCausalLM.from_pretrained(
         str(base_dir),
         local_files_only=True,
@@ -224,9 +242,12 @@ class HfLoRAPreflightBackend:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("preflight-local-identity")
-        torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        torch, tokenizer, model = _build_model_and_tokenizer(
+            snapshot, self.base_dir, self.chat_template_probe,
+        )
         wall_budget.check("preflight-model-load")
         encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
+        _verify_runtime_chat_template(tokenizer, snapshot, self.chat_template_probe)
         optimizer, _ = _optimizer(torch, model, snapshot["method"])
         torch.cuda.reset_peak_memory_stats()
         started = time.perf_counter()
@@ -282,10 +303,13 @@ class HfLoRAFullRun:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("training-local-identity")
-        torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        torch, tokenizer, model = _build_model_and_tokenizer(
+            snapshot, self.base_dir, self.chat_template_probe,
+        )
         wall_budget.check("training-model-load")
         ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
         encoded_rows = _pretokenize(tokenizer, ordered)
+        _verify_runtime_chat_template(tokenizer, snapshot, self.chat_template_probe)
         wall_budget.check("training-pretokenize")
         optimizer, trainable = _optimizer(torch, model, snapshot["method"])
 
