@@ -67,6 +67,85 @@ _IDENTITY_TYPE = RuntimeIdentity
 _EVIDENCE_FIELDS = tuple(PreflightEvidence.__dataclass_fields__)
 _IDENTITY_FIELDS = tuple(RuntimeIdentity.__dataclass_fields__)
 
+# Preflight evidence is a validation boundary, not a backend result by itself.
+# Pin its class contract so a replaced validator or field descriptor cannot
+# turn a synthetic object into accepted measurement evidence.
+_EVIDENCE_FIELDS_VECTOR = _EVIDENCE_FIELDS
+_EVIDENCE_CLASS_HOOKS = (
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "__setattr__", "__post_init__",
+)
+_EVIDENCE_FIELD_MISSING = object()
+_ORIGINAL_EVIDENCE_DATACLASS_FIELDS = _EVIDENCE_TYPE.__dataclass_fields__
+_ORIGINAL_EVIDENCE_DATACLASS_PARAMS = _EVIDENCE_TYPE.__dataclass_params__
+_ORIGINAL_EVIDENCE_FIELD_NAMES = tuple(_ORIGINAL_EVIDENCE_DATACLASS_FIELDS)
+_ORIGINAL_EVIDENCE_FIELD_ITEMS = tuple(_ORIGINAL_EVIDENCE_DATACLASS_FIELDS.items())
+_ORIGINAL_EVIDENCE_FIELD_DESCRIPTORS = tuple(
+    vars(_EVIDENCE_TYPE).get(name, _EVIDENCE_FIELD_MISSING)
+    for name in _EVIDENCE_FIELDS
+)
+_ORIGINAL_EVIDENCE_CLASS_HOOKS = tuple(
+    vars(_EVIDENCE_TYPE).get(name, _EVIDENCE_FIELD_MISSING)
+    for name in _EVIDENCE_CLASS_HOOKS
+)
+_ORIGINAL_EVIDENCE_VALIDATOR = vars(_EVIDENCE_TYPE)["validate"]
+
+
+def _require_original_evidence_contract() -> None:
+    fields = getattr(_EVIDENCE_TYPE, "__dataclass_fields__", None)
+    if (
+        PreflightEvidence is not _EVIDENCE_TYPE
+        or _EVIDENCE_FIELDS is not _EVIDENCE_FIELDS_VECTOR
+        or fields is not _ORIGINAL_EVIDENCE_DATACLASS_FIELDS
+        or type(fields) is not dict
+        or tuple(fields) != _ORIGINAL_EVIDENCE_FIELD_NAMES
+        or any(
+            current_key is not original_key or current_field is not original_field
+            for (current_key, current_field), (original_key, original_field)
+            in zip(
+                fields.items(), _ORIGINAL_EVIDENCE_FIELD_ITEMS, strict=True,
+            )
+        )
+        or _EVIDENCE_TYPE.__dataclass_params__ is not _ORIGINAL_EVIDENCE_DATACLASS_PARAMS
+        or any(
+            vars(_EVIDENCE_TYPE).get(name, _EVIDENCE_FIELD_MISSING) is not original
+            for name, original in zip(
+                _EVIDENCE_CLASS_HOOKS,
+                _ORIGINAL_EVIDENCE_CLASS_HOOKS,
+                strict=True,
+            )
+        )
+        or any(
+            vars(_EVIDENCE_TYPE).get(name, _EVIDENCE_FIELD_MISSING) is not original
+            for name, original in zip(
+                _EVIDENCE_FIELDS,
+                _ORIGINAL_EVIDENCE_FIELD_DESCRIPTORS,
+                strict=True,
+            )
+        )
+    ):
+        raise ValueError("preflight evidence contract changed")
+
+
+def _validate_preflight_evidence(evidence: object) -> None:
+    if type(evidence) is not _EVIDENCE_TYPE:
+        raise ValueError("exact PreflightEvidence required")
+    _require_original_evidence_contract()
+    if "validate" in vars(evidence):
+        raise ValueError("preflight evidence instance validator shadowed")
+    public_validator = vars(_EVIDENCE_TYPE).get(
+        "validate", _EVIDENCE_FIELD_MISSING,
+    )
+    if not callable(public_validator):
+        raise ValueError("preflight evidence validator is not callable")
+    # Preserve the public callback epoch used by existing mutation regressions,
+    # but never let a replacement validator be the final acceptance check.
+    public_validator(evidence)
+    if vars(_EVIDENCE_TYPE).get("validate", _EVIDENCE_FIELD_MISSING) is not public_validator:
+        raise ValueError("preflight evidence validator changed during validation")
+    _require_original_evidence_contract()
+    _ORIGINAL_EVIDENCE_VALIDATOR(evidence)
+
 
 def _pin_json_tree(value: object, depth: int = 0) -> tuple:
     """Retain original execution-snapshot carriers, including nested scalars.
@@ -141,11 +220,13 @@ def verify_preflight_measurements(
         or type(runtime_identity) is not _IDENTITY_TYPE
     ):
         raise ValueError("exact non-Candidate measurement inputs required")
+    _require_original_evidence_contract()
     snapshot_epoch = _pin_json_tree(snapshot)
     evidence_epoch = tuple(getattr(evidence, field) for field in _EVIDENCE_FIELDS)
     identity_epoch = tuple(getattr(runtime_identity, field) for field in _IDENTITY_FIELDS)
 
     def stable() -> None:
+        _require_original_evidence_contract()
         _assert_json_tree_epoch(snapshot, snapshot_epoch)
         try:
             if (
@@ -169,7 +250,7 @@ def verify_preflight_measurements(
             raise ValueError("measurement input epoch invalid") from exc
 
     stable()
-    evidence.validate()
+    _validate_preflight_evidence(evidence)
     stable()
     verify_runtime_identity(snapshot, runtime_identity)
     stable()
@@ -218,11 +299,13 @@ def build_preflight_report(
         or type(runtime_identity) is not _IDENTITY_TYPE
     ):
         raise ValueError("exact preflight report input types required")
+    _require_original_evidence_contract()
     snapshot_epoch = _pin_json_tree(snapshot)
     evidence_epoch = tuple(getattr(evidence, name) for name in _EVIDENCE_FIELDS)
     identity_epoch = tuple(getattr(runtime_identity, name) for name in _IDENTITY_FIELDS)
 
     def assert_epoch() -> None:
+        _require_original_evidence_contract()
         _assert_json_tree_epoch(snapshot, snapshot_epoch)
         try:
             stable = (
@@ -290,5 +373,5 @@ def run_authorized_preflight(snapshot: dict, backend: PreflightBackend) -> Prefl
     """
     validate_experiment_001(snapshot, authorization_scope="preflight")
     evidence = backend.run(snapshot)
-    evidence.validate()
+    _validate_preflight_evidence(evidence)
     return evidence
