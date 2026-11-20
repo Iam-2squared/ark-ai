@@ -164,10 +164,12 @@ def inventory_unapproved_v3_readiness(snapshot: dict) -> OfflineReadinessInvento
         ):
             raise OfflineReadinessRejected("unapproved authorization flags required")
         stable()
+        experiment_id = snapshot.get("experiment_id")
         if (
             type(snapshot.get("schema_version")) is not int
             or snapshot["schema_version"] != 1
-            or snapshot.get("experiment_id") != "v3-format-compliance-001"
+            or type(experiment_id) is not str
+            or experiment_id != "v3-format-compliance-001"
         ):
             raise OfflineReadinessRejected("frozen experiment identity required")
         unresolved = []
