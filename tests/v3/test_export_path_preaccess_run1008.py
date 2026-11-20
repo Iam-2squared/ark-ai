@@ -54,7 +54,7 @@ def test_export_rejects_path_subclasses_before_fspath_callbacks(
     }[position]
     wrapped = CallbackPath(str(source))
     arguments = {
-        "output": output,
+        "output_dir": output,
         "base_dir": base,
         "merged_candidate_dir": candidate,
         "current_model_path": None,
@@ -111,7 +111,7 @@ def test_export_rejects_multibyte_native_path_over_budget_before_lstat(
     def forbidden_lstat(_path):
         pytest.fail("filesystem access occurred before native path byte admission")
 
-    monkeypatch.setattr(Path, "lstat", forbidden_lstat)
+    monkeypatch.setattr(type(Path(".")), "lstat", forbidden_lstat)
     with pytest.raises(ValueError, match="native byte budget"):
         _check(output, base, candidate)
 
@@ -130,8 +130,8 @@ def test_symlinked_output_ancestor_is_rejected_before_leaf_following_probes(
     def forbidden(_path):
         pytest.fail("output leaf was probed before its ancestors were admitted")
 
-    monkeypatch.setattr(Path, "exists", forbidden)
-    monkeypatch.setattr(Path, "is_symlink", forbidden)
+    monkeypatch.setattr(type(Path(".")), "exists", forbidden)
+    monkeypatch.setattr(type(Path(".")), "is_symlink", forbidden)
     with pytest.raises(ValueError, match="export output"):
         _check(output, base, candidate)
 
