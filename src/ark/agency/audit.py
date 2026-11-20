@@ -331,6 +331,10 @@ def _require_original_event_constructor(phase: str = "") -> None:
         or _contracts._freeze_json is not _ORIGINAL_TOOLCALL_FREEZE
         or _contracts.json.dumps is not _ORIGINAL_JSON_DUMPS
         or _validate_outcome is not _ORIGINAL_VALIDATE_OUTCOME
+        or type(_MAX_AUDIT_OUTCOME_CHARS) is not int
+        or _MAX_AUDIT_OUTCOME_CHARS != 256
+        or type(_MAX_AUDIT_OUTCOME_BYTES) is not int
+        or _MAX_AUDIT_OUTCOME_BYTES != 256
     ):
         raise ActionAuditSchemaError("action audit digest callback changed")
     # An audit receipt is data, not a place to execute new Python code.
