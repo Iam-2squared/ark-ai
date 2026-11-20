@@ -6,6 +6,7 @@ The ledger is a negative-use fence, never consent or proof of erasure.
 
 from __future__ import annotations
 
+import importlib
 import pathlib
 import sqlite3
 import subprocess
@@ -13,8 +14,6 @@ import sys
 import time
 
 import pytest
-
-import importlib
 
 memory_contracts = importlib.import_module("ark.memory.contracts")
 personal_context_revocation_continuity_review = importlib.import_module(
