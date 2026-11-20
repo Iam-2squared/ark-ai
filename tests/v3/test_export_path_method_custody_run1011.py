@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-import ark.learning.export_plan as module
 from ark.learning.export_plan import _validate_export_output_path
 
 
