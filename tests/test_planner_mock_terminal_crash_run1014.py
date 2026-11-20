@@ -104,16 +104,16 @@ def _crash_at_terminal_commit(
             )
             if is_commit:
                 commit_count[0] += 1
-                if commit_count[0] == 2 and phase == "before":
+                if commit_count[0] == 3 and phase == "before":
                     Path(marker_path).write_text(
-                        f"planner_commits=2;mock_calls={backend.calls}",
+                        f"planner_commits=3;mock_calls={backend.calls}",
                         encoding="ascii",
                     )
                     os._exit(73)
             cursor = self._connection.execute(statement, *args)
-            if is_commit and commit_count[0] == 2 and phase == "after":
+            if is_commit and commit_count[0] == 3 and phase == "after":
                 Path(marker_path).write_text(
-                    f"planner_commits=2;mock_calls={backend.calls}",
+                    f"planner_commits=3;mock_calls={backend.calls}",
                     encoding="ascii",
                 )
                 os._exit(74)
@@ -130,7 +130,8 @@ def _crash_at_terminal_commit(
         return connection
 
     # Patch only this spawned process and only the Planner journal database.
-    # The first Planner COMMIT is RUNNING; the second is SUCCEEDED. The mock
+    # Bootstrap is COMMIT 1, RUNNING is COMMIT 2, and SUCCEEDED is COMMIT 3.
+    # The mock
     # executor's independent audit/occurrence databases remain unwrapped.
     sqlite3.connect = connect
     token = OneShotAuthorization(_TOKEN_ID, call.request_id, 500)
@@ -193,7 +194,7 @@ def test_mock_completion_before_terminal_commit_is_never_auto_replayed(
 
     assert process.exitcode == exit_code
     assert marker_path.read_text(encoding="ascii") == (
-        "planner_commits=2;mock_calls=1"
+        "planner_commits=3;mock_calls=1"
     )
 
     journal = PlannerJournal(journal_path)
