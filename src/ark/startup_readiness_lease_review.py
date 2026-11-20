@@ -58,6 +58,26 @@ class SyntheticReadinessRequirement:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid NUL {label} requirement"
                 )
+            # Match StartupComponent identity admission: requirement values
+            # must not inject terminal controls or visually redirect diagnostics.
+            # Refuse these before reading any readiness snapshot or matching a
+            # required component. This remains a disconnected fixture boundary.
+            if any(ord(character) < 32 or ord(character) == 127 for character in value):
+                raise SyntheticStartupLeaseRejected(
+                    f"invalid ASCII control {label} requirement"
+                )
+            if any(
+                0x80 <= point <= 0x9F
+                or point in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
+                or 0x200B <= point <= 0x200D
+                or 0x202A <= point <= 0x202E
+                or 0x2060 <= point <= 0x206F
+                or point in (0x2028, 0x2029, 0xFEFF)
+                for point in map(ord, value)
+            ):
+                raise SyntheticStartupLeaseRejected(
+                    f"invalid Unicode formatting control {label} requirement"
+                )
             if byte_count > 256:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid UTF-8 {label} requirement byte budget"
