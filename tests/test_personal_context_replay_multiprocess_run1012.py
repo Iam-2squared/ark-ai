@@ -15,13 +15,10 @@ from pathlib import Path
 
 import pytest
 
+import ark.personal_context_replay_ledger as replay
 from ark.personal_context_offline_preview import (
     OfflineContextFixture,
     build_offline_context_preview,
-)
-from ark.personal_context_replay_ledger import (
-    DisconnectedContextReplayLedger,
-    OfflineContextReplayRejected,
 )
 from ark.personal_context_request_binding import (
     bind_offline_context_request,
@@ -113,7 +110,7 @@ def test_two_processes_reserve_one_context_request_at_most_once(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "context-replay-multiprocess.sqlite3"
-    ledger = DisconnectedContextReplayLedger(path, create=True)
+    ledger = replay.DisconnectedContextReplayLedger(path, create=True)
     retained = ledger.witness()
     assert retained.count == 0
 
@@ -158,10 +155,10 @@ def test_two_processes_reserve_one_context_request_at_most_once(
     assert rows == (1, 1, 1)
     assert _PAYLOAD.encode("utf-8") not in path.read_bytes()
 
-    cold = DisconnectedContextReplayLedger(path)
+    cold = replay.DisconnectedContextReplayLedger(path)
     observed = cold.witness()
     assert observed.count == 1
     assert observed.independent_custody_proven is False
-    with pytest.raises(OfflineContextReplayRejected, match="stale"):
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stale"):
         cold.reserve(_binding(), retained=retained)
     assert cold.witness() == observed
