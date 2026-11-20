@@ -6,8 +6,8 @@ used. No ToolBackend is dispatched and no automatic replay is authorized.
 
 from __future__ import annotations
 
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 import pytest
 
