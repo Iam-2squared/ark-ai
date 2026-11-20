@@ -14,11 +14,11 @@ from pathlib import Path
 
 import pytest
 
-import ark.personal_context_revocation_review as revocation
 from ark.memory.contracts import MemoryScope
 from ark.personal_context_revocation_continuity_review import (
     review_revocation_continuity,
 )
+import ark.personal_context_revocation_review as revocation
 
 
 _CHILD = """
