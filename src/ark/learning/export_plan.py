@@ -37,12 +37,20 @@ _ORIGINAL_PATH_MAX_BYTES = _PATH_MAX_BYTES
 
 
 def _require_original_path_codec(label: str) -> None:
-    """Pin the filesystem-path codec before os.fsencode invokes __fspath__."""
+    """Pin dependencies that pathlib may call while os.fsencode invokes __fspath__."""
     if (
         Path is not _ORIGINAL_PATH_FACTORY
         or _ORIGINAL_PATH_TYPE.__fspath__ is not _ORIGINAL_PATH_FSPATH
         or os.fsencode is not _ORIGINAL_FSENCODE
         or os.fspath is not _ORIGINAL_OS_FSPATH
+        or _PATH_OS_PATH_NAMES is not _ORIGINAL_PATH_OS_PATH_NAMES
+        or os.path is not _ORIGINAL_OS_PATH
+        or any(
+            getattr(_ORIGINAL_OS_PATH, name) is not original
+            for name, original in zip(
+                _PATH_OS_PATH_NAMES, _ORIGINAL_PATH_OS_PATH_FUNCTIONS, strict=True,
+            )
+        )
     ):
         raise ValueError(f"{label} path inspection dependencies changed")
 
