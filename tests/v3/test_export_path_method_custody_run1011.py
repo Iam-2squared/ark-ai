@@ -43,7 +43,7 @@ def test_export_rejects_path_method_rebinding_before_callback(
         raise AssertionError("replaced pathlib method executed before admission")
 
     monkeypatch.setattr(path_type, member, forbidden)
-    with pytest.raises(ValueError, match="local path inspection dependencies changed"):
+    with pytest.raises(ValueError, match="path inspection dependencies changed"):
         _check(output, base, candidate)
     assert calls == []
 
@@ -73,6 +73,6 @@ def test_export_rejects_os_path_dependency_rebinding_before_callback(
 
     owner = os.path if target == "os.path" else os
     monkeypatch.setattr(owner, member, forbidden)
-    with pytest.raises(ValueError, match="local path inspection dependencies changed"):
+    with pytest.raises(ValueError, match="path inspection dependencies changed"):
         _check(output, base, candidate)
     assert calls == []
