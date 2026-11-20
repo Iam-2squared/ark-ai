@@ -13,6 +13,7 @@ from .identity import build_tool_identity
 _PATH_MAX_BYTES = 4096
 _ORIGINAL_PATH_FACTORY = Path
 _ORIGINAL_PATH_TYPE = type(Path("."))
+_ORIGINAL_PATH_FSPATH = getattr(_ORIGINAL_PATH_TYPE, "__fspath__")
 _ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_OS_FSPATH = os.fspath
 _ORIGINAL_OS_LSTAT = os.lstat
@@ -35,8 +36,19 @@ _ORIGINAL_PATH_METHODS = tuple(
 _ORIGINAL_PATH_MAX_BYTES = _PATH_MAX_BYTES
 
 
-def _require_original_path_contract() -> None:
-    """Pin the path inspection surface before any caller-controlled path callback."""
+def _require_original_path_codec(label: str) -> None:
+    """Pin the filesystem-path codec before os.fsencode invokes __fspath__."""
+    if (
+        Path is not _ORIGINAL_PATH_FACTORY
+        or getattr(_ORIGINAL_PATH_TYPE, "__fspath__") is not _ORIGINAL_PATH_FSPATH
+        or os.fsencode is not _ORIGINAL_FSENCODE
+        or os.fspath is not _ORIGINAL_OS_FSPATH
+    ):
+        raise ValueError(f"{label} path inspection dependencies changed")
+
+
+def _require_original_path_contract(label: str) -> None:
+    """Pin filesystem inspection methods before any path I/O."""
     if (
         Path is not _ORIGINAL_PATH_FACTORY
         or _PATH_METHOD_NAMES is not _ORIGINAL_PATH_METHOD_NAMES
@@ -62,12 +74,12 @@ def _require_original_path_contract() -> None:
         or type(_PATH_MAX_BYTES) is not int
         or _PATH_MAX_BYTES != _ORIGINAL_PATH_MAX_BYTES
     ):
-        raise ValueError("local path inspection dependencies changed")
+        raise ValueError(f"{label} path inspection dependencies changed")
 
 
 def _exact_local_path(value: object, *, label: str) -> Path:
     """Reject path subclasses and oversized native encodings before path I/O."""
-    _require_original_path_contract()
+    _require_original_path_codec(label)
     if type(value) is not _ORIGINAL_PATH_TYPE:
         raise ValueError(f"{label} must be an exact local pathlib.Path")
     try:
@@ -81,6 +93,7 @@ def _exact_local_path(value: object, *, label: str) -> Path:
         or len(encoded) > _PATH_MAX_BYTES
     ):
         raise ValueError(f"{label} path exceeds native byte budget")
+    _require_original_path_contract(label)
     return value
 
 
