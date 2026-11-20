@@ -1,3 +1,58 @@
+# LATEST — ARK AI Run1031: five non-UI foundation rebases and exact-head CI launch
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T05:48:11+09:00.** Reporting/checkpoint timestamp only; it is not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1031 work-basis exact HEAD:** `7d25d985c613a36bf81bf4fa11c0fbaea4928b11`. **Checkpoint write-basis HEAD:** the same exact HEAD, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write PR #8 branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs before this checkpoint write:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `325135c0c904cedb584f2edb67576aa992e2332f`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED. PR #9 is untouched. UI/Frontend work remains PAUSED. PR #8 remains OPEN/DRAFT/UNMERGED.
+
+## NEW — Run1031 work packages
+
+All five child branches below were created from PR #8 exact work-basis HEAD `7d25d985c613a36bf81bf4fa11c0fbaea4928b11`. Each new child PR is OPEN/DRAFT/UNMERGED. Its CI validates that child head only; no merge or integration is claimed. The checkpoint write below advances PR #8 by a documentation-only commit, so every child must be re-read and rebased onto the then-current PR #8 head with fresh exact-head CI before integration.
+
+1. **PR #114 — proactive quarantine pre-COMMIT rollback regression.** Branch `research/run1031-proactive-rollback`, exact head `b96c5cffbf209d07217df35fb3bf3d1137241842`. Test-only rebase plus evidence note: rollback before native SQLite COMMIT, no receipt/quarantine row, retained witness unchanged, and clean `quick_check`; no scheduler cursor, notification, dispatch or retry. Exact-head CI #44814250091: **IN_PROGRESS**.
+2. **PR #115 — Planner terminal COMMIT outcome matrix.** Branch `research/run1031-planner-terminal-commit`, exact head `02f076acbabae99d8abef94472e9acbf3efd38c8`. Test-only rebase plus evidence note distinguishes rollback (RUNNING remains ambiguous) from native COMMIT/lost acknowledgement (FAILED persists, only dependent work BLOCKED); independent DAG work and false-only dispatch/replay flags remain. Exact-head CI #44814258160: **IN_PROGRESS**.
+3. **PR #116 — Memory expiry COMMIT outcome matrix.** Branch `research/run1031-memory-expiry-commit`, exact head `231eb3702ee4455562b0d2929ffd5f9dea0bac7b`. Test-only rebase plus evidence note verifies cold readback for rollback versus committed expiry, independent-scope preservation, global event order, no duplicate expiry event and SQLite integrity. Exact-head CI #44814312431: **IN_PROGRESS**.
+4. **PR #117 — Personal Context replay process-crash regression.** Branch `research/run1031-personal-context-replay-crash`, exact head `3af91b11f354a10754cb552d31d5e86aa3da4fce`. Test-only rebase plus evidence note: spawned process exits after native COMMIT but before receipt return; cold recovery sees one hash-only reservation, denies stale/duplicate requests, and does not persist synthetic private fixture content. Exact-head CI #44814358907: **QUEUED**.
+5. **PR #118 — startup-readiness lease identifier and guard-vector custody.** Branch `research/run1031-startup-readiness-lease`, exact head `0bfa4cd461aca9a48ba95654d5af910a1547b63a`. Rebased PR #61's diagnostic-only fixture hardening: reject ASCII/C1/bidi/format controls before snapshot access; pin descriptor vectors, import-original carriers and root tuple; preserve ordinary multilingual identifiers. The only source change is in the disconnected synthetic startup-readiness lease reviewer; startup/dispatch/notification/hardware authority remains false. Previous PR #61 exact head `dd7ad4858b47a2e2ab823f9d77519dd5b81068ad` had CI #44805200811 GREEN (6/6) on its earlier base; that result is not transferred. Fresh exact-head CI #44814571699: **QUEUED**.
+
+## Run1030 exact-head CI resolution
+
+- PR #8 work-basis `b585c61a6e3ca1a9f456175b2a96053a908a500c` / CI #44796885438: **GREEN, 6/6**. The subsequent PR #8 documentation checkpoint head `7d25d985c613a36bf81bf4fa11c0fbaea4928b11` / CI #44806564885: **GREEN, 6/6**.
+- Run1030 child PR #102 / CI #44804482844: **GREEN**; #103 / #44804593658: **GREEN**; #104 / #44804643519: **GREEN**; #105 / #44804875953: **GREEN**; #106 / #44804964385: **GREEN**; #107 / #44805089705: **GREEN**; #108 / #44805371439: **GREEN**; #109 / #44805455580: **GREEN**; #110 / #44805735026: **GREEN**; #111 / #44805924487: **GREEN**; #112 / #44806158216: **GREEN**. These apply only to their exact Run1030 child heads and old base; they do not transfer to Run1031 or authorize integration.
+- PR #113 Memory WAL/CAS child exact head `87dbeab4a9c13252f81c03c28195098e4687b452` / CI #44806223097: **IN_PROGRESS** at this check.
+- PR #61 startup lease exact head `dd7ad4858b47a2e2ab823f9d77519dd5b81068ad` / CI #44805200811: **GREEN, 6/6** on its old base; Run1031 PR #118 requires fresh CI.
+- No local pytest/Ruff PASS is claimed in this invocation.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher reviewed evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 remains gated Draft/unmerged; PR #9 remains paused and untouched; all UI work remains paused. PR #8 remains Draft/unmerged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, or main merge occurred. No trusted-clock, human-review, independent-custody, dataset/file-hash or runtime-identity claim was fabricated. No local model or physical device was accessed.
+
+## Blockers / authorization boundaries
+
+- PR #114–#118 are fresh child rebases and require their own exact-head six-job CI. Their previous Run1030/PR #61 CI results are historical only.
+- PR #102–#113 remain separate child work; their old-base CI does not transfer. Rebase one child onto the latest PR #8 head at a time, require fresh exact-head CI, then integrate only into the parent branch after GREEN. Do not merge PR #8 to main.
+- PR #113 remains in progress at this checkpoint; avoid duplicate workflow launches.
+- PR #110 is a free-only validation child of gated PR #5 and remains under that gate. PR #5 stays Draft/unmerged.
+- Memory expiry uses configured local-clock semantics; no trusted persistent time, secure erasure, backup deletion or retention authorization is established.
+- Planner recovered RUNNING and uncertain external effects remain non-replayable without safe reconciliation and a new explicit authorization.
+- Personal Context replay evidence is synthetic and denial-only, not consent, independent custody, disclosure permission or atomic cross-store state.
+- Startup lease is a diagnostic fixture only, not machine readiness or startup authority.
+
+## Next plan / 今後の方針
+
+1. Let the five Run1031 exact-head CI runs finish without duplicate launches; inspect any failure and make the smallest semantics-preserving fix on the normal GitHub path while using other independent lanes.
+2. After fresh CI is GREEN, re-read PR #8 and one child at a time, rebase onto the then-current parent head, rerun exact-head CI, and only then integrate into PR #8. Prioritize proactive quarantine (#114), Planner terminal recovery (#115), Memory expiry (#116), Personal Context replay crash (#117), and startup readiness lease diagnostics (#118).
+3. Revisit PR #113 when its existing CI completes. Then rebase/integrate the remaining Run1030 children one at a time, with fresh exact-head CI; prioritize mock executor (#108), Planner/ToolRegistry preflight (#109), durable Planner journal/path custody (#112), Memory WAL/CAS (#113), and Action Audit bounds/commit outcomes (#106/#111).
+4. Continue independent non-UI Memory row/event integrity, Planner recovery, immutable ToolRegistry/PermissionGate, durable authorization, audit-before-action, disconnected mock execution, Personal Context privacy, proactive scheduler and observation fixture contracts. Keep real backends disconnected until lower-level invariants have exact-head GREEN evidence.
+5. Keep PR #5 gated Draft/unmerged, PR #9 untouched, all UI work paused, frozen evidence unchanged, and no paid/external compute, protected V2 evaluation, Candidate generation/promotion or main merge.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1030: non-UI durability rebases, mock/registry groundwork, and startup chain integration
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T04:53:52+09:00.** Reporting/checkpoint timestamp only; it is not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
