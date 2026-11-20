@@ -111,12 +111,12 @@ def test_two_processes_cannot_overrun_the_last_revocation_capacity_slot(
     cold = revocation.SyntheticContextRevocationLedger(
         path, require_existing=True,
     )
-    observed = review_revocation_continuity(cold, retained=retained)
+    observed = continuity.review_revocation_continuity(cold, retained=retained)
     assert len(observed.rows) == 1
     assert observed.rows[0][1] == 100
 
     candidates = tuple(
-        MemoryScope("synthetic-owner", namespace) for namespace in namespaces
+        memory_contracts.MemoryScope("synthetic-owner", namespace) for namespace in namespaces
     )
     revoked = tuple(
         scope for scope in candidates
