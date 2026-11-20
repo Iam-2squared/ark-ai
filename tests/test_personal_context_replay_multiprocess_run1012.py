@@ -15,9 +15,9 @@ import time
 
 import pytest
 
-import ark.personal_context_offline_preview as preview
-import ark.personal_context_replay_ledger as replay
-import ark.personal_context_request_binding as binding
+import ark.personal_context_offline_preview
+import ark.personal_context_replay_ledger
+import ark.personal_context_request_binding
 
 
 _OWNER = "a" * 64
@@ -32,7 +32,7 @@ def _binding():
 
 
 def _binding_for(request_id: str):
-    item = preview.OfflineContextFixture(
+    item = ark.personal_context_offline_preview.OfflineContextFixture(
         _RECORD,
         _OWNER,
         _SCOPE,
@@ -40,13 +40,13 @@ def _binding_for(request_id: str):
         hashlib.sha256(_PAYLOAD.encode("utf-8")).hexdigest(),
         1000,
     )
-    preview = preview.build_offline_context_preview(
+    preview = ark.personal_context_offline_preview.build_offline_context_preview(
         (item,),
         owner_digest=_OWNER,
         allowed_scope_digests=(_SCOPE,),
         observed_at_ms=100,
     )
-    return binding.bind_offline_context_request(request_id, preview)
+    return ark.personal_context_request_binding.bind_offline_context_request(request_id, preview)
 
 
 _CHILD = """
@@ -105,7 +105,7 @@ def test_two_processes_reserve_one_context_request_at_most_once(
     tmp_path: pathlib.Path,
 ) -> None:
     path = tmp_path / "context-replay-multiprocess.sqlite3"
-    ledger = replay.DisconnectedContextReplayLedger(path, create=True)
+    ledger = ark.personal_context_replay_ledger.DisconnectedContextReplayLedger(path, create=True)
     retained = ledger.witness()
     assert retained.count == 0
 
@@ -150,10 +150,10 @@ def test_two_processes_reserve_one_context_request_at_most_once(
     assert rows == (1, 1, 1)
     assert _PAYLOAD.encode("utf-8") not in path.read_bytes()
 
-    cold = replay.DisconnectedContextReplayLedger(path)
+    cold = ark.personal_context_replay_ledger.DisconnectedContextReplayLedger(path)
     observed = cold.witness()
     assert observed.count == 1
     assert observed.independent_custody_proven is False
-    with pytest.raises(replay.OfflineContextReplayRejected, match="stale"):
+    with pytest.raises(ark.personal_context_replay_ledger.OfflineContextReplayRejected, match="stale"):
         cold.reserve(_binding(), retained=retained)
     assert cold.witness() == observed
