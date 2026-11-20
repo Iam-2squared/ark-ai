@@ -1,3 +1,55 @@
+# LATEST — ARK AI Run1018: COMMIT-UNKNOWN recovery tests, V3 Path guard repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T18:59:31+09:00.** Checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1018 work-basis exact HEAD:** `40c3467d6e45c477780f1c83b2a1cfa53111f932`. **Checkpoint write-basis HEAD:** `40c3467d6e45c477780f1c83b2a1cfa53111f932`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the post-write branch read; a commit cannot embed its own resulting SHA in the tracked file.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. Main remains unchanged.
+
+## NEW — Run1018: four non-UI work packages
+
+1. **PR #65 — V3 export Path identity guard repair.** Original exact head `5c35612f29f7cc9ca62a058818042aed942dd1c3` / CI [#44707588547](https://github.com/Iam-2squared/ark-ai/actions/runs/44707588547) **FAIL**: checking the concrete type by constructing `Path(".")` invoked a substituted `os.fspath` callback before the guard could reject it. The smallest repair pins the import-time concrete type in `_ORIGINAL_PATH_TYPE_ANCHOR` and compares that anchor in both guards without constructing another Path. Repaired exact head `7454ac7f85c7bea607b972186937dbef213bc457` / CI [#44712857256](https://github.com/Iam-2squared/ark-ai/actions/runs/44712857256) **GREEN 6/6** (Windows/Linux × Python 3.11–3.13). PR #65 remains Draft/unmerged; no converter, quantizer, model load or export runtime was executed.
+
+2. **PR #66 — Personal Context replay COMMIT-UNKNOWN.** Test-only child of PR #8 work-basis `40c3467d6e45c477780f1c83b2a1cfa53111f932`; current exact head `c8716910b8b4d8115551c5f315aa7a1df223064c`. Simulates native SQLite COMMIT success followed by a lost acknowledgement; requires no returned receipt, one cold-readback row, stale-witness denial, duplicate-request denial even with a fresh local witness, and no synthetic fixture text in storage. CI #44713497516 and #44714291290 **FAIL** at Ruff import formatting only; the latest import-order/spacing correction is on the current head. CI [#44714938376](https://github.com/Iam-2squared/ark-ai/actions/runs/44714938376) is **IN PROGRESS**. PR #66 remains Draft/unmerged.
+
+3. **PR #67 — Memory generation-CAS COMMIT-UNKNOWN.** Test-only child of PR #8 work-basis `40c3467d6e45c477780f1c83b2a1cfa53111f932`; exact head `62dda2d539bce92cf7d4ecfd4a4994e4ec9419e8`. Simulates a native SQLite context-manager COMMIT that succeeds while its acknowledgement is lost; cold readback must show the matching revision-2 row/event pair, manual triage must not attribute the caller or authorize retry, and the old generation token must not replay. CI [#44714073942](https://github.com/Iam-2squared/ark-ai/actions/runs/44714073942) is **IN PROGRESS**. PR #67 remains Draft/unmerged.
+
+4. **PR #68 — Planner RUNNING/terminal COMMIT-UNKNOWN.** Test-only child of PR #8 work-basis `40c3467d6e45c477780f1c83b2a1cfa53111f932`; current exact head `89c6d652bec1dfdc5366ab5301ca40602011c0b4`. Covers lost acknowledgement after a durable RUNNING transition (cold UNKNOWN/quarantine, no replay) and after terminal FAILED (terminal recovery, dependent child blocked, independent step unchanged). Original exact head `c2efbf00e653bdb44d88abe8d706a87571c64887` / CI #44714768564 **FAIL** at Ruff import ordering only; latest correction is on the current head. CI [#44715113435](https://github.com/Iam-2squared/ark-ai/actions/runs/44715113435) is **IN PROGRESS**. PR #68 remains Draft/unmerged.
+
+All three new test packages use synthetic inputs and disposable local SQLite only. Their tests are authored; no local pytest PASS is claimed.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 work-basis `40c3467d6e45c477780f1c83b2a1cfa53111f932` / CI [#44707907164](https://github.com/Iam-2squared/ark-ai/actions/runs/44707907164): **GREEN 6/6** before this checkpoint update. This checkpoint commit may schedule a new PR #8 workflow; its run ID is not known at write time.
+- PR #65 repaired head `7454ac7f85c7bea607b972186937dbef213bc457` / CI #44712857256: **GREEN 6/6**; prior failing head/run are recorded above.
+- PR #62 `1f25999c753714eeab9b9bf5954830204f5eef52` / CI #44706852018: **GREEN 6/6**.
+- PR #63 `ce85bd2719a84cf8547fcd000ad9827060fb9f6c` / CI #44707049154: **GREEN 6/6**.
+- PR #64 `f8496737a483aab8aaea580908c776f51e5e4012` / CI #44707323706: **GREEN 6/6**.
+- Parent PR #52 `16f321b322f35f32c2f33914f9ba88db4d3fa428` / CI #44697363788: **GREEN 6/6**.
+- PR #66 current head `c8716910b8b4d8115551c5f315aa7a1df223064c` / CI #44714938376: **IN PROGRESS**.
+- PR #67 head `62dda2d539bce92cf7d4ecfd4a4994e4ec9419e8` / CI #44714073942: **IN PROGRESS**.
+- PR #68 current head `89c6d652bec1dfdc5366ab5301ca40602011c0b4` / CI #44715113435: **IN PROGRESS**.
+- No local full-suite pytest/Ruff, physical-PC, real ToolBackend, live personal-data/sensor, trusted-clock, independent-custody, power-loss/fsync, cross-store atomicity, external-effect, GPU/runtime or Candidate result is claimed.
+
+## Frozen contracts, current ARK state and authorization boundaries
+
+ARK remains **NOT_PASSED**. V1/V2/Local UI/Launcher frozen evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PR #8 and all child PRs remain isolated Draft/unmerged. Main remains unchanged. UI/Frontend work remains PAUSED.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. Synthetic SQLite COMMIT-UNKNOWN results do not establish power-loss/fsync durability, authenticated writer provenance, independent custody, trusted time, consent, retention authorization, cross-store atomicity or exactly-once external effects. PR #65 is local path-admission hardening only; no export runtime was executed.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44714938376 (PR #66), #44714073942 (PR #67), and #44715113435 (PR #68). Inspect failed jobs/logs only; apply the smallest semantics-preserving normal-path repair, then immediately switch to a non-conflicting lane. Do not duplicate workflows or claim PASS before exact-head GREEN.
+2. After exact-head GREEN, review Personal Context replay COMMIT-UNKNOWN, Memory generation-CAS COMMIT-UNKNOWN, and Planner RUNNING/terminal recovery evidence independently. Keep every ambiguous outcome manual-only; never auto-replay.
+3. Continue Memory row/event integrity, CAS/ABA, WAL/SHM last-close, coherent snapshots and expiry recovery.
+4. Continue Planner exact-input validation, terminal propagation, persistence/recovery, registry-bound PermissionGate, durable occurrence/authorization and audit-before-action with disconnected/mock execution only.
+5. Continue privacy-safe Personal Context retention/revocation/replay, proactive restart/quarantine state, Observation fixture contracts, startup readiness and free-only V3 path/identity/reproducibility guards.
+6. Preserve frozen V1/V2/Local UI/Launcher evidence, keep PR #5/#8/#9 Draft/unmerged, leave PR #9 untouched, and do not merge main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1017: Action Audit budget custody, Memory WAL ABA, startup lease ordering, V3 Path identity
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T18:05:33+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
