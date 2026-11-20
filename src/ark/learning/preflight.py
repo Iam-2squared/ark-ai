@@ -35,7 +35,7 @@ class PreflightEvidence:
     runtime_error: str | None = None
 
     def validate(self) -> None:
-        if not isinstance(self.device, str) or not self.device.strip():
+        if type(self.device) is not str or not self.device.strip():
             raise ValueError("valid accelerator identity required")
         for name in ("vram_gib", "peak_vram_mib", "peak_reserved_vram_mib", "wall_seconds"):
             value = getattr(self, name)
@@ -54,7 +54,7 @@ class PreflightEvidence:
         ):
             raise ValueError("preflight mechanics did not complete")
         if (
-            not isinstance(self.tokenizer_probe_sha256, str)
+            type(self.tokenizer_probe_sha256) is not str
             or re.fullmatch(r"[0-9a-f]{64}", self.tokenizer_probe_sha256) is None
         ):
             raise ValueError("tokenizer probe SHA-256 required")
