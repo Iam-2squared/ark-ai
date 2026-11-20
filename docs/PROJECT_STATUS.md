@@ -1,3 +1,73 @@
+# LATEST — ARK AI Run1027: crash-boundary rebases and independent core-lane integrations
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T03:51:12+09:00.** This is a reporting/checkpoint timestamp only; it is not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1027 work-basis exact HEAD:** `e53ffc7db904584a1e817fcfb544012d75eeafc0`. **Checkpoint write-basis HEAD:** the same exact HEAD, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write PR #8 branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs before this checkpoint write:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `325135c0c904cedb584f2edb67576aa992e2332f`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 remains OPEN/DRAFT/UNMERGED after a child-only V3 guard integration. PR #9 and main are unchanged. UI/Frontend work remains PAUSED. PR #8 remains OPEN/DRAFT/UNMERGED.
+
+## NEW — Run1027 work packages
+
+1. **PR #97 — proactive quarantine rollback regression rebased onto current PR #8.** Branch `research/proactive-quarantine-rollback-run1027`, exact head `8f521a4f2d059c9d4ada77097086484e69b8bb19`, based on PR #8 work-basis HEAD above. Reapplies the synthetic pre-native-COMMIT failure test and evidence note. The original PR #93 exact-head CI #44787027172 was GREEN (6/6) on its previous base; rebased exact-head CI #44795817858 is IN_PROGRESS.
+
+2. **PR #98 — Personal Context replay process-crash regression rebased.** Branch `research/personal-context-replay-process-crash-run1027`, exact head `0885d943b594b76e35c956fe790ed10b86108f40`, based on the same PR #8 work-basis HEAD. It verifies a spawned process exit immediately after native SQLite COMMIT, cold readback of one hash-only reservation, stale/duplicate denial, and no fixture-content persistence. Original PR #75 exact-head CI #44731478084 was GREEN (6/6) on its previous base; rebased CI #44795939814 is IN_PROGRESS.
+
+3. **PR #99 — Planner terminal COMMIT outcome regression rebased.** Branch `research/planner-terminal-commit-outcome-run1027`, exact head `f1f32cc2d76c4e8b7dd44e89dbcf619aa84a7473`. It distinguishes rollback-before-native-COMMIT (RUNNING remains ambiguous) from native-COMMIT-success/lost acknowledgement (FAILED persists and only dependent work is BLOCKED), preserving the independent DAG step and false-only dispatch/replay flags. Original PR #94 exact-head CI #44787154979 was GREEN (6/6) on its previous base; rebased CI #44796135254 is IN_PROGRESS.
+
+4. **PR #100 — Memory expiry purge COMMIT outcome regression rebased.** Branch `research/memory-expiry-commit-outcome-run1027`, exact head `1cc66232739b13bed737bc259780b57f0e01d8d2`. It distinguishes rollback (expired row and no `expire` event remain) from committed purge (row absent and exactly one matching event), preserving independent-scope data and global event order. Original PR #95 exact-head CI #44787245581 was GREEN (6/6) on its previous base; rebased CI #44796209266 is QUEUED.
+
+5. **PR #101 — Action Audit COMMIT outcome regression rebased.** Branch `research/action-audit-commit-outcome-run1027`, exact head `f905a0d35a225ffc443f3dcb543a0072cbd87f2a`. It distinguishes rollback from native-COMMIT-success/lost acknowledgement, requiring cold readback of the exact prior prefix or exactly one new event, valid IDs/timestamps/digests, SQLite integrity, and no private argument marker in durable bytes. Original PR #96 exact-head CI #44787310889 was GREEN (6/6) on its previous base; rebased CI #44796254718 is QUEUED.
+
+6. **Integrated PR #90 into gated PR #5 only.** PR #90 exact head `c5ad10df28152830b52f06b8b1dafddf59895b29` passed CI #44776899749 GREEN (6/6), then was squash-merged into `research/v3-learning-evaluation`. This pins the passive V3 readiness inventory vectors, result descriptors, false-only authority descriptors, digest dependencies and snapshot-epoch helpers before traversal. New PR #5 head is `325135c0c904cedb584f2edb67576aa992e2332f`; its exact-head CI #44796047433 is GREEN (6/6). PR #5 remains Draft/unmerged; no compute, Candidate, protected evaluation or promotion was opened.
+
+7. **Integrated PR #92 into startup-readiness parent PR #91 only.** PR #92 exact head `ed1c48a610f30abcbcd7348d7ebf128c09d53a58` passed CI #44776544950 GREEN (6/6); its parent PR #91 prior head `177c827f3d2da6061dd74046177830ff9c3d5dac` passed CI #44767087487 GREEN (6/6), and PR #61 base head `4cce61ec799d5cae8a99c955025d5d73f7fb4751` passed CI #44698322968. PR #92 was squash-merged into PR #91's branch only. New PR #91 head is `be96812ef16ee7426e27b4202fd8a45d3d4f9123`; exact-head CI #44796425963 is QUEUED. PR #91 and PR #61 remain Draft/unmerged; the lease remains diagnostic-only.
+
+8. **Integrated PR #59 into Observation parent PR #50 only.** PR #59 exact head `c8fb9e849113bfa5183ada7dfcb40a733bdbeb20` passed CI #44690842675 GREEN (6/6); PR #50 prior head `56e3163ce0404eeabbc8bcf68771cc1fffedfccc` passed CI #44662927894 GREEN (6/6). PR #59 was squash-merged into PR #50's branch only. The regression verifies malformed text/binary fixture metadata is rejected before private hashing; it does not change the frozen Observation Envelope v1 or production adapter source. New PR #50 head is `0e457eabd526d055757de7b77bd10bacacd3ce11`; exact-head CI #44796589485 is QUEUED. PR #50 remains Draft/unmerged and isolated pending rebase to the current PR #8 head.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 source work-basis `e53ffc7db904584a1e817fcfb544012d75eeafc0` / CI #44787513419: **GREEN, 6/6**. This was the current PR #8 head before this checkpoint-only file update.
+- PR #97 `8f521a4f2d059c9d4ada77097086484e69b8bb19` / CI #44795817858: **IN_PROGRESS**.
+- PR #98 `0885d943b594b76e35c956fe790ed10b86108f40` / CI #44795939814: **IN_PROGRESS**.
+- PR #99 `f1f32cc2d76c4e8b7dd44e89dbcf619aa84a7473` / CI #44796135254: **IN_PROGRESS**.
+- PR #100 `1cc66232739b13bed737bc259780b57f0e01d8d2` / CI #44796209266: **QUEUED**.
+- PR #101 `f905a0d35a225ffc443f3dcb543a0072cbd87f2a` / CI #44796254718: **QUEUED**.
+- PR #5 new head `325135c0c904cedb584f2edb67576aa992e2332f` / CI #44796047433: **GREEN, 6/6**.
+- PR #91 new head `be96812ef16ee7426e27b4202fd8a45d3d4f9123` / CI #44796425963: **QUEUED**.
+- PR #50 new head `0e457eabd526d055757de7b77bd10bacacd3ce11` / CI #44796589485: **QUEUED**.
+- Original-base CI results for PR #93–#96, PR #75, PR #90, PR #92 and PR #59 are explicitly not transferred to the rebased or post-integration heads. No local pytest/Ruff PASS is claimed.
+- This checkpoint update creates a new PR #8 commit; its own exact-head CI was not yet observable at checkpoint write time and must be checked after the write.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher reviewed evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. Main remains at `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #8 remains Draft/unmerged; PR #5 remains gated Draft/unmerged; PR #9 remains paused and untouched. UI/Frontend work remains PAUSED.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, or main merge occurred. No trusted-clock, human-review, independent-custody, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- PR #97–#101 exact-head CI is pending. No child is integrated into PR #8 until its rebased exact head is GREEN.
+- PR #97–#101 were based on `e53ffc7db904584a1e817fcfb544012d75eeafc0`; this checkpoint update advances the PR #8 branch with documentation only. Before integration, re-read PR #8 and each child head, rebase one child onto the latest PR #8 head, and require exact-head six-job CI.
+- PR #50 and PR #91 have post-integration CI queued and remain isolated on their current parent branches; they must be re-read, validated, and rebased onto the latest PR #8 head before any foundation integration.
+- Memory expiry continues to use configured local-clock semantics; this work does not create trusted time, secure erasure, backup deletion or retention authorization.
+- Planner recovered RUNNING and uncertain external effects remain non-replayable without new explicit authorization and safe reconciliation.
+- Personal Context replay reservations and projections remain local synthetic denial-only evidence, not consent, independent custody, disclosure permission or an atomic cross-store snapshot.
+- Startup readiness remains a diagnostic lease; it does not authenticate a physical machine, clock, consent, backend, notification or device.
+- V3 readiness inventory remains passive and cannot authorize external compute, Candidate generation, protected evaluation or promotion. PR #5 remains gated Draft/unmerged.
+
+## Next plan / 今後の方針
+
+1. Recheck exact-head CI #44795817858 (PR #97), #44795939814 (PR #98), #44796135254 (PR #99), #44796209266 (PR #100), #44796254718 (PR #101), #44796589485 (PR #50) and #44796425963 (PR #91). Inspect failures and make only the smallest semantics-preserving normal-path repair; do not duplicate equivalent workflows.
+2. After each PR #8 child exact-head CI is GREEN, integrate one child at a time in priority order: PR #97 proactive quarantine, PR #99 Planner terminal COMMIT, PR #100 Memory expiry COMMIT, PR #101 Action Audit COMMIT, then PR #98 Personal Context replay process crash. Re-read latest PR #8/child heads before each merge; rebase the next child onto the new PR #8 head and require fresh exact-head CI.
+3. After PR #91's new head is GREEN, integrate it into PR #61's branch only, then validate and rebase the startup-readiness chain before any PR #8 integration. Keep all lease authority flags False.
+4. After PR #50's new head is GREEN, rebase the Observation fixture adapter package onto the current PR #8 head and require fresh exact-head CI before any integration.
+5. Continue non-UI Memory integrity/privacy, Planner persistence/recovery, ToolRegistry/PermissionGate identity, restart-safe authorization, audit-before-action, disconnected/mock execution, Personal Context, proactive scheduling, observation contracts/fixtures and free-only V3 guards.
+6. Keep PR #5 gated Draft/unmerged, PR #9 untouched, all UI work paused, and all V1/V2/Local UI/Launcher freezes unchanged. Do not open protected V2 evaluation, generate/promote Candidate weights, use paid/external compute, or merge PR #8 to main without the required explicit approval.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1026: Personal Context final veto integrated; four crash-boundary regression packages rebased
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T02:52:00+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
