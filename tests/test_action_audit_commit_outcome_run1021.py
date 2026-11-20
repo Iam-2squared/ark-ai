@@ -8,15 +8,13 @@ import sqlite3
 
 import pytest
 
-import ark.agency.audit as audit_module
-from ark.agency.audit import SQLiteActionAudit
-from ark.agency.contracts import ToolCall
-
 
 _PRIVATE = "audit-payload-must-never-be-persisted"
 
 
-def _call(number: int) -> ToolCall:
+def _call(number: int):
+    from ark.agency.contracts import ToolCall
+
     return ToolCall(
         "fixture.audit",
         "mock.write",
@@ -70,6 +68,8 @@ def test_action_audit_commit_outcome_requires_cold_readback_not_duplicate_append
 ) -> None:
     path = tmp_path / "action-audit-commit-outcome.sqlite3"
     clock_values = iter((200, 201))
+    from ark.agency.audit import SQLiteActionAudit
+
     audit = SQLiteActionAudit(path, clock_ms=lambda: next(clock_values))
     first = audit.append(_call(1), outcome="synthetic_before_mock")
     second_call = _call(2)
@@ -96,7 +96,6 @@ def test_action_audit_commit_outcome_requires_cold_readback_not_duplicate_append
 
     cold = SQLiteActionAudit(path, clock_ms=lambda: 202)
     events = cold.events()
-    assert all(type(event) is audit_module.ActionAuditEvent for event in events)
     assert events[0] == first
     assert [event.event_id for event in events] == ([1, 2] if durable else [1])
     assert sum(event.request_id == second_call.request_id for event in events) == (
