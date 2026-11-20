@@ -127,7 +127,7 @@ def test_two_processes_cannot_overrun_the_last_revocation_capacity_slot(
     assert observed.rows[0][1] == 100
 
     candidates = tuple(
-        memory.contracts.MemoryScope("synthetic-owner", namespace) for namespace in namespaces
+        memory_contracts.MemoryScope("synthetic-owner", namespace) for namespace in namespaces
     )
     revoked = tuple(
         scope for scope in candidates
