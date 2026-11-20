@@ -193,6 +193,13 @@ class PermissionGate:
         supplying its own READ ToolSpec. This is a diagnostic authorization
         boundary, not durable one-shot approval or external execution authority.
         """
+        if (
+            PermissionGate is not _ORIGINAL_PERMISSION_GATE
+            or type(self) is not _ORIGINAL_PERMISSION_GATE
+        ):
+            raise PermissionDenied(
+                "authorization requires an exact PermissionGate instance"
+            )
         _assert_original_call_contract()
         _require_original_spec_and_token()
         _require_original_grant_validator()
@@ -426,6 +433,13 @@ class PermissionGate:
         one_shot: OneShotAuthorization | None = None,
         _registered_recheck: Callable[[], None] | None = None,
     ) -> None:
+        if (
+            PermissionGate is not _ORIGINAL_PERMISSION_GATE
+            or type(self) is not _ORIGINAL_PERMISSION_GATE
+        ):
+            raise PermissionDenied(
+                "authorization requires an exact PermissionGate instance"
+            )
         _assert_original_call_contract()
         _require_original_spec_and_token()
         _require_original_grant_validator()
@@ -664,6 +678,9 @@ class PermissionGate:
                     raise PermissionDenied("one-shot authorization expired")
                 self._consumed_tokens.add(one_shot.token_id)
 
+
+# Pin the exact public gate type; subclasses can redirect local token/lock custody.
+_ORIGINAL_PERMISSION_GATE = PermissionGate
 
 # Captured after class construction for registered authorization only.
 _ORIGINAL_AUTHORIZE = PermissionGate.authorize
