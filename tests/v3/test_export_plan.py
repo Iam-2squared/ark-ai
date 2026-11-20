@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+import ark.learning.export_plan as export_plan
 from ark.learning.export_plan import build_export_plan
 from ark.learning.identity import build_tool_identity
 
@@ -113,3 +114,98 @@ def test_export_plan_rejects_unpinned_converter_bytes(tmp_path):
             quantizer_path=quantizer,
             output_dir=tmp_path / "out",
         )
+
+
+@pytest.mark.parametrize(
+    "executable",
+    ("", "   ", "py\x00thon", "x" * 4097, "\ud800"),
+    ids=("empty", "blank", "nul", "codepoint-budget", "invalid-utf8"),
+)
+def test_invalid_python_executable_is_rejected_before_snapshot_or_file_access(
+    tmp_path, monkeypatch, executable,
+):
+    def unexpected(*_args, **_kwargs):
+        raise AssertionError("snapshot or tool identity was accessed before argv admission")
+
+    monkeypatch.setattr(export_plan, "validate_experiment_001", unexpected)
+    monkeypatch.setattr(export_plan, "build_tool_identity", unexpected)
+    with pytest.raises(ValueError, match="python executable"):
+        build_export_plan(
+            {},
+            base_dir=tmp_path / "base",
+            merged_candidate_dir=tmp_path / "merged",
+            converter_path=tmp_path / "converter",
+            quantizer_path=tmp_path / "quantizer",
+            output_dir=tmp_path / "out",
+            python_executable=executable,
+        )
+
+
+def test_python_executable_subclass_is_rejected_before_string_callbacks(
+    tmp_path, monkeypatch,
+):
+    class HostileExecutable(str):
+        def __len__(self):
+            raise AssertionError("length callback ran")
+
+        def strip(self):
+            raise AssertionError("strip callback ran")
+
+        def encode(self, *_args, **_kwargs):
+            raise AssertionError("encoding callback ran")
+
+    monkeypatch.setattr(
+        export_plan,
+        "validate_experiment_001",
+        lambda *_args, **_kwargs: pytest.fail("snapshot validation ran"),
+    )
+    with pytest.raises(ValueError, match="python executable"):
+        build_export_plan(
+            {},
+            base_dir=tmp_path / "base",
+            merged_candidate_dir=tmp_path / "merged",
+            converter_path=tmp_path / "converter",
+            quantizer_path=tmp_path / "quantizer",
+            output_dir=tmp_path / "out",
+            python_executable=HostileExecutable("python"),
+        )
+
+
+def test_python_executable_budget_cannot_be_rebound(tmp_path, monkeypatch):
+    monkeypatch.setattr(export_plan, "_MAX_PYTHON_EXECUTABLE_BYTES", 4097)
+    with pytest.raises(ValueError, match="python executable byte budget changed"):
+        build_export_plan(
+            {},
+            base_dir=tmp_path / "base",
+            merged_candidate_dir=tmp_path / "merged",
+            converter_path=tmp_path / "converter",
+            quantizer_path=tmp_path / "quantizer",
+            output_dir=tmp_path / "out",
+        )
+
+
+def test_valid_python_executable_is_preserved_as_one_argv_item(tmp_path):
+    converter = tmp_path / "convert.py"
+    quantizer = tmp_path / "quantize"
+    converter.write_bytes(b"converter")
+    quantizer.write_bytes(b"quantizer")
+    base = tmp_path / "base"
+    merged = tmp_path / "merged"
+    base.mkdir()
+    merged.mkdir()
+    output = tmp_path / "export"
+    executable = r"C:\Program Files\Python\python.exe"
+
+    plan = build_export_plan(
+        resolved_snapshot(converter, quantizer),
+        base_dir=base,
+        merged_candidate_dir=merged,
+        converter_path=converter,
+        quantizer_path=quantizer,
+        output_dir=output,
+        python_executable=executable,
+    )
+
+    assert plan.commands[0].argv[0] is executable
+    assert plan.commands[2].argv[0] is executable
+    assert not output.exists()
