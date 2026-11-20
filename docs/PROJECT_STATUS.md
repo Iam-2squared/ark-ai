@@ -1,3 +1,55 @@
+# LATEST — ARK AI Run1025: Memory expiry boundary integrated; V3 denial assertions and startup lease root pin advanced
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T01:48:15+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1025 work-basis exact HEAD:** `64e0317287fe665268afecba6bc05273880084ea`. **Checkpoint write-basis HEAD:** `64e0317287fe665268afecba6bc05273880084ea`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5, PR #9 and main remain unchanged. PR #8 remains OPEN/DRAFT/UNMERGED. UI/Frontend work remains PAUSED.
+
+## NEW — Run1025 work packages
+
+1. **Integrated PR #89 Memory expiry boundary into the Draft PR #8 foundation branch.** PR #89 exact head `ac57f7061b6413947e4d0fc880f3514939168279` had exact-head CI #44766062544 GREEN (6/6: Windows and Ubuntu, Python 3.11–3.13). After re-reading PR #8 and PR #89 heads, PR #89 was marked ready and squash-merged into `research/jarvis-foundations` only. Integration commit / new PR #8 head: `64e0317287fe665268afecba6bc05273880084ea`. PR #89 is CLOSED/MERGED. No main merge occurred. PR #8 post-integration CI #44776107645 is IN_PROGRESS.
+
+   The integrated tests/docs establish that local read-time logical expiry can reverse after an injected clock rollback while the row remains stored; `include_expired=True` skips clock sampling; read-only filtering appends no event; and explicit transactional purge plus its `expire` event remain after rollback. This documents local-clock semantics only; no Memory v1 schema/API or production source change was made and no trusted time/retention/secure-erasure claim is added.
+
+2. **PR #90 — passive V3 readiness inventory denial-classification repair.** The exact-head CI failures were confined to test expectations: the source intentionally rejects digest/snapshot dependency rebinding as `readiness inventory protocol changed`, while a replaced false-only authority property is rejected as `readiness authority descriptor changed`. The assertions were corrected to match those existing, more precise fail-closed classifications; a pre-existing reentrant hash-replacement test now expects the protocol-level denial. No production source or V3 Contract 1 semantics changed. Latest PR #90 head: `c5ad10df28152830b52f06b8b1dafddf59895b29`; exact-head CI #44776899749 is IN_PROGRESS. Earlier exact-head attempts #44767239554, #44776274446 and #44776649233 failed only on these mismatched assertion strings; no PASS is claimed for the latest head.
+
+3. **PR #92 — startup lease guard-vector root reference pin.** New isolated Draft child of PR #91 exact head `177c827f3d2da6061dd74046177830ff9c3d5dac`, branch `research/startup-lease-pin-vector-root-run1025`, exact head `ed1c48a610f30abcbcd7348d7ebf128c09d53a58`. The guard captures the import-original root tuple identity in its function default and rejects empty/equal-valued rebinding before the snapshot integrity callback or requirement access. Two adversarial cases were added. CI #44776544950 is IN_PROGRESS. The lease remains diagnostic-only; no startup/dispatch/notification authority is granted.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 after PR #89 integration: `64e0317287fe665268afecba6bc05273880084ea` / CI #44776107645: IN_PROGRESS. This is the current foundation validation; do not integrate another child until it is GREEN.
+- PR #89 integrated child: `ac57f7061b6413947e4d0fc880f3514939168279` / CI #44766062544: **GREEN, 6/6**.
+- Prior PR #8 head before PR #89 integration: `ed26a8d45025e7f57c747035b1363dba7f9fc8fc` / CI #44767679380: **GREEN, 6/6**; superseded by the new integration head.
+- PR #90 latest corrected test head: `c5ad10df28152830b52f06b8b1dafddf59895b29` / CI #44776899749: IN_PROGRESS.
+- PR #92 startup lease root pin: `ed1c48a610f30abcbcd7348d7ebf128c09d53a58` / CI #44776544950: IN_PROGRESS.
+- PR #91 startup lease vector parent: `177c827f3d2da6061dd74046177830ff9c3d5dac` / CI #44767087487: **GREEN, 6/6**.
+- PR #49 Personal Context final revocation veto candidate: `d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72` / CI #44662795576: **GREEN, 6/6**; remains isolated pending sequential integration after current PR #8 CI. Its PR currently targets the foundation branch and is mergeable.
+- No local pytest/Ruff PASS is claimed. No CI result is transferred across exact HEADs.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. PR #5 remains gated Draft/unmerged; PR #9 remains paused and untouched. PR #8 remains Draft/unmerged. No protected V2 final evaluation was opened; no Candidate adapter/weights were generated or promoted. No paid/external compute, paid API/service, subscription, purchase, credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, frozen-contract change, or main merge occurred. No trusted-clock, human-review, independent-custody, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- Memory logical expiry still depends on the configured local clock callback. Rollback can reverse read-time visibility until explicit purge. No persistent high-water or frozen Memory v1 DDL/API change was introduced; any future additive proposal must resolve forward clock jumps, restart/cross-process authority, COMMIT-UNKNOWN ordering, sidecar loss and compatibility without treating a max-seen wall clock as trusted time.
+- PR #90 remains validation-only and must complete exact-head CI before any PASS claim. No model, tokenizer, converter, quantizer, subprocess, GPU, Candidate or protected evaluation was opened.
+- PR #92 is a synthetic Python process-integrity guard only; it does not authenticate a physical machine, trusted clock, human consent, backend, notification or device.
+- Real runtime identity, Candidate adapter/weight generation, protected evaluation and promotion remain blocked by explicit free-only and authorization gates.
+
+## Next plan / 今後の方針
+
+1. Recheck exact-head CI #44776107645 (PR #8), #44776899749 (PR #90) and #44776544950 (PR #92). Inspect any failure and make only the smallest semantics-preserving normal-path repair; do not duplicate workflows or stack changes onto an in-flight branch.
+2. After current PR #8 head is GREEN, integrate one package at a time into the latest Draft PR #8 base. Next is PR #49 Personal Context final revocation veto (exact head `d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72`, CI #44662795576 GREEN 6/6). Re-read both heads before the normal integration path; run exact-head CI after integration before the next package.
+3. Continue with PR #72 proactive quarantine rollback, PR #73 Planner terminal COMMIT outcomes, PR #74 Memory expiry COMMIT outcomes, PR #75 Personal Context replay process exit, PR #79 Action Audit COMMIT outcomes and PR #64 startup lease ordering, one at a time after confirming each exact head and mergeability.
+4. Continue non-UI Planner persistence/recovery, immutable ToolRegistry/PermissionGate identity, restart-safe exactly-once authorization, audit-before-action, disconnected/mock execution, privacy-safe Personal Context, proactive/observation back-end contracts and free-only V3 approval/path/identity/reproducibility guards.
+5. Keep PR #5 gated Draft/unmerged, PR #9 untouched and all UI work paused. Never open protected V2 evaluation, generate/promote Candidate weights, or use paid/external compute without explicit authorization.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1024: registry/permission integration, Memory expiry boundary, startup lease custody, V3 inventory hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T00:52:05+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
