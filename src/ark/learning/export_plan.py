@@ -33,6 +33,68 @@ class ExportPlan:
         return sha256_bytes(self.canonical_bytes())
 
 
+_NATIVE_PATH_TYPE = type(Path("."))
+_MAX_PYTHON_EXECUTABLE_BYTES = 4096
+_ORIGINAL_MAX_PYTHON_EXECUTABLE_BYTES = _MAX_PYTHON_EXECUTABLE_BYTES
+
+
+def _require_python_executable(value: object) -> str:
+    """Bound the exact argv carrier before snapshot or file-identity work.
+
+    The plan is data only, but its first argv element is intended for a later
+    non-shell subprocess boundary. Keep it an exact, bounded UTF-8 string and
+    preserve it verbatim; never coerce a caller-owned object with __str__.
+    """
+    if (
+        type(_MAX_PYTHON_EXECUTABLE_BYTES) is not int
+        or _MAX_PYTHON_EXECUTABLE_BYTES is not _ORIGINAL_MAX_PYTHON_EXECUTABLE_BYTES
+    ):
+        raise ValueError("python executable byte budget changed")
+    if type(value) is not str:
+        raise ValueError("python executable must be an exact non-empty string")
+    if not 1 <= len(value) <= _MAX_PYTHON_EXECUTABLE_BYTES:
+        raise ValueError("python executable exceeds the bounded identity budget")
+    if "\x00" in value:
+        raise ValueError("python executable contains a NUL separator")
+    if not value.strip() or any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+        raise ValueError("python executable contains blank or control text")
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise ValueError("python executable must be valid UTF-8") from exc
+    if len(encoded) > _MAX_PYTHON_EXECUTABLE_BYTES:
+        raise ValueError("python executable exceeds the bounded identity budget")
+    return value
+
+
+def _require_native_path(value: object, name: str) -> Path:
+    """Reject caller-owned PathLike callbacks before pathlib invokes __fspath__."""
+    if type(value) is not _NATIVE_PATH_TYPE:
+        raise ValueError(f"{name} must be an exact native Path")
+    return value
+
+
+def _require_export_path_inputs(
+    *,
+    base_dir: object,
+    merged_candidate_dir: object,
+    converter_path: object,
+    quantizer_path: object,
+    output_dir: object,
+    current_model_path: object | None,
+) -> None:
+    for name, value in (
+        ("base_dir", base_dir),
+        ("merged_candidate_dir", merged_candidate_dir),
+        ("converter_path", converter_path),
+        ("quantizer_path", quantizer_path),
+        ("output_dir", output_dir),
+    ):
+        _require_native_path(value, name)
+    if current_model_path is not None:
+        _require_native_path(current_model_path, "current_model_path")
+
+
 def _validate_export_output_path(
     output_dir: Path,
     *,
@@ -45,7 +107,15 @@ def _validate_export_output_path(
     Reject input-tree overlap, aliasing and deployed-model identity collisions.
     This is a preflight path check, not an OS-handle/TOCTOU-proof guarantee.
     """
-    output = Path(output_dir)
+    _require_export_path_inputs(
+        base_dir=base_dir,
+        merged_candidate_dir=merged_candidate_dir,
+        converter_path=Path("."),
+        quantizer_path=Path("."),
+        output_dir=output_dir,
+        current_model_path=current_model_path,
+    )
+    output = output_dir
     if (
         ".." in output.parts
         or len(str(output)) > 4096
@@ -62,13 +132,13 @@ def _validate_export_output_path(
             raise ValueError("export output parent resolves through an alias")
         candidate_dir = resolved_parent / output.name
         protected_dirs = (
-            Path(base_dir).resolve(strict=False),
-            Path(merged_candidate_dir).resolve(strict=False),
+            base_dir.resolve(strict=False),
+            merged_candidate_dir.resolve(strict=False),
         )
         if any(candidate_dir.is_relative_to(root) for root in protected_dirs):
             raise ValueError("export output overlaps protected input tree")
         if current_model_path is not None:
-            deployed = Path(current_model_path).resolve(strict=False)
+            deployed = current_model_path.resolve(strict=False)
             names = (
                 "paired-current-f16.gguf", "paired-current-Q4_K_M.gguf",
                 "candidate-f16.gguf", "candidate-Q4_K_M.gguf",
@@ -91,9 +161,17 @@ def build_export_plan(
     current_model_path: Path | None = None,
 ) -> ExportPlan:
     """Build commands only. No subprocess, conversion, quantization, or file write occurs."""
+    _require_export_path_inputs(
+        base_dir=base_dir,
+        merged_candidate_dir=merged_candidate_dir,
+        converter_path=converter_path,
+        quantizer_path=quantizer_path,
+        output_dir=output_dir,
+        current_model_path=current_model_path,
+    )
+    python_executable = _require_python_executable(python_executable)
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="none")
     # Resolve output custody before hashing converter/quantizer input bytes.
-    output_dir = Path(output_dir)
     _validate_export_output_path(
         output_dir, base_dir=base_dir,
         merged_candidate_dir=merged_candidate_dir,
