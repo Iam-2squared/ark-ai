@@ -1,3 +1,60 @@
+# LATEST — ARK AI Run1022: V3 preflight validator custody and export path admission
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T22:39:36+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1022 work-basis exact HEAD:** `3f047f30f01bad453b08f8ef724db9e4ef4569ed`. **Checkpoint write-basis HEAD:** `3f047f30f01bad453b08f8ef724db9e4ef4569ed`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5, PR #9 and main remain unchanged. PR #8 remains OPEN/DRAFT/UNMERGED. UI/Frontend work remains PAUSED.
+
+## NEW — Run1022: isolated free-only validation packages
+
+1. **PR #82 — V3 preflight evidence validator custody.** Child of Draft PR #80, based on exact PR #80 head `02daafe5d530e5cbb8696e676f7cd437f39ce67c`. Corrected source head: `6af60b86444ed3ab6eb2c910ee5fb10c49218a2d`. Pins the exact PreflightEvidence dataclass field inventory, descriptor set, class hooks and original validator; rejects instance-level validator shadowing; runs the pinned original validator after the public validation callback so existing callback-epoch regressions remain meaningful. Initial source head `f0b4b74408d3133ff24a66665eac0340bb7729e8` / CI #44744996283: **FAIL** because the first guard rejected established callback-epoch tests before their expected snapshot/evidence mutation checks. The semantics-preserving correction is at the new head above; CI #44745837177: **IN PROGRESS** (last observed).
+
+2. **PR #86 — V3 preflight validator/field-contract tests.** Test-only child of PR #82 corrected head `6af60b86444ed3ab6eb2c910ee5fb10c49218a2d`; exact test head `93ad3d70ecadac65ad66fa1d2938a3f2d9b92884`. Covers no-op validator replacement, class field descriptor substitution, field inventory/dataclass-map mutation, instance validator shadowing, and an exact synthetic success case. CI #44745953621: **IN PROGRESS** (last observed).
+
+3. **PR #84 — V3 export path exact-carrier admission.** Validation-only child of gated Draft PR #5 exact base `805b377697472268db02650a89c7a94b1c5337c8`; exact source head `ed1ca1c38ccdd72d5a310481737ba2fedcb6f961`. Requires exact native Path carriers before any pathlib conversion for export roots, converter/quantizer, output and deployed-model paths, preventing caller-owned PathLike `__fspath__` callbacks at this boundary. CI #44745421149: **GREEN 6/6**.
+
+4. **PR #85 — V3 export path callback tests.** Test-only child of PR #84 exact source head `ed1ca1c38ccdd72d5a310481737ba2fedcb6f961`; exact test head `0a3ce74726d483405a4f1fa97bb755ec8be8a74e`. Covers hostile native-Path subclasses for all path roles, rejection before snapshot validation for converter/quantizer paths, and no-create behavior for exact native paths. CI #44745554160: **GREEN 6/6**.
+
+5. **PR #83 — superseded first test attempt.** Exact head `ed2adb05c02a4e98d11c0a62b2dfde26e085cd33`; CI #44745109030: **FAIL** due the same callback-epoch expectation mismatch plus a test fixture using a non-existent class attribute with monkeypatch's default `raising=True`. Corrected coverage is in PR #86; PR #83 remains isolated Draft/unmerged and is not evidence of PASS.
+
+All Run1022 changes are confined to isolated PR branches. V3 work is validation-only: no backend, model, tokenizer, converter, quantizer, subprocess, filesystem output, GPU, training, Candidate adapter/weights, or paid/external service was started. No local pytest/Ruff PASS is claimed.
+
+## Tests / CI / evidence — exact HEADs
+
+- PR #8 foundation head `3f047f30f01bad453b08f8ef724db9e4ef4569ed` / CI #44731967119: **GREEN 6/6**.
+- PR #73 Planner terminal COMMIT rollback/lost-acknowledgement tests, head `f54139d8ea1a5f5d4eed1d79a8c05489c6e3b419` / CI #44731076172: **GREEN 6/6**.
+- PR #74 Memory expiry-purge COMMIT rollback/lost-acknowledgement tests, head `d64c8c6f8f6788ba2d14a017894ef48739df110f` / CI #44731230494: **GREEN 6/6**.
+- PR #75 Personal Context replay-reservation process-exit tests, head `fe63a5a70b12f5e4aa37d882300351ce05f73a3d` / CI #44731478084: **GREEN 6/6**.
+- PR #77 atomic pre-action COMMIT outcome tests, head `4f8b6c9721c03ac4f0134ca50579dde3a5ea41c6` / CI #44738995237: **GREEN 6/6**.
+- PR #78 durable write-slot COMMIT outcome tests, head `d535dadd4b866085e6ee1f65227a127bf346e098` / CI #44739095155: **GREEN 6/6**.
+- PR #79 Action Audit COMMIT outcome tests, head `4af585bbf40fdaeb897f4276feb4efc03545c2a5` / CI #44742382170: **GREEN 6/6**.
+- PR #80 V3 preflight exact text carrier source, head `02daafe5d530e5cbb8696e676f7cd437f39ce67c` / CI #44740024484: **GREEN 6/6**.
+- PR #81 V3 preflight exact text carrier tests, head `c4d52684df2ef8e7234c69400f99cd6bb93700b6` / CI #44740124687: **GREEN 6/6**.
+- PR #82 corrected source head `6af60b86444ed3ab6eb2c910ee5fb10c49218a2d` / CI #44745837177: **IN PROGRESS**.
+- PR #86 tests head `93ad3d70ecadac65ad66fa1d2938a3f2d9b92884` / CI #44745953621: **IN PROGRESS**.
+- PR #84 source head `ed1ca1c38ccdd72d5a310481737ba2fedcb6f961` / CI #44745421149: **GREEN 6/6**.
+- PR #85 tests head `0a3ce74726d483405a4f1fa97bb755ec8be8a74e` / CI #44745554160: **GREEN 6/6**.
+- PR #82 initial source head `f0b4b74408d3133ff24a66665eac0340bb7729e8` / CI #44744996283: **FAIL**; PR #83 initial test head `ed2adb05c02a4e98d11c0a62b2dfde26e085cd33` / CI #44745109030: **FAIL**. Both are superseded by corrected source/tests; no failed result is relabelled GREEN.
+
+## Frozen contracts, current ARK state and authorization boundaries
+
+ARK remains **NOT_PASSED**. V1/V2/Local UI/Launcher frozen evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PR #8 and all child PRs remain isolated Draft/unmerged. Main remains unchanged.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay, or main merge. Synthetic SQLite/process and validation-only V3 fixtures do not establish power-loss/fsync durability, authenticated writer provenance, independent custody, trusted time, consent, retention authorization, cross-store atomicity or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44745837177 (PR #82) and #44745953621 (PR #86). Inspect failed job logs only; apply the smallest semantics-preserving normal-path repair and switch immediately to another independent lane. Do not duplicate workflows or claim PASS before exact-head six-job GREEN.
+2. Keep PR #84/#85's GREEN evidence isolated under gated PR #5. Review path admission and cross-platform CI results; do not execute converters, quantizers, model loading, training, GPU, or Candidate work.
+3. After PR #82/#86 are GREEN, review preflight validator custody with PR #80/#81 callback/text-carrier coverage. Keep all preflight functions validation-only and all real compute authorization boundaries closed.
+4. Continue Memory row/event integrity, generation CAS/ABA, WAL/SHM last-close, coherent snapshots and expiry recovery; Planner terminal propagation, persistence/recovery, and COMMIT-UNKNOWN manual-only triage.
+5. Continue registry-bound ToolRegistry/PermissionGate, durable restart-safe one-shot authorization, trusted-clock audit-before-action, disconnected/mock executor integration, Personal Context privacy/revocation, proactive restart state, Observation fixtures and startup readiness.
+6. Preserve frozen V1/V2/Local UI/Launcher evidence; keep PR #5/#8/#9 and all child PRs Draft/unmerged, leave PR #9 untouched, and do not merge main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+
 # LATEST — ARK AI Run1020: Planner/Memory COMMIT outcomes, Personal Context process-crash recovery, V3 numeric guard
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T20:58:11+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
