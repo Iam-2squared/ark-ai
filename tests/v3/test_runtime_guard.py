@@ -3,7 +3,6 @@ import math
 import pytest
 
 import ark.learning.runtime_guard as runtime_guard
-
 from ark.learning.runtime_guard import (
     RuntimeIdentity,
     RuntimeIdentityMismatch,
@@ -126,7 +125,10 @@ def test_vram_tolerance_must_be_finite_non_negative(bad_tolerance):
 @pytest.mark.parametrize(
     "phase",
     ("", "   ", "x" * 129, "bad\x00phase", "line\nbreak", "\ud800", "é" * 65),
-    ids=("empty", "blank", "codepoint-budget", "nul", "control", "invalid-utf8", "utf8-byte-budget"),
+    ids=(
+        "empty", "blank", "codepoint-budget", "nul", "control",
+        "invalid-utf8", "utf8-byte-budget",
+    ),
 )
 def test_invalid_phase_label_is_denied_without_rewinding_clock_cursor(phase):
     budget = WallTimeBudget(1.0, started=100.0)
