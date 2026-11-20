@@ -1,3 +1,53 @@
+# LATEST — ARK AI Run1013: Personal Context process-CAS and startup-lease identity hardening
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T15:05:29+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1013 work-basis exact HEAD:** `7e294cfdf2dd1b84e4d8378fbfe484dc261d4cca`. **Checkpoint write-basis HEAD:** `7e294cfdf2dd1b84e4d8378fbfe484dc261d4cca`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the post-write branch read; a commit cannot embed its own resulting SHA in the tracked file.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. No main merge, child promotion or Candidate promotion.
+
+## NEW — Run1013: three isolated non-UI packages
+
+1. **PR #54 — Personal Context revocation capacity across independent processes.** Branch `research/personal-context-revocation-multiprocess-run1012`, exact head `1bb3c3d87aec4424e99020b60b077be6d4e6e476`, Draft child of PR #8 work-basis `78a59212e6dcdd32c2937dea691acadb37077a51`. Two independent processes contend for one synthetic revocation-capacity slot; exactly one veto must commit and the other must fail closed. Cold readback checks one retained digest-only row, SQLite quick_check and exact-scope isolation. Latest exact-head CI #44685298663 / run #6673 is **IN PROGRESS**. Earlier exact-head attempts failed on Ruff import ordering and line length; the latest revision uses a grouped package import and wrapped long expressions. No PASS claimed.
+
+2. **PR #55 — Personal Context replay reservation across independent processes.** Branch `research/personal-context-replay-multiprocess-run1012`, exact head `c66eb883fdb94f66fc973c9638c1d39bd2c67f5f`, Draft child of the same PR #8 work-basis. Two independent processes retain the same genesis witness and reserve the same deterministic hash-only request identity; exactly one reservation may commit and the other must fail closed. Cold readback verifies one contiguous row, SQLite integrity, stale-witness rejection and absence of raw fixture payload. Latest exact-head CI #44685324301 / run #6674 is **IN PROGRESS**. Earlier attempts exposed Ruff import ordering, line length and a local-name shadowing issue; the latest revision removes the alias collision and groups imports. No PASS claimed.
+
+3. **PR #56 — startup lease requirement identity controls.** Branch `research/startup-lease-identifier-controls-run1013`, exact head `8bade104459330439443e256bebea3eab429d3e7`, Draft child based on PR #8 exact head `7e294cfdf2dd1b84e4d8378fbfe484dc261d4cca`. The disconnected `SyntheticReadinessRequirement` now rejects embedded ASCII controls and Unicode formatting controls for both component IDs and schema revisions, matching the existing `StartupComponent` identifier boundary. Parameterized tests use actual escaped control characters and preserve ordinary UTF-8 identifiers. Latest exact-head CI #44685093660 / run #6672 is **IN PROGRESS**. No startup, dispatch, notification, hardware or external-effect authority is granted. No PASS claimed.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 canonical foundation head `7e294cfdf2dd1b84e4d8378fbfe484dc261d4cca`: CI #44678032382 / run #6660 **GREEN 6/6**. This is the source work basis for PR #56; no source child is integrated into PR #8.
+- PR #54 head `1bb3c3d87aec4424e99020b60b077be6d4e6e476`: CI #44685298663 / run #6673 **IN PROGRESS**. Previous runs on superseded heads failed lint only; no exact-head PASS is claimed.
+- PR #55 head `c66eb883fdb94f66fc973c9638c1d39bd2c67f5f`: CI #44685324301 / run #6674 **IN PROGRESS**. Previous runs on superseded heads failed lint only; no exact-head PASS is claimed.
+- PR #56 head `8bade104459330439443e256bebea3eab429d3e7`: CI #44685093660 / run #6672 **IN PROGRESS**. Run #6665 was on the superseded pre-fixture-correction head `f72bc77709f2fba705bf4f0127c25491b1c?` and is not evidence for this head. No PASS claimed.
+- PR #53 proactive quarantine COMMIT-UNKNOWN/process race head `a75fde1bae11383fad8663992f922fc1c2681b07`: CI #44676888071 / run #6652 **GREEN**.
+- PR #51 Planner journal hard-process COMMIT boundaries head `9ce928b87b5d69d0cf5ae23f137d769d49552a53`: CI #44669861991 / run #6643 **GREEN 6/6**.
+- PR #52 V3 path method custody head `f7b6c8e2b477b9cd980913ead606db8457340248`: CI #44670949259 / run #6650 **FAIL 6/6**. The test left process-global `os.path.realpath` replaced through pytest temp-directory teardown. Two normal GitHub `update_file` attempts for the `monkeypatch.context()` repair returned HTTP 409 (file/current-SHA mismatch); no repair was saved and no alternate/raw Git path or force push was used. PR #52 remains OPEN/DRAFT/UNMERGED and blocked.
+- PRs #47–#50 remain isolated Draft children with their prior exact-head GREEN evidence recorded in the Run1012 checkpoint below. No child is promoted or merged.
+- This checkpoint is documentation/reporting only; no local full-suite pytest, physical-PC, real ToolBackend, live personal data, live sensor, real model, external effect, GPU/runtime or Candidate result is claimed. The PR #8 documentation update may trigger CI; its run ID is not yet assigned at checkpoint-write time.
+
+## Frozen contracts, current state and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PRs #54–#56 are isolated Draft children; no child is merged or promoted. Main remains unchanged.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. No live personal data or sensor capture was used. Synthetic timestamps/local ledgers do not establish trusted time, consent, authenticated provenance, independent custody, power-loss durability or external-effect proof. Separate Memory, Personal Context, schedule-quarantine and audit stores are not made atomic by local rechecks. No JARVIS PASS claim. UI remains PAUSED.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #6672, #6673 and #6674. Inspect only failing jobs/logs; make the smallest semantics-preserving normal GitHub update, then immediately switch to a non-conflicting lane. Do not duplicate equivalent workflows or claim PASS before exact-head GREEN.
+2. Personal Context: after #54/#55 exact-head CI, continue revocation/retention/reuse continuity and privacy-safe projection lifecycle. Keep reservations and vetoes separate from consent, disclosure, downstream-use leases, erasure and external effects.
+3. Startup readiness: retain exact-type/source guards and diagnostic-only lease semantics; continue bounded identity/schema consistency and startup dependency/recovery tests without granting startup or dispatch authority.
+4. Planner: build on PR #51 GREEN with retained-prefix/truncation, terminal propagation, restart recovery and COMMIT/ROLLBACK ambiguity. RUNNING/UNKNOWN work remains quarantined and is never auto-replayed.
+5. Memory: continue WAL/SHM last-close, cross-process crash boundaries, CAS/ABA, expiry/event snapshot coherence and event-prefix integrity. Local SQLite evidence is not power-loss/fsync or independent-custody evidence.
+6. ToolRegistry/PermissionGate: retain exact-instance/type guards, then advance registry-bound identity and restart-safe one-shot authorization. Trusted-clock audit-before-action remains blocked until a real trusted-clock design/evidence exists; disconnected mocks only.
+7. Observation/proactive: continue fixture identity, byte budget, lineage, multimodal adapter contracts and scheduler quarantine state without live capture or dispatch. Continue free-only V3 approval/path/identity/reproducibility guards.
+8. PR #52: retry the path-custody test repair only later through the normal GitHub write path after the 409 conflict is resolved. Do not use raw Git objects, force push or alternate safeguard routes. Keep PR #5 protected and Draft; keep PR #9 paused and untouched.
+9. Keep JARVIS foundations isolated/reversible until lower-level invariants have exact-head GREEN evidence and explicit integration gates. No main merge.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1012: proactive quarantine, privacy-veto and replay multiprocess durability
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T13:58:57.385+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
