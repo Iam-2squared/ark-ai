@@ -7,8 +7,8 @@ are used. A reservation is not consent, disclosure or Tool dispatch authority.
 from __future__ import annotations
 
 import hashlib
-import sqlite3
 from pathlib import Path
+import sqlite3
 
 import pytest
 
