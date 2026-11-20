@@ -139,6 +139,22 @@ _ORIGINAL_LEASE_AUTHORITY = tuple(
     vars(_LEASE_TYPE)[name] for name in _LEASE_AUTHORITY_FIELDS
 )
 
+# The descriptor inventories and the tuples holding their import-original
+# carriers are themselves safety inputs. Pin both layers before using zip()
+# so an empty/equal-valued replacement cannot silently skip every check.
+_ORIGINAL_GUARD_VECTOR_REFERENCES = (
+    _REQUIREMENT_FIELDS,
+    _REQUIREMENT_HOOKS,
+    _LEASE_FIELDS,
+    _LEASE_HOOKS,
+    _LEASE_AUTHORITY_FIELDS,
+    _ORIGINAL_REQUIREMENT_FIELDS,
+    _ORIGINAL_REQUIREMENT_HOOKS,
+    _ORIGINAL_LEASE_FIELDS,
+    _ORIGINAL_LEASE_HOOKS,
+    _ORIGINAL_LEASE_AUTHORITY,
+)
+
 
 def _require_original_requirement() -> None:
     if (
@@ -186,7 +202,38 @@ def _require_original_lease_result() -> None:
         )
 
 
-def _require_original_lease_protocol() -> None:
+def _require_original_lease_protocol(
+    _original_guard_vector_references: tuple[object, ...] = _ORIGINAL_GUARD_VECTOR_REFERENCES,
+) -> None:
+    # The carrier tuple is itself a module-level safety input. Capture its
+    # import-original identity in this function's default arguments and reject
+    # an empty/equal-valued rebind before reading any snapshot or requirement.
+    if _ORIGINAL_GUARD_VECTOR_REFERENCES is not _original_guard_vector_references:
+        raise SyntheticStartupLeaseRejected(
+            "startup lease guard-vector reference changed"
+        )
+    # Pin descriptor-name vectors and the tuples that carry their original
+    # class descriptors before any snapshot, requirement or result access.
+    # Otherwise an empty/equal-valued replacement can make zip() skip checks.
+    current_vectors = (
+        _REQUIREMENT_FIELDS,
+        _REQUIREMENT_HOOKS,
+        _LEASE_FIELDS,
+        _LEASE_HOOKS,
+        _LEASE_AUTHORITY_FIELDS,
+        _ORIGINAL_REQUIREMENT_FIELDS,
+        _ORIGINAL_REQUIREMENT_HOOKS,
+        _ORIGINAL_LEASE_FIELDS,
+        _ORIGINAL_LEASE_HOOKS,
+        _ORIGINAL_LEASE_AUTHORITY,
+    )
+    if any(
+        current is not original
+        for current, original in zip(
+            current_vectors, _original_guard_vector_references, strict=True,
+        )
+    ):
+        raise SyntheticStartupLeaseRejected("startup lease guard vector changed")
     # A forged snapshot/ComponentResult slot can execute before integrity
     # checks unless the source's original class descriptors are pinned.
     if (
