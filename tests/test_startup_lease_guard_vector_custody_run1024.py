@@ -58,7 +58,8 @@ def test_rebound_guard_vectors_rejected_before_snapshot_integrity_callback(
     replacement = (
         () if mutation == "empty" else tuple(list(original))
     )
-    assert replacement == original if mutation == "equal-valued-clone" else True
+    if mutation == "equal-valued-clone":
+        assert replacement == original
     assert replacement is not original
     callbacks = []
 
