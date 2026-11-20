@@ -10,7 +10,6 @@ from pathlib import Path
 from .execution import canonical_json, sha256_bytes, validate_experiment_001
 from .identity import build_tool_identity
 
-
 _PATH_MAX_BYTES = 4096
 _ORIGINAL_PATH_FACTORY = Path
 _ORIGINAL_PATH_TYPE = type(Path("."))
