@@ -1,3 +1,51 @@
+# LATEST — ARK AI Run1024: registry/permission integration, Memory expiry boundary, startup lease custody, V3 inventory hardening
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T00:52:05+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1024 work-basis exact HEAD:** `ca480e5d84a011fc86978aae33db20e0a5538649`. **Checkpoint write-basis HEAD:** `ca480e5d84a011fc86978aae33db20e0a5538649`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5, PR #9 and main remain unchanged. PR #8 remains OPEN/DRAFT/UNMERGED. UI/Frontend work remains PAUSED.
+
+## NEW — Run1024 work packages
+
+1. **Integrated exact ToolRegistry / PermissionGate identity into Draft PR #8.** PR #57 exact head `7bc217d78059a5fc91bcada9378ded7b12a769aa` had exact-head CI #44687035602 GREEN; its lower-level PR #46 and #47 exact heads also had CI #44656557280 and #44662380123 GREEN. The package pins exact import-original ToolRegistry and PermissionGate types before instance lookup/grant iteration, and verifies synthetic registered WRITE binding plus process-local one-shot reuse denial without dispatch. PR #57 was squash-merged into the **research foundation branch only**, producing commit `ca480e5d84a011fc86978aae33db20e0a5538649`. No merge to main occurred. PR #8 exact post-integration CI #44765928597 is IN PROGRESS.
+
+2. **PR #89 — Memory logical expiry / local clock rollback boundary.** Draft child of PR #8, branch `research/memory-expiry-clock-rollback-boundary-run1024`, exact head `ac57f7061b6413947e4d0fc880f3514939168279`, based on `ca480e5d84a011fc86978aae33db20e0a5538649`. Two synthetic SQLite regressions plus a technical note prove that read-time logical expiry may become visible again after a local clock rollback while the row remains stored; `include_expired=True` skips clock sampling; read-only filtering appends no event; and explicit transactional purge remains deleted with its `expire` event after rollback. No Memory v1 schema/API or production code changed. CI #44766062544 is IN PROGRESS.
+
+3. **PR #90 — passive V3 readiness inventory protocol pins.** Draft child of gated PR #5, branch `research/v3-offline-inventory-protocol-pins-run1024`, corrected exact head `94b3ca7d3121f2e16be722648006d7cc8b9f37a4`, based on PR #5 head `805b377697472268db02650a89c7a94b1c5337c8`. The field inventory is read-only; placeholder/denial/authority vectors, result descriptors, digest functions and snapshot epoch helpers are pinned before inspection. The first exact-head CI #44766435585 FAILED because the new unified guard message broke 13 existing assertions that require the previous specific descriptor-denial classification; the inspected Windows/Python 3.13 job had 1,388 passed and 6 skipped. The smallest semantics-preserving repair restored the established error classification and adjusted the new test to expect the precise authority-descriptor denial. Corrected-head CI #44767239554 is IN PROGRESS. No training/export/compute path was opened.
+
+4. **PR #91 — startup readiness lease guard-vector custody.** Draft child of PR #61, branch `research/startup-lease-guard-vector-custody-run1024`, exact head `177c827f3d2da6061dd74046177830ff9c3d5dac`, based on PR #61 head `4cce61ec799d5cae8a99c955025d5d73f7fb4751`. It pins five descriptor-name vectors and their five original-carrier tuples, rejecting empty or equal-valued rebinding before snapshot integrity or requirement/result callbacks. The lease remains diagnostic-only. CI #44767087487 is IN PROGRESS. Parent PR #61 CI #44698322968 and test child PR #64 CI #44707323706 are GREEN.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 post-PR57 integration head `ca480e5d84a011fc86978aae33db20e0a5538649` / CI #44765928597: **IN PROGRESS**.
+- PR #89 Memory expiry boundary head `ac57f7061b6413947e4d0fc880f3514939168279` / CI #44766062544: **IN PROGRESS**.
+- PR #90 initial V3 inventory head `0c7caf40a565a44c2eb1c6e8cc6114c3edd3fa0f` / CI #44766435585: **FAIL** (13 existing expected-message assertions; inspected job 1,388 passed / 6 skipped). Corrected head `94b3ca7d3121f2e16be722648006d7cc8b9f37a4` / CI #44767239554: **IN PROGRESS**.
+- PR #91 startup lease vector head `177c827f3d2da6061dd74046177830ff9c3d5dac` / CI #44767087487: **IN PROGRESS**.
+- PR #57 exact head `7bc217d78059a5fc91bcada9378ded7b12a769aa` / CI #44687035602: **GREEN**; PR #46 exact head `0edc1c4eb44d306d38bddafea44b14d82964c23e` / CI #44656557280: **GREEN**; PR #47 exact head `b1165eeccdec65c7079894d21d8d7062976c4ef5` / CI #44662380123: **GREEN**. These validate the merged registry/permission package, but do not certify the newer PR #8 integration head.
+- Isolated integration candidates, not yet merged: PR #49 Personal Context final veto head `d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72` / CI #44662795576 **GREEN**; PR #72 proactive quarantine rollback head `c4446dc9151bfaeed2b270882f6f08cb8aa2b9a7` / CI #44722795092 **GREEN**; PR #73 Planner terminal COMMIT outcomes head `f54139d8ea1a5f5d4eed1d79a8c05489c6e3b419` / CI #44731076172 **GREEN**; PR #74 Memory expiry COMMIT outcomes head `d64c8c6f8f6788ba2d14a017894ef48739df110f` / CI #44731230494 **GREEN**; PR #75 Personal Context replay process-crash head `fe63a5a70b12f5e4aa37d882300351ce05f73a3d` / CI #44731478084 **GREEN**; PR #79 Action Audit COMMIT outcomes head `4af585bbf40fdaeb897f4276feb4efc03545c2a5` / CI #44742382170 **GREEN**; PR #64 startup lease control-ordering tests head `f8496737a483aab8aaea580908c776f51e5e4012` / CI #44707323706 **GREEN**. Each remains isolated pending sequential integration on the latest base. No local pytest/Ruff PASS is claimed.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. PR #5 remains gated Draft/unmerged; PR #9 remains paused and untouched. PR #8 remains Draft/unmerged. No protected V2 final evaluation was opened; no Candidate adapter/weights were generated or promoted. No paid/external compute, paid API/service, subscription, purchase, credential/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, frozen-contract change, or main merge occurred. No trusted-clock, human-review, independent-custody, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- Memory logical expiry remains dependent on the configured local clock callback; rollback can reverse read-time visibility until explicit purge. The new tests document this boundary only. No durable high-water was added. Any future additive high-water design must address forward clock jumps, restart/cross-process authority, ambiguous COMMIT ordering, sidecar loss and frozen v1 compatibility; a max-seen wall clock is not trusted time.
+- Real runtime identity, real Candidate adapter/weight generation, protected evaluation and promotion remain blocked by explicit free-only and authorization gates.
+- Synthetic startup leases, Personal Context ledgers and action-audit fixtures do not establish trusted time, authenticated consent, independent custody, atomic cross-store snapshots or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Recheck exact-head CI #44765928597 (PR #8), #44766062544 (PR #89), #44767239554 (corrected PR #90), and #44767087487 (PR #91). Inspect failure logs and make only the smallest semantics-preserving normal-path fix; do not duplicate workflows or stack changes onto the same in-flight branch.
+2. After current integration/child CI is GREEN, integrate one package at a time into the latest Draft PR #8 base: first PR #49 Personal Context final revocation veto, then PR #72 proactive quarantine rollback, PR #73 Planner terminal COMMIT outcomes, PR #74 Memory expiry COMMIT outcomes, PR #75 Personal Context replay process exit, PR #79 Action Audit COMMIT outcomes and PR #64 startup lease ordering. Re-read both heads before each merge; run exact-head CI after each integration before the next.
+3. Continue Memory expiry/high-water design as a reversible proposal only until forward-clock-jump, cross-process, COMMIT-UNKNOWN and frozen-schema constraints are resolved; do not change Memory v1 DDL/API.
+4. Continue non-UI Planner persistence/recovery, registry-bound identity, durable authorization/audit-before-action, disconnected/mock execution, privacy-safe Personal Context, proactive/observation back-end contracts and free-only V3 approval/path/identity/reproducibility guards. Keep PR #5 Draft/unmerged and all UI work paused.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1023: bounded V3 command identity and wall-time diagnostics
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T23:55:14+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
