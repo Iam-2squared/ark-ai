@@ -1,3 +1,43 @@
+# LATEST — ARK AI Run1011: Planner hard-exit recovery, V3 path-method custody, ToolRegistry rerun
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T12:52:18+09:00.** This is reporting/checkpoint metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** research/jarvis-foundations / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1011 work-basis exact HEAD:** 383800ded58afaa4e7f5abc52e7ed01bed892b70. **Checkpoint write-basis HEAD:** 383800ded58afaa4e7f5abc52e7ed01bed892b70, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and verified by the post-write branch read; a commit cannot contain its own SHA in the tracked file.
+
+**Protected refs:** main 7a843f17eb96ed13d66f23b58b06406b3002e405; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) 805b377697472268db02650a89c7a94b1c5337c8; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) 3b49048dd70eebcb6268299b9ecef4e301bbc0fd. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. No main merge, child promotion or Candidate promotion.
+
+## NEW — Run1011: two isolated non-UI packages and exact-head CI reconciliation
+
+1. **PR #51 — Planner journal hard-process COMMIT boundaries.** Test-only child of Draft PR #30 exact base 0857045761bb50c7d1549025c5fa7959af6e95f5. Branch research/planner-journal-hard-exit-run1011, exact head 9ce928b87b5d69d0cf5ae23f137d769d49552a53. Added four subprocess cases: genesis and RUNNING transition, each hard-exiting immediately before or after the real SQLite COMMIT. Cold reopen checks rollback versus durable commit, exact metadata/event counts, sequence frontier and quick_check. A committed RUNNING transition remains ambiguous, not ready, and non-dispatchable; stale graph/sequence reuse is rejected. No retry occurs. Exact-head CI #44669861991 / run #6643 is IN PROGRESS (six Windows/Ubuntu × Python 3.11–3.13 jobs). No PASS is claimed.
+
+2. **PR #52 — V3 export path inspection method custody.** Free-only child of Draft PR #44 exact base c9e3457b7431c8b0fcd79140921a3a2b53e52137. Branch research/v3-export-path-method-custody-run1011, latest exact head 6544949b66d938a6a242fc649a5c655719c6ce54. Source now pins Path.__fspath__ plus os.fsencode/os.fspath before encoding; after exact-type and native-byte-budget admission it pins selected Path inspection methods and os/os.path primitives before filesystem I/O. Added 13 substitution cases (five Path methods and eight OS/path primitives). Initial exact-head CI #44670245690 / run #6644 FAILED 6/6 because the new guard preempted two existing Run1008 assertions and changed the expected diagnostic/byte-budget ordering. Repaired by splitting codec admission from later filesystem-inspection custody and preserving native-byte-budget precedence plus label-specific fail-closed diagnostics. Intermediate source-fix head 122627b4c03cc3a3f9409c9fa3bc4e5aa67b3e0e has CI #44670465105 / run #6645 IN PROGRESS; latest docs-inclusive head 6544949b66d938a6a242fc649a5c655719c6ce54 has CI #44670496311 / run #6646 QUEUED. No exact-latest-head GREEN yet. This is a local Python-process invariant, not a sandbox or atomic directory-handle custody; filesystem TOCTOU remains explicit.
+
+3. **PR #47 — exact ToolRegistry instances.** Current head b1165eeccdec65c7079894d21d8d7062976c4ef5. After the earlier failed head c51dcc495fa7dff0a4aa1b41cc552129174177f9 and an initial current-head run #6638 failure in the unrelated proactive cross-process preparation race fixture, the failed-job-only rerun of CI #44662380123 / run #6638 completed GREEN 6/6. The observed failure was unsafe proactive SQLite sidecar in tests/test_proactive_cross_process_preparation_race_run435.py; no proactive source change was made, so retain it as a previously observed intermittent failure rather than claiming a fix. The earlier #6636 failure was the incomplete property-getter guard at the older ToolRegistry head; the current exact head includes that repair.
+
+4. **Run1010 exact-head children reconciled:** PR #48 Memory final pinned-WAL-reader crash test head ca0da08501f84832423f439f7bce903fd95553a5, CI #44662639614 / run #6639 GREEN 6/6; PR #49 Personal Context final revocation veto head d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72, CI #44662795576 / run #6640 GREEN 6/6; PR #50 Observation fixture byte budget head 56e3163ce0404eeabbc8bcf68771cc1fffedfccc, CI #44662927894 / run #6641 GREEN 6/6. These remain isolated Draft children, not integrated into PR #8.
+
+5. **Canonical foundation exact-head evidence:** PR #8 work-basis head 383800ded58afaa4e7f5abc52e7ed01bed892b70, CI #44663112334 / run #6642 GREEN 6/6. This is the Run1011 checkpoint basis; no later source integration is inferred.
+
+## Frozen contracts, current state and boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. No UI/frontend source, tests, polish or integration.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. No live personal data or sensor capture was used. Synthetic timestamps/local ledgers do not establish trusted time, consent, authenticated provenance or external effects. Separate Memory, Personal Context and audit stores are not made atomic by local rechecks. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile PR #51 run #6643 and PR #52 runs #6645–#6646 by exact head. If a job fails, inspect only that failing job/log, make the smallest semantics-preserving normal GitHub update, and move immediately to a non-conflicting lane. Do not rerun already-green jobs or duplicate an equivalent workflow.
+2. Planner: after PR #51 exact-head CI, continue retained-prefix/truncation, terminal propagation, restart recovery and commit/rollback ambiguity. RUNNING/UNKNOWN work remains quarantined and is never auto-replayed.
+3. Memory: WAL/SHM last-close and cross-process crash boundaries, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only triage.
+4. ToolRegistry/PermissionGate: retain exact-instance guards, then advance registry-bound identity, exact-type permission and restart-safe one-shot authorization with trusted-clock audit-before-action over disconnected mocks only.
+5. Personal Context: continue revocation/retention/reuse continuity and privacy-safe projection lifecycle. Observation: fixture identity, payload budget, lineage and multimodal adapter contracts without live capture.
+6. Continue proactive scheduler state and free-only V3 approval/path/identity/reproducibility guards. Keep protected evaluation and Candidate gates closed. UI remains PAUSED.
+7. Keep all JARVIS foundations isolated/reversible until lower-level invariants have their own exact-head GREEN evidence and explicit integration gates.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1010: registry property guard repair, Memory WAL crash, Personal Context veto, Observation byte budget
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T11:45:26+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
