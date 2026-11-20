@@ -68,7 +68,7 @@ def test_reentrant_replacement_during_hashing_is_rejected(monkeypatch):
 
     monkeypatch.setattr(inv.hashlib, "sha256", replace_denial)
     with pytest.raises(
-        inv.OfflineReadinessRejected, match="descriptor changed"
+        inv.OfflineReadinessRejected, match="protocol changed"
     ):
         inv.inventory_unapproved_v3_readiness(_snapshot())
 
