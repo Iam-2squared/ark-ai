@@ -1,3 +1,57 @@
+# LATEST — ARK AI Run1010: registry property guard repair, Memory WAL crash, Personal Context veto, Observation byte budget
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T11:45:26+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1010 work-basis exact HEAD:** `ce4b567605896fe1bda4fa8458fe448701b9dced`. **Checkpoint write-basis HEAD:** `ce4b567605896fe1bda4fa8458fe448701b9dced`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and verified by the post-write branch read; a commit cannot contain its own SHA in the tracked file.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. PR #8 remains OPEN/DRAFT/UNMERGED. No UI/frontend work, main merge, child promotion or Candidate promotion.
+
+## NEW — Run1010: four isolated non-UI packages plus one CI-driven repair
+
+1. **PR #47 — exact ToolRegistry instance admission repair.** Initial exact-head CI #44656794489 / run #6636 failed pytest in all six matrix jobs: the `revision` property called `self._assert_registration_epoch()` before its type guard, so an adversarial subclass `__getattribute__` ran first. Added the same exact import-original type guard at the start of both `revision` and `registrations` property getters, before any instance lookup. Current PR #47 head `b1165eeccdec65c7079894d21d8d7062976c4ef5`; follow-up exact-head CI #44662380123 / run #6638 was **IN PROGRESS** at checkpoint observation. No type/permission boundary was weakened.
+
+2. **PR #48 — final pinned Memory WAL reader process crash.** Test-only child of the exact PR #8 work basis above; head `ca0da08501f84832423f439f7bce903fd95553a5`. A spawned read-only or read/write SQLite reader pins revision 1 while an independent managed writer commits revision 2, then the final reader process exits with `os._exit(0)` while its transaction remains open. Cold reopen must recover the row/event pair, complete TRUNCATE checkpoint, pass SQLite quick_check and reject the stale generation token. This complements Run1003's separate surviving-reader scenario; it is not power-loss/fsync or independent-custody evidence. Exact-head CI #44662639614 / run #6639 was **IN PROGRESS**.
+
+3. **PR #49 — Personal Context final revocation veto.** Source + synthetic regression + technical note; head `d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72`. Repeat the local revocation veto after retained-history continuity replay, then revalidate the review and bundle epochs before returning the projection. The test appends a synthetic revocation from inside the final continuity-review callback and requires denial, with no raw owner/content retained in the ledger. This narrows a local race only; the Memory and revocation stores remain non-atomic, and this is not a downstream-use lease, authenticated consent or erasure proof. Exact-head CI #44662795576 / run #6640 was **IN PROGRESS**.
+
+4. **PR #50 — Observation fixture payload byte budget.** Test-only child; head `56e3163ce0404eeabbc8bcf68771cc1fffedfccc`. Cover text, transcript, image and screen payloads above 4 MiB, including multibyte UTF-8 expansion, and verify rejection occurs before the private hash helper. Exact 4 MiB text/binary payloads remain accepted as digest-only envelopes. No fixture adapter source or frozen Observation Envelope v1 contract changed. Exact-head CI #44662927894 / run #6641 was **QUEUED**.
+
+All PRs #47–#50 are OPEN/DRAFT/UNMERGED isolated children of PR #8; no child was promoted or merged. No live personal data, live sensor, real ToolBackend, external effect, GPU, Candidate or physical-PC action was used.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 predecessor checkpoint head `c0a7ac9e561b1e57501421efae1c11cc1d84741a`: CI #44649852358 / run #6633 **GREEN**, six matrix jobs.
+- Run1009 PR #8 checkpoint head `ce4b567605896fe1bda4fa8458fe448701b9dced`: CI #44656907143 / run #6637 **GREEN**, six matrix jobs. This is the Run1010 work basis, not the new child heads.
+- PR #43 `67426ce2de9f0d70a848d83018deb258823a90fc`: CI #44648800414 / run #6630 **GREEN**.
+- PR #44 `c9e3457b7431c8b0fcd79140921a3a2b53e52137`: CI #44649707265 / run #6632 **GREEN**.
+- PR #45 `96c1816bda46e35c1777c4610a6e5ed1890f4a1d`: CI #44656403662 / run #6634 **GREEN**.
+- PR #46 `0edc1c4eb44d306d38bddafea44b14d82964c23e`: CI #44656557280 / run #6635 **GREEN**.
+- PR #47 current head `b1165eeccdec65c7079894d21d8d7062976c4ef5`: CI #44662380123 / run #6638 **IN PROGRESS**; prior head `c51dcc495fa7dff0a4aa1b41cc552129174177f9` failed because the property getter guards were incomplete.
+- PR #48 head `ca0da08501f84832423f439f7bce903fd95553a5`: CI #44662639614 / run #6639 **IN PROGRESS**.
+- PR #49 head `d7c56fdf85c7bd98fd4b6f0e0a43d7abc205ed72`: CI #44662795576 / run #6640 **IN PROGRESS**.
+- PR #50 head `56e3163ce0404eeabbc8bcf68771cc1fffedfccc`: CI #44662927894 / run #6641 **QUEUED**.
+- No local full-suite pytest, physical-PC, real ToolBackend, live capture, real model, external effect, GPU/runtime or Candidate result is claimed. No PASS is inferred for a child whose exact-head CI remains pending.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. No frontend source, tests, polish or integration. No main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. Separate Memory/Personal Context/occurrence/audit stores do not become atomic through local rechecks. Exact-type checks are local process invariants, not a Python sandbox or remote backend attestation. Synthetic timestamps and local ledgers do not establish trusted time, consent, authenticated provenance or external effects. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #6638–#6641 when complete. If any fails, inspect only the failing job/log, make the smallest semantics-preserving normal GitHub write, and immediately switch to a non-conflicting lane while CI runs. Do not duplicate equivalent workflows.
+2. Memory: WAL/SHM last-close and cross-process crash boundaries, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only triage.
+3. Planner: retained-prefix/truncation, terminal propagation, restart recovery and commit/rollback ambiguity. RUNNING/UNKNOWN work remains quarantined and is never auto-replayed.
+4. ToolRegistry/PermissionGate: exact-type admission, registry-bound identity, restart-safe one-shot authorization and trusted-clock audit-before-action over disconnected mocks only; resolve cross-store atomicity before real backend integration.
+5. Personal Context: revocation/retention/reuse continuity and privacy-safe projection lifecycle. Observation: fixture identity, payload budget, lineage and multimodal adapter contracts without live capture.
+6. Proactive scheduler and free-only V3 approval/path/identity/reproducibility guards; keep protected evaluation and Candidate gates closed. **UI remains PAUSED.**
+7. Keep JARVIS foundations isolated/reversible until lower-level invariants have their own exact-head GREEN evidence and explicit integration gates.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1009: mock audit crash recovery and exact-type registry/gate custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T10:53:18+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
