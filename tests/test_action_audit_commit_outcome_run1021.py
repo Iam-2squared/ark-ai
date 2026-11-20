@@ -4,14 +4,11 @@ Synthetic ToolCall identities and disposable SQLite only. Audit rows do not
 prove that a tool ran, authorize replay, or authenticate an approval.
 """
 
-from __future__ import annotations
-
 import sqlite3
 
 import pytest
 
-from ark.agency.audit import SQLiteActionAudit
-from ark.agency.contracts import ToolCall
+from ark.agency import SQLiteActionAudit, ToolCall
 
 
 _PRIVATE = "audit-payload-must-never-be-persisted"
