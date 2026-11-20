@@ -17,13 +17,13 @@ from ark.startup_readiness_lease_review import (
 @pytest.mark.parametrize(
     ("raw", "message"),
     (
-        ("mem\\nory", "ASCII control"),
-        ("mem\\ttory", "ASCII control"),
-        ("mem\\x7fory", "ASCII control"),
-        ("mem\\u202eory", "Unicode formatting control"),
-        ("mem\\u200bory", "Unicode formatting control"),
-        ("mem\\u2028ory", "Unicode formatting control"),
-        ("mem\\u00adory", "Unicode formatting control"),
+        ("mem\nory", "ASCII control"),
+        ("mem\ttory", "ASCII control"),
+        ("mem\x7fory", "ASCII control"),
+        ("mem\u202eory", "Unicode formatting control"),
+        ("mem\u200bory", "Unicode formatting control"),
+        ("mem\u2028ory", "Unicode formatting control"),
+        ("mem\u00adory", "Unicode formatting control"),
     ),
 )
 def test_requirement_rejects_diagnostic_control_characters_before_matching(
