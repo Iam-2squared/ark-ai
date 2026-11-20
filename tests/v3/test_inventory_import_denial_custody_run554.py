@@ -49,7 +49,7 @@ def test_preinstalled_true_denial_is_rejected_before_output(monkeypatch):
         property(lambda self: True),
     )
     with pytest.raises(
-        inv.OfflineReadinessRejected, match="descriptor changed"
+        inv.OfflineReadinessRejected, match="protocol changed"
     ):
         inv.inventory_unapproved_v3_readiness(_snapshot())
 
