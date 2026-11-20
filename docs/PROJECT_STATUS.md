@@ -1,3 +1,56 @@
+# LATEST — ARK AI Run1020: Planner/Memory COMMIT outcomes, Personal Context process-crash recovery, V3 numeric guard
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T20:58:11+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1020 work-basis exact HEAD:** `ff3e9e50ca861486a667bce243ee6ca62af08e28`. **Checkpoint write-basis HEAD:** `ff3e9e50ca861486a667bce243ee6ca62af08e28`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5, PR #9 and main remain unchanged. PR #8 remains OPEN/DRAFT/UNMERGED. UI/Frontend work remains PAUSED.
+
+## NEW — Run1020: four isolated free-only non-UI work packages
+
+1. **PR #73 — Planner terminal COMMIT rollback / lost-acknowledgement matrix.** Test-only child of PR #8 work-basis `ff3e9e50ca861486a667bce243ee6ca62af08e28`; exact head `f54139d8ea1a5f5d4eed1d79a8c05489c6e3b419`. Injects a terminal `RUNNING → FAILED` transition failure immediately before native SQLite COMMIT and after native COMMIT success/lost acknowledgement. Cold recovery must distinguish retained RUNNING + PENDING descendant from committed FAILED + BLOCKED descendant; exact event rows, `quick_check`, stale-tail denial and false-only dispatch/replay flags are asserted. CI [#44731076172](https://github.com/Iam-2squared/ark-ai/actions/runs/44731076172): **IN PROGRESS**.
+
+2. **PR #74 — Memory expiry purge COMMIT rollback / lost-acknowledgement matrix.** Test-only child of the same PR #8 work-basis; exact head `d64c8c6f8f6788ba2d14a017894ef48739df110f`. Injects rollback before native COMMIT and acknowledgement loss after native COMMIT for a bounded scope-specific expiry purge. Cold reopen checks due-row presence/absence, independent-scope preservation, global event IDs, `quick_check`, and no duplicate expiry event on a separate explicit no-op purge. CI [#44731230494](https://github.com/Iam-2squared/ark-ai/actions/runs/44731230494): **IN PROGRESS**.
+
+3. **PR #75 — Personal Context replay reservation process exit after native COMMIT.** Test-only child of the same PR #8 work-basis; exact head `fe63a5a70b12f5e4aa37d882300351ce05f73a3d`. A spawned process exits immediately after native SQLite COMMIT and before receipt construction/return. Cold reopen must see one hash-only row, stale genesis and duplicate request denial, and clean `quick_check`; no fixture text is persisted. CI [#44731478084](https://github.com/Iam-2squared/ark-ai/actions/runs/44731478084): **IN PROGRESS**.
+
+4. **PR #76 — V3 preflight numeric-subclass rejection.** Test-only child of gated PR #5 exact base `805b377697472268db02650a89c7a94b1c5337c8`; exact head `2ed011a5739e5b9d189089f82b77980df117f261`. Uses float/int subclasses whose `__float__` raises to prove rejection before conversion across PreflightEvidence, RuntimeIdentity, frozen VRAM, wall budget and tolerance; built-in numeric values remain accepted. This is validation-only and calls no backend. CI [#44731776755](https://github.com/Iam-2squared/ark-ai/actions/runs/44731776755): **QUEUED**.
+
+All four Run1020 packages are test-only; no production source, frozen schema/API or public contract changed. Inputs are synthetic, local SQLite/process fixtures only. Tests are authored; no local pytest/Ruff PASS is claimed.
+
+## Tests / CI / evidence — exact HEADs only
+
+- PR #8 checkpoint source head `ff3e9e50ca861486a667bce243ee6ca62af08e28` / CI [#44723253211](https://github.com/Iam-2squared/ark-ai/actions/runs/44723253211): **GREEN 6/6**.
+- Reconciled Run1019 PR #69 head `0805a76487e50f7c7c28a36a33f0eac7bb53efd3` / CI #44722079735: **GREEN 6/6**.
+- Reconciled Run1019 PR #70 head `a037e59ca62689599fac7fe739e32787ebca79d4` / CI #44722224851: **GREEN 6/6**.
+- Run1019 PR #71 head `62950d95ecb9e2af4eb4727c9cc4d46c23c51af0` / CI #44722616997: **GREEN 6/6**.
+- Reconciled Run1019 PR #72 head `c4446dc9151bfaeed2b270882f6f08cb8aa2b9a7` / CI #44722795092: **GREEN 6/6**.
+- PR #73 head `f54139d8ea1a5f5d4eed1d79a8c05489c6e3b419` / CI #44731076172: **IN PROGRESS**.
+- PR #74 head `d64c8c6f8f6788ba2d14a017894ef48739df110f` / CI #44731230494: **IN PROGRESS**.
+- PR #75 head `fe63a5a70b12f5e4aa37d882300351ce05f73a3d` / CI #44731478084: **IN PROGRESS**.
+- PR #76 head `2ed011a5739e5b9d189089f82b77980df117f261` / CI #44731776755: **QUEUED**.
+- No local full-suite pytest/Ruff, physical-PC, real ToolBackend READ/WRITE, live personal-data/sensor, trusted-clock, independent-custody, power-loss/fsync, cross-store atomicity, external-effect, GPU/runtime or Candidate result is claimed.
+
+## Frozen contracts, current ARK state and authorization boundaries
+
+ARK remains **NOT_PASSED**. V1/V2/Local UI/Launcher frozen evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and protected V2 final-evaluation boundary remain unchanged. PR #5 stays gated Draft/unmerged. PR #9 stays paused and untouched. PR #8 and all Run1020 child PRs remain isolated Draft/unmerged. Main remains unchanged.
+
+PR #73/#74/#75 are test-only children of PR #8; PR #76 is a test-only child of PR #5. No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, live personal data/sensor capture, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation, automatic uncertain-WRITE replay or main merge. Synthetic COMMIT and process-crash tests do not establish power-loss/fsync durability, authenticated writer provenance, independent custody, trusted time, consent, retention authorization, cross-store atomicity or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44731076172 (PR #73), #44731230494 (PR #74), #44731478084 (PR #75), and #44731776755 (PR #76). Inspect failed job logs only; apply the smallest semantics-preserving normal-path repair and then switch to another independent lane. Do not duplicate workflows or claim PASS before exact-head six-job GREEN.
+2. After GREEN, review Planner terminal rollback/COMMIT-UNKNOWN, Memory expiry rollback/COMMIT-UNKNOWN, and Personal Context process-exit evidence alongside Run1019 PR #69/#70/#72 and earlier COMMIT-UNKNOWN cases. Keep ambiguous outcomes manual-only; never auto-replay.
+3. Continue Memory row/event integrity, generation CAS/ABA, WAL/SHM last-close, coherent snapshots and expiry recovery; Planner terminal propagation, persistence/recovery, registry-bound ToolRegistry/PermissionGate and disconnected/mock execution.
+4. Continue privacy-safe Personal Context retention/revocation/replay, proactive restart/quarantine state, Observation fixture contracts and startup readiness.
+5. Continue free-only V3 path/identity/reproducibility/preflight guards. No converter, quantizer, model load, preflight backend, training, GPU or Candidate generation.
+6. Preserve frozen V1/V2/Local UI/Launcher evidence; keep PR #5/#8/#9 and all child PRs Draft/unmerged, leave PR #9 untouched, and do not merge main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+
+---
+
 # LATEST — ARK AI Run1019: COMMIT rollback matrices, V3 preflight cross-binding coverage
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T19:53:56+09:00.** This is checkpoint/report metadata only; it is not trusted time, consent, authorization, scheduler, action, storage-custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
