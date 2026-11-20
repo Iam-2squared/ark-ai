@@ -42,9 +42,10 @@ def test_export_rejects_path_method_rebinding_before_callback(
         calls.append(member)
         raise AssertionError("replaced pathlib method executed before admission")
 
-    monkeypatch.setattr(path_type, member, forbidden)
-    with pytest.raises(ValueError, match="path inspection dependencies changed"):
-        _check(output, base, candidate)
+    with monkeypatch.context() as scoped:
+        scoped.setattr(path_type, member, forbidden)
+        with pytest.raises(ValueError, match="path inspection dependencies changed"):
+            _check(output, base, candidate)
     assert calls == []
 
 
@@ -72,7 +73,10 @@ def test_export_rejects_os_path_dependency_rebinding_before_callback(
         raise AssertionError("replaced os path dependency executed before admission")
 
     owner = os.path if target == "os.path" else os
-    monkeypatch.setattr(owner, member, forbidden)
-    with pytest.raises(ValueError, match="path inspection dependencies changed"):
-        _check(output, base, candidate)
+    # Restore process-global os.path methods before pytest removes tmp_path.
+    # Its own cleanup uses realpath and must not observe this injected hook.
+    with monkeypatch.context() as scoped:
+        scoped.setattr(owner, member, forbidden)
+        with pytest.raises(ValueError, match="path inspection dependencies changed"):
+            _check(output, base, candidate)
     assert calls == []
