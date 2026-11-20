@@ -671,4 +671,10 @@ def review_fresh_nonrevoked_context(
     review_revocation_continuity(ledger, retained=before)
     assert_epoch()
     assert_bundle_epoch()
+    # Retained-history replay can itself be a reentrant boundary. A new veto
+    # appended during that review must be observed before this projection
+    # leaves the local function. This is not an atomic downstream-use lease.
+    ledger.assert_not_revoked(scopes)
+    assert_epoch()
+    assert_bundle_epoch()
     return bundle
