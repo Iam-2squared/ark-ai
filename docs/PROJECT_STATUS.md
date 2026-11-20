@@ -1,3 +1,48 @@
+# LATEST — ARK AI Run1009: mock audit crash recovery and exact-type registry/gate custody
+
+**Saved at (Asia/Tokyo/JST): 2026-11-20T10:53:18+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1009 work-basis exact HEAD:** `c0a7ac9e561b1e57501421efae1c11cc1d84741a`. **Checkpoint write-basis HEAD:** `c0a7ac9e561b1e57501421efae1c11cc1d84741a`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the commit SHA returned by this update and verified by the post-write branch read; the exact result is reported in the invocation summary because a commit cannot contain its own SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains `805b377697472268db02650a89c7a94b1c5337c8`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED and untouched. No UI/frontend work, main merge, child promotion or Candidate promotion.
+
+## NEW — Run1009: three isolated non-UI packages
+
+1. **PR #45 — hard process crash after pre-action Action Audit COMMIT.** Test-only child of Draft PR #43, based on exact head `67426ce2de9f0d70a848d83018deb258823a90fc`; current head `96c1816bda46e35c1777c4610a6e5ed1890f4a1d`. Added `tests/test_mock_executor_pre_action_audit_crash_run1009.py`. A spawned process exits from the SQLite context-manager acknowledgement boundary after the `mock_pre_action` row commits but before `SQLiteActionAudit.append` returns to the executor. Cold reopen must retain the durable occurrence reservation and exactly one pre-action event; a fresh PermissionGate must deny replay without another audit append or mock call. Exact-head CI #44656403662 is **IN PROGRESS**. This remains a two-store non-atomic crash boundary, not proof of an external effect.
+
+2. **PR #46 — exact PermissionGate instance admission.** Isolated child of Draft PR #8 at exact base `c0a7ac9e561b1e57501421efae1c11cc1d84741a`; current head `0edc1c4eb44d306d38bddafea44b14d82964c23e`. Modified only `src/ark/agency/policy.py` and added `tests/test_permission_gate_exact_instance_run1009.py`. Both public authorization entrypoints now reject subclasses before instance attribute lookup, registry binding, grant iteration or token spend. The adversarial subclass regression verifies no overridden getter or grant iterator runs. Exact-head CI #44656557280 is **IN PROGRESS**.
+
+3. **PR #47 — exact ToolRegistry instance admission.** Isolated child of Draft PR #8 at exact base `c0a7ac9e561b1e57501421efae1c11cc1d84741a`; current head `c51dcc495fa7dff0a4aa1b41cc552129174177f9`. Modified only `src/ark/agency/registry.py` and added `tests/test_tool_registry_exact_instance_run1009.py`. Construction, validation, lookup, resolution and binding reject subclasses before instance state or registration generators are touched. Adversarial subclass tests exercise inherited entrypoints without backend dispatch. Exact-head CI #44656794489 is **IN PROGRESS**.
+
+## Tests / CI / evidence — exact HEADs only
+
+- Canonical PR #8 predecessor head `c0a7ac9e561b1e57501421efae1c11cc1d84741a`: CI #44649852358 **GREEN**, six matrix jobs.
+- PR #43 head `67426ce2de9f0d70a848d83018deb258823a90fc`: CI #44648800414 **GREEN**, six matrix jobs.
+- PR #44 head `c9e3457b7431c8b0fcd79140921a3a2b53e52137`: CI #44649707265 **GREEN**, six matrix jobs.
+- PR #45 head `96c1816bda46e35c1777c4610a6e5ed1890f4a1d`: CI #44656403662 **IN PROGRESS**.
+- PR #46 head `0edc1c4eb44d306d38bddafea44b14d82964c23e`: CI #44656557280 **IN PROGRESS**.
+- PR #47 head `c51dcc495fa7dff0a4aa1b41cc552129174177f9`: CI #44656794489 **IN PROGRESS**.
+- No local full-suite pytest, physical-PC, real ToolBackend, external effect, live capture, GPU/runtime or Candidate result is claimed. New test packages are not PASS until their exact-head CI completes.
+
+## Frozen contracts, blockers and authorization boundaries
+
+Frozen V1/V2/Local UI/Launcher evidence; Memory v1 schema/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1; contamination, provenance, regression and reproducibility gates; and the protected V2 final-evaluation boundary remain unchanged. PR #5 remains gated Draft/unmerged. PR #9 remains paused and untouched. PRs #45–#47 are isolated Draft children; PR #43/#44 remain Draft/unmerged. No main merge, child promotion or Candidate promotion.
+
+No paid/potentially billable API/service, subscription, purchase, external GPU/compute, new credentials/account connection, unavailable physical-PC action, real ToolBackend READ/WRITE, real Candidate adapter/weights, Candidate promotion, protected V2 evaluation opening, frozen-contract change, destructive operation or automatic uncertain-WRITE replay. Separate occurrence and Action Audit databases remain non-atomic. Exact-type guards are local process invariants, not a Python sandbox, remote backend attestation, trusted time or consent proof. No JARVIS PASS claim.
+
+## Next plan / 今後の方針
+
+1. Reconcile exact-head CI #44656403662, #44656557280 and #44656794489 when complete. If any fails, inspect the exact failing job/log and make the smallest semantics-preserving normal Contents API fix; do not stack changes onto the code path under validation.
+2. Continue Memory WAL/SHM last-close, cross-process pinned-reader crash, CAS/ABA, expiry/event snapshot coherence, event-prefix integrity and COMMIT-UNKNOWN manual-only triage.
+3. Continue Planner retained-prefix/truncation, terminal propagation, restart recovery and commit/rollback ambiguity. RUNNING/UNKNOWN work remains quarantined; never auto-replay.
+4. Review exact-type ToolRegistry/PermissionGate changes only after exact-head GREEN. Advance durable one-shot authorization, trusted-clock audit-before-action and occurrence/replay protection over disconnected mocks; resolve cross-store atomicity before any real backend integration.
+5. Continue privacy-safe Personal Context revocation/retention/reuse, proactive scheduler restart state and Observation fixture lifecycle; advance free-only V3 approval/path/identity/reproducibility guards without opening protected gates.
+6. Keep JARVIS foundations isolated/reversible until lower-level invariants have exact-head GREEN evidence and explicit integration gates. **UI remains PAUSED.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1008: durable occurrence crash boundary and V3 export path preflight
 
 **Saved at (Asia/Tokyo/JST): 2026-11-20T09:56:10+09:00.** Reporting/checkpoint metadata only; not trusted time, consent, authorization, scheduler, action or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
