@@ -34,6 +34,37 @@ class ExportPlan:
 
 
 _NATIVE_PATH_TYPE = type(Path("."))
+_MAX_PYTHON_EXECUTABLE_BYTES = 4096
+_ORIGINAL_MAX_PYTHON_EXECUTABLE_BYTES = _MAX_PYTHON_EXECUTABLE_BYTES
+
+
+def _require_python_executable(value: object) -> str:
+    """Bound the exact argv carrier before snapshot or file-identity work.
+
+    The plan is data only, but its first argv element is intended for a later
+    non-shell subprocess boundary. Keep it an exact, bounded UTF-8 string and
+    preserve it verbatim; never coerce a caller-owned object with __str__.
+    """
+    if (
+        type(_MAX_PYTHON_EXECUTABLE_BYTES) is not int
+        or _MAX_PYTHON_EXECUTABLE_BYTES is not _ORIGINAL_MAX_PYTHON_EXECUTABLE_BYTES
+    ):
+        raise ValueError("python executable byte budget changed")
+    if type(value) is not str:
+        raise ValueError("python executable must be an exact non-empty string")
+    if not 1 <= len(value) <= _MAX_PYTHON_EXECUTABLE_BYTES:
+        raise ValueError("python executable exceeds the bounded identity budget")
+    if "\x00" in value:
+        raise ValueError("python executable contains a NUL separator")
+    if not value.strip() or any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+        raise ValueError("python executable contains blank or control text")
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise ValueError("python executable must be valid UTF-8") from exc
+    if len(encoded) > _MAX_PYTHON_EXECUTABLE_BYTES:
+        raise ValueError("python executable exceeds the bounded identity budget")
+    return value
 
 
 def _require_native_path(value: object, name: str) -> Path:
@@ -138,6 +169,7 @@ def build_export_plan(
         output_dir=output_dir,
         current_model_path=current_model_path,
     )
+    python_executable = _require_python_executable(python_executable)
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="none")
     # Resolve output custody before hashing converter/quantizer input bytes.
     _validate_export_output_path(
