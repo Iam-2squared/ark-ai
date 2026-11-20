@@ -11,6 +11,37 @@ from .execution import canonical_json, sha256_bytes, validate_experiment_001
 from .identity import build_tool_identity
 
 
+_PATH_MAX_BYTES = 4096
+_ORIGINAL_PATH_FACTORY = Path
+_ORIGINAL_PATH_TYPE = type(Path("."))
+_ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_PATH_MAX_BYTES = _PATH_MAX_BYTES
+
+
+def _exact_local_path(value: object, *, label: str) -> Path:
+    """Reject path subclasses and oversized native encodings before path I/O."""
+    if (
+        Path is not _ORIGINAL_PATH_FACTORY
+        or os.fsencode is not _ORIGINAL_FSENCODE
+        or type(_PATH_MAX_BYTES) is not int
+        or _PATH_MAX_BYTES != _ORIGINAL_PATH_MAX_BYTES
+        or type(value) is not _ORIGINAL_PATH_TYPE
+    ):
+        raise ValueError(f"{label} must be an exact local pathlib.Path")
+    try:
+        encoded = os.fsencode(value)
+    except (OSError, TypeError, UnicodeError, ValueError) as exc:
+        raise ValueError(f"{label} path cannot be safely encoded") from exc
+    if (
+        type(encoded) is not bytes
+        or not encoded
+        or b"\\x00" in encoded
+        or len(encoded) > _PATH_MAX_BYTES
+    ):
+        raise ValueError(f"{label} path exceeds native byte budget")
+    return value
+
+
 @dataclass(frozen=True)
 class CommandSpec:
     role: str
@@ -62,10 +93,9 @@ def _has_symlink_or_reparse_ancestor(path: Path) -> bool:
 
 def _canonical_input_directory(path: Path, *, label: str) -> Path:
     """Return one existing local input root without lexical or reparse aliases."""
-    value = Path(path)
+    value = _exact_local_path(path, label=f"{label} input")
     if (
         ".." in value.parts
-        or len(str(value)) > 4096
         or _has_symlink_or_reparse_ancestor(value)
     ):
         raise ValueError(f"{label} input must be a non-aliased local directory")
@@ -93,16 +123,33 @@ def _validate_export_output_path(
     This is local path admission, not atomic directory-handle custody or a
     guarantee against a hostile concurrent filesystem writer.
     """
-    output = Path(output_dir)
+    output = _exact_local_path(output_dir, label="export output")
+    base_dir = _exact_local_path(base_dir, label="base input")
+    merged_candidate_dir = _exact_local_path(
+        merged_candidate_dir, label="merged Candidate input",
+    )
+    if current_model_path is not None:
+        current_model_path = _exact_local_path(
+            current_model_path, label="Current deployed model",
+        )
     if (
         ".." in output.parts
-        or len(str(output)) > 4096
         or output.name in ("", ".", "..")
-        or output.exists()
-        or output.is_symlink()
-        or not output.parent.is_dir()
         or _has_symlink_or_reparse_ancestor(output)
     ):
+        raise ValueError("export output requires a new directory under safe parents")
+    # lstat the leaf only after every ancestor has passed no-follow inspection.
+    # Unlike exists(), this also detects a dangling final symlink without
+    # following it through an otherwise safe parent chain.
+    try:
+        output.lstat()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        raise ValueError("export output leaf cannot be safely inspected") from exc
+    else:
+        raise ValueError("export output requires a new directory under safe parents")
+    if not output.parent.is_dir():
         raise ValueError("export output requires a new directory under safe parents")
     try:
         base_root = _canonical_input_directory(base_dir, label="base")
@@ -163,9 +210,21 @@ def build_export_plan(
     current_model_path: Path | None = None,
 ) -> ExportPlan:
     """Build commands only. No subprocess, conversion, quantization, or file write occurs."""
+    # Reject path subclasses and over-budget native encodings before snapshot
+    # callbacks, filesystem probes, or converter/quantizer identity reads.
+    base_dir = _exact_local_path(base_dir, label="base input")
+    merged_candidate_dir = _exact_local_path(
+        merged_candidate_dir, label="merged Candidate input",
+    )
+    converter_path = _exact_local_path(converter_path, label="converter")
+    quantizer_path = _exact_local_path(quantizer_path, label="quantizer")
+    output_dir = _exact_local_path(output_dir, label="export output")
+    if current_model_path is not None:
+        current_model_path = _exact_local_path(
+            current_model_path, label="Current deployed model",
+        )
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="none")
     # Resolve output custody before hashing converter/quantizer input bytes.
-    output_dir = Path(output_dir)
     _validate_export_output_path(
         output_dir, base_dir=base_dir,
         merged_candidate_dir=merged_candidate_dir,
