@@ -202,6 +202,19 @@ def _admit_frozen_arguments(value: object) -> None:
 
 
 class PlanGraph:
+    def __setattr__(self, name: str, value: object) -> None:
+        # Status state advances only through the revision-guarded transition.
+        # Internal publication uses object.__setattr__ after a complete staged
+        # snapshot; ordinary callers cannot replace the state or its witness.
+        if name in {"_status", "_status_mapping_epoch", "_status_epoch"}:
+            try:
+                object.__getattribute__(self, name)
+            except AttributeError:
+                pass
+            else:
+                raise AttributeError("PlanGraph status state is transition-managed")
+        object.__setattr__(self, name, value)
+
     def __init__(self, steps: tuple[PlanStep, ...]) -> None:
         _require_original_transition_policy()
         _require_original_plan_digest()
@@ -256,10 +269,10 @@ class PlanGraph:
             if step.step_id in step.depends_on:
                 raise ValueError("step may not depend on itself")
         self._assert_acyclic()
-        self._status = {
+        self._status = MappingProxyType({
             step.step_id: PlanStepStatus(step.step_id, StepState.PENDING, 0)
             for step in steps
-        }
+        })
         # A MappingProxyType protects the mapping, not its frozen dataclass
         # values against object.__setattr__ reflection. Pin exact plan inputs.
         self._step_mapping_epoch = self.steps
@@ -273,8 +286,8 @@ class PlanGraph:
             for step_id, step in sorted(self.steps.items())
         )
         # A caller can reflectively mutate even a frozen PlanStepStatus or
-        # replace the private dictionary. Pin every initial state independent
-        # of the live carrier; only successful transitions advance this epoch.
+        # replace the private mapping. Pin every initial state independent of
+        # the live carrier; only successful transitions advance this epoch.
         self._status_mapping_epoch = self._status
         self._status_epoch = self._capture_status_epoch()
         _require_original_plan_digest()
@@ -290,7 +303,8 @@ class PlanGraph:
 
     def _assert_status_epoch(self) -> None:
         if (
-            type(self._status) is not dict
+            vars(PlanGraph).get("__setattr__") is not _ORIGINAL_PLAN_GRAPH_SETATTR
+            or type(self._status) is not MappingProxyType
             or self._status is not self._status_mapping_epoch
             or type(self._status_epoch) is not tuple
             or len(self._status) != len(self.steps)
@@ -590,10 +604,24 @@ class PlanGraph:
                 raise PlanConflictError("invalid staged plan transition result")
         if self._status_epoch is not entry_status_epoch:
             raise PlanConflictError("plan status advanced during transition staging")
-        self._status.update(staged)
-        # Advance the detached state epoch only after all affected statuses
-        # have been committed in memory, including a terminal BLOCKED cascade.
-        self._status_epoch = self._capture_status_epoch()
+        # Publish one immutable mapping and its complete detached epoch.
+        # Build the next witness BEFORE replacing live state so an allocation
+        # or carrier-read failure cannot leave a partially published cascade.
+        next_status = dict(self._status)
+        next_status.update(staged)
+        published_status = MappingProxyType(next_status)
+        next_status_epoch = tuple(
+            (
+                name,
+                published_status[name],
+                published_status[name].state,
+                published_status[name].revision,
+            )
+            for name in sorted(self.steps)
+        )
+        object.__setattr__(self, "_status", published_status)
+        object.__setattr__(self, "_status_mapping_epoch", published_status)
+        object.__setattr__(self, "_status_epoch", next_status_epoch)
         # A valid nested transition during the *final* detached-copy callback
         # can advance the graph without breaking its internal consistency.
         # A receipt for the older epoch must not silently appear current.
@@ -672,3 +700,6 @@ class PlanGraph:
                     for dependency in reversed(self.steps[step_id].depends_on)
                     if dependency not in complete
                 )
+
+
+_ORIGINAL_PLAN_GRAPH_SETATTR = vars(PlanGraph)["__setattr__"]
