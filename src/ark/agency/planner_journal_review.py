@@ -66,8 +66,15 @@ class SyntheticPlanJournalRejected(RuntimeError):
 
 
 def _require_original_reparse_point_policy() -> None:
+    # stat and its predicates are executable path-classification policy.
+    # Refuse module/predicate substitution before and after every metadata
+    # callback, not merely once before the first lstat.
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise SyntheticPlanJournalRejected(
@@ -78,11 +85,14 @@ def _require_original_reparse_point_policy() -> None:
 def _has_windows_reparse_point(meta: object) -> bool:
     _require_original_reparse_point_policy()
     attributes = getattr(meta, "st_file_attributes", 0)
+    # A synthetic/native metadata accessor can be reentrant. Recheck before
+    # using the returned metadata or proceeding to another filesystem call.
+    _require_original_reparse_point_policy()
     if type(attributes) is not int:
         raise SyntheticPlanJournalRejected(
             "synthetic plan journal reparse metadata is malformed"
         )
-    return bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    return bool(attributes & _ORIGINAL_REPARSE_POINT_ATTRIBUTE)
 
 
 def _hash(label: str, payload: object) -> str:
@@ -446,31 +456,57 @@ def _require_safe_journal_path(path: Path) -> None:
             "synthetic plan journal requires absolute non-traversing Path"
         ) from exc
     _require_original_reparse_point_policy()
+    # Use only import-original classifiers after the identity check. A
+    # reentrant Path/stat metadata callback must not switch the predicate
+    # used to classify the just-returned mode bits.
+    is_dir = _ORIGINAL_STAT_S_ISDIR
+    is_symlink = _ORIGINAL_STAT_S_ISLNK
+    is_regular = _ORIGINAL_STAT_S_ISREG
     try:
         for ancestor in path.parents:
+            _require_original_reparse_point_policy()
             meta = ancestor.lstat()
-            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+            _require_original_reparse_point_policy()
+            mode = meta.st_mode
+            _require_original_reparse_point_policy()
+            if not is_dir(mode) or is_symlink(mode):
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal ancestor is not a real directory"
                 )
             if _has_windows_reparse_point(meta):
+                _require_original_reparse_point_policy()
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal reparse-point ancestor refused"
                 )
+            _require_original_reparse_point_policy()
+        _require_original_reparse_point_policy()
         try:
             meta = path.lstat()
         except FileNotFoundError:
             meta = None
+        # Also check after the missing-leaf exception path: lstat can run
+        # caller-controlled test/native callbacks before reporting absence.
+        _require_original_reparse_point_policy()
         if meta is not None:
-            if stat.S_ISLNK(meta.st_mode):
+            mode = meta.st_mode
+            _require_original_reparse_point_policy()
+            if is_symlink(mode):
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal symlink refused"
                 )
             if _has_windows_reparse_point(meta):
+                _require_original_reparse_point_policy()
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal reparse-point path refused"
                 )
-            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+            _require_original_reparse_point_policy()
+            if not is_regular(mode):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal must be one regular file"
+                )
+            link_count = meta.st_nlink
+            _require_original_reparse_point_policy()
+            if link_count != 1:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal must be one regular file"
                 )
@@ -479,34 +515,53 @@ def _require_safe_journal_path(path: Path) -> None:
         # orphan sidecars before either read-only replay or an append.
         # This lexical check is not a descriptor-held race proof.
         for suffix in ("-wal", "-shm", "-journal"):
+            _require_original_reparse_point_policy()
             sidecar = path.with_name(path.name + suffix)
+            _require_original_reparse_point_policy()
             try:
                 sidecar_meta = sidecar.lstat()
             except FileNotFoundError:
+                _require_original_reparse_point_policy()
                 continue
-            # A sidecar observed during SQLite's final unlink can report
-            # an already-unlinked *regular* inode (nlink=0). Do not mistake
-            # it for a durable alias: only re-observe that pathname ONCE.
-            # Existing orphan, symlink, hardlink and special-file denials
-            # remain strict; this is not descriptor-held pathname custody.
-            if not path.exists():
+            _require_original_reparse_point_policy()
+            exists = path.exists()
+            _require_original_reparse_point_policy()
+            if not exists:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal sidecar unsafe or orphaned"
                 )
             if _has_windows_reparse_point(sidecar_meta):
+                _require_original_reparse_point_policy()
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal sidecar reparse-point refused"
                 )
-            if stat.S_ISREG(sidecar_meta.st_mode) and sidecar_meta.st_nlink == 0:
+            _require_original_reparse_point_policy()
+            sidecar_mode = sidecar_meta.st_mode
+            _require_original_reparse_point_policy()
+            sidecar_links = sidecar_meta.st_nlink
+            _require_original_reparse_point_policy()
+            if is_regular(sidecar_mode) and sidecar_links == 0:
+                # SQLite may be between unlink and pathname disappearance.
+                # Re-observe this pathname only once; this is not atomic
+                # descriptor-held pathname custody.
+                _require_original_reparse_point_policy()
                 try:
                     sidecar_meta = sidecar.lstat()
                 except FileNotFoundError:
+                    _require_original_reparse_point_policy()
                     continue
+                _require_original_reparse_point_policy()
                 if _has_windows_reparse_point(sidecar_meta):
+                    _require_original_reparse_point_policy()
                     raise SyntheticPlanJournalRejected(
                         "synthetic plan journal sidecar reparse-point refused"
                     )
-            if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
+                _require_original_reparse_point_policy()
+                sidecar_mode = sidecar_meta.st_mode
+                _require_original_reparse_point_policy()
+                sidecar_links = sidecar_meta.st_nlink
+                _require_original_reparse_point_policy()
+            if not is_regular(sidecar_mode) or sidecar_links != 1:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal sidecar unsafe or orphaned"
                 )
