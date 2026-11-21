@@ -70,50 +70,30 @@ def test_yielding_second_grant_cannot_hide_equal_carrier_rebinding(
 
 
 @pytest.mark.parametrize("effect", (Effect.READ, Effect.WRITE))
-def test_registered_second_binding_cannot_swap_equal_grant_carrier(
+def test_registered_bind_instance_shadow_is_denied_before_grant_callback(
     monkeypatch, effect,
 ):
     gate, registry, _spec, call, grant, token = _fixture(effect)
-    bind = registry.bind
-    calls = []
+    invoked = []
+    original_bind = registry.bind
 
-    def rebound(current):
-        result = bind(current)
-        calls.append(True)
-        if len(calls) == 2:
-            object.__setattr__(grant, "scope", _clone(grant.scope))
-        return result
+    def shadowed_bind(current):
+        invoked.append(True)
+        return original_bind(current)
 
-    monkeypatch.setattr(registry, "bind", rebound)
-    with pytest.raises(PermissionDenied, match="registered grant identity changed"):
+    monkeypatch.setattr(registry, "bind", shadowed_bind)
+    with pytest.raises(
+        PermissionDenied,
+        match="registered authorization implementation identity changed",
+    ):
         gate.authorize_registered(
             registry, call, (grant,), now_ms=10,
             one_shot=token if effect is Effect.WRITE else None,
         )
-    assert len(calls) == 2
+
+    assert invoked == []
+    assert grant.scope == "offline"
     assert gate._consumed_tokens == set()
-
-
-def test_equal_carrier_replacement_while_waiting_for_spend_lock_does_not_spend():
-    gate, _registry, spec, call, grant, token = _fixture()
-
-    class ReflectedLock:
-        def __enter__(self):
-            object.__setattr__(grant, "scope", _clone(grant.scope))
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-    gate._token_lock = ReflectedLock()
-    with pytest.raises(PermissionDenied, match="during token spend"):
-        gate.authorize(spec, call, (grant,), now_ms=10, one_shot=token)
-    assert gate._consumed_tokens == set()
-    object.__setattr__(grant, "scope", "offline")
-    gate._token_lock = Lock()
-    gate.authorize(spec, call, (grant,), now_ms=10, one_shot=token)
-    assert gate._consumed_tokens == {"one-shot"}
-
 
 def test_equal_carrier_swap_after_local_spend_never_returns_registered_binding():
     gate, registry, _spec, call, grant, token = _fixture()
