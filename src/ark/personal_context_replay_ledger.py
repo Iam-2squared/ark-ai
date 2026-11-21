@@ -34,6 +34,10 @@ _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _ORIGINAL_OS = os
 _ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
 _DDL = (
     "CREATE TABLE context_requests ("
     "seq INTEGER PRIMARY KEY, request_id TEXT NOT NULL UNIQUE, "
@@ -84,14 +88,30 @@ def _require_original_replay_protocol() -> None:
 
 
 
+def _require_original_path_policy() -> None:
+    if (
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+    ):
+        raise OfflineContextReplayRejected("context ledger stat policy changed")
+
+
 def _is_reparse_point(info: object) -> bool:
     _require_original_replay_protocol()
+    _require_original_path_policy()
     attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_path_policy()
     if type(attributes) is not int:
         raise OfflineContextReplayRejected(
             "context ledger reparse metadata is malformed"
         )
-    return stat.S_ISLNK(info.st_mode) or bool(
+    mode = info.st_mode
+    _require_original_path_policy()
+    if type(mode) is not int:
+        raise OfflineContextReplayRejected("context ledger mode metadata is malformed")
+    return _ORIGINAL_S_ISLNK(mode) or bool(
         attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
@@ -313,6 +333,7 @@ def _check_binding(binding: object) -> tuple[str, str, str, str]:
 
 def _check_path(path: object, *, create: bool) -> Path:
     _require_original_replay_protocol()
+    _require_original_path_policy()
     # Reject unsafe native pathname/longest SQLite journal sibling before
     # lstat, a caller callback, or any private context ledger connection.
     if (
@@ -328,7 +349,7 @@ def _check_path(path: object, *, create: bool) -> Path:
         type(path) is not type(Path("."))
         or not path.is_absolute()
         or ".." in path.parts
-        or "\x00" in str(path)
+        or "\\x00" in str(path)
         or path.name in ("", ".", "..")
     ):
         raise OfflineContextReplayRejected("exact absolute local context ledger path required")
@@ -341,19 +362,32 @@ def _check_path(path: object, *, create: bool) -> Path:
     try:
         for ancestor in path.parents:
             info = ancestor.lstat()
-            if not stat.S_ISDIR(info.st_mode) or _is_reparse_point(info):
+            _require_original_path_policy()
+            mode = info.st_mode
+            _require_original_path_policy()
+            if type(mode) is not int:
+                raise OfflineContextReplayRejected("context ledger mode metadata is malformed")
+            if not _ORIGINAL_S_ISDIR(mode) or _is_reparse_point(info):
                 raise OfflineContextReplayRejected("context ledger ancestor is unsafe")
         main_absent = False
         try:
             info = path.lstat()
         except FileNotFoundError:
+            _require_original_path_policy()
             main_absent = True
             if not create:
                 raise OfflineContextReplayRejected("context ledger is missing") from None
         else:
+            _require_original_path_policy()
+            mode = info.st_mode
+            _require_original_path_policy()
+            if type(mode) is not int:
+                raise OfflineContextReplayRejected("context ledger mode metadata is malformed")
+            links = info.st_nlink
+            _require_original_path_policy()
             if (
-                create or not stat.S_ISREG(info.st_mode)
-                or info.st_nlink != 1 or _is_reparse_point(info)
+                create or not _ORIGINAL_S_ISREG(mode)
+                or links != 1 or _is_reparse_point(info)
             ):
                 raise OfflineContextReplayRejected("existing or aliased context ledger path")
         # SQLite can also open companion journal/WAL/shared-memory files.
@@ -365,11 +399,19 @@ def _check_path(path: object, *, create: bool) -> Path:
             try:
                 sidecar = companion.lstat()
             except FileNotFoundError:
+                _require_original_path_policy()
                 continue
+            _require_original_path_policy()
+            mode = sidecar.st_mode
+            _require_original_path_policy()
+            if type(mode) is not int:
+                raise OfflineContextReplayRejected("context ledger mode metadata is malformed")
+            links = sidecar.st_nlink
+            _require_original_path_policy()
             if (
                 main_absent
-                or not stat.S_ISREG(sidecar.st_mode)
-                or sidecar.st_nlink != 1
+                or not _ORIGINAL_S_ISREG(mode)
+                or links != 1
                 or _is_reparse_point(sidecar)
             ):
                 raise OfflineContextReplayRejected(
@@ -378,7 +420,6 @@ def _check_path(path: object, *, create: bool) -> Path:
     except OSError as exc:
         raise OfflineContextReplayRejected("context ledger path unavailable") from exc
     return path
-
 
 def _schema(conn: sqlite3.Connection) -> None:
     _require_original_replay_protocol()
