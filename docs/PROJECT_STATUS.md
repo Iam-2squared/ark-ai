@@ -1,3 +1,62 @@
+# LATEST — ARK Run1085: Reentrant path-policy custody across Planner, ActionAudit, Memory and Personal Context
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22T06:53:49+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `916aae6c6578086fee5e83c77c23375712676c90`. **Checkpoint write-basis HEAD:** `916aae6c6578086fee5e83c77c23375712676c90`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live branch ref immediately afterward; it is not self-embedded because a commit cannot contain its own resulting SHA.
+
+## Protected refs and current state
+
+- **PR #8 foundation:** `research/jarvis-foundations`, work-basis HEAD `916aae6c6578086fee5e83c77c23375712676c90`, OPEN/DRAFT/UNMERGED. Exact-head workflow run [44944518099](https://github.com/Iam-2squared/ark-ai/actions/runs/44944518099) completed **GREEN 6/6** on this work-basis HEAD. This checkpoint creates a new head; no verdict is inferred for its result.
+- **PR #219 — Planner journal reentrant stat-policy custody:** OPEN/DRAFT/UNMERGED, child `research/run1085-planner-journal-stat-reentrant`, current exact HEAD `771a5b1005eb06d259a8cea2b50a5d9eaf8b19be`, based on PR #8 HEAD `916aae6c6578086fee5e83c77c23375712676c90`. Initial head `f64eb083eb8a45a0d31e1cf3711fda85b82cf738` run [44953336786](https://github.com/Iam-2squared/ark-ai/actions/runs/44953336786) **FAILED at Ruff** (missing import-original stat captures and two B010 test assignments). Minimal source/test corrections are on the current head; fresh exact-head run [44953558318](https://github.com/Iam-2squared/ark-ai/actions/runs/44953558318) is **IN PROGRESS**.
+- **PR #220 — ActionAudit reentrant stat-policy custody:** OPEN/DRAFT/UNMERGED, child `research/run1085-action-audit-stat-reentrant`, current exact HEAD `a13ed995239831ef1e96534b0846b684aab274d9`, based on PR #8 HEAD `916aae6c6578086fee5e83c77c23375712676c90`. Initial head `9c9342d986e9120e96896c4e95d59dfaa9080e68` run [44953479986](https://github.com/Iam-2squared/ark-ai/actions/runs/44953479986) **FAILED at Ruff** (three B010 test assignments). Those test-only assignments were corrected; fresh exact-head run [44953668999](https://github.com/Iam-2squared/ark-ai/actions/runs/44953668999) is **IN PROGRESS**.
+- **PR #221 — Memory SQLite reentrant stat-policy custody:** OPEN/DRAFT/UNMERGED, child `research/run1085-memory-stat-reentrant`, exact HEAD `242a556f7d7804dac48ae138776e906683465e4f`, based on PR #8 HEAD `916aae6c6578086fee5e83c77c23375712676c90`. Exact-head run [44953650237](https://github.com/Iam-2squared/ark-ai/actions/runs/44953650237) is **IN PROGRESS**.
+- **PR #222 — Personal Context replay-ledger path custody:** OPEN/DRAFT/UNMERGED, child `research/run1085-context-ledger-reparse-reentrant`, exact HEAD `60fd7c962a26be76bd2e4d2ce33ecfdf1b7db261`, based on PR #8 HEAD `916aae6c6578086fee5e83c77c23375712676c90`. Exact-head run [44953780706](https://github.com/Iam-2squared/ark-ai/actions/runs/44953780706) is **QUEUED**.
+- **Existing core child PRs #212–#218:** remain OPEN/DRAFT/UNMERGED; their latest observed exact-head CI runs completed **GREEN 6/6**: #212 `44947407221`, #213 `44947555621`, #214 `44947593830`, #215 `44947916525`, #216 `44948188472`, #217 `44948229135`, #218 `44949482272`. These do not certify any new Run1085 head.
+- **Older Planner journal PR #203:** remains OPEN/DRAFT/UNMERGED on an older parent snapshot. PR #219 is the current-head successor; no old branch was force-pushed, overwritten or closed.
+- **Gated PR #5:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED. V3 remains **NOT_PASSED**; no real training, Candidate, protected V2 evaluation or promotion was opened.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains **PAUSED**.
+- **main:** HEAD `6e40afb74666b7dfda6560dd5ca619664d7129b7` at pre-checkpoint observation. No main write or merge was made in this invocation.
+
+## NEW — this invocation (Run1085)
+
+1. **Planner journal path-policy reentrancy / PR #219:** rebased the existing stat-predicate custody work onto current PR #8 HEAD and closed the callback-time gap. Import-original stat module/predicate identities are pinned; classification uses captured original predicates; policy is rechecked after ancestor/leaf/sidecar `lstat`, missing-leaf handling, `Path.exists` and metadata access. Replay-only schema/hash-chain/transition semantics and UNKNOWN recovery for recovered RUNNING steps remain unchanged. Added synthetic callback-time predicate/module replacement, missing-leaf and Windows metadata accessor regressions. First CI failure was lint-only; the exact fix is on the current child head.
+2. **ActionAudit path-policy reentrancy / PR #220:** added post-metadata policy checks and captured original directory/regular-file/symlink/reparse/`S_IFMT` classifiers around audit DB and SQLite sidecar admission. ActionAudit v1 schema/event identity/append semantics remain unchanged. Added synthetic callback-time predicate/module, missing-leaf and metadata-accessor regressions. First CI failure was lint-only; the exact fix is on the current child head.
+3. **Memory SQLite path-policy reentrancy / PR #221:** added post-`lstat` and post-metadata checks, captured import-original path classifiers, and bound the Windows reparse attribute mask to its original value. Memory v1 DDL, public API, row/event semantics and CAS behavior remain unchanged. Added synthetic callback-time predicate/module, missing-leaf and metadata-accessor regressions.
+4. **Personal Context replay-ledger path custody / PR #222:** pinned the stat/encoding dependencies, added callback-time policy rechecks and Windows reparse-point rejection for ancestors, main ledger and SQLite sidecars. Hash-only request rows, replay protocol, ledger schema and denial-only authority properties remain unchanged. Added synthetic reentrant and reparse metadata regressions; tests invoke the path checker directly and do not open/create a private ledger.
+5. **CI repair discipline:** PR #219 and #220 each exposed Ruff-only failures before pytest. The smallest missing-capture/attribute-assignment fixes were applied through the normal GitHub Contents API. No force push, raw-object write, duplicate manual workflow dispatch, merge or ready-for-review transition occurred.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 work-basis `916aae6c6578086fee5e83c77c23375712676c90`: run `44944518099`, **GREEN 6/6**.
+- PR #219 initial `f64eb083eb8a45a0d31e1cf3711fda85b82cf738`: run `44953336786`, **FAIL** (Ruff F821/B010 before pytest); repaired head `771a5b1005eb06d259a8cea2b50a5d9eaf8b19be`: run `44953558318`, **IN PROGRESS**.
+- PR #220 initial `9c9342d986e9120e96896c4e95d59dfaa9080e68`: run `44953479986`, **FAIL** (Ruff B010 before pytest); repaired head `a13ed995239831ef1e96534b0846b684aab274d9`: run `44953668999`, **IN PROGRESS**.
+- PR #221 `242a556f7d7804dac48ae138776e906683465e4f`: run `44953650237`, **IN PROGRESS**.
+- PR #222 `60fd7c962a26be76bd2e4d2ce33ecfdf1b7db261`: run `44953780706`, **QUEUED**.
+- Existing child runs #212–#218 listed above are GREEN on their own exact heads. No local pytest/Ruff PASS, physical-PC validation, real runtime identity, live personal data, paid compute, Candidate artifact, protected evaluation or external-effect proof is claimed. A queued/in-progress run is not a PASS. No duplicate workflow was manually dispatched.
+
+## Overall current ARK state
+
+Four non-UI local-first path-custody packages are saved as isolated Draft child PRs. Two lint-only failures were repaired and fresh exact-head runs are in progress; two other exact-head runs are in progress/queued. The work improves fail-closed path admission for Planner journal, ActionAudit, Memory and hash-only Personal Context replay, but does not establish atomic directory-handle custody, a sandbox, independent provenance, trusted time, consent, power-loss durability or exactly-once external effects. PR #8 remains Draft/unmerged; PR #5 remains Draft/unmerged and V3 NOT_PASSED; PR #9 remains paused/untouched. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/row-event/CAS semantics; PlanStep/ToolCall v1; ActionAudit v1 schema/event semantics; Observation Envelope v1; V3 Contract 1 semantics/hash; protected V2 final-evaluation boundary; and all contamination/provenance/regression/reproducibility gates remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, power-loss durability, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated. PR #219–#222 remain Draft; no child was merged or marked ready.
+
+## Next plan / 今後の方針
+
+1. Let exact-head CI runs `44953558318` (#219), `44953668999` (#220), `44953650237` (#221) and `44953780706` (#222) finish without duplicate dispatch. Inspect failures and make only the smallest semantics-preserving repair; switch to a different non-UI lane while any one path is being validated.
+2. After GREEN, re-read the live PR #8 head and each child branch immediately before any rebase/integration. Preserve Draft/unmerged state; no main merge or child merge without the required explicit approval.
+3. Continue Planner durable persistence/crash recovery and terminal propagation; ToolRegistry immutable registry-bound identity and exact-type PermissionGate; restart-safe authorization and trusted-clock audit-before-action; disconnected/mock execution and startup readiness.
+4. Continue privacy-safe Personal Context lifecycle, proactive scheduler persistence/recovery, and observation/multimodal contracts/fixture adapters; keep claims limited to synthetic local evidence until real authorization exists.
+5. Continue only free-only V3 approval/path/identity/reproducibility guard hardening. Keep PR #5 Draft/unmerged; do not open protected V2 evaluation or generate/promote a Candidate.
+6. Keep all UI/frontend development PAUSED; leave PR #9 and Local UI freezes untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1082: PermissionGate fixture repair; V3 export and packet-reader path custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22T05:05:40+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
