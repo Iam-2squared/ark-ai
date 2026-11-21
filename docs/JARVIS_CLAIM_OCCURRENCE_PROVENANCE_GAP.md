@@ -1,0 +1,141 @@
+# ARK JARVIS — Claim/Occurrence Provenance Gap (research-only)
+
+Status: **DRAFT / disconnected / non-authorizing**. This is a test and implementation
+contract proposal, not a frozen contract, verified human approval or a migration
+decision. It applies only to added-only JARVIS research modules in PR #8.
+Frozen V1/V2/Local UI/Launcher evidence and V3 PR #5 gates remain unchanged.
+
+## Observed gap in source
+
+`synthetic_claim_recovery_review.py` verifies that an untrusted approval claim,
+the immutable ToolRegistry binding and read-only Planner/occurrence/audit
+snapshots agree on **Registry revision, bound Action ID and request ID**. A
+reservation in `durable_occurrence_review.py` stores its one-shot token digest
+and occurrence identity, but **does not persist the approval claim ID,
+issuer/subject/purpose/recipient/nonce digests, or a verification record of
+their authority**. Two different locally coherent claims for the same
+request can therefore both describe the same reservation in a diagnostic
+review. A matching cross-store receipt **must not be named proof of historical
+approval-to-occurrence provenance**.
+
+The existing `SyntheticClaimRecoveryReview` correctly exposes
+`human_consent_verified=False`, `dispatch_authorized=False`,
+`automatic_replay_authorized=False`, and `external_outcome_known=False`.
+A stored cancellation marker is a veto, **not proof that absent cancellation
+means consent**. None of the SQLite witnesses are externally authenticated.
+
+## Proposed reversible FREE-only evidence lane
+
+A **new, isolated, create-only synthetic sidecar** (NOT a modification to the
+frozen ActionAudit schema or existing occurrence reservation table) can record a
+one-to-one *claimed local association* of:
+- exact `approval_id`, canonical `nonce_digest`, issuer/subject/purpose/
+  recipient digests, and issued/expiry clocks from the existing envelope;
+- exact `registry_revision`, `bound_action_id`, `request_id` and
+  `occurrence_id` from the already committed reservation;
+- the reservation's independently reviewed row hash/witness and the
+  cancellation journal's observed tail, labeled as local, untrusted evidence;
+- a deterministic, domain-separated append identity, previous event hash,
+  sequence number and local append timestamp.
+
+A sidecar record is a **claim** about two local objects; it is not an
+authenticated signature, user approval, token consumption, transactional
+cross-store commit, external outcome proof, or execution permit.
+
+Admission and read-only review should reject **any** mismatch, missing
+reservation, claim expiry, cancellation, invalid SQLite schema, forged
+receipt, duplicate occurrence, duplicate claim association, changed history,
+timestamp rollback, and reflected input drift. Optionally compare a
+**genuinely earlier and independently retained** prefix witness. Replay of
+the current DB to regenerate its own witness is not independent evidence.
+
+## Acceptance matrix for an isolated implementation
+
+| Fixture | Required result |
+| --- | --- |
+| Correct offline claim + one persisted matching reservation | Inert identity-only evidence |
+| Same request, different claim nonce/purpose/recipient | Different identity; never interchangeable |
+| Duplicate claim, occurrence, or cross-association | Reject atomically before append |
+| Cancelled claim or veto added during review | Reject; no dispatch or replay |
+| Claim expires at the admission clock | Reject at open upper expiry bound |
+| Missing/renamed SQLite source or sidecar | Refuse without creating a replacement |
+| Schema version, extra trigger/index or persisted row tamper | Reject |
+| Earlier separately retained witness no longer matches | Reject |
+| Crash before/after sidecar commit | Recover as distinct known local states |
+| UNKNOWN real WRITE outcome with all local evidence matching | **Still UNKNOWN, never auto-retry** |
+| Backend, notification, camera/mic/screen or external GPU request | Not in this lane; never executed |
+
+All mutation transactions must use SQLite's ordinary safe, documented
+transaction APIs. No raw Git-object writes, force pushes, paid compute,
+credentials, model training, protected evaluation, automatic promotion,
+physical-PC actions or actual network/backend dispatch.
+
+## Dependencies before any later integration
+
+1. Exact-head CI GREEN for existing Registry, PermissionGate, durable occurrence,
+   ActionAudit, Planner recovery and cancellation reviewers.
+2. A separately reviewed, provenance-preserving approval producer with
+   authenticated issuer, subject, recipient and purpose. This does **not** exist.
+3. Trusted clock, revocation rights, independently protected evidence and an
+   explicit treatment of races after final local review. These do **not** exist.
+4. External backend effect/idempotency reconciliation for UNKNOWN WRITE and
+   human authorization for real effects. These do **not** exist.
+
+Until the actual authorities and evidence exist, any prospective implementation
+must permanently return false for human consent, dispatch, replay and known
+external outcome. The work may move forward offline without declaring PASS.
+
+## Disconnected prototype added on the JARVIS research branch
+
+`agency/synthetic_claim_occurrence_link_review.py` is now an **isolated,
+reversible synthetic reference implementation** of the local association
+record (with focused regression fixtures in
+`tests/test_synthetic_claim_occurrence_link_run379.py`). It persists the
+approval ID, nonce and claimed identity digests alongside an exact
+Registry/Action/request/occurrence tuple. The local table requires unique
+approval and occurrence IDs, uses an append-only sequence and hash chain,
+checks schema/row integrity on read and append, optionally checks an
+independently retained historical witness, and refuses to recreate a missing
+initialized file. Before an append it validates the actual reservation row
+in a separate read-only SQLite snapshot and checks the local cancellation
+journal before and after that read. It **never** dispatches a backend.
+
+**Remaining gaps:** This prototype does not bind the claim to the historical
+moment at which the reservation was originally issued, prove issuer/subject
+or nonce authenticity, persist the source reservation witness/hash, attest
+an external timestamp, protect witnesses outside the local trust domain,
+create a cross-database atomic transaction, re-attest all source ledgers
+when a previously written sidecar entry is later read, or prove any
+external effect. Its receipts always deny consent, dispatch and replay.
+The acceptance matrix above remains a design/test target, not a PASS claim.
+
+## Offline source re-attestation (Run 380 research follow-up)
+
+`agency/synthetic_claim_occurrence_recheck_review.py` supplies a separate,
+**read-only and non-authorizing** diagnostic for already committed local
+sidecar rows. It opens the claim-link and occurrence SQLite files with
+`mode=ro`, replays the bounded hash-linked link history, validates the source
+schema/rows and checks **every saved association** against an actual current
+reservation's occurrence, Registry revision, bound Action ID, request ID, and
+relative reservation/association timestamps. An optional explicit claim /
+occurrence pair must be found exactly; missing or renamed SQLite databases
+must not be recreated. Optional independently retained link and reservation
+witnesses can detect local-history deletion or rewriting. The reviewer
+compares new before/after witness snapshots to detect observed concurrent
+source/sidecar changes, including legitimate appends during diagnosis.
+
+This approach intentionally **does not** backfill a missing association,
+dispatch a backend, accept a hash as an authentic issuer signature, or turn
+an absent revocation marker into consent. It cannot attest a reservation's
+original historical approval instant, distinguish a coherent rewrite without
+an earlier independent witness, create an atomic snapshot spanning SQLite
+files, or close the race immediately after the last check. Equalities of
+untrusted local digests prove neither human approval nor an external effect.
+`human_consent_verified`, `dispatch_authorized`, `automatic_replay_authorized`
+and `external_outcome_known` remain **false**, including on successful
+re-attestation. UNKNOWN WRITE remains UNKNOWN and never auto-replayable.
+
+The associated offline regression suite is
+`tests/test_synthetic_claim_occurrence_recheck_run380.py`. Exact-head CI
+results, rather than the existence of this prose, govern any engineering
+claim. No frozen contract or live execution permission changes here.

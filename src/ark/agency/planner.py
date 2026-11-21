@@ -1,0 +1,674 @@
+"""Deterministic DAG plan state with revision-guarded transitions."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+from collections.abc import Mapping
+from dataclasses import replace
+from types import MappingProxyType
+
+from .contracts import PlanConflictError, PlanStep, PlanStepStatus, StepState, ToolCall
+
+# A local Planner hash is only useful while its serializer and SHA-256
+# implementation are the same ones that established the original topology.
+# These process-local pins are NOT independently authenticated provenance.
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_DUMPS = json.dumps
+
+
+def _require_original_plan_digest() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_DUMPS
+    ):
+        raise PlanConflictError("plan digest dependencies changed")
+
+
+def _plan_digest(prefix: str, payload: object) -> str:
+    _require_original_plan_digest()
+    encoded = (
+        json.dumps(
+            payload, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False,
+        ) + "\n"
+    ).encode("utf-8")
+    value = prefix + hashlib.sha256(encoded).hexdigest()
+    _require_original_plan_digest()
+    return value
+
+
+_ALLOWED: Mapping[StepState, frozenset[StepState]] = MappingProxyType(
+    {
+        StepState.PENDING: frozenset(
+            {StepState.RUNNING, StepState.BLOCKED, StepState.CANCELLED}
+        ),
+        StepState.RUNNING: frozenset(
+            {StepState.SUCCEEDED, StepState.FAILED, StepState.CANCELLED}
+        ),
+        StepState.SUCCEEDED: frozenset(),
+        StepState.FAILED: frozenset(),
+        StepState.BLOCKED: frozenset(),
+        StepState.CANCELLED: frozenset(),
+    }
+)
+
+
+# Preserve the import-original transition graph. Rebinding this mapping can
+# otherwise turn PENDING directly into SUCCEEDED or resurrect terminal states,
+# bypassing planner recovery and dependency policy without touching a PlanStep.
+_ORIGINAL_ALLOWED_POLICY = _ALLOWED
+_ORIGINAL_ALLOWED_ROWS = tuple(_ALLOWED.items())
+
+
+def _require_original_transition_policy() -> None:
+    if (
+        _ALLOWED is not _ORIGINAL_ALLOWED_POLICY
+        or type(_ALLOWED) is not MappingProxyType
+        or tuple(_ALLOWED.items()) != _ORIGINAL_ALLOWED_ROWS
+    ):
+        raise PlanConflictError("plan transition policy changed")
+
+
+# Bound standalone PlanGraph ingress as well as the narrower durable journal.
+# A dependency-rich but acyclic graph can otherwise consume unbounded CPU and
+# memory during recovery/readiness diagnosis before reaching any policy gate.
+_MAX_PLAN_GRAPH_STEPS = 4096
+_MAX_PLAN_GRAPH_EDGES = 65536
+_MAX_GRAPH_LABEL_BYTES = 4096
+
+
+def _admit_graph_label(value: object) -> None:
+    """Reject reflected overlong IDs before sets, maps and request hashes.
+
+    This is a boundary of the standalone PlanGraph, NOT a change to the
+    frozen PlanStep/ToolCall dataclasses or a source of execution authority.
+    """
+    if type(value) is not str:
+        # Preserve the existing fail-closed error classification for
+        # reflected non-text carriers, including callback-bearing objects.
+        raise PlanConflictError("plan step carrier changed before admission")
+    if len(value) > _MAX_GRAPH_LABEL_BYTES:
+        raise PlanConflictError("plan graph identifier budget exceeded")
+    if not value.strip():
+        raise PlanConflictError("plan graph identifier must be nonblank")
+    # SQLite/native boundaries must not receive embedded NUL identity bytes.
+    # This rejects both original and post-init-reflected graph labels without
+    # altering the frozen PlanStep/ToolCall constructor contracts.
+    if "\x00" in value:
+        raise PlanConflictError("plan graph identifier contains NUL separator")
+    # The frozen PlanStep/ToolCall contracts allow control-bearing strings.
+    # Standalone Planner must refuse C0/DEL log or journal delimiters before
+    # computing a request digest, constructing a DAG or persisting an ID.
+    # Keep NUL's established error classification above unchanged.
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise PlanConflictError("plan graph identifier contains ASCII control delimiter")
+    # C1 terminal controls, Unicode direction overrides and line separators
+    # allow printed/audited step identities to display differently from the
+    # exact string that was hashed. Keep this stricter optional graph admission
+    # separate from the frozen PlanStep/ToolCall construction contracts.
+    if any(
+        0x80 <= codepoint <= 0x9F
+        or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= codepoint <= 0x202E
+        or 0x2066 <= codepoint <= 0x2069
+        # Identifiers in plans, tool bindings and dependency edges must
+        # remain visually distinguishable in local recovery/audit records.
+        # These default-ignorable scalars do not change the frozen
+        # ToolCall/PlanStep contracts; this is optional PlanGraph admission.
+        or codepoint in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x206A <= codepoint <= 0x206F
+        for codepoint in map(ord, value)
+    ):
+        raise PlanConflictError("plan graph identifier contains Unicode formatting control")
+    try:
+        size = len(value.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise PlanConflictError("plan graph identifier is not valid UTF-8") from exc
+    if size > _MAX_GRAPH_LABEL_BYTES:
+        raise PlanConflictError("plan graph identifier budget exceeded")
+
+
+
+def _admit_frozen_arguments(value: object) -> None:
+    """Preflight exact nested JSON carriers before ToolCall request hashing.
+
+    ToolCall.__post_init__ creates MappingProxyType/tuple recursively. A
+    reflected replacement can preserve that outer mapping type while hiding
+    a foreign nested mapping with executable .items()/iteration callbacks.
+    This admission is not a signature or original-argument provenance proof.
+    """
+    nodes = 0
+    text_bytes = 0
+
+    def visit(item: object, depth: int) -> None:
+        nonlocal nodes, text_bytes
+        nodes += 1
+        if nodes > 4096 or depth > 32:
+            raise PlanConflictError("plan step carrier changed before admission")
+        kind = type(item)
+        if kind is str:
+            if len(item) > 65536:
+                raise PlanConflictError("plan step carrier changed before admission")
+            try:
+                text_bytes += len(item.encode("utf-8", errors="strict"))
+            except UnicodeEncodeError as exc:
+                raise PlanConflictError(
+                    "plan step carrier changed before admission"
+                ) from exc
+            if text_bytes > 256 * 1024:
+                raise PlanConflictError("plan step carrier changed before admission")
+        elif kind is MappingProxyType:
+            if len(item) > 4096:
+                raise PlanConflictError("plan step carrier changed before admission")
+            for key, child in item.items():
+                if type(key) is not str:
+                    raise PlanConflictError(
+                        "plan step carrier changed before admission"
+                    )
+                visit(key, depth + 1)
+                visit(child, depth + 1)
+        elif kind is tuple:
+            if len(item) > 4096:
+                raise PlanConflictError("plan step carrier changed before admission")
+            for child in item:
+                visit(child, depth + 1)
+        elif kind is float:
+            if not math.isfinite(item):
+                raise PlanConflictError("plan step carrier changed before admission")
+        elif kind is int:
+            # A reflected, otherwise exact Python int can contain millions of
+            # digits. Reject it before ToolCall.request_id JSON encoding: on
+            # Python 3.11+ even a much smaller decimal exceeds the default
+            # 4,300-digit conversion budget. 14,000 bits (<4,300 decimal
+            # digits) keeps the standalone Planner within that limit without
+            # changing the frozen ToolCall constructor or valid small hashes.
+            if item.bit_length() > 14_000:
+                raise PlanConflictError("plan step carrier changed before admission")
+        elif item is not None and kind is not bool:
+            raise PlanConflictError("plan step carrier changed before admission")
+
+    if type(value) is not MappingProxyType:
+        raise PlanConflictError("plan step carrier changed before admission")
+    visit(value, 0)
+
+
+class PlanGraph:
+    def __init__(self, steps: tuple[PlanStep, ...]) -> None:
+        _require_original_transition_policy()
+        _require_original_plan_digest()
+        if type(steps) is not tuple:
+            raise TypeError("steps must be a tuple of exact PlanStep values")
+        if not steps:
+            raise ValueError("plan requires at least one step")
+        if len(steps) > _MAX_PLAN_GRAPH_STEPS:
+            raise ValueError("plan step budget exceeded")
+        if any(type(step) is not PlanStep for step in steps):
+            raise TypeError("steps must be a tuple of exact PlanStep values")
+        if any(type(step.depends_on) is not tuple for step in steps):
+            raise PlanConflictError("plan dependency carrier must be a tuple")
+        # Check the total edge budget BEFORE creating per-step dependency
+        # sets. A frozen PlanStep can be reflectively mutated to carry an
+        # enormous duplicate tuple after its constructor validated it.
+        # Reject such input without allocating a giant duplicate-detection set.
+        if sum(len(step.depends_on) for step in steps) > _MAX_PLAN_GRAPH_EDGES:
+            raise ValueError("plan dependency budget exceeded")
+        # Frozen PlanStep fields can be reflectively replaced after their
+        # constructor validates them. Check exact primitive identities before
+        # constructing a dict/set (which could invoke hostile __hash__/__eq__)
+        # or reading the ToolCall to build a retained plan epoch.
+        for step in steps:
+            _admit_graph_label(step.step_id)
+            if type(step.call) is not ToolCall:
+                raise PlanConflictError("plan step carrier changed before admission")
+            # A reflectively replaced ToolCall.arguments mapping may have
+            # executable items()/iteration hooks. The original ToolCall
+            # always freezes arguments to an exact MappingProxyType. Refuse
+            # foreign mapping carriers before the request_id digest, DAG
+            # allocation or any user-controlled mapping traversal.
+            _admit_frozen_arguments(step.call.arguments)
+            for dep in step.depends_on:
+                _admit_graph_label(dep)
+            # The frozen ToolCall contract is unchanged; bound its current
+            # reflected identity before request_id hashing and dict creation.
+            for label in (
+                step.call.tool, step.call.capability, step.call.scope,
+            ):
+                _admit_graph_label(label)
+            if len(set(step.depends_on)) != len(step.depends_on):
+                raise PlanConflictError("plan dependency carrier has duplicate IDs")
+        step_map = {step.step_id: step for step in steps}
+        if len(step_map) != len(steps):
+            raise ValueError("plan step IDs must be unique")
+        self.steps: Mapping[str, PlanStep] = MappingProxyType(step_map)
+        for step in steps:
+            unknown = set(step.depends_on) - self.steps.keys()
+            if unknown:
+                raise ValueError(f"unknown dependency for {step.step_id}: {sorted(unknown)}")
+            if step.step_id in step.depends_on:
+                raise ValueError("step may not depend on itself")
+        self._assert_acyclic()
+        self._status = {
+            step.step_id: PlanStepStatus(step.step_id, StepState.PENDING, 0)
+            for step in steps
+        }
+        # A MappingProxyType protects the mapping, not its frozen dataclass
+        # values against object.__setattr__ reflection. Pin exact plan inputs.
+        self._step_mapping_epoch = self.steps
+        _require_original_plan_digest()
+        self._step_epoch = tuple(
+            (
+                step_id, step, step.step_id, step.call, step.depends_on,
+                step.call.tool, step.call.capability, step.call.scope,
+                step.call.arguments, step.call.request_id,
+            )
+            for step_id, step in sorted(self.steps.items())
+        )
+        # A caller can reflectively mutate even a frozen PlanStepStatus or
+        # replace the private dictionary. Pin every initial state independent
+        # of the live carrier; only successful transitions advance this epoch.
+        self._status_mapping_epoch = self._status
+        self._status_epoch = self._capture_status_epoch()
+        _require_original_plan_digest()
+
+    def _capture_status_epoch(
+        self,
+    ) -> tuple[tuple[str, PlanStepStatus, StepState, int], ...]:
+        return tuple(
+            (name, self._status[name], self._status[name].state,
+             self._status[name].revision)
+            for name in sorted(self.steps)
+        )
+
+    def _assert_status_epoch(self) -> None:
+        if (
+            type(self._status) is not dict
+            or self._status is not self._status_mapping_epoch
+            or type(self._status_epoch) is not tuple
+            or len(self._status) != len(self.steps)
+            or len(self._status_epoch) != len(self.steps)
+            # Dict/set reconstruction hashes keys. Reject substituted keys
+            # before they can execute custom hash/equality callbacks.
+            or any(type(name) is not str for name in self._status)
+            or any(type(name) is not str for name in self.steps)
+            or any(
+                type(entry) is not tuple or len(entry) != 4
+                for entry in self._status_epoch
+            )
+            or set(self._status) != set(self.steps)
+        ):
+            raise PlanConflictError("plan status mapping changed")
+        for name, carrier, state, revision in self._status_epoch:
+            if type(name) is not str:
+                raise PlanConflictError("plan status epoch identifier changed")
+            current = self._status.get(name)
+            if current is not None and (
+                type(current) is not PlanStepStatus
+                # Frozen dataclass fields can be reflectively overwritten.
+                # Do not invoke a foreign __eq__/__ne__ while checking status
+                # identity; refuse its non-string carrier first.
+                or type(current.step_id) is not str
+                or current.step_id != name
+            ):
+                raise PlanConflictError(
+                    "plan status identity changed outside transition"
+                )
+            if (
+                type(name) is not str
+                or type(carrier) is not PlanStepStatus
+                or current is not carrier
+                or current.step_id != name
+                or type(current.state) is not StepState
+                or current.state is not state
+                or type(current.revision) is not int
+                or not 0 <= current.revision <= 2**63 - 1
+                or current.revision != revision
+            ):
+                raise PlanConflictError("plan status changed outside transition")
+
+    def _assert_plan_epoch(self) -> None:
+        _require_original_transition_policy()
+        _require_original_plan_digest()
+        if (
+            type(self.steps) is not MappingProxyType
+            or self.steps is not self._step_mapping_epoch
+            or type(self._step_epoch) is not tuple
+            or len(self._step_epoch) != len(self.steps)
+            or any(
+                type(entry) is not tuple or len(entry) != 10
+                for entry in self._step_epoch
+            )
+        ):
+            raise PlanConflictError("plan mapping changed after construction")
+        for (
+            step_id, step, original_step_id, call, depends_on,
+            tool, capability, scope, arguments, request_id,
+        ) in self._step_epoch:
+            if (
+                type(step_id) is not str
+                or type(step) is not PlanStep
+                or type(step.step_id) is not str
+                or step.step_id != step_id
+                or step.step_id is not original_step_id
+                or self.steps.get(step_id) is not step
+                or step.call is not call
+                or type(call) is not type(step.call)
+                or type(depends_on) is not tuple
+                or step.depends_on is not depends_on
+                # A reflected replacement with equal text still changes the
+                # original action/step carrier; its digest alone cannot
+                # establish exact-input custody for later Planner phases.
+                or call.tool is not tool
+                or call.capability is not capability
+                or call.scope is not scope
+                or call.arguments is not arguments
+            ):
+                raise PlanConflictError("plan step input changed after construction")
+            # MappingProxyType pins the mapping object, not an external backing
+            # dict substituted through reflection before graph construction.
+            # Recheck every nested exact JSON carrier before the frozen
+            # ToolCall's request-id serializer can traverse a later mutation.
+            _admit_frozen_arguments(arguments)
+            try:
+                current_request_id = call.request_id
+            except (TypeError, ValueError, AttributeError) as exc:
+                raise PlanConflictError("plan action input is invalid") from exc
+            if current_request_id != request_id:
+                raise PlanConflictError("plan action identity changed after construction")
+        _require_original_plan_digest()
+
+    def topology_digest(self) -> str:
+        """Canonical input identity for future *disconnected* journal replay.
+
+        Bind exact step IDs, action request digests, and dependency tuple order.
+        This digest is local integrity evidence, never authority for execution.
+        """
+        self._assert_plan_epoch()
+        payload = {
+            "schema_version": 1,
+            "steps": [
+                {
+                    "step_id": step_id,
+                    "request_id": self.steps[step_id].call.request_id,
+                    "depends_on": self.steps[step_id].depends_on,
+                }
+                for step_id in sorted(self.steps)
+            ],
+        }
+        digest = _plan_digest("plan_", payload)
+        # Hash/JSON callbacks are reentrant in fault fixtures. The witness
+        # must not describe an earlier PlanStep epoch than the one returned.
+        self._assert_plan_epoch()
+        return digest
+
+    def status_digest(self) -> str:
+        """Canonical full status witness including derived BLOCKED revisions.
+
+        No raw ToolCall arguments or backend outcomes are serialized.
+        This is an in-process snapshot, NOT a durable concurrency transaction.
+        """
+        # A valid reentrant transition can advance the graph while we hash
+        # an earlier detached snapshot. The live epoch may be consistent but
+        # no longer describe the digest being returned.
+        status_epoch = self._status_epoch
+        statuses = self.statuses()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during digest snapshot")
+        entries = []
+        for step_id in sorted(self.steps):
+            status = statuses[step_id]
+            if status.step_id != step_id:
+                raise PlanConflictError("plan status identity changed")
+            entries.append(
+                {
+                    "step_id": step_id,
+                    "state": status.state.value,
+                    "revision": status.revision,
+                }
+            )
+        digest = _plan_digest(
+            "pstate_",
+            {
+                "schema_version": 1,
+                "topology_digest": self.topology_digest(),
+                "statuses": entries,
+            },
+        )
+        # A canonical snapshot is only valid if neither its plan inputs nor
+        # the authoritative statuses changed during either digest callback.
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during digest hashing")
+        return digest
+
+    def statuses(self) -> Mapping[str, PlanStepStatus]:
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        # A dataclass copy callback can execute an otherwise valid transition.
+        # Record the epoch so a consistent-but-newer graph cannot be paired
+        # with older detached values without detection.
+        status_epoch = self._status_epoch
+        # Return detached value snapshots: frozen dataclass fields can still be
+        # changed by object.__setattr__ on a caller-held reference.
+        detached = MappingProxyType({
+            key: replace(value) for key, value in self._status.items()
+        })
+        # Dataclass snapshot construction is also a fault-injection boundary.
+        # Reject stale detached snapshots if an internal carrier drifted.
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during detached snapshot")
+        return detached
+
+    def ready_steps(self) -> tuple[PlanStep, ...]:
+        # A reentrant but valid transition during dependency/readiness
+        # inspection must not leave a stale runnable set. A consistent newer
+        # status dictionary is not the same snapshot as this read began with.
+        status_epoch = self._status_epoch
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during readiness preflight")
+        ready: list[PlanStep] = []
+        for step_id in sorted(self.steps):
+            status = self._status[step_id]
+            if status.state is not StepState.PENDING:
+                continue
+            dependencies = [self._status[item].state for item in self.steps[step_id].depends_on]
+            if all(state is StepState.SUCCEEDED for state in dependencies):
+                ready.append(self.steps[step_id])
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        if self._status_epoch is not status_epoch:
+            raise PlanConflictError("plan status changed during readiness snapshot")
+        return tuple(ready)
+
+    def transition(
+        self,
+        step_id: str,
+        to_state: StepState,
+        *,
+        expected_revision: int,
+    ) -> PlanStepStatus:
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        # A valid nested transition can advance _status_epoch inside a
+        # replace() fault hook. Preserve that newer state instead of
+        # publishing a staged transition from an obsolete preflight.
+        entry_status_epoch = self._status_epoch
+        if type(step_id) is not str or not step_id.strip():
+            raise TypeError("step_id must be a non-empty exact string")
+        # Transition IDs arrive independently of the constructor-bound DAG.
+        # Reject oversized/invalid UTF-8 strings before dict hashing or
+        # attempting a state transition. This grants no execution authority.
+        _admit_graph_label(step_id)
+        if step_id not in self._status:
+            raise KeyError(step_id)
+        if type(to_state) is not StepState:
+            raise TypeError("to_state must be an exact StepState")
+        if (
+            type(expected_revision) is not int
+            or not 0 <= expected_revision <= 2**63 - 1
+        ):
+            raise ValueError(
+                "expected_revision must be a non-negative exact integer "
+                "within SQLite range"
+            )
+        current = self._status[step_id]
+        if expected_revision != current.revision:
+            raise PlanConflictError(
+                f"revision mismatch: expected {expected_revision}, actual {current.revision}"
+            )
+        _require_original_transition_policy()
+        # Use the exact immutable import-original mapping, never an injected
+        # replacement with expanded or reordered terminal transitions.
+        if to_state not in _ORIGINAL_ALLOWED_POLICY[current.state]:
+            raise PlanConflictError(
+                f"invalid transition: {current.state.value} -> {to_state.value}"
+            )
+        if to_state is StepState.RUNNING:
+            dependency_states = [
+                self._status[item].state for item in self.steps[step_id].depends_on
+            ]
+            if not all(state is StepState.SUCCEEDED for state in dependency_states):
+                raise PlanConflictError("step dependencies are not satisfied")
+        if current.revision == 2**63 - 1:
+            raise PlanConflictError("plan revision exhausted SQLite INTEGER range")
+        # A cascading BLOCKED revision can overflow independently of the
+        # explicitly transitioned step. Check *all* affected descendants
+        # before publishing any state change; never leave half a cascade.
+        descendants: tuple[str, ...] = ()
+        if to_state in {
+            StepState.FAILED,
+            StepState.CANCELLED,
+            StepState.BLOCKED,
+        }:
+            descendants = self._pending_descendants(step_id)
+            if any(
+                type(self._status[item].revision) is not int
+                or not 0 <= self._status[item].revision < 2**63 - 1
+                for item in descendants
+            ):
+                raise PlanConflictError("dependent revision exhausted SQLite INTEGER range")
+
+        # Stage every result before publishing any status. A Python-level
+        # replace callback (or a failure while constructing the Nth derived
+        # status) must not commit the first N-1 statuses and strand the plan
+        # with a half-published terminal cascade.
+        updated = replace(current, state=to_state, revision=current.revision + 1)
+        staged = {step_id: updated}
+        for item in descendants:
+            status = self._status[item]
+            staged[item] = replace(
+                status, state=StepState.BLOCKED, revision=status.revision + 1
+            )
+        # Staging is still a callback boundary. In particular, a reflected
+        # change to the live plan while constructing a proposed status must
+        # be rejected BEFORE any staged result is published.
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        for item, candidate in staged.items():
+            prior = self._status[item]
+            wanted = to_state if item == step_id else StepState.BLOCKED
+            if (
+                type(candidate) is not PlanStepStatus
+                or candidate.step_id != item
+                or candidate.state is not wanted
+                or type(candidate.revision) is not int
+                or candidate.revision != prior.revision + 1
+            ):
+                raise PlanConflictError("invalid staged plan transition result")
+        if self._status_epoch is not entry_status_epoch:
+            raise PlanConflictError("plan status advanced during transition staging")
+        self._status.update(staged)
+        # Advance the detached state epoch only after all affected statuses
+        # have been committed in memory, including a terminal BLOCKED cascade.
+        self._status_epoch = self._capture_status_epoch()
+        # A valid nested transition during the *final* detached-copy callback
+        # can advance the graph without breaking its internal consistency.
+        # A receipt for the older epoch must not silently appear current.
+        # Rejection after publication is never a rollback or retry authority.
+        committed_status_epoch = self._status_epoch
+        detached = replace(updated)
+        self._assert_plan_epoch()
+        self._assert_status_epoch()
+        if self._status_epoch is not committed_status_epoch:
+            raise PlanConflictError(
+                "plan status advanced during final transition snapshot"
+            )
+        if (
+            type(detached) is not PlanStepStatus
+            or detached is updated
+            or detached.step_id != step_id
+            or detached.state is not to_state
+            or type(detached.revision) is not int
+            or detached.revision != expected_revision + 1
+        ):
+            raise PlanConflictError(
+                "plan transition result changed during final snapshot"
+            )
+        return detached
+
+    def _pending_descendants(self, failed_step_id: str) -> tuple[str, ...]:
+        """Preflight pending descendants in O(steps + edges), without mutation.
+
+        A non-PENDING barrier cannot be traversed. Collection before mutation
+        ensures an overflowing downstream revision cannot partially block a DAG.
+        """
+        dependents: dict[str, list[str]] = {step_id: [] for step_id in self.steps}
+        for step_id, step in self.steps.items():
+            for dependency in step.depends_on:
+                dependents[dependency].append(step_id)
+
+        pending = [failed_step_id]
+        seen = {failed_step_id}
+        descendants: list[str] = []
+        while pending:
+            parent = pending.pop()
+            for child in dependents[parent]:
+                if child in seen:
+                    continue
+                seen.add(child)
+                if self._status[child].state is not StepState.PENDING:
+                    continue
+                descendants.append(child)
+                pending.append(child)
+        return tuple(descendants)
+
+    def _assert_acyclic(self) -> None:
+        """Validate arbitrarily deep DAGs without Python recursion exhaustion."""
+        active: set[str] = set()
+        complete: set[str] = set()
+        for root in sorted(self.steps):
+            if root in complete:
+                continue
+            # Exit markers faithfully model recursive DFS while keeping memory
+            # usage bounded by the graph depth rather than the call-stack limit.
+            stack: list[tuple[str, bool]] = [(root, False)]
+            while stack:
+                step_id, finish = stack.pop()
+                if finish:
+                    active.remove(step_id)
+                    complete.add(step_id)
+                    continue
+                if step_id in complete:
+                    continue
+                if step_id in active:
+                    raise ValueError("plan dependency graph contains a cycle")
+                active.add(step_id)
+                stack.append((step_id, True))
+                stack.extend(
+                    (dependency, False)
+                    for dependency in reversed(self.steps[step_id].depends_on)
+                    if dependency not in complete
+                )
