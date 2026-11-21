@@ -1,4 +1,65 @@
-# LATEST — ARK Run1078: Planner/Personal Context rebases and V3 free-guard repair packages prepared
+# LATEST — ARK Run1079: PermissionGate state custody, Memory path identity, immutable Planner status
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22T04:02:23+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `394f3573e18f0d1d6a8913dbb6e7e0f562012585`. **Checkpoint write-basis HEAD:** the same exact HEAD, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live branch ref afterward; it is not embedded here because a commit cannot contain its own resulting SHA.
+
+## Protected refs and current state
+
+- **PR #8 foundation:** `research/jarvis-foundations`, work-basis HEAD `394f3573e18f0d1d6a8913dbb6e7e0f562012585`, OPEN/DRAFT/UNMERGED. Exact-head workflow run [44932662849](https://github.com/Iam-2squared/ark-ai/actions/runs/44932662849) completed SUCCESS on this work-basis HEAD. The checkpoint update creates a new head; no verdict is inferred for its result.
+- **PR #203 — Planner journal stat-predicate rebase:** OPEN/DRAFT/UNMERGED, child HEAD `a29a24445b27596b31cf2f918c5a7154a7574992`. Exact-head run [44931670837](https://github.com/Iam-2squared/ark-ai/actions/runs/44931670837) completed SUCCESS. Its base snapshot is older than current PR #8; re-read/reconcile before any integration.
+- **PR #204 — Personal Context replay rebase:** OPEN/DRAFT/UNMERGED, child HEAD `2d7a1bebc63076129714ef45b582c1a03dae7dce`. Exact-head run [44931807266](https://github.com/Iam-2squared/ark-ai/actions/runs/44931807266) completed SUCCESS. Its base snapshot is older than current PR #8; re-read/reconcile before any integration.
+- **PR #205 — V3 authorization-packet stat custody:** OPEN/DRAFT/UNMERGED, child HEAD `2e407ae7fae1a3daadb602adbfac5a01f162188c`. Exact-head run [44932472711](https://github.com/Iam-2squared/ark-ai/actions/runs/44932472711) completed SUCCESS. A normal merge attempt was rejected because the child PR is Draft; no ready-for-review state change or bypass was attempted.
+- **PR #206 — V3 Personal Context fixture dependency closure:** OPEN/DRAFT/UNMERGED, child HEAD `8ef644aeadd3046c9b1fadb463489f5e0f59136a`. Exact-head run [44932558708](https://github.com/Iam-2squared/ark-ai/actions/runs/44932558708) completed SUCCESS. PR #5 remains Draft/unmerged.
+- **PR #207 — PermissionGate local token-state custody:** OPEN/DRAFT/UNMERGED, child `research/run1079-permission-gate-state-custody`, exact HEAD `14fba0f1f2e6f28004c6c084aeda7526892669f0`, based on PR #8 work-basis HEAD `394f3573e18f0d1d6a8913dbb6e7e0f562012585`. Fresh exact-head CI [44938702589](https://github.com/Iam-2squared/ark-ai/actions/runs/44938702589) is IN PROGRESS. Final evidence document commit references were corrected; no production source changed after the reported source commit.
+- **PR #208 — SQLite Memory constructor path identity:** OPEN/DRAFT/UNMERGED, child `research/run1079-memory-store-path-identity`, exact HEAD `ddb33a0b8c814c8dda64aa2050b4d2eb5b3f169a`, based on PR #8 work-basis HEAD `394f3573e18f0d1d6a8913dbb6e7e0f562012585`. Fresh exact-head CI [44938330478](https://github.com/Iam-2squared/ark-ai/actions/runs/44938330478) is IN PROGRESS.
+- **PR #209 — PlanGraph immutable status publication:** OPEN/DRAFT/UNMERGED, child `research/run1079-plan-graph-immutable-status`, exact HEAD `6c67be241670682a4c62d4f8e9c4295b62d2285a`, based on PR #8 work-basis HEAD `394f3573e18f0d1d6a8913dbb6e7e0f562012585`. No exact-head workflow run was returned at checkpoint preparation; CI is UNOBSERVED, not PASS.
+- **Gated PR #5:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED. V3 remains NOT_PASSED. No real training, Candidate, protected V2 evaluation or promotion was opened.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+- **main:** HEAD `6e40afb74666b7dfda6560dd5ca619664d7129b7` at pre-checkpoint observation; no main write or merge was made in this invocation.
+
+## NEW — this invocation (Run1079)
+
+1. **PermissionGate state custody / PR #207:** bind the local one-shot ledger and lock to their constructor identities; protect ordinary state reassignment; maintain a frozenset snapshot of consumed token IDs; recheck state before direct/registered authorization, after caller-controlled grant iteration, and under the token-spend lock. Five synthetic regression cases cover ordinary reassignment, reflective set/lock replacement, in-place token removal, reentrant grant-iterator mutation and registered authorization after tampering. Final source commit `4f880b019e841dc37c181a487e050b3cc2d552a3`; final regression commit `db63e28135ad361a8dedbd692e1ca1887fe46819`. The evidence note was corrected in a documentation-only follow-up. This remains process-local in-memory state, not restart-safe approval or exactly-once external effect.
+2. **SQLite Memory constructor path identity / PR #208:** retain the exact Path object selected at store construction; reject wrong-type, equal-value replacement and retargeting to another valid regular SQLite database before public Memory operations process inputs; recheck at writable/read-only connection boundaries. Three synthetic regressions cover foreign-database retargeting, equal-value Path replacement and wrong-type path replacement. Final source commit `3e53e29b6b466bc1421fb8c61616e739b6d64861`; regression commit `88a8693cb50f015054d4cf3f0048245b7ffd8f15`. Memory v1 schema, row/event format and public CAS contracts are unchanged.
+3. **PlanGraph immutable status publication / PR #209:** replace the mutable live status dictionary with exact MappingProxyType snapshots; protect ordinary reassignment of status mapping/epoch witnesses; stage complete direct and cascading transitions and next epoch before publishing; pin the original `__setattr__`. Five synthetic regressions cover mapping write refusal, state-field reassignment, reflective single-carrier/epoch drift, immutable snapshot replacement and FAILED-to-BLOCKED propagation. Final source commit `a8192307cfa4d8609dc2f3965647304214097e33`; regression commit `07352cb55ff24352813b86ff5c341ce94a72d7d4`.
+4. **V3 child integration boundary:** exact-head CI for PR #205/#206 is GREEN, but PR #205's merge attempt was rejected because the child remains Draft. No Draft-to-ready change was attempted. PR #5 remains Draft/unmerged and V3 NOT_PASSED.
+5. **No UI work:** PR #9 and all Local UI freezes remain untouched.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 work-basis `394f3573e18f0d1d6a8913dbb6e7e0f562012585`: run `44932662849`, completed SUCCESS.
+- PR #203 `a29a24445b27596b31cf2f918c5a7154a7574992`: run `44931670837`, completed SUCCESS.
+- PR #204 `2d7a1bebc63076129714ef45b582c1a03dae7dce`: run `44931807266`, completed SUCCESS.
+- PR #205 `2e407ae7fae1a3daadb602adbfac5a01f162188c`: run `44932472711`, completed SUCCESS.
+- PR #206 `8ef644aeadd3046c9b1fadb463489f5e0f59136a`: run `44932558708`, completed SUCCESS.
+- PR #207 final HEAD `14fba0f1f2e6f28004c6c084aeda7526892669f0`: run `44938702589`, IN PROGRESS.
+- PR #208 `ddb33a0b8c814c8dda64aa2050b4d2eb5b3f169a`: run `44938330478`, IN PROGRESS.
+- PR #209 `6c67be241670682a4c62d4f8e9c4295b62d2285a`: no exact-head run returned at observation; UNOBSERVED.
+- No local pytest/Ruff PASS, physical-PC validation, real runtime identity, paid compute, live data or external-effect proof is claimed. A prior head's GREEN result does not certify a different child or checkpoint HEAD. No duplicate workflow was manually dispatched.
+
+## Overall current ARK state
+
+Three non-UI local-first hardening packages have been saved as isolated Draft child PRs: PermissionGate local token-state custody, Memory constructor path identity, and immutable PlanGraph status publication. Exact-head CI is running for #207/#208 and not yet observed for #209. The existing Planner/Personal Context rebase children #203/#204 and V3 guard/fixture children #205/#206 have exact-head GREEN evidence but remain Draft. PR #8 and PR #5 remain Draft/unmerged; PR #9 remains paused/untouched. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/row-event semantics; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event semantics; V3 Contract 1 semantics/hash; protected V2 final-evaluation boundary and all existing contamination/provenance/regression/reproducibility gates remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, power-loss durability, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated. Draft children were not marked ready; the PR #205 merge rejection was preserved without a bypass.
+
+## Next plan / 今後の方針
+
+1. Let exact-head CI runs `44938702589` (PR #207) and `44938330478` (PR #208) finish without duplicate workflow dispatch; check whether PR #209 receives its first workflow run. Inspect any failure logs and apply only the smallest semantics-preserving normal-write repair.
+2. After exact-head GREEN, re-read PR #8 and every child branch immediately before integration. Do not merge Draft children or mark them ready without an authorized status transition. Rebase stale #203/#204 only through normal GitHub paths and require fresh exact-head CI after any source rebase.
+3. Continue Memory WAL/SHM and CAS/ABA/coherent row-event-expiry work, Planner persistence/recovery and ToolRegistry/PermissionGate/authorization audit-before-action, connecting components only after lower-level invariants have exact-head GREEN evidence.
+4. Continue free-only V3 approval/path/identity/reproducibility guard hardening on isolated branches. Keep PR #5 Draft/unmerged; no protected V2 evaluation, Candidate, training or paid compute.
+5. Keep all UI/frontend development PAUSED; leave PR #9 and Local UI freezes untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+
+# HISTORICAL CHECKPOINT — ARK Run1078: Planner/Personal Context rebases and V3 free-guard repair packages prepared
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22T02:54:31+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
