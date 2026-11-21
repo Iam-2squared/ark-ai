@@ -208,7 +208,7 @@ def _canonical_current_model_path(
             info = path.lstat()
         except FileNotFoundError:
             if require_existing:
-                raise ValueError("Current deployed model must be an existing regular file")
+                raise ValueError("Current deployed model must be an existing regular file") from None
         else:
             if not stat.S_ISREG(info.st_mode) or _is_reparse_point(info) or info.st_nlink != 1:
                 raise ValueError("Current deployed model must be one regular non-reparse file")
@@ -267,7 +267,10 @@ def _canonicalize_export_paths(
     source_root = _canonical_existing_directory(_SOURCE_TREE_ROOT, "repository source tree")
     protected_directories = (base, merged, source_root)
     if any(_paths_overlap(output, root) for root in protected_directories):
-        raise ValueError("export output overlaps a protected input tree (source tree or model source)")
+        raise ValueError(
+            "export output overlaps a protected input tree "
+            "(source tree or model source)"
+        )
 
     current_model = None
     if current_model_path is not None:
