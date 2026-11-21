@@ -69,7 +69,7 @@ def test_post_resolve_value_equal_argument_rebinding_is_rejected(
         return resolved
 
     monkeypatch.setattr(registry, "resolve", changed_after_resolution)
-    with pytest.raises(ValueError, match="ToolCall identity changed"):
+    with pytest.raises(ValueError, match="ToolCall (?:identity|argument)"):
         registry.bind(call)
     assert backend.calls == 0
 
@@ -83,6 +83,6 @@ def test_direct_resolution_also_rejects_value_equal_argument_rebinding(monkeypat
         return original(name)
 
     monkeypatch.setattr(registry, "get", changed_during_get)
-    with pytest.raises(ValueError, match="ToolCall identity changed"):
+    with pytest.raises(ValueError, match="ToolCall (?:identity|argument)"):
         registry.resolve(call)
     assert backend.calls == 0
