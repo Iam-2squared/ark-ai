@@ -30,6 +30,8 @@ _DOMAIN = b"ARK-disconnected-context-request-replay-ledger-v1\0"
 _MAX_ROWS = 512
 _MAX_DB_PATH_BYTES = 4096
 _ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _ORIGINAL_OS = os
 _ORIGINAL_FSENCODE = os.fsencode
 _DDL = (
@@ -79,6 +81,19 @@ def _require_original_replay_protocol() -> None:
         raise OfflineContextReplayRejected(
             "context replay protocol authority changed"
         )
+
+
+
+def _is_reparse_point(info: object) -> bool:
+    _require_original_replay_protocol()
+    attributes = getattr(info, "st_file_attributes", 0)
+    if type(attributes) is not int:
+        raise OfflineContextReplayRejected(
+            "context ledger reparse metadata is malformed"
+        )
+    return stat.S_ISLNK(info.st_mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -305,6 +320,8 @@ def _check_path(path: object, *, create: bool) -> Path:
         or os.fsencode is not _ORIGINAL_FSENCODE
         or type(_MAX_DB_PATH_BYTES) is not int
         or _MAX_DB_PATH_BYTES != _ORIGINAL_MAX_DB_PATH_BYTES
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise OfflineContextReplayRejected("context ledger path admission changed")
     if (
@@ -324,7 +341,7 @@ def _check_path(path: object, *, create: bool) -> Path:
     try:
         for ancestor in path.parents:
             info = ancestor.lstat()
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            if not stat.S_ISDIR(info.st_mode) or _is_reparse_point(info):
                 raise OfflineContextReplayRejected("context ledger ancestor is unsafe")
         main_absent = False
         try:
@@ -334,7 +351,10 @@ def _check_path(path: object, *, create: bool) -> Path:
             if not create:
                 raise OfflineContextReplayRejected("context ledger is missing") from None
         else:
-            if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            if (
+                create or not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1 or _is_reparse_point(info)
+            ):
                 raise OfflineContextReplayRejected("existing or aliased context ledger path")
         # SQLite can also open companion journal/WAL/shared-memory files.
         # An otherwise safe main path is not safe when one of those aliases
@@ -350,6 +370,7 @@ def _check_path(path: object, *, create: bool) -> Path:
                 main_absent
                 or not stat.S_ISREG(sidecar.st_mode)
                 or sidecar.st_nlink != 1
+                or _is_reparse_point(sidecar)
             ):
                 raise OfflineContextReplayRejected(
                     "context ledger SQLite sidecar is missing its main file or unsafe"
