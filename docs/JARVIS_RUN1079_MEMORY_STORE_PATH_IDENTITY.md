@@ -5,8 +5,8 @@
 - Parent: Draft PR #8, `research/jarvis-foundations`
 - Exact parent HEAD: `394f3573e18f0d1d6a8913dbb6e7e0f562012585`
 - Child branch: `research/run1079-memory-store-path-identity`
-- Source commit: `4be3d2e5a7e3d5bae2adec2aa99cd3eb8bf52d99`
-- Regression commit: `24632e54012cacc687b1691d35160c8ca62181ef`
+- Source commit: `3e53e29b6b466bc1421fb8c61616e739b6d64861`
+- Regression commit: `88a8693cb50f015054d4cf3f0048245b7ffd8f15`
 
 ## Finding
 
