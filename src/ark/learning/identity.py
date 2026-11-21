@@ -17,6 +17,7 @@ from .execution import canonical_json, sha256_bytes
 _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _NATIVE_PATH_TYPE = type(Path("."))
 
 
@@ -27,12 +28,23 @@ def _require_native_path(value: object, label: str) -> Path:
     return value
 
 
+def _require_original_reparse_point_policy() -> None:
+    """Keep the Windows reparse-point bit immutable during identity checks."""
+    if (
+        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise ValueError("identity reparse-point policy changed")
+
+
 def _is_reparse_point(info: os.stat_result) -> bool:
     """Detect symlinks and Windows junction/other reparse-point entries."""
+    _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
-    return stat.S_ISLNK(info.st_mode) or (
-        type(attributes) is int
-        and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    if type(attributes) is not int:
+        raise ValueError("identity file attribute metadata is malformed")
+    return stat.S_ISLNK(info.st_mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
 
