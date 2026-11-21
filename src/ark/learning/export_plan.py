@@ -144,9 +144,10 @@ def _path_text_budget(path: Path, name: str) -> None:
 def _is_reparse_point(info: object) -> bool:
     _require_export_path_constants()
     attributes = getattr(info, "st_file_attributes", 0)
-    return stat.S_ISLNK(info.st_mode) or (
-        type(attributes) is int
-        and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    if type(attributes) is not int:
+        raise ValueError("export path reparse metadata is malformed")
+    return stat.S_ISLNK(info.st_mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
 
