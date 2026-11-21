@@ -24,6 +24,7 @@ _MAX_ROWS = 512
 _MAX_OCCURRENCES = 4096
 _MAX_INTERVAL_MS = 366 * 24 * 60 * 60 * 1000
 _MAX_DB_PATH = 4096
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _DOMAIN = b"ARK-disconnected-quarantine-ledger-v1\0"
 _DDL = (
     "CREATE TABLE policy (policy_sha256 TEXT PRIMARY KEY, first_ms INTEGER NOT NULL, "
@@ -47,7 +48,21 @@ _ORIGINAL_DOMAIN = _DOMAIN
 _ORIGINAL_SHA = _SHA
 _ORIGINAL_SLOT = _SLOT
 _ORIGINAL_DDL = _DDL
-_ORIGINAL_BOUNDS = (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS, _MAX_DB_PATH)
+_ORIGINAL_BOUNDS = (
+    _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS,
+    _MAX_DB_PATH, _FILE_ATTRIBUTE_REPARSE_POINT,
+)
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    attributes = getattr(info, "st_file_attributes", 0)
+    return (
+        type(attributes) is int
+        and bool(attributes & _FILE_ATTRIBUTE_REPARSE_POINT)
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
 
 
 def _require_original_quarantine_protocol() -> None:
@@ -58,15 +73,19 @@ def _require_original_quarantine_protocol() -> None:
         or json.dumps is not _ORIGINAL_DUMPS
         or os is not _ORIGINAL_OS
         or os.fsencode is not _ORIGINAL_FSENCODE
+        or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
         or _DOMAIN is not _ORIGINAL_DOMAIN
         or _SHA is not _ORIGINAL_SHA
         or _SLOT is not _ORIGINAL_SLOT
         or _DDL is not _ORIGINAL_DDL
         or any(type(value) is not int for value in (
-            _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS, _MAX_DB_PATH,
+            _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS,
+            _MAX_DB_PATH, _FILE_ATTRIBUTE_REPARSE_POINT,
         ))
-        or (_MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS, _MAX_DB_PATH)
-           != _ORIGINAL_BOUNDS
+        or (
+            _MAX_MS, _MAX_ROWS, _MAX_OCCURRENCES, _MAX_INTERVAL_MS,
+            _MAX_DB_PATH, _FILE_ATTRIBUTE_REPARSE_POINT,
+        ) != _ORIGINAL_BOUNDS
     ):
         raise ScheduleQuarantineRejected("quarantine digest or protocol changed")
 
@@ -314,7 +333,11 @@ def _path(value: object, *, create: bool) -> Path:
     try:
         for parent in value.parents:
             info = parent.lstat()
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            if (
+                not stat.S_ISDIR(info.st_mode)
+                or stat.S_ISLNK(info.st_mode)
+                or _is_reparse_point(info)
+            ):
                 raise ScheduleQuarantineRejected("unsafe quarantine ancestor")
         try:
             info = value.lstat()
@@ -324,7 +347,12 @@ def _path(value: object, *, create: bool) -> Path:
                 raise ScheduleQuarantineRejected("missing quarantine ledger") from None
         else:
             main_missing = False
-            if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            if (
+                create
+                or not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+                or _is_reparse_point(info)
+            ):
                 raise ScheduleQuarantineRejected("aliased or existing quarantine ledger")
         # SQLite also opens these known sibling paths. Do not adopt orphaned
         # journals on create, or follow an aliased sidecar on later reads/writes.
@@ -339,6 +367,7 @@ def _path(value: object, *, create: bool) -> Path:
                 main_missing or create
                 or not stat.S_ISREG(sidecar_info.st_mode)
                 or sidecar_info.st_nlink != 1
+                or _is_reparse_point(sidecar_info)
             ):
                 raise ScheduleQuarantineRejected("unsafe quarantine SQLite sidecar")
     except OSError as exc:
