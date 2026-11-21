@@ -146,6 +146,8 @@ def _require_original_denials() -> None:
                (_MAX_MS, _MAX_COUNT, _MAX_INTERVAL_MS, _MAX_GRACE_MS))
         or (_MAX_MS, _MAX_COUNT, _MAX_INTERVAL_MS, _MAX_GRACE_MS)
            != _ORIGINAL_BOUNDS
+        or _valid_policy is not _ORIGINAL_VALID_POLICY
+        or _occurrence is not _ORIGINAL_OCCURRENCE_HELPER
         or DisconnectedSchedulePolicy is not _POLICY_TYPE
         or DisconnectedScheduleCursor is not _CURSOR_TYPE
         or DisconnectedDuePreview is not _RESULT_TYPE
@@ -200,6 +202,13 @@ def _occurrence(policy: DisconnectedSchedulePolicy, index: int) -> str:
     digest = hashlib.sha256(_DOMAIN + b"occurrence\0" + payload).hexdigest()
     _require_original_denials()
     return "slot_" + digest
+
+
+# These internal admission/identity helpers are part of the preview protocol.
+# Pin them so a rebound module global cannot accept an invalid policy or forge
+# the occurrence identifier between the surrounding denial checks.
+_ORIGINAL_VALID_POLICY = _valid_policy
+_ORIGINAL_OCCURRENCE_HELPER = _occurrence
 
 
 def preview_disconnected_schedule(
