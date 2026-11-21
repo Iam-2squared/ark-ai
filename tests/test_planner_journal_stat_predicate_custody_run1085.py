@@ -54,7 +54,7 @@ def test_stat_predicate_rebinding_from_lstat_callback_is_denied(
 
     def reentrant_lstat(path: Path):
         metadata = original_lstat(path)
-        setattr(journal.stat, name, lambda *_args: True)
+        patch.setattr(journal.stat, name, lambda *_args: True)
         return metadata
 
     with monkeypatch.context() as patch:
@@ -93,7 +93,7 @@ def test_stat_policy_rebinding_on_missing_leaf_is_denied(
 
     def reentrant_lstat(path: Path):
         if path == target:
-            journal.stat.S_ISREG = lambda *_args: True
+            patch.setattr(journal.stat, "S_ISREG", lambda *_args: True)
             raise FileNotFoundError
         return original_lstat(path)
 
@@ -116,7 +116,7 @@ def test_stat_policy_rebinding_from_windows_metadata_accessor_is_denied(
 
         @property
         def st_file_attributes(self) -> int:
-            journal.stat.S_ISDIR = lambda *_args: True
+            patch.setattr(journal.stat, "S_ISDIR", lambda *_args: True)
             return 0
 
     def reentrant_lstat(path: Path):
