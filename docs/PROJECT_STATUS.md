@@ -1,3 +1,66 @@
+# LATEST — ARK AI Run1035: Planner COMMIT rebase validating; V3 packet path lint repair queued
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T09:58:03+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1035 work-basis exact HEAD:** `27c472e90455500cd380fb20bf3d4fd3f3f43f46`. **Checkpoint write-basis HEAD:** `27c472e90455500cd380fb20bf3d4fd3f3f43f46`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the post-write PR #8 branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs before this checkpoint write:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `4b015d5179bd23f6f797a7b76a119a57c99ac879`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5, #8 and #9 remain OPEN/DRAFT/UNMERGED. PR #9 is untouched; UI/Frontend work remains PAUSED.
+
+## NEW — Run1035 work packages
+
+### Integrated into Draft PR #8 (not main)
+
+1. **PR #134 — proactive quarantine pre-COMMIT rollback rebase.** Child head `676d324f10aa6fa4e6ebe5e2c9dd42259c936ae5`; exact-head CI #44841857977: **GREEN, 6/6**. Squash-integrated into Draft PR #8 at `27c472e90455500cd380fb20bf3d4fd3f3f43f46`. Test/evidence only: rollback-before-native-COMMIT, no receipt/quarantine row, unchanged retained genesis witness and clean SQLite `quick_check`; no scheduler cursor advance, retry, notification, dispatch or external effect.
+2. Superseded proactive rollback PRs #130, #126 and #119 were closed only after PR #134's fresh GREEN integration. PR #127 (older-base Planner terminal COMMIT package) remains open until its fresh replacement is GREEN and integrated.
+
+### PR #8 non-UI work in progress (not integrated)
+
+1. **PR #135 — Planner terminal SQLite COMMIT outcome matrix rebase.** Branch `research/run1034-planner-terminal-commit`, exact child head `57a35075a2158d19f924c5ddd10d8535f6a25d77`, based on PR #8 parent `07f0e39f47a83721e1a2e4028bedbcb7a997154f`. Fresh exact-head CI #44845943673: **IN PROGRESS**; Ubuntu Python 3.11/3.12/3.13 are GREEN, Windows Python 3.11/3.12/3.13 are still running. Test/evidence only: distinguishes rollback before native COMMIT from native COMMIT followed by lost acknowledgement; cold recovery checks terminal state, dependent blocking, independent DAG preservation, event prefix and SQLite integrity; dispatch and automatic replay remain false. No old-base CI transfers and no local pytest/Ruff PASS is claimed.
+
+### Integrated into gated Draft PR #5 (not main)
+
+1. **PR #136 — exact native Path carrier guard for V3 identity capture.** Child head `13dd87bf52a449b070006004997d04941a7248b1`; exact-head CI #44846125272: **GREEN, 6/6**. Rejects callback-capable custom PathLike and pathlib-subclass `__fspath__` carriers before identity path coercion. Squash-integrated into gated PR #5 at `6b983be5734bc6b45dbc3d0e29a33593459f484f`.
+2. **PR #137 — V3 authorization packet output reparse-point guard.** Initial run #44846590861: **FAIL, 6/6**, because the post-write test expected the earlier diagnostic while the final custody check emitted the later one. Corrected the test threshold so the synthetic junction appears at the first post-write ancestry check. Corrected child head `8260e2bfb7fc3ed13927eb5e5b6dab6f527c917a`; CI #44846760098: **GREEN, 6/6**. Squash-integrated into gated PR #5 at current head `4b015d5179bd23f6f797a7b76a119a57c99ac879`. The writer rejects symlink/junction/reparse ancestors before exclusive creation and repeats checks during post-write custody verification.
+3. **PR #138 — V3 passive packet-read reparse-point guard.** Branch `research/v3-packet-read-reparse-guard-run1035`. Initial child head `50efc0a7d5624a5f1dc558f70858abb1f3d6f646`, based on the prior PR #5 head `6b983be5734bc6b45dbc3d0e29a33593459f484f`. Initial exact-head CI #44846909528: **FAIL, 6/6**, Ruff I001 import ordering only; no pytest stage ran. Smallest fix removes the blank line separating the test-helper import from its import group. Corrected child head `3880231d5ec5457bccca9ce4510087c0185f29f5`; fresh CI #44847205479: **IN PROGRESS** on the old base. Its result cannot certify a rebase. The reader checks reparse-point file/ancestor metadata before open and during the independent final read. After this run completes, rebase onto current PR #5 head `4b015d5179bd23f6f797a7b76a119a57c99ac879`, require fresh exact-head CI, then integrate only into Draft PR #5.
+4. PR #5 prior parent head `6b983be5734bc6b45dbc3d0e29a33593459f484f` had CI #44846353641: **GREEN, 6/6**. That result does not transfer to current PR #5 head `4b015d5179bd23f6f797a7b76a119a57c99ac879`; no exact-head workflow run for the current head was surfaced at checkpoint time. PR #5 remains OPEN/DRAFT/UNMERGED and V3 remains NOT_PASSED.
+
+## CI and evidence
+
+- PR #8 checkpoint-result parent `27c472e90455500cd380fb20bf3d4fd3f3f43f46`: checkpoint CI #44847114683 **IN PROGRESS**; earlier parent CI #44845840328 **IN PROGRESS** at last observation.
+- PR #134 child head `676d324f10aa6fa4e6ebe5e2c9dd42259c936ae5`, CI #44841857977: **GREEN, 6/6**; integrated into PR #8.
+- PR #135 Planner child head `57a35075a2158d19f924c5ddd10d8535f6a25d77`, CI #44845943673: **IN PROGRESS** (3/6 Ubuntu GREEN; 3/6 Windows running).
+- PR #136 V3 identity child head `13dd87bf52a449b070006004997d04941a7248b1`, CI #44846125272: **GREEN, 6/6**; integrated into PR #5.
+- PR #137 V3 authorization-writer child head `8260e2bfb7fc3ed13927eb5e5b6dab6f527c917a`, CI #44846760098: **GREEN, 6/6**; integrated into PR #5. Earlier failed run #44846590861 is retained.
+- PR #138 V3 packet-reader initial head CI #44846909528: **FAIL, 6/6**, Ruff I001 import ordering only. Corrected child head CI #44847205479: **IN PROGRESS**, old PR #5 base only.
+- PR #5 current exact head `4b015d5179bd23f6f797a7b76a119a57c99ac879`: no current-head workflow run surfaced at checkpoint observation; previous-head CI is not transferred.
+- No local pytest/Ruff PASS is claimed. All stated test evidence is GitHub exact-head CI only.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher reviewed evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains paused and untouched.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, unavailable physical-PC action, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, or main merge occurred. No trusted-clock, authenticated consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- PR #135 must become exact-head GREEN before integration into Draft PR #8. If it fails, inspect the failed job and make the smallest semantics-preserving normal-path fix; do not transfer old-base CI.
+- PR #127 is superseded by PR #135 but remains open until the fresh replacement is GREEN and integrated. Then rebase PR #128 Memory expiry COMMIT outcomes onto the new PR #8 HEAD and integrate only after fresh six-job CI; repeat sequentially for PR #129 Personal Context replay process-crash.
+- Rebase PR #133 disconnected mock executor onto the then-current PR #8 HEAD only after the durability children, require fresh exact-head CI, and integrate only into Draft PR #8. Close old PR #14 only after fresh GREEN replacement integration.
+- PR #138 is based on old PR #5 HEAD. Wait for corrected run #44847205479, then rebase onto the latest PR #5 head and require fresh exact-head CI. Keep PR #5 Draft/unmerged and V3 NOT_PASSED.
+- PR #9 and all UI/frontend work remain paused and untouched.
+
+## Next plan / 今後の方針
+
+1. Recheck PR #135 exact-head CI #44845943673 and PR #8 checkpoint CI #44847114683. Integrate PR #135 only after all six Windows/Linux × Python 3.11–3.13 jobs are GREEN; otherwise inspect logs and repair minimally.
+2. Recheck PR #138 corrected exact-head CI #44847205479. Once GREEN, rebase it onto current PR #5 head `4b015d5179bd23f6f797a7b76a119a57c99ac879`, require fresh six-job CI, and integrate only into gated Draft PR #5.
+3. Re-read the new PR #8 HEAD, then rebase PR #128 Memory expiry COMMIT outcomes, fresh six-job CI, and integrate. Next rebase PR #129 Personal Context replay process-crash, fresh CI, and integrate; close old-base predecessors only after each fresh integration.
+4. Rebase PR #133 disconnected mock executor onto the then-current PR #8 HEAD after durability children; require fresh exact-head CI and integrate only into Draft PR #8.
+5. Continue independent non-UI Memory row/event/CAS/expiry, Planner crash recovery, immutable ToolRegistry/PermissionGate, restart-safe authorization, audit-before-action, privacy-safe Personal Context, proactive scheduler and observation fixture contracts. Connect components only after their lower-level invariants have exact-head GREEN evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1035: Planner terminal-COMMIT rebase underway; V3 path guards advanced
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T09:56:08+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
