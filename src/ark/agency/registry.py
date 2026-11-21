@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import gc
 import hashlib
 import inspect
 import json
+import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -123,6 +125,127 @@ def _registry_scope_budget(value: object) -> None:
 
 
 _ORIGINAL_REGISTRY_SCOPE_BUDGET = _registry_scope_budget
+
+
+# ToolCall v1 deliberately accepts general Mapping inputs. Once a frozen
+# ToolCall reaches the opt-in registry/policy boundary, however, its reflected
+# argument carrier must still be the exact recursively frozen JSON shape.
+# A foreign Mapping can execute __iter__/items while ToolCall is reconstructed
+# or request_id is hashed, before a later carrier-identity check can reject it.
+_MAX_TOOL_CALL_ARGUMENT_NODES = 4096
+_MAX_TOOL_CALL_ARGUMENT_DEPTH = 32
+_MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS = 65536
+_MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES = 256 * 1024
+_MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS = 14000
+_ORIGINAL_TOOL_CALL_ARGUMENT_LIMITS = (
+    _MAX_TOOL_CALL_ARGUMENT_NODES,
+    _MAX_TOOL_CALL_ARGUMENT_DEPTH,
+    _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS,
+    _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES,
+    _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS,
+)
+_ORIGINAL_GC = gc
+_ORIGINAL_GC_GET_REFERENTS = gc.get_referents
+_ORIGINAL_MATH = math
+_ORIGINAL_MATH_ISFINITE = math.isfinite
+_ORIGINAL_MAPPING_PROXY_TYPE = MappingProxyType
+_ORIGINAL_DICT_TYPE = dict
+_ORIGINAL_DICT_ITEMS = dict.items
+_ORIGINAL_DICT_COPY = dict.copy
+
+
+def _admit_frozen_toolcall_arguments(value: object) -> None:
+    """Check a ToolCall's reflected JSON carrier without invoking foreign mappings.
+
+    MappingProxyType is accepted only when its actual backing object is an
+    exact built-in dict. This rejects a proxy around a custom Mapping before
+    its iterator/items hooks can run. It is a local in-process admission fence,
+    not a sandbox or a change to the frozen ToolCall v1 constructor contract.
+    """
+    if (
+        gc is not _ORIGINAL_GC
+        or gc.get_referents is not _ORIGINAL_GC_GET_REFERENTS
+        or math is not _ORIGINAL_MATH
+        or math.isfinite is not _ORIGINAL_MATH_ISFINITE
+        or MappingProxyType is not _ORIGINAL_MAPPING_PROXY_TYPE
+        or (
+            _MAX_TOOL_CALL_ARGUMENT_NODES,
+            _MAX_TOOL_CALL_ARGUMENT_DEPTH,
+            _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS,
+            _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES,
+            _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS,
+        ) != _ORIGINAL_TOOL_CALL_ARGUMENT_LIMITS
+    ):
+        raise ValueError("ToolCall argument admission dependencies changed")
+    if type(value) is not _ORIGINAL_MAPPING_PROXY_TYPE:
+        raise ValueError("ToolCall arguments are not a frozen mapping carrier")
+
+    nodes = 0
+    text_bytes = 0
+
+    def visit(item: object, depth: int) -> None:
+        nonlocal nodes, text_bytes
+        if depth > _MAX_TOOL_CALL_ARGUMENT_DEPTH:
+            raise ValueError("ToolCall argument nesting budget exceeded")
+        nodes += 1
+        if nodes > _MAX_TOOL_CALL_ARGUMENT_NODES:
+            raise ValueError("ToolCall argument node budget exceeded")
+        kind = type(item)
+        if item is None or kind is bool:
+            return
+        if kind is int:
+            if item.bit_length() > _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS:
+                raise ValueError("ToolCall argument integer budget exceeded")
+            return
+        if kind is str:
+            if len(item) > _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS:
+                raise ValueError("ToolCall argument text budget exceeded")
+            try:
+                size = len(item.encode("utf-8", errors="strict"))
+            except UnicodeError as exc:
+                raise ValueError("ToolCall argument text is not valid UTF-8") from exc
+            text_bytes += size
+            if text_bytes > _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES:
+                raise ValueError("ToolCall argument text budget exceeded")
+            return
+        if kind is float:
+            if not _ORIGINAL_MATH_ISFINITE(item):
+                raise ValueError("ToolCall argument float is not finite")
+            return
+        if kind is tuple:
+            if len(item) > _MAX_TOOL_CALL_ARGUMENT_NODES:
+                raise ValueError("ToolCall argument sequence budget exceeded")
+            for child in item:
+                visit(child, depth + 1)
+            return
+        if kind is _ORIGINAL_MAPPING_PROXY_TYPE:
+            referents = _ORIGINAL_GC_GET_REFERENTS(item)
+            if (
+                type(referents) is not list
+                or len(referents) != 1
+                or type(referents[0]) is not _ORIGINAL_DICT_TYPE
+            ):
+                raise ValueError(
+                    "ToolCall mapping proxy is not backed by an exact dict"
+                )
+            backing = _ORIGINAL_DICT_COPY(referents[0])
+            if (
+                type(backing) is not _ORIGINAL_DICT_TYPE
+                or len(backing) > _MAX_TOOL_CALL_ARGUMENT_NODES
+            ):
+                raise ValueError("ToolCall argument mapping budget exceeded")
+            for key, child in _ORIGINAL_DICT_ITEMS(backing):
+                if type(key) is not str:
+                    raise ValueError("ToolCall argument key is not an exact string")
+                visit(key, depth + 1)
+                visit(child, depth + 1)
+            return
+        raise ValueError("ToolCall argument tree contains a foreign carrier")
+
+    visit(value, 0)
+
+
+_ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION = _admit_frozen_toolcall_arguments
 
 
 def _canonical_json(value: object) -> bytes:
@@ -282,6 +405,8 @@ def _require_original_toolcall_contract() -> None:
         or _TOOL_CALL_LOOKUP_HOOKS is not _ORIGINAL_TOOL_CALL_LOOKUP_HOOKS_VECTOR
     ):
         raise ValueError("ToolCall registry policy vector changed")
+    if _admit_frozen_toolcall_arguments is not _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION:
+        raise ValueError("ToolCall argument admission changed")
     if (
         ToolCall is not _TOOL_CALL_TYPE
     ):
@@ -518,6 +643,7 @@ class ToolRegistry:
         # Capture the ORIGINAL caller-owned scalar carriers before ToolCall
         # construction, which may itself be a synthetic callback boundary.
         original = (call.tool, call.capability, call.scope, call.arguments)
+        _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(original[3])
         # Frozen ToolCall v1 accepts opaque labels, but this opt-in registry
         # must not bind native NUL separators or malformed UTF-8 scopes into
         # a supposedly exact backend identity. Preserve ToolCall v1 unchanged.
@@ -561,6 +687,7 @@ class ToolRegistry:
         def assert_call_epoch() -> None:
             _require_original_registry_digest()
             _require_original_toolcall_contract()
+            _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(call.arguments)
             if (
                 type(call.tool) is not str
                 or type(call.capability) is not str
@@ -656,6 +783,7 @@ class ToolRegistry:
         def assert_call_unchanged() -> None:
             _require_original_registry_digest()
             _require_original_toolcall_contract()
+            _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(call.arguments)
             if (
                 type(call.tool) is not str
                 or type(call.capability) is not str
