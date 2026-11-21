@@ -1,3 +1,61 @@
+# LATEST — ARK AI Run1058: exact-head Planner/V3 integrations and three non-UI privacy follow-ups
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T17:51:05+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Work-basis exact HEAD:** `cab78192933c9383b92b9b58d41d6abe2c7023b8` (PR #172 Planner journal reparse-admission integration result). **Checkpoint write-basis HEAD:** `cab78192933c9383b92b9b58d41d6abe2c7023b8`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the subsequent live branch read; this tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** `main` `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains OPEN/DRAFT/UNMERGED at `c23fa8f24cf3f3ae0ee079111cfc0984d8f63d76` after validation-only PR #174 integration; V3 remains NOT_PASSED. Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+
+## NEW — this invocation
+
+### Exact-head-GREEN integrations into isolated branches
+
+1. **PR #172 — Planner journal Windows reparse admission.** Child HEAD `483ddd80b19435b1bdf626c4d99def3b3d0e1a12`; exact-head CI run `44881681354` / run 6886 **GREEN, 6/6**. Marked ready only after exact-head CI and squash-integrated into the isolated PR #8 branch. Resulting PR #8 HEAD: `cab78192933c9383b92b9b58d41d6abe2c7023b8`. Planner journal remains replay-only; recovered RUNNING steps remain UNKNOWN. Resulting PR #8 CI run `44886255662` is **IN PROGRESS** on that exact HEAD.
+2. **PR #174 — V3 preflight numeric-subclass and cross-binding regressions.** Child HEAD `bb0657d1e793d824c8ff2d5274a7e01891297914`; exact-head CI run `44881766804` / run 6888 **GREEN, 6/6**. Validation-only squash integration into gated Draft PR #5; resulting PR #5 HEAD: `c23fa8f24cf3f3ae0ee079111cfc0984d8f63d76`. Resulting PR #5 CI run `44886297089` is **GREEN, 6/6**. No frozen Contract 1 change, Candidate, training, protected V2 evaluation, promotion or spending.
+
+### CI recovery and isolated non-UI follow-ups
+
+3. **PR #173 — ActionAudit Windows reparse admission.** Child HEAD `fd5accffb40da7db8d20e4c79b2556d68f7ac450`. CI run `44881733172` attempt 1 failed in the existing cross-process privacy-revocation test: the loser observed a transient SQLite sidecar denial rather than the expected `scope already revoked`. The failure log showed one durable synthetic row and no sidecars at post-failure observation; this is an ambiguous fail-closed outcome, not evidence of a second write. Only failed jobs were rerun; attempt 2 is **GREEN, 6/6**. PR #173 is still based on the older PR #8 parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`; it is NOT integrated and requires a fresh rebase/CI against the current parent.
+4. **PR #175 — transient revocation sidecar denial classification.** Test-only branch `research/run1058-revocation-ambiguous-sidecar`, exact child HEAD `33975b46567a6df308e57c6e3b94fdf76fd26d04`, parent `cab78192933c9383b92b9b58d41d6abe2c7023b8`. It classifies only the fixed `unsafe revocation SQLite sidecar` denial as `AMBIGUOUS`; the test still requires exactly one durable winner, one safe loser, and independent one-row readback. CI run `44886475992` is **IN PROGRESS**.
+5. **PR #176 — Personal Context replay reparse-admission rebase.** Branch `research/run1058-personal-context-reparse-admission`, exact child HEAD `3568b57342d13b7a203c348f005a1beb161fe454`, parent `cab78192933c9383b92b9b58d41d6abe2c7023b8`. Reapplies PR #171's import-time Windows reparse mask, malformed-metadata rejection, ancestor/database/sidecar admission checks and synthetic tests. Hash-only schema and denial-only authority unchanged. Original PR #171 CI run `44881652597` was GREEN on its older parent; it does not transfer. Fresh CI run `44886582674` is **IN PROGRESS**.
+6. **PR #177 — Personal Context replay crash and proactive race fixtures.** Branch `research/run1058-personal-context-crash-fixtures`, exact child HEAD `63baf941718431a68b463392d7e6d30d95a467ed`, parent `cab78192933c9383b92b9b58d41d6abe2c7023b8`. Test-only spawned-process exit after native replay-ledger COMMIT and a WAL-anchored proactive two-process CAS race fixture. Original PR #170 CI run `44881839312` was GREEN on its older parent; it does not transfer. Fresh CI run `44886686446` is **QUEUED**.
+
+All three new PRs #175–#177 are OPEN/DRAFT/UNMERGED. No local pytest/Ruff PASS is claimed. CI evidence applies only to the exact head and attempt stated; no result is transferred across rebases or integrations.
+
+## Tests / CI / evidence — current exact heads
+
+- PR #8 `cab78192933c9383b92b9b58d41d6abe2c7023b8`: CI run `44886255662` **IN PROGRESS**.
+- PR #5 `c23fa8f24cf3f3ae0ee079111cfc0984d8f63d76`: CI run `44886297089` **GREEN, 6/6**.
+- PR #172 child `483ddd80b19435b1bdf626c4d99def3b3d0e1a12`: run `44881681354` **GREEN, 6/6**; integrated only into PR #8.
+- PR #174 child `bb0657d1e793d824c8ff2d5274a7e01891297914`: run `44881766804` **GREEN, 6/6**; integrated only into PR #5.
+- PR #173 child `fd5accffb40da7db8d20e4c79b2556d68f7ac450`: run `44881733172`, attempt 2 **GREEN, 6/6**; older parent, not integrated.
+- PR #175 `33975b46567a6df308e57c6e3b94fdf76fd26d04`: run `44886475992` **IN PROGRESS**.
+- PR #176 `3568b57342d13b7a203c348f005a1beb161fe454`: run `44886582674` **IN PROGRESS**.
+- PR #177 `63baf941718431a68b463392d7e6d30d95a467ed`: run `44886686446` **QUEUED**.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher reviewed evidence remains frozen and unchanged. PR #8 has the exact-head-GREEN Planner reparse-admission child integrated, with resulting-parent CI still in progress. PR #5 has the exact-head-GREEN V3 preflight regression package integrated and resulting-parent CI GREEN, but V3 remains NOT_PASSED. Three fresh non-UI follow-ups await exact-head CI. PR #9 remains paused and untouched. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event contract; V3 Contract 1 semantics/hash; and the protected V2 evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated. PR #5 and PR #8 remain Draft/unmerged.
+
+## Next plan / 今後の方針
+
+1. Check PR #8 resulting-head CI run `44886255662` once. If GREEN, integrate only one exact-head-GREEN child after re-reading current parent/child refs; require fresh resulting-parent CI before the next integration.
+2. Inspect PRs #175–#177 exact-head CI. Integrate only after each exact child is GREEN and the current PR #8 parent CI is GREEN; after any parent movement, rebase remaining siblings and require fresh exact-head CI.
+3. Rebase PR #173 ActionAudit admission onto the current PR #8 parent, then require fresh exact-head CI; attempt-2 GREEN on the old parent is not transferable.
+4. Continue Memory WAL/SHM last-close, CAS/ABA, expiry and COMMIT-UNKNOWN triage; Planner retained-prefix/restart recovery; exact ToolRegistry/PermissionGate identity; restart-safe one-shot authorization; trusted-clock audit-before-action; proactive occurrence/replay; privacy-safe Personal Context; Observation/multimodal synthetic fixture lifecycle.
+5. Continue free-only V3 approval/path/identity/reproducibility guards without opening protected V2 evaluation, generating a Candidate or changing Contract 1.
+6. Keep all UI/frontend work paused; do not modify PR #9 or frozen Local UI evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1056: exact-head integrations and six isolated non-UI follow-ups
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T15:56:25+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
