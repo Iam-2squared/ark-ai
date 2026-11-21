@@ -22,6 +22,62 @@ _EVIDENCE_FIELDS = (
     "provenance_reviewed", "contamination_suspected", "runtime_failures",
     "memory_error", "measurement_kind",
 )
+_ORIGINAL_EVIDENCE_TYPE = SimulationEvidence
+_ORIGINAL_EVIDENCE_FIELDS = _EVIDENCE_FIELDS
+_MISSING = object()
+_EVIDENCE_HOOKS = (
+    "__getattribute__", "__getattr__", "__setattr__", "__delattr__", "__dict__",
+)
+_ORIGINAL_EVIDENCE_HOOKS = tuple(
+    vars(_ORIGINAL_EVIDENCE_TYPE).get(name, _MISSING)
+    for name in _EVIDENCE_HOOKS
+)
+_ORIGINAL_EVIDENCE_CLASS_FIELDS = tuple(
+    vars(_ORIGINAL_EVIDENCE_TYPE).get(name, _MISSING)
+    for name in _ORIGINAL_EVIDENCE_FIELDS
+)
+_ORIGINAL_EVIDENCE_KEYS = frozenset(_ORIGINAL_EVIDENCE_FIELDS)
+
+
+def _original_evidence_class() -> bool:
+    """Reject class-level accessors or field descriptors installed after import."""
+    if (
+        SimulationEvidence is not _ORIGINAL_EVIDENCE_TYPE
+        or _EVIDENCE_FIELDS is not _ORIGINAL_EVIDENCE_FIELDS
+    ):
+        return False
+    namespace = vars(_ORIGINAL_EVIDENCE_TYPE)
+    return (
+        all(
+            namespace.get(name, _MISSING) is original
+            for name, original in zip(
+                _EVIDENCE_HOOKS, _ORIGINAL_EVIDENCE_HOOKS, strict=True,
+            )
+        )
+        and all(
+            namespace.get(name, _MISSING) is original
+            for name, original in zip(
+                _ORIGINAL_EVIDENCE_FIELDS,
+                _ORIGINAL_EVIDENCE_CLASS_FIELDS,
+                strict=True,
+            )
+        )
+    )
+
+
+def _instance_state(evidence: SimulationEvidence) -> dict | None:
+    """Read the exact dataclass storage without invoking its attribute hooks."""
+    state = object.__getattribute__(evidence, "__dict__")
+    if type(state) is not dict:
+        return None
+    keys = tuple(state.keys())
+    if (
+        len(keys) != len(_ORIGINAL_EVIDENCE_FIELDS)
+        or any(type(key) is not str for key in keys)
+        or frozenset(keys) != _ORIGINAL_EVIDENCE_KEYS
+    ):
+        return None
+    return state
 
 
 def _reject_noncanonical_mock() -> dict:
@@ -37,17 +93,23 @@ def _reject_noncanonical_mock() -> dict:
 def simulate_gate(evidence: SimulationEvidence) -> dict:
     """Evaluate bounded exact mock evidence, never actual protected V2 runs.
 
-    Pin the entire carrier epoch before policy evaluation and reject a
-    reentrant/reflective mutation after evaluation. Only immutable tuples
-    and exact primitive booleans are eligible. Neither this local simulation
-    nor its output grants Candidate promotion, protected V2 opening or spend.
+    Pin the class accessors and exact instance-dictionary epoch before policy
+    evaluation. Reading through getattr would let a stable replacement getter
+    hide noncanonical stored evidence while returning an eligible-looking
+    tuple. Neither this local simulation nor its output grants Candidate
+    promotion, protected V2 opening or spend.
     """
-    if type(evidence) is not SimulationEvidence:
+    if type(evidence) is not _ORIGINAL_EVIDENCE_TYPE:
         raise StopRequired("STOP before real evaluation/promotion decision")
+    if not _original_evidence_class():
+        return _reject_noncanonical_mock()
     try:
-        epoch = tuple(getattr(evidence, name) for name in _EVIDENCE_FIELDS)
+        state = _instance_state(evidence)
     except (AttributeError, TypeError, ValueError) as exc:
         raise StopRequired("STOP before real evaluation/promotion decision") from exc
+    if state is None:
+        return _reject_noncanonical_mock()
+    epoch = tuple(state[name] for name in _ORIGINAL_EVIDENCE_FIELDS)
     (
         old, new, controlled, provenance_reviewed, contamination_suspected,
         runtime_failures, memory_error, measurement_kind,
@@ -57,11 +119,19 @@ def simulate_gate(evidence: SimulationEvidence) -> dict:
 
     def unchanged() -> bool:
         try:
-            return type(evidence) is SimulationEvidence and all(
-                getattr(evidence, name) is original
-                for name, original in zip(_EVIDENCE_FIELDS, epoch, strict=True)
+            current = _instance_state(evidence)
+            return (
+                type(evidence) is _ORIGINAL_EVIDENCE_TYPE
+                and _original_evidence_class()
+                and current is state
+                and all(
+                    current[name] is original
+                    for name, original in zip(
+                        _ORIGINAL_EVIDENCE_FIELDS, epoch, strict=True,
+                    )
+                )
             )
-        except (AttributeError, TypeError, ValueError):
+        except (AttributeError, KeyError, TypeError, ValueError):
             return False
 
     exact_runs = (
@@ -109,9 +179,6 @@ def simulate_gate(evidence: SimulationEvidence) -> dict:
             reasons.append("task_regression")
         if not any(not a and b for a, b in zip(old[0], new[0], strict=True)):
             reasons.append("no_improvement")
-    # Reflective writes to a frozen dataclass, patched attribute getters or
-    # callback side-effects cannot silently change the evidence underlying
-    # an eligible decision. No automatic retries or grants occur here.
     if not unchanged():
         return _reject_noncanonical_mock()
     report = {
