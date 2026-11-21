@@ -1,12 +1,12 @@
 # LATEST — ARK AI Run1061: revocation repair integrated, V3 mock-gate custody and observation label preflight
 
-**Saved at (Asia/Tokyo/JST): 2026-11-21T19:58:57+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+**Saved at (Asia/Tokyo/JST): 2026-11-21T20:01:03+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
-**Canonical checkpoint branch/PR:** research/jarvis-foundations / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** 3a143ed8ccc6b128829a9958493eae2d9462c392 (Run1059 revocation assertion repair integration). **Checkpoint write-basis HEAD:** 3a143ed8ccc6b128829a9958493eae2d9462c392, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by a subsequent live branch-ref read; this file cannot embed its own resulting SHA.
+**Canonical checkpoint branch/PR:** research/jarvis-foundations / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** b5002a96463ae01c80f329b99583fba556ec48fc (Run1061 checkpoint commit after the Run1059 revocation assertion integration). **Checkpoint write-basis HEAD:** b5002a96463ae01c80f329b99583fba556ec48fc, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by a subsequent live branch-ref read; this file cannot embed its own resulting SHA.
 
 ## Protected refs and current state
 
-- **PR #8 foundation branch:** 3a143ed8ccc6b128829a9958493eae2d9462c392. Exact-head CI run [44896031186](https://github.com/Iam-2squared/ark-ai/actions/runs/44896031186) was **IN PROGRESS, 3/6 GREEN** at last observation; all three Ubuntu jobs had succeeded and all three Windows jobs were still running. No final result is claimed.
+- **PR #8 foundation branch:** current pre-final-checkpoint HEAD b5002a96463ae01c80f329b99583fba556ec48fc; source work-basis HEAD 3a143ed8ccc6b128829a9958493eae2d9462c392. Source CI run [44896031186](https://github.com/Iam-2squared/ark-ai/actions/runs/44896031186) was **IN PROGRESS, 3/6 GREEN** at last observation. The prior documentation checkpoint commit's CI run [44896932346](https://github.com/Iam-2squared/ark-ai/actions/runs/44896932346) was **IN PROGRESS, 0/6 complete** at last observation. No final result is claimed for either.
 - **main:** 23381dab53c9feda81e32f42a51ece578cc045df. The only unintended change remains the single test-only file tests/test_personal_context_replay_process_crash_run1033.py. Main CI run [44891321387](https://github.com/Iam-2squared/ark-ai/actions/runs/44891321387) **FAIL, 6/6**, at Ruff I001 import ordering; pytest did not run. No further main write or cleanup was attempted.
 - **Gated PR #5:** research/v3-learning-evaluation now at c0cead568125578d1da3e9a0ec333f3fcae08b59, OPEN/DRAFT/UNMERGED. V3 remains NOT_PASSED. The post-integration PR #5 CI run [44896521215](https://github.com/Iam-2squared/ark-ai/actions/runs/44896521215) **FAIL, 6/6**, because the PR merge ref includes the accidental main-only test file above; Ruff I001 failed and pytest was skipped. That file is not in PR #5's changed-file set. The integrated V3 child itself passed exact-head CI 6/6. No V3 evaluation, Candidate, promotion or spending gate was opened.
 - **PR #9 UI foundation:** 3b49048dd70eebcb6268299b9ecef4e301bbc0fd, OPEN/DRAFT/UNMERGED and untouched. UI/frontend development remains PAUSED.
@@ -23,7 +23,7 @@ PR #183 exact-head CI run [44896320621](https://github.com/Iam-2squared/ark-ai/a
 
 ### 3. Disconnected observation label preflight — isolated Draft PR #184
 
-Branch research/run1061-observation-label-preflight, exact HEAD d440962b8c8f0e3890d9885b842d6ff5078697ad, targets Draft PR #8 at exact parent 3a143ed8ccc6b128829a9958493eae2d9462c392. It rejects non-exact labels, labels over 1,024 code points, and UTF-8 labels over 1,024 bytes before NUL/control/Unicode scans or private-payload hashing. Synthetic tests prove the oversize path exits before control scanning and retain the exact 1,024-byte multilingual boundary. The frozen public ObservationEnvelope v1 contract is unchanged. Exact-head CI run [44896466548](https://github.com/Iam-2squared/ark-ai/actions/runs/44896466548) was **IN PROGRESS, 0/6 complete** at last observation. No live capture, personal data, consent, trusted time, ToolBackend or external effect.
+Branch research/run1061-observation-label-preflight, current exact HEAD f752f6299f75f7aeb9c345bf79fa92c4fcb38d9e, targets Draft PR #8 from parent work-basis 3a143ed8ccc6b128829a9958493eae2d9462c392. It rejects non-exact labels, labels over 1,024 code points, and UTF-8 labels over 1,024 bytes before NUL/control/Unicode scans or private-payload hashing. Synthetic tests prove the oversize path exits before control scanning and retain the exact 1,024-byte multilingual boundary. The frozen public ObservationEnvelope v1 contract is unchanged. Initial exact-head run 44896466548 failed one Ubuntu 3.11 test after 19,187 passed and 1 skipped: the exact-type diagnostic omitted the existing 'non-empty' wording expected for a non-string privacy scope. The smallest semantics-preserving fix changed the message to 'non-empty exact string'. Fresh exact-head CI run [44896989220](https://github.com/Iam-2squared/ark-ai/actions/runs/44896989220) is **IN PROGRESS**; no result is claimed. No live capture, personal data, consent, trusted time, ToolBackend or external effect.
 
 ### 4. Exact-head-green child packages ready for sequential integration
 
@@ -35,10 +35,10 @@ Branch research/run1061-observation-label-preflight, exact HEAD d440962b8c8f0e38
 ## Tests / CI / evidence — exact heads only
 
 - PR #178 child a7960ae43265d000c5af40b2ee63d1c687c70d94: run 44891225819 **GREEN, 6/6**; integrated into PR #8.
-- PR #8 resulting head 3a143ed8ccc6b128829a9958493eae2d9462c392: run 44896031186 **IN PROGRESS, 3/6 GREEN** at last observation.
+- PR #8 source work-basis head 3a143ed8ccc6b128829a9958493eae2d9462c392: run 44896031186 **IN PROGRESS, 3/6 GREEN** at last observation; checkpoint commit head b5002a96463ae01c80f329b99583fba556ec48fc: run 44896932346 **IN PROGRESS, 0/6 complete** at last observation.
 - PR #183 child 74a00c3f56ecc832559cacf66082f9326c2b9ba2: run 44896320621 **GREEN, 6/6**; integrated into PR #5.
 - PR #5 resulting head c0cead568125578d1da3e9a0ec333f3fcae08b59: run 44896521215 **FAIL, 6/6** at Ruff I001 in the accidental main-only test file; pytest skipped. No source/test fix was applied to main.
-- PR #184 child d440962b8c8f0e3890d9885b842d6ff5078697ad: run 44896466548 **IN PROGRESS, 0/6 complete** at last observation.
+- PR #184 initial child d440962b8c8f0e3890d9885b842d6ff5078697ad: run 44896466548 **FAIL, 1/6** (Ubuntu 3.11; 19,187 passed, 1 skipped, 1 failed) on the expected diagnostic wording. Fixed in child head f752f6299f75f7aeb9c345bf79fa92c4fcb38d9e; fresh run 44896989220 **IN PROGRESS**.
 - PR #179 run 44891283213, PR #180 run 44891397012 and PR #181 run 44891538526: each **GREEN, 6/6** on its exact child HEAD; no result transfers to a later parent head.
 - PR #182 run 44891688919: **GREEN, 6/6** on its exact recovery child HEAD; no main deletion applied.
 - No local pytest/Ruff PASS is claimed. No CI result is transferred across a changed HEAD or base.
@@ -56,7 +56,7 @@ No paid/external compute, paid API/service, subscription, purchase, new credenti
 ## Next plan / 今後の方針
 
 1. Let PR #8 exact-head CI run 44896031186 complete. If GREEN, re-read live PR #8 and child refs and integrate one exact-head-GREEN child at a time, prioritizing PR #181 ActionAudit, then PR #179 Personal Context, then PR #180 crash/proactive fixtures. Require fresh exact-head CI after each integration before the next.
-2. Resolve PR #184 exact-head CI 44896466548; if it fails, inspect logs and make only the smallest semantics-preserving correction. Integrate only after its exact-head GREEN result and a GREEN current parent.
+2. Resolve PR #184 fresh exact-head CI 44896989220 after the diagnostic-only repair. If it fails, inspect logs and make only the smallest semantics-preserving correction. Integrate only after its exact-head GREEN result and a GREEN current parent.
 3. Keep PR #5 Draft/unmerged and V3 NOT_PASSED. Its CI failure is caused by the accidental main-only test file; do not alter main or merge PR #182 without explicit user approval.
 4. Continue Memory WAL/SHM last-close, CAS/ABA, expiry and COMMIT-UNKNOWN triage; Planner retained-prefix/restart recovery; immutable ToolRegistry/exact-type PermissionGate; restart-safe exactly-once authorization; trusted-clock audit-before-action; proactive occurrence/replay; privacy-safe Personal Context; and observation/multimodal fixture lifecycle.
 5. Continue free-only V3 approval/path/identity/reproducibility guards without opening protected V2 evaluation, generating a Candidate, changing Contract 1 or using paid services.
