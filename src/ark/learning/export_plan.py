@@ -41,6 +41,10 @@ _MAX_EXPORT_PATH_BYTES = 4096
 _ORIGINAL_MAX_EXPORT_PATH_BYTES = _MAX_EXPORT_PATH_BYTES
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
 _SOURCE_TREE_ROOT = Path(__file__).resolve().parents[3]
 _ORIGINAL_SOURCE_TREE_ROOT = _SOURCE_TREE_ROOT
 
@@ -52,8 +56,12 @@ def _require_export_path_constants() -> None:
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE is not _ORIGINAL_REPARSE_POINT_ATTRIBUTE
         or _SOURCE_TREE_ROOT is not _ORIGINAL_SOURCE_TREE_ROOT
+        or stat is not _ORIGINAL_STAT
+        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
     ):
-        raise ValueError("export path policy constants changed")
+        raise ValueError("export path policy constants or stat predicates changed")
 
 
 def _require_python_executable(value: object) -> str:
@@ -141,14 +149,23 @@ def _path_text_budget(path: Path, name: str) -> None:
         raise ValueError(f"{name} exceeds the bounded path budget")
 
 
-def _is_reparse_point(info: object) -> bool:
+def _reparse_metadata(info: object) -> tuple[int, bool]:
+    """Read mode/attributes once and recheck the import-original stat policy."""
     _require_export_path_constants()
     attributes = getattr(info, "st_file_attributes", 0)
+    mode = info.st_mode
+    # Metadata properties are callback boundaries in synthetic and reflected
+    # inputs. Do not classify their result through a replaced stat predicate.
+    _require_export_path_constants()
     if type(attributes) is not int:
         raise ValueError("export path reparse metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
+    return mode, _ORIGINAL_STAT_S_ISLNK(mode) or bool(
         attributes & _REPARSE_POINT_ATTRIBUTE
     )
+
+
+def _is_reparse_point(info: object) -> bool:
+    return _reparse_metadata(info)[1]
 
 
 def _reject_reparse_ancestors(path: Path, name: str) -> None:
@@ -172,10 +189,12 @@ def _canonical_existing_directory(path: Path, name: str) -> Path:
     _reject_reparse_ancestors(path, name)
     try:
         info = path.lstat()
-        if not stat.S_ISDIR(info.st_mode) or _is_reparse_point(info):
+        mode, reparse = _reparse_metadata(info)
+        if not _ORIGINAL_STAT_S_ISDIR(mode) or reparse:
             raise ValueError(f"{name} must be a real non-reparse directory")
         absolute = path.absolute()
         resolved = path.resolve(strict=True)
+        _require_export_path_constants()
     except (OSError, RuntimeError) as exc:
         raise ValueError(f"{name} must be an existing canonical directory") from exc
     if resolved != absolute:
@@ -191,14 +210,13 @@ def _canonical_existing_file(path: Path, name: str) -> Path:
     _reject_reparse_ancestors(path, name)
     try:
         info = path.lstat()
-        if (
-            not stat.S_ISREG(info.st_mode)
-            or _is_reparse_point(info)
-            or info.st_nlink != 1
-        ):
+        nlink = info.st_nlink
+        mode, reparse = _reparse_metadata(info)
+        if not _ORIGINAL_STAT_S_ISREG(mode) or reparse or nlink != 1:
             raise ValueError(f"{name} must be one regular non-reparse file")
         absolute = path.absolute()
         resolved = path.resolve(strict=True)
+        _require_export_path_constants()
     except (OSError, RuntimeError) as exc:
         raise ValueError(f"{name} must be an existing canonical file") from exc
     if resolved != absolute:
@@ -228,9 +246,12 @@ def _canonical_current_model_path(
                     "Current deployed model must be an existing regular file"
                 ) from None
         else:
-            if not stat.S_ISREG(info.st_mode) or _is_reparse_point(info) or info.st_nlink != 1:
+            nlink = info.st_nlink
+            mode, reparse = _reparse_metadata(info)
+            if not _ORIGINAL_STAT_S_ISREG(mode) or reparse or nlink != 1:
                 raise ValueError("Current deployed model must be one regular non-reparse file")
         resolved = path.resolve(strict=require_existing)
+        _require_export_path_constants()
     except (OSError, RuntimeError) as exc:
         raise ValueError("Current deployed model path cannot be safely resolved") from exc
     return resolved
