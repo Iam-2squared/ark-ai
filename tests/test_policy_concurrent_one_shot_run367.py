@@ -1,7 +1,7 @@
 """Concurrent in-process token spending is atomic, not durable authorization."""
 
 from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier, BrokenBarrierError
+from threading import Barrier
 
 import pytest
 
@@ -16,22 +16,6 @@ from ark.agency import (
 )
 
 
-class _RacingTokens(set):
-    """Force both unprotected membership reads to observe an unused token."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.barrier = Barrier(2)
-
-    def __contains__(self, value: object) -> bool:
-        observed = super().__contains__(value)
-        try:
-            self.barrier.wait(timeout=0.1)
-        except BrokenBarrierError:
-            pass
-        return observed
-
-
 def _fixture():
     gate = PermissionGate()
     spec = ToolSpec("file.write", "file.write", Effect.WRITE)
@@ -43,9 +27,10 @@ def _fixture():
 
 def test_concurrent_same_token_allows_exactly_one_process_local_decision():
     gate, spec, call, grant, token = _fixture()
-    gate._consumed_tokens = _RacingTokens()
+    barrier = Barrier(2)
 
     def authorize(_index: int) -> bool:
+        barrier.wait(timeout=5)
         try:
             gate.authorize(spec, call, (grant,), now_ms=10, one_shot=token)
         except PermissionDenied as exc:
