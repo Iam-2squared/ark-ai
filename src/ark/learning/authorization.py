@@ -37,7 +37,7 @@ def _require_original_reparse_point_policy() -> None:
 def _is_reparse_point(info: object) -> bool:
     _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
-    mode = getattr(info, "st_mode")
+    mode = info.st_mode
     _require_original_reparse_point_policy()
     if type(attributes) is not int:
         raise ValueError("authorization packet reparse metadata is malformed")
@@ -49,7 +49,7 @@ def _is_reparse_point(info: object) -> bool:
 def _is_regular_file(info: object) -> bool:
     """Use the import-original mode predicate after metadata callback admission."""
     _require_original_reparse_point_policy()
-    mode = getattr(info, "st_mode")
+    mode = info.st_mode
     _require_original_reparse_point_policy()
     return _ORIGINAL_STAT_S_ISREG(mode)
 
