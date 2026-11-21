@@ -267,7 +267,7 @@ def _canonicalize_export_paths(
     source_root = _canonical_existing_directory(_SOURCE_TREE_ROOT, "repository source tree")
     protected_directories = (base, merged, source_root)
     if any(_paths_overlap(output, root) for root in protected_directories):
-        raise ValueError("export output overlaps a protected source or model input tree")
+        raise ValueError("export output overlaps a protected input tree (source tree or model source)")
 
     current_model = None
     if current_model_path is not None:
