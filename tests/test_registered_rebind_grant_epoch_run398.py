@@ -1,7 +1,7 @@
-"""Second/under-lock registry rebinds cannot rewrite retained grant epochs.
+"""Grant epochs remain bound across supported grant-iterator callbacks.
 
-Disconnected and synthetic only: no backend execution, authenticated consent, or
-durable cross-process one-shot guarantee is established here.
+Registry method shadows are denied before invocation; these cases exercise
+separate caller-controlled grant iteration boundaries.
 """
 
 import pytest
@@ -23,7 +23,7 @@ class NeverDispatch:
 
 
 @pytest.mark.parametrize("effect", (Effect.READ, Effect.WRITE))
-@pytest.mark.parametrize("bind_phase", (2, 3))
+@pytest.mark.parametrize("grant_phase", (2, 3))
 @pytest.mark.parametrize(
     ("field", "replacement"),
     (
@@ -33,8 +33,8 @@ class NeverDispatch:
         ("expires_at_ms", object()),
     ),
 )
-def test_registered_rebind_grant_epoch_change_fails_before_any_write_spend(
-    monkeypatch, effect, bind_phase, field, replacement,
+def test_registered_grant_epoch_change_fails_before_any_write_spend(
+    effect, grant_phase, field, replacement,
 ):
     registration = ToolRegistration(
         "fixture-tool", "fixture-capability", effect,
@@ -45,36 +45,30 @@ def test_registered_rebind_grant_epoch_change_fails_before_any_write_spend(
     token = OneShotAuthorization("synthetic-token", call.request_id, 100)
     original_grant = CapabilityGrant("fixture-capability", "fixture-scope", 100)
     later_grant = CapabilityGrant("fixture-capability", "fixture-scope", 100)
+    final_grant = CapabilityGrant("fixture-capability", "fixture-scope", 100)
     gate = PermissionGate()
-    real_bind = registry.bind
-    calls = 0
     original = getattr(original_grant, field)
 
-    def reflected_bind(current_call):
-        nonlocal calls
-        calls += 1
-        result = real_bind(current_call)
-        if calls == bind_phase:
-            # Mutation after the originally valid registry binding, before
-            # returning control to registered policy's next checkpoint.
+    def stream():
+        yield original_grant
+        if grant_phase == 2:
             object.__setattr__(original_grant, field, replacement)
-        return result
+        yield later_grant
+        if grant_phase == 3:
+            object.__setattr__(original_grant, field, replacement)
+        yield final_grant
 
-    monkeypatch.setattr(registry, "bind", reflected_bind)
     with pytest.raises(PermissionDenied, match="registered grant identity changed"):
         gate.authorize_registered(
-            registry, call, (original_grant, later_grant), now_ms=10,
+            registry, call, stream(), now_ms=10,
             one_shot=token if effect is Effect.WRITE else None,
         )
     assert gate._consumed_tokens == set()
-    assert calls == bind_phase
 
-    # Fail-closed rejection must not consume even the synthetic token. A
-    # separate, unchanged attempt remains possible, without dispatching tools.
+    # A failed pre-spend grant epoch must not consume the synthetic token.
     object.__setattr__(original_grant, field, original)
-    monkeypatch.setattr(registry, "bind", real_bind)
     permitted = gate.authorize_registered(
-        registry, call, (original_grant, later_grant), now_ms=10,
+        registry, call, (original_grant, later_grant, final_grant), now_ms=10,
         one_shot=token if effect is Effect.WRITE else None,
     )
     assert permitted.registration is registration
