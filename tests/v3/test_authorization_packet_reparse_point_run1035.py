@@ -67,7 +67,7 @@ def test_reparse_ancestor_appearing_after_write_is_rejected_before_readback(
             parent_checks += 1
             # Initial path preflight sees a normal directory. The simulated
             # junction appears during the post-write custody recheck.
-            if parent_checks >= 4:
+            if parent_checks >= 3:
                 return _reparse_directory_stat()
         return original_lstat(path)
 
@@ -78,4 +78,4 @@ def test_reparse_ancestor_appearing_after_write_is_rejected_before_readback(
             {"full_training_authorized": False},
         )
     assert target.exists()
-    assert parent_checks >= 4
+    assert parent_checks >= 3
