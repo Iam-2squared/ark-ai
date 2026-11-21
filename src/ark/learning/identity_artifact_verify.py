@@ -166,6 +166,7 @@ def verify_local_identity_artifact(
             or path.is_symlink()
         ):
             raise LocalIdentityArtifactRejected("identity file changed during read")
+        _require_original_stat_policy()
     except OSError as exc:
         raise LocalIdentityArtifactRejected("identity file unavailable") from exc
     if len(raw) != before.st_size or len(raw) > _MAX_ARTIFACT_BYTES:
@@ -201,6 +202,7 @@ def verify_local_identity_artifact(
                 raise LocalIdentityArtifactRejected(
                     "identity file changed after verified read"
                 )
+            _require_original_stat_policy()
         except OSError as exc:
             raise LocalIdentityArtifactRejected(
                 "identity file became unavailable"
