@@ -10,6 +10,8 @@
 ## Rebased change
 Reapply Personal Context replay-ledger path admission and process-crash recovery coverage:
 - Pin the Windows reparse-point attribute mask and reject malformed present metadata, reparse ancestors, database leaves and SQLite sidecars before SQLite access.
+- Pin the import-original `stat` module and `S_ISDIR` / `S_ISREG` / `S_ISLNK` predicates; reject substitution before path inspection and recheck after metadata access, using the captured predicates for classification.
+- Add six synthetic regressions for module/predicate substitution before `lstat`, reentrant predicate changes during metadata reads, and reparse-metadata callbacks.
 - Exercise process exit after native replay-ledger COMMIT but before the reservation receipt returns.
 - Stabilize the proactive two-process CAS preparation race with a WAL anchor while leaving production checks unchanged.
 
