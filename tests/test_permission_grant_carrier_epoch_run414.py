@@ -4,8 +4,6 @@ Reflected mutable frozen grants can gain equal-valued replacement strings.
 No real issuer, durable approval or backend execution is established here.
 """
 
-from threading import Lock
-
 import pytest
 
 from ark.agency.contracts import (
