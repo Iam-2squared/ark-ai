@@ -208,7 +208,9 @@ def _canonical_current_model_path(
             info = path.lstat()
         except FileNotFoundError:
             if require_existing:
-                raise ValueError("Current deployed model must be an existing regular file") from None
+                raise ValueError(
+                    "Current deployed model must be an existing regular file"
+                ) from None
         else:
             if not stat.S_ISREG(info.st_mode) or _is_reparse_point(info) or info.st_nlink != 1:
                 raise ValueError("Current deployed model must be one regular non-reparse file")
