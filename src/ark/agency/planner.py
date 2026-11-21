@@ -286,8 +286,8 @@ class PlanGraph:
             for step_id, step in sorted(self.steps.items())
         )
         # A caller can reflectively mutate even a frozen PlanStepStatus or
-        # replace the private dictionary. Pin every initial state independent
-        # of the live carrier; only successful transitions advance this epoch.
+        # replace the private mapping. Pin every initial state independent of
+        # the live carrier; only successful transitions advance this epoch.
         self._status_mapping_epoch = self._status
         self._status_epoch = self._capture_status_epoch()
         _require_original_plan_digest()
