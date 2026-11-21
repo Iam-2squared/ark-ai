@@ -76,6 +76,21 @@ def _require_python_executable(value: object) -> str:
         raise ValueError("python executable contains a NUL separator")
     if not value.strip() or any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
         raise ValueError("python executable contains blank or control text")
+    # Executable argv text is retained verbatim in the plan. Reject C1,
+    # bidi, zero-width, format and line-separator controls that can make the
+    # later displayed/approved command identity visually ambiguous.
+    if any(
+        0x80 <= point <= 0x9F
+        or point in (
+            0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F,
+            0x2028, 0x2029, 0xFEFF,
+        )
+        or 0x200B <= point <= 0x200D
+        or 0x202A <= point <= 0x202E
+        or 0x2060 <= point <= 0x206F
+        for point in map(ord, value)
+    ):
+        raise ValueError("python executable contains a Unicode formatting control")
     try:
         encoded = value.encode("utf-8", errors="strict")
     except UnicodeError as exc:
