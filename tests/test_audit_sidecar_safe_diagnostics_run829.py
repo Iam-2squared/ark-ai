@@ -47,11 +47,19 @@ def test_audit_refuses_aliased_sidecar_with_path_free_metadata(
     with pytest.raises(ActionAuditSchemaError, match="sidecar .*alias refused") as err:
         SQLiteActionAudit(database, clock_ms=lambda: 1000)
     detail = str(err.value)
-    assert f"suffix={suffix}" in detail
-    assert f"file_type={expected_mode:#o}" in detail
-    # Some filesystems use differing nlink values for directories. Record
-    # exactly the observed value without making it a policy exception.
-    assert f"link_count={links}" in detail
+    if kind == "symlink":
+        # Reparse-point denial intentionally uses a fixed diagnostic that
+        # does not reveal sidecar suffix, mode, or link metadata.
+        assert detail == "audit SQLite sidecar reparse-point alias refused"
+        assert "suffix=" not in detail
+        assert "file_type=" not in detail
+        assert "link_count=" not in detail
+    else:
+        assert f"suffix={suffix}" in detail
+        assert f"file_type={expected_mode:#o}" in detail
+        # Some filesystems use differing nlink values for directories. Record
+        # exactly the observed value without making it a policy exception.
+        assert f"link_count={links}" in detail
     assert str(tmp_path) not in detail
     assert "PRIVATE_SENTINEL" not in detail
     assert foreign.read_bytes() == b"PRIVATE_SENTINEL_DO_NOT_DISCLOSE"
