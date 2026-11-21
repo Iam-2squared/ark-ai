@@ -11,9 +11,9 @@ from ark.agency import (
     PermissionDenied,
     PermissionGate,
     ToolCall,
-    ToolSpec,
     ToolRegistration,
     ToolRegistry,
+    ToolSpec,
 )
 from ark.agency.disconnected_mock_executor import MockToolBackend
 
