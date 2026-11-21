@@ -752,6 +752,7 @@ _ORIGINAL_GATE_SETATTR = vars(PermissionGate)["__setattr__"]
 _ORIGINAL_LOCK_FACTORY = Lock
 _GATE_LOCK_TYPE = type(_ORIGINAL_LOCK_FACTORY())
 
+
 def _require_gate_state(
     gate: PermissionGate,
 ) -> tuple[set[str], object]:
