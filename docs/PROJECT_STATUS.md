@@ -1,4 +1,66 @@
-# LATEST — ARK Run1085: Reentrant path-policy custody across Planner, ActionAudit, Memory and Personal Context
+# LATEST — ARK Run1086: repair shared-stat test contamination in four path-custody children
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22T07:41:24+09:00.** This is a reporting/checkpoint timestamp only; it is not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `25767c633396913eb2ea9e8bd133a51d2b399407`. **Checkpoint write-basis HEAD:** `25767c633396913eb2ea9e8bd133a51d2b399407`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live branch ref immediately afterward; it is not self-embedded because a commit cannot contain its own resulting SHA.
+
+## Current repository state
+
+- **PR #8 foundation:** `research/jarvis-foundations`, work-basis HEAD `25767c633396913eb2ea9e8bd133a51d2b399407`, OPEN/DRAFT/UNMERGED. Its exact-head CI run [44953905014](https://github.com/Iam-2squared/ark-ai/actions/runs/44953905014) completed **GREEN 6/6** before this checkpoint update. This documentation commit creates a new HEAD; no CI verdict transfers to that result.
+- **PR #219 — Planner journal reentrant stat-policy custody:** OPEN/DRAFT/UNMERGED, branch `research/run1085-planner-journal-stat-reentrant`, repaired exact HEAD `698e4191ddebf1a84af14f30b7959257d56c1911`; fresh exact-head run [44957865329](https://github.com/Iam-2squared/ark-ai/actions/runs/44957865329) was **IN PROGRESS** at checkpoint.
+- **PR #220 — ActionAudit reentrant stat-policy custody:** OPEN/DRAFT/UNMERGED, branch `research/run1085-action-audit-stat-reentrant`, repaired exact HEAD `9090446ab9d58ac77ca22ec905ea41db511888e5`; fresh exact-head run [44957865520](https://github.com/Iam-2squared/ark-ai/actions/runs/44957865520) was **QUEUED** at checkpoint (some individual jobs had begun; the workflow run had not completed).
+- **PR #221 — Memory SQLite reentrant stat-policy custody:** OPEN/DRAFT/UNMERGED, branch `research/run1085-memory-stat-reentrant`, repaired exact HEAD `24130ebce621442c058bb6a4d2019a8645a863fe`; fresh exact-head run [44957860588](https://github.com/Iam-2squared/ark-ai/actions/runs/44957860588) was **IN PROGRESS** at checkpoint.
+- **PR #222 — Personal Context replay-ledger path custody:** OPEN/DRAFT/UNMERGED, branch `research/run1085-context-ledger-reparse-reentrant`, repaired exact HEAD `f332fe623008ae6ff3b2da856ff80f533a82ba41`; fresh exact-head run [44957859530](https://github.com/Iam-2squared/ark-ai/actions/runs/44957859530) was **IN PROGRESS** at checkpoint.
+- **Gated PR #5:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED; V3 remains **NOT_PASSED**.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains **PAUSED**.
+- **main:** HEAD `6e40afb74666b7dfda6560dd5ca619664d7129b7` at checkpoint observation. No main write or merge occurred.
+
+## NEW — this invocation (Run1086)
+
+1. **PR #219 Planner journal test isolation:** changed callback-time stat-predicate substitutions in `tests/test_planner_journal_stat_predicate_custody_run1085.py` to use the test's `monkeypatch.context()` restoration path. The regression still replaces the predicate during `lstat` and still requires fail-closed denial; the shared Python `stat` module is now restored after the test.
+   - Resulting child HEAD: `698e4191ddebf1a84af14f30b7959257d56c1911`.
+2. **PR #220 ActionAudit test isolation:** applied the same scoped restoration to callback-time, missing-leaf and metadata-accessor predicate substitutions in `tests/test_action_audit_stat_reentrant_custody_run1085.py`.
+   - Resulting child HEAD: `9090446ab9d58ac77ca22ec905ea41db511888e5`.
+3. **PR #221 Memory test isolation:** scoped the corresponding `S_ISDIR` / `S_ISLNK` / `S_ISREG` replacements in `tests/test_memory_sqlite_stat_reentrant_custody_run1085.py`, preserving the intended substitution checks while preventing cross-test global-module contamination.
+   - Resulting child HEAD: `24130ebce621442c058bb6a4d2019a8645a863fe`.
+4. **PR #222 Personal Context test isolation:** applied scoped restoration to `tests/test_context_replay_stat_reentrant_custody_run1085.py`, including callback-time, missing-leaf and metadata-accessor cases.
+   - Resulting child HEAD: `f332fe623008ae6ff3b2da856ff80f533a82ba41`.
+5. **Failure diagnosis:** the first exact-head runs for all four children reached pytest and failed because test callbacks directly assigned attributes on the shared process-wide `stat` module without restoring them. Later unrelated tests then correctly rejected the changed path policy. The repair is test-only; no production source, schema, public API, replay rule, audit ordering or frozen contract was changed. All four repairs were saved through the normal GitHub Contents API. No raw Git-object, force-push or alternate write path was used.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 work-basis HEAD `25767c633396913eb2ea9e8bd133a51d2b399407`: run [44953905014](https://github.com/Iam-2squared/ark-ai/actions/runs/44953905014), **GREEN 6/6 before this checkpoint commit**.
+- Initial PR #219 HEAD `771a5b1005eb06d259a8cea2b50a5d9eaf8b19be`: run [44953558318](https://github.com/Iam-2squared/ark-ai/actions/runs/44953558318), **FAIL** during pytest due shared-stat test contamination.
+- Initial PR #220 HEAD `a13ed995239831ef1e96534b0846b684aab274d9`: run [44953668999](https://github.com/Iam-2squared/ark-ai/actions/runs/44953668999), **FAIL** during pytest due shared-stat test contamination.
+- Initial PR #221 HEAD `242a556f7d7804dac48ae138776e906683465e4f`: run [44953650237](https://github.com/Iam-2squared/ark-ai/actions/runs/44953650237), **FAIL** during pytest due shared-stat test contamination.
+- Initial PR #222 HEAD `60fd7c962a26be76bd2e4d2ce33ecfdf1b7db261`: run [44953780706](https://github.com/Iam-2squared/ark-ai/actions/runs/44953780706), **FAIL** during pytest due shared-stat test contamination.
+- Repaired exact-head runs: #219 `698e4191ddebf1a84af14f30b7959257d56c1911` / [44957865329](https://github.com/Iam-2squared/ark-ai/actions/runs/44957865329) **IN PROGRESS**; #220 `9090446ab9d58ac77ca22ec905ea41db511888e5` / [44957865520](https://github.com/Iam-2squared/ark-ai/actions/runs/44957865520) **QUEUED**; #221 `24130ebce621442c058bb6a4d2019a8645a863fe` / [44957860588](https://github.com/Iam-2squared/ark-ai/actions/runs/44957860588) **IN PROGRESS**; #222 `f332fe623008ae6ff3b2da856ff80f533a82ba41` / [44957859530](https://github.com/Iam-2squared/ark-ai/actions/runs/44957859530) **IN PROGRESS**. These results are pending; no PASS is claimed.
+- No local pytest/Ruff PASS, physical-PC validation, real runtime identity, real model-file hash, live personal data, paid compute, Candidate artifact, protected evaluation, human review or external-effect proof is claimed. No duplicate workflow was manually dispatched.
+
+## Overall current ARK state
+
+Four non-UI path-custody children now have test-isolation repairs on their own branches. The production hardening remains isolated and reversible; fresh exact-head CI is still pending. The parent PR #8 work-basis CI was GREEN before this documentation checkpoint, but this new checkpoint HEAD requires its own exact-head CI. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/row-event/CAS semantics; PlanStep/ToolCall v1; ActionAudit v1 schema/event semantics; Observation Envelope v1; V3 Contract 1 semantics/hash; protected V2 final-evaluation boundary; and contamination/provenance/regression/reproducibility gates remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, power-loss durability, exactly-once external-effect, dataset/file-hash or runtime-identity claim was fabricated. PR #5, PR #8, PR #9 and child PRs #219–#222 remain Draft/unmerged.
+
+## Next plan / 今後の方針
+
+1. Let repaired exact-head runs [44957865329](https://github.com/Iam-2squared/ark-ai/actions/runs/44957865329), [44957865520](https://github.com/Iam-2squared/ark-ai/actions/runs/44957865520), [44957860588](https://github.com/Iam-2squared/ark-ai/actions/runs/44957860588) and [44957859530](https://github.com/Iam-2squared/ark-ai/actions/runs/44957859530) finish; do not duplicate workflow dispatches. If any fail, inspect the exact failing job and make the smallest semantics-preserving repair.
+2. Before any rebase or integration, re-read the live PR #8 head and each child head. The four children were created against the earlier parent snapshot `916aae6c6578086fee5e83c77c23375712676c90`; their exact-head CI must be green before any rebase/integration, and a rebase requires fresh exact-head CI.
+3. Continue durable restart-safe authorization, immutable ToolRegistry / exact-type PermissionGate, trusted-clock audit-before-action and disconnected/mock execution without connecting a real backend.
+4. Continue privacy-safe Personal Context lifecycle, proactive scheduler persistence/recovery, observation/multimodal fixture contracts and startup-readiness review as independent non-UI lanes.
+5. Continue free-only V3 approval/path/identity/reproducibility guards. Keep PR #5 Draft/unmerged; do not open protected V2 evaluation or generate/promote a Candidate.
+6. Keep all UI/frontend development PAUSED; leave PR #9 and Local UI freezes untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORICAL CHECKPOINT — ARK Run1085: Reentrant path-policy custody across Planner, ActionAudit, Memory and Personal Context
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22T06:53:49+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
