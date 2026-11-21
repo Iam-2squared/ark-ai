@@ -103,7 +103,7 @@ def test_equal_carrier_swap_after_local_spend_never_returns_registered_binding()
             super().add(value)
             object.__setattr__(grant, "scope", _clone(grant.scope))
 
-    gate._consumed_tokens = MutateGrantAfterOriginalSpend()
+    object.__setattr__(gate, "_consumed_tokens", MutateGrantAfterOriginalSpend())
     with pytest.raises(PermissionDenied, match="registered grant identity changed"):
         gate.authorize_registered(
             registry, call, (grant,), now_ms=10, one_shot=token,

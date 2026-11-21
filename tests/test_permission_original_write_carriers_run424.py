@@ -97,7 +97,7 @@ def test_equal_value_original_call_or_token_swap_never_spends(
             return False
 
     if phase == "spend":
-        gate._token_lock = MutatingSpendLock()
+        object.__setattr__(gate, "_token_lock", MutatingSpendLock())
     with pytest.raises(PermissionDenied, match="identity|input changed"):
         if registered:
             gate.authorize_registered(
@@ -137,7 +137,7 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
             return False
 
     if phase == "spend":
-        gate._token_lock = MutatingSpendLock()
+        object.__setattr__(gate, "_token_lock", MutatingSpendLock())
     with pytest.raises(PermissionDenied, match="input changed"):
         gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
     assert modified == [True]
@@ -148,7 +148,7 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
 @pytest.mark.parametrize("registered", (False, True))
 def test_unchanged_policy_still_spends_once_without_dispatch(registered):
     gate, spec, call, grant, token, registry, backend = _case()
-    gate._token_lock = Lock()
+    object.__setattr__(gate, "_token_lock", Lock())
     if registered:
         result = gate.authorize_registered(
             registry, call, (grant,), now_ms=10, one_shot=token,

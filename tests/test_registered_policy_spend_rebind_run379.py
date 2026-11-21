@@ -58,7 +58,7 @@ def test_registry_drift_while_spend_lock_waits_preserves_token(field, replacemen
     registration, registry, call, grant, token = _fixture()
     gate = PermissionGate()
     lock = PauseInSpend()
-    gate._token_lock = lock
+    object.__setattr__(gate, "_token_lock", lock)
     outcomes = []
 
     def worker():
@@ -84,7 +84,7 @@ def test_registry_drift_while_spend_lock_waits_preserves_token(field, replacemen
     assert "registered identity changed" in outcomes[0]
     assert token.token_id not in gate._consumed_tokens
     object.__setattr__(registration, field, original)
-    gate._token_lock = Lock()
+    object.__setattr__(gate, "_token_lock", Lock())
     result = gate.authorize_registered(
         registry, call, (grant,), now_ms=10, one_shot=token
     )

@@ -35,7 +35,7 @@ def test_spend_rechecks_policy_epoch_after_contended_lock(mutation):
     spec = ToolSpec("synthetic_write", "fixture", Effect.WRITE)
     grant = CapabilityGrant("fixture", "scope", 1000)
     token = OneShotAuthorization("synthetic-token", call.request_id, 1000)
-    gate._token_lock = PauseBeforeSpend()
+    object.__setattr__(gate, "_token_lock", PauseBeforeSpend())
     outcomes = []
 
     def worker():
@@ -70,7 +70,7 @@ def test_spend_rechecks_policy_epoch_after_contended_lock(mutation):
     object.__setattr__(grant, "expires_at_ms", 1000)
     object.__setattr__(spec, "effect", Effect.WRITE)
     object.__setattr__(spec, "name", "synthetic_write")
-    gate._token_lock = Lock()
+    object.__setattr__(gate, "_token_lock", Lock())
     gate.authorize(spec, call, (grant,), now_ms=10, one_shot=token)
     assert token.token_id in gate._consumed_tokens
 

@@ -43,7 +43,7 @@ def _fixture():
 
 def test_concurrent_same_token_allows_exactly_one_process_local_decision():
     gate, spec, call, grant, token = _fixture()
-    gate._consumed_tokens = _RacingTokens()
+    object.__setattr__(gate, "_consumed_tokens", _RacingTokens())
 
     def authorize(_index: int) -> bool:
         try:
