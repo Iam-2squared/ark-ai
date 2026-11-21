@@ -1,4 +1,69 @@
-# LATEST — ARK Run1082: PermissionGate fixture repair; V3 export and packet-reader path custody
+# LATEST — ARK Run1084: Personal Context path custody, Planner/ToolRegistry preflight, V3 identity guards, ActionAudit recovery
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22T06:03:32+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Checkpoint carrier branch/PR:** `research/run1083-personal-context-replay-rebase` / [Draft PR #215](https://github.com/Iam-2squared/ark-ai/pull/215), OPEN/DRAFT/UNMERGED. This status update is carried on a child branch so the shared PR #8 parent HEAD is not advanced while sibling exact-head CI runs are active. **Parent foundation:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), exact HEAD `916aae6c6578086fee5e83c77c23375712676c90`. **Work-basis HEAD:** `7e53442c3f11cb411e98f5d954f00a1cc3877da8`. **Checkpoint write-basis HEAD:** the same exact child HEAD, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live child branch ref afterward; it is not embedded here because a commit cannot contain its own resulting SHA.
+
+## Protected refs and current state
+
+- **PR #8 JARVIS foundation:** `research/jarvis-foundations`, HEAD `916aae6c6578086fee5e83c77c23375712676c90`, OPEN/DRAFT/UNMERGED. Exact-head CI run [44944518099](https://github.com/Iam-2squared/ark-ai/actions/runs/44944518099) completed SUCCESS (6/6). No parent update or merge occurred in this invocation.
+- **PR #212 PermissionGate state custody:** child HEAD `a460543c6130030342051eff8cf42a9bb49aa966`; CI run [44948075522](https://github.com/Iam-2squared/ark-ai/actions/runs/44948075522), IN PROGRESS.
+- **PR #213 SQLite Memory path identity:** child HEAD `32ec4495b6588a1ef27ed97d737581e7104b69cc`; CI run [44948131786](https://github.com/Iam-2squared/ark-ai/actions/runs/44948131786), IN PROGRESS.
+- **PR #214 immutable PlanGraph status:** child HEAD `9307993e5928ab90ac370a811ffe32c579a5128a`; CI run [44948194900](https://github.com/Iam-2squared/ark-ai/actions/runs/44948194900), IN PROGRESS.
+- **PR #215 Personal Context replay/path rebase:** source/test HEAD `7e53442c3f11cb411e98f5d954f00a1cc3877da8`; CI run [44948814692](https://github.com/Iam-2squared/ark-ai/actions/runs/44948814692), IN PROGRESS. This checkpoint update creates a newer documentation head; no CI verdict is inferred for the resulting head.
+- **PR #216 read-only Planner/ToolRegistry preflight rebase:** HEAD `cc7967ec89ae24d8b1f5a05da9f9d93491d96d68`; CI run [44948927136](https://github.com/Iam-2squared/ark-ai/actions/runs/44948927136), IN PROGRESS.
+- **PR #217 V3 identity/artifact stat custody:** HEAD `441d9846747acea92817d40bf8152d7bad2f5c94`; CI run [44949358284](https://github.com/Iam-2squared/ark-ai/actions/runs/44949358284), QUEUED.
+- **PR #218 ActionAudit COMMIT-outcome regression:** HEAD `a53ea9bf9f478a489f3a617e51b7c4062b889857`; no workflow run or combined status was returned at last observation. Status is UNOBSERVED, not PASS.
+- **PR #5 gated V3:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED; V3 remains NOT_PASSED.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+- **main:** HEAD `6e40afb74666b7dfda6560dd5ca619664d7129b7` at last observation. No main write or merge was made.
+
+## NEW — this invocation (Run1084)
+
+1. **PR #215 Personal Context replay durability/path custody:** rebased the hash-only, denial-only replay ledger and process-crash recovery fixtures onto the current PR #8 head. Added import-original `stat` module and `S_ISDIR`/`S_ISREG`/`S_ISLNK` predicate custody, fail-closed pre-`lstat` substitution checks and post-metadata rechecks, with six new synthetic stat-policy regressions. The existing crash-after-COMMIT/lost-receipt and proactive preparation-race fixtures remain synthetic. No payload storage, live personal data, consent, disclosure or scheduler dispatch.
+2. **PR #216 read-only Planner/ToolRegistry preflight rebase:** rebased PR #15's adapter onto PR #8 HEAD `916aae6c6578086fee5e83c77c23375712676c90`. It binds exact PlanStep ToolCalls to one immutable registry revision and returns only a local fingerprint. Five synthetic tests; no PermissionGate grant, PlanGraph mutation, persistence, replay or backend dispatch.
+3. **PR #217 V3 identity stat-predicate custody:** pinned import-original `stat` module and used mode predicates in `identity.py` and `identity_artifact_verify.py`; added before-path and post-metadata rechecks plus twelve synthetic regressions. No real model snapshot was materialized, opened or hashed. V3 Contract 1/hash unchanged.
+4. **PR #218 ActionAudit COMMIT-outcome rebase:** rebased the test-only rollback-before-COMMIT versus native-COMMIT/lost-acknowledgement regression onto PR #8 HEAD. Cold readback checks exact prior-prefix versus exactly-one-event outcome, IDs, synthetic timestamps, argument digests, SQLite `quick_check` and absence of a private argument marker. No production source change or external effect.
+5. **CI overlap preserved:** after creating each coherent child, work moved to independent modules while CI ran. No duplicate workflow dispatch, parent advancement, Draft-to-ready transition, child merge or main merge.
+
+## Tests / CI / evidence — exact heads only
+
+- Parent PR #8 `916aae6c6578086fee5e83c77c23375712676c90`: run `44944518099`, GREEN 6/6.
+- PR #212 `a460543c6130030342051eff8cf42a9bb49aa966`: run `44948075522`, IN PROGRESS.
+- PR #213 `32ec4495b6588a1ef27ed97d737581e7104b69cc`: run `44948131786`, IN PROGRESS.
+- PR #214 `9307993e5928ab90ac370a811ffe32c579a5128a`: run `44948194900`, IN PROGRESS.
+- PR #215 pre-checkpoint source/test HEAD `7e53442c3f11cb411e98f5d954f00a1cc3877da8`: run `44948814692`, IN PROGRESS. The new checkpoint commit has a different HEAD; no verdict transfers.
+- PR #216 `cc7967ec89ae24d8b1f5a05da9f9d93491d96d68`: run `44948927136`, IN PROGRESS.
+- PR #217 `441d9846747acea92817d40bf8152d7bad2f5c94`: run `44949358284`, QUEUED.
+- PR #218 `a53ea9bf9f478a489f3a617e51b7c4062b889857`: workflow/status UNOBSERVED at last check; no PASS claim.
+- Prior exact-head evidence is not inherited by rebases: PR #204 old head `2d7a1bebc63076129714ef45b582c1a03dae7dce` run `44931807266` GREEN 6/6; PR #15 old head `75680991e1f48d047d5f48aa51d4ceec99393eb8` run `44530235330` GREEN 6/6; PR #101 old head `f905a0d35a225ffc443f3dcb543a0072cbd87f2a` run `44796254718` GREEN 6/6. None certifies #215, #216 or #218.
+- No local pytest/Ruff PASS, physical-PC validation, real runtime identity, real model-file hash, live data, paid compute, Candidate artifact, protected evaluation or external-effect proof is claimed. No duplicate workflow was manually dispatched.
+
+## Overall current ARK state
+
+The non-UI foundation continues to advance through isolated child branches. PermissionGate, Memory, Planner status, Personal Context, read-only Planner/ToolRegistry preflight, ActionAudit outcome recovery and free-only V3 identity hardening are represented by exact-head child PRs with CI running, queued or not yet observed. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/row-event semantics; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event semantics; V3 Contract 1 semantics/hash; protected V2 final-evaluation boundary; and contamination/provenance/regression/reproducibility gates remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, power-loss durability, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated. PR #5 and PR #8 remain Draft/unmerged; PR #9 remains paused and untouched.
+
+## Next plan / 今後の方針
+
+1. Observe exact-head CI runs `44948075522`–`44949358284` once they have had time to complete; inspect any failing job and make the smallest semantics-preserving repair. PR #218 has no observed run yet; check once later. Do not duplicate workflows or modify the same source path while its validation is active.
+2. After PR #212 exact-head GREEN, reconcile the existing shadowed-ToolRegistry-method and exact-PermissionGate-instance children (#143 and #46) against the latest parent. Avoid `policy.py` edits while #212 CI is active.
+3. After PR #213 exact-head GREEN, continue Memory WAL/SHM, CAS/ABA, expiry and coherent row/event snapshot work without changing Memory v1 schema or retrying COMMIT-UNKNOWN writes.
+4. After PR #214 exact-head GREEN, revalidate PR #216's read-only Planner/ToolRegistry adapter against the exact latest PlanGraph and registry APIs. Integrate only after lower-level invariants are GREEN; no backend dispatch.
+5. Continue privacy-safe Personal Context lifecycle, proactive scheduler persistence/occurrence/replay, Observation fixture adapters, startup readiness and disconnected/mock execution as independent lanes.
+6. Continue free-only V3 approval/path/identity/reproducibility guards. Keep PR #5 Draft/unmerged, do not open protected V2 evaluation, do not generate a Candidate, and do not start paid/external compute.
+7. Keep all UI/frontend development PAUSED; leave PR #9 and Local UI freezes untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORICAL CHECKPOINT — ARK Run1082: PermissionGate fixture repair; V3 export and packet-reader path custody
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22T05:05:40+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
