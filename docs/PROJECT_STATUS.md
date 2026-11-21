@@ -1,3 +1,73 @@
+# LATEST — ARK AI Run1047: non-UI core rebases, audit repair and free-only V3 guard
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T12:01:25+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** \`research/jarvis-foundations\` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Work-basis exact HEAD:** \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`. **Checkpoint write-basis HEAD:** \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the immediate post-write branch read; this tracked file cannot embed its own resulting SHA.
+
+**Protected refs at checkpoint:** main \`7a843f17eb96ed13d66f23b58b06406b3002e405\`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) \`c42e7cf878ea4be51b25171301a7ba221604320b\`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) \`3b49048dd70eebcb6268299b9ecef4e301bbc0fd\`. PR #5, #8 and #9 remain OPEN/DRAFT/UNMERGED. PR #9 remains untouched. UI/frontend work remains PAUSED.
+
+## NEW — this invocation
+
+### Repaired an existing ActionAudit child
+
+1. **PR #144 — ActionAudit Windows reparse-point sidecar custody test correction.** The previous corrected child HEAD \`c0bb2eea829f633df3c341ed80c9d95456c8fc7c\`, CI #44856303116, failed three symlink-sidecar assertions because the new reparse-point guard intentionally returns the fixed path-free diagnostic \`audit SQLite sidecar reparse-point alias refused\`, without suffix/mode/link metadata. Updated only the test: symlink cases now require that exact fixed diagnostic and absence of metadata; directory/hardlink cases retain suffix, file-type and link-count assertions. Source denial behavior is unchanged. New child HEAD \`30927ef65e12492f4e4a0566611fe35f1243b2da\`; CI #44857908057: **IN PROGRESS**. PR #144 still has its older parent basis \`784f93d7a48860e774f6d94648ff4e44297c9569\`; it must be rebased and freshly validated before integration.
+
+### New rebased non-UI children of Draft PR #8
+
+2. **PR #147 — ToolRegistry instance-method custody rebase.** Carries Run1038's class/instance descriptor pinning and captured original unbound bind implementation across READ and WRITE registered authorization, with regressions proving denial before shadow callbacks, grant iteration where applicable, token spend and backend dispatch. Child HEAD \`7ab02d53f9e988aef19e6ec2d0b8136b2b993105\`, based on PR #8 HEAD \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`. Earlier PR #143 exact-head CI #44855648639 was **GREEN, 6/6** on older base \`784f93d7a48860e774f6d94648ff4e44297c9569\`; that result is not transferred. Fresh CI #44858185051: **IN PROGRESS**.
+3. **PR #148 — startup-readiness lease guard rebase.** Carries diagnostic-control identifier rejection and descriptor-vector/root-reference custody onto the current foundation. Child HEAD \`02142a61acf54354f29f07a7dae73294a85d8120\`, based on PR #8 HEAD \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`. Earlier PR #118 run #44814571699 completed successfully on an older base; that evidence is not transferred. Fresh CI #44858292942: **IN PROGRESS**. Startup, dispatch, notification and hardware authorization remain false.
+4. **PR #149 — Personal Context replay process-crash rebase and proactive race-fixture stabilization.** Retains the child-process exit immediately after native SQLite COMMIT, cold hash-only recovery, stale/duplicate denial, integrity check and no private fixture payload in durable bytes. Prior PR #145 run #44855740615 **FAILED** on Ubuntu Python 3.11 in an inherited proactive cross-process test: a legitimate DELETE-journal sidecar unlink raced the fail-closed path preflight. The new test-only rebase holds a parent SQLite anchor connection in WAL mode while the two child preparations race, keeping legitimate WAL/SHM sidecars linked and stable. Production path checks and alias denials are unchanged; no uncertain-COMMIT retry was added. Child HEAD \`e284e8209f9b1765e10b292def33b79475d351c6\`, based on PR #8 HEAD \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`. Fresh CI #44858550158: **IN PROGRESS**.
+5. **PR #150 — Planner journal Windows reparse-point custody rebase.** Pins the reparse attribute mask and rejects reparse-point ancestors, database leaf and WAL/SHM/rollback-journal sidecars before SQLite access; synthetic stat fixtures only. Child HEAD \`6e07079a7a0bd561dbbde3894b71dfa407c0444d\`, based on PR #8 HEAD \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`. Earlier PR #146 exact-head CI #44856013136 was **GREEN, 6/6** on older base \`812e5d3777376d5903cbbd17dca967f7448d0e11\`; that result is not transferred. Fresh CI #44858663971: **QUEUED**. The journal remains disconnected/replay-only; recovered RUNNING steps remain UNKNOWN.
+
+### New free-only child of gated Draft PR #5
+
+6. **PR #151 — V3 executable identity Unicode-control guard.** The non-executing export planner already bounded exact Python argv strings and rejected blank, NUL, ASCII C0/DEL and invalid UTF-8; it now also rejects C1, bidi, zero-width, format and line-separator controls before snapshot/path/tool-identity access. Ordinary multilingual executable paths remain verbatim. Synthetic callback-order tests only. Child HEAD \`20866975dbb02ceb066bfc1e9d8ad8fc42d2e0c0\`, based on gated PR #5 HEAD \`c42e7cf878ea4be51b25171301a7ba221604320b\`. CI #44858852488: **QUEUED**. No subprocess, converter, quantizer, model, GPU, training, Candidate, protected V2 evaluation or external service ran.
+
+## CI and evidence at checkpoint
+
+- Draft PR #8 exact HEAD \`a6529d15c78cb9341e2ff97bc886f1b771ad05bd\`, CI #44856505380: **GREEN, 6/6**.
+- Gated Draft PR #5 exact HEAD \`c42e7cf878ea4be51b25171301a7ba221604320b\`, CI #44855822849: **GREEN, 6/6**. V3 remains **NOT_PASSED**.
+- PR #144 repaired child HEAD \`30927ef65e12492f4e4a0566611fe35f1243b2da\`, CI #44857908057: **IN PROGRESS**.
+- PR #147 child HEAD \`7ab02d53f9e988aef19e6ec2d0b8136b2b993105\`, CI #44858185051: **IN PROGRESS**.
+- PR #148 child HEAD \`02142a61acf54354f29f07a7dae73294a85d8120\`, CI #44858292942: **IN PROGRESS**.
+- PR #149 child HEAD \`e284e8209f9b1765e10b292def33b79475d351c6\`, CI #44858550158: **IN PROGRESS**.
+- PR #150 child HEAD \`6e07079a7a0bd561dbbde3894b71dfa407c0444d\`, CI #44858663971: **QUEUED**.
+- PR #151 child HEAD \`20866975dbb02ceb066bfc1e9d8ad8fc42d2e0c0\`, CI #44858852488: **QUEUED**.
+- Earlier child evidence is historical and is not transferred across a rebase. No local pytest/Ruff PASS is claimed for the new children.
+- This checkpoint update may trigger a new PR #8 CI run; its run ID/result were not available when this section was authored and are not claimed here.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher reviewed evidence remains frozen and unchanged. Draft PR #8's current foundation HEAD has exact-head CI GREEN, but ARK/JARVIS overall remains **NOT_PASSED**. Gated PR #5's current head has CI GREEN, but V3 remains **NOT_PASSED**. No later milestone is promoted by these foundation or CI results.
+
+## Frozen contracts / evidence unchanged
+
+V1/V2/Local UI/Launcher reviewed evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1 and its frozen semantics/hash; protected V2 evaluation boundaries. Main remains unchanged. PR #5 and #8 remain Draft/unmerged; PR #9 remains paused and untouched.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, unavailable physical-PC action, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- All new child PRs require fresh exact-head six-job CI. Integrate only after GREEN, re-reading latest PR #8/#5 HEAD immediately before every integration. No older-base CI transfers.
+- PR #144 remains on older base \`784f93d7a48860e774f6d94648ff4e44297c9569\`; even after its repaired CI is GREEN, rebase onto current PR #8 and require fresh exact-head CI before integration.
+- PR #149's WAL-anchor fixture stabilization must pass CI; do not weaken the proactive path-custody guard if it fails.
+- PR #5 remains gated Draft/unmerged under the pre-paid-compute closure. No external compute, real Candidate adapter/weights, protected V2 evaluation opening or promotion is authorized.
+- PR #9 and all UI/frontend work remain paused and untouched.
+- Main merge requiring explicit approval remains blocked.
+
+## Next plan / 今後の方針
+
+1. Continue independent non-UI work while CI runs; revisit #44857908057, #44858185051, #44858292942, #44858550158, #44858663971 and #44858852488 after other work, inspect failures and repair minimally.
+2. After exact-head GREEN, integrate #147, #148, #149 and #150 sequentially into Draft PR #8, re-reading the parent HEAD and requiring fresh resulting-head CI before dependent integration.
+3. After #144 is GREEN, rebase it onto the then-current PR #8 HEAD, require fresh six-job CI, then integrate only if GREEN.
+4. Integrate PR #151 only after its exact-head CI is GREEN, keeping gated PR #5 Draft/unmerged and V3 NOT_PASSED.
+5. Continue local-first Memory CAS/WAL/expiry/coherent snapshots, Planner terminal recovery, immutable ToolRegistry/PermissionGate, restart-safe authorization/audit-before-action, privacy-safe Personal Context, proactive scheduler state and Observation fixture contracts. Connect components only after lower-level exact-head GREEN evidence.
+6. Keep UI paused, preserve all frozen contracts/evidence, and do not declare ARK/JARVIS PASS.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1042: Planner, PermissionGate, ActionAudit and V3 path hardening advanced
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T11:32:53+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
