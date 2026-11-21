@@ -17,12 +17,24 @@ from .execution import (
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+
+
+def _require_original_reparse_point_policy() -> None:
+    if (
+        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise ValueError("authorization packet reparse-point policy changed")
 
 
 def _is_reparse_point(info: object) -> bool:
+    _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
-    return stat.S_ISLNK(info.st_mode) or (
-        type(attributes) is int and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    if type(attributes) is not int:
+        raise ValueError("authorization packet reparse metadata is malformed")
+    return stat.S_ISLNK(info.st_mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
 
