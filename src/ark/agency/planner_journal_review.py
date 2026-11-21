@@ -29,6 +29,10 @@ _PLAN = re.compile(r"plan_[0-9a-f]{64}\Z")
 _STATE = re.compile(r"pstate_[0-9a-f]{64}\Z")
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
 _SCHEMA = (
     """CREATE TABLE synthetic_plan_header(
         id INTEGER PRIMARY KEY CHECK(id = 1),
@@ -66,8 +70,14 @@ class SyntheticPlanJournalRejected(RuntimeError):
 
 
 def _require_original_reparse_point_policy() -> None:
+    # The stat module and its mode predicates are executable policy inputs.
+    # Pin every predicate used by path admission before lstat or SQLite access.
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise SyntheticPlanJournalRejected(
