@@ -162,19 +162,21 @@ def _admit_frozen_toolcall_arguments(value: object) -> None:
     its iterator/items hooks can run. It is a local in-process admission fence,
     not a sandbox or a change to the frozen ToolCall v1 constructor contract.
     """
+    limits = (
+        _MAX_TOOL_CALL_ARGUMENT_NODES,
+        _MAX_TOOL_CALL_ARGUMENT_DEPTH,
+        _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS,
+        _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES,
+        _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS,
+    )
     if (
         gc is not _ORIGINAL_GC
         or gc.get_referents is not _ORIGINAL_GC_GET_REFERENTS
         or math is not _ORIGINAL_MATH
         or math.isfinite is not _ORIGINAL_MATH_ISFINITE
         or MappingProxyType is not _ORIGINAL_MAPPING_PROXY_TYPE
-        or (
-            _MAX_TOOL_CALL_ARGUMENT_NODES,
-            _MAX_TOOL_CALL_ARGUMENT_DEPTH,
-            _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS,
-            _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES,
-            _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS,
-        ) != _ORIGINAL_TOOL_CALL_ARGUMENT_LIMITS
+        or any(type(limit) is not int for limit in limits)
+        or limits != _ORIGINAL_TOOL_CALL_ARGUMENT_LIMITS
     ):
         raise ValueError("ToolCall argument admission dependencies changed")
     if type(value) is not _ORIGINAL_MAPPING_PROXY_TYPE:
@@ -740,6 +742,10 @@ class ToolRegistry:
         # value-equal mapping after resolve() has finished its own checks.
         # That is a new caller input epoch even when request_id is unchanged.
         original = (call.tool, call.capability, call.scope, call.arguments)
+        # ToolCall v1 accepts general Mapping inputs. The registry boundary
+        # must reject a reflected foreign mappingproxy backing object before
+        # reconstructing ToolCall can invoke its __iter__/items callbacks.
+        _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(original[3])
         # Apply resolve()'s opt-in scope admission *before* reconstructing
         # ToolCall. Its frozen v1 request-id serializer would otherwise raise
         # a raw UnicodeEncodeError for a surrogate (and touch invalid data).
