@@ -1,3 +1,61 @@
+# LATEST — ARK AI Run1050: gated integrations and three non-UI foundation rebases
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T13:01:17+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Work-basis exact HEAD:** `aa6e47284fbba6f45845274531defdeb5a974252` (Run1047 ToolRegistry integration). **Checkpoint write-basis HEAD:** `aa6e47284fbba6f45845274531defdeb5a974252`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by the update and verified by the subsequent live PR #8 branch read; this tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) now points to `034c756345b218ce41770ffccad7390a17ec018b` after the free-only PR #151 integration; it remains OPEN/DRAFT/UNMERGED. Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+
+## NEW — this invocation
+
+### Integrated exact-head-GREEN children into isolated Draft branches
+
+1. **PR #147 — ToolRegistry/PermissionGate instance-method custody** was marked ready only after its exact child-head CI passed, then squash-integrated into Draft PR #8. Child HEAD `7ab02d53f9e988aef19e6ec2d0b8136b2b993105`; CI #44858185051 **GREEN, 6/6**. Resulting PR #8 HEAD/merge commit: `aa6e47284fbba6f45845274531defdeb5a974252`. This remains an in-process registry identity/drift check, not a sandbox, durable approval or external exactly-once guarantee.
+2. **PR #151 — V3 executable-identity Unicode-control guard** was integrated into gated Draft PR #5 only after exact-head CI. Child HEAD `20866975dbb02ceb066bfc1e9d8ad8fc42d2e0c0`; CI #44858852488 **GREEN, 6/6**. Resulting PR #5 HEAD/merge commit: `034c756345b218ce41770ffccad7390a17ec018b`. PR #5 remains Draft/unmerged and V3 remains NOT_PASSED.
+
+### Three new isolated non-UI child packages
+
+3. **PR #152 — Memory SQLite Windows reparse-point admission.** Rebased the earlier isolated Memory path guard onto PR #8 HEAD `aa6e47284fbba6f45845274531defdeb5a974252`. Pins the reparse attribute/predicate and refuses reparse-point ancestors, database leaf and WAL/SHM/rollback-journal sidecars before SQLite open. Adds five synthetic metadata regressions and a technical note. Child HEAD `3f994e8976c798c8644e0c63184f8094317c5934`; CI #44863525617 **IN PROGRESS**. Memory v1 DDL/API unchanged.
+4. **PR #153 — ActionAudit Windows reparse-point admission.** Fresh rebase onto the same PR #8 parent; adds reparse checks for ancestors, database leaf and SQLite sidecars, uses lstat-based leaf classification, and aligns the path-free reparse diagnostic regression. Child HEAD `0db50a1e98a1167cd6029c83bf554ac87c75d8f6`; CI #44863715864 **IN PROGRESS**. Audit v1 schema/event contract unchanged.
+5. **PR #154 — Personal Context replay process-crash and proactive race fixture rebase.** Test-only rebase onto the same PR #8 parent. Retains child exit immediately after native SQLite COMMIT and cold hash-only recovery; stabilizes the inherited two-process proactive fixture with a WAL anchor without weakening production path custody. Child HEAD `320f7d367abd9997e581097930ab8cf59dd41096`; CI #44863813665 **QUEUED**. No live personal data or disclosure path.
+6. Existing **PR #148** startup-readiness lease rebase, child `02142a61acf54354f29f07a7dae73294a85d8120`, CI #44858292942 **GREEN, 6/6**; **PR #149** Personal Context replay-crash/proactive fixture child `e284e8209f9b1765e10b292def33b79475d351c6`, CI #44858550158 **GREEN, 6/6**; and **PR #150** Planner journal reparse-point child `6e07079a7a0bd561dbbde3894b71dfa407c0444d`, CI #44858663971 **GREEN, 6/6** remain OPEN/DRAFT/UNMERGED pending sequential integration into PR #8. Each was based on the earlier parent `a6529d15c78cb9341e2ff97bc886f1b771ad05bd`; child CI is exact-head evidence only and does not certify a later combined PR #8 head.
+
+## Tests / CI / evidence — exact heads and latest observed state
+
+- PR #8 after PR #147, exact HEAD `aa6e47284fbba6f45845274531defdeb5a974252`: CI #44863095259 **IN PROGRESS** (Ubuntu Python 3.11/3.12/3.13 jobs SUCCESS; Windows Python 3.11/3.12/3.13 jobs still in pytest at last inspection). This is the required resulting-head validation before integrating the next PR #8 child.
+- PR #5 after PR #151, exact HEAD `034c756345b218ce41770ffccad7390a17ec018b`: CI #44863153528 **GREEN, 6/6**.
+- PR #147 exact child HEAD `7ab02d53f9e988aef19e6ec2d0b8136b2b993105`: CI #44858185051 **GREEN, 6/6**; integrated into PR #8 as `aa6e47284fbba6f45845274531defdeb5a974252`.
+- PR #151 exact child HEAD `20866975dbb02ceb066bfc1e9d8ad8fc42d2e0c0`: CI #44858852488 **GREEN, 6/6**; integrated into PR #5 as `034c756345b218ce41770ffccad7390a17ec018b`.
+- PR #148 exact child HEAD `02142a61acf54354f29f07a7dae73294a85d8120`: CI #44858292942 **GREEN, 6/6**, older parent.
+- PR #149 exact child HEAD `e284e8209f9b1765e10b292def33b79475d351c6`: CI #44858550158 **GREEN, 6/6**, older parent.
+- PR #150 exact child HEAD `6e07079a7a0bd561dbbde3894b71dfa407c0444d`: CI #44858663971 **GREEN, 6/6**, older parent.
+- PR #152 exact child HEAD `3f994e8976c798c8644e0c63184f8094317c5934`: CI #44863525617 **IN PROGRESS**.
+- PR #153 exact child HEAD `0db50a1e98a1167cd6029c83bf554ac87c75d8f6`: CI #44863715864 **IN PROGRESS**.
+- PR #154 exact child HEAD `320f7d367abd9997e581097930ab8cf59dd41096`: CI #44863813665 **QUEUED**.
+- No local pytest/Ruff PASS is claimed for the new rebases. Earlier exact-head CI results do not transfer across rebase or integration.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher reviewed evidence remains frozen and unchanged. PR #8 has an exact-head-green child integration (#147), but the resulting PR #8 head CI is still running. PR #5 has a green exact-head free-only guard integration (#151), but V3 remains gated and NOT_PASSED. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; V3 Contract 1 semantics/hash; protected V2 evaluation boundary remain unchanged. PR #5 and PR #8 remain Draft/unmerged; PR #9 remains paused and untouched.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Next plan / 今後の方針
+
+1. Confirm PR #8 exact resulting-head CI #44863095259. If GREEN, integrate PR #148, #149 and #150 sequentially, re-reading live PR #8 HEAD before each integration and requiring fresh resulting-head CI before the next merge. If FAIL, inspect the exact failed job and make only the smallest semantics-preserving repair.
+2. Inspect PR #152 and #153 CI #44863525617 / #44863715864. Repair failures minimally without weakening path custody; inspect PR #154 CI #44863813665 when it starts.
+3. Integrate only exact-head-GREEN children into their isolated parent branches; keep PR #5 and PR #8 Draft/unmerged and main unchanged.
+4. Continue Memory WAL/SHM and CAS/coherent-snapshot integrity, Planner terminal/restart recovery, registry-bound PermissionGate, durable one-shot authorization and audit-before-action, privacy-safe Personal Context, proactive occurrence/replay, Observation fixture contracts and free-only V3 guards.
+5. Keep all UI/frontend work paused; do not use paid compute, real Candidate generation, protected V2 opening or main merge.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1047: non-UI core rebases, audit repair and free-only V3 guard
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T12:01:25+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
