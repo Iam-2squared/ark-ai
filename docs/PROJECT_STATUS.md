@@ -1,41 +1,41 @@
-# LATEST — ARK AI Run1054: non-UI path hardening and gated integrations
+# LATEST — ARK AI Run1054: non-UI foundation integrations and reparse-policy hardening
 
-**Saved at (Asia/Tokyo/JST): 2026-11-21T13:55:01+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+**Saved at (Asia/Tokyo/JST): 2026-11-21T13:57:46+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
 
-**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Work-basis exact HEAD:** `a48c0464b75a5355606f2369551f79a9012a95ea` (PR #148 startup-readiness integration). **Checkpoint write-basis HEAD:** `a48c0464b75a5355606f2369551f79a9012a95ea`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the subsequent live PR #8 branch read; this tracked file cannot embed its own resulting SHA.
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Work-basis exact HEAD:** `982abc59b032f1ac1c988262e7d5da723c4d7970` (Run1054 checkpoint commit after PR #148 integration). **Checkpoint write-basis HEAD:** `982abc59b032f1ac1c988262e7d5da723c4d7970`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the subsequent live PR #8 branch read; this tracked file cannot embed its own resulting SHA.
 
-**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) now points to `13a90440b52c6997a718c6c03a4636639a97d5ee` after free-only PR #155 integration; it remains OPEN/DRAFT/UNMERGED. Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) now points to `202cb5b6742a9f9e59c530b2c419decdb8f88c4d` after free-only PR #155 and #156 integrations; it remains OPEN/DRAFT/UNMERGED. Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
 
 ## NEW — this invocation
 
-### Isolated JARVIS foundation integration
+### Exact-head-GREEN integrations into isolated Draft branches
 
-1. **PR #148 — startup-readiness lease guard rebase** was integrated into Draft PR #8 after exact child-head CI #44858292942 succeeded. The integration commit / new PR #8 HEAD is `a48c0464b75a5355606f2369551f79a9012a95ea`. It retains diagnostic-only lease semantics, rejects control-bearing identifiers and pins descriptor/guard vectors. No physical startup, hardware, dispatch or notification authority is added.
-2. **PR #155 — V3 identity reparse-policy pin** was integrated into gated Draft PR #5 after exact child-head CI #44867965952 succeeded (6/6). Resulting PR #5 HEAD: `13a90440b52c6997a718c6c03a4636639a97d5ee`. This pins the import-time Windows reparse bit and fails closed on malformed metadata; PR #5 remains Draft/unmerged and V3 remains NOT_PASSED.
+1. **PR #148 — startup-readiness lease guard rebase** integrated into Draft PR #8 after child CI #44858292942 succeeded. Integration commit / PR #8 work-basis HEAD: `a48c0464b75a5355606f2369551f79a9012a95ea`. Diagnostic-only lease semantics remain; no physical startup, hardware, dispatch or notification authority is added.
+2. **PR #155 — V3 identity reparse-policy pin** integrated into gated Draft PR #5 after child CI #44867965952 succeeded (6/6). Resulting PR #5 HEAD: `13a90440b52c6997a718c6c03a4636639a97d5ee`.
+3. **PR #156 — V3 authorization-packet output reparse policy** integrated into gated Draft PR #5 after child CI #44868049783 succeeded (6/6). Resulting PR #5 HEAD: `202cb5b6742a9f9e59c530b2c419decdb8f88c4d`. Both V3 integrations pin Windows reparse policy and reject malformed metadata; PR #5 remains Draft/unmerged and V3 remains NOT_PASSED.
 
 ### New isolated non-UI guard packages
 
-3. **PR #156 — V3 authorization-packet output reparse policy.** Child HEAD `d715649e040d18de14691cafbe0efa12ab6bf366`; CI #44868049783 / run 6861 **GREEN, 6/6**. Pins the policy mask and rejects malformed metadata in the review-only packet output path. OPEN/DRAFT/UNMERGED; not yet integrated.
-4. **PR #157 — V3 export-path malformed reparse metadata.** Child HEAD `68077bb9d68ce9509255033c61c9fad34f139eda`; CI #44868149311 / run 6862 **GREEN, 6/6**. Fails closed on malformed metadata before canonical path resolution. OPEN/DRAFT/UNMERGED; not yet integrated.
+4. **PR #157 — V3 export-path malformed reparse metadata.** Child HEAD `68077bb9d68ce9509255033c61c9fad34f139eda`; CI #44868149311 / run 6862 **GREEN, 6/6**. Fails closed before canonical path resolution. OPEN/DRAFT/UNMERGED; mergeable against the current parent but not yet integrated.
 5. **PR #158 — Personal Context replay-ledger Windows reparse admission.** Child HEAD `cda2152368c0fdb8d058f96ccde4f485009bb5c3`; CI #44868301160 / run 6863 **IN PROGRESS**. Pins the replay path policy and checks ancestors, database leaf and SQLite sidecars while preserving the hash-only, denial-only ledger. Synthetic local SQLite only; no live personal data or disclosure. OPEN/DRAFT/UNMERGED.
-6. Earlier non-UI children remain pending exact sequential integration: **PR #149** Personal Context process-crash/proactive fixture rebase (child `e284e8209f9b1765e10b292def33b79475d351c6`, CI #44858550158 succeeded on older parent `a6529d15c78cb9341e2ff97bc886f1b771ad05bd)); **PR #150** Planner journal reparse guard (child `6e07079a7a0bd561dbbde3894b71dfa407c0444d`, CI #44858663971 succeeded on that older parent); **PR #152** Memory SQLite reparse guard (child `3f994e8976c798c8644e0c63184f8094317c5934`, CI #44863525617 succeeded on parent `aa6e47284fbba6f45845274531defdeb5a974252)); **PR #153** ActionAudit reparse guard (child `0db50a1e98a1167cd6029c83bf554ac87c75d8f6`, CI #44863715864 succeeded on that parent); and **PR #154** Personal Context process-crash/proactive race fixture rebase (child `320f7d367abd9997e581097930ab8cf59dd41096`, CI #44863813665 succeeded on that parent). These child results do not certify a combined PR #8 head.
+6. Existing pending foundation children: **PR #149** Personal Context process-crash/proactive fixture rebase (child `e284e8209f9b1765e10b292def33b79475d351c6`, CI #44858550158 succeeded on older parent `a6529d15c78cb9341e2ff97bc886f1b771ad05bd)); **PR #150** Planner journal reparse guard (child `6e07079a7a0bd561dbbde3894b71dfa407c0444d`, CI #44858663971 succeeded on that older parent); **PR #152** Memory SQLite reparse guard (child `3f994e8976c798c8644e0c63184f8094317c5934`, CI #44863525617 succeeded on parent `aa6e47284fbba6f45845274531defdeb5a974252`); **PR #153** ActionAudit reparse guard (child `0db50a1e98a1167cd6029c83bf554ac87c75d8f6`, CI #44863715864 succeeded on that parent); and **PR #154** Personal Context process-crash/proactive race fixture rebase (child `320f7d367abd9997e581097930ab8cf59dd41096`, CI #44863813665 succeeded on that parent). These child results do not certify a combined PR #8 head.
 
 ## Tests / CI / evidence — exact heads and observed state
 
-- PR #8 current exact HEAD `a48c0464b75a5355606f2369551f79a9012a95ea`: CI #44867791390 / run 6859 **IN PROGRESS**. The prior PR #8 head `ec137f8dc69b68a3d7399c979edb2efc2cdc31ca` had CI #44864072523 / run 6858 **GREEN**.
-- PR #5 resulting exact HEAD `13a90440b52c6997a718c6c03a4636639a97d5ee`: CI #44868353000 / run 6864 **QUEUED**. Previous PR #5 head `034c756345b218ce41770ffccad7390a17ec018b` had CI #44863153528 / run 6854 **GREEN**.
-- PR #155 exact child HEAD `ffb14e51dd343cb12fe746041d047e16f576038a`: CI #44867965952 / run 6860 **GREEN, 6/6**; integrated into PR #5 as `13a90440b52c6997a718c6c03a4636639a97d5ee`.
-- PR #156 exact child HEAD `d715649e040d18de14691cafbe0efa12ab6bf366`: CI #44868049783 / run 6861 **GREEN, 6/6**.
+- PR #8 checkpoint work-basis HEAD `982abc59b032f1ac1c988262e7d5da723c4d7970`: CI #44868439942 / run 6865 **IN PROGRESS**. The prior PR #8 integration head `a48c0464b75a5355606f2369551f79a9012a95ea` also has CI #44867791390 / run 6859 **IN PROGRESS**. Earlier PR #8 head `ec137f8dc69b68a3d7399c979edb2efc2cdc31ca` had CI #44864072523 / run 6858 **GREEN**.
+- PR #5 current exact HEAD `202cb5b6742a9f9e59c530b2c419decdb8f88c4d`: CI #44868536451 / run 6866 **QUEUED**. Previous PR #5 head `13a90440b52c6997a718c6c03a4636639a97d5ee` had CI #44868353000 / run 6864 **GREEN**.
+- PR #155 exact child HEAD `ffb14e51dd343cb12fe746041d047e16f576038a`: CI #44867965952 / run 6860 **GREEN, 6/6**; integrated into PR #5.
+- PR #156 exact child HEAD `d715649e040d18de14691cafbe0efa12ab6bf366`: CI #44868049783 / run 6861 **GREEN, 6/6**; integrated into PR #5.
 - PR #157 exact child HEAD `68077bb9d68ce9509255033c61c9fad34f139eda`: CI #44868149311 / run 6862 **GREEN, 6/6**.
 - PR #158 exact child HEAD `cda2152368c0fdb8d058f96ccde4f485009bb5c3`: CI #44868301160 / run 6863 **IN PROGRESS**.
-- PR #148 exact child HEAD `02142a61acf54354f29f07a7dae73294a85d8120`: CI #44858292942 / run 6848 succeeded; resulting PR #8 head CI #6859 is still required.
+- PR #148 exact child HEAD `02142a61acf54354f29f07a7dae73294a85d8120`: CI #44858292942 / run 6848 succeeded; resulting PR #8 head CI #6859 is still in progress.
 - PR #149 / #150 exact child runs #6849 / #6850 succeeded on older parent `a6529d15c78cb9341e2ff97bc886f1b771ad05bd`; no evidence transfers to a later combined head.
 - PR #152 / #153 / #154 exact child runs #6855 / #6856 / #6857 succeeded on parent `aa6e47284fbba6f45845274531defdeb5a974252`; no evidence transfers to a later combined head.
 - No local pytest/Ruff PASS is claimed for new packages. Exact-head CI is the only reported validation; earlier CI does not transfer across rebase or integration.
 
 ## Overall ARK state
 
-V1/V2/Local UI/Launcher reviewed evidence remains frozen and unchanged. PR #8 has one exact-head-green child integration (#148), but the resulting PR #8 head CI #6859 remains in progress. PR #5 has one exact-head-green free-only guard integration (#155), but resulting-head CI #6864 is queued. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
+V1/V2/Local UI/Launcher reviewed evidence remains frozen and unchanged. PR #8 has one exact-head-GREEN child integration (#148), but resulting PR #8 CI #6859 and checkpoint-result CI #6865 remain in progress. PR #5 has two exact-head-GREEN free-only guard integrations (#155/#156), but resulting-head CI #6866 is queued. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
 
 ## Frozen contracts / blockers / authorization boundaries
 
@@ -45,14 +45,15 @@ No paid/external compute, paid API/service, subscription, purchase, new credenti
 
 ## Next plan / 今後の方針
 
-1. Confirm PR #8 exact resulting-head CI #44867791390 / run 6859. If GREEN, integrate exact-head-GREEN children into PR #8 sequentially, re-reading live parent and child HEADs before each merge and requiring fresh resulting-head CI before the next merge. Rebase older-parent PRs #149/#150 onto the current foundation before integration; PR #152/#153/#154 were based on the prior `aa6e472...` parent and also require resulting-head validation.
-2. Confirm PR #5 resulting-head CI #44868353000 / run 6864. If GREEN, integrate PR #156 and #157 sequentially, each only after re-reading the parent/child refs and then validating the resulting PR #5 head. Keep PR #5 Draft/unmerged and all V3 spending/evaluation gates closed.
-3. Inspect PR #158 CI #44868301160 / run 6863; repair only a concrete semantics-preserving failure. Continue privacy-safe Personal Context and SQLite path admission without live personal data.
+1. Confirm PR #8 exact resulting-head CI #44868439942 / run 6865 (and prior integration run #6859). If GREEN, integrate exact-head-GREEN children into PR #8 sequentially, re-reading live parent and child HEADs before each merge and requiring fresh resulting-head CI before the next merge. Existing PRs #149/#150 use an older parent; #152/#153/#154 use the prior `aa6e472...` parent and require exact resulting-head validation.
+2. Confirm PR #5 resulting-head CI #44868536451 / run 6866. If GREEN, integrate PR #157 only after re-reading parent/child refs and then validating the resulting PR #5 head. Keep PR #5 Draft/unmerged and all V3 spending/evaluation gates closed.
+3. Inspect PR #158 CI #44868301160 / run 6863; repair only a concrete semantics-preserving failure. Integrate only after its exact-head CI is GREEN and the current PR #8 parent is validated.
 4. Continue Memory WAL/SHM and CAS/coherent-snapshot integrity, Planner terminal/restart recovery, ToolRegistry/PermissionGate exact identity, durable one-shot authorization, audit-before-action, proactive occurrence/replay and Observation fixture contracts.
 5. Continue free-only V3 approval/path/identity/reproducibility guard hardening. Do not open protected V2 evaluation, generate a Candidate, promote, change Contract 1, or use paid services.
 6. Keep all UI/frontend work paused; do not modify PR #9 or frozen Local UI evidence.
 
 **ARK/JARVIS: NOT_PASSED.**
+
 
 ---
 
