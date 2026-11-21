@@ -17,6 +17,14 @@ from .execution import canonical_json, sha256_bytes
 _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_NATIVE_PATH_TYPE = type(Path("."))
+
+
+def _require_native_path(value: object, label: str) -> Path:
+    """Reject caller PathLike callbacks and pathlib subclasses before coercion."""
+    if type(value) is not _NATIVE_PATH_TYPE:
+        raise ValueError(f"{label} must be an exact native Path")
+    return value
 
 
 def _is_reparse_point(info: os.stat_result) -> bool:
@@ -117,7 +125,7 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     local manifest generation. They are NOT an atomic descriptor-based open,
     security boundary against a hostile writer, or future file immutability.
     """
-    path = Path(path)
+    path = _require_native_path(path, "identity path")
     safe_label = _identity_label(path.name if label is None else label)
     if ".." in path.parts:
         raise ValueError("identity path may not traverse parent aliases")
@@ -181,7 +189,7 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     cannot pass merely because the directory listing looks identical. This
     remains a best-effort local check, NOT a hostile-writer-safe snapshot.
     """
-    root = Path(root)
+    root = _require_native_path(root, "snapshot root")
     try:
         root_info = root.lstat()
         parent_reparse = _has_reparse_ancestor(root)
@@ -240,6 +248,7 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
 def _assert_snapshot_entries(
     root: Path, original: tuple[tuple[str, Path, bool, tuple[int, ...]], ...],
 ) -> None:
+    root = _require_native_path(root, "snapshot root")
     now = _snapshot_entries(root)
     if tuple((rel, is_dir, epoch) for rel, _, is_dir, epoch in now) != tuple(
         (rel, is_dir, epoch) for rel, _, is_dir, epoch in original
@@ -249,7 +258,7 @@ def _assert_snapshot_entries(
 
 def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
     """Produce a local manifest without accepting a changing file listing."""
-    root = Path(root)
+    root = _require_native_path(root, "snapshot root")
     entries = _snapshot_entries(root)
     rows = [
         file_identity(path, label=relative)
@@ -267,7 +276,7 @@ def build_code_tree_identity(root: Path) -> dict:
     This prevents an authorized GPU command from trusting only a user-supplied git SHA.
     Tests/docs are intentionally excluded; every importable V3 learning module is included.
     """
-    root = Path(root)
+    root = _require_native_path(root, "runtime code root")
     learning_root = root / "src" / "ark" / "learning"
     try:
         learning_info = learning_root.lstat()
@@ -312,6 +321,8 @@ def build_hf_snapshot_identity(
     chat_template_probe: Path,
 ) -> dict:
     """Hash a materialized HF snapshot and derive base/tokenizer snapshot digests."""
+    root = _require_native_path(root, "snapshot root")
+    chat_template_probe = _require_native_path(chat_template_probe, "chat-template probe path")
     if type(model_id) is not str or model_id != "Qwen/Qwen3-4B-Instruct-2507":
         raise ValueError("unexpected experiment-001 model ID")
     if type(revision) is not str or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
@@ -319,7 +330,7 @@ def build_hf_snapshot_identity(
     # Capture a tree epoch before hashing model bytes. The separately hashed
     # chat-template probe may be evaluated later; ensure it cannot silently
     # describe a different snapshot epoch than these manifest rows.
-    snapshot_root = Path(root)
+    snapshot_root = root
     source_entries = _snapshot_entries(snapshot_root)
     files = directory_file_identities(snapshot_root)
     by_path = {row.path: row for row in files}
@@ -361,7 +372,7 @@ def build_hf_snapshot_identity(
         "revision": revision,
         "files": tokenizer_rows,
     }
-    probe = file_identity(Path(chat_template_probe), label="chat-template-probe.txt")
+    probe = file_identity(chat_template_probe, label="chat-template-probe.txt")
     if probe.bytes <= 0:
         raise ValueError("chat-template probe must be non-empty")
     # This bounded metadata recheck is best-effort only: local filesystem
