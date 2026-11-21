@@ -27,6 +27,37 @@ from .execution import (
 )
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    if (
+        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise LocalPacketBindingRejected("review packet reparse-point guard changed")
+    attributes = getattr(info, "st_file_attributes", 0)
+    return stat.S_ISLNK(info.st_mode) or (
+        type(attributes) is int and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    )
+
+
+def _has_reparse_ancestor(path: Path) -> bool:
+    """Reject symlink/junction ancestors before a packet path is opened."""
+    for parent in path.parents:
+        try:
+            info = parent.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise LocalPacketBindingRejected(
+                "review packet ancestry cannot be verified"
+            ) from exc
+        if _is_reparse_point(info):
+            return True
+    return False
+
 _MAX_PACKET_BYTES = 65_536
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -73,6 +104,8 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
         before = path.lstat()
         if (
             not stat.S_ISREG(before.st_mode)
+            or _is_reparse_point(before)
+            or _has_reparse_ancestor(path)
             or before.st_nlink != 1
             or not 1 <= before.st_size <= _MAX_PACKET_BYTES
             or path.is_symlink()
@@ -95,6 +128,7 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
             # unverified nonregular bytes merely because lstat saw a file.
             if (
                 not stat.S_ISREG(opened.st_mode)
+                or _is_reparse_point(opened)
                 or opened.st_nlink != 1
                 or _file_epoch(opened) != _file_epoch(before)
             ):
@@ -113,16 +147,19 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
     if (
         not stat.S_ISREG(opened.st_mode)
         or not stat.S_ISREG(after.st_mode)
+        or _is_reparse_point(after)
         or opened.st_nlink != 1
         or after.st_nlink != 1
         or _file_epoch(opened) != identity
         or not stat.S_ISREG(after_handle.st_mode)
+        or _is_reparse_point(after_handle)
         or after_handle.st_nlink != 1
         or _file_epoch(after_handle) != identity
         or _file_epoch(after) != identity
         or len(content) != before.st_size
         or path.is_symlink()
         or any(parent.is_symlink() for parent in path.parents)
+        or _has_reparse_ancestor(path)
     ):
         raise LocalPacketBindingRejected("review packet file changed during read")
     return content, identity
