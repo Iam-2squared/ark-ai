@@ -26,6 +26,9 @@ from .contracts import (
     MemoryWrite,
 )
 
+_ORIGINAL_PATH_FACTORY = Path
+_ORIGINAL_MEMORY_PATH_TYPE = type(_ORIGINAL_PATH_FACTORY())
+
 SCHEMA_VERSION = 1
 SQLITE_INT_MAX = (1 << 63) - 1
 # Match the opt-in coherent snapshot row bound. A ranked lexical search must
@@ -577,9 +580,14 @@ class SQLiteMemoryStore:
         *,
         clock_ms: Callable[[], int] | None = None,
     ) -> None:
-        if type(path) not in (str, type(Path())):
+        if Path is not _ORIGINAL_PATH_FACTORY:
+            raise MemorySchemaError("memory path constructor changed")
+        if type(path) not in (str, _ORIGINAL_MEMORY_PATH_TYPE):
             raise MemorySchemaError("memory requires exact local path")
         self.path = Path(path)
+        # A store is bound to the exact Path object selected at construction.
+        # Replacing it later must not silently redirect private memory reads or writes.
+        self._original_path = self.path
         # Serialize the pre-create path fences with WAL bootstrap. Otherwise
         # a competing initializer can observe the first connection's
         # transient SQLite sidecar before its main-file creation is visible,
@@ -594,6 +602,7 @@ class SQLiteMemoryStore:
             self._initialize()
 
     def put(self, write: MemoryWrite, *, expected_revision: int = 0) -> MemoryRecord:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         if type(write) is not MemoryWrite or type(write.scope) is not MemoryScope:
             raise TypeError("write requires exact MemoryWrite and MemoryScope")
         _revision(expected_revision, allow_zero=True)
@@ -834,6 +843,7 @@ class SQLiteMemoryStore:
         *,
         include_expired: bool = False,
     ) -> MemoryRecord | None:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         _memory_id(memory_id)
         if type(scope) is not MemoryScope:
             raise TypeError("scope must be an exact MemoryScope")
@@ -908,6 +918,7 @@ class SQLiteMemoryStore:
             return record
 
     def search(self, query: MemoryQuery) -> list[MemoryRecord]:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
             raise TypeError("query requires exact MemoryQuery and MemoryScope")
         original_scope = query.scope
@@ -1024,6 +1035,7 @@ class SQLiteMemoryStore:
             return [value[3] for value in ranked[:pinned_limit]]
 
     def delete(self, memory_id: str, scope: MemoryScope, *, expected_revision: int) -> bool:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         _memory_id(memory_id)
         _revision(expected_revision, allow_zero=False)
         if type(scope) is not MemoryScope:
@@ -1126,6 +1138,7 @@ class SQLiteMemoryStore:
         call deletes at most `limit` rows in deterministic memory-ID order,
         with one event per deletion in the same SQLite write transaction.
         """
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         if scope is not None and type(scope) is not MemoryScope:
             raise TypeError("scope must be an exact MemoryScope")
         if limit is not None and (type(limit) is not int or not 1 <= limit <= 1000):
@@ -1275,6 +1288,7 @@ class SQLiteMemoryStore:
         after_event_id: int = 0,
         limit: int = 100,
     ) -> list[MemoryEvent]:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         if type(scope) is not MemoryScope:
             raise TypeError("scope must be an exact MemoryScope")
         if type(after_event_id) is not int or not 0 <= after_event_id <= SQLITE_INT_MAX:
@@ -1464,6 +1478,7 @@ class SQLiteMemoryStore:
             _validate_v1_schema(conn)
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         # Only explicit initialization can create a SQLite file. Normal
         # mutators must not create a plausible empty replacement database if
         # the original Memory store has been moved or removed after startup.
@@ -1479,6 +1494,7 @@ class SQLiteMemoryStore:
         return conn
 
     def _connect_readonly(self) -> sqlite3.Connection:
+        _ORIGINAL_REQUIRE_MEMORY_STORE_PATH(self)
         # Reading evidence must never recreate a missing initialized SQLite file.
         # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
         _require_safe_memory_path(self.path, create=False)
@@ -1517,6 +1533,36 @@ class SQLiteMemoryStore:
             ),
         )
 
+
+_ORIGINAL_MEMORY_STORE_TYPE = SQLiteMemoryStore
+
+
+def _require_original_memory_store_path(store: SQLiteMemoryStore) -> Path:
+    """Reject a store whose public path no longer matches construction identity."""
+    if (
+        SQLiteMemoryStore is not _ORIGINAL_MEMORY_STORE_TYPE
+        or type(store) is not _ORIGINAL_MEMORY_STORE_TYPE
+    ):
+        raise MemorySchemaError("memory store implementation changed")
+    try:
+        original = object.__getattribute__(store, "_original_path")
+        current = object.__getattribute__(store, "path")
+    except AttributeError as exc:
+        raise MemorySchemaError("memory source path identity is unavailable") from exc
+    if (
+        Path is not _ORIGINAL_PATH_FACTORY
+        or type(current) is not _ORIGINAL_MEMORY_PATH_TYPE
+        or type(original) is not _ORIGINAL_MEMORY_PATH_TYPE
+    ):
+        raise MemorySchemaError("memory source path changed; stable Path required")
+    if current is not original:
+        raise MemorySchemaError(
+            "memory source path changed; single regular source required"
+        )
+    return original
+
+
+_ORIGINAL_REQUIRE_MEMORY_STORE_PATH = _require_original_memory_store_path
 
 
 def _hydrated_record_epoch(record: MemoryRecord) -> tuple[object, ...]:
