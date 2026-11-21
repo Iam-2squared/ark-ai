@@ -16,6 +16,9 @@ from pathlib import Path
 from threading import RLock
 from types import MappingProxyType
 
+_ORIGINAL_PATH_FACTORY = Path
+_ORIGINAL_MEMORY_PATH_TYPE = type(_ORIGINAL_PATH_FACTORY())
+
 from .contracts import (
     MemoryConflictError,
     MemoryEvent,
@@ -577,7 +580,9 @@ class SQLiteMemoryStore:
         *,
         clock_ms: Callable[[], int] | None = None,
     ) -> None:
-        if type(path) not in (str, type(Path())):
+        if Path is not _ORIGINAL_PATH_FACTORY:
+            raise MemorySchemaError("memory path constructor changed")
+        if type(path) not in (str, _ORIGINAL_MEMORY_PATH_TYPE):
             raise MemorySchemaError("memory requires exact local path")
         self.path = Path(path)
         # A store is bound to the exact Path object selected at construction.
@@ -1535,14 +1540,21 @@ _ORIGINAL_MEMORY_STORE_TYPE = SQLiteMemoryStore
 
 def _require_original_memory_store_path(store: SQLiteMemoryStore) -> Path:
     """Reject a store whose public path no longer matches construction identity."""
-    if SQLiteMemoryStore is not _ORIGINAL_MEMORY_STORE_TYPE or type(store) is not _ORIGINAL_MEMORY_STORE_TYPE:
+    if (
+        SQLiteMemoryStore is not _ORIGINAL_MEMORY_STORE_TYPE
+        or type(store) is not _ORIGINAL_MEMORY_STORE_TYPE
+    ):
         raise MemorySchemaError("memory store implementation changed")
     try:
         original = object.__getattribute__(store, "_original_path")
         current = object.__getattribute__(store, "path")
     except AttributeError as exc:
         raise MemorySchemaError("memory source path identity is unavailable") from exc
-    if type(current) is not type(Path()) or type(original) is not type(Path()):
+    if (
+        Path is not _ORIGINAL_PATH_FACTORY
+        or type(current) is not _ORIGINAL_MEMORY_PATH_TYPE
+        or type(original) is not _ORIGINAL_MEMORY_PATH_TYPE
+    ):
         raise MemorySchemaError("memory source path changed; stable Path required")
     if current is not original:
         raise MemorySchemaError(
