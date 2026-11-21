@@ -57,6 +57,32 @@ def _require_fixture_boundary() -> None:
     _ORIGINAL_DIGEST_GUARD()
 
 
+def _preflight_fixture_labels(source_id: str, privacy_scope: str) -> None:
+    """Bound exact UTF-8 labels before scanning controls or hashing payloads."""
+    for name, label in (
+        ("source_id", source_id),
+        ("privacy_scope", privacy_scope),
+    ):
+        if type(label) is not str:
+            raise DisconnectedFixtureRejected(
+                f"fixture {name} must be a non-empty exact string"
+            )
+        if len(label) > 1024:
+            raise DisconnectedFixtureRejected(
+                "observation identifier budget exceeded"
+            )
+        try:
+            encoded = label.encode("utf-8", errors="strict")
+        except UnicodeError as exc:
+            raise DisconnectedFixtureRejected(
+                f"fixture {name} is not valid UTF-8"
+            ) from exc
+        if len(encoded) > 1024:
+            raise DisconnectedFixtureRejected(
+                "observation identifier budget exceeded"
+            )
+
+
 def make_disconnected_fixture(
     *,
     kind: ObservationKind,
@@ -77,6 +103,8 @@ def make_disconnected_fixture(
         raise DisconnectedFixtureRejected("exact synthetic observation kind required")
     if type(payload) is not bytes or not 1 <= len(payload) <= _MAX_FIXTURE_BYTES:
         raise DisconnectedFixtureRejected("fixture payload must be 1..65536 exact bytes")
+
+    _preflight_fixture_labels(source_id, privacy_scope)
     # The disconnected adapter accepts only strict fixture labels. Direct
     # ObservationEnvelope v1 intentionally allows escaped NUL identities;
     # do not change that frozen contract. Reject NUL only at this optional
