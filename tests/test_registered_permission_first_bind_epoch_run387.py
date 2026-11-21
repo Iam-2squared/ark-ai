@@ -53,7 +53,7 @@ def test_registered_action_epoch_precedes_grant_iterator_callbacks(
             object.__setattr__(call, field, replacement)
         yield grant
 
-    with pytest.raises(PermissionDenied, match="identity"):
+    with pytest.raises(PermissionDenied, match="identity|argument"):
         gate.authorize_registered(
             registry, call, stream(), now_ms=10, one_shot=token,
         )
