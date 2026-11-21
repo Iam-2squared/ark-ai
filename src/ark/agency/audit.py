@@ -49,6 +49,58 @@ _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                     CREATE INDEX idx_action_request ON action_events(request_id,event_id);
                     PRAGMA user_version=1;"""
 
+_MAX_AUDIT_OUTCOME_CHARS = 256
+_MAX_AUDIT_OUTCOME_BYTES = 256
+_ORIGINAL_AUDIT_OUTCOME_BUDGETS = (
+    _MAX_AUDIT_OUTCOME_CHARS, _MAX_AUDIT_OUTCOME_BYTES,
+)
+
+
+def _validate_outcome(value: object, *, persisted: bool = False) -> str:
+    """Bound audit labels before storage or SQLite row hydration.
+
+    Outcome vocabulary remains open for existing callers; only exact text,
+    UTF-8 size and control/format characters are constrained. Caller input
+    keeps the historical ValueError surface; corrupt stored rows fail as
+    ActionAuditSchemaError.
+    """
+    if (
+        type(_MAX_AUDIT_OUTCOME_CHARS) is not int
+        or type(_MAX_AUDIT_OUTCOME_BYTES) is not int
+        or (_MAX_AUDIT_OUTCOME_CHARS, _MAX_AUDIT_OUTCOME_BYTES)
+        != _ORIGINAL_AUDIT_OUTCOME_BUDGETS
+    ):
+        raise ActionAuditSchemaError("action audit outcome budget changed")
+    error = ActionAuditSchemaError if persisted else ValueError
+    if type(value) is not str:
+        raise error("audit outcome must be an exact string")
+    if not value or len(value) > _MAX_AUDIT_OUTCOME_CHARS or not value.strip():
+        raise error("audit outcome must be non-empty bounded exact text")
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise error("audit outcome must be valid UTF-8 text") from exc
+    if (
+        len(encoded) > _MAX_AUDIT_OUTCOME_BYTES
+        or any(
+            ord(character) < 0x20
+            or 0x7F <= ord(character) <= 0x9F
+            or ord(character) in (
+                0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F,
+                0x2028, 0x2029, 0xFEFF,
+            )
+            or 0x200B <= ord(character) <= 0x200D
+            or 0x202A <= ord(character) <= 0x202E
+            or 0x2060 <= ord(character) <= 0x206F
+            for character in value
+        )
+    ):
+        raise error("audit outcome exceeds UTF-8 budget or contains a control")
+    return value
+
+
+_ORIGINAL_VALIDATE_OUTCOME = _validate_outcome
+
 
 def _normalized_ddl(sql: str | None) -> str | None:
     """Ignore unquoted formatting only; quoted SQL and CHECK values stay exact."""
@@ -149,7 +201,8 @@ def _validate_tail_identity(row: sqlite3.Row) -> int:
     values = tuple(row[column] for column in fields)
     if any(type(value) is not str or not value.strip() for value in values):
         raise ActionAuditSchemaError("audit persisted tail identity is malformed")
-    request_id, tool, capability, scope, args_hash, _outcome = values
+    request_id, tool, capability, scope, args_hash, outcome = values
+    _validate_outcome(outcome, persisted=True)
     if (
         len(request_id) != 68 or not request_id.startswith("act_")
         or any(char not in "0123456789abcdef" for char in request_id[4:])
@@ -215,6 +268,7 @@ def _require_audit_row_hydration_admission(
         "WHEN typeof(occurred_at_ms)!='integer' THEN 'clock' "
         "WHEN typeof(tool)!='text' OR typeof(capability)!='text' "
         "OR typeof(scope)!='text' OR typeof(outcome)!='text' "
+        "OR length(CAST(outcome AS BLOB))<1 "
         "THEN 'identity' ELSE 'digest' END, event_id "
         "FROM action_events WHERE "
         "typeof(event_id)!='integer' "
@@ -226,6 +280,8 @@ def _require_audit_row_hydration_admission(
         "OR typeof(arguments_sha256)!='text' "
         "OR length(CAST(arguments_sha256 AS BLOB))!=64 "
         "OR typeof(outcome)!='text' "
+        "OR length(CAST(outcome AS BLOB))<1 "
+        "OR length(CAST(outcome AS BLOB))>256 "
         "OR typeof(occurred_at_ms)!='integer' LIMIT 1"
     ).fetchone()
     if malformed is None:
@@ -270,6 +326,7 @@ def _require_original_event_constructor(phase: str = "") -> None:
         or _contracts._canonical_json is not _ORIGINAL_TOOLCALL_JSON
         or _contracts._freeze_json is not _ORIGINAL_TOOLCALL_FREEZE
         or _contracts.json.dumps is not _ORIGINAL_JSON_DUMPS
+        or _validate_outcome is not _ORIGINAL_VALIDATE_OUTCOME
     ):
         raise ActionAuditSchemaError("action audit digest callback changed")
     # An audit receipt is data, not a place to execute new Python code.
@@ -393,8 +450,7 @@ class SQLiteActionAudit:
         _require_original_event_constructor()
         if type(call) is not ToolCall:
             raise TypeError("audit call must be an exact ToolCall")
-        if type(outcome) is not str or not outcome.strip():
-            raise ValueError("outcome must be a non-empty exact string")
+        _validate_outcome(outcome)
         # Freeze the action identity before a reentrant clock callback. Frozen
         # dataclasses can still be modified by reflection; never mix fields
         # from before/after callback in a persisted audit event.
@@ -603,6 +659,7 @@ class SQLiteActionAudit:
             if any(type(value) is not str or not value.strip() for value in values):
                 raise ActionAuditSchemaError("audit identity fields must be non-empty TEXT")
             request_id, tool, capability, scope, arguments_sha256, outcome = values
+            _validate_outcome(outcome, persisted=True)
             if (
                 len(request_id) != 68 or not request_id.startswith("act_")
                 or any(char not in "0123456789abcdef" for char in request_id[4:])
