@@ -18,11 +18,17 @@ from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
 
 
 def _require_original_reparse_point_policy() -> None:
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise ValueError("authorization packet reparse-point policy changed")
@@ -31,15 +37,26 @@ def _require_original_reparse_point_policy() -> None:
 def _is_reparse_point(info: object) -> bool:
     _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
+    mode = getattr(info, "st_mode")
+    _require_original_reparse_point_policy()
     if type(attributes) is not int:
         raise ValueError("authorization packet reparse metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
+    return _ORIGINAL_STAT_S_ISLNK(mode) or bool(
         attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
 
+def _is_regular_file(info: object) -> bool:
+    """Use the import-original mode predicate after metadata callback admission."""
+    _require_original_reparse_point_policy()
+    mode = getattr(info, "st_mode")
+    _require_original_reparse_point_policy()
+    return _ORIGINAL_STAT_S_ISREG(mode)
+
+
 def _has_reparse_ancestor(path: Path) -> bool:
     """Reject symlink/junction ancestors before packet output is opened."""
+    _require_original_reparse_point_policy()
     for parent in path.parents:
         try:
             info = parent.lstat()
@@ -177,6 +194,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
         or path.name in ("", ".", "..")
     ):
         raise ValueError("authorization packet output must be a new non-aliased file")
+    _require_original_reparse_point_policy()
     # Inspect ancestors with no-follow metadata before any operation that
     # follows a path. Then lstat the final leaf: Path.exists() can report
     # False for a dangling Windows reparse point even though an entry exists.
@@ -222,7 +240,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     try:
         before = path.lstat()
         if (
-            not stat.S_ISREG(before.st_mode)
+            not _is_regular_file(before)
             or _is_reparse_point(before)
             or _has_reparse_ancestor(path)
             or before.st_nlink != 1
@@ -238,7 +256,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     _assert_json_tree_epoch(packet, epoch)
     if (
         saved_bytes != data
-        or not stat.S_ISREG(after.st_mode)
+        or not _is_regular_file(after)
         or _is_reparse_point(after)
         or _has_reparse_ancestor(path)
         or after.st_nlink != 1
