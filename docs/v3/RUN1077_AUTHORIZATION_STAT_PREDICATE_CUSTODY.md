@@ -30,3 +30,9 @@ This is local in-process dependency-identity hardening, not a Python sandbox, at
 Fresh exact-head Windows/Linux × Python 3.11–3.13 CI is required. No local pytest/Ruff PASS is claimed. PR #5 remains OPEN/DRAFT/UNMERGED; V3 remains NOT_PASSED.
 
 A separate documentation-only copy of this Run1077 note was written to the default branch by an earlier Contents API call that omitted the branch parameter; no source code or frozen contract was changed on main.
+
+
+## CI repair history
+
+- Initial exact child HEAD `3c91b800dd8af6150cdce0d1ef6b206340233d2f`: run `44932114065` failed all six matrix jobs at Ruff `B009` before pytest. The two constant-name `getattr(info, "st_mode")` calls were replaced with direct attribute access while retaining the policy recheck after metadata access.
+- The repaired exact head requires a fresh CI run; the failed run is not a PASS.
