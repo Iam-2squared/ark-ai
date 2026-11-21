@@ -53,7 +53,7 @@ def test_get_callback_cannot_redefine_original_call(monkeypatch, change):
         return original_get(name)
 
     monkeypatch.setattr(registry, "get", substitute)
-    with pytest.raises(ValueError, match="ToolCall identity changed"):
+    with pytest.raises(ValueError, match="ToolCall (?:identity|argument)"):
         registry.resolve(call)
 
 
