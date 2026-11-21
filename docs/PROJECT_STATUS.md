@@ -1,4 +1,80 @@
-# LATEST — ARK AI Run1062: observation preflight integrated; ActionAudit, Personal Context and V3 path hardening advanced
+# LATEST — ARK AI Run1067: mock executor integrated; ToolCall diagnostics and proactive scheduler hardening in flight
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T23:06:58+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `38644f86ce260ae1f264ac7564a8c974f1e83379` (Run1063 disconnected mock executor squash integration). **Checkpoint write-basis HEAD:** `38644f86ce260ae1f264ac7564a8c974f1e83379`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by a subsequent live branch-ref comparison; it is not embedded here because a commit cannot contain its own resulting SHA.
+
+## Protected refs and current state
+
+- **PR #8 foundation:** `research/jarvis-foundations` at work-basis `38644f86ce260ae1f264ac7564a8c974f1e83379`, OPEN/DRAFT/UNMERGED. Exact-head CI run [44911305869](https://github.com/Iam-2squared/ark-ai/actions/runs/44911305869) was **IN PROGRESS, 3/6 GREEN** at the last job read (3 Linux jobs complete successfully; 3 Windows jobs still running). This checkpoint changes only this status document. Verify whether GitHub queues a fresh run for the resulting parent head; do not transfer the pre-checkpoint result automatically.
+- **PR #189 — disconnected mock executor:** merged only into PR #8 at `38644f86ce260ae1f264ac7564a8c974f1e83379`. Exact child HEAD `f6c0a917b62a5cc502e1cb658ca226f4e7594a50`; exact-head CI run [44906375728](https://github.com/Iam-2squared/ark-ai/actions/runs/44906375728) **GREEN, 6/6**. Adds a reversible local-only composition over exact ToolRegistry, PermissionGate, ActionAudit, optional durable occurrence storage, and exact in-process MockToolBackend. READ/WRITE ordering and pre-action audit gate are explicit. It does not dispatch a real backend or prove external effects, trusted time, authenticated consent, cross-store atomicity, or independent custody.
+- **PR #190 — ToolCall argument admission:** Draft child of PR #8, exact child HEAD `f79e5cd38aaeb338fdc50fcf61e22ff638c5f103`, parent base `87ee86a333fb851ef21b64ce91e9b15d15e231f6` (now behind PR #8). Exact-head run [44908939702](https://github.com/Iam-2squared/ark-ai/actions/runs/44908939702) **FAIL, 6/6**. Six existing assertions expected the older identity diagnostic; early argument-carrier admission rejects the same mutations sooner with a more specific argument diagnostic. The tested operations still fail closed; this is an assertion-message compatibility failure, not an observed authorization bypass. Child **PR #194** is Draft, exact HEAD `15da8e19e761d3bb4335b179f77ccf440b0cc82f`, based on PR #190 head; run [44911687790](https://github.com/Iam-2squared/ark-ai/actions/runs/44911687790) **IN PROGRESS, 0/6 completed**. Its only changes are three test regexes accepting either diagnostic; no production code or denial semantics change.
+- **PR #191 — Personal Context replay reparse admission:** Draft child, exact HEAD `087b87d550d0fdcb981a6e29a5526ca8555efc78`, parent base `87ee86a333fb851ef21b64ce91e9b15d15e231f6`. Run [44909097904](https://github.com/Iam-2squared/ark-ai/actions/runs/44909097904) **GREEN, 6/6** on that older base. Rebase onto the current PR #8 head before integration.
+- **PR #192 — Personal Context crash/proactive race fixtures:** Draft child, exact HEAD `c513e4b68a446ceb59da83a3873acf83288b4361`, same older parent base. Run [44909161484](https://github.com/Iam-2squared/ark-ai/actions/runs/44909161484) **GREEN, 6/6** on that older base. Rebase before integration; test-only scope remains isolated.
+- **PR #193 — V3 branch compatibility attempt:** Draft child of PR #5, exact HEAD `b8c065d8d59847f7563302f284439afbf3dcd015`. Run [44909562565](https://github.com/Iam-2squared/ark-ai/actions/runs/44909562565) **FAIL, 6/6**. After the earlier Ruff I001 blocker was passed, the copied Personal Context crash test fails because the Personal Context modules it imports are absent from the gated PR #5 branch. This is a branch-content/dependency blocker, not evidence that V3 passed. Do not import the entire Personal Context foundation into PR #5 merely to satisfy the accidental main-only test.
+- **PR #195 — proactive schedule preview helper identity:** Draft child of PR #8, exact HEAD `98d6c28fda04cb1ebae0f6c563699ce965aa113f`, parent base `38644f86ce260ae1f264ac7564a8c974f1e83379`. Run [44912003073](https://github.com/Iam-2squared/ark-ai/actions/runs/44912003073) **IN PROGRESS, 0/6 completed**. Pins the import-original `_valid_policy` and `_occurrence` helpers so a rebound module global cannot bypass policy admission or forge a recurrence occurrence identity. A synthetic sentinel regression proves the replacement is rejected before invocation. No scheduler, timer, notification, or dispatch integration is added.
+- **Gated PR #5:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED. V3 remains **NOT_PASSED**. Run [44905840608](https://github.com/Iam-2squared/ark-ai/actions/runs/44905840608) **FAIL, 6/6** at Ruff I001 in the accidental main-only test; pytest did not run on that run. The later PR #193 attempt has the separate missing-module failure above. No evaluation, training, Candidate or promotion gate was opened.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+- **main:** `23381dab53c9feda81e32f42a51ece578cc045df`, unchanged in this invocation. The only unintended change remains `tests/test_personal_context_replay_process_crash_run1033.py`. Main CI run [44891321387](https://github.com/Iam-2squared/ark-ai/actions/runs/44891321387) **FAIL, 6/6** at Ruff I001. Draft recovery PR #182 at `1dfb5ea23f8879455298ae2f04343f4ccc807255` has CI run [44891688919](https://github.com/Iam-2squared/ark-ai/actions/runs/44891688919) **GREEN, 6/6**, but its one-file deletion from main still requires explicit user approval. No main write or deletion was made.
+
+## NEW — this invocation
+
+### 1. Exact-head-GREEN disconnected mock executor integrated into PR #8
+
+PR #189 was re-read at exact child HEAD `f6c0a917b62a5cc502e1cb658ca226f4e7594a50`, exact parent `38644f86ce260ae1f264ac7564a8c974f1e83379`, and mergeable state. Its six Windows/Linux × Python 3.11–3.13 jobs were all GREEN. It was marked ready and squash-integrated only into the isolated PR #8 foundation branch as `38644f86ce260ae1f264ac7564a8c974f1e83379`. The mock-only composition and its limits are recorded in `docs/JARVIS_RUN1063_DISCONNECTED_MOCK_EXECUTOR.md`. No main merge or frozen-contract change occurred. Fresh PR #8 CI run 44911305869 started on the resulting parent.
+
+### 2. ToolCall diagnostic compatibility repair isolated as PR #194
+
+Run 44908939702 showed six existing tests failing only because early argument admission now rejects a reflected argument carrier before the older post-callback identity diagnostic. A child branch was created from the exact PR #190 head and three existing test regexes were minimally widened to accept either diagnostic. The assertions still require rejection before grant completion/backend dispatch. PR #194 is Draft/unmerged pending its own exact-head CI.
+
+### 3. Proactive schedule preview helper identity hardening isolated as PR #195
+
+Read-only inspection found that the disconnected recurrence preview pinned policy/result data and descriptors but did not pin its internal `_valid_policy` and `_occurrence` helper identities. The isolated child captures both import-original helpers and rejects substitution in the existing fail-closed guard before either helper can run. One synthetic regression covers both replacement cases. PR #195 is Draft/unmerged pending exact-head CI; no production scheduler or authority is claimed.
+
+### 4. CI triage and protected-lane decision
+
+PR #191 and #192 each reached exact-child CI GREEN 6/6 on their older parent `87ee86a...`; they are not integrated and must be rebased onto the current PR #8 head. PR #193 remains blocked because the copied Personal Context crash test imports modules absent from PR #5. No attempt was made to weaken/skip that test, pull unrelated production modules into the gated V3 branch, or delete the accidental main test without approval.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #189 child `f6c0a917b62a5cc502e1cb658ca226f4e7594a50`: run `44906375728` **GREEN, 6/6**; integrated only into PR #8.
+- PR #8 resulting parent `38644f86ce260ae1f264ac7564a8c974f1e83379`: run `44911305869` **IN PROGRESS, 3/6 GREEN** at last observation; checkpoint documentation update may require a new run.
+- PR #194 child `15da8e19e761d3bb4335b179f77ccf440b0cc82f`: run `44911687790` **IN PROGRESS, 0/6 completed**.
+- PR #195 child `98d6c28fda04cb1ebae0f6c563699ce965aa113f`: run `44912003073` **IN PROGRESS, 0/6 completed**.
+- PR #191 child `087b87d550d0fdcb981a6e29a5526ca8555efc78`: run `44909097904` **GREEN, 6/6** on older parent `87ee86a...`; rebase required before integration.
+- PR #192 child `c513e4b68a446ceb59da83a3873acf83288b4361`: run `44909161484` **GREEN, 6/6** on older parent `87ee86a...`; rebase required before integration.
+- PR #190 child `f79e5cd38aaeb338fdc50fcf61e22ff638c5f103`: run `44908939702` **FAIL, 6/6**; six legacy diagnostic assertions, not an observed authorization bypass.
+- PR #193 child `b8c065d8d59847f7563302f284439afbf3dcd015`: run `44909562565` **FAIL, 6/6**; missing Personal Context module dependency in the PR #5 branch.
+- PR #5 `2ddc32a69dd32541497373ac76be2c1db332f88f`: run `44905840608` **FAIL, 6/6** at Ruff I001; no pytest result.
+- main `23381dab53c9feda81e32f42a51ece578cc045df`: run `44891321387` **FAIL, 6/6** at Ruff I001; no pytest result.
+- PR #182 recovery proposal: run `44891688919` **GREEN, 6/6**, but Draft/unmerged pending explicit approval.
+- No local pytest/Ruff PASS is claimed. CI evidence is not transferred across changed heads or bases.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher reviewed evidence remains frozen. PR #8 remains an isolated Draft foundation; the mock-only executor is now integrated after exact-head-GREEN child CI, while fresh parent CI is still running. ToolCall diagnostic compatibility and proactive schedule helper identity are isolated Draft children. Personal Context reparse/crash children are exact-head GREEN on an older base and require rebase. PR #5 remains gated Draft/unmerged; V3 remains NOT_PASSED. PR #9 remains paused and untouched. Main remains unchanged at the accidental test-only commit; its cleanup proposal is Draft and requires approval. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event contract; V3 Contract 1 semantics/hash; and the protected V2 evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. PR #182 is only a Draft recovery proposal; explicit user approval is required before its one-file deletion is applied to main. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash, or runtime-identity claim was fabricated.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head PR #8 CI run `44911305869`; because this checkpoint is documentation-only, verify whether GitHub re-queues checks on the new parent head. Require exact-head GREEN on the actual current parent before integrating another child.
+2. If PR #194 is GREEN, re-read PR #190/194 refs, integrate the test-only diagnostic compatibility child into PR #190, then rebase PR #190 onto the latest PR #8 head and require fresh exact-head CI. Keep both Draft until validated.
+3. Rebase PR #191 and #192 from `87ee86a...` onto the latest PR #8 head. Integrate one at a time only after each child is exact-head GREEN and the current parent CI is GREEN; run fresh parent CI after each integration.
+4. Integrate PR #195 only after its exact-head CI is GREEN and the current PR #8 parent CI is GREEN. Keep the recurrence preview disconnected; do not infer a production scheduler or notification authority.
+5. Keep PR #193 and PR #5 Draft/unmerged. Resolve the missing-module/main-contamination blocker only through a safe, authorized path; do not weaken tests or copy unrelated Personal Context production code into the gated V3 branch. Do not apply PR #182's main deletion without explicit user approval.
+6. Continue free-only Memory durability/CAS/expiry/COMMIT-UNKNOWN, Planner persistence/recovery, immutable ToolRegistry/exact-type PermissionGate, restart-safe authorization, trusted-clock audit-before-action, privacy-safe Personal Context, proactive occurrence/replay, and observation/multimodal fixture work.
+7. Keep all UI/frontend work paused; do not modify PR #9 or frozen Local UI evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORICAL CHECKPOINT — ARK AI Run1062: observation preflight integrated; ActionAudit, Personal Context and V3 path hardening advanced
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T21:00:35+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
@@ -72,6 +148,7 @@ No paid/external compute, paid API/service, subscription, purchase, new credenti
 **ARK/JARVIS: NOT_PASSED.**
 
 ---
+
 
 # HISTORICAL CHECKPOINT — ARK AI Run1059: revocation assertion repair, Personal Context and ActionAudit reparse rebases
 
