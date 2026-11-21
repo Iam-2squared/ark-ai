@@ -65,7 +65,7 @@ def _preflight_fixture_labels(source_id: str, privacy_scope: str) -> None:
     ):
         if type(label) is not str:
             raise DisconnectedFixtureRejected(
-                f"fixture {name} must be an exact string"
+                f"fixture {name} must be a non-empty exact string"
             )
         if len(label) > 1024:
             raise DisconnectedFixtureRejected(
