@@ -168,7 +168,11 @@ def _require_original_spec_and_token() -> None:
 # Original identity is checked before and during registered authorization.
 _ORIGINAL_REGISTRY_BIND = vars(ToolRegistry)["bind"]
 _ORIGINAL_REGISTRY_RESOLVE = vars(ToolRegistry)["resolve"]
+_ORIGINAL_REGISTRY_GET = vars(ToolRegistry)["get"]
 _ORIGINAL_REGISTRY_REVISION = vars(ToolRegistry)["revision"]
+_ORIGINAL_REGISTRY_REGISTRATIONS = vars(ToolRegistry)["registrations"]
+_ORIGINAL_REGISTRY_EPOCH = vars(ToolRegistry)["_assert_registration_epoch"]
+_ORIGINAL_REGISTRY_COMPUTE_REVISION = vars(ToolRegistry)["_compute_revision"]
 
 
 class PermissionGate:
@@ -222,11 +226,21 @@ class PermissionGate:
                 raise PermissionDenied(
                     "registered authorization static inspection changed"
                 )
+            registry_methods = (
+                ("bind", _ORIGINAL_REGISTRY_BIND),
+                ("resolve", _ORIGINAL_REGISTRY_RESOLVE),
+                ("get", _ORIGINAL_REGISTRY_GET),
+                ("revision", _ORIGINAL_REGISTRY_REVISION),
+                ("registrations", _ORIGINAL_REGISTRY_REGISTRATIONS),
+                ("_assert_registration_epoch", _ORIGINAL_REGISTRY_EPOCH),
+                ("_compute_revision", _ORIGINAL_REGISTRY_COMPUTE_REVISION),
+            )
             if (
-                (one_shot is not None and
-                 vars(ToolRegistry).get("bind") is not _ORIGINAL_REGISTRY_BIND)
-                or vars(ToolRegistry).get("resolve") is not _ORIGINAL_REGISTRY_RESOLVE
-                or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
+                any(
+                    vars(ToolRegistry).get(name) is not original
+                    or inspect.getattr_static(registry, name) is not original
+                    for name, original in registry_methods
+                )
                 or vars(PermissionGate).get("authorize") is not _ORIGINAL_AUTHORIZE
                 # A shadowed instance method cannot be proof of this
                 # call's token spend. Its presence is denied even when a
@@ -287,7 +301,7 @@ class PermissionGate:
                 raise PermissionDenied("registered input identity changed")
 
         try:
-            bound = registry.bind(call)
+            bound = _ORIGINAL_REGISTRY_BIND(registry, call)
             ensure_entry_epoch()
             # Materialize external grant iterables before any WRITE token is
             # spent; they may mutate a reflected ToolCall/registry as they run.
@@ -357,7 +371,7 @@ class PermissionGate:
                 materialized.append(grant)
             ensure_materialization_epoch()
             grant_snapshot = tuple(materialized)
-            verified = registry.bind(call)
+            verified = _ORIGINAL_REGISTRY_BIND(registry, call)
             ensure_entry_epoch()
             # The second bind is another reentrant boundary. Retain the
             # original grants; registry mismatches keep the existing
@@ -384,7 +398,7 @@ class PermissionGate:
             ensure_entry_epoch()
             ensure_grant_epoch()
             try:
-                current = registry.bind(call)
+                current = _ORIGINAL_REGISTRY_BIND(registry, call)
                 ensure_entry_epoch()
             except (KeyError, TypeError, ValueError) as exc:
                 raise PermissionDenied("registered identity changed before spend") from exc
