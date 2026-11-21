@@ -27,7 +27,7 @@ def test_reparse_policy_rebinding_is_rejected_before_lstat(tmp_path, monkeypatch
         raise AssertionError("filesystem inspected after replay policy drift")
 
     monkeypatch.setattr(Path, "lstat", forbidden_lstat)
-    with pytest.raises(replay.OfflineContextReplayRejected, match="protocol authority changed"):
+    with pytest.raises(replay.OfflineContextReplayRejected, match="path admission changed"):
         replay._check_path(tmp_path / "context.sqlite3", create=True)
 
 
