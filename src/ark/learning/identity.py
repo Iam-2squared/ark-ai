@@ -18,6 +18,10 @@ _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
 _NATIVE_PATH_TYPE = type(Path("."))
 
 
@@ -29,27 +33,55 @@ def _require_native_path(value: object, label: str) -> Path:
 
 
 def _require_original_reparse_point_policy() -> None:
-    """Keep the Windows reparse-point bit immutable during identity checks."""
+    """Keep stat classification and the Windows reparse bit import-original."""
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise ValueError("identity reparse-point policy changed")
+
+
+def _is_regular_file(info: os.stat_result) -> bool:
+    _require_original_reparse_point_policy()
+    mode = info.st_mode
+    _require_original_reparse_point_policy()
+    if type(mode) is not int:
+        raise ValueError("identity file mode metadata is malformed")
+    return _ORIGINAL_S_ISREG(mode)
+
+
+def _is_directory(info: os.stat_result) -> bool:
+    _require_original_reparse_point_policy()
+    mode = info.st_mode
+    _require_original_reparse_point_policy()
+    if type(mode) is not int:
+        raise ValueError("identity file mode metadata is malformed")
+    return _ORIGINAL_S_ISDIR(mode)
 
 
 def _is_reparse_point(info: os.stat_result) -> bool:
     """Detect symlinks and Windows junction/other reparse-point entries."""
     _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_reparse_point_policy()
     if type(attributes) is not int:
         raise ValueError("identity file attribute metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
+    mode = info.st_mode
+    _require_original_reparse_point_policy()
+    if type(mode) is not int:
+        raise ValueError("identity file mode metadata is malformed")
+    return _ORIGINAL_S_ISLNK(mode) or bool(
         attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
 
 def _has_reparse_ancestor(path: Path) -> bool:
     """Inspect every parent without following a symlink or junction."""
+    _require_original_reparse_point_policy()
     for parent in path.parents:
         if _is_reparse_point(parent.lstat()):
             return True
@@ -66,6 +98,7 @@ class FileIdentity:
 
 def _hash_file(path: Path) -> tuple[str, int]:
     """Reject a redirected open and metadata changes to the opened file."""
+    _require_original_reparse_point_policy()
     before = path.lstat()
     if _is_reparse_point(before):
         raise ValueError("identity file changed during hashing")
@@ -85,7 +118,7 @@ def _hash_file(path: Path) -> tuple[str, int]:
         # the actual file ID and portable content metadata across sources;
         # compare each source's complete epoch only against itself.
         if (
-            not stat.S_ISREG(opened.st_mode)
+            not _is_regular_file(opened)
             or opened.st_nlink != 1
             or before.st_ino == 0
             or opened.st_ino == 0
@@ -104,7 +137,9 @@ def _hash_file(path: Path) -> tuple[str, int]:
             size += len(chunk)
         if epoch(os.fstat(handle.fileno())) != epoch(opened):
             raise ValueError("identity file changed during hashing")
-    if epoch(path.lstat()) != epoch(before):
+    final = path.lstat()
+    _require_original_reparse_point_policy()
+    if epoch(final) != epoch(before):
         raise ValueError("identity file changed during hashing")
     return h.hexdigest(), size
 
@@ -137,6 +172,7 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     local manifest generation. They are NOT an atomic descriptor-based open,
     security boundary against a hostile writer, or future file immutability.
     """
+    _require_original_reparse_point_policy()
     path = _require_native_path(path, "identity path")
     safe_label = _identity_label(path.name if label is None else label)
     if ".." in path.parts:
@@ -144,17 +180,25 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     try:
         if _has_reparse_ancestor(path):
             raise ValueError("symlinked identity file ancestors are forbidden")
-        if path.is_symlink() or not path.is_file():
+        symlink = path.is_symlink()
+        _require_original_reparse_point_policy()
+        regular = path.is_file()
+        _require_original_reparse_point_policy()
+        if symlink or not regular:
             raise ValueError(f"identity path must be one regular non-symlink file: {path}")
         before = path.stat(follow_symlinks=False)
+        _require_original_reparse_point_policy()
+        regular = path.is_file()
+        _require_original_reparse_point_policy()
         if (
-            not path.is_file()
+            not regular
             or before.st_nlink != 1
             or _is_reparse_point(path.lstat())
         ):
             raise ValueError("identity file must have one regular-file link")
         sha, size = _hash_file(path)
         after = path.stat(follow_symlinks=False)
+        _require_original_reparse_point_policy()
     except OSError as exc:
         raise ValueError("identity file became unavailable during hashing") from exc
     # Include mode, link count and inode as well as the size/timestamps.
@@ -165,10 +209,16 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
             info.st_mtime_ns, info.st_ctime_ns, info.st_nlink,
         )
 
+    final_info = path.lstat()
+    if _is_reparse_point(final_info):
+        raise ValueError("identity file changed during hashing")
+    symlink = path.is_symlink()
+    _require_original_reparse_point_policy()
+    regular = path.is_file()
+    _require_original_reparse_point_policy()
     if (
-        _is_reparse_point(path.lstat())
-        or path.is_symlink()
-        or not path.is_file()
+        symlink
+        or not regular
         or size != before.st_size
         or epoch(before) != epoch(after)
     ):
@@ -178,14 +228,15 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
 
 def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     """Retain directory/file identity, not only a reusable relative name."""
+    _require_original_reparse_point_policy()
     try:
         info = path.lstat()
     except OSError as exc:
         raise ValueError("snapshot entry disappeared during enumeration") from exc
     if (
         _is_reparse_point(info)
-        or (is_dir and not stat.S_ISDIR(info.st_mode))
-        or (not is_dir and not stat.S_ISREG(info.st_mode))
+        or (is_dir and not _is_directory(info))
+        or (not is_dir and not _is_regular_file(info))
     ):
         raise ValueError("snapshot entry type changed during enumeration")
     return (
@@ -201,6 +252,7 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     cannot pass merely because the directory listing looks identical. This
     remains a best-effort local check, NOT a hostile-writer-safe snapshot.
     """
+    _require_original_reparse_point_policy()
     root = _require_native_path(root, "snapshot root")
     try:
         root_info = root.lstat()
@@ -208,7 +260,7 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
     except OSError as exc:
         raise ValueError("snapshot root must be a non-aliased local directory") from exc
     if (
-        not stat.S_ISDIR(root_info.st_mode)
+        not _is_directory(root_info)
         or _is_reparse_point(root_info)
         or parent_reparse
         or ".." in root.parts
@@ -242,11 +294,13 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
             raise ValueError("snapshot path inventory exceeds local budget")
         paths.append(path)
     for path in sorted(paths, key=lambda p: p.as_posix()):
-        if path.is_symlink():
+        info = path.lstat()
+        _require_original_reparse_point_policy()
+        if _is_reparse_point(info):
             raise ValueError("snapshot contains a symlink entry")
-        if path.is_dir():
+        if _is_directory(info):
             is_dir = True
-        elif path.is_file():
+        elif _is_regular_file(info):
             is_dir = False
         else:
             raise ValueError(f"unsupported snapshot entry: {path}")
@@ -270,6 +324,7 @@ def _assert_snapshot_entries(
 
 def directory_file_identities(root: Path) -> tuple[FileIdentity, ...]:
     """Produce a local manifest without accepting a changing file listing."""
+    _require_original_reparse_point_policy()
     root = _require_native_path(root, "snapshot root")
     entries = _snapshot_entries(root)
     rows = [
@@ -288,12 +343,13 @@ def build_code_tree_identity(root: Path) -> dict:
     This prevents an authorized GPU command from trusting only a user-supplied git SHA.
     Tests/docs are intentionally excluded; every importable V3 learning module is included.
     """
+    _require_original_reparse_point_policy()
     root = _require_native_path(root, "runtime code root")
     learning_root = root / "src" / "ark" / "learning"
     try:
         learning_info = learning_root.lstat()
         if (
-            not stat.S_ISDIR(learning_info.st_mode)
+            not _is_directory(learning_info)
             or _is_reparse_point(learning_info)
             or _has_reparse_ancestor(learning_root)
         ):
@@ -333,6 +389,7 @@ def build_hf_snapshot_identity(
     chat_template_probe: Path,
 ) -> dict:
     """Hash a materialized HF snapshot and derive base/tokenizer snapshot digests."""
+    _require_original_reparse_point_policy()
     root = _require_native_path(root, "snapshot root")
     chat_template_probe = _require_native_path(chat_template_probe, "chat-template probe path")
     if type(model_id) is not str or model_id != "Qwen/Qwen3-4B-Instruct-2507":
@@ -403,6 +460,7 @@ def build_hf_snapshot_identity(
 
 
 def build_tool_identity(path: Path, *, git_revision: str, role: str) -> dict:
+    _require_original_reparse_point_policy()
     if type(git_revision) is not str or re.fullmatch(r"[0-9a-f]{40}", git_revision) is None:
         raise ValueError("exact 40-hex tool revision required")
     if type(role) is not str or role not in {"hf_to_gguf_converter", "quantizer"}:
