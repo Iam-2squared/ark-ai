@@ -1,3 +1,65 @@
+# LATEST — ARK AI Run1070: three non-UI foundation rebases prepared; exact-head CI pending
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T23:58:04+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `5d9e1dfb37d7ff0769545e790da9d5dfbfeb8c50` (Run1067 checkpoint). **Checkpoint write-basis HEAD:** `5d9e1dfb37d7ff0769545e790da9d5dfbfeb8c50`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by a subsequent live branch-ref comparison; it is not embedded here because a commit cannot contain its own resulting SHA.
+
+## Protected refs and current state
+
+- **PR #8 foundation:** `research/jarvis-foundations` at work-basis HEAD `5d9e1dfb37d7ff0769545e790da9d5dfbfeb8c50`, OPEN/DRAFT/UNMERGED. Exact-head CI run [44912347493](https://github.com/Iam-2squared/ark-ai/actions/runs/44912347493) **GREEN, 6/6** (Windows/Linux × Python 3.11–3.13) on this work-basis head. This checkpoint is documentation-only; do not transfer the prior result to its resulting head without a fresh exact-head read.
+- **PR #196 — Run1068 schedule-preview helper identity rebase:** Draft child of PR #8, exact HEAD `a6ae19ea2a4221c20cee508f0727ca920ad00c41`, parent `5d9e1dfb37d7ff0769545e790da9d5dfbfeb8c50`. CI run [44915499778](https://github.com/Iam-2squared/ark-ai/actions/runs/44915499778) **IN PROGRESS**. Original PR #195 head `98d6c28fda04cb1ebae0f6c563699ce965aa113f` had run `44912003073` GREEN 6/6 on older parent `38644f86...`; that result is historical only and is not transferred to the rebase.
+- **PR #197 — Run1069 ToolCall argument admission rebase:** Draft child of PR #8, exact HEAD `cfc00bed0266bef9a39efeb683573386f5d3c95a`, same parent. CI run [44915848124](https://github.com/Iam-2squared/ark-ai/actions/runs/44915848124) **IN PROGRESS**. Original PR #190 exact head `f79e5cd38aaeb338fdc50fcf61e22ff638c5f103` had six legacy diagnostic assertions fail; PR #194 exact head `15da8e19e761d3bb4335b179f77ccf440b0cc82f` had test-only compatibility CI `44911687790` GREEN 6/6 on its older child base. The combined rebase requires fresh exact-head CI.
+- **PR #198 — Run1070 Personal Context replay hardening rebase:** Draft child of PR #8, exact HEAD `fcc303a1a9484549120a0fe747be97744879a210`, same parent. CI run [44916113741](https://github.com/Iam-2squared/ark-ai/actions/runs/44916113741) **IN PROGRESS**. Original PR #191 exact head `087b87d550d0fdcb981a6e29a5526ca8555efc78` and PR #192 exact head `c513e4b68a446ceb59da83a3873acf83288b4361` each had CI GREEN 6/6 on older parent `87ee86a...`; those results are historical only and are not transferred to the combined rebase.
+- **PR #189 — disconnected mock executor:** already integrated only into PR #8 at `38644f86ce260ae1f264ac7564a8c974f1e83379`; its child exact-head CI run `44906375728` was GREEN 6/6. It remains local/mock-only; no real backend dispatch or external effect is claimed.
+- **Gated PR #5:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED. V3 remains **NOT_PASSED**. Prior run `44905840608` failed at Ruff I001 before pytest; PR #193 separately failed because its copied Personal Context test imports modules absent from the gated branch. No evaluation, training, Candidate or promotion gate was opened.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+- **main:** `23381dab53c9feda81e32f42a51ece578cc045df`, unchanged. Draft PR #182's one-file recovery deletion still requires explicit user approval; no main write/deletion was made.
+
+## NEW — this invocation
+
+### 1. Run1068 — proactive schedule-preview helper identity rebase
+
+Rebased PR #195 onto the exact current PR #8 work-basis HEAD. The disconnected preview now pins the import-original `_valid_policy` and `_occurrence` helpers in its existing fail-closed guard. A synthetic sentinel regression proves either substituted helper is rejected before invocation. Recurrence formula, cursor/result fields and deny-only flags are unchanged. No timer, notification, durable scheduler, trusted clock, consent, Tool dispatch or external effect was added. Draft PR #196 awaits fresh exact-head CI.
+
+### 2. Run1069 — frozen ToolCall argument admission rebase
+
+Rebased PR #190 plus PR #194's test-only diagnostic compatibility repair onto the exact current PR #8 work-basis HEAD. Added bounded exact-type admission for recursively frozen JSON argument carriers at the opt-in ToolRegistry/PermissionGate boundary, before request hashing, grant iteration or foreign Mapping callbacks. Frozen ToolCall v1 construction compatibility is preserved. Three legacy assertions accept either early argument-carrier rejection or the existing identity rejection while still requiring fail-closed denial before grant completion/backend dispatch. Draft PR #197 awaits fresh exact-head CI; no local pytest/Ruff PASS is claimed.
+
+### 3. Run1070 — Personal Context replay reparse admission and crash/race fixtures
+
+Rebased PR #191 and PR #192 onto the exact current PR #8 work-basis HEAD. Pinned the Windows reparse-point attribute mask; reject malformed metadata, reparse ancestors, database leaves and SQLite sidecars before SQLite access. Added synthetic process-exit-after-native-COMMIT cold-readback coverage and stabilized the proactive two-process CAS fixture with a WAL anchor without relaxing production path checks. Hash-only replay schema and denial-only authority remain unchanged. Draft PR #198 awaits fresh exact-head CI; no live personal data, disclosure or external effect is involved.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 work-basis `5d9e1dfb37d7ff0769545e790da9d5dfbfeb8c50`: run `44912347493` **GREEN, 6/6**.
+- PR #196 `a6ae19ea2a4221c20cee508f0727ca920ad00c41`: run `44915499778` **IN PROGRESS**.
+- PR #197 `cfc00bed0266bef9a39efeb683573386f5d3c95a`: run `44915848124` **IN PROGRESS**.
+- PR #198 `fcc303a1a9484549120a0fe747be97744879a210`: run `44916113741` **IN PROGRESS**.
+- Prior child CI results listed above are historical evidence only; no result is transferred across a changed head or base. No local full pytest/Ruff PASS is claimed.
+- This checkpoint commit is documentation-only. Its resulting head requires a fresh exact-head CI observation before any child is integrated.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher evidence remains frozen. PR #8 is still an isolated Draft foundation. The disconnected mock executor is integrated only into PR #8 after its child CI passed. Three independent non-UI children are now rebased directly onto the latest verified parent and awaiting their own CI. PR #5 remains gated Draft/unmerged; V3 is NOT_PASSED. PR #9 remains paused and untouched. main remains unchanged. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event contract; V3 Contract 1 semantics/hash; and the protected V2 evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head CI for PR #196, #197 and #198. Inspect the first actual failure, if any; make the smallest semantics-preserving repair and launch only the required fresh run. Do not repeatedly poll while other lanes can progress.
+2. Require each child to be exact-head GREEN and re-read the current PR #8 parent CI/head before integrating it. Integrate one child at a time into PR #8 only; keep PR #8 Draft/unmerged and never merge to main without explicit approval.
+3. After these rebases, continue independent Memory durability/CAS/expiry/COMMIT-UNKNOWN, Planner persistence/recovery, immutable ToolRegistry/exact-type PermissionGate, restart-safe authorization, audit-before-action, privacy-safe Personal Context, proactive occurrence/replay and Observation fixture work.
+4. Keep PR #5 Draft/unmerged and V3 NOT_PASSED. Do not open protected evaluation, generate a Candidate, start training or copy unrelated Personal Context modules into the gated branch to satisfy an accidental test dependency.
+5. Keep PR #9 and all UI/frontend work paused; do not modify the branch or frozen Local UI evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1067: mock executor integrated; ToolCall diagnostics and proactive scheduler hardening in flight
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T23:06:58+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
