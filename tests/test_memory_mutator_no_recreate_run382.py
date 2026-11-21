@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from ark.memory.contracts import MemoryScope, MemoryWrite
+from ark.memory.contracts import MemorySchemaError, MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
 
 
@@ -84,9 +84,9 @@ def test_explicit_bootstrap_still_creates_a_new_frozen_v1_database(tmp_path: Pat
 def test_runtime_path_retarget_to_missing_store_is_not_created(tmp_path: Path):
     store, scope, _item, old_path, calls = _setup(tmp_path)
     missing = tmp_path / "missing # %.sqlite"
-    store.path = missing
+    object.__setattr__(store, "path", missing)
     before = len(calls)
-    with pytest.raises(sqlite3.OperationalError):
+    with pytest.raises(MemorySchemaError, match="source path changed"):
         store.put(MemoryWrite(scope, "new", "PRIVATE-UNSAVED"))
     assert not missing.exists()
     assert old_path.exists()
