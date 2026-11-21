@@ -90,3 +90,71 @@ def test_reparse_sqlite_sidecar_is_rejected(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "lstat", lstat)
     with pytest.raises(replay.OfflineContextReplayRejected, match="sidecar"):
         replay._check_path(target, create=False)
+
+def test_stat_module_rebinding_is_rejected_before_lstat(tmp_path, monkeypatch):
+    monkeypatch.setattr(replay, "stat", SimpleNamespace())
+
+    def forbidden_lstat(path):
+        raise AssertionError("filesystem inspected after stat module substitution")
+
+    monkeypatch.setattr(Path, "lstat", forbidden_lstat)
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stat policy changed"):
+        replay._check_path(tmp_path / "context.sqlite3", create=True)
+
+
+@pytest.mark.parametrize("predicate", ("S_ISDIR", "S_ISREG", "S_ISLNK"))
+def test_stat_predicate_rebinding_is_rejected_before_lstat(
+    tmp_path, monkeypatch, predicate,
+):
+    monkeypatch.setattr(replay.stat, predicate, lambda mode: False)
+
+    def forbidden_lstat(path):
+        raise AssertionError("filesystem inspected after stat predicate substitution")
+
+    monkeypatch.setattr(Path, "lstat", forbidden_lstat)
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stat policy changed"):
+        replay._check_path(tmp_path / "context.sqlite3", create=True)
+
+
+def test_stat_predicate_rebinding_during_metadata_read_is_rejected(
+    tmp_path, monkeypatch,
+):
+    target = tmp_path / "context.sqlite3"
+    original_lstat = Path.lstat
+    leaf_inspected = False
+
+    class MutatingMetadata:
+        @property
+        def st_mode(self):
+            monkeypatch.setattr(replay.stat, "S_ISDIR", lambda mode: True)
+            return stat.S_IFDIR | 0o700
+
+    def lstat(path):
+        nonlocal leaf_inspected
+        if path == tmp_path:
+            return MutatingMetadata()
+        if path == target:
+            leaf_inspected = True
+            raise AssertionError("leaf inspected after metadata policy drift")
+        return original_lstat(path)
+
+    monkeypatch.setattr(Path, "lstat", lstat)
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stat policy changed"):
+        replay._check_path(target, create=True)
+    assert leaf_inspected is False
+
+
+def test_reparse_metadata_callback_cannot_replace_stat_predicate(monkeypatch):
+    class MutatingMetadata:
+        @property
+        def st_file_attributes(self):
+            monkeypatch.setattr(replay.stat, "S_ISLNK", lambda mode: False)
+            return 0
+
+        @property
+        def st_mode(self):
+            return stat.S_IFREG | 0o600
+
+    with pytest.raises(replay.OfflineContextReplayRejected, match="stat policy changed"):
+        replay._is_reparse_point(MutatingMetadata())
+
