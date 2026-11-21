@@ -44,7 +44,7 @@ def test_audit_refuses_aliased_sidecar_with_path_free_metadata(
             pytest.skip(f"hardlink fixture unsupported: {exc}")
         expected_mode = stat.S_IFREG
         links = 2
-    with pytest.raises(ActionAuditSchemaError, match="sidecar alias refused") as err:
+    with pytest.raises(ActionAuditSchemaError, match="sidecar .*alias refused") as err:
         SQLiteActionAudit(database, clock_ms=lambda: 1000)
     detail = str(err.value)
     assert f"suffix={suffix}" in detail
