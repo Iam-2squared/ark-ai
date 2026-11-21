@@ -29,3 +29,8 @@ Synthetic tests attempt instance shadows for bind, resolve, get, _assert_registr
 ## Limits and frozen boundaries
 
 This remains an in-process identity/drift check, not a security sandbox against arbitrary memory rewriting, a trusted runtime identity, a durable authorization receipt, a trusted clock, or exactly-once external execution. ToolRegistry's existing data and contract remain unchanged. No V1/V2, Local UI/Launcher, PR #5, PR #9, main, evaluation gate, Candidate, or external service is changed or opened.
+
+
+## CI repair note
+
+The first exact-head CI attempt exposed 29 legacy assertions that intentionally installed instance-shadowed registry methods as callback injectors. The new custody check correctly rejects those shadows before invoking them, so those tests could no longer use that forbidden callback path to mutate grants/actions/tokens. The test harnesses were revised to keep reentrant action/token/grant epoch coverage on the supported grant-iterator callback boundary, and to assert that registry method shadows are denied before invocation, grant iteration or token spend. This is a stronger early-denial assertion, not a relaxed policy gate. The failed run remains historical; fresh exact-head CI is required and no PASS is transferred.
