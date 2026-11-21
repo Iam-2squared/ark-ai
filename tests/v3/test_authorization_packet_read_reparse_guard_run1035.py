@@ -7,7 +7,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from test_authorization_packet_file_review_run529 import _saved_packet
 
 from ark.learning import authorization_packet_file_review as mod
