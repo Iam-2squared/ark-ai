@@ -37,6 +37,11 @@ _SQLITE_INT_MAX = 2**63 - 1
 _AUDIT_BOOTSTRAP_LOCK = RLock()  # same-process path preflight and WAL bootstrap
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+_ORIGINAL_STAT_IFMT = stat.S_IFMT
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -299,8 +304,15 @@ def _require_original_event_constructor(phase: str = "") -> None:
 
 
 def _require_original_reparse_policy() -> None:
+    # stat predicates are executable module attributes too. Pin every
+    # predicate used by path admission/diagnostics before filesystem access.
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or stat.S_IFMT is not _ORIGINAL_STAT_IFMT
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise ActionAuditSchemaError("audit reparse-point policy changed")
