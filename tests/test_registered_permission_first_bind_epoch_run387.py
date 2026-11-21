@@ -1,6 +1,7 @@
-"""First registry callback cannot redefine the authorized action or token.
+"""Registered action/token identity is rechecked across grant callbacks.
 
-Synthetic diagnostics only: an authorized receipt never dispatches the backend.
+Registry method shadows are denied before invocation; supported grant iterators
+remain explicit reentrant boundaries. No backend is dispatched.
 """
 
 import pytest
@@ -35,31 +36,29 @@ def _inputs(effect=Effect.WRITE):
     ("scope", "other-scope"),
     ("arguments", {"n": 2}),
 ])
-@pytest.mark.parametrize("during_bind", [1, 2])
-def test_registered_action_epoch_precedes_registry_callbacks(
-    monkeypatch, field, replacement, during_bind,
+@pytest.mark.parametrize("mutation_phase", [1, 2])
+def test_registered_action_epoch_precedes_grant_iterator_callbacks(
+    field, replacement, mutation_phase,
 ):
     registry, call, token, grants = _inputs()
     gate = PermissionGate()
     original = getattr(call, field)
-    bind = registry.bind
-    counter = 0
+    grant = grants[0]
 
-    def redirect(current):
-        nonlocal counter
-        counter += 1
-        if counter == during_bind:
+    def stream():
+        if mutation_phase == 1:
             object.__setattr__(call, field, replacement)
-        return bind(current)
+        yield grant
+        if mutation_phase == 2:
+            object.__setattr__(call, field, replacement)
+        yield grant
 
-    monkeypatch.setattr(registry, "bind", redirect)
     with pytest.raises(PermissionDenied, match="identity"):
         gate.authorize_registered(
-            registry, call, grants, now_ms=10, one_shot=token,
+            registry, call, stream(), now_ms=10, one_shot=token,
         )
     assert gate._consumed_tokens == set()
     object.__setattr__(call, field, original)
-    monkeypatch.setattr(registry, "bind", bind)
     gate.authorize_registered(registry, call, grants, now_ms=10, one_shot=token)
 
 
@@ -68,45 +67,51 @@ def test_registered_action_epoch_precedes_registry_callbacks(
     ("request_id", "act_" + "f" * 64),
     ("expires_at_ms", 2_000),
 ])
-@pytest.mark.parametrize("during_bind", [1, 2])
-def test_registered_token_epoch_precedes_registry_callbacks(
-    monkeypatch, field, replacement, during_bind,
+@pytest.mark.parametrize("mutation_phase", [1, 2])
+def test_registered_token_epoch_precedes_grant_iterator_callbacks(
+    field, replacement, mutation_phase,
 ):
     registry, call, token, grants = _inputs()
     gate = PermissionGate()
     original = getattr(token, field)
-    bind = registry.bind
-    counter = 0
+    grant = grants[0]
 
-    def redirect(current):
-        nonlocal counter
-        counter += 1
-        if counter == during_bind:
+    def stream():
+        if mutation_phase == 1:
             object.__setattr__(token, field, replacement)
-        return bind(current)
+        yield grant
+        if mutation_phase == 2:
+            object.__setattr__(token, field, replacement)
+        yield grant
 
-    monkeypatch.setattr(registry, "bind", redirect)
     with pytest.raises(PermissionDenied, match="identity"):
         gate.authorize_registered(
-            registry, call, grants, now_ms=10, one_shot=token,
+            registry, call, stream(), now_ms=10, one_shot=token,
         )
     assert gate._consumed_tokens == set()
     object.__setattr__(token, field, original)
-    monkeypatch.setattr(registry, "bind", bind)
     gate.authorize_registered(registry, call, grants, now_ms=10, one_shot=token)
 
 
-def test_first_registry_bind_epoch_is_enforced_for_read_only():
+def test_first_registry_bind_instance_shadow_is_denied_for_read():
     registry, call, _token, grants = _inputs(Effect.READ)
-    bind = registry.bind
+    original_bind = registry.bind
+    invoked = []
 
-    def mutate_before_bind(current):
+    def shadowed_bind(current):
+        invoked.append(True)
         object.__setattr__(call, "scope", "another-scope")
-        return bind(current)
+        return original_bind(current)
 
-    registry.bind = mutate_before_bind
-    with pytest.raises(PermissionDenied, match="identity"):
+    registry.bind = shadowed_bind
+    with pytest.raises(
+        PermissionDenied,
+        match="registered authorization implementation identity changed",
+    ):
         PermissionGate().authorize_registered(registry, call, grants, now_ms=10)
+
+    assert invoked == []
+    assert call.scope == "fixture"
 
 
 def test_unchanged_registered_read_and_write_require_no_backend():
