@@ -16,9 +16,6 @@ from pathlib import Path
 from threading import RLock
 from types import MappingProxyType
 
-_ORIGINAL_PATH_FACTORY = Path
-_ORIGINAL_MEMORY_PATH_TYPE = type(_ORIGINAL_PATH_FACTORY())
-
 from .contracts import (
     MemoryConflictError,
     MemoryEvent,
@@ -28,6 +25,9 @@ from .contracts import (
     MemoryScope,
     MemoryWrite,
 )
+
+_ORIGINAL_PATH_FACTORY = Path
+_ORIGINAL_MEMORY_PATH_TYPE = type(_ORIGINAL_PATH_FACTORY())
 
 SCHEMA_VERSION = 1
 SQLITE_INT_MAX = (1 << 63) - 1
