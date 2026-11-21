@@ -1,4 +1,66 @@
-# LATEST — ARK AI Run1072: two exact-head-GREEN integrations, replay assertion repair, Memory and ActionAudit path hardening
+# LATEST — ARK AI Run1074: Memory and ActionAudit guards integrated; Personal Context and Planner hardening rebased
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22T01:54:00.536+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `72e2498818d2ab4b9d9c632508b78c750a30392d` (after Run1071 Memory and Run1072 ActionAudit integrations). **Checkpoint write-basis HEAD:** `72e2498818d2ab4b9d9c632508b78c750a30392d`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live branch ref afterward; it is not embedded here because a commit cannot contain its own resulting SHA.
+
+## Protected refs and current state
+
+- **PR #8 foundation:** `research/jarvis-foundations`, current work-basis HEAD `72e2498818d2ab4b9d9c632508b78c750a30392d`, OPEN/DRAFT/UNMERGED. Latest exact-head CI run [44926858472](https://github.com/Iam-2squared/ark-ai/actions/runs/44926858472) was **QUEUED** at checkpoint preparation. The preceding PR #8 head `2e408656ae0661626e6bc3fb234006819ef2ccfc` had run [44926346242](https://github.com/Iam-2squared/ark-ai/actions/runs/44926346242) **IN PROGRESS** before Run1072 integration; it does not certify the current head. Earlier PR #8 head `2c8b361d27bf5e048d474173d082d561ca23e07f` had run [44921454186](https://github.com/Iam-2squared/ark-ai/actions/runs/44921454186) GREEN 6/6, but that result predates both new integrations.
+- **PR #199 — Memory SQLite stat-predicate custody:** exact child HEAD `c73ffefabce57949fd8e5b9463aca388367eca93`; exact-head run [44921230696](https://github.com/Iam-2squared/ark-ai/actions/runs/44921230696) **GREEN 6/6**. Squash-integrated into PR #8 as `2e408656ae0661626e6bc3fb234006819ef2ccfc`. Pins the import-original `stat` module and `S_ISDIR`, `S_ISLNK`, `S_ISREG`, `S_IFMT` before Memory SQLite path inspection. Memory v1 schema/API/event semantics remain unchanged.
+- **PR #200 — ActionAudit SQLite stat-predicate custody:** exact child HEAD `ff8526a7708e5a28d822b50a50cf322c4280b39d`; exact-head run [44921320292](https://github.com/Iam-2squared/ark-ai/actions/runs/44921320292) **GREEN 6/6**. Squash-integrated into PR #8 as current HEAD `72e2498818d2ab4b9d9c632508b78c750a30392d`. Pins the import-original `stat` module and all four predicates used by ActionAudit path admission/diagnostics. ActionAudit v1 schema/event semantics remain unchanged.
+- **PR #201 — Personal Context replay hardening rebase:** OPEN/DRAFT, child branch `research/run1073-personal-context-replay-hardening-rebase`, exact child HEAD `b390d1939a1f17db9be9d29e5bdd483c757a4517`, based on parent HEAD `2e408656ae0661626e6bc3fb234006819ef2ccfc`. Exact-head run [44926559382](https://github.com/Iam-2squared/ark-ai/actions/runs/44926559382) was **IN PROGRESS** at checkpoint preparation. Reapplies Windows reparse-point admission, process-exit-after-native-COMMIT replay recovery, and the WAL-anchored proactive cross-process CAS fixture. Synthetic disposable SQLite only; replay ledger remains hash-only and denial-only. Previous PR #198 head `d6b7994ba682a446d07090011c76fba9867d8226` run [44920870108](https://github.com/Iam-2squared/ark-ai/actions/runs/44920870108) was GREEN 6/6 on an older parent; that result is not transferred. PR #198 remains open pending this fresh rebase's validation.
+- **PR #202 — Planner journal stat-predicate custody:** OPEN/DRAFT, child branch `research/run1074-planner-stat-predicate-custody`, exact child HEAD `37696654fe8d9fc6ec71bde39fb2911ea2b425fe`, based on parent HEAD `2e408656ae0661626e6bc3fb234006819ef2ccfc`. Exact-head run [44926673951](https://github.com/Iam-2squared/ark-ai/actions/runs/44926673951) was **IN PROGRESS** at checkpoint preparation. Pins the import-original `stat` module and `S_ISDIR`, `S_ISLNK`, `S_ISREG` predicates before disconnected Planner journal path inspection. Planner journal schema, hash chain, transition policy and UNKNOWN recovery semantics remain unchanged.
+- **PR #201 and PR #202 base status:** both child branches were created on `2e408...`; PR #8 has since advanced to `72e249...` after ActionAudit integration. GitHub currently reports both child PRs as not mergeable. Do not integrate from stale bases: after exact-head CI, re-read the parent, rebase/verify compatibility if needed, and require fresh exact-head CI before integration.
+- **Superseded PR #198:** remains OPEN/DRAFT on older parent `5d9e1dfb37d7ff0769545e790da9d5dfbfeb8c50`; PR #201 is the fresh rebase. Do not integrate PR #198.
+- **Gated PR #5:** `research/v3-learning-evaluation` at `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED. V3 remains **NOT_PASSED**. No protected evaluation, real training, Candidate or promotion gate was opened.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103` at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+- **main:** `23381dab53c9feda81e32f42a51ece578cc045df`, unchanged. No main write, deletion or merge was made.
+
+## NEW — this invocation
+
+1. **Run1071 / PR #199 integrated:** five synthetic Memory path-policy substitution regressions; exact child-head CI GREEN 6/6; squash-integrated into PR #8. The guard pins the original stat module and each mode predicate before filesystem inspection.
+2. **Run1072 / PR #200 integrated:** five synthetic ActionAudit path-policy substitution regressions; exact child-head CI GREEN 6/6; squash-integrated into PR #8. The ActionAudit v1 schema/event contract was not changed.
+3. **Run1073 / PR #201 prepared:** Personal Context replay reparse admission and process-crash recovery freshly reapplied to parent `2e408...`; proactive cross-process race fixture stabilized with a normal WAL anchor. Fresh exact-head CI is running; no local PASS is claimed.
+4. **Run1074 / PR #202 prepared:** Planner journal stat module/predicate identity guard plus four pre-`lstat` synthetic regressions. Fresh exact-head CI is running; no local PASS is claimed.
+5. **V3 blocker diagnosed:** PR #193 child run [44909562565](https://github.com/Iam-2squared/ark-ai/actions/runs/44909562565) failed all six matrix jobs during pytest collection with `ModuleNotFoundError: ark.personal_context_offline_preview`; `ruff check .` passed. The module is absent from the V3 branch. Earlier PR #5 merge-view run [44905840608](https://github.com/Iam-2squared/ark-ai/actions/runs/44905840608) failed at Ruff I001. No main change or protected-gate bypass was attempted; V3 path/identity work remains blocked on reconciling this main/V3 test dependency safely.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #199 child `c73ffefabce57949fd8e5b9463aca388367eca93`: run `44921230696`, **GREEN 6/6**.
+- PR #200 child `ff8526a7708e5a28d822b50a50cf322c4280b39d`: run `44921320292`, **GREEN 6/6**.
+- PR #8 intermediate head `2c8b361d27bf5e048d474173d082d561ca23e07f`: run `44921454186`, GREEN 6/6; this is historical evidence only.
+- PR #8 intermediate head `2e408656ae0661626e6bc3fb234006819ef2ccfc`: run `44926346242`, **IN PROGRESS** when superseded by Run1072 ActionAudit integration; does not certify current head.
+- PR #8 current head `72e2498818d2ab4b9d9c632508b78c750a30392d`: run `44926858472`, **QUEUED**.
+- PR #201 `b390d1939a1f17db9be9d29e5bdd483c757a4517`: run `44926559382`, **IN PROGRESS**.
+- PR #202 `37696654fe8d9fc6ec71bde39fb2911ea2b425fe`: run `44926673951`, **IN PROGRESS**.
+- PR #198 prior child `d6b7994ba682a446d07090011c76fba9867d8226`: run `44920870108`, GREEN 6/6 on older parent only; not transferred to PR #201.
+- PR #193 `b8c065d8d59847f7563302f284439afbf3dcd015`: run `44909562565`, **FAIL 6/6** at pytest collection due missing V3-branch module; Ruff passed. PR #5 merge-view run `44905840608` is historical FAIL at Ruff I001.
+- No local pytest/Ruff PASS, physical-PC validation, real runtime identity, live data, or external-effect proof is claimed. The checkpoint commit may itself start a new PR #8 CI run; no verdict is inferred for its resulting HEAD.
+
+## Overall current ARK state
+
+The non-UI JARVIS foundation advanced in Memory and ActionAudit path-policy dependency identity; two additional isolated rebase packages now cover Personal Context replay and Planner journal path admission. The core remains disconnected/replay-only where specified: no real ToolBackend dispatch, no automatic uncertain-COMMIT replay, and no trusted-clock or authenticated-consent authority. PR #8 remains Draft/unmerged; main remains unchanged; PR #5 remains gated; PR #9 remains paused. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/event semantics; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event semantics; V3 Contract 1 semantics/hash; and the protected V2 final-evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, power-loss durability, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated. PR #5 remains Draft/unmerged; PR #9 remains untouched and Draft/unmerged.
+
+## Next plan / 今後の方針
+
+1. Let PR #8 current-head CI `44926858472`, PR #201 `44926559382`, and PR #202 `44926673951` finish without duplicate workflow dispatch. Inspect any failure logs; apply only the smallest semantics-preserving repair.
+2. Re-read the live PR #8 head after CI. Rebase PR #201 and PR #202 from their old parent `2e408...` onto the latest foundation, one at a time; confirm file-level compatibility and fresh exact-head Windows/Linux × Python 3.11–3.13 CI before integrating each child into PR #8.
+3. After PR #201 is validated and integrated, close/supersede stale PR #198; do not transfer its older CI result.
+4. Continue Memory WAL/SHM cross-process races, CAS/ABA, coherent expiry/event snapshots and COMMIT-UNKNOWN manual triage; Planner terminal/restart recovery; immutable ToolRegistry/PermissionGate identity and restart-safe authorization; ActionAudit audit-before-action/occurrence replay protection; disconnected/mock execution and startup readiness.
+5. Continue privacy-safe Personal Context revocation/reuse, proactive occurrence/quarantine and trusted-clock blockers, Observation fixture prehash/budget contracts, and free-only V3 approval/path/identity/reproducibility guards. For V3, resolve the missing `ark.personal_context_offline_preview` dependency without editing main or opening protected evaluation. **Keep PR #5 Draft/unmerged and PR #9 UI paused/untouched.**
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORICAL CHECKPOINT — ARK AI Run1072: two exact-head-GREEN integrations, replay assertion repair, Memory and ActionAudit path hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22T00:52:00.495+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
