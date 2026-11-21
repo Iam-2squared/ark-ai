@@ -1,3 +1,67 @@
+# LATEST — ARK AI Run1034: V3 exact-carrier/path guards integrated; mock-only composition and durability rebases underway
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T09:07:14+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Run1034 work-basis exact HEAD:** `06edb64380ee48162adad176e851df63227c91a9`. **Checkpoint write-basis HEAD:** `06edb64380ee48162adad176e851df63227c91a9`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and confirmed by the post-write PR #8 branch read; the tracked file cannot embed its own resulting SHA.
+
+**Protected refs before this checkpoint write:** main `7a843f17eb96ed13d66f23b58b06406b3002e405`; gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) `a3c4e7aea4f754a07c74e93c620ce30a65679504`; paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. PR #5 and PR #9 remain OPEN/DRAFT/UNMERGED. PR #9 is untouched; UI/Frontend work remains PAUSED.
+
+## NEW — Run1034 work packages
+
+### Integrated into gated PR #5 (not main)
+
+1. **PR #131 — exact JSON carriers at the V3 execution-snapshot boundary.** Rebased the validator to reject nested dict/list/string/numeric subclasses before caller-defined methods or equality can run; preserves frozen experiment values and V3 Contract 1. Child head `6543aef3963128a7473a6ee340de693d984cdfcf`; exact-head CI #44840210083: **GREEN, 6/6**. Two earlier exact-head runs #44839931276 (Ruff E501) and #44840081682 (field-specific non-finite diagnostic mismatch) failed; both were corrected before the GREEN head. Squash merge into gated PR #5: `fe7633e1fcfd8791ac36291f0cb89c615a4c7747`.
+2. **PR #132 — Windows reparse-point path guard for V3 identity manifests.** Rejects symlink/junction/reparse ancestors before file open and checks each yielded entry before recursive traversal. Includes synthetic no-follow ordering tests and a Windows-only disposable `mklink /J` test that may skip if junction creation is unavailable. Child head `9aac249e847d2376c56d30602756a340e614f38f`; exact-head CI #44840810920: **GREEN, 6/6**. One Windows 3.12 job reported 1,428 passed and 7 skipped; no claim is made that the conditional junction integration case necessarily ran. Squash merge into gated PR #5: `a3c4e7aea4f754a07c74e93c620ce30a65679504`.
+3. Resulting gated PR #5 exact head `a3c4e7aea4f754a07c74e93c620ce30a65679504`, CI #44841071616: **GREEN, 6/6**. PR #5 remains OPEN/DRAFT/UNMERGED under its controlling gate; no preflight compute, Candidate generation, protected V2 evaluation or promotion is authorized.
+
+### PR #8 non-UI work in progress (not integrated)
+
+1. **PR #130 — Run1033 proactive quarantine pre-COMMIT rollback regression rebased.** Branch `research/run1034-proactive-rollback`, head `f919b4fa02b0f960f88d6f4bef4c6b168d9cfa6a`, originally based on PR #8 head `06edb64380ee48162adad176e851df63227c91a9`. Test/evidence only: a failure before native SQLite COMMIT must roll back, return no receipt, preserve the retained genesis witness, persist no quarantine row, and leave `quick_check` clean. CI #44839431167: **IN PROGRESS** at this checkpoint (Ubuntu Python 3.11/3.12/3.13 GREEN; Windows Python 3.11/3.12/3.13 still in progress). Not integrated.
+2. **PR #133 — Run992 disconnected mock executor composition rebased.** Branch `research/run1034-disconnected-mock-executor`, head `9ad5931d35d5df33ecc31bf82cca5d1c420ac345`, originally based on PR #8 head `06edb64380ee48162adad176e851df63227c91a9`. Adds an isolated exact-MockToolBackend composition over ToolRegistry, PermissionGate, SQLiteActionAudit and the synthetic occurrence ledger. READ/WRITE ordering is explicit; audit failure blocks the mock, and no real backend is called. Run1034 also pins MockExecutionReceipt denial descriptors and MockToolResult lookup hooks, with a regression that descriptor substitution is denied before audit/mock invocation. CI #44841327156: **IN PROGRESS** at this checkpoint. Not integrated.
+3. Original PR #14 head `00fee30e4004a56bb73d7161070c6a31661bc9e3` / CI #44528750916 was GREEN 6/6 only on its old parent `326001af654078227641546a8f30c6954fcea4a3`; it does not transfer to PR #133. Keep PR #14 open until PR #133 is rebased, freshly GREEN and integrated.
+
+### Previously prepared Run1033 children — old base, do not integrate
+
+PR #126–#129 are test-only child branches based on the earlier PR #8 HEAD `c92ef6d65df5e79349e3fa534902117bdfcf263b`. Their old-base exact-head CI runs #44831333274/#44831422369/#44831468494/#44831517976 were GREEN 6/6, but those results do not transfer to the new checkpoint head. Their content is prepared for sequential rebase: proactive rollback (#126), Planner terminal COMMIT outcomes (#127), Memory expiry COMMIT outcomes (#128), and Personal Context replay process-crash (#129). No old-base child has been integrated. Close old PRs only after a corresponding fresh rebase is GREEN and integrated.
+
+## CI and evidence
+
+- PR #8 work-basis HEAD `06edb64380ee48162adad176e851df63227c91a9`, CI #44831676713: **GREEN, 6/6** before this checkpoint write.
+- PR #5 resulting head `a3c4e7aea4f754a07c74e93c620ce30a65679504`, CI #44841071616: **GREEN, 6/6**.
+- PR #131 final child head CI #44840210083: **GREEN, 6/6**; PR #132 child head CI #44840810920: **GREEN, 6/6**.
+- PR #130 old-base head CI #44839431167: **IN PROGRESS** (3/6 Ubuntu GREEN; 3/6 Windows still running). PR #133 old-base head CI #44841327156: **IN PROGRESS**. This checkpoint advances PR #8, so both branches must be re-read and rebased onto the checkpoint-result HEAD with fresh exact-head CI before integration; their current runs are historical for the old base.
+- Run1033 PR #126–#129 CI #44831333274/#44831422369/#44831468494/#44831517976: **GREEN, 6/6 each on old base only**; no result transfers.
+- No local pytest/Ruff PASS is claimed in this invocation; evidence above is GitHub exact-head CI only.
+
+## Frozen contracts, evidence and boundaries
+
+V1/V2/Local UI/Launcher reviewed evidence and frozen contracts remain unchanged, including Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1 and V3 Contract 1. Main remains `7a843f17eb96ed13d66f23b58b06406b3002e405`. PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains paused and untouched.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, unavailable physical-PC action, live personal data/sensor capture, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, or main merge occurred. No trusted-clock, authenticated consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / authorization boundaries
+
+- PR #130 and PR #133 are based on the pre-checkpoint PR #8 HEAD. Rebase one child at a time onto the exact checkpoint-result HEAD and require fresh six-job CI before integration.
+- PR #126–#129 are also old-base. Rebase one child at a time onto the then-current PR #8 head; do not integrate old-base branches or transfer their CI.
+- PR #5 remains gated passive/validation-only. No preflight compute, real Candidate adapter/weight generation, protected V2 evaluation opening or promotion.
+- Synthetic `now_ms` and local injected clocks are not trusted time. Local grants/one-shot tokens are not authenticated consent or independent issuer proof. The occurrence and audit SQLite stores are not cross-store atomic. Hashes and local readback do not prove independent custody or real external effects.
+- The disconnected mock executor is not a production ActionExecutor, scheduler, startup gate or real ToolBackend integration. No automatic retry/replay of ambiguous WRITE is allowed.
+- PR #9 and all UI/frontend work remain paused.
+
+## Next plan / 今後の方針
+
+1. Re-read the latest PR #8 HEAD after this checkpoint. Rebase **PR #130 first** onto the exact checkpoint-result HEAD, obtain fresh Windows/Linux × Python 3.11–3.13 CI, and integrate only into Draft PR #8 after GREEN; then close superseded PR #126 and its older predecessor only after confirming the fresh integration.
+2. Re-read the new parent HEAD and rebase **PR #127 Planner terminal COMMIT outcome** one child at a time, fresh six-job CI, then integrate. Repeat sequentially for PR #128 Memory expiry and PR #129 Personal Context replay process-crash; close their old-base predecessors only after fresh GREEN integration.
+3. Rebase **PR #133 disconnected mock executor** onto the then-current PR #8 head after the durability children, require fresh exact-head CI, then integrate only into Draft PR #8; close old PR #14 only after the fresh replacement is GREEN and integrated.
+4. Continue independent non-UI Memory row/event/CAS/expiry, Planner crash recovery, immutable ToolRegistry/PermissionGate, restart-safe authorization, audit-before-action, privacy-safe Personal Context, proactive scheduler and observation fixture contracts. Connect components only after their lower-level invariants have exact-head GREEN evidence.
+5. Keep PR #5 gated Draft/unmerged, PR #9 untouched, all UI work paused, frozen evidence unchanged, and all work within the zero-cost boundary. Do not open protected V2 evaluation, generate/promote Candidate artifacts, or merge PR #5/#8 to main.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+---
+
 # LATEST — ARK AI Run1033: four non-UI durability regressions rebased; exact-head CI launched
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T07:46:07+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody, or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
