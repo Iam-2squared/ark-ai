@@ -1,4 +1,65 @@
-# LATEST — ARK AI Run1058: exact-head Planner/V3 integrations and three non-UI privacy follow-ups
+# LATEST — ARK AI Run1059: revocation assertion repair, Personal Context and ActionAudit reparse rebases
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T18:56:53.519+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `c840ec805533499cf48cb42d9ba974d01fae045d` (Run1058 checkpoint-result HEAD). **Checkpoint write-basis HEAD:** `c840ec805533499cf48cb42d9ba974d01fae045d`, re-read immediately before this normal GitHub Contents API write. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by a subsequent live branch-ref read; a commit cannot embed its own resulting SHA.
+
+**Protected refs and current state**
+- `research/jarvis-foundations`: `c840ec805533499cf48cb42d9ba974d01fae045d`; exact-head CI run [#44886809693](https://github.com/Iam-2squared/ark-ai/actions/runs/44886809693) **GREEN, 6/6**.
+- `main`: `23381dab53c9feda81e32f42a51ece578cc045df`. **Incident:** an unintended GitHub Contents API call omitted its branch argument and added only `tests/test_personal_context_replay_process_crash_run1033.py` directly to main. Compare against prior main `7a843f17eb96ed13d66f23b58b06406b3002e405` confirms exactly one commit and one added file; no production source or other file changed. Main push CI [#44891321387](https://github.com/Iam-2squared/ark-ai/actions/runs/44891321387) **FAIL, 6/6**, at Ruff I001 import ordering in that file; pytest did not run. No further main write or destructive cleanup was attempted.
+- Gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5): `c23fa8f24cf3f3ae0ee079111cfc0984d8f63d76`, OPEN/DRAFT/UNMERGED; exact-head CI [#44886297089](https://github.com/Iam-2squared/ark-ai/actions/runs/44886297089) **GREEN, 6/6**. V3 remains NOT_PASSED; all protected evaluation/spending/Candidate gates remain closed.
+- Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9): `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+
+## NEW — this invocation
+
+### Four isolated non-UI packages
+
+1. **PR #178 — revocation race assertion repair.** Branch `research/run1059-revocation-prefix-assertion`, exact HEAD `a7960ae43265d000c5af40b2ee63d1c687c70d94`; exact-head CI run [#44891225819](https://github.com/Iam-2squared/ark-ai/actions/runs/44891225819) **IN PROGRESS** at last observation. Repairs PR #175's test-only assertion: workers emit `REVOKED:<64-hex-digest>`, so the winner is counted with `startswith("REVOKED:")`, not equality with the prefix-only string. The exactly-one-durable-winner, exactly-one-safe-loser (`ALREADY` or `AMBIGUOUS`) and independent one-row readback requirements remain intact. Original PR #175 run `44886475992` failed 6/6 on this assertion mismatch; no production source, schema, consent, retry or authority change.
+2. **PR #179 — Personal Context replay reparse-admission rebase.** Branch `research/run1059-personal-context-reparse-admission`, exact HEAD `9db2b287600e33563472e51cae3b7e7b3ff5f88c`; CI run [#44891283213](https://github.com/Iam-2squared/ark-ai/actions/runs/44891283213) **IN PROGRESS**. Reapplies the Run1058 source/test/doc package to this exact parent after confirming the parent source file was byte-identical to the prior base. Pins Windows reparse policy and rejects malformed metadata, unsafe ancestors/database leaves/SQLite sidecars before SQLite access. Hash-only replay schema/row format and denial-only authority unchanged. Prior PR #176 run `44886582674` was GREEN on its older parent and does not transfer.
+3. **PR #180 — Personal Context crash and proactive race fixtures rebase.** Branch `research/run1059-personal-context-crash-fixtures`, exact HEAD `243135ec02dc9b29a87edc3d0358406613435716`; CI run [#44891397012](https://github.com/Iam-2squared/ark-ai/actions/runs/44891397012) **IN PROGRESS**. Test-only spawned-process exit immediately after replay-ledger native COMMIT verifies cold readback of one hash-only reservation, stale/duplicate rejection and no payload storage. Proactive two-process CAS fixture holds a normal WAL/SHM anchor to avoid DELETE-journal sidecar unlink timing; production checks unchanged. Prior PR #177 run `44886686446` was GREEN on its older parent and does not transfer.
+4. **PR #181 — ActionAudit reparse-admission rebase.** Branch `research/run1059-action-audit-reparse-admission`, exact HEAD `af07bcdd155605dcef649130f9c14cf9f6fd24e9`; CI run [#44891538526](https://github.com/Iam-2squared/ark-ai/actions/runs/44891538526) **IN PROGRESS**. Reapplies the Windows reparse-point policy and synthetic malformed-metadata/ancestor/database/sidecar tests after confirming both existing parent files were byte-identical to the older base. Path-free sidecar diagnostics retained; ActionAudit v1 schema/event contract unchanged. Prior PR #173 run `44881733172` attempt 2 was GREEN on the older parent and does not transfer.
+
+### Main-branch recovery proposal and read-only audit
+
+5. **PR #182 — recovery proposal only.** Branch `recovery/run1059-revert-accidental-main-fixture`, exact HEAD `1dfb5ea23f8879455298ae2f04343f4ccc807255`; CI run [#44891688919](https://github.com/Iam-2squared/ark-ai/actions/runs/44891688919) **IN PROGRESS** at last observation. Draft PR to main proposes deleting only the accidentally added JARVIS-only test file. It is OPEN/DRAFT/UNMERGED; main remains at `23381dab53c9feda81e32f42a51ece578cc045df`. **Do not merge without explicit user approval** because it applies a deletion to main. This proposal does not modify main.
+6. Read-only V3 audit found the test files in stale PRs #166 and #169 are already byte-identical to files present on current gated PR #5 HEAD `c23fa8f24cf3f3ae0ee079111cfc0984d8f63d76`; no duplicate rebase or redundant CI was launched.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 parent `c840ec805533499cf48cb42d9ba974d01fae045d`: run `44886809693` **GREEN, 6/6**.
+- PR #5 `c23fa8f24cf3f3ae0ee079111cfc0984d8f63d76`: run `44886297089` **GREEN, 6/6**; V3 still NOT_PASSED.
+- PR #178 `a7960ae43265d000c5af40b2ee63d1c687c70d94`: run `44891225819` **IN PROGRESS**.
+- PR #179 `9db2b287600e33563472e51cae3b7e7b3ff5f88c`: run `44891283213` **IN PROGRESS**.
+- PR #180 `243135ec02dc9b29a87edc3d0358406613435716`: run `44891397012` **IN PROGRESS**.
+- PR #181 `af07bcdd155605dcef649130f9c14cf9f6fd24e9`: run `44891538526` **IN PROGRESS**.
+- PR #182 `1dfb5ea23f8879455298ae2f04343f4ccc807255`: run `44891688919` **IN PROGRESS**.
+- Main `23381dab53c9feda81e32f42a51ece578cc045df`: run `44891321387` **FAIL, 6/6**, Ruff I001; no pytest result. This is the accidental test-only write, not a product-source change.
+- No local pytest/Ruff PASS is claimed. CI evidence is not transferred across parent/head changes or separate branches.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher reviewed evidence remains frozen. PR #8 has exact-head-GREEN baseline CI and four fresh non-UI child packages awaiting exact-head CI. PR #5 has exact-head-GREEN baseline CI but V3 remains NOT_PASSED. PR #9 remains paused and untouched. Main currently has one accidental test-only file addition with failed CI; a Draft-only recovery proposal is open and no main cleanup has been applied. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event contract; V3 Contract 1 semantics/hash; and protected V2 evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work or main merge occurred. The only main-branch mutation was the accidental test-file addition explicitly recorded above; no further main write was made. PR #182 is only a Draft recovery proposal. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PRs #178–#181. Repair only specific failures with the smallest semantics-preserving change; do not weaken one-winner, fail-closed, path-custody, replay or privacy invariants.
+2. After a child is exact-head GREEN, re-read live child and PR #8 parent refs. Integrate **one** child at a time only while the current PR #8 parent CI is GREEN; require fresh exact-head CI on each resulting PR #8 head before the next integration.
+3. Keep PR #182 Draft/unmerged pending explicit user approval to apply the one-file deletion to main. Do not write directly to main.
+4. Continue Memory WAL/SHM last-close, CAS/ABA, expiry and COMMIT-UNKNOWN triage; Planner retained-prefix/restart recovery; immutable ToolRegistry/exact-type PermissionGate; restart-safe one-shot authorization; trusted-clock audit-before-action; proactive occurrence/replay; privacy-safe Personal Context; Observation/multimodal synthetic fixture lifecycle.
+5. Continue free-only V3 approval/path/identity/reproducibility guards without opening protected V2 evaluation, generating a Candidate, changing Contract 1 or using paid services.
+6. Keep all UI/frontend work paused; do not modify PR #9 or frozen Local UI evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORICAL CHECKPOINT — ARK AI Run1058: exact-head Planner/V3 integrations and three non-UI privacy follow-ups
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T17:51:05+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
 
