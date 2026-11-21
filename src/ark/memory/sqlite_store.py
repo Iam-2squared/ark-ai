@@ -1534,7 +1534,6 @@ class SQLiteMemoryStore:
         )
 
 
-
 _ORIGINAL_MEMORY_STORE_TYPE = SQLiteMemoryStore
 
 
