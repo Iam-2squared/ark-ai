@@ -29,22 +29,47 @@ from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
 
 
-def _is_reparse_point(info: os.stat_result) -> bool:
+def _require_original_reparse_point_policy() -> None:
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise LocalPacketBindingRejected("review packet reparse-point guard changed")
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
-    return stat.S_ISLNK(info.st_mode) or (
-        type(attributes) is int and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    mode = info.st_mode
+    # Metadata accessors can be executable in synthetic/reflected inputs.
+    # Recheck the import-original policy before classifying either field.
+    _require_original_reparse_point_policy()
+    if type(attributes) is not int:
+        raise LocalPacketBindingRejected("review packet reparse metadata is malformed")
+    return _ORIGINAL_STAT_S_ISLNK(mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
     )
+
+
+def _is_regular_file(info: os.stat_result) -> bool:
+    """Classify regular files only through the captured import-original predicate."""
+    _require_original_reparse_point_policy()
+    mode = info.st_mode
+    _require_original_reparse_point_policy()
+    return _ORIGINAL_STAT_S_ISREG(mode)
 
 
 def _has_reparse_ancestor(path: Path) -> bool:
     """Reject symlink/junction ancestors before a packet path is opened."""
+    _require_original_reparse_point_policy()
     for parent in path.parents:
         try:
             info = parent.lstat()
@@ -100,10 +125,11 @@ def _file_epoch(info: os.stat_result) -> tuple[int, int, int, int, int]:
 
 def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, int, int]]:
     """Read the same local regular, non-aliased file twice without creating it."""
+    _require_original_reparse_point_policy()
     try:
         before = path.lstat()
         if (
-            not stat.S_ISREG(before.st_mode)
+            not _is_regular_file(before)
             or _is_reparse_point(before)
             or _has_reparse_ancestor(path)
             or before.st_nlink != 1
@@ -127,7 +153,7 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
             # A race may substitute a FIFO, device, or socket. Never read
             # unverified nonregular bytes merely because lstat saw a file.
             if (
-                not stat.S_ISREG(opened.st_mode)
+                not _is_regular_file(opened)
                 or _is_reparse_point(opened)
                 or opened.st_nlink != 1
                 or _file_epoch(opened) != _file_epoch(before)
@@ -145,13 +171,13 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
         raise LocalPacketBindingRejected("review packet file cannot be read") from exc
     identity = _file_epoch(before)
     if (
-        not stat.S_ISREG(opened.st_mode)
-        or not stat.S_ISREG(after.st_mode)
+        not _is_regular_file(opened)
+        or not _is_regular_file(after)
         or _is_reparse_point(after)
         or opened.st_nlink != 1
         or after.st_nlink != 1
         or _file_epoch(opened) != identity
-        or not stat.S_ISREG(after_handle.st_mode)
+        or not _is_regular_file(after_handle)
         or _is_reparse_point(after_handle)
         or after_handle.st_nlink != 1
         or _file_epoch(after_handle) != identity
