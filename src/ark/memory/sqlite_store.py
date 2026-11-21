@@ -48,6 +48,8 @@ _BOOTSTRAP_LOCK = RLock()  # protects same-process first-open preflights and WAL
 # Preserve original result classes across synthetic constructor injection.
 _MEMORY_EVENT_RESULT_TYPE = MemoryEvent
 _MEMORY_RECORD_RESULT_TYPE = MemoryRecord
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
 _SCHEMA_V1_SQL = """CREATE TABLE memories(
@@ -438,6 +440,26 @@ def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     return "mem_" + hashlib.sha256(payload).hexdigest()
 
 
+def _is_reparse_point(info: os.stat_result) -> bool:
+    """Detect Windows reparse points even when their mode is directory/file."""
+    attributes = getattr(info, "st_file_attributes", 0)
+    return type(attributes) is not int or bool(
+        attributes & _FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+
+
+def _require_original_memory_path_policy() -> None:
+    if (
+        type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+        or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
+    ):
+        raise MemorySchemaError("memory path admission policy changed")
+
+
 def _require_safe_memory_path(path: Path, *, create: bool) -> None:
     """Fail closed on local SQLite path aliases before any directory or DB I/O.
 
@@ -445,6 +467,7 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
     process-local preflight is NOT atomic dirfd custody, authenticated storage,
     or protection from a concurrent owner-controlled rename after inspection.
     """
+    _require_original_memory_path_policy()
     if type(path) is not type(Path()) or ".." in path.parts:
         raise MemorySchemaError("memory path type or traversal refused")
     # Do not pass an overlong or NUL-containing private path to mkdir/lstat or
@@ -471,7 +494,11 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
                 if create:
                     continue
                 raise MemorySchemaError("memory ancestor unavailable") from None
-            if not stat.S_ISDIR(meta.st_mode) or stat.S_ISLNK(meta.st_mode):
+            if (
+                not stat.S_ISDIR(meta.st_mode)
+                or stat.S_ISLNK(meta.st_mode)
+                or _is_reparse_point(meta)
+            ):
                 raise MemorySchemaError("memory symbolic or nondirectory ancestor refused")
         main_absent = False
         try:
@@ -481,7 +508,11 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
             if not create:
                 raise sqlite3.OperationalError("memory database unavailable") from None
         else:
-            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+            if (
+                not stat.S_ISREG(meta.st_mode)
+                or meta.st_nlink != 1
+                or _is_reparse_point(meta)
+            ):
                 raise MemorySchemaError("memory database path is not a single regular file")
         # SQLite may open -wal/-shm/-journal alongside the main database.
         # A safe main pathname is not enough if one of these files is a
@@ -507,7 +538,11 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
                     sidecar_meta = sidecar.lstat()
                 except FileNotFoundError:
                     continue
-            if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
+            if (
+                not stat.S_ISREG(sidecar_meta.st_mode)
+                or sidecar_meta.st_nlink != 1
+                or _is_reparse_point(sidecar_meta)
+            ):
                 # Preserve strict path-alias refusal and bounded diagnostics.
                 # Do not include private paths, owners, content or identifiers.
                 raise MemorySchemaError(
