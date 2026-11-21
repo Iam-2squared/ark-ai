@@ -1,6 +1,7 @@
 """Registered WRITE policy must rebind before spending a process-local token."""
 
-from threading import Event, Lock, Thread
+import sys
+from threading import Event, Thread
 
 import pytest
 
@@ -15,23 +16,58 @@ from ark.agency.policy import PermissionGate
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
 
+def _run_during_token_lock_wait(gate, operation, mutate):
+    """Pause the real authorize frame before its original lock acquisition."""
+    lock = gate._token_lock
+    lock.acquire()
+    entered = Event()
+    resume = Event()
+    outcomes = []
+    paused = False
+    authorize_code = PermissionGate.authorize.__code__
+
+    def trace(frame, event, _arg):
+        nonlocal paused
+        if (
+            not paused
+            and event == "line"
+            and frame.f_code is authorize_code
+            and frame.f_locals.get("token_lock") is lock
+        ):
+            paused = True
+            entered.set()
+            if not resume.wait(timeout=5):
+                raise AssertionError("token spend did not resume")
+        return trace
+
+    def worker():
+        sys.settrace(trace)
+        try:
+            operation()
+        except Exception as exc:
+            outcomes.append(f"{type(exc).__name__}: {exc}")
+        else:
+            outcomes.append("allowed")
+        finally:
+            sys.settrace(None)
+
+    thread = Thread(target=worker)
+    thread.start()
+    try:
+        assert entered.wait(timeout=5), "authorization did not reach token lock"
+        mutate()
+    finally:
+        resume.set()
+        lock.release()
+        thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert len(outcomes) == 1
+    return outcomes[0]
+
+
 class NeverBackend:
     def execute(self, call):
         raise AssertionError("a policy check must never execute a ToolBackend")
-
-
-class PauseInSpend:
-    def __init__(self):
-        self.entered = Event()
-        self.resume = Event()
-
-    def __enter__(self):
-        self.entered.set()
-        assert self.resume.wait(timeout=5), "spend lock was not released"
-        return self
-
-    def __exit__(self, exc_type, exc, traceback):
-        return False
 
 
 def _fixture():
@@ -57,34 +93,21 @@ def _fixture():
 def test_registry_drift_while_spend_lock_waits_preserves_token(field, replacement):
     registration, registry, call, grant, token = _fixture()
     gate = PermissionGate()
-    lock = PauseInSpend()
-    object.__setattr__(gate, "_token_lock", lock)
-    outcomes = []
+    original = getattr(registration, field)
 
-    def worker():
-        try:
-            gate.authorize_registered(
-                registry, call, (grant,), now_ms=10, one_shot=token
-            )
-            outcomes.append("incorrect-success")
-        except PermissionDenied as exc:
-            outcomes.append(str(exc))
-
-    thread = Thread(target=worker)
-    thread.start()
-    try:
-        assert lock.entered.wait(timeout=5)
-        original = getattr(registration, field)
+    def mutate():
         object.__setattr__(registration, field, replacement)
-    finally:
-        lock.resume.set()
-        thread.join(timeout=5)
-    assert not thread.is_alive()
-    assert len(outcomes) == 1
-    assert "registered identity changed" in outcomes[0]
+
+    outcome = _run_during_token_lock_wait(
+        gate,
+        lambda: gate.authorize_registered(
+            registry, call, (grant,), now_ms=10, one_shot=token
+        ),
+        mutate,
+    )
+    assert "registered identity changed" in outcome
     assert token.token_id not in gate._consumed_tokens
     object.__setattr__(registration, field, original)
-    object.__setattr__(gate, "_token_lock", Lock())
     result = gate.authorize_registered(
         registry, call, (grant,), now_ms=10, one_shot=token
     )
