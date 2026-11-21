@@ -17,6 +17,7 @@ from .contracts import (
 from .registry import (
     BoundAction,
     ToolRegistry,
+    _admit_frozen_toolcall_arguments,
     _require_original_toolcall_contract,
 )
 
@@ -29,6 +30,7 @@ _ORIGINAL_GETATTR_STATIC = inspect.getattr_static
 _MAX_GRANTS = 1024  # Bound hostile iterables before WRITE token admission.
 _ORIGINAL_MAX_GRANTS = _MAX_GRANTS
 _ORIGINAL_POLICY_TOOL_CALL = ToolCall
+_ORIGINAL_ADMIT_FROZEN_TOOLCALL_ARGUMENTS = _admit_frozen_toolcall_arguments
 
 
 def _assert_original_call_contract() -> None:
@@ -39,10 +41,27 @@ def _assert_original_call_contract() -> None:
     """
     if ToolCall is not _ORIGINAL_POLICY_TOOL_CALL:
         raise PermissionDenied("ToolCall identity contract changed")
+    if _require_frozen_call_arguments is not _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS:
+        raise PermissionDenied("ToolCall argument admission implementation changed")
     try:
         _require_original_toolcall_contract()
     except ValueError as exc:
         raise PermissionDenied("ToolCall identity contract changed") from exc
+
+
+
+def _require_frozen_call_arguments(call: ToolCall) -> None:
+    if _admit_frozen_toolcall_arguments is not _ORIGINAL_ADMIT_FROZEN_TOOLCALL_ARGUMENTS:
+        raise PermissionDenied("ToolCall argument admission implementation changed")
+    try:
+        _ORIGINAL_ADMIT_FROZEN_TOOLCALL_ARGUMENTS(call.arguments)
+    except (TypeError, ValueError) as exc:
+        raise PermissionDenied(
+            "ToolCall arguments carrier changed before authorization"
+        ) from exc
+
+
+_ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS = _require_frozen_call_arguments
 
 # Reconstructing a grant is validation, but it executes dataclass hooks.
 # Pin the validator at import time so a substituted initializer cannot run
@@ -215,6 +234,7 @@ class PermissionGate:
         # later direct call would expose untrusted callbacks first.
         if type(now_ms) is not int or not 0 <= now_ms <= (1 << 63) - 1:
             raise ValueError("now_ms must be a non-negative integer")
+        _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
 
         def ensure_original_implementations() -> None:
             _assert_original_call_contract()
@@ -272,6 +292,7 @@ class PermissionGate:
 
         def ensure_entry_epoch() -> None:
             ensure_original_implementations()
+            _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
             try:
                 stable = (
                     (call.tool, call.capability, call.scope,
@@ -475,6 +496,7 @@ class PermissionGate:
             or type(call.scope) is not str
         ):
             raise PermissionDenied("authorization requires exact tool identity and effect")
+        _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
         if one_shot is not None and type(one_shot) is not OneShotAuthorization:
             raise PermissionDenied("one-shot authorization must be an exact value")
         if spec.name != call.tool or spec.capability != call.capability:
@@ -499,6 +521,7 @@ class PermissionGate:
             raise PermissionDenied("authorization input identity is invalid") from exc
 
         def original_field_carriers() -> bool:
+            _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
             # request_id on ToolCall is a deterministic computed digest, so
             # preserve its VALUE (already checked separately), not the identity
             # of each freshly computed string. Other fields are stored values
