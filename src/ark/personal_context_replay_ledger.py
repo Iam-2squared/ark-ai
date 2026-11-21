@@ -349,7 +349,7 @@ def _check_path(path: object, *, create: bool) -> Path:
         type(path) is not type(Path("."))
         or not path.is_absolute()
         or ".." in path.parts
-        or "\\x00" in str(path)
+        or "\x00" in str(path)
         or path.name in ("", ".", "..")
     ):
         raise OfflineContextReplayRejected("exact absolute local context ledger path required")
