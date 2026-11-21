@@ -27,6 +27,8 @@ _MAX_EVENTS = 10_000
 _HEX = re.compile(r"pevt_[0-9a-f]{64}\Z")
 _PLAN = re.compile(r"plan_[0-9a-f]{64}\Z")
 _STATE = re.compile(r"pstate_[0-9a-f]{64}\Z")
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _SCHEMA = (
     """CREATE TABLE synthetic_plan_header(
         id INTEGER PRIMARY KEY CHECK(id = 1),
