@@ -1,5 +1,7 @@
 """Regression: planner internal status cannot be forged between transitions."""
 
+import gc
+
 import pytest
 
 from ark.agency.contracts import (
@@ -10,6 +12,12 @@ from ark.agency.contracts import (
     ToolCall,
 )
 from ark.agency.planner import PlanGraph
+
+
+def _status_backing(graph: PlanGraph) -> dict:
+    referents = gc.get_referents(graph._status)
+    assert len(referents) == 1 and type(referents[0]) is dict
+    return referents[0]
 
 
 def _plan() -> PlanGraph:
@@ -34,13 +42,13 @@ def test_reflected_or_replaced_private_status_denied(mutation: str) -> None:
     elif mutation == "step_id":
         object.__setattr__(carrier, "step_id", "child")
     elif mutation == "replace":
-        graph._status["root"] = PlanStepStatus("root", StepState.PENDING)
+        _status_backing(graph)["root"] = PlanStepStatus("root", StepState.PENDING)
     elif mutation == "replace_map":
-        graph._status = dict(graph._status)
+        object.__setattr__(graph, "_status", dict(graph._status))
     elif mutation == "remove":
-        del graph._status["root"]
+        del _status_backing(graph)["root"]
     elif mutation == "add":
-        graph._status["unknown"] = PlanStepStatus("unknown", StepState.PENDING)
+        _status_backing(graph)["unknown"] = PlanStepStatus("unknown", StepState.PENDING)
     else:
         object.__setattr__(carrier, "revision", True)
 
