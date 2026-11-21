@@ -276,7 +276,6 @@ class PermissionGate:
         # The first registry.bind() itself is a caller-controlled callback:
         # pin the original action and token BEFORE entering it. Rebinding
         # twice only establishes consistency with a substituted first input.
-        _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
         if one_shot is not None and type(one_shot) is not OneShotAuthorization:
             raise PermissionDenied("one-shot authorization must be an exact value")
         try:
@@ -497,6 +496,7 @@ class PermissionGate:
             or type(call.scope) is not str
         ):
             raise PermissionDenied("authorization requires exact tool identity and effect")
+        _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
         if one_shot is not None and type(one_shot) is not OneShotAuthorization:
             raise PermissionDenied("one-shot authorization must be an exact value")
         if spec.name != call.tool or spec.capability != call.capability:
