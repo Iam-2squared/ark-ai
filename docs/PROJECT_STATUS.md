@@ -1,3 +1,51 @@
+# LATEST — ARK AI Run1055: five non-UI reparse-policy rebases and one gated V3 integration
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T15:00:53+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Work-basis exact HEAD:** `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9` (Run1054 checkpoint-result head). **Checkpoint write-basis HEAD:** `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the subsequent live PR #8 branch read; this tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** main `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. Gated [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) now points to `6f73ab43c110b044552de17536b4aafcff6e3ec2` after the exact-head-GREEN PR #160 integration; it remains OPEN/DRAFT/UNMERGED. Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend work remains PAUSED.
+
+## NEW — this invocation
+
+### Five isolated non-UI child packages
+
+1. **PR #159 — Personal Context replay-ledger reparse admission rebase.** Child HEAD `2d1a0053ea254bf8b818f1c7131eb7630da1082c`, base `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9`. Pins the Windows reparse mask, fails closed on malformed metadata, and checks ancestors/database leaf/SQLite sidecars while preserving the hash-only denial-only ledger. CI run `44872823128`: **IN PROGRESS**.
+2. **PR #161 — Memory SQLite reparse admission rebase.** Child HEAD `973c1218e391f222241503af3d55c074343eacbe`, base `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9`. Pins the reparse policy and rejects reparse ancestors/database leaf/SQLite sidecars before SQLite access; Memory v1 DDL/API unchanged. CI run `44873041260`: **IN PROGRESS**.
+3. **PR #162 — disconnected Planner journal reparse admission rebase.** Child HEAD `c53a1a24f7393e621a33723ccc2e7caaf54e5907`, base `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9`. Adds fail-closed malformed metadata handling, direct `lstat` leaf admission and synthetic ancestor/leaf/sidecar regressions. Journal remains replay-only; recovered RUNNING steps remain UNKNOWN. CI run `44873227419`: **IN PROGRESS**.
+4. **PR #163 — ActionAudit reparse admission rebase.** Child HEAD `b413da6e15ee57fe18349144a6b42c598e402101`, base `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9`. Pins the policy, rejects malformed metadata and reparse ancestors/database/sidecars, uses direct `lstat` leaf admission, and preserves path-free sidecar diagnostics and the v1 audit schema/event contract. CI run `44873378623`: **IN PROGRESS**.
+5. **PR #160 — V3 export-plan malformed reparse metadata guard.** Child HEAD `cb85fac9f848dd23044144e29ceac4d0363c9f7d`, based on gated PR #5 HEAD `202cb5b6742a9f9e59c530b2c419decdb8f88c4d`. CI run `44872913319`: **GREEN, 6/6**. Squash-integrated only into the isolated PR #5 branch; integration commit/resulting PR #5 HEAD `6f73ab43c110b044552de17536b4aafcff6e3ec2`. PR #5 remains Draft/unmerged and V3 remains NOT_PASSED.
+
+### Exact-head CI / evidence
+
+- PR #8 work-basis HEAD `ae6eb0a2ec2fb1db23ac3ae2fccbb03ab24d34b9`: CI run `44868632324` **GREEN, 6/6**.
+- PR #5 resulting HEAD `6f73ab43c110b044552de17536b4aafcff6e3ec2`: CI run `44873430735` **QUEUED** at the last observation after PR #160 integration.
+- PR #159 / #161 / #162 / #163 exact child runs: `44872823128` / `44873041260` / `44873227419` / `44873378623`, all **IN PROGRESS** at the last observation.
+- PR #160 exact child run `44872913319`: **GREEN, 6/6**; its squash integration into PR #5 is recorded above.
+- No local pytest/Ruff PASS is claimed for these new rebases. No child result is transferred to a different head; each resulting parent head requires its own fresh CI.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher evidence remains frozen and unchanged. PR #8 remains OPEN/DRAFT/UNMERGED at the work-basis HEAD above, with four new child rebases awaiting exact-head CI. PR #5 remains OPEN/DRAFT/UNMERGED after one free-only guard integration; its resulting-head CI is queued. PR #9 remains paused and untouched. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API; PlanStep/ToolCall v1; Observation Envelope v1; ActionAudit v1 schema/event contract; V3 Contract 1 semantics/hash; and the protected V2 evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Next plan / 今後の方針
+
+1. Inspect the four PR #8 child CI runs `44872823128`, `44873041260`, `44873227419`, `44873378623`. When an exact child head is GREEN, re-read the live PR #8 parent and child heads before integrating one package; then require fresh resulting-PR-#8-head CI before integrating the next child.
+2. Inspect PR #5 resulting-head CI `44873430735`. If GREEN, continue free-only V3 approval/path/identity/reproducibility guard hardening on an isolated child and integrate only after exact-head GREEN plus live-ref checks. Keep PR #5 Draft/unmerged and all spending/evaluation gates closed.
+3. Continue Memory WAL/SHM and CAS/coherent-snapshot integrity, expiry/COMMIT uncertainty, Planner terminal/restart recovery, exact ToolRegistry/PermissionGate identity, restart-safe one-shot authorization, trusted-clock audit-before-action, proactive occurrence/replay and privacy-safe Personal Context.
+4. Continue Observation/multimodal contracts and synthetic fixture adapters without live capture or disclosure.
+5. Keep UI/frontend work paused; do not modify PR #9 or frozen Local UI evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1054: non-UI foundation integrations and reparse-policy hardening
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T13:57:46+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
