@@ -5,7 +5,7 @@
 - Parent HEAD at branch creation: `916aae6c6578086fee5e83c77c23375712676c90`
 - Prior reviewed child: Draft PR #204, `research/run1076-personal-context-replay-rebase`
 - Prior child HEAD: `2d7a1bebc63076129714ef45b582c1a03dae7dce`
-- Prior exact-head CI: see the exact run returned for that child head in the PR/Actions history; this result does not transfer to this rebase.
+- Prior exact-head CI: run [44931807266](https://github.com/Iam-2squared/ark-ai/actions/runs/44931807266), GREEN 6/6. This result does not transfer to this rebase.
 
 ## Rebased change
 Reapply Personal Context replay-ledger path admission and process-crash recovery coverage:
