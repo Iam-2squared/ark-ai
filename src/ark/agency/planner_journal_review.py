@@ -27,6 +27,8 @@ _MAX_EVENTS = 10_000
 _HEX = re.compile(r"pevt_[0-9a-f]{64}\Z")
 _PLAN = re.compile(r"plan_[0-9a-f]{64}\Z")
 _STATE = re.compile(r"pstate_[0-9a-f]{64}\Z")
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _SCHEMA = (
     """CREATE TABLE synthetic_plan_header(
         id INTEGER PRIMARY KEY CHECK(id = 1),
@@ -61,6 +63,26 @@ _EVENTS = """SELECT seq,step_id,from_state,to_state,expected_revision,
 
 class SyntheticPlanJournalRejected(RuntimeError):
     """The fixture journal cannot establish coherent replay evidence."""
+
+
+def _require_original_reparse_point_policy() -> None:
+    if (
+        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan journal reparse-point policy changed"
+        )
+
+
+def _has_windows_reparse_point(meta: object) -> bool:
+    _require_original_reparse_point_policy()
+    attributes = getattr(meta, "st_file_attributes", 0)
+    if type(attributes) is not int:
+        raise SyntheticPlanJournalRejected(
+            "synthetic plan journal reparse metadata is malformed"
+        )
+    return bool(attributes & _REPARSE_POINT_ATTRIBUTE)
 
 
 def _hash(label: str, payload: object) -> str:
@@ -423,6 +445,7 @@ def _require_safe_journal_path(path: Path) -> None:
         raise SyntheticPlanJournalRejected(
             "synthetic plan journal requires absolute non-traversing Path"
         ) from exc
+    _require_original_reparse_point_policy()
     try:
         for ancestor in path.parents:
             meta = ancestor.lstat()
@@ -430,12 +453,23 @@ def _require_safe_journal_path(path: Path) -> None:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal ancestor is not a real directory"
                 )
-        if path.is_symlink():
-            raise SyntheticPlanJournalRejected(
-                "synthetic plan journal symlink refused"
-            )
-        if path.exists():
+            if _has_windows_reparse_point(meta):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal reparse-point ancestor refused"
+                )
+        try:
             meta = path.lstat()
+        except FileNotFoundError:
+            meta = None
+        if meta is not None:
+            if stat.S_ISLNK(meta.st_mode):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal symlink refused"
+                )
+            if _has_windows_reparse_point(meta):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal reparse-point path refused"
+                )
             if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal must be one regular file"
@@ -459,11 +493,19 @@ def _require_safe_journal_path(path: Path) -> None:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal sidecar unsafe or orphaned"
                 )
+            if _has_windows_reparse_point(sidecar_meta):
+                raise SyntheticPlanJournalRejected(
+                    "synthetic plan journal sidecar reparse-point refused"
+                )
             if stat.S_ISREG(sidecar_meta.st_mode) and sidecar_meta.st_nlink == 0:
                 try:
                     sidecar_meta = sidecar.lstat()
                 except FileNotFoundError:
                     continue
+                if _has_windows_reparse_point(sidecar_meta):
+                    raise SyntheticPlanJournalRejected(
+                        "synthetic plan journal sidecar reparse-point refused"
+                    )
             if not stat.S_ISREG(sidecar_meta.st_mode) or sidecar_meta.st_nlink != 1:
                 raise SyntheticPlanJournalRejected(
                     "synthetic plan journal sidecar unsafe or orphaned"
