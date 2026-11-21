@@ -180,10 +180,13 @@ def run_preflight(args: argparse.Namespace) -> dict:
         code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
-    runtime_identity = _verify_actual_runtime(snapshot)
+    # Reject an unusable output destination before importing torch or
+    # initializing a local accelerator runtime. This is only path admission;
+    # it does not authorize preflight or external compute.
     report_path = Path(args.report)
     if report_path.exists() or report_path.is_symlink() or not report_path.parent.is_dir():
         raise RuntimeError("preflight report path must be a new file under an existing directory")
+    runtime_identity = _verify_actual_runtime(snapshot)
     backend = HfLoRAPreflightBackend(
         base_dir=args.base_dir,
         dataset_path=args.dataset,
