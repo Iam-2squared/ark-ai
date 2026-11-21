@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from ark.memory.contracts import MemoryQuery, MemorySchemaError, MemoryScope, MemoryWrite
+from ark.memory.contracts import (
+    MemoryQuery,
+    MemorySchemaError,
+    MemoryScope,
+    MemoryWrite,
+)
 from ark.memory.sqlite_store import SQLiteMemoryStore
 
 
