@@ -16,6 +16,31 @@ from .execution import (
 )
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _is_reparse_point(info: object) -> bool:
+    attributes = getattr(info, "st_file_attributes", 0)
+    return stat.S_ISLNK(info.st_mode) or (
+        type(attributes) is int and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    )
+
+
+def _has_reparse_ancestor(path: Path) -> bool:
+    """Reject symlink/junction ancestors before packet output is opened."""
+    for parent in path.parents:
+        try:
+            info = parent.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            raise ValueError(
+                "authorization packet output ancestry cannot be verified"
+            ) from exc
+        if _is_reparse_point(info):
+            return True
+    return False
+
 
 def build_preflight_authorization_packet(snapshot: dict) -> dict:
     """Build a user-review packet without authorizing or starting external compute."""
@@ -142,6 +167,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
         or path.is_symlink()
         or not path.parent.is_dir()
         or any(parent.is_symlink() for parent in path.parents)
+        or _has_reparse_ancestor(path)
     ):
         raise ValueError("authorization packet output must be a new non-aliased file")
     # A serializer callback must not make the reviewed JSON tree differ
@@ -166,6 +192,8 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
         before = path.lstat()
         if (
             not stat.S_ISREG(before.st_mode)
+            or _is_reparse_point(before)
+            or _has_reparse_ancestor(path)
             or before.st_nlink != 1
             or before.st_size != len(data)
             or path.is_symlink()
@@ -180,6 +208,8 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     if (
         saved_bytes != data
         or not stat.S_ISREG(after.st_mode)
+        or _is_reparse_point(after)
+        or _has_reparse_ancestor(path)
         or after.st_nlink != 1
         or (after.st_dev, after.st_ino, after.st_size)
         != (before.st_dev, before.st_ino, before.st_size)
