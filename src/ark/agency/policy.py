@@ -475,7 +475,10 @@ class PermissionGate:
             )
             ensure_entry_epoch()
             ensure_registered_binding()
-        elif one_shot is None or one_shot.token_id not in _ORIGINAL_REQUIRE_GATE_STATE(self)[0]:
+        elif (
+            one_shot is None
+            or one_shot.token_id not in _ORIGINAL_REQUIRE_GATE_STATE(self)[0]
+        ):
             # Failure after an attempted WRITE does not imply rollback.
             raise PermissionDenied("registered local one-shot spend not observed")
         return verified
@@ -686,8 +689,13 @@ class PermissionGate:
             consumed_tokens, token_lock = _ORIGINAL_REQUIRE_GATE_STATE(self)
             with token_lock:
                 current_tokens, current_lock = _ORIGINAL_REQUIRE_GATE_STATE(self)
-                if current_tokens is not consumed_tokens or current_lock is not token_lock:
-                    raise PermissionDenied("PermissionGate state changed before token spend")
+                if (
+                    current_tokens is not consumed_tokens
+                    or current_lock is not token_lock
+                ):
+                    raise PermissionDenied(
+                        "PermissionGate state changed before token spend"
+                    )
                 _assert_original_call_contract()
                 _require_original_spec_and_token()
                 _require_original_grant_validator()
@@ -787,11 +795,14 @@ def _require_gate_state(
     ):
         raise PermissionDenied("PermissionGate state changed outside token spend")
     try:
-        if any(type(token) is not str for token in consumed):
-            raise PermissionDenied("PermissionGate token ledger contains invalid values")
-        observed = frozenset(consumed)
-    except (RuntimeError, TypeError, ValueError) as exc:
-        raise PermissionDenied("PermissionGate token ledger changed during inspection") from exc
+        values = tuple(consumed)
+    except RuntimeError as exc:
+        raise PermissionDenied(
+            "PermissionGate token ledger changed during inspection"
+        ) from exc
+    if any(type(token) is not str for token in values):
+        raise PermissionDenied("PermissionGate token ledger contains invalid values")
+    observed = frozenset(values)
     if observed != state[2]:
         raise PermissionDenied("PermissionGate state changed outside token spend")
     return consumed, lock
