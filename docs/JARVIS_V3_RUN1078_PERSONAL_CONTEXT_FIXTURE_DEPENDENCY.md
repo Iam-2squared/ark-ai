@@ -25,3 +25,9 @@ The preview remains explicit-fixture-only; request binding and replay remain has
 The failed PR #193 run is historical evidence only. Fresh exact-head Windows/Linux × Python 3.11–3.13 CI is required for this combined child; no local pytest/Ruff PASS is claimed. This is a reversible V3-branch test/dependency compatibility package, not a main-branch write or merge.
 
 No frozen V3 Contract 1 change, Candidate adapter/weight generation, training, paid/external compute, protected V2 evaluation, promotion, credentials, UI, or main merge is involved. PR #5 remains Draft/unmerged; V3 remains NOT_PASSED.
+
+
+## CI repair history
+
+- Initial exact child HEAD `5d14061187eb67816b1aea501beaf1d32eb2f3da`: run `44932377857` failed all six matrix jobs at Ruff `I001` before pytest. The inherited crash fixture's first-party `ark` imports were separated from the third-party `pytest` import.
+- The repaired exact head requires a fresh CI run; the failed run is not a PASS.
