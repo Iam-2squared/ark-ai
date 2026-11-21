@@ -5,8 +5,8 @@
 - Parent: Draft PR #8, `research/jarvis-foundations`
 - Exact parent HEAD at branch creation: `394f3573e18f0d1d6a8913dbb6e7e0f562012585`
 - Child branch: `research/run1079-permission-gate-state-custody`
-- Source change commit: `e2a3c8431cd0b524abb11861d8a79c49fd44fc9a`
-- Test change commit: `c50f783a2f6991488b3afcef12b133f8d56573d2`
+- Final source commit: `4f880b019e841dc37c181a487e050b3cc2d552a3`
+- Final regression commit: `db63e28135ad361a8dedbd692e1ca1887fe46819`
 
 ## Finding
 
