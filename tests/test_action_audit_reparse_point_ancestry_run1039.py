@@ -38,7 +38,7 @@ def test_reparse_point_ancestor_is_rejected_before_parent_creation(tmp_path, mon
         return original_lstat(candidate)
 
     monkeypatch.setattr(Path, "lstat", lstat)
-    with pytest.raises(ActionAuditSchemaError, match="reparse-point ancestor"):
+    with pytest.raises(ActionAuditSchemaError, match="ancestor refused"):
         SQLiteActionAudit(path)
 
     assert not missing.exists()
