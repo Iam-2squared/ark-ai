@@ -50,6 +50,11 @@ _MEMORY_EVENT_RESULT_TYPE = MemoryEvent
 _MEMORY_RECORD_RESULT_TYPE = MemoryRecord
 _FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+_ORIGINAL_STAT_IFMT = stat.S_IFMT
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]+")
 
 _SCHEMA_V1_SQL = """CREATE TABLE memories(
@@ -452,8 +457,17 @@ _ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
 
 
 def _require_original_memory_path_policy() -> None:
+    # stat predicates are executable module attributes too. Pin the module and
+    # every predicate used by path admission/diagnostics before any lstat,
+    # mkdir or SQLite access; a replaced S_ISREG/S_ISDIR must not bless an
+    # alias or special file as an ordinary database path.
     if (
-        type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or stat.S_IFMT is not _ORIGINAL_STAT_IFMT
+        or type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
         or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
         or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
     ):
