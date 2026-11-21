@@ -1,5 +1,7 @@
 """Bound Planner's in-memory admission/epoch before user-defined callbacks."""
 
+import gc
+
 import pytest
 
 from ark.agency import PlanConflictError, PlanGraph, PlanStep, ToolCall
@@ -68,7 +70,7 @@ def test_plan_epoch_refuses_executable_identifier_before_equality() -> None:
 def test_status_epoch_refuses_executable_record_before_iterating() -> None:
     graph = PlanGraph((_step(),))
     hostile = CallbackProbe()
-    graph._status_epoch = (hostile,)
+    object.__setattr__(graph, "_status_epoch", (hostile,))
     with pytest.raises(PlanConflictError, match="status mapping"):
         graph.statuses()
     assert hostile.events == []
@@ -77,8 +79,10 @@ def test_status_epoch_refuses_executable_record_before_iterating() -> None:
 def test_status_epoch_refuses_executable_identifier_before_hash() -> None:
     graph = PlanGraph((_step(),))
     hostile = CallbackProbe()
-    existing = graph._status.pop("a")
-    graph._status[hostile] = existing
+    referents = gc.get_referents(graph._status)
+    assert len(referents) == 1 and type(referents[0]) is dict
+    existing = referents[0].pop("a")
+    referents[0][hostile] = existing
     hostile.events.clear()
     with pytest.raises(PlanConflictError, match="status mapping"):
         graph.statuses()
