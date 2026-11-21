@@ -175,11 +175,30 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
         or ".." in path.parts
         or len(str(path)) > 4096
         or path.name in ("", ".", "..")
-        or path.exists()
-        or path.is_symlink()
-        or not path.parent.is_dir()
+    ):
+        raise ValueError("authorization packet output must be a new non-aliased file")
+    # Inspect ancestors with no-follow metadata before any operation that
+    # follows a path. Then lstat the final leaf: Path.exists() can report
+    # False for a dangling Windows reparse point even though an entry exists.
+    if _has_reparse_ancestor(path):
+        raise ValueError("authorization packet output must be a new non-aliased file")
+    try:
+        leaf_info = path.lstat()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        raise ValueError(
+            "authorization packet output must be a new non-aliased file"
+        ) from exc
+    else:
+        # Validate the pinned reparse metadata even though every existing
+        # leaf is denied. This catches dangling junction/reparse entries
+        # before exclusive create can traverse or interact with them.
+        _is_reparse_point(leaf_info)
+        raise ValueError("authorization packet output must be a new non-aliased file")
+    if (
+        not path.parent.is_dir()
         or any(parent.is_symlink() for parent in path.parents)
-        or _has_reparse_ancestor(path)
     ):
         raise ValueError("authorization packet output must be a new non-aliased file")
     # A serializer callback must not make the reviewed JSON tree differ
