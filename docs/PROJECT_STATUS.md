@@ -1,3 +1,50 @@
+# LATEST — ARK AI Run1057: five non-UI regression rebases
+
+**Saved at (Asia/Tokyo/JST): 2026-11-21T16:46:59+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/run1057-personal-context-crash-fixtures` / [Draft PR #170](https://github.com/Iam-2squared/ark-ai/pull/170), targeting `research/jarvis-foundations` (Draft PR #8). **Work-basis exact HEADs:** PR #8 parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`; gated PR #5 parent `c0ec757c9cdd240886d0008e3faec06beef8638b`. **Checkpoint write-basis HEAD:** `8bcdba2a58813ed921374de876c52c327b26f4c5`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified by the subsequent live branch read; this tracked file cannot embed its own resulting SHA.
+
+**Protected refs:** `main` `7a843f17eb96ed13d66f23b58b06406b3002e405` unchanged. [Draft PR #5](https://github.com/Iam-2squared/ark-ai/pull/5) remains OPEN/DRAFT/UNMERGED at `c0ec757c9cdd240886d0008e3faec06beef8638b`. [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8) remains OPEN/DRAFT/UNMERGED at `4628e8cf6b38b7826bbe699431b6040890dd6e7a`. Paused [Draft PR #9](https://github.com/Iam-2squared/ark-ai/pull/9) remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`, untouched. UI/frontend work remains PAUSED.
+
+## NEW — this invocation
+
+Five isolated, non-UI regression packages were rebased through the normal GitHub Contents API onto the latest observed parent heads. All are OPEN/DRAFT/UNMERGED; no package has been integrated into PR #8 or PR #5 yet.
+
+1. **PR #170 — Personal Context replay crash + proactive WAL race fixtures.** Branch `research/run1057-personal-context-crash-fixtures`; code head before this checkpoint `8bcdba2a58813ed921374de876c52c327b26f4c5`; parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`. Test-only. Original source PR #164 head `73d9509688e7d8d72b4ac7d87cf54792ad0d5c44`, CI run `44877053408` / run 6877 **GREEN 6/6**. Rebased code-head CI run `44881622729` / run 6884 was **IN PROGRESS** at last observation; this checkpoint-only documentation commit changes the PR head and requires the final-head CI result to be checked separately.
+2. **PR #171 — Personal Context replay-ledger Windows reparse admission.** Branch `research/run1057-personal-context-reparse-admission`; head `1fedef3a45d10ef67b9e657688c8f20114ec2dd0`; parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`. Original source PR #165 head `b3682ac8b7f487f72f7629f70c008f5e648b58c8`, CI run `44877361487` / run 6878 **GREEN 6/6**. Rebased CI run `44881652597` / run 6885 was **IN PROGRESS**.
+3. **PR #172 — Planner journal Windows reparse admission.** Branch `research/run1057-planner-journal-reparse-admission`; head `483ddd80b19435b1bdf626c4d99def3b3d0e1a12`; parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`. Original source PR #167 head `8452e7f057b7bfde4c9f120f49dbfa3f6710b134`, CI run `44877445463` / run 6880 **GREEN 6/6**. Rebased CI run `44881681354` / run 6886 was **IN PROGRESS**.
+4. **PR #173 — ActionAudit Windows reparse admission.** Branch `research/run1057-action-audit-reparse-admission`; head `fd5accffb40da7db8d20e4c79b2556d68f7ac450`; parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`. Original source PR #168 head `76a90dd2cb2bfe69c07b4ede80b6eaad61bebe3d`, CI run `44877557891` / run 6881 **GREEN 6/6**. Rebased CI run `44881733172` / run 6887 was **QUEUED**.
+5. **PR #174 — V3 preflight numeric-subclass + cross-binding regressions.** Branch `research/run1057-v3-preflight-boundary-regressions`; head `bb0657d1e793d824c8ff2d5274a7e01891297914`; parent `c0ec757c9cdd240886d0008e3faec06beef8638b`. Validation-only. Original source PR #166 head `7cb189502b96c4e1da3bf3770f323cd2d9acf447`, run 6879 **GREEN 6/6**; source PR #169 head `cf2d551d21b7b225d857687aa1342126eaa5314a`, run 6882 **GREEN 6/6**. Combined rebased CI run `44881766804` / run 6888 was **QUEUED**.
+
+## Tests / CI / evidence
+
+- Current PR #8 parent `4628e8cf6b38b7826bbe699431b6040890dd6e7a`: run `44877962075` / run 6883 **GREEN 6/6**.
+- Current PR #5 parent `c0ec757c9cdd240886d0008e3faec06beef8638b`: run `44876842060` / run 6876 **GREEN 6/6**.
+- Original exact-child CI runs 6877, 6878, 6880, 6881, 6879 and 6882 were verified **GREEN 6/6**. These validate only their original child heads and do not transfer to rebased heads.
+- New rebased runs 6884–6888: IN PROGRESS/QUEUED as stated above. No local pytest/Ruff PASS is claimed. No PASS is transferred across a rebase or a different exact HEAD.
+
+## Overall ARK state
+
+V1/V2/Local UI/Launcher evidence remains frozen and unchanged. PR #8 and PR #5 remain isolated Draft branches. Five new non-UI rebased child PRs are awaiting exact-head CI. PR #9 remains paused and untouched. **ARK/JARVIS remains NOT_PASSED.** No main merge or later milestone PASS is declared.
+
+## Frozen contracts / blockers / authorization boundaries
+
+Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1, ActionAudit v1 schema/event contract, V3 Contract 1 semantics/hash, V1/V2/Local UI/Launcher evidence and the protected V2 evaluation boundary remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work or main merge occurred. No trusted-clock, authenticated-consent, independent-custody, cross-store atomicity, external-effect, human-review, dataset/file-hash or runtime-identity claim was fabricated. PR #5 and PR #8 remain Draft/unmerged.
+
+## Next plan / 今後の方針
+
+1. Check exact-head CI for PRs #170–#174 once each; do not poll repeatedly. If any fails, inspect the failing job and make only the smallest semantics-preserving fix on that isolated branch.
+2. Integrate at most one exact-head-GREEN child into its isolated parent at a time, after live parent/child ref checks; require fresh resulting-parent CI before the next integration. Rebase sibling children after any parent movement.
+3. Continue Memory WAL/SHM, CAS/ABA, expiry/COMMIT-UNKNOWN and coherent-snapshot work; Planner terminal/restart recovery; exact ToolRegistry/PermissionGate identity; restart-safe authorization and audit-before-action; proactive occurrence/replay; privacy-safe Personal Context; Observation synthetic fixture lifecycle.
+4. Continue free-only V3 approval/path/identity/reproducibility guards without opening protected V2 evaluation, generating a Candidate or changing Contract 1.
+5. Keep UI/frontend work paused; do not modify PR #9 or frozen Local UI evidence.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI Run1056: exact-head integrations and six isolated non-UI follow-ups
 
 **Saved at (Asia/Tokyo/JST): 2026-11-21T15:56:25+09:00.** Reporting/checkpoint timestamp only; not trusted time, consent, authorization, retention, scheduler, action, custody or provenance evidence. **Overall ARK/JARVIS: NOT_PASSED.**
