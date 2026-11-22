@@ -16,7 +16,7 @@ The implementation compared `info_epoch[2:]` and `path_epoch[2:]`, which include
 ## Repair
 
 - Add a pure metadata comparison helper.
-- On Windows, ignore device/inode and ctime differences between DirEntry and Path observations, but still require mode, size, mtime and link-count agreement.
+- On Windows, ignore device/inode and ctime differences between DirEntry and Path observations, but still require mode, size and mtime agreement; Windows link-count observations are excluded as nonportable.
 - On POSIX, retain the complete device/inode/mode/size/mtime/ctime/link-count equality check.
 - Keep the separate Path-derived epoch recheck, so the accepted path metadata must remain stable against itself.
 - Replace the test's mutable `identity.os` substitution with direct tests of the platform comparison rule.
