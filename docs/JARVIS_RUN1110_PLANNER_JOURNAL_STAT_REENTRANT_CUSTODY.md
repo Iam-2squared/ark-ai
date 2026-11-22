@@ -1,11 +1,11 @@
-# Run1110 — Planner journal reentrant stat-policy custody rebase
+# Run1111 — Rebased Run1110 Planner journal reentrant stat-policy custody
 
 ## Exact basis
 
 - Parent: Draft PR #8, `research/jarvis-foundations`.
-- Exact parent HEAD: `d08cf2bdbc7cdd3142b4ab3945cacf39d29ca607`.
-- Reapplied from Draft PR #261 exact child HEAD: `8a4fa9bc36d4d13320362ba2e6940699e3472d73`.
-- New child branch: `research/run1110-planner-journal-stat-reentrant-rebase`.
+- Exact parent HEAD: `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
+- Reapplied from Draft PR #265 exact child HEAD: `901c5ce7c1c04375f7df34c8890bb2367f3e37dd`.
+- New child branch: `research/run1111-planner-journal-stat-reentrant-rebase`.
 - Source: `src/ark/agency/planner_journal_review.py`.
 - Synthetic regression suite: `tests/test_planner_journal_stat_predicate_custody_run1110.py`.
 
@@ -27,3 +27,8 @@ No paid/external compute, Candidate, protected V2 evaluation, frozen-contract ch
 
 
 Rebased child CI is required on this exact branch head. The predecessor PR #261 exact-head run #7060 / 45010686261 is GREEN on the previous base only and is not transferred.
+
+
+## Run1111 rebase evidence
+
+The predecessor child PR #265 exact head `901c5ce7c1c04375f7df34c8890bb2367f3e37dd` passed Windows/Linux × Python 3.11–3.13 CI run [45014576110](https://github.com/Iam-2squared/ark-ai/actions/runs/45014576110), 6/6. That result does not transfer to this rebased branch; fresh exact-head CI is required.
