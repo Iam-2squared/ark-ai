@@ -4,7 +4,8 @@ All grants, identities and tokens are synthetic. Token consumption is only
 process-local and never conveys durable consent or dispatch authority.
 """
 
-from threading import Lock
+import sys
+from threading import Event, Thread
 
 import pytest
 
@@ -59,6 +60,56 @@ def _carrier_to_mutate(case, field):
     return token, field.removeprefix("token_")
 
 
+def _run_during_token_lock_wait(gate, operation, mutate):
+    """Pause the real authorize frame before its original lock acquisition."""
+    lock = gate._token_lock
+    lock.acquire()
+    entered = Event()
+    resume = Event()
+    outcomes = []
+    paused = False
+    authorize_code = PermissionGate.authorize.__code__
+
+    def trace(frame, event, _arg):
+        nonlocal paused
+        if (
+            not paused
+            and event == "line"
+            and frame.f_code is authorize_code
+            and frame.f_locals.get("token_lock") is lock
+        ):
+            paused = True
+            entered.set()
+            if not resume.wait(timeout=5):
+                raise AssertionError("token spend did not resume")
+        return trace
+
+    def worker():
+        sys.settrace(trace)
+        try:
+            operation()
+        except Exception as exc:
+            outcomes.append(f"{type(exc).__name__}: {exc}")
+        else:
+            outcomes.append("allowed")
+        finally:
+            sys.settrace(None)
+
+    thread = Thread(target=worker)
+    thread.start()
+    try:
+        assert entered.wait(timeout=5), "authorization did not reach token lock"
+        mutate()
+    finally:
+        resume.set()
+        lock.release()
+        thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert len(outcomes) == 1
+    return outcomes[0]
+
+
+
 @pytest.mark.parametrize("registered", (False, True))
 @pytest.mark.parametrize("phase", ("grants", "spend"))
 @pytest.mark.parametrize("field", (
@@ -88,23 +139,20 @@ def test_equal_value_original_call_or_token_swap_never_spends(
         if phase == "grants":
             mutate()
 
-    class MutatingSpendLock:
-        def __enter__(self):
-            mutate()
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-    if phase == "spend":
-        gate._token_lock = MutatingSpendLock()
-    with pytest.raises(PermissionDenied, match="identity|input changed"):
+    def invoke():
         if registered:
             gate.authorize_registered(
                 registry, call, grants(), now_ms=10, one_shot=token,
             )
         else:
             gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
+
+    if phase == "spend":
+        outcome = _run_during_token_lock_wait(gate, invoke, mutate)
+        assert "identity" in outcome or "input changed" in outcome
+    else:
+        with pytest.raises(PermissionDenied, match="identity|input changed"):
+            invoke()
     assert modified == [True]
     assert gate._consumed_tokens == set()
     assert backend.calls == 0
@@ -128,18 +176,15 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
         if phase == "grants":
             mutate()
 
-    class MutatingSpendLock:
-        def __enter__(self):
-            mutate()
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
+    def invoke():
+        gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
 
     if phase == "spend":
-        gate._token_lock = MutatingSpendLock()
-    with pytest.raises(PermissionDenied, match="input changed"):
-        gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
+        outcome = _run_during_token_lock_wait(gate, invoke, mutate)
+        assert "input changed" in outcome
+    else:
+        with pytest.raises(PermissionDenied, match="input changed"):
+            invoke()
     assert modified == [True]
     assert gate._consumed_tokens == set()
     assert backend.calls == 0
@@ -148,7 +193,6 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
 @pytest.mark.parametrize("registered", (False, True))
 def test_unchanged_policy_still_spends_once_without_dispatch(registered):
     gate, spec, call, grant, token, registry, backend = _case()
-    gate._token_lock = Lock()
     if registered:
         result = gate.authorize_registered(
             registry, call, (grant,), now_ms=10, one_shot=token,
