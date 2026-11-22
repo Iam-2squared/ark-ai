@@ -111,12 +111,12 @@ def test_lookup_mutation_is_denied_before_second_call_digest(
     attempted: list[str] = []
 
     with monkeypatch.context() as patch:
-        def swap_after_lookup(name: str):
+        def swap_after_lookup(self, name: str):
             result = original_get(name)
             _install_dependency(patch, dependency, attempted)
             return result
 
-        patch.setattr(registry, "get", swap_after_lookup)
+        patch.setattr(ToolRegistry, "get", swap_after_lookup)
         with pytest.raises(ValueError, match="registry digest dependencies changed"):
             getattr(registry, operation)(call)
 
