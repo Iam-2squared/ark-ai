@@ -30,14 +30,14 @@ def test_reentrant_same_text_path_replacement_is_denied(
     if stage == "schema":
         def tamper(conn):
             result = original(conn)
-            audit.path = Path(str(original_path))
+            object.__setattr__(audit, "path", Path(str(original_path))
             return result
 
         monkeypatch.setattr(continuity, "_validate_v1_schema", tamper)
     else:
         def tamper(row, *, previous_id):
             result = original(row, previous_id=previous_id)
-            audit.path = Path(str(original_path))
+            object.__setattr__(audit, "path", Path(str(original_path))
             return result
 
         monkeypatch.setattr(continuity, "_row_payload", tamper)
@@ -72,8 +72,8 @@ def test_reentrant_retained_witness_change_is_denied_before_next_row(
 
 def test_bad_source_type_is_rejected_before_open(tmp_path: Path) -> None:
     audit = _audit(tmp_path)
-    audit.path = str(audit.path)
-    with pytest.raises(ActionAuditSchemaError, match="Path source"):
+    object.__setattr__(audit, "path", str(audit.path)
+    with pytest.raises(ActionAuditSchemaError, match="path changed"):
         continuity.review_audit_continuity(audit)
 
 
