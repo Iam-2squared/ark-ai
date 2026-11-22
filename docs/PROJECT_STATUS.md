@@ -1,3 +1,86 @@
+# LATEST — ARK Run1109: repair V3 packet reader; rebase Memory, Planner, Observation and mock-executor evidence
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 19:09:01+09:00.** Reporting/checkpoint time only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `62047e185d4f8b8fef9a94b3f6441ff1b42c307d` (live PR #8 head and branch ref re-read immediately before this checkpoint write). **Checkpoint-result HEAD:** the exact commit SHA returned by this normal GitHub Contents API update; it is reported separately because a commit cannot self-embed its own resulting SHA.
+
+## Overall current ARK state
+
+- Main observed HEAD remains `6e40afb74666b7dfda6560dd5ca619664d7129b7`; main was not changed, rebased or merged.
+- PR #8 remains OPEN/DRAFT/UNMERGED. This checkpoint is on its isolated foundation branch, not main.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `50b97812dd7eb4bcf3ffb816fb543185cf266e3d`; protected V2 final evaluation, paid/external compute and Candidate gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; all new UI/frontend work remains PAUSED and its branch is untouched.
+- V1/V2, Local UI and Launcher/Gate Runner contracts and reviewed evidence remain frozen. Memory v1, Observation Envelope v1, PlanStep/ToolCall v1 and V3 Contract 1 semantics remain unchanged. No later PASS is declared.
+
+## NEW this invocation — five non-UI work packages
+
+1. **V3 detached authorization-packet reader stat-policy repair — Draft PR #259**
+   - Branch `research/run1108-v3-packet-file-review-stat-policy`, exact head `ef1ef60db0e253b87b2d8f091c68b0e4d33d85e4`.
+   - Run #7057 / [45009986226](https://github.com/Iam-2squared/ark-ai/actions/runs/45009986226) exposed one inherited Windows/portable fixture mismatch: the reparse metadata fixture intentionally omitted `st_nlink`, but the reader accessed link count before rejecting the already-detected reparse file. Ruff passed; pytest failed on that AttributeError.
+   - The repair now fails closed on non-regular/reparse metadata before link-count access, while retaining subsequent link, size, ancestry, double-read and hash checks.
+   - Fresh exact-head CI run #7058 / [45010442719](https://github.com/Iam-2squared/ark-ai/actions/runs/45010442719): **GREEN, 6/6 Windows/Linux × Python 3.11–3.13**. PR #5 remains Draft/unmerged; no protected evaluation or Candidate is opened.
+
+2. **Memory SQLite reentrant stat-policy custody rebase — Draft PR #260**
+   - Branch `research/run1109-memory-stat-reentrant-rebase`, exact head `aa98e7f3cfed3b68aab1b0823d6415b59a674b68`, based on exact PR #8 work-basis HEAD `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`.
+   - Reapplies import-original stat module/predicate pins and callback-time checks around path/metadata access, with a fresh synthetic regression module and evidence note. Memory v1 DDL, public API, row/event integrity and CAS semantics are unchanged.
+   - Run #7059 / [45010626772](https://github.com/Iam-2squared/ark-ai/actions/runs/45010626772): IN_PROGRESS at checkpoint observation. Prior-head CI does not transfer.
+
+3. **Planner journal reentrant stat-policy custody rebase — Draft PR #261**
+   - Branch `research/run1109-planner-journal-stat-reentrant-rebase`, exact head `8a4fa9bc36d4d13320362ba2e6940699e3472d73`, based on exact PR #8 work-basis HEAD `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`.
+   - Reapplies import-original stat classifier pins and reentrant checks after ancestor/leaf lstat, missing-leaf, Path.exists, metadata and sidecar callbacks. Replay-only schema/hash chain and ambiguous/UNKNOWN recovered RUNNING behavior remain unchanged; no retry or dispatch authority is added.
+   - Run #7060 / [45010686261](https://github.com/Iam-2squared/ark-ai/actions/runs/45010686261): QUEUED at checkpoint observation.
+
+4. **Observation fixture ingress regression rebase — Draft PR #262**
+   - Branch `research/run1109-observation-fixture-guards-rebase`, exact head `6e114402885d73082b4e126de7c99b2cd58645eb`, based on exact PR #8 work-basis HEAD `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`.
+   - Reapplies synthetic 4 MiB payload budget, exact-budget digest-only, metadata-before-hash and digest-entrypoint substitution tests. Production fixture adapter and Observation Envelope v1 are unchanged; no live capture or private source is read.
+   - Run #7061 / [45010743101](https://github.com/Iam-2squared/ark-ai/actions/runs/45010743101): QUEUED at checkpoint observation.
+
+5. **Disconnected mock executor failure-boundary regression rebase — Draft PR #263**
+   - Branch `research/run1109-mock-executor-failure-rebase`, exact head `d7ea65def2a8eecd28695f309bb5c86877e2f951`, based on exact PR #8 work-basis HEAD `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`.
+   - Reapplies three synthetic tests for durable-first WRITE replay rejection, missing occurrence-store refusal before gate/audit/mock, and ambiguous completion-audit failure without retry. Production executor and frozen contracts are unchanged; exact in-process MockToolBackend only.
+   - Run #7062 / [45010872740](https://github.com/Iam-2squared/ark-ai/actions/runs/45010872740): QUEUED at checkpoint observation.
+
+## Tests / CI / evidence
+
+- PR #8 work-basis HEAD `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`: exact-head CI run #7052 / [45005645847](https://github.com/Iam-2squared/ark-ai/actions/runs/45005645847) **GREEN, 6/6**.
+- PR #259 repaired exact head: run #7058 / [45010442719](https://github.com/Iam-2squared/ark-ai/actions/runs/45010442719) **GREEN, 6/6**. Its prior run #7057 is recorded as FAIL due to the fixture-ordering issue above; the new exact-head run is the relevant evidence.
+- Existing independent child PRs #256–#258 remain Draft and are not integrated; current run observations:
+  - PR #256, exact head `bd0ddc69df2790ba025d55fce8ad482d66dc277c`: run #7054 / 45009567096 IN_PROGRESS
+  - PR #257, exact head `c47aa90f14e933229cf03295321b60cafeda92d4`: run #7055 / 45009601750 IN_PROGRESS
+  - PR #258, exact head `f3cef4f83c5fddb994fac4b5e61695f1f6486af6`: run #7056 / 45009636570 IN_PROGRESS
+- PR #260 run #7059 is IN_PROGRESS; PR #261 run #7060 is QUEUED; PR #262 run #7061 is QUEUED; PR #263 run #7062 is QUEUED. These are exact child heads; no result is claimed before completion.
+- No local pytest/Ruff execution, physical-PC test, real-model validation, paid runtime or external-service validation was performed in this invocation.
+
+## Frozen contracts / evidence unchanged
+
+- V1/V2/Local UI/Launcher/Gate Runner contracts and reviewed evidence remain frozen.
+- Memory v1 DDL/API and row/event/CAS semantics, Observation Envelope v1, PlanStep/ToolCall v1 and V3 Contract 1 are unchanged.
+- PR #5, PR #8 and PR #9 remain OPEN/DRAFT/UNMERGED. UI remains PAUSED; PR #9 and its branch are untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, real Candidate adapter/weights/promotion, protected evaluation opening, external dispatch, destructive operation, physical-PC action, frozen-contract change or main merge.
+- No trusted-clock, authenticated-consent, independent custody, atomic directory-handle, TOCTOU, cross-store atomicity, human-review, dataset/file-hash, runtime-identity or exactly-once external-effect claim was fabricated.
+
+## Blockers / integration boundary
+
+- PR #5 remains pre-paid-compute and **NOT_PASSED**. Immutable Hub revision/materialized model and tokenizer hashes, human-approved dataset decisions, exact runtime/toolchain identities, target device/driver evidence, billing/cost-cap evidence and explicit spending authorization remain unresolved; none was guessed or opened.
+- Child PRs #256–#263 remain isolated. Their CI results are head-specific. The PR #8 checkpoint write will advance the parent branch beyond the work-basis HEAD above; each child must be re-read and rebased onto the then-current PR #8 HEAD before integration. No child result transfers across a rebase.
+- Local pathname metadata checks remain lexical/dependency-identity admission, not atomic directory-handle custody, a sandbox or TOCTOU protection. Mock executor tests do not prove cross-store atomicity or exactly-once external effects. Observation fixtures do not authenticate capture source/consent. No live private database or personal data was opened.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PRs #256–#263; repair any failure with the smallest semantics-preserving change and do not launch duplicate equivalent workflows.
+2. After a child is GREEN, re-read live PR #8 HEAD, rebase that child onto the exact current parent, and require fresh exact-head CI before integration. Keep PR #8 Draft/unmerged; do not merge main.
+3. Continue Memory WAL/SHM last-close, event-frontier, CAS/ABA, expiry and COMMIT-UNKNOWN manual-only recovery; preserve coherent snapshots and privacy.
+4. Continue Planner restart recovery, terminal propagation, ambiguous RUNNING quarantine and durable-first mock execution; no automatic retry or external dispatch.
+5. Continue ToolRegistry/PermissionGate exact identity, durable occurrence/replay, Personal Context revocation, Observation byte/metadata fixtures, proactive scheduler state and startup readiness with no notification/dispatch authority.
+6. Continue free-only V3 approval/path/identity/reproducibility guards while keeping PR #5's protected evaluation, Candidate and paid-compute gates closed.
+7. UI remains PAUSED; PR #9 and all Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1107: four local-first path-policy custody packages; exact-head CI running
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 18:02:14+09:00.** Reporting/checkpoint time only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
