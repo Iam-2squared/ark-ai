@@ -47,7 +47,7 @@ def test_stat_predicate_replacement_during_lstat_is_rejected(
     def mutate_after_lstat(path: Path):
         result = original_lstat(path)
         touched.append(path)
-        stat.S_ISDIR = lambda _mode: True
+        patch.setattr(stat, "S_ISDIR", lambda _mode: True)
         return result
 
     with monkeypatch.context() as patch:
