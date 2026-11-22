@@ -152,7 +152,7 @@ def test_source_retarget_during_scan_is_denied(tmp_path, monkeypatch):
 
     def retarget(conn):
         result = original(conn)
-        ledger._path = tmp_path / "other.db"
+        object.__setattr__(ledger, "_path", tmp_path / "other.db")
         return result
 
     monkeypatch.setattr(replay, "_inspect", retarget)
