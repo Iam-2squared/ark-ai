@@ -125,7 +125,7 @@ def test_registry_callback_cannot_shadow_instance_gate_method():
         monkeypatch.setattr(registry, "bind", substituted_bind)
         with pytest.raises(
             DisconnectedReadPreflightRejected,
-            match="registered READ preflight denied",
+            match="READ grant preflight denied",
         ):
             _preview(items)
     finally:
