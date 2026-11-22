@@ -80,7 +80,10 @@ def test_equal_path_replacement_between_reviews_is_denied(
         calls += 1
         if calls == 1:
             previous = getattr(target, attr)
-            setattr(target, attr, Path(str(previous)))
+            if source_index == 4:
+                object.__setattr__(target, attr, Path(str(previous)))
+            else:
+                setattr(target, attr, Path(str(previous)))
         return result
 
     monkeypatch.setattr(module, hook, retarget)
