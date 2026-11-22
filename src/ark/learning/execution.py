@@ -16,14 +16,23 @@ from typing import Literal
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_OS = os
+_ORIGINAL_FSTAT = os.fstat
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISREG = stat.S_ISREG
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
 
 
-def _require_original_stat_policy() -> None:
+def _require_original_stat_policy(
+    _original_os: object = _ORIGINAL_OS,
+    _original_fstat: object = _ORIGINAL_FSTAT,
+) -> None:
     if (
-        stat is not _ORIGINAL_STAT
+        os is not _original_os
+        or _ORIGINAL_OS is not _original_os
+        or _ORIGINAL_FSTAT is not _original_fstat
+        or _original_os.fstat is not _original_fstat
+        or stat is not _ORIGINAL_STAT
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
@@ -311,7 +320,7 @@ def load_snapshot(path: Path) -> dict:
         _require_original_stat_policy()
         with source.open("rb") as handle:
             _require_original_stat_policy()
-            initial_stat = os.fstat(handle.fileno())
+            initial_stat = _ORIGINAL_FSTAT(handle.fileno())
             if (
                 not _is_regular_file(initial_stat)
                 or _is_reparse_point(initial_stat)
@@ -350,7 +359,7 @@ def load_snapshot(path: Path) -> dict:
         _require_original_stat_policy()
         with source.open("rb") as handle:
             _require_original_stat_policy()
-            final_stat = os.fstat(handle.fileno())
+            final_stat = _ORIGINAL_FSTAT(handle.fileno())
             if (
                 not _is_regular_file(final_path_stat)
                 or _is_reparse_point(final_path_stat)
