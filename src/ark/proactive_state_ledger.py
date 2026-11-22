@@ -89,6 +89,11 @@ def _require_original_protocol() -> None:
         or _TABLE is not _ORIGINAL_TABLE
         or _HEX is not _ORIGINAL_HEX
         or _DECISIONS is not _ORIGINAL_DECISIONS
+        or _POLICY_FIELDS is not _ORIGINAL_POLICY_VECTORS[0]
+        or _POLICY_METHODS is not _ORIGINAL_POLICY_VECTORS[1]
+        or _STATE_FIELDS is not _ORIGINAL_STATE_VECTORS[0]
+        or _STATE_DENIALS is not _ORIGINAL_STATE_VECTORS[1]
+        or _STATE_HOOKS is not _ORIGINAL_STATE_VECTORS[2]
         or any(type(value) is not int for value in (_MAX, _MAX_ROWS, _MAX_WINDOW_ITEMS))
         or (_MAX, _MAX_ROWS, _MAX_WINDOW_ITEMS) != _ORIGINAL_BOUNDS
     ):
@@ -114,6 +119,16 @@ def _exact_text(name: str, value: object) -> None:
         ord(character) < 32 or ord(character) == 127 for character in value
     ):
         raise SyntheticProactiveStateRejected(f"{name} contains a control delimiter")
+    if any(
+        0x80 <= point <= 0x9F
+        or point in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
+        or 0x200B <= point <= 0x200D
+        or 0x202A <= point <= 0x202E
+        or point in (0x2028, 0x2029, 0xFEFF)
+        or 0x2060 <= point <= 0x206F
+        for point in map(ord, value)
+    ):
+        raise SyntheticProactiveStateRejected(f"{name} contains a Unicode formatting control")
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeError as exc:
@@ -181,12 +196,15 @@ _POLICY_FIELDS = (
 _POLICY_METHODS = ("__init__", "__new__", "__getattribute__", "__getattr__", "__post_init__", "identity")
 _ORIGINAL_POLICY_FIELDS = tuple(vars(_POLICY_TYPE)[name] for name in _POLICY_FIELDS)
 _ORIGINAL_POLICY_METHODS = tuple(vars(_POLICY_TYPE).get(name) for name in _POLICY_METHODS)
+_ORIGINAL_POLICY_VECTORS = (_POLICY_FIELDS, _POLICY_METHODS)
 
 
 def _require_original_policy_contract() -> None:
     _require_original_protocol()
     if (
         SyntheticProactivePolicy is not _POLICY_TYPE
+        or _POLICY_FIELDS is not _ORIGINAL_POLICY_VECTORS[0]
+        or _POLICY_METHODS is not _ORIGINAL_POLICY_VECTORS[1]
         or any(
             vars(_POLICY_TYPE).get(name) is not original
             for names, originals in (
@@ -261,12 +279,16 @@ _STATE_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_STATE_FIELDS = tuple(vars(_STATE_TYPE)[name] for name in _STATE_FIELDS)
 _ORIGINAL_STATE_DENIALS = tuple(vars(_STATE_TYPE)[name] for name in _STATE_DENIALS)
 _ORIGINAL_STATE_HOOKS = tuple(vars(_STATE_TYPE).get(name) for name in _STATE_HOOKS)
+_ORIGINAL_STATE_VECTORS = (_STATE_FIELDS, _STATE_DENIALS, _STATE_HOOKS)
 
 
 def _require_original_state_type() -> None:
     _require_original_protocol()
     if (
         SyntheticProactiveState is not _STATE_TYPE
+        or _STATE_FIELDS is not _ORIGINAL_STATE_VECTORS[0]
+        or _STATE_DENIALS is not _ORIGINAL_STATE_VECTORS[1]
+        or _STATE_HOOKS is not _ORIGINAL_STATE_VECTORS[2]
         or any(
             vars(_STATE_TYPE).get(name) is not original
             for names, originals in (
