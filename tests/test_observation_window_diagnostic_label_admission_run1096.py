@@ -12,7 +12,7 @@ from ark.observation_window_review import ObservationWindowReview
 from ark.observations import ObservationEnvelope, ObservationKind
 
 
-def _envelope(**overrides: str) -> ObservationEnvelope:
+def _envelope(**overrides: object) -> ObservationEnvelope:
     values = {
         "kind": ObservationKind.TEXT,
         "source_id": "synthetic-source",
