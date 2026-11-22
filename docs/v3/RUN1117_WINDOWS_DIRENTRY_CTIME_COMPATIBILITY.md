@@ -37,6 +37,19 @@ The follow-up narrows the cross-API comparison according to entry type:
 
 Added `tests/v3/test_windows_direntry_metadata_compat_run1118.py` to cover directory/file field selection, type/mtime/size drift, complete POSIX equality and classifier replacement. The existing nested-tree replacement and root-metadata tests remain enabled.
 
+## Run1120 correction — Windows directory mtime is not a cross-API identity field
+
+The exact-head run [45059036193](https://github.com/Iam-2squared/ark-ai/actions/runs/45059036193) passed all three Ubuntu jobs and failed all three Windows jobs. The inspected Windows Python 3.11 job [137320588285](https://github.com/Iam-2squared/ark-ai/actions/runs/45059036193) reported 3 failures, 1,604 passes and 7 skips. Two stable nested-directory fixtures were rejected because `DirEntry.stat(follow_symlinks=False)` and `Path.lstat()` returned directory mtime values differing by approximately 1.6–5.0 ms. The third failure (`assert swapped`) was secondary: the premature metadata rejection occurred before the replacement fixture reached its intended hash callback.
+
+Correction:
+
+- On Windows, compare directory entry type across the two metadata APIs, but do not compare directory mtime across those APIs.
+- Keep regular-file type, byte-size and mtime comparison unchanged.
+- Keep the Path-derived directory epoch complete and exact. It is checked against itself before traversal, before and after each directory enumeration, when a queued directory is opened for enumeration, and again during the post-hash snapshot assertion. The root/nested replacement tests remain enabled.
+- POSIX retains complete cross-API epoch equality. No-follow DirEntry classification, reparse rejection, budgets, file hashing, path-self epoch checks, and the explicit non-atomic/hostile-writer limitation remain unchanged.
+
+This does not add a timestamp tolerance or claim Windows directory object identity across metadata APIs. It removes only a cross-API field that produced false denials; exact Path-to-Path epoch checks remain the mutation detector after the path observation is captured.
+
 ## Limits and next evidence
 
 This remains best-effort local filesystem admission, not atomic dirfd custody or protection against a hostile concurrent writer. The directory-specific comparison does not claim cross-API file-ID equality on Windows. No model download, GPU, training, Candidate, protected V2 evaluation, paid service, credential, hardware action or main merge. Fresh exact-head Windows/Linux × Python 3.11–3.13 CI is required; this report does not claim PASS. PR #294 and PR #295 remain Draft; PR #5 remains gated Draft/unmerged. ARK/JARVIS remains NOT_PASSED.

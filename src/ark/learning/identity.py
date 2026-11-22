@@ -241,15 +241,15 @@ def _entry_metadata_matches_path(
         return False
     if windows:
         # Windows FindFirstFile/handle metadata can disagree on file IDs,
-        # ctime, link counts, permission bits and directory allocation size.
-        # Keep the file type and mtime for every entry; regular files also keep
-        # size. A directory's own Path epoch is rechecked against itself before
-        # traversal and again after enumeration, so its allocation size is not
-        # used as cross-API identity evidence.
+        # ctime, link counts, permission bits, directory allocation size and
+        # directory mtime. Compare only the no-follow entry type for directories;
+        # the Path-derived directory epoch is captured and rechecked exactly
+        # before/after enumeration and after hashing. Regular files retain type,
+        # byte-size and mtime comparison across the two metadata APIs.
         if _ORIGINAL_S_IFMT(entry_epoch[2]) != _ORIGINAL_S_IFMT(path_epoch[2]):
             return False
         if is_dir:
-            return entry_epoch[4] == path_epoch[4]
+            return True
         return entry_epoch[3:5] == path_epoch[3:5]
     return entry_epoch == path_epoch
 
