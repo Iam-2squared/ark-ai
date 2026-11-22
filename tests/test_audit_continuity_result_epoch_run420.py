@@ -82,7 +82,7 @@ def test_returned_audit_witness_rejects_late_constructor_side_effect(
                 self, "chain_sha256", _clone(self.chain_sha256)
             )
         else:
-            object.__setattr__(audit, "path", Path(str(original_path))
+            object.__setattr__(audit, "path", Path(str(original_path)))
 
     monkeypatch.setattr(witness_type, "__post_init__", tampered)
     # The original validator is now statically pinned BEFORE any private
