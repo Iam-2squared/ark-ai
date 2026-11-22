@@ -11,6 +11,7 @@ import re
 import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .execution import canonical_json, sha256_bytes
 
@@ -18,6 +19,8 @@ _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_OS = os
+_ORIGINAL_SCANDIR = os.scandir
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_S_ISREG = stat.S_ISREG
@@ -33,10 +36,17 @@ def _require_native_path(value: object, label: str) -> Path:
     return value
 
 
-def _require_original_reparse_point_policy() -> None:
-    """Keep stat classification and the Windows reparse bit import-original."""
+def _require_original_reparse_point_policy(
+    _original_os: Any = _ORIGINAL_OS,
+    _original_scandir: Any = _ORIGINAL_SCANDIR,
+) -> None:
+    """Keep no-follow enumeration and stat classification import-original."""
     if (
-        stat is not _ORIGINAL_STAT
+        os is not _original_os
+        or _ORIGINAL_OS is not _original_os
+        or _ORIGINAL_SCANDIR is not _original_scandir
+        or _original_os.scandir is not _original_scandir
+        or stat is not _ORIGINAL_STAT
         or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
@@ -273,7 +283,11 @@ def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     )
 
 
-def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...]], ...]:
+def _snapshot_entries(
+    root: Path,
+    *,
+    _scandir: Any = _ORIGINAL_SCANDIR,
+) -> tuple[tuple[str, Path, bool, tuple[int, ...]], ...]:
     """Bound a local manifest without descending through symlink directories.
 
     Each directory entry is classified from a no-follow DirEntry.stat result
@@ -309,7 +323,7 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
             raise ValueError("snapshot directory changed before enumeration")
         _require_original_reparse_point_policy()
         try:
-            with os.scandir(directory) as children:
+            with _scandir(directory) as children:
                 _require_original_reparse_point_policy()
                 for entry in children:
                     if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
