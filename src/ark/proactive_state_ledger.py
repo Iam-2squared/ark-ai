@@ -526,12 +526,16 @@ def _safe_path(path: Path) -> None:
 class SyntheticProactiveStateLedger:
     """SQLite CAS state for proposal eligibility; no timer or notification."""
 
+    __slots__ = ("_path",)
+
     def __init__(self, path: Path) -> None:
+        _require_exact_ledger(self, initialized=False)
         _require_original_protocol()
         if type(path) is not type(Path(".")):
             raise TypeError("proactive state path must be an exact Path")
         _safe_path(path)
-        self.path = path
+        object.__setattr__(self, "_path", path)
+        _require_exact_ledger(self)
         with closing(_ORIGINAL_CONNECT(path, timeout=10, isolation_level=None)) as conn:
             _require_original_protocol()
             _safe_path(path)
@@ -555,7 +559,19 @@ class SyntheticProactiveStateLedger:
                 raise
         _require_original_protocol()
 
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("proactive state ledger identity is immutable")
+
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError("proactive state ledger identity is immutable")
+
+    @property
+    def path(self) -> Path:
+        _require_exact_ledger(self)
+        return object.__getattribute__(self, "_path")
+
     def _connect(self, *, read_only: bool) -> sqlite3.Connection:
+        _require_exact_ledger(self)
         _require_original_protocol()
         path = self.path
         _safe_path(path)
@@ -595,6 +611,7 @@ class SyntheticProactiveStateLedger:
     def read_state(
         self, policy: SyntheticProactivePolicy,
     ) -> SyntheticProactiveState | None:
+        _require_exact_ledger(self)
         scope, policy_digest, policy_values = self._policy_identity(policy)
         path_epoch = self.path
         with closing(self._connect(read_only=True)) as conn:
@@ -635,6 +652,7 @@ class SyntheticProactiveStateLedger:
         now_ms: int,
         expected_revision: int,
     ) -> SyntheticProactiveState:
+        _require_exact_ledger(self)
         scope, policy_digest, policy_values = self._policy_identity(policy)
         if type(observation_digest) is not str or not _HEX.fullmatch(observation_digest):
             raise SyntheticProactiveStateRejected("canonical observation digest required")
@@ -775,6 +793,7 @@ class SyntheticProactiveStateLedger:
                 raise
 
     def count(self) -> int:
+        _require_exact_ledger(self)
         path_epoch = self.path
         with closing(self._connect(read_only=True)) as conn:
             if self.path is not path_epoch:
@@ -797,3 +816,31 @@ class SyntheticProactiveStateLedger:
             except BaseException:
                 conn.rollback()
                 raise
+
+
+
+def _require_exact_ledger(
+    instance: SyntheticProactiveStateLedger,
+    *,
+    initialized: bool = True,
+) -> None:
+    """Reject subclasses and mutable instance dictionaries before ledger I/O."""
+    if type(instance) is not SyntheticProactiveStateLedger:
+        raise SyntheticProactiveStateRejected(
+            "an exact proactive state ledger instance is required"
+        )
+    if hasattr(instance, "__dict__"):
+        raise SyntheticProactiveStateRejected(
+            "proactive state ledger instance dictionary is not permitted"
+        )
+    if initialized:
+        try:
+            path = object.__getattribute__(instance, "_path")
+        except AttributeError as exc:
+            raise SyntheticProactiveStateRejected(
+                "proactive state ledger path is not initialized"
+            ) from exc
+        if type(path) is not type(Path(".")):
+            raise SyntheticProactiveStateRejected(
+                "proactive state ledger path identity is invalid"
+            )
