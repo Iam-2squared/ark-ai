@@ -63,10 +63,9 @@ def test_substituted_denial_descriptor_is_rejected_even_when_false(
     assert items[2]._consumed_tokens == set()
 
 
-@pytest.mark.parametrize("location", ("class", "instance"))
 @pytest.mark.parametrize("style", ("forged", "delegating"))
-def test_forged_registered_gate_method_never_counts_as_verified_grant(
-    monkeypatch, location, style,
+def test_class_replaced_registered_gate_method_never_counts_as_verified_grant(
+    monkeypatch, style,
 ):
     items = _setup()
     _plan, registry, gate, _grants, backend = items
@@ -79,15 +78,7 @@ def test_forged_registered_gate_method_never_counts_as_verified_grant(
             self, reg, call, grants, now_ms=now_ms, one_shot=one_shot,
         )
 
-    if location == "class":
-        monkeypatch.setattr(PermissionGate, "authorize_registered", alternate)
-    else:
-        monkeypatch.setattr(
-            gate, "authorize_registered",
-            lambda reg, call, grants, *, now_ms, one_shot=None: alternate(
-                gate, reg, call, grants, now_ms=now_ms, one_shot=one_shot,
-            ),
-        )
+    monkeypatch.setattr(PermissionGate, "authorize_registered", alternate)
     with pytest.raises(
         mod.DisconnectedReadPreflightRejected,
         match="registered READ gate implementation changed",
@@ -129,3 +120,16 @@ def test_unmodified_preflight_still_has_no_dispatch_or_grants_to_execute():
     assert result.automatic_replay_authorized is False
     assert items[-1].calls == 0
     assert items[2]._consumed_tokens == set()
+
+
+def test_instance_gate_method_shadow_is_denied_without_preflight_authority():
+    items = _setup()
+    gate = items[2]
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize_registered = lambda *_args, **_kwargs: None
+
+    result = _run(items)
+    assert result.ready_step_ids == ("a",)
+    assert result.dispatch_authorized is False
+    assert items[-1].calls == 0
+    assert gate._consumed_tokens == set()
