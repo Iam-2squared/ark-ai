@@ -538,7 +538,6 @@ class DisconnectedContextReplayLedger:
     def verify_retained_prefix(
         self, retained: OfflineContextReplayWitness,
     ) -> OfflineContextReplayWitness:
-        _require_exact_replay_ledger(self)
         """Review a retained checkpoint against one complete local read snapshot.
 
         Unlike comparing only the latest tip, a retained prefix may remain
@@ -546,6 +545,7 @@ class DisconnectedContextReplayLedger:
         authorized or automatically replayed. The retained checkpoint must
         come from outside this SQLite database to detect rewritten history.
         """
+        _require_exact_replay_ledger(self)
         prior = _check_witness(retained)
         retained_epoch = (retained.count, retained.chain_sha256)
         path_epoch = self._path
