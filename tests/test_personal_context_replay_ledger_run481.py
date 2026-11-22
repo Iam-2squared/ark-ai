@@ -238,3 +238,30 @@ def test_configured_capacity_prevents_another_reservation(tmp_path, monkeypatch)
         ):
             db.reserve(_binding(2), retained=first.witness)
     assert db.witness() == first.witness
+
+def test_replay_ledger_path_slot_cannot_be_replaced_or_shadowed(tmp_path):
+    ledger = _ledger(tmp_path)
+    original = ledger._path
+    alternate = tmp_path / "alternate.db"
+
+    with pytest.raises(AttributeError, match="path is immutable"):
+        ledger._path = alternate
+
+    # A slot data descriptor wins over an equal-named instance-dictionary key.
+    ledger.__dict__["_path"] = alternate
+    assert ledger._path is original
+    assert ledger.witness() == replay.genesis_offline_context_replay_witness()
+    assert not alternate.exists()
+
+
+def test_replay_ledger_rejects_subclass_before_database_creation(tmp_path):
+    class DerivedReplayLedger(replay.DisconnectedContextReplayLedger):
+        pass
+
+    path = tmp_path / "subclass.db"
+    with pytest.raises(
+        replay.OfflineContextReplayRejected,
+        match="exact context replay ledger",
+    ):
+        DerivedReplayLedger(path, create=True)
+    assert not path.exists()
