@@ -35,7 +35,8 @@ def test_windows_directory_comparison_ignores_cross_api_allocation_and_permissio
     path = _epoch(
         mode=stat.S_IFDIR | 0o700,
         size=0,
-        mtime=100,
+        # Directory mtime is not stable across Windows DirEntry/Path APIs.
+        mtime=5_000_100,
         device=9,
         inode=8,
         ctime=900,
@@ -47,18 +48,9 @@ def test_windows_directory_comparison_ignores_cross_api_allocation_and_permissio
     )
 
 
-@pytest.mark.parametrize(
-    ("path_mode", "path_mtime"),
-    (
-        (stat.S_IFREG | 0o644, 100),
-        (stat.S_IFDIR | 0o700, 101),
-    ),
-)
-def test_windows_directory_comparison_rejects_type_or_mtime_drift(
-    path_mode: int, path_mtime: int,
-):
+def test_windows_directory_comparison_rejects_type_drift():
     entry = _epoch(mode=stat.S_IFDIR | 0o755, size=4096, mtime=100)
-    path = _epoch(mode=path_mode, size=0, mtime=path_mtime)
+    path = _epoch(mode=stat.S_IFREG | 0o600, size=0, mtime=100)
 
     assert not identity._entry_metadata_matches_path(
         entry, path, windows=True, is_dir=True,
