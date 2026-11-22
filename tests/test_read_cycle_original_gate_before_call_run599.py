@@ -78,11 +78,13 @@ def test_spoofed_gate_is_never_invoked_by_independent_wave(
         return receipt
 
     monkeypatch.setattr(cycle, "preview_registered_read_plan", preview_then_change)
-    if location == "class":
-        with pytest.raises(
-            cycle.DisconnectedReadCycleRejected,
-            match="READ wave registered gate implementation changed",
-        ):
+    if location == "class" or moment == "during_rebind":
+        expected = (
+            "READ wave registered gate implementation changed"
+            if location == "class"
+            else "READ wave identity recheck failed"
+        )
+        with pytest.raises(cycle.DisconnectedReadCycleRejected, match=expected):
             cycle.simulate_registered_read_cycle(
                 plan, registry, gate, grants, observed_at_ms=100,
             )
