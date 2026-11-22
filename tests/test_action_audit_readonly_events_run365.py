@@ -26,7 +26,7 @@ def test_stale_audit_path_does_not_create_a_replacement(tmp_path):
     audit = SQLiteActionAudit(tmp_path / "real.db", clock_ms=lambda: 123)
     audit.append(_call(), outcome="fixture-pass")
     missing = tmp_path / "absent.db"
-    object.__setattr__(audit, "path", missing
+    object.__setattr__(audit, "path", missing)
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.events()
     assert not missing.exists()
