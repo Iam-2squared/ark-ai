@@ -215,6 +215,15 @@ class PermissionGate:
         object.__setattr__(self, name, value)
 
     def __init__(self) -> None:
+        # Reject a subclass before any instance attribute access: a subclass
+        # may override __getattribute__ and run code during construction.
+        if (
+            PermissionGate is not _ORIGINAL_PERMISSION_GATE
+            or type(self) is not _ORIGINAL_PERMISSION_GATE
+        ):
+            raise PermissionDenied(
+                "authorization requires an exact PermissionGate instance"
+            )
         _require_original_gate_class()
         self._consumed_tokens = frozenset()
         self._token_lock = _ORIGINAL_LOCK()
@@ -770,7 +779,7 @@ def _require_original_gate_class() -> None:
         is not _ORIGINAL_AUTHORIZE_REGISTERED
         or Lock is not _ORIGINAL_LOCK
     ):
-        raise PermissionDenied("PermissionGate instance contract changed")
+        raise PermissionDenied("PermissionGate implementation identity changed")
 
 
 def _assert_gate_instance_epoch(gate: PermissionGate) -> None:
