@@ -1,11 +1,11 @@
-# Run1110 — disconnected mock executor failure-boundary rebase
+# Run1111 — Rebased Run1110 disconnected mock executor failure-boundary regressions
 
 ## Exact basis
 
 - Parent: Draft PR #8, `research/jarvis-foundations`.
-- Exact parent HEAD: `d08cf2bdbc7cdd3142b4ab3945cacf39d29ca607`.
-- Reapplied from Draft PR #263 exact child HEAD: `d7ea65def2a8eecd28695f309bb5c86877e2f951`.
-- New child branch: `research/run1110-mock-executor-failure-rebase`.
+- Exact parent HEAD: `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
+- Reapplied from Draft PR #267 exact child HEAD: `becbcf90630b8588b84cc83ec6633279fb18a502`.
+- New child branch: `research/run1111-mock-executor-failure-rebase`.
 - Existing composition: `src/ark/agency/disconnected_mock_executor.py`.
 - Synthetic regression suite: `tests/test_disconnected_mock_executor_failure_boundaries_run1110.py`.
 
@@ -27,3 +27,8 @@ No paid/external compute, Candidate, protected V2 evaluation, frozen-contract ch
 
 
 Rebased child CI is required on this exact branch head. The predecessor PR #263 exact-head run #7062 / 45010872740 is GREEN on the previous base only and is not transferred.
+
+
+## Run1111 rebase evidence
+
+The predecessor child PR #267 exact head `becbcf90630b8588b84cc83ec6633279fb18a502` passed Windows/Linux × Python 3.11–3.13 CI run [45014684043](https://github.com/Iam-2squared/ark-ai/actions/runs/45014684043), 6/6. That result does not transfer to this rebased branch; fresh exact-head CI is required.
