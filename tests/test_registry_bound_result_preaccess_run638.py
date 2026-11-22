@@ -111,12 +111,12 @@ def test_reentrant_registry_revision_cannot_rebind_result_field(
         executed.append("descriptor invoked")
         raise AssertionError("rebound result field executed")
 
-    def mutate_during_revision(registrations):
+    def mutate_during_revision(cls, registrations):
         result = original_revision(registrations)
         monkeypatch.setattr(BoundAction, "registration", property(rogue))
         return result
 
-    monkeypatch.setattr(registry, "_compute_revision", mutate_during_revision)
+    monkeypatch.setattr(ToolRegistry, "_compute_revision", classmethod(mutate_during_revision))
     with pytest.raises(ValueError, match="bound result constructor changed"):
         registry.bind(call)
     assert executed == []
