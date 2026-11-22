@@ -10,7 +10,7 @@ from ark.learning import execution as mod
 
 
 @pytest.mark.parametrize("target", ("live os.fstat", "captured alias"))
-def test_fstat_substitution_is_denied_before_descriptor_stat(
+def test_fstat_substitution_is_denied_before_file_open(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     target: str,
@@ -18,15 +18,21 @@ def test_fstat_substitution_is_denied_before_descriptor_stat(
     source = tmp_path / "snapshot.json"
     source.write_text('{"authorization":false}', encoding="utf-8")
     calls: list[int] = []
+    open_calls: list[Path] = []
 
     def forbidden(fd: int):
         calls.append(fd)
         raise AssertionError("substituted fstat must not execute")
 
+    def forbidden_open(self: Path, *args, **kwargs):
+        open_calls.append(self)
+        raise AssertionError("snapshot must be rejected before file open")
+
     if target == "live os.fstat":
         monkeypatch.setattr(mod.os, "fstat", forbidden)
     else:
         monkeypatch.setattr(mod, "_ORIGINAL_FSTAT", forbidden)
+    monkeypatch.setattr(Path, "open", forbidden_open)
 
     with pytest.raises(
         ValueError,
@@ -35,6 +41,7 @@ def test_fstat_substitution_is_denied_before_descriptor_stat(
         mod.load_snapshot(source)
 
     assert calls == []
+    assert open_calls == []
 
 
 def test_reentrant_open_cannot_replace_fstat_before_descriptor_inspection(
@@ -53,7 +60,7 @@ def test_reentrant_open_cannot_replace_fstat_before_descriptor_inspection(
     def switched_open(self: Path, *args, **kwargs):
         handle = original_open(self, *args, **kwargs)
         if self == source:
-            monkeypatch.setattr(mod.os, "fstat", forbidden)
+            monkeypatch.setattr(mod, "_ORIGINAL_FSTAT", forbidden)
         return handle
 
     monkeypatch.setattr(Path, "open", switched_open)
