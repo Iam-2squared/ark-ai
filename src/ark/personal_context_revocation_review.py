@@ -46,7 +46,6 @@ _ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
 _ORIGINAL_STAT_S_ISREG = stat.S_ISREG
 
 
-
 class SyntheticContextRevocationRejected(RuntimeError):
     """A local revocation fence cannot safely provide a context projection."""
 
