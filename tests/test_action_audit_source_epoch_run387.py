@@ -32,12 +32,12 @@ def test_event_read_rejects_source_change_during_schema_check(
 
     def changed_schema_check(conn):
         original_validate(conn)
-        audit.path = Path(str(audit.path))
+        object.__setattr__(audit, "path", Path(str(audit.path))
 
     monkeypatch.setattr(audit_module, "_validate_v1_schema", changed_schema_check)
     with pytest.raises(ActionAuditSchemaError, match="source changed"):
         audit.events()
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     monkeypatch.setattr(audit_module, "_validate_v1_schema", original_validate)
     assert len(audit.events()) == int(has_event)
 
@@ -54,13 +54,13 @@ def test_event_read_rejects_source_change_during_readonly_open(
 
     def retargeting_open():
         connection = original_open()
-        audit.path = Path(str(audit.path))
+        object.__setattr__(audit, "path", Path(str(audit.path))
         return connection
 
     monkeypatch.setattr(audit, "_connect_readonly", retargeting_open)
     with pytest.raises(ActionAuditSchemaError, match="source changed"):
         audit.events()
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     monkeypatch.setattr(audit, "_connect_readonly", original_open)
     assert len(audit.events()) == int(has_event)
 
@@ -74,13 +74,13 @@ def test_append_rejects_source_change_while_opening_write_handle(
 
     def retargeting_open(*, create=False):
         connection = original_open(create=create)
-        audit.path = Path(str(audit.path))
+        object.__setattr__(audit, "path", Path(str(audit.path))
         return connection
 
     monkeypatch.setattr(audit, "_connect", retargeting_open)
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(_call(), outcome="fixture")
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     monkeypatch.setattr(audit, "_connect", original_open)
     assert audit.events() == []
     assert audit.append(_call(), outcome="fixture").event_id == 1
@@ -108,7 +108,7 @@ def test_append_rolls_back_when_source_changes_after_insert(tmp_path, monkeypatc
         def execute(self, statement, *args):
             cursor = self._conn.execute(statement, *args)
             if statement.lstrip().startswith("INSERT INTO action_events"):
-                audit.path = Path(str(audit.path))
+                object.__setattr__(audit, "path", Path(str(audit.path))
             return cursor
 
     monkeypatch.setattr(
@@ -117,7 +117,7 @@ def test_append_rolls_back_when_source_changes_after_insert(tmp_path, monkeypatc
     )
     with pytest.raises(ActionAuditSchemaError, match="before commit"):
         audit.append(_call(), outcome="fixture")
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     monkeypatch.setattr(audit, "_connect", original_open)
     assert audit.events() == []
 
