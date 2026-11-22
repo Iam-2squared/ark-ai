@@ -440,9 +440,11 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
             _require_original_proactive_path_policy()
             mode = parent.st_mode
             _require_original_proactive_path_policy()
+            if not is_directory(mode) or is_symlink(mode):
+                raise SyntheticTriggerRejected("unsafe proactive parent path")
             reparse = _is_proactive_reparse_point(parent)
             _require_original_proactive_path_policy()
-            if not is_directory(mode) or is_symlink(mode) or reparse:
+            if reparse:
                 raise SyntheticTriggerRejected("unsafe proactive parent path")
             _require_original_proactive_path_policy()
         _require_original_proactive_path_policy()
@@ -455,13 +457,17 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
             _require_original_proactive_path_policy()
             main_mode = main.st_mode
             _require_original_proactive_path_policy()
+            if not is_regular(main_mode):
+                raise SyntheticTriggerRejected("unsafe proactive SQLite file")
             main_links = main.st_nlink
             _require_original_proactive_path_policy()
+            if main_links != 1:
+                raise SyntheticTriggerRejected("unsafe proactive SQLite file")
             main_reparse = _is_proactive_reparse_point(main)
             _require_original_proactive_path_policy()
-            absent = False
-            if not is_regular(main_mode) or main_links != 1 or main_reparse:
+            if main_reparse:
                 raise SyntheticTriggerRejected("unsafe proactive SQLite file")
+            absent = False
         for suffix in sidecars:
             _require_original_proactive_path_policy()
             sidecar = target.with_name(target.name + suffix)
@@ -472,14 +478,18 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
                 _require_original_proactive_path_policy()
                 continue
             _require_original_proactive_path_policy()
+            if absent:
+                raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
             sidecar_mode = info.st_mode
             _require_original_proactive_path_policy()
-            sidecar_links = info.st_nlink
-            _require_original_proactive_path_policy()
+            if not is_regular(sidecar_mode):
+                raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
             sidecar_reparse = _is_proactive_reparse_point(info)
             _require_original_proactive_path_policy()
-            if absent or not is_regular(sidecar_mode) or sidecar_reparse:
+            if sidecar_reparse:
                 raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
+            sidecar_links = info.st_nlink
+            _require_original_proactive_path_policy()
             if sidecar_links == 0:
                 # SQLite can unlink a short-lived rollback journal between
                 # pathname lookup and lstat's inode snapshot. Only this
@@ -494,11 +504,15 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
                 _require_original_proactive_path_policy()
                 sidecar_mode = info.st_mode
                 _require_original_proactive_path_policy()
-                sidecar_links = info.st_nlink
-                _require_original_proactive_path_policy()
+                if not is_regular(sidecar_mode):
+                    raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
                 sidecar_reparse = _is_proactive_reparse_point(info)
                 _require_original_proactive_path_policy()
-            if not is_regular(sidecar_mode) or sidecar_links != 1 or sidecar_reparse:
+                if sidecar_reparse:
+                    raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
+                sidecar_links = info.st_nlink
+                _require_original_proactive_path_policy()
+            if sidecar_links != 1:
                 raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
     except OSError as exc:
         raise SyntheticTriggerRejected("proactive SQLite path unavailable") from exc
