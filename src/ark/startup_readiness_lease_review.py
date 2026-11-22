@@ -250,6 +250,16 @@ def _require_original_lease_protocol(
         ) from exc
 
 
+# Capture the import-original guard helpers as part of the lease protocol.
+# Rebinding a helper to a no-op could otherwise make an empty descriptor
+# vector skip the checks that protect requirement/result carriers.
+_ORIGINAL_LEASE_GUARD_HELPERS = (
+    _require_original_requirement,
+    _require_original_lease_result,
+    _require_original_lease_protocol,
+)
+
+
 def review_synthetic_startup_lease(
     snapshot: StartupSnapshot,
     requirements: tuple[SyntheticReadinessRequirement, ...],
@@ -257,13 +267,34 @@ def review_synthetic_startup_lease(
     captured_at_ms: int,
     now_ms: int,
     max_age_ms: int,
+    _original_lease_guard_helpers: tuple[object, ...] = _ORIGINAL_LEASE_GUARD_HELPERS,
 ) -> SyntheticStartupLeaseReview:
     """Check current fixture state against a bounded exact dependency contract.
 
     Caller-supplied clocks and probe values are untrusted. The lease can
     become stale or blocked after review; it is not a capability grant.
     """
-    _require_original_lease_protocol()
+    def assert_original_lease_helpers() -> None:
+        current_helpers = (
+            _require_original_requirement,
+            _require_original_lease_result,
+            _require_original_lease_protocol,
+        )
+        if (
+            _ORIGINAL_LEASE_GUARD_HELPERS is not _original_lease_guard_helpers
+            or any(
+                current is not original
+                for current, original in zip(
+                    current_helpers, _original_lease_guard_helpers, strict=True,
+                )
+            )
+        ):
+            raise SyntheticStartupLeaseRejected(
+                "startup lease helper identity changed"
+            )
+        _original_lease_guard_helpers[2]()
+
+    assert_original_lease_helpers()
     if (
         type(snapshot) is not StartupSnapshot
         or type(requirements) is not tuple
@@ -289,7 +320,7 @@ def review_synthetic_startup_lease(
     epoch = tuple((item, item.component_id, item.schema_revision) for item in requirements)
 
     def assert_requirements() -> None:
-        _require_original_lease_protocol()
+        assert_original_lease_helpers()
         _require_original_requirement()
         try:
             stable = len(requirements) == len(epoch) and all(
@@ -330,7 +361,7 @@ def review_synthetic_startup_lease(
     ) for item in components)
 
     def assert_epoch() -> None:
-        _require_original_lease_protocol()
+        assert_original_lease_helpers()
         _require_original_lease_result()
         if (
             snapshot.components is not components
@@ -434,6 +465,7 @@ def review_synthetic_startup_lease(
     )
 
     def assert_result_epoch() -> None:
+        assert_original_lease_helpers()
         _require_original_lease_result()
         if (
             type(result) is not SyntheticStartupLeaseReview
