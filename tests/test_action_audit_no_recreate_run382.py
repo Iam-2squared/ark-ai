@@ -13,7 +13,7 @@ def _fixture(tmp_path: Path):
     path = tmp_path / "Audit # %.sqlite"
     audit = SQLiteActionAudit(path, clock_ms=lambda: 100)
     call = ToolCall("offline", "write", "local", {"private": "NEVER-DISCLOSE"})
-    return audit, call, path
+    return audit, call, audit.path
 
 
 def test_explicit_bootstrap_still_creates_valid_v1_storage(tmp_path: Path):
