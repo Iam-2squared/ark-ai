@@ -20,6 +20,7 @@ _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _ORIGINAL_OS = os
+_ORIGINAL_OS_NAME = os.name
 _ORIGINAL_SCANDIR = os.scandir
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
@@ -39,11 +40,15 @@ def _require_native_path(value: object, label: str) -> Path:
 def _require_original_reparse_point_policy(
     _original_os: Any = _ORIGINAL_OS,
     _original_scandir: Any = _ORIGINAL_SCANDIR,
+    _original_os_name: str = _ORIGINAL_OS_NAME,
 ) -> None:
-    """Keep no-follow enumeration and stat classification import-original."""
+    """Keep no-follow enumeration and platform policy import-original."""
     if (
         os is not _original_os
         or _ORIGINAL_OS is not _original_os
+        or _ORIGINAL_OS_NAME is not _original_os_name
+        or _original_os.name is not _original_os_name
+        or type(_ORIGINAL_OS_NAME) is not str
         or _ORIGINAL_SCANDIR is not _original_scandir
         or _original_os.scandir is not _original_scandir
         or stat is not _ORIGINAL_STAT
@@ -377,7 +382,7 @@ def _snapshot_entries(
                     # Windows while retaining the complete POSIX epoch check.
                     if not _entry_metadata_matches_path(
                         info_epoch, path_epoch,
-                        windows=os.name == "nt", is_dir=is_dir,
+                        windows=_ORIGINAL_OS_NAME == "nt", is_dir=is_dir,
                     ):
                         type_matches = (
                             _ORIGINAL_S_IFMT(info_epoch[2])
