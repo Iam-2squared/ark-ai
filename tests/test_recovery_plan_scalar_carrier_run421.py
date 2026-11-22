@@ -41,7 +41,7 @@ def test_equal_valued_scalar_swap_during_registry_bind_is_rejected(
     original_bind = registry.bind
     step = journal._steps[0]
 
-    def substituted_bind(call):
+    def substituted_bind(self, call):
         bound = original_bind(call)
         if call is first:
             subject = step if target == "step_id" else call
@@ -51,7 +51,7 @@ def test_equal_valued_scalar_swap_during_registry_bind_is_rejected(
             object.__setattr__(subject, target, clone)
         return bound
 
-    monkeypatch.setattr(registry, "bind", substituted_bind)
+    monkeypatch.setattr(ToolRegistry, "bind", substituted_bind)
     with pytest.raises(
         review.SyntheticWritePlanReviewRejected, match="epoch changed",
     ):
