@@ -50,7 +50,7 @@ def _mutate(state, target):
     elif target == "journal":
         journal._path = Path(str(journal._path))
     else:
-        audit.path = Path(str(audit.path))
+        object.__setattr__(audit, "path", Path(str(audit.path)))
 
 
 @pytest.mark.parametrize("boundary", ("resolve", "as_uri", "connect"))
