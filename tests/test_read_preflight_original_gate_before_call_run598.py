@@ -44,28 +44,18 @@ def _preview(items):
     )
 
 
-def _install_spy(monkeypatch, gate, location, hits):
+def _install_spy(monkeypatch, gate, hits):
     def forged(self, registry, call, grants, *, now_ms, one_shot=None):
         hits.append(call.tool)
         return registry.bind(call)
 
-    if location == "class":
-        monkeypatch.setattr(PermissionGate, "authorize_registered", forged)
-    else:
-        monkeypatch.setattr(
-            gate, "authorize_registered",
-            lambda registry, call, grants, *, now_ms, one_shot=None: forged(
-                gate, registry, call, grants,
-                now_ms=now_ms, one_shot=one_shot,
-            ),
-        )
+    monkeypatch.setattr(PermissionGate, "authorize_registered", forged)
 
 
-@pytest.mark.parametrize("location", ("class", "instance"))
-def test_preinstalled_fake_gate_is_never_invoked(monkeypatch, location):
+def test_preinstalled_class_fake_gate_is_never_invoked(monkeypatch):
     items = _fixture()
     hits = []
-    _install_spy(monkeypatch, items[2], location, hits)
+    _install_spy(monkeypatch, items[2], hits)
     with pytest.raises(
         DisconnectedReadPreflightRejected,
         match="registered READ gate implementation changed",
@@ -76,8 +66,7 @@ def test_preinstalled_fake_gate_is_never_invoked(monkeypatch, location):
     assert items[2]._consumed_tokens == set()
 
 
-@pytest.mark.parametrize("location", ("class", "instance"))
-def test_registry_bind_callback_cannot_invoke_new_fake_gate(monkeypatch, location):
+def test_registry_bind_callback_cannot_invoke_new_class_fake_gate(monkeypatch):
     items = _fixture()
     _plan, registry, gate, _grants, backend = items
     original_bind = registry.bind
@@ -85,7 +74,7 @@ def test_registry_bind_callback_cannot_invoke_new_fake_gate(monkeypatch, locatio
 
     def substituted_bind(call):
         bound = original_bind(call)
-        _install_spy(monkeypatch, gate, location, hits)
+        _install_spy(monkeypatch, gate, hits)
         return bound
 
     monkeypatch.setattr(registry, "bind", substituted_bind)
@@ -106,3 +95,40 @@ def test_unmodified_gate_still_previews_without_dispatch():
     assert receipt.dispatch_authorized is False
     assert receipt.authenticated_clock_or_consent is False
     assert items[-1].calls == 0
+
+
+def test_instance_gate_method_shadow_is_rejected_before_read_preflight():
+    items = _fixture()
+    gate = items[2]
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize_registered = lambda *_args, **_kwargs: None
+
+    receipt = _preview(items)
+    assert receipt.ready_step_ids == ("read",)
+    assert receipt.dispatch_authorized is False
+    assert items[-1].calls == 0
+    assert gate._consumed_tokens == set()
+
+
+def test_registry_callback_cannot_shadow_instance_gate_method():
+    items = _fixture()
+    _plan, registry, gate, _grants, backend = items
+    original_bind = registry.bind
+
+    def substituted_bind(call):
+        with pytest.raises(AttributeError, match="immutable"):
+            gate.authorize_registered = lambda *_args, **_kwargs: None
+        return original_bind(call)
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(registry, "bind", substituted_bind)
+        with pytest.raises(
+            DisconnectedReadPreflightRejected,
+            match="READ grant preflight denied",
+        ):
+            _preview(items)
+    finally:
+        monkeypatch.undo()
+    assert backend.calls == 0
+    assert gate._consumed_tokens == set()

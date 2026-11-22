@@ -179,7 +179,7 @@ def test_mid_grant_class_replacement_cannot_consume_token(monkeypatch):
     gate.authorize_registered(registry, call, grants, now_ms=10, one_shot=token)
 
 
-def test_instance_shadow_cannot_bypass_exact_class_authorization(monkeypatch):
+def test_instance_shadow_cannot_bypass_exact_class_authorization():
     registry, call, token, grants = _policy_inputs()
     gate = PermissionGate()
 
@@ -187,9 +187,10 @@ def test_instance_shadow_cannot_bypass_exact_class_authorization(monkeypatch):
         # Deliberately skips all grant and local token checks.
         return None
 
-    monkeypatch.setattr(gate, "authorize", no_op)
-    with pytest.raises(PermissionDenied, match="implementation identity changed"):
-        gate.authorize_registered(
-            registry, call, grants, now_ms=10, one_shot=token,
-        )
-    assert gate._consumed_tokens == set()
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize = no_op
+    accepted = gate.authorize_registered(
+        registry, call, grants, now_ms=10, one_shot=token,
+    )
+    assert accepted.registration.effect is Effect.WRITE
+    assert gate._consumed_tokens == {token.token_id}

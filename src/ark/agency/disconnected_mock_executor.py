@@ -213,12 +213,27 @@ _ORIGINAL_OCCURRENCE_RESERVE = vars(SyntheticOccurrenceStore)["reserve_synthetic
 _ORIGINAL_OCCURRENCE_CONNECT = vars(SyntheticOccurrenceStore)["_connect"]
 
 
+def _instance_namespace(value: object) -> dict[str, object]:
+    """Return the ordinary instance namespace, or empty for slot-only exact objects."""
+    try:
+        namespace = vars(value)
+    except TypeError:
+        return {}
+    if type(namespace) is not dict:
+        raise DisconnectedMockExecutionRejected("component instance namespace is invalid")
+    return namespace
+
+
 def _require_original_components(
     registry: ToolRegistry,
     gate: PermissionGate,
     audit: SQLiteActionAudit,
     occurrences: SyntheticOccurrenceStore | None,
 ) -> None:
+    if type(registry) is not ToolRegistry or type(gate) is not PermissionGate:
+        raise DisconnectedMockExecutionRejected(
+            "mock execution requires exact ToolRegistry and PermissionGate instances"
+        )
     if (
         hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
@@ -280,13 +295,16 @@ def _require_original_components(
         or vars(ToolRegistry).get("get") is not _ORIGINAL_REGISTRY_GET
         or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
         or vars(ToolRegistry).get("_assert_registration_epoch") is not _ORIGINAL_REGISTRY_EPOCH
-        or any(name in vars(registry) for name in ("bind", "resolve", "get", "revision"))
+        or any(
+            name in _instance_namespace(registry)
+            for name in ("bind", "resolve", "get", "revision")
+        )
     ):
         raise DisconnectedMockExecutionRejected("ToolRegistry method identity changed")
     if (
         vars(PermissionGate).get("authorize_registered") is not _ORIGINAL_GATE_REGISTERED
         or vars(PermissionGate).get("authorize") is not _ORIGINAL_GATE_AUTHORIZE
-        or any(name in vars(gate) for name in ("authorize_registered", "authorize"))
+        or any(name in _instance_namespace(gate) for name in ("authorize_registered", "authorize"))
     ):
         raise DisconnectedMockExecutionRejected("PermissionGate method identity changed")
     if (

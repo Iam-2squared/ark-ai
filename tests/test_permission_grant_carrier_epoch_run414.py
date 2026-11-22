@@ -93,22 +93,16 @@ def test_registered_bind_instance_shadow_is_denied_before_grant_callback(
     assert grant.scope == "offline"
     assert gate._consumed_tokens == set()
 
-def test_equal_carrier_swap_after_local_spend_never_returns_registered_binding():
+def test_mutable_token_container_replacement_is_denied_before_spend():
     gate, registry, _spec, call, grant, token = _fixture()
 
-    class MutateGrantAfterOriginalSpend(set):
-        def add(self, value):
-            # Fault injection occurs at the original policy's real token
-            # spend, not through an instance-shadowed authorize method.
-            super().add(value)
-            object.__setattr__(grant, "scope", _clone(grant.scope))
+    with pytest.raises(AttributeError, match="immutable"):
+        gate._consumed_tokens = set()
 
-    gate._consumed_tokens = MutateGrantAfterOriginalSpend()
-    with pytest.raises(PermissionDenied, match="registered grant identity changed"):
-        gate.authorize_registered(
-            registry, call, (grant,), now_ms=10, one_shot=token,
-        )
-    # The spend happened before post-spend carrier drift; never retry.
+    bound = gate.authorize_registered(
+        registry, call, (grant,), now_ms=10, one_shot=token,
+    )
+    assert bound.call is call
     assert gate._consumed_tokens == {"one-shot"}
 
 

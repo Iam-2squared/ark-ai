@@ -4,7 +4,7 @@ All grants, identities and tokens are synthetic. Token consumption is only
 process-local and never conveys durable consent or dispatch authority.
 """
 
-from threading import Lock
+from threading import Event, Thread
 
 import pytest
 
@@ -77,6 +77,7 @@ def test_equal_value_original_call_or_token_swap_never_spends(
     target, attr = _carrier_to_mutate(case, field)
     original = getattr(target, attr)
     modified = []
+    ready = Event()
 
     def mutate():
         assert not modified
@@ -87,24 +88,44 @@ def test_equal_value_original_call_or_token_swap_never_spends(
         yield grant
         if phase == "grants":
             mutate()
+        else:
+            ready.set()
 
-    class MutatingSpendLock:
-        def __enter__(self):
-            mutate()
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-    if phase == "spend":
-        gate._token_lock = MutatingSpendLock()
-    with pytest.raises(PermissionDenied, match="identity|input changed"):
+    def invoke():
         if registered:
             gate.authorize_registered(
                 registry, call, grants(), now_ms=10, one_shot=token,
             )
         else:
             gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
+
+    if phase == "grants":
+        with pytest.raises(PermissionDenied, match="identity|input changed"):
+            invoke()
+    else:
+        gate._token_lock.acquire()
+        outcomes = []
+
+        def worker():
+            try:
+                invoke()
+            except PermissionDenied as exc:
+                outcomes.append(str(exc))
+            else:
+                outcomes.append("incorrectly-allowed")
+
+        thread = Thread(target=worker)
+        thread.start()
+        try:
+            assert ready.wait(timeout=5), "grant iterator did not reach spend boundary"
+            mutate()
+        finally:
+            gate._token_lock.release()
+            thread.join(timeout=5)
+        assert not thread.is_alive()
+        assert len(outcomes) == 1
+        assert "changed" in outcomes[0]
+
     assert modified == [True]
     assert gate._consumed_tokens == set()
     assert backend.calls == 0
@@ -118,6 +139,7 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
     target, attr = _carrier_to_mutate(case, field)
     original = getattr(target, attr)
     modified = []
+    ready = Event()
 
     def mutate():
         object.__setattr__(target, attr, _distinct(original))
@@ -127,19 +149,39 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
         yield grant
         if phase == "grants":
             mutate()
+        else:
+            ready.set()
 
-    class MutatingSpendLock:
-        def __enter__(self):
-            mutate()
-            return self
-
-        def __exit__(self, exc_type, exc, tb):
-            return False
-
-    if phase == "spend":
-        gate._token_lock = MutatingSpendLock()
-    with pytest.raises(PermissionDenied, match="input changed"):
+    def invoke():
         gate.authorize(spec, call, grants(), now_ms=10, one_shot=token)
+
+    if phase == "grants":
+        with pytest.raises(PermissionDenied, match="input changed"):
+            invoke()
+    else:
+        gate._token_lock.acquire()
+        outcomes = []
+
+        def worker():
+            try:
+                invoke()
+            except PermissionDenied as exc:
+                outcomes.append(str(exc))
+            else:
+                outcomes.append("incorrectly-allowed")
+
+        thread = Thread(target=worker)
+        thread.start()
+        try:
+            assert ready.wait(timeout=5), "grant iterator did not reach spend boundary"
+            mutate()
+        finally:
+            gate._token_lock.release()
+            thread.join(timeout=5)
+        assert not thread.is_alive()
+        assert len(outcomes) == 1
+        assert "changed" in outcomes[0]
+
     assert modified == [True]
     assert gate._consumed_tokens == set()
     assert backend.calls == 0
@@ -148,7 +190,6 @@ def test_equal_value_tool_spec_swap_cannot_authorize_direct_write(phase, field):
 @pytest.mark.parametrize("registered", (False, True))
 def test_unchanged_policy_still_spends_once_without_dispatch(registered):
     gate, spec, call, grant, token, registry, backend = _case()
-    gate._token_lock = Lock()
     if registered:
         result = gate.authorize_registered(
             registry, call, (grant,), now_ms=10, one_shot=token,

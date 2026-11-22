@@ -41,10 +41,9 @@ def _review(items):
     )
 
 
-@pytest.mark.parametrize("scope", ("class", "instance"))
 @pytest.mark.parametrize("kind", ("forged", "delegating"))
-def test_policy_method_replacement_denied_even_if_result_is_bound(
-    monkeypatch, scope, kind,
+def test_class_policy_method_replacement_denied_even_if_result_is_bound(
+    monkeypatch, kind,
 ):
     items = _inputs()
     registry, gate, call, _grants, backend = items
@@ -57,13 +56,7 @@ def test_policy_method_replacement_denied_even_if_result_is_bound(
             self, registry, call, grants, now_ms=now_ms, one_shot=one_shot,
         )
 
-    if scope == "class":
-        monkeypatch.setattr(PermissionGate, "authorize_registered", fake)
-    else:
-        monkeypatch.setattr(
-            gate, "authorize_registered",
-            lambda *args, **kwargs: fake(gate, *args, **kwargs),
-        )
+    monkeypatch.setattr(PermissionGate, "authorize_registered", fake)
     with pytest.raises(
         DisconnectedReadPreflightRejected, match="policy implementation changed",
     ):
@@ -73,25 +66,18 @@ def test_policy_method_replacement_denied_even_if_result_is_bound(
     assert backend.calls == 0
 
 
-@pytest.mark.parametrize("scope", ("class", "instance"))
-def test_registry_callback_cannot_install_policy_forgery_mid_review(
-    monkeypatch, scope,
+def test_registry_callback_cannot_install_class_policy_forgery_mid_review(
+    monkeypatch,
 ):
     items = _inputs()
     registry, gate, call, _grants, backend = items
     original_bind = registry.bind
 
     def changed_bind(current):
-        if scope == "class":
-            monkeypatch.setattr(
-                PermissionGate, "authorize_registered",
-                lambda self, reg, c, grants, *, now_ms: reg.bind(c),
-            )
-        else:
-            monkeypatch.setattr(
-                gate, "authorize_registered",
-                lambda reg, c, grants, *, now_ms: original_bind(c),
-            )
+        monkeypatch.setattr(
+            PermissionGate, "authorize_registered",
+            lambda self, reg, c, grants, *, now_ms: reg.bind(c),
+        )
         return original_bind(current)
 
     monkeypatch.setattr(registry, "bind", changed_bind)
@@ -122,4 +108,41 @@ def test_invalid_gate_shape_rejected_as_bounded_input(bad_gate):
         review_disconnected_registered_read(
             registry, bad_gate, call, grants, now_ms=10,
         )
+    assert backend.calls == 0
+
+
+def test_instance_policy_method_shadow_is_rejected_before_read_review():
+    items = _inputs()
+    gate = items[1]
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize_registered = lambda *_args, **_kwargs: None
+
+    result = _review(items)
+    assert result.backend_dispatched is False
+    assert result.write_authorized is False
+    assert gate._consumed_tokens == set()
+    assert items[-1].calls == 0
+
+
+def test_registry_callback_cannot_shadow_instance_policy_method():
+    items = _inputs()
+    registry, gate, _call, _grants, backend = items
+    original_bind = registry.bind
+
+    def changed_bind(current):
+        with pytest.raises(AttributeError, match="immutable"):
+            gate.authorize_registered = lambda *_args, **_kwargs: original_bind(current)
+        return original_bind(current)
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(registry, "bind", changed_bind)
+        with pytest.raises(
+            DisconnectedReadPreflightRejected,
+            match="registered READ preflight denied",
+        ):
+            _review(items)
+    finally:
+        monkeypatch.undo()
+    assert gate._consumed_tokens == set()
     assert backend.calls == 0

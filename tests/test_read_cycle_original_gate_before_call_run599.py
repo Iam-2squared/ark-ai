@@ -54,13 +54,13 @@ def test_spoofed_gate_is_never_invoked_by_independent_wave(
         if location == "class":
             monkeypatch.setattr(PermissionGate, "authorize_registered", counterfeit)
         else:
-            monkeypatch.setattr(
-                gate, "authorize_registered",
-                lambda registry, call, grants, *, now_ms, one_shot=None: counterfeit(
-                    gate, registry, call, grants,
-                    now_ms=now_ms, one_shot=one_shot,
-                ),
-            )
+            with pytest.raises(AttributeError, match="immutable"):
+                gate.authorize_registered = (
+                    lambda registry, call, grants, *, now_ms, one_shot=None: counterfeit(
+                        gate, registry, call, grants,
+                        now_ms=now_ms, one_shot=one_shot,
+                    )
+                )
 
     def preview_then_change(*args, **kwargs):
         receipt = original_preview(*args, **kwargs)
@@ -78,13 +78,21 @@ def test_spoofed_gate_is_never_invoked_by_independent_wave(
         return receipt
 
     monkeypatch.setattr(cycle, "preview_registered_read_plan", preview_then_change)
-    with pytest.raises(
-        cycle.DisconnectedReadCycleRejected,
-        match="READ wave registered gate implementation changed",
-    ):
-        cycle.simulate_registered_read_cycle(
+    if location == "class" or moment == "during_rebind":
+        expected = (
+            "READ wave registered gate implementation changed"
+            if location == "class"
+            else "READ wave identity recheck failed"
+        )
+        with pytest.raises(cycle.DisconnectedReadCycleRejected, match=expected):
+            cycle.simulate_registered_read_cycle(
+                plan, registry, gate, grants, observed_at_ms=100,
+            )
+    else:
+        receipt = cycle.simulate_registered_read_cycle(
             plan, registry, gate, grants, observed_at_ms=100,
         )
+        assert receipt.dispatch_authorized is False
     assert counter == []
     assert backend.calls == 0
     assert gate._consumed_tokens == set()

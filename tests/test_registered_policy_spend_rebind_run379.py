@@ -1,6 +1,6 @@
 """Registered WRITE policy must rebind before spending a process-local token."""
 
-from threading import Event, Lock, Thread
+from threading import Event, Thread
 
 import pytest
 
@@ -18,20 +18,6 @@ from ark.agency.registry import ToolRegistration, ToolRegistry
 class NeverBackend:
     def execute(self, call):
         raise AssertionError("a policy check must never execute a ToolBackend")
-
-
-class PauseInSpend:
-    def __init__(self):
-        self.entered = Event()
-        self.resume = Event()
-
-    def __enter__(self):
-        self.entered.set()
-        assert self.resume.wait(timeout=5), "spend lock was not released"
-        return self
-
-    def __exit__(self, exc_type, exc, traceback):
-        return False
 
 
 def _fixture():
@@ -57,14 +43,18 @@ def _fixture():
 def test_registry_drift_while_spend_lock_waits_preserves_token(field, replacement):
     registration, registry, call, grant, token = _fixture()
     gate = PermissionGate()
-    lock = PauseInSpend()
-    gate._token_lock = lock
+    gate._token_lock.acquire()
+    ready = Event()
     outcomes = []
+
+    def grants():
+        yield grant
+        ready.set()
 
     def worker():
         try:
             gate.authorize_registered(
-                registry, call, (grant,), now_ms=10, one_shot=token
+                registry, call, grants(), now_ms=10, one_shot=token
             )
             outcomes.append("incorrect-success")
         except PermissionDenied as exc:
@@ -73,18 +63,17 @@ def test_registry_drift_while_spend_lock_waits_preserves_token(field, replacemen
     thread = Thread(target=worker)
     thread.start()
     try:
-        assert lock.entered.wait(timeout=5)
+        assert ready.wait(timeout=5), "grant iterator did not reach spend boundary"
         original = getattr(registration, field)
         object.__setattr__(registration, field, replacement)
     finally:
-        lock.resume.set()
+        gate._token_lock.release()
         thread.join(timeout=5)
     assert not thread.is_alive()
     assert len(outcomes) == 1
     assert "registered identity changed" in outcomes[0]
     assert token.token_id not in gate._consumed_tokens
     object.__setattr__(registration, field, original)
-    gate._token_lock = Lock()
     result = gate.authorize_registered(
         registry, call, (grant,), now_ms=10, one_shot=token
     )
