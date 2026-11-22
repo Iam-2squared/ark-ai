@@ -18,22 +18,42 @@ from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
 
 
 def _require_original_reparse_point_policy() -> None:
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise ValueError("authorization packet reparse-point policy changed")
 
 
+def _is_regular_file(info: object) -> bool:
+    _require_original_reparse_point_policy()
+    mode = info.st_mode
+    _require_original_reparse_point_policy()
+    if type(mode) is not int:
+        raise ValueError("authorization packet file mode is malformed")
+    return _ORIGINAL_S_ISREG(mode)
+
+
 def _is_reparse_point(info: object) -> bool:
     _require_original_reparse_point_policy()
     attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_reparse_point_policy()
     if type(attributes) is not int:
         raise ValueError("authorization packet reparse metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
+    mode = info.st_mode
+    _require_original_reparse_point_policy()
+    if type(mode) is not int:
+        raise ValueError("authorization packet file mode is malformed")
+    return _ORIGINAL_S_ISLNK(mode) or bool(
         attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
@@ -169,6 +189,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     This is not an atomic directory-fd traversal or approval to spend money.
     The payload is generated without opening any execution or evaluation gate.
     """
+    _require_original_reparse_point_policy()
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -196,10 +217,11 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
         # before exclusive create can traverse or interact with them.
         _is_reparse_point(leaf_info)
         raise ValueError("authorization packet output must be a new non-aliased file")
-    if (
-        not path.parent.is_dir()
-        or any(parent.is_symlink() for parent in path.parents)
-    ):
+    parent_is_dir = path.parent.is_dir()
+    _require_original_reparse_point_policy()
+    parent_symlink = any(parent.is_symlink() for parent in path.parents)
+    _require_original_reparse_point_policy()
+    if not parent_is_dir or parent_symlink:
         raise ValueError("authorization packet output must be a new non-aliased file")
     # A serializer callback must not make the reviewed JSON tree differ
     # from the exact bytes that will be exclusively created on disk.
@@ -210,10 +232,14 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     epoch = _pin_json_tree(packet)
     data = canonical_json(packet)
     _assert_json_tree_epoch(packet, epoch)
+    _require_original_reparse_point_policy()
     with path.open("xb") as handle:
+        _require_original_reparse_point_policy()
         written = handle.write(data)
+        _require_original_reparse_point_policy()
         if type(written) is not int or written != len(data):
             raise ValueError("authorization review packet write was incomplete")
+    _require_original_reparse_point_policy()
     _assert_json_tree_epoch(packet, epoch)
     # COMMIT-equivalent boundary: a successful write call is not proof that
     # the exact reviewed bytes reached the new file. Re-open the local file
@@ -221,31 +247,46 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     # Never interpret this check as approval to pay for compute or training.
     try:
         before = path.lstat()
+        regular_before = _is_regular_file(before)
+        reparse_before = _is_reparse_point(before)
+        ancestor_reparse = _has_reparse_ancestor(path)
+        leaf_symlink = path.is_symlink()
+        _require_original_reparse_point_policy()
+        parent_symlink = any(parent.is_symlink() for parent in path.parents)
+        _require_original_reparse_point_policy()
         if (
-            not stat.S_ISREG(before.st_mode)
-            or _is_reparse_point(before)
-            or _has_reparse_ancestor(path)
+            not regular_before
+            or reparse_before
+            or ancestor_reparse
             or before.st_nlink != 1
             or before.st_size != len(data)
-            or path.is_symlink()
-            or any(parent.is_symlink() for parent in path.parents)
+            or leaf_symlink
+            or parent_symlink
         ):
             raise ValueError("authorization packet output alias or size changed")
         saved_bytes = path.read_bytes()
+        _require_original_reparse_point_policy()
         after = path.lstat()
+        regular_after = _is_regular_file(after)
+        reparse_after = _is_reparse_point(after)
+        ancestor_reparse_after = _has_reparse_ancestor(path)
+        leaf_symlink_after = path.is_symlink()
+        _require_original_reparse_point_policy()
+        parent_symlink_after = any(parent.is_symlink() for parent in path.parents)
+        _require_original_reparse_point_policy()
     except OSError as exc:
         raise ValueError("authorization packet output cannot be rechecked") from exc
     _assert_json_tree_epoch(packet, epoch)
     if (
         saved_bytes != data
-        or not stat.S_ISREG(after.st_mode)
-        or _is_reparse_point(after)
-        or _has_reparse_ancestor(path)
+        or not regular_after
+        or reparse_after
+        or ancestor_reparse_after
         or after.st_nlink != 1
         or (after.st_dev, after.st_ino, after.st_size)
         != (before.st_dev, before.st_ino, before.st_size)
-        or path.is_symlink()
-        or any(parent.is_symlink() for parent in path.parents)
+        or leaf_symlink_after
+        or parent_symlink_after
     ):
         raise ValueError("authorization packet output bytes or identity changed")
 
