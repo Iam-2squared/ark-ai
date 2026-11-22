@@ -235,13 +235,10 @@ def _entry_metadata_matches_path(
     """Compare DirEntry and Path metadata without Windows-only ID/ctime aliases."""
     if windows:
         # Windows path-stat and DirEntry-stat can report different file IDs,
-        # and their ctime fields can describe creation vs change time. Keep
-        # the portable mode/size/mtime/link-count checks; the Path epoch is
+        # their ctime semantics and link-count observations can differ. Keep
+        # the portable mode/size/mtime checks; the Path epoch is
         # still rechecked against itself before the entry is accepted.
-        return (
-            entry_epoch[2:5] == path_epoch[2:5]
-            and entry_epoch[6:] == path_epoch[6:]
-        )
+        return entry_epoch[2:5] == path_epoch[2:5]
     return entry_epoch == path_epoch
 
 
