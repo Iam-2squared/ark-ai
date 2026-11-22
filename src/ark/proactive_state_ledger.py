@@ -818,13 +818,53 @@ class SyntheticProactiveStateLedger:
                 raise
 
 
+_LEDGER_TYPE = SyntheticProactiveStateLedger
+_LEDGER_METHODS = (
+    "__init__", "__new__", "__setattr__", "__delattr__",
+    "__getattribute__", "__getattr__", "__init_subclass__",
+    "path", "_connect", "_policy_identity", "read_state", "evaluate", "count",
+)
+_ORIGINAL_LEDGER_METHODS = tuple(
+    vars(_LEDGER_TYPE).get(name) for name in _LEDGER_METHODS
+)
+_ORIGINAL_LEDGER_SLOTS = vars(_LEDGER_TYPE)["__slots__"]
+_LEDGER_GUARD_VECTORS = (_LEDGER_METHODS, _ORIGINAL_LEDGER_METHODS)
+_ORIGINAL_LEDGER_GUARD_VECTORS = _LEDGER_GUARD_VECTORS
+
+
+def _require_original_ledger_class(
+    _original_guard_vectors: tuple[object, ...] = _ORIGINAL_LEDGER_GUARD_VECTORS,
+    _original_slots: tuple[str, ...] = _ORIGINAL_LEDGER_SLOTS,
+) -> None:
+    """Pin the slot layout and every ledger entry point before local I/O."""
+    if (
+        SyntheticProactiveStateLedger is not _LEDGER_TYPE
+        or _LEDGER_GUARD_VECTORS is not _original_guard_vectors
+        or _ORIGINAL_LEDGER_GUARD_VECTORS is not _original_guard_vectors
+        or _LEDGER_METHODS is not _original_guard_vectors[0]
+        or _ORIGINAL_LEDGER_METHODS is not _original_guard_vectors[1]
+        or _ORIGINAL_LEDGER_SLOTS is not _original_slots
+        or vars(_LEDGER_TYPE).get("__slots__") is not _original_slots
+        or any(
+            vars(_LEDGER_TYPE).get(name) is not original
+            for name, original in zip(
+                _LEDGER_METHODS, _ORIGINAL_LEDGER_METHODS, strict=True,
+            )
+        )
+    ):
+        raise SyntheticProactiveStateRejected(
+            "proactive state ledger class descriptor changed"
+        )
+
+
 
 def _require_exact_ledger(
     instance: SyntheticProactiveStateLedger,
     *,
     initialized: bool = True,
 ) -> None:
-    """Reject subclasses and mutable instance dictionaries before ledger I/O."""
+    """Reject class substitution, subclasses and mutable instance dictionaries before I/O."""
+    _require_original_ledger_class()
     if type(instance) is not SyntheticProactiveStateLedger:
         raise SyntheticProactiveStateRejected(
             "an exact proactive state ledger instance is required"
