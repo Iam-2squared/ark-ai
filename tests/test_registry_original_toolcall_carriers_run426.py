@@ -46,14 +46,14 @@ def test_lookup_callback_cannot_replace_equal_original_call_carrier(
     real_get = registry.get
     reached = []
 
-    def get_with_swap(name):
+    def get_with_swap(self, name):
         found = real_get(name)
         assert found is entry
         object.__setattr__(call, field, _equal_new_string(original))
         reached.append("swapped")
         return found
 
-    monkeypatch.setattr(registry, "get", get_with_swap)
+    monkeypatch.setattr(ToolRegistry, "get", get_with_swap)
     with pytest.raises(ValueError, match="ToolCall identity changed"):
         getattr(registry, operation)(call)
     assert reached == ["swapped"]
@@ -68,13 +68,13 @@ def test_binding_rejects_resolve_callback_equal_carrier_replacement(
     original = getattr(call, field)
     real_resolve = registry.resolve
 
-    def resolve_with_swap(request):
+    def resolve_with_swap(self, request):
         resolved = real_resolve(request)
         assert resolved is entry
         object.__setattr__(call, field, _equal_new_string(original))
         return resolved
 
-    monkeypatch.setattr(registry, "resolve", resolve_with_swap)
+    monkeypatch.setattr(ToolRegistry, "resolve", resolve_with_swap)
     with pytest.raises(ValueError, match="registry binding"):
         registry.bind(call)
     assert backend.calls == 0
