@@ -197,9 +197,31 @@ _ORIGINAL_REGISTRY_COMPUTE_REVISION = vars(ToolRegistry)["_compute_revision"]
 class PermissionGate:
     """Exact-scope grant checks with consumable authorization for writes."""
 
+    __slots__ = (
+        "_consumed_tokens", "_token_lock", "_consumed_tokens_epoch",
+        "_token_lock_epoch", "_sealed",
+    )
+
+    def __setattr__(self, name: str, value: object) -> None:
+        # Prevent ordinary replacement of token/lock custody and remove the
+        # mutable __dict__ escape hatch. Reflective object.__setattr__ changes
+        # remain detectable by the instance-epoch guard below.
+        try:
+            sealed = object.__getattribute__(self, "_sealed")
+        except AttributeError:
+            sealed = False
+        if sealed:
+            raise AttributeError("PermissionGate state is immutable")
+        object.__setattr__(self, name, value)
+
     def __init__(self) -> None:
-        self._consumed_tokens: set[str] = set()
-        self._token_lock = Lock()  # process-local; never durable approval
+        _require_original_gate_class()
+        self._consumed_tokens = frozenset()
+        self._token_lock = _ORIGINAL_LOCK()
+        self._consumed_tokens_epoch = self._consumed_tokens
+        self._token_lock_epoch = self._token_lock
+        self._sealed = True
+        _assert_gate_instance_epoch(self)
 
     def authorize_registered(
         self,
@@ -223,6 +245,7 @@ class PermissionGate:
             raise PermissionDenied(
                 "authorization requires an exact PermissionGate instance"
             )
+        _assert_gate_instance_epoch(self)
         _assert_original_call_contract()
         _require_original_spec_and_token()
         _require_original_grant_validator()
@@ -237,6 +260,7 @@ class PermissionGate:
         _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
 
         def ensure_original_implementations() -> None:
+            _assert_gate_instance_epoch(self)
             _assert_original_call_contract()
             _require_original_spec_and_token()
             if (
@@ -453,7 +477,13 @@ class PermissionGate:
             )
             ensure_entry_epoch()
             ensure_registered_binding()
-        elif one_shot is None or one_shot.token_id not in self._consumed_tokens:
+        elif (
+            one_shot is None
+            or (
+                _assert_gate_instance_epoch(self) is None
+                and one_shot.token_id not in self._consumed_tokens
+            )
+        ):
             # Failure after an attempted WRITE does not imply rollback.
             raise PermissionDenied("registered local one-shot spend not observed")
         return verified
@@ -475,6 +505,7 @@ class PermissionGate:
             raise PermissionDenied(
                 "authorization requires an exact PermissionGate instance"
             )
+        _assert_gate_instance_epoch(self)
         _assert_original_call_contract()
         _require_original_spec_and_token()
         _require_original_grant_validator()
@@ -553,6 +584,7 @@ class PermissionGate:
         grant_epochs = []
 
         def assert_iteration_epoch() -> None:
+            _assert_gate_instance_epoch(self)
             _assert_original_call_contract()
             _require_original_spec_and_token()
             _require_original_grant_validator()
@@ -660,6 +692,7 @@ class PermissionGate:
             # Recheck the token/call epoch after waiting for the lock: a
             # reflected mutation during contention must not spend a token.
             with self._token_lock:
+                _assert_gate_instance_epoch(self)
                 _assert_original_call_contract()
                 _require_original_spec_and_token()
                 _require_original_grant_validator()
@@ -713,11 +746,52 @@ class PermissionGate:
                     raise PermissionDenied("one-shot authorization does not match this request")
                 if one_shot.expires_at_ms <= now_ms:
                     raise PermissionDenied("one-shot authorization expired")
-                self._consumed_tokens.add(one_shot.token_id)
+                updated_tokens = self._consumed_tokens | frozenset((one_shot.token_id,))
+                object.__setattr__(self, "_consumed_tokens", updated_tokens)
+                object.__setattr__(self, "_consumed_tokens_epoch", updated_tokens)
+                _assert_gate_instance_epoch(self)
 
 
-# Pin the exact public gate type; subclasses can redirect local token/lock custody.
+# Pin the exact public gate type, slot layout, assignment guard and lock factory.
 _ORIGINAL_PERMISSION_GATE = PermissionGate
+_ORIGINAL_GATE_SLOTS = vars(_ORIGINAL_PERMISSION_GATE)["__slots__"]
+_ORIGINAL_GATE_SETATTR = vars(_ORIGINAL_PERMISSION_GATE)["__setattr__"]
+_ORIGINAL_GATE_INIT = vars(_ORIGINAL_PERMISSION_GATE)["__init__"]
+_ORIGINAL_LOCK = Lock
+_ORIGINAL_LOCK_TYPE = type(_ORIGINAL_LOCK())
+
+
+def _require_original_gate_class() -> None:
+    if (
+        PermissionGate is not _ORIGINAL_PERMISSION_GATE
+        or vars(_ORIGINAL_PERMISSION_GATE).get("__slots__") is not _ORIGINAL_GATE_SLOTS
+        or vars(_ORIGINAL_PERMISSION_GATE).get("__setattr__") is not _ORIGINAL_GATE_SETATTR
+        or vars(_ORIGINAL_PERMISSION_GATE).get("__init__") is not _ORIGINAL_GATE_INIT
+        or Lock is not _ORIGINAL_LOCK
+    ):
+        raise PermissionDenied("PermissionGate instance contract changed")
+
+
+def _assert_gate_instance_epoch(gate: PermissionGate) -> None:
+    _require_original_gate_class()
+    try:
+        sealed = object.__getattribute__(gate, "_sealed")
+        consumed = object.__getattribute__(gate, "_consumed_tokens")
+        consumed_epoch = object.__getattribute__(gate, "_consumed_tokens_epoch")
+        lock = object.__getattribute__(gate, "_token_lock")
+        lock_epoch = object.__getattribute__(gate, "_token_lock_epoch")
+    except AttributeError as exc:
+        raise PermissionDenied("PermissionGate state is incomplete") from exc
+    if (
+        sealed is not True
+        or type(consumed) is not frozenset
+        or consumed is not consumed_epoch
+        or type(lock) is not _ORIGINAL_LOCK_TYPE
+        or lock is not lock_epoch
+    ):
+        raise PermissionDenied("PermissionGate token or lock custody changed")
+
 
 # Captured after class construction for registered authorization only.
 _ORIGINAL_AUTHORIZE = PermissionGate.authorize
+_ORIGINAL_AUTHORIZE_REGISTERED = PermissionGate.authorize_registered
