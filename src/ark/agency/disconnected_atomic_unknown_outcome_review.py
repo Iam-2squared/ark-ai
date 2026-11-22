@@ -24,6 +24,7 @@ _ORIGINAL_WITNESS = ledger_module._witness_image
 _ORIGINAL_CARRIERS = ledger_module._require_original_atomic_carriers
 _ORIGINAL_GENESIS = ledger_module.genesis_atomic_preaction_witness
 _ORIGINAL_OPEN = vars(DisconnectedAtomicPreactionLedger)["_open"]
+_ORIGINAL_LEDGER_PATH_EPOCH = ledger_module._require_ledger_path_epoch
 _LEDGER_HOOK_NAMES = ("__getattribute__", "__getattr__", "__dict__")
 _ORIGINAL_LEDGER_HOOKS = tuple(
     vars(DisconnectedAtomicPreactionLedger).get(name)
@@ -96,6 +97,7 @@ def _protocol() -> None:
         or ledger_module._require_original_atomic_carriers is not _ORIGINAL_CARRIERS
         or ledger_module.genesis_atomic_preaction_witness is not _ORIGINAL_GENESIS
         or vars(DisconnectedAtomicPreactionLedger).get("_open") is not _ORIGINAL_OPEN
+        or ledger_module._require_ledger_path_epoch is not _ORIGINAL_LEDGER_PATH_EPOCH
         or any(
             vars(DisconnectedAtomicPreactionLedger).get(name) is not original
             for name, original in zip(
@@ -141,13 +143,17 @@ def review_atomic_unknown_outcome(
         or type(claim) is not AtomicIntentClaim
     ):
         raise AtomicUnknownOutcomeRejected("exact pre-action triage inputs required")
-    # The ledger is intentionally a plain Python instance. Its _open method
-    # may be shadowed per-instance even while the class method is unchanged.
-    # Pin the only expected instance field before any callback or SQLite IO.
+    # Path identity now lives in non-shadowable slots. The retained instance
+    # dictionary exists only for fault injection and must be empty at admission.
     instance_state = object.__getattribute__(ledger, "__dict__")
-    if type(instance_state) is not dict or set(instance_state) != {"_path"}:
+    if type(instance_state) is not dict or instance_state:
         raise AtomicUnknownOutcomeRejected("pre-action ledger instance changed")
-    original_path = instance_state["_path"]
+    try:
+        original_path = _ORIGINAL_LEDGER_PATH_EPOCH(ledger)
+    except ledger_module.AtomicPreactionRejected as exc:
+        raise AtomicUnknownOutcomeRejected(
+            "pre-action ledger instance changed"
+        ) from exc
     try:
         _ORIGINAL_CLAIM(claim)
         original_before = _ORIGINAL_WITNESS(before)
@@ -163,12 +169,14 @@ def review_atomic_unknown_outcome(
         def stable() -> None:
             _protocol()
             current = object.__getattribute__(ledger, "__dict__")
-            if (
-                type(current) is not dict
-                or set(current) != {"_path"}
-                or current["_path"] is not original_path
-            ):
+            if type(current) is not dict or current:
                 raise AtomicUnknownOutcomeRejected("pre-action ledger instance changed")
+            try:
+                _ORIGINAL_LEDGER_PATH_EPOCH(ledger, original_path)
+            except ledger_module.AtomicPreactionRejected as exc:
+                raise AtomicUnknownOutcomeRejected(
+                    "pre-action ledger instance changed"
+                ) from exc
             if (
                 _ORIGINAL_WITNESS(before) != original_before
                 or (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
