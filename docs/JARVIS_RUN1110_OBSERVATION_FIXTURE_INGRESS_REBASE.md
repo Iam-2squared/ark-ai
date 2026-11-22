@@ -1,11 +1,11 @@
-# Run1110 — Observation fixture ingress regression rebase
+# Run1111 — Rebased Run1110 Observation fixture ingress regression
 
 ## Exact basis
 
 - Parent: Draft PR #8, `research/jarvis-foundations`.
-- Exact parent HEAD: `d08cf2bdbc7cdd3142b4ab3945cacf39d29ca607`.
-- Reapplied from Draft PR #262 exact child HEAD: `6e114402885d73082b4e126de7c99b2cd58645eb`.
-- New child branch: `research/run1110-observation-fixture-guards-rebase`.
+- Exact parent HEAD: `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
+- Reapplied from Draft PR #266 exact child HEAD: `b3097081fb4450eac2b6c50c9870f8bc91d20f2d`.
+- New child branch: `research/run1111-observation-fixture-guards-rebase`.
 - Tests: `tests/test_observation_fixture_metadata_preflight_run1110.py` and `tests/test_observation_fixture_payload_byte_budget_run1110.py`.
 
 ## Coverage
@@ -25,3 +25,8 @@ This validates local fixture-ingress bounds and hash ordering only. It does not 
 
 
 Rebased child CI is required on this exact branch head. The predecessor PR #262 exact-head run #7061 / 45010743101 is GREEN on the previous base only and is not transferred.
+
+
+## Run1111 rebase evidence
+
+The predecessor child PR #266 exact head `b3097081fb4450eac2b6c50c9870f8bc91d20f2d` passed Windows/Linux × Python 3.11–3.13 CI run [45014634151](https://github.com/Iam-2squared/ark-ai/actions/runs/45014634151), 6/6. That result does not transfer to this rebased branch; fresh exact-head CI is required.
