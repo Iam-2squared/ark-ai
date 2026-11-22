@@ -73,6 +73,24 @@ def _barrier(marker, child) -> None:
         time.sleep(0.02)
 
 
+def _read_published_marker(marker, child) -> str:
+    """Wait for the atomically renamed marker to become readable on Windows."""
+    deadline = time.monotonic() + 25
+    while True:
+        if child.poll() is not None:
+            raise AssertionError("WAL child exited before marker became readable")
+        try:
+            content = marker.read_text(encoding="ascii")
+        except (FileNotFoundError, PermissionError) as exc:
+            if time.monotonic() >= deadline:
+                raise AssertionError("WAL marker never became readable") from exc
+            time.sleep(0.02)
+            continue
+        if content != "pinned-old-snapshot":
+            raise AssertionError("WAL child published an unexpected marker")
+        return content
+
+
 @pytest.mark.parametrize("reader_mode", ("ro", "rw"))
 @pytest.mark.parametrize("foreign_owner", (False, True))
 def test_scoped_expiry_and_generation_survive_pinned_reader_last_close(
@@ -104,8 +122,7 @@ def test_scoped_expiry_and_generation_survive_pinned_reader_last_close(
         writer = SQLiteMemoryStore(path, clock_ms=lambda: 200)
         assert writer.purge_expired(scope=own, limit=1) == 1
         written.touch()
-        _barrier(observed, child)
-        assert observed.read_text(encoding="ascii") == "pinned-old-snapshot"
+        assert _read_published_marker(observed, child) == "pinned-old-snapshot"
 
         cold = SQLiteMemoryStore(path, clock_ms=lambda: 201)
         assert cold.get(due.memory_id, own, include_expired=True) is None
