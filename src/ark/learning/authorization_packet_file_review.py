@@ -149,6 +149,10 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
         _require_original_path_policy()
         before_regular = _is_regular_file(before)
         before_reparse = _is_reparse_point(before)
+        if not before_regular or before_reparse:
+            raise LocalPacketBindingRejected(
+                "review packet file path or byte budget denied"
+            )
         before_links = before.st_nlink
         _require_original_path_policy()
         before_size = before.st_size
@@ -160,9 +164,7 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
         before_parent_symlink = any(parent.is_symlink() for parent in path.parents)
         _require_original_path_policy()
         if (
-            not before_regular
-            or before_reparse
-            or before_ancestor_reparse
+            before_ancestor_reparse
             or type(before_links) is not int
             or before_links != 1
             or type(before_size) is not int
