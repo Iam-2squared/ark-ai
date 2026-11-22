@@ -55,12 +55,11 @@ def test_spoofed_gate_is_never_invoked_by_independent_wave(
             monkeypatch.setattr(PermissionGate, "authorize_registered", counterfeit)
         else:
             with pytest.raises(AttributeError, match="immutable"):
-                setattr(
-                    gate, "authorize_registered",
+                gate.authorize_registered = (
                     lambda registry, call, grants, *, now_ms, one_shot=None: counterfeit(
                         gate, registry, call, grants,
                         now_ms=now_ms, one_shot=one_shot,
-                    ),
+                    )
                 )
 
     def preview_then_change(*args, **kwargs):
