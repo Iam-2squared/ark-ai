@@ -26,7 +26,7 @@ def _admit_observation_diagnostic_label(name: str, value: object) -> None:
         raise ValueError(f"{name} exceeds observation diagnostic budget")
     if not value.strip():
         raise ValueError(f"{name} must be a nonempty exact string")
-    if "\\x00" in value:
+    if "\x00" in value:
         raise ValueError(f"{name} contains a NUL separator")
     if any(ord(character) < 32 or ord(character) == 127 for character in value):
         raise ValueError(f"{name} contains an ASCII control delimiter")
