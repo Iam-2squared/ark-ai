@@ -491,6 +491,16 @@ class ToolRegistry:
             raise AttributeError("ToolRegistry is immutable")
         object.__setattr__(self, name, value)
 
+    def __delattr__(self, name: str) -> None:
+        # Deleting a slot is also mutation; deny it after construction.
+        try:
+            sealed = object.__getattribute__(self, "_sealed")
+        except AttributeError:
+            sealed = False
+        if sealed:
+            raise AttributeError("ToolRegistry is immutable")
+        object.__delattr__(self, name)
+
     def __init__(self, registrations: Iterable[ToolRegistration]) -> None:
         if (
             ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
@@ -894,6 +904,7 @@ class ToolRegistry:
 _ORIGINAL_TOOL_REGISTRY_TYPE = ToolRegistry
 _ORIGINAL_TOOL_REGISTRY_SLOTS = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__slots__"]
 _ORIGINAL_TOOL_REGISTRY_SETATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__setattr__"]
+_ORIGINAL_TOOL_REGISTRY_DELATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__delattr__"]
 
 
 def _require_original_registry_instance_seal() -> None:
@@ -904,5 +915,7 @@ def _require_original_registry_instance_seal() -> None:
         is not _ORIGINAL_TOOL_REGISTRY_SLOTS
         or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__setattr__")
         is not _ORIGINAL_TOOL_REGISTRY_SETATTR
+        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__delattr__")
+        is not _ORIGINAL_TOOL_REGISTRY_DELATTR
     ):
         raise ValueError("registry instance immutability contract changed")
