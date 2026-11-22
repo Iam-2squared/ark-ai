@@ -75,11 +75,11 @@ def test_registered_bind_instance_shadow_is_denied_before_grant_callback(
     invoked = []
     original_bind = registry.bind
 
-    def shadowed_bind(current):
+    def shadowed_bind(self, current):
         invoked.append(True)
         return original_bind(current)
 
-    monkeypatch.setattr(registry, "bind", shadowed_bind)
+    monkeypatch.setattr(ToolRegistry, "bind", shadowed_bind)
     with pytest.raises(
         PermissionDenied,
         match="registered authorization implementation identity changed",
