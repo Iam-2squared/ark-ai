@@ -29,33 +29,65 @@ from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
 
 
-def _is_reparse_point(info: os.stat_result) -> bool:
+def _require_original_path_policy() -> None:
+    """Pin the exact local classifiers used by the detached packet reader."""
     if (
-        type(_REPARSE_POINT_ATTRIBUTE) is not int
+        stat is not _ORIGINAL_STAT
+        or stat.S_ISREG is not _ORIGINAL_S_ISREG
+        or stat.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise LocalPacketBindingRejected("review packet reparse-point guard changed")
+
+
+def _is_regular_file(info: object) -> bool:
+    _require_original_path_policy()
+    mode = info.st_mode
+    _require_original_path_policy()
+    if type(mode) is not int:
+        raise LocalPacketBindingRejected("review packet file mode is malformed")
+    return _ORIGINAL_S_ISREG(mode)
+
+
+def _is_reparse_point(info: object) -> bool:
+    _require_original_path_policy()
     attributes = getattr(info, "st_file_attributes", 0)
-    return stat.S_ISLNK(info.st_mode) or (
-        type(attributes) is int and bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    _require_original_path_policy()
+    if type(attributes) is not int:
+        raise LocalPacketBindingRejected("review packet reparse metadata is malformed")
+    mode = info.st_mode
+    _require_original_path_policy()
+    if type(mode) is not int:
+        raise LocalPacketBindingRejected("review packet file mode is malformed")
+    return _ORIGINAL_S_ISLNK(mode) or bool(
+        attributes & _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     )
 
 
 def _has_reparse_ancestor(path: Path) -> bool:
     """Reject symlink/junction ancestors before a packet path is opened."""
+    _require_original_path_policy()
     for parent in path.parents:
+        _require_original_path_policy()
         try:
             info = parent.lstat()
         except FileNotFoundError:
+            _require_original_path_policy()
             continue
         except OSError as exc:
             raise LocalPacketBindingRejected(
                 "review packet ancestry cannot be verified"
             ) from exc
+        _require_original_path_policy()
         if _is_reparse_point(info):
             return True
+    _require_original_path_policy()
     return False
 
 _MAX_PACKET_BYTES = 65_536
@@ -92,24 +124,53 @@ def _file_epoch(info: os.stat_result) -> tuple[int, int, int, int, int]:
     # path.stat and fstat may disagree on ctime even for an unchanged file;
     # preserve the original Windows epoch behavior instead of false rejection.
     # This remains unauthenticated local custody, never approval or provenance.
-    return (
-        info.st_dev, info.st_ino, info.st_size,
-        info.st_mtime_ns, info.st_ctime_ns if os.name == "posix" else 0,
-    )
+    _require_original_path_policy()
+    device = info.st_dev
+    _require_original_path_policy()
+    inode = info.st_ino
+    _require_original_path_policy()
+    size = info.st_size
+    _require_original_path_policy()
+    modified = info.st_mtime_ns
+    _require_original_path_policy()
+    changed = info.st_ctime_ns if os.name == "posix" else 0
+    _require_original_path_policy()
+    values = (device, inode, size, modified, changed)
+    if any(type(value) is not int for value in values):
+        raise LocalPacketBindingRejected("review packet file metadata is malformed")
+    return values
 
 
 def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, int, int]]:
     """Read the same local regular, non-aliased file twice without creating it."""
+    _require_original_path_policy()
     try:
         before = path.lstat()
+        _require_original_path_policy()
+        before_regular = _is_regular_file(before)
+        before_reparse = _is_reparse_point(before)
+        if not before_regular or before_reparse:
+            raise LocalPacketBindingRejected(
+                "review packet file path or byte budget denied"
+            )
+        before_links = before.st_nlink
+        _require_original_path_policy()
+        before_size = before.st_size
+        _require_original_path_policy()
+        before_ancestor_reparse = _has_reparse_ancestor(path)
+        _require_original_path_policy()
+        before_symlink = path.is_symlink()
+        _require_original_path_policy()
+        before_parent_symlink = any(parent.is_symlink() for parent in path.parents)
+        _require_original_path_policy()
         if (
-            not stat.S_ISREG(before.st_mode)
-            or _is_reparse_point(before)
-            or _has_reparse_ancestor(path)
-            or before.st_nlink != 1
-            or not 1 <= before.st_size <= _MAX_PACKET_BYTES
-            or path.is_symlink()
-            or any(parent.is_symlink() for parent in path.parents)
+            before_ancestor_reparse
+            or type(before_links) is not int
+            or before_links != 1
+            or type(before_size) is not int
+            or not 1 <= before_size <= _MAX_PACKET_BYTES
+            or before_symlink
+            or before_parent_symlink
         ):
             raise LocalPacketBindingRejected("review packet file path or byte budget denied")
         # lstat()/open() is a race. O_NOFOLLOW denies a final symlink on
@@ -122,48 +183,86 @@ def _read_exact_local_packet(path: Path) -> tuple[bytes, tuple[int, int, int, in
             | getattr(os, "O_NOFOLLOW", 0)
             | getattr(os, "O_NONBLOCK", 0)
         )
-        with os.fdopen(os.open(path, flags), "rb") as handle:
-            opened = os.fstat(handle.fileno())
-            # A race may substitute a FIFO, device, or socket. Never read
-            # unverified nonregular bytes merely because lstat saw a file.
-            if (
-                not stat.S_ISREG(opened.st_mode)
-                or _is_reparse_point(opened)
-                or opened.st_nlink != 1
-                or _file_epoch(opened) != _file_epoch(before)
-            ):
-                raise LocalPacketBindingRejected(
-                    "review packet file changed during read"
-                )
-            content = handle.read(_MAX_PACKET_BYTES + 1)
-            # Recheck the OPEN HANDLE after reading, not merely its former
-            # path. A forged or restored path stat is not proof that the
-            # already-open file stayed in the same metadata epoch.
-            after_handle = os.fstat(handle.fileno())
+        descriptor = os.open(path, flags)
+        try:
+            _require_original_path_policy()
+            with os.fdopen(descriptor, "rb") as handle:
+                descriptor = -1
+                _require_original_path_policy()
+                opened = os.fstat(handle.fileno())
+                _require_original_path_policy()
+                opened_regular = _is_regular_file(opened)
+                opened_reparse = _is_reparse_point(opened)
+                opened_links = opened.st_nlink
+                _require_original_path_policy()
+                before_epoch = _file_epoch(before)
+                opened_epoch = _file_epoch(opened)
+                if (
+                    not opened_regular
+                    or opened_reparse
+                    or type(opened_links) is not int
+                    or opened_links != 1
+                    or opened_epoch != before_epoch
+                ):
+                    raise LocalPacketBindingRejected(
+                        "review packet file changed during read"
+                    )
+                _require_original_path_policy()
+                content = handle.read(_MAX_PACKET_BYTES + 1)
+                _require_original_path_policy()
+                after_handle = os.fstat(handle.fileno())
+                _require_original_path_policy()
+        finally:
+            if descriptor >= 0:
+                os.close(descriptor)
         after = path.lstat()
+        _require_original_path_policy()
     except OSError as exc:
         raise LocalPacketBindingRejected("review packet file cannot be read") from exc
+
     identity = _file_epoch(before)
+    opened_regular = _is_regular_file(opened)
+    opened_reparse = _is_reparse_point(opened)
+    opened_links = opened.st_nlink
+    _require_original_path_policy()
+    after_regular = _is_regular_file(after)
+    after_reparse = _is_reparse_point(after)
+    after_links = after.st_nlink
+    _require_original_path_policy()
+    after_handle_regular = _is_regular_file(after_handle)
+    after_handle_reparse = _is_reparse_point(after_handle)
+    after_handle_links = after_handle.st_nlink
+    _require_original_path_policy()
+    after_epoch = _file_epoch(after)
+    after_handle_epoch = _file_epoch(after_handle)
+    path_symlink = path.is_symlink()
+    _require_original_path_policy()
+    parent_symlink = any(parent.is_symlink() for parent in path.parents)
+    _require_original_path_policy()
+    ancestor_reparse = _has_reparse_ancestor(path)
+    _require_original_path_policy()
     if (
-        not stat.S_ISREG(opened.st_mode)
-        or not stat.S_ISREG(after.st_mode)
-        or _is_reparse_point(after)
-        or opened.st_nlink != 1
-        or after.st_nlink != 1
-        or _file_epoch(opened) != identity
-        or not stat.S_ISREG(after_handle.st_mode)
-        or _is_reparse_point(after_handle)
-        or after_handle.st_nlink != 1
-        or _file_epoch(after_handle) != identity
-        or _file_epoch(after) != identity
-        or len(content) != before.st_size
-        or path.is_symlink()
-        or any(parent.is_symlink() for parent in path.parents)
-        or _has_reparse_ancestor(path)
+        not opened_regular
+        or opened_reparse
+        or type(opened_links) is not int
+        or opened_links != 1
+        or not after_regular
+        or after_reparse
+        or type(after_links) is not int
+        or after_links != 1
+        or not after_handle_regular
+        or after_handle_reparse
+        or type(after_handle_links) is not int
+        or after_handle_links != 1
+        or after_epoch != identity
+        or after_handle_epoch != identity
+        or len(content) != before_size
+        or path_symlink
+        or parent_symlink
+        or ancestor_reparse
     ):
         raise LocalPacketBindingRejected("review packet file changed during read")
     return content, identity
-
 
 def verify_local_authorization_packet_file(
     snapshot: dict,
