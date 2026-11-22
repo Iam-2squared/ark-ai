@@ -295,7 +295,10 @@ def _require_original_components(
         or vars(ToolRegistry).get("get") is not _ORIGINAL_REGISTRY_GET
         or vars(ToolRegistry).get("revision") is not _ORIGINAL_REGISTRY_REVISION
         or vars(ToolRegistry).get("_assert_registration_epoch") is not _ORIGINAL_REGISTRY_EPOCH
-        or any(name in _instance_namespace(registry) for name in ("bind", "resolve", "get", "revision"))
+        or any(
+            name in _instance_namespace(registry)
+            for name in ("bind", "resolve", "get", "revision")
+        )
     ):
         raise DisconnectedMockExecutionRejected("ToolRegistry method identity changed")
     if (
