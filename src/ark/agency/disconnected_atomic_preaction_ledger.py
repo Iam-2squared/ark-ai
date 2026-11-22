@@ -400,14 +400,37 @@ def _scan(conn: sqlite3.Connection) -> AtomicPreactionSnapshot:
 class DisconnectedAtomicPreactionLedger:
     """Local digest-only intent storage; intentionally has no execute method."""
 
+    # Retain an instance dictionary for the commit-ambiguity fault-injection
+    # fixture, but keep the database path in a non-shadowable data descriptor.
+    __slots__ = ("_path", "_path_identity", "__dict__")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name in ("_path", "_path_identity"):
+            raise AttributeError("atomic pre-action ledger path identity is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        if name in ("_path", "_path_identity"):
+            raise AttributeError("atomic pre-action ledger path identity is immutable")
+        object.__delattr__(self, name)
+
     def __init__(self, path: Path) -> None:
-        self._path = _path(path, create=False)
+        if type(self) is not DisconnectedAtomicPreactionLedger:
+            raise AtomicPreactionRejected("exact atomic pre-action ledger type required")
+        target = _path(path, create=False)
+        object.__setattr__(self, "_path", target)
+        object.__setattr__(self, "_path_identity", target)
+        _require_ledger_path_epoch(self, target)
         with closing(self._open(read_only=True)) as conn:
+            _require_ledger_path_epoch(self, target)
             conn.execute("BEGIN")
             _scan(conn)
+            _require_ledger_path_epoch(self, target)
 
     @classmethod
     def create(cls, path: Path) -> DisconnectedAtomicPreactionLedger:
+        if cls is not DisconnectedAtomicPreactionLedger:
+            raise AtomicPreactionRejected("exact atomic pre-action ledger type required")
         target = _path(path, create=True)
         with closing(sqlite3.connect(target)) as conn:
             conn.execute("PRAGMA busy_timeout=5000")
@@ -419,36 +442,52 @@ class DisconnectedAtomicPreactionLedger:
                 conn.execute(_AUDITS)
                 conn.execute("PRAGMA user_version=1")
                 _schema(conn)
-        return cls(path)
+        return cls(target)
 
     def _open(self, *, read_only: bool) -> sqlite3.Connection:
-        target = _path(self._path, create=False)
+        source = _require_ledger_path_epoch(self)
+        target = _path(source, create=False)
+        _require_ledger_path_epoch(self, source)
         uri = target.as_uri() + ("?mode=ro" if read_only else "?mode=rw")
         conn = sqlite3.connect(uri, uri=True)
-        conn.execute("PRAGMA busy_timeout=5000")
-        return conn
+        try:
+            _require_ledger_path_epoch(self, source)
+            conn.execute("PRAGMA busy_timeout=5000")
+            _require_ledger_path_epoch(self, source)
+            return conn
+        except Exception:
+            conn.close()
+            raise
 
     def inspect(self, retained: AtomicPreactionWitness) -> AtomicPreactionSnapshot:
+        source = _require_ledger_path_epoch(self)
         expected = _witness_image(retained)
         with closing(self._open(read_only=True)) as conn:
+            _require_ledger_path_epoch(self, source)
             conn.execute("BEGIN")
             snapshot = _scan(conn)
+            _require_ledger_path_epoch(self, source)
         if (
             _witness_image(retained) != expected
             or _witness_image(snapshot.witness) != expected
         ):
             raise AtomicPreactionRejected("retained pre-action witness is stale or mismatched")
+        _require_ledger_path_epoch(self, source)
         return snapshot
 
     def reserve(
         self, claim: AtomicIntentClaim, *, retained: AtomicPreactionWitness,
     ) -> AtomicPreactionWitness:
+        source = _require_ledger_path_epoch(self)
         _check_claim(claim)
         expected = _witness_image(retained)
         frozen = (claim.occurrence_id, claim.bound_action_id, claim.request_sha256)
         with closing(self._open(read_only=False)) as conn, conn:
+            _require_ledger_path_epoch(self, source)
             conn.execute("BEGIN IMMEDIATE")
+            _require_ledger_path_epoch(self, source)
             snapshot = _scan(conn)
+            _require_ledger_path_epoch(self, source)
             if (
                 _witness_image(retained) != expected
                 or _witness_image(snapshot.witness) != expected
@@ -474,4 +513,53 @@ class DisconnectedAtomicPreactionLedger:
                 raise AtomicPreactionRejected(
                     "synthetic intent or CAS witness changed before commit"
                 )
+            _require_ledger_path_epoch(self, source)
+        _require_ledger_path_epoch(self, source)
         return AtomicPreactionWitness(seq, tip)
+
+
+_LEDGER_TYPE = DisconnectedAtomicPreactionLedger
+_LEDGER_SLOTS = vars(_LEDGER_TYPE)["__slots__"]
+_ORIGINAL_LEDGER_INIT = vars(_LEDGER_TYPE)["__init__"]
+_ORIGINAL_LEDGER_CREATE = vars(_LEDGER_TYPE)["create"]
+_ORIGINAL_LEDGER_SETATTR = vars(_LEDGER_TYPE)["__setattr__"]
+_ORIGINAL_LEDGER_DELATTR = vars(_LEDGER_TYPE)["__delattr__"]
+_ORIGINAL_LEDGER_OPEN = vars(_LEDGER_TYPE)["_open"]
+_ORIGINAL_LEDGER_INSPECT = vars(_LEDGER_TYPE)["inspect"]
+_ORIGINAL_LEDGER_RESERVE = vars(_LEDGER_TYPE)["reserve"]
+
+
+def _require_ledger_path_epoch(
+    ledger: object, expected: Path | None = None,
+) -> Path:
+    _require_original_atomic_carriers(snapshot=False)
+    if (
+        DisconnectedAtomicPreactionLedger is not _LEDGER_TYPE
+        or type(ledger) is not _LEDGER_TYPE
+        or vars(_LEDGER_TYPE).get("__slots__") is not _LEDGER_SLOTS
+        or vars(_LEDGER_TYPE).get("__init__") is not _ORIGINAL_LEDGER_INIT
+        or vars(_LEDGER_TYPE).get("create") is not _ORIGINAL_LEDGER_CREATE
+        or vars(_LEDGER_TYPE).get("__setattr__") is not _ORIGINAL_LEDGER_SETATTR
+        or vars(_LEDGER_TYPE).get("__delattr__") is not _ORIGINAL_LEDGER_DELATTR
+        or vars(_LEDGER_TYPE).get("_open") is not _ORIGINAL_LEDGER_OPEN
+        or vars(_LEDGER_TYPE).get("inspect") is not _ORIGINAL_LEDGER_INSPECT
+        or vars(_LEDGER_TYPE).get("reserve") is not _ORIGINAL_LEDGER_RESERVE
+        or vars(_LEDGER_TYPE).get("__getattribute__") is not None
+        or vars(_LEDGER_TYPE).get("__getattr__") is not None
+    ):
+        raise AtomicPreactionRejected("atomic pre-action ledger implementation changed")
+    try:
+        path = object.__getattribute__(ledger, "_path")
+        identity = object.__getattribute__(ledger, "_path_identity")
+        namespace = object.__getattribute__(ledger, "__dict__")
+    except (AttributeError, TypeError) as exc:
+        raise AtomicPreactionRejected("atomic pre-action ledger path identity unavailable") from exc
+    if (
+        type(path) is not type(Path())
+        or path is not identity
+        or "_path" in namespace
+        or "_path_identity" in namespace
+        or (expected is not None and path is not expected)
+    ):
+        raise AtomicPreactionRejected("atomic pre-action ledger path identity changed")
+    return path
