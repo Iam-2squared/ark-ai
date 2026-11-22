@@ -1,3 +1,74 @@
+# LATEST — ARK Run1115 maximum-throughput checkpoint
+
+**Saved at (Asia/Tokyo/JST): 2026-11-23 02:03:56+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `246083bb46be2deb18b905a59953247baa290af8` (live `research/jarvis-foundations` ref and PR #8 head re-read immediately before this checkpoint write; includes the green Personal Context replay path-seal integration from PR #290). **PR #5 work-basis HEAD:** `d9406b48c252065068d81dca55b77535073691a1`. **Main observed HEAD:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write or merge occurred. **PR #9 UI head:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; branch remains untouched. **Checkpoint-result HEAD:** this checkpoint update commit; its exact SHA is reported separately in the invocation result and is not self-embedded in this file.
+
+## Overall current ARK state
+
+- Draft PR #8 remains OPEN/DRAFT/UNMERGED on `research/jarvis-foundations` at work-basis HEAD `246083bb46be2deb18b905a59953247baa290af8`. PR #290's Personal Context replay path-identity package was merged into this isolated foundation branch only; its exact child HEAD `62d9bfca82d499cd966a26277e868a9d4dd0eeb8` passed all six Windows/Linux × Python 3.11–3.13 jobs in run [45040901392](https://github.com/Iam-2squared/ark-ai/actions/runs/45040901392). The resulting merge commit is the current PR #8 HEAD `246083bb46be2deb18b905a59953247baa290af8`. The parent run [45045665722](https://github.com/Iam-2squared/ark-ai/actions/runs/45045665722) is **IN PROGRESS** on that exact HEAD.
+- PR #5 remains OPEN/DRAFT/UNMERGED on `research/v3-learning-evaluation` at `d9406b48c252065068d81dca55b77535073691a1`. Its exact-head run [45041094404](https://github.com/Iam-2squared/ark-ai/actions/runs/45041094404) is **FAIL** at Ruff I001 in the inherited Personal Context process-crash test. PR #289's import-order child HEAD `a4f017824a15dcce142626cfb657fffd5356b3ba` has exact-head run [45041246190](https://github.com/Iam-2squared/ark-ai/actions/runs/45041246190) **FAIL** at test collection because `ark.personal_context_offline_preview` is absent from the main/V3 merge tree; the test also imports `ark.personal_context_replay_ledger` and `ark.personal_context_request_binding`, which currently exist together on PR #8, not main. V3 remains NOT_PASSED; protected V2 final evaluation, real Candidate, training/weight generation and paid/external-compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. UI/frontend development remains PAUSED; no UI code, tests, integration or branch updates occurred.
+- V1/V2, Local UI and Launcher/Gate Runner evidence remains frozen. Memory v1 DDL/API and row/event/CAS semantics, Planner journal schema/hash-chain/transition semantics, ActionAudit v1 DDL/API/event identity/sequence/clock semantics, Observation Envelope v1, ToolCall/PlanStep contracts, Personal Context replay schema and durable occurrence semantics remain unchanged. No later PASS is declared.
+
+## NEW this invocation — five non-UI work packages
+
+1. **Personal Context replay path-identity seal — [PR #290](https://github.com/Iam-2squared/ark-ai/pull/290), merged into Draft PR #8 only**
+   - Exact child HEAD `62d9bfca82d499cd966a26277e868a9d4dd0eeb8`; CI run [45040901392](https://github.com/Iam-2squared/ark-ai/actions/runs/45040901392): **GREEN, 6/6**.
+   - Merge commit / resulting PR #8 work-basis HEAD: `246083bb46be2deb18b905a59953247baa290af8`. No main merge. Replay schema, request-binding semantics and consent/authorization boundaries unchanged.
+
+2. **PermissionGate READ-preflight assertion repair — [PR #287](https://github.com/Iam-2squared/ark-ai/pull/287)**
+   - Branch `research/run1114-permission-gate-seal-test-repair`, updated head `bfb0bf0158eccdbd99dbc04fa1b48aa69b51fe4f`. The one failing assertion now matches the actual `READ grant preflight denied` error; production behavior and denial boundary are unchanged.
+   - New exact-head run [45045600936](https://github.com/Iam-2squared/ark-ai/actions/runs/45045600936): **IN PROGRESS**. Its base SHA `9d892d3720a80897ac76de047c9fa393f76600bf` is stale relative to current PR #8 head; PR reports not mergeable. Do not integrate until green and rebased/ported against a freshly re-read current base.
+
+3. **Disconnected atomic pre-action ledger path-identity seal — [PR #291](https://github.com/Iam-2squared/ark-ai/pull/291), DRAFT**
+   - Branch head `9d3d8fa53d20d44eba22342ec2cbc1f99aec737d`; exact-head CI [45046330989](https://github.com/Iam-2squared/ark-ai/actions/runs/45046330989): **IN PROGRESS**.
+   - Slot-backed path identity, ordinary assignment/deletion rejection, dictionary-shadow and reflective single-field retarget rejection, exact-type admission, and six local regression cases. Atomic intent/audit DDL, paired-row insertion, chain/CAS and COMMIT-UNKNOWN cold-readback semantics are unchanged.
+
+4. **ActionAudit source-path identity seal — [PR #292](https://github.com/Iam-2squared/ark-ai/pull/292), DRAFT**
+   - Branch head `2ea4e50905cdedfac2f997051263061fb2967221`; exact-head CI [45047099744](https://github.com/Iam-2squared/ark-ai/actions/runs/45047099744): **IN PROGRESS**.
+   - Slot-backed path identity and exact-class/path admission; existing path-change fixtures now use explicit reflective mutation so same-value/new-object and callback transaction boundaries remain tested. Six focused new regressions. ActionAudit v1 schema, event identity/sequence, full-history validation, WAL/bootstrap, clock ordering and COMMIT-UNKNOWN behavior are unchanged.
+
+5. **Orphan Personal Context test-scope cleanup — [PR #293](https://github.com/Iam-2squared/ark-ai/pull/293), DRAFT to main**
+   - Branch head `9547c24e80809017a4b0061ce6aefc1f9f6b0ae3`; exact-head CI [45047165979](https://github.com/Iam-2squared/ark-ai/actions/runs/45047165979): **IN PROGRESS**.
+   - Removes only the orphan test copy from main while preserving the same test with its three implementation modules on PR #8. This avoids importing an unreviewed partial Personal Context feature into main or V3. The PR is Draft; no main merge was performed and explicit approval is required before any merge.
+
+## Tests / CI / evidence
+
+| Scope | Exact-head evidence | Result |
+|---|---|---|
+| PR #290 Personal Context replay seal | Run 45040901392, six matrix jobs | **GREEN 6/6** |
+| PR #8 foundation parent at `246083bb46be2deb18b905a59953247baa290af8` | Run 45045665722 | **IN PROGRESS** |
+| PR #287 PermissionGate test repair at `bfb0bf0` | Run 45045600936 | **IN PROGRESS** |
+| PR #291 atomic pre-action path seal at `9d3d8fa` | Run 45046330989 | **IN PROGRESS** |
+| PR #292 ActionAudit path seal at `2ea4e50` | Run 45047099744 | **IN PROGRESS** |
+| PR #293 main orphan-test cleanup at `9547c24` | Run 45047165979 | **IN PROGRESS** |
+| PR #5 V3 branch at `d9406b4` | Run 45041094404 | **FAIL — Ruff I001** |
+| PR #289 V3 import-order child at `a4f0178` | Run 45041246190 | **FAIL — missing Personal Context module at collection** |
+
+No local pytest/Ruff PASS is claimed for PRs #287, #291, #292 or #293. CI on one HEAD is not evidence for another HEAD. No run was fabricated or treated as green before completion.
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2, Local UI, Launcher/Gate Runner, frozen contracts, evaluation inputs, contamination/provenance/regression/reproducibility gates and all prior exact-head evidence remain unchanged.
+- PR #5 remains Draft/unmerged; protected V2 final evaluation remains closed. No real Candidate adapter, weight generation, training, automatic Candidate promotion or paid/external compute was started.
+- PR #8 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched. No main merge, destructive operation, credential/account connection or physical-PC action occurred.
+- PR #293 is a Draft main-target PR and requires explicit approval before merge. Its merge is the user-confirmation boundary for restoring main/V3 CI coherence without prematurely importing the foundation modules.
+- All new database tests use disposable local SQLite files and synthetic records only. No external effect, dispatch authority, trusted-clock proof, consent, independent custody or JARVIS PASS is claimed.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head CI for PR #291 and PR #292 after the current runs complete; repair only the smallest semantics-preserving failure, rerun once, and switch immediately to an independent free lane while CI runs.
+2. Integrate PR #291/#292 into PR #8 only after their exact-head six-job CI is GREEN and current-base mergeability is re-read. Keep PR #8 Draft/unmerged.
+3. Rebase or port PR #287's test-only fix onto the latest PR #8 HEAD after its exact-head CI is GREEN; its current base is stale and must not be merged as-is.
+4. Keep PR #293 Draft until its CI is GREEN and explicit approval for a main merge is supplied. Until then, PR #5/PR #289 remain blocked by the orphan test/module mismatch; do not weaken V3 gates or import partial foundation code.
+5. Continue non-UI foundation work: Memory WAL/SHM and CAS/expiry/recovery; Planner crash recovery and exact terminal propagation; ToolRegistry/PermissionGate immutable identity; restart-safe exactly-once authorization and trusted-clock audit-before-action; Personal Context privacy/replay; proactive scheduler state; Observation/multimodal fixture contracts; and free-only V3 path/identity/reproducibility guards. Do not resume UI work.
+
+
+---
+
 # LATEST — ARK Run1114 corrective checkpoint: reconcile post-save CI results
 
 **Saved at (Asia/Tokyo/JST): 2026-11-23 01:02:04+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
