@@ -30,6 +30,7 @@ _OCC_B = "occ_" + "b" * 64
 
 def _preflight_only(
     bindings: tuple[object, ...],
+    monkeypatch: pytest.MonkeyPatch,
     *,
     witness: AtomicPreactionWitness | None = None,
 ) -> None:
@@ -89,7 +90,8 @@ class ExplosiveValue:
 @pytest.mark.parametrize("field", ("count", "tip_sha256"))
 def test_malformed_retained_witness_rejected_before_reader_without_equality(
     field: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     valid = genesis_atomic_preaction_witness()
     object.__setattr__(valid, field, ExplosiveValue())
-    _preflight_only(((_STEP_A, _OCC_A),), witness=valid)
+    _preflight_only(((_STEP_A, _OCC_A),), monkeypatch, witness=valid)
