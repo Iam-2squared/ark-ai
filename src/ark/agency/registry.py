@@ -579,6 +579,7 @@ class ToolRegistry:
             or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
         ):
             raise TypeError("an exact ToolRegistry instance is required")
+        _require_original_registry_instance_seal()
         _require_original_registration_contract()
         _require_original_registry_digest()
         if (
