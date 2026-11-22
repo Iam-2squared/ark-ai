@@ -6,15 +6,13 @@ SQLite and synthetic context fixtures only; no disclosure or tool dispatch.
 
 from __future__ import annotations
 
-from multiprocessing import get_context
-from pathlib import Path
-
 import hashlib
 import os
 import sqlite3
+from multiprocessing import get_context
+from pathlib import Path
 
 import pytest
-
 from ark.personal_context_offline_preview import (
     OfflineContextFixture,
     build_offline_context_preview,
