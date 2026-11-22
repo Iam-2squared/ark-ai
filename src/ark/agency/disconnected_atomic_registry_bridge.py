@@ -60,7 +60,10 @@ def _require_original_bridge_dependencies() -> None:
         or vars(ToolRegistry).get("resolve") is not _ORIGINAL_RESOLVE
         or vars(ToolRegistry).get("get") is not _ORIGINAL_GET
         or vars(ToolRegistry).get("_assert_registration_epoch") is not _ORIGINAL_REGISTRY_EPOCH
-        or registry_module._require_original_registry_instance_seal is not _ORIGINAL_REGISTRY_SEAL_GUARD
+        or (
+            registry_module._require_original_registry_instance_seal
+            is not _ORIGINAL_REGISTRY_SEAL_GUARD
+        )
     ):
         raise AtomicPreactionRejected("registry intent digest or grammar changed")
 
