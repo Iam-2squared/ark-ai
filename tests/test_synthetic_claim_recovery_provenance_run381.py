@@ -243,7 +243,10 @@ def test_late_equal_path_retarget_of_any_claim_store_is_denied(
         if reads == 2:
             # Equal pathname, different Path object. A source-epoch fence
             # must not rely only on Path value equality.
-            setattr(carrier, field, Path(str(old_path)))
+            if field == "path":
+                object.__setattr__(carrier, field, Path(str(old_path)))
+            else:
+                setattr(carrier, field, Path(str(old_path)))
         return result
 
     monkeypatch.setattr(
