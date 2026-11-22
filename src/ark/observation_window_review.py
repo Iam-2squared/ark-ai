@@ -14,6 +14,43 @@ from dataclasses import dataclass, field
 from .observations import ObservationEnvelope
 
 
+def _admit_observation_diagnostic_label(name: str, value: object) -> None:
+    """Keep spoofable labels out of optional lineage/window diagnostics.
+
+    ObservationEnvelope v1 remains unchanged. This stricter opt-in reviewer
+    boundary runs before observation IDs or privacy-window digests are built.
+    """
+    if type(value) is not str:
+        raise ValueError(f"{name} must be a nonempty exact string")
+    if len(value) > 1024:
+        raise ValueError(f"{name} exceeds observation diagnostic budget")
+    if not value.strip():
+        raise ValueError(f"{name} must be a nonempty exact string")
+    if "\\x00" in value:
+        raise ValueError(f"{name} contains a NUL separator")
+    if any(ord(character) < 32 or ord(character) == 127 for character in value):
+        raise ValueError(f"{name} contains an ASCII control delimiter")
+    if any(
+        0x80 <= codepoint <= 0x9F
+        or codepoint in (0x061C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= codepoint <= 0x202E
+        or 0x2066 <= codepoint <= 0x2069
+        or codepoint in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x206A <= codepoint <= 0x206F
+        for codepoint in map(ord, value)
+    ):
+        raise ValueError(f"{name} contains a Unicode formatting control")
+    try:
+        encoded = value.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise ValueError(f"{name} is not valid UTF-8 text") from exc
+    if len(encoded) > 1024:
+        raise ValueError(f"{name} exceeds observation diagnostic byte budget")
+
+
 @dataclass(frozen=True, slots=True)
 class ObservationWindowReview:
     privacy_scope: str
@@ -105,8 +142,7 @@ class ObservationWindowReview:
         self.assert_consistent()
 
     def _validate_header(self) -> None:
-        if type(self.privacy_scope) is not str or not self.privacy_scope.strip():
-            raise ValueError("privacy_scope must be a nonempty exact string")
+        _admit_observation_diagnostic_label("privacy_scope", self.privacy_scope)
         if (
             type(self.observed_at_ms) is not int
             or not 0 <= self.observed_at_ms <= 2**63 - 1
@@ -133,6 +169,8 @@ class ObservationWindowReview:
             envelope.parent_sha256,
             envelope.schema_version,
         )
+        for name in ("source_id", "adapter_id", "privacy_scope"):
+            _admit_observation_diagnostic_label(name, getattr(checked, name))
         if checked.privacy_scope != self.privacy_scope:
             raise ValueError("observation scope does not match window scope")
         if checked.ingested_at_ms > self.observed_at_ms:
