@@ -166,7 +166,7 @@ def test_mutated_ledger_path_during_read_denied(tmp_path, monkeypatch):
 
     def moved():
         current = original()
-        ledger._path = tmp_path / "forged.db"
+        object.__setattr__(ledger, "_path", tmp_path / "forged.db")
         return current
 
     monkeypatch.setattr(ledger, "witness", moved)
