@@ -32,6 +32,12 @@ _MAX_DB_PATH_BYTES = 4096
 _ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
 _ORIGINAL_OS = os
 _ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
 _DDL = (
     "CREATE TABLE context_requests ("
     "seq INTEGER PRIMARY KEY, request_id TEXT NOT NULL UNIQUE, "
@@ -296,17 +302,38 @@ def _check_binding(binding: object) -> tuple[str, str, str, str]:
     return fields
 
 
-def _check_path(path: object, *, create: bool) -> Path:
-    _require_original_replay_protocol()
-    # Reject unsafe native pathname/longest SQLite journal sibling before
-    # lstat, a caller callback, or any private context ledger connection.
+def _require_original_path_policy() -> None:
+    """Pin stat and encoding callbacks used before private ledger access."""
     if (
         os is not _ORIGINAL_OS
         or os.fsencode is not _ORIGINAL_FSENCODE
+        or stat is not _ORIGINAL_STAT
+        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
         or type(_MAX_DB_PATH_BYTES) is not int
         or _MAX_DB_PATH_BYTES != _ORIGINAL_MAX_DB_PATH_BYTES
+        or type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
     ):
         raise OfflineContextReplayRejected("context ledger path admission changed")
+
+
+def _is_reparse_point(info: object) -> bool:
+    """Fail closed on Windows reparse points, including ordinary mode bits."""
+    _require_original_path_policy()
+    attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_path_policy()
+    return type(attributes) is not int or bool(
+        attributes & _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+def _check_path(path: object, *, create: bool) -> Path:
+    _require_original_replay_protocol()
+    _require_original_path_policy()
+    # Reject unsafe native pathname/longest SQLite journal sibling before
+    # lstat, a caller callback, or any private context ledger connection.
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -317,47 +344,85 @@ def _check_path(path: object, *, create: bool) -> Path:
         raise OfflineContextReplayRejected("exact absolute local context ledger path required")
     try:
         encoded_length = len(os.fsencode(path))
+        _require_original_path_policy()
     except (UnicodeError, ValueError, OSError) as exc:
         raise OfflineContextReplayRejected("context ledger path encoding unavailable") from exc
     if encoded_length + len(b"-journal") > _MAX_DB_PATH_BYTES:
         raise OfflineContextReplayRejected("context ledger path byte budget exceeded")
+    is_directory = _ORIGINAL_STAT_S_ISDIR
+    is_symlink = _ORIGINAL_STAT_S_ISLNK
+    is_regular = _ORIGINAL_STAT_S_ISREG
     try:
         for ancestor in path.parents:
+            _require_original_path_policy()
             info = ancestor.lstat()
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            _require_original_path_policy()
+            mode = info.st_mode
+            _require_original_path_policy()
+            if (
+                not is_directory(mode)
+                or is_symlink(mode)
+                or _is_reparse_point(info)
+            ):
+                _require_original_path_policy()
                 raise OfflineContextReplayRejected("context ledger ancestor is unsafe")
+            _require_original_path_policy()
         main_absent = False
+        _require_original_path_policy()
         try:
             info = path.lstat()
         except FileNotFoundError:
+            _require_original_path_policy()
             main_absent = True
             if not create:
                 raise OfflineContextReplayRejected("context ledger is missing") from None
         else:
-            if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            _require_original_path_policy()
+            mode = info.st_mode
+            _require_original_path_policy()
+            link_count = info.st_nlink
+            _require_original_path_policy()
+            if (
+                create
+                or not is_regular(mode)
+                or link_count != 1
+                or _is_reparse_point(info)
+            ):
+                _require_original_path_policy()
                 raise OfflineContextReplayRejected("existing or aliased context ledger path")
+            _require_original_path_policy()
         # SQLite can also open companion journal/WAL/shared-memory files.
         # An otherwise safe main path is not safe when one of those aliases
         # a foreign private file. For a new ledger, refuse orphan sidecars.
-        # These are lstat preflights, NOT atomic directory-handle custody.
+        # These are repeated lstat preflights, NOT atomic directory-handle custody.
         for suffix in ("-wal", "-shm", "-journal"):
+            _require_original_path_policy()
             companion = path.with_name(path.name + suffix)
+            _require_original_path_policy()
             try:
                 sidecar = companion.lstat()
             except FileNotFoundError:
+                _require_original_path_policy()
                 continue
+            _require_original_path_policy()
+            sidecar_mode = sidecar.st_mode
+            _require_original_path_policy()
+            sidecar_links = sidecar.st_nlink
+            _require_original_path_policy()
             if (
                 main_absent
-                or not stat.S_ISREG(sidecar.st_mode)
-                or sidecar.st_nlink != 1
+                or not is_regular(sidecar_mode)
+                or sidecar_links != 1
+                or _is_reparse_point(sidecar)
             ):
+                _require_original_path_policy()
                 raise OfflineContextReplayRejected(
                     "context ledger SQLite sidecar is missing its main file or unsafe"
                 )
+            _require_original_path_policy()
     except OSError as exc:
         raise OfflineContextReplayRejected("context ledger path unavailable") from exc
     return path
-
 
 def _schema(conn: sqlite3.Connection) -> None:
     _require_original_replay_protocol()
