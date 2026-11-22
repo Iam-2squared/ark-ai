@@ -41,7 +41,9 @@ def test_both_authorization_entrypoints_reject_gate_subclasses_before_callbacks(
             attribute_reads.append(name)
             raise AssertionError("subclass attribute lookup must not run")
 
-    gate = _ObservedGate()
+    with pytest.raises(PermissionDenied, match="exact PermissionGate"):
+        _ObservedGate()
+    gate = object.__new__(_ObservedGate)
     backend = _NeverExecute()
     registry = ToolRegistry((
         ToolRegistration(
