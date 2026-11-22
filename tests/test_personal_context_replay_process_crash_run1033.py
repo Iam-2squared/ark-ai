@@ -12,6 +12,7 @@ import sqlite3
 from multiprocessing import get_context
 from pathlib import Path
 
+import pytest
 from ark.personal_context_offline_preview import (
     OfflineContextFixture,
     build_offline_context_preview,
@@ -22,7 +23,6 @@ from ark.personal_context_replay_ledger import (
     genesis_offline_context_replay_witness,
 )
 from ark.personal_context_request_binding import bind_offline_context_request
-import pytest
 
 _OWNER = "a" * 64
 _SCOPE = "b" * 64
