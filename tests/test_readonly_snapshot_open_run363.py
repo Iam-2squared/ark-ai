@@ -25,7 +25,7 @@ def test_memory_snapshot_missing_database_fails_without_file_creation(tmp_path):
 def test_audit_review_missing_database_fails_without_file_creation(tmp_path):
     audit = SQLiteActionAudit(tmp_path / "existing.db", clock_ms=lambda: 100)
     missing = tmp_path / "not-created.db"
-    audit.path = missing
+    object.__setattr__(audit, "path", missing)
     with pytest.raises(ActionAuditSchemaError, match="cannot read audit snapshot"):
         review_audit_continuity(audit)
     assert not missing.exists()
