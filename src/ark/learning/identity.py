@@ -246,11 +246,12 @@ def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
 
 
 def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...]], ...]:
-    """Bound local manifest to names AND file/directory metadata epochs.
+    """Bound a local manifest without descending through symlink directories.
 
-    Root is included explicitly, so replacing a tree with a same-name copy
-    cannot pass merely because the directory listing looks identical. This
-    remains a best-effort local check, NOT a hostile-writer-safe snapshot.
+    Each directory entry is classified from a no-follow DirEntry.stat result
+    before it can enter the traversal stack. Repeated path epochs detect
+    ordinary replacement during enumeration, but are not atomic dirfd custody
+    and do not defend against a hostile concurrent filesystem writer.
     """
     _require_original_reparse_point_policy()
     root = _require_native_path(root, "snapshot root")
@@ -266,48 +267,94 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
         or ".." in root.parts
     ):
         raise ValueError("snapshot root must be a non-aliased local directory")
-    entries = [("", root, True, _entry_epoch(root, is_dir=True))]
-    # Bound enumeration before sorting: sorted(rglob("*")) alone can consume
-    # unbounded memory on a malformed materialized model snapshot.
-    paths = []
+
+    root_epoch = _entry_epoch(root, is_dir=True)
+    entries = [("", root, True, root_epoch)]
+    paths: list[tuple[str, Path, bool, tuple[int, ...]]] = []
     path_bytes = 0
-    for path in root.rglob("*"):
-        # Check the yielded directory entry before asking rglob for another
-        # item, so a junction is rejected before recursive descent.
-        try:
-            entry_info = path.lstat()
-        except OSError as exc:
-            raise ValueError("snapshot entry disappeared during enumeration") from exc
-        if _is_reparse_point(entry_info):
-            raise ValueError("snapshot contains a symlink or reparse-point entry")
-        if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
-            raise ValueError("snapshot entry count exceeds local budget")
-        relative = path.relative_to(root).as_posix()
-        try:
-            encoded = relative.encode("utf-8", errors="strict")
-        except UnicodeError as exc:
-            raise ValueError("snapshot has an invalid UTF-8 path") from exc
-        if len(encoded) > _MAX_SNAPSHOT_PATH_BYTES:
-            raise ValueError("snapshot relative path exceeds local budget")
-        path_bytes += len(encoded)
-        if path_bytes > _MAX_SNAPSHOT_PATH_BYTES * _MAX_SNAPSHOT_ENTRIES:
-            raise ValueError("snapshot path inventory exceeds local budget")
-        paths.append(path)
-    for path in sorted(paths, key=lambda p: p.as_posix()):
-        info = path.lstat()
+    pending: list[tuple[Path, tuple[int, ...]]] = [(root, root_epoch)]
+
+    while pending:
+        directory, expected_directory_epoch = pending.pop()
+        directory_epoch = _entry_epoch(directory, is_dir=True)
+        if directory_epoch != expected_directory_epoch:
+            raise ValueError("snapshot directory changed before enumeration")
         _require_original_reparse_point_policy()
-        if _is_reparse_point(info):
-            raise ValueError("snapshot contains a symlink entry")
-        if _is_directory(info):
-            is_dir = True
-        elif _is_regular_file(info):
-            is_dir = False
-        else:
-            raise ValueError(f"unsupported snapshot entry: {path}")
-        entries.append((
-            path.relative_to(root).as_posix(), path, is_dir,
-            _entry_epoch(path, is_dir=is_dir),
-        ))
+        try:
+            with os.scandir(directory) as children:
+                _require_original_reparse_point_policy()
+                for entry in children:
+                    if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
+                        raise ValueError("snapshot entry count exceeds local budget")
+                    path = Path(entry.path)
+                    relative = path.relative_to(root).as_posix()
+                    try:
+                        encoded = relative.encode("utf-8", errors="strict")
+                    except UnicodeError as exc:
+                        raise ValueError("snapshot has an invalid UTF-8 path") from exc
+                    if len(encoded) > _MAX_SNAPSHOT_PATH_BYTES:
+                        raise ValueError("snapshot relative path exceeds local budget")
+                    path_bytes += len(encoded)
+                    if path_bytes > _MAX_SNAPSHOT_PATH_BYTES * _MAX_SNAPSHOT_ENTRIES:
+                        raise ValueError("snapshot path inventory exceeds local budget")
+
+                    try:
+                        # Never recurse through an entry before its no-follow
+                        # metadata has been classified and matched to its path.
+                        info = entry.stat(follow_symlinks=False)
+                        _require_original_reparse_point_policy()
+                        if _is_reparse_point(info):
+                            raise ValueError("snapshot contains a symlink entry")
+                        path_info = path.lstat()
+                        _require_original_reparse_point_policy()
+                        if _is_reparse_point(path_info):
+                            raise ValueError("snapshot contains a symlink entry")
+                    except OSError as exc:
+                        raise ValueError(
+                            "snapshot entry disappeared during enumeration"
+                        ) from exc
+
+                    if _is_directory(info):
+                        is_dir = True
+                    elif _is_regular_file(info):
+                        is_dir = False
+                    else:
+                        raise ValueError(f"unsupported snapshot entry: {path}")
+
+                    info_epoch = (
+                        info.st_dev, info.st_ino, info.st_mode, info.st_size,
+                        info.st_mtime_ns, info.st_ctime_ns, info.st_nlink,
+                    )
+                    path_epoch = (
+                        path_info.st_dev, path_info.st_ino, path_info.st_mode,
+                        path_info.st_size, path_info.st_mtime_ns,
+                        path_info.st_ctime_ns, path_info.st_nlink,
+                    )
+                    # Windows path-stat and DirEntry-stat can report different
+                    # file IDs for the same entry. Compare all portable metadata
+                    # there; POSIX also requires device/inode identity.
+                    if (
+                        info_epoch[2:] != path_epoch[2:]
+                        or (os.name != "nt" and info_epoch[:2] != path_epoch[:2])
+                    ):
+                        raise ValueError("snapshot entry changed during enumeration")
+
+                    observed_epoch = _entry_epoch(path, is_dir=is_dir)
+                    if observed_epoch != path_epoch:
+                        raise ValueError("snapshot entry changed during enumeration")
+                    paths.append((relative, path, is_dir, observed_epoch))
+                    if is_dir:
+                        pending.append((path, observed_epoch))
+        except OSError as exc:
+            raise ValueError(
+                "snapshot directory became unavailable during enumeration"
+            ) from exc
+
+        if _entry_epoch(directory, is_dir=True) != directory_epoch:
+            raise ValueError("snapshot directory changed during enumeration")
+
+    paths.sort(key=lambda item: item[0])
+    entries.extend(paths)
     return tuple(entries)
 
 
