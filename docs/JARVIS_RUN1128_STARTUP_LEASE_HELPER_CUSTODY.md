@@ -22,6 +22,7 @@ The new synthetic tests cover:
 - lane-scoped behavior when an unrelated component is blocked;
 - required-component BLOCKED, schema mismatch, duplicate requirements, expiry and clock-regression denial;
 - replacement of each of the three module-level guard helpers with a no-op before a forged descriptor callback;
+- rebinding the tuple that carries the original helper identities;
 - helper replacement during a reentrant snapshot integrity callback.
 
 ## Boundaries
