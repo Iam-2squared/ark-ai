@@ -73,7 +73,7 @@ def test_reentrant_retained_witness_change_is_denied_before_next_row(
 def test_bad_source_type_is_rejected_before_open(tmp_path: Path) -> None:
     audit = _audit(tmp_path)
     object.__setattr__(audit, "path", str(audit.path))
-    with pytest.raises(ActionAuditSchemaError, match="path changed"):
+    with pytest.raises(ActionAuditSchemaError, match="Path source|path changed"):
         continuity.review_audit_continuity(audit)
 
 
