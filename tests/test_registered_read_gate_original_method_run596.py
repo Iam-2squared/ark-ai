@@ -137,10 +137,12 @@ def test_registry_callback_cannot_shadow_instance_policy_method():
     monkeypatch = pytest.MonkeyPatch()
     try:
         monkeypatch.setattr(registry, "bind", changed_bind)
-        result = _review(items)
+        with pytest.raises(
+            DisconnectedReadPreflightRejected,
+            match="registered READ preflight denied",
+        ):
+            _review(items)
     finally:
         monkeypatch.undo()
-    assert result.backend_dispatched is False
-    assert result.write_authorized is False
     assert gate._consumed_tokens == set()
     assert backend.calls == 0
