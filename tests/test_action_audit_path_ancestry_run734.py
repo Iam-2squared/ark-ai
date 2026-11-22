@@ -58,14 +58,14 @@ def test_late_symlinked_source_is_not_followed(tmp_path: Path, method: str):
         redirected.symlink_to(alternate)
     except (OSError, NotImplementedError) as exc:
         pytest.skip(f"file symlink unavailable: {exc}")
-    object.__setattr__(audit, "path", redirected
+    object.__setattr__(audit, "path", redirected)
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         if method == "append":
             audit.append(CALL, outcome="never")
         else:
             audit.events()
     assert SQLiteActionAudit(alternate).events() == []
-    object.__setattr__(audit, "path", original
+    object.__setattr__(audit, "path", original)
     assert audit.events() == []
 
 
