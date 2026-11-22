@@ -75,8 +75,12 @@ def test_windows_direntry_metadata_comparison_ignores_file_ids_and_ctime():
 
     changed_size = (9, 8, 0o100644, 13, 34, 99, 1)
     changed_mtime = (9, 8, 0o100644, 12, 35, 99, 1)
+    changed_mode = (9, 8, 0o100600, 12, 34, 99, 1)
     changed_links = (9, 8, 0o100644, 12, 34, 99, 2)
-    for changed in (changed_size, changed_mtime, changed_links):
+    assert identity._entry_metadata_matches_path(
+        entry_epoch, changed_links, windows=True,
+    )
+    for changed in (changed_size, changed_mtime, changed_mode):
         assert not identity._entry_metadata_matches_path(
             entry_epoch, changed, windows=True,
         )
