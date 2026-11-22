@@ -66,7 +66,7 @@ def test_link_open_does_not_accept_equal_path_substitution(
         elif source == "ledger":
             ledger._path = Path(str(ledger._path))
         else:
-            audit.path = Path(str(audit.path))
+            object.__setattr__(audit, "path", Path(str(audit.path)))
         return conn
 
     monkeypatch.setattr(link, "_connect", changed)
@@ -180,7 +180,7 @@ def test_committed_link_stays_durable_if_commit_callback_changes_source(
 
         def commit(self):
             self.conn.commit()
-            audit.path = Path(str(audit.path))
+            object.__setattr__(audit, "path", Path(str(audit.path)))
 
         def __getattr__(self, name):
             return getattr(self.conn, name)
