@@ -122,7 +122,10 @@ def test_ledger_read_drift_cannot_be_restored_by_audit_callback(
 
     monkeypatch.setattr(module, "_digest", digest)
     monkeypatch.setattr(module, "review_audit_continuity", audit)
-    with pytest.raises(module.SyntheticRecoveryRejected, match="input|witness|incomplete|malformed"):
+    with pytest.raises(
+        module.SyntheticRecoveryRejected,
+        match="input|witness|incomplete|malformed",
+    ):
         _review(state, retained_plan=plan)
     assert changed and not restored
 
