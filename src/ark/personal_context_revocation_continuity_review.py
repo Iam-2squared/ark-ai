@@ -97,9 +97,12 @@ _WITNESS_VECTOR_EPOCH = (
 )
 
 
-def _require_original_witness_carrier() -> None:
+def _require_original_witness_carrier(
+    _original_vector_epoch: tuple[object, ...] = _WITNESS_VECTOR_EPOCH,
+) -> None:
     if (
-        hashlib is not _ORIGINAL_HASHLIB
+        _WITNESS_VECTOR_EPOCH is not _original_vector_epoch
+        or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or json.dumps is not _ORIGINAL_DUMPS
@@ -124,7 +127,7 @@ def _require_original_witness_carrier() -> None:
             for now, before in zip(
                 (_WITNESS_FIELDS, _WITNESS_HOOKS,
                  _ORIGINAL_WITNESS_FIELDS, _ORIGINAL_WITNESS_HOOKS),
-                _WITNESS_VECTOR_EPOCH, strict=True,
+                _original_vector_epoch, strict=True,
             )
         )
         or any(
