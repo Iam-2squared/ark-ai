@@ -48,9 +48,32 @@ def test_registered_intent_stays_identical_and_nonexecuting() -> None:
     assert backend.calls == 0
 
 
+def test_slot_only_registry_rejects_instance_method_replacement() -> None:
+    registry, call, backend = _fixture()
+
+    with pytest.raises(TypeError, match="__dict__"):
+        vars(registry)
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("instance method replacement must never execute")
+
+    with pytest.raises(AttributeError, match="immutable"):
+        registry.bind = forbidden
+    with pytest.raises(AttributeError):
+        object.__setattr__(registry, "bind", forbidden)
+    with pytest.raises(AttributeError, match="immutable"):
+        del registry._revision
+
+    claim = derive_registered_atomic_intent(
+        registry, call, occurrence_id="occ_" + "b" * 64,
+    )
+    assert type(claim) is AtomicIntentClaim
+    assert backend.calls == 0
+
+
 @pytest.mark.parametrize(
     "target",
-    ("instance-bind", "claim-init", "claim-field", "call-tool", "call-request-id"),
+    ("claim-init", "claim-field", "call-tool", "call-request-id"),
 )
 def test_preinstalled_mutable_identity_seams_fail_closed_without_callbacks(
     monkeypatch: pytest.MonkeyPatch, target: str,
@@ -63,9 +86,7 @@ def test_preinstalled_mutable_identity_seams_fail_closed_without_callbacks(
         raise AssertionError("substituted identity code must never execute")
 
     with monkeypatch.context() as patch:
-        if target == "instance-bind":
-            patch.setattr(registry, "bind", forbidden)
-        elif target == "claim-init":
+        if target == "claim-init":
             patch.setattr(AtomicIntentClaim, "__init__", forbidden)
         elif target == "claim-field":
             patch.setattr(AtomicIntentClaim, "request_sha256", property(forbidden))
@@ -88,4 +109,21 @@ def test_distinct_synthetic_occurrence_is_bound_to_distinct_claim(
     registry, call, backend = _fixture()
     claim = derive_registered_atomic_intent(registry, call, occurrence_id=identity)
     assert claim.occurrence_id == identity
+    assert backend.calls == 0
+
+
+def test_registry_deletion_guard_descriptor_is_pinned_before_reads(monkeypatch):
+    registry, _call, backend = _fixture()
+    invoked: list[str] = []
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        invoked.append("delattr")
+        raise AssertionError("substituted deletion guard must never execute")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(ToolRegistry, "__delattr__", forbidden)
+        with pytest.raises(ValueError, match="registry instance immutability contract changed"):
+            _ = registry.revision
+
+    assert invoked == []
     assert backend.calls == 0
