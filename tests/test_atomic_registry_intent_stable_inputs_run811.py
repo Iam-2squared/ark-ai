@@ -61,6 +61,8 @@ def test_slot_only_registry_rejects_instance_method_replacement() -> None:
         registry.bind = forbidden
     with pytest.raises(AttributeError):
         object.__setattr__(registry, "bind", forbidden)
+    with pytest.raises(AttributeError, match="immutable"):
+        del registry._revision
 
     claim = derive_registered_atomic_intent(
         registry, call, occurrence_id="occ_" + "b" * 64,
@@ -107,4 +109,21 @@ def test_distinct_synthetic_occurrence_is_bound_to_distinct_claim(
     registry, call, backend = _fixture()
     claim = derive_registered_atomic_intent(registry, call, occurrence_id=identity)
     assert claim.occurrence_id == identity
+    assert backend.calls == 0
+
+
+def test_registry_deletion_guard_descriptor_is_pinned_before_reads(monkeypatch):
+    registry, _call, backend = _fixture()
+    invoked: list[str] = []
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        invoked.append("delattr")
+        raise AssertionError("substituted deletion guard must never execute")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(ToolRegistry, "__delattr__", forbidden)
+        with pytest.raises(ValueError, match="registry instance immutability contract changed"):
+            _ = registry.revision
+
+    assert invoked == []
     assert backend.calls == 0
