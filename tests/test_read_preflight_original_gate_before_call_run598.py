@@ -123,9 +123,12 @@ def test_registry_callback_cannot_shadow_instance_gate_method():
     monkeypatch = pytest.MonkeyPatch()
     try:
         monkeypatch.setattr(registry, "bind", substituted_bind)
-        receipt = _preview(items)
+        with pytest.raises(
+            DisconnectedReadPreflightRejected,
+            match="registered READ preflight denied",
+        ):
+            _preview(items)
     finally:
         monkeypatch.undo()
-    assert receipt.ready_step_ids == ("read",)
-    assert receipt.dispatch_authorized is False
     assert backend.calls == 0
+    assert gate._consumed_tokens == set()
