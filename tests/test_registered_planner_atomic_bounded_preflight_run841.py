@@ -36,11 +36,11 @@ def _preflight_only(
     registry = ToolRegistry(())
     called: list[str] = []
 
-    def forbidden(*_args: object, **_kwargs: object) -> object:
+    def forbidden(self, *_args: object, **_kwargs: object) -> object:
         called.append("resolver")
         raise AssertionError("invalid input reached registry resolver")
 
-    registry.resolve = forbidden  # type: ignore[method-assign]
+    monkeypatch.setattr(ToolRegistry, "resolve", forbidden)
     steps = (
         PlanStep(_STEP_A, ToolCall("mock", "offline.write", "local")),
         PlanStep(_STEP_B, ToolCall("mock", "offline.write", "local")),
@@ -73,9 +73,9 @@ def _preflight_only(
     ),
 )
 def test_unbounded_malformed_or_duplicate_write_occurrences_never_reach_reader(
-    bindings: tuple[object, ...],
+    bindings: tuple[object, ...], monkeypatch,
 ) -> None:
-    _preflight_only(bindings)
+    _preflight_only(bindings, monkeypatch)
 
 
 class ExplosiveValue:
