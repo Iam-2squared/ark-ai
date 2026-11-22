@@ -20,6 +20,10 @@ from .execution import _require_bounded_snapshot_nesting, canonical_json
 _MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
+_ORIGINAL_OS = os
+_ORIGINAL_OS_PATH = os.path
+_ORIGINAL_FSTAT = os.fstat
+_ORIGINAL_SAMESTAT = os.path.samestat
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISREG = stat.S_ISREG
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
@@ -28,9 +32,22 @@ class LocalIdentityArtifactRejected(ValueError):
     """Reject a changed, aliased, oversized or noncanonical identity artifact."""
 
 
-def _require_original_stat_policy() -> None:
+def _require_original_stat_policy(
+    _original_os: object = _ORIGINAL_OS,
+    _original_os_path: object = _ORIGINAL_OS_PATH,
+    _original_fstat: object = _ORIGINAL_FSTAT,
+    _original_samestat: object = _ORIGINAL_SAMESTAT,
+) -> None:
     if (
-        stat is not _ORIGINAL_STAT
+        os is not _original_os
+        or _ORIGINAL_OS is not _original_os
+        or _ORIGINAL_OS_PATH is not _original_os_path
+        or _original_os.path is not _original_os_path
+        or _ORIGINAL_FSTAT is not _original_fstat
+        or _original_os.fstat is not _original_fstat
+        or _ORIGINAL_SAMESTAT is not _original_samestat
+        or _original_os_path.samestat is not _original_samestat
+        or stat is not _ORIGINAL_STAT
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
     ):
@@ -140,16 +157,18 @@ def verify_local_identity_artifact(
         ):
             raise LocalIdentityArtifactRejected("identity file type or byte budget invalid")
         with path.open("rb") as handle:
-            opened = os.fstat(handle.fileno())
+            _require_original_stat_policy()
+            opened = _ORIGINAL_FSTAT(handle.fileno())
             if (
                 not _is_regular_file(opened)
-                or not os.path.samestat(before, opened)
+                or not _ORIGINAL_SAMESTAT(before, opened)
                 or opened.st_size != before.st_size
                 or opened.st_nlink != 1
             ):
                 raise LocalIdentityArtifactRejected("identity file changed before read")
             raw = handle.read(_MAX_ARTIFACT_BYTES + 1)
-            after_open = os.fstat(handle.fileno())
+            _require_original_stat_policy()
+            after_open = _ORIGINAL_FSTAT(handle.fileno())
             if (
                 not _is_regular_file(after_open)
                 or opened.st_size != after_open.st_size
@@ -160,7 +179,7 @@ def verify_local_identity_artifact(
         after = path.lstat()
         if (
             not _is_regular_file(after)
-            or not os.path.samestat(before, after)
+            or not _ORIGINAL_SAMESTAT(before, after)
             or before.st_size != after.st_size
             or before.st_mtime_ns != after.st_mtime_ns
             or path.is_symlink()
@@ -192,7 +211,7 @@ def verify_local_identity_artifact(
             current = path.lstat()
             if (
                 not _is_regular_file(current)
-                or not os.path.samestat(before, current)
+                or not _ORIGINAL_SAMESTAT(before, current)
                 or current.st_size != before.st_size
                 or current.st_mtime_ns != before.st_mtime_ns
                 or current.st_nlink != 1
@@ -257,16 +276,18 @@ def verify_local_identity_artifact(
     # without claiming an atomic OS snapshot or upstream model provenance.
     try:
         with path.open("rb") as second_handle:
-            second_before = os.fstat(second_handle.fileno())
+            _require_original_stat_policy()
+            second_before = _ORIGINAL_FSTAT(second_handle.fileno())
             second_raw = second_handle.read(_MAX_ARTIFACT_BYTES + 1)
-            second_after = os.fstat(second_handle.fileno())
+            _require_original_stat_policy()
+            second_after = _ORIGINAL_FSTAT(second_handle.fileno())
     except OSError as exc:
         raise LocalIdentityArtifactRejected(
             "identity file unavailable during final byte recheck"
         ) from exc
     if (
-        not os.path.samestat(before, second_before)
-        or not os.path.samestat(second_before, second_after)
+        not _ORIGINAL_SAMESTAT(before, second_before)
+        or not _ORIGINAL_SAMESTAT(second_before, second_after)
         or second_before.st_nlink != 1
         or second_after.st_size != before.st_size
         or second_after.st_mtime_ns != before.st_mtime_ns
