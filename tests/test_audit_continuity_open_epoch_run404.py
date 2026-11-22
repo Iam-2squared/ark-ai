@@ -34,7 +34,7 @@ def test_open_boundary_refuses_a_changed_source_or_retained_witness(
 
     def drift():
         if change == "source":
-            object.__setattr__(audit, "path", Path(str(source_epoch))
+            object.__setattr__(audit, "path", Path(str(source_epoch)))
         else:
             object.__setattr__(retained, "event_count", 2)
 
@@ -88,7 +88,7 @@ def test_stable_open_returns_the_same_readonly_witness(tmp_path):
 def test_missing_source_is_never_created_while_reviewing(tmp_path):
     audit, _call = _setup(tmp_path)
     lost = tmp_path / "missing.sqlite"
-    object.__setattr__(audit, "path", lost
+    object.__setattr__(audit, "path", lost)
     with pytest.raises(ActionAuditSchemaError, match="source changed"):
         module.review_audit_continuity(audit)
     assert not lost.exists()
