@@ -34,9 +34,10 @@ _OCCURRENCE = re.compile(r"occ_[0-9a-f]{64}\Z")
 _RESULT_DOMAIN = b"ARK-disconnected-mock-result-v1\0"
 _PRE_ACTION_OUTCOME = "mock_pre_action"
 _COMPLETED_OUTCOME = "mock_completed"
+_MAX_EXECUTOR_GRANTS = 1024
 _ORIGINAL_EXECUTOR_CONSTANTS = (
     _MAX_INT, _OCCURRENCE, _RESULT_DOMAIN,
-    _PRE_ACTION_OUTCOME, _COMPLETED_OUTCOME,
+    _PRE_ACTION_OUTCOME, _COMPLETED_OUTCOME, _MAX_EXECUTOR_GRANTS,
 )
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
@@ -44,6 +45,35 @@ _ORIGINAL_SHA256 = hashlib.sha256
 
 class DisconnectedMockExecutionRejected(RuntimeError):
     """A mock-only execution input or component was inconsistent."""
+
+
+def _snapshot_write_grants(
+    grants: Iterable[CapabilityGrant],
+) -> tuple[CapabilityGrant, ...]:
+    """Bound and retain one grant iterable for two non-authoritative checks."""
+    snapshot: list[CapabilityGrant] = []
+    try:
+        iterator = iter(grants)
+        while True:
+            try:
+                grant = next(iterator)
+            except StopIteration:
+                break
+            if len(snapshot) >= _MAX_EXECUTOR_GRANTS:
+                raise DisconnectedMockExecutionRejected(
+                    "write grant snapshot exceeds the executor budget"
+                )
+            snapshot.append(grant)
+    except DisconnectedMockExecutionRejected:
+        raise
+    except Exception as exc:
+        raise DisconnectedMockExecutionRejected(
+            "write grant snapshot could not be materialized"
+        ) from exc
+    return tuple(snapshot)
+
+
+_ORIGINAL_SNAPSHOT_WRITE_GRANTS = _snapshot_write_grants
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,8 +224,9 @@ def _require_original_components(
         or hashlib.sha256 is not _ORIGINAL_SHA256
         or (
             _MAX_INT, _OCCURRENCE, _RESULT_DOMAIN,
-            _PRE_ACTION_OUTCOME, _COMPLETED_OUTCOME,
+            _PRE_ACTION_OUTCOME, _COMPLETED_OUTCOME, _MAX_EXECUTOR_GRANTS,
         ) != _ORIGINAL_EXECUTOR_CONSTANTS
+        or _snapshot_write_grants is not _ORIGINAL_SNAPSHOT_WRITE_GRANTS
     ):
         raise DisconnectedMockExecutionRejected(
             "disconnected mock executor codec or limits changed"
@@ -282,10 +313,11 @@ def _require_original_components(
 class DisconnectedMockExecutor:
     """Compose local policy and audit around an exact deterministic mock only.
 
-    WRITE order is: local PermissionGate -> durable synthetic occurrence
-    reservation -> pre-action audit commit -> mock backend -> completion audit.
-    A failure at any earlier stage prevents the mock call. If a later stage
-    fails, callers must inspect local evidence; this class never retries.
+    WRITE order is: throwaway exact-gate preflight -> durable synthetic
+    occurrence reservation -> actual process-local PermissionGate one-shot
+    consume -> pre-action audit commit -> mock backend -> completion audit.
+    The preflight never spends the executor's gate token. A failure at any
+    later stage prevents or quarantines the mock call; this class never retries.
     """
 
     __slots__ = (
@@ -403,35 +435,51 @@ class DisconnectedMockExecutor:
         else:
             raise DisconnectedMockExecutionRejected("registered effect is unsupported")
 
-        try:
-            authorized = _ORIGINAL_GATE_REGISTERED(
-                self._gate,
-                self._registry,
-                call,
-                grants,
-                now_ms=now_ms,
-                one_shot=one_shot,
-            )
-        except Exception as exc:
-            raise DisconnectedMockExecutionRejected(
-                "local PermissionGate denied the mock operation"
-            ) from exc
-        self._assert_component_epoch()
-        if (
-            type(authorized) is not BoundAction
-            or authorized.call is not call
-            or authorized.registration is not initial.registration
-            or authorized.registry_revision != initial.registry_revision
-            or authorized.bound_action_id != initial.bound_action_id
-            or type(authorized.registration.backend) is not _MOCK_BACKEND_TYPE
-            or authorized.registration.backend is not backend
-        ):
-            raise DisconnectedMockExecutionRejected(
-                "registered action identity changed during authorization"
-            )
-
         if effect is Effect.WRITE:
             assert self._occurrences is not None
+            # A WRITE token must be durably reserved before the executor's
+            # process-local gate consumes it. Use a throwaway exact gate for
+            # the grant/request/expiry preflight; it cannot dispatch and its
+            # consumed-token set is discarded with this local preflight.
+            try:
+                grant_snapshot = _ORIGINAL_SNAPSHOT_WRITE_GRANTS(grants)
+                preflight_binding = _ORIGINAL_REGISTRY_BIND(self._registry, call)
+                self._assert_component_epoch()
+                if (
+                    type(preflight_binding) is not BoundAction
+                    or preflight_binding.call is not call
+                    or preflight_binding.registration is not initial.registration
+                    or preflight_binding.registry_revision != initial.registry_revision
+                    or preflight_binding.bound_action_id != initial.bound_action_id
+                ):
+                    raise DisconnectedMockExecutionRejected(
+                        "registered action identity changed during grant snapshot"
+                    )
+                preflight_gate = PermissionGate()
+                preflight = _ORIGINAL_GATE_REGISTERED(
+                    preflight_gate,
+                    self._registry,
+                    call,
+                    grant_snapshot,
+                    now_ms=now_ms,
+                    one_shot=one_shot,
+                )
+            except Exception as exc:
+                raise DisconnectedMockExecutionRejected(
+                    "local PermissionGate denied the mock operation"
+                ) from exc
+            self._assert_component_epoch()
+            if (
+                type(preflight) is not BoundAction
+                or preflight.call is not call
+                or preflight.registration is not initial.registration
+                or preflight.registry_revision != initial.registry_revision
+                or preflight.bound_action_id != initial.bound_action_id
+            ):
+                raise DisconnectedMockExecutionRejected(
+                    "registered action identity changed during WRITE preflight"
+                )
+
             try:
                 reservation = _ORIGINAL_OCCURRENCE_RESERVE(
                     self._occurrences,
@@ -456,6 +504,47 @@ class DisconnectedMockExecutor:
                 raise DisconnectedMockExecutionRejected(
                     "synthetic occurrence receipt is malformed or authorizing"
                 )
+            try:
+                authorized = _ORIGINAL_GATE_REGISTERED(
+                    self._gate,
+                    self._registry,
+                    call,
+                    grant_snapshot,
+                    now_ms=now_ms,
+                    one_shot=one_shot,
+                )
+            except Exception as exc:
+                raise DisconnectedMockExecutionRejected(
+                    "local PermissionGate denied after durable reservation"
+                ) from exc
+        else:
+            try:
+                authorized = _ORIGINAL_GATE_REGISTERED(
+                    self._gate,
+                    self._registry,
+                    call,
+                    grants,
+                    now_ms=now_ms,
+                    one_shot=None,
+                )
+            except Exception as exc:
+                raise DisconnectedMockExecutionRejected(
+                    "local PermissionGate denied the mock operation"
+                ) from exc
+
+        self._assert_component_epoch()
+        if (
+            type(authorized) is not BoundAction
+            or authorized.call is not call
+            or authorized.registration is not initial.registration
+            or authorized.registry_revision != initial.registry_revision
+            or authorized.bound_action_id != initial.bound_action_id
+            or type(authorized.registration.backend) is not _MOCK_BACKEND_TYPE
+            or authorized.registration.backend is not backend
+        ):
+            raise DisconnectedMockExecutionRejected(
+                "registered action identity changed during authorization"
+            )
 
         # This commit is a hard gate: if audit append fails, execute is never
         # called. The audit and occurrence databases remain separate stores.
