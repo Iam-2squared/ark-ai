@@ -7,10 +7,10 @@ SQLite and synthetic context fixtures only; no disclosure or tool dispatch.
 from __future__ import annotations
 
 import hashlib
-import os
-import sqlite3
 from multiprocessing import get_context
+import os
 from pathlib import Path
+import sqlite3
 
 import pytest
 
