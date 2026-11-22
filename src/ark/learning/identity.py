@@ -365,7 +365,16 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                         info_epoch, path_epoch,
                         windows=os.name == "nt", is_dir=is_dir,
                     ):
-                        raise ValueError("snapshot entries changed during enumeration")
+                        type_matches = (
+                            _ORIGINAL_S_IFMT(info_epoch[2])
+                            == _ORIGINAL_S_IFMT(path_epoch[2])
+                        )
+                        raise ValueError(
+                            "snapshot entries changed during enumeration "
+                            f"(is_dir={is_dir}, file_type_match={type_matches}, "
+                            f"mtime_delta_ns={info_epoch[4] - path_epoch[4]}, "
+                            f"size_delta={info_epoch[3] - path_epoch[3]})"
+                        )
 
                     observed_epoch = _entry_epoch(path, is_dir=is_dir)
                     if observed_epoch != path_epoch:
