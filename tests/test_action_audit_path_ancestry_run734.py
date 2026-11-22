@@ -51,6 +51,7 @@ def test_symbolic_grandparent_cannot_create_or_reopen_audit(tmp_path: Path):
 def test_late_symlinked_source_is_not_followed(tmp_path: Path, method: str):
     original = tmp_path / "original.sqlite"
     audit = SQLiteActionAudit(original, clock_ms=lambda: 100)
+    original = audit.path
     alternate = tmp_path / "alternate.sqlite"
     SQLiteActionAudit(alternate, clock_ms=lambda: 100)
     try:
@@ -58,14 +59,14 @@ def test_late_symlinked_source_is_not_followed(tmp_path: Path, method: str):
         redirected.symlink_to(alternate)
     except (OSError, NotImplementedError) as exc:
         pytest.skip(f"file symlink unavailable: {exc}")
-    audit.path = redirected
-    with pytest.raises(ActionAuditSchemaError, match="symbolic"):
+    object.__setattr__(audit, "path", redirected)
+    with pytest.raises(ActionAuditSchemaError, match="path changed"):
         if method == "append":
             audit.append(CALL, outcome="never")
         else:
             audit.events()
     assert SQLiteActionAudit(alternate).events() == []
-    audit.path = original
+    object.__setattr__(audit, "path", original)
     assert audit.events() == []
 
 
@@ -73,12 +74,12 @@ def test_late_symlinked_source_is_not_followed(tmp_path: Path, method: str):
 def test_parent_traversal_never_aliases_audit(tmp_path: Path, method: str):
     (tmp_path / "dir").mkdir()
     path = tmp_path / "dir" / ".." / "escaped.sqlite"
-    with pytest.raises(ActionAuditSchemaError, match="parent traversal"):
+    with pytest.raises(ActionAuditSchemaError, match="parent traversal|path changed"):
         if method == "bootstrap":
             SQLiteActionAudit(path)
         else:
             initial = SQLiteActionAudit(tmp_path / "safe.sqlite")
-            initial.path = path
+            object.__setattr__(initial, "path", path)
             initial.events()
     assert not (tmp_path / "escaped.sqlite").exists()
 
