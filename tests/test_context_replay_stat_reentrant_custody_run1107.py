@@ -218,3 +218,65 @@ def test_context_ledger_rejects_windows_reparse_sidecar_before_open(
         patch.setattr(Path, "lstat", marked_lstat)
         with pytest.raises(OfflineContextReplayRejected, match="sidecar"):
             replay._check_path(target, create=False)
+
+
+def test_stat_policy_rebinding_from_main_link_count_accessor_is_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "context.sqlite"
+    target.write_bytes(b"synthetic main file")
+
+    class ReentrantMetadata:
+        st_mode = stat.S_IFREG | 0o600
+        st_file_attributes = 0
+
+        @property
+        def st_nlink(self) -> int:
+            patch.setattr(replay.stat, "S_ISREG", lambda *_args: False)
+            return 1
+
+    original_lstat = Path.lstat
+
+    def reentrant_lstat(path: Path):
+        if path == target:
+            return ReentrantMetadata()
+        return original_lstat(path)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "lstat", reentrant_lstat)
+        with pytest.raises(
+            OfflineContextReplayRejected, match="path admission changed",
+        ):
+            replay._check_path(target, create=False)
+
+
+def test_stat_policy_rebinding_from_sidecar_link_count_accessor_is_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target = tmp_path / "context.sqlite"
+    sidecar = target.with_name(target.name + "-wal")
+    target.write_bytes(b"synthetic main file")
+    sidecar.write_bytes(b"synthetic sidecar")
+
+    class ReentrantMetadata:
+        st_mode = stat.S_IFREG | 0o600
+        st_file_attributes = 0
+
+        @property
+        def st_nlink(self) -> int:
+            patch.setattr(replay.stat, "S_ISREG", lambda *_args: False)
+            return 1
+
+    original_lstat = Path.lstat
+
+    def reentrant_lstat(path: Path):
+        if path == sidecar:
+            return ReentrantMetadata()
+        return original_lstat(path)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "lstat", reentrant_lstat)
+        with pytest.raises(
+            OfflineContextReplayRejected, match="path admission changed",
+        ):
+            replay._check_path(target, create=False)
