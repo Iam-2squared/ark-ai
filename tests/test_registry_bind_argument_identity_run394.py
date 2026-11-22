@@ -53,7 +53,7 @@ def test_post_resolve_value_equal_argument_rebinding_is_rejected(
     original_args = call.arguments
     original_request = call.request_id
 
-    def changed_after_resolution(argument):
+    def changed_after_resolution(self, argument):
         resolved = original(argument)
         if replacement == "plain":
             clone = dict(original_args)
@@ -68,7 +68,7 @@ def test_post_resolve_value_equal_argument_rebinding_is_rejected(
         assert call.request_id == original_request
         return resolved
 
-    monkeypatch.setattr(registry, "resolve", changed_after_resolution)
+    monkeypatch.setattr(ToolRegistry, "resolve", changed_after_resolution)
     with pytest.raises(ValueError, match="ToolCall (?:identity|argument)"):
         registry.bind(call)
     assert backend.calls == 0
@@ -78,11 +78,11 @@ def test_direct_resolution_also_rejects_value_equal_argument_rebinding(monkeypat
     backend, registry, call = _fixture()
     original = registry.get
 
-    def changed_during_get(name):
+    def changed_during_get(self, name):
         object.__setattr__(call, "arguments", dict(call.arguments))
         return original(name)
 
-    monkeypatch.setattr(registry, "get", changed_during_get)
+    monkeypatch.setattr(ToolRegistry, "get", changed_during_get)
     with pytest.raises(ValueError, match="ToolCall (?:identity|argument)"):
         registry.resolve(call)
     assert backend.calls == 0
