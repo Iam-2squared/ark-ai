@@ -1,3 +1,61 @@
+# LATEST — ARK Run1122 non-UI CI repairs and cross-lane recovery
+
+**Saved at (Asia/Tokyo/JST): 2026-11-23 04:51:28.719+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `d410bd4a006272b45f2e31effd7e1ec600013c66` (latest observed PR #8 branch HEAD immediately before this checkpoint write). **PR #5 work-basis HEAD:** `d9406b48c252065068d81dca55b77535073691a1`. **Main observed HEAD:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write or merge occurred. **PR #9 UI head:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; branch remains untouched. **Checkpoint-result HEAD:** the commit SHA returned by this normal GitHub Contents API update; it is reported separately in the invocation result and is not self-embedded here.
+
+## Overall current ARK state
+
+- V1, V2, Local UI v1 and Launcher/Gate Runner remain at their previously reviewed/frozen states. JARVIS foundations are still isolated and **NOT_PASSED**.
+- Draft PR #8 remains OPEN/DRAFT/UNMERGED. The work-basis exact-head CI run [45060347650](https://github.com/Iam-2squared/ark-ai/actions/runs/45060347650) is **GREEN** on the observed Windows/Linux × Python 3.11–3.13 matrix (6/6 jobs).
+- PR #5 remains OPEN/DRAFT/UNMERGED at `d9406b48c252065068d81dca55b77535073691a1`; its previously recorded exact-head run [45041094404](https://github.com/Iam-2squared/ark-ai/actions/runs/45041094404) remains **FAIL** at inherited Ruff I001. Protected V2 final evaluation, real Candidate, training/weight generation and paid/external-compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. UI/frontend development remains PAUSED; no UI code, tests, integration or branch updates occurred.
+- Main remains at `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no main write or merge occurred.
+
+## NEW this invocation — two isolated, non-UI CI repair packages
+
+1. **Planner process-crash fixture path ingress — [Draft PR #306](https://github.com/Iam-2squared/ark-ai/pull/306)**
+   - Child branch `research/run1122-planner-crash-path-type`; exact child HEAD `c2cbb43968edc20f4f8816f31c68d74d4b92f135`; parent basis `d410bd4a006272b45f2e31effd7e1ec600013c66`.
+   - Prior PR #302 exact-head run [45059426398](https://github.com/Iam-2squared/ark-ai/actions/runs/45059426398) was **FAIL, 6/6**. The two new hard-exit cases passed a command-line string to `SyntheticPlanJournal`, which requires an exact platform `pathlib.Path`.
+   - The child script now converts `sys.argv[1]` with `Path(...)` before constructing the journal. This is test-harness-only; the before/after native COMMIT boundaries, retained-tail checks, event sequence, SQLite quick_check and denial-only flags are unchanged.
+   - New exact-head CI [45062498855](https://github.com/Iam-2squared/ark-ai/actions/runs/45062498855): **IN PROGRESS** (in_progress; latest observed jobs: one Ubuntu/Python 3.13 SUCCESS, five jobs IN_PROGRESS). No PASS is claimed.
+
+2. **Memory pinned-WAL child marker readability — [Draft PR #307](https://github.com/Iam-2squared/ark-ai/pull/307)**
+   - Child branch `research/run1122-memory-wal-marker-read-retry`; exact child HEAD `faa9444461eb633ef309bc4296501d2fa98936a0`; parent basis `d410bd4a006272b45f2e31effd7e1ec600013c66`.
+   - Prior PR #301 exact-head run [45058262845](https://github.com/Iam-2squared/ark-ai/actions/runs/45058262845) was **FAIL** on Windows/Python 3.13: the parent observed the atomically renamed marker's existence, then an immediate read raised `PermissionError`.
+   - The test now uses a bounded readability/content barrier. It retries only `FileNotFoundError`/`PermissionError`, checks child liveness, and still requires the exact `pinned-old-snapshot` content. Persistent access failure remains a failure after the 25-second budget. Memory production source, schema, CAS/expiry and privacy semantics are unchanged.
+   - New exact-head CI [45062631067](https://github.com/Iam-2squared/ark-ai/actions/runs/45062631067): **IN PROGRESS** (in_progress; latest observed jobs: 6 jobs in progress). No PASS is claimed.
+
+## CI / evidence rechecked this invocation
+
+- PR #8 work-basis `d410bd4a006272b45f2e31effd7e1ec600013c66`: run [45060347650](https://github.com/Iam-2squared/ark-ai/actions/runs/45060347650) **GREEN, 6/6**.
+- PR #304 proactive process-exit test: run [45059948886](https://github.com/Iam-2squared/ark-ai/actions/runs/45059948886) **GREEN, 6/6**.
+- PR #305 proactive class-descriptor seal: run [45060176698](https://github.com/Iam-2squared/ark-ai/actions/runs/45060176698) **GREEN, 6/6**.
+- PR #294 V3 no-follow tree traversal child: run [45059989838](https://github.com/Iam-2squared/ark-ai/actions/runs/45059989838) **GREEN, 6/6**; it remains a free-only child of gated PR #5, not a V3 PASS.
+- PR #297 ToolRegistry slot-only compatibility remains **FAIL** at run [45053320999](https://github.com/Iam-2squared/ark-ai/actions/runs/45053320999): 81 failed, 19,269 passed, 1 skipped on the inspected Ubuntu/Python 3.11 job; all six matrix jobs failed. The failures are legacy tests that still monkeypatch `registry.bind/get/resolve` on an immutable slot-only instance. Preserve the immutable registry contract; migrate those fixtures to supported dependency injection or assert the early immutability denial. No ToolRegistry code or tests were changed in this invocation.
+
+## Frozen contracts / evidence unchanged
+
+V1/V2, Local UI and Launcher/Gate Runner evidence; Memory v1 DDL/API and row/event/CAS semantics; Planner journal schema/hash-chain/transition semantics; ActionAudit v1 schema/API/event identity/sequence/clock semantics; Observation Envelope v1; ToolCall/PlanStep contracts; Personal Context replay schema; durable occurrence semantics; and V3 Contract/contamination/provenance/reproducibility gates remain unchanged. PR #5/#8/#9 remain Draft/unmerged; UI remains paused. PR #306/#307 are Draft children of #8, not merged. No automatic Candidate promotion or real backend connection occurred.
+
+## Blockers / authorization boundaries
+
+No paid/external GPU or compute, paid APIs/services, subscriptions, purchases, Candidate adapter/weight generation, protected V2 final-evaluation opening, automatic Candidate promotion, frozen-contract change, new credential/secret/account connection, unavailable physical-PC action, destructive/irreversible operation, or main merge. No trusted-clock, authenticated consent, independent custody, cross-store atomicity, or external-effect claim is inferred from local fixtures. Normal GitHub Contents writes only; no raw Git object or force-push path used.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #306 run [45062498855](https://github.com/Iam-2squared/ark-ai/actions/runs/45062498855) and PR #307 run [45062631067](https://github.com/Iam-2squared/ark-ai/actions/runs/45062631067) when complete. If either fails, inspect the exact failing job and make the smallest semantics-preserving test repair; do not duplicate workflow runs.
+2. Prioritize the ToolRegistry slot-only compatibility migration: resolve the 81 legacy instance-monkeypatch failures across PermissionGate, registered Planner/read preflight, registry epoch/carrier, and synthetic occurrence/write-plan tests without restoring mutable instance methods or weakening class/instance identity guards. Rebase any follow-up onto the then-current PR #8 head and require fresh exact-head CI.
+3. Review the GREEN PR #304 → #305 proactive test/source chain and integrate only after reconciling the latest PR #8 base and preserving Draft/review gates.
+4. Continue Memory WAL/SHM, CAS/ABA, expiry/COMMIT-UNKNOWN and coherent snapshots; Planner crash recovery; ActionAudit/authorization/occurrence ordering; privacy-safe Personal Context; proactive state; Observation fixture lifecycle; and free-only V3 approval/path/identity/reproducibility guards. Keep real backends disconnected.
+5. Keep PR #5 Draft/unmerged, PR #9 untouched and all UI/frontend work paused.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1120/1121 maximum-throughput checkpoint
 
 **Saved at (Asia/Tokyo/JST): 2026-11-23 04:20:41+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
