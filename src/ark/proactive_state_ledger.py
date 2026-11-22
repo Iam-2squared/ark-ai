@@ -193,7 +193,10 @@ _POLICY_FIELDS = (
     "minimum_interval_ms", "cooldown_ms", "rolling_window_ms",
     "max_previews_per_window",
 )
-_POLICY_METHODS = ("__init__", "__new__", "__getattribute__", "__getattr__", "__post_init__", "identity")
+_POLICY_METHODS = (
+    "__init__", "__new__", "__getattribute__", "__getattr__",
+    "__post_init__", "identity",
+)
 _ORIGINAL_POLICY_FIELDS = tuple(vars(_POLICY_TYPE)[name] for name in _POLICY_FIELDS)
 _ORIGINAL_POLICY_METHODS = tuple(vars(_POLICY_TYPE).get(name) for name in _POLICY_METHODS)
 _ORIGINAL_POLICY_VECTORS = (_POLICY_FIELDS, _POLICY_METHODS)
@@ -613,7 +616,9 @@ class SyntheticProactiveStateLedger:
                     _validate_policy_state(state, policy, scope, policy_digest)
                 _assert_policy_fields(policy, _POLICY_FIELDS, policy_values)
                 if self.path is not path_epoch:
-                    raise SyntheticProactiveStateRejected("proactive state path changed during read")
+                    raise SyntheticProactiveStateRejected(
+                        "proactive state path changed during read"
+                    )
                 conn.commit()
                 return state
             except BaseException:
@@ -657,11 +662,15 @@ class SyntheticProactiveStateLedger:
                 if current is not None:
                     _validate_policy_state(current, policy, scope, policy_digest)
                     if current.revision != expected_revision:
-                        raise SyntheticProactiveStateConflict("proactive state CAS revision changed")
+                        raise SyntheticProactiveStateConflict(
+                            "proactive state CAS revision changed"
+                        )
                     if now_ms < current.updated_at_ms or now_ms < current.last_evaluated_at_ms:
                         raise SyntheticProactiveStateRejected("proactive state clock regressed")
                     if observed_at_ms < current.last_observed_at_ms:
-                        raise SyntheticProactiveStateRejected("proactive observation clock regressed")
+                        raise SyntheticProactiveStateRejected(
+                            "proactive observation clock regressed"
+                        )
                     window = tuple(
                         value for value in current.window_proposal_times
                         if value > now_ms - policy.rolling_window_ms
@@ -702,7 +711,9 @@ class SyntheticProactiveStateLedger:
                         raise SyntheticProactiveStateRejected("proactive state revision exhausted")
                 else:
                     if expected_revision != 0:
-                        raise SyntheticProactiveStateConflict("proactive state does not exist at expected revision")
+                        raise SyntheticProactiveStateConflict(
+                            "proactive state does not exist at expected revision"
+                        )
                     decision = "ELIGIBLE_PREVIEW"
                     last_observation = observation_digest
                     last_observed = observed_at_ms
@@ -744,7 +755,9 @@ class SyntheticProactiveStateLedger:
                 _require_original_state_type()
                 _assert_policy_fields(policy, _POLICY_FIELDS, policy_values)
                 if self.path is not path_epoch:
-                    raise SyntheticProactiveStateRejected("proactive state path changed before commit")
+                    raise SyntheticProactiveStateRejected(
+                        "proactive state path changed before commit"
+                    )
                 _safe_path(path_epoch)
                 conn.commit()
                 # COMMIT may be durable even if a later result/path check fails.
@@ -752,7 +765,9 @@ class SyntheticProactiveStateLedger:
                 _require_original_state_type()
                 _assert_policy_fields(policy, _POLICY_FIELDS, policy_values)
                 if self.path is not path_epoch:
-                    raise SyntheticProactiveStateRejected("proactive state path changed after commit")
+                    raise SyntheticProactiveStateRejected(
+                        "proactive state path changed after commit"
+                    )
                 return state
             except BaseException:
                 conn.rollback()
@@ -773,7 +788,9 @@ class SyntheticProactiveStateLedger:
                 if type(result) is not int or not 0 <= result <= _MAX_ROWS:
                     raise SyntheticProactiveStateRejected("proactive state count is invalid")
                 if self.path is not path_epoch:
-                    raise SyntheticProactiveStateRejected("proactive state path changed during count")
+                    raise SyntheticProactiveStateRejected(
+                        "proactive state path changed during count"
+                    )
                 conn.commit()
                 return result
             except BaseException:
