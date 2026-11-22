@@ -21,10 +21,12 @@ from . import proactive_synthetic_review as _proactive
 _MAX = 2**63 - 1
 _MAX_ROWS = 10_000
 _MAX_WINDOW_ITEMS = 1_000
-_HEX = re.compile(r"[0-9a-f]{64}\\Z")
+_HEX = re.compile(r"[0-9a-f]{64}\Z")
 _DECISIONS = frozenset({
     "ELIGIBLE_PREVIEW", "UNCHANGED", "TOO_SOON", "COOLDOWN", "WINDOW_BUDGET",
 })
+_ORIGINAL_HEX = _HEX
+_ORIGINAL_DECISIONS = _DECISIONS
 _TABLE = """CREATE TABLE synthetic_proactive_states(
     scope_digest TEXT NOT NULL,
     policy_digest TEXT NOT NULL,
@@ -85,6 +87,8 @@ def _require_original_protocol() -> None:
         or _ORIGINAL_PROACTIVE_STAT.S_ISREG is not _ORIGINAL_PROACTIVE_S_ISREG
         or _ORIGINAL_PROACTIVE_STAT.S_ISLNK is not _ORIGINAL_PROACTIVE_S_ISLNK
         or _TABLE is not _ORIGINAL_TABLE
+        or _HEX is not _ORIGINAL_HEX
+        or _DECISIONS is not _ORIGINAL_DECISIONS
         or any(type(value) is not int for value in (_MAX, _MAX_ROWS, _MAX_WINDOW_ITEMS))
         or (_MAX, _MAX_ROWS, _MAX_WINDOW_ITEMS) != _ORIGINAL_BOUNDS
     ):
@@ -98,7 +102,7 @@ def _hash(label: str, values: object) -> str:
         separators=(",", ":"), allow_nan=False,
     ).encode("utf-8")
     _require_original_protocol()
-    digest = _ORIGINAL_SHA256(label.encode("utf-8") + b"\\0" + payload).hexdigest()
+    digest = _ORIGINAL_SHA256(label.encode("utf-8") + b"\0" + payload).hexdigest()
     _require_original_protocol()
     return digest
 
@@ -106,7 +110,7 @@ def _hash(label: str, values: object) -> str:
 def _exact_text(name: str, value: object) -> None:
     if type(value) is not str or not 1 <= len(value) <= 512 or value != value.strip():
         raise SyntheticProactiveStateRejected(f"{name} must be a bounded exact string")
-    if "\\x00" in value or any(
+    if "\x00" in value or any(
         ord(character) < 32 or ord(character) == 127 for character in value
     ):
         raise SyntheticProactiveStateRejected(f"{name} contains a control delimiter")
@@ -364,7 +368,7 @@ def _row_state(row: tuple[object, ...]) -> SyntheticProactiveState:
         type(window_list) is not list
         or any(type(value) is not int or not 0 <= value <= _MAX for value in window_list)
         or len(window_list) > _MAX_WINDOW_ITEMS
-        or any(left >= right for left, right in zip(window_list, window_list[1:]))
+        or any(left > right for left, right in zip(window_list, window_list[1:]))
         or _canonical_window(tuple(window_list)) != window_json
     ):
         raise SyntheticProactiveStateRejected("proactive window history is noncanonical")
@@ -462,7 +466,7 @@ def _safe_path(path: Path) -> None:
         raise SyntheticProactiveStateRejected("proactive state path must be an exact Path")
     try:
         raw = str(path)
-        if "\\x00" in raw or len(raw) > 4096:
+        if "\x00" in raw or len(raw) > 4096:
             raise SyntheticProactiveStateRejected("proactive state path exceeds its budget")
         _proactive._refuse_aliased_proactive_path(path)
         _require_original_protocol()
