@@ -15,6 +15,48 @@ from pathlib import Path
 from typing import Literal
 
 
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
+
+
+def _require_original_stat_policy() -> None:
+    if (
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise ValueError("execution snapshot stat policy changed")
+
+
+def _is_regular_file(info: object) -> bool:
+    _require_original_stat_policy()
+    mode = info.st_mode
+    _require_original_stat_policy()
+    if type(mode) is not int:
+        raise ValueError("execution snapshot file mode is malformed")
+    return _ORIGINAL_S_ISREG(mode)
+
+
+def _is_reparse_point(info: object) -> bool:
+    _require_original_stat_policy()
+    attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_stat_policy()
+    if type(attributes) is not int:
+        raise ValueError("execution snapshot reparse metadata is malformed")
+    mode = info.st_mode
+    _require_original_stat_policy()
+    if type(mode) is not int:
+        raise ValueError("execution snapshot file mode is malformed")
+    return _ORIGINAL_S_ISLNK(mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
+    )
+
+
 class ExecutionBlocked(RuntimeError):
     """Raised when a real-experiment snapshot is not fully frozen/authorized."""
 
@@ -249,26 +291,41 @@ def load_snapshot(path: Path) -> dict:
     Frozen experiment semantics and authorization gates remain the responsibility
     of validate_experiment_001; loading is never proof of approval.
     """
+    _require_original_stat_policy()
     source = Path(path)
+    # PathLike conversion can execute caller code; do not inspect the path
+    # until the import-original classification policy is rechecked.
+    _require_original_stat_policy()
     try:
         initial_path_stat = source.lstat()
+        _require_original_stat_policy()
     except OSError as exc:
         raise ValueError("execution snapshot cannot be read") from exc
-    if not stat.S_ISREG(initial_path_stat.st_mode):
+    if (
+        not _is_regular_file(initial_path_stat)
+        or _is_reparse_point(initial_path_stat)
+    ):
         raise ValueError("execution snapshot source must be a regular local file")
     if initial_path_stat.st_size > _MAX_EXECUTION_SNAPSHOT_BYTES:
         raise ValueError("execution snapshot exceeds JSON byte budget")
     try:
+        _require_original_stat_policy()
         with source.open("rb") as handle:
+            _require_original_stat_policy()
             initial_stat = os.fstat(handle.fileno())
+            if (
+                not _is_regular_file(initial_stat)
+                or _is_reparse_point(initial_stat)
+                or _snapshot_stat_identity(initial_stat)
+                != _snapshot_stat_identity(initial_path_stat)
+            ):
+                raise ValueError(
+                    "execution snapshot source changed before JSON decode"
+                )
             raw = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
+            _require_original_stat_policy()
     except OSError as exc:
         raise ValueError("execution snapshot cannot be read") from exc
-    if (
-        not stat.S_ISREG(initial_stat.st_mode)
-        or _snapshot_stat_identity(initial_stat) != _snapshot_stat_identity(initial_path_stat)
-    ):
-        raise ValueError("execution snapshot source changed before JSON decode")
     if len(raw) > _MAX_EXECUTION_SNAPSHOT_BYTES:
         raise ValueError("execution snapshot exceeds JSON byte budget")
     _require_bounded_snapshot_nesting(raw)
@@ -283,26 +340,46 @@ def load_snapshot(path: Path) -> dict:
         raise ValueError("execution snapshot JSON cannot be decoded") from exc
     if not isinstance(parsed, dict):
         raise ValueError("execution snapshot must be a JSON object")
+
     # The decoded object must still represent the same local file epoch.
     # Recheck the actual bytes and file identity after arbitrary decoder
     # callbacks. This is local TOCTOU defense, not a filesystem lock,
     # authenticated provenance, or compute authorization.
     try:
+        _require_original_stat_policy()
         final_path_stat = source.lstat()
+        _require_original_stat_policy()
         with source.open("rb") as handle:
+            _require_original_stat_policy()
             final_stat = os.fstat(handle.fileno())
+            if (
+                not _is_regular_file(final_path_stat)
+                or _is_reparse_point(final_path_stat)
+                or not _is_regular_file(final_stat)
+                or _is_reparse_point(final_stat)
+                or _snapshot_stat_identity(final_stat)
+                != _snapshot_stat_identity(initial_stat)
+                or _snapshot_stat_identity(final_path_stat)
+                != _snapshot_stat_identity(initial_stat)
+            ):
+                raise ValueError(
+                    "execution snapshot source changed during JSON decode"
+                )
             final_bytes = handle.read(_MAX_EXECUTION_SNAPSHOT_BYTES + 1)
+            _require_original_stat_policy()
     except OSError as exc:
-        raise ValueError("execution snapshot source changed during JSON decode") from exc
-    initial_identity = _snapshot_stat_identity(initial_stat)
+        raise ValueError(
+            "execution snapshot source changed during JSON decode"
+        ) from exc
     if (
-        not stat.S_ISREG(final_path_stat.st_mode)
-        or not stat.S_ISREG(final_stat.st_mode)
-        or final_bytes != raw
-        or _snapshot_stat_identity(final_stat) != initial_identity
-        or _snapshot_stat_identity(final_path_stat) != initial_identity
+        final_bytes != raw
+        or _snapshot_stat_identity(final_stat)
+        != _snapshot_stat_identity(initial_stat)
+        or _snapshot_stat_identity(final_path_stat)
+        != _snapshot_stat_identity(initial_stat)
     ):
         raise ValueError("execution snapshot source changed during JSON decode")
+    _require_original_stat_policy()
     return parsed
 
 
