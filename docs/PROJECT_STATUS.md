@@ -1,4 +1,70 @@
-# LATEST — ARK Run1119 maximum-throughput checkpoint
+# LATEST — ARK Run1120/1121 maximum-throughput checkpoint
+
+**Saved at (Asia/Tokyo/JST): 2026-11-23 04:20:41+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `71a983db75184b76079648a362638332dc151741` (latest observed PR #8 branch HEAD before this checkpoint; no source merge or main merge). **PR #5 work-basis HEAD:** `d9406b48c252065068d81dca55b77535073691a1`. **Main observed HEAD:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write or merge occurred. **PR #9 UI head last verified:** `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; branch remains untouched. **Checkpoint-result HEAD:** the normal GitHub Contents API commit returned for this checkpoint update; exact SHA is reported in the invocation result and is not self-embedded here.
+
+## Overall current ARK state
+
+- Draft PR #8 remains OPEN/DRAFT/UNMERGED on `research/jarvis-foundations` at work-basis HEAD `71a983db75184b76079648a362638332dc151741`. Exact-head CI run [45058759664](https://github.com/Iam-2squared/ark-ai/actions/runs/45058759664) is **IN PROGRESS**; the preceding `e0bbe963` run [45058332040](https://github.com/Iam-2squared/ark-ai/actions/runs/45058332040) is also **IN PROGRESS**. Neither is a GREEN certification of the current checkpoint-result HEAD.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `d9406b48c252065068d81dca55b77535073691a1`. Exact-head run [45041094404](https://github.com/Iam-2squared/ark-ai/actions/runs/45041094404) is **FAIL** at inherited Ruff I001. Protected V2 final evaluation, real Candidate, training/weight generation and paid/external-compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. UI/frontend development remains PAUSED; no UI code, tests, integration or branch updates occurred.
+- V1/V2, Local UI and Launcher/Gate Runner evidence remains frozen. Memory v1 DDL/API and row/event/CAS semantics, Planner journal schema/hash-chain/transition semantics, ActionAudit v1 DDL/API event identity/sequence/clock semantics, Observation Envelope v1, ToolCall/PlanStep contracts, Personal Context replay schema and durable occurrence semantics remain unchanged. No later PASS is declared.
+
+## NEW this invocation — four coherent non-UI packages plus validated V3 integration
+
+1. **Planner process-crash regression CI repair — [PR #302](https://github.com/Iam-2squared/ark-ai/pull/302), DRAFT**
+   - Previous exact-head run [45058733828](https://github.com/Iam-2squared/ark-ai/actions/runs/45058733828) was **FAIL** at Ruff I001 in the new test module; no Planner semantic test failure was established by that run.
+   - Reordered only standard-library imports in `tests/test_planner_journal_process_crash_terminal_run1119.py`; commit `fda875f9033bf58e2ac32628ca551ce15bf4de9d`. Assertions and Planner production source/contracts are unchanged.
+   - New exact-head run [45059426398](https://github.com/Iam-2squared/ark-ai/actions/runs/45059426398): **IN PROGRESS**. PR #302 remains Draft and is based on the older PR #8 head `e0bbe963`; rebase and require fresh exact-head CI before integration.
+
+2. **V3 no-follow Windows directory metadata compatibility — [PR #303](https://github.com/Iam-2squared/ark-ai/pull/303) → [PR #295](https://github.com/Iam-2squared/ark-ai/pull/295) → [PR #294](https://github.com/Iam-2squared/ark-ai/pull/294)**
+   - PR #303 changed only the Windows DirEntry-vs-Path directory comparison: retain no-follow type agreement, remove cross-API directory-mtime equality, preserve regular-file type/size/mtime comparison and exact Path-to-Path epoch rechecks. POSIX full-epoch comparison, no-follow classification, reparse rejection and path budgets remain unchanged.
+   - Exact-head child run [45059617579](https://github.com/Iam-2squared/ark-ai/actions/runs/45059617579): **GREEN, 6/6**. PR #303 was merged into PR #295 via squash commit `72d7907e46f2bfde427dba953834d86b7b7fa7e7`.
+   - Resulting PR #295 exact-head run [45059792589](https://github.com/Iam-2squared/ark-ai/actions/runs/45059792589): **GREEN, 6/6**. PR #295 was merged into PR #294 via squash commit `b8a1671d17d602276dadcacb970f554f9dcfa0b6`.
+   - PR #294 remains OPEN/DRAFT/UNMERGED against gated PR #5. Its new exact-head run [45059989838](https://github.com/Iam-2squared/ark-ai/actions/runs/45059989838): **IN PROGRESS**. This is isolated V3 groundwork, not a V3 PASS or a PR #5 merge.
+
+3. **Proactive state process-exit recovery test — [PR #304](https://github.com/Iam-2squared/ark-ai/pull/304), DRAFT**
+   - Child process commits one synthetic `ELIGIBLE_PREVIEW` via the public ledger API and exits abruptly after the API returns; cold recovery verifies revision/digest/window, denial-only authority flags, content minimization, stale-CAS refusal and explicit recovered-revision handling without a duplicate preview.
+   - Test/documentation only; no source/schema/CAS change. This is not process death inside native COMMIT and does not claim COMMIT-UNKNOWN resolution.
+   - Exact child HEAD `c082c2dfd0004a7d3525dbfbda9556a7a9bc53e8`; run [45059948886](https://github.com/Iam-2squared/ark-ai/actions/runs/45059948886): **IN PROGRESS**.
+
+4. **Proactive state ledger class-descriptor seal — [PR #305](https://github.com/Iam-2squared/ark-ai/pull/305), DRAFT child of PR #304**
+   - Pins the exact ledger class, slot layout, descriptor-name vector and import-original constructor/hook/path/connection/read/write/count descriptors. The original exact-instance guard checks this before path/database access.
+   - Adds synthetic regressions for class-level descriptor replacement before database creation and guard-vector rebinding before read. Existing SQLite schema, policy, digest, CAS and denial-only semantics are unchanged.
+   - Exact child HEAD `0f9aef6ed47c2f019c64302561eb9cf1cf0e543d`; run [45060176698](https://github.com/Iam-2squared/ark-ai/actions/runs/45060176698): **QUEUED**. No PASS or integration is claimed.
+
+## Other active work / blockers
+
+- **ActionAudit path identity — [PR #301](https://github.com/Iam-2squared/ark-ai/pull/301):** exact child HEAD `c7ea64f2276e007a680163d6a48b90a11bea654e`; run [45058262845](https://github.com/Iam-2squared/ark-ai/actions/runs/45058262845) remains **IN PROGRESS** (Ubuntu jobs observed GREEN; Windows jobs still running). Its base `4412ffbb` predates the current PR #8 head `71a983db`; do not integrate without rebase and fresh exact-head CI.
+- **ToolRegistry slot-only compatibility — [PR #297](https://github.com/Iam-2squared/ark-ai/pull/297):** exact child HEAD `efc7edd7061ad7ab9a5cf380645fa90322be38f0`; run [45053320999](https://github.com/Iam-2squared/ark-ai/actions/runs/45053320999) **FAIL, 6/6**. The inspected Ubuntu Python 3.11 job reported 81 failed, 19,269 passed and 1 skipped; failures are older fixtures attempting instance-level assignment/monkeypatching and receiving `AttributeError: ToolRegistry is immutable`. Preserve the slot-only immutable production contract; migrate tests to explicit denial/class-level or safe dependency-level injection without restoring mutable instance methods or weakening identity guards.
+- **Main orphan Personal Context test cleanup — [PR #293](https://github.com/Iam-2squared/ark-ai/pull/293):** exact child HEAD `9547c24e80809017a4b0061ce6aefc1f9f6b0ae3`; run [45047165979](https://github.com/Iam-2squared/ark-ai/actions/runs/45047165979) **GREEN**. It remains Draft/unmerged to main; no main merge approval was exercised.
+- Main remains at `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write or merge occurred.
+
+## Frozen evidence / authorization boundaries
+
+- PR #5 stays Draft/unmerged; PR #8 stays Draft/unmerged; PR #9 stays untouched and Draft/unmerged.
+- V1/V2, Local UI and Launcher/Gate Runner evidence/contracts remain frozen. No frozen-contract change, protected V2 evaluation opening, Candidate promotion, real Candidate adapter/weight generation, training, paid/external GPU/API/service, purchase/subscription, new credentials/account connection, physical-PC action, destructive operation or main merge occurred.
+- JARVIS foundations remain isolated/reversible. Disconnected/mock fixtures remain non-authorizing; no real external action, notification, camera/microphone/screen capture or external service execution was enabled. The new proactive tests use disposable local SQLite and synthetic values only.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #8 exact-head run [45058759664](https://github.com/Iam-2squared/ark-ai/actions/runs/45058759664) when complete. Do not infer a PASS from older exact heads; preserve the checkpoint-only commit as a new evidence head.
+2. Revisit PR #294 run [45059989838](https://github.com/Iam-2squared/ark-ai/actions/runs/45059989838). If GREEN, keep PR #294 Draft against PR #5; if FAIL, inspect the specific Windows/Linux job and make the smallest semantics-preserving repair.
+3. Revisit PR #302 run [45059426398](https://github.com/Iam-2squared/ark-ai/actions/runs/45059426398). If GREEN, rebase onto the latest PR #8 head and require fresh exact-head CI before any integration; if FAIL, repair only the demonstrated issue.
+4. Revisit PR #304 run [45059948886](https://github.com/Iam-2squared/ark-ai/actions/runs/45059948886) and queued PR #305 run [45060176698](https://github.com/Iam-2squared/ark-ai/actions/runs/45060176698). Once both are GREEN, rebase the child chain onto the then-current PR #8 head, then integrate only with fresh exact-head evidence.
+5. Let PR #301 run [45058262845](https://github.com/Iam-2squared/ark-ai/actions/runs/45058262845) finish; rebase its ActionAudit path identity package onto the latest PR #8 head before integration.
+6. Repair ToolRegistry test compatibility in a fresh isolated child of PR #8: migrate the 20 affected test modules without restoring mutable instance namespaces or weakening exact-class/descriptor/registry identity guards.
+7. Continue Memory CAS/ABA/WAL and expiry COMMIT-outcome work, Planner recovery/terminal propagation, privacy-safe Personal Context, durable authorization and audit-before-action, proactive occurrence/replay state, Observation fixture adapters and free-only V3 identity/reproducibility guards. Integrate only after lower-level invariants have exact-head GREEN evidence.
+8. Keep all paid/external compute, Candidate generation/promotion, protected V2 evaluation, frozen-contract changes, credentials, hardware actions and main merges closed absent the required explicit authorization.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# HISTORICAL — ARK Run1119 maximum-throughput checkpoint
 
 **Saved at (Asia/Tokyo/JST): 2026-11-23 04:05:26+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
@@ -63,9 +129,6 @@
 4. Repair ToolRegistry test compatibility in PR #297 or a fresh child: migrate the 20 failing test modules to the slot-only immutability boundary without restoring mutable instance namespaces or weakening class/descriptor identity guards.
 5. Continue Planner crash recovery and terminal propagation, Memory CAS/expiry/WAL durability, Personal Context privacy/revocation, restart-safe authorization and audit-before-action, proactive scheduler state, Observation fixture contracts and free-only V3 path/identity/reproducibility guards. Integrate only after lower-level exact-head GREEN evidence.
 6. Keep all paid/external compute, Candidate generation/promotion, protected V2 evaluation, frozen-contract changes, credentials, hardware actions and main merges closed absent the required explicit authorization.
-
-
-
 ---
 
 # HISTORICAL — ARK Run1118 maximum-throughput checkpoint
