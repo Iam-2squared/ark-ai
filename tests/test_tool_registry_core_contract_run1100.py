@@ -95,7 +95,7 @@ def test_registry_construction_rejects_mutated_earlier_generator_item() -> None:
 
 
 def test_registry_rejects_equal_valued_mapping_replacement_and_call_subclasses() -> None:
-    registry, reader, writer = _registry()
+    registry, _, _ = _registry()
     original = registry.registrations
     object.__setattr__(registry, "_registrations", MappingProxyType(dict(original)))
     with pytest.raises(ValueError, match="identity map changed"):
