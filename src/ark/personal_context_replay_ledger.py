@@ -450,10 +450,33 @@ def _inspect(conn: sqlite3.Connection) -> OfflineContextReplayWitness:
 class DisconnectedContextReplayLedger:
     """Bounded local reservation journal for synthetic context *identities*."""
 
+    # Keep an instance dictionary for isolated fault-injection wrappers while
+    # storing the source path in a data-descriptor slot that cannot be
+    # shadowed through vars(instance).
+    __slots__ = ("_path", "__dict__")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name == "_path":
+            try:
+                object.__getattribute__(self, "_path")
+            except AttributeError:
+                pass
+            else:
+                raise AttributeError("context replay ledger path is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        if name == "_path":
+            raise AttributeError("context replay ledger path is immutable")
+        object.__delattr__(self, name)
+
     def __init__(self, path: Path, *, create: bool = False) -> None:
+        if type(self) is not DisconnectedContextReplayLedger:
+            raise OfflineContextReplayRejected("an exact context replay ledger is required")
         if type(create) is not bool:
             raise OfflineContextReplayRejected("exact creation option required")
         self._path = _check_path(path, create=create)
+        _require_exact_replay_ledger(self)
         source = self._path
         # Existing replay history is inspected in a read-only snapshot.
         # A RESERVED SQLite writer lock is reserved for explicit creation
@@ -484,6 +507,7 @@ class DisconnectedContextReplayLedger:
                 raise
 
     def _open(self, *, read_only: bool) -> sqlite3.Connection:
+        _require_exact_replay_ledger(self)
         path = _check_path(self._path, create=False)
         mode = "ro" if read_only else "rw"
         return sqlite3.connect(
@@ -493,6 +517,7 @@ class DisconnectedContextReplayLedger:
 
     def witness(self) -> OfflineContextReplayWitness:
         """Read local history; retain a previous witness outside this ledger."""
+        _require_exact_replay_ledger(self)
         source = self._path
         with closing(self._open(read_only=True)) as conn:
             conn.execute("BEGIN")
@@ -520,6 +545,7 @@ class DisconnectedContextReplayLedger:
         authorized or automatically replayed. The retained checkpoint must
         come from outside this SQLite database to detect rewritten history.
         """
+        _require_exact_replay_ledger(self)
         prior = _check_witness(retained)
         retained_epoch = (retained.count, retained.chain_sha256)
         path_epoch = self._path
@@ -581,6 +607,7 @@ class DisconnectedContextReplayLedger:
         *, retained: OfflineContextReplayWitness,
     ) -> OfflineContextReplayReceipt:
         """CAS-reserve one synthetic request; NEVER execute or disclose content."""
+        _require_exact_replay_ledger(self)
         fields = _check_binding(binding)
         previous = _check_witness(retained)
         pinned_path = self._path
@@ -696,3 +723,16 @@ class DisconnectedContextReplayLedger:
             )
         _require_original_receipt_constructor()
         return receipt
+
+
+
+def _require_exact_replay_ledger(instance: DisconnectedContextReplayLedger) -> None:
+    """Pin the exact replay-ledger type and slot-backed path before SQLite I/O."""
+    if type(instance) is not DisconnectedContextReplayLedger:
+        raise OfflineContextReplayRejected("an exact context replay ledger is required")
+    try:
+        path = object.__getattribute__(instance, "_path")
+    except AttributeError as exc:
+        raise OfflineContextReplayRejected("context replay ledger path is unavailable") from exc
+    if type(path) is not type(Path(".")):
+        raise OfflineContextReplayRejected("context replay ledger path identity changed")

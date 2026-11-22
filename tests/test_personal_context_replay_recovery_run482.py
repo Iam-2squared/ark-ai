@@ -141,7 +141,10 @@ def test_nonexact_ledger_and_witness_types_denied(tmp_path):
     with pytest.raises(review.OfflineContextRecoveryRejected, match="witness"):
         review.review_restarted_context_replay(ledger, SubWitness(0, retained.chain_sha256))
     with pytest.raises(review.OfflineContextRecoveryRejected, match="ledger"):
-        review.review_restarted_context_replay(SubLedger(ledger._path), retained)
+        # The sealed constructor rejects subclasses before I/O. Exercise the
+        # recovery helper's independent exact-type guard with an uninitialized
+        # subclass carrier; it must reject before reading ledger state.
+        review.review_restarted_context_replay(object.__new__(SubLedger), retained)
 
 
 def test_mutated_retained_carrier_during_read_denied(tmp_path, monkeypatch):
@@ -166,7 +169,7 @@ def test_mutated_ledger_path_during_read_denied(tmp_path, monkeypatch):
 
     def moved():
         current = original()
-        ledger._path = tmp_path / "forged.db"
+        object.__setattr__(ledger, "_path", tmp_path / "forged.db")
         return current
 
     monkeypatch.setattr(ledger, "witness", moved)
