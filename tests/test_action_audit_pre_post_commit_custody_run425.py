@@ -124,7 +124,7 @@ def test_reentrant_receipt_constructor_refuses_clean_postcommit_result(
             result = self.wrapped.__exit__(*args)
             if args[0] is None:
                 if mutation == "source_path":
-                    audit.path = Path(str(audit.path))
+                    object.__setattr__(audit, "path", Path(str(audit.path))
                 elif mutation == "caller_equal_tool":
                     object.__setattr__(call, "tool", _equal_text(call.tool))
                 else:
@@ -147,7 +147,7 @@ def test_reentrant_receipt_constructor_refuses_clean_postcommit_result(
         )
         with pytest.raises(ActionAuditSchemaError, match="after commit"):
             audit.append(call, outcome="synthetic_audit_before_mock")
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     object.__setattr__(call, "tool", original_tool)
     # The SQL row was already durably written: no false rollback statement,
     # no accidental second append, and no replay permission follows a
