@@ -1,3 +1,87 @@
+# LATEST — ARK Run1105 continued: Memory frontier, startup lease and durable-first failure regressions
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 16:02:22+09:00.** Reporting/checkpoint time only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `a37dd52a379ce5606978d9654dd00ca63007e295` (live PR #8 head re-read immediately before this checkpoint write). **Checkpoint-result HEAD:** the SHA returned by this normal GitHub Contents API update; a commit cannot self-embed its own resulting SHA.
+
+## Overall current ARK state
+
+- Main observed HEAD remains `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no main merge was performed.
+- V1/V2, Local UI and Launcher/Gate Runner contracts and reviewed evidence remain frozen and unchanged.
+- JARVIS foundations remain isolated/reversible under PR #8, which remains OPEN/DRAFT/UNMERGED.
+- PR #5 remains OPEN/DRAFT/UNMERGED; its free-only V3 path-policy child was integrated into its branch only. Protected V2 final evaluation, V3 compute and Candidate gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains PAUSED and its branch is untouched.
+- No later version/PASS is declared.
+
+## NEW this invocation — additional core integrations and isolated rebases
+
+1. **Memory event frontier before scoped row hydration — PR #229 integrated into PR #8**
+   - Child exact HEAD `7ccbc8f11e7c0d5a10be05b067a40eb71318c7f0`; squash integration commit `a37dd52a379ce5606978d9654dd00ca63007e295`.
+   - Exact-head CI run [44970716646](https://github.com/Iam-2squared/ark-ai/actions/runs/44970716646): GREEN, 6/6.
+   - The test-only package requires global Memory event append-frontier validation before scope-specific event-row hydration; a foreign-scope event gap and duplicate `sqlite_sequence` marker fail closed before the scoped `SELECT *`. Memory v1 schema and production source are unchanged. Original PR #229 is merged; no event history was modified.
+
+2. **Startup readiness lease guard-vector rebase — Draft PR #245**
+   - Branch `research/run1105-startup-lease-rebase`, exact HEAD `833834460170b0e7e09d4ecfb5b5da7b6ee1f8fd`, based on PR #8 HEAD `a37dd52a379ce5606978d9654dd00ca63007e295`.
+   - Reapplies the 40 synthetic test cases and report from PR #237, excluding its stale `docs/PROJECT_STATUS.md`. It covers all 11 guard-vector references, replaced descriptors/denial-only authority, malformed requirement labels and exact bounds. Production readiness code is unchanged.
+   - Fresh exact-head CI run [44996246768](https://github.com/Iam-2squared/ark-ai/actions/runs/44996246768): QUEUED. Original PR #237 remains untouched/Draft; its old exact-head GREEN result is not transferred.
+
+3. **Mock executor failure-ordering rebase for durable-first WRITE — Draft PR #246**
+   - Branch `research/run1105-mock-executor-failure-rebase`, exact HEAD `c0452ee8349f1778426fc90c7f3a9a6c77b6c2bb`, based on PR #8 HEAD `a37dd52a379ce5606978d9654dd00ca63007e295`.
+   - Reapplies three failure-boundary regressions and a report from PR #228. The replay case now expects the durable occurrence reservation to reject before the executor's actual process-local PermissionGate consumes the token, matching the PR #239 durable-first implementation. Completion-audit ambiguity remains non-retrying; missing occurrence storage still blocks before audit/mock.
+   - Fresh exact-head CI run [44996325526](https://github.com/Iam-2squared/ark-ai/actions/runs/44996325526): QUEUED. Original PR #228 remains untouched/Draft because its old replay assertion encoded the superseded gate-before-reservation ordering.
+
+4. **Prior free-only packages integrated earlier in this invocation**
+   - PR #239 durable-first mock WRITE ordering → PR #8, integration commit `919fd61c866a05c3ca875577a625947913537137`; exact child CI [44991084771](https://github.com/Iam-2squared/ark-ai/actions/runs/44991084771) GREEN, 6/6.
+   - PR #243 PlanGraph/ToolRegistry/PermissionGate contract coverage → PR #8, integration commit `eb9a6a7063dc2ef1ad271fc86f82c07821a44324`; exact child CI [44991448375](https://github.com/Iam-2squared/ark-ai/actions/runs/44991448375) GREEN, 6/6.
+   - PR #244 proactive eligibility CAS row-time repair → PR #8, integration commit `af1c89196b13db266b638634aaec372781171922`; exact child CI [44991508428](https://github.com/Iam-2squared/ark-ai/actions/runs/44991508428) GREEN, 6/6.
+   - PR #226 free-only V3 authorization/execution snapshot stat-policy custody → PR #5 branch only, integration commit `50b97812dd7eb4bcf3ffb816fb543185cf266e3d`; exact child CI [44991563893](https://github.com/Iam-2squared/ark-ai/actions/runs/44991563893) GREEN, 6/6. PR #5 itself remains Draft/unmerged.
+
+## Tests / CI / evidence — exact HEADs
+
+| Branch / PR | Exact HEAD | Evidence |
+|---|---|---|
+| PR #8 after PR #229 integration | `a37dd52a379ce5606978d9654dd00ca63007e295` | Run 44996094314 — QUEUED |
+| PR #5 after PR #226 integration | `50b97812dd7eb4bcf3ffb816fb543185cf266e3d` | Run 44995831662 — FAIL, 6/6 jobs |
+| PR #245 startup lease rebase | `833834460170b0e7e09d4ecfb5b5da7b6ee1f8fd` | Run 44996246768 — QUEUED |
+| PR #246 mock failure-order rebase | `c0452ee8349f1778426fc90c7f3a9a6c77b6c2bb` | Run 44996325526 — QUEUED |
+| PR #239 durable-first source/tests | `02a39634cf5217c9174bbaae37189653c2a36e94` | Run 44991084771 — GREEN, 6/6 |
+| PR #243 contract tests | `5f2ebaa9adfd53442b7764de75ffc6896f406ca9` | Run 44991448375 — GREEN, 6/6 |
+| PR #244 proactive CAS repair | `c47cde4718348138723c1bfcf4de4b799318a672` | Run 44991508428 — GREEN, 6/6 |
+| PR #226 V3 path-policy guard | `71f478250baabdcab0203087e508af4f8278e2b8` | Run 44991563893 — GREEN, 6/6 |
+| PR #229 Memory event-frontier regression | `7ccbc8f11e7c0d5a10be05b067a40eb71318c7f0` | Run 44970716646 — GREEN, 6/6 |
+
+The PR #5 failure is a merge-view baseline issue, not a failure in the newly merged V3 stat-policy patch: all six jobs stop at Ruff I001 in `tests/test_personal_context_replay_process_crash_run1033.py`, a JARVIS-only test accidentally present on main. A branch-local import-order repair attempt (PR #193, exact head `b8c065d8d59847f7563302f284439afbf3dcd015`, run [44909562565](https://github.com/Iam-2squared/ark-ai/actions/runs/44909562565)) passed Ruff but then failed test collection in the observed Windows 3.13 job with `ModuleNotFoundError: ark.personal_context_offline_preview`, because the test depends on PR #8-only modules absent from PR #5. Draft recovery PR #182 proposes reverting the accidental main test; it remains Draft/unmerged. Do not exclude the test or weaken CI. Correcting main requires the explicit main-merge approval boundary.
+
+No local pytest/Ruff, physical-PC, model or external runtime validation was performed. No CI verdict transfers across HEADs.
+
+## Frozen contracts / authorization boundaries unchanged
+
+- V1/V2/Local UI/Launcher evidence and controlling contracts remain unchanged.
+- Memory v1, Observation Envelope v1, PlanStep/ToolCall v1 and V3 Contract 1 semantics remain unchanged.
+- PR #5 and PR #8 remain OPEN/DRAFT/UNMERGED; PR #9 remains paused and untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, real Candidate adapter/weights/promotion, protected evaluation opening, external dispatch, destructive action, physical-PC action, frozen-contract change or main merge.
+- No trusted-clock, authenticated-consent, independent custody, cross-store atomicity, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / remaining non-authority
+
+Durable occurrence and ActionAudit remain separate SQLite stores. PermissionGate's actual consumed-token set is process-local, although mock WRITE now reserves a synthetic occurrence first. The executor remains restricted to the exact disconnected MockToolBackend. Proactive timestamps remain unauthenticated; preview state does not authorize notification or dispatch. Startup readiness remains a diagnostic lease, not attestation or authority. V3 stat checks remain local metadata/path-policy defenses, not atomic filesystem custody. PR #5's merge-view CI is blocked by the accidental main test described above; no safe branch-only change can both satisfy its imports and preserve the test's intended module dependencies without bringing unrelated JARVIS modules into the gated V3 branch or correcting main.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #8 run 44996094314, PR #245 run 44996246768 and PR #246 run 44996325526; inspect failures and make the smallest semantics-preserving fixes. Merge child PRs only after their fresh exact-head CI is GREEN.
+2. Keep PR #5 Draft/unmerged. Resolve its inherited main test blocker only through an explicitly approved correction to main (PR #182 or equivalent); do not skip Ruff/tests or copy unrelated JARVIS runtime modules into the V3 branch.
+3. Continue Memory WAL/SHM last-close, event frontier, CAS/ABA, expiry and COMMIT-UNKNOWN manual-only recovery; preserve coherent snapshots and privacy.
+4. Continue Planner journal restart recovery, terminal propagation and ambiguous RUNNING quarantine; bind only after exact-head GREEN.
+5. Advance Personal Context revocation/replay lifecycle, Observation fixture byte/metadata guards and startup readiness without adding dispatch authority.
+6. Continue free-only V3 path/identity/reproducibility guards without opening any paid or protected evaluation lane.
+7. UI remains PAUSED; PR #9 and Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1105: integrate durable-first mock authorization, core contracts, proactive CAS and free V3 path guard
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 15:56:08+09:00.** Reporting/checkpoint time only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
