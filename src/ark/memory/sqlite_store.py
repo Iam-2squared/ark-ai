@@ -447,9 +447,13 @@ def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
 
 def _is_reparse_point(info: os.stat_result) -> bool:
     """Detect Windows reparse points even when their mode is directory/file."""
+    _require_original_memory_path_policy()
     attributes = getattr(info, "st_file_attributes", 0)
+    # A synthetic/native metadata accessor can be reentrant. Recheck before
+    # treating the returned attribute as path-admission evidence.
+    _require_original_memory_path_policy()
     return type(attributes) is not int or bool(
-        attributes & _FILE_ATTRIBUTE_REPARSE_POINT
+        attributes & _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
     )
 
 
@@ -482,6 +486,12 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
     or protection from a concurrent owner-controlled rename after inspection.
     """
     _require_original_memory_path_policy()
+    # Classify mode bits only with the import-original functions. Metadata
+    # accessors and lstat can be reentrant, so recheck the policy after them.
+    is_directory = _ORIGINAL_STAT_S_ISDIR
+    is_symlink = _ORIGINAL_STAT_S_ISLNK
+    is_regular = _ORIGINAL_STAT_S_ISREG
+    file_type = _ORIGINAL_STAT_IFMT
     if type(path) is not type(Path()) or ".." in path.parts:
         raise MemorySchemaError("memory path type or traversal refused")
     # Do not pass an overlong or NUL-containing private path to mkdir/lstat or
@@ -502,32 +512,46 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
         raise MemorySchemaError("memory database/sidecar path encoding invalid") from exc
     try:
         for ancestor in target.parents:
+            _require_original_memory_path_policy()
             try:
                 meta = ancestor.lstat()
             except FileNotFoundError:
+                _require_original_memory_path_policy()
                 if create:
                     continue
                 raise MemorySchemaError("memory ancestor unavailable") from None
+            _require_original_memory_path_policy()
+            mode = meta.st_mode
+            _require_original_memory_path_policy()
             if (
-                not stat.S_ISDIR(meta.st_mode)
-                or stat.S_ISLNK(meta.st_mode)
+                not is_directory(mode)
+                or is_symlink(mode)
                 or _is_reparse_point(meta)
             ):
+                _require_original_memory_path_policy()
                 raise MemorySchemaError("memory symbolic or nondirectory ancestor refused")
+            _require_original_memory_path_policy()
         main_absent = False
+        _require_original_memory_path_policy()
         try:
             meta = target.lstat()
         except FileNotFoundError:
+            _require_original_memory_path_policy()
             main_absent = True
             if not create:
                 raise sqlite3.OperationalError("memory database unavailable") from None
         else:
-            if (
-                not stat.S_ISREG(meta.st_mode)
-                or meta.st_nlink != 1
-                or _is_reparse_point(meta)
-            ):
+            _require_original_memory_path_policy()
+            mode = meta.st_mode
+            _require_original_memory_path_policy()
+            if not is_regular(mode):
                 raise MemorySchemaError("memory database path is not a single regular file")
+            link_count = meta.st_nlink
+            _require_original_memory_path_policy()
+            if link_count != 1 or _is_reparse_point(meta):
+                _require_original_memory_path_policy()
+                raise MemorySchemaError("memory database path is not a single regular file")
+            _require_original_memory_path_policy()
         # SQLite may open -wal/-shm/-journal alongside the main database.
         # A safe main pathname is not enough if one of these files is a
         # symbolic link, hardlink, FIFO or directory. Refuse orphan sidecars
@@ -535,34 +559,49 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
         # historical journal bytes. These are local lstat prechecks, not an
         # atomic guarantee against owner-controlled concurrent replacement.
         for suffix in ("-wal", "-shm", "-journal"):
+            _require_original_memory_path_policy()
             sidecar = target.with_name(target.name + suffix)
+            _require_original_memory_path_policy()
             try:
                 sidecar_meta = sidecar.lstat()
             except FileNotFoundError:
+                _require_original_memory_path_policy()
                 continue
+            _require_original_memory_path_policy()
             if main_absent:
                 raise MemorySchemaError("orphaned memory SQLite sidecar refused")
-            if stat.S_ISREG(sidecar_meta.st_mode) and sidecar_meta.st_nlink == 0:
+            sidecar_mode = sidecar_meta.st_mode
+            _require_original_memory_path_policy()
+            sidecar_links = sidecar_meta.st_nlink
+            _require_original_memory_path_policy()
+            if is_regular(sidecar_mode) and sidecar_links == 0:
                 # SQLite can unlink an ordinary journal/WAL/SHM inode after
                 # pathname lookup but before this stat snapshot. Only this
                 # already-unlinked regular inode gets ONE new pathname check.
                 # An alias, special file, orphan or still-unlinked inode never
                 # gains access to the private Memory database.
+                _require_original_memory_path_policy()
                 try:
                     sidecar_meta = sidecar.lstat()
                 except FileNotFoundError:
+                    _require_original_memory_path_policy()
                     continue
-            if (
-                not stat.S_ISREG(sidecar_meta.st_mode)
-                or sidecar_meta.st_nlink != 1
-                or _is_reparse_point(sidecar_meta)
-            ):
+                _require_original_memory_path_policy()
+                sidecar_mode = sidecar_meta.st_mode
+                _require_original_memory_path_policy()
+                sidecar_links = sidecar_meta.st_nlink
+                _require_original_memory_path_policy()
+            reparse = _is_reparse_point(sidecar_meta)
+            _require_original_memory_path_policy()
+            if not is_regular(sidecar_mode) or sidecar_links != 1 or reparse:
                 # Preserve strict path-alias refusal and bounded diagnostics.
                 # Do not include private paths, owners, content or identifiers.
+                file_type_value = file_type(sidecar_mode)
+                _require_original_memory_path_policy()
                 raise MemorySchemaError(
                     "memory SQLite sidecar path is not a single regular file "
-                    f"(suffix={suffix}, file_type={stat.S_IFMT(sidecar_meta.st_mode):#o}, "
-                    f"link_count={sidecar_meta.st_nlink})"
+                    f"(suffix={suffix}, file_type={file_type_value:#o}, "
+                    f"link_count={sidecar_links})"
                 )
     except OSError as exc:
         raise MemorySchemaError("memory path custody cannot be verified") from exc
