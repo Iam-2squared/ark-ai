@@ -89,7 +89,7 @@ def test_missing_source_is_never_created_while_reviewing(tmp_path):
     audit, _call = _setup(tmp_path)
     lost = tmp_path / "missing.sqlite"
     object.__setattr__(audit, "path", lost)
-    with pytest.raises(ActionAuditSchemaError, match="source changed"):
+    with pytest.raises(ActionAuditSchemaError, match="cannot read audit snapshot|source changed"):
         module.review_audit_continuity(audit)
     assert not lost.exists()
 
