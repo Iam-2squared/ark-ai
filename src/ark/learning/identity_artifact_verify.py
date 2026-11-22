@@ -14,6 +14,7 @@ import re
 import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .execution import _require_bounded_snapshot_nesting, canonical_json
 
@@ -33,10 +34,10 @@ class LocalIdentityArtifactRejected(ValueError):
 
 
 def _require_original_stat_policy(
-    _original_os: object = _ORIGINAL_OS,
-    _original_os_path: object = _ORIGINAL_OS_PATH,
-    _original_fstat: object = _ORIGINAL_FSTAT,
-    _original_samestat: object = _ORIGINAL_SAMESTAT,
+    _original_os: Any = _ORIGINAL_OS,
+    _original_os_path: Any = _ORIGINAL_OS_PATH,
+    _original_fstat: Any = _ORIGINAL_FSTAT,
+    _original_samestat: Any = _ORIGINAL_SAMESTAT,
 ) -> None:
     if (
         os is not _original_os
