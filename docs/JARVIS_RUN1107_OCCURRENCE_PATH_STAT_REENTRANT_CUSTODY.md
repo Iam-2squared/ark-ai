@@ -1,13 +1,13 @@
-# Run1107 — durable occurrence SQLite path-policy reentrancy
+# Run1111 — Rebased Run1107 durable occurrence SQLite path-policy reentrancy
 
 ## Exact basis
 
 - Parent: Draft PR #8, `research/jarvis-foundations`.
-- Exact parent HEAD at branch creation: `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`.
-- Rebased from Draft PR #255 exact child HEAD: `af6cd54ea223a0483bf6172adb03fa9aaae0376a` (prior CI run 45005447997 was GREEN on its old base and does not transfer).
+- Exact parent HEAD at branch creation: `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
+- Reapplied from predecessor Draft PR #258 exact child HEAD: `f3cef4f83c5fddb994fac4b5e61695f1f6486af6` (exact-head CI run 45009636570 was GREEN 6/6 on its old base and does not transfer).
 - Source: `src/ark/agency/durable_occurrence_review.py`.
 - Existing transient sidecar coverage: `tests/test_occurrence_transient_sqlite_sidecar_run880.py`.
-- Existing child branch: `research/run1108-occurrence-reentrant-rebase`.
+- Child branch: `research/run1111-occurrence-path-rebase`.
 
 ## Finding and change
 
@@ -30,3 +30,8 @@ No local pytest/Ruff PASS is claimed. Fresh exact-head Windows/Linux × Python 3
 No paid/external compute, paid API/service, Candidate generation/promotion, protected V2 evaluation, frozen-contract change, UI/frontend work, credential/account connection, physical hardware action, destructive operation or main merge is involved.
 
 **ARK/JARVIS remains NOT_PASSED.**
+
+
+## Run1111 rebase evidence
+
+The predecessor child PR #258 exact head `f3cef4f83c5fddb994fac4b5e61695f1f6486af6` passed Windows/Linux × Python 3.11–3.13 CI run [45009636570](https://github.com/Iam-2squared/ark-ai/actions/runs/45009636570), 6/6. That result does not transfer to this rebased branch; fresh exact-head CI is required.
