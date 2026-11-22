@@ -264,7 +264,7 @@ def test_read_only_reopen_does_not_recreate_a_missing_database(tmp_path: Path):
 def test_future_observation_and_policy_control_characters_are_denied(tmp_path: Path):
     ledger = SyntheticProactiveStateLedger(tmp_path / "proactive.sqlite")
     with pytest.raises(SyntheticProactiveStateRejected, match="control delimiter"):
-        _policy(owner="owner\\x00spoof")
+        _policy(owner="owner\x00spoof")
 
     with pytest.raises(SyntheticProactiveStateRejected, match="future observation"):
         ledger.evaluate(
