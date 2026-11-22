@@ -6,7 +6,6 @@ evaluation, or external action is invoked.
 
 from __future__ import annotations
 
-import stat
 from pathlib import Path
 from types import SimpleNamespace
 
