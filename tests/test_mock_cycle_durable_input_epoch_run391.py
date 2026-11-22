@@ -64,7 +64,10 @@ def test_recovery_callback_drift_denied_before_any_write(
         result = original_recover(self, *args, **kwargs)
         if target in carrier:
             holder, key = carrier[target]
-            setattr(holder, key, Path(str(original)))
+            if target == "audit":
+                object.__setattr__(holder, key, Path(str(original)))
+            else:
+                setattr(holder, key, Path(str(original)))
         elif target == "call":
             object.__setattr__(call, "scope", "other")
         else:
@@ -78,7 +81,10 @@ def test_recovery_callback_drift_denied_before_any_write(
     monkeypatch.setattr(SyntheticPlanJournal, "recover", original_recover)
     if target in carrier:
         holder, key = carrier[target]
-        setattr(holder, key, original)
+        if target == "audit":
+            object.__setattr__(holder, key, original)
+        else:
+            setattr(holder, key, original)
     elif target == "call":
         # Restore the reflected test mutation before inspecting journal
         # topology. The rejected cycle itself must never have written.
