@@ -19,7 +19,7 @@ class _CommitBoundary:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc, traceback):
+    def __exit__(self, exc_type, _exc, _traceback):
         if exc_type is not None:
             self.connection.rollback()
             return False
