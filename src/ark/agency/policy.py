@@ -477,15 +477,13 @@ class PermissionGate:
             )
             ensure_entry_epoch()
             ensure_registered_binding()
-        elif (
-            one_shot is None
-            or (
-                _assert_gate_instance_epoch(self) is None
-                and one_shot.token_id not in self._consumed_tokens
-            )
-        ):
+        elif one_shot is None:
             # Failure after an attempted WRITE does not imply rollback.
             raise PermissionDenied("registered local one-shot spend not observed")
+        else:
+            _assert_gate_instance_epoch(self)
+            if one_shot.token_id not in self._consumed_tokens:
+                raise PermissionDenied("registered local one-shot spend not observed")
         return verified
 
     def authorize(
@@ -767,6 +765,9 @@ def _require_original_gate_class() -> None:
         or vars(_ORIGINAL_PERMISSION_GATE).get("__slots__") is not _ORIGINAL_GATE_SLOTS
         or vars(_ORIGINAL_PERMISSION_GATE).get("__setattr__") is not _ORIGINAL_GATE_SETATTR
         or vars(_ORIGINAL_PERMISSION_GATE).get("__init__") is not _ORIGINAL_GATE_INIT
+        or vars(_ORIGINAL_PERMISSION_GATE).get("authorize") is not _ORIGINAL_AUTHORIZE
+        or vars(_ORIGINAL_PERMISSION_GATE).get("authorize_registered")
+        is not _ORIGINAL_AUTHORIZE_REGISTERED
         or Lock is not _ORIGINAL_LOCK
     ):
         raise PermissionDenied("PermissionGate instance contract changed")
@@ -792,6 +793,7 @@ def _assert_gate_instance_epoch(gate: PermissionGate) -> None:
         raise PermissionDenied("PermissionGate token or lock custody changed")
 
 
-# Captured after class construction for registered authorization only.
-_ORIGINAL_AUTHORIZE = PermissionGate.authorize
-_ORIGINAL_AUTHORIZE_REGISTERED = PermissionGate.authorize_registered
+# Capture the exact class methods after class construction. The class guard
+# above is called by every instance before its token/lock state is inspected.
+_ORIGINAL_AUTHORIZE = vars(_ORIGINAL_PERMISSION_GATE)["authorize"]
+_ORIGINAL_AUTHORIZE_REGISTERED = vars(_ORIGINAL_PERMISSION_GATE)["authorize_registered"]
