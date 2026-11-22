@@ -16,11 +16,25 @@ from .execution import (
 )
 from .preflight import _assert_json_tree_epoch, _pin_json_tree
 
-_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_REPARSE_POINT_ATTRIBUTE = getattr(
+    _ORIGINAL_STAT, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400,
+)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 
 
 def _require_original_reparse_point_policy() -> None:
+    # The module object and both mode predicates are security-relevant inputs.
+    # Pin them before touching filesystem metadata or invoking either predicate.
+    if stat is not _ORIGINAL_STAT:
+        raise ValueError("authorization packet stat module changed")
+    if (
+        _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+    ):
+        raise ValueError("authorization packet stat predicate policy changed")
     if (
         type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
@@ -33,13 +47,14 @@ def _is_reparse_point(info: object) -> bool:
     attributes = getattr(info, "st_file_attributes", 0)
     if type(attributes) is not int:
         raise ValueError("authorization packet reparse metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
+    return _ORIGINAL_S_ISLNK(info.st_mode) or bool(
         attributes & _REPARSE_POINT_ATTRIBUTE
     )
 
 
 def _has_reparse_ancestor(path: Path) -> bool:
     """Reject symlink/junction ancestors before packet output is opened."""
+    _require_original_reparse_point_policy()
     for parent in path.parents:
         try:
             info = parent.lstat()
@@ -169,6 +184,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     This is not an atomic directory-fd traversal or approval to spend money.
     The payload is generated without opening any execution or evaluation gate.
     """
+    _require_original_reparse_point_policy()
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -222,7 +238,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     try:
         before = path.lstat()
         if (
-            not stat.S_ISREG(before.st_mode)
+            not _ORIGINAL_S_ISREG(before.st_mode)
             or _is_reparse_point(before)
             or _has_reparse_ancestor(path)
             or before.st_nlink != 1
@@ -238,7 +254,7 @@ def _write_new_authorization_packet(path: Path, packet: dict) -> None:
     _assert_json_tree_epoch(packet, epoch)
     if (
         saved_bytes != data
-        or not stat.S_ISREG(after.st_mode)
+        or not _ORIGINAL_S_ISREG(after.st_mode)
         or _is_reparse_point(after)
         or _has_reparse_ancestor(path)
         or after.st_nlink != 1
