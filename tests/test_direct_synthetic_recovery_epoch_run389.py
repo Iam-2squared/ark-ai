@@ -75,7 +75,10 @@ def test_same_string_source_object_replacement_during_direct_review(
         return result
 
     monkeypatch.setattr(module, "review_audit_continuity", inject)
-    with pytest.raises(SyntheticRecoveryRejected, match="source changed|input|incomplete or malformed"):
+    with pytest.raises(
+        SyntheticRecoveryRejected,
+        match="source changed|input|incomplete or malformed",
+    ):
         _review(state, link_store=state[5])
 
 
