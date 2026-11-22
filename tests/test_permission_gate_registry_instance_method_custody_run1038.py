@@ -53,8 +53,10 @@ def _fixture():
 def test_slot_only_registry_rejects_instance_method_assignment() -> None:
     _backend, _registration, registry, _call, _gate, _grant, _token = _fixture()
 
+    def replacement(*_args, **_kwargs):
+        return None
+
     for member in ("bind", "resolve", "get", "revision", "_assert_registration_epoch"):
-        replacement = lambda *_args, **_kwargs: None
         with pytest.raises(AttributeError, match="immutable"):
             setattr(registry, member, replacement)
         with pytest.raises(AttributeError):
@@ -74,7 +76,7 @@ def test_registered_write_rejects_class_level_registry_method_replacements_befor
 
     if member == "bind":
         # A forged but exact BoundAction can otherwise be returned twice by
-        # an instance-shadowed bind() and appear stable to the old comparison.
+        # a substituted class-level bind() and appear stable to the old comparison.
         replacement = BoundAction(
             registry.revision, call, registration, "bound_forged_identity",
         )
