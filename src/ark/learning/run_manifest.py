@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
+import stat
 from pathlib import Path
 
 from .execution import (
@@ -26,6 +28,125 @@ class CandidateRunManifestError(RuntimeError):
 
 _MAX_CANONICAL_JSON_BYTES = 1_048_576
 _MAX_CANONICAL_JSON_DEPTH = 128
+_MAX_MANIFEST_DIRECTORY_ENTRIES = 10_000
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_FSTAT = os.fstat
+_ORIGINAL_DIRECTORY_FILE_IDENTITIES = directory_file_identities
+
+
+def _require_original_stat_policy() -> None:
+    if (
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or os.fstat is not _ORIGINAL_FSTAT
+        or directory_file_identities is not _ORIGINAL_DIRECTORY_FILE_IDENTITIES
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise CandidateRunManifestError("Candidate run path stat policy changed")
+
+
+def _is_directory(info: object) -> bool:
+    _require_original_stat_policy()
+    mode = info.st_mode
+    _require_original_stat_policy()
+    if type(mode) is not int:
+        raise CandidateRunManifestError("Candidate run directory mode is malformed")
+    return _ORIGINAL_S_ISDIR(mode)
+
+
+def _is_regular_file(info: object) -> bool:
+    _require_original_stat_policy()
+    mode = info.st_mode
+    _require_original_stat_policy()
+    if type(mode) is not int:
+        raise CandidateRunManifestError("Candidate run file mode is malformed")
+    return _ORIGINAL_S_ISREG(mode)
+
+
+def _is_reparse_point(info: object) -> bool:
+    _require_original_stat_policy()
+    attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_stat_policy()
+    if type(attributes) is not int:
+        raise CandidateRunManifestError("Candidate run reparse metadata is malformed")
+    mode = info.st_mode
+    _require_original_stat_policy()
+    if type(mode) is not int:
+        raise CandidateRunManifestError("Candidate run file mode is malformed")
+    return _ORIGINAL_S_ISLNK(mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
+    )
+
+
+def _path_lstat(path: Path, label: str):
+    _require_original_stat_policy()
+    info = path.lstat()
+    _require_original_stat_policy()
+    return info
+
+
+def _file_identity(info: object) -> tuple[int, int, int]:
+    values = (info.st_dev, info.st_ino, info.st_size, info.st_nlink)
+    if any(type(value) is not int or value < 0 for value in values):
+        raise CandidateRunManifestError("Candidate run file identity is malformed")
+    if values[3] != 1:
+        raise CandidateRunManifestError("Candidate run file must not be hard-linked")
+    return values[:3]
+
+
+def _require_nonreparse_ancestors(path: Path, label: str) -> None:
+    for parent in path.parents:
+        info = _path_lstat(parent, label)
+        if not _is_directory(info) or _is_reparse_point(info):
+            raise CandidateRunManifestError(
+                f"{label} path has a symlink or reparse-point ancestor"
+            )
+
+
+def _read_bounded_file(path: Path, label: str, limit: int) -> bytes:
+    _require_original_stat_policy()
+    if type(limit) is not int or not 0 <= limit <= _MAX_CANONICAL_JSON_BYTES:
+        raise CandidateRunManifestError(f"{label} read budget is invalid")
+    try:
+        _require_nonreparse_ancestors(path, label)
+        before = _path_lstat(path, label)
+        if not _is_regular_file(before) or _is_reparse_point(before):
+            raise CandidateRunManifestError(f"{label} must be a regular non-reparse file")
+        before_identity = _file_identity(before)
+        with path.open("rb") as handle:
+            # Path.open can be reentrant; check the classification policy
+            # before fstat or reading any private evidence bytes.
+            _require_original_stat_policy()
+            opened = _ORIGINAL_FSTAT(handle.fileno())
+            if (
+                not _is_regular_file(opened)
+                or _is_reparse_point(opened)
+                or _file_identity(opened) != before_identity
+            ):
+                raise CandidateRunManifestError(f"{label} changed before read")
+            payload = handle.read(limit + 1)
+            _require_original_stat_policy()
+        after = _path_lstat(path, label)
+    except CandidateRunManifestError:
+        raise
+    except OSError as exc:
+        raise CandidateRunManifestError(f"{label} cannot be read") from exc
+    if (
+        not _is_regular_file(after)
+        or _is_reparse_point(after)
+        or _file_identity(after) != before_identity
+        or len(payload) > limit
+    ):
+        raise CandidateRunManifestError(f"{label} changed or exceeded its byte budget")
+    return payload
 
 
 def _reject_excessive_json_nesting(payload: bytes) -> None:
@@ -63,22 +184,45 @@ def _reject_nonstandard_json_constant(token: str) -> None:
 
 def _require_nonempty_directory(root: Path, relative: str) -> None:
     path = root / relative
-    if not path.is_dir() or path.is_symlink():
+    _require_nonreparse_ancestors(path, relative)
+    info = _path_lstat(path, relative)
+    if not _is_directory(info) or _is_reparse_point(info):
         raise CandidateRunManifestError(
-            f"Candidate run requires non-symlink directory: {relative}"
+            f"Candidate run requires non-reparse directory: {relative}"
         )
-    if not any(child.is_file() for child in path.rglob("*")):
+    found_file = False
+    visited = 0
+    try:
+        for child in path.rglob("*"):
+            visited += 1
+            if visited > _MAX_MANIFEST_DIRECTORY_ENTRIES:
+                raise CandidateRunManifestError(
+                    f"Candidate run directory exceeds entry budget: {relative}"
+                )
+            child_info = _path_lstat(child, relative)
+            if _is_reparse_point(child_info):
+                raise CandidateRunManifestError(
+                    f"Candidate run directory contains a reparse point: {relative}"
+                )
+            if _is_regular_file(child_info):
+                found_file = True
+            elif not _is_directory(child_info):
+                raise CandidateRunManifestError(
+                    f"Candidate run directory contains an unsupported entry: {relative}"
+                )
+    except OSError as exc:
+        raise CandidateRunManifestError(
+            f"Candidate run directory cannot be inspected: {relative}"
+        ) from exc
+    _require_original_stat_policy()
+    if not found_file:
         raise CandidateRunManifestError(f"Candidate run directory is empty: {relative}")
 
 
 def _load_canonical_json(path: Path, label: str) -> tuple[dict, bytes]:
     # A forged or unexpectedly huge evidence file must never be read without
     # a byte limit before canonical JSON validation. This is local-only.
-    try:
-        with path.open("rb") as handle:
-            payload = handle.read(_MAX_CANONICAL_JSON_BYTES + 1)
-    except OSError as exc:
-        raise CandidateRunManifestError(f"{label} cannot be read") from exc
+    payload = _read_bounded_file(path, label, _MAX_CANONICAL_JSON_BYTES)
     if len(payload) > _MAX_CANONICAL_JSON_BYTES:
         raise CandidateRunManifestError(f"{label} exceeds canonical JSON byte budget")
     _reject_excessive_json_nesting(payload)
@@ -106,11 +250,9 @@ def _require_expected_snapshot_bytes(path: Path, expected: bytes) -> None:
     """
     if type(expected) is not bytes or len(expected) > _MAX_CANONICAL_JSON_BYTES:
         raise CandidateRunManifestError("authorized snapshot exceeds canonical JSON byte budget")
-    try:
-        with path.open("rb") as handle:
-            observed = handle.read(len(expected) + 1)
-    except OSError as exc:
-        raise CandidateRunManifestError("saved execution snapshot cannot be read") from exc
+    observed = _read_bounded_file(
+        path, "saved execution snapshot", len(expected),
+    )
     if observed != expected:
         raise CandidateRunManifestError(
             "saved execution snapshot bytes do not match the authorized snapshot"
@@ -191,10 +333,12 @@ def _validate_training_metrics(snapshot: dict, metrics: dict, snapshot_sha: str)
 
 
 def _validate_candidate_evidence(snapshot: dict, root: Path) -> str:
+    _require_original_stat_policy()
     snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
-    if not root.is_dir() or root.is_symlink():
+    root_info = _path_lstat(root, "Candidate run root")
+    if not _is_directory(root_info) or _is_reparse_point(root_info):
         raise CandidateRunManifestError(
-            "Candidate run root must be an existing non-symlink directory"
+            "Candidate run root must be an existing non-reparse directory"
         )
 
     _require_nonempty_directory(root, "adapter")
@@ -206,8 +350,9 @@ def _validate_candidate_evidence(snapshot: dict, root: Path) -> str:
         (metrics_path, "training metrics"),
         (snapshot_path, "execution snapshot"),
     ):
-        if not path.is_file() or path.is_symlink():
-            raise CandidateRunManifestError(f"Candidate run is missing {label}")
+        info = _path_lstat(path, label)
+        if not _is_regular_file(info) or _is_reparse_point(info):
+            raise CandidateRunManifestError(f"Candidate run is missing or unsafe: {label}")
 
     expected_snapshot = canonical_json(snapshot)
     _require_expected_snapshot_bytes(snapshot_path, expected_snapshot)
@@ -218,7 +363,9 @@ def _validate_candidate_evidence(snapshot: dict, root: Path) -> str:
 
 
 def _candidate_file_rows(root: Path) -> list[dict]:
-    files = directory_file_identities(root)
+    _require_original_stat_policy()
+    files = _ORIGINAL_DIRECTORY_FILE_IDENTITIES(root)
+    _require_original_stat_policy()
     rows = [row.__dict__ for row in files if row.path != "run-manifest.json"]
     if not rows:
         raise CandidateRunManifestError("Candidate run contains no evidence files")
@@ -245,24 +392,43 @@ def _expected_candidate_run_manifest(snapshot: dict, root: Path) -> dict:
 
 def build_candidate_run_manifest(snapshot: dict, output_dir: Path) -> dict:
     """Inventory a completed run directory without mutating it."""
+    _require_original_stat_policy()
     root = Path(output_dir)
+    _require_original_stat_policy()
     manifest_path = root / "run-manifest.json"
-    if manifest_path.exists() or manifest_path.is_symlink():
+    try:
+        _path_lstat(manifest_path, "Candidate run manifest")
+    except FileNotFoundError:
+        pass
+    else:
         raise CandidateRunManifestError("Candidate run manifest must not already exist")
     return _expected_candidate_run_manifest(snapshot, root)
 
 
 def write_candidate_run_manifest(snapshot: dict, output_dir: Path) -> tuple[Path, str]:
     """Write the final run manifest exactly once and return path + content digest."""
+    _require_original_stat_policy()
     root = Path(output_dir)
+    _require_original_stat_policy()
     manifest = build_candidate_run_manifest(snapshot, root)
     payload = canonical_json(manifest)
+    _require_original_stat_policy()
     path = root / "run-manifest.json"
     try:
         with path.open("xb") as handle:
-            handle.write(payload)
+            _require_original_stat_policy()
+            opened = _ORIGINAL_FSTAT(handle.fileno())
+            if not _is_regular_file(opened) or _is_reparse_point(opened):
+                raise CandidateRunManifestError("Candidate run manifest output is unsafe")
+            written = handle.write(payload)
+            _require_original_stat_policy()
+            if type(written) is not int or written != len(payload):
+                raise CandidateRunManifestError("Candidate run manifest write was incomplete")
     except FileExistsError as exc:
         raise CandidateRunManifestError("Candidate run manifest must be create-only") from exc
+    saved = _read_bounded_file(path, "Candidate run manifest", _MAX_CANONICAL_JSON_BYTES)
+    if saved != payload:
+        raise CandidateRunManifestError("Candidate run manifest bytes changed after write")
     return path, sha256_bytes(payload)
 
 
@@ -273,9 +439,12 @@ def verify_candidate_run_manifest(
     expected_manifest_sha256: str | None = None,
 ) -> dict:
     """Fail closed if a frozen Candidate run changed after its manifest was written."""
+    _require_original_stat_policy()
     root = Path(output_dir)
+    _require_original_stat_policy()
     path = root / "run-manifest.json"
-    if not path.is_file() or path.is_symlink():
+    info = _path_lstat(path, "Candidate run manifest")
+    if not _is_regular_file(info) or _is_reparse_point(info):
         raise CandidateRunManifestError("Candidate run manifest is missing or unsafe")
 
     manifest, payload = _load_canonical_json(path, "Candidate run manifest")
