@@ -40,7 +40,7 @@ def test_get_callback_cannot_redefine_original_call(monkeypatch, change):
     )
     original_get = registry.get
 
-    def substitute(name):
+    def substitute(self, name):
         if change == "tool":
             object.__setattr__(call, "tool", "offline.tool")
             name = "offline.tool"
@@ -52,7 +52,7 @@ def test_get_callback_cannot_redefine_original_call(monkeypatch, change):
             object.__setattr__(call, "arguments", {"k": 1})
         return original_get(name)
 
-    monkeypatch.setattr(registry, "get", substitute)
+    monkeypatch.setattr(ToolRegistry, "get", substitute)
     with pytest.raises(ValueError, match="ToolCall (?:identity|argument)"):
         registry.resolve(call)
 
@@ -61,12 +61,12 @@ def test_get_callback_cannot_change_registry_effect_after_validation(monkeypatch
     registry, entry = _registry()
     original_get = registry.get
 
-    def change_effect(name):
+    def change_effect(self, name):
         result = original_get(name)
         object.__setattr__(entry, "effect", Effect.READ)
         return result
 
-    monkeypatch.setattr(registry, "get", change_effect)
+    monkeypatch.setattr(ToolRegistry, "get", change_effect)
     with pytest.raises(ValueError, match="registry|registered tool"):
         registry.resolve(_call())
 
@@ -90,6 +90,6 @@ def test_get_must_return_the_original_registered_entry(
     else:
         forged = None
 
-    monkeypatch.setattr(registry, "get", lambda _name: forged)
+    monkeypatch.setattr(ToolRegistry, "get", lambda self, _name: forged)
     with pytest.raises(ValueError, match="unregistered identity"):
         getattr(registry, operation)(_call())
