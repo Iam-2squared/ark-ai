@@ -1,4 +1,90 @@
-# LATEST — ARK Run1103: durable-first mock authorization, atomic pre-action commit recovery, proactive CAS repair
+# LATEST — ARK Run1104: integrate mock authorization tests, rebase core contracts, proactive CAS and repair V3 lint
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 14:58:14+09:00.** Reporting/checkpoint timestamp only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `a3b5617bb4b2a9d0bd1107e7f7588b82f3da488a` (live PR #8 head re-read immediately before this write). **Checkpoint-result HEAD:** the exact commit SHA returned by this normal GitHub Contents API update; the result is reported separately because a commit cannot self-embed its own SHA.
+
+## Overall current ARK state
+
+- V1/V2 and Local UI/Launcher historical evidence and controlling contracts remain frozen and unchanged.
+- JARVIS foundations remain isolated/reversible under Draft PR #8. No main merge occurred.
+- PR #5 remains OPEN/DRAFT/UNMERGED behind its protected V3 evaluation gate.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains PAUSED and untouched.
+- Main advanced from prior base `7a843f17eb96ed13d66f23b58b06406b3002e405` to `6e40afb74666b7dfda6560dd5ca619664d7129b7` through two commits adding only `docs/v3/RUN1077_AUTHORIZATION_STAT_PREDICATE_CUSTODY.md` and `tests/test_personal_context_replay_process_crash_run1033.py`. PR #8 still targets its existing base SHA `7a843f17eb96ed13d66f23b58b06406b3002e405`; no rebase or merge was attempted. The observed main delta did not modify a frozen contract.
+- No later version/PASS is declared.
+
+## NEW this invocation — non-UI work packages
+
+1. **Durable-first mock WRITE ordering — PR #240 integrated into PR #239**
+   - PR #239 source branch `research/run1103-durable-first-auth-order` now has exact HEAD `02a39634cf5217c9174bbaae37189653c2a36e94`.
+   - Child PR #240 was marked ready after exact-head CI GREEN and squash-merged into #239 as `02a39634cf5217c9174bbaae37189653c2a36e94`. It adds five synthetic regressions for duplicate durable reservation, denial after reservation, missing scope grant, grant-generator failure, and successful WRITE ordering.
+   - PR #240 exact child HEAD `db03ff3afe3512215d2e392b233086a6b56a76e3`, CI run [44987044564](https://github.com/Iam-2squared/ark-ai/actions/runs/44987044564): GREEN, 6/6. PR #239 source HEAD `385010f49df16ef5cd56788622873415dc7c0581`, CI run [44986964902](https://github.com/Iam-2squared/ark-ai/actions/runs/44986964902): GREEN, 6/6. The combined PR #239 head `02a39634cf5217c9174bbaae37189653c2a36e94` has fresh CI run [44991084771](https://github.com/Iam-2squared/ark-ai/actions/runs/44991084771) IN PROGRESS.
+   - PR #239 currently reports `mergeable=false` because its base SHA is the older parent `e8761e183094cd27955423844a8db7d6b0063829`; it must be rebased/reconciled against the latest PR #8 head before integration. No parent merge is claimed.
+
+2. **Atomic pre-action intent/audit COMMIT-unknown regression — PR #241 integrated into PR #8**
+   - Test-only PR #241 exact HEAD `c63a11583038e055d8ee58afa768f0087490bc22`, CI run [44987272312](https://github.com/Iam-2squared/ark-ai/actions/runs/44987272312): GREEN, 6/6.
+   - PR #241 was squash-merged into the isolated PR #8 branch as parent HEAD `a3b5617bb4b2a9d0bd1107e7f7588b82f3da488a`. The tests simulate lost COMMIT acknowledgement before/after native COMMIT and require cold recovery to observe either zero rows or the complete intent/pre-action-audit pair. The ledger source/schema and execute surface remain unchanged.
+   - Fresh parent exact-head CI run [44991110505](https://github.com/Iam-2squared/ark-ai/actions/runs/44991110505) is IN PROGRESS at this checkpoint.
+
+3. **Rebased PlanGraph, ToolRegistry and PermissionGate contract coverage — Draft PR #243**
+   - New branch `research/run1104-plan-registry-permission-rebase`, exact child HEAD `5f2ebaa9adfd53442b7764de75ffc6896f406ca9`, parent basis `a3b5617bb4b2a9d0bd1107e7f7588b82f3da488a`.
+   - Carries the six original test/report files unchanged from PR #234 (PlanGraph), #235 (ToolRegistry) and #236 (PermissionGate). Original child exact-head CI runs [44972889223](https://github.com/Iam-2squared/ark-ai/actions/runs/44972889223), [44973003470](https://github.com/Iam-2squared/ark-ai/actions/runs/44973003470), and [44973107471](https://github.com/Iam-2squared/ark-ai/actions/runs/44973107471) were each GREEN, 6/6. Original PRs #234–#236 remain open/Draft/untouched.
+   - Fresh rebase exact-head CI run [44991448375](https://github.com/Iam-2squared/ark-ai/actions/runs/44991448375) is IN PROGRESS. No prior verdict is transferred.
+
+4. **Rebased proactive eligibility CAS repair — Draft PR #244**
+   - New branch `research/run1104-proactive-state-cas-rebase`, exact child HEAD `c47cde4718348138723c1bfcf4de4b799318a672`, parent basis `a3b5617bb4b2a9d0bd1107e7f7588b82f3da488a`.
+   - Carries the source, 11-test suite and report unchanged from PR #242 exact HEAD `588c716230f3aa53a222cf367496d2ce7d578caf`; original exact-head CI run [44987483186](https://github.com/Iam-2squared/ark-ai/actions/runs/44987483186) was GREEN, 6/6. The fix corrects only the row-time predicate: valid `last_proposal_at_ms <= last_evaluated_at_ms` is accepted; future proposal time is rejected. Original PR #242 and PR #227 remain open/Draft/untouched.
+   - Fresh rebase exact-head CI run [44991508428](https://github.com/Iam-2squared/ark-ai/actions/runs/44991508428) is QUEUED. No prior verdict is transferred.
+
+5. **Free-only V3 execution-snapshot path guard lint repair — Draft PR #226**
+   - Original exact HEAD `ea1b96dc4bba8dd927ee65fb26464f72982d8dbc`, CI run [44982216375](https://github.com/Iam-2squared/ark-ai/actions/runs/44982216375): FAIL, all six jobs stopped at Ruff I001 in `src/ark/learning/execution.py`.
+   - First import-order attempt `a99bd4027af850655258fd813353b380c759e042`, CI run [44991288581](https://github.com/Iam-2squared/ark-ai/actions/runs/44991288581): FAIL, same Ruff I001. The job log exposed Ruff's exact ordering diff.
+   - Second semantics-preserving import-only repair is exact HEAD `71f478250baabdcab0203087e508af4f8278e2b8`. No exact-head workflow result was returned at checkpoint time; GREEN is not claimed. PR #226 remains Draft under PR #5. No V3 evaluation, model, tokenizer, GPU or training action was opened or started.
+
+## Tests / CI / evidence — exact HEADs only
+
+| Branch / PR | Exact HEAD | Evidence at checkpoint |
+|---|---|---|
+| PR #8 parent | `a3b5617bb4b2a9d0bd1107e7f7588b82f3da488a` | Run 44991110505 — IN PROGRESS |
+| PR #239 combined source + tests | `02a39634cf5217c9174bbaae37189653c2a36e94` | Run 44991084771 — IN PROGRESS |
+| PR #243 contract-test rebase | `5f2ebaa9adfd53442b7764de75ffc6896f406ca9` | Run 44991448375 — IN PROGRESS |
+| PR #244 proactive CAS rebase | `c47cde4718348138723c1bfcf4de4b799318a672` | Run 44991508428 — QUEUED |
+| PR #226 second lint repair | `71f478250baabdcab0203087e508af4f8278e2b8` | No exact-head workflow result returned yet |
+| PR #240 original tests | `db03ff3afe3512215d2e392b233086a6b56a76e3` | Run 44987044564 — GREEN, 6/6 |
+| PR #241 original tests | `c63a11583038e055d8ee58afa768f0087490bc22` | Run 44987272312 — GREEN, 6/6 |
+| PR #234 / #235 / #236 original tests | `2ee423ada01fa2ea3cee5fc01b984f7a5c036412` / `d9c83f04bf430b3e46eaef085cc8982893b4cbd0` / `857ba0349cb0a1042f5fbbad91183c00623859bc` | Runs 44972889223 / 44973003470 / 44973107471 — each GREEN, 6/6 |
+| PR #242 original proactive repair | `588c716230f3aa53a222cf367496d2ce7d578caf` | Run 44987483186 — GREEN, 6/6 |
+
+No local pytest/Ruff execution, physical-PC test, model test, or external runtime validation was performed. No result transfers to a different HEAD. No duplicate workflow was manually dispatched.
+
+## Frozen contracts / authorization boundaries unchanged
+
+- Main V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged. Main's two newly observed commits add one V3 guard report and one Personal Context process-crash test only.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `2ddc32a69dd32541497373ac76be2c1db332f88f`; protected V2 final-evaluation and V3 compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains paused and the branch is untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credentials/account connection, real Candidate adapter/weights/promotion, destructive operation, protected evaluation opening, external dispatch, unavailable physical-PC action, frozen-contract change, or main merge occurred.
+- No trusted-clock, authenticated-consent, cross-store atomicity, independent custody, crash-safe exactly-once external effect, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / remaining non-authority
+
+Durable occurrence and ActionAudit remain separate SQLite stores; PR #239 is mock-only and its combined exact-head CI is still running. The atomic pre-action ledger remains disconnected and has no execute API. The PermissionGate one-shot token set remains process-local. Proactive `ELIGIBLE_PREVIEW` remains non-notifying and non-authorizing. Caller timestamps remain unauthenticated. PR #226's latest lint repair still needs exact-head GREEN evidence. Trusted time, authenticated consent/approval, independent custody, real backend dispatch, production startup readiness and exactly-once external effects remain NOT_PASSED.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head CI for PR #8, #239, #243, #244 and the second PR #226 lint repair. Inspect failures and apply the smallest semantics-preserving fix; do not duplicate equivalent workflows.
+2. Re-read PR #8 and PR #239 live HEADs. Rebase PR #239's durable-first source/tests onto the latest parent before considering integration; require exact-head GREEN and preserve the no-blind-replay/COMMIT-unknown rules.
+3. After the lower-level authorization and atomic-ledger evidence is exact-head GREEN, design a separate disconnected mock-only composition. Keep the stores' cross-store atomicity limitation explicit; never claim external exactly-once.
+4. Integrate PR #243 and #244 only after their fresh exact-head CI is GREEN and the latest parent HEAD is re-read. Keep their original child PRs unchanged.
+5. Continue Memory WAL/event-frontier/CAS/expiry and coherent-snapshot hardening; Planner terminal propagation/restart recovery; privacy-safe Personal Context; Observation fixture contracts; and free-only V3 path/provenance guards.
+6. UI remains PAUSED. PR #9 and Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# Historical checkpoint — ARK Run1103: durable-first mock authorization, atomic pre-action commit recovery, proactive CAS repair
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 14:00:54+09:00.** Reporting/checkpoint timestamp only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
