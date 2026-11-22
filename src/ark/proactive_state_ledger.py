@@ -329,7 +329,8 @@ def _state_digest(values: tuple[object, ...]) -> str:
 
 def _build_state(values: tuple[object, ...]) -> SyntheticProactiveState:
     _require_original_state_type()
-    state = SyntheticProactiveState(*values, _state_digest(values))
+    state_sha256 = _state_digest(values)
+    state = SyntheticProactiveState(*values, state_sha256)
     _require_original_state_type()
     if (
         type(state) is not _STATE_TYPE
@@ -337,7 +338,7 @@ def _build_state(values: tuple[object, ...]) -> SyntheticProactiveState:
             getattr(state, name) is not expected
             for name, expected in zip(
                 _STATE_FIELDS,
-                (*values, _state_digest(values)),
+                (*values, state_sha256),
                 strict=True,
             )
         )
