@@ -1,14 +1,14 @@
-# Run1107 — Personal Context replay-ledger reentrant path-policy rebase
+# Run1111 — Rebased Run1107 Personal Context replay-ledger path-policy guards
 
 ## Exact basis
 
 - Parent: Draft PR #8, `research/jarvis-foundations`.
-- Exact parent HEAD at branch creation: `62047e185d4f8b8fef9a94b3f6441ff1b42c307d`.
-- Rebased from Draft PR #253 exact child HEAD: `a86bbdabae68d492cf3895361d5e93dce8aced81` (prior CI run 45004786780 was GREEN on its old base and does not transfer).
+- Exact parent HEAD at branch creation: `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
+- Reapplied from predecessor Draft PR #257 exact child HEAD: `c47aa90f14e933229cf03295321b60cafeda92d4` (exact-head CI run 45009601750 was GREEN 6/6 on its old base and does not transfer).
 - Rebased from Draft PR #222 exact child HEAD: `f332fe623008ae6ff3b2da856ff80f533a82ba41`.
 - Source: `src/ark/personal_context_replay_ledger.py`.
 - Existing path coverage: `tests/test_context_replay_sidecar_custody_run793.py` and `tests/test_context_replay_sqlite_preaccess_run859.py`.
-- Child branch: `research/run1108-context-replay-reentrant-rebase`.
+- Child branch: `research/run1111-personal-context-replay-rebase`.
 
 ## Finding and change
 
@@ -29,3 +29,8 @@ No local pytest/Ruff PASS is claimed. Fresh exact-head Windows/Linux × Python 3
 No paid/external compute, paid API/service, Candidate, protected V2 evaluation, frozen-contract change, UI/frontend work, credential/account connection, physical hardware action, destructive operation or main merge is involved.
 
 **ARK/JARVIS remains NOT_PASSED.**
+
+
+## Run1111 rebase evidence
+
+The predecessor child PR #257 exact head `c47aa90f14e933229cf03295321b60cafeda92d4` passed Windows/Linux × Python 3.11–3.13 CI run [45009601750](https://github.com/Iam-2squared/ark-ai/actions/runs/45009601750), 6/6. That result does not transfer to this rebased branch; fresh exact-head CI is required.
