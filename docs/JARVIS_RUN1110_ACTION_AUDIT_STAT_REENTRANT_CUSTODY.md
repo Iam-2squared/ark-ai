@@ -1,14 +1,14 @@
-# Run1110 — ActionAudit reentrant stat-policy custody
+# Run1111 — Rebased Run1110 ActionAudit reentrant stat-policy custody
 
 ## Exact basis
 
 - Parent: Draft PR #8, `research/jarvis-foundations`.
-- Exact parent HEAD at branch creation: `d08cf2bdbc7cdd3142b4ab3945cacf39d29ca607`.
+- Exact parent HEAD at branch creation: `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
 - Rebased from Draft PR #256 exact child HEAD: `bd0ddc69df2790ba025d55fce8ad482d66dc277c` (prior CI run 45004537989 was GREEN on its old base and does not transfer).
 - Source: `src/ark/agency/audit.py`.
 - Existing pre-access coverage: `tests/test_action_audit_stat_predicate_custody_run1072.py`.
 - Existing reparse-point coverage: `tests/test_action_audit_reparse_point_ancestry_run1055.py`.
-- Child branch: `research/run1110-action-audit-stat-reentrant-rebase`.
+- Child branch: `research/run1111-action-audit-stat-reentrant-rebase`.
 
 ## Finding and change
 
@@ -40,3 +40,8 @@ No paid/external compute, paid API/service, Candidate generation/promotion, prot
 
 
 Rebased child CI is required on this exact branch head. The predecessor PR #256 exact-head run #7054 / 45009567096 is GREEN (6/6) on the previous base only and is not transferred.
+
+
+## Run1111 rebase evidence
+
+The predecessor child PR #268 exact head `475aaa2127cf25dc498a5ac253082d36ab0fe604` passed Windows/Linux × Python 3.11–3.13 CI run [45014780890](https://github.com/Iam-2squared/ark-ai/actions/runs/45014780890), 6/6. That result does not transfer to this rebased branch; fresh exact-head CI is required.
