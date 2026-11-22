@@ -185,3 +185,30 @@ def test_reentrant_snapshot_callback_cannot_replace_a_lease_guard(
         _review(snapshot, requirements)
 
     assert observed == ["snapshot-integrity"]
+
+
+def test_replaced_guard_tuple_is_denied_before_helper_or_descriptor_use(
+    ready_case, monkeypatch,
+):
+    snapshot, requirements = ready_case
+    callbacks = []
+
+    def forbidden(_self):
+        callbacks.append("requirement")
+        raise AssertionError("unreviewed requirement descriptor was invoked")
+
+    monkeypatch.setattr(
+        mod,
+        "_ORIGINAL_LEASE_GUARD_HELPERS",
+        tuple(list(mod._ORIGINAL_LEASE_GUARD_HELPERS)),
+    )
+    monkeypatch.setattr(
+        mod._REQUIREMENT_TYPE, "component_id", property(forbidden),
+    )
+
+    with pytest.raises(
+        mod.SyntheticStartupLeaseRejected, match="helper identity",
+    ):
+        _review(snapshot, requirements)
+
+    assert callbacks == []
