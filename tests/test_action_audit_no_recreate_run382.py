@@ -57,39 +57,39 @@ def test_restored_audit_preserves_event_ids_after_missing_append(tmp_path: Path)
 def test_reentrant_clock_path_swap_rejects_and_rolls_back(tmp_path: Path):
     audit, call, original_path = _fixture(tmp_path)
     alternative = SQLiteActionAudit(tmp_path / "other.sqlite", clock_ms=lambda: 100)
-    audit._clock_ms = lambda: setattr(audit, "path", alternative.path) or 101
+    audit._clock_ms = lambda: object.__setattr__(audit, "path", alternative.path) or 101
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="must-not-commit")
     assert alternative.events() == []
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     assert audit.events() == []
 
 
 def test_reentrant_clock_same_value_new_path_instance_rejected(tmp_path: Path):
     audit, call, original_path = _fixture(tmp_path)
-    audit._clock_ms = lambda: setattr(audit, "path", Path(str(original_path))) or 101
+    audit._clock_ms = lambda: object.__setattr__(audit, "path", Path(str(original_path))) or 101
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="must-not-commit")
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     assert audit.events() == []
 
 
 def test_reentrant_clock_type_corruption_is_rejected(tmp_path: Path):
     audit, call, original_path = _fixture(tmp_path)
-    audit._clock_ms = lambda: setattr(audit, "path", "non-path") or 101
+    audit._clock_ms = lambda: object.__setattr__(audit, "path", "non-path") or 101
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="must-not-commit")
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     assert audit.events() == []
 
 
 def test_normal_append_after_reentrant_clock_denial_remains_usable(tmp_path: Path):
     audit, call, original_path = _fixture(tmp_path)
-    audit._clock_ms = lambda: setattr(audit, "path", tmp_path / "other.sqlite") or 101
+    audit._clock_ms = lambda: object.__setattr__(audit, "path", tmp_path / "other.sqlite") or 101
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="denied")
     assert not (tmp_path / "other.sqlite").exists()
-    audit.path = original_path
+    object.__setattr__(audit, "path", original_path
     audit._clock_ms = lambda: 102
     assert audit.append(call, outcome="permitted-local-audit").event_id == 1
     assert len(audit.events()) == 1
