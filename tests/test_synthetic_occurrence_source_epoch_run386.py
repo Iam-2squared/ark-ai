@@ -49,12 +49,12 @@ def test_registry_callback_cannot_retarget_reservation_source(
     registry, call, token, occurrence = _identity()
     bind = registry.bind
 
-    def retarget(request):
+    def retarget(self, request):
         bound = bind(request)
         store._path = second if different_path else Path(str(path))
         return bound
 
-    monkeypatch.setattr(registry, "bind", retarget)
+    monkeypatch.setattr(ToolRegistry, "bind", retarget)
     with pytest.raises(SyntheticReplayRejected, match="source changed"):
         _reserve(store, registry, call, token, occurrence)
     assert SyntheticOccurrenceStore(path).count_synthetic() == 0
@@ -70,7 +70,7 @@ def test_late_registry_callback_retarget_rolls_back_insert(
     bind = registry.bind
     attempts = 0
 
-    def retarget_on_second_bind(request):
+    def retarget_on_second_bind(self, request):
         nonlocal attempts
         attempts += 1
         bound = bind(request)
@@ -78,7 +78,7 @@ def test_late_registry_callback_retarget_rolls_back_insert(
             store._path = Path(str(path))
         return bound
 
-    monkeypatch.setattr(registry, "bind", retarget_on_second_bind)
+    monkeypatch.setattr(ToolRegistry, "bind", retarget_on_second_bind)
     with pytest.raises(SyntheticReplayRejected, match="source changed"):
         _reserve(store, registry, call, token, occurrence)
     assert attempts == 2
