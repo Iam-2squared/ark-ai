@@ -27,7 +27,7 @@ def _symlink_or_skip(link: Path, target: Path, *, directory: bool) -> None:
 
 
 def test_symlink_directory_is_rejected_before_target_scandir(
-    tmp_path, monkeypatch,
+    tmp_path: Path,
 ):
     learning = _fake_project(tmp_path)
     outside = tmp_path / "outside-learning-root"
@@ -45,11 +45,34 @@ def test_symlink_directory_is_rejected_before_target_scandir(
             scanned_targets.append(Path(path))
         return original_scandir(path)
 
-    monkeypatch.setattr(identity.os, "scandir", record_scandir)
     with pytest.raises(ValueError, match="symlink entry"):
-        identity.build_code_tree_identity(tmp_path)
+        identity._snapshot_entries(learning, _scandir=record_scandir)
 
     assert scanned_targets == []
+
+
+@pytest.mark.parametrize("target", ("os.scandir", "captured alias"))
+def test_replaced_import_original_scandir_is_denied_before_enumeration(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+) -> None:
+    _fake_project(tmp_path)
+    calls: list[Path] = []
+
+    def forbidden(path):
+        calls.append(Path(path))
+        raise AssertionError("substituted scandir must not execute")
+
+    if target == "os.scandir":
+        monkeypatch.setattr(identity.os, "scandir", forbidden)
+    else:
+        monkeypatch.setattr(identity, "_ORIGINAL_SCANDIR", forbidden)
+
+    with pytest.raises(ValueError, match="reparse-point policy changed"):
+        identity.build_code_tree_identity(tmp_path)
+
+    assert calls == []
 
 
 def test_symlinked_python_file_is_rejected(tmp_path):

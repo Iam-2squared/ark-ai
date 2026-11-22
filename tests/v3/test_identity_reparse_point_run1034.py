@@ -63,10 +63,9 @@ def test_directory_walk_rejects_reparse_entry_before_advancing(
             raise AssertionError("path metadata was read before no-follow classification")
         return original_lstat(path)
 
-    monkeypatch.setattr(identity.os, "scandir", guarded_scandir)
     monkeypatch.setattr(Path, "lstat", lstat)
     with pytest.raises(ValueError, match="symlink entry"):
-        identity.directory_file_identities(root)
+        identity._snapshot_entries(root, _scandir=guarded_scandir)
 
     assert scanned == [root]
 
