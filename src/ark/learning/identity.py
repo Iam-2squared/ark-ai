@@ -22,6 +22,7 @@ _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_S_ISREG = stat.S_ISREG
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_S_IFMT = stat.S_IFMT
 _NATIVE_PATH_TYPE = type(Path("."))
 
 
@@ -39,6 +40,7 @@ def _require_original_reparse_point_policy() -> None:
         or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or _ORIGINAL_STAT.S_IFMT is not _ORIGINAL_S_IFMT
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
@@ -226,6 +228,32 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     return FileIdentity(safe_label, sha, size, False)
 
 
+def _entry_metadata_matches_path(
+    entry_epoch: tuple[int, ...],
+    path_epoch: tuple[int, ...],
+    *,
+    windows: bool,
+    is_dir: bool,
+) -> bool:
+    """Compare no-follow DirEntry and Path metadata using stable fields."""
+    _require_original_reparse_point_policy()
+    if type(windows) is not bool or type(is_dir) is not bool:
+        return False
+    if windows:
+        # Windows FindFirstFile/handle metadata can disagree on file IDs,
+        # ctime, link counts, permission bits, directory allocation size and
+        # directory mtime. Compare only the no-follow entry type for directories;
+        # the Path-derived directory epoch is captured and rechecked exactly
+        # before/after enumeration and after hashing. Regular files retain type,
+        # byte-size and mtime comparison across the two metadata APIs.
+        if _ORIGINAL_S_IFMT(entry_epoch[2]) != _ORIGINAL_S_IFMT(path_epoch[2]):
+            return False
+        if is_dir:
+            return True
+        return entry_epoch[3:5] == path_epoch[3:5]
+    return entry_epoch == path_epoch
+
+
 def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     """Retain directory/file identity, not only a reusable relative name."""
     _require_original_reparse_point_policy()
@@ -330,18 +358,27 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                         path_info.st_size, path_info.st_mtime_ns,
                         path_info.st_ctime_ns, path_info.st_nlink,
                     )
-                    # Windows path-stat and DirEntry-stat can report different
-                    # file IDs for the same entry. Compare all portable metadata
-                    # there; POSIX also requires device/inode identity.
-                    if (
-                        info_epoch[2:] != path_epoch[2:]
-                        or (os.name != "nt" and info_epoch[:2] != path_epoch[:2])
+                    # DirEntry and Path metadata have platform-specific
+                    # file-ID/ctime differences; compare the portable fields on
+                    # Windows while retaining the complete POSIX epoch check.
+                    if not _entry_metadata_matches_path(
+                        info_epoch, path_epoch,
+                        windows=os.name == "nt", is_dir=is_dir,
                     ):
-                        raise ValueError("snapshot entry changed during enumeration")
+                        type_matches = (
+                            _ORIGINAL_S_IFMT(info_epoch[2])
+                            == _ORIGINAL_S_IFMT(path_epoch[2])
+                        )
+                        raise ValueError(
+                            "snapshot entries changed during enumeration "
+                            f"(is_dir={is_dir}, file_type_match={type_matches}, "
+                            f"mtime_delta_ns={info_epoch[4] - path_epoch[4]}, "
+                            f"size_delta={info_epoch[3] - path_epoch[3]})"
+                        )
 
                     observed_epoch = _entry_epoch(path, is_dir=is_dir)
                     if observed_epoch != path_epoch:
-                        raise ValueError("snapshot entry changed during enumeration")
+                        raise ValueError("snapshot entries changed during enumeration")
                     paths.append((relative, path, is_dir, observed_epoch))
                     if is_dir:
                         pending.append((path, observed_epoch))

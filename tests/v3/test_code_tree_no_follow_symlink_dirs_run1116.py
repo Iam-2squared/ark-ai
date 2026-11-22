@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -64,28 +62,30 @@ def test_symlinked_python_file_is_rejected(tmp_path):
         identity.build_code_tree_identity(tmp_path)
 
 
-def test_windows_snapshot_epoch_uses_path_identity_not_direntry_file_id(
-    tmp_path, monkeypatch,
-):
-    learning = _fake_project(tmp_path)
+def test_windows_direntry_metadata_comparison_ignores_file_ids_and_ctime():
+    entry_epoch = (1, 2, 0o100644, 12, 34, 56, 1)
+    path_epoch = (9, 8, 0o100644, 12, 34, 99, 1)
 
-    def forbidden_samestat(*_args):
-        raise AssertionError(
-            "Windows snapshot enumeration must not compare DirEntry and Path file IDs"
-        )
-
-    monkeypatch.setattr(
-        identity,
-        "os",
-        SimpleNamespace(
-            name="nt",
-            scandir=os.scandir,
-            path=SimpleNamespace(samestat=forbidden_samestat),
-        ),
+    assert identity._entry_metadata_matches_path(
+        entry_epoch, path_epoch, windows=True, is_dir=False,
     )
-    entries = identity._snapshot_entries(learning)
+    assert not identity._entry_metadata_matches_path(
+        entry_epoch, path_epoch, windows=False, is_dir=False,
+    )
 
-    assert [(relative, is_dir) for relative, _, is_dir, _ in entries] == [
-        ("", True),
-        ("core.py", False),
-    ]
+    changed_size = (9, 8, 0o100644, 13, 34, 99, 1)
+    changed_mtime = (9, 8, 0o100644, 12, 35, 99, 1)
+    changed_permissions = (9, 8, 0o100600, 12, 34, 99, 1)
+    changed_type = (9, 8, 0o040600, 12, 34, 99, 1)
+    changed_links = (9, 8, 0o100644, 12, 34, 99, 2)
+    assert identity._entry_metadata_matches_path(
+        entry_epoch, changed_links, windows=True, is_dir=False,
+    )
+    # Windows cross-API comparison intentionally ignores permission bits.
+    assert identity._entry_metadata_matches_path(
+        entry_epoch, changed_permissions, windows=True, is_dir=False,
+    )
+    for changed in (changed_size, changed_mtime, changed_type):
+        assert not identity._entry_metadata_matches_path(
+            entry_epoch, changed, windows=True, is_dir=False,
+        )
