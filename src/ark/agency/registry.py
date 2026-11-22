@@ -498,8 +498,6 @@ class ToolRegistry:
         ):
             raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registry_instance_seal()
-        if object.__getattribute__(self, "_sealed") is not True:
-            raise ValueError("registry construction was not sealed")
         _require_original_registration_contract()
         _require_original_registry_digest()
         # Registrations can arrive from caller-controlled generators. Never
