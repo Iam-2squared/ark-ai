@@ -22,6 +22,7 @@ _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_S_ISREG = stat.S_ISREG
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_S_IFMT = stat.S_IFMT
 _NATIVE_PATH_TYPE = type(Path("."))
 
 
@@ -39,6 +40,7 @@ def _require_original_reparse_point_policy() -> None:
         or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or _ORIGINAL_STAT.S_IFMT is not _ORIGINAL_S_IFMT
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
@@ -231,14 +233,24 @@ def _entry_metadata_matches_path(
     path_epoch: tuple[int, ...],
     *,
     windows: bool,
+    is_dir: bool,
 ) -> bool:
-    """Compare DirEntry and Path metadata without Windows-only ID/ctime aliases."""
+    """Compare no-follow DirEntry and Path metadata using stable fields."""
+    _require_original_reparse_point_policy()
+    if type(windows) is not bool or type(is_dir) is not bool:
+        return False
     if windows:
-        # Windows path-stat and DirEntry-stat can report different file IDs,
-        # their ctime semantics and link-count observations can differ. Keep
-        # the portable mode/size/mtime checks; the Path epoch is
-        # still rechecked against itself before the entry is accepted.
-        return entry_epoch[2:5] == path_epoch[2:5]
+        # Windows FindFirstFile/handle metadata can disagree on file IDs,
+        # ctime, link counts, permission bits and directory allocation size.
+        # Keep the file type and mtime for every entry; regular files also keep
+        # size. A directory's own Path epoch is rechecked against itself before
+        # traversal and again after enumeration, so its allocation size is not
+        # used as cross-API identity evidence.
+        if _ORIGINAL_S_IFMT(entry_epoch[2]) != _ORIGINAL_S_IFMT(path_epoch[2]):
+            return False
+        if is_dir:
+            return entry_epoch[4] == path_epoch[4]
+        return entry_epoch[3:5] == path_epoch[3:5]
     return entry_epoch == path_epoch
 
 
@@ -350,13 +362,14 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                     # file-ID/ctime differences; compare the portable fields on
                     # Windows while retaining the complete POSIX epoch check.
                     if not _entry_metadata_matches_path(
-                        info_epoch, path_epoch, windows=os.name == "nt",
+                        info_epoch, path_epoch,
+                        windows=os.name == "nt", is_dir=is_dir,
                     ):
-                        raise ValueError("snapshot entry changed during enumeration")
+                        raise ValueError("snapshot entries changed during enumeration")
 
                     observed_epoch = _entry_epoch(path, is_dir=is_dir)
                     if observed_epoch != path_epoch:
-                        raise ValueError("snapshot entry changed during enumeration")
+                        raise ValueError("snapshot entries changed during enumeration")
                     paths.append((relative, path, is_dir, observed_epoch))
                     if is_dir:
                         pending.append((path, observed_epoch))
