@@ -1,3 +1,64 @@
+# LATEST — ARK Run1103: durable-first mock authorization, atomic pre-action commit recovery, proactive CAS repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 14:00:54+09:00.** Reporting/checkpoint timestamp only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), still OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `e8761e183094cd27955423844a8db7d6b0063829` (live PR #8 head re-read immediately before this write). **Checkpoint-result HEAD:** the exact commit SHA returned by the normal GitHub Contents API write; the checkpoint cannot embed its own resulting SHA. This response records that returned SHA.
+
+## Overall current ARK state
+
+V1/V2 and Local UI/Launcher historical evidence remain frozen and unchanged. The non-UI JARVIS foundations remain isolated/reversible under Draft PR #8. PR #5 remains behind its protected V3 evaluation gate. PR #9 remains the existing completed UI foundation, paused and untouched. No main merge, real Candidate generation/promotion, protected evaluation opening, external dispatch, paid service, or hardware action occurred. **No later version/PASS is declared.**
+
+## NEW this invocation — three non-UI work packages
+
+1. **Durable-first mock WRITE authorization ordering**
+   - Source PR [#239](https://github.com/Iam-2squared/ark-ai/pull/239), branch `research/run1103-durable-first-auth-order`, source commit `385010f49df16ef5cd56788622873415dc7c0581`.
+   - WRITE now performs bounded grant snapshot + throwaway exact-gate preflight, then commits the digest-only durable synthetic occurrence reservation, then spends the executor's actual process-local one-shot gate, then the pre-action audit and exact mock backend.
+   - Test/documentation child PR [#240](https://github.com/Iam-2squared/ark-ai/pull/240), branch `research/run1103-durable-first-auth-order-tests`, test commit `35c2cebb13b758c393fc1592e9d8f938e3b17a37`, evidence commit `db03ff3afe3512215d2e392b233086a6b56a76e3`. Five synthetic regressions cover duplicate durable reservation, actual-gate denial after reservation, missing scope grant, grant-generator failure, and successful ordering.
+   - This closes the local window where the executor's in-memory token set could be spent before the durable occurrence row committed. It does not prove cross-store atomicity, trusted time, authenticated consent, or exactly-once external effects.
+
+2. **Atomic pre-action intent/audit COMMIT-unknown recovery**
+   - Test-only Draft PR [#241](https://github.com/Iam-2squared/ark-ai/pull/241), branch `research/run1103-atomic-preaction-commit-unknown`, test commit `10b6b62a0b118109fa163d86cd44c70ef38a7328`, evidence commit `c63a11583038e055d8ee58afa768f0087490bc22`.
+   - A synthetic wrapper loses the COMMIT acknowledgement before or after native SQLite COMMIT. Cold readback must find either zero rows or the complete paired intent/pre-action-audit rows. No retry occurs on the original handle. Existing ledger source/schema unchanged.
+
+3. **Proactive eligibility CAS rebase and CI failure repair**
+   - Original Draft PR #227 exact HEAD `3952c0ee9a8242e137679347da7d998e5ca6b303` had [CI run 44982299323](https://github.com/Iam-2squared/ark-ai/actions/runs/44982299323) **FAIL, all six matrix jobs**: 19,224 passed, 1 skipped, 9 proactive-state tests failed.
+   - Root cause: `_row_state` inverted the required temporal predicate and rejected valid `last_proposal_at_ms <= last_evaluated_at_ms` rows. Rebased on current parent e8761e1 and changed only the rejection predicate to `proposal_at > evaluated_at`.
+   - Repair/rebase Draft PR [#242](https://github.com/Iam-2squared/ark-ai/pull/242), branch `research/run1103-proactive-state-cas-rebase-fix`, source commit `1a078d64cff0ed2267c4807ee72c724821ca626d`, tests commit `0624b8f510cbf7d0a312f507a79cfc0b33eb89a1`, evidence commit `588c716230f3aa53a222cf367496d2ce7d578caf`. Original PR #227 remains open/Draft/unmodified.
+
+## Tests / CI / evidence — exact HEADs only
+
+- **PR #237 startup lease guard vectors:** exact child HEAD `3f56240a4937b960b90aa81f438df27d77a1da88`; [CI run 44977393218](https://github.com/Iam-2squared/ark-ai/actions/runs/44977393218) **GREEN, 6/6 jobs** (Windows/Linux × Python 3.11–3.13).
+- **PR #239 source:** exact HEAD `385010f49df16ef5cd56788622873415dc7c0581`; [CI run 44986964902](https://github.com/Iam-2squared/ark-ai/actions/runs/44986964902) **IN PROGRESS** at last observation. Ruff succeeded in all six jobs; pytest was in progress.
+- **PR #240 tests:** exact HEAD `db03ff3afe3512215d2e392b233086a6b56a76e3`; [CI run 44987044564](https://github.com/Iam-2squared/ark-ai/actions/runs/44987044564) **IN PROGRESS** at last observation. Ruff succeeded in all six jobs; pytest was in progress.
+- **PR #241 atomic commit-unknown tests:** exact HEAD `c63a11583038e055d8ee58afa768f0087490bc22`; [CI run 44987272312](https://github.com/Iam-2squared/ark-ai/actions/runs/44987272312) **IN PROGRESS** at last observation.
+- **PR #242 proactive CAS rebase:** exact HEAD `588c716230f3aa53a222cf367496d2ce7d578caf`; [CI run 44987483186](https://github.com/Iam-2squared/ark-ai/actions/runs/44987483186) **IN PROGRESS** at last observation.
+- No local pytest/Ruff run or physical-PC/model test was performed. No IN_PROGRESS result is called GREEN. Older CI does not certify a newer HEAD.
+
+## Frozen contracts/evidence and authorization boundaries unchanged
+
+- Main HEAD remains `7a843f17eb96ed13d66f23b58b06406b3002e405`.
+- Protected PR #5 remains OPEN/DRAFT/UNMERGED at `2ddc32a69dd32541497373ac76be2c1db332f88f`; no protected V2/V3 evaluation gate was opened.
+- Paused UI PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; no UI/frontend source, tests, integration, polish or branch changes.
+- PR #8 remains OPEN/DRAFT/UNMERGED at exact head `e8761e183094cd27955423844a8db7d6b0063829`. Frozen V1/V2/Local UI/Launcher evidence and controlling contracts unchanged.
+- No paid/external compute, paid API/service, subscription, purchase, new credentials/account connection, real Candidate adapter/weights/promotion, destructive operation, protected evaluation opening, external dispatch, unavailable physical-PC action, frozen-contract change, or main merge.
+
+## Blockers / remaining non-authority
+
+Durable occurrence and ActionAudit remain separate SQLite stores; this run did not claim cross-store atomicity. The atomic pre-action ledger remains disconnected and has no execute method. The throwaway gate preflight is not dispatch authority. Caller clocks remain unauthenticated. Trusted time, authenticated consent/approval, independent custody, crash-safe exactly-once external effects, real backend integration and production startup readiness remain NOT_PASSED. CI for PRs #239–#242 remains IN_PROGRESS at checkpoint time.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head CI for PRs #239–#242 once useful work has progressed; inspect any failing job logs and make the smallest semantics-preserving fix. Do not duplicate equivalent workflows or merge any Draft PR without explicit approval.
+2. After exact-head GREEN evidence, connect the durable one-shot/occurrence reservation to the atomic pre-action audit ledger in a separate reversible mock-only integration; preserve commit-unknown quarantine and never infer external exactly-once.
+3. Continue Memory WAL/SHM, event-frontier, CAS/ABA, expiry and coherent snapshot hardening; continue Planner terminal propagation and restart recovery.
+4. Continue privacy-safe Personal Context, proactive clock/replay fencing, Observation fixture contracts and free-only V3 path/provenance guards. **UI remains PAUSED.**
+
+**ARK/JARVIS NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1101: direct Planner, ToolRegistry and PermissionGate contract coverage
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 10:48:52+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
