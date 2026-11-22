@@ -9,11 +9,10 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import re
 import stat
+from pathlib import Path
 from typing import Literal
-
 
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
