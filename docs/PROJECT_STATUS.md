@@ -1,3 +1,58 @@
+# LATEST — ARK Run1101: direct Planner, ToolRegistry and PermissionGate contract coverage
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 10:48:52+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED. **Exact work-basis HEAD:** `5aae41319f67cfef8f78b32a9eb6808fd9247ea4`. **Checkpoint write-basis HEAD:** `5aae41319f67cfef8f78b32a9eb6808fd9247ea4`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live PR #8 branch ref immediately afterward; it is not self-embedded because a commit cannot contain its own resulting SHA.
+
+## Current repository state
+
+- **PR #8 JARVIS foundation:** `research/jarvis-foundations`, work-basis HEAD `5aae41319f67cfef8f78b32a9eb6808fd9247ea4`, OPEN/DRAFT/UNMERGED. Exact-head CI [run 44971446976](https://github.com/Iam-2squared/ark-ai/actions/runs/44971446976) was IN PROGRESS at this checkpoint; its result does not certify the checkpoint-result HEAD.
+- **PR #234 — PlanGraph state machine:** OPEN/DRAFT/UNMERGED, branch `research/run1099-plan-graph-state-machine`, exact head `2ee423ada01fa2ea3cee5fc01b984f7a5c036412`; exact-head CI [run 44972889223](https://github.com/Iam-2squared/ark-ai/actions/runs/44972889223) IN PROGRESS (six Windows/Linux × Python 3.11–3.13 jobs observed in progress).
+- **PR #235 — ToolRegistry core contract:** OPEN/DRAFT/UNMERGED, branch `research/run1100-tool-registry-core-contract`, exact head `d9c83f04bf430b3e46eaef085cc8982893b4cbd0`; exact-head CI [run 44973003470](https://github.com/Iam-2squared/ark-ai/actions/runs/44973003470) IN PROGRESS (six matrix jobs observed in progress).
+- **PR #236 — PermissionGate one-shot contract:** OPEN/DRAFT/UNMERGED, branch `research/run1101-permission-gate-one-shot-contract`, exact head `857ba0349cb0a1042f5fbbad91183c00623859bc`; exact-head CI [run 44973107471](https://github.com/Iam-2squared/ark-ai/actions/runs/44973107471) QUEUED.
+- Existing non-UI child PRs #223–#233 remain isolated and unmerged; their recorded heads/evidence remain in the preceding checkpoint sections.
+- **Gated PR #5:** OPEN/DRAFT/UNMERGED, V3 remains NOT_PASSED and the protected V2 final-evaluation boundary remains closed.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend development remains PAUSED.
+- No main merge or main write occurred.
+
+## NEW — this invocation (Run1099–Run1101)
+
+1. **PR #234 — direct PlanGraph state-machine tests:** added focused direct coverage for deterministic topology identity, ready-step gating, revision-guarded transitions, terminal failure propagation through a join/leaf DAG, immutable detached status snapshots, exact-type ingress, and atomic all-or-nothing staging when a later descendant copy fails. Test-only; production Planner and frozen contracts unchanged.
+2. **PR #235 — direct ToolRegistry contract tests:** added coverage for order-independent registry revision, immutable registration view, backend-identity revision changes, exact ToolCall-to-BoundAction binding, generator-resumption mutation detection, equal-valued registry-map replacement, and exact ToolCall ingress. Synthetic backends are inert and never called.
+3. **PR #236 — direct PermissionGate contract tests:** added coverage for exact-scope READ grants, exact clock/expiry boundaries, request-bound one-shot WRITE tokens, replay denial, grant-generator mutation before spend, concurrent single-token consumption, and exact PermissionGate type enforcement. The token set remains process-local.
+4. No production source, schema, frozen contract, existing UI branch, or main branch was changed. No child PR was merged.
+
+## Tests / CI / evidence — exact heads only
+
+- **PR #8 work-basis** `5aae41319f67cfef8f78b32a9eb6808fd9247ea4`: run [44971446976](https://github.com/Iam-2squared/ark-ai/actions/runs/44971446976), IN PROGRESS at checkpoint preparation.
+- **PR #234** `2ee423ada01fa2ea3cee5fc01b984f7a5c036412`: run [44972889223](https://github.com/Iam-2squared/ark-ai/actions/runs/44972889223), IN PROGRESS.
+- **PR #235** `d9c83f04bf430b3e46eaef085cc8982893b4cbd0`: run [44973003470](https://github.com/Iam-2squared/ark-ai/actions/runs/44973003470), IN PROGRESS.
+- **PR #236** `857ba0349cb0a1042f5fbbad91183c00623859bc`: run [44973107471](https://github.com/Iam-2squared/ark-ai/actions/runs/44973107471), QUEUED.
+- No local pytest/Ruff PASS is claimed; no local test execution or physical-PC validation was performed. No workflow verdict transfers between branches or to a later commit. No duplicate workflow was manually dispatched.
+
+## Overall current ARK state
+
+Three isolated test/evidence packages now directly exercise Planner state transitions, ToolRegistry identity and PermissionGate one-shot semantics. This improves core regression coverage but does not implement or prove durable cross-restart authorization, trusted time, authenticated consent, atomic external effects, real backend dispatch, or power-loss durability. V1/V2 and Local UI/Launcher evidence remain frozen. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/row-event/CAS semantics; PlanStep/ToolCall v1; ActionAudit v1 schema/event semantics; Observation Envelope v1; V3 Contract 1 semantics/hash; protected V2 final-evaluation boundary; and contamination/provenance/regression/reproducibility gates remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 final-evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, or main merge occurred. PR #5 remains Draft/unmerged; PR #9 remains Draft/unmerged and untouched. No trusted-clock, authenticated-consent, durable authorization, exactly-once external-effect, independent custody, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Next plan / 今後の方針
+
+1. Let exact-head CI runs [44972889223](https://github.com/Iam-2squared/ark-ai/actions/runs/44972889223), [44973003470](https://github.com/Iam-2squared/ark-ai/actions/runs/44973003470) and [44973107471](https://github.com/Iam-2squared/ark-ai/actions/runs/44973107471) complete without duplicate dispatch. Inspect any failure and make the smallest semantics-preserving correction on that child branch.
+2. Re-read live parent and child HEADs before any rebase or integration. Keep PRs #5, #8, #9 and #234–#236 Draft/unmerged until their controlling gates and explicit approval are satisfied.
+3. Continue durable authorization across restart, trusted-clock audit-before-action, occurrence/replay protection and disconnected/mock execution; do not mistake PermissionGate's process-local one-shot set for a durable ledger.
+4. Continue Memory row/event integrity, CAS/ABA, expiry COMMIT-UNKNOWN and coherent snapshots; continue Planner journal persistence/recovery and exact terminal propagation.
+5. Continue privacy-safe Personal Context, proactive scheduler persistence and Observation/multimodal fixture contracts, plus free-only V3 approval/path/identity/reproducibility guards.
+6. Keep all UI/frontend development PAUSED; leave PR #9 and Local UI freezes untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1098: advance Memory, Personal Context, Observation and free-only V3 foundations
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22T10:25:15+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
