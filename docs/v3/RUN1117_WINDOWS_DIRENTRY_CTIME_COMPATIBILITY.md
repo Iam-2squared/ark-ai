@@ -13,7 +13,7 @@ The first child revision's exact-head CI run [45051615687](https://github.com/Ia
 
 The implementation compared `info_epoch[2:]` and `path_epoch[2:]`, which includes `st_ctime_ns`. On Windows, `DirEntry.stat` and `Path.lstat` can expose different ctime semantics (creation time versus change time), as already documented in the file-hashing path. The code comment called these fields portable but the comparison was broader than the portable set.
 
-## Repair
+## Initial repair
 
 - Add a pure metadata comparison helper.
 - On Windows, ignore device/inode and ctime differences between DirEntry and Path observations, but still require mode, size and mtime agreement; Windows link-count observations are excluded as nonportable.
@@ -22,6 +22,21 @@ The implementation compared `info_epoch[2:]` and `path_epoch[2:]`, which include
 - Replace the test's mutable `identity.os` substitution with direct tests of the platform comparison rule.
 - Keep the synthetic reparse fixture on the new no-follow `os.scandir`/DirEntry path; reject before Path metadata access or nested enumeration.
 
+## Run1118 correction — directory-specific Windows comparison
+
+The later exact-head run [45053306958](https://github.com/Iam-2squared/ark-ai/actions/runs/45053306958) passed all three Ubuntu jobs but failed all three Windows jobs. The inspected Windows job reported five failures: two stable nested-directory scans and three message-regex mismatches. The trace identified the generic comparison denial, but did not print the actual metadata tuples; the precise differing field is therefore not claimed.
+
+The follow-up narrows the cross-API comparison according to entry type:
+
+- Windows directories: compare the import-original file-type classifier and mtime; do not compare permission bits or directory allocation size across FindFirstFile/handle-backed metadata.
+- Windows regular files: compare file type, byte size and mtime.
+- POSIX entries: preserve the complete metadata epoch comparison.
+- The Path-derived epoch is still checked against itself before traversal and after enumeration; no-follow DirEntry classification and reparse-point rejection remain in place.
+- Pin `stat.S_IFMT` as part of the import-original policy and reject classifier substitution.
+- Make the denial diagnostic plural (`snapshot entries changed`) so the existing regression assertions match the actual boundary.
+
+Added `tests/v3/test_windows_direntry_metadata_compat_run1118.py` to cover directory/file field selection, type/mtime/size drift, complete POSIX equality and classifier replacement. The existing nested-tree replacement and root-metadata tests remain enabled.
+
 ## Limits and next evidence
 
-This remains best-effort local filesystem admission, not atomic dirfd custody or protection against a hostile concurrent writer. No model download, GPU, training, Candidate, protected V2 evaluation, paid service, credential, hardware action or main merge. Fresh exact-head Windows/Linux × Python 3.11–3.13 CI is required; this report does not claim PASS. PR #294 and PR #295 remain Draft; PR #5 remains gated Draft/unmerged. ARK/JARVIS remains NOT_PASSED.
+This remains best-effort local filesystem admission, not atomic dirfd custody or protection against a hostile concurrent writer. The directory-specific comparison does not claim cross-API file-ID equality on Windows. No model download, GPU, training, Candidate, protected V2 evaluation, paid service, credential, hardware action or main merge. Fresh exact-head Windows/Linux × Python 3.11–3.13 CI is required; this report does not claim PASS. PR #294 and PR #295 remain Draft; PR #5 remains gated Draft/unmerged. ARK/JARVIS remains NOT_PASSED.
