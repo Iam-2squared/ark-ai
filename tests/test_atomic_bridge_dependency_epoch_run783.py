@@ -71,7 +71,7 @@ def test_preinstalled_bridge_substitution_refused_before_bind(
     assert backend.calls == 0
 
 
-def test_bind_callback_cannot_swap_sha_before_request_digest(
+def test_bind_class_replacement_cannot_swap_sha_before_request_digest(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     registry, call, backend = _fixture()
@@ -83,17 +83,17 @@ def test_bind_callback_cannot_swap_sha_before_request_digest(
         raise AssertionError("forged digest must not see request identifier")
 
     with monkeypatch.context() as patch:
-        def bind_then_swap(value: ToolCall):
+        def bind_then_swap(self, value: ToolCall):
             result = original_bind(value)
             patch.setattr(bridge.hashlib, "sha256", forbidden)
             return result
 
-        patch.setattr(registry, "bind", bind_then_swap)
-        # A nested fail-closed refusal may be normalized by the bridge's
-        # original ValueError boundary; neither path may run the forged hash.
+        # A slot-only registry cannot be shadowed per instance. Class-level
+        # substitution is rejected by the bridge before the callback runs.
+        patch.setattr(type(registry), "bind", bind_then_swap)
         with pytest.raises(
             AtomicPreactionRejected,
-            match="registry intent digest or grammar changed|registered intent binding refused",
+            match="registry intent digest or grammar changed",
         ):
             bridge.derive_registered_atomic_intent(
                 registry, call, occurrence_id="occ_" + "b" * 64,
