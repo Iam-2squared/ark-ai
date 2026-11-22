@@ -1,3 +1,81 @@
+# LATEST — ARK Run1105: integrate durable-first mock authorization, core contracts, proactive CAS and free V3 path guard
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 15:56:08+09:00.** Reporting/checkpoint time only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `af1c89196b13db266b638634aaec372781171922` (live PR #8 head re-read immediately before this checkpoint write). **Checkpoint-result HEAD:** the SHA returned by this normal GitHub Contents API update; a commit cannot self-embed its own resulting SHA.
+
+## Overall current ARK state
+
+- Main observed HEAD remains `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no main merge was performed.
+- V1/V2, Local UI and Launcher/Gate Runner contracts and reviewed evidence remain frozen and unchanged.
+- JARVIS foundations remain isolated/reversible under PR #8, which remains OPEN/DRAFT/UNMERGED.
+- PR #5 remains OPEN/DRAFT/UNMERGED; its V3 path-policy child was integrated into its branch only. Protected V2 final evaluation, V3 compute and Candidate gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains PAUSED and its branch is untouched.
+- No later version/PASS is declared.
+
+## NEW this invocation — four free-only integration packages
+
+1. **Durable-first mock WRITE authorization ordering — PR #239 integrated into PR #8**
+   - Child exact HEAD `02a39634cf5217c9174bbaae37189653c2a36e94`; squash integration commit `919fd61c866a05c3ca875577a625947913537137`.
+   - Exact-head CI run [44991084771](https://github.com/Iam-2squared/ark-ai/actions/runs/44991084771): GREEN, 6/6 Windows/Linux × Python 3.11–3.13.
+   - WRITE now performs a throwaway exact-gate preflight, durable synthetic occurrence reservation, then consumes the executor's actual process-local PermissionGate token before the pre-action audit and exact MockToolBackend call. Grant iterables are bounded and snapshotted once. Duplicate reservation leaves the actual gate unspent; denial after reservation leaves the occurrence burned and performs no audit/backend call.
+   - Mock-only local SQLite. Separate occurrence/audit stores are not cross-store atomic; this is not trusted time, authenticated consent, power-loss proof, real dispatch or exactly-once external effect.
+
+2. **PlanGraph, ToolRegistry and PermissionGate contract coverage — PR #243 integrated into PR #8**
+   - Child exact HEAD `5f2ebaa9adfd53442b7764de75ffc6896f406ca9`; squash integration commit `eb9a6a7063dc2ef1ad271fc86f82c07821a44324`.
+   - Exact-head CI run [44991448375](https://github.com/Iam-2squared/ark-ai/actions/runs/44991448375): GREEN, 6/6.
+   - Six test/report files add focused contract coverage for PlanGraph state transitions/terminal cascades, immutable ToolRegistry identity/binding and PermissionGate exact-scope/one-shot behavior. Original PRs #234–#236 were not modified.
+
+3. **Proactive eligibility CAS row-time repair — PR #244 integrated into PR #8**
+   - Child exact HEAD `c47cde4718348138723c1bfcf4de4b799318a672`; squash integration commit `af1c89196b13db266b638634aaec372781171922`.
+   - Exact-head CI run [44991508428](https://github.com/Iam-2squared/ark-ai/actions/runs/44991508428): GREEN, 6/6.
+   - Carries the source, 11-test suite and report. Valid `last_proposal_at_ms <= last_evaluated_at_ms` rows are accepted; a proposal time later than evaluation is rejected. Caller timestamps remain unauthenticated; `ELIGIBLE_PREVIEW` remains non-notifying and non-authorizing. Original PRs #242 and #227 remain untouched.
+
+4. **Free-only V3 authorization/execution snapshot stat-policy custody — PR #226 integrated into PR #5**
+   - Child exact HEAD `71f478250baabdcab0203087e508af4f8278e2b8`; squash integration commit `50b97812dd7eb4bcf3ffb816fb543185cf266e3d`.
+   - Exact-head CI run [44991563893](https://github.com/Iam-2squared/ark-ai/actions/runs/44991563893): GREEN, 6/6.
+   - Pins original stat module/classification predicates and Windows reparse mask; rejects policy substitution and rechecks after metadata/open/read/decoder callbacks. This is local path-policy hardening, not atomic descriptor-relative custody or authenticated provenance. PR #5 remains Draft/unmerged; no model, tokenizer, GPU, training, protected evaluation or Candidate action occurred.
+
+## Tests / CI / evidence — exact HEADs
+
+| Branch / PR | Exact HEAD | Evidence |
+|---|---|---|
+| PR #8 after three integrations | `af1c89196b13db266b638634aaec372781171922` | Run 44995803522 — IN_PROGRESS at checkpoint observation |
+| PR #5 after V3 child integration | `50b97812dd7eb4bcf3ffb816fb543185cf266e3d` | Run 44995831662 — QUEUED at checkpoint observation |
+| PR #239 child | `02a39634cf5217c9174bbaae37189653c2a36e94` | Run 44991084771 — GREEN, 6/6 |
+| PR #243 child | `5f2ebaa9adfd53442b7764de75ffc6896f406ca9` | Run 44991448375 — GREEN, 6/6 |
+| PR #244 child | `c47cde4718348138723c1bfcf4de4b799318a672` | Run 44991508428 — GREEN, 6/6 |
+| PR #226 child | `71f478250baabdcab0203087e508af4f8278e2b8` | Run 44991563893 — GREEN, 6/6 |
+
+All four child runs had six completed successful jobs: Ubuntu and Windows × Python 3.11, 3.12 and 3.13. The PR #8 and PR #5 post-integration heads do not yet have a completed exact-head verdict. No local pytest/Ruff, physical-PC, model or external runtime validation was performed. No verdict transfers across HEADs.
+
+## Frozen contracts / authorization boundaries unchanged
+
+- V1/V2/Local UI/Launcher evidence and controlling contracts remain unchanged.
+- Memory v1, Observation Envelope v1, PlanStep/ToolCall v1 and V3 Contract 1 semantics remain unchanged.
+- PR #5 remains OPEN/DRAFT/UNMERGED; PR #8 remains OPEN/DRAFT/UNMERGED; PR #9 remains paused and untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, real Candidate adapter/weights/promotion, protected evaluation opening, external dispatch, destructive action, physical-PC action, frozen-contract change or main merge.
+- No trusted-clock, authenticated-consent, independent custody, cross-store atomicity, human-review, dataset/file-hash or runtime-identity claim was fabricated.
+
+## Blockers / remaining non-authority
+
+Durable occurrence and ActionAudit remain separate SQLite stores. The PermissionGate token set is still process-local even though the mock executor now reserves a synthetic occurrence first. The executor remains restricted to the exact disconnected MockToolBackend. Proactive caller timestamps are unauthenticated; preview state does not authorize notification or dispatch. V3 path checks remain local metadata/path-policy defenses, not atomic filesystem custody. Trusted time, authenticated approval/consent, independent custody, production readiness, real backend dispatch and exactly-once external effects remain NOT_PASSED.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #8 run 44995803522 and PR #5 run 44995831662; inspect any failure logs and make only the smallest semantics-preserving repair. Do not duplicate equivalent workflows.
+2. Continue Memory WAL/SHM last-close, event frontier, CAS/ABA, expiry and COMMIT-UNKNOWN manual-only recovery; preserve coherent snapshots and privacy.
+3. Continue Planner journal restart recovery, terminal propagation and ambiguous RUNNING quarantine; bind only after exact-head GREEN.
+4. Advance Personal Context revocation/replay lifecycle, startup readiness lease and Observation fixture byte/metadata guards.
+5. Continue free-only V3 path/identity/reproducibility guards without opening any paid or protected evaluation lane.
+6. UI remains PAUSED; PR #9 and Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1104: integrate mock authorization tests, rebase core contracts, proactive CAS and repair V3 lint
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 14:58:14+09:00.** Reporting/checkpoint timestamp only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
