@@ -43,7 +43,7 @@ def test_rebound_witness_vector_root_rejected_before_ledger_access(
 
         with pytest.raises(
             continuity.SyntheticContextRevocationRejected,
-            match="revocation integrity validator changed",
+            match="revocation digest implementation changed",
         ):
             # The first guard must reject before ledger.path is read.
             continuity.review_revocation_continuity(ledger)
