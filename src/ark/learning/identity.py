@@ -226,6 +226,25 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     return FileIdentity(safe_label, sha, size, False)
 
 
+def _entry_metadata_matches_path(
+    entry_epoch: tuple[int, ...],
+    path_epoch: tuple[int, ...],
+    *,
+    windows: bool,
+) -> bool:
+    """Compare DirEntry and Path metadata without Windows-only ID/ctime aliases."""
+    if windows:
+        # Windows path-stat and DirEntry-stat can report different file IDs,
+        # and their ctime fields can describe creation vs change time. Keep
+        # the portable mode/size/mtime/link-count checks; the Path epoch is
+        # still rechecked against itself before the entry is accepted.
+        return (
+            entry_epoch[2:5] == path_epoch[2:5]
+            and entry_epoch[6:] == path_epoch[6:]
+        )
+    return entry_epoch == path_epoch
+
+
 def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     """Retain directory/file identity, not only a reusable relative name."""
     _require_original_reparse_point_policy()
@@ -330,12 +349,11 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
                         path_info.st_size, path_info.st_mtime_ns,
                         path_info.st_ctime_ns, path_info.st_nlink,
                     )
-                    # Windows path-stat and DirEntry-stat can report different
-                    # file IDs for the same entry. Compare all portable metadata
-                    # there; POSIX also requires device/inode identity.
-                    if (
-                        info_epoch[2:] != path_epoch[2:]
-                        or (os.name != "nt" and info_epoch[:2] != path_epoch[:2])
+                    # DirEntry and Path metadata have platform-specific
+                    # file-ID/ctime differences; compare the portable fields on
+                    # Windows while retaining the complete POSIX epoch check.
+                    if not _entry_metadata_matches_path(
+                        info_epoch, path_epoch, windows=os.name == "nt",
                     ):
                         raise ValueError("snapshot entry changed during enumeration")
 
