@@ -1,4 +1,66 @@
-# LATEST — ARK Run1102/1103: startup lease regression coverage and V3 guard CI repair
+# LATEST — ARK Run1104: core CI repairs and free-only guard hardening
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 12:51:53+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/run1102-startup-lease-guard-vectors` / [Draft PR #237](https://github.com/Iam-2squared/ark-ai/pull/237), OPEN/DRAFT/UNMERGED, targeting `research/jarvis-foundations`. **Parent PR #8:** `research/jarvis-foundations`, OPEN/DRAFT/UNMERGED, exact HEAD `e8761e183094cd27955423844a8db7d6b0063829`. **Exact work-basis HEAD:** `8286eddd98a2d986d2b313a07ed0fb0c0c7416b0`. **Checkpoint write-basis HEAD:** `8286eddd98a2d986d2b313a07ed0fb0c0c7416b0`, re-read immediately before this normal GitHub Contents API update. **Checkpoint-result HEAD:** the exact commit SHA returned by this update and verified against the live branch ref immediately afterward; it is not self-embedded because a commit cannot contain its own resulting SHA. The checkpoint update creates a new head; prior CI does not certify that result head.
+
+## Current repository state
+
+- **Main:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no main write or merge this invocation.
+- **PR #8 — JARVIS foundations:** `research/jarvis-foundations`, HEAD `e8761e183094cd27955423844a8db7d6b0063829`, OPEN/DRAFT/UNMERGED; exact-head CI [run 44973206492](https://github.com/Iam-2squared/ark-ai/actions/runs/44973206492) GREEN.
+- **PR #237 — startup readiness lease guard-vector coverage:** checkpoint branch HEAD before this write `8286eddd98a2d986d2b313a07ed0fb0c0c7416b0`, OPEN/DRAFT/UNMERGED; exact-head CI [run 44978665377](https://github.com/Iam-2squared/ark-ai/actions/runs/44978665377) GREEN. Its 40 synthetic tests cover all 11 guard-vector references, descriptor/authority replacement before poisoned getters, Unicode/UTF-8/byte-budget labels, the 512-requirement ceiling and bounded age input. This is diagnostic-only, not startup attestation or dispatch authority.
+- **PR #228 — disconnected mock executor failure ordering:** HEAD `75c2f2efccf74c657d4a2f8ce613203c1d23d755`, OPEN/DRAFT/UNMERGED; exact-head CI [run 44969786977](https://github.com/Iam-2squared/ark-ai/actions/runs/44969786977) GREEN. It covers completion-audit clock failure after a mock call, missing durable occurrence blocking before side effects, and one-shot replay rejection. No real backend is connected.
+- **PR #226 — V3 authorization/execution stat custody:** `research/run1090-v3-auth-execution-stat-custody`, HEAD `ea1b96dc4bba8dd927ee65fb26464f72982d8dbc`, OPEN/DRAFT/UNMERGED, based on gated PR #5. Exact-head CI [run 44982216375](https://github.com/Iam-2squared/ark-ai/actions/runs/44982216375) FAILS at Ruff I001 in `src/ark/learning/execution.py:6:1`; pytest was skipped. The import-order-only correction did not resolve the diagnostic; this lane remains blocked pending the formatter's exact expected diff. No V3 evaluation or compute was opened.
+- **PR #230 — Personal Context revocation path classification:** `research/run1095-personal-context-revocation-stat-reparse`, HEAD `c5c20bb93887b128980984831d6355ef208e9fbe`, OPEN/DRAFT/UNMERGED. Exact-head CI [run 44982277338](https://github.com/Iam-2squared/ark-ai/actions/runs/44982277338) IN PROGRESS. Previous run [44970966134](https://github.com/Iam-2squared/ark-ai/actions/runs/44970966134) failed 279 tests because a reentrant test directly assigned process-global `stat.S_ISDIR` without restoring it; this invocation changed the callback to use the active pytest monkeypatch context. This is still pathname preflight, not atomic handle custody.
+- **PR #227 — proactive eligibility state CAS:** `research/run1091-proactive-state-cas`, HEAD `3952c0ee9a8242e137679347da7d998e5ca6b303`, OPEN/DRAFT/UNMERGED. Exact-head CI [run 44982299323](https://github.com/Iam-2squared/ark-ai/actions/runs/44982299323) IN PROGRESS. Previous run [44970514847](https://github.com/Iam-2squared/ark-ai/actions/runs/44970514847) failed because state construction recomputed an equal-but-distinct SHA string before identity verification; this invocation computes the digest once and reuses that exact immutable string.
+- **PR #233 — Personal Context revocation witness guard root:** `research/run1098-context-revocation-witness-root-custody`, HEAD `8041728571d0465a51de1050cb7ddfe74960395c`, OPEN/DRAFT/UNMERGED. Exact-head CI [run 44982306873](https://github.com/Iam-2squared/ark-ai/actions/runs/44982306873) IN PROGRESS. Previous run [44971301621](https://github.com/Iam-2squared/ark-ai/actions/runs/44971301621) failed three assertions because the early witness-root guard reports `revocation digest implementation changed`; this invocation aligned the test matcher with that actual pre-ledger rejection.
+- **PR #5:** `research/v3-learning-evaluation`, HEAD `2ddc32a69dd32541497373ac76be2c1db332f88f`, OPEN/DRAFT/UNMERGED under its pre-paid-compute gate. V3 remains NOT_PASSED; protected V2 final evaluation remains closed.
+- **PR #9 UI foundation:** `ui/next-generation-command-center-20261103`, OPEN/DRAFT/UNMERGED and untouched. UI/frontend development remains PAUSED.
+
+## NEW — this invocation (Run1104)
+
+1. **PR #226 V3 lint repair attempt:** re-read its live branch head, changed only the standard-library import order in `src/ark/learning/execution.py`, and observed exact-head run 7015 still failing Ruff I001. No lint suppression, rule weakening, V3 contract change or evaluation opening was made. Preserve this blocker; do not continue blind reorder attempts.
+2. **PR #230 Personal Context test isolation:** fixed a test that leaked a process-global `stat.S_ISDIR` replacement across the full test process. The replacement now goes through the active `monkeypatch.context()`, preserving the intended reentrant policy-denial assertion while restoring the original predicate at teardown.
+3. **PR #227 proactive state digest identity:** fixed `_build_state` to calculate `state_sha256` once and reuse the same object for construction and exact field-carrier verification. This removes false rejection of valid states caused by comparing two independently allocated but equal digest strings by identity.
+4. **PR #233 revocation witness guard test:** aligned the expected error with the first fail-closed guard actually executed when the witness-root vector is replaced. The assertion still occurs before ledger-path access; no production authority or disclosure behavior changed.
+5. Read-only verification confirmed PR #8, PR #237 and PR #228 exact-head CI are GREEN. No child PR, PR #5, PR #8, PR #9 or main branch was merged or closed.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 `e8761e183094cd27955423844a8db7d6b0063829`: [44973206492](https://github.com/Iam-2squared/ark-ai/actions/runs/44973206492) GREEN.
+- PR #237 `8286eddd98a2d986d2b313a07ed0fb0c0c7416b0`: [44978665377](https://github.com/Iam-2squared/ark-ai/actions/runs/44978665377) GREEN. This run does **not** certify the checkpoint-result HEAD created by this update.
+- PR #228 `75c2f2efccf74c657d4a2f8ce613203c1d23d755`: [44969786977](https://github.com/Iam-2squared/ark-ai/actions/runs/44969786977) GREEN.
+- PR #226 `ea1b96dc4bba8dd927ee65fb26464f72982d8dbc`: [44982216375](https://github.com/Iam-2squared/ark-ai/actions/runs/44982216375) FAIL — Ruff I001; pytest skipped.
+- PR #230 `c5c20bb93887b128980984831d6355ef208e9fbe`: [44982277338](https://github.com/Iam-2squared/ark-ai/actions/runs/44982277338) IN PROGRESS.
+- PR #227 `3952c0ee9a8242e137679347da7d998e5ca6b303`: [44982299323](https://github.com/Iam-2squared/ark-ai/actions/runs/44982299323) IN PROGRESS.
+- PR #233 `8041728571d0465a51de1050cb7ddfe74960395c`: [44982306873](https://github.com/Iam-2squared/ark-ai/actions/runs/44982306873) IN PROGRESS.
+- No local pytest/Ruff PASS is claimed. CI results are exact-head only and never transfer to another branch or commit. No duplicate equivalent workflow was manually dispatched.
+
+## Overall current ARK state
+
+V1 remains complete/frozen. V2 and Local UI/Launcher evidence remain frozen. The JARVIS foundation has substantial local-first Memory, Planner, ToolRegistry, PermissionGate, occurrence, audit, Personal Context, proactive, Observation and disconnected/mock components, but these are still isolated and their combined system behavior is not established. PR #8 remains Draft/unmerged. PR #237/PR #228 and the listed child work remain Draft/unmerged. Durable cross-restart authorization, trusted-time audit-before-action, authenticated consent, cross-store atomicity, power-loss durability and exactly-once external effects are not established. No real ToolBackend dispatch is enabled. **ARK/JARVIS remains NOT_PASSED.**
+
+## Frozen contracts / blockers / authorization boundaries
+
+V1/V2/Local UI/Launcher evidence; Memory v1 DDL/public API/row-event/CAS semantics; PlanStep/ToolCall v1; ActionAudit v1 schema/event semantics; Observation Envelope v1; V3 Contract 1 semantics/hash; protected V2 final-evaluation boundary; and contamination/provenance/regression/reproducibility gates remain unchanged.
+
+No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, physical-PC action, live personal data, disclosure, destructive operation, automatic uncertain-WRITE replay, protected V2 evaluation opening, Candidate adapter/weight generation or promotion, frozen-contract change, real ToolBackend dispatch, UI/frontend work, main merge or branch force-update occurred. PR #5 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched. The V3 CI lint blocker remains open; the three core regression fixes above await exact-head CI.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head outcomes for PR #230 run 44982277338, PR #227 run 44982299323 and PR #233 run 44982306873; repair only concrete failures, preserving their existing semantics.
+2. Resolve PR #226 Ruff I001 from the formatter's exact expected diff (not speculative reorder); keep PR #5 Draft/unmerged and do not open protected evaluation or real compute.
+3. Continue Planner journal crash recovery, terminal propagation and ambiguous RUNNING quarantine; preserve manual-only handling of COMMIT-UNKNOWN writes.
+4. Continue Memory event-frontier, row/event integrity, CAS/ABA, expiry and coherent-snapshot work; keep trusted action time separate from synthetic/local Memory clocks.
+5. Continue restart-safe authorization occurrence/replay and audit-before-action over disconnected mocks only; do not equate separate SQLite ledgers with cross-store atomicity.
+6. Continue privacy-safe Personal Context revocation/retention, proactive persistent eligibility and Observation fixture contracts; no live capture, disclosure or implicit consent.
+7. Keep PR #5/#8/#9 and all child work Draft/unmerged under their gates; UI/frontend remains PAUSED.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
+# Previous checkpoint — ARK Run1102/1103: startup lease regression coverage and V3 guard CI repair
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 12:00:49+09:00.** Reporting/checkpoint timestamp only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
 
