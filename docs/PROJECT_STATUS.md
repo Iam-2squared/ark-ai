@@ -1,3 +1,84 @@
+# LATEST — ARK Run1113: five non-UI foundation packages and exact-head CI repairs
+
+**Saved at (Asia/Tokyo/JST): 2026-11-23 00:01:37+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `4f9e44532cc25dfe57059021519717441399155b` (live PR #8 branch ref read before this checkpoint write). **Main observed HEAD:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; main was not changed. **Checkpoint-result HEAD:** the exact commit SHA returned by this normal GitHub Contents API update; it is not self-embedded in this file and is reported separately in the invocation result.
+
+## Overall current ARK state
+
+- Draft PR #8 remains OPEN/DRAFT/UNMERGED on `research/jarvis-foundations`. Its exact-head CI run [45030272616](https://github.com/Iam-2squared/ark-ai/actions/runs/45030272616) is **GREEN, 6/6** on work-basis HEAD `4f9e44532cc25dfe57059021519717441399155b`.
+- Main remains at `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write, rebase or merge occurred.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `50b97812dd7eb4bcf3ffb816fb543185cf266e3d`; V3 remains NOT_PASSED. Protected V2 final evaluation, real Candidate, training/weight generation and paid/external-compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains PAUSED and its branch is untouched.
+- V1/V2, Local UI and Launcher/Gate Runner evidence remains frozen. Memory v1 DDL/API and row/event/CAS semantics, Planner journal schema/hash-chain/transition semantics, ActionAudit v1 DDL/API/event identity/sequence/clock semantics, Observation Envelope v1, ToolCall/PlanStep contracts, Personal Context replay schema and durable occurrence semantics are unchanged. No later PASS is declared.
+
+## NEW this invocation — five non-UI packages
+
+1. **PermissionGate slot-seal test compatibility repair — [Draft PR #281](https://github.com/Iam-2squared/ark-ai/pull/281)**
+   - Branch: `research/run1112-permission-gate-state-seal-repair`; current exact child HEAD `8e361ee6c6c2f6be2a2713568dbd0c8fb4f0bb5f`.
+   - Updated exact-type subclass tests to construct an uninitialized hostile subclass for unbound-entrypoint checks; class-level method substitution remains rejected, while ordinary instance-method assignment is asserted to fail at the immutable slot boundary. READ preflight tests now distinguish class substitution from an impossible instance shadow without weakening no-dispatch assertions.
+   - Previous exact-head run [45035357827](https://github.com/Iam-2squared/ark-ai/actions/runs/45035357827) failed Ruff B010 only; the test now uses direct assignment inside the expected AttributeError assertion.
+   - Fresh exact-head run [45035502938](https://github.com/Iam-2squared/ark-ai/actions/runs/45035502938): **IN PROGRESS**. No PASS claimed.
+
+2. **Proactive state-ledger identity seal rebased onto current PR #8 head — [Draft PR #283](https://github.com/Iam-2squared/ark-ai/pull/283)**
+   - Branch: `research/run1113-proactive-ledger-instance-seal`; exact child HEAD `c55d288ed42000f40e30dc5511f2e9d55d58f018`; exact work-basis parent `4f9e44532cc25dfe57059021519717441399155b`.
+   - Reapplies slot-only path identity, read-only path, exact-class admission and focused regressions. SQLite schema, row digest, policy identity, revision CAS, cooldown/window semantics and denial-only preview behavior remain unchanged.
+   - Fresh exact-head run [45035724082](https://github.com/Iam-2squared/ark-ai/actions/runs/45035724082): **IN PROGRESS**. Prior PR #280 run [45027156939](https://github.com/Iam-2squared/ark-ai/actions/runs/45027156939) was GREEN only on its prior child head; it does not transfer.
+
+3. **Memory SQLite stat-policy custody rebased onto current PR #8 head — [Draft PR #284](https://github.com/Iam-2squared/ark-ai/pull/284)**
+   - Branch: `research/run1113-memory-stat-reentrant-rebase`; exact child HEAD `aa20d1b00a05996f6c4145acd45223db9231e3d6`; exact work-basis parent `4f9e44532cc25dfe57059021519717441399155b`.
+   - Reapplies import-original stat policy and callback-time path/metadata rechecks, including missing-leaf and reentrant metadata cases. Memory v1 DDL/API, row/event integrity, CAS, expiry and transaction semantics remain unchanged.
+   - Fresh exact-head run [45035766998](https://github.com/Iam-2squared/ark-ai/actions/runs/45035766998): **IN PROGRESS**. Prior PR #269 run [45019515216](https://github.com/Iam-2squared/ark-ai/actions/runs/45019515216) was GREEN only on its prior child head; it does not transfer.
+
+4. **Planner journal stat-policy custody rebased onto current PR #8 head — [Draft PR #285](https://github.com/Iam-2squared/ark-ai/pull/285)**
+   - Branch: `research/run1113-planner-journal-stat-reentrant-rebase`; exact child HEAD `6086adee491f6671882329ed0a18581a4293c4a5`; exact work-basis parent `4f9e44532cc25dfe57059021519717441399155b`.
+   - Reapplies replay-only stat module/classifier custody and reentrant path/metadata checks. Journal schema, hash chain, transition policy and UNKNOWN handling for recovered RUNNING remain unchanged; no automatic retry or dispatch is added.
+   - Fresh exact-head run [45035815982](https://github.com/Iam-2squared/ark-ai/actions/runs/45035815982): **QUEUED**. Prior PR #270 run [45019519474](https://github.com/Iam-2squared/ark-ai/actions/runs/45019519474) was GREEN only on its prior child head; it does not transfer.
+
+5. **Observation fixture ingress regressions rebased onto current PR #8 head — [Draft PR #286](https://github.com/Iam-2squared/ark-ai/pull/286)**
+   - Branch: `research/run1113-observation-fixture-guards-rebase`; exact child HEAD `327516c9346a2e447fa97bf95a9b97b37c35dbfa`; exact work-basis parent `4f9e44532cc25dfe57059021519717441399155b`.
+   - Reapplies synthetic byte-budget, metadata-before-hash and digest-entrypoint substitution regressions. Production fixture adapter source and Observation Envelope v1 remain unchanged; no live capture or external source is accessed.
+   - Fresh exact-head run [45035875652](https://github.com/Iam-2squared/ark-ai/actions/runs/45035875652): **QUEUED**. Prior PR #271 run [45019523789](https://github.com/Iam-2squared/ark-ai/actions/runs/45019523789) was GREEN only on its prior child head; it does not transfer.
+
+## Other observed CI / blockers
+
+- Draft PR #278 ToolRegistry slot-only experiment, exact head `a93e2922b6280f4bad5aaf2b72ca19e7b87fcc31`, run [45027296742](https://github.com/Iam-2squared/ark-ai/actions/runs/45027296742): **FAIL**, 203 failed / 19,093 passed / 1 skipped on the inspected Ubuntu 3.12 job. The broad compatibility gap is not ready for integration: legacy adversarial tests expect ordinary registry attribute mutation, and `src/ark/agency/disconnected_atomic_registry_bridge.py` calls `vars(registry)` on a proposed slot-only instance. Do not weaken immutability; future repair must move intentional reflective field mutation to explicit `object.__setattr__` tests and retain class-level method substitution checks, while making consumers safe for objects without `__dict__`.
+- Draft PR #282 Personal Context replay path seal exact-head run [45029732869](https://github.com/Iam-2squared/ark-ai/actions/runs/45029732869): **GREEN** on its exact child head; it remains isolated and is not integrated.
+- Draft PR #276 main-base import repair run [45026667524](https://github.com/Iam-2squared/ark-ai/actions/runs/45026667524): **FAIL** at pytest collection because the main-based branch's existing test imports missing `ark.personal_context_offline_preview`. Do not add JARVIS-only source directly to main to satisfy this fixture; main remains unchanged pending proper reconciliation.
+- No local pytest/Ruff, physical-PC test, real-model validation, private database access, live capture, external action, paid runtime or external service was used in this invocation. CI verdicts do not transfer across commits or rebases.
+
+## Frozen contracts / evidence unchanged
+
+- V1/V2/Local UI/Launcher/Gate Runner contracts and reviewed evidence remain frozen.
+- Memory v1 DDL/API and row/event/CAS semantics; Planner journal schema/hash-chain/transition policy; ActionAudit v1 DDL/API/event identity/sequence/clock semantics; Observation Envelope v1; ToolCall/PlanStep contracts; Personal Context replay schema; durable occurrence schema/identity/expiry semantics; and V3 Contract 1 remain unchanged.
+- PR #5, PR #8 and PR #9 remain OPEN/DRAFT/UNMERGED. UI remains PAUSED; PR #9 and all Local UI freezes remain untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, real Candidate adapter/weights/promotion, protected evaluation opening, external dispatch, destructive operation, physical-PC action, frozen-contract change or main merge occurred.
+- No trusted-clock, authenticated-consent, independent custody, atomic directory-handle, TOCTOU, cross-store atomicity, human-review, dataset/file-hash, runtime-identity or exactly-once external-effect claim was fabricated.
+
+## Blockers / integration boundary
+
+- PR #281 is still awaiting fresh exact-head CI. The previous Ruff-only failure was corrected; wait for the new exact-head result before considering the isolated PermissionGate slot seal ready.
+- PRs #283–#286 are fresh reapplications on exact PR #8 work-basis HEAD `4f9e44532cc25dfe57059021519717441399155b`; their CI is queued/in progress and must be observed before integration. None is merged into PR #8 or main.
+- PR #278 ToolRegistry slot-only layout remains blocked by the broad mutation-test and no-`__dict__` consumer compatibility gap.
+- Local pathname checks remain lexical/dependency-identity admission, not atomic directory-handle custody, a sandbox or TOCTOU protection. Mock executor tests do not prove cross-store atomicity or exactly-once external effects. Observation fixtures do not authenticate capture source/consent.
+- PR #5 remains pre-paid-compute and NOT_PASSED. Immutable Hub revision/materialized model and tokenizer hashes, human-approved dataset decisions, exact runtime/toolchain identities, target device/driver evidence, billing/cost-cap evidence and explicit spending authorization remain unresolved; none was guessed or opened.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI runs [45035502938](https://github.com/Iam-2squared/ark-ai/actions/runs/45035502938), [45035724082](https://github.com/Iam-2squared/ark-ai/actions/runs/45035724082), [45035766998](https://github.com/Iam-2squared/ark-ai/actions/runs/45035766998), [45035815982](https://github.com/Iam-2squared/ark-ai/actions/runs/45035815982) and [45035875652](https://github.com/Iam-2squared/ark-ai/actions/runs/45035875652); make only the smallest semantics-preserving corrections and immediately pipeline another independent lane.
+2. Reconcile the ToolRegistry slot-only compatibility gap across the disconnected atomic registry bridge, mock executor and the existing adversarial mutation tests; preserve exact-type and method-identity checks.
+3. Continue Personal Context replay/revocation, durable occurrence, ActionAudit audit-before-action and Planner restart/terminal recovery only with exact-head evidence; no automatic replay or external dispatch.
+4. Continue Memory WAL/SHM last-close, event-frontier, CAS/ABA, expiry and COMMIT-UNKNOWN manual-only recovery; preserve coherent snapshots and privacy.
+5. Continue startup readiness, proactive scheduler state and observation/multimodal fixture contracts without notification/dispatch authority.
+6. Continue free-only V3 approval/path/identity/reproducibility guards while keeping PR #5's protected evaluation, Candidate and paid-compute gates closed.
+7. UI remains PAUSED; PR #9 and all Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1113: repair exact-head PermissionGate and Personal Context CI
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 22:44:12+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
