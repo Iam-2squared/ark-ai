@@ -1,3 +1,79 @@
+# LATEST — ARK Run1113: repair exact-head PermissionGate and Personal Context CI
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 22:44:12+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `6bdbe12acadc2ffa5c7506c4e8d9b41b722f7e83` (live PR #8 branch ref re-read before this checkpoint write). **Main observed HEAD:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; main was not changed. **Checkpoint-result HEAD:** the exact SHA returned by this normal GitHub Contents API update; it is reported separately in the invocation result and is not self-embedded in this file.
+
+## Overall current ARK state
+
+- Draft PR #8 remains OPEN/DRAFT/UNMERGED on `research/jarvis-foundations`. This checkpoint is on that isolated foundation branch, not main.
+- Main remains at `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write, rebase or merge occurred.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `50b97812dd7eb4bcf3ffb816fb543185cf266e3d`; V3 remains NOT_PASSED. Protected V2 final evaluation, real Candidate, training/weight generation and paid/external-compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains PAUSED and its branch is untouched.
+- V1/V2, Local UI and Launcher/Gate Runner evidence remains frozen. Memory v1 DDL/API and row/event/CAS semantics, Planner journal schema/hash-chain/transition semantics, ActionAudit v1 DDL/API/event identity/sequence/clock semantics, Observation Envelope v1, ToolCall/PlanStep contracts, Personal Context replay schema and occurrence semantics are unchanged. No later PASS is declared.
+
+## NEW this invocation — two exact-head CI repairs
+
+1. **PermissionGate / disconnected mock executor lint repair — [Draft PR #281](https://github.com/Iam-2squared/ark-ai/pull/281)**
+   - Branch: `research/run1112-permission-gate-state-seal-repair`.
+   - Work basis: `d28463a156a9bbd8af0abfc951cb8ecd88fc3314`; repaired exact child HEAD: `99e8cab79ecd2d3638bcdbe078ad75e025838f01`.
+   - The prior exact-head CI run [45028232878](https://github.com/Iam-2squared/ark-ai/actions/runs/45028232878) failed 6/6 at Ruff E501 on one 104-character registry namespace guard line in `src/ark/agency/disconnected_mock_executor.py`. The repair only reformats that expression; it does not alter runtime semantics.
+   - Fresh exact-head CI run [45029729692](https://github.com/Iam-2squared/ark-ai/actions/runs/45029729692), run #7090: **IN_PROGRESS** at checkpoint time. No PASS is claimed.
+
+2. **Personal Context replay recovery subclass regression — [Draft PR #282](https://github.com/Iam-2squared/ark-ai/pull/282)**
+   - Branch: `research/run1112-personal-context-replay-path-seal`.
+   - Work basis: `01f547e1c3b99918d444649d73b678fc7fb40490`; repaired exact child HEAD: `0f5028d8eaa4afd306a8eb9e3b3110c6f00c9aa5`.
+   - The prior exact-head CI run [45028548180](https://github.com/Iam-2squared/ark-ai/actions/runs/45028548180), run #7089, showed three Ubuntu jobs failing the existing subclass test because the newly sealed ledger constructor correctly rejects a subclass before I/O. The test now uses `object.__new__(SubLedger)` to exercise the recovery-review helper's independent exact-type denial with an uninitialized carrier; the helper must reject before reading ledger state or opening SQLite. No production source, replay schema, retained-prefix semantics or reservation behavior changed.
+   - Fresh exact-head CI run [45029732869](https://github.com/Iam-2squared/ark-ai/actions/runs/45029732869), run #7091: **IN_PROGRESS** at checkpoint time. No PASS is claimed.
+
+## Other exact-head evidence observed
+
+- Draft PR #277 foundation gap audit: exact head `96e8973d579fd322b547153ae382ab3be45abc26`, CI [45025045641](https://github.com/Iam-2squared/ark-ai/actions/runs/45025045641) **GREEN**.
+- Draft PR #280 proactive state-ledger instance seal: exact head `6293e93189885b9bffc0c746cfe2a65f76adb5c5`, CI [45027156939](https://github.com/Iam-2squared/ark-ai/actions/runs/45027156939) **GREEN**.
+- Draft PR #278 ToolRegistry instance seal: current PR head observed as `a93e2922b6280f4bad5aaf2b72ca19e7b87fcc31`; CI [45027296742](https://github.com/Iam-2squared/ark-ai/actions/runs/45027296742) **FAIL**. The first inspected failure is a compatibility defect at `src/ark/agency/disconnected_atomic_registry_bridge.py:79`: `vars(registry)` raises `TypeError` after ToolRegistry becomes slot-only. The same check is repeated in the callback-time epoch guard. This lane remains open for a semantics-preserving slot-only namespace fix and a search of other registry consumers; no change to PR #278 was made in this invocation.
+
+## Tests / CI / evidence
+
+- PR #281 exact-head repair run #7090 / 45029729692: **IN_PROGRESS**.
+- PR #282 exact-head repair run #7091 / 45029732869: **IN_PROGRESS**.
+- PR #281 predecessor run #7088 / 45028232878: **FAIL**, Ruff-only E501 on the old exact head.
+- PR #282 predecessor run #7089 / 45028548180: observed three Ubuntu job failures in the old exact-head subclass test; its replacement run is the relevant validation.
+- PR #278 run #7087 / 45027296742: **FAIL**; slot-only ToolRegistry compatibility defect identified.
+- PR #277 run #7080 / 45025045641 and PR #280 run #7086 / 45027156939: **GREEN** on their respective exact child heads only.
+- No local pytest/Ruff run, physical-PC test, real-model validation, private database access, live capture, external action, paid runtime or external service was used in this invocation. CI verdicts do not transfer across commits or rebases.
+
+## Frozen contracts / evidence unchanged
+
+- V1/V2/Local UI/Launcher/Gate Runner contracts and reviewed evidence remain frozen.
+- Memory v1 DDL/API and row/event/CAS semantics; Planner journal schema/hash-chain/transition policy; ActionAudit v1 DDL/API/event identity/sequence/clock semantics; Observation Envelope v1; ToolCall/PlanStep contracts; Personal Context replay schema; durable occurrence schema/identity/expiry semantics; and V3 Contract 1 remain unchanged.
+- PR #5, PR #8 and PR #9 remain OPEN/DRAFT/UNMERGED. UI remains PAUSED; PR #9 and its branch are untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, real Candidate adapter/weights/promotion, protected evaluation opening, external dispatch, destructive operation, physical-PC action, frozen-contract change or main merge occurred.
+- No trusted-clock, authenticated-consent, independent custody, atomic directory-handle, TOCTOU, cross-store atomicity, human-review, dataset/file-hash, runtime-identity or exactly-once external-effect claim was fabricated.
+
+## Blockers / integration boundary
+
+- PR #278 ToolRegistry slot-only change is not ready for integration until every registry consumer handles the no-`__dict__` instance layout without weakening exact-type or method-shadow checks. The known atomic registry bridge failure must be repaired and exact-head CI rerun.
+- PR #281 and #282 remain isolated Draft children. Their fresh CI is in progress; predecessor results do not transfer. No child was merged into PR #8 or main.
+- PR #5 remains pre-paid-compute and NOT_PASSED. Immutable Hub revision/materialized model and tokenizer hashes, human-approved dataset decisions, exact runtime/toolchain identities, target device/driver evidence, billing/cost-cap evidence and explicit spending authorization remain unresolved; none was guessed or opened.
+- Local pathname checks remain lexical/dependency-identity admission, not atomic directory-handle custody, a sandbox or TOCTOU protection. Mock executor tests do not prove cross-store atomicity or exactly-once external effects. Observation fixtures do not authenticate capture source/consent.
+
+## Next plan / 今後の方針
+
+1. Inspect the fresh exact-head CI runs #7090 and #7091 after completion; if either fails, make the smallest semantics-preserving correction and launch only the necessary new exact-head workflow.
+2. Repair PR #278's slot-only ToolRegistry consumer compatibility in `disconnected_atomic_registry_bridge.py`; audit other registry consumers for unsafe `vars(registry)` assumptions, then require fresh exact-head Windows/Linux × Python 3.11–3.13 CI.
+3. Reconcile exact-head CI for child PRs #269–#275 and all newer isolated children. For any GREEN child intended for integration, re-read the live PR #8 HEAD, rebase/reapply onto that exact parent, and require fresh exact-head CI. Keep PR #8 Draft/unmerged.
+4. Continue Memory WAL/SHM last-close, event-frontier, CAS/ABA, expiry and COMMIT-UNKNOWN manual-only recovery; preserve coherent snapshots and privacy.
+5. Continue Planner restart recovery, terminal propagation, ambiguous RUNNING quarantine and durable-first disconnected mock execution; no automatic retry or external dispatch.
+6. Continue Personal Context revocation/reuse, durable occurrence/replay, proactive restart state, Observation fixture lifecycle and startup readiness without notification/dispatch authority.
+7. Continue free-only V3 approval/path/identity/reproducibility guards while keeping PR #5's protected evaluation, Candidate and paid-compute gates closed.
+8. UI remains PAUSED; PR #9 and all Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1111: seven non-UI core rebases and main CI lint repair
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 21:04:18+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
