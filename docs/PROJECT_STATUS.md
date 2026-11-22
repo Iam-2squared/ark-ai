@@ -1,3 +1,95 @@
+# LATEST — ARK Run1111: seven non-UI core rebases and main CI lint repair
+
+**Saved at (Asia/Tokyo/JST): 2026-11-22 21:04:18+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
+
+**Canonical checkpoint branch/PR:** `research/jarvis-foundations` / [Draft PR #8](https://github.com/Iam-2squared/ark-ai/pull/8), OPEN/DRAFT/UNMERGED.
+
+**Work-basis HEAD:** `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6` (live PR #8 branch ref re-read immediately before this checkpoint write). **Main observed HEAD:** `6e40afb74666b7dfda6560dd5ca619664d7129b7`; main was not changed. **Checkpoint-result HEAD:** the exact commit SHA returned by this normal GitHub Contents API update; it is not self-embedded in the committed text and is reported separately in the invocation result.
+
+## Overall current ARK state
+
+- Draft PR #8 remains OPEN/DRAFT/UNMERGED on `research/jarvis-foundations`. Its exact-head CI run [45014901993](https://github.com/Iam-2squared/ark-ai/actions/runs/45014901993) is **GREEN, 6/6** (Ubuntu/Windows × Python 3.11–3.13) on work-basis HEAD `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`.
+- Main remains at `6e40afb74666b7dfda6560dd5ca619664d7129b7`; no direct main write or merge occurred.
+- PR #5 remains OPEN/DRAFT/UNMERGED at `50b97812dd7eb4bcf3ffb816fb543185cf266e3d`; V3 remains NOT_PASSED. Protected V2 final evaluation, real Candidate, training/weight generation and paid/external-compute gates remain closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains PAUSED and its branch is untouched.
+- V1/V2, Local UI and Launcher/Gate Runner evidence remains frozen. Memory v1 DDL/API and row/event/CAS semantics, Planner journal schema/hash-chain/transition semantics, ActionAudit v1 DDL/API/event identity/sequence/clock semantics, Observation Envelope v1, ToolCall/PlanStep contracts, Personal Context replay schema and occurrence ledger semantics are unchanged. No later PASS is declared.
+
+## NEW this invocation — seven exact-parent non-UI rebases
+
+All seven child branches were created from the exact PR #8 work-basis HEAD `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`. Each remains an isolated OPEN/DRAFT/UNMERGED PR targeting `research/jarvis-foundations`; none was integrated into PR #8 or main.
+
+1. **Memory SQLite stat-policy custody — [Draft PR #269](https://github.com/Iam-2squared/ark-ai/pull/269)**  
+   Branch `research/run1111-memory-stat-reentrant-rebase`; exact child HEAD `f0fdcd7b8b3809d30744f57ad0dd1d51361b1026`. Reapplies import-original stat module/predicate custody and callback-time path/metadata rechecks with synthetic regressions. Memory v1 DDL/API, row/event integrity and CAS semantics unchanged. Fresh exact-head CI [45019515216](https://github.com/Iam-2squared/ark-ai/actions/runs/45019515216): **IN_PROGRESS**.
+
+2. **Planner journal stat-policy custody — [Draft PR #270](https://github.com/Iam-2squared/ark-ai/pull/270)**  
+   Branch `research/run1111-planner-journal-stat-reentrant-rebase`; exact child HEAD `8d76eecf944aa053863cb2de19af9ed087119016`. Reapplies captured stat classifiers and reentrant path/metadata checks. Journal schema/hash chain, transition policy and UNKNOWN treatment of recovered RUNNING remain unchanged; no retry or dispatch authority. Fresh exact-head CI [45019519474](https://github.com/Iam-2squared/ark-ai/actions/runs/45019519474): **IN_PROGRESS**.
+
+3. **Observation fixture ingress regressions — [Draft PR #271](https://github.com/Iam-2squared/ark-ai/pull/271)**  
+   Branch `research/run1111-observation-fixture-guards-rebase`; exact child HEAD `336ad2aedbdbf6741996bc717f3c59780bc513ad`. Reapplies synthetic byte-budget, metadata-before-hash and digest-entrypoint substitution tests. Production fixture adapter and Observation Envelope v1 unchanged; no live capture or private source. Fresh exact-head CI [45019523789](https://github.com/Iam-2squared/ark-ai/actions/runs/45019523789): **IN_PROGRESS**.
+
+4. **Disconnected mock executor failure boundaries — [Draft PR #272](https://github.com/Iam-2squared/ark-ai/pull/272)**  
+   Branch `research/run1111-mock-executor-failure-rebase`; exact child HEAD `e6768cf30b4e47cf8a81bedffb1472d1b7adb487`. Reapplies durable-first WRITE replay rejection, missing occurrence-store refusal before permission/audit/mock, and ambiguous completion-audit failure without retry. Test-only; exact in-process MockToolBackend. Fresh exact-head CI [45019554248](https://github.com/Iam-2squared/ark-ai/actions/runs/45019554248): **QUEUED**.
+
+5. **ActionAudit stat-policy custody — [Draft PR #273](https://github.com/Iam-2squared/ark-ai/pull/273)**  
+   Branch `research/run1111-action-audit-stat-reentrant-rebase`; exact child HEAD `d34b1d2a45661cba4f53769841f8927f2d31cddc`. Reapplies import-original stat/predicate custody and callback-time checks. ActionAudit v1 DDL/API, event identity/sequence and clock semantics unchanged. Fresh exact-head CI [45019558251](https://github.com/Iam-2squared/ark-ai/actions/runs/45019558251): **QUEUED**.
+
+6. **Personal Context replay path guards — [Draft PR #274](https://github.com/Iam-2squared/ark-ai/pull/274)**  
+   Branch `research/run1111-personal-context-replay-rebase`; exact child HEAD `983a5d0a8418ce110f77a2cec3efc2697ed6c130`. Reapplies hash-only replay-ledger stat/encoding dependency custody, callback-time checks and Windows reparse rejection. Ledger schema, replay protocol and denial-only authority unchanged. Fresh exact-head CI [45019755365](https://github.com/Iam-2squared/ark-ai/actions/runs/45019755365): **QUEUED**.
+
+7. **Durable occurrence path guards — [Draft PR #275](https://github.com/Iam-2squared/ark-ai/pull/275)**  
+   Branch `research/run1111-occurrence-path-rebase`; exact child HEAD `6a216c2be943f28a89b33f1436ee9d03f59aca73`. Reapplies stat-policy and reentrant path/metadata checks, Windows reparse rejection and bounded unlinked-sidecar resample. Occurrence DDL, token/occurrence identity, expiry, reservation transaction and receipt semantics unchanged. Fresh exact-head CI [45019760054](https://github.com/Iam-2squared/ark-ai/actions/runs/45019760054): **QUEUED**.
+
+### Predecessor evidence and non-transfer rule
+
+The seven predecessor exact-head runs were independently observed GREEN, 6/6: PR #264 run [45014499205](https://github.com/Iam-2squared/ark-ai/actions/runs/45014499205), #265 [45014576110](https://github.com/Iam-2squared/ark-ai/actions/runs/45014576110), #266 [45014634151](https://github.com/Iam-2squared/ark-ai/actions/runs/45014634151), #267 [45014684043](https://github.com/Iam-2squared/ark-ai/actions/runs/45014684043), #268 [45014780890](https://github.com/Iam-2squared/ark-ai/actions/runs/45014780890), #257 [45009601750](https://github.com/Iam-2squared/ark-ai/actions/runs/45009601750), and #258 [45009636570](https://github.com/Iam-2squared/ark-ai/actions/runs/45009636570). These verdicts apply only to predecessor heads and do **not** certify PRs #269–#275. No duplicate equivalent workflow was launched. Predecessor Draft PRs #257–#268 remain open/untouched; no predecessor was closed or merged.
+
+## NEW this invocation — main Ruff CI repair, separate from JARVIS rebases
+
+**[Draft PR #276](https://github.com/Iam-2squared/ark-ai/pull/276)** targets `main` from `fix/main-ruff-personal-context-imports-run1111`, exact head `2594c884660c251a0eea3415dd834e8bf01daae3`. It changes only standard-library import ordering in `tests/test_personal_context_replay_process_crash_run1033.py`; test behavior, fixtures and contracts are unchanged.
+
+- Main exact-head CI [44932052144](https://github.com/Iam-2squared/ark-ai/actions/runs/44932052144) failed 6/6 at Ruff I001 in that test module.
+- PR #5 exact-head CI [44995831662](https://github.com/Iam-2squared/ark-ai/actions/runs/44995831662) independently failed 6/6 at the same Ruff finding. The failure is a lint-only issue in the main-side test file, not a V3 source failure.
+- Fresh exact-head CI for PR #276 [45020241118](https://github.com/Iam-2squared/ark-ai/actions/runs/45020241118): **QUEUED**. No merge or direct main write occurred.
+- Existing V3 detached packet reader PR #259 exact-head CI [45010442719](https://github.com/Iam-2squared/ark-ai/actions/runs/45010442719) remains **GREEN, 6/6** on its own child head; no protected evaluation or Candidate path was opened.
+
+## Tests / CI / evidence
+
+- PR #8 work-basis HEAD `22a22aa08001990739e6c1607d7b1b1cd7b0d9a6`: run 45014901993 **GREEN, 6/6**.
+- New PRs #269–#275: exact-head runs 45019515216 / 45019519474 / 45019523789 **IN_PROGRESS**; 45019554248 / 45019558251 / 45019755365 / 45019760054 **QUEUED** at checkpoint observation.
+- Main lint repair PR #276: exact-head run 45020241118 **QUEUED** at checkpoint observation.
+- Predecessor exact-head results are recorded separately and do not transfer across rebases.
+- No local pytest/Ruff execution, physical-PC test, real-model validation, paid runtime, external service, live capture, private database or external action was performed in this invocation.
+
+## Frozen contracts / evidence unchanged
+
+- V1/V2/Local UI/Launcher/Gate Runner contracts and reviewed evidence remain frozen.
+- Memory v1 DDL/API and row/event/CAS semantics; Planner journal schema/hash-chain/transition policy; ActionAudit v1 DDL/API/event identity/sequence/clock semantics; Observation Envelope v1; ToolCall/PlanStep contracts; Personal Context replay schema; durable occurrence schema/identity/expiry semantics; and V3 Contract 1 are unchanged.
+- PR #5, PR #8 and PR #9 remain OPEN/DRAFT/UNMERGED. UI remains PAUSED; PR #9 and its branch are untouched.
+- No paid/external compute, paid API/service, subscription, purchase, new credential/account connection, real Candidate adapter/weights/promotion, protected V2 evaluation opening, external dispatch, destructive operation, physical-PC action, frozen-contract change or main merge.
+- No trusted-clock, authenticated-consent, independent custody, atomic directory-handle, TOCTOU, cross-store atomicity, human-review, dataset/file-hash, runtime-identity or exactly-once external-effect claim was fabricated.
+
+## Blockers / integration boundary
+
+- PR #5 remains pre-paid-compute and **NOT_PASSED**. Immutable Hub revision/materialized model and tokenizer hashes, human-approved dataset decisions, exact runtime/toolchain identities, target device/driver evidence, billing/cost-cap evidence and explicit spending authorization remain unresolved; none was guessed or opened.
+- Main and PR #5 CI share the Ruff import-order failure described above until PR #276 receives fresh exact-head evidence and any later integration is explicitly authorized. PR #276 is Draft and has not been merged.
+- PRs #269–#275 are isolated child drafts. Their exact-head CI is pending; predecessor GREEN results do not transfer. No child has been integrated into PR #8 or main.
+- Local pathname checks remain dependency-identity/metadata admission, not atomic directory-handle custody, a sandbox or TOCTOU protection. Mock executor tests do not prove cross-store atomicity or exactly-once external effects. Observation fixtures do not authenticate capture source/consent. No live private database or personal data was opened.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PRs #269–#276 once runs complete; repair failures with the smallest semantics-preserving fix, and do not launch duplicate equivalent workflows.
+2. For each GREEN child #269–#275, re-read live PR #8 HEAD, rebase/reapply onto that exact current parent if it moved, and require fresh exact-head CI before any integration. Keep PR #8 Draft/unmerged; do not merge main.
+3. Complete the main Ruff lint repair through PR #276's exact-head CI. Keep PR #276 Draft; no main merge without explicit approval.
+4. Continue Memory WAL/SHM last-close, event-frontier, CAS/ABA, expiry and COMMIT-UNKNOWN manual-only recovery; preserve coherent snapshots and privacy.
+5. Continue Planner restart recovery, terminal propagation, ambiguous RUNNING quarantine, immutable ToolRegistry, exact-type PermissionGate and durable-first disconnected mock execution; no automatic retry or external dispatch.
+6. Continue Personal Context revocation/reuse, durable occurrence/replay, proactive scheduler state, Observation byte/metadata fixtures and startup readiness with no notification/dispatch authority.
+7. Continue free-only V3 approval/path/identity/reproducibility guards while keeping PR #5's protected evaluation, Candidate and paid-compute gates closed.
+8. UI remains PAUSED; PR #9 and all Local UI freezes remain untouched.
+
+**ARK/JARVIS: NOT_PASSED.**
+
+---
+
 # LATEST — ARK Run1110: five isolated core rebases; exact-head CI queued/in progress
 
 **Saved at (Asia/Tokyo/JST): 2026-11-22 19:56:06+09:00.** Reporting/checkpoint time only; not a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
