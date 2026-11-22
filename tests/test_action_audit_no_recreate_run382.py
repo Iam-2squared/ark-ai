@@ -61,7 +61,7 @@ def test_reentrant_clock_path_swap_rejects_and_rolls_back(tmp_path: Path):
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="must-not-commit")
     assert alternative.events() == []
-    object.__setattr__(audit, "path", original_path
+    object.__setattr__(audit, "path", original_path)
     assert audit.events() == []
 
 
@@ -70,7 +70,7 @@ def test_reentrant_clock_same_value_new_path_instance_rejected(tmp_path: Path):
     audit._clock_ms = lambda: object.__setattr__(audit, "path", Path(str(original_path))) or 101
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="must-not-commit")
-    object.__setattr__(audit, "path", original_path
+    object.__setattr__(audit, "path", original_path)
     assert audit.events() == []
 
 
@@ -79,7 +79,7 @@ def test_reentrant_clock_type_corruption_is_rejected(tmp_path: Path):
     audit._clock_ms = lambda: object.__setattr__(audit, "path", "non-path") or 101
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="must-not-commit")
-    object.__setattr__(audit, "path", original_path
+    object.__setattr__(audit, "path", original_path)
     assert audit.events() == []
 
 
@@ -89,7 +89,7 @@ def test_normal_append_after_reentrant_clock_denial_remains_usable(tmp_path: Pat
     with pytest.raises(ActionAuditSchemaError, match="path changed"):
         audit.append(call, outcome="denied")
     assert not (tmp_path / "other.sqlite").exists()
-    object.__setattr__(audit, "path", original_path
+    object.__setattr__(audit, "path", original_path)
     audit._clock_ms = lambda: 102
     assert audit.append(call, outcome="permitted-local-audit").event_id == 1
     assert len(audit.events()) == 1
