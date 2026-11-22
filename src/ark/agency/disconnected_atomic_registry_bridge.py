@@ -11,6 +11,7 @@ import hashlib
 import re
 
 from . import disconnected_atomic_preaction_ledger as preaction_module
+from . import registry as registry_module
 from .contracts import Effect, ToolCall
 from .disconnected_atomic_preaction_ledger import (
     AtomicIntentClaim,
@@ -27,6 +28,10 @@ _OCC = re.compile(r"occ_[0-9a-f]{64}\Z")
 _BOUND = re.compile(r"bound_[0-9a-f]{64}\Z")
 _ORIGINAL_BIND = vars(ToolRegistry)["bind"]
 _ORIGINAL_REVISION = vars(ToolRegistry)["revision"]
+_ORIGINAL_RESOLVE = vars(ToolRegistry)["resolve"]
+_ORIGINAL_GET = vars(ToolRegistry)["get"]
+_ORIGINAL_REGISTRY_EPOCH = vars(ToolRegistry)["_assert_registration_epoch"]
+_ORIGINAL_REGISTRY_SEAL_GUARD = registry_module._require_original_registry_instance_seal
 
 _REQUEST = re.compile(r"act_[0-9a-f]{64}\Z")
 _ORIGINAL_OCC = _OCC
@@ -50,6 +55,10 @@ def _require_original_bridge_dependencies() -> None:
         or _REQUEST is not _ORIGINAL_REQUEST
         or _require_original_toolcall_contract is not _ORIGINAL_CALL_GUARD
         or preaction_module._require_original_atomic_carriers is not _ORIGINAL_CLAIM_GUARD
+        or vars(ToolRegistry).get("resolve") is not _ORIGINAL_RESOLVE
+        or vars(ToolRegistry).get("get") is not _ORIGINAL_GET
+        or vars(ToolRegistry).get("_assert_registration_epoch") is not _ORIGINAL_REGISTRY_EPOCH
+        or registry_module._require_original_registry_instance_seal is not _ORIGINAL_REGISTRY_SEAL_GUARD
     ):
         raise AtomicPreactionRejected("registry intent digest or grammar changed")
 
@@ -76,10 +85,13 @@ def derive_registered_atomic_intent(
         or vars(ToolRegistry).get("revision") is not _ORIGINAL_REVISION
     ):
         raise AtomicPreactionRejected("invalid registry-bound intent source")
-    if "bind" in vars(registry):
-        # Preserve the established rejection taxonomy for a replaced bind;
-        # never run the shadowed instance method or the subsequent callback.
-        raise AtomicPreactionRejected("registered intent binding refused")
+    try:
+        _ORIGINAL_REGISTRY_SEAL_GUARD()
+        registry._assert_registration_epoch()
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise AtomicPreactionRejected(
+            "registered intent binding refused"
+        ) from exc
     _ORIGINAL_CALL_GUARD()
     # Class-level method checks do not reject an instance-shadowed bind.
     # Record the original call identity and recheck it after every callback.
@@ -95,9 +107,14 @@ def derive_registered_atomic_intent(
     def assert_call_epoch() -> None:
         _require_original_bridge_dependencies()
         _ORIGINAL_CALL_GUARD()
+        try:
+            registry._assert_registration_epoch()
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise AtomicPreactionRejected(
+                "registered intent input epoch changed"
+            ) from exc
         if (
-            "bind" in vars(registry)
-            or any(now is not original for now, original in zip(
+            any(now is not original for now, original in zip(
                 (call.tool, call.capability, call.scope, call.arguments),
                 call_epoch[:4], strict=True,
             ))
