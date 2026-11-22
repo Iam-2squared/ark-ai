@@ -1,3 +1,34 @@
+# Current source audit — Run1112 (2026-11-22)
+
+**Exact verified source basis:** Draft PR #8 branch `research/jarvis-foundations`, HEAD
+`6bdbe12acadc2ffa5c7506c4e8d9b41b722f7e83`. This is a read-only audit of that
+exact source tree, not a JARVIS PASS, an integration attestation, or evidence
+that isolated child branches have been merged.
+
+| Area | Verified at this source HEAD | Remaining boundary / next work |
+| --- | --- | --- |
+| ToolRegistry instance immutability | `src/ark/agency/registry.py` exposes a deterministic revision, a read-only registration mapping, exact ToolCall binding, and a retained registration epoch. The `ToolRegistry` class itself has no `__slots__` or sealed `__setattr__`; its private instance fields are ordinarily assignable and an instance `__dict__` exists. Accessors detect some single-field drift, but this is weaker than an immutable instance boundary. | Add a no-`__dict__` slot layout and reject ordinary post-construction assignment. Keep reflective `object.__setattr__` explicitly outside the security claim and detect drift before use. Add exact-instance regressions and require fresh exact-head CI. |
+| PermissionGate state custody | `src/ark/agency/policy.py` uses an exact PermissionGate class, a mutable `set` for consumed one-shot token IDs, and a per-instance `Lock`. The class has no slots/seal, so ordinary assignment can replace the consumed-token set or lock; the mutable set can also be cleared by a caller holding the instance. | Keep the consumed-token view immutable, prevent ordinary state/lock replacement, and check import-original state identity before and during spend. This remains process-local only; a durable restart-safe token/occurrence ledger is still required and must not be inferred from this gate. |
+| Durable authorization and audit | The disconnected executor composes registry binding, local PermissionGate, durable synthetic occurrence reservation, pre-action ActionAudit and the exact mock backend. The occurrence and audit stores are separate SQLite databases. | No cross-store atomicity, trusted clock, authenticated consent, independent custody, crash-safe external effect, or exactly-once external dispatch is proven. Ambiguous outcomes remain quarantined; never automatically retry. |
+| Planner recovery | The in-memory PlanGraph has deterministic topology, revision-guarded transitions and terminal descendant propagation. The journal/recovery lane is separate and treats recovered RUNNING work as ambiguous. | Continue exact-head journal replay/truncation/corruption and multi-process CAS evidence. Preserve UNKNOWN for recovered RUNNING; no automatic redispatch. |
+| Memory durability | Memory SQLite has row/event integrity, CAS, coherent read snapshots and bounded expiry behavior in the current foundation. | Continue WAL/SHM last-close, cross-process reader/writer, delete/recreate ABA, expiry/clock rollback and COMMIT-UNKNOWN manual-only recovery. Do not turn local clocks into trusted action time. |
+| V3 free-only boundary | The separate V3 branch contains local snapshot, identity, authorization-packet and output-path guards. Its pre-paid-compute boundary remains closed. | No external compute, Candidate adapter/weights, protected V2 evaluation, promotion, or paid service. Exact source and reproducibility evidence remain required before any later gate; PR #5 remains Draft/unmerged. |
+
+## Run1112 audit conclusion
+
+The next cross-cutting hardening is instance-state custody for ToolRegistry and
+PermissionGate, followed by durable authorization that binds a token digest to
+one occurrence across restart. These are distinct layers: immutable in-process
+state does not make authorization durable, and a durable occurrence reservation
+does not make separate audit/occurrence databases atomic.
+
+The audit does not change Memory v1, Planner journal, ActionAudit v1,
+Observation Envelope v1, ToolCall/PlanStep, Personal Context replay, occurrence
+schemas, V3 Contract 1, V1/V2, Local UI or Launcher/Gate Runner evidence.
+UI/frontend work remains paused.
+
+---
+
 # ARK JARVIS Foundation Gap Matrix
 
 ## Current source audit — Run995
