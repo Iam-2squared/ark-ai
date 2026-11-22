@@ -399,7 +399,7 @@ def _row_state(row: tuple[object, ...]) -> SyntheticProactiveState:
         type(window_list) is not list
         or any(type(value) is not int or not 0 <= value <= _MAX for value in window_list)
         or len(window_list) > _MAX_WINDOW_ITEMS
-        or any(left > right for left, right in zip(window_list, window_list[1:]))
+        or any(left > right for left, right in zip(window_list, window_list[1:], strict=False))
         or _canonical_window(tuple(window_list)) != window_json
     ):
         raise SyntheticProactiveStateRejected("proactive window history is noncanonical")
