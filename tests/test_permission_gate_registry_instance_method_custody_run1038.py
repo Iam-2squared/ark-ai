@@ -50,12 +50,25 @@ def _fixture():
     return backend, registration, registry, call, gate, grant, token
 
 
+def test_slot_only_registry_rejects_instance_method_assignment() -> None:
+    _backend, _registration, registry, _call, _gate, _grant, _token = _fixture()
+
+    def replacement(*_args, **_kwargs):
+        return None
+
+    for member in ("bind", "resolve", "get", "revision", "_assert_registration_epoch"):
+        with pytest.raises(AttributeError, match="immutable"):
+            setattr(registry, member, replacement)
+        with pytest.raises(AttributeError):
+            object.__setattr__(registry, member, replacement)
+
+
 @pytest.mark.parametrize(
     "member",
     ("bind", "resolve", "get", "_assert_registration_epoch", "_compute_revision"),
 )
-def test_registered_write_rejects_shadowed_registry_instance_methods_before_callbacks(
-    member: str,
+def test_registered_write_rejects_class_level_registry_method_replacements_before_callbacks(
+    member: str, monkeypatch,
 ) -> None:
     backend, registration, registry, call, gate, grant, token = _fixture()
     invoked: list[str] = []
@@ -63,7 +76,7 @@ def test_registered_write_rejects_shadowed_registry_instance_methods_before_call
 
     if member == "bind":
         # A forged but exact BoundAction can otherwise be returned twice by
-        # an instance-shadowed bind() and appear stable to the old comparison.
+        # a substituted class-level bind() and appear stable to the old comparison.
         replacement = BoundAction(
             registry.revision, call, registration, "bound_forged_identity",
         )
@@ -75,7 +88,7 @@ def test_registered_write_rejects_shadowed_registry_instance_methods_before_call
             invoked.append(member)
             raise AssertionError("shadowed registry method executed")
 
-    setattr(registry, member, shadowed)
+    monkeypatch.setattr(type(registry), member, shadowed)
 
     def grants():
         iterated.append("started")

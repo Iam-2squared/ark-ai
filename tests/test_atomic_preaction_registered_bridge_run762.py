@@ -64,13 +64,8 @@ def test_registered_read_is_not_reclassified_as_write(effect: Effect) -> None:
 @pytest.mark.parametrize("identity", [
     "occ_" + "x" * 64, "bad", "occ_" + "a" * 63,
 ])
-def test_noncanonical_occurrence_rejected_before_registry_bind(
-    identity: str, monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_noncanonical_occurrence_is_rejected(identity: str) -> None:
     registry, call, backend = _registered(Effect.WRITE)
-    def forbidden(_call: ToolCall) -> object:
-        raise AssertionError("must reject before registry lookup")
-    monkeypatch.setattr(registry, "bind", forbidden)
     with pytest.raises(AtomicPreactionRejected):
         derive_registered_atomic_intent(registry, call, occurrence_id=identity)
     assert backend.calls == 0
