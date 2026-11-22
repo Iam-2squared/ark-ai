@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import sqlite3
 import subprocess
 import sys
 import textwrap
-import sqlite3
 
 import pytest
 
