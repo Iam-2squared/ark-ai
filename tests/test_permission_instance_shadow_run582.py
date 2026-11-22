@@ -38,28 +38,33 @@ def _case(effect):
 
 
 @pytest.mark.parametrize("effect", (Effect.READ, Effect.WRITE))
-def test_fresh_instance_noop_policy_cannot_authorize_registered_action(effect):
+def test_instance_method_shadow_assignment_is_denied(effect):
     registry, call, grants, token, backend = _case(effect)
     gate = PermissionGate()
-    gate.authorize = lambda *_args, **_kwargs: None
-    # Both READ and WRITE reject the instance shadow before even a
-    # synthetic registry authorization result is returned. No token spends.
-    with pytest.raises(PermissionDenied, match="implementation identity changed"):
-        gate.authorize_registered(
-            registry, call, grants, now_ms=10,
-            one_shot=token if effect is Effect.WRITE else None,
-        )
-    assert gate._consumed_tokens == set()
+
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize = lambda *_args, **_kwargs: None
+
+    accepted = gate.authorize_registered(
+        registry, call, grants, now_ms=10,
+        one_shot=token if effect is Effect.WRITE else None,
+    )
+    assert accepted.call is call
+    assert gate._consumed_tokens == (
+        {"local-token"} if effect is Effect.WRITE else set()
+    )
     assert backend.calls == 0
 
 
-def test_replay_not_laundered_through_already_consumed_token_and_noop():
+def test_replay_stays_denied_after_instance_shadow_assignment_is_refused():
     registry, call, grants, token, backend = _case(Effect.WRITE)
     gate = PermissionGate()
     gate.authorize_registered(registry, call, grants, now_ms=10, one_shot=token)
     assert gate._consumed_tokens == {"local-token"}
-    gate.authorize = lambda *_args, **_kwargs: None
-    with pytest.raises(PermissionDenied, match="implementation identity"):
+
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize = lambda *_args, **_kwargs: None
+    with pytest.raises(PermissionDenied, match="already consumed"):
         gate.authorize_registered(
             registry, call, grants, now_ms=10, one_shot=token,
         )
@@ -67,32 +72,29 @@ def test_replay_not_laundered_through_already_consumed_token_and_noop():
     assert backend.calls == 0
 
 
-def test_policy_shadow_installed_by_grant_iterator_is_rejected_before_spend():
+def test_grant_iterator_cannot_shadow_gate_method():
     registry, call, grants, token, backend = _case(Effect.WRITE)
     gate = PermissionGate()
 
-    def redirecting_grants():
+    def checked_grants():
         yield grants[0]
-        gate.authorize = lambda *_args, **_kwargs: None
+        with pytest.raises(AttributeError, match="immutable"):
+            gate.authorize = lambda *_args, **_kwargs: None
 
-    with pytest.raises(PermissionDenied, match="implementation identity changed"):
-        gate.authorize_registered(
-            registry, call, redirecting_grants(), now_ms=10,
-            one_shot=token,
-        )
-    assert gate._consumed_tokens == set()
+    accepted = gate.authorize_registered(
+        registry, call, checked_grants(), now_ms=10, one_shot=token,
+    )
+    assert accepted.call is call
+    assert gate._consumed_tokens == {"local-token"}
     assert backend.calls == 0
 
 
-def test_removing_instance_shadow_restores_original_policy_not_replay():
+def test_method_shadow_cannot_launder_a_replayed_token():
     registry, call, grants, token, backend = _case(Effect.WRITE)
     gate = PermissionGate()
-    gate.authorize = lambda *_args, **_kwargs: None
-    with pytest.raises(PermissionDenied, match="implementation identity changed"):
-        gate.authorize_registered(
-            registry, call, grants, now_ms=10, one_shot=token,
-        )
-    del gate.authorize
+
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize = lambda *_args, **_kwargs: None
     accepted = gate.authorize_registered(
         registry, call, grants, now_ms=10, one_shot=token,
     )
