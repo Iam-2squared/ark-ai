@@ -55,6 +55,8 @@ def _require_original_bridge_dependencies() -> None:
         or _REQUEST is not _ORIGINAL_REQUEST
         or _require_original_toolcall_contract is not _ORIGINAL_CALL_GUARD
         or preaction_module._require_original_atomic_carriers is not _ORIGINAL_CLAIM_GUARD
+        or vars(ToolRegistry).get("bind") is not _ORIGINAL_BIND
+        or vars(ToolRegistry).get("revision") is not _ORIGINAL_REVISION
         or vars(ToolRegistry).get("resolve") is not _ORIGINAL_RESOLVE
         or vars(ToolRegistry).get("get") is not _ORIGINAL_GET
         or vars(ToolRegistry).get("_assert_registration_epoch") is not _ORIGINAL_REGISTRY_EPOCH
@@ -93,7 +95,8 @@ def derive_registered_atomic_intent(
             "registered intent binding refused"
         ) from exc
     _ORIGINAL_CALL_GUARD()
-    # Class-level method checks do not reject an instance-shadowed bind.
+    # The exact slot-only registry has no mutable instance namespace; its
+    # class-level method identities are pinned before and after each callback.
     # Record the original call identity and recheck it after every callback.
     call_epoch = (call.tool, call.capability, call.scope, call.arguments, call.request_id)
     # No registry binding attempt may see an unbounded or malformed request ID.
