@@ -326,15 +326,21 @@ def _build_state(values: tuple[object, ...]) -> SyntheticProactiveState:
 
 
 def _canonical_window(values: tuple[int, ...]) -> str:
-    return json.dumps(list(values), separators=(",", ":"), ensure_ascii=True)
+    _require_original_protocol()
+    encoded = json.dumps(list(values), separators=(",", ":"), ensure_ascii=True)
+    _require_original_protocol()
+    return encoded
 
 
 def _objects(conn: sqlite3.Connection) -> tuple[tuple[object, ...], ...]:
-    return tuple(
+    _require_original_protocol()
+    result = tuple(
         tuple(row) for row in conn.execute(
             "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         )
     )
+    _require_original_protocol()
+    return result
 
 
 def _row_state(row: tuple[object, ...]) -> SyntheticProactiveState:
@@ -387,6 +393,21 @@ def _validate(conn: sqlite3.Connection) -> None:
     version = conn.execute("PRAGMA user_version").fetchone()
     if version != (1,):
         raise SyntheticProactiveStateRejected("proactive state schema version changed")
+    catalog = conn.execute(
+        "SELECT COUNT(*),COALESCE(SUM(length(CAST(sql AS BLOB))),0),"
+        "COALESCE(SUM(COALESCE(length(CAST(type AS BLOB)),4097)+"
+        "COALESCE(length(CAST(name AS BLOB)),4097)+"
+        "COALESCE(length(CAST(tbl_name AS BLOB)),4097)),0) "
+        "FROM sqlite_master"
+    ).fetchone()
+    if (
+        type(catalog) is not tuple or len(catalog) != 3
+        or type(catalog[0]) is not int or catalog[0] != 2
+        or type(catalog[1]) is not int or not 0 <= catalog[1] <= 8192
+        or type(catalog[2]) is not int or not 0 <= catalog[2] <= 8192
+    ):
+        raise SyntheticProactiveStateRejected("proactive state schema preflight failed")
+    _require_original_protocol()
     with closing(_ORIGINAL_CONNECT(":memory:")) as expected:
         expected.execute(_TABLE)
         if _objects(conn) != _objects(expected):
@@ -523,11 +544,16 @@ class SyntheticProactiveStateLedger:
         conn = _ORIGINAL_CONNECT(
             uri, uri=True, timeout=10, isolation_level=None,
         )
-        _require_original_protocol()
-        if self.path is not path:
+        try:
+            _require_original_protocol()
+            if self.path is not path:
+                raise SyntheticProactiveStateRejected(
+                    "proactive state path changed during open"
+                )
+            _safe_path(path)
+        except BaseException:
             conn.close()
-            raise SyntheticProactiveStateRejected("proactive state path changed during open")
-        _safe_path(path)
+            raise
         return conn
 
     @staticmethod
@@ -551,6 +577,8 @@ class SyntheticProactiveStateLedger:
             conn.execute("BEGIN")
             try:
                 _validate(conn)
+                _require_original_protocol()
+                _assert_policy_fields(policy, _POLICY_FIELDS, policy_values)
                 row = conn.execute(
                     "SELECT scope_digest,policy_digest,revision,last_observation_digest,"
                     "last_observed_at_ms,last_evaluated_at_ms,last_proposal_at_ms,"
@@ -594,6 +622,8 @@ class SyntheticProactiveStateLedger:
             conn.execute("BEGIN IMMEDIATE")
             try:
                 _validate(conn)
+                _require_original_protocol()
+                _assert_policy_fields(policy, _POLICY_FIELDS, policy_values)
                 row = conn.execute(
                     "SELECT scope_digest,policy_digest,revision,last_observation_digest,"
                     "last_observed_at_ms,last_evaluated_at_ms,last_proposal_at_ms,"
@@ -714,6 +744,7 @@ class SyntheticProactiveStateLedger:
             conn.execute("BEGIN")
             try:
                 _validate(conn)
+                _require_original_protocol()
                 result = conn.execute(
                     "SELECT COUNT(*) FROM synthetic_proactive_states"
                 ).fetchone()[0]
