@@ -135,7 +135,7 @@ def test_read_authorization_also_rejects_class_level_bind_replacement(monkeypatc
     assert backend.calls == 0
 
 
-def test_grant_iterator_cannot_shadow_registry_after_initial_binding():
+def test_grant_iterator_cannot_mutate_slot_only_registry_after_initial_binding():
     backend, _registration, registry, call, gate, grant, token = _fixture()
     invoked: list[str] = []
 
@@ -145,17 +145,13 @@ def test_grant_iterator_cannot_shadow_registry_after_initial_binding():
 
     def grants():
         yield grant
-        registry.get = shadowed_get
-        yield grant
+        with pytest.raises(AttributeError, match="immutable"):
+            registry.get = shadowed_get
 
-    with pytest.raises(
-        PermissionDenied,
-        match="registered authorization implementation identity changed",
-    ):
-        gate.authorize_registered(
-            registry, call, grants(), now_ms=100, one_shot=token,
-        )
-
+    bound = gate.authorize_registered(
+        registry, call, grants(), now_ms=100, one_shot=token,
+    )
+    assert bound.call is call
     assert invoked == []
-    assert token.token_id not in gate._consumed_tokens
+    assert token.token_id in gate._consumed_tokens
     assert backend.calls == 0
