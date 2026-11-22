@@ -472,7 +472,24 @@ def _require_original_bound_constructor() -> None:
 class ToolRegistry:
     """Immutable exact-name registry with deterministic revision identity."""
 
+    __slots__ = (
+        "_registrations", "_registry_mapping_epoch", "_registration_epoch",
+        "_revision", "_revision_epoch", "_sealed",
+    )
     _SCHEMA_VERSION = 1
+
+    def __setattr__(self, name: str, value: object) -> None:
+        # Ordinary attribute assignment must not mutate the supposedly
+        # immutable registry or create an escape hatch through __dict__.
+        # object.__setattr__ remains a deliberate reflective bypass and is
+        # detected by the existing registration-epoch checks.
+        try:
+            sealed = object.__getattribute__(self, "_sealed")
+        except AttributeError:
+            sealed = False
+        if sealed:
+            raise AttributeError("ToolRegistry is immutable")
+        object.__setattr__(self, name, value)
 
     def __init__(self, registrations: Iterable[ToolRegistration]) -> None:
         if (
@@ -480,6 +497,9 @@ class ToolRegistry:
             or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
         ):
             raise TypeError("an exact ToolRegistry instance is required")
+        _require_original_registry_instance_seal()
+        if object.__getattribute__(self, "_sealed") is not True:
+            raise ValueError("registry construction was not sealed")
         _require_original_registration_contract()
         _require_original_registry_digest()
         # Registrations can arrive from caller-controlled generators. Never
@@ -545,6 +565,7 @@ class ToolRegistry:
         self._revision = self._compute_revision(ordered)
         self._revision_epoch = self._revision
         assert_ingress_epoch()
+        self._sealed = True
         self._assert_registration_epoch()
 
     def _assert_registration_epoch(self) -> None:
@@ -872,3 +893,17 @@ class ToolRegistry:
 
 # Public registry operations reject subclasses with alternate lookup semantics.
 _ORIGINAL_TOOL_REGISTRY_TYPE = ToolRegistry
+_ORIGINAL_TOOL_REGISTRY_SLOTS = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__slots__"]
+_ORIGINAL_TOOL_REGISTRY_SETATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__setattr__"]
+
+
+def _require_original_registry_instance_seal() -> None:
+    """Pin the no-dict slot layout and assignment guard before registry reads."""
+    if (
+        ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__slots__")
+        is not _ORIGINAL_TOOL_REGISTRY_SLOTS
+        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__setattr__")
+        is not _ORIGINAL_TOOL_REGISTRY_SETATTR
+    ):
+        raise ValueError("registry instance immutability contract changed")
