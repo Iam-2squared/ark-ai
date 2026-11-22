@@ -20,9 +20,30 @@ from .execution import _require_bounded_snapshot_nesting, canonical_json
 _MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
 
 class LocalIdentityArtifactRejected(ValueError):
     """Reject a changed, aliased, oversized or noncanonical identity artifact."""
+
+
+def _require_original_stat_policy() -> None:
+    if (
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+    ):
+        raise LocalIdentityArtifactRejected("identity artifact stat policy changed")
+
+
+def _is_regular_file(info: os.stat_result) -> bool:
+    _require_original_stat_policy()
+    mode = info.st_mode
+    _require_original_stat_policy()
+    if type(mode) is not int:
+        raise LocalIdentityArtifactRejected("identity artifact mode metadata is malformed")
+    return _ORIGINAL_S_ISREG(mode)
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,15 +124,17 @@ def verify_local_identity_artifact(
     ):
         raise LocalIdentityArtifactRejected("exact local path and retained digest required")
     _require_original_denials()
+    _require_original_stat_policy()
     try:
-        if (
-            path.is_symlink()
-            or any(parent.is_symlink() for parent in path.parents)
-        ):
+        symlink = path.is_symlink()
+        _require_original_stat_policy()
+        parent_symlink = any(parent.is_symlink() for parent in path.parents)
+        _require_original_stat_policy()
+        if symlink or parent_symlink:
             raise LocalIdentityArtifactRejected("identity file path may not be symlinked")
         before = path.lstat()
         if (
-            not stat.S_ISREG(before.st_mode)
+            not _is_regular_file(before)
             or before.st_nlink != 1
             or not 0 < before.st_size <= _MAX_ARTIFACT_BYTES
         ):
@@ -119,7 +142,8 @@ def verify_local_identity_artifact(
         with path.open("rb") as handle:
             opened = os.fstat(handle.fileno())
             if (
-                not os.path.samestat(before, opened)
+                not _is_regular_file(opened)
+                or not os.path.samestat(before, opened)
                 or opened.st_size != before.st_size
                 or opened.st_nlink != 1
             ):
@@ -127,19 +151,22 @@ def verify_local_identity_artifact(
             raw = handle.read(_MAX_ARTIFACT_BYTES + 1)
             after_open = os.fstat(handle.fileno())
             if (
-                opened.st_size != after_open.st_size
+                not _is_regular_file(after_open)
+                or opened.st_size != after_open.st_size
                 or opened.st_mtime_ns != after_open.st_mtime_ns
                 or opened.st_nlink != after_open.st_nlink
             ):
                 raise LocalIdentityArtifactRejected("identity file changed during read")
         after = path.lstat()
         if (
-            not os.path.samestat(before, after)
+            not _is_regular_file(after)
+            or not os.path.samestat(before, after)
             or before.st_size != after.st_size
             or before.st_mtime_ns != after.st_mtime_ns
             or path.is_symlink()
         ):
             raise LocalIdentityArtifactRejected("identity file changed during read")
+        _require_original_stat_policy()
     except OSError as exc:
         raise LocalIdentityArtifactRejected("identity file unavailable") from exc
     if len(raw) != before.st_size or len(raw) > _MAX_ARTIFACT_BYTES:
@@ -164,7 +191,7 @@ def verify_local_identity_artifact(
         try:
             current = path.lstat()
             if (
-                not stat.S_ISREG(current.st_mode)
+                not _is_regular_file(current)
                 or not os.path.samestat(before, current)
                 or current.st_size != before.st_size
                 or current.st_mtime_ns != before.st_mtime_ns
@@ -175,6 +202,7 @@ def verify_local_identity_artifact(
                 raise LocalIdentityArtifactRejected(
                     "identity file changed after verified read"
                 )
+            _require_original_stat_policy()
         except OSError as exc:
             raise LocalIdentityArtifactRejected(
                 "identity file became unavailable"
