@@ -70,13 +70,13 @@ def test_lookup_callback_cannot_install_identity_code(
         raise AssertionError("forged ToolCall member must never run")
 
     with monkeypatch.context() as patch:
-        def install_at_lookup(name):
+        def install_at_lookup(self, name):
             result = get_original(name)
             replacement = property(forbidden) if member == "request_id" else forbidden
             patch.setattr(ToolCall, member, replacement)
             return result
 
-        patch.setattr(registry, "get", install_at_lookup)
+        patch.setattr(ToolRegistry, "get", install_at_lookup)
         with pytest.raises(ValueError, match="ToolCall identity constructor changed"):
             getattr(registry, operation)(call)
 
