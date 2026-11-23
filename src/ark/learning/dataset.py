@@ -20,6 +20,21 @@ def canonical(value: object) -> bytes:
     ).encode("utf-8")
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject ambiguous duplicate object members at every JSON nesting level."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def loads_unique_json(payload: str | bytes) -> object:
+    """Parse JSON without silently accepting duplicate object keys."""
+    return json.loads(payload, object_pairs_hook=_unique_json_object)
+
+
 def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
