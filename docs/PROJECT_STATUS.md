@@ -1,3 +1,86 @@
+# LATEST — ARK AI core progress, 2026-11-23 19:08:24 JST
+
+**Saved at:** 2026-11-23 19:08:24 JST (Asia/Tokyo).
+**Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; OPEN/DRAFT/UNMERGED).
+**Work-basis HEAD:** `703ef0f3d2488a1967ee4696eb0db0dea1ff2447` — latest PR #8 branch HEAD re-read immediately before this checkpoint update.
+**Checkpoint-result HEAD:** the exact documentation-only commit SHA returned by the GitHub Contents API for this update and verified against the live branch tip after the write. It is not self-embedded; this checkpoint changes no source or tests.
+**main HEAD at checkpoint:** `3421a6099f2cf975e02327244ed94f6a00c5f3d8` (read-only recheck; no main write or merge).
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No V3+ PASS, human-review decision, trusted-clock certification, authenticated consent, physical hardware readiness, physical erasure, production dispatch, or exactly-once external-effect claim is made.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch, OPEN/DRAFT/UNMERGED. PR #5 remains gated Draft/unmerged; protected V2 final evaluation remains closed.
+- Draft PR #9 remains untouched and unmerged. UI/frontend development, UI integration, polish, and frontend tests remain paused.
+- Main remains at `3421a6099f2cf975e02327244ed94f6a00c5f3d8`. V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Integrated Personal Context replay COMMIT-UNKNOWN regression — PR #354 into PR #8.**
+   - Exact child HEAD `2a17045c23beead86f12c08e64853b6dd420fd75`; exact-head CI [45141772503](https://github.com/Iam-2squared/ark-ai/actions/runs/45141772503) GREEN, 6/6.
+   - Squash-integrated into PR #8; resulting branch HEAD before the later gap-matrix documentation update was `107b56849fec47e4d2e24576958b358c0aef697b`.
+   - Test-only rollback/COMMIT-lost-acknowledgement, cold recovery, stale/duplicate denial, SQLite integrity and plaintext-absence coverage. Personal Context policy/schema and disclosure authority unchanged.
+2. **Integrated V3 preflight validator-contract guard — PR #356 into gated PR #5.**
+   - Exact child HEAD `3cb79acccfe9947a183aad043b386853bc724d53`; exact-head CI [45142732361](https://github.com/Iam-2squared/ark-ai/actions/runs/45142732361) GREEN, 6/6.
+   - PR #5 now has head `e7aed3f409ad6147260e6eb0bad2924eed5cf160`; its subsequent CI [45150395382](https://github.com/Iam-2squared/ark-ai/actions/runs/45150395382) FAILED at Ruff I001 in `tests/test_personal_context_replay_process_crash_run1033.py`, a file on the current `main` base but absent from PR #5's head branch. Existing Draft PR #276 is the separate main-branch import-order fix; its observed run [45026667524](https://github.com/Iam-2squared/ark-ai/actions/runs/45026667524) is also FAILED. No protected evaluation was opened and no Candidate was generated or promoted.
+3. **Integrated Planner journal path-fence child — PR #19 into PR #18.**
+   - PR #19 exact child HEAD `c08c7e9e6c836285362da96663dee903479da98a`; exact-head CI [44549000547](https://github.com/Iam-2squared/ark-ai/actions/runs/44549000547) GREEN, 6/6.
+   - Squash-integrated into Draft PR #18 as `780af1ab58a90ab69c749fd8130ea33f53fa4e84`. The resulting Planner journal now includes no-follow database/sidecar checks and no-recreation after startup. PR #18 remains isolated from PR #8; fresh CI [45152509063](https://github.com/Iam-2squared/ark-ai/actions/runs/45152509063) is QUEUED. Repeated lstat checks remain TOCTOU-limited; recovered RUNNING steps remain ambiguous and never auto-replay.
+4. **PermissionGate deletion-custody rebase — Draft PR #357.**
+   - Exact child HEAD `48d069fe089285f704867f9e67dfb41480541824`; CI [45150662044](https://github.com/Iam-2squared/ark-ai/actions/runs/45150662044) IN PROGRESS.
+   - Seals ordinary `__delattr__`, pins the exact class descriptor, and tests state-slot deletion/class-guard substitution. Local in-process integrity only.
+5. **Memory WAL delete/recreate ABA crash rebase — Draft PR #358.**
+   - Exact child HEAD `1b80168de66770021f3640cd8c80fefbf4b30f09`; CI [45150850994](https://github.com/Iam-2squared/ark-ai/actions/runs/45150850994) IN PROGRESS.
+   - Test-only spawned reader crash/last-reader checkpoint barrier, ID/revision reuse, stale-generation denial and cold-reopen integrity.
+6. **Proactive state process-crash recovery rebase — Draft PR #359.**
+   - Exact child HEAD `520ada9c4e8240fd5ab909b06dccaed78c895da0`; CI [45150853763](https://github.com/Iam-2squared/ark-ai/actions/runs/45150853763) IN PROGRESS.
+   - Test-only cold recovery of synthetic preview state, denial-only authority, SQLite/WAL/SHM plaintext scan and stale-CAS rejection. Production proactive policy/schema unchanged.
+7. **Memory store path-identity hardening — Draft PR #360.**
+   - Current exact child HEAD `f12324a625806cd2dccf66a8f1db2988e2c763f3`; fresh CI [45152318333](https://github.com/Iam-2squared/ark-ai/actions/runs/45152318333) IN PROGRESS.
+   - The initial exact-head run [45152127154](https://github.com/Iam-2squared/ark-ai/actions/runs/45152127154) failed only Ruff UP037; the forward-reference quoting was corrected in the smallest semantics-preserving commit before the new run. The change binds SQLiteMemoryStore to its constructor-created Path identity and rejects a pre-operation redirect to another valid private database; V1 schema and method signatures are unchanged.
+8. **Reconciled the foundation gap matrix** at PR #8 work-basis HEAD `107b56849fec47e4d2e24576958b358c0aef697b`; documentation commit `703ef0f3d2488a1967ee4696eb0db0dea1ff2447` is now the current work-basis. The live correction records that the mock-only executor module/tests and cross-process Memory WAL CAS test are already present in PR #8; older PRs #14 and #17 are not pending integrations. PR #13 Action Audit outcome bounds and PR #15 Planner-to-Registry preflight remain isolated exact-head-GREEN candidates.
+
+## Tests / CI / evidence — exact heads only
+
+- **PR #8** work-basis `703ef0f3d2488a1967ee4696eb0db0dea1ff2447`: run [45153042729](https://github.com/Iam-2squared/ark-ai/actions/runs/45153042729) QUEUED. The earlier run on pre-correction HEAD `107b568...` does not certify this documentation-updated head.
+- **PR #18** `780af1ab58a90ab69c749fd8130ea33f53fa4e84`: run [45152509063](https://github.com/Iam-2squared/ark-ai/actions/runs/45152509063) QUEUED after PR #19 integration. Prior PR #18 run [44538278870](https://github.com/Iam-2squared/ark-ai/actions/runs/44538278870) applies only to its older pre-path-fence head.
+- **PR #357** `48d069fe089285f704867f9e67dfb41480541824`: run [45150662044](https://github.com/Iam-2squared/ark-ai/actions/runs/45150662044) IN PROGRESS.
+- **PR #358** `1b80168de66770021f3640cd8c80fefbf4b30f09`: run [45150850994](https://github.com/Iam-2squared/ark-ai/actions/runs/45150850994) IN PROGRESS.
+- **PR #359** `520ada9c4e8240fd5ab909b06dccaed78c895da0`: run [45150853763](https://github.com/Iam-2squared/ark-ai/actions/runs/45150853763) IN PROGRESS.
+- **PR #360** `f12324a625806cd2dccf66a8f1db2988e2c763f3`: run [45152318333](https://github.com/Iam-2squared/ark-ai/actions/runs/45152318333) IN PROGRESS after the Ruff-only correction.
+- **PR #5** `e7aed3f409ad6147260e6eb0bad2924eed5cf160`: run [45150395382](https://github.com/Iam-2squared/ark-ai/actions/runs/45150395382) FAILED on the base-branch Ruff I001 finding described above.
+- **PR #13** exact head `b940525c43d3e3a858352c8702dc4202598597e3`: run [44518002802](https://github.com/Iam-2squared/ark-ai/actions/runs/44518002802) GREEN, 6/6; remains isolated. It preserves the open outcome vocabulary while bounding new writes and persisted hydration to 256 code points/UTF-8 bytes and rejecting control/format characters; Action Audit v1 schema/public fields unchanged.
+- **PR #15** exact head `75680991e1f48d047d5f48aa51d4ceec99393eb8`: run [44530235330](https://github.com/Iam-2squared/ark-ai/actions/runs/44530235330) GREEN, 6/6; remains isolated. Planner-to-Registry preflight grants no permission or dispatch authority.
+- No local pytest/Ruff, physical-PC, real GGUF, fsync/power-loss durability, independent storage custody, trusted-clock, authenticated provenance/consent, physical-erasure, cross-store atomicity, real backend dispatch, or exactly-once external-effect result is claimed.
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher evidence, Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1, frozen PermissionGate/ToolCall contracts, and all frozen evaluation boundaries remain unchanged.
+- PR #5 remains gated Draft/unmerged; protected V2 final evaluation remains closed. No Candidate adapter/weights/training/promotion.
+- PR #8 remains Draft/unmerged. PR #9 remains untouched; no UI/frontend work.
+- No main merge, paid/external GPU compute, paid API/service, subscription, purchase, credential, new account connection, physical-PC action, destructive data operation, or external ToolBackend dispatch.
+- No contamination, provenance, privacy, regression, or reproducibility gate was weakened.
+
+## Blockers / authorization boundaries
+
+- PR #8 current exact-head CI [45153042729](https://github.com/Iam-2squared/ark-ai/actions/runs/45153042729) is QUEUED. Do not integrate another child until it is GREEN.
+- PRs #357–#359 were created against parent HEAD `107b568...`; PR #8 has since advanced to `703ef0f...`. Their mergeability must be rechecked and the children rebased onto the current parent before any integration. PR #360 also needs a fresh mergeability check.
+- PR #18 is a child of PR #8 and now contains PR #19's path fence, but its new exact-head CI is QUEUED and its base is older. Rebase/reconcile it against current PR #8 before integration; require GREEN child CI and fresh parent CI.
+- PRs #13 and #15 are exact-head GREEN but based on older PR #8 commits; re-read each head and mergeability before integration, then require fresh parent CI after each one-at-a-time integration.
+- PR #5 CI remains blocked by a Ruff finding in the current main base. The existing Draft PR #276 has a failed observed run; resolving this requires a valid main-branch fix and explicit approval before any main merge. Keep protected V2 evaluation closed.
+- No payment, credentials/new account connection, physical hardware, destructive action, frozen-contract change, Candidate promotion, protected evaluation opening, or main merge is authorized.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head runs [45153042729](https://github.com/Iam-2squared/ark-ai/actions/runs/45153042729), [45152509063](https://github.com/Iam-2squared/ark-ai/actions/runs/45152509063), [45150662044](https://github.com/Iam-2squared/ark-ai/actions/runs/45150662044), [45150850994](https://github.com/Iam-2squared/ark-ai/actions/runs/45150850994), [45150853763](https://github.com/Iam-2squared/ark-ai/actions/runs/45150853763), and [45152318333](https://github.com/Iam-2squared/ark-ai/actions/runs/45152318333). Inspect actual failures; apply only the smallest semantics-preserving repair and do not launch duplicate equivalent workflows.
+2. After current PR #8 exact-head CI is GREEN, integrate the Planner journal (PR #18 with PR #19 path fence) only after its fresh exact-head CI is GREEN and its branch is reconciled to the current parent. Then consider PR #13 Action Audit bounds and PR #15 Planner-to-Registry preflight, one at a time; require a new exact-head PR #8 CI result after each integration.
+3. Rebase PRs #357–#359 onto the latest PR #8 head, re-run exact-head CI, and integrate only after both child and current parent evidence are GREEN. Recheck PR #360 mergeability and exact-head CI before integration.
+4. Continue Memory row/event/CAS/expiry/WAL/path identity, Planner crash/terminal/COMMIT-UNKNOWN recovery, exact-type PermissionGate, restart-safe registry-bound one-shot authorization, trusted-clock audit-before-action, and disconnected/mock execution. Keep Personal Context/revocation, proactive scheduler, Observation fixture adapters, startup readiness, and free-only V3 guards moving in isolated reversible lanes.
+5. Keep PR #5 and #8 Draft/unmerged, protected V2 evaluation closed, main unchanged, and PR #9/UI paused.
+
+**ARK/JARVIS remains NOT_PASSED.**
+
+---
+
 # LATEST — ARK AI core progress, 2026-11-23 17:58:20 JST
 
 **Saved at:** 2026-11-23 17:58:20 JST (Asia/Tokyo).
