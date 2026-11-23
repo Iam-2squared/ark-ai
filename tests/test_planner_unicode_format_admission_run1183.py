@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-import ark.agency.planner as planner
-from ark.agency import PlanConflictError, PlanGraph, PlanStep, StepState, ToolCall
+from ark.agency import (
+    PlanConflictError, PlanGraph, PlanStep, StepState, ToolCall, planner,
+)
 
 
 def _steps() -> tuple[PlanStep, PlanStep]:
@@ -18,7 +19,7 @@ def _steps() -> tuple[PlanStep, PlanStep]:
     return root, leaf
 
 
-@pytest.mark.parametrize("control", ("\\u0600", "\\ufff9", "\\U000e0001"))
+@pytest.mark.parametrize("control", ("\u0600", "\ufff9", "\U000e0001"))
 @pytest.mark.parametrize("field", ("step_id", "dependency", "tool", "capability", "scope"))
 def test_plan_graph_rejects_every_unicode_format_control_in_identity_fields(
     control: str, field: str,
@@ -39,7 +40,7 @@ def test_plan_graph_rejects_every_unicode_format_control_in_identity_fields(
         PlanGraph((root, leaf))
 
 
-@pytest.mark.parametrize("control", ("\\u0600", "\\ufff9", "\\U000e0001"))
+@pytest.mark.parametrize("control", ("\u0600", "\ufff9", "\U000e0001"))
 def test_transition_rejects_unicode_format_control_before_status_mutation(
     control: str,
 ) -> None:
