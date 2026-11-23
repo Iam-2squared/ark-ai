@@ -7,7 +7,7 @@ import pytest
 from ark.memory import MemoryScope, generation_fenced_cas as generation
 
 
-@pytest.mark.parametrize("control", ("\\u0600", "\\ufff9", "\\U000e0001"))
+@pytest.mark.parametrize("control", ("\u0600", "\ufff9", "\U000e0001"))
 def test_generation_source_rejects_every_unicode_format_control(control: str) -> None:
     with pytest.raises(
         generation.MemoryGenerationCASRejected,
@@ -16,7 +16,7 @@ def test_generation_source_rejects_every_unicode_format_control(control: str) ->
         generation._require_bounded_source_id("private" + control + "source")
 
 
-@pytest.mark.parametrize("control", ("\\u0600", "\\ufff9", "\\U000e0001"))
+@pytest.mark.parametrize("control", ("\u0600", "\ufff9", "\U000e0001"))
 @pytest.mark.parametrize("field", ("owner_id", "namespace"))
 def test_generation_scope_rejects_every_unicode_format_control(
     control: str, field: str,
