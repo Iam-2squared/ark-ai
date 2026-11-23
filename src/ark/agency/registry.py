@@ -7,6 +7,7 @@ import hashlib
 import inspect
 import json
 import math
+import unicodedata
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -31,12 +32,23 @@ def _require_original_registry_limits() -> None:
         raise ValueError("registry admission limits changed")
 
 
+def _require_original_registry_unicode() -> None:
+    """Pin Unicode category semantics before inspecting registry identity text."""
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ValueError("registry Unicode category dependency changed")
+
+
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_INSPECT = inspect
 _ORIGINAL_GETATTR_STATIC = inspect.getattr_static
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 def _require_original_registry_digest() -> None:
@@ -46,6 +58,7 @@ def _require_original_registry_digest() -> None:
     authenticated backend attestation, or permission to dispatch a tool.
     """
     _require_original_registry_limits()
+    _require_original_registry_unicode()
     if (
         # Module rebinding may itself install executable __getattr__ code.
         # Compare the module identity before fetching a digest/JSON member.
@@ -60,6 +73,7 @@ def _require_original_registry_digest() -> None:
 
 def _text(name: str, value: object) -> str:
     _require_original_registry_limits()
+    _require_original_registry_unicode()
     if type(value) is not str:
         raise ValueError(f"{name} must be a non-empty exact string")
     # The constant-time codepoint cap must precede strip() and NUL search:
@@ -83,7 +97,8 @@ def _text(name: str, value: object) -> str:
     # Reject these controls only at the opt-in registry boundary,
     # preserving meaningful multilingual letters and frozen ToolCall v1.
     if any(
-        0x80 <= codepoint <= 0x9F
+        _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
+        or 0x80 <= codepoint <= 0x9F
         or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
         or 0x202A <= codepoint <= 0x202E
         or 0x2066 <= codepoint <= 0x2069
@@ -693,7 +708,8 @@ class ToolRegistry:
         # must not bind bidi controls or alternate line separators into a
         # visually misleading permission/audit scope identity.
         if any(
-            0x80 <= code <= 0x9f
+            _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
+            or 0x80 <= code <= 0x9f
             or code in (0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
             or 0x202a <= code <= 0x202e
             or 0x2066 <= code <= 0x2069
@@ -794,7 +810,8 @@ class ToolRegistry:
         # must not bind bidi controls or alternate line separators into a
         # visually misleading permission/audit scope identity.
         if any(
-            0x80 <= code <= 0x9f
+            _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
+            or 0x80 <= code <= 0x9f
             or code in (0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
             or 0x202a <= code <= 0x202e
             or 0x2066 <= code <= 0x2069
