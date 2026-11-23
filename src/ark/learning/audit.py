@@ -74,7 +74,10 @@ def deterministic_sample_ids(
     rows = _require_exact_items(items, "items")
     measured_fraction, minimum = _validate_sample_policy(fraction, minimum)
     identifiers = [_require_candidate_id(item) for item in rows]
-    unique = {candidate_id: item for candidate_id, item in zip(identifiers, rows, strict=True)}
+    unique = {
+        candidate_id: item
+        for candidate_id, item in zip(identifiers, rows, strict=True)
+    }
     count = min(
         len(unique),
         max(minimum, (len(unique) * int(measured_fraction * 100) + 99) // 100),
@@ -147,7 +150,7 @@ def build_human_review_queue(
     return {
         "policy": {
             "flagged_pair_review": "100_percent",
-            "non_flagged_fraction": fraction,
+            "non_flagged_fraction": measured_fraction,
             "non_flagged_minimum": minimum,
             "escalation": "any suspicious sampled item -> review 100% accepted examples",
         },
