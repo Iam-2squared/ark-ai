@@ -15,6 +15,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import unicodedata
 from contextlib import closing
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -43,6 +44,8 @@ _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 _ORIGINAL_EVENT_DOMAIN = _EVENT_DOMAIN
 _ORIGINAL_ROW_DOMAIN = _ROW_DOMAIN
 
@@ -66,6 +69,38 @@ def _require_original_generation_digest() -> None:
 
 class MemoryGenerationCASRejected(MemorySchemaError):
     """An opt-in lifetime-fenced update cannot safely be attempted."""
+
+
+def _require_original_generation_unicode() -> None:
+    """Pin the local Unicode classifier before private identity text is scanned."""
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise MemoryGenerationCASRejected("generation CAS Unicode policy changed")
+
+
+def _has_generation_identity_control(value: str) -> bool:
+    """Retain legacy explicit controls and reject every Unicode Cf character."""
+    _require_original_generation_unicode()
+    found = any(
+        _ORIGINAL_UNICODE_CATEGORY(character) == "Cf"
+        or ord(character) < 0x20
+        or 0x7F <= ord(character) <= 0x9F
+        or ord(character) in (
+            0x85, 0x61C, 0x200E, 0x200F, 0x2028, 0x2029,
+        )
+        or 0x202A <= ord(character) <= 0x202E
+        or 0x2066 <= ord(character) <= 0x2069
+        or ord(character) in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x206A <= ord(character) <= 0x206F
+        for character in value
+    )
+    _require_original_generation_unicode()
+    return found
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,7 +222,10 @@ def _require_bounded_source_id(source_id: object) -> None:
     generation-CAS path must not treat a multibyte identifier as a bounded
     512-byte identity or let unpaired surrogates escape as encoding errors.
     """
-    if type(source_id) is not str or not source_id.strip() or "\x00" in source_id:
+    if type(source_id) is not str:
+        raise MemoryGenerationCASRejected("exact nonblank generation source required")
+    _require_original_generation_unicode()
+    if not source_id.strip() or "\x00" in source_id:
         raise MemoryGenerationCASRejected("exact nonblank generation source required")
     # Preserve the original cheap character cap before any UTF-8 allocation.
     # A direct observation caller is not required to construct MemoryWrite.
@@ -198,16 +236,7 @@ def _require_bounded_source_id(source_id: object) -> None:
     # Generation-CAS identities can appear in audit/recovery diagnostics.
     # Reject ASCII separators, bidi formatting and Unicode line separators
     # at the opt-in boundary; frozen Memory v1 contracts remain unchanged.
-    if any(
-        code < 0x20 or 0x7f <= code <= 0x9f
-        or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
-        or 0x202a <= code <= 0x202e
-        or 0x2066 <= code <= 0x2069
-        or code in (0x00ad, 0x034f, 0x180e, 0x200b, 0x200c, 0x200d,
-                    0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xfeff)
-        or 0x206a <= code <= 0x206f
-        for code in map(ord, source_id)
-    ):
+    if _has_generation_identity_control(source_id):
         raise MemoryGenerationCASRejected(
             "generation source contains a formatting control"
         )
@@ -233,6 +262,7 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
     _require_original_generation_inputs()
     if type(scope) is not MemoryScope:
         raise MemoryGenerationCASRejected("exact generation scope required")
+    _require_original_generation_unicode()
     for name in ("owner_id", "namespace"):
         value = getattr(scope, name)
         if (
@@ -240,16 +270,7 @@ def _require_bounded_scope(scope: MemoryScope) -> None:
             or len(value) > 256
         ):
             raise MemoryGenerationCASRejected("exact bounded generation scope required")
-        if any(
-            code < 0x20 or 0x7f <= code <= 0x9f
-            or code in (0x85, 0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
-            or 0x202a <= code <= 0x202e
-            or 0x2066 <= code <= 0x2069
-            or code in (0x00ad, 0x034f, 0x180e, 0x200b, 0x200c, 0x200d,
-                        0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xfeff)
-            or 0x206a <= code <= 0x206f
-            for code in map(ord, value)
-        ):
+        if _has_generation_identity_control(value):
             raise MemoryGenerationCASRejected(
                 "generation scope contains a formatting control"
             )
