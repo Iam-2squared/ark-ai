@@ -5,7 +5,12 @@ from __future__ import annotations
 import pytest
 
 from ark.agency import (
-    PlanConflictError, PlanGraph, PlanStep, StepState, ToolCall, planner,
+    PlanConflictError,
+    PlanGraph,
+    PlanStep,
+    StepState,
+    ToolCall,
+    planner,
 )
 
 
