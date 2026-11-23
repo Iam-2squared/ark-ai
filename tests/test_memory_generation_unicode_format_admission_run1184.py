@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from ark.memory import MemoryScope, generation_fenced_cas as generation
+from ark.memory import MemoryScope
+from ark.memory import generation_fenced_cas as generation
 
 
 @pytest.mark.parametrize("control", ("\u0600", "\ufff9", "\U000e0001"))
