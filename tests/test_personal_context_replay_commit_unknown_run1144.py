@@ -15,7 +15,6 @@ from ark.personal_context_offline_preview import (
 from ark.personal_context_replay_ledger import (
     DisconnectedContextReplayLedger,
     OfflineContextReplayRejected,
-    genesis_offline_context_replay_witness,
 )
 from ark.personal_context_request_binding import bind_offline_context_request
 
