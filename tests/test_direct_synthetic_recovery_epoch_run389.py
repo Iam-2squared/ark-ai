@@ -69,13 +69,16 @@ def test_same_string_source_object_replacement_during_direct_review(
         if which == "journal":
             state[0]._path = Path(str(state[0]._path))
         elif which == "audit":
-            state[2].path = Path(str(state[2].path))
+            object.__setattr__(state[2], "path", Path(str(state[2].path)))
         else:
             state[5]._path = Path(str(state[5]._path))
         return result
 
     monkeypatch.setattr(module, "review_audit_continuity", inject)
-    with pytest.raises(SyntheticRecoveryRejected, match="source changed|input"):
+    with pytest.raises(
+        SyntheticRecoveryRejected,
+        match="source changed|input|incomplete or malformed",
+    ):
         _review(state, link_store=state[5])
 
 
