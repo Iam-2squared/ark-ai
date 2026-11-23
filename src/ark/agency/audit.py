@@ -418,19 +418,41 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
 
 
 class SQLiteActionAudit:
+    # Keep __dict__ for the existing callback fault-injection fixtures while
+    # making the source path a non-shadowable data-descriptor slot.
+    __slots__ = ("path", "_path_identity", "__dict__")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name in ("path", "_path_identity"):
+            raise AttributeError("action audit path identity is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        if name in ("path", "_path_identity"):
+            raise AttributeError("action audit path identity is immutable")
+        object.__delattr__(self, name)
+
     def __init__(self, path: str | Path, *, clock_ms: Callable[[], int] | None = None) -> None:
+        if type(self) is not SQLiteActionAudit:
+            raise ActionAuditSchemaError("exact SQLiteActionAudit type required")
         if type(path) not in (str, type(Path("."))):
             raise ActionAuditSchemaError("audit requires exact local path")
-        self.path = Path(path)
+        source = Path(path)
+        object.__setattr__(self, "path", source)
+        object.__setattr__(self, "_path_identity", source)
+        _require_audit_path_epoch(self, source)
         # The first-open parent/main/sidecar checks and WAL negotiation must
         # form one same-process bootstrap epoch. Otherwise a second constructor
         # can mistake transient journal creation for an orphaned audit sidecar.
         # This reentrant lock preserves _initialize()'s standalone guard,
         # without asserting cross-process or atomic filesystem path custody.
         with _AUDIT_BOOTSTRAP_LOCK:
-            _require_safe_audit_path(self.path, allow_new_parents=True)
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            _require_safe_audit_path(self.path, allow_new_parents=False)
+            _require_safe_audit_path(source, allow_new_parents=True)
+            _require_audit_path_epoch(self, source)
+            source.parent.mkdir(parents=True, exist_ok=True)
+            _require_audit_path_epoch(self, source)
+            _require_safe_audit_path(source, allow_new_parents=False)
+            _require_audit_path_epoch(self, source)
             self._clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
             self._initialize()
 
@@ -458,7 +480,7 @@ class SQLiteActionAudit:
             raise ActionAuditSchemaError("audit call identity is invalid") from exc
         original_arguments = call.arguments
         original_subject = (call.tool, call.capability, call.scope)
-        path_epoch = self.path
+        path_epoch = _require_audit_path_epoch(self)
 
         def assert_action_epoch(phase: str) -> None:
             _require_original_event_constructor(phase)
@@ -738,28 +760,42 @@ class SQLiteActionAudit:
             _validate_v1_schema(conn)
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
-        _require_safe_audit_path(self.path, allow_new_parents=False)
+        source = _require_audit_path_epoch(self)
+        _require_safe_audit_path(source, allow_new_parents=False)
+        _require_audit_path_epoch(self, source)
         # Explicit bootstrap may create a new SQLite file. Ordinary audit
         # appends MUST NOT recreate an empty replacement after a file moves.
         if create:
-            conn = sqlite3.connect(self.path)
+            conn = sqlite3.connect(source)
         else:
-            conn = sqlite3.connect(
-                self.path.resolve().as_uri() + "?mode=rw", uri=True
-            )
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA busy_timeout=5000")
-        return conn
+            conn = sqlite3.connect(source.resolve().as_uri() + "?mode=rw", uri=True)
+        try:
+            _require_audit_path_epoch(self, source)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA busy_timeout=5000")
+            _require_audit_path_epoch(self, source)
+            return conn
+        except Exception:
+            conn.close()
+            raise
 
     def _connect_readonly(self) -> sqlite3.Connection:
-        _require_safe_audit_path(self.path, allow_new_parents=False)
+        source = _require_audit_path_epoch(self)
+        _require_safe_audit_path(source, allow_new_parents=False)
+        _require_audit_path_epoch(self, source)
         try:
-            conn = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True)
+            conn = sqlite3.connect(source.resolve().as_uri() + "?mode=ro", uri=True)
         except sqlite3.DatabaseError as exc:
             raise ActionAuditSchemaError("action audit read-only file is unavailable") from exc
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA busy_timeout=5000")
-        return conn
+        try:
+            _require_audit_path_epoch(self, source)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA busy_timeout=5000")
+            _require_audit_path_epoch(self, source)
+            return conn
+        except Exception:
+            conn.close()
+            raise
 
     def _now(self) -> int:
         value = self._clock_ms()
@@ -768,3 +804,56 @@ class SQLiteActionAudit:
                 "clock_ms must return a non-negative integer within SQLite INTEGER range"
             )
         return value
+
+
+_AUDIT_TYPE = SQLiteActionAudit
+_AUDIT_SLOTS = vars(_AUDIT_TYPE)["__slots__"]
+_ORIGINAL_AUDIT_INIT = vars(_AUDIT_TYPE)["__init__"]
+_ORIGINAL_AUDIT_SETATTR = vars(_AUDIT_TYPE)["__setattr__"]
+_ORIGINAL_AUDIT_DELATTR = vars(_AUDIT_TYPE)["__delattr__"]
+_ORIGINAL_AUDIT_APPEND = vars(_AUDIT_TYPE)["append"]
+_ORIGINAL_AUDIT_EVENTS = vars(_AUDIT_TYPE)["events"]
+_ORIGINAL_AUDIT_CONNECT = vars(_AUDIT_TYPE)["_connect"]
+_ORIGINAL_AUDIT_CONNECT_READONLY = vars(_AUDIT_TYPE)["_connect_readonly"]
+_ORIGINAL_AUDIT_INITIALIZE = vars(_AUDIT_TYPE)["_initialize"]
+_ORIGINAL_AUDIT_NOW = vars(_AUDIT_TYPE)["_now"]
+
+
+def _require_audit_path_epoch(
+    audit: object, expected: Path | None = None,
+) -> Path:
+    _require_original_event_constructor()
+    if (
+        SQLiteActionAudit is not _AUDIT_TYPE
+        or type(audit) is not _AUDIT_TYPE
+        or vars(_AUDIT_TYPE).get("__slots__") is not _AUDIT_SLOTS
+        or vars(_AUDIT_TYPE).get("__init__") is not _ORIGINAL_AUDIT_INIT
+        or vars(_AUDIT_TYPE).get("__setattr__") is not _ORIGINAL_AUDIT_SETATTR
+        or vars(_AUDIT_TYPE).get("__delattr__") is not _ORIGINAL_AUDIT_DELATTR
+        or vars(_AUDIT_TYPE).get("append") is not _ORIGINAL_AUDIT_APPEND
+        or vars(_AUDIT_TYPE).get("events") is not _ORIGINAL_AUDIT_EVENTS
+        or vars(_AUDIT_TYPE).get("_connect") is not _ORIGINAL_AUDIT_CONNECT
+        or vars(_AUDIT_TYPE).get("_connect_readonly") is not _ORIGINAL_AUDIT_CONNECT_READONLY
+        or vars(_AUDIT_TYPE).get("_initialize") is not _ORIGINAL_AUDIT_INITIALIZE
+        or vars(_AUDIT_TYPE).get("_now") is not _ORIGINAL_AUDIT_NOW
+        or vars(_AUDIT_TYPE).get("__getattribute__") is not None
+        or vars(_AUDIT_TYPE).get("__getattr__") is not None
+    ):
+        raise ActionAuditSchemaError("action audit implementation changed")
+    try:
+        path = object.__getattribute__(audit, "path")
+        identity = object.__getattribute__(audit, "_path_identity")
+        namespace = object.__getattribute__(audit, "__dict__")
+    except (AttributeError, TypeError) as exc:
+        raise ActionAuditSchemaError("action audit path identity unavailable") from exc
+    if (
+        type(path) is not type(Path("."))
+        or path is not identity
+        or "path" in namespace
+        or "_path_identity" in namespace
+        or (expected is not None and path is not expected)
+    ):
+        raise ActionAuditSchemaError(
+            "action audit path changed; source changed identity"
+        )
+    return path
