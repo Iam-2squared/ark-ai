@@ -16,7 +16,7 @@ The local execution-snapshot loader compared path metadata with descriptor metad
 - Capture the import-original `os` module and `os.fstat` callable.
 - Pin the live module/function and captured alias before any snapshot path or descriptor inspection.
 - Use the captured `fstat` callable for both initial and final descriptor checks.
-- Add regressions for live function replacement, captured-alias replacement, and a reentrant `Path.open` callback that attempts replacement between admission and descriptor inspection.
+- Add regressions for OS-module binding replacement, captured-alias replacement, and a reentrant `Path.open` callback that attempts replacement between admission and descriptor inspection.
 
 ## Validation boundary
 
