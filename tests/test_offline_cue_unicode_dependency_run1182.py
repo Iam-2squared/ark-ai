@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from types import SimpleNamespace
 
 import pytest
 
@@ -51,7 +52,14 @@ def test_replaced_unicode_normalizer_is_denied_before_callback(
         called.append("normalize")
         raise AssertionError("unreviewed normalizer received transcript text")
 
-    monkeypatch.setattr(cues.unicodedata, "normalize", forbidden)
+    monkeypatch.setattr(
+        cues,
+        "unicodedata",
+        SimpleNamespace(
+            normalize=forbidden,
+            category=cues._ORIGINAL_UNICODE_CATEGORY,
+        ),
+    )
     with pytest.raises(
         cues.OfflineCueRejected,
         match="Unicode policy changed",
@@ -69,7 +77,14 @@ def test_replaced_unicode_category_is_denied_before_callback(
         called.append("category")
         raise AssertionError("unreviewed category function received transcript text")
 
-    monkeypatch.setattr(cues.unicodedata, "category", forbidden)
+    monkeypatch.setattr(
+        cues,
+        "unicodedata",
+        SimpleNamespace(
+            normalize=cues._ORIGINAL_NORMALIZE,
+            category=forbidden,
+        ),
+    )
     with pytest.raises(
         cues.OfflineCueRejected,
         match="Unicode policy changed",
