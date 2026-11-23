@@ -42,11 +42,11 @@ def _require_native_path(value: object, label: str) -> Path:
 
 def _require_original_reparse_point_policy(
     _original_os: Any = _ORIGINAL_OS,
-    _original_os_path: Any = _ORIGINAL_OS_PATH,
     _original_scandir: Any = _ORIGINAL_SCANDIR,
+    _original_os_name: str = _ORIGINAL_OS_NAME,
+    _original_os_path: Any = _ORIGINAL_OS_PATH,
     _original_fstat: Any = _ORIGINAL_FSTAT,
     _original_samestat: Any = _ORIGINAL_SAMESTAT,
-    _original_os_name: str = _ORIGINAL_OS_NAME,
 ) -> None:
     """Keep no-follow enumeration and platform policy import-original."""
     if (
