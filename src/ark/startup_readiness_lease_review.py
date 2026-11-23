@@ -7,6 +7,7 @@ grant real execution, notification or hardware access.
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 
 from .startup_readiness_review import (
@@ -22,6 +23,18 @@ _LIMIT = 512
 _ORIGINAL_MAX = _MAX
 _ORIGINAL_LIMIT = _LIMIT
 _ORIGINAL_SOURCE_GUARD = _assert_original_startup_constructors
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
+
+
+def _require_original_unicode_category() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise SyntheticStartupLeaseRejected(
+            "startup lease Unicode category classifier changed"
+        )
 
 
 class SyntheticStartupLeaseRejected(RuntimeError):
@@ -34,6 +47,7 @@ class SyntheticReadinessRequirement:
     schema_revision: str
 
     def assert_shape(self) -> None:
+        _require_original_unicode_category()
         for label, value in (
             ("component", self.component_id),
             ("schema", self.schema_revision),
@@ -67,7 +81,8 @@ class SyntheticReadinessRequirement:
                     f"invalid ASCII control {label} requirement"
                 )
             if any(
-                0x80 <= point <= 0x9F
+                _ORIGINAL_UNICODE_CATEGORY(chr(point)) == "Cf"
+                or 0x80 <= point <= 0x9F
                 or point in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
                 or 0x200B <= point <= 0x200D
                 or 0x202A <= point <= 0x202E
@@ -78,6 +93,7 @@ class SyntheticReadinessRequirement:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid Unicode formatting control {label} requirement"
                 )
+            _require_original_unicode_category()
             if byte_count > 256:
                 raise SyntheticStartupLeaseRejected(
                     f"invalid UTF-8 {label} requirement byte budget"
