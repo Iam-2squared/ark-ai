@@ -35,22 +35,39 @@ def test_directory_walk_rejects_reparse_entry_before_advancing(
     root = tmp_path / "snapshot"
     root.mkdir()
     junction = root / "redirect"
+    scanned = []
+
+    class _OneEntryScandir:
+        def __enter__(self):
+            return iter((entry,))
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+    def entry_stat(*, follow_symlinks):
+        assert follow_symlinks is False
+        return _reparse_directory_stat()
+
+    entry = SimpleNamespace(path=str(junction), stat=entry_stat)
+
+    def guarded_scandir(path):
+        current = Path(path)
+        scanned.append(current)
+        assert current == root, "enumeration advanced into a reparse directory"
+        return _OneEntryScandir()
+
     original_lstat = Path.lstat
 
     def lstat(path):
         if path == junction:
-            return _reparse_directory_stat()
+            raise AssertionError("path metadata was read before no-follow classification")
         return original_lstat(path)
 
-    def guarded_rglob(path, pattern):
-        assert path == root
-        yield junction
-        raise AssertionError("recursive walk advanced into a reparse point")
-
     monkeypatch.setattr(Path, "lstat", lstat)
-    monkeypatch.setattr(Path, "rglob", guarded_rglob)
-    with pytest.raises(ValueError, match="reparse-point"):
-        identity.directory_file_identities(root)
+    with pytest.raises(ValueError, match="symlink entry"):
+        identity._snapshot_entries(root, _scandir=guarded_scandir)
+
+    assert scanned == [root]
 
 
 def test_file_identity_rejects_reparse_ancestor_before_open(

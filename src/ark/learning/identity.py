@@ -11,6 +11,7 @@ import re
 import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .execution import canonical_json, sha256_bytes
 
@@ -18,10 +19,17 @@ _MAX_SNAPSHOT_ENTRIES = 16_384
 _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_OS = os
+_ORIGINAL_OS_PATH = os.path
+_ORIGINAL_OS_NAME = os.name
+_ORIGINAL_SCANDIR = os.scandir
+_ORIGINAL_FSTAT = os.fstat
+_ORIGINAL_SAMESTAT = os.path.samestat
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_S_ISREG = stat.S_ISREG
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_S_IFMT = stat.S_IFMT
 _NATIVE_PATH_TYPE = type(Path("."))
 
 
@@ -32,13 +40,34 @@ def _require_native_path(value: object, label: str) -> Path:
     return value
 
 
-def _require_original_reparse_point_policy() -> None:
-    """Keep stat classification and the Windows reparse bit import-original."""
+def _require_original_reparse_point_policy(
+    _original_os: Any = _ORIGINAL_OS,
+    _original_scandir: Any = _ORIGINAL_SCANDIR,
+    _original_os_name: str = _ORIGINAL_OS_NAME,
+    _original_os_path: Any = _ORIGINAL_OS_PATH,
+    _original_fstat: Any = _ORIGINAL_FSTAT,
+    _original_samestat: Any = _ORIGINAL_SAMESTAT,
+) -> None:
+    """Keep no-follow enumeration and platform policy import-original."""
     if (
-        stat is not _ORIGINAL_STAT
+        os is not _original_os
+        or _ORIGINAL_OS is not _original_os
+        or _ORIGINAL_OS_PATH is not _original_os_path
+        or _original_os.path is not _original_os_path
+        or _ORIGINAL_FSTAT is not _original_fstat
+        or _original_os.fstat is not _original_fstat
+        or _ORIGINAL_SAMESTAT is not _original_samestat
+        or _original_os_path.samestat is not _original_samestat
+        or _ORIGINAL_OS_NAME is not _original_os_name
+        or _original_os.name is not _original_os_name
+        or type(_ORIGINAL_OS_NAME) is not str
+        or _ORIGINAL_SCANDIR is not _original_scandir
+        or _original_os.scandir is not _original_scandir
+        or stat is not _ORIGINAL_STAT
         or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or _ORIGINAL_STAT.S_IFMT is not _ORIGINAL_S_IFMT
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
@@ -112,7 +141,11 @@ def _hash_file(path: Path) -> tuple[str, int]:
     h = hashlib.sha256()
     size = 0
     with path.open("rb") as handle:
-        opened = os.fstat(handle.fileno())
+        # Path.open is a callback boundary: recheck captured descriptor and
+        # same-file primitives before inspecting the returned handle.
+        _require_original_reparse_point_policy()
+        opened = _ORIGINAL_FSTAT(handle.fileno())
+        _require_original_reparse_point_policy()
         # Windows path-stat and descriptor-stat can describe the *same* file
         # with different ctime semantics (creation vs change time). Compare
         # the actual file ID and portable content metadata across sources;
@@ -122,7 +155,7 @@ def _hash_file(path: Path) -> tuple[str, int]:
             or opened.st_nlink != 1
             or before.st_ino == 0
             or opened.st_ino == 0
-            or not os.path.samestat(before, opened)
+            or not _ORIGINAL_SAMESTAT(before, opened)
             or before.st_size != opened.st_size
             or before.st_mtime_ns != opened.st_mtime_ns
             or (
@@ -135,7 +168,10 @@ def _hash_file(path: Path) -> tuple[str, int]:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             h.update(chunk)
             size += len(chunk)
-        if epoch(os.fstat(handle.fileno())) != epoch(opened):
+        _require_original_reparse_point_policy()
+        final_opened = _ORIGINAL_FSTAT(handle.fileno())
+        _require_original_reparse_point_policy()
+        if epoch(final_opened) != epoch(opened):
             raise ValueError("identity file changed during hashing")
     final = path.lstat()
     _require_original_reparse_point_policy()
@@ -226,6 +262,32 @@ def file_identity(path: Path, *, label: str | None = None) -> FileIdentity:
     return FileIdentity(safe_label, sha, size, False)
 
 
+def _entry_metadata_matches_path(
+    entry_epoch: tuple[int, ...],
+    path_epoch: tuple[int, ...],
+    *,
+    windows: bool,
+    is_dir: bool,
+) -> bool:
+    """Compare no-follow DirEntry and Path metadata using stable fields."""
+    _require_original_reparse_point_policy()
+    if type(windows) is not bool or type(is_dir) is not bool:
+        return False
+    if windows:
+        # Windows FindFirstFile/handle metadata can disagree on file IDs,
+        # ctime, link counts, permission bits, directory allocation size and
+        # directory mtime. Compare only the no-follow entry type for directories;
+        # the Path-derived directory epoch is captured and rechecked exactly
+        # before/after enumeration and after hashing. Regular files retain type,
+        # byte-size and mtime comparison across the two metadata APIs.
+        if _ORIGINAL_S_IFMT(entry_epoch[2]) != _ORIGINAL_S_IFMT(path_epoch[2]):
+            return False
+        if is_dir:
+            return True
+        return entry_epoch[3:5] == path_epoch[3:5]
+    return entry_epoch == path_epoch
+
+
 def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     """Retain directory/file identity, not only a reusable relative name."""
     _require_original_reparse_point_policy()
@@ -245,12 +307,17 @@ def _entry_epoch(path: Path, *, is_dir: bool) -> tuple[int, ...]:
     )
 
 
-def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...]], ...]:
-    """Bound local manifest to names AND file/directory metadata epochs.
+def _snapshot_entries(
+    root: Path,
+    *,
+    _scandir: Any = _ORIGINAL_SCANDIR,
+) -> tuple[tuple[str, Path, bool, tuple[int, ...]], ...]:
+    """Bound a local manifest without descending through symlink directories.
 
-    Root is included explicitly, so replacing a tree with a same-name copy
-    cannot pass merely because the directory listing looks identical. This
-    remains a best-effort local check, NOT a hostile-writer-safe snapshot.
+    Each directory entry is classified from a no-follow DirEntry.stat result
+    before it can enter the traversal stack. Repeated path epochs detect
+    ordinary replacement during enumeration, but are not atomic dirfd custody
+    and do not defend against a hostile concurrent filesystem writer.
     """
     _require_original_reparse_point_policy()
     root = _require_native_path(root, "snapshot root")
@@ -266,48 +333,103 @@ def _snapshot_entries(root: Path) -> tuple[tuple[str, Path, bool, tuple[int, ...
         or ".." in root.parts
     ):
         raise ValueError("snapshot root must be a non-aliased local directory")
-    entries = [("", root, True, _entry_epoch(root, is_dir=True))]
-    # Bound enumeration before sorting: sorted(rglob("*")) alone can consume
-    # unbounded memory on a malformed materialized model snapshot.
-    paths = []
+
+    root_epoch = _entry_epoch(root, is_dir=True)
+    entries = [("", root, True, root_epoch)]
+    paths: list[tuple[str, Path, bool, tuple[int, ...]]] = []
     path_bytes = 0
-    for path in root.rglob("*"):
-        # Check the yielded directory entry before asking rglob for another
-        # item, so a junction is rejected before recursive descent.
-        try:
-            entry_info = path.lstat()
-        except OSError as exc:
-            raise ValueError("snapshot entry disappeared during enumeration") from exc
-        if _is_reparse_point(entry_info):
-            raise ValueError("snapshot contains a symlink or reparse-point entry")
-        if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
-            raise ValueError("snapshot entry count exceeds local budget")
-        relative = path.relative_to(root).as_posix()
-        try:
-            encoded = relative.encode("utf-8", errors="strict")
-        except UnicodeError as exc:
-            raise ValueError("snapshot has an invalid UTF-8 path") from exc
-        if len(encoded) > _MAX_SNAPSHOT_PATH_BYTES:
-            raise ValueError("snapshot relative path exceeds local budget")
-        path_bytes += len(encoded)
-        if path_bytes > _MAX_SNAPSHOT_PATH_BYTES * _MAX_SNAPSHOT_ENTRIES:
-            raise ValueError("snapshot path inventory exceeds local budget")
-        paths.append(path)
-    for path in sorted(paths, key=lambda p: p.as_posix()):
-        info = path.lstat()
+    pending: list[tuple[Path, tuple[int, ...]]] = [(root, root_epoch)]
+
+    while pending:
+        directory, expected_directory_epoch = pending.pop()
+        directory_epoch = _entry_epoch(directory, is_dir=True)
+        if directory_epoch != expected_directory_epoch:
+            raise ValueError("snapshot directory changed before enumeration")
         _require_original_reparse_point_policy()
-        if _is_reparse_point(info):
-            raise ValueError("snapshot contains a symlink entry")
-        if _is_directory(info):
-            is_dir = True
-        elif _is_regular_file(info):
-            is_dir = False
-        else:
-            raise ValueError(f"unsupported snapshot entry: {path}")
-        entries.append((
-            path.relative_to(root).as_posix(), path, is_dir,
-            _entry_epoch(path, is_dir=is_dir),
-        ))
+        try:
+            with _scandir(directory) as children:
+                _require_original_reparse_point_policy()
+                for entry in children:
+                    if len(paths) >= _MAX_SNAPSHOT_ENTRIES:
+                        raise ValueError("snapshot entry count exceeds local budget")
+                    path = Path(entry.path)
+                    relative = path.relative_to(root).as_posix()
+                    try:
+                        encoded = relative.encode("utf-8", errors="strict")
+                    except UnicodeError as exc:
+                        raise ValueError("snapshot has an invalid UTF-8 path") from exc
+                    if len(encoded) > _MAX_SNAPSHOT_PATH_BYTES:
+                        raise ValueError("snapshot relative path exceeds local budget")
+                    path_bytes += len(encoded)
+                    if path_bytes > _MAX_SNAPSHOT_PATH_BYTES * _MAX_SNAPSHOT_ENTRIES:
+                        raise ValueError("snapshot path inventory exceeds local budget")
+
+                    try:
+                        # Never recurse through an entry before its no-follow
+                        # metadata has been classified and matched to its path.
+                        info = entry.stat(follow_symlinks=False)
+                        _require_original_reparse_point_policy()
+                        if _is_reparse_point(info):
+                            raise ValueError("snapshot contains a symlink entry")
+                        path_info = path.lstat()
+                        _require_original_reparse_point_policy()
+                        if _is_reparse_point(path_info):
+                            raise ValueError("snapshot contains a symlink entry")
+                    except OSError as exc:
+                        raise ValueError(
+                            "snapshot entry disappeared during enumeration"
+                        ) from exc
+
+                    if _is_directory(info):
+                        is_dir = True
+                    elif _is_regular_file(info):
+                        is_dir = False
+                    else:
+                        raise ValueError(f"unsupported snapshot entry: {path}")
+
+                    info_epoch = (
+                        info.st_dev, info.st_ino, info.st_mode, info.st_size,
+                        info.st_mtime_ns, info.st_ctime_ns, info.st_nlink,
+                    )
+                    path_epoch = (
+                        path_info.st_dev, path_info.st_ino, path_info.st_mode,
+                        path_info.st_size, path_info.st_mtime_ns,
+                        path_info.st_ctime_ns, path_info.st_nlink,
+                    )
+                    # DirEntry and Path metadata have platform-specific
+                    # file-ID/ctime differences; compare the portable fields on
+                    # Windows while retaining the complete POSIX epoch check.
+                    if not _entry_metadata_matches_path(
+                        info_epoch, path_epoch,
+                        windows=_ORIGINAL_OS_NAME == "nt", is_dir=is_dir,
+                    ):
+                        type_matches = (
+                            _ORIGINAL_S_IFMT(info_epoch[2])
+                            == _ORIGINAL_S_IFMT(path_epoch[2])
+                        )
+                        raise ValueError(
+                            "snapshot entries changed during enumeration "
+                            f"(is_dir={is_dir}, file_type_match={type_matches}, "
+                            f"mtime_delta_ns={info_epoch[4] - path_epoch[4]}, "
+                            f"size_delta={info_epoch[3] - path_epoch[3]})"
+                        )
+
+                    observed_epoch = _entry_epoch(path, is_dir=is_dir)
+                    if observed_epoch != path_epoch:
+                        raise ValueError("snapshot entries changed during enumeration")
+                    paths.append((relative, path, is_dir, observed_epoch))
+                    if is_dir:
+                        pending.append((path, observed_epoch))
+        except OSError as exc:
+            raise ValueError(
+                "snapshot directory became unavailable during enumeration"
+            ) from exc
+
+        if _entry_epoch(directory, is_dir=True) != directory_epoch:
+            raise ValueError("snapshot directory changed during enumeration")
+
+    paths.sort(key=lambda item: item[0])
+    entries.extend(paths)
     return tuple(entries)
 
 
