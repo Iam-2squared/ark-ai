@@ -76,7 +76,6 @@ def _require_original_transition_policy() -> None:
         raise PlanConflictError("plan transition policy changed")
 
 
-
 # Graph identity admission rejects the complete Unicode General Category Cf,
 # not only a hand-maintained subset of currently known format controls. Pin the
 # import-original module and classifier before inspecting any caller label.
@@ -137,19 +136,18 @@ def _admit_graph_label(value: object) -> None:
         _ORIGINAL_UNICODE_CATEGORY(character) == "Cf"
         or 0x80 <= ord(character) <= 0x9F
         or ord(character) in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
-        or 0x202A <= codepoint <= 0x202E
-        or 0x2066 <= codepoint <= 0x2069
+        or 0x202A <= ord(character) <= 0x202E
+        or 0x2066 <= ord(character) <= 0x2069
         # Identifiers in plans, tool bindings and dependency edges must
         # remain visually distinguishable in local recovery/audit records.
         # These default-ignorable scalars do not change the frozen
         # ToolCall/PlanStep contracts; this is optional PlanGraph admission.
-        or codepoint in (
+        or ord(character) in (
             0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
             0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
         )
-        or 0x206A <= codepoint <= 0x206F
-        for codepoint in map(ord, value)
-        for character in (chr(codepoint),)
+        or 0x206A <= ord(character) <= 0x206F
+        for character in value
     ):
         raise PlanConflictError("plan graph identifier contains Unicode formatting control")
     _require_original_unicode_policy()
