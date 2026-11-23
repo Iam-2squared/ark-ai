@@ -10,6 +10,25 @@ from ark import startup_readiness_review as readiness
 _FORMAT_CONTROLS = ("\u0600", "\ufff9", "\U000e0001")
 
 
+def _component_with_control(field: str, control: str) -> None:
+    if field == "component_id":
+        readiness.StartupComponent("component" + control)
+    elif field == "dependency":
+        readiness.StartupComponent(
+            "child", dependencies=("parent" + control,),
+        )
+    elif field == "failure_code":
+        readiness.StartupComponent(
+            "component",
+            local_state=readiness.ReadinessState.BLOCKED,
+            failure_code="failure" + control,
+        )
+    else:
+        readiness.StartupComponent(
+            "component", schema_revision="schema" + control,
+        )
+
+
 @pytest.mark.parametrize("control", _FORMAT_CONTROLS)
 @pytest.mark.parametrize(
     "field", ("component_id", "dependency", "failure_code", "schema_revision"),
@@ -17,25 +36,8 @@ _FORMAT_CONTROLS = ("\u0600", "\ufff9", "\U000e0001")
 def test_startup_component_rejects_every_unicode_cf(
     control: str, field: str,
 ) -> None:
-    if field == "component_id":
-        build = lambda: readiness.StartupComponent("component" + control)
-    elif field == "dependency":
-        build = lambda: readiness.StartupComponent(
-            "child", dependencies=("parent" + control,),
-        )
-    elif field == "failure_code":
-        build = lambda: readiness.StartupComponent(
-            "component",
-            local_state=readiness.ReadinessState.BLOCKED,
-            failure_code="failure" + control,
-        )
-    else:
-        build = lambda: readiness.StartupComponent(
-            "component", schema_revision="schema" + control,
-        )
-
     with pytest.raises(ValueError, match="Unicode formatting control"):
-        build()
+        _component_with_control(field, control)
 
 
 @pytest.mark.parametrize("control", _FORMAT_CONTROLS)
