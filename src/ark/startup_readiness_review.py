@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
@@ -30,6 +31,8 @@ _MAX_DEPENDENCY_EDGES = 65_536
 _ORIGINAL_READINESS_BUDGETS = (
     _MAX_COMPONENTS, _MAX_DEPENDENCIES_PER_COMPONENT, _MAX_DEPENDENCY_EDGES,
 )
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 def _require_original_readiness_budgets() -> None:
@@ -46,12 +49,21 @@ def _require_original_readiness_budgets() -> None:
 _ORIGINAL_READINESS_BUDGET_CHECK = _require_original_readiness_budgets
 
 
+def _require_original_unicode_category() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ValueError("readiness Unicode category classifier changed")
+
+
 def _identifier(value: object, label: str) -> str:
     """Enforce a strict UTF-8 byte budget for disconnected probe identities.
 
     The cheap character cap precedes encoding to bound allocations. This
     stricter foundation input rule does not modify any frozen V1/V2 schema.
     """
+    _require_original_unicode_category()
     if type(value) is not str or len(value) > 256 or not value.strip():
         raise ValueError(f"{label} must be nonempty bounded exact text")
     # A NUL separator is not a valid cross-component identity. Reject it
@@ -68,7 +80,8 @@ def _identifier(value: object, label: str) -> str:
     # visually indistinguishable or terminal-reinterpreted component names;
     # this stricter opt-in probe rule does not change frozen runtime contracts.
     if any(
-        0x80 <= point <= 0x9F
+        _ORIGINAL_UNICODE_CATEGORY(chr(point)) == "Cf"
+        or 0x80 <= point <= 0x9F
         or point in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
         or 0x200B <= point <= 0x200D
         or 0x202A <= point <= 0x202E
@@ -77,6 +90,7 @@ def _identifier(value: object, label: str) -> str:
         for point in map(ord, value)
     ):
         raise ValueError(f"{label} contains Unicode formatting control")
+    _require_original_unicode_category()
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
