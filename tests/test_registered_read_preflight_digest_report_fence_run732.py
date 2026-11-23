@@ -138,7 +138,7 @@ def test_registry_callback_cannot_rebind_digest_before_grant_fingerprint(
         hits.append("executed")
         raise AssertionError("unexpected private digest")
 
-    def delayed(call):
+    def delayed(self, call):
         bound = original(call)
         if mutation == "sha256":
             monkeypatch.setattr(preflight.hashlib, "sha256", hostile)
@@ -148,7 +148,7 @@ def test_registry_callback_cannot_rebind_digest_before_grant_fingerprint(
             monkeypatch.setattr(preflight, "_DOMAIN", b"altered")
         return bound
 
-    monkeypatch.setattr(registry, "bind", delayed)
+    monkeypatch.setattr(ToolRegistry, "bind", delayed)
     with pytest.raises(
         preflight.DisconnectedReadPreflightRejected,
         match="digest dependencies changed",
