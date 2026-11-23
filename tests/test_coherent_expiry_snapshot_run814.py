@@ -145,7 +145,7 @@ def test_invalid_scope_or_clock_refused_before_private_rows(tmp_path, bad):
         class FakeStore(SQLiteMemoryStore):
             pass
 
-        args["store"] = FakeStore(store.path, clock_ms=lambda: 1000)
+        args["store"] = object.__new__(FakeStore)
     with pytest.raises(coherent.CoherentExpirySnapshotRejected):
         coherent.review_coherent_expiry_snapshot(**args)
 
