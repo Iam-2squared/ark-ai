@@ -72,12 +72,12 @@ def test_registry_bind_callback_cannot_invoke_new_class_fake_gate(monkeypatch):
     original_bind = registry.bind
     hits = []
 
-    def substituted_bind(call):
+    def substituted_bind(self, call):
         bound = original_bind(call)
         _install_spy(monkeypatch, gate, hits)
         return bound
 
-    monkeypatch.setattr(registry, "bind", substituted_bind)
+    monkeypatch.setattr(ToolRegistry, "bind", substituted_bind)
     with pytest.raises(
         DisconnectedReadPreflightRejected,
         match="registered READ gate implementation changed",
@@ -115,14 +115,14 @@ def test_registry_callback_cannot_shadow_instance_gate_method():
     _plan, registry, gate, _grants, backend = items
     original_bind = registry.bind
 
-    def substituted_bind(call):
+    def substituted_bind(self, call):
         with pytest.raises(AttributeError, match="immutable"):
             gate.authorize_registered = lambda *_args, **_kwargs: None
         return original_bind(call)
 
     monkeypatch = pytest.MonkeyPatch()
     try:
-        monkeypatch.setattr(registry, "bind", substituted_bind)
+        monkeypatch.setattr(ToolRegistry, "bind", substituted_bind)
         with pytest.raises(
             DisconnectedReadPreflightRejected,
             match="READ grant preflight denied",
