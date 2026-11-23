@@ -73,14 +73,14 @@ def test_registry_callback_cannot_install_class_policy_forgery_mid_review(
     registry, gate, call, _grants, backend = items
     original_bind = registry.bind
 
-    def changed_bind(current):
+    def changed_bind(self, current):
         monkeypatch.setattr(
             PermissionGate, "authorize_registered",
             lambda self, reg, c, grants, *, now_ms: reg.bind(c),
         )
         return original_bind(current)
 
-    monkeypatch.setattr(registry, "bind", changed_bind)
+    monkeypatch.setattr(ToolRegistry, "bind", changed_bind)
     with pytest.raises(
         DisconnectedReadPreflightRejected, match="policy implementation changed",
     ):
@@ -129,14 +129,14 @@ def test_registry_callback_cannot_shadow_instance_policy_method():
     registry, gate, _call, _grants, backend = items
     original_bind = registry.bind
 
-    def changed_bind(current):
+    def changed_bind(self, current):
         with pytest.raises(AttributeError, match="immutable"):
             gate.authorize_registered = lambda *_args, **_kwargs: original_bind(current)
         return original_bind(current)
 
     monkeypatch = pytest.MonkeyPatch()
     try:
-        monkeypatch.setattr(registry, "bind", changed_bind)
+        monkeypatch.setattr(ToolRegistry, "bind", changed_bind)
         with pytest.raises(
             DisconnectedReadPreflightRejected,
             match="registered READ preflight denied",
