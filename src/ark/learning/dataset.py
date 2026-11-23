@@ -30,9 +30,18 @@ def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
+def _reject_nonstandard_json_constant(value: str) -> None:
+    """Reject JavaScript-style NaN/Infinity tokens that are not JSON values."""
+    raise ValueError(f"non-standard JSON constant: {value}")
+
+
 def loads_unique_json(payload: str | bytes) -> object:
-    """Parse JSON without silently accepting duplicate object keys."""
-    return json.loads(payload, object_pairs_hook=_unique_json_object)
+    """Parse strict JSON without duplicate keys or non-standard constants."""
+    return json.loads(
+        payload,
+        object_pairs_hook=_unique_json_object,
+        parse_constant=_reject_nonstandard_json_constant,
+    )
 
 
 def digest(data: bytes) -> str:
