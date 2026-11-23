@@ -152,7 +152,9 @@ def build_human_review_queue(
             "flagged_pair_review": "100_percent",
             "non_flagged_fraction": measured_fraction,
             "non_flagged_minimum": minimum,
-            "escalation": "any suspicious sampled item -> review 100% accepted examples",
+            "escalation": (
+                "any suspicious sampled item -> review 100% accepted examples"
+            ),
         },
         "flagged_pairs": sorted(
             pairs,
