@@ -121,7 +121,7 @@ def _exact_text(name: str, value: object) -> None:
     _require_original_protocol()
     if type(value) is not str or not 1 <= len(value) <= 512 or value != value.strip():
         raise SyntheticProactiveStateRejected(f"{name} must be a bounded exact string")
-    if "\\x00" in value or any(
+    if "\x00" in value or any(
         ord(character) < 32 or ord(character) == 127 for character in value
     ):
         raise SyntheticProactiveStateRejected(f"{name} contains a control delimiter")
