@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import pytest
 
+import ark.agency.registry as registry_module
 from ark.agency.contracts import (
     CapabilityGrant,
     Effect,
@@ -19,9 +20,10 @@ from ark.agency.policy import PermissionGate
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
 _FORMAT_CONTROLS = (
-    "\u0085", "\u061c", "\u200e", "\u200f",
-    "\u2028", "\u2029", "\u202a", "\u202b", "\u202c",
-    "\u202d", "\u202e", "\u2066", "\u2067", "\u2068", "\u2069",
+    "\u0085", "\u0600", "\u061c", "\u070f", "\u0890", "\u08e2",
+    "\u200e", "\u200f", "\u2028", "\u2029", "\u202a", "\u202b",
+    "\u202c", "\u202d", "\u202e", "\u2066", "\u2067", "\u2068",
+    "\u2069", "\ufff9", "\ufffa", "\ufffb", "\U000e0001", "\U000e007f",
 )
 
 
@@ -92,6 +94,41 @@ def test_bad_scope_does_not_consume_unrelated_one_shot(control: str) -> None:
         gate.authorize_registered(
             registry, good, (grant,), now_ms=100, one_shot=token,
         )
+    assert backend.calls == 0
+
+
+def test_registry_unicode_category_dependency_substitution_fails_closed_before_registration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backend = NoDispatch()
+    monkeypatch.setattr(
+        registry_module.unicodedata, "category", lambda _character: "Cn",
+    )
+
+    with pytest.raises(ValueError, match="registry Unicode category dependency changed"):
+        ToolRegistration(
+            "fixture.read", "offline.read", Effect.READ, "mock", backend,
+        )
+    assert backend.calls == 0
+
+
+def test_scope_resolution_rejects_substituted_unicode_category_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backend = NoDispatch()
+    registry = ToolRegistry((
+        ToolRegistration("fixture.read", "offline.read", Effect.READ, "mock", backend),
+    ))
+    call = ToolCall("fixture.read", "offline.read", "private")
+
+    monkeypatch.setattr(
+        registry_module.unicodedata, "category", lambda _character: "Cn",
+    )
+
+    with pytest.raises(ValueError, match="registry Unicode category dependency changed"):
+        registry.resolve(call)
+    with pytest.raises(ValueError, match="registry Unicode category dependency changed"):
+        registry.bind(call)
     assert backend.calls == 0
 
 
