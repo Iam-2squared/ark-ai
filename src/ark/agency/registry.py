@@ -7,6 +7,7 @@ import hashlib
 import inspect
 import json
 import math
+import unicodedata
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -31,21 +32,33 @@ def _require_original_registry_limits() -> None:
         raise ValueError("registry admission limits changed")
 
 
+def _require_original_registry_unicode() -> None:
+    """Pin Unicode category semantics before inspecting registry identity text."""
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ValueError("registry Unicode category dependency changed")
+
+
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_JSON_DUMPS = json.dumps
 _ORIGINAL_INSPECT = inspect
 _ORIGINAL_GETATTR_STATIC = inspect.getattr_static
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 def _require_original_registry_digest() -> None:
-    """Refuse substituted digest/JSON code before reading registry identities.
+    """Refuse substituted digest/JSON/Unicode code before reading identities.
 
     These local in-process identity checks are not a security sandbox,
     authenticated backend attestation, or permission to dispatch a tool.
     """
     _require_original_registry_limits()
+    _require_original_registry_unicode()
     if (
         # Module rebinding may itself install executable __getattr__ code.
         # Compare the module identity before fetching a digest/JSON member.
@@ -60,6 +73,7 @@ def _require_original_registry_digest() -> None:
 
 def _text(name: str, value: object) -> str:
     _require_original_registry_limits()
+    _require_original_registry_unicode()
     if type(value) is not str:
         raise ValueError(f"{name} must be a non-empty exact string")
     # The constant-time codepoint cap must precede strip() and NUL search:
@@ -92,6 +106,7 @@ def _text(name: str, value: object) -> str:
             0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
         )
         or 0x206A <= codepoint <= 0x206F
+        or _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
         for codepoint in map(ord, value)
     ):
         raise ValueError(f"{name} contains a Unicode formatting control")
@@ -702,6 +717,7 @@ class ToolRegistry:
                 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
             )
             or 0x206A <= code <= 0x206F
+            or _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
             for code in map(ord, original[2])
         ):
             raise ValueError(
@@ -803,6 +819,7 @@ class ToolRegistry:
                 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
             )
             or 0x206A <= code <= 0x206F
+            or _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
             for code in map(ord, original[2])
         ):
             raise ValueError(
