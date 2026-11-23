@@ -22,10 +22,22 @@ _MAX_DURATION_SECONDS = 120
 _RATES = frozenset((8000, 16000, 22050, 32000, 44100, 48000))
 _LANGUAGES = frozenset(("ja", "en", "und"))
 _DOMAIN = b"ARK-detached-audio-transcript-binding-v1\0"
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_NORMALIZE = unicodedata.normalize
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 class TranscriptBindingRejected(ValueError):
     """Malformed or temporally inconsistent synthetic transcript claim."""
+
+
+def _assert_original_unicode_policy() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.normalize is not _ORIGINAL_NORMALIZE
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise TranscriptBindingRejected("transcript Unicode policy changed")
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,6 +151,7 @@ _ORIGINAL_PREVIEW_DENIALS = tuple(
 
 def _assert_preview_denials() -> None:
     """Reject forged input/output slots before reviewing private text."""
+    _assert_original_unicode_policy()
     _assert_original_binding_carriers()
     if (
         TranscriptBindingPreview is not _PREVIEW_TYPE
@@ -159,13 +172,19 @@ def _hash(value: object) -> bool:
 
 
 def _safe_text(value: object) -> bytes:
+    _assert_original_unicode_policy()
     if type(value) is not str or not value or value != value.strip():
         raise TranscriptBindingRejected("empty or untrimmed transcript")
-    if unicodedata.normalize("NFC", value) != value:
+    if _ORIGINAL_NORMALIZE("NFC", value) != value:
         raise TranscriptBindingRejected("transcript must already be canonical NFC")
+    _assert_original_unicode_policy()
     # Reject hidden format controls, bidi overrides, lone surrogates and C0/C1 controls.
-    if any(unicodedata.category(char) in ("Cc", "Cf", "Cs") for char in value):
+    if any(
+        _ORIGINAL_UNICODE_CATEGORY(char) in ("Cc", "Cf", "Cs")
+        for char in value
+    ):
         raise TranscriptBindingRejected("unsafe transcript control character")
+    _assert_original_unicode_policy()
     data = value.encode("utf-8")
     if len(data) > _MAX_SEGMENT_BYTES:
         raise TranscriptBindingRejected("transcript segment budget exceeded")
