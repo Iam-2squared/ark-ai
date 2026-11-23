@@ -32,6 +32,10 @@ _MAX_DB_PATH_BYTES = 4096
 _ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
 _ORIGINAL_OS = os
 _ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_SQLITE3 = sqlite3
+_ORIGINAL_SQLITE_CONNECT = sqlite3.connect
+_ORIGINAL_SQLITE_CONNECTION = sqlite3.Connection
+_ORIGINAL_SQLITE_INTEGRITY_ERROR = sqlite3.IntegrityError
 _DDL = (
     "CREATE TABLE context_requests ("
     "seq INTEGER PRIMARY KEY, request_id TEXT NOT NULL UNIQUE, "
@@ -66,6 +70,11 @@ def _require_original_replay_protocol() -> None:
     if (
         hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
+        or sqlite3 is not _ORIGINAL_SQLITE3
+        or _ORIGINAL_SQLITE3.connect is not _ORIGINAL_SQLITE_CONNECT
+        or _ORIGINAL_SQLITE3.Connection is not _ORIGINAL_SQLITE_CONNECTION
+        or _ORIGINAL_SQLITE3.IntegrityError is not _ORIGINAL_SQLITE_INTEGRITY_ERROR
+        or _connect_original is not _ORIGINAL_CONNECT_HELPER
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
         or re is not _ORIGINAL_RE
@@ -79,6 +88,21 @@ def _require_original_replay_protocol() -> None:
         raise OfflineContextReplayRejected(
             "context replay protocol authority changed"
         )
+
+
+def _connect_original(*args, **kwargs) -> sqlite3.Connection:
+    """Open only through the import-original SQLite factory and exact type."""
+    _require_original_replay_protocol()
+    connection = _ORIGINAL_SQLITE_CONNECT(*args, **kwargs)
+    _require_original_replay_protocol()
+    if type(connection) is not _ORIGINAL_SQLITE_CONNECTION:
+        raise OfflineContextReplayRejected(
+            "context ledger SQLite connection type changed"
+        )
+    return connection
+
+
+_ORIGINAL_CONNECT_HELPER = _connect_original
 
 
 @dataclass(frozen=True, slots=True)
@@ -386,7 +410,7 @@ def _schema(conn: sqlite3.Connection) -> None:
         raise OfflineContextReplayRejected(
             "context ledger schema drift: SQL preflight budget"
         )
-    with closing(sqlite3.connect(":memory:")) as expected:
+    with closing(_connect_original(":memory:")) as expected:
         expected.execute(_DDL)
         sql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         if tuple(conn.execute(sql)) != tuple(expected.execute(sql)):
@@ -482,7 +506,7 @@ class DisconnectedContextReplayLedger:
         # A RESERVED SQLite writer lock is reserved for explicit creation
         # and later CAS reservation, never merely for restart validation.
         mode = "rwc" if create else "ro"
-        with closing(sqlite3.connect(
+        with closing(_connect_original(
             self._path.as_uri() + "?mode=" + mode,
             uri=True, timeout=10, isolation_level=None,
         )) as conn:
@@ -510,7 +534,7 @@ class DisconnectedContextReplayLedger:
         _require_exact_replay_ledger(self)
         path = _check_path(self._path, create=False)
         mode = "ro" if read_only else "rw"
-        return sqlite3.connect(
+        return _connect_original(
             path.as_uri() + "?mode=" + mode, uri=True,
             timeout=10, isolation_level=None,
         )
@@ -665,7 +689,7 @@ class DisconnectedContextReplayLedger:
                     raise OfflineContextReplayRejected("context reservation integrity mismatch")
                 stable()
                 conn.commit()
-            except sqlite3.IntegrityError as exc:
+            except _ORIGINAL_SQLITE_INTEGRITY_ERROR as exc:
                 conn.rollback()
                 raise OfflineContextReplayRejected("duplicate context request identity") from exc
             except BaseException:
