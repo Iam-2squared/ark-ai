@@ -1,3 +1,80 @@
+# LATEST — 2026-11-23 09:08:23 JST
+
+**Saved at:** 2026-11-23 09:08:23 JST (Asia/Tokyo)
+
+**Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; remains Draft/unmerged).
+
+**Work-basis HEAD:** `fd0995ded5a0aa10c08a9fbf22b4a2129bb72be4` — exact PR #8 branch HEAD after the Run1129 Personal Context crash-regression package was integrated.
+
+**Checkpoint-result HEAD:** this documentation-only checkpoint commit on `research/jarvis-foundations`. Its exact SHA is the GitHub commit returned for this update. No source or test file is changed by this checkpoint. The commit message uses `[skip ci]` because the exact work-basis CI is already running; this avoids launching a duplicate equivalent workflow.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. This checkpoint does not declare a new V1/V2/V3 gate PASS, human review, trusted-clock result, hardware readiness, or real-world execution authority.
+- Draft PR #8 is the isolated JARVIS/core foundation branch. It now includes the Run1128 startup lease helper-custody package and Run1129 Personal Context native-COMMIT crash regression; the new exact-head PR #8 CI run is still in progress.
+- Draft PR #5 remains gated and unmerged. No protected/frozen V2 final evaluation was opened; no Candidate adapter/weight generation or promotion occurred.
+- Draft PR #9 remains untouched. All new UI/frontend work, UI integration, polish, and frontend tests remain paused.
+- Frozen V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **PR #314 → PR #8:** merged the startup-readiness lease reviewer helper-identity custody package into the isolated PR #8 branch. Exact child-head CI was GREEN before integration.
+2. **PR #315 → PR #8:** merged the Personal Context replay-ledger native-COMMIT/process-exit regression and evidence note. This is synthetic test/evidence only; production Personal Context source, schema, replay policy, and frozen contract were not changed.
+3. **PR #313 → PR #294:** merged V3 no-follow code-tree `os.scandir` import-original identity custody into the isolated V3 branch.
+4. **PR #319 → PR #294:** merged V3 no-follow metadata platform-policy identity custody; the mutable `os.name` discriminator is now captured and checked before selecting the platform-specific metadata policy.
+5. **PR #320 → PR #294:** merged V3 execution-snapshot `os.fstat` dependency identity custody, with the captured descriptor-stat callable used for initial and final checks.
+6. **PR #321 → PR #294:** merged V3 identity-artifact `os.fstat` / `os.path.samestat` dependency custody and policy rechecks around file-open callbacks.
+7. The PR #320/#321 test work initially exposed a test-design problem: patching process-global `os.fstat` intercepted standard-library/test-runner descriptor work. The failing tests were narrowed to isolated module-binding proxies and captured-alias substitution; production guards were not weakened. The repaired exact-head runs are GREEN.
+8. A requested audio fixture adapter was **not** added: frozen `ObservationKind` v1 currently has TEXT, TRANSCRIPT, IMAGE, and SCREEN only. Adding AUDIO would change a frozen contract and therefore requires explicit authorization. Existing observation fixture adapters remain unchanged.
+
+## Tests / CI / evidence
+
+All run IDs below are exact-head evidence for the named commit; no local pytest/Ruff run or human review is claimed.
+
+| Work / exact HEAD | CI evidence | Result |
+|---|---|---|
+| PR #314 child `7932c7d04cb0252c73f506621581ca02bdd99775` | [45079863530](https://github.com/Iam-2squared/ark-ai/actions/runs/45079863530) | GREEN, 6/6 |
+| PR #315 child `aefb4566aace2e8df2bd602b3c0343df15d3c201` | [45079940373](https://github.com/Iam-2squared/ark-ai/actions/runs/45079940373) | GREEN, 6/6 |
+| PR #8 parent before PR #315, `f0d4973aba541a8601e8c23ccb7ddbf457ce8e98` | [45085124049](https://github.com/Iam-2squared/ark-ai/actions/runs/45085124049) | GREEN, 6/6 |
+| PR #8 current work-basis HEAD `fd0995ded5a0aa10c08a9fbf22b4a2129bb72be4` | [45086838689](https://github.com/Iam-2squared/ark-ai/actions/runs/45086838689) | IN PROGRESS at checkpoint |
+| PR #313 child `6566faf0a63f51e472e3132168f19fc7029fa9a4` | [45077039105](https://github.com/Iam-2squared/ark-ai/actions/runs/45077039105) | GREEN, 6/6 |
+| PR #319 child `cd2f1b1995030da6b445722fddf684dfff22da29` | [45085427067](https://github.com/Iam-2squared/ark-ai/actions/runs/45085427067) | GREEN, 6/6 |
+| PR #320 repaired child `71a1dca9c1f3b88de0a203f4eff5740d67850de9` | [45086448353](https://github.com/Iam-2squared/ark-ai/actions/runs/45086448353) | GREEN, 6/6 |
+| PR #321 repaired child `f11deee51c43d647f96494e1788c1dee586127ef` | [45086473919](https://github.com/Iam-2squared/ark-ai/actions/runs/45086473919) | GREEN, 6/6 |
+| PR #294 parent before PR #321, `8a51e56508a721f6927ed30f051f0487a8158a67` | [45086622840](https://github.com/Iam-2squared/ark-ai/actions/runs/45086622840) | GREEN, 6/6 |
+| PR #294 current HEAD `33732054ccce31b9cd87999895b9d7f6d5ab87de` | [45086889580](https://github.com/Iam-2squared/ark-ai/actions/runs/45086889580) | IN PROGRESS at checkpoint |
+| Existing PR #316 child `0754e2ca4a828c622b1bb9f3157bddae66c6ed49` | [45080044189](https://github.com/Iam-2squared/ark-ai/actions/runs/45080044189) | GREEN, 6/6; still Draft/unmerged |
+| Existing PR #317 child `df35a1b5590e0e295226e287c819ec394705af6a` | [45080283846](https://github.com/Iam-2squared/ark-ai/actions/runs/45080283846) | GREEN, 6/6; still Draft/unmerged |
+| Existing PR #318 child `0e0bdf2768e656e2d5f54bcb5685aefbc3f015c4` | [45080526939](https://github.com/Iam-2squared/ark-ai/actions/runs/45080526939) | GREEN, 6/6; still Draft/unmerged |
+
+Initial failed V3 child runs [45085629026](https://github.com/Iam-2squared/ark-ai/actions/runs/45085629026), [45086064540](https://github.com/Iam-2squared/ark-ai/actions/runs/45086064540), and [45085858339](https://github.com/Iam-2squared/ark-ai/actions/runs/45085858339) are preserved as FAIL history. Their test fixtures were corrected to avoid patching process-global `os.fstat`; repaired exact-head runs are listed above. No production safety gate was weakened.
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher frozen evidence unchanged.
+- Observation Envelope v1 unchanged; no AUDIO enum or schema addition.
+- PR #5 remains Draft/unmerged; no protected evaluation opening, real Candidate adapter, weight generation, or Candidate promotion.
+- PR #9 remains Draft/unmerged and untouched; UI/frontend work remains paused.
+- No paid/external GPU, paid API/service, subscription, purchase, credential, new account connection, physical-PC action, trusted-clock assertion, destructive operation, or main merge was performed.
+- **Main-branch correction:** one docs-only Run1133 note was accidentally created on `main` at `eefacd3f832062e069b4f04cc7f0495002660b86` because the branch argument was omitted. It was immediately removed through the normal GitHub delete-file path at `59a033af4ec2a5cdc229de79294202c3365670e6`. Comparing starting main `6e40afb74666b7dfda6560dd5ca619664d7129b7` to current main `59a033af4ec2a5cdc229de79294202c3365670e6` shows **2 commits, 0 changed files** (net tree unchanged). No force-push or history rewrite was used. This was an execution error and must not recur.
+
+## Blockers / authorization boundaries
+
+- Audio observations require changing frozen Observation Envelope v1; do not proceed without explicit authorization.
+- Real Candidate generation, training/weight creation, protected V2 final evaluation, automatic promotion, paid/external compute, new credentials/connections, hardware action, frozen-contract changes, and main merge remain blocked by their existing gates.
+- No trusted-clock source is established; caller/local timestamps remain diagnostic only.
+- UI/frontend development remains paused.
+
+## Next plan / 今後の方針
+
+1. Let exact-head PR #8 run `45086838689` and PR #294 run `45086889580` complete without duplicate polling. If GREEN, update this checkpoint from the latest HEAD and integrate the next independent child.
+2. On PR #8, reconcile the existing green Draft PRs #316 (Planner/Memory/proactive), #317 (ToolRegistry/PermissionGate), and #318 (ActionAudit path identity) against the latest parent branch before integration. Integrate one at a time; after each merge, start CI and switch to a non-conflicting lane until exact-head evidence is GREEN.
+3. On PR #294, continue free-only V3 approval/path/identity/reproducibility hardening only after the current exact-head CI is GREEN. Keep PR #5 Draft/unmerged and do not open protected evaluation.
+4. Continue Memory privacy/revocation, Planner persistence/recovery, durable authorization/audit-before-action, disconnected/mock execution, Personal Context, proactive scheduler, and observation backend fixture work without changing frozen contracts.
+5. Keep PR #9 untouched and do no UI/frontend work. Do not merge PR #8 or PR #5 to `main` without the applicable explicit approval/gate.
+
+---
+
 # LATEST — ARK Run1128–1131 maximum-utilization non-UI core progress
 
 **Saved at (Asia/Tokyo/JST): 2026-11-23T07:58:22+09:00.** Reporting/checkpoint time only; never a trusted clock, consent, authorization, retention, scheduler, action, custody or provenance source. **Overall ARK/JARVIS: NOT_PASSED.**
