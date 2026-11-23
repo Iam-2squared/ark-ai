@@ -20,8 +20,11 @@ _MAX_SNAPSHOT_PATH_BYTES = 4_096
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _ORIGINAL_OS = os
+_ORIGINAL_OS_PATH = os.path
 _ORIGINAL_OS_NAME = os.name
 _ORIGINAL_SCANDIR = os.scandir
+_ORIGINAL_FSTAT = os.fstat
+_ORIGINAL_SAMESTAT = os.path.samestat
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_S_ISREG = stat.S_ISREG
@@ -41,11 +44,20 @@ def _require_original_reparse_point_policy(
     _original_os: Any = _ORIGINAL_OS,
     _original_scandir: Any = _ORIGINAL_SCANDIR,
     _original_os_name: str = _ORIGINAL_OS_NAME,
+    _original_os_path: Any = _ORIGINAL_OS_PATH,
+    _original_fstat: Any = _ORIGINAL_FSTAT,
+    _original_samestat: Any = _ORIGINAL_SAMESTAT,
 ) -> None:
     """Keep no-follow enumeration and platform policy import-original."""
     if (
         os is not _original_os
         or _ORIGINAL_OS is not _original_os
+        or _ORIGINAL_OS_PATH is not _original_os_path
+        or _original_os.path is not _original_os_path
+        or _ORIGINAL_FSTAT is not _original_fstat
+        or _original_os.fstat is not _original_fstat
+        or _ORIGINAL_SAMESTAT is not _original_samestat
+        or _original_os_path.samestat is not _original_samestat
         or _ORIGINAL_OS_NAME is not _original_os_name
         or _original_os.name is not _original_os_name
         or type(_ORIGINAL_OS_NAME) is not str
@@ -129,7 +141,11 @@ def _hash_file(path: Path) -> tuple[str, int]:
     h = hashlib.sha256()
     size = 0
     with path.open("rb") as handle:
-        opened = os.fstat(handle.fileno())
+        # Path.open is a callback boundary: recheck captured descriptor and
+        # same-file primitives before inspecting the returned handle.
+        _require_original_reparse_point_policy()
+        opened = _ORIGINAL_FSTAT(handle.fileno())
+        _require_original_reparse_point_policy()
         # Windows path-stat and descriptor-stat can describe the *same* file
         # with different ctime semantics (creation vs change time). Compare
         # the actual file ID and portable content metadata across sources;
@@ -139,7 +155,7 @@ def _hash_file(path: Path) -> tuple[str, int]:
             or opened.st_nlink != 1
             or before.st_ino == 0
             or opened.st_ino == 0
-            or not os.path.samestat(before, opened)
+            or not _ORIGINAL_SAMESTAT(before, opened)
             or before.st_size != opened.st_size
             or before.st_mtime_ns != opened.st_mtime_ns
             or (
@@ -152,7 +168,10 @@ def _hash_file(path: Path) -> tuple[str, int]:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             h.update(chunk)
             size += len(chunk)
-        if epoch(os.fstat(handle.fileno())) != epoch(opened):
+        _require_original_reparse_point_policy()
+        final_opened = _ORIGINAL_FSTAT(handle.fileno())
+        _require_original_reparse_point_policy()
+        if epoch(final_opened) != epoch(opened):
             raise ValueError("identity file changed during hashing")
     final = path.lstat()
     _require_original_reparse_point_policy()
