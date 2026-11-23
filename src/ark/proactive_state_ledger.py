@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import unicodedata
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,6 +51,8 @@ _TABLE = """CREATE TABLE synthetic_proactive_states(
 
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 _ORIGINAL_JSON = json
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_SQLITE = sqlite3
@@ -80,6 +83,8 @@ def _require_original_protocol() -> None:
         or json.dumps is not _ORIGINAL_DUMPS
         or sqlite3 is not _ORIGINAL_SQLITE
         or sqlite3.connect is not _ORIGINAL_CONNECT
+        or unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
         or _proactive is not _ORIGINAL_PROACTIVE_MODULE
         or _proactive._refuse_aliased_proactive_path is not _ORIGINAL_PATH_CHECK
         or _proactive.stat is not _ORIGINAL_PROACTIVE_STAT
@@ -113,6 +118,7 @@ def _hash(label: str, values: object) -> str:
 
 
 def _exact_text(name: str, value: object) -> None:
+    _require_original_protocol()
     if type(value) is not str or not 1 <= len(value) <= 512 or value != value.strip():
         raise SyntheticProactiveStateRejected(f"{name} must be a bounded exact string")
     if "\x00" in value or any(
@@ -126,9 +132,11 @@ def _exact_text(name: str, value: object) -> None:
         or 0x202A <= point <= 0x202E
         or point in (0x2028, 0x2029, 0xFEFF)
         or 0x2060 <= point <= 0x206F
+        or _ORIGINAL_UNICODE_CATEGORY(chr(point)) == "Cf"
         for point in map(ord, value)
     ):
         raise SyntheticProactiveStateRejected(f"{name} contains a Unicode formatting control")
+    _require_original_protocol()
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeError as exc:
