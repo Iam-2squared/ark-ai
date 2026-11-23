@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from ark.learning import execution as mod
 
 
-def test_live_fstat_substitution_is_denied_by_policy_guard(
+def test_os_module_binding_substitution_is_denied_by_policy_guard(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[int] = []
@@ -18,7 +19,7 @@ def test_live_fstat_substitution_is_denied_by_policy_guard(
         calls.append(fd)
         raise AssertionError("substituted fstat must not execute")
 
-    monkeypatch.setattr(mod.os, "fstat", forbidden)
+    monkeypatch.setattr(mod, "os", SimpleNamespace(fstat=forbidden))
     with pytest.raises(
         ValueError,
         match="execution snapshot stat policy changed",
