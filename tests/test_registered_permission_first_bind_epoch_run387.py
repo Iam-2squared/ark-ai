@@ -93,17 +93,17 @@ def test_registered_token_epoch_precedes_grant_iterator_callbacks(
     gate.authorize_registered(registry, call, grants, now_ms=10, one_shot=token)
 
 
-def test_first_registry_bind_instance_shadow_is_denied_for_read():
+def test_first_registry_bind_class_shadow_is_denied_for_read(monkeypatch):
     registry, call, _token, grants = _inputs(Effect.READ)
     original_bind = registry.bind
     invoked = []
 
-    def shadowed_bind(current):
+    def shadowed_bind(self, current):
         invoked.append(True)
         object.__setattr__(call, "scope", "another-scope")
         return original_bind(current)
 
-    registry.bind = shadowed_bind
+    monkeypatch.setattr(ToolRegistry, "bind", shadowed_bind)
     with pytest.raises(
         PermissionDenied,
         match="registered authorization implementation identity changed",
