@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from ark.learning.audit import ReviewPair, build_human_review_queue, deterministic_sample_ids
+from ark.learning.audit import (
+    ReviewPair,
+    build_human_review_queue,
+    deterministic_sample_ids,
+)
 from ark.learning.dataset import LearningCandidate
 
 
