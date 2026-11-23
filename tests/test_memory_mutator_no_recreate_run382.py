@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from ark.memory.contracts import MemoryScope, MemoryWrite
+from ark.memory.contracts import MemorySchemaError, MemoryScope, MemoryWrite
 from ark.memory.sqlite_store import SQLiteMemoryStore
 
 
@@ -86,7 +86,7 @@ def test_runtime_path_retarget_to_missing_store_is_not_created(tmp_path: Path):
     missing = tmp_path / "missing # %.sqlite"
     store.path = missing
     before = len(calls)
-    with pytest.raises(sqlite3.OperationalError):
+    with pytest.raises(MemorySchemaError, match="path identity changed"):
         store.put(MemoryWrite(scope, "new", "PRIVATE-UNSAVED"))
     assert not missing.exists()
     assert old_path.exists()
