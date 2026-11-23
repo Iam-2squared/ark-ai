@@ -17,7 +17,7 @@ The local identity-artifact verifier compared path and open-descriptor metadata 
 - Pin both live module attributes and captured aliases in the existing fail-closed policy check.
 - Use the captured descriptor and same-file primitives for artifact identity checks.
 - Recheck policy immediately after each file-open callback and before descriptor-stat calls.
-- Add synthetic tests for live/captured primitive replacement and reentrant replacement from `Path.open`.
+- Add synthetic tests for OS-module binding and captured-alias replacement and reentrant replacement from `Path.open`.
 
 ## Validation boundary
 
