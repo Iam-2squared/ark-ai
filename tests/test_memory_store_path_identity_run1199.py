@@ -27,6 +27,7 @@ def test_rebind_to_another_valid_private_store_is_denied_before_path_io(
 ) -> None:
     original, foreign, scope, own, other = _stores(tmp_path)
     original.path = foreign.path
+    foreign_record = foreign.get(other.memory_id, scope)
     touched: list[Path] = []
 
     def forbidden_lstat(path: Path):
@@ -38,7 +39,7 @@ def test_rebind_to_another_valid_private_store_is_denied_before_path_io(
         original.get(own.memory_id, scope)
 
     assert touched == []
-    assert foreign.get(other.memory_id, scope) == other
+    assert foreign_record == other
     assert own.content == "original private fixture"
 
 
@@ -109,10 +110,12 @@ def test_path_rebind_from_sqlite_open_callback_closes_untrusted_handle(
     original, foreign, scope, own, _ = _stores(tmp_path)
     real_connect = sqlite_store.sqlite3.connect
     opened: list[sqlite3.Connection] = []
+    opened_paths: list[str] = []
 
     def reentrant_connect(*args, **kwargs):
         connection = real_connect(*args, **kwargs)
         opened.append(connection)
+        opened_paths.append(connection.execute("PRAGMA database_list").fetchone()[2])
         original.path = foreign.path
         return connection
 
@@ -121,6 +124,6 @@ def test_path_rebind_from_sqlite_open_callback_closes_untrusted_handle(
         original.get(own.memory_id, scope)
 
     assert len(opened) == 1
-    assert opened[0].execute("PRAGMA database_list").fetchone()[2].endswith("original.sqlite")
+    assert opened_paths[0].endswith("original.sqlite")
     with pytest.raises(sqlite3.ProgrammingError, match="closed"):
         opened[0].execute("SELECT 1")
