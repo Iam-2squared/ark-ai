@@ -119,7 +119,7 @@ finally:
     armed = False
 
 assert backend.calls == 0
-assert gate._consumed_tokens == {"run1140-token"}
+assert gate._consumed_tokens == {"run1146-token"}
 
 # Restart both local stores after the ambiguous audit acknowledgement. The
 # occurrence reservation must remain durable regardless of audit COMMIT fate.
@@ -135,7 +135,7 @@ replay_gate = PermissionGate()
 replay_executor = DisconnectedMockExecutor(
     registry, replay_gate, recovered_audit, recovered_occurrences,
 )
-replay_token = OneShotAuthorization("run1140-token", call.request_id, 500)
+replay_token = OneShotAuthorization("run1146-token", call.request_id, 500)
 try:
     replay_executor.execute(
         call, (grant,), now_ms=101, one_shot=replay_token,
