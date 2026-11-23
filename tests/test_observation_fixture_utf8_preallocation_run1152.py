@@ -10,7 +10,7 @@ from ark.observations import ObservationKind
 
 def test_bounded_encoder_preserves_ascii_and_multibyte_exact_boundaries() -> None:
     assert adapters._encode_fixture_text_bounded("ascii", 5) == b"ascii"
-    assert adapters._encode_fixture_text_bounded("🧪🧪", 8) == "🧪🧪".encode("utf-8")
+    assert adapters._encode_fixture_text_bounded("🧪🧪", 8) == "🧪🧪".encode()
     assert adapters._encode_fixture_text_bounded("🧪🧪🧪", 8) is None
 
 
