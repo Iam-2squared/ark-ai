@@ -26,7 +26,7 @@ def _policy(**overrides: object) -> proactive_state.SyntheticProactivePolicy:
 
 
 @pytest.mark.parametrize("field", ("owner", "namespace", "definition_id", "policy_revision"))
-@pytest.mark.parametrize("control", ("\\u0600", "\\ufff9", "\\U000e0001"))
+@pytest.mark.parametrize("control", ("\u0600", "\ufff9", "\U000e0001"))
 def test_proactive_policy_rejects_every_unicode_cf_identity(
     field: str,
     control: str,
