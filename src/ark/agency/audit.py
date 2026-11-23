@@ -7,6 +7,7 @@ import os
 import sqlite3
 import stat
 import time
+import unicodedata
 from collections.abc import Callable
 from contextlib import closing
 from pathlib import Path
@@ -33,6 +34,8 @@ _ORIGINAL_CANONICAL_JSON = _canonical_json
 _ORIGINAL_TOOLCALL_JSON = _contracts._canonical_json
 _ORIGINAL_TOOLCALL_FREEZE = _contracts._freeze_json
 _ORIGINAL_JSON_DUMPS = _contracts.json.dumps
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 _SQLITE_INT_MAX = 2**63 - 1
 _AUDIT_BOOTSTRAP_LOCK = RLock()  # same-process path preflight and WAL bootstrap
 
@@ -70,6 +73,11 @@ def _validate_outcome(value: object, *, persisted: bool = False) -> str:
         != _ORIGINAL_AUDIT_OUTCOME_BUDGETS
     ):
         raise ActionAuditSchemaError("action audit outcome budget changed")
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ActionAuditSchemaError("action audit Unicode category dependency changed")
     error = ActionAuditSchemaError if persisted else ValueError
     if type(value) is not str:
         raise error("audit outcome must be an exact string")
@@ -95,6 +103,7 @@ def _validate_outcome(value: object, *, persisted: bool = False) -> str:
             or 0x200B <= ord(character) <= 0x200D
             or 0x202A <= ord(character) <= 0x202E
             or 0x2060 <= ord(character) <= 0x206F
+            or _ORIGINAL_UNICODE_CATEGORY(character) == "Cf"
             for character in value
         )
     ):
