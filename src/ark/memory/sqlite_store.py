@@ -607,8 +607,46 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
         raise MemorySchemaError("memory path custody cannot be verified") from exc
 
 
+def _require_memory_store_path_identity(
+    store: SQLiteMemoryStore, expected: Path | None = None,
+) -> Path:
+    """Bind every SQLite open to the exact Path object selected at construction."""
+    try:
+        original = object.__getattribute__(store, "_path_identity")
+        current = object.__getattribute__(store, "path")
+    except AttributeError as exc:
+        raise MemorySchemaError("memory source path identity is unavailable") from exc
+    if (
+        type(original) is not type(Path("."))
+        or type(current) is not type(Path("."))
+        or current is not original
+        or (expected is not None and current is not expected)
+    ):
+        raise MemorySchemaError("memory source path identity changed")
+    return current
+
+
 class SQLiteMemoryStore:
     """Local-only store with schema versioning, scope isolation and CAS writes."""
+
+    # Keep __dict__ for the established fault-injection callbacks while the
+    # constructor path witness lives in a non-shadowable data-descriptor slot.
+    __slots__ = ("_path_identity", "__dict__")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name == "_path_identity":
+            try:
+                object.__getattribute__(self, "_path_identity")
+            except AttributeError:
+                pass
+            else:
+                raise AttributeError("memory source path identity is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        if name == "_path_identity":
+            raise AttributeError("memory source path identity is immutable")
+        object.__delattr__(self, name)
 
     def __init__(
         self,
@@ -619,6 +657,7 @@ class SQLiteMemoryStore:
         if type(path) not in (str, type(Path())):
             raise MemorySchemaError("memory requires exact local path")
         self.path = Path(path)
+        self._path_identity = self.path
         # Serialize the pre-create path fences with WAL bootstrap. Otherwise
         # a competing initializer can observe the first connection's
         # transient SQLite sidecar before its main-file creation is visible,
@@ -1503,29 +1542,46 @@ class SQLiteMemoryStore:
             _validate_v1_schema(conn)
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
-        # Only explicit initialization can create a SQLite file. Normal
-        # mutators must not create a plausible empty replacement database if
-        # the original Memory store has been moved or removed after startup.
-        _require_safe_memory_path(self.path, create=create)
+        # Bind the path BEFORE filesystem inspection, then recheck after the
+        # reentrant lstat preflight and again after SQLite opens the handle.
+        # Only explicit initialization can create a database file.
+        source = _require_memory_store_path_identity(self)
+        _require_safe_memory_path(source, create=create)
+        _require_memory_store_path_identity(self, source)
         if create:
-            conn = sqlite3.connect(self.path)
+            conn = sqlite3.connect(source)
         else:
-            conn = sqlite3.connect(
-                self.path.resolve().as_uri() + "?mode=rw", uri=True
-            )
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA busy_timeout=5000")
-        return conn
+            uri = source.resolve().as_uri() + "?mode=rw"
+            _require_memory_store_path_identity(self, source)
+            conn = sqlite3.connect(uri, uri=True)
+        try:
+            _require_memory_store_path_identity(self, source)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA busy_timeout=5000")
+            _require_memory_store_path_identity(self, source)
+            return conn
+        except Exception:
+            conn.close()
+            raise
 
     def _connect_readonly(self) -> sqlite3.Connection:
         # Reading evidence must never recreate a missing initialized SQLite file.
-        # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
-        _require_safe_memory_path(self.path, create=False)
-        uri = self.path.resolve().as_uri() + "?mode=ro"
+        # Pin constructor identity before path preflight and recheck around open.
+        source = _require_memory_store_path_identity(self)
+        _require_safe_memory_path(source, create=False)
+        _require_memory_store_path_identity(self, source)
+        uri = source.resolve().as_uri() + "?mode=ro"
+        _require_memory_store_path_identity(self, source)
         conn = sqlite3.connect(uri, uri=True)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA busy_timeout=5000")
-        return conn
+        try:
+            _require_memory_store_path_identity(self, source)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA busy_timeout=5000")
+            _require_memory_store_path_identity(self, source)
+            return conn
+        except Exception:
+            conn.close()
+            raise
 
     def _now(self) -> int:
         value = self._clock_ms()
