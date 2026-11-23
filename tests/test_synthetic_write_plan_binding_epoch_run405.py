@@ -61,7 +61,7 @@ def test_reentrant_read_binding_cannot_make_original_write_disappear(
     registry, original_call = state[3], state[4]
     original_bind = registry.bind
 
-    def swapped(call):
+    def swapped(self, call):
         if call is not original_call:
             return original_bind(call)
         old_tool, old_capability = call.tool, call.capability
@@ -75,7 +75,7 @@ def test_reentrant_read_binding_cannot_make_original_write_disappear(
             object.__setattr__(call, "tool", old_tool)
             object.__setattr__(call, "capability", old_capability)
 
-    monkeypatch.setattr(registry, "bind", swapped)
+    monkeypatch.setattr(ToolRegistry, "bind", swapped)
     with pytest.raises(SyntheticWritePlanReviewRejected, match="binding changed"):
         _review(state)
     assert original_call.tool == "writer"
@@ -86,10 +86,10 @@ def test_binder_returning_another_call_is_not_accepted(tmp_path, monkeypatch):
     registry, reader = state[3], state[6]
     original_bind = registry.bind
 
-    def retargeted(_call):
+    def retargeted(self, _call):
         return original_bind(reader)
 
-    monkeypatch.setattr(registry, "bind", retargeted)
+    monkeypatch.setattr(ToolRegistry, "bind", retargeted)
     with pytest.raises(SyntheticWritePlanReviewRejected, match="binding changed"):
         _review(state)
 
@@ -102,12 +102,12 @@ def test_forged_bound_registration_or_revision_fails_closed(
     registry = state[3]
     original_bind = registry.bind
 
-    def forged(call):
+    def forged(self, call):
         bound = original_bind(call)
         if field == "revision":
             return replace(bound, registry_revision="tools_" + "0" * 64)
         return replace(bound, registration=registry.get("reader"))
 
-    monkeypatch.setattr(registry, "bind", forged)
+    monkeypatch.setattr(ToolRegistry, "bind", forged)
     with pytest.raises(SyntheticWritePlanReviewRejected, match="binding changed"):
         _review(state)
