@@ -13,8 +13,8 @@ from .dataset import (
     build_dataset,
     canonical,
     digest,
-    valid_sha,
     loads_unique_json,
+    valid_sha,
 )
 
 
