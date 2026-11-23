@@ -21,10 +21,22 @@ _SEPARATORS = " ,、:;.!?！？；："
 _MAX_CUES = 8
 _MAX_INPUT = 4096
 _MAX_PHRASE = 96
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_NORMALIZE = unicodedata.normalize
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 class OfflineCueRejected(ValueError):
     """A transcript or local wake-cue set fails bounded exact review."""
+
+
+def _assert_original_unicode_policy() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.normalize is not _ORIGINAL_NORMALIZE
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise OfflineCueRejected("transcript Unicode policy changed")
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,13 +88,18 @@ def _sha(value: object) -> bool:
 
 
 def _text(value: object, maximum: int) -> str:
+    _assert_original_unicode_policy()
     if type(value) is not str or not value:
         raise OfflineCueRejected("nonempty exact transcript text required")
-    if any(unicodedata.category(char).startswith("C") for char in value):
+    if any(
+        _ORIGINAL_UNICODE_CATEGORY(char).startswith("C") for char in value
+    ):
         raise OfflineCueRejected("transcript contains control or invisible Unicode")
+    _assert_original_unicode_policy()
     try:
         raw = value.encode("utf-8", "strict")
-        normalized = unicodedata.normalize("NFKC", value).casefold()
+        normalized = _ORIGINAL_NORMALIZE("NFKC", value).casefold()
+        _assert_original_unicode_policy()
         norm_raw = normalized.encode("utf-8", "strict")
     except UnicodeError as exc:
         raise OfflineCueRejected("invalid transcript Unicode") from exc
