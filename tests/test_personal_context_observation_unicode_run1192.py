@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 
 from ark import observation_fixture_adapters as observation_adapters
