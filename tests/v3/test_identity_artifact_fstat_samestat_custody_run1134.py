@@ -18,16 +18,30 @@ def _artifact(tmp_path: Path) -> tuple[Path, str]:
     return path, hashlib.sha256(raw).hexdigest()
 
 
+def test_live_fstat_substitution_is_denied_by_policy_guard(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[int] = []
+
+    def forbidden(fd: int):
+        calls.append(fd)
+        raise AssertionError("substituted fstat must not execute")
+
+    monkeypatch.setattr(mod.os, "fstat", forbidden)
+    with pytest.raises(
+        mod.LocalIdentityArtifactRejected,
+        match="identity artifact stat policy changed",
+    ):
+        mod._require_original_stat_policy()
+
+    assert calls == []
+
+
 @pytest.mark.parametrize(
     "target",
-    (
-        "live fstat",
-        "captured fstat",
-        "live samestat",
-        "captured samestat",
-    ),
+    ("captured fstat", "live samestat", "captured samestat"),
 )
-def test_stat_dependency_substitution_is_denied_before_file_open(
+def test_captured_stat_dependency_substitution_is_denied_before_file_open(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     target: str,
@@ -44,9 +58,7 @@ def test_stat_dependency_substitution_is_denied_before_file_open(
         open_calls.append(self)
         raise AssertionError("identity artifact must be rejected before file open")
 
-    if target == "live fstat":
-        monkeypatch.setattr(mod.os, "fstat", forbidden)
-    elif target == "captured fstat":
+    if target == "captured fstat":
         monkeypatch.setattr(mod, "_ORIGINAL_FSTAT", forbidden)
     elif target == "live samestat":
         monkeypatch.setattr(mod.os.path, "samestat", forbidden)
