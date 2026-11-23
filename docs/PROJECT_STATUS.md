@@ -1,4 +1,91 @@
-# LATEST — ARK AI core progress, 2026-11-23 23:01:02 JST
+# LATEST — ARK AI core progress, 2026-11-24 00:50:13 JST
+
+**Saved at:** 2026-11-24 00:50:13 JST (Asia/Tokyo).
+**Branch / PR:** \`research/jarvis-foundations\` / Draft PR #8 (base \`main\`; OPEN/DRAFT/UNMERGED).
+**Work-basis HEAD:** \`2df6b261554428cd01871f2723ce87c4dd05e4b4\` — live PR #8 head and branch tip re-read immediately before this checkpoint write.
+**Checkpoint-result HEAD:** the documentation-only commit SHA returned by the GitHub Contents API and verified against the live PR #8 branch tip immediately after this write. It is intentionally not self-embedded.
+**main HEAD at checkpoint:** \`3421a6099f2cf975e02327244ed94f6a00c5f3d8\` (read-only; no main write or merge).
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No V3+ PASS, human-review decision, trusted-clock certification, authenticated consent, physical hardware readiness, physical erasure, production dispatch, or exactly-once external-effect claim is made.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch, OPEN/DRAFT/UNMERGED. PR #5 remains gated Draft/unmerged; protected V2 final evaluation remains closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED and untouched. All new UI/frontend development, UI integration, polish and frontend tests remain paused.
+- Main remains at \`3421a6099f2cf975e02327244ed94f6a00c5f3d8\`. V1/V2/Local UI/Launcher frozen evidence and frozen contracts remain unchanged.
+- Four isolated Draft child packages were created this invocation. None was merged into PR #8 or main. No source/test change was integrated into the parent branch.
+
+## NEW work this invocation
+
+1. **Memory SQLite constructor-path identity — Draft PR #382.**
+   - Branch: \`research/run1199-memory-store-path-identity-rebase\`.
+   - Exact child HEAD after the Ruff correction: \`d3b5fed3c057e622f2f4146521862ae3164deb0a\`.
+   - Adds a non-shadowable constructor Path witness slot while retaining \`__dict__\` for existing fault-injection callbacks; checks identity before filesystem inspection, after reentrant path preflight/URI resolution and after SQLite open; closes a handle if the path changes during open.
+   - Synthetic tests cover alternate valid database redirection, equal-valued Path replacement, slot reassignment/deletion/dictionary shadowing, reentrant lstat rebinding and SQLite-open callback rebinding.
+   - Initial exact-head run [45208623950](https://github.com/Iam-2squared/ark-ai/actions/runs/45208623950) **FAIL** — all six jobs stopped at Ruff I001 import ordering. The smallest import-only correction is commit \`d3b5fed3c057e622f2f4146521862ae3164deb0a\`; fresh exact-head run [45209142137](https://github.com/Iam-2squared/ark-ai/actions/runs/45209142137) is **IN PROGRESS**. No local pytest/Ruff PASS is claimed.
+   - Memory v1 DDL/public API and frozen contracts remain unchanged; this is local in-process path identity, not OS custody or TOCTOU proof.
+2. **ActionAudit outcome bounds and Unicode format-control admission — Draft PR #383.**
+   - Branch: \`research/run1198-action-audit-outcome-unicode\`.
+   - Exact child HEAD: \`1c1fc1350535b6c1cedddabb8668d42a86b967a5\`.
+   - Reapplies the isolated Run990 finding from still-open PR #13 onto the current parent: exact-string outcomes, 256 code-point / 256 UTF-8-byte ceiling, C0/C1/bidi/separator and all Unicode General Category \`Cf\` rejection, import-time Unicode dependency checks, SQLite-side persisted-byte preflight, and fail-closed history/read validation.
+   - ActionAudit v1 DDL, public event fields, open outcome vocabulary, chronology and COMMIT-UNKNOWN behavior remain unchanged.
+   - Exact-head run [45208759320](https://github.com/Iam-2squared/ark-ai/actions/runs/45208759320) is **IN PROGRESS**. No local pytest/Ruff PASS is claimed.
+3. **Planner journal COMMIT ambiguity and hard-process-exit recovery tests — Draft PR #384.**
+   - Parent: Draft PR #381, exact parent HEAD \`5272d6d9689d7adbf3c11e48fecf8da23e789cf5\`; parent exact-head CI [45199241648](https://github.com/Iam-2squared/ark-ai/actions/runs/45199241648) was **GREEN, 6/6** Windows/Linux × Python 3.11–3.13.
+   - Child branch: \`research/run1200-planner-journal-commit-unknown-tests\`; exact child HEAD: \`3dbf5a4916769870496b2dc122d307305378084d\`.
+   - Test-only coverage injects both native rollback and native commit behind a lost COMMIT acknowledgement, requires one attempt/no receipt, and resolves only through cold recovery. A spawned child also calls \`os._exit\` immediately after native COMMIT; recovery must preserve RUNNING as ambiguous, with no ready work or automatic replay.
+   - Exact child run [45209036283](https://github.com/Iam-2squared/ark-ai/actions/runs/45209036283) is **IN PROGRESS**. No local pytest/Ruff PASS is claimed.
+   - Integration of PR #381 into PR #8 was attempted only through the normal GitHub merge API with the exact expected head. GitHub returned HTTP 405, \`Pull Request is still a draft\`. PR #381 remains Draft/unmerged; no ready-state change, alternate Git path or safeguard bypass was attempted. PR #384 remains a dependent child and is not integrated.
+4. **Proactive trigger Unicode format-control admission — Draft PR #385.**
+   - Branch: \`research/run1201-proactive-trigger-unicode-rebase\`.
+   - Exact child HEAD: \`2e30ea84b8912aee5b8d7ae3e5ceb1517f7ed78d\`.
+   - Reapplies the isolated Run1180 finding from still-open PR #364 onto the current parent. The disconnected synthetic trigger policy pins the Unicode module/category classifier and rejects all \`Cf\` scalars during initial and retained-policy validation, preserving existing control/UTF-8/512-byte limits.
+   - Synthetic tests cover U+0600/U+FFF9/U+E0001 across owner, namespace, definition ID and policy revision, reflected mutation, and module/classifier substitution.
+   - Exact-head run [45209468351](https://github.com/Iam-2squared/ark-ai/actions/runs/45209468351) is **QUEUED**. No local pytest/Ruff PASS is claimed.
+   - No real scheduler, notification, Tool dispatch, consent, trusted clock or replay authority is added.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 parent HEAD \`2df6b261554428cd01871f2723ce87c4dd05e4b4\`: run [45197711815](https://github.com/Iam-2squared/ark-ai/actions/runs/45197711815) **GREEN**.
+- PR #381 Planner journal child HEAD \`5272d6d9689d7adbf3c11e48fecf8da23e789cf5\`: run [45199241648](https://github.com/Iam-2squared/ark-ai/actions/runs/45199241648) **GREEN, 6/6**.
+- PR #382 final current HEAD \`d3b5fed3c057e622f2f4146521862ae3164deb0a\`: run [45209142137](https://github.com/Iam-2squared/ark-ai/actions/runs/45209142137) **IN PROGRESS**; prior head run [45208623950](https://github.com/Iam-2squared/ark-ai/actions/runs/45208623950) **FAIL** on Ruff I001 only, corrected by the import-only commit.
+- PR #383 exact HEAD \`1c1fc1350535b6c1cedddabb8668d42a86b967a5\`: run [45208759320](https://github.com/Iam-2squared/ark-ai/actions/runs/45208759320) **IN PROGRESS**.
+- PR #384 exact HEAD \`3dbf5a4916769870496b2dc122d307305378084d\`: run [45209036283](https://github.com/Iam-2squared/ark-ai/actions/runs/45209036283) **IN PROGRESS**.
+- PR #385 exact HEAD \`2e30ea84b8912aee5b8d7ae3e5ceb1517f7ed78d\`: run [45209468351](https://github.com/Iam-2squared/ark-ai/actions/runs/45209468351) **QUEUED**.
+- No local pytest/Ruff run, physical-PC verification, real GGUF run, real Candidate adapter/weight generation, paid/external compute, fsync/power-loss proof, independent storage custody, trusted-clock certification, authenticated consent/provenance, physical-erasure proof, cross-store atomicity, real backend dispatch or exactly-once external-effect result is claimed.
+
+## V3 free-only guard review
+
+- Read-only review of PR #5's pre-paid-compute gate and V3 contract confirms the preflight and full Candidate-training approvals remain separate, the immutable execution-core binding remains required, and exact base/tokenizer, dataset/provenance/contamination, runtime, hardware, cost and timeout evidence remain unresolved prerequisites.
+- No preflight packet was approved, no external compute was started, no Candidate adapter/weights were generated, and no V2 evaluation was opened. PR #5 remains Draft/unmerged.
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher evidence, Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1, frozen PermissionGate/ToolCall contracts and all frozen evaluation boundaries remain unchanged.
+- PR #5 remains gated Draft/unmerged; protected V2 final evaluation remains closed. No Candidate adapter, weights, training or promotion.
+- PR #8 remains Draft/unmerged. PR #9 remains untouched; no UI/frontend work.
+- No main merge, paid/external GPU compute, paid API/service, subscription, purchase, credential, new account connection, physical-PC action, destructive data operation or external ToolBackend dispatch occurred.
+- No contamination, provenance, privacy, regression or reproducibility gate was weakened.
+
+## Blockers / authorization boundaries
+
+- PR #381 remains Draft; the normal merge path rejected integration into PR #8 with HTTP 405 because the PR is still Draft. Do not convert it to ready or use alternate Git routes; continue independent lanes.
+- PR #382 exact-head CI is in progress after the semantics-preserving Ruff import correction; PR #383 and #384 are in progress; PR #385 is queued. No PASS transfers between child heads.
+- PR #384 is based on PR #381's exact-head-GREEN Planner journal and remains dependent/unintegrated until normal integration is available.
+- PR #13 and #364 remain open as the original source findings; their rebased children #383 and #385 are separate Draft branches. Reconcile/supersede only after fresh exact-head validation; do not claim the original CI transfers.
+- PR #5 remains gated; no payment, credentials/new account connection, physical hardware, destructive action, frozen-contract change, protected evaluation opening, Candidate promotion or main merge is authorized.
+
+## Next plan / 今後の方針
+
+1. Do not repeatedly poll. Revisit exact-head CI for PRs #382–#385 once useful; if any fails, inspect the precise job/log, apply the smallest semantics-preserving fix on that child, launch one fresh exact-head run, then switch to a non-conflicting lane.
+2. Keep PR #381 Draft/unmerged while the normal GitHub gate rejects merge; do not change its Draft state or bypass the 405. After the normal path permits integration, require a fresh exact-head PR #8 parent CI before any next dependent child.
+3. After each child is exact-head GREEN, integrate at most one validated package into PR #8 at a time, then require fresh parent CI. Keep PR #8 Draft/unmerged; no main merge.
+4. Continue Memory row/event integrity, generation-CAS/ABA, expiry and coherent snapshots; Planner terminal propagation and COMMIT-UNKNOWN recovery; immutable ToolRegistry/PermissionGate identity; restart-safe one-shot authorization and audit-before-action; privacy-safe Personal Context; proactive scheduler recovery; Observation fixture boundaries; and free-only V3 approval/path/identity/reproducibility guards.
+5. Keep PR #5's pre-paid gate, protected V2 final evaluation, Candidate generation/promotion and all UI/frontend work closed.
+
+---
+
+# Previous checkpoint — 2026-11-23 23:01:02 JST
+
 
 **Saved at:** 2026-11-23 23:01:02 JST (Asia/Tokyo).
 **Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; OPEN/DRAFT/UNMERGED).
