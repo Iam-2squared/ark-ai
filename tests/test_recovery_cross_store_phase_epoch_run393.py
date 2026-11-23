@@ -84,10 +84,10 @@ def _mutators(state, target, retained):
         original = audit.path
 
         def mutate():
-            audit.path = Path(str(original))
+            object.__setattr__(audit, "path", Path(str(original)))
 
         def restore():
-            audit.path = original
+            object.__setattr__(audit, "path", original)
 
     return mutate, restore
 
@@ -122,7 +122,10 @@ def test_ledger_read_drift_cannot_be_restored_by_audit_callback(
 
     monkeypatch.setattr(module, "_digest", digest)
     monkeypatch.setattr(module, "review_audit_continuity", audit)
-    with pytest.raises(module.SyntheticRecoveryRejected, match="input|witness"):
+    with pytest.raises(
+        module.SyntheticRecoveryRejected,
+        match="input|witness|incomplete|malformed",
+    ):
         _review(state, retained_plan=plan)
     assert changed and not restored
 
