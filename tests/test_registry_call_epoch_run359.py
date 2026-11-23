@@ -24,7 +24,7 @@ class _NeverExecute:
     ],
 )
 def test_registry_bind_rejects_drift_during_revision_check(
-    field: str, replacement: object
+    field: str, replacement: object, monkeypatch
 ) -> None:
     backend = _NeverExecute()
     registration = ToolRegistration(
@@ -34,11 +34,11 @@ def test_registry_bind_rejects_drift_during_revision_check(
     call = ToolCall("synthetic.read", "synthetic.read", "workspace:synthetic", {"x": 1})
     original_compute = registry._compute_revision
 
-    def injected_compute(entries):
+    def injected_compute(cls, entries):
         object.__setattr__(call, field, replacement)
         return original_compute(entries)
 
-    registry._compute_revision = injected_compute
+    monkeypatch.setattr(ToolRegistry, "_compute_revision", classmethod(injected_compute))
     with pytest.raises(ValueError):
         registry.bind(call)
     assert backend.calls == 0

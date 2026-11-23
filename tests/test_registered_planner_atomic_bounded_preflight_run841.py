@@ -30,17 +30,18 @@ _OCC_B = "occ_" + "b" * 64
 
 def _preflight_only(
     bindings: tuple[object, ...],
+    monkeypatch: pytest.MonkeyPatch,
     *,
     witness: AtomicPreactionWitness | None = None,
 ) -> None:
     registry = ToolRegistry(())
     called: list[str] = []
 
-    def forbidden(*_args: object, **_kwargs: object) -> object:
+    def forbidden(self, *_args: object, **_kwargs: object) -> object:
         called.append("resolver")
         raise AssertionError("invalid input reached registry resolver")
 
-    registry.resolve = forbidden  # type: ignore[method-assign]
+    monkeypatch.setattr(ToolRegistry, "resolve", forbidden)
     steps = (
         PlanStep(_STEP_A, ToolCall("mock", "offline.write", "local")),
         PlanStep(_STEP_B, ToolCall("mock", "offline.write", "local")),
@@ -73,9 +74,9 @@ def _preflight_only(
     ),
 )
 def test_unbounded_malformed_or_duplicate_write_occurrences_never_reach_reader(
-    bindings: tuple[object, ...],
+    bindings: tuple[object, ...], monkeypatch,
 ) -> None:
-    _preflight_only(bindings)
+    _preflight_only(bindings, monkeypatch)
 
 
 class ExplosiveValue:
@@ -89,7 +90,8 @@ class ExplosiveValue:
 @pytest.mark.parametrize("field", ("count", "tip_sha256"))
 def test_malformed_retained_witness_rejected_before_reader_without_equality(
     field: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     valid = genesis_atomic_preaction_witness()
     object.__setattr__(valid, field, ExplosiveValue())
-    _preflight_only(((_STEP_A, _OCC_A),), witness=valid)
+    _preflight_only(((_STEP_A, _OCC_A),), monkeypatch, witness=valid)

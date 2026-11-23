@@ -46,7 +46,7 @@ def test_token_replacement_during_registry_bind_refuses_reservation(
     original_bind = registry.bind
     calls = 0
 
-    def reflect_token_after_bind(request):
+    def reflect_token_after_bind(self, request):
         nonlocal calls
         calls += 1
         bound = original_bind(request)
@@ -54,7 +54,7 @@ def test_token_replacement_during_registry_bind_refuses_reservation(
             object.__setattr__(token, field, replacement)
         return bound
 
-    monkeypatch.setattr(registry, "bind", reflect_token_after_bind)
+    monkeypatch.setattr(ToolRegistry, "bind", reflect_token_after_bind)
     with pytest.raises(SyntheticReplayRejected, match="token|action"):
         store.reserve_synthetic(
             registry, call, token, occurrence_id=occurrence, now_ms=10,

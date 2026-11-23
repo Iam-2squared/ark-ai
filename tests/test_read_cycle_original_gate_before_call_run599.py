@@ -69,12 +69,12 @@ def test_spoofed_gate_is_never_invoked_by_independent_wave(
         else:
             original_bind = registry.bind
 
-            def changed_bind(call):
+            def changed_bind(self, call):
                 result = original_bind(call)
                 install_spoof()
                 return result
 
-            monkeypatch.setattr(registry, "bind", changed_bind)
+            monkeypatch.setattr(ToolRegistry, "bind", changed_bind)
         return receipt
 
     monkeypatch.setattr(cycle, "preview_registered_read_plan", preview_then_change)
