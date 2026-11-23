@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -18,16 +19,20 @@ def _artifact(tmp_path: Path) -> tuple[Path, str]:
     return path, hashlib.sha256(raw).hexdigest()
 
 
-def test_live_fstat_substitution_is_denied_by_policy_guard(
+def test_os_module_binding_substitution_is_denied_by_policy_guard(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[int] = []
+    calls: list[object] = []
 
-    def forbidden(fd: int):
-        calls.append(fd)
-        raise AssertionError("substituted fstat must not execute")
+    def forbidden(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("substituted stat dependency must not execute")
 
-    monkeypatch.setattr(mod.os, "fstat", forbidden)
+    proxy = SimpleNamespace(
+        fstat=forbidden,
+        path=SimpleNamespace(samestat=forbidden),
+    )
+    monkeypatch.setattr(mod, "os", proxy)
     with pytest.raises(
         mod.LocalIdentityArtifactRejected,
         match="identity artifact stat policy changed",
@@ -37,10 +42,7 @@ def test_live_fstat_substitution_is_denied_by_policy_guard(
     assert calls == []
 
 
-@pytest.mark.parametrize(
-    "target",
-    ("captured fstat", "live samestat", "captured samestat"),
-)
+@pytest.mark.parametrize("target", ("captured fstat", "captured samestat"))
 def test_captured_stat_dependency_substitution_is_denied_before_file_open(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -60,8 +62,6 @@ def test_captured_stat_dependency_substitution_is_denied_before_file_open(
 
     if target == "captured fstat":
         monkeypatch.setattr(mod, "_ORIGINAL_FSTAT", forbidden)
-    elif target == "live samestat":
-        monkeypatch.setattr(mod.os.path, "samestat", forbidden)
     else:
         monkeypatch.setattr(mod, "_ORIGINAL_SAMESTAT", forbidden)
     monkeypatch.setattr(Path, "open", forbidden_open)
