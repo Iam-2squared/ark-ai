@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import replace
 from types import MappingProxyType
@@ -75,6 +76,22 @@ def _require_original_transition_policy() -> None:
         raise PlanConflictError("plan transition policy changed")
 
 
+# Graph identity admission rejects the complete Unicode General Category Cf,
+# not only a hand-maintained subset of currently known format controls. Pin the
+# import-original module and classifier before inspecting any caller label.
+# This is an in-process dependency guard, not an independent Python sandbox.
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
+
+
+def _require_original_unicode_policy() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise PlanConflictError("plan Unicode policy changed")
+
+
 # Bound standalone PlanGraph ingress as well as the narrower durable journal.
 # A dependency-rich but acyclic graph can otherwise consume unbounded CPU and
 # memory during recovery/readiness diagnosis before reaching any policy gate.
@@ -93,6 +110,9 @@ def _admit_graph_label(value: object) -> None:
         # Preserve the existing fail-closed error classification for
         # reflected non-text carriers, including callback-bearing objects.
         raise PlanConflictError("plan step carrier changed before admission")
+    # Refuse a replaced Unicode dependency before strip/encoding/category
+    # work can receive caller-controlled graph identity text.
+    _require_original_unicode_policy()
     if len(value) > _MAX_GRAPH_LABEL_BYTES:
         raise PlanConflictError("plan graph identifier budget exceeded")
     if not value.strip():
@@ -113,22 +133,24 @@ def _admit_graph_label(value: object) -> None:
     # exact string that was hashed. Keep this stricter optional graph admission
     # separate from the frozen PlanStep/ToolCall construction contracts.
     if any(
-        0x80 <= codepoint <= 0x9F
-        or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
-        or 0x202A <= codepoint <= 0x202E
-        or 0x2066 <= codepoint <= 0x2069
+        _ORIGINAL_UNICODE_CATEGORY(character) == "Cf"
+        or 0x80 <= ord(character) <= 0x9F
+        or ord(character) in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= ord(character) <= 0x202E
+        or 0x2066 <= ord(character) <= 0x2069
         # Identifiers in plans, tool bindings and dependency edges must
         # remain visually distinguishable in local recovery/audit records.
         # These default-ignorable scalars do not change the frozen
         # ToolCall/PlanStep contracts; this is optional PlanGraph admission.
-        or codepoint in (
+        or ord(character) in (
             0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
             0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
         )
-        or 0x206A <= codepoint <= 0x206F
-        for codepoint in map(ord, value)
+        or 0x206A <= ord(character) <= 0x206F
+        for character in value
     ):
         raise PlanConflictError("plan graph identifier contains Unicode formatting control")
+    _require_original_unicode_policy()
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
@@ -337,6 +359,7 @@ class PlanGraph:
     def _assert_plan_epoch(self) -> None:
         _require_original_transition_policy()
         _require_original_plan_digest()
+        _require_original_unicode_policy()
         if (
             type(self.steps) is not MappingProxyType
             or self.steps is not self._step_mapping_epoch
