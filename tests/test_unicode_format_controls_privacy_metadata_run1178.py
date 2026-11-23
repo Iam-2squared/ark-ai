@@ -5,8 +5,7 @@ from __future__ import annotations
 import pytest
 
 from ark import observation_fixture_adapters as observation_adapters
-from ark import personal_context_review
-from ark import proactive_state_ledger
+from ark import personal_context_review, proactive_state_ledger
 from ark.observations import ObservationKind
 
 # These are Cf characters outside the older hand-maintained rejection list:
