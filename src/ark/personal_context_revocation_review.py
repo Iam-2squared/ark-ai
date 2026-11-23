@@ -38,6 +38,13 @@ _TABLE = """CREATE TABLE synthetic_context_revocations(
     revoked_at_ms INTEGER NOT NULL
 )"""
 
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+
 
 class SyntheticContextRevocationRejected(RuntimeError):
     """A local revocation fence cannot safely provide a context projection."""
@@ -170,13 +177,86 @@ def _validate(conn: sqlite3.Connection) -> None:
             raise SyntheticContextRevocationRejected("revocation row integrity failed")
 
 
-def _check_local_revocation_path(path: Path) -> None:
-    """Reject obvious symlink/alias sources before fixture SQLite access.
+def _require_original_revocation_stat_policy() -> None:
+    """Pin filesystem classification before and after reentrant path callbacks.
 
-    A path inspection is not atomic open-handle custody and cannot prove
-    filesystem ownership or user consent. Missing source files are handled
-    by the existing SQLite read-only restart behavior.
+    Repeated pathname checks are not atomic handle custody. These import-local
+    identities only prevent a callback from silently replacing the classifier
+    used by this disconnected veto fixture.
     """
+    if (
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+        or getattr(_ORIGINAL_STAT, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+        != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise SyntheticContextRevocationRejected("revocation stat policy changed")
+
+
+def _revocation_mode(info: object) -> int:
+    _require_original_revocation_stat_policy()
+    mode = info.st_mode
+    _require_original_revocation_stat_policy()
+    if type(mode) is not int:
+        raise SyntheticContextRevocationRejected(
+            "revocation filesystem mode metadata is malformed"
+        )
+    return mode
+
+
+def _revocation_link_count(info: object) -> int:
+    _require_original_revocation_stat_policy()
+    links = info.st_nlink
+    _require_original_revocation_stat_policy()
+    if type(links) is not int or links < 0:
+        raise SyntheticContextRevocationRejected(
+            "revocation filesystem link metadata is malformed"
+        )
+    return links
+
+
+def _is_revocation_reparse_point(info: object) -> bool:
+    _require_original_revocation_stat_policy()
+    attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_revocation_stat_policy()
+    if type(attributes) is not int:
+        raise SyntheticContextRevocationRejected(
+            "revocation reparse metadata is malformed"
+        )
+    mode = _revocation_mode(info)
+    return _ORIGINAL_STAT_S_ISLNK(mode) or bool(
+        attributes & _REPARSE_POINT_ATTRIBUTE
+    )
+
+
+def _is_revocation_directory(info: object) -> bool:
+    mode = _revocation_mode(info)
+    return (
+        _ORIGINAL_STAT_S_ISDIR(mode)
+        and not _is_revocation_reparse_point(info)
+    )
+
+
+def _is_revocation_regular_file(info: object) -> bool:
+    mode = _revocation_mode(info)
+    return (
+        _ORIGINAL_STAT_S_ISREG(mode)
+        and not _is_revocation_reparse_point(info)
+    )
+
+
+def _check_local_revocation_path(path: Path) -> None:
+    """Reject obvious symlink/reparse/alias sources before fixture SQLite access.
+
+    These repeated pathname observations are not atomic directory-handle
+    custody and cannot prove filesystem ownership or user consent. Missing
+    source files are handled by the existing SQLite read-only restart behavior.
+    """
+    _require_original_revocation_stat_policy()
     if type(path) is not type(Path(".")):
         raise SyntheticContextRevocationRejected(
             "revocation path must be an exact local Path"
@@ -191,14 +271,16 @@ def _check_local_revocation_path(path: Path) -> None:
     # Reject oversize, NUL and unencodable paths before any lstat, resolve,
     # SQLite connect or directory traversal. Reserve the longest SQLite
     # journal suffix and measure encoded absolute bytes, not codepoints.
-    # This is a local admission bound, not atomic ownership of the pathname.
     raw = str(path)
     if "\x00" in raw or len(raw) > 4096:
         raise SyntheticContextRevocationRejected(
             "revocation path exceeds local SQLite limits"
         )
     try:
-        target = path if path.is_absolute() else path.absolute()
+        absolute = path.is_absolute()
+        _require_original_revocation_stat_policy()
+        target = path if absolute else path.absolute()
+        _require_original_revocation_stat_policy()
         if len(os.fsencode(target)) + len(b"-journal") > 4096:
             raise SyntheticContextRevocationRejected(
                 "revocation path exceeds local SQLite limits"
@@ -208,51 +290,73 @@ def _check_local_revocation_path(path: Path) -> None:
             "revocation path encoding invalid"
         ) from exc
     try:
-        for parent in target.parents:
+        parents = target.parents
+        _require_original_revocation_stat_policy()
+        for parent in parents:
+            _require_original_revocation_stat_policy()
             info = parent.lstat()
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            _require_original_revocation_stat_policy()
+            if not _is_revocation_directory(info):
                 raise SyntheticContextRevocationRejected(
                     "revocation path ancestor is not a real directory"
                 )
-        if path.is_symlink():
+        _require_original_revocation_stat_policy()
+        source_is_symlink = path.is_symlink()
+        _require_original_revocation_stat_policy()
+        if source_is_symlink:
             raise SyntheticContextRevocationRejected(
                 "revocation source symlink is forbidden"
             )
         main_exists = path.exists()
+        _require_original_revocation_stat_policy()
         if main_exists:
             info = path.lstat()
-            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            _require_original_revocation_stat_policy()
+            if (
+                not _is_revocation_regular_file(info)
+                or _revocation_link_count(info) != 1
+            ):
                 raise SyntheticContextRevocationRejected(
                     "revocation source must be one regular-file link"
                 )
         # SQLite may open or create these sidecars before the first query.
-        # Deny obvious aliases/special files and stale orphan sidecars;
+        # Deny obvious aliases, reparse points and stale orphan sidecars;
         # ordinary single-link regular journal/WAL files remain compatible.
-        # Path prechecks are not atomic open-handle ownership or consent.
         for suffix in ("-wal", "-shm", "-journal"):
             sidecar = path.with_name(path.name + suffix)
             try:
                 details = sidecar.lstat()
             except FileNotFoundError:
+                _require_original_revocation_stat_policy()
                 continue
-            if not main_exists or not stat.S_ISREG(details.st_mode):
+            _require_original_revocation_stat_policy()
+            if not main_exists or not _is_revocation_regular_file(details):
                 raise SyntheticContextRevocationRejected(
                     "unsafe revocation SQLite sidecar"
                 )
-            if details.st_nlink == 0:
+            links = _revocation_link_count(details)
+            if links == 0:
                 # An independent SQLite writer may unlink its rollback
                 # journal between pathname lookup and this lstat result.
                 # Only an ALREADY-unlinked regular inode gets one fresh
-                # pathname observation. Never retry symlinks, hardlinks,
+                # pathname observation. Never retry reparse points, aliases,
                 # orphan sidecars, directories or other special files.
                 try:
                     details = sidecar.lstat()
                 except FileNotFoundError:
+                    _require_original_revocation_stat_policy()
                     continue
-            if not stat.S_ISREG(details.st_mode) or details.st_nlink != 1:
+                _require_original_revocation_stat_policy()
+                if not _is_revocation_regular_file(details):
+                    raise SyntheticContextRevocationRejected(
+                        "unsafe revocation SQLite sidecar"
+                    )
+                links = _revocation_link_count(details)
+            if links != 1:
                 raise SyntheticContextRevocationRejected(
                     "unsafe revocation SQLite sidecar"
                 )
+        _require_original_revocation_stat_policy()
     except OSError as exc:
         raise SyntheticContextRevocationRejected(
             "revocation source path cannot be checked"
@@ -277,10 +381,16 @@ class SyntheticContextRevocationLedger:
         if type(require_existing) is not bool:
             raise TypeError("require_existing must be an exact boolean")
         _check_local_revocation_path(path)
-        if require_existing and (not path.is_absolute() or not path.is_file()):
-            raise SyntheticContextRevocationRejected(
-                "existing revocation ledger is missing or noncanonical"
-            )
+        if require_existing:
+            _require_original_revocation_stat_policy()
+            absolute = path.is_absolute()
+            _require_original_revocation_stat_policy()
+            existing_file = path.is_file()
+            _require_original_revocation_stat_policy()
+            if not absolute or not existing_file:
+                raise SyntheticContextRevocationRejected(
+                    "existing revocation ledger is missing or noncanonical"
+                )
         self.path = path
         self._source_path = path
         if require_existing:
