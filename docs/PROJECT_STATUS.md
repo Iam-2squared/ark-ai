@@ -1,3 +1,84 @@
+# LATEST — 2026-11-23 12:48:01 JST
+
+**Saved at:** 2026-11-23 12:48:01 JST (Asia/Tokyo).
+**Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; remains OPEN/DRAFT/UNMERGED).
+**Work-basis HEAD:** `1f809e6489584ca0d4cc3b9291995696216c53bf` — exact PR #8 branch HEAD re-read immediately before this checkpoint.
+**Checkpoint-result HEAD:** documentation-only commit on `research/jarvis-foundations` created by this update; its exact SHA is the GitHub Contents API result and is not self-embedded. No production source/test file on PR #8 is changed by this checkpoint.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. This invocation makes no V1/V2/V3 PASS, human-review, trusted-clock, hardware-readiness, consent, physical-erasure, or real-world execution-authority claim.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch, OPEN/DRAFT/UNMERGED. The source/test basis `243a65a121690bb0fc1f4a0596b9d1397da79c3c` has exact-head CI run [45105064474](https://github.com/Iam-2squared/ark-ai/actions/runs/45105064474) GREEN, 6/6; `1f809e6489584ca0d4cc3b9291995696216c53bf` is the subsequent documentation-only checkpoint.
+- Draft PR #5 remains gated, OPEN/DRAFT/UNMERGED; protected V2 final evaluation remains closed.
+- Draft PR #9 remains OPEN/DRAFT/UNMERGED and untouched. UI/frontend development, UI integration, polish, and frontend tests remain paused.
+- Main received no write or merge in this invocation. V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Repair PR #333 mock pre-action COMMIT-UNKNOWN rebase test.**
+   - Failed child head: `6acc5a0153ed8f2616b39ddf5540e9f578c7e580`; run [45105525622](https://github.com/Iam-2squared/ark-ai/actions/runs/45105525622) / #7221 failed both parameter cases because the rebased fixture token was renamed to `run1146-token` but one replay assertion still expected `run1140-token`.
+   - Corrected exactly the two stale token literals on the same isolated branch. New exact head: `8a0d9d4bc91b6bcea3c373d53f470d7756123a86`; fresh run [45107744522](https://github.com/Iam-2squared/ark-ai/actions/runs/45107744522) / #7222 is IN PROGRESS.
+   - This is test-only. The source PR #327 exact-head run [45097063883](https://github.com/Iam-2squared/ark-ai/actions/runs/45097063883) was GREEN 6/6 on its older base; it does not transfer. PR #333 still needs reconciliation onto the latest PR #8 head after its corrected exact-head CI is GREEN.
+2. **Rebase Memory put COMMIT-acknowledgement-loss tests — Draft PR #334.**
+   - Reapplied PR #332's subprocess-only create/update × native rollback/durable COMMIT regression to exact parent basis `1f809e6489584ca0d4cc3b9291995696216c53bf`.
+   - Child head: `134d374c0ac3d4ec9aa0cb3c0215785380c56c0e`; fresh exact-head run [45107793820](https://github.com/Iam-2squared/ark-ai/actions/runs/45107793820) / #7223 is IN PROGRESS.
+   - Source PR #332 head `af400676e30513284732d6cf74ad2b2b3b464705` had exact-head run [45105439635](https://github.com/Iam-2squared/ark-ai/actions/runs/45105439635) GREEN 6/6. Production Memory source, v1 DDL/API, and frozen contracts remain unchanged; no automatic retry is added.
+3. **Rebase Personal Context replay COMMIT-ambiguity tests — Draft PR #335.**
+   - Reapplied PR #331's synthetic SQLite rollback/durable COMMIT regression to exact parent basis `1f809e6489584ca0d4cc3b9291995696216c53bf`.
+   - Child head: `d041b7f2aba9b2175f4117c0c053698ffd4e12c4`; fresh exact-head run [45107846455](https://github.com/Iam-2squared/ark-ai/actions/runs/45107846455) / #7224 is IN PROGRESS.
+   - Source PR #331 head `a1530cd985d63b08c189ad93e8ed123c63115190` had exact-head run [45104098448](https://github.com/Iam-2squared/ark-ai/actions/runs/45104098448) GREEN 6/6. Production Personal Context source, schema, retention, revocation, and disclosure policy remain unchanged.
+4. **Rebase Planner COMMIT recovery plus PermissionGate denial-order regression — Draft PR #336.**
+   - Combined PR #329's synthetic Planner journal rollback/durable COMMIT recovery test with PR #330's test-only correction that asserts fail-closed denial and token preservation without freezing diagnostic-message precedence.
+   - Child head: `4a44d8826fb4143aecce60cc2af9b0d124bcfcb1`; fresh run [45107932945](https://github.com/Iam-2squared/ark-ai/actions/runs/45107932945) / #7225 has 2/6 jobs running and 4/6 queued at last observation.
+   - Source PR #329 run [45102298063](https://github.com/Iam-2squared/ark-ai/actions/runs/45102298063) / #7215 failed one unrelated PermissionGate diagnostic-order assertion after 19,404 passed and 1 skipped. Source PR #330 correction head `b5068d6f88fa54ca6af56b8c68b6541a8b1c2bc6` had run [45103670705](https://github.com/Iam-2squared/ark-ai/actions/runs/45103670705) / #7216 GREEN 6/6. The combined rebase requires its own exact-head GREEN result.
+   - No Planner, ToolRegistry, PermissionGate, or frozen production source/policy changed.
+
+## Tests / CI / evidence
+
+All entries are GitHub Actions exact-head observations; no local pytest/Ruff PASS, physical-PC run, human review, or production dispatch is claimed.
+
+| Scope / exact head | CI evidence | Result |
+|---|---|---|
+| PR #8 source/test basis `243a65a121690bb0fc1f4a0596b9d1397da79c3c` | [45105064474](https://github.com/Iam-2squared/ark-ai/actions/runs/45105064474) / #7219 | **GREEN, 6/6** |
+| PR #333 corrected test branch `8a0d9d4bc91b6bcea3c373d53f470d7756123a86` | [45107744522](https://github.com/Iam-2squared/ark-ai/actions/runs/45107744522) / #7222 | **IN PROGRESS, 6/6 running** |
+| PR #334 Memory rebase `134d374c0ac3d4ec9aa0cb3c0215785380c56c0e` | [45107793820](https://github.com/Iam-2squared/ark-ai/actions/runs/45107793820) / #7223 | **IN PROGRESS, 6/6 running** |
+| PR #335 Personal Context rebase `d041b7f2aba9b2175f4117c0c053698ffd4e12c4` | [45107846455](https://github.com/Iam-2squared/ark-ai/actions/runs/45107846455) / #7224 | **IN PROGRESS, 6/6 running** |
+| PR #336 Planner + PermissionGate rebase `4a44d8826fb4143aecce60cc2af9b0d124bcfcb1` | [45107932945](https://github.com/Iam-2squared/ark-ai/actions/runs/45107932945) / #7225 | **QUEUED / IN PROGRESS, 2/6 running and 4/6 queued** |
+| Source PR #332 Memory test `af400676e30513284732d6cf74ad2b2b3b464705` | [45105439635](https://github.com/Iam-2squared/ark-ai/actions/runs/45105439635) / #7220 | **GREEN, 6/6**; historical source head only |
+| Source PR #331 Personal Context test `a1530cd985d63b08c189ad93e8ed123c63115190` | [45104098448](https://github.com/Iam-2squared/ark-ai/actions/runs/45104098448) / #7218 | **GREEN, 6/6**; historical source head only |
+| Source PR #330 PermissionGate test correction `b5068d6f88fa54ca6af56b8c68b6541a8b1c2bc6` | [45103670705](https://github.com/Iam-2squared/ark-ai/actions/runs/45103670705) / #7216 | **GREEN, 6/6**; historical source head only |
+| Source PR #329 Planner test `e7484a1946c7d805c8cfeb6a774f0ceebf036901` | [45102298063](https://github.com/Iam-2squared/ark-ai/actions/runs/45102298063) / #7215 | **FAIL**, one unrelated PermissionGate assertion; 19,404 passed, 1 skipped |
+| Original PR #333 rebase head `6acc5a0153ed8f2616b39ddf5540e9f578c7e580` | [45105525622](https://github.com/Iam-2squared/ark-ai/actions/runs/45105525622) / #7221 | **FAIL**, two test subcases due stale fixture-token assertion; corrected head is under fresh CI |
+| PR #5 current head `034a6f988445e54e5c6280d0f8f157959416d33b` | [45090389277](https://github.com/Iam-2squared/ark-ai/actions/runs/45090389277) / #7209 | **FAIL** at inherited Ruff I001 before pytest; no main-level correction attempted |
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+- PR #5 and PR #8 remain OPEN/DRAFT/UNMERGED; protected V2 final evaluation remains closed.
+- PR #9 remains OPEN/DRAFT/UNMERGED and untouched; no UI/frontend code, tests, or integration were changed.
+- PRs #334–#336 are new isolated Draft children of PR #8; PR #333 remains Draft and its corrected branch still requires current-parent reconciliation before integration.
+- No main write or merge, paid/external GPU compute, paid API/service, subscription, purchase, credential, new account connection, physical-PC action, destructive operation, Candidate generation/training/promotion, protected V2 evaluation, or external tool dispatch occurred.
+- No contamination, provenance, regression, reproducibility, privacy, or frozen-contract gate was weakened.
+- Synthetic SQLite and mock-only evidence does not prove fsync/power-loss durability, independent storage custody, authenticated writer provenance, trusted time, consent, physical erasure, cross-store atomicity, or exactly-once external effects.
+
+## Blockers / authorization boundaries
+
+- PR #333 must finish corrected exact-head CI, then be rebased onto the latest PR #8 head; the failed prior head remains historical evidence.
+- PR #334, #335, and #336 require fresh exact-head GREEN CI and a fresh PR #8 head/mergeability check before any integration. Never transfer source-child CI to a rebase.
+- PR #5 remains blocked by inherited Ruff I001 in a main-branch test file before pytest. A main-level correction requires explicit user approval; no main write or workaround was attempted. Do not weaken Ruff or open protected V2 evaluation.
+- Real Candidate adapter/weight generation, paid/external compute, protected V2 evaluation, Candidate promotion, credentials/new connections, hardware actions, frozen-contract changes, destructive operations, and main merge remain blocked by their explicit gates.
+- No trusted clock, authenticated consent, physical-PC readiness, real backend dispatch, or exactly-once external effect is established.
+
+## Next plan / 今後の方針
+
+1. Continue independent free-only work while runs #7222–#7225 execute; inspect failures rather than waiting idle or launching duplicate equivalent workflows.
+2. For each exact-head GREEN child, re-read the latest PR #8 head and mergeability before integrating one package at a time; require fresh PR #8 CI after integration.
+3. Rebase PR #333 onto the newest PR #8 head only after corrected exact-head CI is GREEN.
+4. Continue Memory WAL/CAS/expiry and COMMIT-UNKNOWN recovery, Planner crash/terminal recovery, restart-safe authorization and audit-before-action, privacy-safe Personal Context, proactive scheduler recovery, Observation fixture contracts, startup readiness, and free-only V3 approval/path/identity/reproducibility guards.
+5. Keep PR #5 and PR #8 Draft/unmerged, protected V2 evaluation closed, main unchanged, and PR #9/UI paused.
+
+---
+
 # LATEST — 2026-11-23 12:24:10 JST
 
 **Saved at:** 2026-11-23 12:24:10 JST (Asia/Tokyo).
