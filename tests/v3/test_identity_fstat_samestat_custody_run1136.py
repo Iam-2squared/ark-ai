@@ -113,3 +113,42 @@ def test_identity_file_hash_still_matches_opened_local_bytes(tmp_path: Path) -> 
     result = identity.file_identity(path)
     assert result.sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
     assert result.bytes == path.stat().st_size
+
+
+@pytest.mark.parametrize("target", ("live fstat", "live samestat"))
+def test_live_stat_attribute_substitution_is_denied_by_policy_guard(
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+) -> None:
+    calls: list[object] = []
+
+    def forbidden(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AssertionError("substituted live stat dependency must not execute")
+
+    original_fstat = identity._ORIGINAL_FSTAT
+    original_samestat = identity._ORIGINAL_SAMESTAT
+    proxy_path = SimpleNamespace(
+        samestat=forbidden if target == "live samestat" else original_samestat,
+    )
+    proxy_os = SimpleNamespace(
+        name=identity._ORIGINAL_OS_NAME,
+        scandir=identity._ORIGINAL_SCANDIR,
+        fstat=forbidden if target == "live fstat" else original_fstat,
+        path=proxy_path,
+    )
+    monkeypatch.setattr(identity, "os", proxy_os)
+    monkeypatch.setattr(identity, "_ORIGINAL_OS", proxy_os)
+    monkeypatch.setattr(identity, "_ORIGINAL_OS_PATH", proxy_path)
+
+    with pytest.raises(ValueError, match="identity reparse-point policy changed"):
+        identity._require_original_reparse_point_policy(
+            _original_os=proxy_os,
+            _original_os_path=proxy_path,
+            _original_scandir=identity._ORIGINAL_SCANDIR,
+            _original_fstat=original_fstat,
+            _original_samestat=original_samestat,
+            _original_os_name=identity._ORIGINAL_OS_NAME,
+        )
+
+    assert calls == []
