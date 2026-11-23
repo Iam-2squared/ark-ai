@@ -6,7 +6,7 @@
 
 ## Change
 
-The v1 Action Audit accepted any non-empty outcome string and hydrated persisted TEXT without a byte ceiling. This package keeps the existing open outcome vocabulary but bounds labels to 256 code points and 256 UTF-8 bytes, and rejects C0/C1, bidi, and Unicode formatting controls.
+The v1 Action Audit accepted any non-empty outcome string and hydrated persisted TEXT without a byte ceiling. This package keeps the existing open outcome vocabulary but bounds labels to 256 code points and 256 UTF-8 bytes, and rejects C0/C1, bidi, line/paragraph separators, and every Unicode `Cf` format character (not only a hand-picked subset). The Unicode category dependency is identity-pinned before caller text is processed.
 
 - Caller-provided invalid outcomes retain the existing `ValueError` surface and are rejected before opening SQLite or sampling the audit clock.
 - Persisted oversized outcome TEXT is rejected in SQLite-side byte preflight before Python row hydration.
@@ -16,7 +16,7 @@ The v1 Action Audit accepted any non-empty outcome string and hydrated persisted
 
 ## Synthetic regression coverage
 
-The new test module covers empty/whitespace, code-point and UTF-8 byte overflow, newline/C1/bidi controls, lone surrogate, wrong exact types, pre-SQLite/pre-clock rejection, valid UTF-8 boundary, and persisted-row rejection without mutation.
+The new test module covers empty/whitespace, code-point and UTF-8 byte overflow, newline/C1/bidi controls, Arabic format marks, interlinear annotation controls, supplementary-plane language tags, a substituted Unicode category dependency, lone surrogate, wrong exact types, pre-SQLite/pre-clock rejection, valid UTF-8 boundary, and persisted-row rejection without mutation.
 
 All cases use temporary SQLite and synthetic ToolCalls. No real backend, tool dispatch, personal data, paid service, external compute, or Candidate operation is involved.
 
