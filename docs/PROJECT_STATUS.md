@@ -1,3 +1,86 @@
+# LATEST — 2026-11-23 12:24:10 JST
+
+**Saved at:** 2026-11-23 12:24:10 JST (Asia/Tokyo).
+**Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; remains OPEN/DRAFT/UNMERGED).
+**Work-basis HEAD:** `243a65a121690bb0fc1f4a0596b9d1397da79c3c` — exact PR #8 branch HEAD re-read immediately before this checkpoint.
+**Checkpoint-result HEAD:** this documentation-only checkpoint commit on `research/jarvis-foundations`; its exact SHA is the GitHub Contents API result for this update and is not self-embedded. No source/test code is changed by this checkpoint. Commit message uses `[skip ci]` because exact-head PR #8 CI is already running on the unchanged source/test basis.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No V1/V2/V3 PASS, human review, trusted-clock result, hardware readiness, authenticated consent, physical erasure, or real-world execution authority is claimed.
+- Main HEAD at inspection: `59a033af4ec2a5cdc229de79294202c3365670e6`; no main write or merge occurred.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch, OPEN/DRAFT/UNMERGED.
+- Draft PR #5 remains gated, OPEN/DRAFT/UNMERGED; protected V2 final evaluation remains closed.
+- Draft PR #9 remains OPEN/DRAFT/UNMERGED and untouched. UI/frontend work, UI integration, polish, and frontend tests remain paused.
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Proactive state ambiguous COMMIT outcome — Draft PR #328 integrated into PR #8.**
+   - Child exact HEAD: `660234c19e0e7ba1c08d3165fd3b1e4457ac69bf`.
+   - Exact-head CI run [45102031381](https://github.com/Iam-2squared/ark-ai/actions/runs/45102031381) was GREEN, 6/6.
+   - Integrated by squash merge into PR #8; merge / current work-basis HEAD: `243a65a121690bb0fc1f4a0596b9d1397da79c3c`.
+   - Adds a subprocess-only regression for both native rollback and durable COMMIT with lost acknowledgement. The ledger returns no receipt on ambiguity; cold readback resolves state; stale genesis CAS rejects duplicate preview. No scheduler, notification, or external dispatch authority is added.
+2. **Memory put COMMIT acknowledgement ambiguity — Draft PR #332.**
+   - Child branch: `research/run1145-memory-put-commit-unknown`; exact child HEAD: `af400676e30513284732d6cf74ad2b2b3b464705`.
+   - Test-only subprocess regression covers create/update × native rollback/durable COMMIT with lost acknowledgement, exactly one COMMIT attempt, cold row/event readback, stale-CAS rejection after durable write, and content-free event history.
+   - Memory v1 production source, DDL, public API, and frozen contracts are unchanged.
+3. **Mock pre-action audit COMMIT ambiguity rebase — Draft PR #333.**
+   - Rebased the already GREEN test-only source package from PR #327 exact HEAD `9997045d0d9e0d438027248b3554bb41457ae632` onto the current PR #8 work basis.
+   - New child branch: `research/run1146-mock-preaction-commit-unknown-rebase`; exact child HEAD: `6acc5a0153ed8f2616b39ddf5540e9f578c7e580`.
+   - Fresh exact-head CI is required; the source PR #327 result is historical and does not transfer to this rebase.
+4. **PermissionGate denial-order regression correction — Draft PR #330 remains in progress.**
+   - Corrects the inherited test to assert fail-closed denial and token preservation without requiring one exact diagnostic-message precedence. No production policy or authorization behavior changed.
+5. **Personal Context replay COMMIT ambiguity — Draft PR #331 remains in progress.**
+   - Adds native rollback/durable COMMIT lost-acknowledgement cases with cold readback and duplicate/stale-witness rejection. Production Personal Context source, schema, retention, revocation, and disclosure policy are unchanged.
+   - Its branch includes a separate earlier checkpoint based on the old PR #8 head; it is not integrated. Reconcile/rebase it before integration.
+
+## Tests / CI / evidence
+
+All results below are exact-head GitHub Actions observations. No local pytest/Ruff PASS, human review, or physical-PC test is claimed.
+
+| Scope / exact HEAD | CI evidence | Result |
+|---|---|---|
+| PR #8 current source/test basis `243a65a121690bb0fc1f4a0596b9d1397da79c3c` | [45105064474](https://github.com/Iam-2squared/ark-ai/actions/runs/45105064474) / #7219 | **IN PROGRESS**; 1/6 jobs GREEN, 5/6 running at last observation |
+| PR #328 integrated child `660234c19e0e7ba1c08d3165fd3b1e4457ac69bf` | [45102031381](https://github.com/Iam-2squared/ark-ai/actions/runs/45102031381) / #7214 | **GREEN, 6/6** |
+| PR #327 original mock-executor child `9997045d0d9e0d438027248b3554bb41457ae632` | [45097063883](https://github.com/Iam-2squared/ark-ai/actions/runs/45097063883) / #7212 | **GREEN, 6/6** on its old base; not integrated; fresh rebase PR #333 CI required |
+| PR #329 Planner COMMIT-unknown child `e7484a1946c7d805c8cfeb6a774f0ceebf036901` | [45102298063](https://github.com/Iam-2squared/ark-ai/actions/runs/45102298063) / #7215 | **FAIL** in Ubuntu/Python 3.12: 19,404 passed, 1 skipped, 1 failed. The failing assertion froze a denial-message string; the actual PermissionGate denial remained fail-closed and the one-shot token remained unconsumed. PR #330 contains the test correction and is still running. |
+| PR #330 PermissionGate test correction `b5068d6f88fa54ca6af56b8c68b6541a8b1c2bc6` | [45103670705](https://github.com/Iam-2squared/ark-ai/actions/runs/45103670705) / #7216 | **IN PROGRESS**; 5/6 jobs GREEN, 1/6 running |
+| PR #331 Personal Context replay COMMIT test `a1530cd985d63b08c189ad93e8ed123c63115190` | [45104098448](https://github.com/Iam-2squared/ark-ai/actions/runs/45104098448) / #7218 | **IN PROGRESS**; 3/6 jobs GREEN, 3/6 running |
+| PR #332 Memory put COMMIT test `af400676e30513284732d6cf74ad2b2b3b464705` | [45105439635](https://github.com/Iam-2squared/ark-ai/actions/runs/45105439635) / #7220 | **IN PROGRESS**; 6/6 jobs running at last observation |
+| PR #333 mock pre-action audit rebase `6acc5a0153ed8f2616b39ddf5540e9f578c7e580` | [45105525622](https://github.com/Iam-2squared/ark-ai/actions/runs/45105525622) / #7221 | **QUEUED / IN PROGRESS**; 5 jobs running, 1 queued at last observation |
+| PR #5 current head `034a6f988445e54e5c6280d0f8f157959416d33b` | [45090389277](https://github.com/Iam-2squared/ark-ai/actions/runs/45090389277) / #7209 | **FAIL** at inherited Ruff I001 before pytest; protected V2 evaluation remains closed |
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+- PR #5 and PR #8 remain OPEN/DRAFT/UNMERGED. PR #9 remains OPEN/DRAFT/UNMERGED and untouched.
+- Main remains at `59a033af4ec2a5cdc229de79294202c3365670e6`; no main write or merge occurred.
+- No paid/external GPU compute, paid API/service, subscription, purchase, credential, new account connection, physical-PC action, destructive operation, Candidate generation/training/promotion, protected V2 final evaluation, or external tool dispatch occurred.
+- No contamination, provenance, regression, reproducibility, privacy, or frozen-contract gate was weakened.
+- Synthetic local SQLite/hash-chain evidence does not prove fsync/power-loss durability, independent storage custody, authenticated writer provenance, trusted time, consent, physical erasure, cross-store atomicity, or exactly-once external effects.
+- UI/frontend development remains paused; no UI code, branch, tests, or integration was touched.
+
+## Blockers / authorization boundaries
+
+- PR #329 has one exact-head CI failure; PR #330 is the isolated test-only correction. Do not claim the Planner child GREEN until a fresh exact-head run succeeds.
+- PR #331, #332, and #333 remain isolated. Integrate only after each exact child HEAD is GREEN and a fresh parent HEAD / mergeability check passes. PR #331 must be reconciled with the updated PR #8 base and its older checkpoint.
+- PR #8 exact-head CI run #7219 is still in progress at this checkpoint; the documentation-only checkpoint does not change source/test files.
+- PR #5 remains blocked by the inherited main-branch Ruff I001 finding in the V3 branch's CI run. A main-level correction still requires explicit user approval; do not weaken Ruff or open the protected V2 evaluation.
+- Real Candidate adapter/weight generation, paid/external compute, protected evaluation, Candidate promotion, credentials/new connections, hardware actions, frozen-contract changes, and main merge remain blocked by their explicit gates.
+- No trusted clock, authenticated consent, physical-PC readiness, real backend dispatch, or exactly-once external effect is established.
+
+## Next plan / 今後の方針
+
+1. Revisit the existing CI runs only when useful; inspect failures, do not launch duplicate equivalent workflows, and do not wait idle while other safe lanes remain.
+2. After PR #330 is exact-head GREEN, re-read PR #8 HEAD and mergeability, integrate the test-only correction, then re-evaluate PR #329 against the corrected parent without transferring old CI evidence.
+3. Reconcile PR #331 onto the latest PR #8 base after its exact-head CI completes; preserve its Personal Context replay regression and produce fresh exact-head evidence.
+4. Continue PR #332 Memory put COMMIT-UNKNOWN validation and PR #333 mock pre-action audit rebase; integrate only after exact-head GREEN and current-base checks.
+5. Continue independent local-first work on Memory WAL/expiry/CAS, Planner recovery, durable authorization/occurrence replay, privacy-safe Personal Context, startup readiness, observation fixture contracts, and free-only V3 guards.
+6. Keep PR #5 and PR #8 Draft/unmerged, the protected V2 final evaluation closed, main unchanged, and PR #9/UI paused.
+
+---
+
 # LATEST — 2026-11-23 10:56:04 JST
 
 **Saved at:** 2026-11-23 10:56:04 JST (Asia/Tokyo).
