@@ -1,3 +1,73 @@
+# LATEST — 2026-11-23 12:03 JST
+
+**Saved at:** 2026-11-23 12:03 JST (Asia/Tokyo).  
+**Checkpoint branch / PR:** `research/run1144-personal-context-replay-commit-unknown` / Draft PR #331 (base `research/jarvis-foundations`; remains OPEN/DRAFT/UNMERGED).  
+**Companion work:** Draft PR #330, `research/run1143-permission-gate-denial-order-test`.  
+**Work-basis HEAD:** `e7b49bfb257b0adaf07b3e7b2e52e7f4ca2bf6e8` — exact PR #8 / `research/jarvis-foundations` HEAD re-read before both child branches were created.  
+**Checkpoint-result HEAD:** the new commit created by this `PROJECT_STATUS.md` update on PR #331's branch; its exact SHA is the GitHub Contents API result for this update and is not self-embedded. Immediately preceding Run1144 source/test package HEAD: `aa00a0b15506932e0905fafc91e8d65c27e35daf`.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No new V1/V2/V3 PASS, human review, trusted-clock result, hardware readiness, consent proof, or real-world execution authority is claimed.
+- Main HEAD at inspection: `59a033af4ec2a5cdc229de79294202c3365670e6`; no main write or merge occurred.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch, OPEN/DRAFT/UNMERGED.
+- Draft PR #5 remains gated and OPEN/DRAFT/UNMERGED; its protected V2 final evaluation remains closed.
+- Draft PR #9 remains OPEN/DRAFT/UNMERGED and untouched. UI/frontend work, integration, polish, and frontend tests remain paused.
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Run1143 — PermissionGate denial-order regression (test-only), Draft PR #330.**
+   - Branch: `research/run1143-permission-gate-denial-order-test`.
+   - Exact child head before checkpoint: `b5068d6f88fa54ca6af56b8c68b6541a8b1c2bc6`.
+   - Corrects one existing adversarial test to assert denial and preservation of the unconsumed one-shot token without freezing error-message precedence. A capability mutation can be rejected by the earlier ToolSpec/ToolCall mismatch check. No production policy or authorization semantics changed.
+2. **Run1144 — Personal Context replay COMMIT ambiguity (test-only), Draft PR #331.**
+   - Branch: `research/run1144-personal-context-replay-commit-unknown`.
+   - Source/test package head before this checkpoint: `aa00a0b15506932e0905fafc91e8d65c27e35daf`.
+   - Adds both native-rollback and native-commit/lost-acknowledgement cases. It verifies one COMMIT attempt, no receipt returned, cold readback of the actual state, stale-witness/duplicate rejection after a durable commit, and no persistence of fixture context text. No production Personal Context source, schema, retention, revocation, or authority semantics changed.
+
+## Tests / CI / evidence
+
+All observations below are exact-head GitHub Actions lookups. No local pytest/Ruff result is claimed.
+
+| Scope | Exact head / workflow | Result |
+|---|---|---|
+| PR #8 foundation base | `e7b49bfb257b0adaf07b3e7b2e52e7f4ca2bf6e8`; run [45101550629](https://github.com/Iam-2squared/ark-ai/actions/runs/45101550629) / #7213 | **IN PROGRESS** at last observation; Linux Python 3.11–3.13 jobs GREEN, Windows Python 3.11–3.13 jobs still running |
+| Planner COMMIT-unknown child PR #329 | `e7484a1946c7d805c8cfeb6a774f0ceebf036901`; run [45102298063](https://github.com/Iam-2squared/ark-ai/actions/runs/45102298063) / #7215 | **FAIL observed in one job; workflow still IN PROGRESS** at last observation. Ubuntu/Python 3.12: 19,404 passed, 1 skipped, 1 failed. Failure is the existing PermissionGate denial-message assertion in `test_registered_policy_spend_rebind_run379.py`; the actual denial remained fail-closed and the token was not consumed. |
+| Proactive COMMIT-unknown child PR #328 | `660234c19e0e7ba1c08d3165fd3b1e4457ac69bf`; run [45102031381](https://github.com/Iam-2squared/ark-ai/actions/runs/45102031381) / #7214 | **IN PROGRESS** at last observation |
+| Mock pre-action audit COMMIT-unknown child PR #327 | `9997045d0d9e0d438027248b3554bb41457ae632`; run [45097063883](https://github.com/Iam-2squared/ark-ai/actions/runs/45097063883) / #7212 | **GREEN / success** |
+| Run1143 PR #330 | `b5068d6f88fa54ca6af56b8c68b6541a8b1c2bc6` | No exact-head workflow run returned by the last lookup; CI evidence **pending / not yet observed** |
+| Run1144 PR #331 | `aa00a0b15506932e0905fafc91e8d65c27e35daf` | No exact-head workflow run returned by the last lookup; CI evidence **pending / not yet observed** |
+| main | `59a033af4ec2a5cdc229de79294202c3365670e6` | No combined status/workflow run returned by the last lookup; no main write was made |
+
+Predecessor-head CI does not validate a later child head. No local test or runtime result is claimed.
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+- Frozen V2 evaluation/scorer/policy boundaries remain closed.
+- V3 Contract 1 and its authorization/evidence gates were not changed; no Candidate adapter or weights were generated.
+- PR #5 and PR #8 remain Draft/unmerged. PR #9 remains Draft/unmerged and untouched.
+- No paid/external compute, paid API/service, subscription, purchase, credential/account connection, physical-PC action, destructive operation, Candidate generation/training/promotion, external tool dispatch, or main merge occurred.
+- No contamination, provenance, regression, or reproducibility gate was weakened.
+- Local synthetic SQLite/hash-chain tests do not prove fsync/power-loss durability, independent storage custody, trusted time, authenticated consent, revocation freshness, cross-store atomicity, or exactly-once external effects.
+
+## Blockers / authorization boundaries
+
+- Real Candidate adapter/weight generation, paid/external compute, protected V2 final evaluation, and Candidate promotion remain blocked by their explicit gates.
+- No trusted clock, physical-PC readiness, authenticated consent, or real backend dispatch is established by this work.
+- PR #330 and PR #331 must receive fresh exact-head CI before any integration; re-read PR #8 HEAD and mergeability before rebasing/integrating any child.
+- If CI fails, inspect the failing job and make only the smallest semantics-preserving correction. Do not weaken assertions about denial, token preservation, COMMIT outcome, replay, or privacy.
+
+## Next plan / 今後の方針
+
+1. Observe exact-head CI for PR #330 and #331; inspect any failing job logs and repair only proven issues.
+2. Reconcile PR #329's PermissionGate assertion failure against PR #8 run #7213; determine whether the parent exact-head suite exhibits the same diagnostic-order issue.
+3. Continue independent non-UI work on Memory WAL/CAS/expiry ambiguity, Planner crash recovery, ActionAudit/occurrence replay protection, Personal Context privacy/revocation, ToolRegistry/PermissionGate, startup readiness, observation fixture ingress, and proactive state recovery.
+4. Keep child work isolated and reversible. Re-read the latest PR #8 HEAD before each new branch/write. Do not merge to main or open protected evaluations.
+
+---
+
 # LATEST — 2026-11-23 10:56:04 JST
 
 **Saved at:** 2026-11-23 10:56:04 JST (Asia/Tokyo).
