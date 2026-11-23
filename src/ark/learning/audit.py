@@ -18,17 +18,50 @@ class ReviewPair:
     reason: str
 
     def validate(self) -> None:
+        if type(self) is not ReviewPair:
+            raise ValueError("exact ReviewPair required")
         for name in ("candidate_id", "protected_id", "detector", "reason"):
-            value = getattr(self, name)
-            if not isinstance(value, str) or not value.strip():
+            value = object.__getattribute__(self, name)
+            if type(value) is not str or not value.strip():
                 raise ValueError("complete review-pair metadata required")
-        if (
-            isinstance(self.score, bool)
-            or not isinstance(self.score, (int, float))
-            or not math.isfinite(self.score)
-            or not 0.0 <= self.score <= 1.0
-        ):
+        score = object.__getattribute__(self, "score")
+        if type(score) not in (int, float):
+            raise ValueError("finite similarity score must be an exact number")
+        try:
+            measured = float(score)
+        except (OverflowError, ValueError) as exc:
+            raise ValueError("finite similarity score must be within [0, 1]") from exc
+        if not math.isfinite(measured) or not 0.0 <= measured <= 1.0:
             raise ValueError("finite similarity score must be within [0, 1]")
+
+
+def _require_exact_items(value: object, name: str) -> list:
+    if type(value) is not list:
+        raise ValueError(f"{name} must be an exact list")
+    return value
+
+
+def _require_candidate_id(item: object) -> str:
+    if type(item) is not LearningCandidate:
+        raise ValueError("exact LearningCandidate required")
+    candidate_id = object.__getattribute__(item, "candidate_id")
+    if type(candidate_id) is not str or not candidate_id.strip():
+        raise ValueError("accepted candidate ID must be exact non-empty text")
+    return candidate_id
+
+
+def _validate_sample_policy(fraction: object, minimum: object) -> tuple[float, int]:
+    if type(fraction) not in (int, float) or type(minimum) is not int:
+        raise ValueError("invalid sample policy")
+    try:
+        measured_fraction = float(fraction)
+    except (OverflowError, ValueError) as exc:
+        raise ValueError("invalid sample policy") from exc
+    if not math.isfinite(measured_fraction) or not 0.0 < measured_fraction <= 1.0:
+        raise ValueError("invalid sample policy")
+    if minimum < 1:
+        raise ValueError("invalid sample policy")
+    return measured_fraction, minimum
 
 
 def deterministic_sample_ids(
@@ -38,12 +71,13 @@ def deterministic_sample_ids(
     minimum: int = 15,
 ) -> list[str]:
     """Choose a stable SHA-ordered human-review sample from non-flagged examples."""
-    if not 0 < fraction <= 1 or minimum < 1:
-        raise ValueError("invalid sample policy")
-    unique = {item.candidate_id: item for item in items}
+    rows = _require_exact_items(items, "items")
+    measured_fraction, minimum = _validate_sample_policy(fraction, minimum)
+    identifiers = [_require_candidate_id(item) for item in rows]
+    unique = {candidate_id: item for candidate_id, item in zip(identifiers, rows, strict=True)}
     count = min(
         len(unique),
-        max(minimum, (len(unique) * int(fraction * 100) + 99) // 100),
+        max(minimum, (len(unique) * int(measured_fraction * 100) + 99) // 100),
     )
     ordered = sorted(
         unique,
@@ -65,11 +99,19 @@ def build_human_review_queue(
     sample. This function does not claim that semantic leakage has been detected or
     excluded; it only freezes the review workload.
     """
-    ids = {item.candidate_id for item in accepted}
+    accepted_rows = _require_exact_items(accepted, "accepted")
+    flagged_rows = _require_exact_items(flagged_pairs, "flagged_pairs")
+    measured_fraction, minimum = _validate_sample_policy(fraction, minimum)
+    accepted_with_ids = [
+        (item, _require_candidate_id(item)) for item in accepted_rows
+    ]
+    ids = {candidate_id for _, candidate_id in accepted_with_ids}
     flagged_ids: set[str] = set()
     pairs: list[dict] = []
     seen_pairs: dict[tuple[str, str, str], tuple[float, str]] = {}
-    for pair in flagged_pairs:
+    for pair in flagged_rows:
+        if type(pair) is not ReviewPair:
+            raise ValueError("exact ReviewPair required")
         pair.validate()
         if pair.candidate_id not in ids:
             raise ValueError("flag references a non-accepted candidate")
@@ -91,9 +133,14 @@ def build_human_review_queue(
             }
         )
 
-    non_flagged = [item for item in accepted if item.candidate_id not in flagged_ids]
+    non_flagged = [
+        item for item, candidate_id in accepted_with_ids
+        if candidate_id not in flagged_ids
+    ]
     sampled = (
-        deterministic_sample_ids(non_flagged, fraction=fraction, minimum=minimum)
+        deterministic_sample_ids(
+            non_flagged, fraction=measured_fraction, minimum=minimum,
+        )
         if non_flagged
         else []
     )
