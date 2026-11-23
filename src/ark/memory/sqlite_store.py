@@ -607,8 +607,38 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
         raise MemorySchemaError("memory path custody cannot be verified") from exc
 
 
+def _require_memory_store_path_identity(store: SQLiteMemoryStore) -> None:
+    """Reject a store redirected to a different local database after construction."""
+    try:
+        original = object.__getattribute__(store, "_path_identity")
+        current = object.__getattribute__(store, "path")
+    except AttributeError as exc:
+        raise MemorySchemaError("memory source path identity is unavailable") from exc
+    if (
+        type(original) is not type(Path())
+        or type(current) is not type(Path())
+        or current is not original
+    ):
+        raise MemorySchemaError("memory source path identity changed")
+
+
 class SQLiteMemoryStore:
     """Local-only store with schema versioning, scope isolation and CAS writes."""
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name == "_path_identity":
+            try:
+                object.__getattribute__(self, "_path_identity")
+            except AttributeError:
+                pass
+            else:
+                raise AttributeError("memory source path identity is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        if name == "_path_identity":
+            raise AttributeError("memory source path identity is immutable")
+        object.__delattr__(self, name)
 
     def __init__(
         self,
@@ -619,6 +649,7 @@ class SQLiteMemoryStore:
         if type(path) not in (str, type(Path())):
             raise MemorySchemaError("memory requires exact local path")
         self.path = Path(path)
+        self._path_identity = self.path
         # Serialize the pre-create path fences with WAL bootstrap. Otherwise
         # a competing initializer can observe the first connection's
         # transient SQLite sidecar before its main-file creation is visible,
@@ -1507,6 +1538,7 @@ class SQLiteMemoryStore:
         # mutators must not create a plausible empty replacement database if
         # the original Memory store has been moved or removed after startup.
         _require_safe_memory_path(self.path, create=create)
+        _require_memory_store_path_identity(self)
         if create:
             conn = sqlite3.connect(self.path)
         else:
@@ -1521,6 +1553,7 @@ class SQLiteMemoryStore:
         # Reading evidence must never recreate a missing initialized SQLite file.
         # Path.as_uri() escapes '?' and '#' within a literal filesystem path.
         _require_safe_memory_path(self.path, create=False)
+        _require_memory_store_path_identity(self)
         uri = self.path.resolve().as_uri() + "?mode=ro"
         conn = sqlite3.connect(uri, uri=True)
         conn.row_factory = sqlite3.Row
