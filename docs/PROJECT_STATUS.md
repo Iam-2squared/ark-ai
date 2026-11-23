@@ -1,3 +1,80 @@
+# LATEST — 2026-11-23 10:56:04 JST
+
+**Saved at:** 2026-11-23 10:56:04 JST (Asia/Tokyo).
+
+**Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; remains OPEN/DRAFT/UNMERGED).
+
+**Work-basis HEAD:** `1d80a2ac00d6f00669f1d3f2940556e77ac31cad` — latest PR #8 branch HEAD immediately before this checkpoint.
+
+**Checkpoint-result HEAD:** documentation-only commit produced by this update on `research/jarvis-foundations`. Its exact SHA is the GitHub Contents API result for this update and is not self-embedded. No source/test code is changed by this checkpoint.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No new V1/V2/V3 PASS, human review, trusted-clock result, hardware readiness, consent proof, or real-world execution authority is claimed.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch and is OPEN/DRAFT/UNMERGED.
+- Draft PR #5 remains gated and OPEN/DRAFT/UNMERGED. Its protected V2 final evaluation remains closed.
+- Draft PR #9 remains OPEN/DRAFT/UNMERGED and untouched. UI/frontend work, UI integration, polish, and frontend tests remain paused.
+- Main remains at `59a033af4ec2a5cdc229de79294202c3365670e6` as observed for this checkpoint; no main-branch write or merge occurred.
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Personal Context replay SQLite factory custody rebase — Draft PR #326**
+   - Child branch: `research/run1139-personal-context-sqlite-factory-rebase`.
+   - Exact child HEAD: `60d9a307224b58ec4288bc5fe784f3287b45593a`; base PR #8 work-basis: `1d80a2ac00d6f00669f1d3f2940556e77ac31cad`.
+   - Rebased the Run1137 import-original SQLite module/factory/Connection/IntegrityError custody onto the latest PR #8 foundation. Schema probing and startup/read/write opens use one guarded exact-native-connection helper.
+   - Repaired two legacy read-only restart tests that monkeypatched `sqlite3.connect`, which is now intentionally pinned. The replacement checks exercise the production read-only URI directly and verify that a read-only restart coexists with a RESERVED writer; the new Run1137 tests retain module/factory/type/helper substitution coverage.
+   - Prior source child PR #325 exact-head run [45088953623](https://github.com/Iam-2squared/ark-ai/actions/runs/45088953623) FAILED because those two legacy tests violated the new factory pin. New rebased PR #326 exact-head run [45096702605](https://github.com/Iam-2squared/ark-ai/actions/runs/45096702605) is IN PROGRESS. PR #326 remains Draft/unmerged and is not integrated.
+
+2. **Disconnected mock executor pre-action audit COMMIT ambiguity — Draft PR #327**
+   - Child branch: `research/run1140-mock-preaction-commit-unknown`.
+   - Exact child HEAD: `9997045d0d9e0d438027248b3554bb41457ae632`; base PR #8 work-basis: `1d80a2ac00d6f00669f1d3f2940556e77ac31cad`.
+   - Added a subprocess-only integration regression for both possible outcomes when a pre-action ActionAudit COMMIT acknowledgement is lost: the transaction either persisted or rolled back, but in both cases the already-reserved occurrence remains durable, the mock backend is never called, and a fresh process-local gate cannot replay the same token identity with a different occurrence ID.
+   - The SQLite factory wrapper is installed before ARK imports in the subprocess, so the import-original dependency guards remain active. This is test-only; no production executor, ledger schema, or frozen contract changed.
+   - New exact-head PR #327 run [45097063883](https://github.com/Iam-2squared/ark-ai/actions/runs/45097063883) is IN PROGRESS. PR #327 remains Draft/unmerged and is not integrated.
+
+## Tests / CI / evidence
+
+All results below are exact-head GitHub Actions observations. No local pytest/Ruff run, human review, or hardware test is claimed.
+
+| Work / exact HEAD | CI evidence | Result |
+|---|---|---|
+| PR #8 source work-basis `0dd4d72c8e49fe25177091a972265d1f689c5098` | [45090552986](https://github.com/Iam-2squared/ark-ai/actions/runs/45090552986) | GREEN, 6/6; current PR #8 HEAD `1d80a2ac00d6f00669f1d3f2940556e77ac31cad` adds only the prior documentation checkpoint |
+| PR #326 child `60d9a307224b58ec4288bc5fe784f3287b45593a` | [45096702605](https://github.com/Iam-2squared/ark-ai/actions/runs/45096702605) | IN PROGRESS |
+| PR #327 child `9997045d0d9e0d438027248b3554bb41457ae632` | [45097063883](https://github.com/Iam-2squared/ark-ai/actions/runs/45097063883) | IN PROGRESS |
+| Prior PR #325 child `15faa5c235dc61b193f0812233b938232a7d98d6` | [45088953623](https://github.com/Iam-2squared/ark-ai/actions/runs/45088953623) | FAIL; two legacy read-only restart tests monkeypatched the now-pinned SQLite factory |
+| PR #5 current HEAD `034a6f988445e54e5c6280d0f8f157959416d33b` | [45090389277](https://github.com/Iam-2squared/ark-ai/actions/runs/45090389277) | FAIL; all six matrix jobs stopped at Ruff I001 in an inherited main-branch test before pytest |
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts unchanged.
+- Observation Envelope v1 unchanged; AUDIO was not added.
+- PR #5 remains OPEN/DRAFT/UNMERGED; protected V2 final evaluation remains closed.
+- PR #8 remains OPEN/DRAFT/UNMERGED. PR #9 remains OPEN/DRAFT/UNMERGED and its branch is untouched.
+- Main HEAD remains `59a033af4ec2a5cdc229de79294202c3365670e6`; no main-branch write or merge occurred.
+- No paid/external GPU, paid API/service, subscription, purchase, credential, new account connection, physical-PC action, destructive operation, Candidate generation/training/promotion, trusted-clock assertion, external tool dispatch, or main merge occurred.
+- No frozen contract, contamination, provenance, regression, or reproducibility gate was weakened.
+- PR #326 and PR #327 are isolated child branches based on PR #8 work-basis `1d80a2ac00d6f00669f1d3f2940556e77ac31cad`. Neither is integrated; each requires exact-head GREEN CI and a fresh parent-HEAD/mergeability check before integration.
+- UI/frontend development remains paused; no UI code, branch, tests, or integration was touched.
+
+## Blockers / authorization boundaries
+
+- PR #5 remains blocked by the inherited main-branch Ruff I001 finding in `tests/test_personal_context_replay_process_crash_run1033.py`. The import-only correction is represented by Draft PR #276; no main write or PR #5 workaround was attempted. A main-level correction still requires explicit user approval. Do not weaken Ruff or open the protected V2 final evaluation.
+- PR #326 and PR #327 exact-head CI are IN PROGRESS. Do not integrate either until its exact head is GREEN; if a run fails, inspect the failing job, make the smallest semantics-preserving correction on an isolated branch, and launch one fresh exact-head run.
+- Real Candidate adapter/weight generation, training, protected V2 final evaluation, Candidate promotion, paid/external compute, credentials/new connections, hardware actions, frozen-contract changes, and main merge remain blocked by their existing gates.
+- No trusted clock is established; caller/local timestamps remain diagnostic only.
+- No external tool dispatch or exactly-once external effect is proven by the synthetic ledgers or mock executor.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #326 run [45096702605](https://github.com/Iam-2squared/ark-ai/actions/runs/45096702605) and PR #327 run [45097063883](https://github.com/Iam-2squared/ark-ai/actions/runs/45097063883) when their current attempts complete; inspect only failed jobs and avoid duplicate equivalent runs.
+2. After each child is exact-head GREEN, re-read the latest PR #8 HEAD and confirm a clean merge before integrating; require fresh exact-head PR #8 CI after integration.
+3. Continue free-only Planner terminal recovery, Memory CAS/expiry/WAL integrity, Personal Context revocation/replay privacy, Observation fixture ingress, startup readiness, and durable authorization/audit ordering. Keep components isolated until lower-level invariants have exact-head GREEN evidence.
+4. Keep PR #5 Draft/unmerged and the protected V2 final evaluation closed; await explicit approval for any main-level correction.
+5. Keep PR #9 untouched; no UI work.
+
+---
+
 # LATEST — 2026-11-23 09:48:16 JST
 
 **Saved at:** 2026-11-23 09:48:16 JST (Asia/Tokyo).
