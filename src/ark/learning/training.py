@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Protocol
@@ -14,6 +13,7 @@ from .dataset import (
     build_dataset,
     canonical,
     digest,
+    loads_unique_json,
     valid_sha,
 )
 
@@ -99,7 +99,7 @@ class MockTrainingBackend:
             raise StopRequired("mock backend cannot train a real method")
         if digest(dataset.payload) != dataset.sha256 or dataset.sha256 != config.dataset_sha256:
             raise ValueError("dataset hash mismatch")
-        rows = json.loads(dataset.payload)["examples"]
+        rows = loads_unique_json(dataset.payload)["examples"]
         rebuilt = build_dataset(
             [LearningCandidate(**row) for row in rows], ContaminationGuard.frozen_v2()
         )

@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 from .audit import ReviewPair, build_human_review_queue
-from .dataset import ContaminationGuard, LearningCandidate, build_dataset, canonical, digest
+from .dataset import (
+    ContaminationGuard,
+    LearningCandidate,
+    build_dataset,
+    canonical,
+    digest,
+    loads_unique_json,
+)
 from .freeze import (
     AuditDecision,
     build_review_queue_artifact,
@@ -16,7 +22,7 @@ from .freeze import (
 
 
 def _load_json_list(path: Path, label: str) -> list[dict]:
-    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    value = loads_unique_json(Path(path).read_text(encoding="utf-8"))
     if not isinstance(value, list) or not all(isinstance(row, dict) for row in value):
         raise ValueError(f"{label} must be a JSON array of objects")
     return value
@@ -35,7 +41,7 @@ def _decisions(path: Path) -> list[AuditDecision]:
 
 
 def _accepted(dataset_payload: bytes) -> list[LearningCandidate]:
-    rows = json.loads(dataset_payload)["examples"]
+    rows = loads_unique_json(dataset_payload)["examples"]
     return [LearningCandidate(**row) for row in rows]
 
 

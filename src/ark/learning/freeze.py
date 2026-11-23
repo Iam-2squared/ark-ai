@@ -12,6 +12,7 @@ from .dataset import (
     build_dataset,
     canonical,
     digest,
+    loads_unique_json,
 )
 
 
@@ -47,9 +48,7 @@ class FrozenDatasetEvidence:
 
 
 def _accepted_items(dataset: DatasetArtifact) -> list[LearningCandidate]:
-    import json
-
-    parsed = json.loads(dataset.payload)
+    parsed = loads_unique_json(dataset.payload)
     return [LearningCandidate(**row) for row in parsed["examples"]]
 
 
