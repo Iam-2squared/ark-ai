@@ -182,7 +182,7 @@ def test_missing_audit_fails_and_is_never_recreated(tmp_path: Path):
     # Point a stale audit handle to an absent path. On Windows, SQLite
     # initializers can retain an OS file handle and prohibit unlink().
     missing = tmp_path / "missing-audit.sqlite"
-    state[3].path = missing
+    object.__setattr__(state[3], "path", missing)
     with pytest.raises(ActionAuditSchemaError, match="cannot read audit"):
         _review(state)
     assert not missing.exists()
