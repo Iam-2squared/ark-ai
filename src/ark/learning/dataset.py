@@ -45,7 +45,9 @@ def _finite_json_float(value: str) -> float:
 
 
 def loads_unique_json(payload: str | bytes) -> object:
-    """Parse strict JSON without duplicate keys or non-standard constants."""
+    """Parse strict JSON from exact built-in text/bytes without caller callbacks."""
+    if type(payload) not in (str, bytes):
+        raise TypeError("JSON payload must be an exact str or bytes value")
     return json.loads(
         payload,
         object_pairs_hook=_unique_json_object,
