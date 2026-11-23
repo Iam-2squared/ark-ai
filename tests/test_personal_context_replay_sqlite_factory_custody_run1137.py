@@ -90,7 +90,11 @@ def test_sqlite_result_and_error_types_are_pinned(
     proxy = SimpleNamespace(
         connect=replay._ORIGINAL_SQLITE_CONNECT,
         Connection=object if target == "Connection" else replay._ORIGINAL_SQLITE_CONNECTION,
-        IntegrityError=RuntimeError if target == "IntegrityError" else replay._ORIGINAL_SQLITE_INTEGRITY_ERROR,
+        IntegrityError=(
+            RuntimeError
+            if target == "IntegrityError"
+            else replay._ORIGINAL_SQLITE_INTEGRITY_ERROR
+        ),
     )
     monkeypatch.setattr(replay, "sqlite3", proxy)
     monkeypatch.setattr(replay, "_ORIGINAL_SQLITE3", proxy)
