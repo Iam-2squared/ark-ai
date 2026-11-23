@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import unicodedata
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +55,8 @@ _ORIGINAL_JSON = json
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_SQLITE = sqlite3
 _ORIGINAL_CONNECT = sqlite3.connect
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 _ORIGINAL_PROACTIVE_MODULE = _proactive
 _ORIGINAL_PATH_CHECK = _proactive._refuse_aliased_proactive_path
 _ORIGINAL_PROACTIVE_STAT = _proactive.stat
@@ -80,6 +83,8 @@ def _require_original_protocol() -> None:
         or json.dumps is not _ORIGINAL_DUMPS
         or sqlite3 is not _ORIGINAL_SQLITE
         or sqlite3.connect is not _ORIGINAL_CONNECT
+        or unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
         or _proactive is not _ORIGINAL_PROACTIVE_MODULE
         or _proactive._refuse_aliased_proactive_path is not _ORIGINAL_PATH_CHECK
         or _proactive.stat is not _ORIGINAL_PROACTIVE_STAT
@@ -113,29 +118,31 @@ def _hash(label: str, values: object) -> str:
 
 
 def _exact_text(name: str, value: object) -> None:
+    _require_original_protocol()
     if type(value) is not str or not 1 <= len(value) <= 512 or value != value.strip():
         raise SyntheticProactiveStateRejected(f"{name} must be a bounded exact string")
-    if "\x00" in value or any(
+    if "\\x00" in value or any(
         ord(character) < 32 or ord(character) == 127 for character in value
     ):
         raise SyntheticProactiveStateRejected(f"{name} contains a control delimiter")
     if any(
-        0x80 <= point <= 0x9F
-        or point in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
-        or 0x200B <= point <= 0x200D
-        or 0x202A <= point <= 0x202E
-        or point in (0x2028, 0x2029, 0xFEFF)
-        or 0x2060 <= point <= 0x206F
-        for point in map(ord, value)
+        _ORIGINAL_UNICODE_CATEGORY(character) == "Cf"
+        or 0x80 <= ord(character) <= 0x9F
+        or ord(character) in (0x00AD, 0x034F, 0x061C, 0x180E, 0x200E, 0x200F)
+        or 0x200B <= ord(character) <= 0x200D
+        or 0x202A <= ord(character) <= 0x202E
+        or ord(character) in (0x2028, 0x2029, 0xFEFF)
+        or 0x2060 <= ord(character) <= 0x206F
+        for character in value
     ):
         raise SyntheticProactiveStateRejected(f"{name} contains a Unicode formatting control")
+    _require_original_protocol()
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeError as exc:
         raise SyntheticProactiveStateRejected(f"{name} is not valid UTF-8") from exc
     if size > 512:
         raise SyntheticProactiveStateRejected(f"{name} exceeds its UTF-8 byte budget")
-
 
 def _exact_int(name: str, value: object, *, minimum: int = 0) -> None:
     if type(value) is not int or not minimum <= value <= _MAX:
