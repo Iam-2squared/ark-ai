@@ -214,6 +214,16 @@ class PermissionGate:
             raise AttributeError("PermissionGate state is immutable")
         object.__setattr__(self, name, value)
 
+    def __delattr__(self, name: str) -> None:
+        # Deleting a slot is also mutation; preserve token and lock custody.
+        try:
+            sealed = object.__getattribute__(self, "_sealed")
+        except AttributeError:
+            sealed = False
+        if sealed:
+            raise AttributeError("PermissionGate state is immutable")
+        object.__delattr__(self, name)
+
     def __init__(self) -> None:
         # Reject a subclass before any instance attribute access: a subclass
         # may override __getattribute__ and run code during construction.
@@ -763,6 +773,7 @@ class PermissionGate:
 _ORIGINAL_PERMISSION_GATE = PermissionGate
 _ORIGINAL_GATE_SLOTS = vars(_ORIGINAL_PERMISSION_GATE)["__slots__"]
 _ORIGINAL_GATE_SETATTR = vars(_ORIGINAL_PERMISSION_GATE)["__setattr__"]
+_ORIGINAL_GATE_DELATTR = vars(_ORIGINAL_PERMISSION_GATE)["__delattr__"]
 _ORIGINAL_GATE_INIT = vars(_ORIGINAL_PERMISSION_GATE)["__init__"]
 _ORIGINAL_LOCK = Lock
 _ORIGINAL_LOCK_TYPE = type(_ORIGINAL_LOCK())
@@ -773,6 +784,7 @@ def _require_original_gate_class() -> None:
         PermissionGate is not _ORIGINAL_PERMISSION_GATE
         or vars(_ORIGINAL_PERMISSION_GATE).get("__slots__") is not _ORIGINAL_GATE_SLOTS
         or vars(_ORIGINAL_PERMISSION_GATE).get("__setattr__") is not _ORIGINAL_GATE_SETATTR
+        or vars(_ORIGINAL_PERMISSION_GATE).get("__delattr__") is not _ORIGINAL_GATE_DELATTR
         or vars(_ORIGINAL_PERMISSION_GATE).get("__init__") is not _ORIGINAL_GATE_INIT
         or vars(_ORIGINAL_PERMISSION_GATE).get("authorize") is not _ORIGINAL_AUTHORIZE
         or vars(_ORIGINAL_PERMISSION_GATE).get("authorize_registered")
