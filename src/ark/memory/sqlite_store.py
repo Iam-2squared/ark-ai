@@ -607,7 +607,7 @@ def _require_safe_memory_path(path: Path, *, create: bool) -> None:
         raise MemorySchemaError("memory path custody cannot be verified") from exc
 
 
-def _require_memory_store_path_identity(store: "SQLiteMemoryStore") -> None:
+def _require_memory_store_path_identity(store: SQLiteMemoryStore) -> None:
     """Reject a store redirected to a different local database after construction."""
     try:
         original = object.__getattribute__(store, "_path_identity")
