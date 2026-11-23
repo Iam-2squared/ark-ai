@@ -7,8 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from ark.memory import MemorySchemaError, MemoryScope, MemoryWrite, SQLiteMemoryStore
-from ark.memory import sqlite_store
+from ark.memory import MemorySchemaError, MemoryScope, MemoryWrite, SQLiteMemoryStore, sqlite_store
 
 
 def _stores(tmp_path: Path):
