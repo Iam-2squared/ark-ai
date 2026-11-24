@@ -15,7 +15,7 @@ from pathlib import Path
 
 from .dataset import digest
 from .execution import validate_experiment_001
-from .identity import build_hf_snapshot_identity
+from .identity import build_hf_snapshot_identity, file_identity
 from .preflight import PreflightEvidence
 from .run_manifest import write_candidate_run_manifest
 from .runtime_guard import WallTimeBudget
@@ -23,6 +23,66 @@ from .runtime_guard import WallTimeBudget
 
 class LoRARuntimeError(RuntimeError):
     pass
+
+
+_MAX_CHAT_TEMPLATE_PROBE_BYTES = 64 * 1024
+
+
+def _verify_chat_template_probe(
+    tokenizer: object,
+    probe_path: Path,
+    expected_sha256: str,
+) -> str:
+    """Require the loaded tokenizer to reproduce the exact reviewed probe bytes."""
+    if (
+        type(expected_sha256) is not str
+        or len(expected_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in expected_sha256)
+    ):
+        raise LoRARuntimeError("frozen chat-template probe SHA-256 is malformed")
+    try:
+        before = file_identity(probe_path, label="chat-template-probe.txt")
+        if before.bytes <= 0 or before.bytes > _MAX_CHAT_TEMPLATE_PROBE_BYTES:
+            raise LoRARuntimeError("chat-template probe exceeds the local byte budget")
+        expected = Path(probe_path).read_bytes()
+        after = file_identity(probe_path, label="chat-template-probe.txt")
+    except LoRARuntimeError:
+        raise
+    except (OSError, ValueError) as exc:
+        raise LoRARuntimeError("chat-template probe could not be read safely") from exc
+    if (
+        before != after
+        or len(expected) != before.bytes
+        or before.sha256 != expected_sha256
+        or digest(expected) != expected_sha256
+    ):
+        raise LoRARuntimeError("chat-template probe bytes changed after identity review")
+    try:
+        expected.decode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise LoRARuntimeError("chat-template probe must be strict UTF-8") from exc
+
+    messages = [
+        {"role": "user", "content": "ARK V3 runtime template probe: user"},
+        {"role": "assistant", "content": "ARK V3 runtime template probe: assistant"},
+    ]
+    try:
+        rendered = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=False,
+        )
+    except Exception as exc:
+        raise LoRARuntimeError("loaded tokenizer could not render the frozen chat probe") from exc
+    if type(rendered) is not str:
+        raise LoRARuntimeError("loaded tokenizer returned a non-text chat-template probe")
+    try:
+        rendered_bytes = rendered.encode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise LoRARuntimeError("loaded tokenizer probe is not strict UTF-8") from exc
+    if rendered_bytes != expected:
+        raise LoRARuntimeError("loaded tokenizer chat-template rendering differs from reviewed probe")
+    return digest(rendered_bytes)
 
 
 def _validate_candidate_output_path(output: Path, base_dir: Path) -> None:
@@ -114,18 +174,26 @@ def _runtime_imports():
     return torch, LoraConfig, get_peft_model, AutoModelForCausalLM, AutoTokenizer
 
 
-def _build_model_and_tokenizer(snapshot: dict, base_dir: Path):
+def _build_model_and_tokenizer(
+    snapshot: dict,
+    base_dir: Path,
+    chat_template_probe: Path,
+):
     torch, LoraConfig, get_peft_model, AutoModelForCausalLM, AutoTokenizer = _runtime_imports()
-    if not torch.cuda.is_available():
-        raise LoRARuntimeError("authorized experiment-001 runtime requires CUDA GPU")
-    if not torch.cuda.is_bf16_supported():
-        raise LoRARuntimeError("frozen experiment-001 precision requires CUDA BF16 support")
-
     tokenizer = AutoTokenizer.from_pretrained(
         str(base_dir),
         local_files_only=True,
         trust_remote_code=False,
     )
+    verified_probe_sha256 = _verify_chat_template_probe(
+        tokenizer,
+        chat_template_probe,
+        snapshot["tokenizer"]["chat_template_probe_sha256"],
+    )
+    if not torch.cuda.is_available():
+        raise LoRARuntimeError("authorized experiment-001 runtime requires CUDA GPU")
+    if not torch.cuda.is_bf16_supported():
+        raise LoRARuntimeError("frozen experiment-001 precision requires CUDA BF16 support")
     model = AutoModelForCausalLM.from_pretrained(
         str(base_dir),
         local_files_only=True,
@@ -142,7 +210,7 @@ def _build_model_and_tokenizer(snapshot: dict, base_dir: Path):
         task_type="CAUSAL_LM",
     )
     model = get_peft_model(model, lora)
-    return torch, tokenizer, model
+    return torch, tokenizer, model, verified_probe_sha256
 
 
 def _encoded_example(tokenizer, row: dict, max_length: int = 256) -> tuple[list[int], list[int]]:
@@ -224,7 +292,9 @@ class HfLoRAPreflightBackend:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("preflight-local-identity")
-        torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        torch, tokenizer, model, verified_probe_sha256 = _build_model_and_tokenizer(
+            snapshot, self.base_dir, self.chat_template_probe,
+        )
         wall_budget.check("preflight-model-load")
         encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
         optimizer, _ = _optimizer(torch, model, snapshot["method"])
@@ -244,7 +314,7 @@ class HfLoRAPreflightBackend:
             device=torch.cuda.get_device_name(0),
             vram_gib=float(total_vram),
             base_loaded=True,
-            tokenizer_probe_sha256=snapshot["tokenizer"]["chat_template_probe_sha256"],
+            tokenizer_probe_sha256=verified_probe_sha256,
             forward_backward_ok=True,
             optimizer_step_ok=True,
             peak_vram_mib=float(peak),
@@ -282,7 +352,9 @@ class HfLoRAFullRun:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("training-local-identity")
-        torch, tokenizer, model = _build_model_and_tokenizer(snapshot, self.base_dir)
+        torch, tokenizer, model, _ = _build_model_and_tokenizer(
+            snapshot, self.base_dir, self.chat_template_probe,
+        )
         wall_budget.check("training-model-load")
         ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
         encoded_rows = _pretokenize(tokenizer, ordered)
