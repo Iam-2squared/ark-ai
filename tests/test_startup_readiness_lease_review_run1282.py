@@ -83,6 +83,11 @@ def test_expired_rollback_or_out_of_range_lease_is_rejected(now_ms, max_age_ms):
         _review(now_ms=now_ms, max_age_ms=max_age_ms)
 
 
+def test_lease_accepts_age_below_the_maximum():
+    result = _review(now_ms=101, max_age_ms=100)
+    assert result.checked_at_ms == 101
+
+
 @pytest.mark.parametrize(
     "overrides",
     (
@@ -91,11 +96,6 @@ def test_expired_rollback_or_out_of_range_lease_is_rejected(now_ms, max_age_ms):
         {"max_age_ms": True},
     ),
 )
-def test_lease_accepts_age_below_the_maximum():
-    result = _review(now_ms=101, max_age_ms=100)
-    assert result.checked_at_ms == 101
-
-
 def test_lease_clock_requires_exact_nonnegative_integer_epoch(overrides):
     with pytest.raises(SyntheticStartupLeaseRejected, match="exact synthetic lease inputs"):
         _review(**overrides)
