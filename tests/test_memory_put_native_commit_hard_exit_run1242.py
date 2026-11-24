@@ -6,8 +6,6 @@ import sqlite3
 import subprocess
 import sys
 
-import pytest
-
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
 
 
