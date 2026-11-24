@@ -415,6 +415,17 @@ def _require_memory_mutation_row_hydration_admission(
 
 
 
+def _pin_exact_memory_scope(scope: object) -> tuple[MemoryScope, str, str]:
+    """Snapshot exact scope identity text before any store I/O or clock callback."""
+    if type(scope) is not MemoryScope:
+        raise TypeError("scope must be an exact MemoryScope")
+    owner = scope.owner_id
+    namespace = scope.namespace
+    if type(owner) is not str or type(namespace) is not str:
+        raise TypeError("scope identifiers must be exact strings")
+    return MemoryScope(owner, namespace), owner, namespace
+
+
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
@@ -426,10 +437,7 @@ def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
         raise TypeError("source_id must be an exact string")
     if len(source_id) > 512 or not source_id.strip():
         raise ValueError("source_id must be nonblank and at most 512 characters")
-    owner, namespace = scope.owner_id, scope.namespace
-    if type(owner) is not str or type(namespace) is not str:
-        raise TypeError("scope identifiers must be exact strings")
-    MemoryScope(owner, namespace)
+    _, owner, namespace = _pin_exact_memory_scope(scope)
     try:
         source_id.encode("utf-8", errors="strict")
         owner.encode("utf-8", errors="strict")
@@ -920,8 +928,7 @@ class SQLiteMemoryStore:
         # Bind both the database read and its expiry clock to the same read
         # transaction; reject scope retargeting by a reentrant clock callback.
         # Capture original caller carriers before any SQLite or clock callback.
-        original_owner, original_namespace = scope.owner_id, scope.namespace
-        pinned_scope = MemoryScope(original_owner, original_namespace)
+        pinned_scope, original_owner, original_namespace = _pin_exact_memory_scope(scope)
         path_epoch = self.path
 
         def assert_scope_carrier() -> None:
@@ -989,9 +996,7 @@ class SQLiteMemoryStore:
         if type(query) is not MemoryQuery or type(query.scope) is not MemoryScope:
             raise TypeError("query requires exact MemoryQuery and MemoryScope")
         original_scope = query.scope
-        original_owner = original_scope.owner_id
-        original_namespace = original_scope.namespace
-        pinned_scope = MemoryScope(original_owner, original_namespace)
+        pinned_scope, original_owner, original_namespace = _pin_exact_memory_scope(original_scope)
         pinned_text = query.text
         pinned_limit = query.limit
         pinned_include_expired = query.include_expired
@@ -1108,10 +1113,8 @@ class SQLiteMemoryStore:
             raise TypeError("scope must be an exact MemoryScope")
         # A clock callback may reflectively modify a frozen scope object.
         # Bind both SQL and audit events to one pre-clock identity epoch.
-        pinned_scope = MemoryScope(scope.owner_id, scope.namespace)
+        pinned_scope, original_owner, original_namespace = _pin_exact_memory_scope(scope)
         path_epoch = self.path
-        original_owner = scope.owner_id
-        original_namespace = scope.namespace
 
         def assert_post_commit_delete_epoch() -> None:
             # A post-COMMIT callback cannot retroactively roll back deletion.
@@ -1208,15 +1211,16 @@ class SQLiteMemoryStore:
             raise TypeError("scope must be an exact MemoryScope")
         if limit is not None and (type(limit) is not int or not 1 <= limit <= 1000):
             raise ValueError("purge limit must be an exact integer from 1 to 1000")
-        pinned_scope = (
-            MemoryScope(scope.owner_id, scope.namespace) if scope is not None else None
-        )
+        if scope is None:
+            pinned_scope = None
+            original_owner = None
+            original_namespace = None
+        else:
+            pinned_scope, original_owner, original_namespace = _pin_exact_memory_scope(scope)
         # Claim the SQLite writer slot before taking either the clock reading
         # or the expiry snapshot. A read-before-write transaction permits a
         # concurrent refresh to resurrect a selected row before deletion.
         path_epoch = self.path
-        original_owner = None if scope is None else scope.owner_id
-        original_namespace = None if scope is None else scope.namespace
 
         def assert_post_commit_purge_epoch() -> None:
             # A successful SQLite commit cannot be undone by a diagnostic
@@ -1362,9 +1366,7 @@ class SQLiteMemoryStore:
         # Caller-owned immutable dataclasses can be reflectively retargeted
         # to a distinct equal-text owner/namespace during a SQLite callback.
         # A value-equal replacement is still a changed audit-query identity.
-        original_owner = scope.owner_id
-        original_namespace = scope.namespace
-        pinned_scope = MemoryScope(original_owner, original_namespace)
+        pinned_scope, original_owner, original_namespace = _pin_exact_memory_scope(scope)
         path_epoch = self.path
 
         def assert_events_epoch() -> None:
