@@ -2,6 +2,85 @@
 
 ## LATEST
 
+- **Saved at:** 2026-11-25 08:56:59 JST (Asia/Tokyo).
+- **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `4ee3f7e7f82f5348810c303c3e1e1a3c27cbde26` (latest PR #8 branch head immediately before this checkpoint write).
+- **Checkpoint-result HEAD:** this `PROJECT_STATUS.md` update's commit; the exact resulting branch HEAD is verified immediately after save and recorded in the run summary. This file does not self-reference its own commit hash.
+- **Overall ARK state:** V1, V2, Local UI v1 and Launcher/Gate Runner retain their previously reviewed/frozen evidence. JARVIS foundations continue in isolated, reversible Draft work. **ARK/JARVIS overall remains NOT_PASSED.** No protected V2 evaluation, Candidate promotion or later milestone PASS is claimed. No merge to `main`.
+- **Main/UI boundary:** `main` HEAD is `ecd72fced0f3e575e504331f9f7bf1c4f0187614` and was not modified. PR #9 remains Draft/unmerged and untouched; all work this invocation was non-UI.
+
+## NEW work this invocation
+
+1. **Run1337 — mock completion-audit COMMIT hard-exit regression integrated (PR #517)**
+   - Child branch/head: `research/run1337-mock-completion-audit-hard-exit-20261125` / `da7509fe0094b32d9998661b3a9479f9ca6c45e5`.
+   - Squash integration into `research/jarvis-foundations`: `6bd2703c0ba830545e577e0333e7ea71fbb6be12`.
+   - Exact-head CI run `45503899320`: **GREEN, 6/6** Windows/Linux × Python 3.11–3.13. Synthetic test-only boundary; no production executor change and no external exactly-once claim.
+
+2. **Run1319 / Run1325 — Memory query-text pre-access and diagnostic correction integrated (PR #520)**
+   - Child branch/head: `research/run1340-memory-query-preaccess-rebase-20261125` / `da98d53bec346ccbcb5de503575f9ea07f443d93`.
+   - Squash integration: `404a24aa6e18583586068ddedd47138917ec6cd6`.
+   - Exact-head CI run `45504156637`: **GREEN, 6/6**. Exact query epoch is checked before read-only SQLite open; diagnostic wording and two synthetic regression expectations are aligned. Memory v1 schema/DDL/public contracts remain unchanged.
+
+3. **Run1336 — Observation UTF-8 chunk-boundary regression integrated (PR #521)**
+   - Child branch/head: `research/run1341-observation-utf8-rebase-20261125` / `a33b30fdec8fe54f08b81dd43b175d30ca2c6527`.
+   - Squash integration: `4ee3f7e7f82f5348810c303c3e1e1a3c27cbde26`.
+   - Exact-head CI run `45504310253`: **GREEN, 6/6**. Test/evidence-only; no capture adapter or Observation Envelope v1 change.
+
+4. **Run1342 — combined startup snapshot method custody and public-reader pre-dispatch guard (Draft PR #522)**
+   - Child branch: `research/run1342-startup-method-guard-combined-20261125`; current exact child HEAD: `e5565caa92b5f91f5ec28025cb45210baf15f7ac`.
+   - Combines the Run1338 method identity pin and Run1339 direct-reader guard. The old Draft PRs #518 and #519 remain open pending this combined package's validation; no integration is claimed.
+   - Previous exact-head run `45513482941` / run 7554: **FAIL at Ruff only** (two E501 lines and one I001 import block). All three lint findings were corrected in the current child head.
+   - Fresh exact-head run `45513927591` / run 7558: **QUEUED**. No PASS is claimed.
+
+5. **Run1343 — Personal Context revocation digest/schema-validator custody (Draft PR #523)**
+   - Child branch: `research/run1343-personal-context-revocation-validator-custody-20261125`; current exact child HEAD: `241a2f7ff6e0f21b73762b42a6dc228341ddc191`.
+   - Pins the scope-digest helper and SQLite schema validator before constructor/revoke/read SQLite access. The constructor guard is executable and positioned after its docstring, before path/SQLite work. No Memory schema/DDL or consent contract change.
+   - Fresh exact-head run `45513867238` / run 7556: **QUEUED**. No PASS is claimed.
+
+## Tests, CI and evidence
+
+- PR #8 work-basis HEAD `4ee3f7e7f82f5348810c303c3e1e1a3c27cbde26`, exact-head CI run `45512631829` / run 7553: **IN PROGRESS** at checkpoint preparation.
+- PR #517 Run1337 run `45503899320`: **GREEN, 6/6**.
+- PR #520 Run1319/1325 run `45504156637`: **GREEN, 6/6**.
+- PR #521 Run1336 run `45504310253`: **GREEN, 6/6**.
+- PR #518 Run1338 run `45503772771`: **FAIL**; six matrix jobs failed on 29 legacy assertions expecting the previous later-stage diagnostic, while the new method-identity guard rejects earlier. The combined Run1342 package updates those regressions and adds direct-reader pre-dispatch checks.
+- PR #519 Run1339 run `45497903814`: **FAIL at Ruff I001** in two test files on the old dependent branch; the combined PR #522 has corrected import grouping.
+- PR #522 initial Run1342 run `45513482941`: **FAIL at Ruff only**; corrected. Fresh exact-head run `45513927591`: **QUEUED**.
+- PR #523 Run1343 exact-head run `45513867238`: **QUEUED**.
+- PR #5 run `45484069708`: **FAIL at Ruff I001** in all six matrix jobs on three V3/main-base test paths.
+- PR #483 run `45422941503`: **FAIL at pytest collection**; the main base lacks `ark.personal_context_offline_preview` and `ark.agency` modules imported by the three test files. This remains a source/test ownership blocker, not a reason to copy foundation modules into `main`.
+- No local pytest/Ruff execution, physical-PC verification, live capture, real model runtime, paid compute or external service action is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen as previously reviewed.
+- Frozen ToolCall/PermissionGate public contracts, Memory v1 schema/DDL and retention policy, Observation Envelope v1, Personal Context consent/privacy boundaries and V3 Contract 1 were not changed.
+- PR #517, #520 and #521 are integrated only into the PR #8 research branch, not `main`.
+- PR #8 remains Draft/unmerged. PR #5 remains Draft/unmerged; no protected V2 evaluation, real Candidate generation or promotion was opened.
+- PR #9 remains Draft/unmerged and untouched. UI/frontend development remains paused.
+- PR #522 and #523 remain Draft/unmerged children pending exact-head CI and review. PR #518/#519 remain open and unmerged as superseded predecessors until the combined package validates.
+
+## Blockers and authorization boundaries
+
+- **Free-only boundary:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- No real Candidate adapter/weight generation, protected V2 final-evaluation opening, Candidate promotion, credentials/secrets, new account connection, unavailable physical-PC action, destructive operation or irreversible data change occurred.
+- Startup Run1338/1339 is not integrated; use combined PR #522 only after exact-head GREEN and source review. Its synthetic readiness result remains diagnostic, not startup/dispatch authority.
+- Personal Context Run1343 is isolated in PR #523 until exact-head GREEN and review. The local revocation ledger remains a synthetic veto fixture, not authenticated consent or trusted storage.
+- V3's main-base ownership blocker remains unresolved; PR #5 and #483 stay Draft/unmerged. Do not merge to `main` or copy foundation modules into it.
+- QUEUED/IN PROGRESS is not PASS. SQLite COMMIT/process-exit tests cover only their named synthetic native-COMMIT boundaries; they do not prove fsync/power-loss durability, trusted time, independent custody, authenticated consent, cross-store atomicity or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PR #522 and #523 once useful results are available; fix only concrete failures, then immediately work a non-conflicting lane while reruns execute.
+2. After Run1342 PR #522 is exact-head GREEN and reviewed, integrate it into PR #8 only; then mark/close the superseded #518/#519 children without touching `main`.
+3. After Run1343 PR #523 is exact-head GREEN and reviewed, integrate it into PR #8 only.
+4. Continue local-first Memory durability/privacy, Planner crash recovery, immutable ToolRegistry/PermissionGate, durable authorization and audit-before-action, disconnected mock execution, Personal Context, proactive scheduler and observation backend contracts.
+5. Keep V3 approval/path/identity/reproducibility guards isolated while the main-base ownership blocker remains unresolved. PR #5 stays Draft/unmerged and all paid/real-Candidate gates stay closed.
+6. Keep UI paused: no frontend features, polish, tests or integration.
+
+
+## Historical checkpoint — saved at 2026-11-25 07:49:25 JST
+
 - **Saved at:** 2026-11-25 07:49:25 JST (Asia/Tokyo).
 - **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `44d6cbdb6a554d42ba1c86c1f646a12fe4487f4f` (PR #8 exact head immediately before this checkpoint write).
