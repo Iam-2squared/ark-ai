@@ -9,6 +9,7 @@ consent or permission to execute an action.
 from __future__ import annotations
 
 import hashlib
+import unicodedata
 
 from .observations import ObservationEnvelope, ObservationKind
 
@@ -18,6 +19,8 @@ _MAX_FIXTURE_BYTES = 4 * 1024 * 1024
 # even constructed, despite all later constructor/validator custody checks.
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 _ENVELOPE_TYPE = ObservationEnvelope
 _ORIGINAL_ENVELOPE_INIT = vars(_ENVELOPE_TYPE)["__init__"]
 # Keep a stable copy of the frozen v1 validator. An injected constructor or
@@ -57,6 +60,11 @@ def _require_original_fixture_budget() -> None:
         or _MAX_FIXTURE_BYTES is not _ORIGINAL_MAX_FIXTURE_BYTES
     ):
         raise ValueError("fixture byte budget definition changed")
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ValueError("fixture Unicode category classifier changed")
 
 
 def _encode_fixture_text_bounded(content: str, max_bytes: int) -> bytes | None:
@@ -132,9 +140,11 @@ def _preflight_fixture_metadata(
                 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
             )
             or 0x206A <= codepoint <= 0x206F
+            or _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
             for codepoint in map(ord, value)
         ):
             raise ValueError(f"{name} contains a Unicode formatting control")
+        _require_original_fixture_budget()
         try:
             nbytes = len(value.encode("utf-8", errors="strict"))
         except UnicodeError as exc:
