@@ -96,6 +96,35 @@ def _encode_fixture_text_bounded(content: str, max_bytes: int) -> bytes | None:
     return bytes(encoded)
 
 
+def _encode_fixture_text_bounded(content: str, max_bytes: int) -> bytes | None:
+    """Strictly encode UTF-8 without materializing an over-budget full payload.
+
+    ASCII input has a one-byte-per-codepoint lower bound and can be encoded in
+    one bounded allocation. Non-ASCII input is encoded in 16K-codepoint chunks;
+    the adapter stops as soon as the cumulative byte budget is exceeded. The
+    largest temporary chunk is therefore bounded independently of input size.
+    """
+    if type(content) is not str:
+        raise TypeError("fixture text must be an exact string")
+    if type(max_bytes) is not int or max_bytes < 0:
+        raise ValueError("fixture text byte budget must be a non-negative exact integer")
+    if len(content) > max_bytes:
+        return None
+    if content.isascii():
+        return content.encode("utf-8", errors="strict")
+
+    encoded = bytearray()
+    chunk_chars = 16 * 1024
+    for offset in range(0, len(content), chunk_chars):
+        chunk = content[offset:offset + chunk_chars].encode(
+            "utf-8", errors="strict",
+        )
+        if len(encoded) + len(chunk) > max_bytes:
+            return None
+        encoded.extend(chunk)
+    return bytes(encoded)
+
+
 def _preflight_fixture_metadata(
     source_id: str,
     privacy_scope: str,
