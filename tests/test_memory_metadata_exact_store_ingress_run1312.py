@@ -52,7 +52,7 @@ def test_put_rejects_metadata_string_subclasses_before_sqlite_or_clock(
     with monkeypatch.context() as patch:
         patch.setattr(store, "_connect", unexpected_connect)
         patch.setattr(store, "_now", unexpected_clock)
-        with pytest.raises(MemorySchemaError, match="metadata"):
+        with pytest.raises(MemorySchemaError, match="ingress"):
             store.put(invalid, expected_revision=original.revision)
 
     assert calls == []
@@ -101,7 +101,7 @@ def test_put_rejects_reflectively_replaced_metadata_carrier_before_callbacks(
     with monkeypatch.context() as patch:
         patch.setattr(store, "_connect", unexpected_connect)
         patch.setattr(store, "_now", unexpected_clock)
-        with pytest.raises(MemorySchemaError, match="metadata"):
+        with pytest.raises(MemorySchemaError, match="ingress"):
             store.put(invalid, expected_revision=original.revision)
 
     assert hostile.calls == 0
