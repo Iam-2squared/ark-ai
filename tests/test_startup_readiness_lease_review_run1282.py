@@ -183,6 +183,9 @@ def test_replaced_result_authority_descriptor_is_denied_before_return(
         "dispatch_authorized",
         property(forged),
     )
-    with pytest.raises(SyntheticStartupLeaseRejected, match="result constructor or descriptor changed"):
+    with pytest.raises(
+        SyntheticStartupLeaseRejected,
+        match="result constructor or descriptor changed",
+    ):
         _review()
     assert calls == []
