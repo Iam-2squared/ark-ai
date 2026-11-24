@@ -192,6 +192,15 @@ _ORIGINAL_REGISTRY_REVISION = vars(ToolRegistry)["revision"]
 _ORIGINAL_REGISTRY_REGISTRATIONS = vars(ToolRegistry)["registrations"]
 _ORIGINAL_REGISTRY_EPOCH = vars(ToolRegistry)["_assert_registration_epoch"]
 _ORIGINAL_REGISTRY_COMPUTE_REVISION = vars(ToolRegistry)["_compute_revision"]
+# Static lookup hooks can execute before a bound registry method body starts.
+# Pin both inherited object lookup and any optional fallback hook so registered
+# authorization can reject a substituted class hook without invoking it.
+_ORIGINAL_REGISTRY_GETATTRIBUTE = inspect.getattr_static(
+    ToolRegistry, "__getattribute__",
+)
+_ORIGINAL_REGISTRY_GETATTR = inspect.getattr_static(
+    ToolRegistry, "__getattr__", None,
+)
 
 
 class PermissionGate:
@@ -288,6 +297,19 @@ class PermissionGate:
             ):
                 raise PermissionDenied(
                     "registered authorization static inspection changed"
+                )
+            if (
+                inspect.getattr_static(ToolRegistry, "__getattribute__")
+                is not _ORIGINAL_REGISTRY_GETATTRIBUTE
+                or inspect.getattr_static(registry, "__getattribute__")
+                is not _ORIGINAL_REGISTRY_GETATTRIBUTE
+                or inspect.getattr_static(ToolRegistry, "__getattr__", None)
+                is not _ORIGINAL_REGISTRY_GETATTR
+                or inspect.getattr_static(registry, "__getattr__", None)
+                is not _ORIGINAL_REGISTRY_GETATTR
+            ):
+                raise PermissionDenied(
+                    "registered authorization lookup hook changed"
                 )
             registry_methods = (
                 ("bind", _ORIGINAL_REGISTRY_BIND),
