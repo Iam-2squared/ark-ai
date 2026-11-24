@@ -8,11 +8,41 @@ from __future__ import annotations
 
 import pytest
 
-from ark.agency.contracts import PermissionDenied
+from ark.agency.contracts import (
+    CapabilityGrant,
+    Effect,
+    OneShotAuthorization,
+    PermissionDenied,
+    ToolCall,
+)
 from ark.agency.policy import PermissionGate
-from ark.agency.registry import ToolRegistry
+from ark.agency.registry import ToolRegistration, ToolRegistry
 
-from test_permission_gate_registry_instance_method_custody_run1038 import _fixture
+
+class _NeverExecute:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def execute(self, _call: ToolCall) -> object:
+        self.calls += 1
+        raise AssertionError("registered authorization must not dispatch")
+
+
+def _fixture():
+    backend = _NeverExecute()
+    registration = ToolRegistration(
+        "fixture.write", "fixture.write", Effect.WRITE,
+        "disconnected.mock.v1", backend,
+    )
+    registry = ToolRegistry((registration,))
+    call = ToolCall(
+        "fixture.write", "fixture.write", "synthetic:scope",
+        {"value": "local-only"},
+    )
+    gate = PermissionGate()
+    grant = CapabilityGrant("fixture.write", "synthetic:scope")
+    token = OneShotAuthorization("synthetic-token", call.request_id, 500)
+    return backend, registration, registry, call, gate, grant, token
 
 
 @pytest.mark.parametrize("hook", ("__getattribute__", "__getattr__"))
