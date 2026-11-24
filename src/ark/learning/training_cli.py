@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import stat
 import subprocess
 from pathlib import Path
 
@@ -22,7 +24,150 @@ from .preflight import (
     run_authorized_preflight,
     verify_preflight_measurements,
 )
+
 from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
+
+
+# Reuse existing repository evidence-ingress ceilings rather than inventing
+# larger limits: dataset JSON ingress is capped at 64 MiB, while canonical
+# run-manifest JSON is capped at 1 MiB. The preflight report is a fixed,
+# small-schema JSON artifact; provenance and contamination retain the dataset
+# ingress ceiling because their row counts are fixed by experiment-001.
+_MAX_PROVENANCE_MANIFEST_BYTES = 64 * 1024 * 1024
+_MAX_CONTAMINATION_REPORT_BYTES = 64 * 1024 * 1024
+_MAX_PREFLIGHT_REPORT_BYTES = 1_048_576
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _is_regular_evidence_file(info: os.stat_result) -> bool:
+    mode = info.st_mode
+    return type(mode) is int and stat.S_ISREG(mode)
+
+
+def _is_evidence_reparse_point(info: os.stat_result) -> bool:
+    mode = info.st_mode
+    attributes = getattr(info, "st_file_attributes", 0)
+    if type(mode) is not int or type(attributes) is not int:
+        raise RuntimeError("evidence file metadata is malformed")
+    return stat.S_ISLNK(mode) or bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+
+
+def _has_evidence_reparse_ancestor(path: Path) -> bool:
+    for parent in path.parents:
+        try:
+            info = parent.lstat()
+        except FileNotFoundError:
+            continue
+        if _is_evidence_reparse_point(info):
+            return True
+    return False
+
+
+def _evidence_file_epoch(info: os.stat_result) -> tuple[int, ...]:
+    # Windows path-stat and descriptor-stat expose different ctime semantics;
+    # compare ctime only on POSIX, matching the existing V3 packet reader.
+    changed = info.st_ctime_ns if os.name == "posix" else 0
+    values = (
+        info.st_dev,
+        info.st_ino,
+        info.st_mode,
+        info.st_nlink,
+        info.st_size,
+        info.st_mtime_ns,
+        changed,
+    )
+    if any(type(value) is not int for value in values):
+        raise RuntimeError("evidence file metadata is malformed")
+    return values
+
+
+def _read_bounded_evidence(path: Path, *, max_bytes: int, label: str) -> bytes:
+    """Read one bounded regular evidence file and recheck its descriptor epoch.
+
+    This is local file-custody hardening, not an atomic directory-fd traversal,
+    authenticated provenance, immutable storage, or protection from a hostile
+    concurrent filesystem writer.
+    """
+    if type(max_bytes) is not int or max_bytes <= 0:
+        raise RuntimeError("evidence byte budget must be a positive exact integer")
+    path = Path(path)
+    if ".." in path.parts or len(str(path)) > 4096:
+        raise RuntimeError(f"{label} path is not an accepted local file path")
+
+    try:
+        before = path.lstat()
+        before_size = before.st_size
+        before_links = before.st_nlink
+        if (
+            not _is_regular_evidence_file(before)
+            or _is_evidence_reparse_point(before)
+            or type(before_size) is not int
+            or not 1 <= before_size <= max_bytes
+            or type(before_links) is not int
+            or before_links != 1
+            or _has_evidence_reparse_ancestor(path)
+        ):
+            raise RuntimeError(f"{label} path or byte budget denied")
+
+        flags = (
+            os.O_RDONLY
+            | getattr(os, "O_BINARY", 0)
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_NONBLOCK", 0)
+        )
+        descriptor = os.open(path, flags)
+        try:
+            with os.fdopen(descriptor, "rb") as handle:
+                descriptor = -1
+                opened = os.fstat(handle.fileno())
+                opened_links = opened.st_nlink
+                if (
+                    not _is_regular_evidence_file(opened)
+                    or _is_evidence_reparse_point(opened)
+                    or type(opened_links) is not int
+                    or opened_links != 1
+                    or before.st_ino == 0
+                    or opened.st_ino == 0
+                    or not os.path.samestat(before, opened)
+                    or _evidence_file_epoch(opened) != _evidence_file_epoch(before)
+                ):
+                    raise RuntimeError(f"{label} changed before its bytes were read")
+                payload = handle.read(max_bytes + 1)
+                after_handle = os.fstat(handle.fileno())
+        finally:
+            if descriptor >= 0:
+                os.close(descriptor)
+
+        after = path.lstat()
+        after_links = after.st_nlink
+        after_handle_links = after_handle.st_nlink
+        if (
+            not _is_regular_evidence_file(after)
+            or _is_evidence_reparse_point(after)
+            or type(after_links) is not int
+            or after_links != 1
+            or not _is_regular_evidence_file(after_handle)
+            or _is_evidence_reparse_point(after_handle)
+            or type(after_handle_links) is not int
+            or after_handle_links != 1
+            or _evidence_file_epoch(after) != _evidence_file_epoch(before)
+            or _evidence_file_epoch(after_handle) != _evidence_file_epoch(before)
+            or _has_evidence_reparse_ancestor(path)
+            or len(payload) != before_size
+            or len(payload) > max_bytes
+        ):
+            raise RuntimeError(f"{label} changed during its bounded read")
+        return payload
+    except OSError as exc:
+        raise RuntimeError(f"{label} cannot be read safely") from exc
+
+
+_EVIDENCE_FILE_BUDGETS = {
+    "provenance manifest": _MAX_PROVENANCE_MANIFEST_BYTES,
+    "contamination report": _MAX_CONTAMINATION_REPORT_BYTES,
+    "preflight report": _MAX_PREFLIGHT_REPORT_BYTES,
+}
 
 
 def _reject_nonstandard_json_constant(token: str) -> None:
@@ -30,10 +175,10 @@ def _reject_nonstandard_json_constant(token: str) -> None:
 
 
 def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
-    path = Path(path)
-    if not path.is_file():
-        raise RuntimeError(f"{label} is not a file")
-    payload = path.read_bytes()
+    max_bytes = _EVIDENCE_FILE_BUDGETS.get(label)
+    if max_bytes is None:
+        raise RuntimeError("unsupported V3 evidence file label")
+    payload = _read_bounded_evidence(path, max_bytes=max_bytes, label=label)
     if digest(payload) != expected_sha256:
         raise RuntimeError(f"{label} bytes do not match frozen snapshot SHA-256")
     return payload
