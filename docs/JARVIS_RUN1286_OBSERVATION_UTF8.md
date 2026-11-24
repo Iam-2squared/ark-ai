@@ -6,7 +6,7 @@
 - Parent: Draft PR #8, branch `research/jarvis-foundations`.
 - Exact parent work-basis HEAD: `ddc4a574437361059552615ceb44936a628555dc`.
 - Child branch: `research/run1286-observation-fixture-utf8-rebase`.
-- Test-only rebase of the bounded Observation text-fixture encoder regression previously carried by Draft PR #? (source branch `research/run1160-observation-utf8-rebase`).
+- Test-only rebase of the bounded Observation text-fixture encoder regression previously developed on source branch `research/run1160-observation-utf8-rebase`.
 - Current `src/ark/observation_fixture_adapters.py` was inspected; the bounded encoder and strict UTF-8 rejection path are present.
 
 ## Regression coverage
