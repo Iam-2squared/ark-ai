@@ -178,6 +178,14 @@ class ContaminationGuard:
         candidate_input = object.__getattribute__(item, "input")
         approved_target = object.__getattribute__(item, "approved_target")
         model_response = object.__getattribute__(item, "model_response")
+        if any(
+            type(value) is not str
+            for value in (
+                source_reference, provenance, candidate_input,
+                approved_target, model_response,
+            )
+        ):
+            raise ValueError("contamination review requires exact candidate text")
         reference = normalized(source_reference + " " + provenance)
         if any(marker in reference for marker in reference_markers):
             return "protected_source_reference"
