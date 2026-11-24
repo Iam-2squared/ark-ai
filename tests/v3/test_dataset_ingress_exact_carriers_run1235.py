@@ -94,8 +94,13 @@ def test_guard_tuple_subclass_is_rejected_before_iteration() -> None:
     guard = _guard()
     object.__setattr__(guard, "protected_inputs", CallbackTuple(("protected",)))
 
-    with pytest.raises(ValueError, match="exact immutable text tuples"):
-        build_dataset([_candidate()], guard)
+    result = build_dataset([_candidate()], guard)
+
+    # Invalid candidate rows are retained as explicit rejections; the hostile
+    # tuple iterator must not run and no candidate may enter the dataset.
+    assert result.summary["accepted"] == 0
+    assert result.summary["rejected"] == 1
+    assert "exact immutable text tuples" in result.summary["rejections"][0]["reason"]
 
 
 def test_direct_contamination_review_rejects_string_subclass_before_normalization() -> None:
