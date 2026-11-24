@@ -6,7 +6,6 @@ trusted time, notification consent, dispatch authority, or external effects.
 
 from __future__ import annotations
 
-import hashlib
 import subprocess
 import sys
 from pathlib import Path
