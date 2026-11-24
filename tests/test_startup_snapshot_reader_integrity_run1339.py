@@ -6,9 +6,9 @@ credential or live backend is activated.
 
 from __future__ import annotations
 
-import ark.startup_readiness_review as readiness
-
 import pytest
+
+import ark.startup_readiness_review as readiness
 
 
 @pytest.mark.parametrize("reader_name", ("state", "root_blockers"))
