@@ -98,5 +98,5 @@ def test_clock_cannot_retarget_an_existing_search_query(tmp_path):
         return 101
 
     store._clock_ms = retargeting_clock
-    with pytest.raises(MemorySchemaError, match="scope changed during clock"):
+    with pytest.raises(MemorySchemaError, match="scope changed during read"):
         store.search(query)
