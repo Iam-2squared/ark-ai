@@ -866,11 +866,20 @@ def _require_planner_journal_path_epoch(
         or vars(_PLANNER_JOURNAL_TYPE).get("__delattr__") is not _ORIGINAL_PLANNER_JOURNAL_DELATTR
         or vars(_PLANNER_JOURNAL_TYPE).get("_connect") is not _ORIGINAL_PLANNER_JOURNAL_CONNECT
         or vars(_PLANNER_JOURNAL_TYPE).get("_bootstrap") is not _ORIGINAL_PLANNER_JOURNAL_BOOTSTRAP
-        or vars(_PLANNER_JOURNAL_TYPE).get("_validate_schema") is not _ORIGINAL_PLANNER_JOURNAL_VALIDATE_SCHEMA
+        or (
+            vars(_PLANNER_JOURNAL_TYPE).get("_validate_schema")
+            is not _ORIGINAL_PLANNER_JOURNAL_VALIDATE_SCHEMA
+        )
         or vars(_PLANNER_JOURNAL_TYPE).get("_read_meta") is not _ORIGINAL_PLANNER_JOURNAL_READ_META
-        or vars(_PLANNER_JOURNAL_TYPE).get("_read_events") is not _ORIGINAL_PLANNER_JOURNAL_READ_EVENTS
+        or (
+            vars(_PLANNER_JOURNAL_TYPE).get("_read_events")
+            is not _ORIGINAL_PLANNER_JOURNAL_READ_EVENTS
+        )
         or vars(_PLANNER_JOURNAL_TYPE).get("_replay") is not _ORIGINAL_PLANNER_JOURNAL_REPLAY
-        or vars(_PLANNER_JOURNAL_TYPE).get("create_plan") is not _ORIGINAL_PLANNER_JOURNAL_CREATE_PLAN
+        or (
+            vars(_PLANNER_JOURNAL_TYPE).get("create_plan")
+            is not _ORIGINAL_PLANNER_JOURNAL_CREATE_PLAN
+        )
         or vars(_PLANNER_JOURNAL_TYPE).get("transition") is not _ORIGINAL_PLANNER_JOURNAL_TRANSITION
         or vars(_PLANNER_JOURNAL_TYPE).get("recover") is not _ORIGINAL_PLANNER_JOURNAL_RECOVER
         or vars(_PLANNER_JOURNAL_TYPE).get("__getattribute__") is not None
