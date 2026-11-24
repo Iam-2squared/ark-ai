@@ -1,3 +1,91 @@
+# LATEST — ARK AI core progress, 2026-11-24 09:55:48 JST
+
+**Saved at:** 2026-11-24 09:55:48 JST (Asia/Tokyo).
+**Branch / PR:** `research/jarvis-foundations` / Draft PR #8 (base `main`; OPEN/DRAFT/UNMERGED).
+**Work-basis HEAD:** `36a1c947196efb26a0328b25c516054e80a77536` — live branch tip and PR #8 head re-read immediately before this checkpoint write.
+**Checkpoint-result HEAD:** documentation-only commit returned by the normal GitHub Contents API; verified against the live branch tip immediately after the write. Intentionally not self-embedded.
+**main HEAD:** `9767fef35eef2115138b5714ebf672dc825636c9`. The main tree no longer contains the accidentally added Run1236 test file, but main history now contains the test-only add commit `60a0d3becee408abe13a8075bf27e31ac5c0f769` followed by corrective deletion commit `9767fef35eef2115138b5714ebf672dc825636c9`; no history rewrite or force-push was used.
+**V3 parent branch:** `research/v3-learning-evaluation` at `ce7a3498472ef1fbcfc36496817bf3c10f6d18f2` (PR #5 remains OPEN/DRAFT/UNMERGED).
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No later-version PASS, human-review decision, trusted-clock certification, authenticated consent, physical hardware readiness, physical erasure, production dispatch, or exactly-once external-effect claim is made.
+- Draft PR #8 remains the isolated JARVIS/core foundation branch, OPEN/DRAFT/UNMERGED. PermissionGate deletion-seal hardening from PR #415 is integrated into this branch only at `36a1c947196efb26a0328b25c516054e80a77536`; current exact-head parent CI is still IN_PROGRESS.
+- PR #5 remains gated Draft/unmerged. The free-only dataset-ingress exact-carrier package from PR #418 is integrated into its branch only at `ce7a3498472ef1fbcfc36496817bf3c10f6d18f2`; no protected V2 evaluation or Candidate generation was opened.
+- PR #9 remains OPEN/DRAFT/UNMERGED and untouched. All new UI/frontend development, UI integration, polish and frontend tests remain paused.
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged. No paid/external compute, credentials, new account connection, physical-PC action, external backend dispatch or destructive data operation was performed.
+- **Operational correction:** the Run1236 Planner test file was accidentally committed to `main` when the Contents API call omitted its explicit branch. It was immediately removed through the normal GitHub delete-file path; the current main tree is restored with respect to that file. This did advance main history by the add/revert pair above. No other main file was changed, no force-push was used, and no further main writes are planned. This was a deviation from the requested branch isolation and is recorded explicitly.
+
+## NEW work this invocation
+
+1. **PermissionGate deletion-seal hardening integrated into PR #8 — PR #415.**
+   - Child branch `research/run1232-permission-gate-delete-seal-rebase`, exact child HEAD `fb68a07a6d8b789053c2d2d2dec2549729ed8527`.
+   - Exact-head CI [45291809790](https://github.com/Iam-2squared/ark-ai/actions/runs/45291809790) **GREEN, 6/6** Windows/Linux × Python 3.11–3.13.
+   - Normal squash merge integrated the sealed `__delattr__` guard and deletion/class-descriptor regressions into PR #8 branch head `36a1c947196efb26a0328b25c516054e80a77536`. This is local in-process integrity only; no durable approval or external execution authority.
+
+2. **V3 dataset-ingress exact-carrier guard integrated into PR #5's branch — PR #418.**
+   - Child branch `research/run1235-dataset-ingress-exact-carriers`, exact child HEAD `fcf8bd505746061f5dd05a4d45eba6507d0eb1da`.
+   - Final exact-head CI [45300584162](https://github.com/Iam-2squared/ark-ai/actions/runs/45300584162) **GREEN, 6/6** Windows/Linux × Python 3.11–3.13.
+   - Two earlier child runs failed and were repaired without weakening gates: [45300264452](https://github.com/Iam-2squared/ark-ai/actions/runs/45300264452) found Ruff E501/B905; [45300408031](https://github.com/Iam-2squared/ark-ai/actions/runs/45300408031) found one incorrect test expectation. The code was formatted with explicit strict zip, and the malformed-guard test now asserts fail-closed row rejection rather than requiring a function-level exception.
+   - Normal squash merge integrated exact list/candidate/guard carriers, exact text checks, original validator custody and deterministic output coverage into `research/v3-learning-evaluation` as `ce7a3498472ef1fbcfc36496817bf3c10f6d18f2`. Contract 1, schema, approval, provenance, contamination and reproducibility rules were not changed.
+
+3. **Planner genesis COMMIT-UNKNOWN cold-recovery regression — Draft PR #419.**
+   - Branch `research/run1236-planner-genesis-commit-unknown`, exact child HEAD `499f665b799b1fac77b7e70f8415c0fbb8599ce8`, based on PR #8 work-basis `36a1c947196efb26a0328b25c516054e80a77536`.
+   - Test-only: synthetic native ROLLBACK-before-error and COMMIT-before-error, exactly one COMMIT attempt, cold readback, duplicate genesis rejection, SQLite quick-check and no raw ToolCall argument persistence.
+   - Exact-head CI [45300333995](https://github.com/Iam-2squared/ark-ai/actions/runs/45300333995) **IN_PROGRESS, 6 jobs**. No local test PASS is claimed.
+
+4. **ToolRegistry deletion-seal regressions — Draft PR #420.**
+   - Branch `research/run1237-tool-registry-delete-seal`, exact child HEAD `ea0ea2668e861721395f4ec74ffbf08a56c435d6`, based on PR #8 work-basis `36a1c947196efb26a0328b25c516054e80a77536`.
+   - Test-only: ordinary deletion denied for every sealed slot, reflective registration-map deletion fails before bind returns, class-level `__delattr__` substitution is rejected, and a healthy registry remains disconnected.
+   - Exact-head CI [45300745151](https://github.com/Iam-2squared/ark-ai/actions/runs/45300745151) **IN_PROGRESS, 6 jobs**. No backend is executed.
+
+5. **V3 parent revalidation after PR #418 integration.**
+   - New branch-head CI [45300897438](https://github.com/Iam-2squared/ark-ai/actions/runs/45300897438) is **IN_PROGRESS** on `ce7a3498472ef1fbcfc36496817bf3c10f6d18f2`. PR #5 remains Draft/unmerged.
+
+6. **Read-only audits and preserved prior work.**
+   - PR #416 proactive process-exit and PR #417 Unicode privacy/identity children remain OPEN/DRAFT on their prior parent basis `e3ab3b4a33ff2414bc978158898a2eed71ef79f5`; their prior GREEN runs do not transfer to the current parent and neither was integrated this invocation.
+   - Memory expiry/CAS/WAL evidence, Planner transition/hard-exit recovery, ActionAudit/occurrence guards, Personal Context and Observation fixture contracts were inspected without changing frozen schemas or starting external execution.
+   - No UI/frontend files, tests or branches were changed.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 branch head `36a1c947196efb26a0328b25c516054e80a77536`: [45299549270](https://github.com/Iam-2squared/ark-ai/actions/runs/45299549270) **IN_PROGRESS**. Ubuntu Python 3.11–3.13 jobs are GREEN; Windows Python 3.11–3.13 jobs remain IN_PROGRESS. The checkpoint commit below is documentation-only and is not covered by this run; fresh exact-head CI is required.
+- PR #415 child `fb68a07a6d8b789053c2d2d2dec2549729ed8527`: [45291809790](https://github.com/Iam-2squared/ark-ai/actions/runs/45291809790) **GREEN, 6/6**; integrated into PR #8 branch only.
+- PR #418 child `fcf8bd505746061f5dd05a4d45eba6507d0eb1da`: [45300584162](https://github.com/Iam-2squared/ark-ai/actions/runs/45300584162) **GREEN, 6/6**; integrated into PR #5 branch only. Earlier lint/test failures are superseded by this exact-head result.
+- PR #419 Planner genesis child `499f665b799b1fac77b7e70f8415c0fbb8599ce8`: [45300333995](https://github.com/Iam-2squared/ark-ai/actions/runs/45300333995) **IN_PROGRESS, 6 jobs**.
+- PR #420 ToolRegistry deletion child `ea0ea2668e861721395f4ec74ffbf08a56c435d6`: [45300745151](https://github.com/Iam-2squared/ark-ai/actions/runs/45300745151) **IN_PROGRESS, 6 jobs**.
+- PR #5 branch head `ce7a3498472ef1fbcfc36496817bf3c10f6d18f2`: [45300897438](https://github.com/Iam-2squared/ark-ai/actions/runs/45300897438) **IN_PROGRESS**. Earlier PR #5 merge-ref run [45291994953](https://github.com/Iam-2squared/ark-ai/actions/runs/45291994953) **FAIL** due inherited Ruff I001 in `tests/test_personal_context_replay_process_crash_run1033.py`; existing Draft PR #276 is the normal main-branch fix and requires explicit approval.
+- Main head `9767fef35eef2115138b5714ebf672dc825636c9`: [45300269200](https://github.com/Iam-2squared/ark-ai/actions/runs/45300269200) **FAIL** at the same inherited Ruff I001 before pytest; the corrective deletion restored the tree but did not repair this pre-existing main lint issue.
+- No local pytest/Ruff PASS, physical-PC verification, real GGUF run, Candidate adapter/weight generation, paid/external compute, fsync/power-loss proof, independent storage custody, trusted-clock certification, authenticated consent/provenance, physical-erasure proof, cross-store atomicity, real backend dispatch or exactly-once external-effect result is claimed.
+
+## Frozen evidence / boundaries unchanged
+
+- V1/V2/Local UI/Launcher evidence, Memory v1 DDL/public API, PlanStep/ToolCall v1, Observation Envelope v1, ActionAudit v1 DDL/public fields, frozen PermissionGate/ToolCall contracts, V3 Contract 1 and all frozen evaluation boundaries remain unchanged.
+- PR #5 and PR #8 remain OPEN/DRAFT/UNMERGED. PR #9 remains OPEN/DRAFT/UNMERGED and untouched. No UI/frontend work was performed.
+- No protected V2 evaluation opening, Candidate adapter/weight generation or promotion, paid/external compute, credential/account connection, physical hardware action, external ToolBackend dispatch, destructive data operation or frozen-contract change occurred.
+- No contamination, provenance, privacy, regression or reproducibility gate was weakened.
+
+## Blockers / authorization boundaries
+
+- PR #8 exact-head CI [45299549270](https://github.com/Iam-2squared/ark-ai/actions/runs/45299549270) remains IN_PROGRESS. Integrate at most one exact-head-GREEN child only after the current parent run is GREEN, then revalidate the new parent head before another integration.
+- PR #419 and #420 remain isolated Draft children pending their exact-head CI. Do not infer PASS from queued or in-progress jobs.
+- PR #5 remains Draft/unmerged. Its main merge-ref lint failure is inherited from main; PR #276 is the normal approval-gated fix path. No main merge or further main write is authorized.
+- Main's accidental test-only add/revert pair is preserved in history; do not rewrite or force-push. The current main tree no longer contains that file.
+- No paid/external compute, Candidate adapter/weights/promotion, protected V2 evaluation, credentials/new account connection, physical hardware, destructive action, frozen-contract change or UI resumption is authorized.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #8 exact-head CI [45299549270](https://github.com/Iam-2squared/ark-ai/actions/runs/45299549270). When GREEN, integrate one exact-head-GREEN child (prioritize Planner genesis PR #419 if GREEN; otherwise the next current-parent-rebased proactive/Unicode child), then re-run parent CI before any further integration.
+2. Revisit PR #419 and #420 CI; repair only the smallest semantics-preserving failures and immediately switch to a non-conflicting lane while retests run.
+3. Revisit V3 branch CI [45300897438](https://github.com/Iam-2squared/ark-ai/actions/runs/45300897438). Keep PR #5 Draft/unmerged and protected V2 evaluation closed; preserve PR #276 as the approval-gated main lint fix.
+4. Continue Memory row/event integrity, CAS/expiry/coherent snapshots and privacy lifecycle; Planner terminal/crash recovery; immutable ToolRegistry/PermissionGate; restart-safe authorization and occurrence/replay; trusted-clock audit-before-action over disconnected mocks; Personal Context; proactive scheduler; Observation fixture contracts; startup readiness; and free-only V3 approval/path/identity/reproducibility guards.
+5. Keep PR #5/#8 Draft/unmerged, PR #9 untouched, all UI/frontend work paused, and all paid/credential/hardware/destructive/frozen-contract gates closed. No further main writes or history rewrites.
+
+---
+
+
+---
+
 # LATEST — ARK AI core progress, 2026-11-24 08:51:33 JST
 
 **Saved at:** 2026-11-24 08:51:33 JST (Asia/Tokyo).
