@@ -106,7 +106,7 @@ def test_put_row_and_event_survive_hard_exit_after_native_commit(
     ]
 
     with sqlite3.connect(path) as connection:
-        assert connection.execute("PRAGMA quick_check").fetchone() == ("ok,")
+        assert connection.execute("PRAGMA quick_check").fetchone() == ("ok",)
         assert connection.execute(
             "SELECT revision,content FROM memories WHERE memory_id=?",
             (original.memory_id,),
