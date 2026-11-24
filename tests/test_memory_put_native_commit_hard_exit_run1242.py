@@ -11,7 +11,6 @@ import pytest
 
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
 
-
 _CHILD = r"""
 import os
 import sqlite3
