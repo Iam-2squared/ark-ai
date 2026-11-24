@@ -75,6 +75,8 @@ def test_fresh_lease_accepts_exact_age_boundary_and_denies_authority():
         (99, 10),
         (100, -1),
         (2**63, 0),
+        (-1, 0),
+        (101, 100),
     ),
 )
 def test_expired_rollback_or_out_of_range_lease_is_rejected(now_ms, max_age_ms):
@@ -88,8 +90,6 @@ def test_expired_rollback_or_out_of_range_lease_is_rejected(now_ms, max_age_ms):
         {"captured_at_ms": True},
         {"now_ms": False},
         {"max_age_ms": True},
-        {"captured_at_ms": 101, "now_ms": 100},
-        {"captured_at_ms": -1},
     ),
 )
 def test_lease_clock_requires_exact_nonnegative_integer_epoch(overrides):
