@@ -6,6 +6,7 @@ trusted time, notification consent, dispatch authority, or external effects.
 
 from __future__ import annotations
 
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -19,6 +20,7 @@ from ark.proactive_state_ledger import (
 )
 
 _PRIVATE = "run1283-private-observation-must-not-be-persisted"
+_OBSERVATION_DIGEST = hashlib.sha256(_PRIVATE.encode("utf-8")).hexdigest()
 
 _CHILD = r"""
 import os
@@ -33,6 +35,7 @@ from ark.proactive_state_ledger import (
 )
 
 path = Path(sys.argv[1])
+observation_digest = sys.argv[2]
 policy = SyntheticProactivePolicy(
     owner="owner-a",
     namespace="personal",
@@ -77,7 +80,7 @@ module._ORIGINAL_CONNECT = controlled_connect
 
 ledger.evaluate(
     policy,
-    observation_digest="a" * 64,
+    observation_digest=observation_digest,
     observed_at_ms=10,
     now_ms=10,
     expected_revision=0,
@@ -119,7 +122,7 @@ def test_native_commit_hard_exit_recovers_one_preview_without_replay_run1283(
     assert initial.read_state(policy) is None
 
     child = subprocess.run(
-        [sys.executable, "-c", _CHILD, str(path)],
+        [sys.executable, "-c", _CHILD, str(path), _OBSERVATION_DIGEST],
         capture_output=True,
         text=True,
         timeout=60,
@@ -132,7 +135,7 @@ def test_native_commit_hard_exit_recovers_one_preview_without_replay_run1283(
     assert recovered is not None
     assert recovered.revision == 1
     assert recovered.last_decision == "ELIGIBLE_PREVIEW"
-    assert recovered.last_observation_digest == "a" * 64
+    assert recovered.last_observation_digest == _OBSERVATION_DIGEST
     assert recovered.last_observed_at_ms == 10
     assert recovered.last_evaluated_at_ms == 10
     assert recovered.last_proposal_at_ms == 10
@@ -159,7 +162,7 @@ def test_native_commit_hard_exit_recovers_one_preview_without_replay_run1283(
 
     unchanged = cold.evaluate(
         policy,
-        observation_digest="a" * 64,
+        observation_digest=_OBSERVATION_DIGEST,
         observed_at_ms=20,
         now_ms=20,
         expected_revision=recovered.revision,
