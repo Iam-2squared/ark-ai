@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import os
-import sqlite3
 from pathlib import Path
 
 import pytest
 
+import ark.agency.planner_journal as journal_module
 from ark.agency.contracts import PlanStep, ToolCall
 from ark.agency.planner import PlanGraph
 from ark.agency.planner_journal import PlannerJournal, PlannerJournalPathError
@@ -38,7 +38,7 @@ def _deny_sqlite(monkeypatch: pytest.MonkeyPatch) -> list[object]:
         calls.append((args, kwargs))
         raise AssertionError("retargeted PlannerJournal must be denied before SQLite")
 
-    monkeypatch.setattr(sqlite3, "connect", forbidden_connect)
+    monkeypatch.setattr(journal_module.sqlite3, "connect", forbidden_connect)
     return calls
 
 
