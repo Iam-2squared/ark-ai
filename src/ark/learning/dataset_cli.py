@@ -20,9 +20,59 @@ from .freeze import (
     freeze_experiment_001_dataset,
 )
 
+# Operational CLI ingress limits only. These do not alter the frozen dataset schema,
+# example counts, review policy, canonical serialization, or training/evaluation gates.
+MAX_DATASET_INPUT_BYTES = 64 * 1024 * 1024
+MAX_JSON_NESTING = 64
+
+
+def _check_json_nesting(payload: bytes, label: str) -> None:
+    """Bound structural nesting without counting brackets inside JSON strings."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in payload:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x5B, 0x7B):
+            depth += 1
+            if depth > MAX_JSON_NESTING:
+                raise ValueError(
+                    f"{label} JSON nesting exceeds {MAX_JSON_NESTING} levels"
+                )
+        elif byte in (0x5D, 0x7D):
+            depth -= 1
+
+
+def _load_json_file(path: Path, label: str) -> object:
+    """Read a local JSON input with fixed byte/depth budgets before parsing."""
+    with Path(path).open("rb") as handle:
+        payload = handle.read(MAX_DATASET_INPUT_BYTES + 1)
+    if len(payload) > MAX_DATASET_INPUT_BYTES:
+        raise ValueError(
+            f"{label} JSON input exceeds {MAX_DATASET_INPUT_BYTES} bytes"
+        )
+    _check_json_nesting(payload, label)
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{label} JSON input must be UTF-8") from exc
+    try:
+        return loads_unique_json(text)
+    except RecursionError as exc:
+        raise ValueError(f"{label} JSON nesting exceeds parser capacity") from exc
+
 
 def _load_json_list(path: Path, label: str) -> list[dict]:
-    value = loads_unique_json(Path(path).read_text(encoding="utf-8"))
+    value = _load_json_file(path, label)
     if not isinstance(value, list) or not all(isinstance(row, dict) for row in value):
         raise ValueError(f"{label} must be a JSON array of objects")
     return value
