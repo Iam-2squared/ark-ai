@@ -1,3 +1,58 @@
+# LATEST — ARK continuous-build checkpoint
+
+**Saved at:** 2026-11-25 02:58:35 JST  
+**Checkpoint branch:** `research/run1318-project-status-checkpoint-20261125-0256` (prepared from Draft PR #8; checkpoint PR intentionally deferred while parent CI is in flight)  
+**Parent work branch:** `research/jarvis-foundations` — Draft PR #8, still unmerged  
+**Exact work-basis HEAD:** `824bb987f0addf4e961c9f4949f6075ca42a1caa`  
+**Checkpoint-result HEAD:** the tip created by this checkpoint update; its exact SHA is recorded in the branch ref and the accompanying run report rather than self-embedded in this file.
+
+## Overall ARK state
+
+ARK/JARVIS foundations remain **IN PROGRESS / NOT_PASSED**. V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged. PR #5 and PR #8 remain Draft/unmerged. PR #9 remains untouched. No real Candidate, external backend dispatch, protected V2 evaluation, or paid compute was used.
+
+## New work in this invocation
+
+1. **Integrated PlannerJournal production path-identity hardening** from child PR #484 into the isolated PR #8 foundation after exact-head CI became GREEN. Child head `ae508bf96cf9afab4f433b9a1ea80e62bfb66850`; CI run [45425122765](https://github.com/Iam-2squared/ark-ai/actions/runs/45425122765) GREEN, 6/6; squash merge commit / new PR #8 head `824bb987f0addf4e961c9f4949f6075ca42a1caa`. Evidence remains limited to in-process path identity and synthetic local SQLite; no filesystem security or exactly-once external-effect claim.
+2. Opened **Draft PR #495 / Run1314** for Planner COMMIT-UNKNOWN and event-prefix recovery regression rebased onto this parent. Exact child head `a4542eafa2e51a2d8e187939b0071a36acfe4388`.
+3. Opened **Draft PR #496 / Run1315** for Proactive native-COMMIT privacy fixture binding, rebased onto this parent. Exact child head `38db3eee8586431c03006a73bfb1f487e061790e`.
+4. Opened **Draft PR #497 / Run1316** for Personal Context revocation exact-scope ingress, rebased onto this parent. Exact child head `e209720310c4c28b594b58fc7841d3a0a88368a3`.
+5. Opened **Draft PR #498 / Run1317** for Memory exact-scope store ingress, rebased onto this parent. Exact child head `7b2b32ea742905b31d664fa24e8c5cb9de50363e`.
+6. Older child PRs #490, #491, #492 and #494 remain open/Draft as superseded bases until their rebased replacements pass exact-head CI and are integrated. No stale child was closed or force-updated.
+
+## Tests, CI and evidence
+
+- PR #484 exact child head `ae508bf96cf9afab4f433b9a1ea80e62bfb66850`: run [45425122765](https://github.com/Iam-2squared/ark-ai/actions/runs/45425122765) **GREEN 6/6**; merged only into PR #8, never main.
+- PR #8 exact head `824bb987f0addf4e961c9f4949f6075ca42a1caa`: run [45452038527](https://github.com/Iam-2squared/ark-ai/actions/runs/45452038527) **IN PROGRESS** at checkpoint time.
+- PR #495 exact head `a4542eafa2e51a2d8e187939b0071a36acfe4388`: run [45453163788](https://github.com/Iam-2squared/ark-ai/actions/runs/45453163788) **IN PROGRESS**.
+- PR #496 exact head `38db3eee8586431c03006a73bfb1f487e061790e`: run [45453294645](https://github.com/Iam-2squared/ark-ai/actions/runs/45453294645) **IN PROGRESS**.
+- PR #497 exact head `e209720310c4c28b594b58fc7841d3a0a88368a3`: run [45453428666](https://github.com/Iam-2squared/ark-ai/actions/runs/45453428666) **IN PROGRESS**.
+- PR #498 exact head `7b2b32ea742905b31d664fa24e8c5cb9de50363e`: run [45453681591](https://github.com/Iam-2squared/ark-ai/actions/runs/45453681591) **QUEUED**.
+- PR #5 exact head `af54b19b0f45bfbf66b46c93fcef422f5b1cae9c`: run [45421272707](https://github.com/Iam-2squared/ark-ai/actions/runs/45421272707) **FAIL** on `ruff check .` across all six matrix jobs. V3 remains Draft/NOT_PASSED and main remains read-only; do not open protected evaluation or Candidate work.
+- No local pytest/Ruff or physical-PC verification was performed in this remote-only invocation. CI status above is the only validation evidence claimed for these heads.
+
+## Frozen evidence and boundaries unchanged
+
+V1/V2/Local UI/Launcher evidence, frozen V2 final-evaluation gate, ToolCall/MemoryScope and other frozen contracts, V3 Contract 1, contamination/provenance/reproducibility gates remain unchanged. No UI/frontend work. No paid/external compute, paid APIs, subscriptions, purchases, Candidate adapter/weight generation, Candidate promotion, credentials/secrets/account connections, physical hardware actions, destructive operations, or main merge.
+
+## Blockers
+
+- Wait for exact-head PR #8 CI run 45452038527 before touching its branch again; a checkpoint-only commit on that branch during the run would invalidate the in-flight evidence.
+- Rebased child CI runs 45453163788, 45453294645, 45453428666 and 45453681591 must each complete GREEN before their respective integration.
+- V3 lane remains blocked by main merge-ref Ruff failure run 45421272707; do not modify main.
+- Separate stores for synthetic occurrence reservation and pre-action audit still do not prove cross-store atomicity; no real WRITE adapter or external exactly-once guarantee is authorized or claimed.
+
+## Next plan / 今後の方針
+
+1. Recheck PR #8 run 45452038527; after GREEN, publish this checkpoint branch as a Draft documentation PR and integrate it without touching main.
+2. Integrate the exact-head GREEN Memory ingress child (#498) first if its CI passes; then rebase dependent Memory metadata PR #493 onto the new parent head and rerun exact-head CI.
+3. Integrate #495 Planner recovery tests, #496 Proactive privacy fixture, and #497 Personal Context revocation ingress one at a time only after each exact-head CI is GREEN; re-read PR #8 HEAD before every integration.
+4. Close superseded #490/#491/#492/#494 only after their rebased replacements are GREEN and integrated.
+5. Continue local-only durable authorization/occurrence/audit design and ToolRegistry/PermissionGate hardening in isolated branches; keep mock-only, no backend dispatch.
+6. Resume free-only V3 guard work only after the main merge-ref Ruff blocker is resolved; preserve all frozen gates.
+
+
+---
+
 # LATEST — ARK AI canonical current checkpoint
 
 **Saved at:** 2026-11-25 02:04:01 JST (Asia/Tokyo).  
