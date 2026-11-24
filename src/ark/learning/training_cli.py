@@ -420,6 +420,9 @@ def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Authorization and every exact identity must close before importing torch/GPU runtime.
     validate_experiment_001(snapshot, authorization_scope="preflight")
+    # Reject an unusable report destination before evidence reads or runtime
+    # probing. The destination is checked again immediately before creation.
+    report_path = _validate_new_preflight_report_path(args.report)
     _verify_common_evidence(
         snapshot,
         provenance=args.provenance,
@@ -428,7 +431,6 @@ def run_preflight(args: argparse.Namespace) -> dict:
         running_code_sha=args.code_sha,
     )
     runtime_identity = _verify_actual_runtime(snapshot)
-    report_path = _validate_new_preflight_report_path(args.report)
     backend = HfLoRAPreflightBackend(
         base_dir=args.base_dir,
         dataset_path=args.dataset,
