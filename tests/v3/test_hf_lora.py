@@ -96,8 +96,11 @@ def test_wall_time_guard_aborts_full_run_before_candidate_save(monkeypatch, tmp_
     monkeypatch.setattr(
         module,
         "_build_model_and_tokenizer",
-        lambda snapshot, base_dir: (FakeTorch(), object(), FakeModel()),
+        lambda snapshot, base_dir, chat_template_probe: (FakeTorch(), object(), FakeModel()),
     )
+    # This test isolates the wall-time gate; runtime template binding has
+    # dedicated fake-tokenizer coverage in test_runtime_chat_template_probe_binding_run1003.py.
+    monkeypatch.setattr(module, "_verify_runtime_chat_template", lambda *args, **kwargs: None)
     monkeypatch.setattr(module, "_pretokenize", lambda tokenizer, ordered: [(None, None)] * 120)
     monkeypatch.setattr(
         module,
