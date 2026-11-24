@@ -1,54 +1,58 @@
 # LATEST — ARK continuous-build checkpoint
 
-**Saved at:** 2026-11-25 02:58:35 JST  
-**Checkpoint branch:** `research/run1318-project-status-checkpoint-20261125-0256` (prepared from Draft PR #8; checkpoint PR intentionally deferred while parent CI is in flight)  
-**Parent work branch:** `research/jarvis-foundations` — Draft PR #8, still unmerged  
-**Exact work-basis HEAD:** `824bb987f0addf4e961c9f4949f6075ca42a1caa`  
-**Checkpoint-result HEAD:** the tip created by this checkpoint update; its exact SHA is recorded in the branch ref and the accompanying run report rather than self-embedded in this file.
+**Saved at:** 2026-11-25 03:57:32 JST (Asia/Tokyo)  
+**Checkpoint branch:** `research/run1318-project-status-checkpoint-20261125-0256` (updated in place; checkpoint PR deferred while five exact-head child CI runs are queued/in progress)  
+**Parent work branch:** `research/jarvis-foundations` — Draft PR #8, OPEN / DRAFT / UNMERGED  
+**Exact work-basis HEAD:** `77d3b2f50d258bb3694afc0d03830e0d44644961`  
+**Checkpoint-result HEAD:** the single normal GitHub Contents API commit created by this update; verified against the live checkpoint branch ref after the write and not self-embedded.
 
 ## Overall ARK state
 
-ARK/JARVIS foundations remain **IN PROGRESS / NOT_PASSED**. V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged. PR #5 and PR #8 remain Draft/unmerged. PR #9 remains untouched. No real Candidate, external backend dispatch, protected V2 evaluation, or paid compute was used.
+ARK/JARVIS remains **IN PROGRESS / NOT_PASSED**. PR #5 and PR #8 remain Draft/unmerged; PR #9 remains untouched. V1/V2/Local UI/Launcher evidence and frozen contracts remain unchanged. No real Candidate, paid/external compute, paid API, protected V2 evaluation, external backend dispatch, physical hardware action or main merge occurred.
 
 ## New work in this invocation
 
-1. **Integrated PlannerJournal production path-identity hardening** from child PR #484 into the isolated PR #8 foundation after exact-head CI became GREEN. Child head `ae508bf96cf9afab4f433b9a1ea80e62bfb66850`; CI run [45425122765](https://github.com/Iam-2squared/ark-ai/actions/runs/45425122765) GREEN, 6/6; squash merge commit / new PR #8 head `824bb987f0addf4e961c9f4949f6075ca42a1caa`. Evidence remains limited to in-process path identity and synthetic local SQLite; no filesystem security or exactly-once external-effect claim.
-2. Opened **Draft PR #495 / Run1314** for Planner COMMIT-UNKNOWN and event-prefix recovery regression rebased onto this parent. Exact child head `a4542eafa2e51a2d8e187939b0071a36acfe4388`.
-3. Opened **Draft PR #496 / Run1315** for Proactive native-COMMIT privacy fixture binding, rebased onto this parent. Exact child head `38db3eee8586431c03006a73bfb1f487e061790e`.
-4. Opened **Draft PR #497 / Run1316** for Personal Context revocation exact-scope ingress, rebased onto this parent. Exact child head `e209720310c4c28b594b58fc7841d3a0a88368a3`.
-5. Opened **Draft PR #498 / Run1317** for Memory exact-scope store ingress, rebased onto this parent. Exact child head `7b2b32ea742905b31d664fa24e8c5cb9de50363e`.
-6. Older child PRs #490, #491, #492 and #494 remain open/Draft as superseded bases until their rebased replacements pass exact-head CI and are integrated. No stale child was closed or force-updated.
+1. **Integrated Draft PR #498 / Run1317 Memory exact-scope store ingress** into the isolated PR #8 foundation after exact-head CI was GREEN 6/6. Child head `7b2b32ea742905b31d664fa24e8c5cb9de50363e`; CI run [45453681591](https://github.com/Iam-2squared/ark-ai/actions/runs/45453681591); squash integration commit / current foundation HEAD `77d3b2f50d258bb3694afc0d03830e0d44644961`. Main was not changed.
+2. Opened **Draft PR #499 / Run1319** for Memory search query-text pre-access validation. Exact child head `caa79962b775b6e1ceca39e38606545e5e0de9f4`; it moves query-epoch validation before SQLite open.
+3. Rebased Planner COMMIT-UNKNOWN recovery regressions as **Draft PR #500 / Run1320**, exact child head `94f979c6b666b26065550577880b17ae5eee6984`.
+4. Rebased Proactive native-COMMIT privacy fixture binding as **Draft PR #501 / Run1321**, exact child head `ac6efa608df5dba04d38a3a60ebd0272c5c5ff0a`.
+5. Rebased Personal Context revocation exact-scope ingress as **Draft PR #502 / Run1322**, exact child head `02ce03ea49361996716ddfbdce2362ba344460e3`.
+6. Added ToolRegistry lookup-hook custody before registered PermissionGate authorization as **Draft PR #503 / Run1323**, exact child head `98409e5f2cb7567ecccfce888c15c5a65136dbd1`.
+7. Old child PRs #495–#497 remain open/Draft on their prior base; their rebased replacements are #500–#502. Their old GREEN evidence does not transfer to the new exact heads.
 
 ## Tests, CI and evidence
 
-- PR #484 exact child head `ae508bf96cf9afab4f433b9a1ea80e62bfb66850`: run [45425122765](https://github.com/Iam-2squared/ark-ai/actions/runs/45425122765) **GREEN 6/6**; merged only into PR #8, never main.
-- PR #8 exact head `824bb987f0addf4e961c9f4949f6075ca42a1caa`: run [45452038527](https://github.com/Iam-2squared/ark-ai/actions/runs/45452038527) **IN PROGRESS** at checkpoint time.
-- PR #495 exact head `a4542eafa2e51a2d8e187939b0071a36acfe4388`: run [45453163788](https://github.com/Iam-2squared/ark-ai/actions/runs/45453163788) **IN PROGRESS**.
-- PR #496 exact head `38db3eee8586431c03006a73bfb1f487e061790e`: run [45453294645](https://github.com/Iam-2squared/ark-ai/actions/runs/45453294645) **IN PROGRESS**.
-- PR #497 exact head `e209720310c4c28b594b58fc7841d3a0a88368a3`: run [45453428666](https://github.com/Iam-2squared/ark-ai/actions/runs/45453428666) **IN PROGRESS**.
-- PR #498 exact head `7b2b32ea742905b31d664fa24e8c5cb9de50363e`: run [45453681591](https://github.com/Iam-2squared/ark-ai/actions/runs/45453681591) **QUEUED**.
-- PR #5 exact head `af54b19b0f45bfbf66b46c93fcef422f5b1cae9c`: run [45421272707](https://github.com/Iam-2squared/ark-ai/actions/runs/45421272707) **FAIL** on `ruff check .` across all six matrix jobs. V3 remains Draft/NOT_PASSED and main remains read-only; do not open protected evaluation or Candidate work.
-- No local pytest/Ruff or physical-PC verification was performed in this remote-only invocation. CI status above is the only validation evidence claimed for these heads.
+- PR #8 exact head `77d3b2f50d258bb3694afc0d03830e0d44644961`: CI run [45452038527](https://github.com/Iam-2squared/ark-ai/actions/runs/45452038527) **GREEN 6/6**.
+- PR #498 exact head `7b2b32ea742905b31d664fa24e8c5cb9de50363e`: CI run [45453681591](https://github.com/Iam-2squared/ark-ai/actions/runs/45453681591) **GREEN 6/6**; merged only into PR #8.
+- PR #499 exact head `caa79962b775b6e1ceca39e38606545e5e0de9f4`: run [45464002019](https://github.com/Iam-2squared/ark-ai/actions/runs/45464002019) **IN PROGRESS**.
+- PR #500 exact head `94f979c6b666b26065550577880b17ae5eee6984`: run [45464151385](https://github.com/Iam-2squared/ark-ai/actions/runs/45464151385) **IN PROGRESS**.
+- PR #501 exact head `ac6efa608df5dba04d38a3a60ebd0272c5c5ff0a`: run [45464271226](https://github.com/Iam-2squared/ark-ai/actions/runs/45464271226) **QUEUED**.
+- PR #502 exact head `02ce03ea49361996716ddfbdce2362ba344460e3`: run [45464416519](https://github.com/Iam-2squared/ark-ai/actions/runs/45464416519) **QUEUED**.
+- PR #503 exact head `98409e5f2cb7567ecccfce888c15c5a65136dbd1`: run [45464858784](https://github.com/Iam-2squared/ark-ai/actions/runs/45464858784) **QUEUED**.
+- Prior PR #495/#496/#497 runs [45453163788](https://github.com/Iam-2squared/ark-ai/actions/runs/45453163788), [45453294645](https://github.com/Iam-2squared/ark-ai/actions/runs/45453294645), [45453428666](https://github.com/Iam-2squared/ark-ai/actions/runs/45453428666) were GREEN 6/6 on their old bases only; none transfers to #500–#502.
+- PR #5 remains Draft/unmerged. Its existing run [45421272707](https://github.com/Iam-2squared/ark-ai/actions/runs/45421272707) failed `ruff check .` across all six jobs; no protected evaluation or Candidate work was opened.
+- No local pytest/Ruff or physical-PC verification was performed in this remote-only invocation. Only the exact-head CI results above are claimed.
 
 ## Frozen evidence and boundaries unchanged
 
-V1/V2/Local UI/Launcher evidence, frozen V2 final-evaluation gate, ToolCall/MemoryScope and other frozen contracts, V3 Contract 1, contamination/provenance/reproducibility gates remain unchanged. No UI/frontend work. No paid/external compute, paid APIs, subscriptions, purchases, Candidate adapter/weight generation, Candidate promotion, credentials/secrets/account connections, physical hardware actions, destructive operations, or main merge.
+V1/V2/Local UI/Launcher evidence, frozen V2 final-evaluation gate, ToolCall/MemoryScope and other frozen contracts, V3 Contract 1, contamination/provenance/regression/reproducibility gates remain unchanged. PR #9 remains untouched. No UI/frontend work, paid compute, paid APIs, subscriptions, purchases, Candidate adapter/weight generation, Candidate promotion, credentials/secrets/account connections, physical hardware, destructive operations or main merge.
 
 ## Blockers
 
-- Wait for exact-head PR #8 CI run 45452038527 before touching its branch again; a checkpoint-only commit on that branch during the run would invalidate the in-flight evidence.
-- Rebased child CI runs 45453163788, 45453294645, 45453428666 and 45453681591 must each complete GREEN before their respective integration.
-- V3 lane remains blocked by main merge-ref Ruff failure run 45421272707; do not modify main.
-- Separate stores for synthetic occurrence reservation and pre-action audit still do not prove cross-store atomicity; no real WRITE adapter or external exactly-once guarantee is authorized or claimed.
+- Five child CI runs #499–#503 are queued/in progress. Do not change their exact branches or move the #8 base while those checks are in flight; revisit once, after they settle.
+- PR #493 Memory metadata ingress rebase is deferred while PR #499 validates the Memory store path; do not stack another Memory source change onto that in-flight lane.
+- PRs #495–#497 are superseded by #500–#502 and remain Draft/unmerged until the replacements are GREEN and integrated.
+- V3 remains blocked by the existing PR #5 Ruff failure; keep protected V2 evaluation closed and do not generate/promote a Candidate.
+- Synthetic occurrence and audit stores remain separate; no cross-store atomicity or external exactly-once guarantee is claimed.
 
 ## Next plan / 今後の方針
 
-1. Recheck PR #8 run 45452038527; after GREEN, publish this checkpoint branch as a Draft documentation PR and integrate it without touching main.
-2. Integrate the exact-head GREEN Memory ingress child (#498) first if its CI passes; then rebase dependent Memory metadata PR #493 onto the new parent head and rerun exact-head CI.
-3. Integrate #495 Planner recovery tests, #496 Proactive privacy fixture, and #497 Personal Context revocation ingress one at a time only after each exact-head CI is GREEN; re-read PR #8 HEAD before every integration.
-4. Close superseded #490/#491/#492/#494 only after their rebased replacements are GREEN and integrated.
-5. Continue local-only durable authorization/occurrence/audit design and ToolRegistry/PermissionGate hardening in isolated branches; keep mock-only, no backend dispatch.
-6. Resume free-only V3 guard work only after the main merge-ref Ruff blocker is resolved; preserve all frozen gates.
+1. Recheck exact-head CI for #499–#503 once the queued runs settle; inspect any failure logs, make the smallest semantics-preserving fix, rerun once, then return to a non-conflicting lane.
+2. Integrate only exact-head GREEN child PRs into `research/jarvis-foundations`, one at a time; re-read the latest #8 HEAD before every transition. Keep #8 Draft/unmerged to main.
+3. After the Memory lane is GREEN and integrated, rebase PR #493 metadata ingress onto the new #8 HEAD and require fresh exact-head CI.
+4. Continue independent startup-readiness, durable authorization/audit, disconnected mock-executor and observation contract work only where a concrete invariant gap is demonstrated.
+5. Revisit free-only V3 guard hardening only after its Ruff blocker is resolved; never open protected evaluation or Candidate work without the explicit gate.
+6. Preserve the UI/frontend pause and all frozen evidence.
 
 
 ---
