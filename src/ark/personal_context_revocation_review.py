@@ -88,10 +88,19 @@ def _scope_digest(scope: MemoryScope) -> str:
     _require_original_scope_digest()
     if type(scope) is not MemoryScope:
         raise SyntheticContextRevocationRejected("exact MemoryScope required")
+    # MemoryScope's frozen constructor intentionally remains unchanged. The
+    # privacy-veto boundary requires exact built-in text before invoking its
+    # validator, so str subclasses cannot run overridden methods here.
+    owner_id = scope.owner_id
+    namespace = scope.namespace
+    if type(owner_id) is not str or type(namespace) is not str:
+        raise SyntheticContextRevocationRejected("exact scope text required")
     scope.__post_init__()
     _require_original_scope_digest()
+    if scope.owner_id is not owner_id or scope.namespace is not namespace:
+        raise SyntheticContextRevocationRejected("scope changed during digest validation")
     payload = json.dumps(
-        (scope.owner_id, scope.namespace), ensure_ascii=True,
+        (owner_id, namespace), ensure_ascii=True,
         separators=(",", ":"),
     ).encode("utf-8")
     _require_original_scope_digest()
