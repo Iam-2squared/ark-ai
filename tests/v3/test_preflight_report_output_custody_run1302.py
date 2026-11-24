@@ -95,7 +95,10 @@ def test_missing_parent_and_path_traversal_are_denied(tmp_path: Path) -> None:
         cli._write_new_preflight_report(traversing, b"x")
 
 
-@pytest.mark.parametrize("payload", (b"", b"x" * (cli._MAX_PREFLIGHT_REPORT_BYTES + 1), bytearray(b"x")))
+@pytest.mark.parametrize(
+    "payload",
+    (b"", b"x" * (cli._MAX_PREFLIGHT_REPORT_BYTES + 1), bytearray(b"x")),
+)
 def test_invalid_report_payload_is_denied_before_path_access(
     tmp_path: Path, monkeypatch, payload: object,
 ) -> None:
