@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
@@ -84,7 +85,7 @@ def test_reflective_path_retarget_is_denied_before_sqlite(
 
     assert calls == []
     assert not other.exists()
-    assert Path(original).is_file()
+    assert os.path.isfile(original)
 
 
 @pytest.mark.parametrize("guard", ("__setattr__", "__delattr__", "_connect"))
