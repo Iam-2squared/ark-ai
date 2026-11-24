@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -73,7 +74,7 @@ os._exit(75)
 
 
 def test_put_row_and_event_survive_hard_exit_after_native_commit(
-    tmp_path,
+    tmp_path: Path,
 ) -> None:
     path = tmp_path / "memory-native-commit-hard-exit.sqlite3"
     scope = MemoryScope("run1242-owner", "private")
