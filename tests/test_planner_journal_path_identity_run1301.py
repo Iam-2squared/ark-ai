@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
+import ark.agency.planner_journal as journal_module
 from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency.planner import PlanGraph
-import ark.agency.planner_journal as journal_module
 from ark.agency.planner_journal import PlannerJournal, PlannerJournalPathError
 
 
