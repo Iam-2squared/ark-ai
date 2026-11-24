@@ -61,6 +61,14 @@ class CommitExit:
     def __init__(self, connection):
         self.connection = connection
 
+    def __setattr__(self, name, value):
+        if name == "connection":
+            object.__setattr__(self, name, value)
+        else:
+            # Preserve sqlite3.Connection configuration semantics: the
+            # audit store sets row_factory on the connection it receives.
+            setattr(self.connection, name, value)
+
     def __enter__(self):
         self.connection.__enter__()
         return self
