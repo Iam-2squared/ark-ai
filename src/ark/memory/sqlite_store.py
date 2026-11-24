@@ -1014,7 +1014,7 @@ class SQLiteMemoryStore:
                 or (query.scope.owner_id, query.scope.namespace)
                 != (pinned_scope.owner_id, pinned_scope.namespace)
             ):
-                raise MemorySchemaError("memory search scope changed during clock")
+                raise MemorySchemaError("memory search scope changed during read")
             if (
                 type(query.text) is not str or query.text is not pinned_text
                 or query.text != pinned_text
@@ -1022,8 +1022,12 @@ class SQLiteMemoryStore:
                 or type(query.include_expired) is not bool
                 or query.include_expired != pinned_include_expired
             ):
-                raise MemorySchemaError("memory search query changed during clock")
+                raise MemorySchemaError("memory search query changed during read")
 
+        # Validate the complete caller-owned query epoch before opening SQLite.
+        # MemoryQuery v1 intentionally accepts str subclasses; this store boundary
+        # requires exact built-in text before any private-store access.
+        assert_query_epoch()
         with closing(self._connect_readonly()) as conn:
             assert_query_epoch()
             conn.execute("BEGIN")
