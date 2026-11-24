@@ -8,7 +8,6 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-
 from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency.planner import PlanGraph
 from ark.agency.planner_journal import PlannerJournal
