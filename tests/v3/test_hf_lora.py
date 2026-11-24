@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from ark.learning import hf_lora
+from ark.learning.dataset import digest
 from ark.learning.execution import ExecutionBlocked
 from ark.learning.hf_lora import (
     HfLoRAFullRun,
@@ -24,6 +26,73 @@ def test_training_order_is_seeded_and_input_order_independent():
 def test_duplicate_training_ids_are_rejected():
     with pytest.raises(ValueError, match="unique candidate_id"):
         deterministic_training_order([{"candidate_id": "x"}, {"candidate_id": "x"}])
+
+
+def test_loaded_tokenizer_must_reproduce_reviewed_chat_template_probe(tmp_path):
+    probe = tmp_path / "chat-template-probe.txt"
+    expected = (
+        b"<|user|>ARK V3 runtime template probe: user"
+        b"<|assistant|>ARK V3 runtime template probe: assistant"
+    )
+    probe.write_bytes(expected)
+
+    class FakeTokenizer:
+        def __init__(self):
+            self.calls = []
+
+        def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+            self.calls.append((messages, tokenize, add_generation_prompt))
+            return expected.decode("utf-8")
+
+    tokenizer = FakeTokenizer()
+    sha256 = hf_lora._verify_chat_template_probe(tokenizer, probe, digest(expected))
+    assert sha256 == digest(expected)
+    assert tokenizer.calls == [(
+        [
+            {"role": "user", "content": "ARK V3 runtime template probe: user"},
+            {"role": "assistant", "content": "ARK V3 runtime template probe: assistant"},
+        ],
+        False,
+        False,
+    )]
+
+
+def test_loaded_tokenizer_probe_mismatch_fails_closed_before_model_load(tmp_path):
+    probe = tmp_path / "chat-template-probe.txt"
+    expected = b"reviewed rendered template"
+    probe.write_bytes(expected)
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+            return "different rendered template"
+
+    with pytest.raises(hf_lora.LoRARuntimeError, match="differs from reviewed probe"):
+        hf_lora._verify_chat_template_probe(FakeTokenizer(), probe, digest(expected))
+
+
+def test_probe_file_replacement_between_identity_and_read_is_rejected(tmp_path, monkeypatch):
+    probe = tmp_path / "chat-template-probe.txt"
+    expected = b"reviewed rendered template"
+    probe.write_bytes(expected)
+    original = hf_lora.file_identity
+    calls = 0
+
+    def replace_after_first_identity(path, *, label=None):
+        nonlocal calls
+        identity = original(path, label=label)
+        calls += 1
+        if calls == 1:
+            path.write_bytes(b"replacement template")
+        return identity
+
+    monkeypatch.setattr(hf_lora, "file_identity", replace_after_first_identity)
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+            raise AssertionError("changed probe must be rejected before tokenizer rendering")
+
+    with pytest.raises(hf_lora.LoRARuntimeError, match="changed after identity review"):
+        hf_lora._verify_chat_template_probe(FakeTokenizer(), probe, digest(expected))
 
 
 def test_preflight_cannot_reach_heavy_imports_from_unresolved_snapshot(tmp_path):
@@ -96,7 +165,9 @@ def test_wall_time_guard_aborts_full_run_before_candidate_save(monkeypatch, tmp_
     monkeypatch.setattr(
         module,
         "_build_model_and_tokenizer",
-        lambda snapshot, base_dir: (FakeTorch(), object(), FakeModel()),
+        lambda snapshot, base_dir, chat_template_probe: (
+            FakeTorch(), object(), FakeModel(), "a" * 64,
+        ),
     )
     monkeypatch.setattr(module, "_pretokenize", lambda tokenizer, ordered: [(None, None)] * 120)
     monkeypatch.setattr(
