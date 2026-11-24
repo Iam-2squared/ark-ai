@@ -17,7 +17,12 @@ def test_bounded_encoder_preserves_ascii_and_multibyte_exact_boundaries() -> Non
 def test_bounded_encoder_stops_on_oversize_multibyte_text() -> None:
     # The full string is caller-owned. The adapter must not build a second
     # full-size UTF-8 byte string just to discover that it exceeds this limit.
-    assert adapters._encode_fixture_text_bounded("🧪" * 100_000, 8) is None
+    content = "🧪" * 100_000
+    byte_budget = 100_000
+    # Codepoint count fits the byte budget, so the non-ASCII chunk loop must
+    # reject on cumulative UTF-8 bytes rather than its cheap length precheck.
+    assert len(content) == byte_budget
+    assert adapters._encode_fixture_text_bounded(content, byte_budget) is None
 
 
 def test_bounded_encoder_keeps_strict_surrogate_rejection() -> None:
@@ -44,3 +49,16 @@ def test_text_fixture_translates_invalid_utf8_before_private_hash(
             ingested_at_ms=1234,
         )
     assert touched == []
+
+def test_bounded_encoder_accepts_exact_budget_across_chunk_boundary() -> None:
+    content = "🧪" * (16 * 1024 + 1)
+    byte_budget = len(content.encode("utf-8"))
+    assert byte_budget == 65_540
+    encoded = adapters._encode_fixture_text_bounded(content, byte_budget)
+    assert encoded == content.encode("utf-8")
+
+
+def test_bounded_encoder_rejects_one_byte_below_chunked_utf8_budget() -> None:
+    content = "🧪" * (16 * 1024 + 1)
+    assert len(content) < 65_539
+    assert adapters._encode_fixture_text_bounded(content, 65_539) is None
