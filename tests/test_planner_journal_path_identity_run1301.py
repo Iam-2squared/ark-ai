@@ -12,7 +12,6 @@ from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency.planner import PlanGraph
 from ark.agency.planner_journal import PlannerJournal, PlannerJournalPathError
 
-
 _PLAN_ID = "planner-path-identity-run1301"
 
 
