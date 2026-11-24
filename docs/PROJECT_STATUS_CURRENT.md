@@ -1,10 +1,10 @@
 # LATEST — ARK AI canonical current checkpoint
 
-**Saved at:** 2026-11-24 21:53:55 JST (Asia/Tokyo).  
+**Saved at:** 2026-11-24 21:57:54 JST (Asia/Tokyo).  
 **Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md`.  
 **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).  
 **Work-basis HEAD:** `101be0cb505d8ae045027faf54f8d982c0a4f9d2` — PR #8 live head re-read immediately before this checkpoint write.  
-**Checkpoint-result HEAD:** the single normal GitHub Contents API commit created by this update; its returned SHA is verified against the live `research/jarvis-foundations` ref immediately after the write and is intentionally not self-embedded.  
+**Checkpoint-result HEAD:** the final live `research/jarvis-foundations` ref after this checkpoint correction; it will be verified immediately after the write and is intentionally not self-embedded. The preceding checkpoint content commit was `64eef6a17a6de03ea123d77167a857b80799410b`.  
 **Live main HEAD:** `ecd72fced0f3e575e504331f9f7bf1c4f0187614` — unintended direct Contents API commit remains unresolved; main is read-only pending explicit user direction.  
 **V3 branch / PR #5:** `research/v3-learning-evaluation` / Draft PR #5 (OPEN / DRAFT / UNMERGED), observed head `ceb44c85e4bdd2b13cf62ddf02ccc9f555a51efc`.  
 **UI branch / PR #9:** `ui/next-generation-command-center-20261103` / Draft PR #9 (OPEN / DRAFT / UNMERGED; paused and untouched).
@@ -12,7 +12,7 @@
 ## Current ARK state
 
 - ARK/JARVIS remains **NOT_PASSED**. No V3/V4/V5 PASS, trusted-clock certification, authenticated consent, production dispatch, physical hardware readiness, fsync/power-loss guarantee, independent custody, cross-store atomicity, or exactly-once external-effect claim is made.
-- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Its current head is `101be0cb505d8ae045027faf54f8d982c0a4f9d2`; exact-head parent CI run [45396672530](https://github.com/Iam-2squared/ark-ai/actions/runs/45396672530) is **IN PROGRESS** after the Run1288 integration.
+- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Its code work-basis before the checkpoint document write was `101be0cb505d8ae045027faf54f8d982c0a4f9d2`. The checkpoint document commit `64eef6a17a6de03ea123d77167a857b80799410b` changes no source. Exact-head parent CI run [45396672530](https://github.com/Iam-2squared/ark-ai/actions/runs/45396672530) is **IN PROGRESS** on the code work-basis; no workflow run has yet been surfaced for the docs-only checkpoint commit.
 - PR #5 remains gated Draft/unmerged. No Candidate adapter/weight generation, real training, preflight compute, external GPU compute, protected V2 evaluation opening, or promotion was performed.
 - PR #9 remains paused and untouched. No UI/frontend work, UI integration, polish, or frontend tests were performed.
 - V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
@@ -63,7 +63,7 @@
 
 - PR #8 pre-integration HEAD `08d7bd7a89da786e0773dabead86d3adad40e98e`: run [45386339764](https://github.com/Iam-2squared/ark-ai/actions/runs/45386339764) **GREEN**.
 - PR #468 child HEAD `70680dabe5f78258b6fe0a735ee1ff0f5dfd3035`: run [45387396190](https://github.com/Iam-2squared/ark-ai/actions/runs/45387396190) **GREEN** before merge.
-- PR #8 post-integration HEAD `101be0cb505d8ae045027faf54f8d982c0a4f9d2`: run [45396672530](https://github.com/Iam-2squared/ark-ai/actions/runs/45396672530) **IN PROGRESS**.
+- PR #8 post-integration code work-basis HEAD `101be0cb505d8ae045027faf54f8d982c0a4f9d2`: run [45396672530](https://github.com/Iam-2squared/ark-ai/actions/runs/45396672530) **IN PROGRESS**. The preceding docs-only checkpoint commit `64eef6a17a6de03ea123d77167a857b80799410b` has no exact-head workflow run surfaced; no source changed in that commit.
 - PR #469 child HEAD `0231de00811d98f8eb38db015d4d1da1830fa63b`: run [45387478678](https://github.com/Iam-2squared/ark-ai/actions/runs/45387478678) attempt 2 **IN PROGRESS**; attempt 1 failed only the unrelated Windows/Python 3.12 UI server test described above.
 - PR #470 child HEAD `8520b8a2da7b93dc1da797d6717c2c3ab04630d8`: run [45397074538](https://github.com/Iam-2squared/ark-ai/actions/runs/45397074538) **IN PROGRESS**.
 - PR #471 child HEAD `c84111bc26490e5478d15daca623c422c7b9cec1`: run [45397281932](https://github.com/Iam-2squared/ark-ai/actions/runs/45397281932) **IN PROGRESS**.
