@@ -312,6 +312,110 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         raise RuntimeError("preflight report measurements are inconsistent") from exc
 
 
+
+def _validate_new_preflight_report_path(path: Path) -> Path:
+    """Validate a new local report destination before any preflight backend work."""
+    if type(path) is not type(Path(".")):
+        raise RuntimeError("preflight report path must be an exact native Path")
+    try:
+        raw = os.fspath(path)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("preflight report path is invalid") from exc
+    if (
+        type(raw) is not str
+        or not raw
+        or "\\0" in raw
+        or ".." in path.parts
+        or len(raw) > 4096
+    ):
+        raise RuntimeError("preflight report path is not an accepted local path")
+
+    source = path.absolute()
+    try:
+        parent = source.parent.lstat()
+        if (
+            type(parent.st_mode) is not int
+            or not stat.S_ISDIR(parent.st_mode)
+            or _is_evidence_reparse_point(parent)
+            or _has_evidence_reparse_ancestor(source)
+        ):
+            raise RuntimeError(
+                "preflight report parent must be an existing non-reparse directory"
+            )
+        try:
+            source.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            raise RuntimeError("preflight report path must be a new file")
+    except OSError as exc:
+        raise RuntimeError("preflight report path custody cannot be verified") from exc
+    return source
+
+
+def _write_new_preflight_report(path: Path, payload: bytes) -> None:
+    """Create one bounded report without following a leaf or reparse-point parent."""
+    if type(payload) is not bytes or not 1 <= len(payload) <= _MAX_PREFLIGHT_REPORT_BYTES:
+        raise RuntimeError("preflight report payload is outside its byte budget")
+    source = _validate_new_preflight_report_path(path)
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_BINARY", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
+    descriptor = -1
+    try:
+        descriptor = os.open(source, flags, 0o600)
+        with os.fdopen(descriptor, "wb") as handle:
+            descriptor = -1
+            opened = os.fstat(handle.fileno())
+            observed = source.lstat()
+            opened_links = opened.st_nlink
+            if (
+                not _is_regular_evidence_file(opened)
+                or _is_evidence_reparse_point(opened)
+                or type(opened_links) is not int
+                or opened_links != 1
+                or opened.st_ino == 0
+                or not os.path.samestat(observed, opened)
+                or _evidence_file_epoch(observed) != _evidence_file_epoch(opened)
+                or _has_evidence_reparse_ancestor(source)
+            ):
+                raise RuntimeError("preflight report destination changed before write")
+            written = handle.write(payload)
+            handle.flush()
+            if written != len(payload):
+                raise RuntimeError("preflight report write was incomplete")
+            after_handle = os.fstat(handle.fileno())
+        after = source.lstat()
+        after_links = after.st_nlink
+        handle_links = after_handle.st_nlink
+        if (
+            not _is_regular_evidence_file(after)
+            or _is_evidence_reparse_point(after)
+            or type(after_links) is not int
+            or after_links != 1
+            or not _is_regular_evidence_file(after_handle)
+            or _is_evidence_reparse_point(after_handle)
+            or type(handle_links) is not int
+            or handle_links != 1
+            or not os.path.samestat(after, after_handle)
+            or _evidence_file_epoch(after) != _evidence_file_epoch(after_handle)
+            or _has_evidence_reparse_ancestor(source)
+            or after.st_size != len(payload)
+        ):
+            raise RuntimeError("preflight report destination changed during write")
+    except OSError as exc:
+        raise RuntimeError("preflight report cannot be created safely") from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
 def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Authorization and every exact identity must close before importing torch/GPU runtime.
@@ -324,9 +428,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
         running_code_sha=args.code_sha,
     )
     runtime_identity = _verify_actual_runtime(snapshot)
-    report_path = Path(args.report)
-    if report_path.exists() or report_path.is_symlink() or not report_path.parent.is_dir():
-        raise RuntimeError("preflight report path must be a new file under an existing directory")
+    report_path = _validate_new_preflight_report_path(args.report)
     backend = HfLoRAPreflightBackend(
         base_dir=args.base_dir,
         dataset_path=args.dataset,
@@ -334,8 +436,7 @@ def run_preflight(args: argparse.Namespace) -> dict:
     )
     evidence = run_authorized_preflight(snapshot, backend)
     payload = build_preflight_report(snapshot, evidence, runtime_identity)
-    with report_path.open("xb") as handle:
-        handle.write(payload)
+    _write_new_preflight_report(report_path, payload)
     return {
         "kind": "NON_CANDIDATE_PREFLIGHT",
         "report_sha256": digest(payload),
