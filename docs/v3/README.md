@@ -27,6 +27,8 @@ Core documents:
   download models or contact external services.
 - Strict experiment-001 execution-snapshot validation, runtime code-tree identity, measured
   environment/hardware checks, numeric safety checks and wall-clock timeout enforcement.
+- Bounded descriptor/epoch-checked reads for provenance, contamination and preflight evidence;
+  byte ceilings reuse the existing dataset-ingress and canonical-JSON budgets.
 - Separate preflight and full-training authorization scopes plus a hash-addressed authorization
   packet; preflight evidence is bound to the immutable execution core before full training.
 - Local-files-only HF/PEFT LoRA implementation for the frozen 120/30 recipe. Heavy model work
