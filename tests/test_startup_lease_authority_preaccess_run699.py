@@ -63,7 +63,10 @@ def test_preinstalled_getter_rejected_without_callback_or_probe(
         SyntheticStartupLeaseReview, getter, property(forged_getter),
     )
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", forbidden_integrity)
-    with pytest.raises(SyntheticStartupLeaseRejected, match="startup lease source descriptor changed"):
+    with pytest.raises(
+        SyntheticStartupLeaseRejected,
+        match="startup lease source descriptor changed",
+    ):
         _review(snapshot, requirements)
     assert callbacks == []
     assert probes == []
@@ -91,7 +94,10 @@ def test_replaced_integrity_method_denied_before_getter_dispatch(monkeypatch, ge
             )
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", late_injection)
-    with pytest.raises(SyntheticStartupLeaseRejected, match="startup lease source descriptor changed"):
+    with pytest.raises(
+        SyntheticStartupLeaseRejected,
+        match="startup lease source descriptor changed",
+    ):
         _review(snapshot, requirements)
     assert injections == []
     assert callbacks == []
