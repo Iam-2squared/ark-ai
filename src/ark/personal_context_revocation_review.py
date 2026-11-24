@@ -78,6 +78,8 @@ def _require_original_scope_digest() -> None:
         or json is not _ORIGINAL_SCOPE_JSON
         or hashlib.sha256 is not _ORIGINAL_SCOPE_SHA256
         or json.dumps is not _ORIGINAL_SCOPE_DUMPS
+        or _scope_digest is not _ORIGINAL_SCOPE_DIGEST
+        or _validate is not _ORIGINAL_REVOCATION_VALIDATOR
     ):
         raise SyntheticContextRevocationRejected(
             "revocation scope digest implementation changed"
@@ -179,6 +181,12 @@ def _validate(conn: sqlite3.Connection) -> None:
             raise SyntheticContextRevocationRejected("revocation row integrity failed")
 
 
+# The scope hash and SQLite schema validator are both executable privacy gates.
+# A no-op replacement could miss a persisted veto or accept a tampered ledger.
+_ORIGINAL_SCOPE_DIGEST = _scope_digest
+_ORIGINAL_REVOCATION_VALIDATOR = _validate
+
+
 def _check_local_revocation_path(path: Path) -> None:
     """Reject obvious symlink/alias sources before fixture SQLite access.
 
@@ -275,6 +283,7 @@ class SyntheticContextRevocationLedger:
         self, path: Path, *, require_existing: bool = False,
     ) -> None:
         """Open a synthetic veto ledger, optionally refusing any fresh bootstrap.
+        _require_original_scope_digest()
 
         Recovery callers must set require_existing=True so a lost veto file
         cannot silently become a new empty ledger. This is only a local path
