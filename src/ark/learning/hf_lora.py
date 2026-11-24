@@ -81,7 +81,9 @@ def _verify_chat_template_probe(
     except UnicodeError as exc:
         raise LoRARuntimeError("loaded tokenizer probe is not strict UTF-8") from exc
     if rendered_bytes != expected:
-        raise LoRARuntimeError("loaded tokenizer chat-template rendering differs from reviewed probe")
+        raise LoRARuntimeError(
+            "loaded tokenizer chat-template rendering differs from reviewed probe"
+        )
     return digest(rendered_bytes)
 
 
