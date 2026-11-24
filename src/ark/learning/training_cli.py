@@ -26,7 +26,6 @@ from .preflight import (
 )
 from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
 
-
 # Reuse existing repository evidence-ingress ceilings rather than inventing
 # larger limits: dataset JSON ingress is capped at 64 MiB, while canonical
 # run-manifest JSON is capped at 1 MiB. The preflight report is a fixed,
