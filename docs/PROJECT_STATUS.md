@@ -1,6 +1,79 @@
 # ARK AI — Canonical Project Status
-
 ## LATEST
+
+- **Saved at:** 2026-11-25 07:09:08 JST (Asia/Tokyo).
+- **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `2af77814dd01f0959d99a86ddcf9387d94e8053c` (current exact PR #8 head before this checkpoint write).
+- **Checkpoint-result HEAD:** the GitHub commit created by this `PROJECT_STATUS.md` update; the exact returned SHA is recorded in the run summary. This file does not self-reference its own commit SHA.
+- **Overall ARK state:** V1, V2, Local UI v1 and Launcher/Gate Runner retain their previously reviewed/frozen PASS evidence. JARVIS foundations continue in isolated, reversible Draft branches. **ARK/JARVIS overall remains NOT_PASSED.** No protected V2 evaluation or later milestone PASS is claimed.
+- **Main boundary:** no write, merge, protected evaluation, or Candidate action against `main` was performed in this invocation.
+
+## NEW work this invocation
+
+1. **Draft PR #517 — disconnected mock completion-audit COMMIT hard-exit regression (Run1337)**
+   - Branch: `research/run1337-mock-completion-audit-hard-exit-20261125`.
+   - Exact child HEAD: `5d2ef03019a9fe43ecbcde5a016d1f04efa12e29`; work basis: PR #8 HEAD `2af77814dd01f0959d99a86ddcf9387d94e8053c`.
+   - Adds a subprocess exit immediately after the second native ActionAudit COMMIT, after the exact in-process mock backend call and before the completion append returns. Cold recovery checks both audit events and the durable occurrence, denies reuse of the old one-shot before a fresh gate/backend call, and permits a distinct new one-shot for the same canonical request.
+   - Test-only plus evidence note; no production executor, schema, or public contract change.
+   - CI run `45496873298`: IN PROGRESS at checkpoint time.
+
+2. **Draft PR #518 — startup snapshot method custody (Run1338)**
+   - Branch: `research/run1338-startup-snapshot-method-custody-20261125`.
+   - Exact child HEAD: `9d531b38f9e943401956c27e60379b40dbdec58e`; work basis: PR #8 HEAD `2af77814dd01f0959d99a86ddcf9387d94e8053c`.
+   - Pins the import-original `StartupSnapshot._assert_integrity`, `state`, and `root_blockers` method identities in the startup implementation guard. Tests reject method substitution before probe iteration and reject a forged-digest lease before the substituted integrity callback runs.
+   - CI run `45497687313`: QUEUED at checkpoint time.
+
+3. **Draft PR #519 — direct startup snapshot reader guard (Run1339), stacked on PR #518**
+   - Branch: `research/run1339-startup-reader-integrity-guard-20261125`.
+   - Exact child HEAD: `5111c49c353b1753627cd31793309ebfd3f9d83c`; exact parent basis: PR #518 HEAD `9d531b38f9e943401956c27e60379b40dbdec58e`.
+   - Adds a guard call at the beginning of the original `StartupSnapshot.state()` and `root_blockers()` methods, before dispatch through `_assert_integrity`; adds direct-reader regressions. This follow-up is isolated and does not alter PR #518's exact head.
+   - CI run `45497903814`: QUEUED at checkpoint time. Validate in dependency order: #518 before #519.
+
+4. **V3 CI blocker reconciliation (read-only)**
+   - PR #5 exact head remains `f7252fbe7d5f65c640fed41bbb5b3cc7ae817296`; parent CI run `45484069708` is FAIL across all six jobs on Ruff I001 in three files present on `main` but absent from the V3 branch checkout.
+   - Confirmed the three files exist on `main`, not on `research/v3-learning-evaluation`.
+   - Existing Draft PR #483 (`fix/run1303-main-ci-import-groups-20261125`, head `82edf57452ffae117cb4dfaff3bb26aac5987c91`) removes the three import separators, but its exact-head CI run `45422941503` is FAIL at pytest collection because the main base lacks the JARVIS modules those tests import. No merge or workaround was attempted; the main/foundation ownership boundary remains blocked pending explicit integration approval.
+
+## Tests, CI and evidence
+
+- PR #8 exact-head CI run `45494409207`: IN PROGRESS; three Windows jobs remained in progress at the last inspection, with the Ubuntu matrix jobs successful.
+- PR #515 Memory child run `45494873858`: IN PROGRESS.
+- PR #516 Observation child exact head `e3d4674c3e01dc315f647e0f6da39dd8a34a4317`: no workflow run surfaced at the last inspection; no PASS is claimed.
+- PR #517 Run1337 exact-head run `45496873298`: IN PROGRESS.
+- PR #518 Run1338 exact-head run `45497687313`: QUEUED.
+- PR #519 Run1339 exact-head run `45497903814`: QUEUED.
+- PR #5 exact-head run `45484069708`: FAIL; all six matrix jobs failed at Ruff I001 on the three main-base test paths.
+- PR #483 exact-head run `45422941503`: FAIL; Ruff passes, but pytest collection cannot import the JARVIS foundation modules absent from its main base.
+- No local pytest/Ruff execution, physical-PC verification, real model runtime, external service, or paid compute result is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen as previously reviewed.
+- Frozen ToolCall/PermissionGate public contracts, Memory v1 schema/DDL, Observation Envelope v1, Personal Context privacy boundaries and V3 Contract 1 were not changed.
+- PR #5 remains Draft/unmerged; no protected V2 evaluation, real Candidate generation or promotion was opened.
+- PR #8 remains Draft/unmerged. PRs #517–#519 are isolated Draft children; none is merged into #8 or `main`.
+- PR #9 remains Draft/unmerged and untouched. UI/frontend development remains paused.
+
+## Blockers and authorization boundaries
+
+- **Free-only boundary:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
+- No real Candidate adapter/weight generation, protected V2 final-evaluation opening, Candidate promotion, credentials/secrets, new account connection, unavailable physical-PC action, destructive operation, or irreversible data change occurred.
+- **V3 main-base blocker:** PR #5's merge-ref lint paths belong to `main`; the import-only PR #483 then fails collection because the foundation modules are not on `main`. Keep #5 and #483 Draft/unmerged; do not copy isolated foundation modules into V3 or merge to main without the explicit integration decision.
+- **CI evidence boundary:** QUEUED/IN PROGRESS is not PASS. Do not integrate #517–#519 until each exact child head is GREEN and its dependency order is satisfied.
+- **Architecture boundary:** the new readiness methods remain synthetic diagnostics only; the mock executor remains exact in-process mock only. Neither establishes trusted time, independent custody, authenticated consent, power-loss durability, or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Inspect PR #517 run `45496873298` once useful results are available; correct only a concrete exact-head failure, then return to an independent lane while validation runs.
+2. Validate PR #518 run `45497687313` before PR #519 run `45497903814`; integrate the startup reader follow-up only after its parent and child exact-head evidence is GREEN.
+3. Revisit PR #8 run `45494409207`, PR #515 Memory run `45494873858`, and PR #516's missing run evidence without duplicating workflows.
+4. Continue non-UI free work on Memory durability/privacy, Planner crash recovery, ToolRegistry/PermissionGate, audit-before-action, disconnected execution, Personal Context, proactive state and Observation fixture contracts.
+5. Keep V3 free-only guards isolated until the main-base source/test ownership blocker is resolved with explicit approval; keep PR #5 Draft/unmerged and all protected evaluation/Candidate gates closed.
+
+## Historical checkpoint archive
+
+### Previous checkpoint — saved at 2026-11-25 05:53:35 JST
+
 
 - **Saved at:** 2026-11-25 05:53:35 JST (Asia/Tokyo)
 - **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
@@ -9,7 +82,7 @@
 - **Overall ARK state:** V1, V2, Local UI v1 and Launcher/Gate Runner retain their previously reviewed/frozen PASS evidence. JARVIS core foundations continue in isolated, reversible research branches. **ARK/JARVIS overall remains NOT_PASSED.** No protected V2 evaluation was opened; no later milestone PASS is claimed.
 - **Main remains unchanged by this invocation:** no merge to `main`.
 
-## NEW work this invocation
+### NEW work this invocation
 
 1. **Draft PR #509 — ActionAudit outcome-boundary regressions integrated into PR #8**
    - Child exact HEAD: `d4fbc8dfefcdc6de3af1e7b3649722bf9e8299c9`.
@@ -50,7 +123,7 @@
    - Binds the synthetic private observation's actual SHA-256 digest through the hard-exit child process and checks the recovered digest.
    - CI run `45485244434`: QUEUED.
 
-## Tests, CI and evidence
+### Tests, CI and evidence
 
 - PR #509 child run `45474932797`: GREEN, 6/6; integrated into PR #8 at work-basis HEAD `05d65aa006fb4d429abce70869d4271db5bed825`.
 - PR #8 exact current-head run `45483923713`: IN PROGRESS.
@@ -65,7 +138,7 @@
 - PR #508 run `45474394318`: FAIL during pytest collection with missing `ark.personal_context_offline_preview` and `ark.agency` imports on the V3 branch. Those modules belong to the separate JARVIS foundation branch; do not weaken the tests or copy them into V3 merely to silence the failure.
 - No local pytest/Ruff result, physical-PC verification, real model runtime, paid compute or external service action is claimed in this invocation.
 
-## Frozen contracts and evidence — unchanged
+### Frozen contracts and evidence — unchanged
 
 - V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen as previously reviewed.
 - Frozen ToolCall/PermissionGate public contracts, Memory v1 schema/DDL, Observation Envelope v1, Personal Context privacy boundaries and V3 Contract 1 were not changed.
@@ -73,7 +146,7 @@
 - PR #8 remains Draft/unmerged; this checkpoint and child packages do not merge to `main`.
 - PR #9 remains Draft/unmerged and untouched. UI/frontend development remains paused.
 
-## Blockers and authorization boundaries
+### Blockers and authorization boundaries
 
 - **Free-only boundary:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
 - No real Candidate adapter/weight generation, protected V2 final-evaluation opening, Candidate promotion, credentials/secrets, new account connection, unavailable physical-PC action, destructive operation or irreversible data change occurred.
@@ -81,7 +154,7 @@
 - SQLite process-exit/COMMIT-UNKNOWN tests establish only the specific synthetic native-COMMIT recovery boundaries exercised. They do not prove power-loss/fsync durability, trusted time, independent custody, authenticated consent, cross-store atomicity or exactly-once external effects.
 - No automatic promotion, real backend dispatch or human-review decision is inferred from test results.
 
-## Next plan / 今後の方針
+### Next plan / 今後の方針
 
 1. Inspect exact-head CI for PRs #510–#514 and PR #8 once useful results are available; fix only concrete failures, then switch to an independent non-conflicting lane while reruns execute.
 2. After exact-head GREEN and dependency review, integrate validated child packages into the PR #8 research branch only. Keep PR #8 Draft/unmerged and preserve exact-head evidence.
@@ -89,8 +162,6 @@
 4. Keep the V3/JARVIS test dependency boundary explicit. Re-home JARVIS-only tests to the foundation branch where their source modules exist; do not weaken tests or make V3 depend on an unproven foundation merge.
 5. Continue independent free-only work on Observation fixture byte/lineage guards, startup readiness leases, occurrence/replay protection and disconnected mock execution.
 6. Keep UI paused; no frontend features, polish, tests or integration.
-
-## Historical checkpoint archive
 
 ### LATEST
 
@@ -169,4 +240,3 @@ All new packages are test/documentation-only rebases onto the exact Run1280 foun
 5. **Privacy and proactive/observation:** extend Personal Context revocation/replay lifecycle and proactive CAS/privacy tests; harden observation fixture budgets without connecting real capture.
 6. **V3 free-only guards:** continue isolated approval/path/identity/reproducibility review without opening protected evaluation or promoting a Candidate.
 7. **UI remains paused:** no frontend work unless explicitly resumed.
-
