@@ -6,6 +6,8 @@ import sqlite3
 import subprocess
 import sys
 
+import pytest
+
 from ark.memory import MemoryScope, MemoryWrite, SQLiteMemoryStore
 
 
@@ -87,7 +89,8 @@ def test_put_row_and_event_survive_hard_exit_after_native_commit(
         timeout=45,
         check=False,
     )
-    assert child.returncode == 74, child.stdout + child.stderr
+    if child.returncode != 74:
+        pytest.fail(child.stdout + child.stderr)
 
     cold = SQLiteMemoryStore(path, clock_ms=lambda: 300)
     recovered = cold.get(original.memory_id, scope)
