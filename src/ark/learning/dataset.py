@@ -92,7 +92,10 @@ class LearningCandidate:
     def validate(self) -> None:
         if type(self) is not _ORIGINAL_LEARNING_CANDIDATE_TYPE:
             raise ValueError("exact LearningCandidate required")
-        if vars(_ORIGINAL_LEARNING_CANDIDATE_TYPE).get("validate") is not _ORIGINAL_LEARNING_CANDIDATE_VALIDATE:
+        if (
+            vars(_ORIGINAL_LEARNING_CANDIDATE_TYPE).get("validate")
+            is not _ORIGINAL_LEARNING_CANDIDATE_VALIDATE
+        ):
             raise ValueError("LearningCandidate validator changed")
         if (
             type(object.__getattribute__(self, "schema_version")) is not int
@@ -239,7 +242,11 @@ def build_dataset(items: list[LearningCandidate], guard: ContaminationGuard) -> 
     if len(set(identifiers)) != len(identifiers):
         raise ValueError("duplicate candidate IDs")
     ordered_items = (
-        item for _, item in sorted(zip(identifiers, items), key=lambda pair: pair[0])
+        item
+        for _, item in sorted(
+            zip(identifiers, items, strict=True),
+            key=lambda pair: pair[0],
+        )
     )
     accepted, rejected, seen = [], [], {}
     duplicates = contamination = 0
