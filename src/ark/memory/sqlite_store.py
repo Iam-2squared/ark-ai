@@ -426,6 +426,20 @@ def _pin_exact_memory_scope(scope: object) -> tuple[MemoryScope, str, str]:
     return MemoryScope(owner, namespace), owner, namespace
 
 
+def _snapshot_exact_memory_metadata(metadata: object) -> dict[str, str]:
+    """Copy only exact built-in text from the immutable MemoryWrite snapshot."""
+    if type(metadata) is not MappingProxyType:
+        raise TypeError("metadata must be an exact immutable mapping snapshot")
+    if len(metadata) > 64:
+        raise ValueError("metadata exceeds 64 entries")
+    snapshot: dict[str, str] = {}
+    for key, value in metadata.items():
+        if type(key) is not str or type(value) is not str:
+            raise TypeError("metadata keys and values must be exact strings")
+        snapshot[key] = value
+    return snapshot
+
+
 def deterministic_memory_id(scope: MemoryScope, source_id: str) -> str:
     """Return a stable ID without embedding plaintext scope/source bytes."""
     if type(scope) is not MemoryScope:
@@ -704,10 +718,14 @@ class SQLiteMemoryStore:
                               pinned_content)
             ):
                 raise TypeError("memory identity/content must be exact strings")
+            # MemoryWrite accepts general str subclasses at construction for
+            # compatibility. The durable store narrows this boundary to exact
+            # built-in strings before copying or serializing caller metadata.
+            metadata_snapshot = _snapshot_exact_memory_metadata(pinned_metadata)
             validated_scope = MemoryScope(pinned_owner, pinned_namespace)
             validated_write = MemoryWrite(
                 validated_scope, pinned_source_id, pinned_content,
-                pinned_metadata, pinned_expiry,
+                metadata_snapshot, pinned_expiry,
             )
             metadata_copy = dict(validated_write.metadata)
             pinned_source_id.encode("utf-8", errors="strict")
