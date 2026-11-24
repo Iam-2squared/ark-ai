@@ -369,6 +369,14 @@ _ORIGINAL_COMPONENT_INIT = vars(_STARTUP_COMPONENT_TYPE)["__init__"]
 _ORIGINAL_COMPONENT_POST_INIT = vars(_STARTUP_COMPONENT_TYPE)["__post_init__"]
 _ORIGINAL_COMPONENT_RESULT_INIT = vars(_COMPONENT_RESULT_TYPE)["__init__"]
 _ORIGINAL_SNAPSHOT_INIT = vars(_STARTUP_SNAPSHOT_RESULT_TYPE)["__init__"]
+# These snapshot review methods are part of the readiness witness protocol.
+# A substituted no-op _assert_integrity would otherwise let a forged READY
+# ComponentResult tuple pass the synthetic lease reviewer without digest or
+# dependency re-derivation. Pin the public read methods as well so every
+# consumer can use the same import-original implementation guard.
+_ORIGINAL_SNAPSHOT_ASSERT_INTEGRITY = vars(_STARTUP_SNAPSHOT_RESULT_TYPE)["_assert_integrity"]
+_ORIGINAL_SNAPSHOT_STATE = vars(_STARTUP_SNAPSHOT_RESULT_TYPE)["state"]
+_ORIGINAL_SNAPSHOT_ROOT_BLOCKERS = vars(_STARTUP_SNAPSHOT_RESULT_TYPE)["root_blockers"]
 # Check exact original data slots/lookup hooks in addition to constructors.
 # A frozen dataclass does not prevent a malicious property or overridden
 # __getattribute__ from accessing probe identities before validation.
@@ -414,6 +422,12 @@ def _assert_original_startup_constructors() -> None:
         is not _ORIGINAL_COMPONENT_RESULT_INIT
         or vars(_STARTUP_SNAPSHOT_RESULT_TYPE).get("__init__")
         is not _ORIGINAL_SNAPSHOT_INIT
+        or vars(_STARTUP_SNAPSHOT_RESULT_TYPE).get("_assert_integrity")
+        is not _ORIGINAL_SNAPSHOT_ASSERT_INTEGRITY
+        or vars(_STARTUP_SNAPSHOT_RESULT_TYPE).get("state")
+        is not _ORIGINAL_SNAPSHOT_STATE
+        or vars(_STARTUP_SNAPSHOT_RESULT_TYPE).get("root_blockers")
+        is not _ORIGINAL_SNAPSHOT_ROOT_BLOCKERS
         or any(
             any(
                 vars(kind).get(name) is not original
