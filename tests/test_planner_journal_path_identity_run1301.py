@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 import ark.agency.planner_journal as journal_module
-from ark.agency.contracts import PlanStep, ToolCall
+from ark.agency.contracts import PlanStep, StepState, ToolCall
 from ark.agency.planner import PlanGraph
 from ark.agency.planner_journal import PlannerJournal, PlannerJournalPathError
 
@@ -56,6 +56,17 @@ def test_path_slots_refuse_ordinary_assignment_and_deletion(tmp_path: Path) -> N
     assert recovered.sequence == 0
     assert recovered.dispatch_authorized is False
     assert recovered.automatic_replay_authorized is False
+
+    transitioned = journal.transition(
+        _PLAN_ID,
+        recovered.graph,
+        "root",
+        StepState.RUNNING,
+        expected_revision=0,
+        expected_sequence=0,
+    )
+    assert transitioned.receipt.sequence == 1
+    assert transitioned.graph.statuses()["root"].state is StepState.RUNNING
 
 
 @pytest.mark.parametrize("slot", ("_path", "_path_identity"))
