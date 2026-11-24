@@ -24,7 +24,6 @@ from .preflight import (
     run_authorized_preflight,
     verify_preflight_measurements,
 )
-
 from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
 
 
