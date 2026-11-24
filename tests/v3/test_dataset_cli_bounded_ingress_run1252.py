@@ -9,7 +9,9 @@ import pytest
 import ark.learning.dataset_cli as dataset_cli
 
 
-def test_input_byte_limit_accepts_exact_boundary(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_input_byte_limit_accepts_exact_boundary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(dataset_cli, "MAX_DATASET_INPUT_BYTES", 16)
     path = tmp_path / "exact.json"
     payload = b"[{}]" + (b" " * 12)
@@ -43,10 +45,13 @@ def test_json_nesting_limit_counts_structure_not_string_contents(
 ) -> None:
     monkeypatch.setattr(dataset_cli, "MAX_JSON_NESTING", 2)
     path = tmp_path / "brackets-in-string.json"
-    path.write_text('[{"text":"[[[[[[", "quote":"escaped \\" [ ]"}]', encoding="utf-8")
+    path.write_text(
+        r'[{"text":"[[[[[[", "quote":"escaped \" [ ]"}]',
+        encoding="utf-8",
+    )
 
     assert dataset_cli._load_json_list(path, "candidates") == [
-        {"text": "[[[[[[", "quote": 'escaped \\" [ ]'}
+        {"text": "[[[[[[", "quote": 'escaped " [ ]'}
     ]
 
 
