@@ -1,10 +1,10 @@
 # LATEST — ARK AI canonical current checkpoint
 
-**Saved at:** 2026-11-24 21:57:54 JST (Asia/Tokyo).  
+**Saved at:** 2026-11-24 21:59:36 JST (Asia/Tokyo).  
 **Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md`.  
 **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).  
 **Work-basis HEAD:** `101be0cb505d8ae045027faf54f8d982c0a4f9d2` — PR #8 live head re-read immediately before this checkpoint write.  
-**Checkpoint-result HEAD:** the final live `research/jarvis-foundations` ref after this checkpoint correction; it will be verified immediately after the write and is intentionally not self-embedded. The preceding checkpoint content commit was `64eef6a17a6de03ea123d77167a857b80799410b`.  
+**Checkpoint-result HEAD:** the final live `research/jarvis-foundations` ref after this checkpoint correction; it will be verified immediately after the write and is intentionally not self-embedded. The preceding checkpoint content commit was `6765cca701fb5322a460579f13df90badf10d410`.  
 **Live main HEAD:** `ecd72fced0f3e575e504331f9f7bf1c4f0187614` — unintended direct Contents API commit remains unresolved; main is read-only pending explicit user direction.  
 **V3 branch / PR #5:** `research/v3-learning-evaluation` / Draft PR #5 (OPEN / DRAFT / UNMERGED), observed head `ceb44c85e4bdd2b13cf62ddf02ccc9f555a51efc`.  
 **UI branch / PR #9:** `ui/next-generation-command-center-20261103` / Draft PR #9 (OPEN / DRAFT / UNMERGED; paused and untouched).
@@ -12,7 +12,7 @@
 ## Current ARK state
 
 - ARK/JARVIS remains **NOT_PASSED**. No V3/V4/V5 PASS, trusted-clock certification, authenticated consent, production dispatch, physical hardware readiness, fsync/power-loss guarantee, independent custody, cross-store atomicity, or exactly-once external-effect claim is made.
-- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Its code work-basis before the checkpoint document write was `101be0cb505d8ae045027faf54f8d982c0a4f9d2`. The checkpoint document commit `64eef6a17a6de03ea123d77167a857b80799410b` changes no source. Exact-head parent CI run [45396672530](https://github.com/Iam-2squared/ark-ai/actions/runs/45396672530) is **IN PROGRESS** on the code work-basis; no workflow run has yet been surfaced for the docs-only checkpoint commit.
+- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Its code work-basis before checkpoint documentation was `101be0cb505d8ae045027faf54f8d982c0a4f9d2`. Docs-only checkpoint commits `64eef6a17a6de03ea123d77167a857b80799410b` and `6765cca701fb5322a460579f13df90badf10d410` changed no source; the live branch head before this final checkpoint write was `6765cca701fb5322a460579f13df90badf10d410`. Parent CI run [45396672530](https://github.com/Iam-2squared/ark-ai/actions/runs/45396672530) is **IN PROGRESS** on the code work-basis; checkpoint CI run [45398703574](https://github.com/Iam-2squared/ark-ai/actions/runs/45398703574) is **QUEUED** on the preceding docs-only head.
 - PR #5 remains gated Draft/unmerged. No Candidate adapter/weight generation, real training, preflight compute, external GPU compute, protected V2 evaluation opening, or promotion was performed.
 - PR #9 remains paused and untouched. No UI/frontend work, UI integration, polish, or frontend tests were performed.
 - V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
@@ -59,6 +59,11 @@
    - Reviewed PR #5 bounded evidence reader, execution authorization ordering, local-only model/tokenizer loading, and deferred torch/PEFT/transformers imports. The selected path validates exact preflight/training authorization and local evidence before heavy runtime imports; no model/GPU action was invoked.
    - No V3 source change was made. PR #5's unresolved inputs and merge-ref CI blocker remain.
 
+
+9. **Observation fixture UTF-8 allocation regression rebase — Draft PR #475.**
+   - Branch `research/run1295-observation-fixture-utf8-rebase-20261124`; exact child HEAD `051c6dabacd1250bc7dcc391500b74cb6ca74c9b`; parent basis `6765cca701fb5322a460579f13df90badf10d410`.
+   - Covers ASCII/multibyte exact byte-budget boundaries, oversized multibyte rejection without a second full-size encoding, strict surrogate rejection, and rejection before private hashing. No Observation source or Envelope v1 contract changed.
+   - CI run [45398822951](https://github.com/Iam-2squared/ark-ai/actions/runs/45398822951) is **QUEUED**.
 ## Tests / CI / evidence — exact heads only
 
 - PR #8 pre-integration HEAD `08d7bd7a89da786e0773dabead86d3adad40e98e`: run [45386339764](https://github.com/Iam-2squared/ark-ai/actions/runs/45386339764) **GREEN**.
@@ -70,6 +75,8 @@
 - PR #472 child HEAD `0634aaf6b225c988d247e5fbd35e85fc43ee0dd4`: run [45397364432](https://github.com/Iam-2squared/ark-ai/actions/runs/45397364432) **QUEUED**.
 - PR #473 child HEAD `c0a8c2ce3053a6510e3a519905143a3b2e9d24a0`: run [45397534099](https://github.com/Iam-2squared/ark-ai/actions/runs/45397534099) **QUEUED**.
 - PR #474 child HEAD `58403de4dd32d13afbf4c1db208117a781df34c2`: run [45397603587](https://github.com/Iam-2squared/ark-ai/actions/runs/45397603587) **QUEUED**.
+- PR #475 child HEAD `051c6dabacd1250bc7dcc391500b74cb6ca74c9b`: run [45398822951](https://github.com/Iam-2squared/ark-ai/actions/runs/45398822951) **QUEUED**.
+- Checkpoint docs head before this final update `6765cca701fb5322a460579f13df90badf10d410`: run [45398703574](https://github.com/Iam-2squared/ark-ai/actions/runs/45398703574) **QUEUED**; this run does not validate source changes.
 - PR #5 current head `ceb44c85e4bdd2b13cf62ddf02ccc9f555a51efc`: prior run [45383098792](https://github.com/Iam-2squared/ark-ai/actions/runs/45383098792) **FAIL** before pytest because Ruff I001 import-order errors are on the main merge ref; no main correction was attempted.
 - PR #467's previous exact-head run [45388021947](https://github.com/Iam-2squared/ark-ai/actions/runs/45388021947) was GREEN on its older parent `08d7bd7a89da786e0773dabead86d3adad40e98e`; its tests were separately rebased as PR #472. The prior result does not transfer to PR #472.
 - No local pytest/Ruff PASS, physical-PC verification, model inference, GPU work, real preflight, real training, Candidate generation, or external compute is claimed.
@@ -98,8 +105,9 @@
 3. Continue Planner terminal COMMIT/recovery and PermissionGate/ToolRegistry identity/authorization hardening on isolated, reversible branches; preserve audit-before-action and replay-denial ordering.
 4. Continue Observation fixture ingress and privacy-safe Personal Context/proactive work using synthetic fixtures only; keep Observation Envelope v1 and privacy contracts frozen.
 5. Resume free-only V3 guard hardening only after the main merge-ref lint blocker is resolved; keep all compute, Candidate, protected V2 and promotion gates closed.
-6. Keep main read-only until the user explicitly directs recovery of the unintended commit.
-7. Keep all UI/frontend development paused; PR #9 remains untouched.
+6. Recheck PR #475's Observation UTF-8 fixture CI together with PRs #470–#474; integrate only after exact-head GREEN and parent sequencing.
+7. Keep main read-only until the user explicitly directs recovery of the unintended commit.
+8. Keep all UI/frontend development paused; PR #9 remains untouched.
 
 
 ---
