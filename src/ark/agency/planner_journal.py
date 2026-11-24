@@ -367,7 +367,23 @@ class PlannerJournal:
     steps whose external outcome cannot be established.
     """
 
+    # Keep __dict__ for existing fault-injection fixtures while making the
+    # database path a non-shadowable data-descriptor slot.
+    __slots__ = ("_path", "_path_identity", "__dict__")
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name in ("_path", "_path_identity"):
+            raise AttributeError("Planner journal path identity is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        if name in ("_path", "_path_identity"):
+            raise AttributeError("Planner journal path identity is immutable")
+        object.__delattr__(self, name)
+
     def __init__(self, path: Path) -> None:
+        if type(self) is not PlannerJournal:
+            raise PlannerJournalPathError("exact PlannerJournal type required")
         if not isinstance(path, Path) or type(path) is not type(Path(".")):
             raise TypeError("path must be a native pathlib Path")
         path_value = os.fspath(path)
@@ -376,11 +392,15 @@ class PlannerJournal:
         if ".." in path.parts:
             raise PlannerJournalPathError("Planner journal path traversal refused")
         # Pin a lexical absolute path without resolving or following symlinks.
-        self._path = os.fspath(path.absolute())
-        _require_safe_journal_path(Path(self._path), create=True)
+        source = os.fspath(path.absolute())
+        object.__setattr__(self, "_path", source)
+        object.__setattr__(self, "_path_identity", source)
+        _require_planner_journal_path_epoch(self, source)
+        _require_safe_journal_path(Path(source), create=True)
         self._bootstrap()
 
     def _connect(self, *, create: bool = False) -> sqlite3.Connection:
+        _require_planner_journal_path_epoch(self)
         path = Path(self._path)
         _require_safe_journal_path(path, create=create)
         connection: sqlite3.Connection | None = None
@@ -432,6 +452,7 @@ class PlannerJournal:
                 raise PlannerJournalSchemaError(f"Planner journal table changed: {name}")
 
     def _bootstrap(self) -> None:
+        _require_planner_journal_path_epoch(self)
         connection = self._connect(create=True)
         try:
             connection.execute("BEGIN IMMEDIATE")
@@ -606,6 +627,7 @@ class PlannerJournal:
         return graph, previous_hash
 
     def create_plan(self, plan_id: str, graph: PlanGraph) -> PlannerJournalReceipt:
+        _require_planner_journal_path_epoch(self)
         plan_id = _validate_plan_id(plan_id)
         steps, topology, status = _validate_graph(graph)
         statuses = graph.statuses()
@@ -664,6 +686,7 @@ class PlannerJournal:
         expected_revision: int,
         expected_sequence: int,
     ) -> PlannerJournalTransition:
+        _require_planner_journal_path_epoch(self)
         plan_id = _validate_plan_id(plan_id)
         _identity_text(step_id, "step_id", _MAX_STEP_ID_BYTES)
         if type(to_state) is not StepState:
@@ -779,6 +802,7 @@ class PlannerJournal:
         plan_id: str,
         steps: tuple[PlanStep, ...],
     ) -> PlannerJournalRecovery:
+        _require_planner_journal_path_epoch(self)
         plan_id = _validate_plan_id(plan_id)
         steps = _validate_steps(steps)
         connection = self._connect()
@@ -809,6 +833,74 @@ class PlannerJournal:
             last_event_hash=last_hash,
             ambiguous_running_step_ids=ambiguous,
         )
+
+
+
+_PLANNER_JOURNAL_TYPE = PlannerJournal
+_PLANNER_JOURNAL_SLOTS = vars(_PLANNER_JOURNAL_TYPE)["__slots__"]
+_ORIGINAL_PLANNER_JOURNAL_INIT = vars(_PLANNER_JOURNAL_TYPE)["__init__"]
+_ORIGINAL_PLANNER_JOURNAL_SETATTR = vars(_PLANNER_JOURNAL_TYPE)["__setattr__"]
+_ORIGINAL_PLANNER_JOURNAL_DELATTR = vars(_PLANNER_JOURNAL_TYPE)["__delattr__"]
+_ORIGINAL_PLANNER_JOURNAL_CONNECT = vars(_PLANNER_JOURNAL_TYPE)["_connect"]
+_ORIGINAL_PLANNER_JOURNAL_BOOTSTRAP = vars(_PLANNER_JOURNAL_TYPE)["_bootstrap"]
+_ORIGINAL_PLANNER_JOURNAL_VALIDATE_SCHEMA = vars(_PLANNER_JOURNAL_TYPE)["_validate_schema"]
+_ORIGINAL_PLANNER_JOURNAL_READ_META = vars(_PLANNER_JOURNAL_TYPE)["_read_meta"]
+_ORIGINAL_PLANNER_JOURNAL_READ_EVENTS = vars(_PLANNER_JOURNAL_TYPE)["_read_events"]
+_ORIGINAL_PLANNER_JOURNAL_REPLAY = vars(_PLANNER_JOURNAL_TYPE)["_replay"]
+_ORIGINAL_PLANNER_JOURNAL_CREATE_PLAN = vars(_PLANNER_JOURNAL_TYPE)["create_plan"]
+_ORIGINAL_PLANNER_JOURNAL_TRANSITION = vars(_PLANNER_JOURNAL_TYPE)["transition"]
+_ORIGINAL_PLANNER_JOURNAL_RECOVER = vars(_PLANNER_JOURNAL_TYPE)["recover"]
+
+
+def _require_planner_journal_path_epoch(
+    journal: object,
+    expected: str | None = None,
+) -> str:
+    """Reject a retargeted path or replaced class guard before SQLite access."""
+    if (
+        PlannerJournal is not _PLANNER_JOURNAL_TYPE
+        or type(journal) is not _PLANNER_JOURNAL_TYPE
+        or vars(_PLANNER_JOURNAL_TYPE).get("__slots__") is not _PLANNER_JOURNAL_SLOTS
+        or vars(_PLANNER_JOURNAL_TYPE).get("__init__") is not _ORIGINAL_PLANNER_JOURNAL_INIT
+        or vars(_PLANNER_JOURNAL_TYPE).get("__setattr__") is not _ORIGINAL_PLANNER_JOURNAL_SETATTR
+        or vars(_PLANNER_JOURNAL_TYPE).get("__delattr__") is not _ORIGINAL_PLANNER_JOURNAL_DELATTR
+        or vars(_PLANNER_JOURNAL_TYPE).get("_connect") is not _ORIGINAL_PLANNER_JOURNAL_CONNECT
+        or vars(_PLANNER_JOURNAL_TYPE).get("_bootstrap") is not _ORIGINAL_PLANNER_JOURNAL_BOOTSTRAP
+        or (
+            vars(_PLANNER_JOURNAL_TYPE).get("_validate_schema")
+            is not _ORIGINAL_PLANNER_JOURNAL_VALIDATE_SCHEMA
+        )
+        or vars(_PLANNER_JOURNAL_TYPE).get("_read_meta") is not _ORIGINAL_PLANNER_JOURNAL_READ_META
+        or (
+            vars(_PLANNER_JOURNAL_TYPE).get("_read_events")
+            is not _ORIGINAL_PLANNER_JOURNAL_READ_EVENTS
+        )
+        or vars(_PLANNER_JOURNAL_TYPE).get("_replay") is not _ORIGINAL_PLANNER_JOURNAL_REPLAY
+        or (
+            vars(_PLANNER_JOURNAL_TYPE).get("create_plan")
+            is not _ORIGINAL_PLANNER_JOURNAL_CREATE_PLAN
+        )
+        or vars(_PLANNER_JOURNAL_TYPE).get("transition") is not _ORIGINAL_PLANNER_JOURNAL_TRANSITION
+        or vars(_PLANNER_JOURNAL_TYPE).get("recover") is not _ORIGINAL_PLANNER_JOURNAL_RECOVER
+        or vars(_PLANNER_JOURNAL_TYPE).get("__getattribute__") is not None
+        or vars(_PLANNER_JOURNAL_TYPE).get("__getattr__") is not None
+    ):
+        raise PlannerJournalPathError("Planner journal implementation changed")
+    try:
+        path = object.__getattribute__(journal, "_path")
+        identity = object.__getattribute__(journal, "_path_identity")
+        namespace = object.__getattribute__(journal, "__dict__")
+    except (AttributeError, TypeError) as exc:
+        raise PlannerJournalPathError("Planner journal path identity unavailable") from exc
+    if (
+        type(path) is not str
+        or path is not identity
+        or "_path" in namespace
+        or "_path_identity" in namespace
+        or (expected is not None and path is not expected)
+    ):
+        raise PlannerJournalPathError("Planner journal source identity changed")
+    return path
 
 
 __all__ = [
