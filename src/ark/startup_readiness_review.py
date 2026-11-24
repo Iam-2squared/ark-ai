@@ -308,6 +308,8 @@ class StartupSnapshot:
             raise ValueError("startup snapshot witness changed")
 
     def state(self, component_id: str) -> ReadinessState:
+        # Pin the integrity hook before dispatching through the class method.
+        _assert_original_startup_constructors()
         self._assert_integrity()
         # Caller-id validation is a reentrant boundary. Recheck the retained
         # graph after it, before returning READY or calculating blockers.
@@ -331,6 +333,8 @@ class StartupSnapshot:
 
     def root_blockers(self, component_id: str) -> tuple[str, ...]:
         """Return local BLOCKED ancestors, not a new readiness decision."""
+        # Pin the integrity hook before dispatching through the class method.
+        _assert_original_startup_constructors()
         self._assert_integrity()
         # Caller-id validation is a reentrant boundary. Recheck the retained
         # graph after it, before returning READY or calculating blockers.
