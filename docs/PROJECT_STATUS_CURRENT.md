@@ -1,5 +1,98 @@
 # LATEST — ARK AI canonical current checkpoint
 
+**Saved at:** 2026-11-24 20:50:03 JST (Asia/Tokyo)  
+**Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md`.  
+**Checkpoint branch / PR:** `research/run1287-action-audit-outcome-bounds-rebase` / Draft PR #467 (OPEN / DRAFT / UNMERGED; targets `research/jarvis-foundations`).  
+**Parent branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).  
+**Work-basis HEAD:** `fecaf03348e8ce68c7707545511f981c9d747bed` — live checkpoint branch tip re-read immediately before this update.  
+**Parent work-basis HEAD:** `08d7bd7a89da786e0773dabead86d3adad40e98e` — live PR #8 branch tip re-read immediately before this update.  
+**Checkpoint-result HEAD:** the single normal GitHub Contents API commit created by this update; its returned SHA is verified against the live checkpoint branch ref immediately after the write and is intentionally not self-embedded.  
+**Live main HEAD:** `ecd72fced0f3e575e504331f9f7bf1c4f0187614` — unintended direct Contents API commit remains unresolved; main is read-only pending explicit user direction.  
+**V3 branch / PR #5:** `research/v3-learning-evaluation` / Draft PR #5 (OPEN / DRAFT / UNMERGED), current observed head `ceb44c85e4bdd2b13cf62ddf02ccc9f555a51efc`.  
+**UI branch / PR #9:** `ui/next-generation-command-center-20261103` / Draft PR #9 (OPEN / DRAFT / UNMERGED; paused and untouched).
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No V3/V4/V5 PASS, trusted-clock certification, authenticated consent, production dispatch, physical hardware readiness, fsync/power-loss guarantee, independent custody, cross-store atomicity, or exactly-once external-effect claim is made.
+- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Its live parent head is `08d7bd7a89da786e0773dabead86d3adad40e98e`; exact-head CI run [45386339764](https://github.com/Iam-2squared/ark-ai/actions/runs/45386339764) is **IN PROGRESS**.
+- PR #5 remains gated Draft/unmerged. No Candidate adapter/weight generation, real training, preflight compute, external GPU compute, protected V2 evaluation opening, or promotion was performed.
+- The previous V3 `training_cli._verify_file` concern is resolved on the current PR #5 branch: it now uses explicit per-label 64 MiB / 1 MiB budgets, no-follow/reparse and regular-file checks, descriptor/path epoch checks, a limit+1 bounded read, and frozen SHA-256 comparison. This was a read-only audit in this invocation; no V3 source was changed.
+- PR #9 remains paused and untouched. No UI/frontend work, UI integration, polish, or frontend tests were performed.
+- V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
+- **Main-branch write incident remains unresolved:** main head `ecd72fced0f3e575e504331f9f7bf1c4f0187614` is an unintended direct Contents API commit. No revert, follow-up main write, force-push, or merge was attempted. Explicit user direction is required before any corrective main mutation.
+
+## NEW work this invocation
+
+1. **ActionAudit outcome-boundary regression rebase — Draft PR #467.**
+   - Branch `research/run1287-action-audit-outcome-bounds-rebase`; child work HEAD before this checkpoint update `fecaf03348e8ce68c7707545511f981c9d747bed`; exact parent work-basis `08d7bd7a89da786e0773dabead86d3adad40e98e`.
+   - Test/documentation-only rebase of PR #452: exact-type outcome validation, codepoint/UTF-8 byte limits, control/format/surrogate rejection before SQLite or clock access, Unicode-classifier substitution denial, valid 256-byte round-trip, and fail-closed corrupted persisted outcomes.
+   - No ActionAudit source, v1 DDL, public event fields, frozen contract, or migration plan changed.
+   - CI run [45387043967](https://github.com/Iam-2squared/ark-ai/actions/runs/45387043967) was **QUEUED** on the pre-checkpoint child HEAD. This checkpoint changes only the status document on the same child branch, so that run is not exact-head evidence for the checkpoint-result HEAD; fresh exact-head CI is required.
+
+2. **Mock executor occurrence-COMMIT hard-exit rebase — Draft PR #468.**
+   - Branch `research/run1288-mock-occurrence-hard-exit-rebase`; exact child HEAD `70680dabe5f78258b6fe0a735ee1ff0f5dfd3035`; exact parent work-basis `08d7bd7a89da786e0773dabead86d3adad40e98e`.
+   - Test/documentation-only rebase of PR #454. A spawned process exits after durable synthetic occurrence reservation COMMIT but before gate consumption, audit, or mock execution; cold recovery must deny the same one-shot token with a different occurrence ID.
+   - CI run [45387396190](https://github.com/Iam-2squared/ark-ai/actions/runs/45387396190) is **QUEUED**.
+
+3. **Mock executor pre-action-audit-COMMIT hard-exit rebase — Draft PR #469.**
+   - Branch `research/run1289-mock-preaudit-hard-exit-rebase`; exact child HEAD `0231de00811d98f8eb38db015d4d1da1830fa63b`; exact parent work-basis `08d7bd7a89da786e0773dabead86d3adad40e98e`.
+   - Test/documentation-only rebase of PR #455. A spawned process exits after the ActionAudit COMMIT; cold recovery must retain one occurrence and one `mock_pre_action` event, show no completion event, and deny replay before new gate consumption or mock backend invocation.
+   - CI run [45387478678](https://github.com/Iam-2squared/ark-ai/actions/runs/45387478678) is **QUEUED**.
+
+4. **Startup readiness lease parametrization repair — Draft PR #462.**
+   - Branch `research/run1282-startup-readiness-lease-tests`; repair commit `a3f39b9d9be4388194f7bb3e19271f0724d1878c`.
+   - Original exact-head run [45385945866](https://github.com/Iam-2squared/ark-ai/actions/runs/45385945866) **FAILED** at pytest collection: the `overrides` parameterization was attached to the no-argument age-boundary test instead of the invalid-input test.
+   - Smallest test-only fix moved the existing parameterization to `test_lease_clock_requires_exact_nonnegative_integer_epoch(overrides)`; no implementation or contract changed.
+   - Fresh exact-head run [45387675985](https://github.com/Iam-2squared/ark-ai/actions/runs/45387675985) is **QUEUED**.
+
+5. **V3 free-only guard audit.**
+   - Current PR #5 `training_cli._verify_file` is already backed by the bounded descriptor-checked reader and the Run1281 focused test. No duplicate patch was made.
+   - PR #5 run [45383098792](https://github.com/Iam-2squared/ark-ai/actions/runs/45383098792) **FAILED** before pytest because Ruff I001 import-order errors occur in three files on the main merge ref: `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py`, and `tests/test_tool_registry_delete_seal_run1240.py`. This is a base/merge-ref lint blocker, not a failure of the bounded-reader tests. No main-branch correction was attempted because main remains read-only pending user direction.
+
+## Tests / CI / evidence — exact heads only
+
+- PR #8 parent HEAD `08d7bd7a89da786e0773dabead86d3adad40e98e`: run [45386339764](https://github.com/Iam-2squared/ark-ai/actions/runs/45386339764) **IN PROGRESS**.
+- PR #462 original child HEAD `7b71f62204a293cb5c978b6524aec3d64d95ea97`: run [45385945866](https://github.com/Iam-2squared/ark-ai/actions/runs/45385945866) **FAIL** (pytest collection parameter mismatch); repaired child HEAD `a3f39b9d9be4388194f7bb3e19271f0724d1878c`: run [45387675985](https://github.com/Iam-2squared/ark-ai/actions/runs/45387675985) **QUEUED**.
+- PR #463 child HEAD `78f1d782d2415ba8ded06401a6607ae6e56b5630`: run [45385683618](https://github.com/Iam-2squared/ark-ai/actions/runs/45385683618) **IN PROGRESS**.
+- PR #464 child HEAD `605842017b112f09619928c80209b0564cdafd68`: run [45385289828](https://github.com/Iam-2squared/ark-ai/actions/runs/45385289828) **IN PROGRESS**.
+- PR #465 child HEAD `ee9fa010ef9deceb904cf8c3e37d90ac6e21fee5`: run [45385417961](https://github.com/Iam-2squared/ark-ai/actions/runs/45385417961) **IN PROGRESS**.
+- PR #466 child HEAD `8ec985d4b7290fdc59b8f309678b25e90a699837`: run [45385598574](https://github.com/Iam-2squared/ark-ai/actions/runs/45385598574) **IN PROGRESS**.
+- PR #467 pre-checkpoint child HEAD `fecaf03348e8ce68c7707545511f981c9d747bed`: run [45387043967](https://github.com/Iam-2squared/ark-ai/actions/runs/45387043967) **QUEUED**, not transferable to the checkpoint-result HEAD.
+- PR #468 exact child HEAD `70680dabe5f78258b6fe0a735ee1ff0f5dfd3035`: run [45387396190](https://github.com/Iam-2squared/ark-ai/actions/runs/45387396190) **QUEUED**.
+- PR #469 exact child HEAD `0231de00811d98f8eb38db015d4d1da1830fa63b`: run [45387478678](https://github.com/Iam-2squared/ark-ai/actions/runs/45387478678) **QUEUED**.
+- PR #5 current branch head `ceb44c85e4bdd2b13cf62ddf02ccc9f555a51efc`: run [45383098792](https://github.com/Iam-2squared/ark-ai/actions/runs/45383098792) **FAIL** (main merge-ref Ruff I001 before pytest).
+- Prior PR #454 / #455 GREEN results were on their older parent `126f7df3ab83013aa2f456b305d364013f7bfd19`; they do not transfer. The rebased PRs #468 / #469 require fresh exact-head CI.
+- No local pytest/Ruff PASS, physical-PC verification, model inference, GPU work, real training, Candidate generation, or external compute is claimed.
+
+## Frozen contracts / evidence unchanged
+
+- V1 Local Core, V2 evaluation and final-evaluation boundary, Local UI v1, Launcher, ToolCall v1, PermissionGate, Planner schema, Memory schema, ActionAudit v1 DDL/public event fields, Observation Envelope v1, Personal Context privacy contract, and V3 Contract 1 remain unchanged.
+- PR #5 and PR #8 remain Draft/unmerged to main; PR #9 remains Draft/paused/untouched. PRs #462–#469 remain Draft/unmerged; no child integration is inferred from queued or in-progress CI.
+- All new tests use synthetic local fixtures and disconnected SQLite/mock components only. They do not establish fsync/power-loss durability, authenticated consent, independent custody, cross-store atomicity, production dispatch, or exactly-once external effects.
+- No paid services, external APIs/compute, new credentials/account connections, physical-PC actions, Candidate generation/promotion, protected V2 evaluation, destructive operation, or UI/frontend work occurred.
+
+## Blockers / authorization boundaries
+
+- **Main recovery:** stop all main mutations. The unintended commit `ecd72fced0f3e575e504331f9f7bf1c4f0187614` requires explicit user direction before any revert or correction. Do not merge PR #446 or any other PR to main.
+- **V3 CI base blocker:** PR #5's merge-ref Ruff I001 failures are in files on main. Do not mask or repair them through the V3 branch; main correction requires explicit user direction under the current read-only boundary.
+- **Child integration:** PRs #462–#469 are isolated Draft children. Require exact-head GREEN and dependency review; integrate only one at a time into PR #8, then require fresh parent exact-head CI GREEN before the next child.
+- **Compute boundary:** no external GPU, paid service, real preflight, Candidate generation, protected V2 evaluation, or promotion.
+- **UI boundary:** PR #9 and Local UI freezes remain untouched.
+
+## Next plan / 今後の方針
+
+1. Recheck the exact-head CI runs for PR #8 and #462–#469 once when useful; repair only concrete failures with the smallest semantics-preserving test/source change, then switch immediately to a non-conflicting lane.
+2. After GREEN, integrate one child at a time into PR #8. Prioritize the startup lease repair and the durable occurrence / pre-action-audit crash regressions, then Memory, Planner, ToolRegistry, Personal Context, and Observation packages. Re-read parent HEAD before every integration and require a fresh parent CI run after each.
+3. Continue Memory row/event integrity, CAS/concurrency/expiry, Planner terminal recovery, immutable ToolRegistry/PermissionGate, restart-safe authorization, audit-before-action, and disconnected/mock executor work without claiming external-effect guarantees.
+4. Continue free-only V3 approval/path/identity/reproducibility review after the main merge-ref lint blocker is resolved; keep every compute/Candidate gate closed.
+5. Keep Personal Context, proactive scheduler, and Observation work privacy-safe and synthetic until their lower-level invariants have exact-head GREEN evidence.
+6. Keep all UI/frontend development paused; PR #9 remains untouched.
+7. Preserve main as read-only until the user explicitly directs how to handle the unintended commit.
+
+---
+
+# LATEST — ARK AI canonical current checkpoint
+
 **Saved at:** 2026-11-24 19:20:59 JST (Asia/Tokyo)  
 **Canonical status authority:** \`docs/PROJECT_STATUS_CURRENT.md\`.  
 **Branch / PR:** \`research/jarvis-foundations\` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base \`main\`).  
