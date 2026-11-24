@@ -9,10 +9,26 @@ the same one-shot token. This is not power-loss or external-effect evidence.
 from __future__ import annotations
 
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
+
+from ark.agency import (
+    CapabilityGrant,
+    Effect,
+    OneShotAuthorization,
+    PermissionGate,
+    SQLiteActionAudit,
+    ToolCall,
+    ToolRegistration,
+    ToolRegistry,
+)
+from ark.agency.disconnected_mock_executor import (
+    DisconnectedMockExecutionRejected,
+    DisconnectedMockExecutor,
+    MockToolBackend,
+)
+from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 
 
 def test_occurrence_commit_hard_exit_before_audit_or_mock_prevents_replay(
@@ -158,20 +174,15 @@ raise AssertionError("child returned instead of exiting after occurrence COMMIT"
     audit = SQLiteActionAudit(audit_path, clock_ms=lambda: 101)
     occurrences = SyntheticOccurrenceStore(occurrence_path)
     executor = DisconnectedMockExecutor(registry, gate, audit, occurrences)
-
-    assert occurrences.count_synthetic() == 1
-    assert audit.events() == []
-
-    token = OneShotAuthorization("run1273-token", call_id := ToolCall(
-        "fixture.mock", "fixture.mock", "synthetic:private",
-        {"value": "fixture-only"},
-    ).request_id, 500)
     call = ToolCall(
         "fixture.mock", "fixture.mock", "synthetic:private",
         {"value": "fixture-only"},
     )
-    assert call.request_id == call_id
     grant = CapabilityGrant("fixture.mock", "synthetic:private")
+    token = OneShotAuthorization("run1273-token", call.request_id, 500)
+
+    assert occurrences.count_synthetic() == 1
+    assert audit.events() == []
 
     with pytest.raises(
         DisconnectedMockExecutionRejected,
