@@ -1,5 +1,87 @@
 # ARK AI — Canonical Project Status
+
 ## LATEST
+
+- **Saved at:** 2026-11-25 07:49:25 JST (Asia/Tokyo).
+- **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `44d6cbdb6a554d42ba1c86c1f646a12fe4487f4f` (PR #8 exact head immediately before this checkpoint write).
+- **Checkpoint-result HEAD:** the GitHub commit created by this `PROJECT_STATUS.md` update; its exact returned SHA is recorded in the run summary. This file does not self-reference its own commit hash.
+- **Overall ARK state:** V1, V2, Local UI v1 and Launcher/Gate Runner retain their previously reviewed/frozen PASS evidence. JARVIS foundations continue in isolated, reversible Draft branches. **ARK/JARVIS overall remains NOT_PASSED.** No protected V2 evaluation, Candidate promotion, or later milestone PASS is claimed. No merge to `main`.
+- **Main/UI boundary:** `main` is unchanged by this invocation. PR #9 remains Draft/unmerged and untouched; all new work is non-UI.
+
+## NEW work this invocation
+
+1. **Draft PR #518 — Run1338 startup snapshot method-custody lint correction**
+   - Branch: `research/run1338-startup-snapshot-method-custody-20261125`.
+   - Exact child head before the correction: `9d531b38f9e943401956c27e60379b40dbdec58e`; fix commit: `23302646e144bcabbe24e09a4d7adea8dc1105e3`.
+   - Exact-head run `45497687313` failed at Ruff I001 in the new test import block; pytest was skipped. Added the required separation between third-party and first-party imports only. No production semantics changed.
+   - Fresh exact-head CI run `45503772771`: IN PROGRESS at checkpoint time.
+
+2. **Draft PR #517 — Run1337 mock completion-audit COMMIT hard-exit fixture correction**
+   - Branch: `research/run1337-mock-completion-audit-hard-exit-20261125`.
+   - Exact child head before the correction: `5d2ef03019a9fe43ecbcde5a016d1f04efa12e29`; fix commit: `da7509fe0094b32d9998661b3a9479f9ca6c45e5`.
+   - Exact-head run `45496873298` failed in the synthetic child because the `CommitExit` SQLite proxy forwarded attribute reads but not attribute writes; `row_factory` was assigned to the proxy rather than the underlying SQLite connection, causing tuple rows during audit-history validation. The test proxy now forwards non-`connection` assignments to the wrapped connection. This is a test-harness correction, not a production audit change.
+   - Fresh exact-head CI run `45503899320`: IN PROGRESS at checkpoint time.
+
+3. **Draft PR #520 — Run1340 Memory query pre-access package rebased onto current PR #8**
+   - Branch: `research/run1340-memory-query-preaccess-rebase-20261125`.
+   - Exact current parent work-basis: `44d6cbdb6a554d42ba1c86c1f646a12fe4487f4f`; exact child head: `da98d53bec346ccbcb5de503575f9ea07f443d93`.
+   - Rebased the six-file package from stale PR #515 without changing its intended semantics: exact query-epoch validation before read-only SQLite open, inexact query-text rejection before SQLite/expiry-clock access, corrected “during read” diagnostics, and synthetic pre-access regressions.
+   - Predecessor PR #515 exact-head run `45494873858` was GREEN, 6/6, on its old child head only; that evidence does not transfer to #520.
+   - Fresh exact-head CI run `45504156637`: IN PROGRESS at checkpoint time.
+
+4. **Draft PR #521 — Run1341 Observation UTF-8 chunk-boundary package rebased onto current PR #8**
+   - Branch: `research/run1341-observation-utf8-rebase-20261125`.
+   - Exact current parent work-basis: `44d6cbdb6a554d42ba1c86c1f646a12fe4487f4f`; exact child head: `a33b30fdec8fe54f08b81dd43b175d30ca2c6527`.
+   - Rebased the two-file test/evidence package from stale PR #516. It corrects the multibyte fixture so the chunk loop is exercised and adds accepted/one-byte-under UTF-8 budget boundaries. Test/documentation-only; no capture adapter or frozen Observation contract change.
+   - Predecessor PR #516 exact-head run `45495516730` was GREEN, 6/6, on its old child head only; that evidence does not transfer to #521.
+   - Fresh exact-head CI run `45504310253`: QUEUED at checkpoint time.
+
+5. **Run1339 startup-reader follow-up remains blocked on its dependency**
+   - Existing Draft PR #519 exact child head: `5111c49c353b1753627cd31793309ebfd3f9d83c`.
+   - Exact-head run `45497903814` failed at Ruff I001 in both the parent Run1338 test and the Run1339 test; pytest was skipped. The Run1338 import grouping is corrected in PR #518, but PR #519 still needs its own import grouping correction and a rebase onto the corrected, exact-head-GREEN #518 parent. No integration or PASS is claimed.
+
+## Tests, CI and evidence
+
+- PR #8 exact current-head run `45498250484`: GREEN, 6/6 Windows/Linux × Python 3.11–3.13. This validates the current research parent at work-basis HEAD `44d6cbdb6a554d42ba1c86c1f646a12fe4487f4f`, not the new child PRs.
+- PR #517 original run `45496873298`: FAIL in the test subprocess due to the proxy's missing attribute-write forwarding; fixed on the child branch. Fresh run `45503899320`: IN PROGRESS.
+- PR #518 original run `45497687313`: FAIL at Ruff I001 only; fixed on the child branch. Fresh run `45503772771`: IN PROGRESS.
+- PR #519 run `45497903814`: FAIL at Ruff I001 in two test files; stale dependency branch remains unintegrated.
+- PR #520 run `45504156637`: IN PROGRESS on exact child head `da98d53bec346ccbcb5de503575f9ea07f443d93`.
+- PR #521 run `45504310253`: QUEUED on exact child head `a33b30fdec8fe54f08b81dd43b175d30ca2c6527`.
+- Predecessor PR #515 run `45494873858` and PR #516 run `45495516730`: GREEN, 6/6 on their predecessor child heads only; no result transfers to #520 or #521.
+- No local pytest/Ruff execution, physical-PC verification, live capture, real model runtime, paid compute, or external service action is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen as previously reviewed.
+- Frozen ToolCall/PermissionGate public contracts, Memory v1 schema/DDL and retention policy, Observation Envelope v1, Personal Context privacy boundaries and V3 Contract 1 were not changed.
+- PR #5 remains Draft/unmerged; no protected V2 evaluation, real Candidate generation or promotion was opened.
+- PR #8 remains Draft/unmerged. PRs #517–#521 remain isolated Draft children; none is integrated into #8 or `main`.
+- PR #9 remains Draft/unmerged and untouched. UI/frontend development remains paused.
+
+## Blockers and authorization boundaries
+
+- **Free-only boundary:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- No real Candidate adapter/weight generation, protected V2 final-evaluation opening, Candidate promotion, credentials/secrets, new account connection, unavailable physical-PC action, destructive operation or irreversible data change occurred.
+- PR #519 remains dependent on exact-head GREEN for PR #518 and requires its own Ruff correction/rebase.
+- QUEUED/IN PROGRESS is not PASS. No child package is integrated before exact-head validation and dependency review.
+- SQLite process-exit/COMMIT-UNKNOWN tests establish only the specific synthetic native-COMMIT boundaries exercised; they do not prove fsync/power-loss durability, trusted time, independent custody, authenticated consent, cross-store atomicity or exactly-once external effects.
+- V3's previously recorded main-base source/test ownership blocker remains unchanged; keep PR #5 Draft/unmerged and protected gates closed.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for #517, #518, #520 and #521 once useful results are available; fix only concrete failures and switch to an independent lane while reruns execute.
+2. After #518 is exact-head GREEN, rebase Run1339 onto its corrected head, fix the child test's import grouping, and require fresh exact-head CI before considering that dependent package.
+3. Rebase #517 onto the latest PR #8 parent after its fixture correction is GREEN; preserve the synthetic-only evidence boundary.
+4. After #520 and #521 exact-head GREEN plus source review, integrate validated packages into the PR #8 research branch only. Keep PR #8 Draft/unmerged.
+5. Continue free-only Memory durability/privacy, Planner crash recovery, ToolRegistry/PermissionGate, audit-before-action, Personal Context, proactive and observation back-end work. Keep V3 approval/path/identity/reproducibility guards isolated while the main-base ownership issue remains unresolved.
+6. Keep UI paused: no frontend feature, polish, test or integration work.
+
+
+## Historical checkpoint archive
+
+### Previous checkpoint — saved at 2026-11-25 07:09:08 JST
 
 - **Saved at:** 2026-11-25 07:09:08 JST (Asia/Tokyo).
 - **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
@@ -8,7 +90,7 @@
 - **Overall ARK state:** V1, V2, Local UI v1 and Launcher/Gate Runner retain their previously reviewed/frozen PASS evidence. JARVIS foundations continue in isolated, reversible Draft branches. **ARK/JARVIS overall remains NOT_PASSED.** No protected V2 evaluation or later milestone PASS is claimed.
 - **Main boundary:** no write, merge, protected evaluation, or Candidate action against `main` was performed in this invocation.
 
-## NEW work this invocation
+### NEW work this invocation
 
 1. **Draft PR #517 — disconnected mock completion-audit COMMIT hard-exit regression (Run1337)**
    - Branch: `research/run1337-mock-completion-audit-hard-exit-20261125`.
@@ -34,7 +116,7 @@
    - Confirmed the three files exist on `main`, not on `research/v3-learning-evaluation`.
    - Existing Draft PR #483 (`fix/run1303-main-ci-import-groups-20261125`, head `82edf57452ffae117cb4dfaff3bb26aac5987c91`) removes the three import separators, but its exact-head CI run `45422941503` is FAIL at pytest collection because the main base lacks the JARVIS modules those tests import. No merge or workaround was attempted; the main/foundation ownership boundary remains blocked pending explicit integration approval.
 
-## Tests, CI and evidence
+### Tests, CI and evidence
 
 - PR #8 exact-head CI run `45494409207`: IN PROGRESS; three Windows jobs remained in progress at the last inspection, with the Ubuntu matrix jobs successful.
 - PR #515 Memory child run `45494873858`: IN PROGRESS.
@@ -46,7 +128,7 @@
 - PR #483 exact-head run `45422941503`: FAIL; Ruff passes, but pytest collection cannot import the JARVIS foundation modules absent from its main base.
 - No local pytest/Ruff execution, physical-PC verification, real model runtime, external service, or paid compute result is claimed.
 
-## Frozen contracts and evidence — unchanged
+### Frozen contracts and evidence — unchanged
 
 - V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen as previously reviewed.
 - Frozen ToolCall/PermissionGate public contracts, Memory v1 schema/DDL, Observation Envelope v1, Personal Context privacy boundaries and V3 Contract 1 were not changed.
@@ -54,7 +136,7 @@
 - PR #8 remains Draft/unmerged. PRs #517–#519 are isolated Draft children; none is merged into #8 or `main`.
 - PR #9 remains Draft/unmerged and untouched. UI/frontend development remains paused.
 
-## Blockers and authorization boundaries
+### Blockers and authorization boundaries
 
 - **Free-only boundary:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
 - No real Candidate adapter/weight generation, protected V2 final-evaluation opening, Candidate promotion, credentials/secrets, new account connection, unavailable physical-PC action, destructive operation, or irreversible data change occurred.
@@ -62,15 +144,13 @@
 - **CI evidence boundary:** QUEUED/IN PROGRESS is not PASS. Do not integrate #517–#519 until each exact child head is GREEN and its dependency order is satisfied.
 - **Architecture boundary:** the new readiness methods remain synthetic diagnostics only; the mock executor remains exact in-process mock only. Neither establishes trusted time, independent custody, authenticated consent, power-loss durability, or exactly-once external effects.
 
-## Next plan / 今後の方針
+### Next plan / 今後の方針
 
 1. Inspect PR #517 run `45496873298` once useful results are available; correct only a concrete exact-head failure, then return to an independent lane while validation runs.
 2. Validate PR #518 run `45497687313` before PR #519 run `45497903814`; integrate the startup reader follow-up only after its parent and child exact-head evidence is GREEN.
 3. Revisit PR #8 run `45494409207`, PR #515 Memory run `45494873858`, and PR #516's missing run evidence without duplicating workflows.
 4. Continue non-UI free work on Memory durability/privacy, Planner crash recovery, ToolRegistry/PermissionGate, audit-before-action, disconnected execution, Personal Context, proactive state and Observation fixture contracts.
 5. Keep V3 free-only guards isolated until the main-base source/test ownership blocker is resolved with explicit approval; keep PR #5 Draft/unmerged and all protected evaluation/Candidate gates closed.
-
-## Historical checkpoint archive
 
 ### Previous checkpoint — saved at 2026-11-25 05:53:35 JST
 
