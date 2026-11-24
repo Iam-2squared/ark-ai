@@ -283,13 +283,13 @@ class SyntheticContextRevocationLedger:
         self, path: Path, *, require_existing: bool = False,
     ) -> None:
         """Open a synthetic veto ledger, optionally refusing any fresh bootstrap.
-        _require_original_scope_digest()
 
         Recovery callers must set require_existing=True so a lost veto file
         cannot silently become a new empty ledger. This is only a local path
         fence; independent retained history is still required against a
         coordinated valid-file replacement or rollback.
         """
+        _require_original_scope_digest()
         if type(path) is not type(Path(".")):
             raise TypeError("revocation path must be an exact local pathlib.Path")
         if type(require_existing) is not bool:
