@@ -10,12 +10,16 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import unicodedata
 from dataclasses import dataclass
 from types import MappingProxyType
 
 from .memory.coherent_snapshot_review import CoherentSnapshotReview
 from .memory.contracts import MemoryRecord, MemoryScope
 from .memory.sqlite_store import deterministic_memory_id
+
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 _MAX_INT = 2**63 - 1
 # Cap optional Personal Context projection, leaving frozen Memory v1 intact.
@@ -54,8 +58,14 @@ class ContextSelectionPolicy:
             for char in self.policy_revision
         ):
             raise ValueError("Personal Context policy revision contains control delimiter")
+        if (
+            unicodedata is not _ORIGINAL_UNICODEDATA
+            or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+        ):
+            raise ValueError("Personal Context Unicode category classifier changed")
         if any(
-            0x80 <= codepoint <= 0x9F
+            _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
+            or 0x80 <= codepoint <= 0x9F
             or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
             or 0x202A <= codepoint <= 0x202E
             or 0x2066 <= codepoint <= 0x2069
@@ -67,6 +77,11 @@ class ContextSelectionPolicy:
             for codepoint in map(ord, self.policy_revision)
         ):
             raise ValueError("Personal Context policy revision contains Unicode formatting control")
+        if (
+            unicodedata is not _ORIGINAL_UNICODEDATA
+            or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+        ):
+            raise ValueError("Personal Context Unicode category classifier changed")
         # Policy identifiers become part of derived hashes. Refuse malformed
         # Unicode and multibyte text beyond the 128-byte encoding budget
         # before inspecting any private Memory snapshot rows.
