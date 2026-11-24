@@ -9,6 +9,7 @@ the same one-shot token. This is not power-loss or external-effect evidence.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
