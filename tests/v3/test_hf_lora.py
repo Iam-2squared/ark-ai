@@ -31,9 +31,9 @@ def test_duplicate_training_ids_are_rejected():
 def test_loaded_tokenizer_must_reproduce_reviewed_chat_template_probe(tmp_path):
     probe = tmp_path / "chat-template-probe.txt"
     expected = (
-        "<|user|>ARK V3 runtime template probe: user"
-        "<|assistant|>ARK V3 runtime template probe: assistant"
-    ).encode("utf-8")
+        b"<|user|>ARK V3 runtime template probe: user"
+        b"<|assistant|>ARK V3 runtime template probe: assistant"
+    )
     probe.write_bytes(expected)
 
     class FakeTokenizer:
