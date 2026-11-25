@@ -311,7 +311,7 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
             parse_float=_ORIGINAL_PREFLIGHT_JSON_FLOAT,
             object_pairs_hook=_ORIGINAL_PREFLIGHT_JSON_PAIRS,
         )
-    except (UnicodeDecodeError, RecursionError, json.JSONDecodeError, ValueError) as exc:
+    except (UnicodeDecodeError, RecursionError, ValueError) as exc:
         raise RuntimeError("preflight report is not valid canonical JSON") from exc
     if not isinstance(report, dict):
         raise RuntimeError("preflight report must be a JSON object")
