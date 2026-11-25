@@ -144,20 +144,37 @@ def _require_original_witness_carrier(
         )
 
 
-def review_revocation_continuity(
+_ORIGINAL_WITNESS_GUARD = _require_original_witness_carrier
+
+
+def _review_revocation_continuity_impl(
     ledger: SyntheticContextRevocationLedger,
-    *, retained: SyntheticRevocationWitness | None = None,
+    *,
+    _original_guard,
+    retained: SyntheticRevocationWitness | None = None,
 ) -> SyntheticRevocationWitness:
     """Compare all previously witnessed veto markers in one SQLite snapshot.
 
     New markers are allowed. Removing or rewriting any independently retained
     marker fails closed. Unwitnessed deletions cannot be detected by hashes.
     """
+    def assert_original_guard() -> None:
+        # The wrapper retains the import-time callable in a closure. Comparing
+        # both mutable module names with that captured identity closes the case
+        # where an attacker replaces the helper and its alias with one no-op.
+        if (
+            _require_original_witness_carrier is not _original_guard
+            or _ORIGINAL_WITNESS_GUARD is not _original_guard
+        ):
+            raise SyntheticContextRevocationRejected(
+                "revocation digest implementation changed"
+            )
+        _original_guard()
     if type(ledger) is not SyntheticContextRevocationLedger:
         raise SyntheticContextRevocationRejected("exact revocation ledger required")
     if retained is not None and type(retained) is not SyntheticRevocationWitness:
         raise SyntheticContextRevocationRejected("exact retained witness required")
-    _require_original_witness_carrier()
+    assert_original_guard()
     source_path = ledger.path
     # Capture the caller's exact retained evidence BEFORE its first integrity
     # callback. A frozen dataclass can be reflectively mutated from inside
@@ -173,7 +190,7 @@ def review_revocation_continuity(
         pinned = (retained_rows, retained.witness_id)
 
     def assert_epoch() -> None:
-        _require_original_witness_carrier()
+        assert_original_guard()
         ledger._assert_source_path(source_path)
         if retained is not None and (
             retained.rows is not retained_rows
@@ -260,3 +277,26 @@ def review_revocation_continuity(
         except BaseException:
             conn.rollback()
             raise
+
+
+
+def _make_review_revocation_continuity():
+    # Keep the reviewed implementation and guard outside mutable module names.
+    original_guard = _require_original_witness_carrier
+    original_impl = _review_revocation_continuity_impl
+
+    def review_revocation_continuity(
+        ledger: SyntheticContextRevocationLedger,
+        *,
+        retained: SyntheticRevocationWitness | None = None,
+    ) -> SyntheticRevocationWitness:
+        return original_impl(
+            ledger,
+            _original_guard=original_guard,
+            retained=retained,
+        )
+
+    return review_revocation_continuity
+
+
+review_revocation_continuity = _make_review_revocation_continuity()
