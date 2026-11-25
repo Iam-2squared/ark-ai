@@ -91,7 +91,17 @@ def test_fixture_rejects_equal_value_carrier_replacement(
 
 
 @pytest.mark.parametrize("binary", [False, True])
-def test_fixture_rejects_non_envelope_constructor_result(binary, monkeypatch):
-    monkeypatch.setattr(adapters, "ObservationEnvelope", lambda **_kwargs: {})
-    with pytest.raises(ValueError, match="non-envelope"):
+def test_fixture_rejects_replaced_constructor_before_execution(binary, monkeypatch):
+    called = []
+
+    def counterfeit(**_kwargs):
+        called.append(True)
+        return {}
+
+    monkeypatch.setattr(adapters, "ObservationEnvelope", counterfeit)
+    with pytest.raises(
+        ValueError,
+        match="fixture envelope definition changed before private access",
+    ):
         _produce(binary)
+    assert called == []

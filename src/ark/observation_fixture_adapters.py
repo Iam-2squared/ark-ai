@@ -43,8 +43,22 @@ _ENVELOPE_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_ENVELOPE_FIELDS = tuple(
     vars(_ENVELOPE_TYPE)[name] for name in _ENVELOPE_FIELDS
 )
+_ABSENT_ENVELOPE_HOOK = object()
 _ORIGINAL_ENVELOPE_HOOKS = tuple(
-    vars(_ENVELOPE_TYPE).get(name) for name in _ENVELOPE_HOOKS
+    vars(_ENVELOPE_TYPE)[name]
+    if name in vars(_ENVELOPE_TYPE)
+    else _ABSENT_ENVELOPE_HOOK
+    for name in _ENVELOPE_HOOKS
+)
+_ORIGINAL_ENVELOPE_GUARD_EPOCH = (
+    _ENVELOPE_TYPE,
+    _ORIGINAL_ENVELOPE_INIT,
+    _ORIGINAL_ENVELOPE_VALIDATOR,
+    _ENVELOPE_FIELDS,
+    _ORIGINAL_ENVELOPE_FIELDS,
+    _ENVELOPE_HOOKS,
+    _ORIGINAL_ENVELOPE_HOOKS,
+    _ABSENT_ENVELOPE_HOOK,
 )
 
 
@@ -205,35 +219,59 @@ def _hash_private_fixture(payload: bytes) -> str:
 _ORIGINAL_PRIVATE_HASH_HELPER = _hash_private_fixture
 
 
-def _require_original_envelope() -> None:
-    # Distinguish constructor substitution from executable field or
-    # validator replacement without invoking any of the substitutions.
+def _require_original_envelope(
+    *,
+    _original_epoch: tuple[object, ...] = _ORIGINAL_ENVELOPE_GUARD_EPOCH,
+) -> None:
+    # Distinguish true namespace absence from explicit None or sentinel
+    # installation without invoking any substituted class hook.
     if (
-        ObservationEnvelope is not _ENVELOPE_TYPE
-        or vars(_ENVELOPE_TYPE).get("__init__") is not _ORIGINAL_ENVELOPE_INIT
+        _ORIGINAL_ENVELOPE_GUARD_EPOCH is not _original_epoch
+        or _ENVELOPE_TYPE is not _original_epoch[0]
+        or _ORIGINAL_ENVELOPE_INIT is not _original_epoch[1]
+        or _ORIGINAL_ENVELOPE_VALIDATOR is not _original_epoch[2]
+        or _ENVELOPE_FIELDS is not _original_epoch[3]
+        or _ORIGINAL_ENVELOPE_FIELDS is not _original_epoch[4]
+        or _ENVELOPE_HOOKS is not _original_epoch[5]
+        or _ORIGINAL_ENVELOPE_HOOKS is not _original_epoch[6]
+        or _ABSENT_ENVELOPE_HOOK is not _original_epoch[7]
+        or ObservationEnvelope is not _original_epoch[0]
+    ):
+        raise ValueError("fixture envelope definition changed before private access")
+    namespace = vars(_ENVELOPE_TYPE)
+    if (
+        "__init__" not in namespace
+        or namespace["__init__"] is not _ORIGINAL_ENVELOPE_INIT
     ):
         raise ValueError(
             "fixture constructor returned a non-envelope result: class or init changed"
         )
-    if vars(_ENVELOPE_TYPE).get("__post_init__") is not _ORIGINAL_ENVELOPE_VALIDATOR:
+    if (
+        "__post_init__" not in namespace
+        or namespace["__post_init__"] is not _ORIGINAL_ENVELOPE_VALIDATOR
+    ):
         raise ValueError(
             "fixture constructor changed during construction: validator definition changed"
         )
-    if (
-        any(
-            vars(_ENVELOPE_TYPE).get(name) is not saved
-            for name, saved in zip(
-                _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
-            )
-        )
-        or any(
-            vars(_ENVELOPE_TYPE).get(name) is not saved
-            for name, saved in zip(
-                _ENVELOPE_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True,
-            )
+    if any(
+        name not in namespace or namespace[name] is not saved
+        for name, saved in zip(
+            _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
         )
     ):
         raise ValueError("fixture envelope definition changed before private access")
+    for name, saved in zip(
+        _ENVELOPE_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True,
+    ):
+        if saved is _ABSENT_ENVELOPE_HOOK:
+            if name in namespace:
+                raise ValueError(
+                    "fixture envelope definition changed before private access"
+                )
+        elif name not in namespace or namespace[name] is not saved:
+            raise ValueError(
+                "fixture envelope definition changed before private access"
+            )
 
 
 def _sealed_fixture(
