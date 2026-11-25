@@ -82,6 +82,26 @@ def test_lookup_hook_absence_sentinel_is_pinned(
             policy._require_original_gate_class()
 
 
+def test_lookup_hook_cannot_be_set_to_the_absence_sentinel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    gate = policy.PermissionGate()
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            policy.PermissionGate,
+            "__getattribute__",
+            policy._GATE_LOOKUP_HOOK_ABSENT,
+            raising=False,
+        )
+        with pytest.raises(
+            policy.PermissionDenied,
+            match="PermissionGate implementation identity changed",
+        ):
+            policy.PermissionGate.authorize(
+                gate, object(), object(), (), now_ms=0,
+            )
+
+
 def test_exact_permission_gate_still_passes_original_class_and_instance_guards() -> None:
     gate = policy.PermissionGate()
 
