@@ -10,7 +10,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import tempfile
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 from .dataset import digest
@@ -26,6 +28,148 @@ class LoRARuntimeError(RuntimeError):
 
 
 _MAX_CHAT_TEMPLATE_PROBE_BYTES = 64 * 1024
+
+
+def _copy_verified_snapshot_file(
+    source: Path,
+    destination: Path,
+    *,
+    expected_sha256: str,
+    expected_bytes: int,
+) -> None:
+    """Copy one manifest row while hashing the exact bytes sent to the stage."""
+    if (
+        type(expected_sha256) is not str
+        or len(expected_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in expected_sha256)
+        or type(expected_bytes) is not int
+        or expected_bytes < 0
+    ):
+        raise LoRARuntimeError("frozen snapshot file identity is malformed")
+    hasher = hashlib.sha256()
+    size = 0
+    try:
+        with source.open("rb") as source_handle, destination.open("xb") as target_handle:
+            while True:
+                chunk = source_handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > expected_bytes:
+                    raise LoRARuntimeError("base snapshot file grew while staging")
+                hasher.update(chunk)
+                if target_handle.write(chunk) != len(chunk):
+                    raise LoRARuntimeError("base snapshot staging write was incomplete")
+            target_handle.flush()
+    except LoRARuntimeError:
+        raise
+    except OSError as exc:
+        raise LoRARuntimeError("base snapshot file could not be staged") from exc
+    if size != expected_bytes or hasher.hexdigest() != expected_sha256:
+        raise LoRARuntimeError("base snapshot bytes changed while staging")
+
+
+def _assert_staged_snapshot_identity(
+    snapshot: dict,
+    staged_base_dir: Path,
+    chat_template_probe: Path,
+) -> None:
+    try:
+        identity = build_hf_snapshot_identity(
+            staged_base_dir,
+            model_id=snapshot["base"]["model_id"],
+            revision=snapshot["base"]["revision"],
+            chat_template_probe=chat_template_probe,
+        )
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise LoRARuntimeError("staged base snapshot could not be revalidated") from exc
+    if (
+        identity["base_file_manifest_sha256"] != snapshot["base"]["file_sha256_manifest"]
+        or identity["tokenizer_file_manifest_sha256"]
+        != snapshot["tokenizer"]["file_sha256_manifest"]
+        or identity["chat_template_probe_sha256"]
+        != snapshot["tokenizer"]["chat_template_probe_sha256"]
+    ):
+        raise LoRARuntimeError("staged base snapshot identity changed before loader handoff")
+
+
+def _stage_verified_hf_snapshot(
+    snapshot: dict,
+    base_dir: Path,
+    chat_template_probe: Path,
+):
+    """Copy only reviewed HF bytes to a private temporary tree for loader handoff.
+
+    The staged tree is re-hashed before it is returned. TemporaryDirectory gives
+    best-effort private-directory permissions; this is not atomic dirfd custody,
+    protection from a hostile same-user writer, or a platform ACL attestation.
+    """
+    if (
+        type(snapshot) is not dict
+        or type(snapshot.get("base")) is not dict
+        or type(snapshot.get("tokenizer")) is not dict
+    ):
+        raise LoRARuntimeError("frozen snapshot identity container is malformed")
+    try:
+        source_identity = build_hf_snapshot_identity(
+            base_dir,
+            model_id=snapshot["base"]["model_id"],
+            revision=snapshot["base"]["revision"],
+            chat_template_probe=chat_template_probe,
+        )
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise LoRARuntimeError("base snapshot could not be identified before staging") from exc
+    if (
+        source_identity["base_file_manifest_sha256"]
+        != snapshot["base"]["file_sha256_manifest"]
+        or source_identity["tokenizer_file_manifest_sha256"]
+        != snapshot["tokenizer"]["file_sha256_manifest"]
+        or source_identity["chat_template_probe_sha256"]
+        != snapshot["tokenizer"]["chat_template_probe_sha256"]
+    ):
+        raise LoRARuntimeError("local base snapshot manifest mismatch before staging")
+
+    try:
+        temporary_parent = Path(tempfile.gettempdir()).resolve(strict=True)
+        owner = tempfile.TemporaryDirectory(
+            prefix="ark-v3-hf-stage-",
+            dir=str(temporary_parent),
+        )
+    except OSError as exc:
+        raise LoRARuntimeError("private base snapshot staging directory is unavailable") from exc
+
+    staged_base_dir = Path(owner.name)
+    try:
+        if staged_base_dir.resolve(strict=True).is_relative_to(base_dir.resolve(strict=True)):
+            raise LoRARuntimeError("base snapshot staging directory aliases the source tree")
+        for row in source_identity["base_file_manifest"]["files"]:
+            if type(row) is not dict or row.get("symlink") is not False:
+                raise LoRARuntimeError("base snapshot manifest row is malformed")
+            relative = row.get("path")
+            if (
+                type(relative) is not str
+                or not relative
+                or relative.startswith("/")
+                or "\\" in relative
+                or any(part in ("", ".", "..") for part in relative.split("/"))
+                or (len(relative.split("/")[0]) == 2
+                    and relative.split("/")[0][1] == ":")
+            ):
+                raise LoRARuntimeError("base snapshot manifest path is not relative")
+            parts = relative.split("/")
+            destination = staged_base_dir.joinpath(*parts)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            _copy_verified_snapshot_file(
+                base_dir.joinpath(*parts),
+                destination,
+                expected_sha256=row.get("sha256"),
+                expected_bytes=row.get("bytes"),
+            )
+        _assert_staged_snapshot_identity(snapshot, staged_base_dir, chat_template_probe)
+        return owner, staged_base_dir
+    except BaseException:
+        owner.cleanup()
+        raise
 
 
 def _verify_chat_template_probe(
@@ -182,37 +326,48 @@ def _build_model_and_tokenizer(
     chat_template_probe: Path,
 ):
     torch, LoraConfig, get_peft_model, AutoModelForCausalLM, AutoTokenizer = _runtime_imports()
-    tokenizer = AutoTokenizer.from_pretrained(
-        str(base_dir),
-        local_files_only=True,
-        trust_remote_code=False,
-    )
-    verified_probe_sha256 = _verify_chat_template_probe(
-        tokenizer,
+    stage_owner, staged_base_dir = _stage_verified_hf_snapshot(
+        snapshot,
+        base_dir,
         chat_template_probe,
-        snapshot["tokenizer"]["chat_template_probe_sha256"],
     )
-    if not torch.cuda.is_available():
-        raise LoRARuntimeError("authorized experiment-001 runtime requires CUDA GPU")
-    if not torch.cuda.is_bf16_supported():
-        raise LoRARuntimeError("frozen experiment-001 precision requires CUDA BF16 support")
-    model = AutoModelForCausalLM.from_pretrained(
-        str(base_dir),
-        local_files_only=True,
-        trust_remote_code=False,
-        torch_dtype=torch.bfloat16,
-    )
-    model.to("cuda")
-    lora = LoraConfig(
-        r=8,
-        lora_alpha=16,
-        lora_dropout=0.0,
-        target_modules=["q_proj", "v_proj"],
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
-    model = get_peft_model(model, lora)
-    return torch, tokenizer, model, verified_probe_sha256
+    try:
+        _assert_staged_snapshot_identity(snapshot, staged_base_dir, chat_template_probe)
+        tokenizer = AutoTokenizer.from_pretrained(
+            str(staged_base_dir),
+            local_files_only=True,
+            trust_remote_code=False,
+        )
+        verified_probe_sha256 = _verify_chat_template_probe(
+            tokenizer,
+            chat_template_probe,
+            snapshot["tokenizer"]["chat_template_probe_sha256"],
+        )
+        if not torch.cuda.is_available():
+            raise LoRARuntimeError("authorized experiment-001 runtime requires CUDA GPU")
+        if not torch.cuda.is_bf16_supported():
+            raise LoRARuntimeError("frozen experiment-001 precision requires CUDA BF16 support")
+        _assert_staged_snapshot_identity(snapshot, staged_base_dir, chat_template_probe)
+        model = AutoModelForCausalLM.from_pretrained(
+            str(staged_base_dir),
+            local_files_only=True,
+            trust_remote_code=False,
+            torch_dtype=torch.bfloat16,
+        )
+        model.to("cuda")
+        lora = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            lora_dropout=0.0,
+            target_modules=["q_proj", "v_proj"],
+            bias="none",
+            task_type="CAUSAL_LM",
+        )
+        model = get_peft_model(model, lora)
+        return torch, tokenizer, model, verified_probe_sha256, stage_owner
+    except BaseException:
+        stage_owner.cleanup()
+        raise
 
 
 def _encoded_example(tokenizer, row: dict, max_length: int = 256) -> tuple[list[int], list[int]]:
