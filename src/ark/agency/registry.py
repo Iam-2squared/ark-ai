@@ -978,7 +978,6 @@ def _require_original_registry_instance_seal(
     _original_epoch: tuple[object, ...] = _ORIGINAL_REGISTRY_CLASS_EPOCH,
 ) -> None:
     """Pin exact registry class hooks, descriptors, and the no-dict slot layout."""
-    namespace = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)
     if (
         _ORIGINAL_REGISTRY_CLASS_EPOCH is not _original_epoch
         or _ORIGINAL_TOOL_REGISTRY_TYPE is not _original_epoch[0]
@@ -990,20 +989,27 @@ def _require_original_registry_instance_seal(
         or _REGISTRY_CLASS_HOOK_NAMES is not _original_epoch[6]
         or _ORIGINAL_REGISTRY_CLASS_HOOKS is not _original_epoch[7]
         or _REGISTRY_CLASS_HOOK_ABSENT is not _original_epoch[8]
-        or "__slots__" not in namespace
-        or namespace["__slots__"] is not _ORIGINAL_TOOL_REGISTRY_SLOTS
+    ):
+        raise ValueError("registry instance immutability contract changed")
+
+    # Only inspect the namespace of the import-original class after every
+    # module alias and retained vector has passed identity admission.
+    namespace = vars(_original_epoch[0])
+    if (
+        "__slots__" not in namespace
+        or namespace["__slots__"] is not _original_epoch[2]
         or "__setattr__" not in namespace
-        or namespace["__setattr__"] is not _ORIGINAL_TOOL_REGISTRY_SETATTR
+        or namespace["__setattr__"] is not _original_epoch[3]
         or "__delattr__" not in namespace
-        or namespace["__delattr__"] is not _ORIGINAL_TOOL_REGISTRY_DELATTR
+        or namespace["__delattr__"] is not _original_epoch[4]
         or "__init__" not in namespace
-        or namespace["__init__"] is not _ORIGINAL_TOOL_REGISTRY_INIT
+        or namespace["__init__"] is not _original_epoch[5]
         or any(
-            (name in namespace) != (original is not _REGISTRY_CLASS_HOOK_ABSENT)
+            (name in namespace) != (original is not _original_epoch[8])
             or (name in namespace and namespace[name] is not original)
             for name, original in zip(
-                _REGISTRY_CLASS_HOOK_NAMES,
-                _ORIGINAL_REGISTRY_CLASS_HOOKS,
+                _original_epoch[6],
+                _original_epoch[7],
                 strict=True,
             )
         )
