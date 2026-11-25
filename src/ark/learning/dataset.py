@@ -209,6 +209,39 @@ class ContaminationGuard:
 _ORIGINAL_CONTAMINATION_GUARD_TYPE = ContaminationGuard
 _ORIGINAL_CONTAMINATION_GUARD_REASON = vars(_ORIGINAL_CONTAMINATION_GUARD_TYPE)["reason"]
 
+# Retain both public type names and the private validator aliases as one
+# import-time admission epoch. Rebinding the "original" aliases together must
+# not let a replacement dataclass and no-op policy masquerade as the originals.
+_ORIGINAL_DATASET_ADMISSION_EPOCH = (
+    LearningCandidate,
+    _ORIGINAL_LEARNING_CANDIDATE_TYPE,
+    _ORIGINAL_LEARNING_CANDIDATE_VALIDATE,
+    ContaminationGuard,
+    _ORIGINAL_CONTAMINATION_GUARD_TYPE,
+    _ORIGINAL_CONTAMINATION_GUARD_REASON,
+)
+
+
+def _require_original_dataset_admission(
+    _original_dataset_admission_epoch: tuple[object, ...] = (
+        _ORIGINAL_DATASET_ADMISSION_EPOCH
+    ),
+) -> None:
+    if (
+        _ORIGINAL_DATASET_ADMISSION_EPOCH is not _original_dataset_admission_epoch
+        or LearningCandidate is not _original_dataset_admission_epoch[0]
+        or _ORIGINAL_LEARNING_CANDIDATE_TYPE is not _original_dataset_admission_epoch[1]
+        or _ORIGINAL_LEARNING_CANDIDATE_VALIDATE is not _original_dataset_admission_epoch[2]
+        or vars(_original_dataset_admission_epoch[1]).get("validate")
+        is not _original_dataset_admission_epoch[2]
+        or ContaminationGuard is not _original_dataset_admission_epoch[3]
+        or _ORIGINAL_CONTAMINATION_GUARD_TYPE is not _original_dataset_admission_epoch[4]
+        or _ORIGINAL_CONTAMINATION_GUARD_REASON is not _original_dataset_admission_epoch[5]
+        or vars(_original_dataset_admission_epoch[4]).get("reason")
+        is not _original_dataset_admission_epoch[5]
+    ):
+        raise ValueError("dataset admission policy implementation changed")
+
 
 @dataclass(frozen=True)
 class DatasetArtifact:
@@ -224,13 +257,7 @@ def build_dataset(items: list[LearningCandidate], guard: ContaminationGuard) -> 
         raise ValueError("items must be an exact list")
     if type(guard) is not _ORIGINAL_CONTAMINATION_GUARD_TYPE:
         raise ValueError("exact ContaminationGuard required")
-    if (
-        vars(_ORIGINAL_LEARNING_CANDIDATE_TYPE).get("validate")
-        is not _ORIGINAL_LEARNING_CANDIDATE_VALIDATE
-        or vars(_ORIGINAL_CONTAMINATION_GUARD_TYPE).get("reason")
-        is not _ORIGINAL_CONTAMINATION_GUARD_REASON
-    ):
-        raise ValueError("dataset admission policy implementation changed")
+    _require_original_dataset_admission()
     identifiers: list[str] = []
     for item in items:
         if type(item) is not _ORIGINAL_LEARNING_CANDIDATE_TYPE:
