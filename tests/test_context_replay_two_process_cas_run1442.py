@@ -24,7 +24,6 @@ from ark.personal_context_replay_ledger import (
 )
 from ark.personal_context_request_binding import bind_offline_context_request
 
-
 _OWNER = "a" * 64
 _SCOPE = "b" * 64
 _RECORD = "rec_" + "c" * 32
