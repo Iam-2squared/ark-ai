@@ -1,6 +1,6 @@
 ## Run1420 — Reconcile V3 preflight-report and nested-ancestor guards (2026-11-26)
 
-**Foundation documentation basis:** Draft PR #8 branch `research/jarvis-foundations`, HEAD `ae3c330f11513c782bed9703febc8ac0c3a31747`.
+**Foundation documentation basis:** Draft PR #8 branch `research/jarvis-foundations`, HEAD `be6cee86da0876e9481d1cc81465d607b0305d69`.
 
 **Audited V3 source basis:** gated Draft PR #5 branch `research/v3-learning-evaluation`, exact HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`. This was a read-only source audit. No V3 runtime, torch import, model/tokenizer load, GPU query, preflight, training, Candidate, protected evaluation, or external compute was run.
 
