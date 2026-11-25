@@ -348,15 +348,23 @@ def _verify_actual_runtime(snapshot: dict) -> RuntimeIdentity:
     return actual
 
 
-def _verify_preflight_report(path: Path, snapshot: dict) -> None:
+def _verify_preflight_report(
+    path: Path,
+    snapshot: dict,
+    *,
+    _original_parser_guard=_ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD,
+) -> None:
     payload = _verify_file(
         path,
         snapshot["hardware"]["preflight_report_sha256"],
         "preflight report",
     )
-    if _require_original_preflight_json_parser is not _ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD:
+    if (
+        _original_parser_guard is not _ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD
+        or _require_original_preflight_json_parser is not _original_parser_guard
+    ):
         raise RuntimeError("preflight JSON parser guard changed")
-    _ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD()
+    _original_parser_guard()
     try:
         report = _ORIGINAL_PREFLIGHT_JSON_LOADS(
             payload,
