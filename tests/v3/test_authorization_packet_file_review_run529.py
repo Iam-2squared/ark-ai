@@ -187,8 +187,8 @@ def test_review_callback_cannot_retarget_snapshot(tmp_path, monkeypatch):
     snapshot, path, digest = _saved_packet(tmp_path)
     real = mod._read_exact_local_packet
 
-    def mutate_snapshot(target):
-        result = real(target)
+    def mutate_snapshot(target, **kwargs):
+        result = real(target, **kwargs)
         snapshot["budget"]["max_cost_jpy"] = 50
         return result
 
