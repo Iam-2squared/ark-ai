@@ -16,10 +16,10 @@ import ark.proactive_synthetic_review as proactive
 from ark.proactive_state_ledger import SyntheticProactiveStateLedger
 
 
-def _metadata(mode: int, *, attributes: object = 0):
+def _metadata(mode: int, *, attributes: object = 0, links: int = 1):
     return SimpleNamespace(
         st_mode=mode,
-        st_nlink=1,
+        st_nlink=links,
         st_file_attributes=attributes,
     )
 
@@ -212,6 +212,33 @@ def test_reparse_point_sidecar_is_rejected_before_sqlite_access(
         match="sidecar or reparse point",
     ):
         proactive._refuse_aliased_proactive_path(path)
+
+
+def test_unlinked_regular_sidecar_gets_only_one_bounded_recheck(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = tmp_path / "trigger.sqlite"
+    path.write_bytes(b"synthetic marker")
+    sidecar = path.with_name(path.name + "-journal")
+    original_lstat = Path.lstat
+    sidecar_calls = 0
+
+    def lstat(candidate: Path):
+        nonlocal sidecar_calls
+        if candidate == sidecar:
+            sidecar_calls += 1
+            if sidecar_calls == 1:
+                return _metadata(
+                    statlib.S_IFREG | 0o600,
+                    links=0,
+                )
+            raise FileNotFoundError
+        return original_lstat(candidate)
+
+    monkeypatch.setattr(Path, "lstat", lstat)
+    proactive._refuse_aliased_proactive_path(path)
+    assert sidecar_calls == 2
 
 
 def test_reentrant_reparse_metadata_accessor_cannot_restore_path_policy(
