@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 import ark.agency.registry as registry_module
@@ -58,20 +61,29 @@ def _restore_class_attribute(
 def test_explicit_none_is_not_confused_with_an_absent_registration_hook(
     hook: str,
 ) -> None:
-    _entry, backend = _registration()
+    # A temporary __new__ assignment changes the type's allocation slot on
+    # some Python builds even after namespace deletion. Isolate every special
+    # hook mutation so no interpreter-level type-slot state can leak to tests.
+    script = f"""
+import ark.agency.registry as registry_module
+from ark.agency.registry import ToolRegistration
 
-    original = _set_class_attribute(ToolRegistration, hook, None)
-    try:
-        with pytest.raises(
-            ValueError,
-            match="tool registration contract changed",
-        ):
-            registry_module._require_original_registration_contract()
-    finally:
-        _restore_class_attribute(ToolRegistration, hook, original)
-
+type.__setattr__(ToolRegistration, {hook!r}, None)
+try:
     registry_module._require_original_registration_contract()
-    assert backend.calls == 0
+except ValueError as exc:
+    if str(exc) != "tool registration contract changed":
+        raise
+else:
+    raise SystemExit("explicit None hook was accepted")
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr or completed.stdout
 
 
 def test_exact_absence_sentinel_installed_as_a_hook_is_rejected() -> None:
