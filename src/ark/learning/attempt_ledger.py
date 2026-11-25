@@ -345,7 +345,8 @@ def _validate_history(
             type(sequence) is not int or sequence != expected_sequence
             or type(attempt_id) is not str or _ATTEMPT_ID.fullmatch(attempt_id) is None
             or type(execution_sha256) is not str or _SHA256.fullmatch(execution_sha256) is None
-            or type(authorization_sha256) is not str or _SHA256.fullmatch(authorization_sha256) is None
+            or type(authorization_sha256) is not str
+            or _SHA256.fullmatch(authorization_sha256) is None
             or state not in ("STARTED", "FINALIZED")
             or type(occurred_at_ms) is not int or not 0 <= occurred_at_ms <= _MAX_SQLITE_INT
             or type(previous_hash) is not str or previous_hash != previous
@@ -610,7 +611,9 @@ class SQLiteAttemptLedger:
                     or started[2] != execution_sha256
                     or started[3] != authorization_packet_sha256
                 ):
-                    raise AttemptLedgerConflictError("finalization does not match the reserved attempt")
+                    raise AttemptLedgerConflictError(
+                        "finalization does not match the reserved attempt"
+                    )
                 if len(events) != 1:
                     raise AttemptLedgerConflictError("attempt was already finalized")
                 sequence, event_sha256 = self._append_event(
