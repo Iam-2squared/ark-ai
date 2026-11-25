@@ -56,6 +56,65 @@ _DENIAL_FLAGS = (
 _ORIGINAL_DENIAL_DESCRIPTORS = tuple(
     getattr(_WITNESS_TYPE, name) for name in _DENIAL_FLAGS
 )
+_ORIGINAL_DENIAL_FLAGS_VECTOR = _DENIAL_FLAGS
+
+# Absence is a first-class part of the class contract. In particular, an
+# explicitly installed None must not compare equal to an inherited/missing
+# lookup hook.
+_WITNESS_CLASS_HOOK_NAMES = (
+    "__new__", "__getattribute__", "__getattr__", "__setattr__", "__delattr__",
+)
+_WITNESS_CLASS_HOOK_ABSENT = object()
+_ORIGINAL_WITNESS_INIT = vars(_WITNESS_TYPE)["__init__"]
+_ORIGINAL_WITNESS_CLASS_HOOKS = tuple(
+    vars(_WITNESS_TYPE).get(name, _WITNESS_CLASS_HOOK_ABSENT)
+    for name in _WITNESS_CLASS_HOOK_NAMES
+)
+_ORIGINAL_WITNESS_CLASS_HOOKS_VECTOR = _WITNESS_CLASS_HOOK_NAMES
+
+
+def _require_original_witness_contract(
+    *,
+    _witness_type: type = _WITNESS_TYPE,
+    _hook_names: tuple[str, ...] = _WITNESS_CLASS_HOOK_NAMES,
+    _hook_absent: object = _WITNESS_CLASS_HOOK_ABSENT,
+    _original_init: object = _ORIGINAL_WITNESS_INIT,
+    _original_hooks: tuple[object, ...] = _ORIGINAL_WITNESS_CLASS_HOOKS,
+    _denial_flags: tuple[str, ...] = _DENIAL_FLAGS,
+    _original_denials: tuple[object, ...] = _ORIGINAL_DENIAL_DESCRIPTORS,
+) -> None:
+    """Pin witness construction and class hooks before any witness access."""
+    namespace = vars(_witness_type)
+    if (
+        LocalPacketBindingWitness is not _witness_type
+        or _WITNESS_TYPE is not _witness_type
+        or namespace.get("__init__") is not _original_init
+        or _ORIGINAL_WITNESS_INIT is not _original_init
+        or _WITNESS_CLASS_HOOK_NAMES is not _hook_names
+        or _ORIGINAL_WITNESS_CLASS_HOOKS_VECTOR is not _hook_names
+        or _WITNESS_CLASS_HOOK_ABSENT is not _hook_absent
+        or _ORIGINAL_WITNESS_CLASS_HOOKS is not _original_hooks
+        or any(
+            (name in namespace) != (original is not _hook_absent)
+            or (name in namespace and namespace[name] is not original)
+            for name, original in zip(_hook_names, _original_hooks, strict=True)
+        )
+    ):
+        raise LocalPacketBindingRejected("packet witness class lookup contract changed")
+    if (
+        _DENIAL_FLAGS is not _denial_flags
+        or _ORIGINAL_DENIAL_FLAGS_VECTOR is not _denial_flags
+        or _ORIGINAL_DENIAL_DESCRIPTORS is not _original_denials
+        or any(
+            namespace.get(name) is not original
+            for name, original in zip(
+                _denial_flags, _original_denials, strict=True,
+            )
+        )
+    ):
+        raise LocalPacketBindingRejected(
+            "packet witness gained authority: denial descriptor inventory changed"
+        )
 
 
 def verify_detached_authorization_packet(
@@ -69,6 +128,7 @@ def verify_detached_authorization_packet(
     This only detects drift of in-memory review evidence. A matching hash is
     neither independently authenticated provenance nor authorization.
     """
+    _require_original_witness_contract()
     if (
         type(snapshot) is not dict
         or type(packet) is not dict
@@ -81,8 +141,10 @@ def verify_detached_authorization_packet(
         packet_epoch = _pin_json_tree(packet)
 
         def unchanged() -> None:
+            _require_original_witness_contract()
             _assert_json_tree_epoch(snapshot, snapshot_epoch)
             _assert_json_tree_epoch(packet, packet_epoch)
+            _require_original_witness_contract()
 
         unchanged()
         expected = build_preflight_authorization_packet(snapshot)
@@ -108,26 +170,37 @@ def verify_detached_authorization_packet(
         ):
             raise LocalPacketBindingRejected("internal packet digest disagrees")
         unchanged()
+        unchanged()
         witness = LocalPacketBindingWitness(
             packet["execution_snapshot_sha256"], observed, internal,
         )
         unchanged()
+
+        def read_witness(name: str) -> object:
+            # A field/denial descriptor is a callback boundary. Recheck the
+            # class lookup policy immediately after each getter so a getter
+            # cannot install a new __getattribute__ before the next read.
+            _require_original_witness_contract()
+            value = getattr(witness, name)
+            _require_original_witness_contract()
+            return value
+
         if (
             type(witness) is not _WITNESS_TYPE
-            or type(witness.snapshot_sha256) is not str
-            or witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
-            or witness.packet_file_sha256 is not observed
-            or witness.internal_packet_sha256 is not internal
-            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
+            or type(read_witness("snapshot_sha256")) is not str
+            or read_witness("snapshot_sha256") != expected["execution_snapshot_sha256"]
+            or read_witness("packet_file_sha256") is not observed
+            or read_witness("internal_packet_sha256") is not internal
+            or any(read_witness(flag) is not False for flag in _DENIAL_FLAGS)
         ):
             raise LocalPacketBindingRejected("packet witness gained authority")
         unchanged()
         if (
             type(witness) is not _WITNESS_TYPE
-            or witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
-            or witness.packet_file_sha256 is not observed
-            or witness.internal_packet_sha256 is not internal
-            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
+            or read_witness("snapshot_sha256") != expected["execution_snapshot_sha256"]
+            or read_witness("packet_file_sha256") is not observed
+            or read_witness("internal_packet_sha256") is not internal
+            or any(read_witness(flag) is not False for flag in _DENIAL_FLAGS)
         ):
             raise LocalPacketBindingRejected("packet witness changed after review")
         # A late false-valued denial getter may also replace a previously
@@ -136,18 +209,18 @@ def verify_detached_authorization_packet(
         unchanged()
         if (
             type(witness) is not _WITNESS_TYPE
-            or witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
-            or witness.packet_file_sha256 is not observed
-            or witness.internal_packet_sha256 is not internal
-            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
+            or read_witness("snapshot_sha256") != expected["execution_snapshot_sha256"]
+            or read_witness("packet_file_sha256") is not observed
+            or read_witness("internal_packet_sha256") is not internal
+            or any(read_witness(flag) is not False for flag in _DENIAL_FLAGS)
         ):
             raise LocalPacketBindingRejected("packet witness changed in final review")
         unchanged()
         if (
-            witness.snapshot_sha256 != expected["execution_snapshot_sha256"]
-            or witness.packet_file_sha256 is not observed
-            or witness.internal_packet_sha256 is not internal
-            or any(getattr(witness, flag) is not False for flag in _DENIAL_FLAGS)
+            read_witness("snapshot_sha256") != expected["execution_snapshot_sha256"]
+            or read_witness("packet_file_sha256") is not observed
+            or read_witness("internal_packet_sha256") is not internal
+            or any(read_witness(flag) is not False for flag in _DENIAL_FLAGS)
         ):
             raise LocalPacketBindingRejected("packet witness changed after final denial")
         # Field reads and denial getters are reflective callback boundaries.
