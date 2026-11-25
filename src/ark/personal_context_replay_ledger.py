@@ -30,6 +30,8 @@ _DOMAIN = b"ARK-disconnected-context-request-replay-ledger-v1\0"
 _MAX_ROWS = 512
 _MAX_DB_PATH_BYTES = 4096
 _ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_STAT = stat
 _ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
@@ -107,9 +109,6 @@ def _require_original_context_replay_path_policy(
         )
 
 
-_ORIGINAL_SQLITE3 = sqlite3
-_ORIGINAL_OS = os
-_ORIGINAL_FSENCODE = os.fsencode
 _ORIGINAL_SQLITE3 = sqlite3
 _ORIGINAL_SQLITE_CONNECT = sqlite3.connect
 _ORIGINAL_SQLITE_CONNECTION = sqlite3.Connection
