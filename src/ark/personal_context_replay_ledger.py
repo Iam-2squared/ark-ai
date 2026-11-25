@@ -87,6 +87,7 @@ def _require_original_context_replay_path_policy(
         or _ORIGINAL_FSENCODE is not epoch[1]
         or type(_MAX_DB_PATH_BYTES) is not int
         or _MAX_DB_PATH_BYTES != epoch[2]
+        or _ORIGINAL_MAX_DB_PATH_BYTES is not epoch[2]
         or stat is not epoch[3]
         or _ORIGINAL_STAT is not epoch[3]
         or _ORIGINAL_STAT_S_ISDIR is not epoch[4]
