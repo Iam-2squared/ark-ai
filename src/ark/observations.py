@@ -141,8 +141,20 @@ _ENVELOPE_HOOKS = (
 _ORIGINAL_ENVELOPE_FIELDS = tuple(
     vars(_ENVELOPE_TYPE)[name] for name in _ENVELOPE_FIELDS
 )
+_ABSENT_ENVELOPE_HOOK = object()
 _ORIGINAL_ENVELOPE_HOOKS = tuple(
-    vars(_ENVELOPE_TYPE).get(name) for name in _ENVELOPE_HOOKS
+    vars(_ENVELOPE_TYPE)[name]
+    if name in vars(_ENVELOPE_TYPE)
+    else _ABSENT_ENVELOPE_HOOK
+    for name in _ENVELOPE_HOOKS
+)
+_ORIGINAL_ENVELOPE_IDENTITY_EPOCH = (
+    _ENVELOPE_TYPE,
+    _ENVELOPE_FIELDS,
+    _ORIGINAL_ENVELOPE_FIELDS,
+    _ENVELOPE_HOOKS,
+    _ORIGINAL_ENVELOPE_HOOKS,
+    _ABSENT_ENVELOPE_HOOK,
 )
 
 
@@ -170,26 +182,40 @@ def _require_original_digest_implementation() -> None:
         raise ValueError("observation identity digest implementation changed")
 
 
-def _require_original_identity_carrier() -> None:
+def _require_original_identity_carrier(
+    *,
+    _original_epoch: tuple[object, ...] = _ORIGINAL_ENVELOPE_IDENTITY_EPOCH,
+) -> None:
     # Only local, import-original class descriptors are treated as reviewed
     # metadata access paths. This is a defensive check, not in-process
     # sandboxing, source authentication, or consent/dispatch authorization.
     if (
-        ObservationEnvelope is not _ENVELOPE_TYPE
-        or any(
-            vars(_ENVELOPE_TYPE).get(name) is not original
-            for name, original in zip(
-                _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
-            )
-        )
-        or any(
-            vars(_ENVELOPE_TYPE).get(name) is not original
-            for name, original in zip(
-                _ENVELOPE_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True,
-            )
+        _ORIGINAL_ENVELOPE_IDENTITY_EPOCH is not _original_epoch
+        or _ENVELOPE_TYPE is not _original_epoch[0]
+        or _ENVELOPE_FIELDS is not _original_epoch[1]
+        or _ORIGINAL_ENVELOPE_FIELDS is not _original_epoch[2]
+        or _ENVELOPE_HOOKS is not _original_epoch[3]
+        or _ORIGINAL_ENVELOPE_HOOKS is not _original_epoch[4]
+        or _ABSENT_ENVELOPE_HOOK is not _original_epoch[5]
+        or ObservationEnvelope is not _original_epoch[0]
+    ):
+        raise ValueError("observation identity definition changed")
+    namespace = vars(_ENVELOPE_TYPE)
+    if any(
+        name not in namespace or namespace[name] is not original
+        for name, original in zip(
+            _ENVELOPE_FIELDS, _ORIGINAL_ENVELOPE_FIELDS, strict=True,
         )
     ):
         raise ValueError("observation identity definition changed")
+    for name, original in zip(
+        _ENVELOPE_HOOKS, _ORIGINAL_ENVELOPE_HOOKS, strict=True,
+    ):
+        if original is _ABSENT_ENVELOPE_HOOK:
+            if name in namespace:
+                raise ValueError("observation identity definition changed")
+        elif name not in namespace or namespace[name] is not original:
+            raise ValueError("observation identity definition changed")
 
 
 def _digest(value: object, name: str) -> None:
