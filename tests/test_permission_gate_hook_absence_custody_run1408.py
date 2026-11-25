@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 import ark.agency.policy as policy
@@ -15,8 +18,7 @@ from ark.agency.contracts import (
 )
 from ark.agency.policy import PermissionGate
 
-
-_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_HOOKS = ("__getattribute__", "__getattr__")
 _CARRIERS = (
     ("gate", PermissionGate, "_GATE_HOOK_ABSENT"),
     ("grant", CapabilityGrant, "_GRANT_HOOK_ABSENT"),
@@ -89,6 +91,46 @@ def test_explicit_none_is_not_confused_with_an_absent_gate_or_input_hook(
         _restore_class_attribute(carrier, hook, original)
 
     assert token.token_id not in object.__getattribute__(gate, "_consumed_tokens")
+
+
+@pytest.mark.parametrize("carrier_name", ("gate", "grant", "spec", "token"))
+def test_explicit_none_new_hook_is_rejected_in_an_isolated_process(
+    carrier_name: str,
+) -> None:
+    # Deleting a temporary __new__ assignment can leave interpreter-level
+    # allocation-slot state behind on some builds. Keep that special-hook
+    # probe in a child process so the main pytest interpreter stays pristine.
+    script = f"""
+import ark.agency.policy as policy
+from ark.agency.contracts import CapabilityGrant, OneShotAuthorization, ToolSpec
+from ark.agency.policy import PermissionDenied
+
+carrier = {{
+    "gate": policy.PermissionGate,
+    "grant": CapabilityGrant,
+    "spec": ToolSpec,
+    "token": OneShotAuthorization,
+}}[{carrier_name!r}]
+type.__setattr__(carrier, "__new__", None)
+try:
+    if {carrier_name!r} == "gate":
+        policy._require_original_gate_class()
+    elif {carrier_name!r} == "grant":
+        policy._require_original_grant_validator()
+    else:
+        policy._require_original_spec_and_token()
+except PermissionDenied:
+    pass
+else:
+    raise SystemExit("explicit None __new__ hook was accepted")
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr or completed.stdout
 
 
 @pytest.mark.parametrize(("carrier_name", "hook", "sentinel_name"), (
