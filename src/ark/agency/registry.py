@@ -336,6 +336,10 @@ _REGISTRATION_TYPE = ToolRegistration
 _REGISTRATION_FIELDS = ("name", "capability", "effect", "backend_id", "backend")
 _REGISTRATION_METHODS = ("__init__", "__post_init__")
 _REGISTRATION_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+# A missing class hook is not equivalent to an explicit None (or another
+# non-callable value). Keep a unique sentinel so class namespace membership is
+# part of the exact lookup-policy epoch.
+_REGISTRATION_HOOK_ABSENT = object()
 _ORIGINAL_REGISTRATION_FIELDS = tuple(
     vars(_REGISTRATION_TYPE)[name] for name in _REGISTRATION_FIELDS
 )
@@ -343,7 +347,8 @@ _ORIGINAL_REGISTRATION_METHODS = tuple(
     vars(_REGISTRATION_TYPE)[name] for name in _REGISTRATION_METHODS
 )
 _ORIGINAL_REGISTRATION_HOOKS = tuple(
-    vars(_REGISTRATION_TYPE).get(name) for name in _REGISTRATION_HOOKS
+    vars(_REGISTRATION_TYPE).get(name, _REGISTRATION_HOOK_ABSENT)
+    for name in _REGISTRATION_HOOKS
 )
 # Pin the complete descriptor inventories, not only their zipped values.
 # Rebinding a name tuple to an empty or reordered vector cannot suppress a
@@ -353,26 +358,48 @@ _ORIGINAL_REGISTRATION_METHODS_VECTOR = _REGISTRATION_METHODS
 _ORIGINAL_REGISTRATION_HOOKS_VECTOR = _REGISTRATION_HOOKS
 
 
-def _require_original_registration_contract() -> None:
+def _require_original_registration_contract(
+    *,
+    _registration_type: type = _REGISTRATION_TYPE,
+    _registration_hook_names: tuple[str, ...] = _REGISTRATION_HOOKS,
+    _registration_hook_absent: object = _REGISTRATION_HOOK_ABSENT,
+    _original_registration_hooks: tuple[object, ...] = _ORIGINAL_REGISTRATION_HOOKS,
+) -> None:
     """Reject class-level substitution before reading registration fields.
 
     Frozen instance fields do not prevent replacing a class slot descriptor
     with a property that executes arbitrary code during registry inspection.
     This local identity check is not remote backend attestation.
     """
+    lookup_namespace = vars(_registration_type)
     if (
         _REGISTRATION_FIELDS is not _ORIGINAL_REGISTRATION_FIELDS_VECTOR
         or _REGISTRATION_METHODS is not _ORIGINAL_REGISTRATION_METHODS_VECTOR
-        or _REGISTRATION_HOOKS is not _ORIGINAL_REGISTRATION_HOOKS_VECTOR
-        or ToolRegistration is not _REGISTRATION_TYPE
+        or _REGISTRATION_HOOKS is not _registration_hook_names
+        or _ORIGINAL_REGISTRATION_HOOKS_VECTOR is not _registration_hook_names
+        or _REGISTRATION_HOOK_ABSENT is not _registration_hook_absent
+        or _ORIGINAL_REGISTRATION_HOOKS is not _original_registration_hooks
+        or ToolRegistration is not _registration_type
+        or _REGISTRATION_TYPE is not _registration_type
         or any(
-            vars(_REGISTRATION_TYPE).get(name) is not original
+            lookup_namespace.get(name) is not original
             for names, originals in (
                 (_REGISTRATION_FIELDS, _ORIGINAL_REGISTRATION_FIELDS),
                 (_REGISTRATION_METHODS, _ORIGINAL_REGISTRATION_METHODS),
-                (_REGISTRATION_HOOKS, _ORIGINAL_REGISTRATION_HOOKS),
             )
             for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            (name in lookup_namespace) != (original is not _registration_hook_absent)
+            or (
+                name in lookup_namespace
+                and lookup_namespace[name] is not original
+            )
+            for name, original in zip(
+                _registration_hook_names,
+                _original_registration_hooks,
+                strict=True,
+            )
         )
     ):
         raise ValueError("tool registration contract changed")
