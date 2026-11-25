@@ -60,7 +60,8 @@ _ORIGINAL_SCOPE_DUMPS = json.dumps
 
 def _require_original_scope_digest() -> None:
     if (
-        MemoryScope is not _ORIGINAL_SCOPE
+        _require_original_scope_digest is not _ORIGINAL_SCOPE_DIGEST_GUARD
+        or MemoryScope is not _ORIGINAL_SCOPE
         or vars(_ORIGINAL_SCOPE).get("__post_init__") is not _ORIGINAL_SCOPE_POST_INIT
         or any(
             vars(_ORIGINAL_SCOPE).get(name) is not original
@@ -78,14 +79,16 @@ def _require_original_scope_digest() -> None:
         or json is not _ORIGINAL_SCOPE_JSON
         or hashlib.sha256 is not _ORIGINAL_SCOPE_SHA256
         or json.dumps is not _ORIGINAL_SCOPE_DUMPS
+        or _scope_digest is not _ORIGINAL_SCOPE_DIGEST
+        or _validate is not _ORIGINAL_REVOCATION_VALIDATOR
     ):
         raise SyntheticContextRevocationRejected(
             "revocation scope digest implementation changed"
         )
-
+_ORIGINAL_SCOPE_DIGEST_GUARD = _require_original_scope_digest
 
 def _scope_digest(scope: MemoryScope) -> str:
-    _require_original_scope_digest()
+    _ORIGINAL_SCOPE_DIGEST_GUARD()
     if type(scope) is not MemoryScope:
         raise SyntheticContextRevocationRejected("exact MemoryScope required")
     # MemoryScope's frozen constructor intentionally remains unchanged. The
@@ -96,16 +99,16 @@ def _scope_digest(scope: MemoryScope) -> str:
     if type(owner_id) is not str or type(namespace) is not str:
         raise SyntheticContextRevocationRejected("exact scope text required")
     scope.__post_init__()
-    _require_original_scope_digest()
+    _ORIGINAL_SCOPE_DIGEST_GUARD()
     if scope.owner_id is not owner_id or scope.namespace is not namespace:
         raise SyntheticContextRevocationRejected("scope changed during digest validation")
     payload = json.dumps(
         (owner_id, namespace), ensure_ascii=True,
         separators=(",", ":"),
     ).encode("utf-8")
-    _require_original_scope_digest()
+    _ORIGINAL_SCOPE_DIGEST_GUARD()
     digest = hashlib.sha256(b"ARK-context-revocation-scope-v1\0" + payload).hexdigest()
-    _require_original_scope_digest()
+    _ORIGINAL_SCOPE_DIGEST_GUARD()
     return digest
 
 
@@ -177,6 +180,12 @@ def _validate(conn: sqlite3.Connection) -> None:
             or type(when) is not int or not 0 <= when <= _MAX
         ):
             raise SyntheticContextRevocationRejected("revocation row integrity failed")
+
+
+# The scope hash and SQLite schema validator are both executable privacy gates.
+# A no-op replacement could miss a persisted veto or accept a tampered ledger.
+_ORIGINAL_SCOPE_DIGEST = _scope_digest
+_ORIGINAL_REVOCATION_VALIDATOR = _validate
 
 
 def _check_local_revocation_path(path: Path) -> None:
@@ -281,6 +290,7 @@ class SyntheticContextRevocationLedger:
         fence; independent retained history is still required against a
         coordinated valid-file replacement or rollback.
         """
+        _ORIGINAL_SCOPE_DIGEST_GUARD()
         if type(path) is not type(Path(".")):
             raise TypeError("revocation path must be an exact local pathlib.Path")
         if type(require_existing) is not bool:
@@ -367,7 +377,7 @@ class SyntheticContextRevocationLedger:
         """Persist a veto marker; no implicit regrant or personal data deletion."""
         # Read no private scope descriptor until the frozen validator and
         # descriptors have been verified in their original identity.
-        _require_original_scope_digest()
+        _ORIGINAL_SCOPE_DIGEST_GUARD()
         source_path = self.path
         self._assert_source_path(source_path)
         # The initial digest computation is an overridable Python boundary.
@@ -378,7 +388,7 @@ class SyntheticContextRevocationLedger:
         scope_epoch = (scope.owner_id, scope.namespace)
 
         def assert_scope_epoch() -> None:
-            _require_original_scope_digest()
+            _ORIGINAL_SCOPE_DIGEST_GUARD()
             if (
                 type(scope) is not MemoryScope
                 or scope.owner_id is not scope_epoch[0]
@@ -449,7 +459,7 @@ class SyntheticContextRevocationLedger:
 
     def assert_not_revoked(self, scopes: tuple[MemoryScope, ...]) -> None:
         """Inspect one read-only snapshot; absence is not proof of consent."""
-        _require_original_scope_digest()
+        _ORIGINAL_SCOPE_DIGEST_GUARD()
         if type(scopes) is not tuple or not 1 <= len(scopes) <= 16:
             raise SyntheticContextRevocationRejected("exact bounded scopes required")
         # Reject foreign objects *before* inspecting owner_id/namespace.
@@ -467,7 +477,7 @@ class SyntheticContextRevocationLedger:
 
         def assert_epoch() -> None:
             self._assert_source_path(source_path)
-            _require_original_scope_digest()
+            _ORIGINAL_SCOPE_DIGEST_GUARD()
             if any(
                 type(scope) is not MemoryScope
                 or scope.owner_id is not owner
