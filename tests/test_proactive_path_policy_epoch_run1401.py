@@ -164,7 +164,7 @@ def test_reparse_point_parent_is_rejected_before_sqlite_access(
     monkeypatch.setattr(Path, "lstat", lstat)
     with pytest.raises(
         proactive.SyntheticTriggerRejected,
-        match="reparse-point or nondirectory parent",
+        match="unsafe proactive parent path",
     ):
         proactive._refuse_aliased_proactive_path(path)
 
