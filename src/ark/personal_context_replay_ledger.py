@@ -32,6 +32,84 @@ _MAX_DB_PATH_BYTES = 4096
 _ORIGINAL_MAX_DB_PATH_BYTES = _MAX_DB_PATH_BYTES
 _ORIGINAL_OS = os
 _ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+_ORIGINAL_STAT_IFMT = stat.S_IFMT
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
+
+
+def _is_reparse_point(info: object) -> bool:
+    """Recognize POSIX symlinks and Windows reparse-point metadata."""
+    _require_original_context_replay_path_policy()
+    attributes = getattr(info, "st_file_attributes", 0)
+    # Native/fault-injection metadata access can re-enter this module. Check
+    # the complete import-time policy again before using the returned value.
+    _require_original_context_replay_path_policy()
+    return type(attributes) is not int or bool(
+        attributes & _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+# The whole local path-admission vector is retained as one identity epoch.
+# A jointly replaced stat module, predicates, reparse mask/helper or epoch
+# must not make a hostile path classifier appear self-consistent.
+_ORIGINAL_CONTEXT_REPLAY_PATH_POLICY_EPOCH = (
+    _ORIGINAL_OS,
+    _ORIGINAL_FSENCODE,
+    _ORIGINAL_MAX_DB_PATH_BYTES,
+    _ORIGINAL_STAT,
+    _ORIGINAL_STAT_S_ISDIR,
+    _ORIGINAL_STAT_S_ISLNK,
+    _ORIGINAL_STAT_S_ISREG,
+    _ORIGINAL_STAT_IFMT,
+    _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT,
+    _ORIGINAL_REPARSE_POINT_CHECK,
+)
+
+
+def _require_original_context_replay_path_policy(
+    *,
+    _original_context_replay_path_policy_epoch: tuple[object, ...] = (
+        _ORIGINAL_CONTEXT_REPLAY_PATH_POLICY_EPOCH
+    ),
+) -> None:
+    """Reject changed filesystem classifiers before or across path callbacks."""
+    epoch = _original_context_replay_path_policy_epoch
+    if (
+        _ORIGINAL_CONTEXT_REPLAY_PATH_POLICY_EPOCH is not epoch
+        or os is not epoch[0]
+        or os.fsencode is not epoch[1]
+        or _ORIGINAL_OS is not epoch[0]
+        or _ORIGINAL_FSENCODE is not epoch[1]
+        or type(_MAX_DB_PATH_BYTES) is not int
+        or _MAX_DB_PATH_BYTES != epoch[2]
+        or _ORIGINAL_MAX_DB_PATH_BYTES is not epoch[2]
+        or stat is not epoch[3]
+        or _ORIGINAL_STAT is not epoch[3]
+        or _ORIGINAL_STAT_S_ISDIR is not epoch[4]
+        or _ORIGINAL_STAT_S_ISLNK is not epoch[5]
+        or _ORIGINAL_STAT_S_ISREG is not epoch[6]
+        or _ORIGINAL_STAT_IFMT is not epoch[7]
+        or stat.S_ISDIR is not epoch[4]
+        or stat.S_ISLNK is not epoch[5]
+        or stat.S_ISREG is not epoch[6]
+        or stat.S_IFMT is not epoch[7]
+        or getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400) != epoch[8]
+        or type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != epoch[8]
+        or _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT is not epoch[8]
+        or _is_reparse_point is not epoch[9]
+        or _ORIGINAL_REPARSE_POINT_CHECK is not epoch[9]
+    ):
+        raise OfflineContextReplayRejected(
+            "context replay path admission changed (policy epoch)"
+        )
+
+
 _ORIGINAL_SQLITE3 = sqlite3
 _ORIGINAL_SQLITE_CONNECT = sqlite3.connect
 _ORIGINAL_SQLITE_CONNECTION = sqlite3.Connection
@@ -401,15 +479,13 @@ def _check_binding(binding: object) -> tuple[str, str, str, str]:
 
 def _check_path(path: object, *, create: bool) -> Path:
     _require_original_replay_protocol()
-    # Reject unsafe native pathname/longest SQLite journal sibling before
-    # lstat, a caller callback, or any private context ledger connection.
-    if (
-        os is not _ORIGINAL_OS
-        or os.fsencode is not _ORIGINAL_FSENCODE
-        or type(_MAX_DB_PATH_BYTES) is not int
-        or _MAX_DB_PATH_BYTES != _ORIGINAL_MAX_DB_PATH_BYTES
-    ):
-        raise OfflineContextReplayRejected("context ledger path admission changed")
+    _require_original_context_replay_path_policy()
+    # Retain import-original classifiers locally. The module/epoch guard is
+    # rechecked after every lstat, metadata accessor and path callback.
+    is_directory = _ORIGINAL_STAT_S_ISDIR
+    is_symlink = _ORIGINAL_STAT_S_ISLNK
+    is_regular = _ORIGINAL_STAT_S_ISREG
+    is_reparse_point = _ORIGINAL_REPARSE_POINT_CHECK
     if (
         type(path) is not type(Path("."))
         or not path.is_absolute()
@@ -419,48 +495,92 @@ def _check_path(path: object, *, create: bool) -> Path:
     ):
         raise OfflineContextReplayRejected("exact absolute local context ledger path required")
     try:
-        encoded_length = len(os.fsencode(path))
+        encoded_length = len(_ORIGINAL_FSENCODE(path))
     except (UnicodeError, ValueError, OSError) as exc:
         raise OfflineContextReplayRejected("context ledger path encoding unavailable") from exc
+    _require_original_context_replay_path_policy()
     if encoded_length + len(b"-journal") > _MAX_DB_PATH_BYTES:
         raise OfflineContextReplayRejected("context ledger path byte budget exceeded")
     try:
         for ancestor in path.parents:
-            info = ancestor.lstat()
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
-                raise OfflineContextReplayRejected("context ledger ancestor is unsafe")
+            _require_original_context_replay_path_policy()
+            try:
+                info = ancestor.lstat()
+            except FileNotFoundError:
+                _require_original_context_replay_path_policy()
+                raise
+            _require_original_context_replay_path_policy()
+            mode = info.st_mode
+            _require_original_context_replay_path_policy()
+            directory = is_directory(mode)
+            _require_original_context_replay_path_policy()
+            symlink = is_symlink(mode)
+            _require_original_context_replay_path_policy()
+            reparse = is_reparse_point(info)
+            _require_original_context_replay_path_policy()
+            if not directory or symlink or reparse:
+                raise OfflineContextReplayRejected(
+                    "context ledger symbolic, reparse-point or nondirectory ancestor"
+                )
+
         main_absent = False
+        _require_original_context_replay_path_policy()
         try:
             info = path.lstat()
         except FileNotFoundError:
+            _require_original_context_replay_path_policy()
             main_absent = True
             if not create:
                 raise OfflineContextReplayRejected("context ledger is missing") from None
         else:
-            if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-                raise OfflineContextReplayRejected("existing or aliased context ledger path")
+            _require_original_context_replay_path_policy()
+            mode = info.st_mode
+            _require_original_context_replay_path_policy()
+            regular = is_regular(mode)
+            _require_original_context_replay_path_policy()
+            link_count = info.st_nlink
+            _require_original_context_replay_path_policy()
+            reparse = is_reparse_point(info)
+            _require_original_context_replay_path_policy()
+            if create or not regular or link_count != 1 or reparse:
+                raise OfflineContextReplayRejected(
+                    "existing, aliased or reparse-point context ledger path"
+                )
+
         # SQLite can also open companion journal/WAL/shared-memory files.
-        # An otherwise safe main path is not safe when one of those aliases
-        # a foreign private file. For a new ledger, refuse orphan sidecars.
-        # These are lstat preflights, NOT atomic directory-handle custody.
+        # A safe main path is not enough when a sidecar aliases another file
+        # or is a Windows reparse point. These lstat checks are not atomic
+        # directory-handle custody or protection from concurrent renames.
         for suffix in ("-wal", "-shm", "-journal"):
+            _require_original_context_replay_path_policy()
             companion = path.with_name(path.name + suffix)
+            _require_original_context_replay_path_policy()
             try:
                 sidecar = companion.lstat()
             except FileNotFoundError:
+                _require_original_context_replay_path_policy()
                 continue
-            if (
-                main_absent
-                or not stat.S_ISREG(sidecar.st_mode)
-                or sidecar.st_nlink != 1
-            ):
+            _require_original_context_replay_path_policy()
+            if main_absent:
                 raise OfflineContextReplayRejected(
                     "context ledger SQLite sidecar is missing its main file or unsafe"
                 )
+            sidecar_mode = sidecar.st_mode
+            _require_original_context_replay_path_policy()
+            sidecar_regular = is_regular(sidecar_mode)
+            _require_original_context_replay_path_policy()
+            sidecar_links = sidecar.st_nlink
+            _require_original_context_replay_path_policy()
+            sidecar_reparse = is_reparse_point(sidecar)
+            _require_original_context_replay_path_policy()
+            if not sidecar_regular or sidecar_links != 1 or sidecar_reparse:
+                raise OfflineContextReplayRejected(
+                    "context ledger SQLite sidecar is not a single regular non-reparse file"
+                )
     except OSError as exc:
         raise OfflineContextReplayRejected("context ledger path unavailable") from exc
+    _require_original_context_replay_path_policy()
     return path
-
 
 def _schema(conn: sqlite3.Connection) -> None:
     _require_original_replay_protocol()
