@@ -56,6 +56,12 @@ _ORIGINAL_MAX_FIXTURE_BYTES = _MAX_FIXTURE_BYTES
 
 def _require_original_fixture_budget() -> None:
     if (
+        _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR is not _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR_EPOCH
+        or _ORIGINAL_BOUNDED_TEXT_ENCODER is not _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR[0]
+        or _encode_fixture_text_bounded is not _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR[0]
+    ):
+        raise ValueError("fixture text encoder identity changed")
+    if (
         type(_MAX_FIXTURE_BYTES) is not int
         or _MAX_FIXTURE_BYTES is not _ORIGINAL_MAX_FIXTURE_BYTES
     ):
@@ -195,6 +201,9 @@ def _hash_private_fixture(payload: bytes) -> str:
 # receive raw caller-private text or image bytes even when hashlib itself is
 # untouched. Refuse that replacement before either fixture hands over data.
 _ORIGINAL_PRIVATE_HASH_HELPER = _hash_private_fixture
+_ORIGINAL_BOUNDED_TEXT_ENCODER = _encode_fixture_text_bounded
+_ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR = (_ORIGINAL_BOUNDED_TEXT_ENCODER,)
+_ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR_EPOCH = _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR
 
 
 def _require_original_envelope() -> None:
@@ -323,8 +332,12 @@ def fixture_text_observation(
     _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
     if len(content) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
+    if _encode_fixture_text_bounded is not _ORIGINAL_BOUNDED_TEXT_ENCODER:
+        raise ValueError("fixture text encoder changed before private content encoding")
     try:
-        data = _encode_fixture_text_bounded(
+        # Invoke the import-time callable after the module binding check so a
+        # concurrent replacement cannot receive caller-private text.
+        data = _ORIGINAL_BOUNDED_TEXT_ENCODER(
             content, _ORIGINAL_MAX_FIXTURE_BYTES,
         )
     except UnicodeError as exc:
