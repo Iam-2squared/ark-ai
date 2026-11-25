@@ -29,30 +29,26 @@ def test_stable_absence_is_not_a_consent_grant(tmp_path):
         ledger.assert_not_revoked(scopes)
 
 
-def test_scope_drift_between_digest_callbacks_cannot_be_restored_later(
+def test_scope_digest_replacement_is_denied_before_lookup(
     tmp_path, monkeypatch,
 ):
     ledger, scopes = _setup(tmp_path)
     original = review._scope_digest
     calls = 0
 
-    def change_during_second_digest(scope):
+    def forbidden_replacement(scope):
         nonlocal calls
         calls += 1
-        if calls == 3:
-            object.__setattr__(scopes[0], "namespace", "private-a")
-        value = original(scope)
-        if calls == 2:
-            object.__setattr__(scopes[0], "namespace", "temporary-namespace")
-        return value
+        return original(scope)
 
-    monkeypatch.setattr(review, "_scope_digest", change_during_second_digest)
+    monkeypatch.setattr(review, "_scope_digest", forbidden_replacement)
     with pytest.raises(
         review.SyntheticContextRevocationRejected,
-        match="scope changed during revocation check",
+        match="revocation scope digest implementation changed",
     ):
         ledger.assert_not_revoked(scopes)
-    assert calls == 2
+    assert calls == 0
+    assert scopes[0].namespace == "private-a"
 
 
 @pytest.mark.parametrize("change", ("scope", "path"))
