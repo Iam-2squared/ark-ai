@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 from ark.agency import disconnected_atomic_preaction_ledger as atomic
+import pytest
 
 
 _CARRIERS = (
