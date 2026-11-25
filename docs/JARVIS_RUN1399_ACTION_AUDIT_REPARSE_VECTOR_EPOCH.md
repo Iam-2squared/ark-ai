@@ -3,7 +3,7 @@
 ## Exact basis
 
 - Parent: Draft PR #8, branch `research/jarvis-foundations`.
-- Exact parent work-basis HEAD: `a1bff14b0ca731ee1d094d6611caf76c08640398`; parent exact-head CI run `45590765382` was GREEN (6/6) before this child was created.
+- Exact parent work-basis HEAD: `a1bff14b0ca731ee1d094d6611caf76c08640398`; parent exact-head CI run `45681609910` was GREEN (6/6) before this child was created.
 - Child branch: `research/run1425-action-audit-reparse-epoch-20261126`.
 - Existing single-alias regressions in `tests/test_action_audit_stat_predicate_custody_run1072.py` remain unchanged.
 
