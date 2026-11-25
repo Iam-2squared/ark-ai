@@ -98,6 +98,10 @@ def _require_original_token_contract() -> None:
         raise SyntheticReplayRejected("synthetic one-shot token contract changed")
 
 
+_ORIGINAL_TOKEN_VECTOR_EPOCH = _TOKEN_VECTOR_EPOCH
+_ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT = _require_original_token_contract
+
+
 def _require_original_digest() -> None:
     if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
         raise SyntheticReplayRejected(
@@ -112,7 +116,12 @@ def _require_original_protocol() -> None:
     ownership, or any external action.
     """
     _require_original_digest()
-    _require_original_token_contract()
+    if (
+        _TOKEN_VECTOR_EPOCH is not _ORIGINAL_TOKEN_VECTOR_EPOCH
+        or _require_original_token_contract is not _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT
+    ):
+        raise SyntheticReplayRejected("synthetic one-shot token contract guard changed")
+    _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT()
     if (
         _TABLE is not _ORIGINAL_TABLE
         or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
@@ -131,7 +140,9 @@ def _admit_exact_token_fields(
     token: OneShotAuthorization,
 ) -> tuple[str, str, int]:
     """Read only exact primitive token fields before registry/SQLite callbacks."""
-    _require_original_token_contract()
+    if _require_original_token_contract is not _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT:
+        raise SyntheticReplayRejected("synthetic one-shot token contract guard changed")
+    _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT()
     if type(token) is not _TOKEN_TYPE:
         raise SyntheticReplayRejected("synthetic reservation requires an exact token")
     try:
