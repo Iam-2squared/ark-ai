@@ -45,21 +45,37 @@ _ORIGINAL_STAT = stat
 _ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
 _ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+# Retain the complete stat-policy inventory independently of its mutable
+# module aliases. The verifier captures this tuple in its default argument.
+_ORIGINAL_STAT_POLICY_EPOCH = (
+    _ORIGINAL_STAT,
+    _ORIGINAL_STAT_S_ISDIR,
+    _ORIGINAL_STAT_S_ISLNK,
+    _ORIGINAL_STAT_S_ISREG,
+)
 _SOURCE_TREE_ROOT = Path(__file__).resolve().parents[3]
 _ORIGINAL_SOURCE_TREE_ROOT = _SOURCE_TREE_ROOT
 
 
-def _require_export_path_constants() -> None:
+def _require_export_path_constants(
+    *,
+    _original_stat_policy_epoch: tuple[object, ...] = _ORIGINAL_STAT_POLICY_EPOCH,
+) -> None:
     if (
         type(_MAX_EXPORT_PATH_BYTES) is not int
         or _MAX_EXPORT_PATH_BYTES is not _ORIGINAL_MAX_EXPORT_PATH_BYTES
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE is not _ORIGINAL_REPARSE_POINT_ATTRIBUTE
         or _SOURCE_TREE_ROOT is not _ORIGINAL_SOURCE_TREE_ROOT
-        or stat is not _ORIGINAL_STAT
-        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
-        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
-        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
+        or _ORIGINAL_STAT_POLICY_EPOCH is not _original_stat_policy_epoch
+        or stat is not _original_stat_policy_epoch[0]
+        or _ORIGINAL_STAT is not _original_stat_policy_epoch[0]
+        or _ORIGINAL_STAT_S_ISDIR is not _original_stat_policy_epoch[1]
+        or _ORIGINAL_STAT_S_ISLNK is not _original_stat_policy_epoch[2]
+        or _ORIGINAL_STAT_S_ISREG is not _original_stat_policy_epoch[3]
+        or stat.S_ISDIR is not _original_stat_policy_epoch[1]
+        or stat.S_ISLNK is not _original_stat_policy_epoch[2]
+        or stat.S_ISREG is not _original_stat_policy_epoch[3]
     ):
         raise ValueError("export path policy constants or stat predicates changed")
 
