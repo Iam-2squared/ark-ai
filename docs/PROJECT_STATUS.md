@@ -1,5 +1,75 @@
 ## LATEST
 
+- **Saved at:** 2026-11-26 08:52:39 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `9af4fc3d7911cafb9a6d8ed542e7449eb19f57dc` (PR #8 head re-read immediately before this checkpoint; includes the Run1443 V3 gate-reconciliation note in `docs/JARVIS_FOUNDATION_GAP_MATRIX.md`).
+- **Checkpoint-result HEAD:** the GitHub commit created by this `docs/PROJECT_STATUS.md` update; its exact returned SHA is confirmed after the write and reported in the invocation summary. This file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner retain frozen evidence. Memory, Planner, ToolRegistry, PermissionGate, ActionAudit, Personal Context, proactive state, Observation, disconnected/mock execution, and free-only V3 guard work remain isolated local-first foundations. **ARK/JARVIS overall remains NOT_PASSED.**
+- **PR #8 source-basis CI:** run [45717115355](https://github.com/Iam-2squared/ark-ai/actions/runs/45717115355) on prior source HEAD `963e8e67c63b36a376208d29efe06e23cb87be7b`, **GREEN 6/6**. The current PR #8 head `9af4fc3d7911cafb9a6d8ed542e7449eb19f57dc` contains documentation-only gap-matrix reconciliation; no workflow run was returned for this exact docs head at the checkpoint lookup.
+- **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #8 remains Draft/unmerged. PR #9 remains untouched and Draft/unmerged. All new UI/frontend development remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **Proactive state process-level first-open and CAS races — Draft PR #629.**
+   - Branch `research/run1441-proactive-state-two-handle-cas-20261126`; exact child HEAD `6ce42bc7e26ffe1a2dfa9696cac4df488d5b4b83`; targets only PR #8.
+   - Adds spawned-process tests for concurrent first-open schema convergence, genesis `expected_revision=0` contention, and same-revision update contention. The intended invariant is one durable winner and one domain-level CAS conflict; no production source, schema, or policy vocabulary changed.
+   - Exact-head run [45723833690](https://github.com/Iam-2squared/ark-ai/actions/runs/45723833690) (run 7797) is **IN PROGRESS**. No local pytest/Ruff run is claimed.
+
+2. **Personal Context replay process-level CAS — Draft PR #630.**
+   - Branch `research/run1442-context-replay-two-process-cas-20261126`; current exact child HEAD `d81efcd86a78ba138b73c5401c0ccc1e5abce6ef`; targets only PR #8.
+   - Adds two-process races for identical request identity and disjoint requests sharing a retained genesis witness. The losing disjoint request must cold-read the new prefix before a separate reservation; receipts remain denial-only and fixture plaintext is not stored.
+   - Initial exact-head run [45724103264](https://github.com/Iam-2squared/ark-ai/actions/runs/45724103264) (run 7798) failed Ruff I001 because a blank line separated `pytest` from the repository's third-party `ark` import group. The smallest import-group correction is at `d81efcd86a78ba138b73c5401c0ccc1e5abce6ef`; fresh exact-head run [45724637568](https://github.com/Iam-2squared/ark-ai/actions/runs/45724637568) (run 7802) is **QUEUED**.
+
+3. **Action Audit process-level first-open and append sequencing — Draft PR #631.**
+   - Branch `research/run1443-action-audit-process-first-open-20261126`; exact child HEAD `ad6328cc121b558cf960e65e5805d73c57a2527c`; targets only PR #8.
+   - Adds a spawned-process concurrent WAL/bootstrap regression followed by one synthetic append per process. A cold reader checks schema version 1, SQLite quick_check, dense event IDs 1–2, and absence of raw private marker values. No production source, schema, or executor integration changed.
+   - Exact-head run [45724216924](https://github.com/Iam-2squared/ark-ai/actions/runs/45724216924) (run 7799) is **IN PROGRESS**.
+
+4. **V3 gap-matrix live reconciliation — parent PR #8 documentation commit `9af4fc3d7911cafb9a6d8ed542e7449eb19f57dc`.**
+   - Records PR #5 exact source HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28` and its exact-head run [45668716864](https://github.com/Iam-2squared/ark-ai/actions/runs/45668716864) (run 7744), which fails all six matrix jobs at Ruff I001 in three test paths absent from the PR #5 head branch and present through the base merge ref. No `main` change, test deletion, JARVIS module copy, or gate bypass was attempted.
+   - Marks Run1346's strict duplicate/non-finite parser and nested symlink-grandparent gaps as superseded by the exact PR #5 source and PR #624 reconciliation (run 45708528169 GREEN 6/6). PR #623, #625, and #626 retain their previously recorded exact-head GREEN evidence.
+
+## Tests, CI and evidence
+
+- PR #8 prior source HEAD `963e8e67c63b36a376208d29efe06e23cb87be7b`: run 45717115355, **GREEN 6/6**. Current docs-only checkpoint/matrix head `9af4fc3d7911cafb9a6d8ed542e7449eb19f57dc`: no exact-head workflow run returned at lookup.
+- PR #627 disconnected mock executor two-handle WRITE race: run 45716635322, **GREEN 6/6**.
+- PR #628 PlannerJournal diamond RUNNING-barrier recovery: run 45716909855, **GREEN 6/6**.
+- PR #629 proactive state process-level first-open/CAS: run 45723833690, **IN PROGRESS**.
+- PR #630 Personal Context replay process-level CAS: run 45724103264 **FAIL** at Ruff I001; corrected exact child HEAD `d81efcd86a78ba138b73c5401c0ccc1e5abce6ef`, run 45724637568 **QUEUED**.
+- PR #631 Action Audit process-level first-open/append: run 45724216924, **IN PROGRESS**.
+- PR #5 exact source HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`: run 45668716864 **FAIL** at Ruff I001 in the three merge-ref test paths recorded above. This is not a green V3 gate.
+- PR #623: run 45708896479 **GREEN 6/6**; PR #624: run 45708528169 **GREEN 6/6**; PR #625: run 45716697765 **GREEN 6/6**; PR #626: run 45716706277 **GREEN 6/6**.
+- No local pytest/Ruff execution, physical-PC verification, live personal-data access, real-model runtime, GPU query, V3 preflight/training, protected evaluation, live observation capture, or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries, and V3 Contract 1 remain unchanged.
+- PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains untouched. PRs #627–#631 remain isolated Draft children; none has been integrated. No main write or merge occurred.
+- No UI/frontend feature, polish, test, or integration work occurred.
+
+## Blockers and authorization boundaries
+
+- **PR #5 merge-ref ownership/lint blocker:** exact-head run 45668716864 fails Ruff I001 in three test paths that are not present at PR #5's own head. Preserve this as a repository/base-branch issue for normal reconciliation. Do not alter `main`, disable Ruff/tests, copy foundation modules into V3, or open the protected gate.
+- **Draft integration gate:** PRs #627–#631 remain Draft and target only PR #8. No ready-for-review transition or merge bypass is attempted. PR #8 remains Draft/unmerged.
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
+- No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening, Candidate promotion, new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, or irreversible data change occurred.
+- Synthetic process/SQLite tests do not prove fsync/power-loss durability, trusted time, authenticated consent, independent custody, cross-store atomicity, or exactly-once external effects. Personal Context receipts remain denial-only; proactive state remains synthetic and non-notifying; ActionAudit evidence is local only.
+- No frozen-contract change or human-review decision is inferred from CI.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PRs #629–#631 once useful results are available. Fix only concrete semantics-preserving failures, then switch immediately to an independent non-conflicting lane while corrected CI runs.
+2. Keep PRs #627–#631 Draft and isolated until the normal review/readiness gate permits integration. Do not promote them or merge to `main`.
+3. Continue Memory row/event integrity, WAL/ABA, expiry/CAS, coherent snapshots, and manual-only COMMIT-UNKNOWN recovery without changing schema v1.
+4. Continue Planner terminal/COMMIT-UNKNOWN recovery, durable one-shot authorization, occurrence/replay protection, and audit-before-action over disconnected mocks; do not claim a trusted clock without a trusted source.
+5. Continue privacy-safe Personal Context, proactive restart/occurrence state, Observation fixture lifecycle, ToolRegistry/PermissionGate identity, and startup readiness.
+6. Continue free-only V3 approval/path/identity/reproducibility guards. Preserve PR #5's merge-ref lint blocker; do not open protected evaluation, train, or promote a Candidate.
+7. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+## Historical checkpoint — saved at 2026-11-26 07:52:59 JST (superseded)
+
 - **Saved at:** 2026-11-26 07:52:59 JST (Asia/Tokyo).
 - **Branch / PR:** \`research/jarvis-foundations\` / Draft PR #8; isolated research branch, not \`main\`.
 - **Exact work-basis HEAD:** \`5a344d250dd0ef2a208ccd09f5d791b10c548bbe\` (PR #8 head and branch ref re-read immediately before this checkpoint update).
