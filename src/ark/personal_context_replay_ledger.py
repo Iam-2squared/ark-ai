@@ -56,6 +56,12 @@ class OfflineContextReplayRejected(ValueError):
 # identity, clock trust or independent storage custody.
 _ORIGINAL_HASHLIB = hashlib
 _ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_S_ISREG = stat.S_ISREG
+_REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
 _ORIGINAL_JSON = json
 _ORIGINAL_DUMPS = json.dumps
 _ORIGINAL_RE = re
@@ -77,6 +83,15 @@ def _require_original_replay_protocol() -> None:
         or _connect_original is not _ORIGINAL_CONNECT_HELPER
         or json is not _ORIGINAL_JSON
         or json.dumps is not _ORIGINAL_DUMPS
+        or stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+        or getattr(
+            _ORIGINAL_STAT, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400,
+        ) != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
         or re is not _ORIGINAL_RE
         or _SHA is not _ORIGINAL_SHA
         or _REQUEST is not _ORIGINAL_REQUEST
@@ -88,6 +103,20 @@ def _require_original_replay_protocol() -> None:
         raise OfflineContextReplayRejected(
             "context replay protocol authority changed"
         )
+
+
+def _is_reparse_point(info: object) -> bool:
+    """Reject POSIX symlinks and Windows reparse-point metadata."""
+    _require_original_replay_protocol()
+    mode = info.st_mode
+    _require_original_replay_protocol()
+    attributes = getattr(info, "st_file_attributes", 0)
+    _require_original_replay_protocol()
+    if type(attributes) is not int:
+        raise OfflineContextReplayRejected("context ledger reparse metadata is malformed")
+    is_symlink = _ORIGINAL_S_ISLNK(mode)
+    _require_original_replay_protocol()
+    return is_symlink or bool(attributes & _ORIGINAL_REPARSE_POINT_ATTRIBUTE)
 
 
 def _connect_original(*args, **kwargs) -> sqlite3.Connection:
@@ -347,18 +376,37 @@ def _check_path(path: object, *, create: bool) -> Path:
         raise OfflineContextReplayRejected("context ledger path byte budget exceeded")
     try:
         for ancestor in path.parents:
-            info = ancestor.lstat()
-            if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode):
+            try:
+                info = ancestor.lstat()
+            except OSError:
+                _require_original_replay_protocol()
+                raise
+            _require_original_replay_protocol()
+            mode = info.st_mode
+            _require_original_replay_protocol()
+            is_directory = _ORIGINAL_S_ISDIR(mode)
+            _require_original_replay_protocol()
+            is_reparse = _is_reparse_point(info)
+            if not is_directory or is_reparse:
                 raise OfflineContextReplayRejected("context ledger ancestor is unsafe")
         main_absent = False
         try:
             info = path.lstat()
         except FileNotFoundError:
+            _require_original_replay_protocol()
             main_absent = True
             if not create:
                 raise OfflineContextReplayRejected("context ledger is missing") from None
         else:
-            if create or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            _require_original_replay_protocol()
+            mode = info.st_mode
+            _require_original_replay_protocol()
+            is_regular = _ORIGINAL_S_ISREG(mode)
+            _require_original_replay_protocol()
+            is_reparse = _is_reparse_point(info)
+            link_count = info.st_nlink
+            _require_original_replay_protocol()
+            if create or not is_regular or is_reparse or link_count != 1:
                 raise OfflineContextReplayRejected("existing or aliased context ledger path")
         # SQLite can also open companion journal/WAL/shared-memory files.
         # An otherwise safe main path is not safe when one of those aliases
@@ -369,19 +417,32 @@ def _check_path(path: object, *, create: bool) -> Path:
             try:
                 sidecar = companion.lstat()
             except FileNotFoundError:
+                _require_original_replay_protocol()
                 continue
-            if (
-                main_absent
-                or not stat.S_ISREG(sidecar.st_mode)
-                or sidecar.st_nlink != 1
-            ):
+            except OSError:
+                _require_original_replay_protocol()
+                raise
+            _require_original_replay_protocol()
+            if main_absent:
                 raise OfflineContextReplayRejected(
                     "context ledger SQLite sidecar is missing its main file or unsafe"
                 )
+            mode = sidecar.st_mode
+            _require_original_replay_protocol()
+            is_regular = _ORIGINAL_S_ISREG(mode)
+            _require_original_replay_protocol()
+            is_reparse = _is_reparse_point(sidecar)
+            link_count = sidecar.st_nlink
+            _require_original_replay_protocol()
+            if not is_regular or is_reparse or link_count != 1:
+                raise OfflineContextReplayRejected(
+                    "context ledger SQLite sidecar is missing its main file or unsafe"
+                )
+        _require_original_replay_protocol()
     except OSError as exc:
+        _require_original_replay_protocol()
         raise OfflineContextReplayRejected("context ledger path unavailable") from exc
     return path
-
 
 def _schema(conn: sqlite3.Connection) -> None:
     _require_original_replay_protocol()
