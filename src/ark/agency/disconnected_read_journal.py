@@ -144,6 +144,7 @@ class ReadJournalSnapshot:
         return False
 
 
+_ABSENT_CLASS_HOOK = object()
 _SNAPSHOT_TYPE = ReadJournalSnapshot
 _SNAPSHOT_DENIALS = (
     "dispatch_authorized", "effect_proven",
@@ -169,26 +170,12 @@ _ORIGINAL_SNAPSHOT_FIELDS = tuple(
     vars(_SNAPSHOT_TYPE)[name] for name in _SNAPSHOT_FIELDS
 )
 _ORIGINAL_SNAPSHOT_HOOKS = tuple(
-    vars(_SNAPSHOT_TYPE).get(name) for name in _SNAPSHOT_HOOKS
+    vars(_SNAPSHOT_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _SNAPSHOT_HOOKS
 )
 
 
 def _require_original_snapshot_class() -> None:
-    if (
-        ReadJournalSnapshot is not _SNAPSHOT_TYPE
-        or any(
-            vars(_SNAPSHOT_TYPE).get(name) is not original
-            for names, originals in (
-                (_SNAPSHOT_FIELDS, _ORIGINAL_SNAPSHOT_FIELDS),
-                (_SNAPSHOT_HOOKS, _ORIGINAL_SNAPSHOT_HOOKS),
-                (_SNAPSHOT_DENIALS, _ORIGINAL_SNAPSHOT_DENIALS),
-            )
-            for name, original in zip(names, originals, strict=True)
-        )
-    ):
-        raise ReadJournalRejected(
-            "READ recovery result changed: snapshot constructor changed"
-        )
+    _require_original_read_carriers()
 
 
 
@@ -207,31 +194,128 @@ _ORIGINAL_WITNESS_FIELDS = tuple(
     vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
 )
 _ORIGINAL_RECEIPT_HOOKS = tuple(
-    vars(_RECEIPT_TYPE).get(name) for name in _CARRIER_HOOKS
+    vars(_RECEIPT_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _CARRIER_HOOKS
 )
 _ORIGINAL_WITNESS_HOOKS = tuple(
-    vars(_WITNESS_TYPE).get(name) for name in _CARRIER_HOOKS
+    vars(_WITNESS_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _CARRIER_HOOKS
 )
 
 
-def _require_original_read_carriers() -> None:
-    if ReadReceipt is not _RECEIPT_TYPE or ReadJournalWitness is not _WITNESS_TYPE:
-        raise ReadJournalRejected("synthetic READ carrier class changed")
-    for cls, names, originals in (
-        (_RECEIPT_TYPE, _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS),
-        (_WITNESS_TYPE, _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS),
-        (_RECEIPT_TYPE, _CARRIER_HOOKS, _ORIGINAL_RECEIPT_HOOKS),
-        (_WITNESS_TYPE, _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS),
-        (_WITNESS_TYPE, _WITNESS_DENIALS, _ORIGINAL_WITNESS_DENIALS),
-    ):
-        if any(
-            vars(cls).get(name) is not original
-            for name, original in zip(names, originals, strict=True)
-        ):
-            raise ReadJournalRejected(
-                "invalid retained witness"
-                if cls is _WITNESS_TYPE else "synthetic READ carrier descriptor changed"
+_ORIGINAL_READ_CARRIER_EPOCH = (
+    _ABSENT_CLASS_HOOK,
+    ReadReceipt,
+    _RECEIPT_TYPE,
+    ReadJournalWitness,
+    _WITNESS_TYPE,
+    ReadJournalSnapshot,
+    _SNAPSHOT_TYPE,
+    _RECEIPT_FIELDS,
+    _WITNESS_FIELDS,
+    _SNAPSHOT_FIELDS,
+    _ORIGINAL_RECEIPT_FIELDS,
+    _ORIGINAL_WITNESS_FIELDS,
+    _ORIGINAL_SNAPSHOT_FIELDS,
+    _CARRIER_HOOKS,
+    _SNAPSHOT_HOOKS,
+    _ORIGINAL_RECEIPT_HOOKS,
+    _ORIGINAL_WITNESS_HOOKS,
+    _ORIGINAL_SNAPSHOT_HOOKS,
+    _WITNESS_DENIALS,
+    _SNAPSHOT_DENIALS,
+    _ORIGINAL_WITNESS_DENIALS,
+    _ORIGINAL_SNAPSHOT_DENIALS,
+)
+
+
+def _require_original_read_carriers(
+    _original_read_carrier_epoch: tuple[object, ...] = (
+        _ORIGINAL_READ_CARRIER_EPOCH
+    ),
+) -> None:
+    current_epoch = (
+        _ABSENT_CLASS_HOOK,
+        ReadReceipt,
+        _RECEIPT_TYPE,
+        ReadJournalWitness,
+        _WITNESS_TYPE,
+        ReadJournalSnapshot,
+        _SNAPSHOT_TYPE,
+        _RECEIPT_FIELDS,
+        _WITNESS_FIELDS,
+        _SNAPSHOT_FIELDS,
+        _ORIGINAL_RECEIPT_FIELDS,
+        _ORIGINAL_WITNESS_FIELDS,
+        _ORIGINAL_SNAPSHOT_FIELDS,
+        _CARRIER_HOOKS,
+        _SNAPSHOT_HOOKS,
+        _ORIGINAL_RECEIPT_HOOKS,
+        _ORIGINAL_WITNESS_HOOKS,
+        _ORIGINAL_SNAPSHOT_HOOKS,
+        _WITNESS_DENIALS,
+        _SNAPSHOT_DENIALS,
+        _ORIGINAL_WITNESS_DENIALS,
+        _ORIGINAL_SNAPSHOT_DENIALS,
+    )
+    if (
+        _ORIGINAL_READ_CARRIER_EPOCH is not _original_read_carrier_epoch
+        or any(
+            current is not original
+            for current, original in zip(
+                current_epoch, _original_read_carrier_epoch, strict=True,
             )
+        )
+    ):
+        raise ReadJournalRejected("synthetic READ carrier class changed")
+    absent_class_hook = _original_read_carrier_epoch[0]
+
+    def members_match(
+        cls: type,
+        names: tuple[str, ...],
+        originals: tuple[object, ...],
+    ) -> bool:
+        namespace = vars(cls)
+        return all(
+            (name not in namespace)
+            if original is absent_class_hook
+            else namespace.get(name, absent_class_hook) is original
+            for name, original in zip(names, originals, strict=True)
+        )
+
+    if (
+        not members_match(
+            _SNAPSHOT_TYPE, _SNAPSHOT_FIELDS, _ORIGINAL_SNAPSHOT_FIELDS,
+        )
+        or not members_match(
+            _SNAPSHOT_TYPE, _SNAPSHOT_HOOKS, _ORIGINAL_SNAPSHOT_HOOKS,
+        )
+        or not members_match(
+            _SNAPSHOT_TYPE, _SNAPSHOT_DENIALS, _ORIGINAL_SNAPSHOT_DENIALS,
+        )
+    ):
+        raise ReadJournalRejected(
+            "READ recovery result changed: snapshot constructor changed"
+        )
+    if (
+        not members_match(
+            _RECEIPT_TYPE, _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS,
+        )
+        or not members_match(
+            _RECEIPT_TYPE, _CARRIER_HOOKS, _ORIGINAL_RECEIPT_HOOKS,
+        )
+    ):
+        raise ReadJournalRejected("synthetic READ carrier descriptor changed")
+    if (
+        not members_match(
+            _WITNESS_TYPE, _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS,
+        )
+        or not members_match(
+            _WITNESS_TYPE, _CARRIER_HOOKS, _ORIGINAL_WITNESS_HOOKS,
+        )
+        or not members_match(
+            _WITNESS_TYPE, _WITNESS_DENIALS, _ORIGINAL_WITNESS_DENIALS,
+        )
+    ):
+        raise ReadJournalRejected("invalid retained witness")
 
 
 def genesis_witness() -> ReadJournalWitness:
