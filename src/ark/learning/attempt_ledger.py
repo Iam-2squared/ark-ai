@@ -27,8 +27,22 @@ _MAX_PATH_BYTES = 4096
 _ATTEMPT_ID = re.compile(r"attempt_[0-9a-f]{64}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _EVENT_DOMAIN = b"ARK-v3-local-attempt-event-v1\0"
-_GENESIS = hashlib.sha256(b"ARK-v3-local-attempt-genesis-v1\0").hexdigest()
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON = json
+_ORIGINAL_JSON_DUMPS = json.dumps
+_GENESIS = _ORIGINAL_SHA256(b"ARK-v3-local-attempt-genesis-v1\0").hexdigest()
 _REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+
+
+def _require_original_codec() -> None:
+    if (
+        hashlib is not _ORIGINAL_HASHLIB
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json is not _ORIGINAL_JSON
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+    ):
+        raise AttemptLedgerSchemaError("attempt ledger digest or JSON codec changed")
 
 _META_SQL = """
 CREATE TABLE attempt_meta (
@@ -187,6 +201,7 @@ def _canonical_event(
     evidence_bundle_sha256: str | None,
     previous_event_sha256: str,
 ) -> bytes:
+    _require_original_codec()
     payload = [
         sequence,
         attempt_id,
@@ -204,7 +219,8 @@ def _canonical_event(
 
 
 def _event_hash(*values: object) -> str:
-    return hashlib.sha256(_EVENT_DOMAIN + _canonical_event(*values)).hexdigest()
+    _require_original_codec()
+    return _ORIGINAL_SHA256(_EVENT_DOMAIN + _canonical_event(*values)).hexdigest()
 
 
 def _is_reparse_point(info: os.stat_result) -> bool:
@@ -218,11 +234,14 @@ def _safe_path(path: Path, *, create: bool) -> None:
     Rechecking path metadata narrows accidental aliasing but is not atomic
     dirfd custody or protection against a concurrent owner-controlled rename.
     """
-    if type(path) is not type(Path()) or ".." in path.parts or not path.name:
+    if (
+        type(path) is not type(Path()) or ".." in path.parts
+        or not path.name or "\x00" in str(path)
+    ):
         raise AttemptLedgerSchemaError("attempt ledger path is invalid")
     try:
         target = path.absolute()
-        if len(os.fsencode(target)) > _MAX_PATH_BYTES:
+        if len(os.fsencode(target)) + len(b"-journal") > _MAX_PATH_BYTES:
             raise AttemptLedgerSchemaError("attempt ledger path exceeds its byte budget")
         for ancestor in target.parents:
             info = ancestor.lstat()
