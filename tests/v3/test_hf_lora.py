@@ -6,6 +6,7 @@ import pytest
 from ark.learning import hf_lora
 from ark.learning.dataset import digest
 from ark.learning.execution import ExecutionBlocked
+from ark.learning.identity import build_hf_snapshot_identity
 from ark.learning.hf_lora import (
     HfLoRAFullRun,
     HfLoRAPreflightBackend,
@@ -95,6 +96,140 @@ def test_probe_file_replacement_between_identity_and_read_is_rejected(tmp_path, 
         hf_lora._verify_chat_template_probe(FakeTokenizer(), probe, digest(expected))
 
 
+
+def _write_staging_snapshot(base_dir: Path, probe: Path) -> dict:
+    base_dir.mkdir()
+    (base_dir / "config.json").write_text("{}", encoding="utf-8")
+    (base_dir / "tokenizer_config.json").write_text("{}", encoding="utf-8")
+    (base_dir / "tokenizer.json").write_text('{"version":"1"}', encoding="utf-8")
+    (base_dir / "model.safetensors").write_bytes(b"synthetic-model-bytes")
+    probe.write_bytes(b"synthetic-rendered-chat-template")
+    identity = build_hf_snapshot_identity(
+        base_dir,
+        model_id="Qwen/Qwen3-4B-Instruct-2507",
+        revision="1" * 40,
+        chat_template_probe=probe,
+    )
+    return {
+        "base": {
+            "model_id": identity["model_id"],
+            "revision": identity["revision"],
+            "file_sha256_manifest": identity["base_file_manifest_sha256"],
+        },
+        "tokenizer": {
+            "file_sha256_manifest": identity["tokenizer_file_manifest_sha256"],
+            "chat_template_probe_sha256": identity["chat_template_probe_sha256"],
+        },
+    }
+
+
+def test_verified_snapshot_is_staged_and_rehashed_before_loader_use(tmp_path):
+    base_dir = tmp_path / "source-model"
+    probe = tmp_path / "probe.txt"
+    snapshot = _write_staging_snapshot(base_dir, probe)
+
+    owner, staged = hf_lora._stage_verified_hf_snapshot(snapshot, base_dir, probe)
+    try:
+        assert staged != base_dir
+        assert staged.is_dir()
+        staged_identity = build_hf_snapshot_identity(
+            staged,
+            model_id=snapshot["base"]["model_id"],
+            revision=snapshot["base"]["revision"],
+            chat_template_probe=probe,
+        )
+        assert staged_identity["base_file_manifest_sha256"] == (
+            snapshot["base"]["file_sha256_manifest"]
+        )
+        assert staged_identity["tokenizer_file_manifest_sha256"] == (
+            snapshot["tokenizer"]["file_sha256_manifest"]
+        )
+    finally:
+        owner.cleanup()
+    assert not staged.exists()
+
+
+def test_changed_bytes_during_staging_are_denied_and_temp_tree_is_removed(
+    tmp_path,
+    monkeypatch,
+):
+    base_dir = tmp_path / "source-model"
+    probe = tmp_path / "probe.txt"
+    snapshot = _write_staging_snapshot(base_dir, probe)
+
+    def write_changed_bytes(source, destination, *, expected_sha256, expected_bytes):
+        destination.write_bytes(b"unreviewed replacement")
+
+    monkeypatch.setattr(hf_lora, "_copy_verified_snapshot_file", write_changed_bytes)
+    with pytest.raises(hf_lora.LoRARuntimeError, match="staged base snapshot identity changed"):
+        hf_lora._stage_verified_hf_snapshot(snapshot, base_dir, probe)
+
+
+def test_model_and_tokenizer_load_only_from_verified_staged_tree(tmp_path, monkeypatch):
+    base_dir = tmp_path / "source-model"
+    probe = tmp_path / "probe.txt"
+    snapshot = _write_staging_snapshot(base_dir, probe)
+    loader_paths = []
+
+    class FakeCuda:
+        @staticmethod
+        def is_available():
+            return True
+
+        @staticmethod
+        def is_bf16_supported():
+            return True
+
+    class FakeTorch:
+        cuda = FakeCuda()
+        bfloat16 = object()
+
+    class FakeTokenizer:
+        @classmethod
+        def from_pretrained(cls, path, **kwargs):
+            loader_paths.append(Path(path))
+            return cls()
+
+        def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+            return probe.read_text(encoding="utf-8")
+
+    class FakeModel:
+        @classmethod
+        def from_pretrained(cls, path, **kwargs):
+            loader_paths.append(Path(path))
+            return cls()
+
+        def to(self, device):
+            assert device == "cuda"
+            return self
+
+    class FakeLoraConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    def get_peft_model(model, config):
+        return model
+
+    monkeypatch.setattr(
+        hf_lora,
+        "_runtime_imports",
+        lambda: (FakeTorch, FakeLoraConfig, get_peft_model, FakeModel, FakeTokenizer),
+    )
+    _, _, _, verified_probe_sha256, owner = hf_lora._build_model_and_tokenizer(
+        snapshot,
+        base_dir,
+        probe,
+    )
+    try:
+        assert len(loader_paths) == 2
+        assert loader_paths[0] == loader_paths[1]
+        assert loader_paths[0] != base_dir
+        assert loader_paths[0].is_dir()
+        assert verified_probe_sha256 == snapshot["tokenizer"]["chat_template_probe_sha256"]
+    finally:
+        owner.cleanup()
+    assert not loader_paths[0].exists()
+
 def test_preflight_cannot_reach_heavy_imports_from_unresolved_snapshot(tmp_path):
     snapshot = json.loads(TEMPLATE.read_text(encoding="utf-8"))
     backend = HfLoRAPreflightBackend(
@@ -166,7 +301,7 @@ def test_wall_time_guard_aborts_full_run_before_candidate_save(monkeypatch, tmp_
         module,
         "_build_model_and_tokenizer",
         lambda snapshot, base_dir, chat_template_probe: (
-            FakeTorch(), object(), FakeModel(), "a" * 64,
+            FakeTorch(), object(), FakeModel(), "a" * 64, None,
         ),
     )
     monkeypatch.setattr(module, "_pretokenize", lambda tokenizer, ordered: [(None, None)] * 120)
