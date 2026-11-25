@@ -1,6 +1,11 @@
 """Run1345: a returned mock result without completion audit is quarantined.
 
-Synthetic local SQLite only. The child exits at entry to the completion-audit append, after the exact mock backend method has returned. Recovery must retain the pre-action event and occurrence reservation but must not invent a completion event. Reusing the old one-shot is denied before a fresh gate or backend call. A distinct new one-shot may create a distinct mock occurrence. This is not external-effect, power-loss, or trusted-clock evidence.
+Synthetic local SQLite only. The child exits at entry to the completion-audit
+append, after the exact mock backend method has returned. Recovery must retain
+the pre-action event and occurrence reservation but must not invent a
+completion event. Reusing the old one-shot is denied before a fresh gate or
+backend call. A distinct new one-shot may create a distinct mock occurrence.
+This is not external-effect, power-loss, or trusted-clock evidence.
 """
 
 from __future__ import annotations
