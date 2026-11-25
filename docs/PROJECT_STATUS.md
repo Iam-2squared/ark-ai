@@ -1,11 +1,11 @@
 ## LATEST
 
-- **Saved at:** 2026-11-26 05:00:22 JST (Asia/Tokyo).
+- **Saved at:** 2026-11-26 05:01:18 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
-- **Exact work-basis HEAD:** `be6cee86da0876e9481d1cc81465d607b0305d69` (PR #8 head re-read immediately before this checkpoint update).
+- **Exact work-basis HEAD:** `f00225536f6a260079e18791cb911658bd674d66` (PR #8 head re-read immediately before this checkpoint update).
 - **Checkpoint-result HEAD:** the GitHub commit created by this `docs/PROJECT_STATUS.md` update; its exact returned SHA is confirmed after the write and reported in the invocation summary. This file intentionally does not self-reference its own commit.
 - **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain frozen evidence. Memory, Observation, Personal Context, Planner, ToolRegistry, PermissionGate, proactive state and ActionAudit remain local-first, disconnected/reversible foundations. **ARK/JARVIS overall remains NOT_PASSED.**
-- **Parent validation:** PR #8 work-basis HEAD `be6cee86da0876e9481d1cc81465d607b0305d69`, CI run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910), was **GREEN 6/6**. The checkpoint-result HEAD `be6cee86da0876e9481d1cc81465d607b0305d69` has a new run [45690462474](https://github.com/Iam-2squared/ark-ai/actions/runs/45690462474) **QUEUED**; this checkpoint commit will require its own exact-head CI.
+- **Parent validation:** PR #8 source/work-basis HEAD `a1bff14b0ca731ee1d094d6611caf76c08640398`, CI run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910), was **GREEN 6/6**. The prior checkpoint HEAD `be6cee86da0876e9481d1cc81465d607b0305d69`, run [45690462474](https://github.com/Iam-2squared/ark-ai/actions/runs/45690462474), was **QUEUED** at last read. No workflow run was returned for the new checkpoint-result HEAD at last read.
 - **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #9 remains Draft/unmerged and untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All new UI/frontend work remains paused. No `main` write or merge occurred.
 
 ## NEW work this invocation
@@ -53,7 +53,7 @@ All seven packages below are isolated Draft children of PR #8. The first six are
 ## Tests, CI and evidence
 
 - **PR #8 work-basis HEAD** `be6cee86da0876e9481d1cc81465d607b0305d69`, run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910): **GREEN 6/6** (Windows/Linux × Python 3.11–3.13).
-- **PR #8 checkpoint-result HEAD** `be6cee86da0876e9481d1cc81465d607b0305d69`, run [45690462474](https://github.com/Iam-2squared/ark-ai/actions/runs/45690462474): **QUEUED** at last read; this run is for the work-basis head, not the checkpoint-result commit.
+- **PR #8 prior checkpoint HEAD** `be6cee86da0876e9481d1cc81465d607b0305d69`, run [45690462474](https://github.com/Iam-2squared/ark-ai/actions/runs/45690462474): **QUEUED** at last read. This is not the new checkpoint-result HEAD; no workflow run was returned for the new result at last read.
 - **PR #609** exact child HEAD `7dbdefaaec8f58b9a681d9e902dd48aa372411cd`, run `45688812009`: **IN PROGRESS**.
 - **PR #610** exact child HEAD `78a3e677eecc17e90eb24063458cc21cfb33a4a0`, run `45689141624`: **IN PROGRESS**.
 - **PR #611** exact child HEAD `557f791082180d256f076809b884945f923c0869`, run `45689545926`: **IN PROGRESS**.
