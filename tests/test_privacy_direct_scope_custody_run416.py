@@ -41,13 +41,14 @@ def test_initial_scope_digest_helper_replacement_is_denied_before_sqlite(
     with monkeypatch.context() as patch:
         patch.setattr(privacy, "_scope_digest", digest_and_swap)
         with pytest.raises(
-            privacy.SyntheticContextRevocationRejected,\n            match="revocation scope digest implementation changed",
+            privacy.SyntheticContextRevocationRejected,
+            match="revocation scope digest implementation changed",
         ):
             _invoke(ledger, scope, operation)
 
     assert calls == 0
     # No veto row was committed, no private content was projected.
-    assert calls == 0\n    ledger.assert_not_revoked((MemoryScope("offline-owner", "private"),))
+    ledger.assert_not_revoked((MemoryScope("offline-owner", "private"),))
 
 
 @pytest.mark.parametrize("operation", ("revoke", "check"))
@@ -69,8 +70,10 @@ def test_schema_validator_replacement_is_denied_before_sqlite(
     with monkeypatch.context() as patch:
         patch.setattr(privacy, "_validate", validate_and_swap)
         with pytest.raises(
-            privacy.SyntheticContextRevocationRejected,\n            match="revocation scope digest implementation changed",
+            privacy.SyntheticContextRevocationRejected,
+            match="revocation scope digest implementation changed",
         ):
             _invoke(ledger, scope, operation)
 
+    assert calls == 0
     ledger.assert_not_revoked((MemoryScope("offline-owner", "private"),))
