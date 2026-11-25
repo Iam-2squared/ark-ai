@@ -18,6 +18,7 @@ The disconnected mock executor retained class-hook vectors for `MockToolBackend`
 
 - For each of the three exact component classes, explicit `None` is rejected for each of the three absent hooks.
 - Installing the exact absence sentinel as a class hook is also rejected.
+- All `__new__` allocation-slot probes run in isolated subprocesses; lookup-hook probes restore the class namespace before checking audit state.
 - Replacing the module's sentinel binding is rejected by the retained validator epoch.
 - Every rejection leaves the mock backend call count at zero and the ActionAudit event list empty.
 
