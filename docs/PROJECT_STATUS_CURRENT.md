@@ -1,9 +1,9 @@
 # LATEST — ARK AI canonical current checkpoint
 
-**Saved at:** 2026-11-25 14:20:56 JST (Asia/Tokyo).
+**Saved at:** 2026-11-25 14:23:16 JST (Asia/Tokyo).
 **Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md` (repo-established current authority; `docs/PROJECT_STATUS.md` remains historical).
 **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).
-**Exact work-basis HEAD:** `a1461bd24b30752c0e8f23ad7afb7cfda4da982d` — live foundation branch ref re-read immediately before this checkpoint update.
+**Exact work-basis HEAD:** `fd8f81bd38ae705dd7ad4d8202b58320d1d095dc` — live foundation branch ref re-read immediately before this checkpoint update.
 **Checkpoint-result HEAD:** the single normal GitHub Contents API commit returned by this update; live branch ref re-read after the write and verified against that commit SHA. The SHA is intentionally not self-embedded to avoid a self-referential commit hash.
 **Live main HEAD:** `ecd72fced0f3e575e504331f9f7bf1c4f0187614` — main remains read-only under the unresolved prior direct-write incident; no main mutation, revert, force-push or merge was attempted.
 **V3 branch / PR #5:** `research/v3-learning-evaluation` / Draft PR #5 (OPEN / DRAFT / UNMERGED), head `49e03192b785419ba4d4a99c06f9a4c104a821e5`.
@@ -12,7 +12,7 @@
 ## Current ARK state
 
 - ARK/JARVIS remains **NOT_PASSED**. No V3/V4/V5 PASS, authenticated consent, trusted-clock certification, production dispatch, physical-hardware readiness, fsync/power-loss guarantee, independent custody, cross-store atomicity or exactly-once external-effect claim is made.
-- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Current branch HEAD `a1461bd24b30752c0e8f23ad7afb7cfda4da982d` has exact-head CI [45551144139](https://github.com/Iam-2squared/ark-ai/actions/runs/45551144139) **IN PROGRESS** at last read (3/6 jobs GREEN; three Windows jobs still running). Its prior source/test work-basis `c15b588dd017c5eaa556966094898f5a2e444c96` has CI [45546948642](https://github.com/Iam-2squared/ark-ai/actions/runs/45546948642) **GREEN 6/6**. This checkpoint changes only this status document; it does not claim exact-head CI for the resulting documentation commit.
+- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to main. Current branch HEAD `fd8f81bd38ae705dd7ad4d8202b58320d1d095dc` has checkpoint CI [45553092792](https://github.com/Iam-2squared/ark-ai/actions/runs/45553092792) **QUEUED** at last read. The previous documentation head `a1461bd24b30752c0e8f23ad7afb7cfda4da982d` has CI [45551144139](https://github.com/Iam-2squared/ark-ai/actions/runs/45551144139) **IN PROGRESS** (3/6 jobs GREEN; three Windows jobs still running); prior source/test work-basis `c15b588dd017c5eaa556966094898f5a2e444c96` has CI [45546948642](https://github.com/Iam-2squared/ark-ai/actions/runs/45546948642) **GREEN 6/6**. This checkpoint changes only this status document; it does not claim exact-head CI for the resulting documentation commit.
 - PR #5 remains gated Draft/unmerged. Its latest parent run [45550794433](https://github.com/Iam-2squared/ark-ai/actions/runs/45550794433) is **FAIL** at `ruff check .` before pytest: inherited main-merge-ref files `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py`, and `tests/test_tool_registry_delete_seal_run1240.py` have Ruff I001 import-order errors. The failure is on the merge ref; do not mutate main, delete/disable tests, copy JARVIS modules into main, or merge PR #5 to bypass the ownership boundary.
 - PR #9 remains paused and untouched. No UI/frontend work, UI integration, polish or frontend tests occurred.
 - V1/V2/Local UI/Launcher frozen evidence and all frozen contracts remain unchanged.
@@ -30,7 +30,7 @@
 
 3. **Durable occurrence path-policy guard self-custody — Draft PR #551.**
    - Child branch `research/run1372-occurrence-path-guard-self-custody-20261125`; exact latest HEAD `dd06953e03fa7da365ac57a3e7b1cdb3066348c1`; parent Draft PR #536 at `b50a635b5e883b96a2130dedf778b902d81fb282`.
-   - Pins the occurrence path-policy guard itself and routes all internal checks through the retained alias. Synthetic regressions cover pre-lstat replacement and reentrant replacement from an lstat callback. The first child run [45552185816](https://github.com/Iam-2squared/ark-ai/actions/runs/45552185816) **FAIL**ed at Ruff syntax because the new predicate lacked an `or`; the smallest operator correction is saved in the latest head. Fresh exact-head CI [45552325199](https://github.com/Iam-2squared/ark-ai/actions/runs/45552325199) is **QUEUED**. Occurrence DDL, token identity, expiry, reservation and receipt semantics are unchanged.
+   - Pins the occurrence path-policy guard itself and routes all internal checks through the retained alias. Synthetic regressions cover pre-lstat replacement and reentrant replacement from an lstat callback. The first child run [45552185816](https://github.com/Iam-2squared/ark-ai/actions/runs/45552185816) **FAIL**ed at Ruff syntax because the new predicate lacked an `or`; the smallest operator correction is saved in the latest head. Fresh exact-head CI [45552325199](https://github.com/Iam-2squared/ark-ai/actions/runs/45552325199) is **IN PROGRESS** (2/6 Ubuntu jobs GREEN at last read). Occurrence DDL, token identity, expiry, reservation and receipt semantics are unchanged.
 
 4. **ToolRegistry admission-guard self-custody — Draft PR #552.**
    - Child branch `research/run1373-registry-policy-guard-self-custody-20261125`; exact latest HEAD `c0090ff57fe33ae9e4d770c4909f57d7bc4509e5`; parent Draft PR #542 at `7d0604a7a789f38f11d90faaf4c38516b5b55716`.
@@ -42,6 +42,10 @@
    - Pins the reparse-policy guard itself and routes internal checks through the retained alias. Synthetic tests require replacement rejection before lstat and after a reentrant lstat callback. ActionAudit v1 DDL, public event fields, append semantics, timestamp policy and audit-before-action ordering are unchanged.
    - Exact-head CI [45552894626](https://github.com/Iam-2squared/ark-ai/actions/runs/45552894626) is **QUEUED**.
 
+6. **Observation encoder assertion correction — Draft PR #540.**
+   - Branch `research/run1361-observation-encoder-seal-rebase-20261125`; latest child HEAD `212e3713b1c74815f3d22c081c4c0cc7b3dfffe2`.
+   - The previous exact-head run [45550602505](https://github.com/Iam-2squared/ark-ai/actions/runs/45550602505) **FAIL**ed at pytest on the reentrant-preflight denial assertion. The test now expects the exact distinct message for preinstalled versus reentrant encoder replacement; no production source changed. Fresh exact-head run [45553163237](https://github.com/Iam-2squared/ark-ai/actions/runs/45553163237) is **QUEUED**.
+
 ## Tests / CI / evidence — exact heads only
 
 - PR #8 latest branch head `a1461bd24b30752c0e8f23ad7afb7cfda4da982d`: [45551144139](https://github.com/Iam-2squared/ark-ai/actions/runs/45551144139) **IN PROGRESS** (3/6 GREEN; three Windows jobs in progress). Previous source/test basis `c15b588dd017c5eaa556966094898f5a2e444c96`: [45546948642](https://github.com/Iam-2squared/ark-ai/actions/runs/45546948642) **GREEN 6/6**.
@@ -49,7 +53,7 @@
 - PR #537: [45543996209](https://github.com/Iam-2squared/ark-ai/actions/runs/45543996209) **GREEN 6/6**.
 - PR #538: [45545369309](https://github.com/Iam-2squared/ark-ai/actions/runs/45545369309) **GREEN 6/6**.
 - PR #539: [45546268040](https://github.com/Iam-2squared/ark-ai/actions/runs/45546268040) **GREEN 6/6**.
-- PR #540 corrected head: [45550602505](https://github.com/Iam-2squared/ark-ai/actions/runs/45550602505) **IN PROGRESS**.
+- PR #540 prior corrected head: [45550602505](https://github.com/Iam-2squared/ark-ai/actions/runs/45550602505) **FAIL** at pytest; inspected Windows Python 3.12 log shows the reentrant-preflight path returned `fixture text encoder changed before private content encoding`, while the assertion expected the preinstalled-replacement message. The assertion now distinguishes those two exact denial messages on latest child HEAD `212e3713b1c74815f3d22c081c4c0cc7b3dfffe2`; fresh exact-head CI [45553163237](https://github.com/Iam-2squared/ark-ai/actions/runs/45553163237) is **QUEUED**.
 - PR #541: [45546210220](https://github.com/Iam-2squared/ark-ai/actions/runs/45546210220) **GREEN 6/6**.
 - PR #542: [45546392454](https://github.com/Iam-2squared/ark-ai/actions/runs/45546392454) **GREEN 6/6**.
 - PR #543: [45546570051](https://github.com/Iam-2squared/ark-ai/actions/runs/45546570051) **GREEN 6/6**.
