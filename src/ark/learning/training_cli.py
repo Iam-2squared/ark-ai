@@ -214,6 +214,9 @@ def _require_original_preflight_json_parser() -> None:
         raise RuntimeError("preflight JSON parser implementation changed")
 
 
+_ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD = _require_original_preflight_json_parser
+
+
 def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
     max_bytes = _EVIDENCE_FILE_BUDGETS.get(label)
     if max_bytes is None:
@@ -298,7 +301,9 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         snapshot["hardware"]["preflight_report_sha256"],
         "preflight report",
     )
-    _require_original_preflight_json_parser()
+    if _require_original_preflight_json_parser is not _ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD:
+        raise RuntimeError("preflight JSON parser guard changed")
+    _ORIGINAL_PREFLIGHT_JSON_PARSER_GUARD()
     try:
         report = _ORIGINAL_PREFLIGHT_JSON_LOADS(
             payload,
