@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
-
 import pytest
 
 import ark.startup_readiness_review as readiness
@@ -18,23 +15,28 @@ _CARRIERS = (
 _HOOKS = ("__new__", "__getattribute__", "__getattr__")
 
 
-@contextmanager
-def _class_attribute(
+def _set_class_attribute(
     carrier: type,
     name: str,
     value: object,
-) -> Iterator[None]:
+) -> tuple[bool, object | None]:
     namespace = vars(carrier)
     was_present = name in namespace
     original = namespace.get(name)
     type.__setattr__(carrier, name, value)
-    try:
-        yield
-    finally:
-        if was_present:
-            type.__setattr__(carrier, name, original)
-        else:
-            type.__delattr__(carrier, name)
+    return was_present, original
+
+
+def _restore_class_attribute(
+    carrier: type,
+    name: str,
+    original: tuple[bool, object | None],
+) -> None:
+    was_present, value = original
+    if was_present:
+        type.__setattr__(carrier, name, value)
+    else:
+        type.__delattr__(carrier, name)
 
 
 @pytest.mark.parametrize("carrier_name", _CARRIERS)
@@ -45,25 +47,32 @@ def test_explicit_none_is_not_confused_with_an_absent_startup_hook(
 ) -> None:
     carrier = getattr(readiness, carrier_name)
 
-    with _class_attribute(carrier, hook, None):
+    original = _set_class_attribute(carrier, hook, None)
+    try:
         with pytest.raises(
             ValueError,
             match="startup constructor authority changed",
         ):
             readiness._assert_original_startup_constructors()
+    finally:
+        _restore_class_attribute(carrier, hook, original)
 
 
 def test_exact_absence_sentinel_installed_as_a_hook_is_rejected() -> None:
-    with _class_attribute(
+    hook = "__getattr__"
+    original = _set_class_attribute(
         readiness.StartupComponent,
-        "__getattr__",
+        hook,
         readiness._STARTUP_CARRIER_HOOK_ABSENT,
-    ):
+    )
+    try:
         with pytest.raises(
             ValueError,
             match="startup constructor authority changed",
         ):
             readiness._assert_original_startup_constructors()
+    finally:
+        _restore_class_attribute(readiness.StartupComponent, hook, original)
 
 
 def test_replaced_absence_sentinel_is_rejected(
@@ -111,16 +120,18 @@ def test_hostile_lookup_hook_is_rejected_before_probe_iteration(
             schema_revision="memory-v1",
         )
 
-    with _class_attribute(
-        readiness.StartupComponent,
-        "__getattribute__",
-        forbidden,
-    ):
+    hook = "__getattribute__"
+    original = _set_class_attribute(
+        readiness.StartupComponent, hook, forbidden,
+    )
+    try:
         with pytest.raises(
             ValueError,
             match="startup constructor authority changed",
         ):
             readiness.evaluate_startup_readiness(probes())
+    finally:
+        _restore_class_attribute(readiness.StartupComponent, hook, original)
 
     assert invoked == []
     assert consumed == []
