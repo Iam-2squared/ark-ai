@@ -1,3 +1,16 @@
+## Run1443 — live V3 gate reconciliation (2026-11-26 JST)
+
+**Exact PR #5 source basis:** branch research/v3-learning-evaluation, HEAD ea373c3496d06e2789cee5bb58836054ef35ed28. Exact-head workflow run 45668716864 (run 7744) is FAIL: all six matrix jobs stop at Ruff I001 in the merge-ref files tests/test_personal_context_replay_process_crash_run1033.py, tests/test_planner_journal_terminal_hard_exit_run1280.py, and tests/test_tool_registry_delete_seal_run1240.py. Those three paths are absent from the PR #5 head branch and are supplied by its base merge ref; fetching them at the PR #5 head returns 404. This is a base-branch ownership/lint boundary, not evidence of a V3 implementation failure. No main-branch write, test deletion, dependency copy, or gate bypass is authorized or attempted.
+
+**Run1346 items superseded:** strict duplicate/non-finite preflight-report parsing and nested symlink-grandparent rejection are already present on the exact PR #5 source head, as recorded by Runs 1349/1351 and the read-only reconciliation in Draft PR #624 (exact child head 06a053d33cdfb568e4cfc2d4a735ec18136934fc, CI run 45708528169 GREEN 6/6). Do not repeat those two implementations.
+
+**Current free-only evidence:** PR #623 local snapshot staging is exact-head GREEN 6/6 (run 45708896479); PR #625 attempt/finalization receipts are exact-head GREEN 6/6 (run 45716697765); PR #626 create-only manifest publication is exact-head GREEN 6/6 (run 45716706277). These remain isolated child PRs targeting gated Draft PR #5. No preflight, model/tokenizer load, GPU query, training, export, Candidate generation, protected V2 evaluation, or Candidate promotion occurred.
+
+**Remaining boundary:** PR #623's staged local copy reduces source-mutation exposure but does not establish atomic dirfd custody or eliminate the final rehash-to-open race. The V3 branch remains a research/gating lane; exact-head green child evidence is not permission to open protected evaluation or promote a Candidate.
+
+**Decision:** keep PR #5 Draft/unmerged. Preserve the merge-ref lint/ownership blocker for normal repository-level reconciliation; do not edit main, disable Ruff/tests, or copy JARVIS-only modules into the V3 branch.
+
+---
 ## Run1346 — V3 free-only source revalidation (2026-11-25)
 
 **Exact source basis:** Draft PR #5 branch `research/v3-learning-evaluation`, HEAD `f7252fbe7d5f65c640fed41bbb5b3cc7ae817296`. Exact-head CI run [45484069708](https://github.com/Iam-2squared/ark-ai/actions/runs/45484069708) / run 7529 is **FAIL**. This is a read-only source audit of free guard code; no V3 runtime, torch import, model/tokenizer load, GPU query, preflight, training, Candidate or evaluation was run.
