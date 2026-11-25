@@ -106,7 +106,7 @@ def _require_original_context_replay_path_policy(
         or _ORIGINAL_REPARSE_POINT_CHECK is not epoch[9]
     ):
         raise OfflineContextReplayRejected(
-            "context replay path admission policy changed"
+            "context replay path admission changed (policy epoch)"
         )
 
 
