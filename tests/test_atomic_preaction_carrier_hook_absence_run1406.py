@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 from ark.agency import disconnected_atomic_preaction_ledger as atomic
@@ -11,7 +14,8 @@ _CARRIERS = (
     "AtomicPreactionWitness",
     "AtomicPreactionSnapshot",
 )
-_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_HOOKS = ("__getattribute__", "__getattr__")
+_NEW_HOOK_CARRIERS = (*_CARRIERS, "DisconnectedAtomicPreactionLedger")
 
 
 def _set_class_attribute(
@@ -55,6 +59,44 @@ def test_explicit_none_is_not_confused_with_absent_carrier_hook(
     finally:
         _restore_class_attribute(carrier, hook, original)
 
+
+
+@pytest.mark.parametrize("carrier_name", _NEW_HOOK_CARRIERS)
+def test_explicit_none_new_hook_is_rejected_in_an_isolated_process(
+    carrier_name: str,
+) -> None:
+    # Mutating a special __new__ slot and deleting it can leave interpreter
+    # allocation state behind on some Python builds. Keep this probe isolated.
+    script = f"""
+import ark.agency.disconnected_atomic_preaction_ledger as atomic
+
+if {carrier_name!r} == "DisconnectedAtomicPreactionLedger":
+    carrier = atomic.DisconnectedAtomicPreactionLedger
+    ledger = object.__new__(carrier)
+    type.__setattr__(carrier, "__new__", None)
+    try:
+        atomic._require_ledger_path_epoch(ledger)
+    except atomic.AtomicPreactionRejected:
+        pass
+    else:
+        raise SystemExit("explicit None __new__ hook was accepted")
+else:
+    carrier = getattr(atomic, {carrier_name!r})
+    type.__setattr__(carrier, "__new__", None)
+    try:
+        atomic._require_original_atomic_carriers()
+    except atomic.AtomicPreactionRejected:
+        pass
+    else:
+        raise SystemExit("explicit None __new__ hook was accepted")
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr or completed.stdout
 
 def test_exact_absence_sentinel_installed_as_carrier_hook_is_rejected() -> None:
     hook = "__getattr__"
