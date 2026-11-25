@@ -1,5 +1,82 @@
 ## LATEST
 
+- **Saved at:** 2026-11-25 10:06:17 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `af7beebaf8246ec03b5e311aac34befac91c26a4` (latest PR #8 branch head immediately before this checkpoint write).
+- **Checkpoint-result HEAD:** this `PROJECT_STATUS.md` update commit; exact SHA is returned by GitHub after save and recorded in the run summary. The file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1, V2, Local UI v1 and Launcher/Gate Runner retain their prior frozen evidence. JARVIS foundations remain isolated/reversible. **ARK/JARVIS overall remains NOT_PASSED.**
+- **Main / UI boundary:** `main` HEAD `ecd72fced0f3e575e504331f9f7bf1c4f0187614` was not modified. PR #9 remains Draft/unmerged and untouched; UI/frontend work remains paused.
+
+## NEW work this invocation
+
+1. **Run1342 — startup snapshot method custody + public-reader pre-dispatch guard.**
+   - PR #522 exact-head CI `45513927591` / run 7558: **GREEN, 6/6** Windows/Linux × Python 3.11–3.13.
+   - Source reviewed; no frozen schema/contract or live startup/dispatch authority change. Squash-integrated into PR #8 only at `f809c1c2cd6d186cb317752607cab904a9fd0f92`.
+   - Superseded child PRs #518/#519 closed without merging.
+
+2. **Run1346 — V3 free-only source revalidation.**
+   - Exact PR #5 branch HEAD inspected: `f7252fbe7d5f65c640fed41bbb5b3cc7ae817296`; exact-head CI `45484069708`: **FAIL**.
+   - Updated `docs/JARVIS_FOUNDATION_GAP_MATRIX.md`: source already rejects learning-tree symlink/reparse traversal and checks preflight report path ancestors; most V3 JSON readers already reject duplicate keys/canonical drift. Remaining parser inconsistency is `training_cli._verify_preflight_report()`; unresolved hash-then-use, runtime chat-template and attempt/receipt gaps remain.
+   - Read-only audit only: no V3 source, runtime, torch, model/tokenizer load, GPU query, preflight, training or Candidate action.
+
+3. **Run1344 — Personal Context revocation helper-custody regression correction (Draft PR #524).**
+   - Child branch/head: `research/run1344-personal-context-revocation-guard-tests-20261125` / `d1c47b8c68e924cf082a2de4dab11b8b7a669c32`.
+   - Five synthetic regression modules now assert substituted digest/validator helpers are rejected before callback dispatch, without scope/path mutation or veto write. Production source, Memory v1 schema/DDL and privacy policy unchanged.
+   - Initial CI `45520692351`: FAIL at Ruff E501 only; corrected. Fresh exact-head CI `45521650446`: **IN_PROGRESS**.
+
+4. **Run1345 — mock backend-return / pre-completion-audit hard-exit regression (Draft PR #525).**
+   - Child branch/head: `research/run1345-mock-backend-return-precompletion-hard-exit-20261125` / `2553bfb6e9c2f0be1d91d59816411785c92decdb`.
+   - A spawned-process profile hook records the mock backend return, then exits at entry to the second audit append. Recovery must retain occurrence + pre-action event, contain no completion event, and deny old one-shot reuse before a new gate/backend call. Production executor/registry/gate/audit source unchanged.
+   - Initial CI `45521290805`: FAIL at Ruff E501 only; docstring corrected. Fresh exact-head CI `45522184303`: **QUEUED**.
+
+5. **Run1347 — ActionAudit outcome-boundary regressions (Draft PR #526).**
+   - Rebased the existing synthetic test and evidence note onto current PR #8 head; production implementation is already present in `src/ark/agency/audit.py`, so this child is test/documentation-only.
+   - Child branch/head: `research/run1347-action-audit-outcome-regressions-20261125` / `c8b3b43f7953af6819769c5d06e844b4f66d89e2`.
+   - Predecessor PR #13 exact-head CI `44518002802` was GREEN 6/6 on an older base; evidence does not transfer. Fresh CI `45523117005`: **QUEUED**.
+
+6. **Duplicate-child cleanup — closed without merging; historical branches/evidence retained.**
+   - #13 (source already present; tests/docs rebased to #526), #499, #500, #501, #502, #503, #505, #510, #515, #516, #518 and #519.
+   - Each closure followed source/test/doc comparison against the current PR #8 branch or an explicit supersession chain. No source history was deleted.
+
+## Tests, CI and evidence
+
+- PR #522 Run1342 exact-head CI `45513927591`: **GREEN, 6/6**.
+- PR #523 Run1343 exact-head CI `45513867238`: **FAIL**, 15 stale callback/diagnostic expectations across six matrix jobs; no PASS claimed. PR #524 is the test-only correction child.
+- PR #524 initial CI `45520692351`: FAIL at Ruff E501 only; corrected head `45521650446`: **IN_PROGRESS**.
+- PR #525 initial CI `45521290805`: FAIL at Ruff E501 only; corrected head `45522184303`: **QUEUED**.
+- PR #526 fresh exact-head CI `45523117005`: **QUEUED**.
+- PR #8 checkpoint predecessor head `af7beebaf8246ec03b5e311aac34befac91c26a4`, CI `45522559235`: **QUEUED**; this run predates this checkpoint commit.
+- PR #5 exact-head CI `45484069708`: FAIL; V3 remains NOT_PASSED and gated.
+- No local pytest/Ruff, physical-PC, real-model, live-capture, external-backend or production-runtime execution is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
+- Frozen ToolCall/PermissionGate public contracts, Memory v1 schema/DDL and retention, Observation Envelope v1, Personal Context consent/privacy boundaries and V3 Contract 1 were not changed.
+- PR #522 is integrated only into PR #8, not `main`. PR #8 remains Draft/unmerged.
+- PR #5 remains Draft/unmerged; no protected V2 final evaluation, Candidate generation or promotion was opened.
+- PR #9 remains Draft/unmerged and untouched. No UI features, polish, frontend tests or UI integration were performed.
+
+## Blockers and authorization boundaries
+
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- No new credentials/secrets/account connection, physical hardware action, destructive/irreversible operation, frozen-contract change, protected evaluation opening, Candidate promotion or main merge occurred.
+- PR #523 is not green; integrate PR #524 into #523 only after its exact-head CI is GREEN, then rerun #523 before any integration into PR #8.
+- PR #525 and PR #526 remain isolated until their own exact-head CI is GREEN.
+- V3 main merge-ref ownership remains blocked because current `main` lacks foundation modules imported by some copied test paths. Do not copy those modules into `main`, delete/disable tests, merge PR #5, or open protected V2 evaluation.
+- QUEUED/IN_PROGRESS/FAIL is not PASS. Synthetic SQLite/process-exit evidence does not prove fsync/power-loss durability, trusted time, independent custody, authenticated consent, cross-store atomicity or exactly-once external effects.
+
+## Next plan / 今後の方針
+
+1. Inspect PR #524 run `45521650446`, PR #525 run `45522184303`, PR #526 run `45523117005` and PR #8 CI when available; fix only concrete failures and preserve CI-overlap.
+2. If PR #524 is GREEN, integrate it into PR #523 only and run fresh exact-head CI on the corrected PR #523 branch. Integrate PR #523 into PR #8 only after that exact head is GREEN and reviewed; never merge to main.
+3. If PR #525 or #526 is GREEN, review and integrate each into PR #8 only; preserve mock-only and synthetic SQLite evidence boundaries.
+4. After the V3 main-base ownership blocker is resolved through an approved path, implement strict preflight-report parsing/duplicate-key tests and nested symlink-ancestor regression on an isolated PR #5 child. No runtime or compute.
+5. Continue local-first Planner crash recovery, Memory durability/privacy, immutable ToolRegistry/PermissionGate, durable authorization and audit-before-action, disconnected mock execution, Personal Context, proactive scheduler and Observation backend contracts.
+6. Keep PR #5 Draft/unmerged, PR #8 Draft/unmerged, PR #9 untouched and all UI/frontend work paused.
+
+## Historical checkpoint — saved at 2026-11-25 10:01:03 JST
+
 - **Saved at:** 2026-11-25 10:01:03 JST (Asia/Tokyo).
 - **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `4d6f94257bd87b23ebbbc1e76ba5f04ccb1bef2d` (latest PR #8 branch head immediately before this checkpoint write).
