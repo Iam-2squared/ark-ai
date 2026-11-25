@@ -96,6 +96,14 @@ def _encode_fixture_text_bounded(content: str, max_bytes: int) -> bytes | None:
     return bytes(encoded)
 
 
+# Keep an import-time encoder witness. The public fixture wrapper below also
+# retains these objects in closure cells, so replacing all module aliases and
+# their equality-based epoch together cannot retarget private fixture text.
+_ORIGINAL_BOUNDED_TEXT_ENCODER = _encode_fixture_text_bounded
+_ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR = (_ORIGINAL_BOUNDED_TEXT_ENCODER,)
+_ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR_EPOCH = _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR
+
+
 def _preflight_fixture_metadata(
     source_id: str,
     privacy_scope: str,
@@ -303,16 +311,30 @@ def _sealed_fixture(
     return envelope
 
 
-def fixture_text_observation(
+def _fixture_text_observation_impl(
     content: str,
     *,
     kind: ObservationKind,
     source_id: str,
     privacy_scope: str,
     ingested_at_ms: int,
+    _original_encoder,
+    _original_encoder_vector,
     parent_sha256: str | None = None,
 ) -> ObservationEnvelope:
     """Adapt provided text/transcript in memory; never acquire or retain it."""
+
+    def assert_original_encoder() -> None:
+        if (
+            _encode_fixture_text_bounded is not _original_encoder
+            or _ORIGINAL_BOUNDED_TEXT_ENCODER is not _original_encoder
+            or _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR is not _original_encoder_vector
+            or _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR_EPOCH is not _original_encoder_vector
+            or type(_original_encoder_vector) is not tuple
+            or len(_original_encoder_vector) != 1
+            or _original_encoder_vector[0] is not _original_encoder
+        ):
+            raise ValueError("fixture text encoder identity changed")
     if type(kind) is not ObservationKind or kind not in (
         ObservationKind.TEXT,
         ObservationKind.TRANSCRIPT,
@@ -320,15 +342,21 @@ def fixture_text_observation(
         raise ValueError("fixture text kind must be exact TEXT or TRANSCRIPT")
     if type(content) is not str:
         raise TypeError("fixture text must be an exact string")
+    assert_original_encoder()
     _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
+    # Metadata callbacks may reenter and replace every module-level encoder
+    # alias. Recheck against the closure-held import-time tuple before content.
+    assert_original_encoder()
     if len(content) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
+    assert_original_encoder()
     try:
-        data = _encode_fixture_text_bounded(
-            content, _ORIGINAL_MAX_FIXTURE_BYTES,
-        )
+        # Use the import-time callable captured by the public wrapper, never a
+        # module alias that can be rebound immediately before private text.
+        data = _original_encoder(content, _ORIGINAL_MAX_FIXTURE_BYTES)
     except UnicodeError as exc:
         raise ValueError("fixture text is not valid UTF-8") from exc
+    assert_original_encoder()
     if data is None:
         raise ValueError("fixture content byte budget exceeded")
     if _hash_private_fixture is not _ORIGINAL_PRIVATE_HASH_HELPER:
@@ -342,6 +370,39 @@ def fixture_text_observation(
         content_sha256=digest,
         parent_sha256=parent_sha256,
     )
+
+
+def _make_fixture_text_observation():
+    # Both the implementation and encoder/vector are retained outside mutable
+    # module names while preserving the public function's original signature.
+    original_encoder = _encode_fixture_text_bounded
+    original_encoder_vector = _ORIGINAL_BOUNDED_TEXT_ENCODER_VECTOR
+    original_impl = _fixture_text_observation_impl
+
+    def fixture_text_observation(
+        content: str,
+        *,
+        kind: ObservationKind,
+        source_id: str,
+        privacy_scope: str,
+        ingested_at_ms: int,
+        parent_sha256: str | None = None,
+    ) -> ObservationEnvelope:
+        return original_impl(
+            content,
+            kind=kind,
+            source_id=source_id,
+            privacy_scope=privacy_scope,
+            ingested_at_ms=ingested_at_ms,
+            _original_encoder=original_encoder,
+            _original_encoder_vector=original_encoder_vector,
+            parent_sha256=parent_sha256,
+        )
+
+    return fixture_text_observation
+
+
+fixture_text_observation = _make_fixture_text_observation()
 
 
 def fixture_binary_observation(
