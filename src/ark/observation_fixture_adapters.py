@@ -265,9 +265,13 @@ def _require_original_envelope(
     ):
         if saved is _ABSENT_ENVELOPE_HOOK:
             if name in namespace:
-                raise ValueError("fixture envelope definition changed before private access")
+                raise ValueError(
+                    "fixture envelope definition changed before private access"
+                )
         elif name not in namespace or namespace[name] is not saved:
-            raise ValueError("fixture envelope definition changed before private access")
+            raise ValueError(
+                "fixture envelope definition changed before private access"
+            )
 
 
 def _sealed_fixture(
