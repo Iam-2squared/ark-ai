@@ -1,4 +1,5 @@
-"""A substituted revocation digest helper must be rejected before the intended Memory scope can be read or changed.
+"""A substituted revocation digest helper must be rejected before the intended
+Memory scope can be read or changed.
 
 Local SQLite fixtures model a privacy veto, not verified human consent or
 real erasure. No external personal-data connection is made.
