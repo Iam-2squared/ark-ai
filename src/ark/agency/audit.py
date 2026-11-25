@@ -347,7 +347,14 @@ def _require_valid_committed_audit_history(conn: sqlite3.Connection) -> None:
         previous_clock = clock
 
 
-def _require_original_event_constructor(phase: str = "") -> None:
+def _require_original_event_constructor(
+    phase: str = "",
+    *,
+    _event_fields=_EVENT_FIELDS,
+    _original_event_fields=_ORIGINAL_EVENT_FIELDS,
+    _event_hooks=_EVENT_HOOKS,
+    _original_event_hooks=_ORIGINAL_EVENT_HOOKS,
+) -> None:
     if (
         hashlib.sha256 is not _ORIGINAL_SHA256
         or _canonical_json is not _ORIGINAL_CANONICAL_JSON
@@ -358,22 +365,25 @@ def _require_original_event_constructor(phase: str = "") -> None:
     ):
         raise ActionAuditSchemaError("action audit digest callback changed")
     # An audit receipt is data, not a place to execute new Python code.
-    # Reflectively replacing a slotted field can install an executable
-    # descriptor. Inspect the ORIGINAL class dictionary without getattr(),
-    # before opening SQLite, hydrating rows or constructing a receipt.
+    # Retain the comparison vectors outside mutable module bindings before
+    # inspecting the ORIGINAL class dictionary without getattr().
     if (
-        ActionAuditEvent is not _EVENT_TYPE
+        _EVENT_FIELDS is not _event_fields
+        or _ORIGINAL_EVENT_FIELDS is not _original_event_fields
+        or _EVENT_HOOKS is not _event_hooks
+        or _ORIGINAL_EVENT_HOOKS is not _original_event_hooks
+        or ActionAuditEvent is not _EVENT_TYPE
         or vars(_EVENT_TYPE).get("__init__") is not _ORIGINAL_EVENT_INIT
         or any(
             vars(_EVENT_TYPE).get(name) is not original
             for name, original in zip(
-                _EVENT_FIELDS, _ORIGINAL_EVENT_FIELDS, strict=True,
+                _event_fields, _original_event_fields, strict=True,
             )
         )
         or any(
             vars(_EVENT_TYPE).get(name) is not original
             for name, original in zip(
-                _EVENT_HOOKS, _ORIGINAL_EVENT_HOOKS, strict=True,
+                _event_hooks, _original_event_hooks, strict=True,
             )
         )
     ):
