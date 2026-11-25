@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 import ark.startup_readiness_review as readiness
@@ -11,7 +14,7 @@ _CARRIERS = (
     "ComponentResult",
     "StartupSnapshot",
 )
-_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_HOOKS = ("__getattribute__", "__getattr__")
 
 
 def _set_class_attribute(
@@ -56,6 +59,33 @@ def test_explicit_none_is_not_confused_with_an_absent_startup_hook(
     finally:
         _restore_class_attribute(carrier, hook, original)
 
+
+
+@pytest.mark.parametrize("carrier_name", _CARRIERS)
+def test_explicit_none_new_hook_is_rejected_in_an_isolated_process(
+    carrier_name: str,
+) -> None:
+    # Mutating a special __new__ slot and deleting it can leave interpreter
+    # allocation state behind on some Python builds. Keep this probe isolated.
+    script = f"""
+import ark.startup_readiness_review as readiness
+
+carrier = getattr(readiness, {carrier_name!r})
+type.__setattr__(carrier, "__new__", None)
+try:
+    readiness._assert_original_startup_constructors()
+except ValueError:
+    pass
+else:
+    raise SystemExit("explicit None __new__ hook was accepted")
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr or completed.stdout
 
 def test_exact_absence_sentinel_installed_as_a_hook_is_rejected() -> None:
     hook = "__getattr__"
