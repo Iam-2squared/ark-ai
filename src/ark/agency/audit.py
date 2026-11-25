@@ -411,6 +411,7 @@ def _is_reparse_point(info: object) -> bool:
         attributes & _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     )
 
+
 def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
     """Refuse local audit path aliases before any SQLite open or mkdir.
 
@@ -531,6 +532,7 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
     except OSError as exc:
         _require_original_reparse_policy()
         raise ActionAuditSchemaError("audit path custody cannot be verified") from exc
+
 
 class SQLiteActionAudit:
     # Keep __dict__ for the existing callback fault-injection fixtures while
