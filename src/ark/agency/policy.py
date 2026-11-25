@@ -822,21 +822,73 @@ _ORIGINAL_GATE_SLOTS = vars(_ORIGINAL_PERMISSION_GATE)["__slots__"]
 _ORIGINAL_GATE_SETATTR = vars(_ORIGINAL_PERMISSION_GATE)["__setattr__"]
 _ORIGINAL_GATE_DELATTR = vars(_ORIGINAL_PERMISSION_GATE)["__delattr__"]
 _ORIGINAL_GATE_INIT = vars(_ORIGINAL_PERMISSION_GATE)["__init__"]
+_ORIGINAL_AUTHORIZE = vars(_ORIGINAL_PERMISSION_GATE)["authorize"]
+_ORIGINAL_AUTHORIZE_REGISTERED = vars(_ORIGINAL_PERMISSION_GATE)["authorize_registered"]
 _ORIGINAL_LOCK = Lock
 _ORIGINAL_LOCK_TYPE = type(_ORIGINAL_LOCK())
+# object.__getattribute__ is inherited by this exact class, and __getattr__ is
+# absent. Pin absence as well as present hooks: setting either attribute to
+# None is still a class-level lookup-policy change.
+_GATE_LOOKUP_HOOK_NAMES = ("__getattribute__", "__getattr__")
+_GATE_LOOKUP_HOOK_ABSENT = object()
+_ORIGINAL_GATE_LOOKUP_HOOKS = tuple(
+    vars(_ORIGINAL_PERMISSION_GATE).get(name, _GATE_LOOKUP_HOOK_ABSENT)
+    for name in _GATE_LOOKUP_HOOK_NAMES
+)
 
 
-def _require_original_gate_class() -> None:
+def _require_original_gate_class(
+    *,
+    _original_gate_type: type = _ORIGINAL_PERMISSION_GATE,
+    _original_gate_slots: tuple[str, ...] = _ORIGINAL_GATE_SLOTS,
+    _original_gate_setattr: object = _ORIGINAL_GATE_SETATTR,
+    _original_gate_delattr: object = _ORIGINAL_GATE_DELATTR,
+    _original_gate_init: object = _ORIGINAL_GATE_INIT,
+    _original_authorize: object = _ORIGINAL_AUTHORIZE,
+    _original_authorize_registered: object = _ORIGINAL_AUTHORIZE_REGISTERED,
+    _original_lock: object = _ORIGINAL_LOCK,
+    _original_lock_type: type = _ORIGINAL_LOCK_TYPE,
+    _original_lookup_names: tuple[str, ...] = _GATE_LOOKUP_HOOK_NAMES,
+    _original_lookup_absent: object = _GATE_LOOKUP_HOOK_ABSENT,
+    _original_lookup_hooks: tuple[object, ...] = _ORIGINAL_GATE_LOOKUP_HOOKS,
+) -> None:
+    # Defaults retain the original class/descriptors independently of mutable
+    # module aliases. Lookup hooks are checked before _assert_gate_instance_epoch
+    # reads any token or lock slot, so a replaced __getattribute__ cannot
+    # substitute a non-locking context manager or counterfeit token set.
+    lookup_namespace = vars(_original_gate_type)
     if (
-        PermissionGate is not _ORIGINAL_PERMISSION_GATE
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__slots__") is not _ORIGINAL_GATE_SLOTS
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__setattr__") is not _ORIGINAL_GATE_SETATTR
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__delattr__") is not _ORIGINAL_GATE_DELATTR
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__init__") is not _ORIGINAL_GATE_INIT
-        or vars(_ORIGINAL_PERMISSION_GATE).get("authorize") is not _ORIGINAL_AUTHORIZE
-        or vars(_ORIGINAL_PERMISSION_GATE).get("authorize_registered")
-        is not _ORIGINAL_AUTHORIZE_REGISTERED
-        or Lock is not _ORIGINAL_LOCK
+        PermissionGate is not _original_gate_type
+        or _ORIGINAL_PERMISSION_GATE is not _original_gate_type
+        or vars(_original_gate_type).get("__slots__") is not _original_gate_slots
+        or _ORIGINAL_GATE_SLOTS is not _original_gate_slots
+        or vars(_original_gate_type).get("__setattr__") is not _original_gate_setattr
+        or _ORIGINAL_GATE_SETATTR is not _original_gate_setattr
+        or vars(_original_gate_type).get("__delattr__") is not _original_gate_delattr
+        or _ORIGINAL_GATE_DELATTR is not _original_gate_delattr
+        or vars(_original_gate_type).get("__init__") is not _original_gate_init
+        or _ORIGINAL_GATE_INIT is not _original_gate_init
+        or vars(_original_gate_type).get("authorize") is not _original_authorize
+        or _ORIGINAL_AUTHORIZE is not _original_authorize
+        or vars(_original_gate_type).get("authorize_registered")
+        is not _original_authorize_registered
+        or _ORIGINAL_AUTHORIZE_REGISTERED is not _original_authorize_registered
+        or Lock is not _original_lock
+        or _ORIGINAL_LOCK is not _original_lock
+        or _ORIGINAL_LOCK_TYPE is not _original_lock_type
+        or _GATE_LOOKUP_HOOK_NAMES is not _original_lookup_names
+        or _GATE_LOOKUP_HOOK_ABSENT is not _original_lookup_absent
+        or _ORIGINAL_GATE_LOOKUP_HOOKS is not _original_lookup_hooks
+        or any(
+            (name in lookup_namespace) != (original is not _original_lookup_absent)
+            or (
+                name in lookup_namespace
+                and lookup_namespace[name] is not original
+            )
+            for name, original in zip(
+                _original_lookup_names, _original_lookup_hooks, strict=True,
+            )
+        )
     ):
         raise PermissionDenied("PermissionGate implementation identity changed")
 
@@ -859,9 +911,3 @@ def _assert_gate_instance_epoch(gate: PermissionGate) -> None:
         or lock is not lock_epoch
     ):
         raise PermissionDenied("PermissionGate token or lock custody changed")
-
-
-# Capture the exact class methods after class construction. The class guard
-# above is called by every instance before its token/lock state is inspected.
-_ORIGINAL_AUTHORIZE = vars(_ORIGINAL_PERMISSION_GATE)["authorize"]
-_ORIGINAL_AUTHORIZE_REGISTERED = vars(_ORIGINAL_PERMISSION_GATE)["authorize_registered"]
