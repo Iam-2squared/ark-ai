@@ -23,6 +23,10 @@ ark-compare = "ark.evaluation.compare:main"
 ark-ui = "ark.ui.server:main"
 ark-launch = "ark.launcher:main"
 ark-gate = "ark.gate:main"
+ark-v3-dataset = "ark.learning.dataset_cli:main"
+ark-v3-identity = "ark.learning.identity_cli:main"
+ark-v3-auth-packet = "ark.learning.authorization:main"
+ark-v3-run = "ark.learning.training_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ark"]
