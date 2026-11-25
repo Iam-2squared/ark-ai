@@ -29,8 +29,18 @@ _HASH = re.compile(r"[0-9a-f]{64}\Z")
 _TOPOLOGY = re.compile(r"plan_[0-9a-f]{64}\Z")
 _STATUS = re.compile(r"pstate_[0-9a-f]{64}\Z")
 _STATES = frozenset(state.value for state in StepState)
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+# Retain the module objects and executable digest functions as one import-time
+# epoch. Mutable module aliases must not jointly redefine the "original" pair.
+_ORIGINAL_PLANNER_DIGEST_EPOCH = (
+    _ORIGINAL_HASHLIB,
+    _ORIGINAL_SHA256,
+    _ORIGINAL_JSON,
+    _ORIGINAL_DUMPS,
+)
 _ORIGINAL_STAT = stat
 _ORIGINAL_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
@@ -173,8 +183,21 @@ def _normalize_sql(value: str) -> str:
     return " ".join(value.lower().split())
 
 
-def _require_digest_protocol() -> None:
-    if hashlib.sha256 is not _ORIGINAL_SHA256 or json.dumps is not _ORIGINAL_DUMPS:
+def _require_digest_protocol(
+    *,
+    _original_planner_digest_epoch: tuple[object, ...] = _ORIGINAL_PLANNER_DIGEST_EPOCH,
+) -> None:
+    if (
+        _ORIGINAL_PLANNER_DIGEST_EPOCH is not _original_planner_digest_epoch
+        or hashlib is not _original_planner_digest_epoch[0]
+        or _ORIGINAL_HASHLIB is not _original_planner_digest_epoch[0]
+        or hashlib.sha256 is not _original_planner_digest_epoch[1]
+        or _ORIGINAL_SHA256 is not _original_planner_digest_epoch[1]
+        or json is not _original_planner_digest_epoch[2]
+        or _ORIGINAL_JSON is not _original_planner_digest_epoch[2]
+        or json.dumps is not _original_planner_digest_epoch[3]
+        or _ORIGINAL_DUMPS is not _original_planner_digest_epoch[3]
+    ):
         raise PlannerJournalError("Planner journal digest dependencies changed")
 
 
