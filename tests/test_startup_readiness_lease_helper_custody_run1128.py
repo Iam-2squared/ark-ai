@@ -160,7 +160,7 @@ def test_replaced_guard_helper_is_denied_before_descriptor_callback(
     assert callbacks == []
 
 
-def test_reentrant_snapshot_callback_cannot_replace_a_lease_guard(
+def test_replaced_integrity_method_denied_before_lease_guard_callback(
     ready_case, monkeypatch,
 ):
     snapshot, requirements = ready_case
@@ -180,11 +180,11 @@ def test_reentrant_snapshot_callback_cannot_replace_a_lease_guard(
     )
 
     with pytest.raises(
-        mod.SyntheticStartupLeaseRejected, match="helper identity",
+        mod.SyntheticStartupLeaseRejected, match="startup lease source descriptor changed",
     ):
         _review(snapshot, requirements)
 
-    assert observed == ["snapshot-integrity"]
+    assert observed == []
 
 
 def test_replaced_guard_tuple_is_denied_before_helper_or_descriptor_use(

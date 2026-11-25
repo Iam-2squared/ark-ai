@@ -25,7 +25,7 @@ def _snapshot(*, blocked: bool):
     ))
 
 
-def test_reflected_temporary_requirement_substitution_cannot_skip_blocked_lane(
+def test_replaced_integrity_method_denied_before_requirement_callback(
     monkeypatch,
 ):
     snapshot = _snapshot(blocked=True)
@@ -45,11 +45,15 @@ def test_reflected_temporary_requirement_substitution_cannot_skip_blocked_lane(
             object.__setattr__(requirement, "schema_revision", "memory-v1")
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", reflected_requirement_swap)
-    with pytest.raises(SyntheticStartupLeaseRejected, match="blocked"):
+    with pytest.raises(
+        SyntheticStartupLeaseRejected,
+        match="startup lease source descriptor changed",
+    ):
         review_synthetic_startup_lease(
             snapshot, (requirement,),
             captured_at_ms=10, now_ms=12, max_age_ms=5,
         )
+    assert calls == 0
 
 
 def test_normal_ready_dependency_diagnostic_remains_non_authoritative():

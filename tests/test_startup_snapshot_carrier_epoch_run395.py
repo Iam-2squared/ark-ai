@@ -39,7 +39,7 @@ def _review(snapshot, requirement):
 @pytest.mark.parametrize(
     "change", ("tuple", "component", "dependencies", "local_state"),
 )
-def test_integrity_callback_cannot_substitute_snapshot_carriers(
+def test_replaced_integrity_method_denied_before_snapshot_carrier_access(
     monkeypatch, phase, change,
 ):
     snapshot, requirement = _state()
@@ -70,13 +70,13 @@ def test_integrity_callback_cannot_substitute_snapshot_carriers(
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", substituted)
     with pytest.raises(
-        SyntheticStartupLeaseRejected, match="readiness inputs changed",
+        SyntheticStartupLeaseRejected, match="startup lease source descriptor changed",
     ):
         _review(snapshot, requirement)
-    assert calls == phase
+    assert calls == 0
 
 
-def test_requirement_drift_between_integrity_passes_is_rejected(monkeypatch):
+def test_replaced_integrity_method_denied_before_requirement_access(monkeypatch):
     snapshot, requirement = _state()
     original = StartupSnapshot._assert_integrity
     calls = 0
@@ -94,10 +94,10 @@ def test_requirement_drift_between_integrity_passes_is_rejected(monkeypatch):
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", swapped_requirement)
     with pytest.raises(
-        SyntheticStartupLeaseRejected, match="readiness inputs changed",
+        SyntheticStartupLeaseRejected, match="startup lease source descriptor changed",
     ):
         _review(snapshot, requirement)
-    assert calls == 1
+    assert calls == 0
 
 
 def test_stable_lease_never_authorizes_startup_or_dispatch():

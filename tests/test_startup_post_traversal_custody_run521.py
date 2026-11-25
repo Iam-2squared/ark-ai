@@ -37,7 +37,7 @@ def test_unmodified_state_and_blocker_queries_remain_stable():
         ("schema_revision", "reflected-change"),
     ),
 )
-def test_state_lookup_rejects_reentrant_snapshot_edit(
+def test_state_lookup_rejects_replaced_integrity_method_before_dispatch(
     monkeypatch, field, replacement,
 ):
     stored = snapshot()
@@ -55,13 +55,13 @@ def test_state_lookup_rejects_reentrant_snapshot_edit(
             object.__setattr__(root, field, replacement)
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", modified)
-    with pytest.raises(ValueError, match="startup snapshot"):
+    with pytest.raises(ValueError, match="startup constructor authority changed"):
         stored.state("child")
-    assert checks >= 3
+    assert checks == 0
 
 
 @pytest.mark.parametrize("target", ("root_state", "dependency", "digest"))
-def test_blocker_traversal_rejects_reentrant_snapshot_edit(monkeypatch, target):
+def test_blocker_reader_rejects_replaced_integrity_method_before_dispatch(monkeypatch, target):
     stored = snapshot()
     original = StartupSnapshot._assert_integrity
     checks = 0
@@ -85,6 +85,6 @@ def test_blocker_traversal_rejects_reentrant_snapshot_edit(monkeypatch, target):
                 object.__setattr__(self, "digest", "startup_" + "f" * 64)
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", modified)
-    with pytest.raises(ValueError, match="startup snapshot"):
+    with pytest.raises(ValueError, match="startup constructor authority changed"):
         stored.root_blockers("child")
-    assert checks >= 3
+    assert checks == 0

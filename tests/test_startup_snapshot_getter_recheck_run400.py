@@ -29,7 +29,7 @@ def test_clean_snapshot_still_preserves_dependency_blockers():
 
 
 @pytest.mark.parametrize("method", ("state", "root_blockers"))
-def test_identifier_callback_cannot_reclassify_cached_blocker(
+def test_replaced_integrity_method_denied_before_identifier_callback(
     monkeypatch, method,
 ):
     snapshot = _snapshot()
@@ -64,9 +64,9 @@ def test_identifier_callback_cannot_reclassify_cached_blocker(
 
     monkeypatch.setattr(StartupSnapshot, "_assert_integrity", check)
     monkeypatch.setattr(startup, "_identifier", identify)
-    with pytest.raises(ValueError, match="startup snapshot"):
+    with pytest.raises(ValueError, match="startup constructor authority changed"):
         if method == "state":
             snapshot.state("child")
         else:
             snapshot.root_blockers("child")
-    assert phase["attacked"]
+    assert phase["attacked"] is False
