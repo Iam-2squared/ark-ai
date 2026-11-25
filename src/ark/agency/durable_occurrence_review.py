@@ -57,6 +57,51 @@ _ORIGINAL_ID_PATTERNS = (
 )
 
 
+_TOKEN_TYPE = OneShotAuthorization
+_TOKEN_FIELDS = ("token_id", "request_id", "expires_at_ms")
+_TOKEN_METHODS = ("__init__", "__post_init__")
+_TOKEN_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_TOKEN_FIELDS = tuple(vars(_TOKEN_TYPE)[name] for name in _TOKEN_FIELDS)
+_ORIGINAL_TOKEN_METHODS = tuple(vars(_TOKEN_TYPE)[name] for name in _TOKEN_METHODS)
+_ORIGINAL_TOKEN_HOOKS = tuple(vars(_TOKEN_TYPE).get(name) for name in _TOKEN_HOOKS)
+_TOKEN_VECTOR_EPOCH = (
+    _TOKEN_FIELDS, _TOKEN_METHODS, _TOKEN_HOOKS,
+    _ORIGINAL_TOKEN_FIELDS, _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS,
+)
+
+
+def _require_original_token_contract() -> None:
+    if (
+        OneShotAuthorization is not _TOKEN_TYPE
+        or any(
+            current is not original
+            for current, original in zip(
+                (
+                    _TOKEN_FIELDS, _TOKEN_METHODS, _TOKEN_HOOKS,
+                    _ORIGINAL_TOKEN_FIELDS, _ORIGINAL_TOKEN_METHODS,
+                    _ORIGINAL_TOKEN_HOOKS,
+                ),
+                _TOKEN_VECTOR_EPOCH,
+                strict=True,
+            )
+        )
+        or any(
+            vars(_TOKEN_TYPE).get(name) is not original
+            for names, originals in (
+                (_TOKEN_FIELDS, _ORIGINAL_TOKEN_FIELDS),
+                (_TOKEN_METHODS, _ORIGINAL_TOKEN_METHODS),
+                (_TOKEN_HOOKS, _ORIGINAL_TOKEN_HOOKS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+    ):
+        raise SyntheticReplayRejected("synthetic one-shot token contract changed")
+
+
+_ORIGINAL_TOKEN_VECTOR_EPOCH = _TOKEN_VECTOR_EPOCH
+_ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT = _require_original_token_contract
+
+
 def _require_original_digest() -> None:
     if hashlib is not _ORIGINAL_HASHLIB or hashlib.sha256 is not _ORIGINAL_SHA256:
         raise SyntheticReplayRejected(
@@ -72,6 +117,12 @@ def _require_original_protocol() -> None:
     """
     _require_original_digest()
     if (
+        _TOKEN_VECTOR_EPOCH is not _ORIGINAL_TOKEN_VECTOR_EPOCH
+        or _require_original_token_contract is not _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT
+    ):
+        raise SyntheticReplayRejected("synthetic one-shot token contract guard changed")
+    _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT()
+    if (
         _TABLE is not _ORIGINAL_TABLE
         or type(_MAX) is not int or _MAX != _ORIGINAL_MAX
         or any(
@@ -83,6 +134,43 @@ def _require_original_protocol() -> None:
         )
     ):
         raise SyntheticReplayRejected("synthetic occurrence protocol changed")
+
+
+def _admit_exact_token_fields(
+    token: OneShotAuthorization,
+) -> tuple[str, str, int]:
+    """Read only exact primitive token fields before registry/SQLite callbacks."""
+    if _require_original_token_contract is not _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT:
+        raise SyntheticReplayRejected("synthetic one-shot token contract guard changed")
+    _ORIGINAL_REQUIRE_ORIGINAL_TOKEN_CONTRACT()
+    if type(token) is not _TOKEN_TYPE:
+        raise SyntheticReplayRejected("synthetic reservation requires an exact token")
+    try:
+        token_id = object.__getattribute__(token, "token_id")
+        request_id = object.__getattribute__(token, "request_id")
+        expires_at_ms = object.__getattribute__(token, "expires_at_ms")
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise SyntheticReplayRejected(
+            "synthetic token fields are unavailable"
+        ) from exc
+    if type(token_id) is not str or not token_id.strip():
+        raise SyntheticReplayRejected("synthetic token fields must be exact valid values")
+    if (
+        type(request_id) is not str
+        or len(request_id) != 68
+        or request_id[:4] != "act_"
+        or any(char not in "0123456789abcdef" for char in request_id[4:])
+    ):
+        raise SyntheticReplayRejected("synthetic token fields must be exact valid values")
+    if (
+        type(expires_at_ms) is not int
+        or not 0 <= expires_at_ms <= _MAX
+    ):
+        raise SyntheticReplayRejected("synthetic token fields must be exact valid values")
+    return token_id, request_id, expires_at_ms
+
+
+_ORIGINAL_ADMIT_EXACT_TOKEN_FIELDS = _admit_exact_token_fields
 
 
 @dataclass(frozen=True, slots=True)
@@ -366,6 +454,9 @@ class SyntheticOccurrenceStore:
         # registry/SQLite fixture may replace with even an always-False getter.
         _require_original_protocol()
         _assert_receipt_denials()
+        if _admit_exact_token_fields is not _ORIGINAL_ADMIT_EXACT_TOKEN_FIELDS:
+            raise SyntheticReplayRejected("synthetic token admission implementation changed")
+        token_epoch = _ORIGINAL_ADMIT_EXACT_TOKEN_FIELDS(token)
         # Pin the initialized source before any caller-supplied registry work.
         # A reflected equal-value Path replacement is a different review epoch.
         path_epoch = self._path
@@ -374,7 +465,6 @@ class SyntheticOccurrenceStore:
         # Auth token fields must be pinned *before* the registry callback.
         # Otherwise a reflected token swap during first bind becomes the
         # supposed original epoch and can reserve a different token.
-        token_epoch = (token.token_id, token.request_id, token.expires_at_ms)
         # Capture the original WRITE subject before the first registry callback,
         # not after its return. Reflection can retarget an otherwise frozen
         # ToolCall or token while the ledger is about to be reserved.
@@ -393,8 +483,18 @@ class SyntheticOccurrenceStore:
                 raise SyntheticReplayRejected(
                     "synthetic occurrence source changed during reserve"
                 )
+            if _admit_exact_token_fields is not _ORIGINAL_ADMIT_EXACT_TOKEN_FIELDS:
+                raise SyntheticReplayRejected(
+                    "synthetic token admission implementation changed"
+                )
             try:
-                if (token.token_id, token.request_id, token.expires_at_ms) != token_epoch:
+                current_token_epoch = _ORIGINAL_ADMIT_EXACT_TOKEN_FIELDS(token)
+                if any(
+                    current is not original
+                    for current, original in zip(
+                        current_token_epoch, token_epoch, strict=True,
+                    )
+                ):
                     raise SyntheticReplayRejected(
                         "synthetic token changed during reserve"
                     )
@@ -405,6 +505,10 @@ class SyntheticOccurrenceStore:
                         call.request_id, call.arguments_sha256,
                     ) == call_epoch
                 )
+            except SyntheticReplayRejected as exc:
+                raise SyntheticReplayRejected(
+                    "synthetic token changed during reserve"
+                ) from exc
             except (TypeError, ValueError, AttributeError) as exc:
                 raise SyntheticReplayRejected(
                     "synthetic occurrence input changed during reserve"
