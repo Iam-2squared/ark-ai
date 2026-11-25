@@ -41,45 +41,29 @@ def test_validator_replacement_is_denied_before_sqlite_validation(
     ledger, path, scope = _fixture(tmp_path)
     opened = []
     original_open = ledger._connect
-    original_validate = module._validate
     validated = []
 
-    def validate(conn):
-        validated.append(True)
-        object.__setattr__(scope, "namespace", "private")
-        return original_validate(conn)
-
-    class ConnectionProxy:
-        def __init__(self, conn):
-            self.conn = conn
-
-        def execute(self, sql, *args):
-            value = self.conn.execute(sql, *args)
-            if sql.startswith("BEGIN"):
-                object.__setattr__(scope, "namespace", "transient")
-            return value
-
-        def __getattr__(self, name):
-            return getattr(self.conn, name)
-
     def open_fixture(*, readonly=False):
-        conn = original_open(readonly=readonly)
-        opened.append(conn)
-        return ConnectionProxy(conn)
+        opened.append(readonly)
+        return original_open(readonly=readonly)
+
+    def forbidden_validator(_conn):
+        validated.append(True)
 
     monkeypatch.setattr(ledger, "_connect", open_fixture)
-    monkeypatch.setattr(module, "_validate", validate)
+    monkeypatch.setattr(module, "_validate", forbidden_validator)
     with pytest.raises(
         module.SyntheticContextRevocationRejected,
         match="revocation scope digest implementation changed",
     ):
         _call(ledger, scope, readonly)
-    assert validated == []
-    assert len(opened) == 1
-    with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
-        opened[0].execute("SELECT 1")
-    assert _count(path) == 0
 
+    # The helper-identity guard must run before either SQLite connection or
+    # schema-validator callback. The fixture constructor's earlier bootstrap
+    # is outside this measured operation.
+    assert opened == []
+    assert validated == []
+    assert _count(path) == 0
 
 @pytest.mark.parametrize("readonly", [True, False])
 def test_post_commit_source_drift_fails_closed_without_erasing_veto(
