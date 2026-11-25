@@ -3,8 +3,8 @@
 ## Exact basis
 
 - Parent: Draft PR #8, branch `research/jarvis-foundations`.
-- Exact parent work-basis HEAD: `86229ee377e91ed1925bd5cd192f565ddd8c2477`.
-- Child branch: `research/run1414-observation-absent-hook-custody-20261125`.
+- Exact parent work-basis HEAD: `7178d91c4ae332908dd8bd34fd9f8ab939385bd3` (PR #8 exact rebase basis)..
+- Child branch: `research/run1414-observation-rebase-20261126`..
 - Scope: `src/ark/observations.py`, `src/ark/observation_fixture_adapters.py`, and one isolated subprocess regression module.
 
 ## Finding
