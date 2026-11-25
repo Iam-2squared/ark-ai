@@ -89,7 +89,9 @@ def _require_original_replay_protocol() -> None:
         or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
-        or getattr(_ORIGINAL_STAT, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400) != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+        or getattr(
+            _ORIGINAL_STAT, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400,
+        ) != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
         or re is not _ORIGINAL_RE
         or _SHA is not _ORIGINAL_SHA
         or _REQUEST is not _ORIGINAL_REQUEST
