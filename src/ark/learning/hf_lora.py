@@ -449,36 +449,39 @@ class HfLoRAPreflightBackend:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("preflight-local-identity")
-        torch, tokenizer, model, verified_probe_sha256 = _build_model_and_tokenizer(
-            snapshot, self.base_dir, self.chat_template_probe,
-        )
-        wall_budget.check("preflight-model-load")
-        encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
-        optimizer, _ = _optimizer(torch, model, snapshot["method"])
-        torch.cuda.reset_peak_memory_stats()
-        started = time.perf_counter()
-        optimizer.zero_grad(set_to_none=True)
-        _single_backward(torch, model, encoded, scale=1.0)
-        wall_budget.check("preflight-backward")
-        optimizer.step()
-        torch.cuda.synchronize()
-        wall_budget.check("preflight-optimizer-step")
-        elapsed = time.perf_counter() - started
-        total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        peak = torch.cuda.max_memory_allocated() / (1024**2)
-        peak_reserved = torch.cuda.max_memory_reserved() / (1024**2)
-        return PreflightEvidence(
-            device=torch.cuda.get_device_name(0),
-            vram_gib=float(total_vram),
-            base_loaded=True,
-            tokenizer_probe_sha256=verified_probe_sha256,
-            forward_backward_ok=True,
-            optimizer_step_ok=True,
-            peak_vram_mib=float(peak),
-            peak_reserved_vram_mib=float(peak_reserved),
-            wall_seconds=float(elapsed),
-            runtime_error=None,
-        )
+        with ExitStack() as stack:
+            torch, tokenizer, model, verified_probe_sha256, stage_owner = (
+                _build_model_and_tokenizer(snapshot, self.base_dir, self.chat_template_probe)
+            )
+            if stage_owner is not None:
+                stack.callback(stage_owner.cleanup)
+            wall_budget.check("preflight-model-load")
+            encoded = _encoded_example(tokenizer, deterministic_training_order(train_rows)[0])
+            optimizer, _ = _optimizer(torch, model, snapshot["method"])
+            torch.cuda.reset_peak_memory_stats()
+            started = time.perf_counter()
+            optimizer.zero_grad(set_to_none=True)
+            _single_backward(torch, model, encoded, scale=1.0)
+            wall_budget.check("preflight-backward")
+            optimizer.step()
+            torch.cuda.synchronize()
+            wall_budget.check("preflight-optimizer-step")
+            elapsed = time.perf_counter() - started
+            total_vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+            peak = torch.cuda.max_memory_allocated() / (1024**2)
+            peak_reserved = torch.cuda.max_memory_reserved() / (1024**2)
+            return PreflightEvidence(
+                device=torch.cuda.get_device_name(0),
+                vram_gib=float(total_vram),
+                base_loaded=True,
+                tokenizer_probe_sha256=verified_probe_sha256,
+                forward_backward_ok=True,
+                optimizer_step_ok=True,
+                peak_vram_mib=float(peak),
+                peak_reserved_vram_mib=float(peak_reserved),
+                wall_seconds=float(elapsed),
+                runtime_error=None,
+            )
 
 
 class HfLoRAFullRun:
@@ -509,85 +512,88 @@ class HfLoRAFullRun:
             dataset_path=self.dataset_path,
         )
         wall_budget.check("training-local-identity")
-        torch, tokenizer, model, _ = _build_model_and_tokenizer(
-            snapshot, self.base_dir, self.chat_template_probe,
-        )
-        wall_budget.check("training-model-load")
-        ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
-        encoded_rows = _pretokenize(tokenizer, ordered)
-        wall_budget.check("training-pretokenize")
-        optimizer, trainable = _optimizer(torch, model, snapshot["method"])
-
-        accumulation = snapshot["method"]["gradient_accumulation"]
-        if len(encoded_rows) % accumulation:
-            raise LoRARuntimeError("training rows must divide exactly by gradient accumulation")
-        optimizer.zero_grad(set_to_none=True)
-        torch.cuda.reset_peak_memory_stats()
-        started = time.perf_counter()
-        losses: list[float] = []
-        optimizer_steps = 0
-        model.train()
-        for index, encoded in enumerate(encoded_rows, start=1):
-            wall_budget.check(f"training-microbatch-{index}-start")
-            losses.append(_single_backward(torch, model, encoded, scale=float(accumulation)))
-            wall_budget.check(f"training-microbatch-{index}-backward")
-            if index % accumulation == 0:
-                optimizer.step()
-                optimizer.zero_grad(set_to_none=True)
-                optimizer_steps += 1
-                wall_budget.check(f"training-optimizer-step-{optimizer_steps}")
-        torch.cuda.synchronize()
-        wall_budget.check("training-synchronize")
-        elapsed = time.perf_counter() - started
-        if optimizer_steps != 15:
-            raise LoRARuntimeError("experiment-001 must execute exactly 15 optimizer steps")
-
-        wall_budget.check("training-before-save")
-        self.output_dir.mkdir()
-        adapter_dir = self.output_dir / "adapter"
-        model.save_pretrained(adapter_dir, safe_serialization=True)
-        wall_budget.check("training-adapter-save")
-        tokenizer.save_pretrained(self.output_dir / "tokenizer")
-        wall_budget.check("training-tokenizer-save")
-        metrics = {
-            "schema_version": 1,
-            "experiment_id": "v3-format-compliance-001",
-            "execution_snapshot_sha256": snapshot_sha,
-            "dataset_sha256": snapshot["dataset"]["canonical_sha256"],
-            "optimizer_steps": optimizer_steps,
-            "microbatches": len(encoded_rows),
-            "mean_training_loss": math.fsum(losses) / len(losses),
-            "peak_vram_mib": float(torch.cuda.max_memory_allocated() / (1024**2)),
-            "peak_reserved_vram_mib": float(
-                torch.cuda.max_memory_reserved() / (1024**2)
-            ),
-            "wall_seconds": float(elapsed),
-            "trainable_parameters": int(sum(parameter.numel() for parameter in trainable)),
-            "method": dict(snapshot["method"]),
-        }
-        metrics_payload = (
-            json.dumps(metrics, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
-        ).encode()
-        with (self.output_dir / "training-metrics.json").open("xb") as handle:
-            handle.write(metrics_payload)
-        with (self.output_dir / "execution-snapshot.json").open("xb") as handle:
-            handle.write(
-                (
-                    json.dumps(snapshot, sort_keys=True, separators=(",", ":"), allow_nan=False)
-                    + "\n"
-                ).encode()
+        with ExitStack() as stack:
+            torch, tokenizer, model, _, stage_owner = _build_model_and_tokenizer(
+                snapshot, self.base_dir, self.chat_template_probe,
             )
-        wall_budget.check("training-evidence-save")
-        run_manifest_path, run_manifest_sha256 = write_candidate_run_manifest(
-            snapshot,
-            self.output_dir,
-        )
-        wall_budget.check("training-run-manifest-save")
-        return {
-            **metrics,
-            "training_metrics_sha256": digest(metrics_payload),
-            "run_manifest_sha256": run_manifest_sha256,
-            "run_manifest": str(run_manifest_path),
-            "adapter_directory": str(adapter_dir),
-            "authorization_scope": "training",
-        }
+            if stage_owner is not None:
+                stack.callback(stage_owner.cleanup)
+            wall_budget.check("training-model-load")
+            ordered = deterministic_training_order(train_rows, snapshot["method"]["seed"])
+            encoded_rows = _pretokenize(tokenizer, ordered)
+            wall_budget.check("training-pretokenize")
+            optimizer, trainable = _optimizer(torch, model, snapshot["method"])
+
+            accumulation = snapshot["method"]["gradient_accumulation"]
+            if len(encoded_rows) % accumulation:
+                raise LoRARuntimeError("training rows must divide exactly by gradient accumulation")
+            optimizer.zero_grad(set_to_none=True)
+            torch.cuda.reset_peak_memory_stats()
+            started = time.perf_counter()
+            losses: list[float] = []
+            optimizer_steps = 0
+            model.train()
+            for index, encoded in enumerate(encoded_rows, start=1):
+                wall_budget.check(f"training-microbatch-{index}-start")
+                losses.append(_single_backward(torch, model, encoded, scale=float(accumulation)))
+                wall_budget.check(f"training-microbatch-{index}-backward")
+                if index % accumulation == 0:
+                    optimizer.step()
+                    optimizer.zero_grad(set_to_none=True)
+                    optimizer_steps += 1
+                    wall_budget.check(f"training-optimizer-step-{optimizer_steps}")
+            torch.cuda.synchronize()
+            wall_budget.check("training-synchronize")
+            elapsed = time.perf_counter() - started
+            if optimizer_steps != 15:
+                raise LoRARuntimeError("experiment-001 must execute exactly 15 optimizer steps")
+
+            wall_budget.check("training-before-save")
+            self.output_dir.mkdir()
+            adapter_dir = self.output_dir / "adapter"
+            model.save_pretrained(adapter_dir, safe_serialization=True)
+            wall_budget.check("training-adapter-save")
+            tokenizer.save_pretrained(self.output_dir / "tokenizer")
+            wall_budget.check("training-tokenizer-save")
+            metrics = {
+                "schema_version": 1,
+                "experiment_id": "v3-format-compliance-001",
+                "execution_snapshot_sha256": snapshot_sha,
+                "dataset_sha256": snapshot["dataset"]["canonical_sha256"],
+                "optimizer_steps": optimizer_steps,
+                "microbatches": len(encoded_rows),
+                "mean_training_loss": math.fsum(losses) / len(losses),
+                "peak_vram_mib": float(torch.cuda.max_memory_allocated() / (1024**2)),
+                "peak_reserved_vram_mib": float(
+                    torch.cuda.max_memory_reserved() / (1024**2)
+                ),
+                "wall_seconds": float(elapsed),
+                "trainable_parameters": int(sum(parameter.numel() for parameter in trainable)),
+                "method": dict(snapshot["method"]),
+            }
+            metrics_payload = (
+                json.dumps(metrics, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+            ).encode()
+            with (self.output_dir / "training-metrics.json").open("xb") as handle:
+                handle.write(metrics_payload)
+            with (self.output_dir / "execution-snapshot.json").open("xb") as handle:
+                handle.write(
+                    (
+                        json.dumps(snapshot, sort_keys=True, separators=(",", ":"), allow_nan=False)
+                        + "\n"
+                    ).encode()
+                )
+            wall_budget.check("training-evidence-save")
+            run_manifest_path, run_manifest_sha256 = write_candidate_run_manifest(
+                snapshot,
+                self.output_dir,
+            )
+            wall_budget.check("training-run-manifest-save")
+            return {
+                **metrics,
+                "training_metrics_sha256": digest(metrics_payload),
+                "run_manifest_sha256": run_manifest_sha256,
+                "run_manifest": str(run_manifest_path),
+                "adapter_directory": str(adapter_dir),
+                "authorization_scope": "training",
+            }
