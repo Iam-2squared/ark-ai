@@ -98,18 +98,31 @@ _ORIGINAL_REQUEST_HOOKS = tuple(
 )
 
 
-def _require_original_request_validator() -> None:
+def _require_original_request_validator(
+    _request_fields=_REQUEST_FIELDS,
+    _original_request_fields=_ORIGINAL_REQUEST_FIELDS,
+    _request_hooks=_REQUEST_HOOKS,
+    _original_request_hooks=_ORIGINAL_REQUEST_HOOKS,
+) -> None:
+    # Retain every comparison vector in function defaults. Module-level
+    # aliases are mutable too: replacing both a working vector and its
+    # purported original with empty tuples would otherwise make zip(strict=True)
+    # vacuous and permit a substituted descriptor to execute before denial.
     if (
-        CoherentSnapshotRequest is not _REQUEST_TYPE
+        _REQUEST_FIELDS is not _request_fields
+        or _ORIGINAL_REQUEST_FIELDS is not _original_request_fields
+        or _REQUEST_HOOKS is not _request_hooks
+        or _ORIGINAL_REQUEST_HOOKS is not _original_request_hooks
+        or CoherentSnapshotRequest is not _REQUEST_TYPE
         or vars(_REQUEST_TYPE).get("__init__") is not _ORIGINAL_REQUEST_INIT
         or vars(_REQUEST_TYPE).get("__post_init__") is not _ORIGINAL_REQUEST_POST_INIT
         or any(
             vars(_REQUEST_TYPE).get(name) is not original
-            for name, original in zip(_REQUEST_FIELDS, _ORIGINAL_REQUEST_FIELDS, strict=True)
+            for name, original in zip(_request_fields, _original_request_fields, strict=True)
         )
         or any(
             vars(_REQUEST_TYPE).get(name) is not original
-            for name, original in zip(_REQUEST_HOOKS, _ORIGINAL_REQUEST_HOOKS, strict=True)
+            for name, original in zip(_request_hooks, _original_request_hooks, strict=True)
         )
     ):
         raise MemorySchemaError("memory snapshot request validator changed")
@@ -128,20 +141,30 @@ _ORIGINAL_RESULT_HOOKS = tuple(
 )
 
 
-def _require_original_snapshot_result_constructor() -> None:
+def _require_original_snapshot_result_constructor(
+    _result_fields=_RESULT_FIELDS,
+    _original_result_fields=_ORIGINAL_RESULT_FIELDS,
+    _result_hooks=_RESULT_HOOKS,
+    _original_result_hooks=_ORIGINAL_RESULT_HOOKS,
+) -> None:
     # A counterfeit constructor can execute arbitrary Python before the
-    # postconstruction result-type/authority review ever runs.
+    # postconstruction result-type/authority review ever runs. Retain the
+    # vectors outside mutable module bindings before inspecting class slots.
     if (
-        CoherentSnapshotReview is not _COHERENT_SNAPSHOT_RESULT_TYPE
+        _RESULT_FIELDS is not _result_fields
+        or _ORIGINAL_RESULT_FIELDS is not _original_result_fields
+        or _RESULT_HOOKS is not _result_hooks
+        or _ORIGINAL_RESULT_HOOKS is not _original_result_hooks
+        or CoherentSnapshotReview is not _COHERENT_SNAPSHOT_RESULT_TYPE
         or vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get("__init__")
         is not _ORIGINAL_COHERENT_SNAPSHOT_INIT
         or any(
             vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get(name) is not original
-            for name, original in zip(_RESULT_FIELDS, _ORIGINAL_RESULT_FIELDS, strict=True)
+            for name, original in zip(_result_fields, _original_result_fields, strict=True)
         )
         or any(
             vars(_COHERENT_SNAPSHOT_RESULT_TYPE).get(name) is not original
-            for name, original in zip(_RESULT_HOOKS, _ORIGINAL_RESULT_HOOKS, strict=True)
+            for name, original in zip(_result_hooks, _original_result_hooks, strict=True)
         )
     ):
         raise MemorySchemaError("memory snapshot result constructor changed")
