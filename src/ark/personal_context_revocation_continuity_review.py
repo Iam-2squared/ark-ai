@@ -102,7 +102,7 @@ def _require_original_witness_carrier(
 ) -> None:
     if (
         _require_original_witness_carrier is not _ORIGINAL_WITNESS_GUARD
-        _WITNESS_VECTOR_EPOCH is not _original_vector_epoch
+        or _WITNESS_VECTOR_EPOCH is not _original_vector_epoch
         or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
