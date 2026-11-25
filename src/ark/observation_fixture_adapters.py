@@ -372,8 +372,6 @@ def _fixture_text_observation_impl(
     )
 
 
-
-
 def _make_fixture_text_observation():
     # Both the implementation and encoder/vector are retained outside mutable
     # module names while preserving the public function's original signature.
