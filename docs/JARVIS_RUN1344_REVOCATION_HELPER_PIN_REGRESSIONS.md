@@ -22,3 +22,9 @@ This package updates those regressions to assert that substituted helpers are re
 ## Evidence boundary
 
 Synthetic local SQLite and exact MemoryScope fixtures only. No authenticated consent, trusted storage, erasure proof, cross-store atomicity, downstream-use authorization, live personal data, external service or paid compute, Candidate, protected V2 evaluation, credentials, hardware, destructive action, frozen-contract change, UI work, or main merge. PR #8 and PR #523 remain Draft/unmerged; PR #9 remains untouched. ARK/JARVIS remains NOT_PASSED.
+
+## Exact-head CI correction
+
+- Initial Run1344 exact-head CI [45520692351](https://github.com/Iam-2squared/ark-ai/actions/runs/45520692351), head `0a68e7541f8e84e5dcff03fbe89a28638c28c7c3`: **FAIL at Ruff E501 only** across all six Windows/Linux × Python 3.11–3.13 jobs; pytest did not run. The findings were three overlong lines introduced while updating old regression expectations (two in Run416 and one Run402 docstring), repeated by the six matrix jobs.
+- Corrected only test formatting and callback-count placement. The five regression files now have no lines over the repository's 100-character Ruff limit. No production source or test semantics were relaxed.
+- Fresh exact-head CI is triggered by this correction; its result is pending. No PASS is claimed.
