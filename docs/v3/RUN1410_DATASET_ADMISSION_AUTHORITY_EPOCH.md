@@ -30,8 +30,8 @@ The dataset admission boundary compared `_ORIGINAL_LEARNING_CANDIDATE_TYPE` with
 
 This is local admission-implementation identity hardening only. It does not prove source rights, independent human approval, semantic contamination absence, provenance completeness, training success, Candidate weights, V2 evaluation or promotion. Frozen Contract 1, dataset schema and experiment parameters are unchanged.
 
-The existing PR #5 head `2c3501930baff61f04b25e7e02c00b0241a426e7` has CI run `45589076269` **FAIL** before pytest: all six matrix jobs fail at `ruff check .` on inherited import-order violations in `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py` and `tests/test_tool_registry_delete_seal_run1240.py`. The observed job logs show pytest skipped. This is a base-branch blocker; no child exact-head CI or test PASS is claimed.
+A historical PR #5 parent-head run `45589076269` **FAIL**ed before pytest at `ruff check .` on three import-order violations; its job logs show pytest skipped. The child exact-head run `45627825798` for `73f93c46cda8832a82ed5a20579324a11cec64ff` is **GREEN, 6/6** (Windows/Linux × Python 3.11–3.13). The child result is the applicable validation evidence for this package; the older parent run is retained only as historical context.
 
 No paid/external compute, paid service, Candidate generation/promotion, protected V2 evaluation, credentials, account connection, hardware, destructive action, frozen-contract change, main write/merge or UI/frontend work occurred. PR #5 remains Draft/unmerged. PR #8/#9 remain Draft/unmerged; UI/frontend work remains paused.
 
-Fresh child exact-head Windows/Linux × Python 3.11–3.13 CI remains required after the inherited Ruff blocker is resolved through its controlling path.
+Exact child-head CI evidence: run `45627825798` GREEN, all six Windows/Linux × Python 3.11–3.13 jobs successful.
