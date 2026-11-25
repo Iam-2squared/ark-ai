@@ -212,6 +212,18 @@ _ORIGINAL_AUDIT_NOW = vars(SQLiteActionAudit)["_now"]
 _ORIGINAL_OCCURRENCE_RESERVE = vars(SyntheticOccurrenceStore)["reserve_synthetic"]
 _ORIGINAL_OCCURRENCE_CONNECT = vars(SyntheticOccurrenceStore)["_connect"]
 
+# Keep the complete validator inventory as one import-time object. The
+# component verifier captures this tuple in its defaults, so jointly replacing
+# working/original vectors and their aggregate module alias cannot make the
+# strict-zip descriptor checks vacuous.
+_ORIGINAL_COMPONENT_VECTOR_EPOCH = (
+    _MOCK_BACKEND_METHODS, _ORIGINAL_MOCK_BACKEND_METHODS,
+    _MOCK_RESULT_FIELDS, _ORIGINAL_MOCK_RESULT_MEMBERS,
+    _MOCK_RESULT_HOOKS, _ORIGINAL_MOCK_RESULT_HOOKS,
+    _RECEIPT_FIELDS, _RECEIPT_DENIALS, _RECEIPT_HOOKS,
+    _ORIGINAL_RECEIPT_MEMBERS, _ORIGINAL_RECEIPT_HOOKS,
+)
+
 
 def _instance_namespace(value: object) -> dict[str, object]:
     """Return the ordinary instance namespace, or empty for slot-only exact objects."""
@@ -229,7 +241,28 @@ def _require_original_components(
     gate: PermissionGate,
     audit: SQLiteActionAudit,
     occurrences: SyntheticOccurrenceStore | None,
+    *,
+    _original_component_vector_epoch: tuple[object, ...] = _ORIGINAL_COMPONENT_VECTOR_EPOCH,
 ) -> None:
+    current_vectors = (
+        _MOCK_BACKEND_METHODS, _ORIGINAL_MOCK_BACKEND_METHODS,
+        _MOCK_RESULT_FIELDS, _ORIGINAL_MOCK_RESULT_MEMBERS,
+        _MOCK_RESULT_HOOKS, _ORIGINAL_MOCK_RESULT_HOOKS,
+        _RECEIPT_FIELDS, _RECEIPT_DENIALS, _RECEIPT_HOOKS,
+        _ORIGINAL_RECEIPT_MEMBERS, _ORIGINAL_RECEIPT_HOOKS,
+    )
+    if (
+        _ORIGINAL_COMPONENT_VECTOR_EPOCH is not _original_component_vector_epoch
+        or any(
+            current is not original
+            for current, original in zip(
+                current_vectors, _original_component_vector_epoch, strict=True,
+            )
+        )
+    ):
+        raise DisconnectedMockExecutionRejected(
+            "mock executor validator inventory changed"
+        )
     if type(registry) is not ToolRegistry or type(gate) is not PermissionGate:
         raise DisconnectedMockExecutionRejected(
             "mock execution requires exact ToolRegistry and PermissionGate instances"
