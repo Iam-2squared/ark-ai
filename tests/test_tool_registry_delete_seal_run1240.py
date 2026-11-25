@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from ark.agency.contracts import Effect, ToolCall
 from ark.agency.registry import ToolRegistration, ToolRegistry
 
