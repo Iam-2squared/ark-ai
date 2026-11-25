@@ -1,5 +1,84 @@
 ## LATEST
 
+- **Saved at:** 2026-11-25 18:02:32 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `088322f30978da5c5094cd2b5114425107343002` (PR #8 and branch HEAD re-read immediately before this checkpoint).
+- **Checkpoint-result HEAD:** this `docs/PROJECT_STATUS.md` update commit; the exact returned SHA is verified after save and reported in the invocation summary. The file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain frozen evidence. Local-first JARVIS foundations continue in isolated/reversible research branches. **ARK/JARVIS overall remains NOT_PASSED.**
+- **Main / UI boundary:** PR #5 remains Draft/unmerged under its V3 gate. PR #8 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; all new UI/frontend development remains paused. No `main` write or merge occurred.
+
+## NEW work this invocation
+
+1. **Run1381 — Planner COMMIT-UNKNOWN recovery evidence integrated (PR #560).**
+   - Child exact HEAD: `9868834cb5b30e0bf33b359bb95ab8ddc63a382d`; exact-head CI run `45575640329`: **GREEN, 6/6**.
+   - Squash-integrated into `research/jarvis-foundations`; resulting parent HEAD: `088322f30978da5c5094cd2b5114425107343002`.
+   - Test/documentation-only. Covers native-COMMIT acknowledgement loss for genesis and transition, reopen/recovery, stale retry denial, ambiguous RUNNING quarantine, and event-prefix truncation. Planner source, schema and CAS semantics remain unchanged.
+
+2. **Run1385 — Memory coherent-snapshot validator vector custody (Draft PR #564).**
+   - Current child HEAD: `6410f11f1c44fded81cbfcf0fb128094e7beb603`.
+   - Retains import-time request/result field, descriptor and hook vectors in private validator defaults; adds joint-vector replacement tests before request-field access and result-field assignment.
+   - Memory v1 DDL/schema/retention, public request/result types, coherent transaction behavior and digest format are unchanged.
+
+3. **Run1386 — ActionAudit event validator vector custody (Draft PR #565).**
+   - Child HEAD: `ea9c8e06e22df7bda0a5e450fa8c4d0b17602ab8`.
+   - Retains event field/descriptor/hook vectors in the private constructor verifier and tests joint vector replacement before SQLite access.
+   - ActionAudit v1 DDL/event fields, chronology and audit-before-action semantics are unchanged.
+
+4. **Run1387 — startup readiness constructor vector custody (Draft PR #566).**
+   - Child HEAD: `50629bc200dd049d1d8a9d0ad59fa2dcd31bf439`.
+   - Retains the startup carrier type/field/hook/descriptor vectors; tests joint replacement before a hostile descriptor or probe generator can execute.
+   - Public readiness types/API and readiness semantics are unchanged.
+
+5. **Run1388 — PlannerJournal stat module/predicate custody (Draft PR #567).**
+   - Child HEAD: `fe09c7a4a7a4ae7a19105ce9c9618967f8273ab2`.
+   - Retains the original stat module and three predicates; tests preinstalled and reentrant joint alias replacement before any substituted predicate executes.
+   - PlannerJournal path semantics, schema/DDL, hash chain, CAS, transition/recovery behavior and public API are unchanged.
+
+## Tests, CI and evidence
+
+- **PR #8 current parent HEAD** `088322f30978da5c5094cd2b5114425107343002`, run `45580347293`: **IN PROGRESS**, 6/6 matrix jobs were running at last observation. This is the parent run after Run1381 integration; it does not validate later child heads or this checkpoint commit.
+- **PR #560 / Run1381** child run `45575640329`: **GREEN, 6/6**; merged into PR #8 at parent HEAD `088322f...`.
+- **PR #559 / Run1380** child HEAD `0df057641628611304bc1380c0a5a222fa3cb88f`, run `45573783862`: **GREEN, 6/6**. It contains source changes and remains Draft/isolated pending a separate dependency review; it was not integrated.
+- **PR #561 / Run1382** child HEAD `59118e37f64f0d40ac5e7a3d6294d11c2384e515`, run `45576193976`: **GREEN, 6/6**, test/documentation-only; not yet integrated.
+- **PR #562 / Run1383** child HEAD `8bc8bf974759ca98a9c6be12d0d961716ee654dc`, run `45576435715`: **GREEN, 6/6**, test/documentation-only; not yet integrated.
+- **PR #563 / Run1384** child HEAD `419e20612d50b8016b633a496181bbc5b3ca7e5c`, run `45576826207`: **GREEN, 6/6** on the PR #5 V3 branch; PR #5 remains Draft/unmerged.
+- **PR #564 / Run1385**: initial run `45579622641` **FAIL** at Ruff B010 in the test probe; next run `45579862539` **FAIL** on Ubuntu pytest because the test incorrectly restored a raw `object.__new__` descriptor, causing unrelated snapshot constructions to fail. The probe has been replaced with a reversible result-field descriptor test at child HEAD `6410f11f...`; fresh run `45581547683` is **QUEUED**. No PASS is claimed.
+- **PR #565 / Run1386** child HEAD `ea9c8e06...`, run `45580148671`: **IN PROGRESS** (1/6 GREEN at last job inspection).
+- **PR #566 / Run1387** child HEAD `50629bc...`, run `45580672203`: **IN PROGRESS** (2 jobs running and 4 queued at last job inspection).
+- **PR #567 / Run1388** child HEAD `fe09c7a...`, run `45581080159`: **QUEUED** (6/6 queued at last observation).
+- **PR #5 parent** HEAD `279232c359ec13355f684e1c8cfc081bda0a4a94`, run `45572111257`: **FAIL, 6/6** due Ruff I001 in three main merge-ref/base-owned test files: `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py`, and `tests/test_tool_registry_delete_seal_run1240.py`. No main edit, merge workaround or protected evaluation opening was attempted.
+- No local pytest/Ruff execution, target-PC verification, real-model runtime, live capture, real backend, GPU, paid compute or production-runtime execution is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal schema/hash-chain/CAS contracts, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries and V3 Contract 1 remain unchanged.
+- PR #5 and PR #8 remain Draft/unmerged. PR #9 remains Draft/unmerged and untouched. No UI/frontend feature, polish, test or integration work occurred. No main write or merge occurred.
+- PR #560 was integrated only into the PR #8 research branch after exact-head GREEN. No protected V2 final evaluation, real Candidate generation/promotion, credential/account connection, physical hardware action or destructive operation occurred.
+
+## Blockers and authorization boundaries
+
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- PR #5's main merge-ref Ruff I001 failure is confined to the three base-owned files above. Do not edit `main`, copy/re-home those tests, or merge PR #5 without the required ownership/approval path. Protected V2 evaluation remains closed.
+- PR #559 is green but changes source; keep it isolated until its Personal Context/Observation dependency review is complete.
+- PRs #561 and #562 are exact-head GREEN test/documentation-only children. Parent PR #8 CI run `45580347293` is still in progress, so neither child was integrated in this invocation.
+- PR #564's two initial failures are recorded above; its corrected exact head awaits run `45581547683`. PRs #565–#567 are still running/queued; no child PASS is claimed for them.
+- Planner COMMIT-UNKNOWN evidence simulates acknowledgement loss after native SQLite COMMIT; it does not prove fsync/power-loss durability or exactly-once external effects. Startup readiness leases remain synthetic diagnostics only. Registry deletion checks remain local in-process object-integrity evidence. Stat/path checks are not atomic dirfd custody or process isolation.
+- No new credentials/secrets/account connections, unavailable physical-PC actions, destructive operations, frozen-contract changes, protected evaluation openings, Candidate promotion or main merge occurred.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #8 run `45580347293` when useful. After it is GREEN, re-read the latest parent HEAD and integrate test-only PRs #561 and #562 one at a time; launch fresh parent CI after each integration and switch to a non-conflicting lane while it runs.
+2. Review green PR #559's source changes in Personal Context and Observation separately before any integration. Do not treat its child CI as proof of combined parent behavior.
+3. Inspect PR #564 run `45581547683` and PRs #565–#567 exact-head CI; fix only concrete child-specific failures, then continue another independent non-UI lane.
+4. Review PR #563 against the current PR #5 branch, but keep #5 Draft/unmerged; do not edit main to bypass the base-owned Ruff blocker or open protected V2 evaluation/training.
+5. Continue Memory CAS/event/expiry/purge recovery, Planner terminal/recovery, ToolRegistry/PermissionGate, restart-safe authorization, trusted-clock audit-before-action, Personal Context revocation, proactive scheduler and Observation fixture boundaries.
+6. Keep UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## Historical checkpoint — saved at 2026-11-25 17:12:11 JST
+
 - **Saved at:** 2026-11-25 17:12:11 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `11d72bef1b69df06ed0c0102d6154fc4d44a0214` (PR #8 head re-read immediately before this checkpoint).
