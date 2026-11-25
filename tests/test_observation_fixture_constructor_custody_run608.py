@@ -45,7 +45,11 @@ def test_forged_fixture_constructor_never_runs(monkeypatch, binary, phase):
 
         monkeypatch.setattr(adapters.hashlib, "sha256", hash_and_tamper)
 
-    expected = "digest implementation" if phase == "digest" else "non-envelope"
+    expected = (
+        "digest implementation"
+        if phase == "digest"
+        else "fixture envelope definition changed before private access"
+    )
     with pytest.raises(ValueError, match=expected):
         _fixture(binary)
     assert called == []
