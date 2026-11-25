@@ -7,8 +7,6 @@ from pathlib import Path
 
 import pytest
 
-import ark.agency.durable_occurrence_review as occurrence
-import ark.agency.policy as policy
 from ark.agency import (
     CapabilityGrant,
     Effect,
@@ -197,7 +195,11 @@ def test_permission_gate_rejects_replaced_token_admission_helper(
     call = _call()
     token = _token(call)
     gate = PermissionGate()
-    monkeypatch.setattr(policy, "_admit_exact_one_shot_fields", lambda _token: None)
+    monkeypatch.setitem(
+        PermissionGate.authorize.__globals__,
+        "_admit_exact_one_shot_fields",
+        lambda _token: None,
+    )
 
     with pytest.raises(PermissionDenied, match="admission implementation changed"):
         gate.authorize(
@@ -225,7 +227,11 @@ def test_synthetic_store_rejects_replaced_token_admission_helper(
         return original_bind(self, bound_call)
 
     monkeypatch.setattr(ToolRegistry, "bind", counted_bind)
-    monkeypatch.setattr(occurrence, "_admit_exact_token_fields", lambda _token: ("x", "y", 1))
+    monkeypatch.setitem(
+        SyntheticOccurrenceStore.reserve_synthetic.__globals__,
+        "_admit_exact_token_fields",
+        lambda _token: ("x", "y", 1),
+    )
 
     with pytest.raises(
         SyntheticReplayRejected,
