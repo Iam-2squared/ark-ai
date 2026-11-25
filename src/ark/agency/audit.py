@@ -59,6 +59,16 @@ _ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
 _ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
 _ORIGINAL_STAT_S_ISREG = stat.S_ISREG
 _ORIGINAL_STAT_IFMT = stat.S_IFMT
+# Retain the complete reparse/path-policy dependency inventory independently
+# of its mutable module aliases. The verifier captures this tuple in defaults.
+_ORIGINAL_AUDIT_REPARSE_POLICY_EPOCH = (
+    _ORIGINAL_STAT,
+    _ORIGINAL_STAT_S_ISDIR,
+    _ORIGINAL_STAT_S_ISLNK,
+    _ORIGINAL_STAT_S_ISREG,
+    _ORIGINAL_STAT_IFMT,
+    _ORIGINAL_REPARSE_POINT_ATTRIBUTE,
+)
 
 _AUDIT_SCHEMA_V1_SQL = """CREATE TABLE action_events(
                         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -440,17 +450,27 @@ def _require_original_event_constructor(
         raise ActionAuditSchemaError(f"audit event constructor changed{suffix}")
 
 
-def _require_original_reparse_policy() -> None:
+def _require_original_reparse_policy(
+    *,
+    _original_audit_reparse_policy_epoch: tuple[object, ...] = _ORIGINAL_AUDIT_REPARSE_POLICY_EPOCH,
+) -> None:
     # stat predicates are executable module attributes too. Pin every
     # predicate used by path admission/diagnostics before filesystem access.
     if (
-        stat is not _ORIGINAL_STAT
-        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
-        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
-        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
-        or stat.S_IFMT is not _ORIGINAL_STAT_IFMT
+        _ORIGINAL_AUDIT_REPARSE_POLICY_EPOCH is not _original_audit_reparse_policy_epoch
+        or stat is not _original_audit_reparse_policy_epoch[0]
+        or _ORIGINAL_STAT is not _original_audit_reparse_policy_epoch[0]
+        or _ORIGINAL_STAT_S_ISDIR is not _original_audit_reparse_policy_epoch[1]
+        or _ORIGINAL_STAT_S_ISLNK is not _original_audit_reparse_policy_epoch[2]
+        or _ORIGINAL_STAT_S_ISREG is not _original_audit_reparse_policy_epoch[3]
+        or _ORIGINAL_STAT_IFMT is not _original_audit_reparse_policy_epoch[4]
+        or stat.S_ISDIR is not _original_audit_reparse_policy_epoch[1]
+        or stat.S_ISLNK is not _original_audit_reparse_policy_epoch[2]
+        or stat.S_ISREG is not _original_audit_reparse_policy_epoch[3]
+        or stat.S_IFMT is not _original_audit_reparse_policy_epoch[4]
         or type(_REPARSE_POINT_ATTRIBUTE) is not int
-        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+        or _REPARSE_POINT_ATTRIBUTE != _original_audit_reparse_policy_epoch[5]
+        or _ORIGINAL_REPARSE_POINT_ATTRIBUTE is not _original_audit_reparse_policy_epoch[5]
     ):
         raise ActionAuditSchemaError("audit reparse-point policy changed")
 
@@ -459,10 +479,15 @@ def _is_reparse_point(info: object) -> bool:
     """Recognize POSIX symlinks and Windows reparse-point entries."""
     _require_original_reparse_policy()
     attributes = getattr(info, "st_file_attributes", 0)
+    # Metadata accessors may be reentrant; recheck before reading mode or
+    # applying a filesystem classifier.
+    _require_original_reparse_policy()
     if type(attributes) is not int:
         raise ActionAuditSchemaError("audit reparse metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
-        attributes & _REPARSE_POINT_ATTRIBUTE
+    mode = info.st_mode
+    _require_original_reparse_policy()
+    return _ORIGINAL_AUDIT_REPARSE_POLICY_EPOCH[2](mode) or bool(
+        attributes & _ORIGINAL_AUDIT_REPARSE_POLICY_EPOCH[5]
     )
 
 
