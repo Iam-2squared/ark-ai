@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from collections.abc import Iterator
+
 import pytest
 
 from ark.learning import authorization_packet_verify as mod
@@ -13,18 +16,35 @@ def _invalid_review_inputs() -> tuple[object, object, str]:
     return object(), object(), "not-a-digest"
 
 
+@contextmanager
+def _class_attribute(
+    carrier: type,
+    name: str,
+    value: object,
+) -> Iterator[None]:
+    namespace = vars(carrier)
+    was_present = name in namespace
+    original = namespace.get(name)
+    type.__setattr__(carrier, name, value)
+    try:
+        yield
+    finally:
+        if was_present:
+            type.__setattr__(carrier, name, original)
+        else:
+            type.__delattr__(carrier, name)
+
+
 @pytest.mark.parametrize(
     "hook",
     ("__new__", "__getattribute__", "__getattr__", "__setattr__", "__delattr__"),
 )
 def test_explicit_none_is_not_confused_with_an_absent_witness_hook(
-    monkeypatch: pytest.MonkeyPatch,
     hook: str,
 ) -> None:
     snapshot, packet, retained = _invalid_review_inputs()
 
-    with monkeypatch.context() as patch:
-        patch.setattr(mod.LocalPacketBindingWitness, hook, None, raising=False)
+    with _class_attribute(mod.LocalPacketBindingWitness, hook, None):
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="class lookup contract changed",
@@ -36,7 +56,6 @@ def test_explicit_none_is_not_confused_with_an_absent_witness_hook(
 
 @pytest.mark.parametrize("hook", ("__getattribute__", "__getattr__"))
 def test_hostile_lookup_hook_is_rejected_before_it_executes(
-    monkeypatch: pytest.MonkeyPatch,
     hook: str,
 ) -> None:
     invoked: list[str] = []
@@ -46,10 +65,7 @@ def test_hostile_lookup_hook_is_rejected_before_it_executes(
         raise AssertionError("substituted witness lookup hook executed")
 
     snapshot, packet, retained = _invalid_review_inputs()
-    with monkeypatch.context() as patch:
-        patch.setattr(
-            mod.LocalPacketBindingWitness, hook, forbidden, raising=False,
-        )
+    with _class_attribute(mod.LocalPacketBindingWitness, hook, forbidden):
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="class lookup contract changed",
@@ -61,18 +77,14 @@ def test_hostile_lookup_hook_is_rejected_before_it_executes(
     assert invoked == []
 
 
-def test_exact_absence_sentinel_installed_as_hook_is_rejected(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_exact_absence_sentinel_installed_as_hook_is_rejected() -> None:
     snapshot, packet, retained = _invalid_review_inputs()
 
-    with monkeypatch.context() as patch:
-        patch.setattr(
-            mod.LocalPacketBindingWitness,
-            "__getattr__",
-            mod._WITNESS_CLASS_HOOK_ABSENT,
-            raising=False,
-        )
+    with _class_attribute(
+        mod.LocalPacketBindingWitness,
+        "__getattr__",
+        mod._WITNESS_CLASS_HOOK_ABSENT,
+    ):
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="class lookup contract changed",
@@ -122,15 +134,12 @@ def test_denial_flag_inventory_cannot_be_replaced_with_an_empty_vector(
             mod._require_original_witness_contract()
 
 
-def test_false_valued_denial_descriptor_replacement_is_rejected(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    with monkeypatch.context() as patch:
-        patch.setattr(
-            mod.LocalPacketBindingWitness,
-            "main_merge_authorized",
-            property(lambda _self: False),
-        )
+def test_false_valued_denial_descriptor_replacement_is_rejected() -> None:
+    with _class_attribute(
+        mod.LocalPacketBindingWitness,
+        "main_merge_authorized",
+        property(lambda _self: False),
+    ):
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="gained authority",
