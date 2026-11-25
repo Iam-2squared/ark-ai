@@ -1,3 +1,31 @@
+## Run1346 — V3 free-only source revalidation (2026-11-25)
+
+**Exact source basis:** Draft PR #5 branch `research/v3-learning-evaluation`, HEAD `f7252fbe7d5f65c640fed41bbb5b3cc7ae817296`. Exact-head CI run [45484069708](https://github.com/Iam-2squared/ark-ai/actions/runs/45484069708) / run 7529 is **FAIL**. This is a read-only source audit of free guard code; no V3 runtime, torch import, model/tokenizer load, GPU query, preflight, training, Candidate or evaluation was run.
+
+### Reconciled gaps — already present in the current PR #5 source
+
+- **Learning code-tree symlink traversal:** `identity._snapshot_entries()` enumerates with `os.scandir`, classifies each entry using `DirEntry.stat(follow_symlinks=False)`, rejects reparse/symlink entries before they can enter the traversal stack, and rechecks the retained entry epoch. `directory_file_identities()` binds `pyproject.toml` and the learning subtree. The historical claim that the manifest simply enumerates `*.py` without rejecting symlink directories is superseded for this exact source head.
+- **Preflight report path ancestry:** `training_cli._validate_new_preflight_report_path()` checks the existing direct parent and `_has_evidence_reparse_ancestor()` before runtime probing; `_write_new_preflight_report()` repeats ancestor and descriptor/path checks around create/write. Run1302 tests cover direct symlink parent and symlink leaf. A multi-level symlink-ancestor fixture is not explicit in the current test file, so the remaining item is a regression-coverage gap, not an observed missing source guard.
+- **Strict JSON coverage:** execution-snapshot loading uses duplicate-key rejection and finite-number hooks; dataset ingress uses `loads_unique_json`; authorization-packet file review uses a unique-pairs hook; identity-artifact verification uses unique pairs plus canonical-byte equality; Candidate run-manifest loading requires canonical re-serialization to equal the exact input bytes, which also rejects duplicate keys. The older broad statement that all these paths are uniformly permissive is superseded.
+
+### Remaining concrete free guard work
+
+1. **Preflight report parser consistency:** `training_cli._verify_preflight_report()` still calls `json.loads(payload, parse_constant=...)` directly. Unlike the snapshot, dataset, packet and identity-artifact readers, this call does not use a duplicate-key hook or require canonical-byte equality. The report hash is snapshot-bound, but the parser itself is less strict than the other runtime evidence readers. A focused synthetic duplicate-key / noncanonical report regression and strict-loader reuse are the next low-risk V3 guard package; do not run preflight.
+2. **Explicit nested-ancestor regression:** add a synthetic report-path test where the immediate parent is a real directory reached through a symlinked grandparent; assert rejection before `os.open` and preserve target bytes. The current source helper already traverses all ancestors.
+3. **Hash-then-use TOCTOU remains:** base/tokenizer trees are hashed before later model/tokenizer loader opens; no immutable staged copy, open-handle binding or post-load byte proof is established.
+4. **Chat-template probe remains file-bound, not runtime-rendered:** the supplied probe file digest is frozen, but the loaded tokenizer's actual `apply_chat_template()` output is not compared to a repository-owned probe digest.
+5. **Authorization / runtime receipt gaps remain:** deep-detached packet section custody and actual reviewed packet-byte digest semantics; wall-time budget origin before runtime identity probing; crash-consistent staged dataset evidence publication; durable one-attempt preflight/full-run ledger; and Candidate run manifest linkage to a complete execution receipt are not proven by the inspected code.
+
+### CI / ownership boundary
+
+- PR #5 exact-head run 45484069708 is FAIL; no V3 PASS is claimed.
+- PR #483 exact-head run [45422941503](https://github.com/Iam-2squared/ark-ai/actions/runs/45422941503) documents the main merge-ref pytest-collection blocker: foundation modules imported by copied tests are absent from `main`. Do not copy JARVIS foundation modules into `main`, delete/disable those tests, or merge PR #5 to bypass the ownership boundary.
+- PR #5 remains Draft/unmerged. Contract 1, V1/V2/Local UI/Launcher freezes, protected V2 evaluation and Candidate gates remain unchanged. No paid/external compute, credentials, hardware or runtime action occurred.
+
+**Next V3 order:** (1) strict preflight-report parser + duplicate/noncanonical tests; (2) nested symlink-ancestor regression; (3) stage/hash-bind local base/tokenizer bytes before loader handoff; (4) runtime-rendered chat-template probe; (5) bind durable preflight/full-run attempt and final artifact receipt. All work remains local-only and must not open protected V2 evaluation or start compute.
+
+---
+
 # ARK JARVIS Foundation Gap Matrix
 
 ## Live source / PR correction — 2026-11-23
