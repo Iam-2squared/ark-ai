@@ -368,16 +368,16 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
                 _require_original_stat_policy()
                 continue
             _require_original_stat_policy()
+            if main_absent:
+                raise PlannerJournalPathError(
+                    "orphaned Planner journal SQLite sidecar refused"
+                )
             mode = sidecar_metadata.st_mode
             _require_original_stat_policy()
             is_regular = _ORIGINAL_S_ISREG(mode)
             _require_original_stat_policy()
             is_symlink = _ORIGINAL_S_ISLNK(mode)
             _require_original_stat_policy()
-            if main_absent:
-                raise PlannerJournalPathError(
-                    "orphaned Planner journal SQLite sidecar refused"
-                )
             if is_regular and sidecar_metadata.st_nlink == 0:
                 try:
                     sidecar_metadata = sidecar.lstat()
@@ -406,6 +406,7 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
         raise PlannerJournalPathError(
             "Planner journal path custody cannot be verified"
         ) from exc
+
 
 class PlannerJournal:
     """Append-only local journal; transition returns a new recovered PlanGraph.
