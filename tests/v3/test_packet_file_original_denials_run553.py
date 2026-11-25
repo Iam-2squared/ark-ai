@@ -77,8 +77,8 @@ def test_packet_read_callback_cannot_replace_denial_before_verification(
     original_read = mod._read_exact_local_packet
     called = []
 
-    def read_then_swap(target):
-        data = original_read(target)
+    def read_then_swap(target, **kwargs):
+        data = original_read(target, **kwargs)
         monkeypatch.setattr(
             mod.LocalPacketBindingWitness,
             "protected_evaluation_authorized",
