@@ -24,7 +24,8 @@ _ORIGINAL_ADMISSION_LIMITS = (_MAX_REGISTRATIONS, _MAX_REGISTRATION_TEXT)
 
 def _require_original_registry_limits() -> None:
     if (
-        type(_MAX_REGISTRATIONS) is not int
+        _require_original_registry_limits is not _ORIGINAL_REQUIRE_REGISTRY_LIMITS
+        or type(_MAX_REGISTRATIONS) is not int
         or type(_MAX_REGISTRATION_TEXT) is not int
         or (_MAX_REGISTRATIONS, _MAX_REGISTRATION_TEXT)
         != _ORIGINAL_ADMISSION_LIMITS
@@ -32,13 +33,20 @@ def _require_original_registry_limits() -> None:
         raise ValueError("registry admission limits changed")
 
 
+_ORIGINAL_REQUIRE_REGISTRY_LIMITS = _require_original_registry_limits
+
+
 def _require_original_registry_unicode() -> None:
     """Pin Unicode category semantics before inspecting registry identity text."""
     if (
-        unicodedata is not _ORIGINAL_UNICODEDATA
+        _require_original_registry_unicode is not _ORIGINAL_REQUIRE_REGISTRY_UNICODE
+        or unicodedata is not _ORIGINAL_UNICODEDATA
         or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
     ):
         raise ValueError("registry Unicode category dependency changed")
+
+
+_ORIGINAL_REQUIRE_REGISTRY_UNICODE = _require_original_registry_unicode
 
 
 _ORIGINAL_HASHLIB = hashlib
@@ -57,8 +65,10 @@ def _require_original_registry_digest() -> None:
     These local in-process identity checks are not a security sandbox,
     authenticated backend attestation, or permission to dispatch a tool.
     """
-    _require_original_registry_limits()
-    _require_original_registry_unicode()
+    if _require_original_registry_digest is not _ORIGINAL_REQUIRE_REGISTRY_DIGEST:
+        raise ValueError("registry digest dependencies changed")
+    _ORIGINAL_REQUIRE_REGISTRY_LIMITS()
+    _ORIGINAL_REQUIRE_REGISTRY_UNICODE()
     if (
         # Module rebinding may itself install executable __getattr__ code.
         # Compare the module identity before fetching a digest/JSON member.
@@ -70,10 +80,13 @@ def _require_original_registry_digest() -> None:
         raise ValueError("registry digest dependencies changed")
 
 
+_ORIGINAL_REQUIRE_REGISTRY_DIGEST = _require_original_registry_digest
+
+
 
 def _text(name: str, value: object) -> str:
-    _require_original_registry_limits()
-    _require_original_registry_unicode()
+    _ORIGINAL_REQUIRE_REGISTRY_LIMITS()
+    _ORIGINAL_REQUIRE_REGISTRY_UNICODE()
     if type(value) is not str:
         raise ValueError(f"{name} must be a non-empty exact string")
     # The constant-time codepoint cap must precede strip() and NUL search:
@@ -266,7 +279,7 @@ _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION = _admit_frozen_toolcall_arguments
 
 
 def _canonical_json(value: object) -> bytes:
-    _require_original_registry_digest()
+    _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
     return (
         json.dumps(
             value,
@@ -524,7 +537,7 @@ class ToolRegistry:
             raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registry_instance_seal()
         _require_original_registration_contract()
-        _require_original_registry_digest()
+        _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
         # Registrations can arrive from caller-controlled generators. Never
         # exhaust an unbounded iterator before enforcing the construction
         # budget, and never silently accept a reflected mutation of an
@@ -534,7 +547,7 @@ class ToolRegistry:
 
         def assert_ingress_epoch() -> None:
             _require_original_registration_contract()
-            _require_original_registry_digest()
+            _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
             for entry, name, capability, effect, backend_id, backend, execute in retained:
                 try:
                     stable = (
@@ -604,7 +617,7 @@ class ToolRegistry:
             raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registry_instance_seal()
         _require_original_registration_contract()
-        _require_original_registry_digest()
+        _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
         if (
             type(self._revision) is not str
             or self._revision is not self._revision_epoch
@@ -636,7 +649,7 @@ class ToolRegistry:
                 or self._registrations.get(name) is not entry
             ):
                 raise ValueError("registered tool identity drifted after construction")
-        _require_original_registry_digest()
+        _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
         if self._compute_revision([item[0] for item in entries]) != self._revision:
             raise ValueError("registry revision drifted after construction")
 
@@ -680,7 +693,7 @@ class ToolRegistry:
         ):
             raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registration_contract()
-        _require_original_registry_digest()
+        _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
         if type(call) is not ToolCall:
             raise TypeError("call must be an exact ToolCall")
         _require_original_toolcall_contract()
@@ -733,7 +746,7 @@ class ToolRegistry:
 
 
         def assert_call_epoch() -> None:
-            _require_original_registry_digest()
+            _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
             _require_original_toolcall_contract()
             _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(call.arguments)
             if (
@@ -775,7 +788,7 @@ class ToolRegistry:
         ):
             raise TypeError("an exact ToolRegistry instance is required")
         _require_original_registration_contract()
-        _require_original_registry_digest()
+        _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
         # Call objects are frozen, but reflected mutation is still possible
         # during a registry lookup. Refuse a bound ID based on mixed snapshots.
         # This check is not an authorization grant or a concurrency primitive.
@@ -834,7 +847,7 @@ class ToolRegistry:
         original_request_id = stable.request_id
 
         def assert_call_unchanged() -> None:
-            _require_original_registry_digest()
+            _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
             _require_original_toolcall_contract()
             _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(call.arguments)
             if (
@@ -901,7 +914,7 @@ class ToolRegistry:
 
     @classmethod
     def _compute_revision(cls, registrations: list[ToolRegistration]) -> str:
-        _require_original_registry_digest()
+        _ORIGINAL_REQUIRE_REGISTRY_DIGEST()
         payload = {
             "schema_version": cls._SCHEMA_VERSION,
             "tools": [
