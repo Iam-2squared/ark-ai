@@ -159,7 +159,7 @@ def test_changed_bytes_during_staging_are_denied_and_temp_tree_is_removed(
     original_copy = hf_lora._copy_verified_snapshot_file
 
     def replace_source_then_copy(source, destination, *, expected_sha256, expected_bytes):
-        source.write_bytes(b"unreviewed replacement")
+        source.write_bytes(b"xx")
         original_copy(
             source,
             destination,
