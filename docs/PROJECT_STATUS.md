@@ -1,5 +1,82 @@
 ## LATEST
 
+- **Saved at:** 2026-11-25 12:02:32 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `83f73303778a47430203095b246a94d90cc4bd81` (PR #8 head re-read immediately before this checkpoint; includes the Run1352 Memory child integration).
+- **Checkpoint-result HEAD:** this `PROJECT_STATUS.md` update commit; the exact SHA is returned by GitHub after save and reported in the invocation summary. The file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain their frozen evidence. Local-first JARVIS foundations continue in isolated/reversible work. **ARK/JARVIS overall remains NOT_PASSED.**
+- **Main / UI boundary:** PR #5 remains Draft/unmerged under its V3 gate. PR #8 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched; UI/frontend work remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **Run1352 — exact Memory metadata ingress integrated into PR #8.**
+   - Child PR #531 exact HEAD `8f369e70a69426c358a4b5114d11ef9fb63e67a0`; CI run `45532803522`: **GREEN, 6/6** Windows/Linux × Python 3.11–3.13.
+   - Squash-integrated into `research/jarvis-foundations`; integration commit / current work-basis HEAD: `83f73303778a47430203095b246a94d90cc4bd81`.
+   - Exact mapping-proxy admission, 64-entry cap and exact built-in string key/value snapshot occur before reconstruction, serialization, hashing, SQLite open or clock access. Memory v1 DDL/schema/API/event/retention remain unchanged.
+
+2. **Run1353 — Observation private text-encoder custody (Draft PR #532).**
+   - Child branch: `research/run1353-observation-text-encoder-custody-20261125`; exact child HEAD: `78ebf994d05462a8065dfdd03aa376c8b0438465`.
+   - Retains the import-time bounded UTF-8 encoder, rejects a replaced module binding after metadata preflight, and invokes the retained callable before private fixture text can reach a substituted encoder.
+   - Regression coverage includes a preinstalled replacement and a replacement installed during metadata preflight. Observation Envelope v1 and the byte-budget algorithm are unchanged.
+   - Exact-head CI run `45535410668`: **IN PROGRESS** (4/6 jobs GREEN; 2 Windows jobs still running at checkpoint).
+
+3. **Run1354 — production PlannerJournal stat-policy custody (Draft PR #533).**
+   - Child branch: `research/run1354-planner-production-stat-custody-20261125`; exact child HEAD: `3a3555830a18d9c15f7d6330c8226ce97262ab1e`.
+   - Pins the import-time stat module and exact `S_ISDIR`/`S_ISLNK`/`S_ISREG` predicates; rechecks after `lstat`, metadata reads, predicate calls and missing database/sidecar branches.
+   - Regression coverage includes preinstalled and reentrant predicate/module substitutions, missing-path callbacks and a valid existing path. Planner journal schema, hash chain, CAS, transition and recovery contracts are unchanged.
+   - Exact-head CI run `45536086845`: **IN PROGRESS** (3/6 jobs GREEN; 3 jobs still running at checkpoint).
+
+4. **Run1355 — Personal Context replay-ledger stat-policy custody (Draft PR #534).**
+   - Child branch: `research/run1355-personal-context-replay-stat-custody-20261125`; exact child HEAD: `a79bee67b8c58b6b827469ef82eeab2da4e1d4fd`.
+   - Adds import-time stat module/predicate checks to the replay protocol, uses retained classifiers, and rechecks after metadata callbacks and missing database/sidecar outcomes.
+   - Synthetic regression coverage includes preinstalled/reentrant changes and a valid existing path. Replay schema, hash chain, binding, CAS, reservation, retention and denial-only receipts are unchanged.
+   - Exact-head CI run `45536363929`: **IN PROGRESS** (1/6 jobs GREEN; 5 jobs still running at checkpoint).
+
+5. **Run1356 — ActionAudit reentrant stat-policy custody (Draft PR #535).**
+   - Child branch: `research/run1356-action-audit-reentrant-stat-custody-20261125`; exact child HEAD: `cbb19bf5bd713c05e56c0c82436e6f5fd5fcc1ee`.
+   - Uses retained stat predicates and rechecks after `lstat`, metadata access, classifier calls and missing-path branches; preserves the bounded sidecar recheck.
+   - Synthetic tests cover reentrant predicate/module replacement, metadata accessors, missing database/sidecar and a valid path. ActionAudit v1 DDL, event fields, digest identity, chronology and audit-before-action ordering are unchanged.
+   - Exact-head CI run `45536671862`: **IN PROGRESS** (6/6 jobs running at checkpoint).
+
+## Tests, CI and evidence
+
+- PR #8 pre-integration head `8c969bbd2dc83c800b7bad998fd8e480aec941e7`, run `45533045246`: **GREEN, 6/6**.
+- PR #531 exact child head `8f369e70a69426c358a4b5114d11ef9fb63e67a0`, run `45532803522`: **GREEN, 6/6**; squash integration commit `83f73303778a47430203095b246a94d90cc4bd81`.
+- PR #8 post-integration head `83f73303778a47430203095b246a94d90cc4bd81`, run `45536986740`: **QUEUED** when last observed; it predates this checkpoint-only documentation update.
+- PR #532 exact child head/run `78ebf994d05462a8065dfdd03aa376c8b0438465` / `45535410668`: **IN PROGRESS, 4/6 GREEN**.
+- PR #533 exact child head/run `3a3555830a18d9c15f7d6330c8226ce97262ab1e` / `45536086845`: **IN PROGRESS, 3/6 GREEN**.
+- PR #534 exact child head/run `a79bee67b8c58b6b827469ef82eeab2da4e1d4fd` / `45536363929`: **IN PROGRESS, 1/6 GREEN**.
+- PR #535 exact child head/run `cbb19bf5bd713c05e56c0c82436e6f5fd5fcc1ee` / `45536671862`: **IN PROGRESS, 0/6 completed**.
+- PR #5 prior exact-head run `45532003801`: **FAIL** on Ruff I001 in the three main-merge-ref files already recorded below; no main write, test removal or merge was attempted.
+- No local pytest/Ruff, physical-PC, real-model, live-capture, real-backend, paid-compute or production-runtime execution is claimed. The checkpoint commit's own exact-head CI is created after this save and is reported in the invocation summary when observed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
+- Frozen ToolCall/PermissionGate public contracts, Memory v1 DDL/schema, Observation Envelope v1, Personal Context consent/privacy boundaries, ActionAudit v1 DDL/event fields and V3 Contract 1 were not changed.
+- PR #5 and PR #8 remain Draft/unmerged. PR #9 remains Draft/unmerged and untouched. No UI/frontend feature, polish, test or integration work occurred.
+- No protected V2 final evaluation, real Candidate generation/promotion, credentials, new account connection, physical hardware action, destructive operation or frozen-contract change occurred.
+
+## Blockers and authorization boundaries
+
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- PRs #532–#535 remain Draft and isolated until their own exact-head CI is GREEN. Their tests are synthetic/disconnected and do not grant dispatch, consent, trusted-time or external-effect authority.
+- PR #8 post-Run1352 integration CI run `45536986740` was queued at last observation; integration is not yet revalidated on the combined parent head.
+- PR #5 remains blocked at the main merge-ref ownership boundary: run `45532003801` reported Ruff I001 in main-base files absent from the inspected PR #5 branch. Explicit approval is required before any main ownership/import-order change. PR #5 stays Draft/unmerged; protected V2 evaluation remains closed.
+- SQLite pathname preflights are not atomic dirfd custody or a sandbox. Process-exit/COMMIT-UNKNOWN tests do not prove fsync/power-loss durability, trusted time, authenticated consent, independent custody, cross-store atomicity or exactly-once external effects.
+- No automatic Candidate promotion, real backend dispatch or human-review decision is inferred from these CI results.
+
+## Next plan / 今後の方針
+
+1. Inspect exact-head CI for PRs #532–#535 and PR #8 run `45536986740` when useful; fix only concrete failures with the smallest semantics-preserving change, then switch to a non-conflicting lane while reruns execute.
+2. After each child is exact-head GREEN, review and integrate it into the PR #8 research branch only; re-read latest HEAD before each integration and run fresh parent CI. Keep PR #8 Draft/unmerged.
+3. Continue Memory CAS/concurrency/expiry/ABA and coherent-snapshot work; Planner crash recovery and ambiguous-RUNNING quarantine; immutable ToolRegistry/exact-type PermissionGate; durable authorization and audit-before-action; disconnected mock execution; privacy-safe Personal Context; proactive scheduler state; and Observation fixture contracts.
+4. Continue free-only V3 approval/path/identity/reproducibility guards without opening protected evaluation or promoting a Candidate.
+5. Keep PR #5 Draft/unmerged and PR #9 untouched; UI/frontend work remains paused.
+
+
+## Historical checkpoint — saved at 2026-11-25 11:26:19 JST
+
 - **Saved at:** 2026-11-25 11:26:19 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `d8079f8b96bfa0875e0ad77372088b003e1c6550` (PR #8 branch HEAD re-read immediately before this checkpoint update).
@@ -84,6 +161,8 @@
 4. Keep PR #530's GREEN nested-ancestor regression isolated until the PR #5 main-merge-ref ownership blocker is resolved through an approved path. Do not merge PR #5 or open protected V2 evaluation.
 5. Continue Memory CAS/concurrency/expiry/ABA and coherent-snapshot review; Planner COMMIT-UNKNOWN recovery and ambiguous-RUNNING quarantine; immutable ToolRegistry/PermissionGate; durable authorization and audit-before-action; disconnected mock execution; privacy-safe Personal Context; proactive scheduler state; and Observation fixture contracts.
 6. Keep PR #5 and PR #8 Draft/unmerged, PR #9 untouched, and all UI/frontend work paused.
+
+
 
 ## Historical checkpoint — saved at 2026-11-25 10:01:03 JST
 
