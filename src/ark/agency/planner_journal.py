@@ -303,9 +303,9 @@ def _require_original_stat_policy(
     if (
         stat is not _stat
         or _ORIGINAL_STAT is not _stat
-        or _ORIGINAL_STAT_S_ISDIR is not _stat_isdir
-        or _ORIGINAL_STAT_S_ISLNK is not _stat_islnk
-        or _ORIGINAL_STAT_S_ISREG is not _stat_isreg
+        or _ORIGINAL_S_ISDIR is not _stat_isdir
+        or _ORIGINAL_S_ISLNK is not _stat_islnk
+        or _ORIGINAL_S_ISREG is not _stat_isreg
         or _stat.S_ISDIR is not _stat_isdir
         or _stat.S_ISLNK is not _stat_islnk
         or _stat.S_ISREG is not _stat_isreg
