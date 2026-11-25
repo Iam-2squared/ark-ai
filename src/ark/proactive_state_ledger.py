@@ -250,7 +250,7 @@ def _require_original_policy_contract(
     if any(
         name not in namespace or namespace[name] is not original
         for name, original in zip(
-            _original_policy_fields and _POLICY_FIELDS,
+            _POLICY_FIELDS,
             _original_policy_fields,
             strict=True,
         )
