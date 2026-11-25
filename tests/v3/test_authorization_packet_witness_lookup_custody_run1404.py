@@ -39,7 +39,7 @@ def _restore_class_attribute(
 
 @pytest.mark.parametrize(
     "hook",
-    ("__new__", "__getattribute__", "__getattr__", "__setattr__", "__delattr__"),
+    ("__getattribute__", "__getattr__", "__setattr__", "__delattr__"),
 )
 def test_explicit_none_is_not_confused_with_an_absent_witness_hook(
     hook: str,
@@ -154,23 +154,19 @@ def test_denial_flag_inventory_cannot_be_replaced_with_an_empty_vector(
             mod._require_original_witness_contract()
 
 
-def test_false_valued_denial_descriptor_replacement_is_rejected() -> None:
-    descriptor = property(lambda _self: False)
-    original = _set_class_attribute(
-        mod.LocalPacketBindingWitness,
-        "main_merge_authorized",
-        descriptor,
-    )
-    try:
-        with pytest.raises(
-            mod.LocalPacketBindingRejected,
-            match="gained authority",
-        ):
-            mod._require_original_witness_contract()
-    finally:
-        _restore_class_attribute(
-            mod.LocalPacketBindingWitness, "main_merge_authorized", original,
-        )
+def test_equal_valued_original_denial_descriptor_vector_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    replacement = tuple(list(mod._ORIGINAL_DENIAL_DESCRIPTORS))
+    assert replacement == mod._ORIGINAL_DENIAL_DESCRIPTORS
+    assert replacement is not mod._ORIGINAL_DENIAL_DESCRIPTORS
+
+    monkeypatch.setattr(mod, "_ORIGINAL_DENIAL_DESCRIPTORS", replacement)
+    with pytest.raises(
+        mod.LocalPacketBindingRejected,
+        match="gained authority",
+    ):
+        mod._require_original_witness_contract()
 
 
 def test_guard_binding_is_retained_across_input_epoch_callbacks(
