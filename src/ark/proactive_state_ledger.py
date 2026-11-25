@@ -195,6 +195,7 @@ class SyntheticProactivePolicy:
         return scope, policy
 
 
+_PROACTIVE_CLASS_HOOK_ABSENT = object()
 _POLICY_TYPE = SyntheticProactivePolicy
 _POLICY_FIELDS = (
     "owner", "namespace", "definition_id", "revision", "policy_revision",
@@ -206,8 +207,23 @@ _POLICY_METHODS = (
     "__post_init__", "identity",
 )
 _ORIGINAL_POLICY_FIELDS = tuple(vars(_POLICY_TYPE)[name] for name in _POLICY_FIELDS)
-_ORIGINAL_POLICY_METHODS = tuple(vars(_POLICY_TYPE).get(name) for name in _POLICY_METHODS)
+_ORIGINAL_POLICY_METHODS = tuple(
+    vars(_POLICY_TYPE)[name]
+    if name in vars(_POLICY_TYPE)
+    else _PROACTIVE_CLASS_HOOK_ABSENT
+    for name in _POLICY_METHODS
+)
 _ORIGINAL_POLICY_VECTORS = (_POLICY_FIELDS, _POLICY_METHODS)
+_ORIGINAL_POLICY_EPOCH = (
+    _POLICY_TYPE,
+    SyntheticProactivePolicy,
+    _POLICY_FIELDS,
+    _POLICY_METHODS,
+    _ORIGINAL_POLICY_FIELDS,
+    _ORIGINAL_POLICY_METHODS,
+    _ORIGINAL_POLICY_VECTORS,
+    _PROACTIVE_CLASS_HOOK_ABSENT,
+)
 
 
 def _require_original_policy_contract(
@@ -215,26 +231,43 @@ def _require_original_policy_contract(
     _original_policy_fields: tuple[object, ...] = _ORIGINAL_POLICY_FIELDS,
     _original_policy_methods: tuple[object, ...] = _ORIGINAL_POLICY_METHODS,
     _original_policy_type: type = _POLICY_TYPE,
+    _original_policy_epoch: tuple[object, ...] = _ORIGINAL_POLICY_EPOCH,
 ) -> None:
     _require_original_protocol()
     if (
-        _ORIGINAL_POLICY_VECTORS is not _original_policy_vectors
+        _ORIGINAL_POLICY_EPOCH is not _original_policy_epoch
+        or _ORIGINAL_POLICY_VECTORS is not _original_policy_vectors
         or _ORIGINAL_POLICY_FIELDS is not _original_policy_fields
         or _ORIGINAL_POLICY_METHODS is not _original_policy_methods
         or _POLICY_TYPE is not _original_policy_type
         or SyntheticProactivePolicy is not _original_policy_type
         or _POLICY_FIELDS is not _original_policy_vectors[0]
         or _POLICY_METHODS is not _original_policy_vectors[1]
-        or any(
-            vars(_original_policy_type).get(name) is not original
-            for names, originals in (
-                (_original_policy_vectors[0], _original_policy_fields),
-                (_original_policy_vectors[1], _original_policy_methods),
-            )
-            for name, original in zip(names, originals, strict=True)
+        or _PROACTIVE_CLASS_HOOK_ABSENT is not _original_policy_epoch[7]
+    ):
+        raise SyntheticProactiveStateRejected("proactive policy definition changed")
+    namespace = vars(_original_policy_type)
+    if any(
+        name not in namespace or namespace[name] is not original
+        for name, original in zip(
+            _POLICY_FIELDS,
+            _original_policy_fields,
+            strict=True,
         )
     ):
         raise SyntheticProactiveStateRejected("proactive policy definition changed")
+    for name, original in zip(
+        _original_policy_vectors[1], _original_policy_methods, strict=True,
+    ):
+        if original is _PROACTIVE_CLASS_HOOK_ABSENT:
+            if name in namespace:
+                raise SyntheticProactiveStateRejected(
+                    "proactive policy definition changed"
+                )
+        elif name not in namespace or namespace[name] is not original:
+            raise SyntheticProactiveStateRejected(
+                "proactive policy definition changed"
+            )
 
 
 def _assert_policy_fields(
@@ -298,8 +331,25 @@ _STATE_DENIALS = (
 _STATE_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_STATE_FIELDS = tuple(vars(_STATE_TYPE)[name] for name in _STATE_FIELDS)
 _ORIGINAL_STATE_DENIALS = tuple(vars(_STATE_TYPE)[name] for name in _STATE_DENIALS)
-_ORIGINAL_STATE_HOOKS = tuple(vars(_STATE_TYPE).get(name) for name in _STATE_HOOKS)
+_ORIGINAL_STATE_HOOKS = tuple(
+    vars(_STATE_TYPE)[name]
+    if name in vars(_STATE_TYPE)
+    else _PROACTIVE_CLASS_HOOK_ABSENT
+    for name in _STATE_HOOKS
+)
 _ORIGINAL_STATE_VECTORS = (_STATE_FIELDS, _STATE_DENIALS, _STATE_HOOKS)
+_ORIGINAL_STATE_EPOCH = (
+    _STATE_TYPE,
+    SyntheticProactiveState,
+    _STATE_FIELDS,
+    _STATE_DENIALS,
+    _STATE_HOOKS,
+    _ORIGINAL_STATE_FIELDS,
+    _ORIGINAL_STATE_DENIALS,
+    _ORIGINAL_STATE_HOOKS,
+    _ORIGINAL_STATE_VECTORS,
+    _PROACTIVE_CLASS_HOOK_ABSENT,
+)
 
 
 def _require_original_protocol(
@@ -313,6 +363,9 @@ def _require_original_protocol(
     _original_policy_type: type = _POLICY_TYPE,
     _original_state_type: type = _STATE_TYPE,
     _original_protocol_base: object = _require_original_protocol_base,
+    _original_policy_epoch: tuple[object, ...] = _ORIGINAL_POLICY_EPOCH,
+    _original_state_epoch: tuple[object, ...] = _ORIGINAL_STATE_EPOCH,
+    _original_hook_absent: object = _PROACTIVE_CLASS_HOOK_ABSENT,
 ) -> None:
     """Reject replaced working/original vectors before any protocol callback."""
     if (
@@ -323,6 +376,9 @@ def _require_original_protocol(
         or _POLICY_METHODS is not _original_policy_vectors[1]
         or _POLICY_TYPE is not _original_policy_type
         or SyntheticProactivePolicy is not _original_policy_type
+        or _ORIGINAL_POLICY_EPOCH is not _original_policy_epoch
+        or _ORIGINAL_STATE_EPOCH is not _original_state_epoch
+        or _PROACTIVE_CLASS_HOOK_ABSENT is not _original_hook_absent
         or _ORIGINAL_STATE_VECTORS is not _original_state_vectors
         or _ORIGINAL_STATE_FIELDS is not _original_state_fields
         or _ORIGINAL_STATE_DENIALS is not _original_state_denials
@@ -343,10 +399,12 @@ def _require_original_state_type(
     _original_state_denials: tuple[object, ...] = _ORIGINAL_STATE_DENIALS,
     _original_state_hooks: tuple[object, ...] = _ORIGINAL_STATE_HOOKS,
     _original_state_type: type = _STATE_TYPE,
+    _original_state_epoch: tuple[object, ...] = _ORIGINAL_STATE_EPOCH,
 ) -> None:
     _require_original_protocol()
     if (
-        _ORIGINAL_STATE_VECTORS is not _original_state_vectors
+        _ORIGINAL_STATE_EPOCH is not _original_state_epoch
+        or _ORIGINAL_STATE_VECTORS is not _original_state_vectors
         or _ORIGINAL_STATE_FIELDS is not _original_state_fields
         or _ORIGINAL_STATE_DENIALS is not _original_state_denials
         or _ORIGINAL_STATE_HOOKS is not _original_state_hooks
@@ -355,17 +413,33 @@ def _require_original_state_type(
         or _STATE_FIELDS is not _original_state_vectors[0]
         or _STATE_DENIALS is not _original_state_vectors[1]
         or _STATE_HOOKS is not _original_state_vectors[2]
-        or any(
-            vars(_original_state_type).get(name) is not original
-            for names, originals in (
-                (_original_state_vectors[0], _original_state_fields),
-                (_original_state_vectors[1], _original_state_denials),
-                (_original_state_vectors[2], _original_state_hooks),
-            )
-            for name, original in zip(names, originals, strict=True)
-        )
+        or _PROACTIVE_CLASS_HOOK_ABSENT is not _original_state_epoch[9]
     ):
         raise SyntheticProactiveStateRejected("proactive state result definition changed")
+    namespace = vars(_original_state_type)
+    for names, originals in (
+        (_original_state_vectors[0], _original_state_fields),
+        (_original_state_vectors[1], _original_state_denials),
+    ):
+        if any(
+            name not in namespace or namespace[name] is not original
+            for name, original in zip(names, originals, strict=True)
+        ):
+            raise SyntheticProactiveStateRejected(
+                "proactive state result definition changed"
+            )
+    for name, original in zip(
+        _original_state_vectors[2], _original_state_hooks, strict=True,
+    ):
+        if original is _PROACTIVE_CLASS_HOOK_ABSENT:
+            if name in namespace:
+                raise SyntheticProactiveStateRejected(
+                    "proactive state result definition changed"
+                )
+        elif name not in namespace or namespace[name] is not original:
+            raise SyntheticProactiveStateRejected(
+                "proactive state result definition changed"
+            )
 
 
 def _state_values(
@@ -888,36 +962,66 @@ _LEDGER_METHODS = (
     "path", "_connect", "_policy_identity", "read_state", "evaluate", "count",
 )
 _ORIGINAL_LEDGER_METHODS = tuple(
-    vars(_LEDGER_TYPE).get(name) for name in _LEDGER_METHODS
+    vars(_LEDGER_TYPE)[name]
+    if name in vars(_LEDGER_TYPE)
+    else _PROACTIVE_CLASS_HOOK_ABSENT
+    for name in _LEDGER_METHODS
 )
 _ORIGINAL_LEDGER_SLOTS = vars(_LEDGER_TYPE)["__slots__"]
 _LEDGER_GUARD_VECTORS = (_LEDGER_METHODS, _ORIGINAL_LEDGER_METHODS)
 _ORIGINAL_LEDGER_GUARD_VECTORS = _LEDGER_GUARD_VECTORS
+_ORIGINAL_LEDGER_EPOCH = (
+    _LEDGER_TYPE,
+    SyntheticProactiveStateLedger,
+    _LEDGER_METHODS,
+    _ORIGINAL_LEDGER_METHODS,
+    _ORIGINAL_LEDGER_SLOTS,
+    _LEDGER_GUARD_VECTORS,
+    _ORIGINAL_LEDGER_GUARD_VECTORS,
+    _PROACTIVE_CLASS_HOOK_ABSENT,
+)
 
 
 def _require_original_ledger_class(
     _original_guard_vectors: tuple[object, ...] = _ORIGINAL_LEDGER_GUARD_VECTORS,
     _original_slots: tuple[str, ...] = _ORIGINAL_LEDGER_SLOTS,
+    _original_ledger_epoch: tuple[object, ...] = _ORIGINAL_LEDGER_EPOCH,
 ) -> None:
     """Pin the slot layout and every ledger entry point before local I/O."""
     if (
-        SyntheticProactiveStateLedger is not _LEDGER_TYPE
+        _ORIGINAL_LEDGER_EPOCH is not _original_ledger_epoch
+        or _LEDGER_TYPE is not _original_ledger_epoch[0]
+        or SyntheticProactiveStateLedger is not _original_ledger_epoch[1]
+        or _LEDGER_METHODS is not _original_ledger_epoch[2]
+        or _ORIGINAL_LEDGER_METHODS is not _original_ledger_epoch[3]
+        or _ORIGINAL_LEDGER_SLOTS is not _original_slots
+        or _original_ledger_epoch[4] is not _original_slots
         or _LEDGER_GUARD_VECTORS is not _original_guard_vectors
         or _ORIGINAL_LEDGER_GUARD_VECTORS is not _original_guard_vectors
-        or _LEDGER_METHODS is not _original_guard_vectors[0]
-        or _ORIGINAL_LEDGER_METHODS is not _original_guard_vectors[1]
-        or _ORIGINAL_LEDGER_SLOTS is not _original_slots
-        or vars(_LEDGER_TYPE).get("__slots__") is not _original_slots
-        or any(
-            vars(_LEDGER_TYPE).get(name) is not original
-            for name, original in zip(
-                _LEDGER_METHODS, _ORIGINAL_LEDGER_METHODS, strict=True,
-            )
-        )
+        or _original_guard_vectors is not _original_ledger_epoch[5]
+        or _ORIGINAL_LEDGER_GUARD_VECTORS is not _original_ledger_epoch[6]
+        or _PROACTIVE_CLASS_HOOK_ABSENT is not _original_ledger_epoch[7]
     ):
         raise SyntheticProactiveStateRejected(
             "proactive state ledger class descriptor changed"
         )
+    namespace = vars(_LEDGER_TYPE)
+    if "__slots__" not in namespace or namespace["__slots__"] is not _original_slots:
+        raise SyntheticProactiveStateRejected(
+            "proactive state ledger class descriptor changed"
+        )
+    for name, original in zip(
+        _LEDGER_METHODS, _ORIGINAL_LEDGER_METHODS, strict=True,
+    ):
+        if original is _PROACTIVE_CLASS_HOOK_ABSENT:
+            if name in namespace:
+                raise SyntheticProactiveStateRejected(
+                    "proactive state ledger class descriptor changed"
+                )
+        elif name not in namespace or namespace[name] is not original:
+            raise SyntheticProactiveStateRejected(
+                "proactive state ledger class descriptor changed"
+            )
 
 
 
