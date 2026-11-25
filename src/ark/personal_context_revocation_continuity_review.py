@@ -279,7 +279,6 @@ def _review_revocation_continuity_impl(
             raise
 
 
-
 def _make_review_revocation_continuity():
     # Keep the reviewed implementation and guard outside mutable module names.
     original_guard = _require_original_witness_carrier
