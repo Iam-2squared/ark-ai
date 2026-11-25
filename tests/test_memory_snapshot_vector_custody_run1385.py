@@ -49,23 +49,30 @@ def test_result_constructor_rejects_joint_vector_rebinding_before_new(
 ):
     store, request = _fixture(tmp_path)
     constructor_calls = []
+    result_type = snapshot.CoherentSnapshotReview
+    had_own_new = "__new__" in vars(result_type)
+    original_new = vars(result_type).get("__new__")
 
     def hostile_new(cls, *_args, **_kwargs):
         constructor_calls.append(True)
         raise AssertionError("replaced snapshot result __new__ executed")
 
-    monkeypatch.setattr(
-        snapshot.CoherentSnapshotReview, "__new__", staticmethod(hostile_new),
-    )
-    for name in (
-        "_RESULT_FIELDS",
-        "_ORIGINAL_RESULT_FIELDS",
-        "_RESULT_HOOKS",
-        "_ORIGINAL_RESULT_HOOKS",
-    ):
-        monkeypatch.setattr(snapshot, name, ())
+    setattr(result_type, "__new__", staticmethod(hostile_new))
+    try:
+        for name in (
+            "_RESULT_FIELDS",
+            "_ORIGINAL_RESULT_FIELDS",
+            "_RESULT_HOOKS",
+            "_ORIGINAL_RESULT_HOOKS",
+        ):
+            monkeypatch.setattr(snapshot, name, ())
 
-    with pytest.raises(MemorySchemaError, match="result constructor changed"):
-        snapshot.review_coherent_snapshot(store, request)
+        with pytest.raises(MemorySchemaError, match="result constructor changed"):
+            snapshot.review_coherent_snapshot(store, request)
+    finally:
+        if had_own_new:
+            setattr(result_type, "__new__", original_new)
+        else:
+            delattr(result_type, "__new__")
 
     assert constructor_calls == []
