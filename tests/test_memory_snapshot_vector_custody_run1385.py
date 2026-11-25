@@ -57,7 +57,7 @@ def test_result_constructor_rejects_joint_vector_rebinding_before_new(
         constructor_calls.append(True)
         raise AssertionError("replaced snapshot result __new__ executed")
 
-    setattr(result_type, "__new__", staticmethod(hostile_new))
+    result_type.__new__ = staticmethod(hostile_new)
     try:
         for name in (
             "_RESULT_FIELDS",
@@ -71,7 +71,7 @@ def test_result_constructor_rejects_joint_vector_rebinding_before_new(
             snapshot.review_coherent_snapshot(store, request)
     finally:
         if had_own_new:
-            setattr(result_type, "__new__", original_new)
+            result_type.__new__ = original_new
         else:
             delattr(result_type, "__new__")
 
