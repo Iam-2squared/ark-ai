@@ -72,12 +72,13 @@ _ORIGINAL_GRANT_POST_INIT = vars(_GRANT_TYPE)["__post_init__"]
 _GRANT_FIELDS = ("capability", "scope", "expires_at_ms")
 _ORIGINAL_GRANT_FIELDS = tuple(vars(_GRANT_TYPE)[name] for name in _GRANT_FIELDS)
 _GRANT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_GRANT_HOOK_ABSENT = object()
 _ORIGINAL_GRANT_HOOKS = tuple(
-    vars(_GRANT_TYPE).get(name) for name in _GRANT_HOOKS
+    vars(_GRANT_TYPE).get(name, _GRANT_HOOK_ABSENT) for name in _GRANT_HOOKS
 )
 _GRANT_VECTOR_EPOCH = (
     _GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS,
-    _GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS,
+    _GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS, _GRANT_HOOK_ABSENT,
 )
 
 
@@ -95,36 +96,54 @@ def _require_original_grant_validator(
         or _ORIGINAL_MAX_GRANTS is not _original_max_grants
     ):
         raise PermissionDenied("capability grant budget contract changed")
+    current_vectors = (
+        _GRANT_FIELDS,
+        _ORIGINAL_GRANT_FIELDS,
+        _GRANT_HOOKS,
+        _ORIGINAL_GRANT_HOOKS,
+        _GRANT_HOOK_ABSENT,
+    )
     if (
         _GRANT_VECTOR_EPOCH is not _original_vector_epoch
         or any(
             current is not original
             for current, original in zip(
-                (_GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS,
-                 _GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS),
-                _original_vector_epoch, strict=True,
-            )
-        )
-        or _GRANT_TYPE is not _original_grant_type
-        or CapabilityGrant is not _original_grant_type
-        or _ORIGINAL_GRANT_INIT is not _original_grant_init
-        or _ORIGINAL_GRANT_POST_INIT is not _original_grant_post_init
-        or vars(_original_grant_type).get("__init__") is not _original_grant_init
-        or vars(_original_grant_type).get("__post_init__") is not _original_grant_post_init
-        or any(
-            vars(_original_grant_type).get(name) is not original
-            for name, original in zip(
-                _original_vector_epoch[0], _original_vector_epoch[1], strict=True,
-            )
-        )
-        or any(
-            vars(_original_grant_type).get(name) is not original
-            for name, original in zip(
-                _original_vector_epoch[2], _original_vector_epoch[3], strict=True,
+                current_vectors,
+                _original_vector_epoch,
+                strict=True,
             )
         )
     ):
         raise PermissionDenied("capability grant validator changed")
+    namespace = vars(_original_grant_type)
+    if (
+        _GRANT_TYPE is not _original_grant_type
+        or CapabilityGrant is not _original_grant_type
+        or _ORIGINAL_GRANT_INIT is not _original_grant_init
+        or _ORIGINAL_GRANT_POST_INIT is not _original_grant_post_init
+        or namespace.get("__init__") is not _original_grant_init
+        or namespace.get("__post_init__") is not _original_grant_post_init
+        or any(
+            namespace.get(name) is not original
+            for name, original in zip(
+                _original_vector_epoch[0],
+                _original_vector_epoch[1],
+                strict=True,
+            )
+        )
+        or any(
+            (name in namespace) != (original is not _original_vector_epoch[4])
+            or (name in namespace and namespace[name] is not original)
+            for name, original in zip(
+                _original_vector_epoch[2],
+                _original_vector_epoch[3],
+                strict=True,
+            )
+        )
+    ):
+        raise PermissionDenied("capability grant validator changed")
+
+
 # A frozen input instance does not protect class-level fields or hooks.
 # Check every original descriptor before reading ToolSpec/OneShot fields,
 # including after potentially reentrant caller-owned grant iterators.
@@ -132,19 +151,21 @@ _SPEC_TYPE = ToolSpec
 _SPEC_FIELDS = ("name", "capability", "effect")
 _SPEC_METHODS = ("__init__", "__post_init__")
 _SPEC_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_SPEC_HOOK_ABSENT = object()
 _ORIGINAL_SPEC_FIELDS = tuple(vars(_SPEC_TYPE)[key] for key in _SPEC_FIELDS)
 _ORIGINAL_SPEC_METHODS = tuple(vars(_SPEC_TYPE)[key] for key in _SPEC_METHODS)
 _ORIGINAL_SPEC_HOOKS = tuple(
-    vars(_SPEC_TYPE).get(key) for key in _SPEC_HOOKS
+    vars(_SPEC_TYPE).get(key, _SPEC_HOOK_ABSENT) for key in _SPEC_HOOKS
 )
 _TOKEN_TYPE = OneShotAuthorization
 _TOKEN_FIELDS = ("token_id", "request_id", "expires_at_ms")
 _TOKEN_METHODS = ("__init__", "__post_init__")
 _TOKEN_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_TOKEN_HOOK_ABSENT = object()
 _ORIGINAL_TOKEN_FIELDS = tuple(vars(_TOKEN_TYPE)[key] for key in _TOKEN_FIELDS)
 _ORIGINAL_TOKEN_METHODS = tuple(vars(_TOKEN_TYPE)[key] for key in _TOKEN_METHODS)
 _ORIGINAL_TOKEN_HOOKS = tuple(
-    vars(_TOKEN_TYPE).get(key) for key in _TOKEN_HOOKS
+    vars(_TOKEN_TYPE).get(key, _TOKEN_HOOK_ABSENT) for key in _TOKEN_HOOKS
 )
 # A shortened or reordered class field inventory can skip a substituted
 # descriptor and allow a token/grant getter to run before admission. Preserve
@@ -154,6 +175,7 @@ _SPEC_TOKEN_VECTOR_EPOCH = (
     _ORIGINAL_SPEC_FIELDS, _ORIGINAL_SPEC_METHODS, _ORIGINAL_SPEC_HOOKS,
     _TOKEN_FIELDS, _TOKEN_METHODS, _TOKEN_HOOKS,
     _ORIGINAL_TOKEN_FIELDS, _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS,
+    _SPEC_HOOK_ABSENT, _TOKEN_HOOK_ABSENT,
 )
 
 
@@ -167,42 +189,63 @@ def _require_original_spec_and_token(
         _ORIGINAL_SPEC_FIELDS, _ORIGINAL_SPEC_METHODS, _ORIGINAL_SPEC_HOOKS,
         _TOKEN_FIELDS, _TOKEN_METHODS, _TOKEN_HOOKS,
         _ORIGINAL_TOKEN_FIELDS, _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS,
+        _SPEC_HOOK_ABSENT, _TOKEN_HOOK_ABSENT,
     )
     if (
         _SPEC_TOKEN_VECTOR_EPOCH is not _original_vector_epoch
         or any(
             current is not original
             for current, original in zip(
-                current_vectors, _original_vector_epoch, strict=True,
+                current_vectors,
+                _original_vector_epoch,
+                strict=True,
             )
         )
     ):
         raise PermissionDenied("tool/token validator inventory changed")
+    spec_namespace = vars(_original_spec_type)
     if (
         _SPEC_TYPE is not _original_spec_type
         or ToolSpec is not _original_spec_type
         or any(
-            vars(_original_spec_type).get(key) is not original
+            spec_namespace.get(key) is not original
             for keys, values in (
                 (_original_vector_epoch[0], _original_vector_epoch[3]),
                 (_original_vector_epoch[1], _original_vector_epoch[4]),
-                (_original_vector_epoch[2], _original_vector_epoch[5]),
             )
             for key, original in zip(keys, values, strict=True)
         )
+        or any(
+            (key in spec_namespace) != (original is not _original_vector_epoch[12])
+            or (key in spec_namespace and spec_namespace[key] is not original)
+            for key, original in zip(
+                _original_vector_epoch[2],
+                _original_vector_epoch[5],
+                strict=True,
+            )
+        )
     ):
         raise PermissionDenied("tool specification contract changed")
+    token_namespace = vars(_original_token_type)
     if (
         _TOKEN_TYPE is not _original_token_type
         or OneShotAuthorization is not _original_token_type
         or any(
-            vars(_original_token_type).get(key) is not original
+            token_namespace.get(key) is not original
             for keys, values in (
                 (_original_vector_epoch[6], _original_vector_epoch[9]),
                 (_original_vector_epoch[7], _original_vector_epoch[10]),
-                (_original_vector_epoch[8], _original_vector_epoch[11]),
             )
             for key, original in zip(keys, values, strict=True)
+        )
+        or any(
+            (key in token_namespace) != (original is not _original_vector_epoch[13])
+            or (key in token_namespace and token_namespace[key] is not original)
+            for key, original in zip(
+                _original_vector_epoch[8],
+                _original_vector_epoch[11],
+                strict=True,
+            )
         )
     ):
         raise PermissionDenied("one-shot token contract changed")
@@ -822,20 +865,59 @@ _ORIGINAL_GATE_SLOTS = vars(_ORIGINAL_PERMISSION_GATE)["__slots__"]
 _ORIGINAL_GATE_SETATTR = vars(_ORIGINAL_PERMISSION_GATE)["__setattr__"]
 _ORIGINAL_GATE_DELATTR = vars(_ORIGINAL_PERMISSION_GATE)["__delattr__"]
 _ORIGINAL_GATE_INIT = vars(_ORIGINAL_PERMISSION_GATE)["__init__"]
+_GATE_HOOK_NAMES = ("__new__", "__getattribute__", "__getattr__")
+_GATE_HOOK_ABSENT = object()
+_ORIGINAL_GATE_HOOK_NAMES = _GATE_HOOK_NAMES
+_ORIGINAL_GATE_HOOKS = tuple(
+    vars(_ORIGINAL_PERMISSION_GATE).get(name, _GATE_HOOK_ABSENT)
+    for name in _GATE_HOOK_NAMES
+)
+_GATE_HOOK_EPOCH = (
+    _GATE_HOOK_NAMES,
+    _ORIGINAL_GATE_HOOK_NAMES,
+    _ORIGINAL_GATE_HOOKS,
+    _GATE_HOOK_ABSENT,
+)
 _ORIGINAL_LOCK = Lock
 _ORIGINAL_LOCK_TYPE = type(_ORIGINAL_LOCK())
 
 
-def _require_original_gate_class() -> None:
+def _require_original_gate_class(
+    _original_hook_epoch: tuple[object, ...] = _GATE_HOOK_EPOCH,
+) -> None:
+    namespace = vars(_ORIGINAL_PERMISSION_GATE)
+    current_hook_epoch = (
+        _GATE_HOOK_NAMES,
+        _ORIGINAL_GATE_HOOK_NAMES,
+        _ORIGINAL_GATE_HOOKS,
+        _GATE_HOOK_ABSENT,
+    )
     if (
-        PermissionGate is not _ORIGINAL_PERMISSION_GATE
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__slots__") is not _ORIGINAL_GATE_SLOTS
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__setattr__") is not _ORIGINAL_GATE_SETATTR
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__delattr__") is not _ORIGINAL_GATE_DELATTR
-        or vars(_ORIGINAL_PERMISSION_GATE).get("__init__") is not _ORIGINAL_GATE_INIT
-        or vars(_ORIGINAL_PERMISSION_GATE).get("authorize") is not _ORIGINAL_AUTHORIZE
-        or vars(_ORIGINAL_PERMISSION_GATE).get("authorize_registered")
-        is not _ORIGINAL_AUTHORIZE_REGISTERED
+        _GATE_HOOK_EPOCH is not _original_hook_epoch
+        or any(
+            current is not original
+            for current, original in zip(
+                current_hook_epoch,
+                _original_hook_epoch,
+                strict=True,
+            )
+        )
+        or any(
+            (name in namespace) != (original is not _original_hook_epoch[3])
+            or (name in namespace and namespace[name] is not original)
+            for name, original in zip(
+                _original_hook_epoch[0],
+                _original_hook_epoch[2],
+                strict=True,
+            )
+        )
+        or PermissionGate is not _ORIGINAL_PERMISSION_GATE
+        or namespace.get("__slots__") is not _ORIGINAL_GATE_SLOTS
+        or namespace.get("__setattr__") is not _ORIGINAL_GATE_SETATTR
+        or namespace.get("__delattr__") is not _ORIGINAL_GATE_DELATTR
+        or namespace.get("__init__") is not _ORIGINAL_GATE_INIT
+        or namespace.get("authorize") is not _ORIGINAL_AUTHORIZE
+        or namespace.get("authorize_registered") is not _ORIGINAL_AUTHORIZE_REGISTERED
         or Lock is not _ORIGINAL_LOCK
     ):
         raise PermissionDenied("PermissionGate implementation identity changed")
