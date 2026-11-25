@@ -362,10 +362,10 @@ def _require_original_protocol(
     _original_state_hooks: tuple[object, ...] = _ORIGINAL_STATE_HOOKS,
     _original_policy_type: type = _POLICY_TYPE,
     _original_state_type: type = _STATE_TYPE,
+    _original_protocol_base: object = _require_original_protocol_base,
     _original_policy_epoch: tuple[object, ...] = _ORIGINAL_POLICY_EPOCH,
     _original_state_epoch: tuple[object, ...] = _ORIGINAL_STATE_EPOCH,
     _original_hook_absent: object = _PROACTIVE_CLASS_HOOK_ABSENT,
-    _original_protocol_base: object = _require_original_protocol_base,
 ) -> None:
     """Reject replaced working/original vectors before any protocol callback."""
     if (
