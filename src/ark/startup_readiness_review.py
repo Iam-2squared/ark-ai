@@ -403,8 +403,12 @@ _ORIGINAL_CARRIER_FIELDS = tuple(
         _STARTUP_CARRIER_TYPES, _STARTUP_CARRIER_FIELDS, strict=True,
     )
 )
+_STARTUP_CARRIER_HOOK_ABSENT = object()
 _ORIGINAL_CARRIER_HOOKS = tuple(
-    tuple(vars(kind).get(name) for name in _STARTUP_CARRIER_HOOKS)
+    tuple(
+        vars(kind).get(name, _STARTUP_CARRIER_HOOK_ABSENT)
+        for name in _STARTUP_CARRIER_HOOKS
+    )
     for kind in _STARTUP_CARRIER_TYPES
 )
 
@@ -415,6 +419,7 @@ def _assert_original_startup_constructors(
     _startup_carrier_hooks=_STARTUP_CARRIER_HOOKS,
     _original_carrier_fields=_ORIGINAL_CARRIER_FIELDS,
     _original_carrier_hooks=_ORIGINAL_CARRIER_HOOKS,
+    _carrier_hook_absent=_STARTUP_CARRIER_HOOK_ABSENT,
 ) -> None:
     # Retain the carrier inventory and every comparison vector outside mutable
     # module bindings. Joint replacement with empty tuples must not make the
@@ -424,10 +429,27 @@ def _assert_original_startup_constructors(
     if _require_original_readiness_budgets is not _ORIGINAL_READINESS_BUDGET_CHECK:
         raise ValueError("readiness admission budgets changed")
     _ORIGINAL_READINESS_BUDGET_CHECK()
+    def hook_inventory_changed(
+        kind: type,
+        originals: tuple[object, ...],
+    ) -> bool:
+        namespace = vars(kind)
+        return any(
+            (name in namespace) != (original is not _carrier_hook_absent)
+            or (
+                name in namespace
+                and namespace[name] is not original
+            )
+            for name, original in zip(
+                _startup_carrier_hooks, originals, strict=True,
+            )
+        )
+
     if (
         _STARTUP_CARRIER_TYPES is not _startup_carrier_types
         or _STARTUP_CARRIER_FIELDS is not _startup_carrier_fields
         or _STARTUP_CARRIER_HOOKS is not _startup_carrier_hooks
+        or _STARTUP_CARRIER_HOOK_ABSENT is not _carrier_hook_absent
         or _ORIGINAL_CARRIER_FIELDS is not _original_carrier_fields
         or _ORIGINAL_CARRIER_HOOKS is not _original_carrier_hooks
         or StartupComponent is not _STARTUP_COMPONENT_TYPE
@@ -457,12 +479,7 @@ def _assert_original_startup_constructors(
             )
         )
         or any(
-            any(
-                vars(kind).get(name) is not original
-                for name, original in zip(
-                    _startup_carrier_hooks, originals, strict=True,
-                )
-            )
+            hook_inventory_changed(kind, originals)
             for kind, originals in zip(
                 _startup_carrier_types, _original_carrier_hooks, strict=True,
             )
