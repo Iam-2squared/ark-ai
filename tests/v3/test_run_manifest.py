@@ -244,7 +244,8 @@ def test_candidate_manifest_is_fsynced_before_atomic_create_only_link(
     root = tmp_path / "candidate"
     root.mkdir()
     write_completed_run(root, snapshot)
-    expected = canonical_json(build_candidate_run_manifest(snapshot, root))
+    expected_manifest = build_candidate_run_manifest(snapshot, root)
+    expected = canonical_json(expected_manifest)
     native_write = os.write
     native_fsync = os.fsync
     native_link = os.link
@@ -272,9 +273,7 @@ def test_candidate_manifest_is_fsynced_before_atomic_create_only_link(
     path, digest = write_candidate_run_manifest(snapshot, root)
     assert path.read_bytes() == expected
     assert digest == sha256_bytes(expected)
-    assert verify_candidate_run_manifest(snapshot, root) == build_candidate_run_manifest(
-        snapshot, root
-    )
+    assert verify_candidate_run_manifest(snapshot, root) == expected_manifest
     assert list(tmp_path.glob(".ark-v3-run-manifest-*")) == []
 
 
