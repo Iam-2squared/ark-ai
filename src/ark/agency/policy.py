@@ -856,6 +856,7 @@ def _require_original_gate_class(
     # module aliases. Lookup hooks are checked before _assert_gate_instance_epoch
     # reads any token or lock slot, so a replaced __getattribute__ cannot
     # substitute a non-locking context manager or counterfeit token set.
+    lookup_namespace = vars(_original_gate_type)
     if (
         PermissionGate is not _original_gate_type
         or _ORIGINAL_PERMISSION_GATE is not _original_gate_type
@@ -879,7 +880,11 @@ def _require_original_gate_class(
         or _GATE_LOOKUP_HOOK_ABSENT is not _original_lookup_absent
         or _ORIGINAL_GATE_LOOKUP_HOOKS is not _original_lookup_hooks
         or any(
-            vars(_original_gate_type).get(name, _original_lookup_absent) is not original
+            (name in lookup_namespace) != (original is not _original_lookup_absent)
+            or (
+                name in lookup_namespace
+                and lookup_namespace[name] is not original
+            )
             for name, original in zip(
                 _original_lookup_names, _original_lookup_hooks, strict=True,
             )
