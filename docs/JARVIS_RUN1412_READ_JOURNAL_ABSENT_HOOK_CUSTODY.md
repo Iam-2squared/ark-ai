@@ -5,8 +5,8 @@ Status: isolated hardening of the synthetic READ recovery journal under Draft PR
 ## Exact basis
 
 - Parent: Draft PR #8, branch `research/jarvis-foundations`.
-- Exact parent work-basis HEAD: `43eaf52c81b86ed8cdca7e18b6abea0eee3dcdfe`.
-- Child branch: `research/run1412-read-journal-absent-hook-custody-20261125`.
+- Exact parent work-basis HEAD: `7178d91c4ae332908dd8bd34fd9f8ab939385bd3` (PR #8 exact rebase basis)..
+- Child branch: `research/run1412-read-journal-rebase-20261126`..
 - Scope: `src/ark/agency/disconnected_read_journal.py` and one synthetic regression file.
 
 ## Finding
