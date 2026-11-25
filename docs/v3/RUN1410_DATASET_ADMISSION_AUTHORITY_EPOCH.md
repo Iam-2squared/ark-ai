@@ -34,4 +34,4 @@ A historical PR #5 parent-head run `45589076269` **FAIL**ed before pytest at `ru
 
 No paid/external compute, paid service, Candidate generation/promotion, protected V2 evaluation, credentials, account connection, hardware, destructive action, frozen-contract change, main write/merge or UI/frontend work occurred. PR #5 remains Draft/unmerged. PR #8/#9 remain Draft/unmerged; UI/frontend work remains paused.
 
-Exact child-head CI evidence: run `45627825798` GREEN, all six Windows/Linux × Python 3.11–3.13 jobs successful.
+Exact-head CI evidence: source/test HEAD `73f93c46cda8832a82ed5a20579324a11cec64ff` run `45627825798` GREEN 6/6; evidence-only HEAD `93b8b61281606bbdadf3d0f33dffdeace64aa400` run `45628627183` GREEN 6/6. This follow-up is documentation-only; its resulting HEAD requires its own exact-head CI.
