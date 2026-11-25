@@ -1,4 +1,5 @@
-"""The initial revocation digest cannot redefine the intended Memory scope.
+"""A substituted revocation digest helper must be rejected before the intended
+Memory scope can be read or changed.
 
 Local SQLite fixtures model a privacy veto, not verified human consent or
 real erasure. No external personal-data connection is made.
@@ -16,7 +17,7 @@ from ark.memory.contracts import MemoryScope
     "field,decoy",
     (("owner_id", "wrong-owner"), ("namespace", "wrong-namespace")),
 )
-def test_first_digest_retarget_fails_without_writing_wrong_veto(
+def test_scope_digest_replacement_is_denied_without_writing_veto(
     tmp_path, monkeypatch, field, decoy,
 ):
     ledger = revocation.SyntheticContextRevocationLedger(
@@ -26,20 +27,20 @@ def test_first_digest_retarget_fails_without_writing_wrong_veto(
     original_digest = revocation._scope_digest
     called = 0
 
-    def retarget_first(argument):
+    def forbidden_replacement(argument):
         nonlocal called
         called += 1
-        if called == 1:
-            object.__setattr__(argument, field, decoy)
         return original_digest(argument)
 
-    monkeypatch.setattr(revocation, "_scope_digest", retarget_first)
+    monkeypatch.setattr(revocation, "_scope_digest", forbidden_replacement)
     with pytest.raises(
         revocation.SyntheticContextRevocationRejected,
-        match="scope changed during revocation",
+        match="revocation scope digest implementation changed",
     ):
         ledger.revoke(scope, at_ms=42)
-    assert called == 1
+    assert called == 0
+    assert scope.owner_id == "fixture-owner"
+    assert scope.namespace == "private"
     with sqlite3.connect(ledger.path) as conn:
         assert conn.execute(
             "SELECT COUNT(*) FROM synthetic_context_revocations"
