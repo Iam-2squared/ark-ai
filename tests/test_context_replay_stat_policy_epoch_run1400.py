@@ -92,7 +92,7 @@ def test_joint_stat_aliases_and_epoch_are_denied_before_lstat(
     monkeypatch.setattr(Path, "lstat", forbidden_lstat)
     with pytest.raises(
         replay.OfflineContextReplayRejected,
-        match="context replay path admission policy changed",
+        match="context replay path admission changed",
     ):
         replay.DisconnectedContextReplayLedger(
             tmp_path / "new-context.sqlite",
@@ -124,7 +124,7 @@ def test_reentrant_stat_epoch_replacement_is_denied_before_st_mode(
     monkeypatch.setattr(Path, "lstat", reentrant_lstat)
     with pytest.raises(
         replay.OfflineContextReplayRejected,
-        match="context replay path admission policy changed",
+        match="context replay path admission changed",
     ):
         replay.DisconnectedContextReplayLedger(
             tmp_path / "new-context.sqlite",
@@ -224,7 +224,7 @@ def test_reentrant_reparse_metadata_accessor_is_rechecked_before_classification(
     monkeypatch.setattr(Path, "lstat", lstat)
     with pytest.raises(
         replay.OfflineContextReplayRejected,
-        match="context replay path admission policy changed",
+        match="context replay path admission changed",
     ):
         replay.DisconnectedContextReplayLedger(
             tmp_path / "new-context.sqlite",
