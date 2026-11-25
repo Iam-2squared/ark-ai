@@ -505,6 +505,10 @@ class SyntheticOccurrenceStore:
                         call.request_id, call.arguments_sha256,
                     ) == call_epoch
                 )
+            except SyntheticReplayRejected as exc:
+                raise SyntheticReplayRejected(
+                    "synthetic token changed during reserve"
+                ) from exc
             except (TypeError, ValueError, AttributeError) as exc:
                 raise SyntheticReplayRejected(
                     "synthetic occurrence input changed during reserve"
