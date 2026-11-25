@@ -58,57 +58,70 @@ def test_recovery_rejects_stale_external_tip_without_rewriting(tmp_path):
         assert journal.verify(retained) == retained
 
 
-def test_recovery_rejects_fake_authority(monkeypatch, tmp_path):
+def test_recovery_rejects_fake_authority_before_descriptor_access(monkeypatch, tmp_path):
     path = tmp_path / "authority.sqlite"
     retained = _create_two(path)
-    monkeypatch.setattr(
-        mod.ReadJournalSnapshot, "effect_proven",
-        property(lambda _self: True),
-    )
+    calls = []
+
+    def fake_authority(_self):
+        calls.append(True)
+        return True
+
     with mod.DisconnectedReadJournal.open(path) as journal:
-        with pytest.raises(
-            mod.ReadJournalRejected, match="gained authority|READ recovery result changed",
-        ):
-            journal.recover_receipts(retained)
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                mod.ReadJournalSnapshot, "effect_proven",
+                property(fake_authority),
+            )
+            with pytest.raises(
+                mod.ReadJournalRejected,
+                match="gained authority|READ recovery result changed",
+            ):
+                journal.recover_receipts(retained)
+        assert calls == []
         assert journal.verify(retained) == retained
 
 
-def test_false_denial_cannot_replace_equal_receipt_tuple(monkeypatch, tmp_path):
+def test_false_denial_descriptor_is_rejected_before_receipt_access(monkeypatch, tmp_path):
     path = tmp_path / "replacement.sqlite"
     retained = _create_two(path)
+    calls = []
 
     def replace_tuple(self):
+        calls.append(True)
         object.__setattr__(self, "receipts", tuple([*self.receipts]))
         return False
 
-    monkeypatch.setattr(
-        mod.ReadJournalSnapshot, "dispatch_authorized",
-        property(replace_tuple),
-    )
     with mod.DisconnectedReadJournal.open(path) as journal:
-        with pytest.raises(mod.ReadJournalRejected, match="result changed"):
-            journal.recover_receipts(retained)
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                mod.ReadJournalSnapshot, "dispatch_authorized",
+                property(replace_tuple),
+            )
+            with pytest.raises(mod.ReadJournalRejected, match="result changed"):
+                journal.recover_receipts(retained)
+        assert calls == []
         assert journal.verify(retained) == retained
 
 
-def test_false_last_denial_cannot_grant_earlier_permission(monkeypatch, tmp_path):
+def test_false_last_denial_descriptor_is_rejected_before_callback(monkeypatch, tmp_path):
     path = tmp_path / "descriptor.sqlite"
     retained = _create_two(path)
+    calls = []
 
-    def replace_descriptor(self):
-        monkeypatch.setattr(
-            mod.ReadJournalSnapshot, "dispatch_authorized",
-            property(lambda _self: True),
-        )
+    def replace_descriptor(_self):
+        calls.append(True)
         return False
 
-    monkeypatch.setattr(
-        mod.ReadJournalSnapshot, "independent_custody_proven",
-        property(replace_descriptor),
-    )
     with mod.DisconnectedReadJournal.open(path) as journal:
-        with pytest.raises(mod.ReadJournalRejected, match="result changed"):
-            journal.recover_receipts(retained)
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                mod.ReadJournalSnapshot, "independent_custody_proven",
+                property(replace_descriptor),
+            )
+            with pytest.raises(mod.ReadJournalRejected, match="result changed"):
+                journal.recover_receipts(retained)
+        assert calls == []
         assert journal.verify(retained) == retained
 
 
