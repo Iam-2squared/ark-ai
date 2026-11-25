@@ -1,3 +1,76 @@
+## Run1436 — live PR #5 guard reconciliation (2026-11-26)
+
+**Exact source basis:** gated Draft PR #5, branch research/v3-learning-evaluation, HEAD
+ea373c3496d06e2789cee5bb58836054ef35ed28. This read-only audit supersedes stale Run1346
+queue items below only for the exact source files and tests identified here.
+
+### Verified guards already present
+
+1. **Preflight report duplicate/non-finite JSON rejection.**
+   - Source: src/ark/learning/training_cli.py, blob
+     ff47942a38a6859fde5a3002eceadd688de18ab9.
+   - _verify_preflight_report uses the captured JSON loader with the captured
+     duplicate-key object_pairs_hook, non-standard-constant rejection, and finite-float
+     parser. The Run1349 tests cover duplicate keys at multiple nesting levels,
+     same-named keys in distinct objects, overflowed floats, and parser replacement.
+   - Test: tests/v3/test_training_cli_preflight_duplicate_json_keys_run1349.py, blob
+     91bee621ff68b05e3ae8072603229c3b5bb0edf0.
+   - This is strict duplicate/non-finite parsing; do not describe it as a canonical-byte
+     equality check, which is a separate property.
+
+2. **Nested symlink/reparse ancestor rejection for new preflight reports.**
+   - _validate_new_preflight_report_path checks _has_evidence_reparse_ancestor
+     before _write_new_preflight_report reaches os.open.
+   - Test: tests/v3/test_preflight_report_nested_symlink_ancestor_run1351.py, blob
+     a3b67ce4f41a42e80c4711630622d2d633b92754. It uses a real directory reached through
+     a symlinked grandparent and asserts rejection before open while preserving a
+     sentinel target.
+
+3. **Runtime-rendered chat-template probe.**
+   - Source: src/ark/learning/hf_lora.py, blob
+     fde10e8f4e16c0021c5eb906b6af6d70250840e0.
+   - After loading the local tokenizer, _verify_chat_template_probe invokes
+     apply_chat_template with the repository-owned fixed messages and compares the
+     exact UTF-8 rendered bytes to the reviewed probe file and frozen SHA-256.
+   - Tests: tests/v3/test_hf_lora.py, blob
+     e7f4727313ef80ab1cda558fe4befbf2fcf96f66, including matching render, mismatch
+     denial, and probe-file replacement between identity and read.
+
+Therefore the Run1346 claims that these three guards are still absent are superseded
+for the exact PR #5 source HEAD above. Do not schedule duplicate parser, nested-ancestor,
+or runtime-rendered-template work from that historical section.
+
+### Current local hash-then-stage child
+
+- Draft PR #623, branch research/run1435-v3-local-snapshot-staging-20261126, exact child
+  HEAD 2ed89a59c89606a1aebbafc2c18eec2911599796, targets only Draft PR #5.
+- It stages only manifest-listed local HF snapshot files into a private temporary tree,
+  hashes copied bytes, re-hashes the stage, and directs both local-only model/tokenizer
+  loaders to the staged path. Synthetic tests cover source mutation and loader path use.
+- At the last exact-head workflow lookup, no PR-triggered run was returned; no CI result
+  is claimed. This package is not integrated into PR #5.
+- This is not atomic dirfd custody, same-user hostile-writer isolation, platform ACL
+  attestation, or elimination of the final rehash-to-open race. A real run also requires
+  temporary disk space for a second local snapshot copy.
+
+### Remaining free-only V3 work
+
+1. Durable one-attempt preflight/full-run authorization ledger with restart-safe
+   attempt identity, terminal receipt, and conservative COMMIT-UNKNOWN recovery.
+2. Bind final training metrics, exported files, and Candidate run manifest to one
+   complete execution receipt without weakening frozen approval or provenance checks.
+3. Crash-consistent publication of staged dataset/evidence artifacts and packet-byte
+   custody across the review-to-runtime boundary.
+
+Immutable Hub revision/file-byte identities and human-reviewed dataset decisions remain
+unresolved external evidence, not facts to infer. No V3 runtime, torch import, model load,
+GPU query, preflight, training, Candidate generation/promotion, protected V2 evaluation,
+paid/external compute, or Contract 1 change occurred in this audit.
+
+PR #5 remains Draft/unmerged. The V3 gate and all frozen V1/V2/Local UI/Launcher evidence
+remain unchanged.
+
+---
 ## Run1346 — V3 free-only source revalidation (2026-11-25)
 
 **Exact source basis:** Draft PR #5 branch `research/v3-learning-evaluation`, HEAD `f7252fbe7d5f65c640fed41bbb5b3cc7ae817296`. Exact-head CI run [45484069708](https://github.com/Iam-2squared/ark-ai/actions/runs/45484069708) / run 7529 is **FAIL**. This is a read-only source audit of free guard code; no V3 runtime, torch import, model/tokenizer load, GPU query, preflight, training, Candidate or evaluation was run.
