@@ -34,9 +34,9 @@ def test_joint_stat_module_and_original_alias_replacement_is_denied_before_predi
     def install(patch: pytest.MonkeyPatch) -> None:
         patch.setattr(journal_module, "stat", fake_stat)
         patch.setattr(journal_module, "_ORIGINAL_STAT", fake_stat)
-        patch.setattr(journal_module, "_ORIGINAL_STAT_S_ISDIR", hostile_predicate)
-        patch.setattr(journal_module, "_ORIGINAL_STAT_S_ISLNK", hostile_predicate)
-        patch.setattr(journal_module, "_ORIGINAL_STAT_S_ISREG", hostile_predicate)
+        patch.setattr(journal_module, "_ORIGINAL_S_ISDIR", hostile_predicate)
+        patch.setattr(journal_module, "_ORIGINAL_S_ISLNK", hostile_predicate)
+        patch.setattr(journal_module, "_ORIGINAL_S_ISREG", hostile_predicate)
 
     with monkeypatch.context() as patch:
         def lstat(path: Path):
