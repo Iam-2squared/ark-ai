@@ -1,9 +1,12 @@
 import copy
 import json
+import os
+import stat
 from pathlib import Path
 
 import pytest
 
+import ark.learning.run_manifest as manifest_module
 from ark.learning.execution import canonical_json, sha256_bytes, validate_experiment_001
 from ark.learning.run_manifest import (
     CandidateRunManifestError,
@@ -232,3 +235,78 @@ def test_candidate_run_manifest_rejects_extra_training_metric_fields(tmp_path):
 
     with pytest.raises(CandidateRunManifestError, match="schema mismatch"):
         build_candidate_run_manifest(snapshot, root)
+
+
+def test_candidate_manifest_is_fsynced_before_atomic_create_only_link(
+    tmp_path, monkeypatch,
+):
+    snapshot = resolved_training_snapshot()
+    root = tmp_path / "candidate"
+    root.mkdir()
+    write_completed_run(root, snapshot)
+    expected_manifest = build_candidate_run_manifest(snapshot, root)
+    expected = canonical_json(expected_manifest)
+    native_write = os.write
+    native_fsync = os.fsync
+    native_link = os.link
+    fsync_kinds = []
+
+    def short_write(descriptor, view):
+        return native_write(descriptor, view[:max(1, len(view) // 2)])
+
+    def observed_fsync(descriptor):
+        mode = os.fstat(descriptor).st_mode
+        fsync_kinds.append("file" if stat.S_ISREG(mode) else "directory")
+        return native_fsync(descriptor)
+
+    def checked_link(source, destination, *args, **kwargs):
+        assert Path(source).parent == root.parent
+        assert Path(source).read_bytes() == expected
+        assert "file" in fsync_kinds
+        assert not Path(destination).exists()
+        return native_link(source, destination, *args, **kwargs)
+
+    monkeypatch.setattr(manifest_module.os, "write", short_write)
+    monkeypatch.setattr(manifest_module.os, "fsync", observed_fsync)
+    monkeypatch.setattr(manifest_module.os, "link", checked_link)
+
+    path, digest = write_candidate_run_manifest(snapshot, root)
+    assert path.read_bytes() == expected
+    assert digest == sha256_bytes(expected)
+    assert verify_candidate_run_manifest(snapshot, root) == expected_manifest
+    assert list(tmp_path.glob(".ark-v3-run-manifest-*")) == []
+
+
+def test_manifest_link_failure_leaves_no_partial_final_file_or_temp_sibling(
+    tmp_path, monkeypatch,
+):
+    snapshot = resolved_training_snapshot()
+    root = tmp_path / "candidate"
+    root.mkdir()
+    write_completed_run(root, snapshot)
+
+    def fail_link(source, destination, *args, **kwargs):
+        assert Path(source).read_bytes() == canonical_json(
+            build_candidate_run_manifest(snapshot, root)
+        )
+        raise OSError("synthetic atomic link failure")
+
+    monkeypatch.setattr(manifest_module.os, "link", fail_link)
+    with pytest.raises(CandidateRunManifestError, match="publication failed before publication"):
+        write_candidate_run_manifest(snapshot, root)
+
+    assert not (root / "run-manifest.json").exists()
+    assert list(tmp_path.glob(".ark-v3-run-manifest-*")) == []
+
+
+def test_manifest_create_only_collision_preserves_existing_bytes(tmp_path):
+    snapshot = resolved_training_snapshot()
+    root = tmp_path / "candidate"
+    root.mkdir()
+    write_completed_run(root, snapshot)
+    existing = root / "run-manifest.json"
+    existing.write_bytes(b"pre-existing synthetic bytes")
+
+    with pytest.raises(CandidateRunManifestError, match="must not already exist"):
+        write_candidate_run_manifest(snapshot, root)
+    assert existing.read_bytes() == b"pre-existing synthetic bytes"
