@@ -9,7 +9,6 @@ import pytest
 import ark.agency.planner_journal as journal_module
 from ark.agency.planner_journal import PlannerJournal, PlannerJournalPathError
 
-
 _HOOKS = ("__getattribute__", "__getattr__")
 
 
