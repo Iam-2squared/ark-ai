@@ -6,6 +6,7 @@ execution, retry or trusted filesystem identity.
 
 import os
 import stat
+from types import SimpleNamespace
 
 import pytest
 
@@ -34,9 +35,11 @@ def test_unlinked_regular_journal_is_resampled_once(tmp_path, monkeypatch):
                 # Model a concurrent unlink after pathname lookup: a regular
                 # inode with zero links must never be used without recheck.
                 sidecar.unlink()
-                fields = list(observed)
-                fields[3] = 0
-                return os.stat_result(fields)
+                return SimpleNamespace(
+                    st_mode=observed.st_mode,
+                    st_nlink=0,
+                    st_file_attributes=getattr(observed, "st_file_attributes", 0),
+                )
         return original_lstat(candidate, *args, **kwargs)
 
     monkeypatch.setattr(path_type, "lstat", lstat_with_unlink)
