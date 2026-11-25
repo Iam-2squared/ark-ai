@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-from contextlib import contextmanager
-
 import pytest
 
 from ark.learning import authorization_packet_verify as mod
@@ -16,23 +13,28 @@ def _invalid_review_inputs() -> tuple[object, object, str]:
     return object(), object(), "not-a-digest"
 
 
-@contextmanager
-def _class_attribute(
+def _set_class_attribute(
     carrier: type,
     name: str,
     value: object,
-) -> Iterator[None]:
+) -> tuple[bool, object | None]:
     namespace = vars(carrier)
     was_present = name in namespace
     original = namespace.get(name)
     type.__setattr__(carrier, name, value)
-    try:
-        yield
-    finally:
-        if was_present:
-            type.__setattr__(carrier, name, original)
-        else:
-            type.__delattr__(carrier, name)
+    return was_present, original
+
+
+def _restore_class_attribute(
+    carrier: type,
+    name: str,
+    original: tuple[bool, object | None],
+) -> None:
+    was_present, value = original
+    if was_present:
+        type.__setattr__(carrier, name, value)
+    else:
+        type.__delattr__(carrier, name)
 
 
 @pytest.mark.parametrize(
@@ -44,7 +46,8 @@ def test_explicit_none_is_not_confused_with_an_absent_witness_hook(
 ) -> None:
     snapshot, packet, retained = _invalid_review_inputs()
 
-    with _class_attribute(mod.LocalPacketBindingWitness, hook, None):
+    original = _set_class_attribute(mod.LocalPacketBindingWitness, hook, None)
+    try:
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="class lookup contract changed",
@@ -52,6 +55,10 @@ def test_explicit_none_is_not_confused_with_an_absent_witness_hook(
             mod.verify_detached_authorization_packet(
                 snapshot, packet, retained_packet_file_sha256=retained,
             )
+    finally:
+        _restore_class_attribute(
+            mod.LocalPacketBindingWitness, hook, original,
+        )
 
 
 @pytest.mark.parametrize("hook", ("__getattribute__", "__getattr__"))
@@ -65,7 +72,10 @@ def test_hostile_lookup_hook_is_rejected_before_it_executes(
         raise AssertionError("substituted witness lookup hook executed")
 
     snapshot, packet, retained = _invalid_review_inputs()
-    with _class_attribute(mod.LocalPacketBindingWitness, hook, forbidden):
+    original = _set_class_attribute(
+        mod.LocalPacketBindingWitness, hook, forbidden,
+    )
+    try:
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="class lookup contract changed",
@@ -73,6 +83,10 @@ def test_hostile_lookup_hook_is_rejected_before_it_executes(
             mod.verify_detached_authorization_packet(
                 snapshot, packet, retained_packet_file_sha256=retained,
             )
+    finally:
+        _restore_class_attribute(
+            mod.LocalPacketBindingWitness, hook, original,
+        )
 
     assert invoked == []
 
@@ -80,11 +94,13 @@ def test_hostile_lookup_hook_is_rejected_before_it_executes(
 def test_exact_absence_sentinel_installed_as_hook_is_rejected() -> None:
     snapshot, packet, retained = _invalid_review_inputs()
 
-    with _class_attribute(
+    hook = "__getattr__"
+    original = _set_class_attribute(
         mod.LocalPacketBindingWitness,
-        "__getattr__",
+        hook,
         mod._WITNESS_CLASS_HOOK_ABSENT,
-    ):
+    )
+    try:
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="class lookup contract changed",
@@ -92,6 +108,10 @@ def test_exact_absence_sentinel_installed_as_hook_is_rejected() -> None:
             mod.verify_detached_authorization_packet(
                 snapshot, packet, retained_packet_file_sha256=retained,
             )
+    finally:
+        _restore_class_attribute(
+            mod.LocalPacketBindingWitness, hook, original,
+        )
 
 
 def test_replaced_absence_sentinel_is_rejected(
@@ -135,16 +155,22 @@ def test_denial_flag_inventory_cannot_be_replaced_with_an_empty_vector(
 
 
 def test_false_valued_denial_descriptor_replacement_is_rejected() -> None:
-    with _class_attribute(
+    descriptor = property(lambda _self: False)
+    original = _set_class_attribute(
         mod.LocalPacketBindingWitness,
         "main_merge_authorized",
-        property(lambda _self: False),
-    ):
+        descriptor,
+    )
+    try:
         with pytest.raises(
             mod.LocalPacketBindingRejected,
             match="gained authority",
         ):
             mod._require_original_witness_contract()
+    finally:
+        _restore_class_attribute(
+            mod.LocalPacketBindingWitness, "main_merge_authorized", original,
+        )
 
 
 def test_guard_binding_is_retained_across_input_epoch_callbacks(
