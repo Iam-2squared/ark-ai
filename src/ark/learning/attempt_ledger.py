@@ -384,7 +384,8 @@ def _validate_history(
         if (
             type(attempt_id) is not str or _ATTEMPT_ID.fullmatch(attempt_id) is None
             or type(execution_sha256) is not str or _SHA256.fullmatch(execution_sha256) is None
-            or type(authorization_sha256) is not str or _SHA256.fullmatch(authorization_sha256) is None
+            or type(authorization_sha256) is not str
+            or _SHA256.fullmatch(authorization_sha256) is None
             or type(started_at_ms) is not int or not 0 <= started_at_ms <= _MAX_SQLITE_INT
             or attempt_id in reservation_ids or execution_sha256 in execution_ids
         ):
