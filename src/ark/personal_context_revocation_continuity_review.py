@@ -101,7 +101,8 @@ def _require_original_witness_carrier(
     _original_vector_epoch: tuple[object, ...] = _WITNESS_VECTOR_EPOCH,
 ) -> None:
     if (
-        _WITNESS_VECTOR_EPOCH is not _original_vector_epoch
+        _require_original_witness_carrier is not _ORIGINAL_WITNESS_GUARD
+        or _WITNESS_VECTOR_EPOCH is not _original_vector_epoch
         or hashlib is not _ORIGINAL_HASHLIB
         or json is not _ORIGINAL_JSON
         or hashlib.sha256 is not _ORIGINAL_SHA256
@@ -142,7 +143,7 @@ def _require_original_witness_carrier(
         raise SyntheticContextRevocationRejected(
             "revocation integrity validator changed"
         )
-
+_ORIGINAL_WITNESS_GUARD = _require_original_witness_carrier
 
 def review_revocation_continuity(
     ledger: SyntheticContextRevocationLedger,
@@ -157,7 +158,7 @@ def review_revocation_continuity(
         raise SyntheticContextRevocationRejected("exact revocation ledger required")
     if retained is not None and type(retained) is not SyntheticRevocationWitness:
         raise SyntheticContextRevocationRejected("exact retained witness required")
-    _require_original_witness_carrier()
+    _ORIGINAL_WITNESS_GUARD()
     source_path = ledger.path
     # Capture the caller's exact retained evidence BEFORE its first integrity
     # callback. A frozen dataclass can be reflectively mutated from inside
@@ -173,7 +174,7 @@ def review_revocation_continuity(
         pinned = (retained_rows, retained.witness_id)
 
     def assert_epoch() -> None:
-        _require_original_witness_carrier()
+        _ORIGINAL_WITNESS_GUARD()
         ledger._assert_source_path(source_path)
         if retained is not None and (
             retained.rows is not retained_rows
