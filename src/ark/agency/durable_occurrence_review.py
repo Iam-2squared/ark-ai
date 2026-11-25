@@ -252,7 +252,8 @@ def _validate(conn: sqlite3.Connection) -> None:
 def _require_original_occurrence_path_policy() -> None:
     """Pin local stat classifiers and SQLite sidecar names before path access."""
     if (
-        stat is not _ORIGINAL_OCCURRENCE_PATH_STAT
+        _require_original_occurrence_path_policy is not _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY
+        or stat is not _ORIGINAL_OCCURRENCE_PATH_STAT
         or stat.S_ISDIR is not _ORIGINAL_OCCURRENCE_PATH_S_ISDIR
         or stat.S_ISLNK is not _ORIGINAL_OCCURRENCE_PATH_S_ISLNK
         or stat.S_ISREG is not _ORIGINAL_OCCURRENCE_PATH_S_ISREG
@@ -263,17 +264,17 @@ def _require_original_occurrence_path_policy() -> None:
         or _SQLITE_SIDECARS is not _ORIGINAL_SQLITE_SIDECARS
     ):
         raise SyntheticReplayRejected("synthetic occurrence path policy changed")
-
+_ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY = _require_original_occurrence_path_policy
 
 def _is_occurrence_reparse_point(info: object) -> bool:
     """Recognize POSIX symlinks and Windows reparse-point metadata."""
-    _require_original_occurrence_path_policy()
+    _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
     attributes = getattr(info, "st_file_attributes", 0)
-    _require_original_occurrence_path_policy()
+    _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
     if type(attributes) is not int:
         raise SyntheticReplayRejected("synthetic occurrence path metadata malformed")
     mode = info.st_mode
-    _require_original_occurrence_path_policy()
+    _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
     return _ORIGINAL_OCCURRENCE_PATH_S_ISLNK(mode) or bool(
         attributes & _ORIGINAL_OCCURRENCE_REPARSE_POINT_ATTRIBUTE
     )
@@ -285,7 +286,7 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
     This repeated local lstat preflight cannot defeat concurrent path renames
     by a filesystem owner. It conveys neither trust nor execution authority.
     """
-    _require_original_occurrence_path_policy()
+    _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
     is_directory = _ORIGINAL_OCCURRENCE_PATH_S_ISDIR
     is_symlink = _ORIGINAL_OCCURRENCE_PATH_S_ISLNK
     is_regular = _ORIGINAL_OCCURRENCE_PATH_S_ISREG
@@ -293,50 +294,50 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
     if type(path) is not type(Path()) or ".." in path.parts:
         raise SyntheticReplayRejected("synthetic occurrence path alias refused")
     target = path if path.is_absolute() else path.absolute()
-    _require_original_occurrence_path_policy()
+    _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
     try:
         for ancestor in target.parents:
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             try:
                 meta = ancestor.lstat()
             except FileNotFoundError:
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                 raise SyntheticReplayRejected(
                     "synthetic occurrence ancestor unavailable"
                 ) from None
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             mode = meta.st_mode
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if not is_directory(mode) or is_symlink(mode):
                 raise SyntheticReplayRejected("synthetic occurrence ancestor unsafe")
             reparse = _is_occurrence_reparse_point(meta)
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if reparse:
                 raise SyntheticReplayRejected("synthetic occurrence ancestor unsafe")
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
         main_absent = False
-        _require_original_occurrence_path_policy()
+        _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
         try:
             meta = target.lstat()
         except FileNotFoundError:
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             main_absent = True
             if not create:
                 raise sqlite3.OperationalError(
                     "synthetic occurrence storage missing"
                 ) from None
         else:
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             mode = meta.st_mode
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if not is_regular(mode):
                 raise SyntheticReplayRejected("synthetic occurrence ledger path unsafe")
             link_count = meta.st_nlink
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if link_count != 1:
                 raise SyntheticReplayRejected("synthetic occurrence ledger path unsafe")
             reparse = _is_occurrence_reparse_point(meta)
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if reparse:
                 raise SyntheticReplayRejected("synthetic occurrence ledger path unsafe")
         # A legitimate main DB can still be redirected through an aliased
@@ -344,50 +345,50 @@ def _require_safe_occurrence_path(path: object, *, create: bool) -> Path:
         # before SQLite reads or writes; do not adopt any orphaned journal
         # when creating a new disconnected fixture ledger.
         for suffix in sidecars:
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             sidecar = target.with_name(target.name + suffix)
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             try:
                 sidecar_info = sidecar.lstat()
             except FileNotFoundError:
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                 continue
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if main_absent:
                 raise SyntheticReplayRejected("orphaned occurrence SQLite sidecar refused")
             sidecar_mode = sidecar_info.st_mode
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if not is_regular(sidecar_mode):
                 raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
             sidecar_reparse = _is_occurrence_reparse_point(sidecar_info)
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if sidecar_reparse:
                 raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
             sidecar_links = sidecar_info.st_nlink
-            _require_original_occurrence_path_policy()
+            _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if sidecar_links == 0:
                 # SQLite's last connection can unlink a regular sidecar
                 # between pathname lookup and the inode snapshot. Re-lstat
                 # this *already-unlinked regular* case just once; an orphan,
                 # alias, special file or persistent zero-link inode is still
                 # rejected before the reservation ledger is opened.
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                 try:
                     sidecar_info = sidecar.lstat()
                 except FileNotFoundError:
-                    _require_original_occurrence_path_policy()
+                    _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                     continue
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                 sidecar_mode = sidecar_info.st_mode
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                 if not is_regular(sidecar_mode):
                     raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
                 sidecar_reparse = _is_occurrence_reparse_point(sidecar_info)
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
                 if sidecar_reparse:
                     raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
                 sidecar_links = sidecar_info.st_nlink
-                _require_original_occurrence_path_policy()
+                _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY()
             if sidecar_links != 1:
                 raise SyntheticReplayRejected("occurrence SQLite sidecar alias refused")
     except OSError as exc:
