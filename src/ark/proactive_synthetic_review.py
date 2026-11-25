@@ -491,7 +491,7 @@ def _refuse_aliased_proactive_path(path: Path) -> None:
             _require_original_proactive_path_policy()
             if not parent_directory or parent_symlink or parent_reparse:
                 raise SyntheticTriggerRejected(
-                    "unsafe proactive reparse-point or nondirectory parent path"
+                    "unsafe proactive parent path (reparse-point or nondirectory)"
                 )
 
         _require_original_proactive_path_policy()
