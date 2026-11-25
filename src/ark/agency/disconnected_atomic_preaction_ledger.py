@@ -113,13 +113,21 @@ _CLAIM_FIELDS = ("occurrence_id", "bound_action_id", "request_sha256")
 _WITNESS_FIELDS = ("count", "tip_sha256")
 _SNAPSHOT_FIELDS = ("witness", "occurrence_ids")
 _CARRIER_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
+_CARRIER_HOOK_ABSENT = object()
 _SNAPSHOT_DENIALS = (
     "tool_dispatch_authorized", "automatic_replay_authorized",
     "external_effect_proven", "trusted_approval_verified",
     "independent_custody_proven",
 )
 _ORIGINAL_CARRIER_SLOTS = tuple(
-    (cls, names, tuple(vars(cls).get(name) for name in names))
+    (
+        cls,
+        names,
+        tuple(
+            vars(cls).get(name, _CARRIER_HOOK_ABSENT)
+            for name in names
+        ),
+    )
     for cls, names in (
         (_CLAIM_TYPE, _CLAIM_FIELDS + _CARRIER_HOOKS),
         (_WITNESS_TYPE, _WITNESS_FIELDS + _CARRIER_HOOKS),
@@ -128,7 +136,25 @@ _ORIGINAL_CARRIER_SLOTS = tuple(
 )
 
 
-def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
+def _require_original_atomic_carriers(
+    *,
+    snapshot: bool = True,
+    _carrier_slots=_ORIGINAL_CARRIER_SLOTS,
+    _carrier_hooks=_CARRIER_HOOKS,
+    _carrier_hook_absent=_CARRIER_HOOK_ABSENT,
+) -> None:
+    def inventory_changed(
+        carrier: type,
+        names: tuple[str, ...],
+        originals: tuple[object, ...],
+    ) -> bool:
+        namespace = vars(carrier)
+        return any(
+            (name in namespace) != (original is not _carrier_hook_absent)
+            or (name in namespace and namespace[name] is not original)
+            for name, original in zip(names, originals, strict=True)
+        )
+
     if (
         sqlite3 is not _ORIGINAL_SQLITE3
         or sqlite3.connect is not _ORIGINAL_CONNECT
@@ -151,14 +177,16 @@ def _require_original_atomic_carriers(*, snapshot: bool = True) -> None:
     # usable while a downstream recovery reviewer tests a forbidden snapshot
     # getter. The private _scan boundary checks the snapshot definition.
     if (
-        AtomicIntentClaim is not _CLAIM_TYPE
-        or AtomicPreactionWitness is not _WITNESS_TYPE
-        or (snapshot and AtomicPreactionSnapshot is not _SNAPSHOT_TYPE)
+        _ORIGINAL_CARRIER_SLOTS is not _carrier_slots
+        or _CARRIER_HOOKS is not _carrier_hooks
+        or _CARRIER_HOOK_ABSENT is not _carrier_hook_absent
+        or AtomicIntentClaim is not _carrier_slots[0][0]
+        or AtomicPreactionWitness is not _carrier_slots[1][0]
+        or (snapshot and AtomicPreactionSnapshot is not _carrier_slots[2][0])
         or any(
-            vars(cls).get(name) is not original
-            for cls, names, originals in _ORIGINAL_CARRIER_SLOTS
-            if snapshot or cls is not _SNAPSHOT_TYPE
-            for name, original in zip(names, originals, strict=True)
+            inventory_changed(carrier, names, originals)
+            for index, (carrier, names, originals) in enumerate(_carrier_slots)
+            if snapshot or index != 2
         )
     ):
         raise AtomicPreactionRejected("atomic intent or audit carrier definition changed")
@@ -527,25 +555,51 @@ _ORIGINAL_LEDGER_DELATTR = vars(_LEDGER_TYPE)["__delattr__"]
 _ORIGINAL_LEDGER_OPEN = vars(_LEDGER_TYPE)["_open"]
 _ORIGINAL_LEDGER_INSPECT = vars(_LEDGER_TYPE)["inspect"]
 _ORIGINAL_LEDGER_RESERVE = vars(_LEDGER_TYPE)["reserve"]
+_LEDGER_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_LEDGER_HOOK_ABSENT = object()
+_ORIGINAL_LEDGER_HOOKS = tuple(
+    vars(_LEDGER_TYPE).get(name, _LEDGER_HOOK_ABSENT)
+    for name in _LEDGER_HOOKS
+)
+_ORIGINAL_LEDGER_HOOKS_VECTOR = _LEDGER_HOOKS
 
 
 def _require_ledger_path_epoch(
-    ledger: object, expected: Path | None = None,
+    ledger: object,
+    expected: Path | None = None,
+    *,
+    _ledger_type: type = _LEDGER_TYPE,
+    _ledger_hooks: tuple[str, ...] = _LEDGER_HOOKS,
+    _ledger_hook_absent: object = _LEDGER_HOOK_ABSENT,
+    _original_ledger_hooks: tuple[object, ...] = _ORIGINAL_LEDGER_HOOKS,
 ) -> Path:
     _require_original_atomic_carriers(snapshot=False)
+    ledger_namespace = vars(_ledger_type)
     if (
-        DisconnectedAtomicPreactionLedger is not _LEDGER_TYPE
-        or type(ledger) is not _LEDGER_TYPE
-        or vars(_LEDGER_TYPE).get("__slots__") is not _LEDGER_SLOTS
+        DisconnectedAtomicPreactionLedger is not _ledger_type
+        or _LEDGER_TYPE is not _ledger_type
+        or _LEDGER_HOOKS is not _ledger_hooks
+        or _ORIGINAL_LEDGER_HOOKS_VECTOR is not _ledger_hooks
+        or _LEDGER_HOOK_ABSENT is not _ledger_hook_absent
+        or _ORIGINAL_LEDGER_HOOKS is not _original_ledger_hooks
+        or any(
+            (name in ledger_namespace) != (original is not _ledger_hook_absent)
+            or (
+                name in ledger_namespace
+                and ledger_namespace[name] is not original
+            )
+            for name, original in zip(
+                _ledger_hooks, _original_ledger_hooks, strict=True,
+            )
+        )
+        or ledger_namespace.get("__slots__") is not _LEDGER_SLOTS
         or vars(_LEDGER_TYPE).get("__init__") is not _ORIGINAL_LEDGER_INIT
         or vars(_LEDGER_TYPE).get("create") is not _ORIGINAL_LEDGER_CREATE
         or vars(_LEDGER_TYPE).get("__setattr__") is not _ORIGINAL_LEDGER_SETATTR
         or vars(_LEDGER_TYPE).get("__delattr__") is not _ORIGINAL_LEDGER_DELATTR
         or vars(_LEDGER_TYPE).get("_open") is not _ORIGINAL_LEDGER_OPEN
         or vars(_LEDGER_TYPE).get("inspect") is not _ORIGINAL_LEDGER_INSPECT
-        or vars(_LEDGER_TYPE).get("reserve") is not _ORIGINAL_LEDGER_RESERVE
-        or vars(_LEDGER_TYPE).get("__getattribute__") is not None
-        or vars(_LEDGER_TYPE).get("__getattr__") is not None
+        or ledger_namespace.get("reserve") is not _ORIGINAL_LEDGER_RESERVE
     ):
         raise AtomicPreactionRejected("atomic pre-action ledger implementation changed")
     try:
