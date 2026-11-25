@@ -96,7 +96,6 @@ def test_probe_file_replacement_between_identity_and_read_is_rejected(tmp_path, 
         hf_lora._verify_chat_template_probe(FakeTokenizer(), probe, digest(expected))
 
 
-
 def _write_staging_snapshot(base_dir: Path, probe: Path) -> dict:
     base_dir.mkdir()
     (base_dir / "config.json").write_text("{}", encoding="utf-8")
@@ -157,11 +156,19 @@ def test_changed_bytes_during_staging_are_denied_and_temp_tree_is_removed(
     probe = tmp_path / "probe.txt"
     snapshot = _write_staging_snapshot(base_dir, probe)
 
-    def write_changed_bytes(source, destination, *, expected_sha256, expected_bytes):
-        destination.write_bytes(b"unreviewed replacement")
+    original_copy = hf_lora._copy_verified_snapshot_file
 
-    monkeypatch.setattr(hf_lora, "_copy_verified_snapshot_file", write_changed_bytes)
-    with pytest.raises(hf_lora.LoRARuntimeError, match="staged base snapshot identity changed"):
+    def replace_source_then_copy(source, destination, *, expected_sha256, expected_bytes):
+        source.write_bytes(b"unreviewed replacement")
+        original_copy(
+            source,
+            destination,
+            expected_sha256=expected_sha256,
+            expected_bytes=expected_bytes,
+        )
+
+    monkeypatch.setattr(hf_lora, "_copy_verified_snapshot_file", replace_source_then_copy)
+    with pytest.raises(hf_lora.LoRARuntimeError, match="base snapshot bytes changed while staging"):
         hf_lora._stage_verified_hf_snapshot(snapshot, base_dir, probe)
 
 
@@ -229,6 +236,7 @@ def test_model_and_tokenizer_load_only_from_verified_staged_tree(tmp_path, monke
     finally:
         owner.cleanup()
     assert not loader_paths[0].exists()
+
 
 def test_preflight_cannot_reach_heavy_imports_from_unresolved_snapshot(tmp_path):
     snapshot = json.loads(TEMPLATE.read_text(encoding="utf-8"))
