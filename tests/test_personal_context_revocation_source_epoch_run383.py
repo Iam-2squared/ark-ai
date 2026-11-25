@@ -31,13 +31,16 @@ def _count(path: Path) -> int:
 
 
 @pytest.mark.parametrize("operation", ["write", "read", "continuity"])
-def test_reflected_source_retarget_mid_review_denied_without_commit(
+def test_validator_replacement_is_denied_before_source_retarget(
     tmp_path: Path, monkeypatch, operation: str,
 ):
     ledger, source, alternate, scope = _fixture(tmp_path)
     original = veto_module._validate
+    calls = 0
 
     def redirect(conn):
+        nonlocal calls
+        calls += 1
         original(conn)
         ledger.path = alternate
 
@@ -48,7 +51,7 @@ def test_reflected_source_retarget_mid_review_denied_without_commit(
     with pytest.raises(
         SyntheticContextRevocationRejected,
         match=("revocation digest implementation changed" if operation == "continuity"
-               else "source path"),
+               else "revocation scope digest implementation changed"),
     ):
         if operation == "write":
             ledger.revoke(scope, at_ms=100)
@@ -56,6 +59,8 @@ def test_reflected_source_retarget_mid_review_denied_without_commit(
             ledger.assert_not_revoked((scope,))
         else:
             continuity.review_revocation_continuity(ledger)
+    assert calls == 0
+    assert ledger.path is source
     assert _count(source) == 0
     assert _count(alternate) == 0
 
