@@ -86,9 +86,9 @@ def test_late_file_read_cannot_rewrite_returned_witness(
         witness.append(value)
         return value
 
-    def reread(target):
+    def reread(target, **kwargs):
         nonlocal calls
-        data = original_read(target)
+        data = original_read(target, **kwargs)
         calls += 1
         if calls == 2:
             object.__setattr__(witness[0], field, "0" * 64)
