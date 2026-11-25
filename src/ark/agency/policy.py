@@ -183,6 +183,46 @@ def _require_original_spec_and_token() -> None:
         raise PermissionDenied("one-shot token contract changed")
 
 
+_ORIGINAL_REQUIRE_ORIGINAL_SPEC_AND_TOKEN = _require_original_spec_and_token
+
+
+def _admit_exact_one_shot_fields(
+    token: OneShotAuthorization | None,
+) -> tuple[str, str, int] | None:
+    """Snapshot exact primitive token fields before any caller-controlled callback."""
+    if _require_original_spec_and_token is not _ORIGINAL_REQUIRE_ORIGINAL_SPEC_AND_TOKEN:
+        raise PermissionDenied("one-shot token contract guard changed")
+    _ORIGINAL_REQUIRE_ORIGINAL_SPEC_AND_TOKEN()
+    if token is None:
+        return None
+    if type(token) is not _TOKEN_TYPE:
+        raise PermissionDenied("one-shot authorization must be an exact value")
+    try:
+        token_id = object.__getattribute__(token, "token_id")
+        request_id = object.__getattribute__(token, "request_id")
+        expires_at_ms = object.__getattribute__(token, "expires_at_ms")
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise PermissionDenied("one-shot authorization fields are unavailable") from exc
+    if type(token_id) is not str or not token_id.strip():
+        raise PermissionDenied("one-shot authorization fields must be exact valid values")
+    if (
+        type(request_id) is not str
+        or len(request_id) != 68
+        or request_id[:4] != "act_"
+        or any(char not in "0123456789abcdef" for char in request_id[4:])
+    ):
+        raise PermissionDenied("one-shot authorization fields must be exact valid values")
+    if (
+        type(expires_at_ms) is not int
+        or not 0 <= expires_at_ms <= (1 << 63) - 1
+    ):
+        raise PermissionDenied("one-shot authorization fields must be exact valid values")
+    return token_id, request_id, expires_at_ms
+
+
+_ORIGINAL_ADMIT_EXACT_ONE_SHOT_FIELDS = _admit_exact_one_shot_fields
+
+
 # Capture registry class-level interfaces before caller-controlled callbacks.
 # Original identity is checked before and during registered authorization.
 _ORIGINAL_REGISTRY_BIND = vars(ToolRegistry)["bind"]
@@ -341,16 +381,15 @@ class PermissionGate:
         # The first registry.bind() itself is a caller-controlled callback:
         # pin the original action and token BEFORE entering it. Rebinding
         # twice only establishes consistency with a substituted first input.
-        if one_shot is not None and type(one_shot) is not OneShotAuthorization:
+        if one_shot is not None and type(one_shot) is not _TOKEN_TYPE:
             raise PermissionDenied("one-shot authorization must be an exact value")
+        if _admit_exact_one_shot_fields is not _ORIGINAL_ADMIT_EXACT_ONE_SHOT_FIELDS:
+            raise PermissionDenied("one-shot token admission implementation changed")
+        token_epoch = _ORIGINAL_ADMIT_EXACT_ONE_SHOT_FIELDS(one_shot)
         try:
             call_epoch = (
                 call.tool, call.capability, call.scope,
                 call.request_id, call.arguments,
-            )
-            token_epoch = (
-                (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
-                if one_shot is not None else None
             )
         except (AttributeError, TypeError, ValueError) as exc:
             raise PermissionDenied("registered input identity is invalid") from exc
@@ -371,14 +410,12 @@ class PermissionGate:
                         )
                     )
                     and (
-                        (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
-                        if one_shot is not None else None
-                    ) == token_epoch
-                    and (
                         one_shot is None
-                        or one_shot.token_id is token_epoch[0]
-                        and one_shot.request_id is token_epoch[1]
-                        and one_shot.expires_at_ms is token_epoch[2]
+                        or (
+                            object.__getattribute__(one_shot, "token_id") is token_epoch[0]
+                            and object.__getattribute__(one_shot, "request_id") is token_epoch[1]
+                            and object.__getattribute__(one_shot, "expires_at_ms") is token_epoch[2]
+                        )
                     )
                 )
             except (AttributeError, TypeError, ValueError) as exc:
@@ -567,8 +604,11 @@ class PermissionGate:
         ):
             raise PermissionDenied("authorization requires exact tool identity and effect")
         _ORIGINAL_REQUIRE_FROZEN_CALL_ARGUMENTS(call)
-        if one_shot is not None and type(one_shot) is not OneShotAuthorization:
+        if one_shot is not None and type(one_shot) is not _TOKEN_TYPE:
             raise PermissionDenied("one-shot authorization must be an exact value")
+        if _admit_exact_one_shot_fields is not _ORIGINAL_ADMIT_EXACT_ONE_SHOT_FIELDS:
+            raise PermissionDenied("one-shot token admission implementation changed")
+        token_epoch = _ORIGINAL_ADMIT_EXACT_ONE_SHOT_FIELDS(one_shot)
         if spec.name != call.tool or spec.capability != call.capability:
             raise PermissionDenied("tool call does not match registered tool specification")
         if type(now_ms) is not int or not 0 <= now_ms <= (1 << 63) - 1:
@@ -582,10 +622,6 @@ class PermissionGate:
             call_epoch = (
                 call.tool, call.capability, call.scope, call.arguments,
                 call.request_id,
-            )
-            token_epoch = (
-                (one_shot.token_id, one_shot.request_id, one_shot.expires_at_ms)
-                if one_shot is not None else None
             )
         except (AttributeError, TypeError, ValueError) as exc:
             raise PermissionDenied("authorization input identity is invalid") from exc
@@ -613,9 +649,9 @@ class PermissionGate:
                 )
                 and (
                     one_shot is None
-                    or one_shot.token_id is token_epoch[0]
-                    and one_shot.request_id is token_epoch[1]
-                    and one_shot.expires_at_ms is token_epoch[2]
+                    or object.__getattribute__(one_shot, "token_id") is token_epoch[0]
+                    and object.__getattribute__(one_shot, "request_id") is token_epoch[1]
+                    and object.__getattribute__(one_shot, "expires_at_ms") is token_epoch[2]
                 )
             )
 
