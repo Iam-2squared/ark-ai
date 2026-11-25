@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import stat
+from pathlib import Path
 
 import pytest
 
@@ -160,7 +160,9 @@ class _ReparseMetadata:
         self.st_nlink = 1
 
 
-def test_windows_reparse_ancestor_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_windows_reparse_ancestor_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     target = tmp_path / "context.sqlite3"
     original_lstat = Path.lstat
 
@@ -175,7 +177,9 @@ def test_windows_reparse_ancestor_is_rejected(tmp_path: Path, monkeypatch: pytes
             replay._check_path(target, create=True)
 
 
-def test_windows_reparse_main_database_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_windows_reparse_main_database_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     target = tmp_path / "context.sqlite3"
     target.write_bytes(b"synthetic context ledger marker")
     original_lstat = Path.lstat
@@ -191,7 +195,9 @@ def test_windows_reparse_main_database_is_rejected(tmp_path: Path, monkeypatch: 
             replay._check_path(target, create=False)
 
 
-def test_windows_reparse_sqlite_sidecar_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_windows_reparse_sqlite_sidecar_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     target = tmp_path / "context.sqlite3"
     target.write_bytes(b"synthetic context ledger marker")
     sidecar = target.with_name(target.name + "-wal")
