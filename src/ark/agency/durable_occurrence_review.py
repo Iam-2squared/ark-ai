@@ -253,7 +253,7 @@ def _require_original_occurrence_path_policy() -> None:
     """Pin local stat classifiers and SQLite sidecar names before path access."""
     if (
         _require_original_occurrence_path_policy is not _ORIGINAL_REQUIRE_OCCURRENCE_PATH_POLICY
-        stat is not _ORIGINAL_OCCURRENCE_PATH_STAT
+        or stat is not _ORIGINAL_OCCURRENCE_PATH_STAT
         or stat.S_ISDIR is not _ORIGINAL_OCCURRENCE_PATH_S_ISDIR
         or stat.S_ISLNK is not _ORIGINAL_OCCURRENCE_PATH_S_ISLNK
         or stat.S_ISREG is not _ORIGINAL_OCCURRENCE_PATH_S_ISREG
