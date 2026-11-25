@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from pathlib import Path
+
 import pytest
 
+import ark.agency.durable_occurrence_review as occurrence
+import ark.agency.policy as policy
 from ark.agency import (
     CapabilityGrant,
     Effect,
@@ -17,8 +22,7 @@ from ark.agency.durable_occurrence_review import (
     SyntheticOccurrenceStore,
     SyntheticReplayRejected,
 )
-from ark.agency.policy import ToolRegistry as PolicyToolRegistry
-from ark.agency.registry import ToolRegistration, ToolRegistry
+from ark.agency.registry import BoundAction, ToolRegistration, ToolRegistry
 
 
 class HostileString(str):
@@ -74,7 +78,7 @@ def _mutate_token(token: OneShotAuthorization, call: ToolCall, variant: str) -> 
         raise AssertionError(f"unknown token mutation fixture: {variant}")
 
 
-def _grants(events: list[str]):
+def _grants(events: list[str]) -> Iterator[CapabilityGrant]:
     events.append("iterated")
     yield CapabilityGrant("fixture.write", "scope:one", 500)
 
@@ -154,7 +158,7 @@ def test_registered_permission_gate_rejects_invalid_token_fields_before_grant_it
     ("token_id_subclass", "request_id_subclass", "expiry_bool"),
 )
 def test_durable_occurrence_rejects_invalid_token_fields_before_registry_bind(
-    tmp_path,
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     variant: str,
 ) -> None:
@@ -166,7 +170,7 @@ def test_durable_occurrence_rejects_invalid_token_fields_before_registry_bind(
     bind_calls: list[bool] = []
     original_bind = ToolRegistry.bind
 
-    def counted_bind(self: ToolRegistry, bound_call: ToolCall):
+    def counted_bind(self: ToolRegistry, bound_call: ToolCall) -> BoundAction:
         bind_calls.append(True)
         return original_bind(self, bound_call)
 
@@ -190,8 +194,6 @@ def test_durable_occurrence_rejects_invalid_token_fields_before_registry_bind(
 def test_permission_gate_rejects_replaced_token_admission_helper(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import ark.agency.policy as policy
-
     call = _call()
     token = _token(call)
     gate = PermissionGate()
@@ -208,11 +210,9 @@ def test_permission_gate_rejects_replaced_token_admission_helper(
 
 
 def test_synthetic_store_rejects_replaced_token_admission_helper(
-    tmp_path,
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import ark.agency.durable_occurrence_review as occurrence
-
     call = _call()
     token = _token(call)
     registry = _registry()
