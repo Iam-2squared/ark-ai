@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from .audit import SQLiteActionAudit
@@ -160,12 +160,13 @@ class MockToolBackend:
 # Pin the only backend implementation and every foundation method this
 # composition invokes. Exact object types alone do not prevent instance
 # method shadowing or a class-level replacement before registry construction.
+_ABSENT_CLASS_HOOK = object()
 _MOCK_BACKEND_TYPE = MockToolBackend
 _MOCK_BACKEND_METHODS = (
     "__init__", "execute", "calls", "__new__", "__getattribute__", "__getattr__",
 )
 _ORIGINAL_MOCK_BACKEND_METHODS = tuple(
-    vars(_MOCK_BACKEND_TYPE).get(name) for name in _MOCK_BACKEND_METHODS
+    vars(_MOCK_BACKEND_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _MOCK_BACKEND_METHODS
 )
 _MOCK_RESULT_TYPE = MockToolResult
 _MOCK_RESULT_FIELDS = ("request_id", "result_sha256", "external_effect_proven")
@@ -174,7 +175,7 @@ _ORIGINAL_MOCK_RESULT_MEMBERS = tuple(
     vars(_MOCK_RESULT_TYPE).get(name) for name in _MOCK_RESULT_FIELDS
 )
 _ORIGINAL_MOCK_RESULT_HOOKS = tuple(
-    vars(_MOCK_RESULT_TYPE).get(name) for name in _MOCK_RESULT_HOOKS
+    vars(_MOCK_RESULT_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _MOCK_RESULT_HOOKS
 )
 _ORIGINAL_MOCK_RESULT_INIT = vars(_MOCK_RESULT_TYPE)["__init__"]
 _RECEIPT_TYPE = MockExecutionReceipt
@@ -194,7 +195,7 @@ _ORIGINAL_RECEIPT_MEMBERS = tuple(
     for name in _RECEIPT_FIELDS + _RECEIPT_DENIALS
 )
 _ORIGINAL_RECEIPT_HOOKS = tuple(
-    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+    vars(_RECEIPT_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _RECEIPT_HOOKS
 )
 _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
 _ORIGINAL_MOCK_EXECUTE = vars(_MOCK_BACKEND_TYPE)["execute"]
@@ -217,6 +218,7 @@ _ORIGINAL_OCCURRENCE_CONNECT = vars(SyntheticOccurrenceStore)["_connect"]
 # working/original vectors and their aggregate module alias cannot make the
 # strict-zip descriptor checks vacuous.
 _ORIGINAL_COMPONENT_VECTOR_EPOCH = (
+    _ABSENT_CLASS_HOOK, _MOCK_BACKEND_TYPE, _MOCK_RESULT_TYPE, _RECEIPT_TYPE,
     _MOCK_BACKEND_METHODS, _ORIGINAL_MOCK_BACKEND_METHODS,
     _MOCK_RESULT_FIELDS, _ORIGINAL_MOCK_RESULT_MEMBERS,
     _MOCK_RESULT_HOOKS, _ORIGINAL_MOCK_RESULT_HOOKS,
@@ -245,6 +247,7 @@ def _require_original_components(
     _original_component_vector_epoch: tuple[object, ...] = _ORIGINAL_COMPONENT_VECTOR_EPOCH,
 ) -> None:
     current_vectors = (
+        _ABSENT_CLASS_HOOK, _MOCK_BACKEND_TYPE, _MOCK_RESULT_TYPE, _RECEIPT_TYPE,
         _MOCK_BACKEND_METHODS, _ORIGINAL_MOCK_BACKEND_METHODS,
         _MOCK_RESULT_FIELDS, _ORIGINAL_MOCK_RESULT_MEMBERS,
         _MOCK_RESULT_HOOKS, _ORIGINAL_MOCK_RESULT_HOOKS,
@@ -263,6 +266,20 @@ def _require_original_components(
         raise DisconnectedMockExecutionRejected(
             "mock executor validator inventory changed"
         )
+    absent_class_hook = _original_component_vector_epoch[0]
+
+    def members_match(
+        namespace: Mapping[str, object],
+        names: tuple[str, ...],
+        originals: tuple[object, ...],
+    ) -> bool:
+        return all(
+            (name not in namespace)
+            if original is absent_class_hook
+            else namespace.get(name, absent_class_hook) is original
+            for name, original in zip(names, originals, strict=True)
+        )
+
     if type(registry) is not ToolRegistry or type(gate) is not PermissionGate:
         raise DisconnectedMockExecutionRejected(
             "mock execution requires exact ToolRegistry and PermissionGate instances"
@@ -281,12 +298,10 @@ def _require_original_components(
         )
     if (
         MockToolBackend is not _MOCK_BACKEND_TYPE
-        or any(
-            vars(_MOCK_BACKEND_TYPE).get(name) is not original
-            for name, original in zip(
-                _MOCK_BACKEND_METHODS, _ORIGINAL_MOCK_BACKEND_METHODS,
-                strict=True,
-            )
+        or not members_match(
+            vars(_MOCK_BACKEND_TYPE),
+            _MOCK_BACKEND_METHODS,
+            _ORIGINAL_MOCK_BACKEND_METHODS,
         )
         or MockToolResult is not _MOCK_RESULT_TYPE
         or vars(_MOCK_RESULT_TYPE).get("__init__") is not _ORIGINAL_MOCK_RESULT_INIT
@@ -296,11 +311,10 @@ def _require_original_components(
                 _MOCK_RESULT_FIELDS, _ORIGINAL_MOCK_RESULT_MEMBERS, strict=True,
             )
         )
-        or any(
-            vars(_MOCK_RESULT_TYPE).get(name) is not original
-            for name, original in zip(
-                _MOCK_RESULT_HOOKS, _ORIGINAL_MOCK_RESULT_HOOKS, strict=True,
-            )
+        or not members_match(
+            vars(_MOCK_RESULT_TYPE),
+            _MOCK_RESULT_HOOKS,
+            _ORIGINAL_MOCK_RESULT_HOOKS,
         )
         or MockExecutionReceipt is not _RECEIPT_TYPE
         or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
@@ -312,11 +326,10 @@ def _require_original_components(
                 strict=True,
             )
         )
-        or any(
-            vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS, strict=True,
-            )
+        or not members_match(
+            vars(_RECEIPT_TYPE),
+            _RECEIPT_HOOKS,
+            _ORIGINAL_RECEIPT_HOOKS,
         )
     ):
         raise DisconnectedMockExecutionRejected(
