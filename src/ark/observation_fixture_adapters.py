@@ -195,6 +195,7 @@ def _hash_private_fixture(payload: bytes) -> str:
 # receive raw caller-private text or image bytes even when hashlib itself is
 # untouched. Refuse that replacement before either fixture hands over data.
 _ORIGINAL_PRIVATE_HASH_HELPER = _hash_private_fixture
+_ORIGINAL_BOUNDED_TEXT_ENCODER = _encode_fixture_text_bounded
 
 
 def _require_original_envelope() -> None:
@@ -323,8 +324,12 @@ def fixture_text_observation(
     _preflight_fixture_metadata(source_id, privacy_scope, ingested_at_ms, parent_sha256)
     if len(content) > _MAX_FIXTURE_BYTES:
         raise ValueError("fixture content byte budget exceeded")
+    if _encode_fixture_text_bounded is not _ORIGINAL_BOUNDED_TEXT_ENCODER:
+        raise ValueError("fixture text encoder changed before private content encoding")
     try:
-        data = _encode_fixture_text_bounded(
+        # Invoke the import-time callable after the module binding check so a
+        # concurrent replacement cannot receive caller-private text.
+        data = _ORIGINAL_BOUNDED_TEXT_ENCODER(
             content, _ORIGINAL_MAX_FIXTURE_BYTES,
         )
     except UnicodeError as exc:
