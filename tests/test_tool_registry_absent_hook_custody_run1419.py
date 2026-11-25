@@ -91,6 +91,9 @@ def test_registry_class_epoch_rejects_replaced_vectors_sentinel_and_init(
             "_ORIGINAL_REGISTRY_CLASS_EPOCH",
             tuple(list(registry_module._ORIGINAL_REGISTRY_CLASS_EPOCH)),
         ),
+        ("_ORIGINAL_TOOL_REGISTRY_TYPE", object()),
+        ("ToolRegistry", object()),
+        ("_ORIGINAL_TOOL_REGISTRY_INIT", object()),
     )
     for name, replacement in replacements:
         with monkeypatch.context() as patch:
