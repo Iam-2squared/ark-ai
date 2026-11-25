@@ -912,40 +912,68 @@ _ORIGINAL_PLANNER_JOURNAL_REPLAY = vars(_PLANNER_JOURNAL_TYPE)["_replay"]
 _ORIGINAL_PLANNER_JOURNAL_CREATE_PLAN = vars(_PLANNER_JOURNAL_TYPE)["create_plan"]
 _ORIGINAL_PLANNER_JOURNAL_TRANSITION = vars(_PLANNER_JOURNAL_TYPE)["transition"]
 _ORIGINAL_PLANNER_JOURNAL_RECOVER = vars(_PLANNER_JOURNAL_TYPE)["recover"]
+_PLANNER_JOURNAL_HOOK_NAMES = ("__getattribute__", "__getattr__")
+_PLANNER_JOURNAL_HOOK_ABSENT = object()
+_ORIGINAL_PLANNER_JOURNAL_HOOK_NAMES = _PLANNER_JOURNAL_HOOK_NAMES
+_ORIGINAL_PLANNER_JOURNAL_HOOKS = tuple(
+    vars(_PLANNER_JOURNAL_TYPE).get(name, _PLANNER_JOURNAL_HOOK_ABSENT)
+    for name in _PLANNER_JOURNAL_HOOK_NAMES
+)
 
 
 def _require_planner_journal_path_epoch(
     journal: object,
     expected: str | None = None,
+    *,
+    _journal_type: type = _PLANNER_JOURNAL_TYPE,
+    _hook_names: tuple[str, ...] = _PLANNER_JOURNAL_HOOK_NAMES,
+    _hook_absent: object = _PLANNER_JOURNAL_HOOK_ABSENT,
+    _original_hooks: tuple[object, ...] = _ORIGINAL_PLANNER_JOURNAL_HOOKS,
 ) -> str:
     """Reject a retargeted path or replaced class guard before SQLite access."""
+    journal_namespace = vars(_journal_type)
     if (
-        PlannerJournal is not _PLANNER_JOURNAL_TYPE
-        or type(journal) is not _PLANNER_JOURNAL_TYPE
-        or vars(_PLANNER_JOURNAL_TYPE).get("__slots__") is not _PLANNER_JOURNAL_SLOTS
-        or vars(_PLANNER_JOURNAL_TYPE).get("__init__") is not _ORIGINAL_PLANNER_JOURNAL_INIT
-        or vars(_PLANNER_JOURNAL_TYPE).get("__setattr__") is not _ORIGINAL_PLANNER_JOURNAL_SETATTR
-        or vars(_PLANNER_JOURNAL_TYPE).get("__delattr__") is not _ORIGINAL_PLANNER_JOURNAL_DELATTR
-        or vars(_PLANNER_JOURNAL_TYPE).get("_connect") is not _ORIGINAL_PLANNER_JOURNAL_CONNECT
-        or vars(_PLANNER_JOURNAL_TYPE).get("_bootstrap") is not _ORIGINAL_PLANNER_JOURNAL_BOOTSTRAP
+        PlannerJournal is not _journal_type
+        or _PLANNER_JOURNAL_TYPE is not _journal_type
+        or type(journal) is not _journal_type
+        or _PLANNER_JOURNAL_HOOK_NAMES is not _hook_names
+        or _ORIGINAL_PLANNER_JOURNAL_HOOK_NAMES is not _hook_names
+        or _PLANNER_JOURNAL_HOOK_ABSENT is not _hook_absent
+        or _ORIGINAL_PLANNER_JOURNAL_HOOKS is not _original_hooks
+        or journal_namespace.get("__slots__") is not _PLANNER_JOURNAL_SLOTS
+        or journal_namespace.get("__init__") is not _ORIGINAL_PLANNER_JOURNAL_INIT
+        or journal_namespace.get("__setattr__") is not _ORIGINAL_PLANNER_JOURNAL_SETATTR
+        or journal_namespace.get("__delattr__") is not _ORIGINAL_PLANNER_JOURNAL_DELATTR
+        or journal_namespace.get("_connect") is not _ORIGINAL_PLANNER_JOURNAL_CONNECT
+        or journal_namespace.get("_bootstrap") is not _ORIGINAL_PLANNER_JOURNAL_BOOTSTRAP
         or (
-            vars(_PLANNER_JOURNAL_TYPE).get("_validate_schema")
+            journal_namespace.get("_validate_schema")
             is not _ORIGINAL_PLANNER_JOURNAL_VALIDATE_SCHEMA
         )
-        or vars(_PLANNER_JOURNAL_TYPE).get("_read_meta") is not _ORIGINAL_PLANNER_JOURNAL_READ_META
+        or journal_namespace.get("_read_meta") is not _ORIGINAL_PLANNER_JOURNAL_READ_META
         or (
-            vars(_PLANNER_JOURNAL_TYPE).get("_read_events")
+            journal_namespace.get("_read_events")
             is not _ORIGINAL_PLANNER_JOURNAL_READ_EVENTS
         )
-        or vars(_PLANNER_JOURNAL_TYPE).get("_replay") is not _ORIGINAL_PLANNER_JOURNAL_REPLAY
+        or journal_namespace.get("_replay") is not _ORIGINAL_PLANNER_JOURNAL_REPLAY
         or (
-            vars(_PLANNER_JOURNAL_TYPE).get("create_plan")
+            journal_namespace.get("create_plan")
             is not _ORIGINAL_PLANNER_JOURNAL_CREATE_PLAN
         )
-        or vars(_PLANNER_JOURNAL_TYPE).get("transition") is not _ORIGINAL_PLANNER_JOURNAL_TRANSITION
-        or vars(_PLANNER_JOURNAL_TYPE).get("recover") is not _ORIGINAL_PLANNER_JOURNAL_RECOVER
-        or vars(_PLANNER_JOURNAL_TYPE).get("__getattribute__") is not None
-        or vars(_PLANNER_JOURNAL_TYPE).get("__getattr__") is not None
+        or journal_namespace.get("transition") is not _ORIGINAL_PLANNER_JOURNAL_TRANSITION
+        or journal_namespace.get("recover") is not _ORIGINAL_PLANNER_JOURNAL_RECOVER
+        or any(
+            (name in journal_namespace) != (original is not _hook_absent)
+            or (
+                name in journal_namespace
+                and journal_namespace[name] is not original
+            )
+            for name, original in zip(
+                _hook_names,
+                _original_hooks,
+                strict=True,
+            )
+        )
     ):
         raise PlannerJournalPathError("Planner journal implementation changed")
     try:
