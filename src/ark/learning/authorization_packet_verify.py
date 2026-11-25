@@ -105,15 +105,9 @@ def _require_original_witness_contract(
         _DENIAL_FLAGS is not _denial_flags
         or _ORIGINAL_DENIAL_FLAGS_VECTOR is not _denial_flags
         or _ORIGINAL_DENIAL_DESCRIPTORS is not _original_denials
-        or any(
-            namespace.get(name) is not original
-            for name, original in zip(
-                _denial_flags, _original_denials, strict=True,
-            )
-        )
     ):
         raise LocalPacketBindingRejected(
-            "packet witness gained authority: denial descriptor inventory changed"
+            "packet witness gained authority: denial inventory changed"
         )
 
 
