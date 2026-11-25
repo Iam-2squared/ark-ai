@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from ark.agency.contracts import (
-    PlanConflictError,
     PlanStep,
     StepState,
     ToolCall,
