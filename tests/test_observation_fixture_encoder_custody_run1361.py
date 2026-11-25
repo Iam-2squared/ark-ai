@@ -47,7 +47,12 @@ def test_replaced_text_encoder_never_receives_private_fixture_text(
                 adapters, "_encode_fixture_text_bounded", forbidden_encoder,
             )
 
-        with pytest.raises(ValueError, match="fixture text encoder identity changed"):
+        expected_message = (
+            "fixture text encoder changed before private content encoding"
+            if replace_after_preflight
+            else "fixture text encoder identity changed"
+        )
+        with pytest.raises(ValueError, match=expected_message):
             adapters.fixture_text_observation(
                 "synthetic private transcript",
                 kind=ObservationKind.TRANSCRIPT,
