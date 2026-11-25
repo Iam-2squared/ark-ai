@@ -1,60 +1,67 @@
 ## LATEST
 
-- **Saved at:** 2026-11-26 04:58:07 JST (Asia/Tokyo).
+- **Saved at:** 2026-11-26 05:00:22 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
-- **Exact work-basis HEAD:** `a1bff14b0ca731ee1d094d6611caf76c08640398` (PR #8 head re-read immediately before this checkpoint update).
+- **Exact work-basis HEAD:** `be6cee86da0876e9481d1cc81465d607b0305d69` (PR #8 head re-read immediately before this checkpoint update).
 - **Checkpoint-result HEAD:** the GitHub commit created by this `docs/PROJECT_STATUS.md` update; its exact returned SHA is confirmed after the write and reported in the invocation summary. This file intentionally does not self-reference its own commit.
 - **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain frozen evidence. Memory, Observation, Personal Context, Planner, ToolRegistry, PermissionGate, proactive state and ActionAudit remain local-first, disconnected/reversible foundations. **ARK/JARVIS overall remains NOT_PASSED.**
-- **Parent validation:** PR #8 exact work-basis HEAD `a1bff14b0ca731ee1d094d6611caf76c08640398`, CI run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910), is **GREEN 6/6**. This checkpoint creates a new parent HEAD and requires fresh exact-head CI.
+- **Parent validation:** PR #8 work-basis HEAD `be6cee86da0876e9481d1cc81465d607b0305d69`, CI run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910), was **GREEN 6/6**. The checkpoint-result HEAD `be6cee86da0876e9481d1cc81465d607b0305d69` has a new run [45690462474](https://github.com/Iam-2squared/ark-ai/actions/runs/45690462474) **QUEUED**; this checkpoint commit will require its own exact-head CI.
 - **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #9 remains Draft/unmerged and untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`. All new UI/frontend work remains paused. No `main` write or merge occurred.
 
 ## NEW work this invocation
 
-All six packages below are isolated Draft children of PR #8, based on the exact parent HEAD `a1bff14b0ca731ee1d094d6611caf76c08640398`. None has been integrated into PR #8 or `main`.
+All seven packages below are isolated Draft children of PR #8. The first six are based on exact parent HEAD `a1bff14b0ca731ee1d094d6611caf76c08640398`; the V3 documentation rebase is based on checkpoint HEAD `be6cee86da0876e9481d1cc81465d607b0305d69`. None has been integrated into PR #8 or `main`.
 
 1. **Proactive state absent-hook custody — Draft PR #609.**
    - Branch `research/rebase-run1417-proactive-state-absent-hook-custody-20261126`; exact child HEAD `7dbdefaaec8f58b9a681d9e902dd48aa372411cd`.
-   - Rebased the policy/state/ledger absent-hook sentinel and retained epochs onto the current parent. The source blob was identical between the original Run1417 base and current parent; the regression module and evidence note were carried forward with corrected provenance.
+   - Rebased the policy/state/ledger absent-hook sentinel and retained epochs onto the current parent. The source blob was identical between the original Run1417 base and the parent; regression module and evidence note were carried forward with corrected provenance.
    - Exact-head CI run [45688812009](https://github.com/Iam-2squared/ark-ai/actions/runs/45688812009): **IN PROGRESS**.
 
 2. **Proactive SQLite path-policy epoch — Draft PR #610.**
    - Branch `research/run1421-proactive-path-epoch-20261126`; exact child HEAD `78a3e677eecc17e90eb24063458cc21cfb33a4a0`.
-   - Rebased the stat/sidecar/reparse-point epoch and callback rechecks. The parent source and existing transient-journal test were byte-identical to the original Run1401 base; the new path-policy tests and metadata fixture correction were carried forward.
+   - Rebased stat/sidecar/reparse-point epoch and callback rechecks. Parent source and existing transient-journal test were byte-identical to the original Run1401 base; new path-policy tests and metadata fixture correction were carried forward.
    - Exact-head CI run [45689141624](https://github.com/Iam-2squared/ark-ai/actions/runs/45689141624): **IN PROGRESS**.
 
 3. **Personal Context replay path-policy epoch — Draft PR #611.**
    - Branch `research/run1422-context-replay-path-epoch-20261126`; exact child HEAD `557f791082180d256f076809b884945f923c0869`.
-   - The parent source had changed since the original Run1400 base due to the already-integrated Personal Context carrier custody work. Preserved those current carrier epochs and reapplied only the path-policy epoch and `_check_path` hardening at the existing path-admission boundary.
+   - Preserved the current Personal Context witness/receipt/replay carrier epochs integrated since the original Run1400 base and reapplied only path-policy epoch plus `_check_path` hardening at the existing path-admission boundary.
    - Exact-head CI run [45689545926](https://github.com/Iam-2squared/ark-ai/actions/runs/45689545926): **IN PROGRESS**.
 
 4. **ToolRegistry absent-hook custody — Draft PR #612.**
    - Branch `research/run1423-registry-hook-custody-20261126`; exact child HEAD `64af590311be5d74a9f03cc7eedfb8b494f08c7b`.
-   - Rebased the true-absence sentinel and class epoch. The parent registry source was byte-identical to the previous child base; the source, regression test and corrected provenance note were carried forward without replacing parent changes.
+   - Rebased the true-absence sentinel and class epoch. Parent registry source was byte-identical to the previous child base; source, regression test and corrected provenance note were carried forward without replacing parent changes.
    - Exact-head CI run [45689890616](https://github.com/Iam-2squared/ark-ai/actions/runs/45689890616): **IN PROGRESS**.
 
 5. **PlannerJournal digest dependency epoch — Draft PR #613.**
    - Branch `research/run1424-planner-digest-epoch-20261126`; exact child HEAD `e9e773633c531284730828cb688aa2bcbbf3ff40`.
-   - Rebased the retained hashlib/SHA-256/json serializer epoch. The parent PlannerJournal source was byte-identical to the previous child base; the narrow source change, synthetic regressions and updated evidence note were carried forward.
+   - Rebased retained hashlib/SHA-256/json serializer epoch. Parent PlannerJournal source was byte-identical to the previous child base; narrow source change, synthetic regressions and updated evidence note were carried forward.
    - Exact-head CI run [45690053012](https://github.com/Iam-2squared/ark-ai/actions/runs/45690053012): **QUEUED**.
 
 6. **ActionAudit reparse-policy epoch — Draft PR #614.**
    - Branch `research/run1425-action-audit-reparse-epoch-20261126`; exact child HEAD `be8acdc30ee32bdf999fbe621baedac808546f51`.
-   - Rebased the stat/reparse dependency epoch and post-metadata callback recheck. The parent ActionAudit source was byte-identical to the previous child base; the exact compare contains only the expected source, synthetic regression test and evidence note.
-   - No PR-triggered workflow run was returned at the last read; **no PASS is claimed**.
+   - Rebased stat/reparse dependency epoch and post-metadata callback recheck. Parent ActionAudit source was byte-identical to the previous child base; exact compare contains only the expected source, synthetic regression test and evidence note.
+   - Exact-head CI run [45690251664](https://github.com/Iam-2squared/ark-ai/actions/runs/45690251664): **QUEUED**.
 
-7. **Memory path-policy duplicate audit.**
-   - The current parent already contains the complete Memory SQLite stat/reparse path-policy epoch implementation from the earlier Run1394/Run1395 work. No duplicate source patch or duplicate regression package was created.
+7. **V3 free-only guard gap-matrix reconciliation — Draft PR #615.**
+   - Branch `research/run1426-v3-gap-matrix-reconcile-20261126`; exact child HEAD `4a7744b963f479a7dd9ba613d85883958bc19475`.
+   - Rebased the documentation-only Run1420 audit onto the latest parent checkpoint. Re-read PR #5 exact source HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`; confirmed Run1349 strict report parsing and Run1351 nested symlink-grandparent regression are already present. The gap matrix records the current PR #5 base-owned Ruff I001 failure and PR #483 collection blocker, then prioritizes hash-then-use staging, runtime-rendered chat-template identity and durable attempt/finalization receipts.
+   - Exact-head CI run [45690672654](https://github.com/Iam-2squared/ark-ai/actions/runs/45690672654): **QUEUED**. Documentation-only; no V3 runtime or frozen contract change.
+
+8. **Memory path-policy duplicate audit.**
+   - Current parent already contains the complete Memory SQLite stat/reparse path-policy epoch implementation from earlier Run1394/Run1395 work. No duplicate source patch or regression package was created.
 
 ## Tests, CI and evidence
 
-- **PR #8 work-basis HEAD** `a1bff14b0ca731ee1d094d6611caf76c08640398`, run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910): **GREEN 6/6** (Windows/Linux × Python 3.11–3.13).
+- **PR #8 work-basis HEAD** `be6cee86da0876e9481d1cc81465d607b0305d69`, run [45681609910](https://github.com/Iam-2squared/ark-ai/actions/runs/45681609910): **GREEN 6/6** (Windows/Linux × Python 3.11–3.13).
+- **PR #8 checkpoint-result HEAD** `be6cee86da0876e9481d1cc81465d607b0305d69`, run [45690462474](https://github.com/Iam-2squared/ark-ai/actions/runs/45690462474): **QUEUED** at last read; this run is for the work-basis head, not the checkpoint-result commit.
 - **PR #609** exact child HEAD `7dbdefaaec8f58b9a681d9e902dd48aa372411cd`, run `45688812009`: **IN PROGRESS**.
 - **PR #610** exact child HEAD `78a3e677eecc17e90eb24063458cc21cfb33a4a0`, run `45689141624`: **IN PROGRESS**.
 - **PR #611** exact child HEAD `557f791082180d256f076809b884945f923c0869`, run `45689545926`: **IN PROGRESS**.
 - **PR #612** exact child HEAD `64af590311be5d74a9f03cc7eedfb8b494f08c7b`, run `45689890616`: **IN PROGRESS**.
 - **PR #613** exact child HEAD `e9e773633c531284730828cb688aa2bcbbf3ff40`, run `45690053012`: **QUEUED**.
-- **PR #614** exact child HEAD `be8acdc30ee32bdf999fbe621baedac808546f51`: no workflow run returned at last read.
-- Historical predecessor runs were GREEN only on their older child heads: PR #597 run `45668064878`, PR #580 run `45617462416`, PR #579 run `45610632395`, PR #605 run `45678685362`, PR #607 run `45679983575`, PR #608 run `45680337879`. **None transfers to the new rebased child HEADs.**
+- **PR #614** exact child HEAD `be8acdc30ee32bdf999fbe621baedac808546f51`, run `45690251664`: **QUEUED**.
+- **PR #615** exact child HEAD `4a7744b963f479a7dd9ba613d85883958bc19475`, run `45690672654`: **QUEUED**.
+- Historical predecessor runs were GREEN only on their older child heads: PR #597 run `45668064878`, PR #580 run `45617462416`, PR #579 run `45610632395`, PR #605 run `45678685362`, PR #607 run `45679983575`, PR #608 run `45680337879`, and PR #606 run `45679594332`. **None transfers to the new rebased child HEADs.**
 - No local pytest/Ruff execution, target-PC verification, real-model runtime, GPU query, V3 preflight/training, protected evaluation, live observation capture or production dispatch is claimed.
 
 ## Frozen contracts and evidence — unchanged
@@ -67,15 +74,15 @@ All six packages below are isolated Draft children of PR #8, based on the exact 
 
 - **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
 - No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening or Candidate promotion occurred.
-- PR #609–#614 require fresh exact-head CI. Prior predecessor GREEN runs do not transfer. Do not integrate any child before its own exact-head GREEN and a latest-parent re-read.
+- PR #609–#615 require fresh exact-head CI. Prior predecessor GREEN runs do not transfer. Do not integrate any child before its own exact-head GREEN and a latest-parent re-read.
 - All class/path-policy guards remain in-process checks only; they do not prove sandboxing, trusted time, independent storage custody, fsync/power-loss durability, cross-store atomicity, authenticated consent, physical erasure or exactly-once external effects.
 - No new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, irreversible data change, frozen-contract change or main merge occurred. All UI/frontend work remains paused.
 
 ## Next plan / 今後の方針
 
-1. Inspect exact-head CI for PR #609–#614 when useful results are available; fix only concrete semantics-preserving failures and never reuse historical predecessor evidence.
+1. Inspect exact-head CI for PR #609–#615 when useful results are available; fix only concrete semantics-preserving failures and never reuse historical predecessor evidence.
 2. After each child is exact-head GREEN, re-read the latest PR #8 head and integrate only non-overlapping, dependency-safe packages one at a time. Keep PR #8 Draft/unmerged.
-3. Reconcile and, if still useful, rebase the free-only V3 gap-matrix audit PR #606 onto the current parent; keep PR #5 gated and do not run preflight/training or open protected evaluation.
+3. Continue free-only V3 guard work after the documentation audit: local hash-then-use staging, runtime-rendered chat-template identity and durable attempt/finalization receipts. Keep PR #5 gated and do not run preflight/training or open protected evaluation.
 4. Continue Memory CAS/expiry/WAL-ABA and COMMIT-UNKNOWN manual-only recovery, Planner terminal/COMMIT-UNKNOWN recovery, durable restart-safe one-shot authorization, trusted-clock audit-before-action, disconnected mock execution, startup readiness, privacy-safe Personal Context and Observation fixture lifecycle.
 5. Integrate components only after lower-level invariants have exact-head GREEN evidence. Keep real backends disconnected and preserve all frozen contracts.
 6. Keep all UI/frontend development paused; PR #9 and Local UI freezes remain untouched.
