@@ -29,7 +29,7 @@ from ark.agency.disconnected_mock_executor import (
 from ark.agency.durable_occurrence_review import SyntheticOccurrenceStore
 
 
-def test_backend_return_without_completion_audit_hard_exit_quarantines_old_occurrence(
+def test_mock_backend_return_then_exit_before_completion_audit(
     tmp_path: Path,
 ) -> None:
     audit_path = tmp_path / "action-audit.sqlite3"
@@ -87,12 +87,16 @@ audit_calls = 0
 
 def mark(value):
     with TIMELINE_PATH.open("a", encoding="utf-8") as stream:
-        stream.write(value + "\\n")
+        stream.write(value + "\n")
 
 
 def profile(frame, event, _argument):
     global audit_calls
-    if frame.f_code is gate_code and event == "call" and frame.f_locals.get("self") is gate:
+    if (
+        frame.f_code is gate_code
+        and event == "call"
+        and frame.f_locals.get("self") is gate
+    ):
         mark("gate")
     elif frame.f_code is audit_code and event == "call":
         audit_calls += 1
