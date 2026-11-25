@@ -1,0 +1,67 @@
+name: Next UI Frontend
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "src/ark/command_center.py"
+      - "tests/command_center/**"
+      - "docs/NEXT_UI_ARCHITECTURE.md"
+      - "docs/next-ui/**"
+      - ".github/workflows/next-ui.yml"
+  push:
+    branches: ["ui/**"]
+    paths:
+      - "frontend/**"
+      - "src/ark/command_center.py"
+      - "tests/command_center/**"
+      - "docs/NEXT_UI_ARCHITECTURE.md"
+      - "docs/next-ui/**"
+      - ".github/workflows/next-ui.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-ui-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Verify actual adapter against the mock HTTP session
+        env:
+          PYTHONPATH: ../src
+        run: |
+          python -m ark.command_center --mock --dist dist --port 8876 > "$RUNNER_TEMP/ark-next-ui.log" 2>&1 &
+          ark_ui_pid=$!
+          trap 'kill "$ark_ui_pid" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time
+          import urllib.request
+          for attempt in range(100):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8876/api/status', timeout=1):
+                      break
+              except OSError:
+                  time.sleep(0.1)
+          else:
+              raise SystemExit('Mock runner did not start')
+          PY
+          npm run test:local-api -- http://127.0.0.1:8876
