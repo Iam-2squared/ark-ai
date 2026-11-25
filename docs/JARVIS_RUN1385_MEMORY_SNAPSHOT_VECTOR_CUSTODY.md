@@ -15,7 +15,7 @@ The public request/result types, function signatures, Memory v1 DDL, schema, ret
 ## Regression coverage
 
 - Joint replacement of request field-name, descriptor, hook-name and hook vectors must be rejected before a substituted request field descriptor is accessed.
-- Joint replacement of result field-name, descriptor, hook-name and hook vectors must be rejected before a substituted result `__new__` hook executes.
+- Joint replacement of result field-name, descriptor, hook-name and hook vectors must be rejected before a substituted result field descriptor executes.
 
 Synthetic local SQLite only. The tests do not use live personal data, external context sources, tool dispatch, notification, hardware, paid services or external compute.
 
