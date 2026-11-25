@@ -480,22 +480,44 @@ def _is_reparse_point(info: os.stat_result) -> bool:
 
 
 _ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+# Retain the full path-policy dependency inventory independently of its
+# mutable module aliases. The verifier captures this tuple in its defaults.
+_ORIGINAL_MEMORY_PATH_POLICY_EPOCH = (
+    _ORIGINAL_STAT,
+    _ORIGINAL_STAT_S_ISDIR,
+    _ORIGINAL_STAT_S_ISLNK,
+    _ORIGINAL_STAT_S_ISREG,
+    _ORIGINAL_STAT_IFMT,
+    _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT,
+    _ORIGINAL_REPARSE_POINT_CHECK,
+)
 
 
-def _require_original_memory_path_policy() -> None:
+def _require_original_memory_path_policy(
+    *,
+    _original_memory_path_policy_epoch: tuple[object, ...] = _ORIGINAL_MEMORY_PATH_POLICY_EPOCH,
+) -> None:
     # stat predicates are executable module attributes too. Pin the module and
     # every predicate used by path admission/diagnostics before any lstat,
     # mkdir or SQLite access; a replaced S_ISREG/S_ISDIR must not bless an
     # alias or special file as an ordinary database path.
     if (
-        stat is not _ORIGINAL_STAT
-        or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
-        or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
-        or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
-        or stat.S_IFMT is not _ORIGINAL_STAT_IFMT
+        _ORIGINAL_MEMORY_PATH_POLICY_EPOCH is not _original_memory_path_policy_epoch
+        or stat is not _original_memory_path_policy_epoch[0]
+        or _ORIGINAL_STAT is not _original_memory_path_policy_epoch[0]
+        or _ORIGINAL_STAT_S_ISDIR is not _original_memory_path_policy_epoch[1]
+        or _ORIGINAL_STAT_S_ISLNK is not _original_memory_path_policy_epoch[2]
+        or _ORIGINAL_STAT_S_ISREG is not _original_memory_path_policy_epoch[3]
+        or _ORIGINAL_STAT_IFMT is not _original_memory_path_policy_epoch[4]
+        or stat.S_ISDIR is not _original_memory_path_policy_epoch[1]
+        or stat.S_ISLNK is not _original_memory_path_policy_epoch[2]
+        or stat.S_ISREG is not _original_memory_path_policy_epoch[3]
+        or stat.S_IFMT is not _original_memory_path_policy_epoch[4]
         or type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
-        or _FILE_ATTRIBUTE_REPARSE_POINT != _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
-        or _is_reparse_point is not _ORIGINAL_REPARSE_POINT_CHECK
+        or _FILE_ATTRIBUTE_REPARSE_POINT != _original_memory_path_policy_epoch[5]
+        or _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT != _original_memory_path_policy_epoch[5]
+        or _is_reparse_point is not _original_memory_path_policy_epoch[6]
+        or _ORIGINAL_REPARSE_POINT_CHECK is not _original_memory_path_policy_epoch[6]
     ):
         raise MemorySchemaError("memory path admission policy changed")
 
