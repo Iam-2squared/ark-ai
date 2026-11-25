@@ -7,6 +7,8 @@ stores fixture plaintext and its receipts do not authorize disclosure or tools.
 from __future__ import annotations
 
 import hashlib
+import os
+import sqlite3
 from multiprocessing import get_context
 from pathlib import Path
 
@@ -83,7 +85,7 @@ def _race(path: Path, indexes: tuple[int, int]) -> list[tuple[object, ...]]:
     processes = [
         context.Process(
             target=_reserve_worker,
-            args=(str(path), index, ready, release, results),
+            args=(os.fspath(path), index, ready, release, results),
         )
         for index in indexes
     ]
@@ -136,6 +138,9 @@ def test_same_context_request_reserved_once_across_two_processes_run1442(
         cold.reserve(_binding(1), retained=tip)
     assert cold.witness() == tip
     assert _PRIVATE.encode("utf-8") not in path.read_bytes()
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("PRAGMA quick_check").fetchone() == ("ok",)
+        assert connection.execute("SELECT COUNT(*) FROM context_requests").fetchone() == (1,)
 
 
 def test_disjoint_requests_need_cold_readback_after_cross_process_cas_loss_run1442(
@@ -167,3 +172,6 @@ def test_disjoint_requests_need_cold_readback_after_cross_process_cas_loss_run14
         genesis_offline_context_replay_witness()
     ) == receipt.witness
     assert _PRIVATE.encode("utf-8") not in path.read_bytes()
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("PRAGMA quick_check").fetchone() == ("ok",)
+        assert connection.execute("SELECT COUNT(*) FROM context_requests").fetchone() == (2,)
