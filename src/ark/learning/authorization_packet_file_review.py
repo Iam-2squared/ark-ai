@@ -34,7 +34,7 @@ _ORIGINAL_S_ISREG = stat.S_ISREG
 _ORIGINAL_S_ISLNK = stat.S_ISLNK
 
 
-def _path_guard() -> None:
+def _require_original_path_policy() -> None:
     """Pin the exact local classifiers used by the detached packet reader."""
     if (
         stat is not _ORIGINAL_STAT
