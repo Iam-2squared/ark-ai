@@ -24,6 +24,7 @@ The generation token, `MemoryScope` and `MemoryWrite` validators retained hook v
 ## Regression coverage
 
 - Explicit `None` and exact-sentinel installation are rejected for `__new__`, `__getattribute__` and `__getattr__` on the token, scope and write carriers.
+- All `__new__` allocation-slot probes run in isolated subprocesses to prevent CPython type-slot residue in the main pytest process.
 - Sentinel rebinding, joint token/input hook-vector replacement and joint type-alias replacement are rejected.
 - Each rejection asserts SQLite is not opened and the original row/event state remains unchanged.
 - Fixtures use only a throwaway local SQLite database and synthetic values.
