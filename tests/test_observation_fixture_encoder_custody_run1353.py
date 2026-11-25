@@ -32,6 +32,7 @@ def test_replaced_text_encoder_never_receives_private_fixture_text(
     with monkeypatch.context() as patch:
         patch.setattr(adapters, "_hash_private_fixture", forbidden_hash)
         if replace_after_preflight:
+
             def preflight_then_replace(*args, **kwargs):
                 original_preflight(*args, **kwargs)
                 patch.setattr(
