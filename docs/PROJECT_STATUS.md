@@ -1,5 +1,82 @@
 ## LATEST
 
+- **Saved at:** 2026-11-25 17:12:11 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `11d72bef1b69df06ed0c0102d6154fc4d44a0214` (PR #8 head re-read immediately before this checkpoint).
+- **Checkpoint-result HEAD:** this `PROJECT_STATUS.md` update commit; GitHub returns the exact resulting SHA after save, which is recorded in the invocation summary. The file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain frozen evidence. Local-first JARVIS foundations continue in isolated/reversible branches. **ARK/JARVIS overall remains NOT_PASSED.**
+- **Main / UI boundary:** PR #5 remains Draft/unmerged under its V3 gate. PR #8 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; UI/frontend work remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **Run1381 — Planner COMMIT-UNKNOWN recovery rebase (Draft PR #560).**
+   - Child branch: `research/run1381-planner-commit-unknown-rebase-20261125`.
+   - Exact final child HEAD: `9868834cb5b30e0bf33b359bb95ab8ddc63a382d`.
+   - Test/documentation-only rebase onto the exact PR #8 work-basis above; verified unchanged PlannerJournal source blob `d27298a3c6ed5b9d8421ac50944b966a279c8db5`.
+   - Covers native-COMMIT acknowledgement loss for genesis and transition, reopen/recovery, stale retry denial, ambiguous RUNNING quarantine, and event-prefix truncation rejection.
+
+2. **Run1382 — disconnected startup-readiness lease regression rebase (Draft PR #561).**
+   - Child branch: `research/run1382-startup-readiness-lease-rebase-20261125`.
+   - Exact final child HEAD: `59118e37f64f0d40ac5e7a3d6294d11c2384e515`.
+   - Test/documentation-only rebase; production evaluator and lease reviewer blobs are unchanged (`bcbe936127ed8ef526862b2be73ecd75aac45dea`, `facddb02cb5c0a53517ca8f4a00a7138a2fab7a2`).
+   - Covers freshness/expiry boundaries, clock rollback, exact carriers, dependency blocking, schema mismatch and reflected snapshot/authority mutation.
+
+3. **Run1383 — ToolRegistry deletion-seal regression rebase (Draft PR #562).**
+   - Child branch: `research/run1383-tool-registry-delete-seal-rebase-20261125`.
+   - Exact final child HEAD: `8bc8bf974759ca98a9c6be12d0d961716ee654dc`.
+   - Test/documentation-only rebase; unchanged parent ToolRegistry source blob `2bbb88f6d87a5c51c7b025072e10c998ebc400b9`.
+   - Covers ordinary sealed-slot deletion denial, reflective registration-map deletion before binding, replaced class deletion guard denial, and inert mock backend behavior.
+
+4. **Run1384 — V3 preflight parser guard self-custody rebase (Draft PR #563, child of PR #5).**
+   - Child branch: `research/run1384-v3-preflight-guard-self-custody-rebase-20261125`.
+   - Exact final child HEAD: `419e20612d50b8016b633a496181bbc5b3ca7e5c`; exact parent PR #5 basis: `279232c359ec13355f684e1c8cfc081bda0a4a94`.
+   - Adds a keyword-only retained parser-guard default and compares both mutable module bindings before invoking the guard or parsing synthetic report bytes. Adds a test that replaces both bindings with one no-op and instruments the loader.
+   - No model/tokenizer load, torch runtime, GPU query, preflight execution, training, adapter/weight generation, Candidate, or protected V2 evaluation.
+
+## Tests, CI and evidence
+
+- **PR #8 work-basis head** `11d72bef1b69df06ed0c0102d6154fc4d44a0214`, CI run `45571957861`: **GREEN, 6/6** Windows/Linux × Python 3.11–3.13. This validates the parent work-basis, not the later checkpoint commit.
+- **PR #559 concurrent child** `0df057641628611304bc1380c0a5a222fa3cb88f`, run `45573783862`: **IN PROGRESS** at last observation (5 jobs GREEN; Windows/Python 3.12 still running).
+- **PR #560 / Run1381** `9868834cb5b30e0bf33b359bb95ab8ddc63a382d`, run `45575640329`: **IN PROGRESS** (3 jobs GREEN; 3 still running).
+- **PR #561 / Run1382** `59118e37f64f0d40ac5e7a3d6294d11c2384e515`, run `45576193976`: **IN PROGRESS / QUEUED** (5 jobs running; 1 queued; no completed result observed).
+- **PR #562 / Run1383** `8bc8bf974759ca98a9c6be12d0d961716ee654dc`, run `45576435715`: **QUEUED, 6/6**.
+- **PR #563 / Run1384** `419e20612d50b8016b633a496181bbc5b3ca7e5c`, run `45576826207`: **QUEUED, 6/6**.
+- **PR #5 parent** `279232c359ec13355f684e1c8cfc081bda0a4a94`, run `45572111257`: **FAIL, 6/6** due Ruff I001 on the main merge-ref files `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py`, and `tests/test_tool_registry_delete_seal_run1240.py`. The Ubuntu/Python 3.11 log confirms these are import-order findings in base-owned files; this is the previously known main-merge-ref ownership blocker, not a failure in Run1384's child source/test.
+- No local pytest/Ruff, target-PC, real-model, live-capture, real-backend, GPU, paid-compute or production-runtime execution is claimed. No child PASS is claimed before its final exact-head CI completes. The checkpoint update itself triggers a new PR #8 CI run after this save.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, ToolCall and PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries, ActionAudit v1 DDL/event fields, and V3 Contract 1 remain unchanged.
+- PRs #560, #561 and #562 are test/documentation-only. PR #563 changes only the V3 preflight verifier's retained guard argument/check and adds synthetic regression coverage; it does not change Contract 1, report schema, dataset, runtime or training parameters.
+- PR #5 and PR #8 remain Draft/unmerged. PR #9 remains Draft/unmerged and untouched. No UI/frontend feature, polish, test or integration work occurred. No main write or merge occurred.
+
+## Blockers and authorization boundaries
+
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- PR #5's current merge-ref Ruff I001 failure is confined to three base-owned test files listed above. Do not edit `main`, copy/re-home those tests, or merge PR #5 without the required ownership/approval path. PR #5 remains Draft/unmerged; protected V2 evaluation remains closed.
+- PRs #559–#563 remain Draft and isolated until their own final exact-head CI is GREEN. PR #8's GREEN run applies to work-basis HEAD `11d72bef...`, not the later checkpoint commit.
+- Planner COMMIT-UNKNOWN fixtures simulate acknowledgement loss after native SQLite COMMIT; they do not prove fsync/power-loss durability or exactly-once external effects.
+- Startup readiness leases are synthetic diagnostics only, not trusted time, authenticated identity, startup authorization, dispatch, notification or hardware readiness.
+- ToolRegistry deletion checks are local in-process object-integrity evidence, not process isolation, authenticated backend identity or permission.
+- V3 parser guard tests are synthetic only and do not invoke model loading, GPU, preflight, training or Candidate creation. No automatic Candidate promotion or human-review decision is inferred.
+- No new credentials/secrets/account connections, unavailable physical-PC actions, destructive operations, frozen-contract changes or protected evaluation openings occurred.
+
+## Next plan / 今後の方針
+
+1. Inspect the final exact-head CI for PRs #559–#563 when useful; fix only concrete child-specific failures, then switch to an independent non-conflicting lane while reruns execute.
+2. After exact-head GREEN and dependency review, integrate validated test-only PRs #560, #561 and #562 into the PR #8 research branch only. Re-read latest PR #8 HEAD immediately before each integration and run fresh parent CI. Keep PR #8 Draft/unmerged.
+3. For PR #563, verify its exact-head CI and review the parser-guard rebase against the current PR #5 branch. Keep PR #5 Draft/unmerged; do not open protected evaluation or training gates and do not modify main to bypass the merge-ref blocker.
+4. Continue Memory row/event integrity, WAL/CAS/ABA, expiry/purge commit-outcome recovery and coherent snapshots without changing Memory v1 DDL or retention.
+5. Continue Planner terminal propagation and crash recovery, ToolRegistry/exact-type PermissionGate, durable authorization, trusted-clock audit-before-action and occurrence/replay protection.
+6. Continue disconnected/mock execution, startup readiness, privacy-safe Personal Context, proactive scheduler state and Observation/multimodal fixture contracts.
+7. Continue free-only V3 approval/path/identity/reproducibility guards; no real Candidate adapter/weight generation, protected V2 evaluation or promotion.
+8. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## Historical checkpoint — saved at 2026-11-25 12:02:32 JST
+
 - **Saved at:** 2026-11-25 12:02:32 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `83f73303778a47430203095b246a94d90cc4bd81` (PR #8 head re-read immediately before this checkpoint; includes the Run1352 Memory child integration).
