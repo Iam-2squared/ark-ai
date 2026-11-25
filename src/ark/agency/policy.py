@@ -81,32 +81,47 @@ _GRANT_VECTOR_EPOCH = (
 )
 
 
-def _require_original_grant_validator() -> None:
+def _require_original_grant_validator(
+    _original_vector_epoch: tuple[object, ...] = _GRANT_VECTOR_EPOCH,
+    _original_grant_type: type = _GRANT_TYPE,
+    _original_grant_init: object = _ORIGINAL_GRANT_INIT,
+    _original_grant_post_init: object = _ORIGINAL_GRANT_POST_INIT,
+    _original_max_grants: int = _ORIGINAL_MAX_GRANTS,
+) -> None:
     if (
         type(_MAX_GRANTS) is not int
         or type(_ORIGINAL_MAX_GRANTS) is not int
-        or _MAX_GRANTS is not _ORIGINAL_MAX_GRANTS
+        or _MAX_GRANTS is not _original_max_grants
+        or _ORIGINAL_MAX_GRANTS is not _original_max_grants
     ):
         raise PermissionDenied("capability grant budget contract changed")
     if (
-        CapabilityGrant is not _GRANT_TYPE
+        _GRANT_VECTOR_EPOCH is not _original_vector_epoch
         or any(
             current is not original
             for current, original in zip(
                 (_GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS,
                  _GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS),
-                _GRANT_VECTOR_EPOCH, strict=True,
+                _original_vector_epoch, strict=True,
             )
         )
-        or vars(_GRANT_TYPE).get("__init__") is not _ORIGINAL_GRANT_INIT
-        or vars(_GRANT_TYPE).get("__post_init__") is not _ORIGINAL_GRANT_POST_INIT
+        or _GRANT_TYPE is not _original_grant_type
+        or CapabilityGrant is not _original_grant_type
+        or _ORIGINAL_GRANT_INIT is not _original_grant_init
+        or _ORIGINAL_GRANT_POST_INIT is not _original_grant_post_init
+        or vars(_original_grant_type).get("__init__") is not _original_grant_init
+        or vars(_original_grant_type).get("__post_init__") is not _original_grant_post_init
         or any(
-            vars(_GRANT_TYPE).get(name) is not original
-            for name, original in zip(_GRANT_FIELDS, _ORIGINAL_GRANT_FIELDS, strict=True)
+            vars(_original_grant_type).get(name) is not original
+            for name, original in zip(
+                _original_vector_epoch[0], _original_vector_epoch[1], strict=True,
+            )
         )
         or any(
-            vars(_GRANT_TYPE).get(name) is not original
-            for name, original in zip(_GRANT_HOOKS, _ORIGINAL_GRANT_HOOKS, strict=True)
+            vars(_original_grant_type).get(name) is not original
+            for name, original in zip(
+                _original_vector_epoch[2], _original_vector_epoch[3], strict=True,
+            )
         )
     ):
         raise PermissionDenied("capability grant validator changed")
@@ -142,40 +157,50 @@ _SPEC_TOKEN_VECTOR_EPOCH = (
 )
 
 
-def _require_original_spec_and_token() -> None:
-    if any(
-        current is not original
-        for current, original in zip(
-            (_SPEC_FIELDS, _SPEC_METHODS, _SPEC_HOOKS,
-             _ORIGINAL_SPEC_FIELDS, _ORIGINAL_SPEC_METHODS,
-             _ORIGINAL_SPEC_HOOKS, _TOKEN_FIELDS, _TOKEN_METHODS,
-             _TOKEN_HOOKS, _ORIGINAL_TOKEN_FIELDS,
-             _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS),
-            _SPEC_TOKEN_VECTOR_EPOCH, strict=True,
+def _require_original_spec_and_token(
+    _original_vector_epoch: tuple[object, ...] = _SPEC_TOKEN_VECTOR_EPOCH,
+    _original_spec_type: type = _SPEC_TYPE,
+    _original_token_type: type = _TOKEN_TYPE,
+) -> None:
+    current_vectors = (
+        _SPEC_FIELDS, _SPEC_METHODS, _SPEC_HOOKS,
+        _ORIGINAL_SPEC_FIELDS, _ORIGINAL_SPEC_METHODS, _ORIGINAL_SPEC_HOOKS,
+        _TOKEN_FIELDS, _TOKEN_METHODS, _TOKEN_HOOKS,
+        _ORIGINAL_TOKEN_FIELDS, _ORIGINAL_TOKEN_METHODS, _ORIGINAL_TOKEN_HOOKS,
+    )
+    if (
+        _SPEC_TOKEN_VECTOR_EPOCH is not _original_vector_epoch
+        or any(
+            current is not original
+            for current, original in zip(
+                current_vectors, _original_vector_epoch, strict=True,
+            )
         )
     ):
         raise PermissionDenied("tool/token validator inventory changed")
     if (
-        ToolSpec is not _SPEC_TYPE
+        _SPEC_TYPE is not _original_spec_type
+        or ToolSpec is not _original_spec_type
         or any(
-            vars(_SPEC_TYPE).get(key) is not original
+            vars(_original_spec_type).get(key) is not original
             for keys, values in (
-                (_SPEC_FIELDS, _ORIGINAL_SPEC_FIELDS),
-                (_SPEC_METHODS, _ORIGINAL_SPEC_METHODS),
-                (_SPEC_HOOKS, _ORIGINAL_SPEC_HOOKS),
+                (_original_vector_epoch[0], _original_vector_epoch[3]),
+                (_original_vector_epoch[1], _original_vector_epoch[4]),
+                (_original_vector_epoch[2], _original_vector_epoch[5]),
             )
             for key, original in zip(keys, values, strict=True)
         )
     ):
         raise PermissionDenied("tool specification contract changed")
     if (
-        OneShotAuthorization is not _TOKEN_TYPE
+        _TOKEN_TYPE is not _original_token_type
+        or OneShotAuthorization is not _original_token_type
         or any(
-            vars(_TOKEN_TYPE).get(key) is not original
+            vars(_original_token_type).get(key) is not original
             for keys, values in (
-                (_TOKEN_FIELDS, _ORIGINAL_TOKEN_FIELDS),
-                (_TOKEN_METHODS, _ORIGINAL_TOKEN_METHODS),
-                (_TOKEN_HOOKS, _ORIGINAL_TOKEN_HOOKS),
+                (_original_vector_epoch[6], _original_vector_epoch[9]),
+                (_original_vector_epoch[7], _original_vector_epoch[10]),
+                (_original_vector_epoch[8], _original_vector_epoch[11]),
             )
             for key, original in zip(keys, values, strict=True)
         )
