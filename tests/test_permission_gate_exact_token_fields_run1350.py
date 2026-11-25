@@ -220,7 +220,7 @@ def test_synthetic_store_rejects_replaced_token_admission_helper(
     bind_calls: list[bool] = []
     original_bind = ToolRegistry.bind
 
-    def counted_bind(self: ToolRegistry, bound_call: ToolCall):
+    def counted_bind(self: ToolRegistry, bound_call: ToolCall) -> BoundAction:
         bind_calls.append(True)
         return original_bind(self, bound_call)
 
