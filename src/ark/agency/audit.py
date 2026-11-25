@@ -25,7 +25,21 @@ _EVENT_FIELDS = (
 )
 _ORIGINAL_EVENT_FIELDS = tuple(vars(_EVENT_TYPE)[name] for name in _EVENT_FIELDS)
 _EVENT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
-_ORIGINAL_EVENT_HOOKS = tuple(vars(_EVENT_TYPE).get(name) for name in _EVENT_HOOKS)
+_ABSENT_EVENT_CLASS_HOOK = object()
+_ORIGINAL_EVENT_HOOKS = tuple(
+    vars(_EVENT_TYPE).get(name, _ABSENT_EVENT_CLASS_HOOK)
+    for name in _EVENT_HOOKS
+)
+_ORIGINAL_EVENT_CLASS_EPOCH = (
+    _ABSENT_EVENT_CLASS_HOOK,
+    ActionAuditEvent,
+    _EVENT_TYPE,
+    _ORIGINAL_EVENT_INIT,
+    _EVENT_FIELDS,
+    _ORIGINAL_EVENT_FIELDS,
+    _EVENT_HOOKS,
+    _ORIGINAL_EVENT_HOOKS,
+)
 # Local callbacks may be rebound after a ToolCall is constructed. Before
 # touching its private argument mapping or stored audit identities, validate
 # both the audit-side and ToolCall-side canonical digest pipeline.
@@ -354,6 +368,8 @@ def _require_original_event_constructor(
     _original_event_fields=_ORIGINAL_EVENT_FIELDS,
     _event_hooks=_EVENT_HOOKS,
     _original_event_hooks=_ORIGINAL_EVENT_HOOKS,
+    _absent_event_class_hook=_ABSENT_EVENT_CLASS_HOOK,
+    _event_class_epoch=_ORIGINAL_EVENT_CLASS_EPOCH,
 ) -> None:
     if (
         hashlib.sha256 is not _ORIGINAL_SHA256
@@ -365,23 +381,56 @@ def _require_original_event_constructor(
     ):
         raise ActionAuditSchemaError("action audit digest callback changed")
     # An audit receipt is data, not a place to execute new Python code.
-    # Retain the comparison vectors outside mutable module bindings before
-    # inspecting the ORIGINAL class dictionary without getattr().
+    # Retain the exact carrier aliases, sentinel and comparison vectors outside
+    # mutable module bindings before inspecting the original class namespace.
+    current_epoch = (
+        _ABSENT_EVENT_CLASS_HOOK,
+        ActionAuditEvent,
+        _EVENT_TYPE,
+        _ORIGINAL_EVENT_INIT,
+        _EVENT_FIELDS,
+        _ORIGINAL_EVENT_FIELDS,
+        _EVENT_HOOKS,
+        _ORIGINAL_EVENT_HOOKS,
+    )
     if (
-        _EVENT_FIELDS is not _event_fields
+        _ORIGINAL_EVENT_CLASS_EPOCH is not _event_class_epoch
+        or any(
+            current is not original
+            for current, original in zip(
+                current_epoch, _event_class_epoch, strict=True,
+            )
+        )
+        or _absent_event_class_hook is not _event_class_epoch[0]
+        or _EVENT_FIELDS is not _event_fields
         or _ORIGINAL_EVENT_FIELDS is not _original_event_fields
         or _EVENT_HOOKS is not _event_hooks
         or _ORIGINAL_EVENT_HOOKS is not _original_event_hooks
         or ActionAuditEvent is not _EVENT_TYPE
-        or vars(_EVENT_TYPE).get("__init__") is not _ORIGINAL_EVENT_INIT
+    ):
+        suffix = f" {phase}" if phase else ""
+        raise ActionAuditSchemaError(f"audit event constructor changed{suffix}")
+
+    namespace = vars(_EVENT_TYPE)
+    if (
+        "__init__" not in namespace
+        or namespace["__init__"] is not _ORIGINAL_EVENT_INIT
         or any(
-            vars(_EVENT_TYPE).get(name) is not original
+            (
+                name in namespace
+                if original is _absent_event_class_hook
+                else name not in namespace or namespace[name] is not original
+            )
             for name, original in zip(
                 _event_fields, _original_event_fields, strict=True,
             )
         )
         or any(
-            vars(_EVENT_TYPE).get(name) is not original
+            (
+                name in namespace
+                if original is _absent_event_class_hook
+                else name not in namespace or namespace[name] is not original
+            )
             for name, original in zip(
                 _event_hooks, _original_event_hooks, strict=True,
             )
