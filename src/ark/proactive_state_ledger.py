@@ -75,7 +75,7 @@ class SyntheticProactiveStateConflict(SyntheticProactiveStateRejected):
     """A compare-and-swap revision no longer matches the persisted state."""
 
 
-def _require_original_protocol() -> None:
+def _require_original_protocol_base() -> None:
     if (
         hashlib is not _ORIGINAL_HASHLIB
         or hashlib.sha256 is not _ORIGINAL_SHA256
@@ -210,17 +210,26 @@ _ORIGINAL_POLICY_METHODS = tuple(vars(_POLICY_TYPE).get(name) for name in _POLIC
 _ORIGINAL_POLICY_VECTORS = (_POLICY_FIELDS, _POLICY_METHODS)
 
 
-def _require_original_policy_contract() -> None:
+def _require_original_policy_contract(
+    _original_policy_vectors: tuple[object, ...] = _ORIGINAL_POLICY_VECTORS,
+    _original_policy_fields: tuple[object, ...] = _ORIGINAL_POLICY_FIELDS,
+    _original_policy_methods: tuple[object, ...] = _ORIGINAL_POLICY_METHODS,
+    _original_policy_type: type = _POLICY_TYPE,
+) -> None:
     _require_original_protocol()
     if (
-        SyntheticProactivePolicy is not _POLICY_TYPE
-        or _POLICY_FIELDS is not _ORIGINAL_POLICY_VECTORS[0]
-        or _POLICY_METHODS is not _ORIGINAL_POLICY_VECTORS[1]
+        _ORIGINAL_POLICY_VECTORS is not _original_policy_vectors
+        or _ORIGINAL_POLICY_FIELDS is not _original_policy_fields
+        or _ORIGINAL_POLICY_METHODS is not _original_policy_methods
+        or _POLICY_TYPE is not _original_policy_type
+        or SyntheticProactivePolicy is not _original_policy_type
+        or _POLICY_FIELDS is not _original_policy_vectors[0]
+        or _POLICY_METHODS is not _original_policy_vectors[1]
         or any(
-            vars(_POLICY_TYPE).get(name) is not original
+            vars(_original_policy_type).get(name) is not original
             for names, originals in (
-                (_POLICY_FIELDS, _ORIGINAL_POLICY_FIELDS),
-                (_POLICY_METHODS, _ORIGINAL_POLICY_METHODS),
+                (_original_policy_vectors[0], _original_policy_fields),
+                (_original_policy_vectors[1], _original_policy_methods),
             )
             for name, original in zip(names, originals, strict=True)
         )
@@ -293,19 +302,65 @@ _ORIGINAL_STATE_HOOKS = tuple(vars(_STATE_TYPE).get(name) for name in _STATE_HOO
 _ORIGINAL_STATE_VECTORS = (_STATE_FIELDS, _STATE_DENIALS, _STATE_HOOKS)
 
 
-def _require_original_state_type() -> None:
+def _require_original_protocol(
+    _original_policy_vectors: tuple[object, ...] = _ORIGINAL_POLICY_VECTORS,
+    _original_policy_fields: tuple[object, ...] = _ORIGINAL_POLICY_FIELDS,
+    _original_policy_methods: tuple[object, ...] = _ORIGINAL_POLICY_METHODS,
+    _original_state_vectors: tuple[object, ...] = _ORIGINAL_STATE_VECTORS,
+    _original_state_fields: tuple[object, ...] = _ORIGINAL_STATE_FIELDS,
+    _original_state_denials: tuple[object, ...] = _ORIGINAL_STATE_DENIALS,
+    _original_state_hooks: tuple[object, ...] = _ORIGINAL_STATE_HOOKS,
+    _original_policy_type: type = _POLICY_TYPE,
+    _original_state_type: type = _STATE_TYPE,
+    _original_protocol_base: object = _require_original_protocol_base,
+) -> None:
+    """Reject replaced working/original vectors before any protocol callback."""
+    if (
+        _ORIGINAL_POLICY_VECTORS is not _original_policy_vectors
+        or _ORIGINAL_POLICY_FIELDS is not _original_policy_fields
+        or _ORIGINAL_POLICY_METHODS is not _original_policy_methods
+        or _POLICY_FIELDS is not _original_policy_vectors[0]
+        or _POLICY_METHODS is not _original_policy_vectors[1]
+        or _POLICY_TYPE is not _original_policy_type
+        or SyntheticProactivePolicy is not _original_policy_type
+        or _ORIGINAL_STATE_VECTORS is not _original_state_vectors
+        or _ORIGINAL_STATE_FIELDS is not _original_state_fields
+        or _ORIGINAL_STATE_DENIALS is not _original_state_denials
+        or _ORIGINAL_STATE_HOOKS is not _original_state_hooks
+        or _STATE_FIELDS is not _original_state_vectors[0]
+        or _STATE_DENIALS is not _original_state_vectors[1]
+        or _STATE_HOOKS is not _original_state_vectors[2]
+        or _STATE_TYPE is not _original_state_type
+        or SyntheticProactiveState is not _original_state_type
+    ):
+        raise SyntheticProactiveStateRejected("proactive state protocol changed")
+    _original_protocol_base()
+
+
+def _require_original_state_type(
+    _original_state_vectors: tuple[object, ...] = _ORIGINAL_STATE_VECTORS,
+    _original_state_fields: tuple[object, ...] = _ORIGINAL_STATE_FIELDS,
+    _original_state_denials: tuple[object, ...] = _ORIGINAL_STATE_DENIALS,
+    _original_state_hooks: tuple[object, ...] = _ORIGINAL_STATE_HOOKS,
+    _original_state_type: type = _STATE_TYPE,
+) -> None:
     _require_original_protocol()
     if (
-        SyntheticProactiveState is not _STATE_TYPE
-        or _STATE_FIELDS is not _ORIGINAL_STATE_VECTORS[0]
-        or _STATE_DENIALS is not _ORIGINAL_STATE_VECTORS[1]
-        or _STATE_HOOKS is not _ORIGINAL_STATE_VECTORS[2]
+        _ORIGINAL_STATE_VECTORS is not _original_state_vectors
+        or _ORIGINAL_STATE_FIELDS is not _original_state_fields
+        or _ORIGINAL_STATE_DENIALS is not _original_state_denials
+        or _ORIGINAL_STATE_HOOKS is not _original_state_hooks
+        or _STATE_TYPE is not _original_state_type
+        or SyntheticProactiveState is not _original_state_type
+        or _STATE_FIELDS is not _original_state_vectors[0]
+        or _STATE_DENIALS is not _original_state_vectors[1]
+        or _STATE_HOOKS is not _original_state_vectors[2]
         or any(
-            vars(_STATE_TYPE).get(name) is not original
+            vars(_original_state_type).get(name) is not original
             for names, originals in (
-                (_STATE_FIELDS, _ORIGINAL_STATE_FIELDS),
-                (_STATE_DENIALS, _ORIGINAL_STATE_DENIALS),
-                (_STATE_HOOKS, _ORIGINAL_STATE_HOOKS),
+                (_original_state_vectors[0], _original_state_fields),
+                (_original_state_vectors[1], _original_state_denials),
+                (_original_state_vectors[2], _original_state_hooks),
             )
             for name, original in zip(names, originals, strict=True)
         )
