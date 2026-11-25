@@ -10,6 +10,8 @@ import hashlib
 from multiprocessing import get_context
 from pathlib import Path
 
+import pytest
+
 from ark.personal_context_offline_preview import (
     OfflineContextFixture,
     build_offline_context_preview,
@@ -130,7 +132,7 @@ def test_same_context_request_reserved_once_across_two_processes_run1442(
     assert tip.count == 1
     assert request_id == _binding(1).request_id
     assert cold.verify_retained_prefix(genesis_offline_context_replay_witness()) == tip
-    with __import__("pytest").raises(OfflineContextReplayRejected, match="duplicate"):
+    with pytest.raises(OfflineContextReplayRejected, match="duplicate"):
         cold.reserve(_binding(1), retained=tip)
     assert cold.witness() == tip
     assert _PRIVATE.encode("utf-8") not in path.read_bytes()
