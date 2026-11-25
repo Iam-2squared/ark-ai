@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import ark.startup_readiness_review as readiness
 import pytest
+import ark.startup_readiness_review as readiness
 
 
 _CARRIERS = (
