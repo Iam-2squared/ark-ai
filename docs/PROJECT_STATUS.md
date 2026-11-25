@@ -1,5 +1,77 @@
 ## LATEST
 
+- **Saved at:** 2026-11-26 06:56:54 JST (Asia/Tokyo).
+- **Branch / PR:** research/jarvis-foundations / Draft PR #8; isolated research branch, not main.
+- **Exact work-basis HEAD:** 72bad2b15dc00075aa00bcb57289834b7ea6cf68 (PR #8 head and branch ref re-read immediately before this checkpoint update).
+- **Checkpoint-result HEAD:** the GitHub commit created by this docs/PROJECT_STATUS.md update; its exact returned SHA is confirmed after the write and reported in the invocation summary. This file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner retain frozen evidence. Memory, Observation, Personal Context, Planner, ToolRegistry, PermissionGate, proactive state, ActionAudit, disconnected/mock execution, and free-only V3 guard work remain isolated local-first foundations. **ARK/JARVIS overall remains NOT_PASSED.**
+- **PR #8 previous exact-head CI:** fee6c3cf8d6e0f34194c2f24adef4fbfc1daf360, run [45700734437](https://github.com/Iam-2squared/ark-ai/actions/runs/45700734437), **GREEN 6/6**. Current checkpoint commit is newer and has no returned workflow run at the last lookup.
+- **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #8 remains Draft/unmerged. PR #9 remains untouched and Draft/unmerged. All new UI/frontend development remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **V3 local HF snapshot staging — Draft PR #623.**
+   - Branch research/run1435-v3-local-snapshot-staging-20261126; current exact child HEAD 3f10e395e92b90706286ebc384dae07edbc9f09d; target is only gated Draft PR #5.
+   - Verifies the local source manifest against frozen base/tokenizer/probe digests; streams only manifest-listed files into a temporary tree while hashing copied bytes; re-hashes the stage; and directs both Transformers loaders to that staged path with local_files_only=True and trust_remote_code=False. The stage owner is retained through the full preflight/full-run scope and cleaned on return or exception.
+   - Synthetic tests cover manifest preservation, source mutation during staging, and fake loader path isolation. The initial exact head 2ed89a59c89606a1aebbafc2c18eec2911599796 failed Ruff I001; import order was corrected at f0812464db8376f9034f1ee19739bf3b85cae809.
+   - Exact-head run [45708596824](https://github.com/Iam-2squared/ark-ai/actions/runs/45708596824) then failed one synthetic test because the mutation fixture changed file length and correctly triggered the earlier size guard. The fixture now uses a same-length replacement so the test isolates digest mismatch. Current exact head 3f10e395e92b90706286ebc384dae07edbc9f09d has run [45708896479](https://github.com/Iam-2squared/ark-ai/actions/runs/45708896479) **QUEUED**; no result is claimed.
+   - No local test/lint run, torch import, model load, GPU query, preflight, training, or Candidate generation occurred. This does not establish atomic dirfd custody, same-user hostile-writer isolation, platform ACL attestation, or elimination of the final rehash-to-open race.
+
+2. **V3 free-only guard matrix reconciliation — Draft PR #624.**
+   - Branch research/run1436-v3-gap-matrix-runtime-reconcile-20261126; exact child HEAD 06a053d33cdfb568e4cfc2d4a735ec18136934fc; targets only PR #8.
+   - Read-only audit confirms that PR #5 already has strict duplicate/non-finite preflight-report parsing (Run1349), nested symlink-grandparent rejection before report open (Run1351), and runtime-rendered chat-template comparison with synthetic tests. Historical Run1346 claims that these three guards are absent are superseded for exact PR #5 source HEAD ea373c3496d06e2789cee5bb58836054ef35ed28.
+   - Records PR #623 as the current local hash-then-stage child and reorders the remaining free-only queue around durable attempt/finalization receipts and crash-consistent evidence publication.
+   - Exact-head CI run [45708528169](https://github.com/Iam-2squared/ark-ai/actions/runs/45708528169) remains **IN PROGRESS**. Documentation-only; no local test/lint execution is claimed.
+
+3. **Exact-head GREEN child packages #616–#622.**
+   - #616 ToolRegistry absent-hook custody, HEAD 597da11ce097b428ee1435a34bea1ee1ae8a5561, run 45699272456: **GREEN 6/6**.
+   - #617 PlannerJournal digest epoch, HEAD f42f04d51fe1cbacb0ee83addf84ec7de67a0ce1, run 45699456768: **GREEN 6/6**.
+   - #618 ActionAudit reparse-policy epoch, HEAD 1c78b8ce81ff8c388e30123a6db7cc3a39164ac9, run 45699642591: **GREEN 6/6**.
+   - #619 Personal Context replay path-policy epoch, HEAD a9a0617e58ba8eb5df07e6606aa437fcc247b43b, run 45699827682: **GREEN 6/6**.
+   - #620 V3 guard gap-matrix reconciliation, HEAD 139e478d51176869e6bdb43f53002adf4a25834e, run 45700074307: **GREEN 6/6**.
+   - #621 proactive state absent-hook custody, HEAD feaa1eb982256b90faae4527076c36d80d58c220, run 45700262611: **GREEN 6/6**.
+   - #622 proactive SQLite path-policy epoch, HEAD a30fec2ad73e9260dc5e439f7cba0e39592dae55, run 45700503587: **GREEN 6/6**.
+   - These seven child PRs remain Draft and target only PR #8. The normal GitHub merge endpoint rejected the first merge attempt with HTTP 405 because PR #616 is still Draft. No ready-for-review transition, raw Git object/ref write, or bypass was attempted; all seven remain isolated pending the normal review/readiness gate.
+
+## Tests, CI and evidence
+
+- PR #8 prior exact-head CI: run 45700734437, GREEN 6/6; the current checkpoint commit has no returned run at the last lookup.
+- PRs #616–#622: each exact child head has a GREEN 6/6 run as listed above.
+- PR #623: run 45708407205 FAIL at Ruff I001 (fixed at f081); run 45708596824 FAIL at one test assertion caused by a length-changing mutation fixture; current exact head 3f10e395e92b90706286ebc384dae07edbc9f09d has run 45708896479 QUEUED.
+- PR #624: exact head 06a053d33cdfb568e4cfc2d4a735ec18136934fc has run 45708528169 IN PROGRESS.
+- No local pytest/Ruff execution, physical-PC verification, live personal-data access, real-model runtime, GPU query, V3 preflight/training, protected evaluation, live observation capture, or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries, and V3 Contract 1 remain unchanged.
+- PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains untouched. No UI/frontend feature, polish, test, or integration work occurred. No main write or merge occurred.
+- PRs #616–#622, #623, and #624 are isolated Draft children; none has been integrated into PR #8 or main.
+
+## Blockers and authorization boundaries
+
+- **Draft integration gate:** PRs #616–#622 are exact-head GREEN but remain Draft; GitHub rejected the merge attempt because the PR was Draft. Keep them isolated; do not change readiness or bypass the normal review gate.
+- **CI:** PR #623 has a queued corrected exact-head run; PR #624 remains in progress. Do not treat either as GREEN until the exact current head is complete.
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
+- No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening, or Candidate promotion occurred. PR #5 remains gated Draft/unmerged.
+- PR #5 still has unresolved external identity/review evidence and the previously documented main merge-ref ownership/lint blockers. Do not alter main, copy foundation modules into V3, weaken tests, or bypass the gate.
+- In-process class/path-policy checks and temporary snapshot staging are not a Python sandbox, atomic dirfd custody, trusted-clock proof, independent storage custody, fsync/power-loss durability, cross-store atomicity, authenticated consent, physical erasure, or exactly-once external-effect proof.
+- No new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, irreversible data change, frozen-contract change, or main merge occurred. UI/frontend work remains paused.
+
+## Next plan / 今後の方針
+
+1. Let the queued exact-head PR #623 run and the in-progress PR #624 run complete; inspect only their actual results, fix concrete semantics-preserving failures, and switch immediately to a non-conflicting lane after each corrected CI launch.
+2. Keep #616–#622 Draft and isolated until the normal review/readiness gate permits integration. After that, integrate one exact-head GREEN package at a time into PR #8 and revalidate the resulting parent head; never merge PR #8 to main without explicit approval.
+3. Continue Memory row/event integrity, WAL/ABA, expiry/CAS, coherent snapshots, and manual-only COMMIT-UNKNOWN recovery without changing schema v1.
+4. Continue Planner terminal/COMMIT-UNKNOWN recovery, durable one-shot authorization, occurrence/replay protection, and trusted-clock audit-before-action over disconnected mocks.
+5. Continue privacy-safe Personal Context, proactive restart/occurrence state, Observation fixture lifecycle, ToolRegistry/PermissionGate identity, and startup readiness.
+6. Continue free-only V3 work on durable attempt/finalization receipts and crash-consistent evidence publication. Keep PR #5 gated; no preflight, training, GPU, or Candidate action.
+7. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## Historical checkpoint — saved at 2026-11-26 06:55:33 JST (superseded)
+
 - **Saved at:** 2026-11-26 06:55:33 JST (Asia/Tokyo).
 - **Branch / PR:** research/jarvis-foundations / Draft PR #8; isolated research branch, not main.
 - **Exact work-basis HEAD:** fee6c3cf8d6e0f34194c2f24adef4fbfc1daf360 (PR #8 head and branch ref re-read immediately before this checkpoint update).
