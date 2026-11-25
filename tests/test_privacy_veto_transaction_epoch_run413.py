@@ -35,7 +35,7 @@ def _count(path):
 
 
 @pytest.mark.parametrize("readonly", [True, False])
-def test_begin_phase_detects_scope_retarget_before_validator_can_restore(
+def test_validator_replacement_is_denied_before_sqlite_validation(
     tmp_path, monkeypatch, readonly,
 ):
     ledger, path, scope = _fixture(tmp_path)
@@ -71,7 +71,7 @@ def test_begin_phase_detects_scope_retarget_before_validator_can_restore(
     monkeypatch.setattr(module, "_validate", validate)
     with pytest.raises(
         module.SyntheticContextRevocationRejected,
-        match="scope changed",
+        match="revocation scope digest implementation changed",
     ):
         _call(ledger, scope, readonly)
     assert validated == []
