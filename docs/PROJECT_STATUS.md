@@ -1,79 +1,73 @@
 ## LATEST
 
-- **Saved at:** 2026-11-25 22:05:29 JST (Asia/Tokyo).
+- **Saved at:** 2026-11-25 23:27:17 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
-- **Exact work-basis HEAD:** `36368ccc4160727c79fb24704a675d589575b414` (PR #8 and branch HEAD re-read immediately before this checkpoint).
+- **Exact work-basis HEAD:** `43eaf52c81b86ed8cdca7e18b6abea0eee3dcdfe` (parent branch and PR #8 HEAD re-read immediately before this checkpoint write).
 - **Checkpoint-result HEAD:** this `docs/PROJECT_STATUS.md` update commit; its exact returned SHA is verified after save and reported in the invocation summary. The file intentionally does not self-reference its own commit.
-- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain their frozen evidence. Local-first JARVIS foundations continue only in isolated/reversible Draft branches. **ARK/JARVIS overall remains NOT_PASSED.**
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain their frozen evidence. Local-first JARVIS foundations continue in isolated/reversible Draft branches. **ARK/JARVIS overall remains NOT_PASSED.**
 - **Main / UI boundary:** PR #5 remains Draft/unmerged under its V3 gate. PR #8 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; all new UI/frontend development remains paused. No `main` write or merge occurred.
 
 ## NEW work this invocation
 
-1. **Run1401 — proactive SQLite path-policy Windows fixture correction (Draft PR #580).**
-   - Exact child HEAD: `f9722d87c8b282284651dcd4afd548f58cd94f46`.
-   - The Windows-only unlink/resample fixture now preserves `st_file_attributes` in a small metadata carrier instead of reconstructing an `os.stat_result` that can expose missing platform metadata as `None`. Production path-policy semantics are unchanged.
-   - Initial run `45610835271` failed the Windows unlink/resample test because the synthetic stat result was interpreted as a reparse point. Corrected exact-head run `45617462416` is **IN PROGRESS**.
+1. **Run1412 — READ journal absent-hook custody compatibility correction (Draft PR #591).**
+   - Exact corrected child HEAD: `824df6a3ad1bd5783585248bdf6aba3c83b73f2b`.
+   - Initial exact-head run `45630138793`: **FAIL, 6/6**. Three existing Run546 snapshot-tampering tests installed replacement descriptors before `DisconnectedReadJournal.open()`; the new recovery-scan carrier guard correctly rejected those mutations during open, before the tests' expected `recover_receipts()` assertion.
+   - Corrected the tests to open the journal with original carriers, inject tampering only around recovery, assert the substituted property/callback is not executed, restore the class namespace, then verify the unchanged journal.
+   - Fresh exact-head run `45631754169`: **IN PROGRESS**; all three Ubuntu Python 3.11–3.13 jobs are GREEN, all three Windows jobs were still running at last observation.
 
-2. **Run1403 — ToolRegistration lookup-hook absence custody (Draft PR #582).**
-   - Exact child HEAD: `60539055db049570f16d759400eb6c6cc3403396`.
-   - Production guard retains an exact absence sentinel and hook vector. Initial run `45614556548` exposed interpreter type-slot contamination from changing `__new__` inside the main pytest process; the special-hook probes are now isolated in subprocesses. Fresh run `45619387032` is **QUEUED**.
+2. **Run1413 — ActionAuditEvent absent class-hook custody (Draft PR #592).**
+   - Exact child HEAD: `93367f81a003d61dfc5f57cf168999d3aa313ea2`.
+   - Added a unique absent-hook sentinel, an import-time epoch binding the public/private event type aliases, original constructor and field/hook vectors, and namespace-membership checks that distinguish true absence from explicit `None` or installation of the sentinel itself.
+   - Regression fixtures cover `__new__` probes in isolated subprocesses, `__getattribute__`/`__getattr__` replacement, sentinel rebinding and coordinated type-alias replacement; lookup tampering must fail before SQLite access.
+   - ActionAudit v1 DDL, event fields, chronology, public APIs and audit-before-action ordering are unchanged.
+   - Exact-head run `45632566254`: **IN PROGRESS**; all three Ubuntu Python 3.11–3.13 jobs are GREEN, all three Windows jobs were still running at last observation.
 
-3. **Run1405 — startup readiness hook absence custody (Draft PR #584).**
-   - Exact child HEAD: `0a96537738c7943e544a2926ecf666cce92e6082`.
-   - Production readiness carrier guard distinguishes an absent lookup hook from explicit `None`. Two earlier exact-head runs (`45614620686`, `45617281643`) failed Ruff I001 import grouping/spacing in the new test; the smallest formatting corrections are saved. Fresh run `45619139106` is **IN PROGRESS**.
+3. **Run1409 — disconnected mock executor absent-hook test isolation correction (Draft PR #588).**
+   - Initial exact-head run `45627038705`: **FAIL, 6/6**. In-process `__new__` probes changed CPython's allocation slot and caused later existing tests to fail constructing `MockToolResult`.
+   - Moved all backend/result/receipt `__new__` probes to isolated subprocesses; lookup-hook probes now restore class namespaces before audit-state assertions.
+   - Latest child HEAD: `75ba733cd2e3ca6efe71c39ee5d25902c401bc38`.
+   - Fresh exact-head run `45633991795`: **QUEUED / IN PROGRESS**; two matrix jobs were running and four queued at last observation.
 
-4. **Run1406 — disconnected atomic pre-action carrier hook absence custody (Draft PR #585).**
-   - Exact child HEAD: `1995d20fcb64a6ecb2bcff820c889c8fcab7a771`.
-   - Production carrier guard distinguishes absent hooks from explicit `None` and pins the sentinel/vector. Earlier exact-head runs (`45615014748`, `45617296746`) failed Ruff I001 in the test import block; the formatting correction is saved. Fresh run `45619158921` is **IN PROGRESS**.
-
-5. **Run1407 — PlannerJournal lookup-hook absence custody (Draft PR #586).**
-   - Exact child HEAD: `8661be2c9c4a4ec91a0ad432fc13c317d46a767d`.
-   - PlannerJournal now retains its hook-name vector, unique absence sentinel and original descriptor vector, checking namespace membership before instance path state. Synthetic regressions cover explicit `None`, exact-sentinel installation, sentinel/vector replacement and hostile hooks before instance lookup.
-   - Initial run `45618110776` failed Ruff I001 spacing in the new test; corrected exact-head run `45619176394` is **QUEUED**.
-
-6. **Run1408 — PermissionGate and input-carrier hook absence custody (Draft PR #587).**
-   - Exact child HEAD: `8841b887ead7fb07f5d5682e7c9db44d93a155b5`.
-   - PermissionGate, CapabilityGrant, ToolSpec and OneShotAuthorization now retain unique absence sentinels and exact hook vectors; explicit `None`/sentinel/vector changes fail before caller-field reads or local WRITE-token spend.
-   - Initial run `45618931270` failed Ruff I001 in the new test. The test also isolates `__new__` probes in subprocesses to avoid interpreter type-slot contamination. Fresh run `45619526759` is **QUEUED**.
+4. **Run1411 — Memory generation-CAS absent-hook test isolation correction (Draft PR #590).**
+   - Initial exact-head run `45628449827`: **FAIL, 6/6**. In-process `__new__` slot mutation caused 489 failures and 3 errors in the Ubuntu 3.11 job as subsequent Memory constructors failed.
+   - Moved token/scope/write `__new__` probes into isolated subprocesses; other lookup-hook probes remain scoped and restore before row/event verification.
+   - Latest child HEAD: `9992047479ed69c68ab1f4c282228020ec360a33`.
+   - Fresh exact-head run `45634005322`: **QUEUED, 6/6** at last observation.
 
 ## Tests, CI and evidence
 
-- **PR #8 parent basis** `36368ccc4160727c79fb24704a675d589575b414`, run `45607929025`: **GREEN, 6/6** before this checkpoint. This checkpoint advances the parent branch and triggers a fresh exact-head parent run; no result for the new checkpoint HEAD is claimed yet.
-- **PR #580** exact child HEAD `f9722d87...`, run `45617462416`: **IN PROGRESS**.
-- **PR #582** exact child HEAD `60539055...`, run `45619387032`: **QUEUED**.
-- **PR #584** exact child HEAD `0a965377...`, run `45619139106`: **IN PROGRESS**.
-- **PR #585** exact child HEAD `1995d20f...`, run `45619158921`: **IN PROGRESS**.
-- **PR #586** exact child HEAD `8661be2c...`, run `45619176394`: **QUEUED**.
-- **PR #587** exact child HEAD `8841b887...`, run `45619526759`: **QUEUED**.
-- **PR #5 V3 parent** exact HEAD `2c3501930baff61f04b25e7e02c00b0241a426e7`, run `45589076269`: **FAIL, 6/6** at Ruff I001 in three base-owned test files: `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py`, and `tests/test_tool_registry_delete_seal_run1240.py`. No `main` edit, merge workaround or protected evaluation opening was attempted.
-- **Main HEAD:** `48899c484be42db9b310d6e6412cfe8df42a0f52`; no workflow run was returned for that exact commit in this inspection.
-- Read-only V3 reconciliation: the current PR #5 `training_cli.py` uses retained unique-pairs/finite-number parser hooks for preflight reports; the nested symlink-ancestor helper and regression `tests/v3/test_preflight_report_nested_symlink_ancestor_run1351.py` are present, as is duplicate-key evidence `docs/v3/RUN1349_PREFLIGHT_REPORT_DUPLICATE_JSON_KEYS.md`. The older Run1346 matrix claims for those two gaps are stale at current PR #5 HEAD. Hash-then-use TOCTOU, runtime-rendered chat-template proof, and durable preflight/full-run receipt linkage remain open.
+- **PR #8 parent HEAD** `43eaf52c81b86ed8cdca7e18b6abea0eee3dcdfe`, run `45620092815`: **GREEN, 6/6** before this checkpoint update. The checkpoint advances the parent branch; no result for the resulting checkpoint HEAD is claimed.
+- **PR #591 / Run1412:** initial run `45630138793` **FAIL, 6/6**; corrected exact-head run `45631754169` **IN PROGRESS** (3/6 Ubuntu jobs GREEN, 3/6 Windows jobs running).
+- **PR #592 / Run1413:** exact-head run `45632566254` **IN PROGRESS** (3/6 Ubuntu jobs GREEN, 3/6 Windows jobs running).
+- **PR #588 / Run1409:** initial run `45627038705` **FAIL, 6/6**; corrected exact-head run `45633991795` **QUEUED / IN PROGRESS** (2 running, 4 queued).
+- **PR #590 / Run1411:** initial run `45628449827` **FAIL, 6/6**; corrected exact-head run `45634005322` **QUEUED, 6/6**.
+- **PR #5 V3 parent** exact HEAD `2c3501930baff61f04b25e7e02c00b0241a426e7`, last observed run `45589076269`: **FAIL, 6/6** at Ruff I001 in three base-owned merge-ref test files: `tests/test_personal_context_replay_process_crash_run1033.py`, `tests/test_planner_journal_terminal_hard_exit_run1280.py`, and `tests/test_tool_registry_delete_seal_run1240.py`. No `main` edit, merge workaround or protected evaluation opening was attempted.
 - No local pytest/Ruff execution, target-PC verification, real-model runtime, tokenizer/model load, GPU query, V3 preflight, training, protected evaluation or production dispatch is claimed.
 
 ## Frozen contracts and evidence — unchanged
 
 - V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
 - Memory v1 DDL/schema/retention, PlannerJournal schema/hash-chain/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries and V3 Contract 1 are unchanged.
-- PR #5 and PR #8 remain Draft/unmerged. PR #9 remains Draft/unmerged and untouched. No UI/frontend feature, polish, test or integration work occurred. No `main` write or merge occurred.
-- All six new/updated child PRs remain Draft and isolated; none was integrated into PR #8 or `main`.
+- PR #5, PR #8 and PR #9 remain Draft/unmerged. PR #9 remains untouched. No UI/frontend feature, polish, test or integration work occurred. No `main` write or merge occurred.
+- PRs #588, #590, #591 and #592 remain isolated Draft children; none was integrated into PR #8 or `main`.
 
 ## Blockers and authorization boundaries
 
 - **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
-- PR #5's current CI failure is confined to three base-owned Ruff import blocks. Do not edit `main`, copy/re-home tests to bypass the ownership boundary, or merge PR #5 without the required approval path. Protected V2 evaluation remains closed.
-- Child PR runs listed above are still queued/in progress; no PASS is claimed for those exact heads. Initial lint/test failures are retained as evidence rather than hidden.
-- PlannerJournal/PermissionGate/ToolRegistration hook checks are local in-process class-definition integrity only. They are not Python sandboxing, durable authorization, authenticated consent, trusted-time proof, fsync/power-loss proof, cross-store atomicity or exactly-once external-effect evidence.
+- PR #5's last observed merge-ref CI failure is confined to three base-owned Ruff import blocks. Do not edit `main`, copy/re-home tests to bypass the ownership boundary, or merge PR #5 without its required approval path. Protected V2 evaluation remains closed.
+- Exact-head CI for PRs #588, #590, #591 and #592 is queued/in progress as recorded above; no PASS is claimed for those corrected/current child heads.
+- Class-hook custody is local in-process Python definition integrity only. It is not a Python sandbox, authenticated consent, trusted-clock proof, independent storage custody, cross-store atomicity, fsync/power-loss durability or exactly-once external-effect evidence.
 - No real Candidate adapter/weight generation, protected V2 final-evaluation opening, Candidate promotion, new credentials/secrets/account connection, unavailable physical-PC action, destructive operation or irreversible data change occurred.
 
 ## Next plan / 今後の方針
 
-1. Inspect the exact-head runs `45617462416`, `45619387032`, `45619139106`, `45619158921`, `45619176394`, and `45619526759` when useful; fix only concrete child-specific failures, launch one fresh run, and immediately switch to a non-conflicting lane.
-2. After exact-head GREEN and dependency review, integrate validated children into the PR #8 research branch one at a time. Re-read the parent HEAD before every integration; keep PR #8 Draft/unmerged and never merge to `main` without approval.
-3. Next independent audit: add exact absence-sentinel custody to ActionAuditEvent in `agency/audit.py` (its current hook inventory still uses `.get(name)`) and audit ToolRegistry's own `__getattr__` absence check in `registry.py`/PermissionGate.
-4. Continue Memory CAS/concurrency/expiry/coherent-snapshot and Planner crash-recovery work; preserve v1 schemas and ambiguous RUNNING quarantine.
-5. Advance durable registry-bound one-shot authorization, trusted-clock audit-before-action and occurrence/replay protection only after their lower-level exact-head invariants are GREEN; keep the executor disconnected/mock-only.
-6. Continue privacy-safe Personal Context revocation/replay, proactive scheduler state and observation fixture contracts without live capture.
-7. Continue V3 free-only hash-then-use and runtime chat-template provenance review; do not run preflight/training, open protected V2 evaluation or promote a Candidate.
+1. Inspect exact-head runs `45631754169`, `45632566254`, `45633991795` and `45634005322` when useful; fix only concrete child-specific failures, launch one fresh run, and immediately switch to a non-conflicting lane.
+2. After exact-head GREEN and dependency review, integrate validated children into the PR #8 research branch one at a time. Re-read the latest parent HEAD before every integration; keep PR #8 Draft/unmerged and never merge to `main` without approval.
+3. Continue ToolRegistry's own lookup-hook absence review and exact registry-bound identity; preserve PermissionGate exact-type and one-shot token boundaries.
+4. Continue Memory CAS/concurrency/expiry/coherent snapshots and Planner crash/terminal recovery; preserve v1 schemas and ambiguous RUNNING quarantine.
+5. Advance restart-safe authorization, trusted-clock audit-before-action and occurrence/replay protection only after lower-level exact-head invariants are GREEN; keep execution disconnected/mock-only.
+6. Continue privacy-safe Personal Context revocation/replay, proactive scheduler state and Observation fixture contracts without live capture.
+7. Continue V3 free-only hash-then-use and runtime provenance review; do not run preflight/training, open protected V2 evaluation or promote a Candidate.
 8. Keep all UI/frontend development paused; PR #9 and Local UI freezes remain untouched.
 
 ---
