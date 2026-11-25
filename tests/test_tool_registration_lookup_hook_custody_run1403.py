@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from collections.abc import Iterator
+
 import pytest
 
 import ark.agency.registry as registry_module
@@ -30,15 +33,32 @@ def _registration() -> tuple[ToolRegistration, _NeverExecute]:
     return entry, backend
 
 
+@contextmanager
+def _class_attribute(
+    carrier: type,
+    name: str,
+    value: object,
+) -> Iterator[None]:
+    namespace = vars(carrier)
+    was_present = name in namespace
+    original = namespace.get(name)
+    type.__setattr__(carrier, name, value)
+    try:
+        yield
+    finally:
+        if was_present:
+            type.__setattr__(carrier, name, original)
+        else:
+            type.__delattr__(carrier, name)
+
+
 @pytest.mark.parametrize("hook", ("__new__", "__getattribute__", "__getattr__"))
 def test_explicit_none_is_not_confused_with_an_absent_registration_hook(
-    monkeypatch: pytest.MonkeyPatch,
     hook: str,
 ) -> None:
     _entry, backend = _registration()
 
-    with monkeypatch.context() as patch:
-        patch.setattr(ToolRegistration, hook, None, raising=False)
+    with _class_attribute(ToolRegistration, hook, None):
         with pytest.raises(
             ValueError,
             match="tool registration contract changed",
@@ -49,18 +69,14 @@ def test_explicit_none_is_not_confused_with_an_absent_registration_hook(
     assert backend.calls == 0
 
 
-def test_exact_absence_sentinel_installed_as_a_hook_is_rejected(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_exact_absence_sentinel_installed_as_a_hook_is_rejected() -> None:
     _entry, backend = _registration()
 
-    with monkeypatch.context() as patch:
-        patch.setattr(
-            ToolRegistration,
-            "__getattr__",
-            registry_module._REGISTRATION_HOOK_ABSENT,
-            raising=False,
-        )
+    with _class_attribute(
+        ToolRegistration,
+        "__getattr__",
+        registry_module._REGISTRATION_HOOK_ABSENT,
+    ):
         with pytest.raises(
             ValueError,
             match="tool registration contract changed",
