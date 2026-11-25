@@ -360,63 +360,209 @@ def _validate(conn: sqlite3.Connection) -> None:
 
 
 _SQLITE_SIDECARS = ("-wal", "-shm", "-journal")
+_MAX_SQLITE_PATH_BYTES = 4096
+_ORIGINAL_MAX_SQLITE_PATH_BYTES = _MAX_SQLITE_PATH_BYTES
+_ORIGINAL_OS = os
+_ORIGINAL_FSENCODE = os.fsencode
+_ORIGINAL_STAT = stat
+_ORIGINAL_STAT_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_STAT_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_STAT_S_ISREG = stat.S_ISREG
+_ORIGINAL_STAT_IFMT = stat.S_IFMT
+_FILE_ATTRIBUTE_REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT = _FILE_ATTRIBUTE_REPARSE_POINT
+_ORIGINAL_SQLITE_SIDECARS = _SQLITE_SIDECARS
+
+
+def _is_reparse_point(info: object) -> bool:
+    """Recognize POSIX symlinks and Windows reparse-point metadata."""
+    _require_original_proactive_path_policy()
+    attributes = getattr(info, "st_file_attributes", 0)
+    # A metadata accessor can re-enter the fixture. Recheck the complete
+    # import-time policy before using the value it returned.
+    _require_original_proactive_path_policy()
+    return type(attributes) is not int or bool(
+        attributes & _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
+_ORIGINAL_REPARSE_POINT_CHECK = _is_reparse_point
+# Keep path classifiers, budgets, sidecar suffixes and reparse metadata in one
+# immutable identity epoch. A jointly replaced module/alias tuple cannot
+# redefine which local SQLite paths are admitted.
+_ORIGINAL_PROACTIVE_PATH_POLICY_EPOCH = (
+    _ORIGINAL_OS,
+    _ORIGINAL_FSENCODE,
+    _ORIGINAL_MAX_SQLITE_PATH_BYTES,
+    _ORIGINAL_STAT,
+    _ORIGINAL_STAT_S_ISDIR,
+    _ORIGINAL_STAT_S_ISLNK,
+    _ORIGINAL_STAT_S_ISREG,
+    _ORIGINAL_STAT_IFMT,
+    _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT,
+    _ORIGINAL_REPARSE_POINT_CHECK,
+    _ORIGINAL_SQLITE_SIDECARS,
+)
+
+
+def _require_original_proactive_path_policy(
+    *,
+    _original_proactive_path_policy_epoch: tuple[object, ...] = (
+        _ORIGINAL_PROACTIVE_PATH_POLICY_EPOCH
+    ),
+) -> None:
+    """Reject path-policy drift before and across local filesystem callbacks."""
+    epoch = _original_proactive_path_policy_epoch
+    if (
+        _ORIGINAL_PROACTIVE_PATH_POLICY_EPOCH is not epoch
+        or os is not epoch[0]
+        or os.fsencode is not epoch[1]
+        or _ORIGINAL_OS is not epoch[0]
+        or _ORIGINAL_FSENCODE is not epoch[1]
+        or type(_MAX_SQLITE_PATH_BYTES) is not int
+        or _MAX_SQLITE_PATH_BYTES != epoch[2]
+        or _ORIGINAL_MAX_SQLITE_PATH_BYTES is not epoch[2]
+        or stat is not epoch[3]
+        or _ORIGINAL_STAT is not epoch[3]
+        or _ORIGINAL_STAT_S_ISDIR is not epoch[4]
+        or _ORIGINAL_STAT_S_ISLNK is not epoch[5]
+        or _ORIGINAL_STAT_S_ISREG is not epoch[6]
+        or _ORIGINAL_STAT_IFMT is not epoch[7]
+        or stat.S_ISDIR is not epoch[4]
+        or stat.S_ISLNK is not epoch[5]
+        or stat.S_ISREG is not epoch[6]
+        or stat.S_IFMT is not epoch[7]
+        or getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400) != epoch[8]
+        or type(_FILE_ATTRIBUTE_REPARSE_POINT) is not int
+        or _FILE_ATTRIBUTE_REPARSE_POINT != epoch[8]
+        or _ORIGINAL_FILE_ATTRIBUTE_REPARSE_POINT is not epoch[8]
+        or _is_reparse_point is not epoch[9]
+        or _ORIGINAL_REPARSE_POINT_CHECK is not epoch[9]
+        or _SQLITE_SIDECARS is not epoch[10]
+        or _ORIGINAL_SQLITE_SIDECARS is not epoch[10]
+    ):
+        raise SyntheticTriggerRejected("proactive path admission policy changed")
 
 
 def _refuse_aliased_proactive_path(path: Path) -> None:
-    """Preflight the literal SQLite path; never follow a known local alias.
+    """Preflight a literal SQLite path without following aliases or reparse points.
 
-    This read-only lstat fence does not defeat an attacker racing path swaps
-    between checks and SQLite open. No directory, file or sidecar is removed.
-    A missing main file is still handled by SQLite as before on read/write.
+    Rechecks constrain in-process callbacks but do not defeat a hostile owner
+    racing filesystem renames between pathname inspection and SQLite open.
+    No directory, file or sidecar is removed.
     """
+    _require_original_proactive_path_policy()
+    is_directory = _ORIGINAL_STAT_S_ISDIR
+    is_symlink = _ORIGINAL_STAT_S_ISLNK
+    is_regular = _ORIGINAL_STAT_S_ISREG
+    is_reparse_point = _ORIGINAL_REPARSE_POINT_CHECK
     if type(path) is not type(Path(".")) or ".." in path.parts:
         raise SyntheticTriggerRejected("proactive ledger path changed")
-    # SQLite appends WAL/SHM/journal suffixes and uses native path encoding.
-    # Reject NUL and over-budget paths before ancestor lstat or sqlite3.connect.
-    # This is a lexical fence, not atomic filesystem/path custody.
     raw = str(path)
-    if "\x00" in raw or len(raw) > 4096:
+    _require_original_proactive_path_policy()
+    if "\x00" in raw or len(raw) > _MAX_SQLITE_PATH_BYTES:
         raise SyntheticTriggerRejected("proactive ledger path exceeds SQLite limits")
     try:
         target = path if path.is_absolute() else path.absolute()
-        if len(os.fsencode(target)) + len(b"-journal") > 4096:
+        _require_original_proactive_path_policy()
+        encoded_length = len(_ORIGINAL_FSENCODE(target))
+        _require_original_proactive_path_policy()
+        if encoded_length + len(b"-journal") > _MAX_SQLITE_PATH_BYTES:
             raise SyntheticTriggerRejected("proactive ledger path exceeds SQLite limits")
     except (UnicodeError, ValueError) as exc:
         raise SyntheticTriggerRejected("proactive ledger path encoding unavailable") from exc
+
     try:
         for ancestor in target.parents:
-            parent = ancestor.lstat()
-            if not stat.S_ISDIR(parent.st_mode) or stat.S_ISLNK(parent.st_mode):
-                raise SyntheticTriggerRejected("unsafe proactive parent path")
+            _require_original_proactive_path_policy()
+            try:
+                parent = ancestor.lstat()
+            except FileNotFoundError:
+                _require_original_proactive_path_policy()
+                raise
+            _require_original_proactive_path_policy()
+            parent_mode = parent.st_mode
+            _require_original_proactive_path_policy()
+            parent_directory = is_directory(parent_mode)
+            _require_original_proactive_path_policy()
+            parent_symlink = is_symlink(parent_mode)
+            _require_original_proactive_path_policy()
+            parent_reparse = is_reparse_point(parent)
+            _require_original_proactive_path_policy()
+            if not parent_directory or parent_symlink or parent_reparse:
+                raise SyntheticTriggerRejected(
+                    "unsafe proactive parent path (reparse-point or nondirectory)"
+                )
+
+        _require_original_proactive_path_policy()
         try:
             main = target.lstat()
         except FileNotFoundError:
+            _require_original_proactive_path_policy()
             absent = True
         else:
+            _require_original_proactive_path_policy()
             absent = False
-            if not stat.S_ISREG(main.st_mode) or main.st_nlink != 1:
-                raise SyntheticTriggerRejected("unsafe proactive SQLite file")
+            main_mode = main.st_mode
+            _require_original_proactive_path_policy()
+            main_regular = is_regular(main_mode)
+            _require_original_proactive_path_policy()
+            main_links = main.st_nlink
+            _require_original_proactive_path_policy()
+            main_reparse = is_reparse_point(main)
+            _require_original_proactive_path_policy()
+            if not main_regular or main_links != 1 or main_reparse:
+                raise SyntheticTriggerRejected(
+                    "unsafe proactive SQLite file or reparse point"
+                )
+
         for suffix in _SQLITE_SIDECARS:
+            _require_original_proactive_path_policy()
             sidecar = target.with_name(target.name + suffix)
+            _require_original_proactive_path_policy()
             try:
                 info = sidecar.lstat()
             except FileNotFoundError:
+                _require_original_proactive_path_policy()
                 continue
-            if absent or not stat.S_ISREG(info.st_mode):
+            _require_original_proactive_path_policy()
+            if absent:
                 raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
-            if info.st_nlink == 0:
-                # SQLite can unlink a short-lived rollback journal between
-                # pathname lookup and lstat's inode snapshot. Only this
-                # already-unlinked *regular* inode may be rechecked once.
-                # Symlinks, hardlinks and special files are never retried.
+            sidecar_mode = info.st_mode
+            _require_original_proactive_path_policy()
+            sidecar_regular = is_regular(sidecar_mode)
+            _require_original_proactive_path_policy()
+            sidecar_reparse = is_reparse_point(info)
+            _require_original_proactive_path_policy()
+            if not sidecar_regular or sidecar_reparse:
+                raise SyntheticTriggerRejected(
+                    "unsafe proactive SQLite sidecar or reparse point"
+                )
+            sidecar_links = info.st_nlink
+            _require_original_proactive_path_policy()
+            if sidecar_links == 0:
+                # Preserve the bounded SQLite unlink race handling: only an
+                # already-unlinked regular sidecar gets one fresh lstat.
+                _require_original_proactive_path_policy()
                 try:
                     info = sidecar.lstat()
                 except FileNotFoundError:
+                    _require_original_proactive_path_policy()
                     continue
-            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                _require_original_proactive_path_policy()
+                sidecar_mode = info.st_mode
+                _require_original_proactive_path_policy()
+                sidecar_regular = is_regular(sidecar_mode)
+                _require_original_proactive_path_policy()
+                sidecar_links = info.st_nlink
+                _require_original_proactive_path_policy()
+                sidecar_reparse = is_reparse_point(info)
+                _require_original_proactive_path_policy()
+            if not sidecar_regular or sidecar_links != 1 or sidecar_reparse:
                 raise SyntheticTriggerRejected("unsafe proactive SQLite sidecar")
     except OSError as exc:
         raise SyntheticTriggerRejected("proactive SQLite path unavailable") from exc
+    _require_original_proactive_path_policy()
 
 
 class SyntheticProactiveLedger:
