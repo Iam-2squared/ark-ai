@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import stat
@@ -172,6 +173,47 @@ def _reject_nonstandard_json_constant(token: str) -> None:
     raise ValueError(f"non-standard JSON constant is forbidden: {token}")
 
 
+def _unique_preflight_json_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Reject duplicate report members at every JSON nesting level."""
+    result: dict[str, object] = {}
+    for name, value in pairs:
+        if type(name) is not str:
+            raise ValueError("preflight report JSON keys must be exact strings")
+        if name in result:
+            raise ValueError("preflight report contains duplicate JSON key")
+        result[name] = value
+    return result
+
+
+def _finite_preflight_json_float(token: str) -> float:
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError("preflight report contains nonfinite numeric value")
+    return value
+
+
+_ORIGINAL_PREFLIGHT_JSON = json
+_ORIGINAL_PREFLIGHT_JSON_LOADS = json.loads
+_ORIGINAL_PREFLIGHT_JSON_PAIRS = _unique_preflight_json_pairs
+_ORIGINAL_PREFLIGHT_JSON_CONSTANT = _reject_nonstandard_json_constant
+_ORIGINAL_PREFLIGHT_JSON_FLOAT = _finite_preflight_json_float
+_ORIGINAL_PREFLIGHT_MATH = math
+_ORIGINAL_PREFLIGHT_MATH_ISFINITE = math.isfinite
+
+
+def _require_original_preflight_json_parser() -> None:
+    if (
+        json is not _ORIGINAL_PREFLIGHT_JSON
+        or _ORIGINAL_PREFLIGHT_JSON.loads is not _ORIGINAL_PREFLIGHT_JSON_LOADS
+        or _unique_preflight_json_pairs is not _ORIGINAL_PREFLIGHT_JSON_PAIRS
+        or _reject_nonstandard_json_constant is not _ORIGINAL_PREFLIGHT_JSON_CONSTANT
+        or _finite_preflight_json_float is not _ORIGINAL_PREFLIGHT_JSON_FLOAT
+        or math is not _ORIGINAL_PREFLIGHT_MATH
+        or _ORIGINAL_PREFLIGHT_MATH.isfinite is not _ORIGINAL_PREFLIGHT_MATH_ISFINITE
+    ):
+        raise RuntimeError("preflight JSON parser implementation changed")
+
+
 def _verify_file(path: Path, expected_sha256: str, label: str) -> bytes:
     max_bytes = _EVIDENCE_FILE_BUDGETS.get(label)
     if max_bytes is None:
@@ -256,9 +298,15 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
         snapshot["hardware"]["preflight_report_sha256"],
         "preflight report",
     )
+    _require_original_preflight_json_parser()
     try:
-        report = json.loads(payload, parse_constant=_reject_nonstandard_json_constant)
-    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        report = _ORIGINAL_PREFLIGHT_JSON_LOADS(
+            payload,
+            parse_constant=_ORIGINAL_PREFLIGHT_JSON_CONSTANT,
+            parse_float=_ORIGINAL_PREFLIGHT_JSON_FLOAT,
+            object_pairs_hook=_ORIGINAL_PREFLIGHT_JSON_PAIRS,
+        )
+    except (UnicodeDecodeError, RecursionError, json.JSONDecodeError, ValueError) as exc:
         raise RuntimeError("preflight report is not valid canonical JSON") from exc
     if not isinstance(report, dict):
         raise RuntimeError("preflight report must be a JSON object")
