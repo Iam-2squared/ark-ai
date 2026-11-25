@@ -153,8 +153,22 @@ _WITNESS_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_WITNESS_FIELDS = tuple(
     vars(_WITNESS_TYPE)[name] for name in _WITNESS_FIELDS
 )
+_WITNESS_HOOK_ABSENT = object()
 _ORIGINAL_WITNESS_HOOKS = tuple(
-    vars(_WITNESS_TYPE).get(name) for name in _WITNESS_HOOKS
+    vars(_WITNESS_TYPE)[name]
+    if name in vars(_WITNESS_TYPE)
+    else _WITNESS_HOOK_ABSENT
+    for name in _WITNESS_HOOKS
+)
+_ORIGINAL_WITNESS_EPOCH = (
+    _WITNESS_TYPE,
+    OfflineContextReplayWitness,
+    _WITNESS_FIELDS,
+    _WITNESS_HOOKS,
+    _ORIGINAL_WITNESS_FIELDS,
+    _ORIGINAL_WITNESS_HOOKS,
+    _ORIGINAL_WITNESS_DENIAL,
+    _WITNESS_HOOK_ABSENT,
 )
 _RECEIPT_TYPE = OfflineContextReplayReceipt
 _RECEIPT_DENIALS = (
@@ -176,37 +190,81 @@ _ORIGINAL_RECEIPT_INIT = vars(_RECEIPT_TYPE)["__init__"]
 # Pin absent as well as present class attributes before post-COMMIT receipt
 # construction; a rejected return cannot undo the durable reservation.
 _RECEIPT_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_RECEIPT_HOOK_ABSENT = object()
 _ORIGINAL_RECEIPT_HOOKS = tuple(
-    vars(_RECEIPT_TYPE).get(name) for name in _RECEIPT_HOOKS
+    vars(_RECEIPT_TYPE)[name]
+    if name in vars(_RECEIPT_TYPE)
+    else _RECEIPT_HOOK_ABSENT
+    for name in _RECEIPT_HOOKS
+)
+_ORIGINAL_RECEIPT_EPOCH = (
+    _RECEIPT_TYPE,
+    OfflineContextReplayReceipt,
+    _RECEIPT_FIELDS,
+    _ORIGINAL_RECEIPT_FIELDS,
+    _ORIGINAL_RECEIPT_INIT,
+    _RECEIPT_DENIALS,
+    _ORIGINAL_RECEIPT_DENIALS,
+    _RECEIPT_HOOKS,
+    _ORIGINAL_RECEIPT_HOOKS,
+    _RECEIPT_HOOK_ABSENT,
 )
 
 
-def _require_original_receipt_constructor() -> None:
+def _require_original_receipt_constructor(
+    *,
+    _original_epoch: tuple[object, ...] = _ORIGINAL_RECEIPT_EPOCH,
+) -> None:
     if (
-        OfflineContextReplayReceipt is not _RECEIPT_TYPE
-        or vars(_RECEIPT_TYPE).get("__init__") is not _ORIGINAL_RECEIPT_INIT
-        or any(
-            vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS, strict=True,
-            )
-        )
-        or any(
-            vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
-            )
-        )
-        or any(
-            vars(_RECEIPT_TYPE).get(name) is not original
-            for name, original in zip(
-                _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS, strict=True,
-            )
-        )
+        _ORIGINAL_RECEIPT_EPOCH is not _original_epoch
+        or _RECEIPT_TYPE is not _original_epoch[0]
+        or OfflineContextReplayReceipt is not _original_epoch[1]
+        or _RECEIPT_FIELDS is not _original_epoch[2]
+        or _ORIGINAL_RECEIPT_FIELDS is not _original_epoch[3]
+        or _ORIGINAL_RECEIPT_INIT is not _original_epoch[4]
+        or _RECEIPT_DENIALS is not _original_epoch[5]
+        or _ORIGINAL_RECEIPT_DENIALS is not _original_epoch[6]
+        or _RECEIPT_HOOKS is not _original_epoch[7]
+        or _ORIGINAL_RECEIPT_HOOKS is not _original_epoch[8]
+        or _RECEIPT_HOOK_ABSENT is not _original_epoch[9]
     ):
         raise OfflineContextReplayRejected(
             "postcommit context receipt authority epoch changed"
         )
+    namespace = vars(_RECEIPT_TYPE)
+    if (
+        "__init__" not in namespace
+        or namespace["__init__"] is not _ORIGINAL_RECEIPT_INIT
+    ):
+        raise OfflineContextReplayRejected(
+            "postcommit context receipt authority epoch changed"
+        )
+    for name, original in zip(
+        _RECEIPT_FIELDS, _ORIGINAL_RECEIPT_FIELDS, strict=True,
+    ):
+        if name not in namespace or namespace[name] is not original:
+            raise OfflineContextReplayRejected(
+                "postcommit context receipt authority epoch changed"
+            )
+    for name, original in zip(
+        _RECEIPT_DENIALS, _ORIGINAL_RECEIPT_DENIALS, strict=True,
+    ):
+        if name not in namespace or namespace[name] is not original:
+            raise OfflineContextReplayRejected(
+                "postcommit context receipt authority epoch changed"
+            )
+    for name, original in zip(
+        _RECEIPT_HOOKS, _ORIGINAL_RECEIPT_HOOKS, strict=True,
+    ):
+        if original is _RECEIPT_HOOK_ABSENT:
+            if name in namespace:
+                raise OfflineContextReplayRejected(
+                    "postcommit context receipt authority epoch changed"
+                )
+        elif name not in namespace or namespace[name] is not original:
+            raise OfflineContextReplayRejected(
+                "postcommit context receipt authority epoch changed"
+            )
 
 
 def _hash(value: tuple[object, ...]) -> str:
@@ -231,27 +289,48 @@ def _valid(value: object, pattern: re.Pattern[str]) -> bool:
     return type(value) is str and pattern.fullmatch(value) is not None
 
 
-def _require_original_witness_carrier() -> None:
+def _require_original_witness_carrier(
+    *,
+    _original_epoch: tuple[object, ...] = _ORIGINAL_WITNESS_EPOCH,
+) -> None:
     # Do not execute replaced slots or allocation hooks before the first
     # witness field read, including in recovery-only and read-only paths.
     if (
-        OfflineContextReplayWitness is not _WITNESS_TYPE
-        or vars(_WITNESS_TYPE).get("independent_custody_proven")
-        is not _ORIGINAL_WITNESS_DENIAL
+        _ORIGINAL_WITNESS_EPOCH is not _original_epoch
+        or _WITNESS_TYPE is not _original_epoch[0]
+        or OfflineContextReplayWitness is not _original_epoch[1]
+        or _WITNESS_FIELDS is not _original_epoch[2]
+        or _WITNESS_HOOKS is not _original_epoch[3]
+        or _ORIGINAL_WITNESS_FIELDS is not _original_epoch[4]
+        or _ORIGINAL_WITNESS_HOOKS is not _original_epoch[5]
+        or _ORIGINAL_WITNESS_DENIAL is not _original_epoch[6]
+        or _WITNESS_HOOK_ABSENT is not _original_epoch[7]
+    ):
+        raise OfflineContextReplayRejected("invalid exact retained context witness")
+    namespace = vars(_WITNESS_TYPE)
+    if (
+        "independent_custody_proven" not in namespace
+        or namespace["independent_custody_proven"] is not _ORIGINAL_WITNESS_DENIAL
         or any(
-            vars(_WITNESS_TYPE).get(name) is not original
+            name not in namespace or namespace[name] is not original
             for name, original in zip(
                 _WITNESS_FIELDS, _ORIGINAL_WITNESS_FIELDS, strict=True,
             )
         )
-        or any(
-            vars(_WITNESS_TYPE).get(name) is not original
-            for name, original in zip(
-                _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
-            )
-        )
     ):
         raise OfflineContextReplayRejected("invalid exact retained context witness")
+    for name, original in zip(
+        _WITNESS_HOOKS, _ORIGINAL_WITNESS_HOOKS, strict=True,
+    ):
+        if original is _WITNESS_HOOK_ABSENT:
+            if name in namespace:
+                raise OfflineContextReplayRejected(
+                    "invalid exact retained context witness"
+                )
+        elif name not in namespace or namespace[name] is not original:
+            raise OfflineContextReplayRejected(
+                "invalid exact retained context witness"
+            )
 
 
 def _check_witness(witness: object) -> tuple[int, str]:
