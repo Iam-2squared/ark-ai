@@ -290,13 +290,25 @@ def _event_hash(
     )
 
 
-def _require_original_stat_policy() -> None:
+def _require_original_stat_policy(
+    _stat=stat,
+    _stat_isdir=stat.S_ISDIR,
+    _stat_islnk=stat.S_ISLNK,
+    _stat_isreg=stat.S_ISREG,
+) -> None:
     """Reject substituted filesystem classifiers before path inspection."""
+    # Retain the module and predicate objects outside mutable module aliases.
+    # Replacing both stat references and all three comparison predicates must
+    # not make the identity checks self-consistent with an attacker object.
     if (
-        stat is not _ORIGINAL_STAT
-        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
-        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
-        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+        stat is not _stat
+        or _ORIGINAL_STAT is not _stat
+        or _ORIGINAL_STAT_S_ISDIR is not _stat_isdir
+        or _ORIGINAL_STAT_S_ISLNK is not _stat_islnk
+        or _ORIGINAL_STAT_S_ISREG is not _stat_isreg
+        or _stat.S_ISDIR is not _stat_isdir
+        or _stat.S_ISLNK is not _stat_islnk
+        or _stat.S_ISREG is not _stat_isreg
     ):
         raise PlannerJournalPathError("Planner journal filesystem policy changed")
 
