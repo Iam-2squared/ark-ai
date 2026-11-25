@@ -1,3 +1,35 @@
+## Run1420 — Reconcile V3 preflight-report and nested-ancestor guards (2026-11-26)
+
+**Foundation documentation basis:** Draft PR #8 branch `research/jarvis-foundations`, HEAD `ae3c330f11513c782bed9703febc8ac0c3a31747`.
+
+**Audited V3 source basis:** gated Draft PR #5 branch `research/v3-learning-evaluation`, exact HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`. This was a read-only source audit. No V3 runtime, torch import, model/tokenizer load, GPU query, preflight, training, Candidate, protected evaluation, or external compute was run.
+
+### Run1346 items 1–2 are already closed at this source head
+
+1. **Preflight-report strict JSON parsing is implemented.** `src/ark/learning/training_cli.py::_verify_preflight_report` calls the retained import-original JSON loader with the non-standard-constant rejection hook, finite-float parser, and recursive `object_pairs_hook`. The parser implementation is guarded before parsing. The existing Run1349 tests cover duplicate root keys, duplicate nested runtime-identity keys, same member names in distinct objects, exponent-overflow floats, loader substitution, and parser-guard substitution. See `tests/v3/test_training_cli_preflight_duplicate_json_keys_run1349.py` and `docs/v3/RUN1349_PREFLIGHT_REPORT_DUPLICATE_JSON_KEYS.md`.
+
+2. **Nested reparse-ancestor regression is implemented.** `_has_evidence_reparse_ancestor` walks every ancestor and checks reparse metadata. The existing Run1351 regression creates a symlinked grandparent, requires rejection before `os.open`, and verifies that the target sentinel bytes remain unchanged. See `tests/v3/test_preflight_report_nested_symlink_ancestor_run1351.py`.
+
+Do not schedule duplicate work for these two items unless a later exact-head source change reopens them. This correction supersedes the corresponding “remaining” statements in the older Run1346 audit above; historical notes are retained for provenance.
+
+### Current PR #5 CI / branch-ownership blocker
+
+- Current V3 exact-head CI run [45668716864](https://github.com/Iam-2squared/ark-ai/actions/runs/45668716864) is **FAIL, 6/6**, at `ruff check .` before pytest. The Ubuntu Python 3.11 log reports I001 in:
+  - `tests/test_personal_context_replay_process_crash_run1033.py`
+  - `tests/test_planner_journal_terminal_hard_exit_run1280.py`
+  - `tests/test_tool_registry_delete_seal_run1240.py`
+- All three paths were confirmed absent from the V3 branch; they enter the PR merge ref from `main`. The existing Draft PR #483 attempts an import-order-only correction, but its exact-head run [45422941503](https://github.com/Iam-2squared/ark-ai/actions/runs/45422941503) fails pytest collection because the foundation modules imported by those tests are not on `main`.
+- This is a base-branch ownership/integration blocker, not evidence that the V3 guard changes fail. Do not edit `main`, copy foundation modules into V3, delete/disable tests, weaken lint/tests, or merge PR #5 to bypass the boundary. Keep PR #5 Draft/unmerged and await the explicitly authorized foundation integration path.
+
+### Remaining free-only V3 priorities
+
+1. Close the base/tokenizer hash-then-use gap with a local immutable staging or equivalent byte binding before loader handoff, without loading models or running compute.
+2. Bind a repository-owned chat-template probe to the actual runtime-rendered tokenizer output; keep it offline and non-authorizing.
+3. Design and test a durable local attempt/finalization receipt linking reviewed authorization, measured runtime identity, preflight evidence, training occurrence, and final artifact manifest. Do not start preflight/training or create a Candidate.
+4. Continue deep packet/receipt custody and exact local path/identity review without changing frozen Contract 1 or opening protected evaluation.
+
+**Evidence boundary:** no V3 PASS, Candidate, preflight, training, protected V2 evaluation, paid/external compute, credentials, hardware action, main write/merge, or UI/frontend work is claimed. PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains untouched.
+
 ## Run1346 — V3 free-only source revalidation (2026-11-25)
 
 **Exact source basis:** Draft PR #5 branch `research/v3-learning-evaluation`, HEAD `f7252fbe7d5f65c640fed41bbb5b3cc7ae817296`. Exact-head CI run [45484069708](https://github.com/Iam-2squared/ark-ai/actions/runs/45484069708) / run 7529 is **FAIL**. This is a read-only source audit of free guard code; no V3 runtime, torch import, model/tokenizer load, GPU query, preflight, training, Candidate or evaluation was run.
