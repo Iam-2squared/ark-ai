@@ -1,5 +1,89 @@
 ## LATEST
 
+- **Saved at:** 2026-11-26 07:52:59 JST (Asia/Tokyo).
+- **Branch / PR:** \`research/jarvis-foundations\` / Draft PR #8; isolated research branch, not \`main\`.
+- **Exact work-basis HEAD:** \`5a344d250dd0ef2a208ccd09f5d791b10c548bbe\` (PR #8 head and branch ref re-read immediately before this checkpoint update).
+- **Checkpoint-result HEAD:** the GitHub commit created by this \`docs/PROJECT_STATUS.md\` update; its exact returned SHA is confirmed after the write and reported in the invocation summary. This file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner retain frozen evidence. Memory, Observation, Personal Context, Planner, ToolRegistry, PermissionGate, proactive state, ActionAudit, disconnected/mock execution, and free-only V3 guard work remain isolated local-first foundations. **ARK/JARVIS overall remains NOT_PASSED.**
+- **PR #8 exact-head CI:** run [45708999545](https://github.com/Iam-2squared/ark-ai/actions/runs/45708999545) on \`5a344d250dd0ef2a208ccd09f5d791b10c548bbe\`, **GREEN 6/6**.
+- **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #8 remains Draft/unmerged. PR #9 remains untouched and Draft/unmerged. All new UI/frontend development remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **V3 local-only attempt/finalization receipts — Draft PR #625.**
+   - Branch \`research/run1437-v3-attempt-finalization-ledger-20261126\`; current exact child HEAD \`8a9fe18bf3cbb54f6e72dd372d3ac2a4e7474a3a\`; targets only gated Draft PR #5.
+   - Adds an isolated SQLite append-only ledger: one reservation per execution-snapshot digest, one optional FINALIZED event, schema/foreign-key/hash-chain/reservation reconciliation, explicit COMMIT-UNKNOWN errors, cold recovery, and manual-review-required STARTED state. It has no resume/retry API and is not wired into training CLI/runtime.
+   - Synthetic tests cover STARTED recovery, duplicate reservation, one-way finalization, lost COMMIT acknowledgements after both transitions, two-handle reservation races, and event tampering.
+   - Initial exact-head runs [45715965778](https://github.com/Iam-2squared/ark-ai/actions/runs/45715965778) and [45716548441](https://github.com/Iam-2squared/ark-ai/actions/runs/45716548441) failed Ruff E501 only. The line-wrap-only correction is at current HEAD \`8a9fe18bf3cbb54f6e72dd372d3ac2a4e7474a3a\`; exact-head run [45716697765](https://github.com/Iam-2squared/ark-ai/actions/runs/45716697765) is **GREEN 6/6**.
+   - No preflight, model/tokenizer load, GPU query, training, export, Candidate generation, protected V2 evaluation, or local pytest/Ruff execution occurred.
+
+2. **Crash-consistent create-only V3 run-manifest publication — Draft PR #626.**
+   - Branch \`research/run1438-v3-atomic-manifest-publication-20261126\`; current exact child HEAD \`e8673cc6615613ab01e2bea285bbd9ea277ecbe6\`; targets only gated Draft PR #5.
+   - Changes the existing manifest writer to write canonical bytes to an exclusive temporary sibling outside the Candidate tree, handle short writes, fsync the file, publish through a same-filesystem create-only hard link, verify final inode identity, and fsync the directory on POSIX. No overwrite or weaker direct-write fallback is provided.
+   - Synthetic tests cover partial writes, fsync-before-link ordering, failed-link cleanup, and preservation of an existing final file. Manifest schema and canonical bytes are unchanged.
+   - Initial exact-head run [45716397812](https://github.com/Iam-2squared/ark-ai/actions/runs/45716397812) failed one test assertion because the test rebuilt a manifest after the final file correctly existed. The test now compares against its pre-publication expected manifest; exact-head run [45716706277](https://github.com/Iam-2squared/ark-ai/actions/runs/45716706277) is **GREEN 6/6**.
+   - No Candidate run was created; no preflight, model/tokenizer load, GPU query, training, export, or local pytest/Ruff execution occurred. POSIX directory fsync is attempted; Windows does not claim directory-sync durability.
+
+3. **Disconnected mock executor two-handle WRITE race — Draft PR #627.**
+   - Branch \`research/run1439-disconnected-executor-two-handle-race-20261126\`; exact child HEAD \`702cd55f9686582b5734fab6b4278ed8ceefec81\`; targets only PR #8.
+   - Test-only composition race: two executor instances with separate process-local PermissionGates and SQLite occurrence handles contend for the same WRITE request, one-shot token, and occurrence ID. The expected result is exactly one durable reservation, one actual gate consumption, one mock call, and one pre-action/completion audit pair; the losing executor must stop before its gate or backend.
+   - Exact-head run [45716635322](https://github.com/Iam-2squared/ark-ai/actions/runs/45716635322) is **IN PROGRESS**. No production source or frozen contract changed.
+
+4. **PlannerJournal diamond RUNNING-barrier recovery — Draft PR #628.**
+   - Branch \`research/run1440-planner-journal-diamond-running-barrier-20261126\`; exact child HEAD \`07dddf801c6ab622152e5721bf52f0bdfa84e2c9\`; targets only PR #8.
+   - Test-only production PlannerJournal scenario: root succeeds, both diamond branches enter RUNNING, one branch fails and blocks its pending join/leaf, while the other remains ambiguous RUNNING through cold recovery. Resolving that remaining branch cannot resurrect the terminally blocked join.
+   - Exact-head run [45716909855](https://github.com/Iam-2squared/ark-ai/actions/runs/45716909855) is **IN PROGRESS**. PlannerJournal v1 DDL/event/hash/CAS and PlanStep/ToolCall contracts are unchanged.
+
+5. **Prior V3 child reconciliation.**
+   - PR #623 local HF snapshot staging, exact HEAD \`3f10e395e92b90706286ebc384dae07edbc9f09d\`, run [45708896479](https://github.com/Iam-2squared/ark-ai/actions/runs/45708896479): **GREEN 6/6**.
+   - PR #624 free-only guard matrix reconciliation, exact HEAD \`06a053d33cdfb568e4cfc2d4a735ec18136934fc\`, run [45708528169](https://github.com/Iam-2squared/ark-ai/actions/runs/45708528169): **GREEN 6/6**.
+   - PRs #616–#622 remain exact-head GREEN 6/6 as recorded in the preceding checkpoint; all seven remain Draft and isolated pending the normal review/readiness gate.
+
+## Tests, CI and evidence
+
+- PR #8 current work-basis HEAD \`5a344d250dd0ef2a208ccd09f5d791b10c548bbe\`: run 45708999545, **GREEN 6/6**.
+- PR #616–#622: exact child-head CI remains **GREEN 6/6** for each, with IDs/SHAs preserved in the preceding checkpoint.
+- PR #623: current exact child head \`3f10e395e92b90706286ebc384dae07edbc9f09d\`, run 45708896479, **GREEN 6/6**. Earlier failed heads remain historical only.
+- PR #624: exact child head \`06a053d33cdfb568e4cfc2d4a735ec18136934fc\`, run 45708528169, **GREEN 6/6**.
+- PR #625: initial runs 45715965778 and 45716548441 failed Ruff E501; corrected exact head \`8a9fe18bf3cbb54f6e72dd372d3ac2a4e7474a3a\`, run 45716697765, **GREEN 6/6**.
+- PR #626: run 45716397812 failed one test assertion; corrected exact head \`e8673cc6615613ab01e2bea285bbd9ea277ecbe6\`, run 45716706277, **GREEN 6/6**.
+- PR #627: exact head \`702cd55f9686582b5734fab6b4278ed8ceefec81\`, run 45716635322, **IN PROGRESS**.
+- PR #628: exact head \`07dddf801c6ab622152e5721bf52f0bdfa84e2c9\`, run 45716909855, **IN PROGRESS**.
+- No local pytest/Ruff execution, physical-PC verification, live personal-data access, real-model runtime, GPU query, V3 preflight/training, protected evaluation, live observation capture, or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries, and V3 Contract 1 remain unchanged.
+- PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains untouched. No UI/frontend feature, polish, test, or integration work occurred. No main write or merge occurred.
+- PRs #616–#628 remain isolated Draft children; none has been integrated into PR #8, PR #5, or \`main\`.
+
+## Blockers and authorization boundaries
+
+- **Draft integration gate:** PRs #616–#622 remain Draft despite exact-head GREEN; the previous normal merge attempt was rejected because the child was Draft. PRs #623–#628 are also kept Draft and isolated; no ready-for-review transition or merge bypass is attempted.
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
+- No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening, or Candidate promotion occurred. PR #5 remains gated Draft/unmerged.
+- PR #5 still has unresolved external identity/review evidence and the previously documented main merge-ref ownership/lint blockers. Do not alter main, copy isolated foundation modules into V3, weaken tests, or bypass the gate.
+- Attempt-ledger digests/timestamps are caller-supplied local metadata, not authenticated approval or trusted time. Successful SQLite COMMIT is not proof of fsync/power-loss durability, independent custody, cross-store atomicity, or exactly-once external effects.
+- Atomic manifest publication requires same-filesystem hard-link support; POSIX directory fsync is attempted, while Windows directory-sync durability is not claimed. Unknown publication/cleanup requires inspection before retry.
+- In-process class/path checks and synthetic SQLite tests are not a Python sandbox, atomic dirfd custody, authenticated consent, physical erasure, or production dispatch authorization.
+- No new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, irreversible data change, frozen-contract change, or main merge occurred. UI/frontend work remains paused.
+
+## Next plan / 今後の方針
+
+1. Inspect the exact-head CI for PRs #627 and #628 once useful results are available; fix only concrete semantics-preserving failures, then immediately switch to a non-conflicting lane while corrected CI runs.
+2. Keep PRs #625–#628 Draft and isolated until the normal review/readiness gate permits integration. After that, integrate one exact-head GREEN package at a time into its parent research branch and revalidate the resulting parent head.
+3. Keep PRs #616–#622 isolated until the normal review/readiness gate permits integration; do not change readiness or bypass the normal review gate.
+4. Continue Memory row/event integrity, WAL/ABA, expiry/CAS, coherent snapshots, and manual-only COMMIT-UNKNOWN recovery without changing schema v1.
+5. Continue Planner terminal/COMMIT-UNKNOWN recovery, durable one-shot authorization, occurrence/replay protection, and audit-before-action over disconnected mocks; do not claim a trusted clock without a trusted source.
+6. Continue privacy-safe Personal Context, proactive restart/occurrence state, Observation fixture lifecycle, ToolRegistry/PermissionGate identity, and startup readiness.
+7. Continue free-only V3 guard work on passive attempt/finalization receipts and crash-consistent evidence publication. Keep PR #5 gated; no preflight, training, GPU, or Candidate action.
+8. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## Historical checkpoint — saved at 2026-11-26 06:56:54 JST (superseded)
+
 - **Saved at:** 2026-11-26 06:56:54 JST (Asia/Tokyo).
 - **Branch / PR:** research/jarvis-foundations / Draft PR #8; isolated research branch, not main.
 - **Exact work-basis HEAD:** 72bad2b15dc00075aa00bcb57289834b7ea6cf68 (PR #8 head and branch ref re-read immediately before this checkpoint update).
@@ -67,6 +151,9 @@
 5. Continue privacy-safe Personal Context, proactive restart/occurrence state, Observation fixture lifecycle, ToolRegistry/PermissionGate identity, and startup readiness.
 6. Continue free-only V3 work on durable attempt/finalization receipts and crash-consistent evidence publication. Keep PR #5 gated; no preflight, training, GPU, or Candidate action.
 7. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
 
 ---
 
