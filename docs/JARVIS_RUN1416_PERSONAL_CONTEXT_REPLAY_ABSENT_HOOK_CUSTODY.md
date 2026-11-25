@@ -3,8 +3,8 @@
 ## Exact basis
 
 - Parent: Draft PR #8, branch `research/jarvis-foundations`.
-- Exact parent work-basis HEAD: `86229ee377e91ed1925bd5cd192f565ddd8c2477`.
-- Child branch: `research/run1416-personal-context-replay-hook-absence-20261125`.
+- Exact parent work-basis HEAD: `7178d91c4ae332908dd8bd34fd9f8ab939385bd3` (PR #8 exact rebase basis)..
+- Child branch: `research/run1416-personal-context-rebase-20261126`..
 - Source: `src/ark/personal_context_replay_ledger.py`.
 - Regression test: `tests/test_context_replay_absent_hook_custody_run1416.py`.
 
