@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
+import stat
+import tempfile
 from pathlib import Path
 
 from .execution import (
@@ -252,17 +255,114 @@ def build_candidate_run_manifest(snapshot: dict, output_dir: Path) -> dict:
     return _expected_candidate_run_manifest(snapshot, root)
 
 
+def _sync_manifest_directory(root: Path) -> None:
+    """Persist the directory entry where POSIX directory fsync is supported."""
+    if os.name != "posix":
+        return
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    descriptor = os.open(root, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def write_candidate_run_manifest(snapshot: dict, output_dir: Path) -> tuple[Path, str]:
-    """Write the final run manifest exactly once and return path + content digest."""
+    """Publish a complete create-only manifest by same-filesystem hard link.
+
+    Bytes are written and fsynced in a temporary sibling outside the Candidate
+    tree. A hard link makes the final name visible atomically without replacing
+    an existing path. This is process-crash publication, not power-loss proof.
+    """
     root = Path(output_dir)
     manifest = build_candidate_run_manifest(snapshot, root)
     payload = canonical_json(manifest)
     path = root / "run-manifest.json"
+    descriptor = -1
+    temporary: Path | None = None
+    published = False
     try:
-        with path.open("xb") as handle:
-            handle.write(payload)
+        root_info = os.stat(root, follow_symlinks=False)
+        parent_info = os.stat(root.parent, follow_symlinks=False)
+        if (
+            not stat.S_ISDIR(root_info.st_mode)
+            or stat.S_ISLNK(root_info.st_mode)
+            or not stat.S_ISDIR(parent_info.st_mode)
+            or stat.S_ISLNK(parent_info.st_mode)
+            or root_info.st_dev != parent_info.st_dev
+        ):
+            raise CandidateRunManifestError(
+                "Candidate run manifest requires a plain same-filesystem parent"
+            )
+
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".ark-v3-run-manifest-", dir=root.parent,
+        )
+        temporary = Path(temporary_name)
+        view = memoryview(payload)
+        while view:
+            written = os.write(descriptor, view)
+            if type(written) is not int or written <= 0:
+                raise OSError("short write made no progress")
+            view = view[written:]
+        if os.fstat(descriptor).st_size != len(payload):
+            raise OSError("temporary manifest size differs from canonical payload")
+        os.fsync(descriptor)
+        os.close(descriptor)
+        descriptor = -1
+
+        temporary_info = os.stat(temporary, follow_symlinks=False)
+        if (
+            not stat.S_ISREG(temporary_info.st_mode)
+            or stat.S_ISLNK(temporary_info.st_mode)
+            or temporary_info.st_nlink != 1
+        ):
+            raise CandidateRunManifestError("temporary manifest file identity changed")
+        # link() is create-only and atomic within this filesystem. It refuses
+        # an existing destination rather than replacing or truncating it.
+        os.link(temporary, path)
+        published = True
+        final_info = os.stat(path, follow_symlinks=False)
+        if (
+            not stat.S_ISREG(final_info.st_mode)
+            or stat.S_ISLNK(final_info.st_mode)
+            or not os.path.samestat(temporary_info, final_info)
+        ):
+            raise CandidateRunManifestError(
+                "published Candidate run manifest identity changed"
+            )
+        try:
+            _sync_manifest_directory(root)
+        except OSError as exc:
+            raise CandidateRunManifestError(
+                "manifest was linked but directory sync was not confirmed; inspect before retry"
+            ) from exc
     except FileExistsError as exc:
-        raise CandidateRunManifestError("Candidate run manifest must be create-only") from exc
+        raise CandidateRunManifestError(
+            "Candidate run manifest must be create-only"
+        ) from exc
+    except OSError as exc:
+        state = "after publication" if published else "before publication"
+        raise CandidateRunManifestError(
+            f"Candidate run manifest publication failed {state}; inspect before retry"
+        ) from exc
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if temporary is not None:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                if published:
+                    raise CandidateRunManifestError(
+                        "manifest was published but temporary sibling cleanup failed"
+                    ) from exc
+                raise CandidateRunManifestError(
+                    "temporary manifest cleanup failed before publication"
+                ) from exc
+
     return path, sha256_bytes(payload)
 
 
