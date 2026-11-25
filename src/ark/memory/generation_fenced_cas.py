@@ -124,6 +124,7 @@ class MemoryGenerationCASToken:
 # Bind deny-only token authority to its import-time implementation. Capturing
 # descriptors only after a caller has entered the SQLite path would accept a
 # preinstalled False-returning replacement as the trusted baseline.
+_ABSENT_CLASS_HOOK = object()
 _TOKEN_DENIALS = ("external_action_authorized", "consent_authenticated")
 _TOKEN_TYPE = MemoryGenerationCASToken
 _ORIGINAL_TOKEN_INIT = vars(_TOKEN_TYPE)["__init__"]
@@ -136,36 +137,74 @@ _ORIGINAL_TOKEN_FIELDS = tuple(
 )
 _TOKEN_HOOKS = ("__new__", "__getattribute__", "__getattr__")
 _ORIGINAL_TOKEN_HOOKS = tuple(
-    vars(_TOKEN_TYPE).get(name) for name in _TOKEN_HOOKS
+    vars(_TOKEN_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _TOKEN_HOOKS
 )
 _ORIGINAL_TOKEN_DENIALS = tuple(
     vars(_TOKEN_TYPE)[name] for name in _TOKEN_DENIALS
 )
+_ORIGINAL_TOKEN_VALIDATOR_EPOCH = (
+    _ABSENT_CLASS_HOOK,
+    MemoryGenerationCASToken,
+    _TOKEN_TYPE,
+    _ORIGINAL_TOKEN_INIT,
+    _TOKEN_FIELDS,
+    _ORIGINAL_TOKEN_FIELDS,
+    _TOKEN_HOOKS,
+    _ORIGINAL_TOKEN_HOOKS,
+    _TOKEN_DENIALS,
+    _ORIGINAL_TOKEN_DENIALS,
+)
 
 
-def _require_original_token_denials() -> None:
+def _require_original_token_denials(
+    _original_token_validator_epoch: tuple[object, ...] = (
+        _ORIGINAL_TOKEN_VALIDATOR_EPOCH
+    ),
+) -> None:
     _require_original_generation_digest()
+    current_epoch = (
+        _ABSENT_CLASS_HOOK,
+        MemoryGenerationCASToken,
+        _TOKEN_TYPE,
+        _ORIGINAL_TOKEN_INIT,
+        _TOKEN_FIELDS,
+        _ORIGINAL_TOKEN_FIELDS,
+        _TOKEN_HOOKS,
+        _ORIGINAL_TOKEN_HOOKS,
+        _TOKEN_DENIALS,
+        _ORIGINAL_TOKEN_DENIALS,
+    )
     if (
-        MemoryGenerationCASToken is not _TOKEN_TYPE
-        or vars(_TOKEN_TYPE).get("__init__") is not _ORIGINAL_TOKEN_INIT
+        _ORIGINAL_TOKEN_VALIDATOR_EPOCH is not _original_token_validator_epoch
         or any(
-            vars(_TOKEN_TYPE).get(name) is not original
-            for name, original in zip(
-                _TOKEN_FIELDS, _ORIGINAL_TOKEN_FIELDS, strict=True,
+            current is not original
+            for current, original in zip(
+                current_epoch, _original_token_validator_epoch, strict=True,
             )
         )
-        or any(
-            vars(_TOKEN_TYPE).get(name) is not original
-            for name, original in zip(
-                _TOKEN_HOOKS, _ORIGINAL_TOKEN_HOOKS, strict=True,
-            )
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation token or denial epoch changed"
         )
-        or any(
-            vars(_TOKEN_TYPE).get(name) is not original
-            for name, original in zip(
-                _TOKEN_DENIALS, _ORIGINAL_TOKEN_DENIALS, strict=True,
-            )
+    absent_class_hook = _original_token_validator_epoch[0]
+    namespace = vars(_TOKEN_TYPE)
+
+    def members_match(
+        names: tuple[str, ...],
+        originals: tuple[object, ...],
+    ) -> bool:
+        return all(
+            (name not in namespace)
+            if original is absent_class_hook
+            else namespace.get(name, absent_class_hook) is original
+            for name, original in zip(names, originals, strict=True)
         )
+
+    if (
+        not members_match(("__init__",), (_ORIGINAL_TOKEN_INIT,))
+        or not members_match(_TOKEN_FIELDS, _ORIGINAL_TOKEN_FIELDS)
+        or not members_match(_TOKEN_HOOKS, _ORIGINAL_TOKEN_HOOKS)
+        or not members_match(_TOKEN_DENIALS, _ORIGINAL_TOKEN_DENIALS)
     ):
         raise MemoryGenerationCASRejected(
             "generation token or denial epoch changed"
@@ -192,27 +231,86 @@ _ORIGINAL_WRITE_FIELDS = tuple(
     vars(_WRITE_TYPE)[name] for name in _WRITE_FIELDS
 )
 _ORIGINAL_SCOPE_HOOKS = tuple(
-    vars(_SCOPE_TYPE).get(name) for name in _INPUT_HOOKS
+    vars(_SCOPE_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _INPUT_HOOKS
 )
 _ORIGINAL_WRITE_HOOKS = tuple(
-    vars(_WRITE_TYPE).get(name) for name in _INPUT_HOOKS
+    vars(_WRITE_TYPE).get(name, _ABSENT_CLASS_HOOK) for name in _INPUT_HOOKS
 )
 
 
-def _require_original_generation_inputs() -> None:
+_ORIGINAL_GENERATION_INPUT_EPOCH = (
+    _ABSENT_CLASS_HOOK,
+    MemoryScope,
+    _SCOPE_TYPE,
+    MemoryWrite,
+    _WRITE_TYPE,
+    _SCOPE_FIELDS,
+    _WRITE_FIELDS,
+    _ORIGINAL_SCOPE_FIELDS,
+    _ORIGINAL_WRITE_FIELDS,
+    _INPUT_HOOKS,
+    _ORIGINAL_SCOPE_HOOKS,
+    _ORIGINAL_WRITE_HOOKS,
+)
+
+
+def _require_original_generation_inputs(
+    _original_generation_input_epoch: tuple[object, ...] = (
+        _ORIGINAL_GENERATION_INPUT_EPOCH
+    ),
+) -> None:
+    current_epoch = (
+        _ABSENT_CLASS_HOOK,
+        MemoryScope,
+        _SCOPE_TYPE,
+        MemoryWrite,
+        _WRITE_TYPE,
+        _SCOPE_FIELDS,
+        _WRITE_FIELDS,
+        _ORIGINAL_SCOPE_FIELDS,
+        _ORIGINAL_WRITE_FIELDS,
+        _INPUT_HOOKS,
+        _ORIGINAL_SCOPE_HOOKS,
+        _ORIGINAL_WRITE_HOOKS,
+    )
+    if (
+        _ORIGINAL_GENERATION_INPUT_EPOCH is not _original_generation_input_epoch
+        or any(
+            current is not original
+            for current, original in zip(
+                current_epoch, _original_generation_input_epoch, strict=True,
+            )
+        )
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation input carrier descriptor changed"
+        )
     if MemoryScope is not _SCOPE_TYPE or MemoryWrite is not _WRITE_TYPE:
         raise MemoryGenerationCASRejected("generation input carrier changed")
-    for cls, names, originals in (
-        (_SCOPE_TYPE, _SCOPE_FIELDS, _ORIGINAL_SCOPE_FIELDS),
-        (_WRITE_TYPE, _WRITE_FIELDS, _ORIGINAL_WRITE_FIELDS),
-        (_SCOPE_TYPE, _INPUT_HOOKS, _ORIGINAL_SCOPE_HOOKS),
-        (_WRITE_TYPE, _INPUT_HOOKS, _ORIGINAL_WRITE_HOOKS),
-    ):
-        if any(
-            vars(cls).get(name) is not original
+    absent_class_hook = _original_generation_input_epoch[0]
+
+    def members_match(
+        cls: type,
+        names: tuple[str, ...],
+        originals: tuple[object, ...],
+    ) -> bool:
+        namespace = vars(cls)
+        return all(
+            (name not in namespace)
+            if original is absent_class_hook
+            else namespace.get(name, absent_class_hook) is original
             for name, original in zip(names, originals, strict=True)
-        ):
-            raise MemoryGenerationCASRejected("generation input carrier descriptor changed")
+        )
+
+    if (
+        not members_match(_SCOPE_TYPE, _SCOPE_FIELDS, _ORIGINAL_SCOPE_FIELDS)
+        or not members_match(_WRITE_TYPE, _WRITE_FIELDS, _ORIGINAL_WRITE_FIELDS)
+        or not members_match(_SCOPE_TYPE, _INPUT_HOOKS, _ORIGINAL_SCOPE_HOOKS)
+        or not members_match(_WRITE_TYPE, _INPUT_HOOKS, _ORIGINAL_WRITE_HOOKS)
+    ):
+        raise MemoryGenerationCASRejected(
+            "generation input carrier descriptor changed"
+        )
 
 
 def _require_bounded_source_id(source_id: object) -> None:
