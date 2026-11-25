@@ -44,35 +44,34 @@ def test_request_validator_rejects_joint_vector_rebinding_before_field_access(
     assert getter_calls == []
 
 
-def test_result_constructor_rejects_joint_vector_rebinding_before_new(
+def test_result_constructor_rejects_joint_vector_rebinding_before_field_assignment(
     tmp_path, monkeypatch,
 ):
     store, request = _fixture(tmp_path)
-    constructor_calls = []
-    result_type = snapshot.CoherentSnapshotReview
-    had_own_new = "__new__" in vars(result_type)
-    original_new = vars(result_type).get("__new__")
+    descriptor_calls = []
 
-    def hostile_new(cls, *_args, **_kwargs):
-        constructor_calls.append(True)
-        raise AssertionError("replaced snapshot result __new__ executed")
+    def hostile_getter(_instance):
+        descriptor_calls.append("get")
+        raise AssertionError("replaced snapshot result field getter executed")
 
-    result_type.__new__ = staticmethod(hostile_new)
-    try:
-        for name in (
-            "_RESULT_FIELDS",
-            "_ORIGINAL_RESULT_FIELDS",
-            "_RESULT_HOOKS",
-            "_ORIGINAL_RESULT_HOOKS",
-        ):
-            monkeypatch.setattr(snapshot, name, ())
+    def hostile_setter(_instance, _value):
+        descriptor_calls.append("set")
+        raise AssertionError("replaced snapshot result field setter executed")
 
-        with pytest.raises(MemorySchemaError, match="result constructor changed"):
-            snapshot.review_coherent_snapshot(store, request)
-    finally:
-        if had_own_new:
-            result_type.__new__ = original_new
-        else:
-            delattr(result_type, "__new__")
+    monkeypatch.setattr(
+        snapshot.CoherentSnapshotReview,
+        "read_at_ms",
+        property(hostile_getter, hostile_setter),
+    )
+    for name in (
+        "_RESULT_FIELDS",
+        "_ORIGINAL_RESULT_FIELDS",
+        "_RESULT_HOOKS",
+        "_ORIGINAL_RESULT_HOOKS",
+    ):
+        monkeypatch.setattr(snapshot, name, ())
 
-    assert constructor_calls == []
+    with pytest.raises(MemorySchemaError, match="result constructor changed"):
+        snapshot.review_coherent_snapshot(store, request)
+
+    assert descriptor_calls == []
