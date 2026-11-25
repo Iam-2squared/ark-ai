@@ -149,7 +149,7 @@ def test_reparse_point_ancestor_is_rejected_before_database_creation(
     monkeypatch.setattr(Path, "lstat", lstat)
     with pytest.raises(
         replay.OfflineContextReplayRejected,
-        match="reparse-point ancestor",
+        match="reparse-point or nondirectory ancestor",
     ):
         replay.DisconnectedContextReplayLedger(path, create=True)
 
@@ -214,10 +214,12 @@ def test_reentrant_reparse_metadata_accessor_is_rechecked_before_classification(
             _replace_stat_policy(monkeypatch, calls)
             return 0
 
+    original_lstat = Path.lstat
+
     def lstat(candidate: Path):
         if candidate == tmp_path:
             return ReentrantMetadata()
-        return Path.lstat(candidate)
+        return original_lstat(candidate)
 
     monkeypatch.setattr(Path, "lstat", lstat)
     with pytest.raises(
