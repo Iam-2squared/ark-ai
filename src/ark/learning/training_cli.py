@@ -36,29 +36,69 @@ _MAX_PROVENANCE_MANIFEST_BYTES = 64 * 1024 * 1024
 _MAX_CONTAMINATION_REPORT_BYTES = 64 * 1024 * 1024
 _MAX_PREFLIGHT_REPORT_BYTES = 1_048_576
 _REPARSE_POINT_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+_ORIGINAL_EVIDENCE_STAT = stat
+_ORIGINAL_EVIDENCE_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_EVIDENCE_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_EVIDENCE_S_ISREG = stat.S_ISREG
+_ORIGINAL_REPARSE_POINT_ATTRIBUTE = _REPARSE_POINT_ATTRIBUTE
+
+
+def _require_original_evidence_path_policy() -> None:
+    if (
+        _require_original_evidence_path_policy is not _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD
+        or stat is not _ORIGINAL_EVIDENCE_STAT
+        or stat.S_ISDIR is not _ORIGINAL_EVIDENCE_S_ISDIR
+        or stat.S_ISLNK is not _ORIGINAL_EVIDENCE_S_ISLNK
+        or stat.S_ISREG is not _ORIGINAL_EVIDENCE_S_ISREG
+        or type(_REPARSE_POINT_ATTRIBUTE) is not int
+        or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    ):
+        raise RuntimeError("evidence path policy changed")
+
+
+_ORIGINAL_EVIDENCE_PATH_POLICY_GUARD = _require_original_evidence_path_policy
 
 
 def _is_regular_evidence_file(info: os.stat_result) -> bool:
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     mode = info.st_mode
-    return type(mode) is int and stat.S_ISREG(mode)
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
+    if type(mode) is not int:
+        return False
+    result = _ORIGINAL_EVIDENCE_S_ISREG(mode)
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
+    return result
 
 
 def _is_evidence_reparse_point(info: os.stat_result) -> bool:
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     mode = info.st_mode
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     attributes = getattr(info, "st_file_attributes", 0)
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     if type(mode) is not int or type(attributes) is not int:
         raise RuntimeError("evidence file metadata is malformed")
-    return stat.S_ISLNK(mode) or bool(attributes & _REPARSE_POINT_ATTRIBUTE)
+    result = _ORIGINAL_EVIDENCE_S_ISLNK(mode) or bool(
+        attributes & _ORIGINAL_REPARSE_POINT_ATTRIBUTE
+    )
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
+    return result
 
 
 def _has_evidence_reparse_ancestor(path: Path) -> bool:
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     for parent in path.parents:
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         try:
             info = parent.lstat()
         except FileNotFoundError:
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             continue
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         if _is_evidence_reparse_point(info):
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             return True
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     return False
 
 
@@ -87,16 +127,21 @@ def _read_bounded_evidence(path: Path, *, max_bytes: int, label: str) -> bytes:
     authenticated provenance, immutable storage, or protection from a hostile
     concurrent filesystem writer.
     """
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     if type(max_bytes) is not int or max_bytes <= 0:
         raise RuntimeError("evidence byte budget must be a positive exact integer")
     path = Path(path)
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     if ".." in path.parts or len(str(path)) > 4096:
         raise RuntimeError(f"{label} path is not an accepted local file path")
 
     try:
         before = path.lstat()
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         before_size = before.st_size
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         before_links = before.st_nlink
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         if (
             not _is_regular_evidence_file(before)
             or _is_evidence_reparse_point(before)
@@ -116,11 +161,15 @@ def _read_bounded_evidence(path: Path, *, max_bytes: int, label: str) -> bytes:
             | getattr(os, "O_NONBLOCK", 0)
         )
         descriptor = os.open(path, flags)
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         try:
             with os.fdopen(descriptor, "rb") as handle:
                 descriptor = -1
+                _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
                 opened = os.fstat(handle.fileno())
+                _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
                 opened_links = opened.st_nlink
+                _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
                 if (
                     not _is_regular_evidence_file(opened)
                     or _is_evidence_reparse_point(opened)
@@ -139,8 +188,11 @@ def _read_bounded_evidence(path: Path, *, max_bytes: int, label: str) -> bytes:
                 os.close(descriptor)
 
         after = path.lstat()
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         after_links = after.st_nlink
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         after_handle_links = after_handle.st_nlink
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         if (
             not _is_regular_evidence_file(after)
             or _is_evidence_reparse_point(after)
@@ -159,6 +211,7 @@ def _read_bounded_evidence(path: Path, *, max_bytes: int, label: str) -> bytes:
             raise RuntimeError(f"{label} changed during its bounded read")
         return payload
     except OSError as exc:
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         raise RuntimeError(f"{label} cannot be read safely") from exc
 
 
@@ -368,6 +421,7 @@ def _verify_preflight_report(path: Path, snapshot: dict) -> None:
 
 def _validate_new_preflight_report_path(path: Path) -> Path:
     """Validate a new local report destination before any preflight backend work."""
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     if type(path) is not type(Path(".")):
         raise RuntimeError("preflight report path must be an exact native Path")
     try:
@@ -384,33 +438,42 @@ def _validate_new_preflight_report_path(path: Path) -> Path:
         raise RuntimeError("preflight report path is not an accepted local path")
 
     source = path.absolute()
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     try:
         parent = source.parent.lstat()
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
+        parent_mode = parent.st_mode
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         if (
-            type(parent.st_mode) is not int
-            or not stat.S_ISDIR(parent.st_mode)
+            type(parent_mode) is not int
+            or not _ORIGINAL_EVIDENCE_S_ISDIR(parent_mode)
             or _is_evidence_reparse_point(parent)
             or _has_evidence_reparse_ancestor(source)
         ):
             raise RuntimeError(
                 "preflight report parent must be an existing non-reparse directory"
             )
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         try:
             source.lstat()
         except FileNotFoundError:
-            pass
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         else:
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             raise RuntimeError("preflight report path must be a new file")
     except OSError as exc:
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         raise RuntimeError("preflight report path custody cannot be verified") from exc
     return source
 
 
 def _write_new_preflight_report(path: Path, payload: bytes) -> None:
     """Create one bounded report without following a leaf or reparse-point parent."""
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     if type(payload) is not bytes or not 1 <= len(payload) <= _MAX_PREFLIGHT_REPORT_BYTES:
         raise RuntimeError("preflight report payload is outside its byte budget")
     source = _validate_new_preflight_report_path(path)
+    _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
     flags = (
         os.O_WRONLY
         | os.O_CREAT
@@ -423,11 +486,16 @@ def _write_new_preflight_report(path: Path, payload: bytes) -> None:
     descriptor = -1
     try:
         descriptor = os.open(source, flags, 0o600)
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         with os.fdopen(descriptor, "wb") as handle:
             descriptor = -1
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             opened = os.fstat(handle.fileno())
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             observed = source.lstat()
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             opened_links = opened.st_nlink
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             if (
                 not _is_regular_evidence_file(opened)
                 or _is_evidence_reparse_point(opened)
@@ -440,13 +508,19 @@ def _write_new_preflight_report(path: Path, payload: bytes) -> None:
             ):
                 raise RuntimeError("preflight report destination changed before write")
             written = handle.write(payload)
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             handle.flush()
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
             if written != len(payload):
                 raise RuntimeError("preflight report write was incomplete")
             after_handle = os.fstat(handle.fileno())
+            _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         after = source.lstat()
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         after_links = after.st_nlink
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         handle_links = after_handle.st_nlink
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         if (
             not _is_regular_evidence_file(after)
             or _is_evidence_reparse_point(after)
@@ -463,6 +537,7 @@ def _write_new_preflight_report(path: Path, payload: bytes) -> None:
         ):
             raise RuntimeError("preflight report destination changed during write")
     except OSError as exc:
+        _ORIGINAL_EVIDENCE_PATH_POLICY_GUARD()
         raise RuntimeError("preflight report cannot be created safely") from exc
     finally:
         if descriptor >= 0:
