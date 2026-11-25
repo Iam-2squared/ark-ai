@@ -444,7 +444,8 @@ def _require_original_reparse_policy() -> None:
     # stat predicates are executable module attributes too. Pin every
     # predicate used by path admission/diagnostics before filesystem access.
     if (
-        stat is not _ORIGINAL_STAT
+        _require_original_reparse_policy is not _ORIGINAL_REQUIRE_REPARSE_POLICY
+        or         stat is not _ORIGINAL_STAT
         or stat.S_ISDIR is not _ORIGINAL_STAT_S_ISDIR
         or stat.S_ISLNK is not _ORIGINAL_STAT_S_ISLNK
         or stat.S_ISREG is not _ORIGINAL_STAT_S_ISREG
@@ -453,16 +454,21 @@ def _require_original_reparse_policy() -> None:
         or _REPARSE_POINT_ATTRIBUTE != _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     ):
         raise ActionAuditSchemaError("audit reparse-point policy changed")
-
+_ORIGINAL_REQUIRE_REPARSE_POLICY = _require_original_reparse_policy
 
 def _is_reparse_point(info: object) -> bool:
     """Recognize POSIX symlinks and Windows reparse-point entries."""
-    _require_original_reparse_policy()
+    _ORIGINAL_REQUIRE_REPARSE_POLICY()
+    mode = info.st_mode
+    _ORIGINAL_REQUIRE_REPARSE_POLICY()
     attributes = getattr(info, "st_file_attributes", 0)
+    _ORIGINAL_REQUIRE_REPARSE_POLICY()
     if type(attributes) is not int:
         raise ActionAuditSchemaError("audit reparse metadata is malformed")
-    return stat.S_ISLNK(info.st_mode) or bool(
-        attributes & _REPARSE_POINT_ATTRIBUTE
+    is_symlink = _ORIGINAL_STAT_S_ISLNK(mode)
+    _ORIGINAL_REQUIRE_REPARSE_POLICY()
+    return is_symlink or bool(
+        attributes & _ORIGINAL_REPARSE_POINT_ATTRIBUTE
     )
 
 
@@ -474,7 +480,7 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
     a preexisting symbolic ancestor. This preflight is NOT atomic dirfd custody,
     authenticated history or protection from later owner-controlled renames.
     """
-    _require_original_reparse_policy()
+    _ORIGINAL_REQUIRE_REPARSE_POLICY()
     if type(path) is not type(Path()) or ".." in path.parts:
         raise ActionAuditSchemaError("audit path type or parent traversal refused")
     # Bound private paths BEFORE mkdir/lstat/SQLite; leave room for SQLite's
@@ -497,21 +503,35 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
             try:
                 meta = ancestor.lstat()
             except FileNotFoundError:
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
                 if allow_new_parents:
                     continue
                 raise ActionAuditSchemaError("audit ancestor unavailable") from None
-            if not stat.S_ISDIR(meta.st_mode) or _is_reparse_point(meta):
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            mode = meta.st_mode
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            is_directory = _ORIGINAL_STAT_S_ISDIR(mode)
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            if not is_directory or _is_reparse_point(meta):
                 raise ActionAuditSchemaError(
                     "audit symbolic, reparse-point or nondirectory ancestor refused"
                 )
         try:
             meta = target.lstat()
         except FileNotFoundError:
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
             main_exists = False
         else:
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
             if _is_reparse_point(meta):
                 raise ActionAuditSchemaError("audit symbolic or reparse-point path refused")
-            if not stat.S_ISREG(meta.st_mode) or meta.st_nlink != 1:
+            mode = meta.st_mode
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            is_regular = _ORIGINAL_STAT_S_ISREG(mode)
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            link_count = meta.st_nlink
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            if not is_regular or link_count != 1:
                 raise ActionAuditSchemaError("audit path must have one regular-file link")
             main_exists = True
         # SQLite can open a journal, WAL or shared-memory sidecar even when
@@ -523,12 +543,20 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
             try:
                 sidecar_info = sidecar.lstat()
             except FileNotFoundError:
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
                 continue
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
             if not main_exists:
                 raise ActionAuditSchemaError("orphaned audit SQLite sidecar refused")
             if _is_reparse_point(sidecar_info):
                 raise ActionAuditSchemaError("audit SQLite sidecar reparse-point alias refused")
-            if stat.S_ISREG(sidecar_info.st_mode) and sidecar_info.st_nlink == 0:
+            mode = sidecar_info.st_mode
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            is_regular = _ORIGINAL_STAT_S_ISREG(mode)
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            link_count = sidecar_info.st_nlink
+            _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            if is_regular and link_count == 0:
                 # A separate SQLite writer may unlink a WAL/SHM or rollback
                 # journal after the pathname was looked up. Re-lstat ONCE
                 # only for this already-unlinked regular inode. Never adopt
@@ -536,21 +564,33 @@ def _require_safe_audit_path(path: Path, *, allow_new_parents: bool) -> None:
                 try:
                     sidecar_info = sidecar.lstat()
                 except FileNotFoundError:
+                    _ORIGINAL_REQUIRE_REPARSE_POLICY()
                     continue
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
                 if _is_reparse_point(sidecar_info):
                     raise ActionAuditSchemaError(
                         "audit SQLite sidecar reparse-point alias refused"
                     )
-            if not stat.S_ISREG(sidecar_info.st_mode) or sidecar_info.st_nlink != 1:
+                mode = sidecar_info.st_mode
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
+                is_regular = _ORIGINAL_STAT_S_ISREG(mode)
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
+                link_count = sidecar_info.st_nlink
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
+            if not is_regular or link_count != 1:
                 # Report bounded metadata only. Never include the audit DB
                 # pathname, request identifiers, arguments or row contents.
                 # Keep strict fail-closed denial after the bounded recheck.
+                file_type = _ORIGINAL_STAT_IFMT(sidecar_info.st_mode)
+                _ORIGINAL_REQUIRE_REPARSE_POLICY()
                 raise ActionAuditSchemaError(
                     "audit SQLite sidecar alias refused "
-                    f"(suffix={suffix}, file_type={stat.S_IFMT(sidecar_info.st_mode):#o}, "
-                    f"link_count={sidecar_info.st_nlink})"
+                    f"(suffix={suffix}, file_type={file_type:#o}, "
+                    f"link_count={link_count})"
                 )
+        _ORIGINAL_REQUIRE_REPARSE_POLICY()
     except OSError as exc:
+        _ORIGINAL_REQUIRE_REPARSE_POLICY()
         raise ActionAuditSchemaError("audit path custody cannot be verified") from exc
 
 
