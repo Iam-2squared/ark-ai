@@ -902,7 +902,7 @@ def _assert_gate_instance_epoch(gate: PermissionGate) -> None:
         sealed is not True
         or type(consumed) is not frozenset
         or consumed is not consumed_epoch
-        or type(lock) is not _original_lock_type
+        or type(lock) is not _ORIGINAL_LOCK_TYPE
         or lock is not lock_epoch
     ):
         raise PermissionDenied("PermissionGate token or lock custody changed")
