@@ -1,5 +1,108 @@
 # LATEST — ARK AI canonical current checkpoint
 
+**Saved at:** 2026-11-26 00:08:51 JST (Asia/Tokyo).
+**Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md` (repo-established authority; `docs/PROJECT_STATUS.md` remains historical).
+**Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).
+**Exact work-basis HEAD:** `3b530533fac27c2f40cb445aa2e2bdf902448f62` — live foundation branch ref re-read immediately before this checkpoint update.
+**Checkpoint-result HEAD:** this single normal GitHub Contents API update commit; its exact SHA is returned by GitHub and verified against the live branch ref immediately after save. This status-only checkpoint does not claim exact-head CI for its resulting documentation HEAD.
+**Live main HEAD:** `48899c484be42db9b310d6e6412cfe8df42a0f52`; main remained read-only.
+**V3 branch / PR #5:** `research/v3-learning-evaluation` / Draft PR #5 (OPEN / DRAFT / UNMERGED), head `2c3501930baff61f04b25e7e02c00b0241a426e7`.
+**UI branch / PR #9:** `ui/next-generation-command-center-20261103` / Draft PR #9 (OPEN / DRAFT / UNMERGED), head `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; paused and untouched.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No V3/V4/V5 PASS, authenticated consent, trusted-clock certification, production dispatch, physical-hardware readiness, fsync/power-loss guarantee, independent custody, cross-store atomicity or exactly-once external-effect claim is made.
+- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to `main`. ToolRegistration lookup-hook custody from child PR #582 was integrated into the PR #8 branch at `3b530533fac27c2f40cb445aa2e2bdf902448f62`. Parent CI run [45641460651](https://github.com/Iam-2squared/ark-ai/actions/runs/45641460651) is **IN_PROGRESS** for this exact pre-checkpoint HEAD.
+- The parent pre-integration HEAD `86229ee377e91ed1925bd5cd192f565ddd8c2477` had CI run [45634583741](https://github.com/Iam-2squared/ark-ai/actions/runs/45634583741) **GREEN, 6/6**. That result does not transfer to the later integration/checkpoint HEADs.
+- PR #5 remains gated Draft/unmerged. Its last observed exact-head/merge-ref run [45589076269](https://github.com/Iam-2squared/ark-ai/actions/runs/45589076269) is **FAIL** at Ruff before pytest in three base-owned merge-ref test files. No main edit, lint/test bypass, Candidate generation/promotion or protected V2 evaluation opening was attempted.
+- PR #9 remains paused and untouched. No UI/frontend feature, polish, test or integration work occurred.
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen. Frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Run1403 — ToolRegistration lookup-hook absence custody (child PR #582) integrated into PR #8.**
+   - Child branch: `research/run1403-tool-registration-lookup-hook-custody-20261125`.
+   - Exact child HEAD: `60539055db049570f16d759400eb6c6cc3403396`.
+   - Child exact-head CI run [45619387032](https://github.com/Iam-2squared/ark-ai/actions/runs/45619387032): **GREEN**.
+   - The normal GitHub merge path integrated the child into PR #8 at `3b530533fac27c2f40cb445aa2e2bdf902448f62`. ToolRegistration's absent-hook sentinel/namespace-membership checks and its regression/evidence files are now on the parent branch. PR #582 is merged; PR #8 remains Draft/unmerged to main.
+
+2. **Run1414 — ObservationEnvelope and fixture-adapter absent-hook custody (Draft PR #593).**
+   - Child branch: `research/run1414-observation-absent-hook-custody-20261125`.
+   - Exact child HEAD: `0f77a39205933a4b1e7714226e2be06dc7e0c4b7`.
+   - Captures true absence separately from explicit `None`/sentinel installation, pins type/vector epochs in both observation layers, and adds isolated class-slot regression probes.
+   - Exact-head CI run [45638973287](https://github.com/Iam-2squared/ark-ai/actions/runs/45638973287): **IN_PROGRESS**.
+
+3. **Run1415 — V3 passive readiness-inventory absent-hook custody (Draft PR #594).**
+   - Child branch: `research/run1415-v3-readiness-inventory-absent-hook-20261125`.
+   - Exact child HEAD: `18cd0a877c37f1ea1b4a8fd485992e850d5368f7`.
+   - Adds an absence sentinel and retained type/vector epoch to the passive V3 placeholder inventory; preflight, training, export and Candidate paths were not opened or executed.
+   - Exact-head CI run [45639557385](https://github.com/Iam-2squared/ark-ai/actions/runs/45639557385): **GREEN**. PR #594 remains Draft/unmerged and isolated under PR #5's existing gate.
+
+4. **Run1416 — Personal Context replay witness/receipt absent-hook custody (Draft PR #595).**
+   - Child branch: `research/run1416-personal-context-replay-hook-absence-20261125`.
+   - Exact child HEAD: `4dcbdd72e4db2d261f9a6649c4ee22091947a253`.
+   - Adds separate witness and post-COMMIT receipt epochs; true hook absence, explicit `None`, sentinel installation, vector replacement and joint type-alias replacement are tested in isolated subprocesses. Hash-only persistence, DDL, CAS, recovery and public APIs are unchanged.
+   - Exact-head CI run [45640150844](https://github.com/Iam-2squared/ark-ai/actions/runs/45640150844): **IN_PROGRESS**.
+
+5. **Run1417 — Proactive policy/state/ledger absent-hook custody (Draft PR #596).**
+   - Child branch: `research/run1417-proactive-state-absent-hook-custody-20261125`.
+   - Exact child HEAD: `95c6651c50ae29ca734c022d714c9be6dda875a0`.
+   - Adds independent policy/state/ledger epochs and namespace-membership checks for absent hooks, while retaining exact slot and method descriptors. Scheduler activation, notification, schema, CAS and recovery behavior are unchanged.
+   - Exact-head CI run [45641016493](https://github.com/Iam-2squared/ark-ai/actions/runs/45641016493): **IN_PROGRESS**.
+
+## Existing exact-head integration queue
+
+- **Disconnected mock executor — Draft PR #588 / Run1409:** child HEAD `75ba733cd2e3ca6efe71c39ee5d25902c401bc38`, exact-head CI [45633991795](https://github.com/Iam-2squared/ark-ai/actions/runs/45633991795) **GREEN**, mergeable at last read. It remains unintegrated while parent run 45641460651 validates the ToolRegistration integration.
+- **PermissionGate — Draft PR #587 / Run1408:** child HEAD `8841b887ead7fb07f5d5682e7c9db44d93a155b5`, exact-head CI [45619526759](https://github.com/Iam-2squared/ark-ai/actions/runs/45619526759) **GREEN**; mergeability was false at last read against its older base. Rebase/reconcile before integration.
+- **Disconnected READ journal — Draft PR #591 / Run1412:** child HEAD `824df6a3ad1bd5783585248bdf6aba3c83b73f2b`, corrected exact-head CI [45631754169](https://github.com/Iam-2squared/ark-ai/actions/runs/45631754169) **GREEN**; not integrated.
+- **ActionAudit event carrier — Draft PR #592 / Run1413:** child HEAD `93367f81a003d61dfc5f57cf168999d3aa313ea2`, exact-head CI [45632566254](https://github.com/Iam-2squared/ark-ai/actions/runs/45632566254) **GREEN**; not integrated.
+- Memory generation-CAS child PR #590 remains isolated and unintegrated; its exact-head result is not upgraded by other child results.
+
+## Tests, CI and evidence
+
+- PR #8 pre-integration HEAD `86229ee377e91ed1925bd5cd192f565ddd8c2477`: run **45634583741 GREEN, 6/6**.
+- PR #582 ToolRegistration child HEAD `60539055...`: run **45619387032 GREEN**; integrated into PR #8 at `3b530533fac27c2f40cb445aa2e2bdf902448f62`.
+- PR #8 post-integration HEAD `3b530533fac27c2f40cb445aa2e2bdf902448f62`: run **45641460651 IN_PROGRESS**.
+- PR #593 Observation child: run **45638973287 IN_PROGRESS**.
+- PR #594 V3 readiness inventory child: run **45639557385 GREEN**.
+- PR #595 Personal Context replay child: run **45640150844 IN_PROGRESS**.
+- PR #596 Proactive state child: run **45641016493 IN_PROGRESS**.
+- PR #588 mock executor child: run **45633991795 GREEN**.
+- PR #587 PermissionGate child: run **45619526759 GREEN**.
+- PR #591 READ journal child: run **45631754169 GREEN**.
+- PR #592 ActionAudit child: run **45632566254 GREEN**.
+- PR #5 V3 parent HEAD `2c350193...`: last observed run **45589076269 FAIL** at Ruff before pytest in base-owned merge-ref files.
+- No local pytest/Ruff execution, target-PC verification, real-model runtime, tokenizer/model load, GPU query, V3 preflight, training, protected evaluation, live capture or production dispatch is claimed. Each child result applies only to its exact child HEAD.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 schema/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, ToolRegistry revision/bound identity, Observation Envelope v1, Personal Context privacy/consent boundaries, proactive state schema and V3 Contract 1 remain unchanged.
+- PR #5, PR #8 and PR #9 remain Draft/unmerged. PR #9 remains untouched. PRs #593–#596 remain Draft child work; PR #594 is GREEN but remains gated. PR #582 is integrated into PR #8 only; no main write or merge occurred.
+- No paid/external compute/service, Candidate generation/promotion, protected V2 evaluation, credentials/account connection, physical hardware action or destructive operation occurred.
+
+## Blockers and authorization boundaries
+
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- PR #5's latest observed failure is Ruff-only before pytest in base-owned merge-ref files. Do not edit `main`, re-home tests to bypass ownership, weaken CI, or open protected V2 evaluation without its explicit gate.
+- PR #8 post-ToolRegistration integration CI is in progress. Do not integrate another child into the same parent path until that exact parent head is GREEN; continue independent lanes while it runs.
+- PR #593/#595/#596 remain in progress; PR #594 is green but remains isolated under PR #5's gate.
+- In-process class-hook custody is not a Python sandbox, authenticated consent, trusted time, independent storage custody, physical deletion, process isolation, fsync/power-loss durability, cross-store atomicity or exactly-once external-effect proof.
+- No credentials/secrets/new account connections, unavailable physical-PC actions, destructive operations, frozen-contract changes, protected evaluation opening, Candidate promotion or approval-required main merge occurred.
+
+## Next plan / 今後の方針
+
+1. Revisit PR #8 run 45641460651. If GREEN, re-read the latest parent ref and PR #588 exact head, then integrate the mock executor through the normal GitHub path; launch parent CI and immediately switch to a non-conflicting lane.
+2. Rebase/reconcile PermissionGate PR #587 and review PRs #590–#592 against the then-current parent HEAD. Integrate one exact-head-GREEN child at a time; older-base green runs do not transfer.
+3. Revisit PRs #593, #595 and #596 when their exact-head CI completes. Fix only concrete failures with the smallest semantics-preserving change; after GREEN, integrate one at a time after re-reading parent HEAD.
+4. Keep PR #594 isolated until PR #5's base-owned Ruff blocker and its controlling gate are resolved. Do not open protected V2 evaluation, run preflight/training, generate or promote a Candidate.
+5. Continue free core work on Memory CAS/expiry/coherent snapshots, Planner terminal/COMMIT-UNKNOWN recovery, restart-safe authorization, trusted-clock audit-before-action, Personal Context privacy/revocation, proactive scheduler state and observation fixture ingress.
+6. Keep all UI/frontend development paused; PR #9 and frozen Local UI evidence remain untouched.
+
+---
+
+## Historical checkpoint — saved at 2026-11-25 19:57:17 JST
+
 **Saved at:** 2026-11-25 19:57:17 JST (Asia/Tokyo).
 **Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md` (repo-established authority; `docs/PROJECT_STATUS.md` remains historical).
 **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).
