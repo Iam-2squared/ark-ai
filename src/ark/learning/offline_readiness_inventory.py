@@ -87,15 +87,32 @@ _ORIGINAL_INVENTORY_TYPE = OfflineReadinessInventory
 _INVENTORY_FIELDS = ("snapshot_sha256", "unresolved_paths", "unresolved_count")
 _INVENTORY_HOOKS = ("__init__", "__new__", "__getattribute__", "__getattr__")
 _INVENTORY_PINNED_NAMES = _INVENTORY_FIELDS + _AUTHORITY + _INVENTORY_HOOKS
+_ABSENT_INVENTORY_HOOK = object()
 _ORIGINAL_INVENTORY_CARRIERS = tuple(
-    vars(_ORIGINAL_INVENTORY_TYPE).get(name) for name in _INVENTORY_PINNED_NAMES
+    vars(_ORIGINAL_INVENTORY_TYPE)[name]
+    if name in vars(_ORIGINAL_INVENTORY_TYPE)
+    else _ABSENT_INVENTORY_HOOK
+    for name in _INVENTORY_PINNED_NAMES
 )
 _ORIGINAL_INVENTORY_DENIALS = tuple(
     vars(_ORIGINAL_INVENTORY_TYPE)[name] for name in _AUTHORITY
 )
+_ORIGINAL_INVENTORY_EPOCH = (
+    _ORIGINAL_INVENTORY_TYPE,
+    _INVENTORY_FIELDS,
+    _INVENTORY_HOOKS,
+    _INVENTORY_PINNED_NAMES,
+    _AUTHORITY,
+    _ORIGINAL_INVENTORY_CARRIERS,
+    _ORIGINAL_INVENTORY_DENIALS,
+    _ABSENT_INVENTORY_HOOK,
+)
 
 
-def _assert_original_inventory_protocol() -> None:
+def _assert_original_inventory_protocol(
+    *,
+    _original_epoch: tuple[object, ...] = _ORIGINAL_INVENTORY_EPOCH,
+) -> None:
     """Pin passive inventory fields, denial carriers and digest dependencies."""
     if (
         _SECTIONS is not _ORIGINAL_SECTIONS
@@ -111,22 +128,39 @@ def _assert_original_inventory_protocol() -> None:
         or _assert_json_tree_epoch is not _ORIGINAL_ASSERT_JSON_TREE_EPOCH
     ):
         raise OfflineReadinessRejected("readiness inventory protocol changed")
-    if OfflineReadinessInventory is not _ORIGINAL_INVENTORY_TYPE:
+    if (
+        _ORIGINAL_INVENTORY_EPOCH is not _original_epoch
+        or _ORIGINAL_INVENTORY_TYPE is not _original_epoch[0]
+        or _INVENTORY_FIELDS is not _original_epoch[1]
+        or _INVENTORY_HOOKS is not _original_epoch[2]
+        or _INVENTORY_PINNED_NAMES is not _original_epoch[3]
+        or _AUTHORITY is not _original_epoch[4]
+        or _ORIGINAL_INVENTORY_CARRIERS is not _original_epoch[5]
+        or _ORIGINAL_INVENTORY_DENIALS is not _original_epoch[6]
+        or _ABSENT_INVENTORY_HOOK is not _original_epoch[7]
+        or OfflineReadinessInventory is not _original_epoch[0]
+    ):
         raise OfflineReadinessRejected("readiness inventory result descriptor changed")
+    namespace = vars(_ORIGINAL_INVENTORY_TYPE)
     field_and_hook_names = _INVENTORY_FIELDS + _INVENTORY_HOOKS
     field_and_hook_originals = (
         _ORIGINAL_INVENTORY_CARRIERS[:len(_INVENTORY_FIELDS)]
         + _ORIGINAL_INVENTORY_CARRIERS[-len(_INVENTORY_HOOKS):]
     )
-    if any(
-        vars(_ORIGINAL_INVENTORY_TYPE).get(name) is not original
-        for name, original in zip(
-            field_and_hook_names, field_and_hook_originals, strict=True,
-        )
+    for name, original in zip(
+        field_and_hook_names, field_and_hook_originals, strict=True,
     ):
-        raise OfflineReadinessRejected("readiness inventory result descriptor changed")
+        if original is _ABSENT_INVENTORY_HOOK:
+            if name in namespace:
+                raise OfflineReadinessRejected(
+                    "readiness inventory result descriptor changed"
+                )
+        elif name not in namespace or namespace[name] is not original:
+            raise OfflineReadinessRejected(
+                "readiness inventory result descriptor changed"
+            )
     if any(
-        vars(_ORIGINAL_INVENTORY_TYPE).get(name) is not original
+        name not in namespace or namespace[name] is not original
         for name, original in zip(
             _AUTHORITY, _ORIGINAL_INVENTORY_DENIALS, strict=True,
         )
