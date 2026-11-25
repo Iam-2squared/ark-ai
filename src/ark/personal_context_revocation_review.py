@@ -78,6 +78,8 @@ def _require_original_scope_digest() -> None:
         or json is not _ORIGINAL_SCOPE_JSON
         or hashlib.sha256 is not _ORIGINAL_SCOPE_SHA256
         or json.dumps is not _ORIGINAL_SCOPE_DUMPS
+        or _scope_digest is not _ORIGINAL_SCOPE_DIGEST
+        or _validate is not _ORIGINAL_REVOCATION_VALIDATOR
     ):
         raise SyntheticContextRevocationRejected(
             "revocation scope digest implementation changed"
@@ -177,6 +179,12 @@ def _validate(conn: sqlite3.Connection) -> None:
             or type(when) is not int or not 0 <= when <= _MAX
         ):
             raise SyntheticContextRevocationRejected("revocation row integrity failed")
+
+
+# The scope hash and SQLite schema validator are both executable privacy gates.
+# A no-op replacement could miss a persisted veto or accept a tampered ledger.
+_ORIGINAL_SCOPE_DIGEST = _scope_digest
+_ORIGINAL_REVOCATION_VALIDATOR = _validate
 
 
 def _check_local_revocation_path(path: Path) -> None:
@@ -281,6 +289,7 @@ class SyntheticContextRevocationLedger:
         fence; independent retained history is still required against a
         coordinated valid-file replacement or rollback.
         """
+        _require_original_scope_digest()
         if type(path) is not type(Path(".")):
             raise TypeError("revocation path must be an exact local pathlib.Path")
         if type(require_existing) is not bool:
