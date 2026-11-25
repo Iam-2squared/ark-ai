@@ -1,5 +1,78 @@
 ## LATEST
 
+- **Saved at:** 2026-11-26 04:00:56 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `ae3c330f11513c782bed9703febc8ac0c3a31747` (branch ref re-read immediately before this checkpoint update).
+- **Checkpoint-result HEAD:** the GitHub commit created by this `docs/PROJECT_STATUS.md` update; its exact returned SHA is confirmed after the write and reported in the invocation summary. This file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner retain frozen evidence. Local-first JARVIS foundations continue in isolated/reversible Draft branches. **ARK/JARVIS overall remains NOT_PASSED.**
+- **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #8 remains Draft/unmerged. PR #9 remains Draft/unmerged and untouched at `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; all new UI/frontend work remains paused. No `main` write or merge occurred.
+
+## NEW work this invocation
+
+1. **ToolRegistry absent-hook custody rebase — Draft PR #605.**
+   - Child branch: `research/rebase-run1419-tool-registry-absent-hook-custody-20261126`; exact child HEAD: `ddd0bf52c86e2b1d5660be5a33f294c48c53eeae`.
+   - Reapplied the Run1419 class-hook absence sentinel/epoch guard, regression tests and evidence note onto current PR #8 basis. The source blob was verified identical between old base `996d557f6b723229ffc201ac827b8a908e90a7ae` and current parent, so no intervening registry source was overwritten.
+   - Predecessor PR #601 exact-head CI `45669883259` is GREEN 6/6 on its older child head only. New PR #605 exact-head CI `45678685362` is IN PROGRESS (Ubuntu 3/3 GREEN; Windows 3/3 running).
+
+2. **V3 free-only gap-matrix reconciliation — Draft PR #606.**
+   - Child branch: `research/run1420-v3-gap-matrix-reconcile-20261126`; exact child HEAD: `02118f0be6810fa501a53fdc9dc3c70c906c2a26`.
+   - Documentation-only, read-only audit against gated PR #5 HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`. Verified Run1349 strict duplicate-key/non-finite preflight-report parsing and Run1351 nested symlink-grandparent rejection are already present; removed both from the active work queue in the matrix.
+   - Recorded PR #5 exact-head CI run `45668716864` FAIL 6/6 at Ruff I001 in three files supplied by `main`, and PR #483's separate pytest-collection blocker because foundation modules are absent from `main`. No main change or V3 gate opening.
+
+3. **PlannerJournal digest dependency epoch rebase — Draft PR #607.**
+   - Child branch: `research/rebase-run1398-planner-digest-epoch-20261126`; exact child HEAD: `e18a82d2b6f55a9bac2a0b591bf455b3dd449ec1`.
+   - Preserved the current PlannerJournal source and reapplied the narrow digest-module/serializer epoch guard at exact unique anchors; carried forward synthetic joint-replacement and reentrant-serialization regressions.
+   - Predecessor PR #577 exact-head CI `45599174248` is GREEN 6/6 on its old child head only. New PR #607 exact-head CI `45679983575` is IN PROGRESS (6 jobs running at last read).
+
+4. **ActionAudit reparse-policy epoch rebase — Draft PR #608.**
+   - Child branch: `research/rebase-run1399-action-audit-reparse-epoch-20261126`; exact child HEAD: `52e27a2ce8f7637935890bbddc01762ed86c1e5a`.
+   - Preserved current ActionAudit source and reapplied the complete stat/reparse dependency epoch plus post-metadata callback recheck at exact unique anchors; carried forward synthetic pre-lstat and reentrant metadata regressions.
+   - Predecessor PR #578 exact-head CI `45599489425` is GREEN 6/6 on its old child head only. No PR-triggered workflow run was returned for the new PR #608 head at the last read; no PASS is claimed.
+
+## Tests, CI and evidence
+
+- **PR #8 work-basis HEAD** `ae3c330f11513c782bed9703febc8ac0c3a31747`, run `45673643495`: IN PROGRESS at last read; Ubuntu 3/3 and Windows 3.11/3.12 GREEN, Windows 3.13 still running. This run does not validate the checkpoint-result HEAD; a fresh parent run is required after this status update.
+- **PR #602 Personal Context replay rebase**, exact child HEAD `d3147122dd95e4705aa793943abe53efedd2f0c9`, run `45672690179`: GREEN 6/6.
+- **PR #603 Observation absent-hook rebase**, exact child HEAD `72af53e9ccbacb4e645e6db67b1c8a9edd7e6685`, run `45672998348`: GREEN 6/6.
+- **PR #604 READ-journal absent-hook rebase**, exact child HEAD `48682cd3e0ad475c2141d73d6f29187bbe82ec2c`, run `45673239909`: GREEN 6/6.
+- **PR #605 ToolRegistry rebase**, exact child HEAD `ddd0bf52c86e2b1d5660be5a33f294c48c53eeae`, run `45678685362`: IN PROGRESS (3/6 Ubuntu GREEN; 3/6 Windows running).
+- **PR #606 V3 gap-matrix audit**, exact child HEAD `02118f0be6810fa501a53fdc9dc3c70c906c2a26`, run `45679594332`: IN PROGRESS (Ubuntu Python 3.11 GREEN; remaining 5 jobs running).
+- **PR #607 PlannerJournal digest epoch**, exact child HEAD `e18a82d2b6f55a9bac2a0b591bf455b3dd449ec1`, run `45679983575`: IN PROGRESS (6/6 running at last read).
+- **PR #608 ActionAudit reparse epoch**, exact child HEAD `52e27a2ce8f7637935890bbddc01762ed86c1e5a`: no run returned at last read; no PASS is claimed.
+- **PR #601 predecessor** exact child run `45669883259`, **PR #577 predecessor** `45599174248`, and **PR #578 predecessor** `45599489425` are GREEN 6/6 only on their older exact heads; fresh rebased child CI is required.
+- No local pytest/Ruff execution, target-PC verification, live observation capture, real-model runtime, GPU query, V3 preflight/training, protected evaluation or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1 and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries and V3 Contract 1 remain unchanged.
+- PR #5, #8 and #9 remain Draft/unmerged. PR #9 remains untouched. No UI/frontend feature, polish, test or integration work occurred. No `main` write or merge occurred.
+- PRs #602–#608 are isolated Draft children; none has been integrated into PR #8 or `main`.
+
+## Blockers and authorization boundaries
+
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase or potentially billable action was started.
+- PR #5 remains gated Draft/unmerged. No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening or Candidate promotion occurred.
+- PR #5 current-head merge-ref CI failure is the three base-owned Ruff I001 paths documented in PR #606. PR #483's import-only correction still fails pytest collection because the foundation modules are not on `main`; do not edit `main`, copy foundation modules into V3, weaken tests or merge PR #5 to bypass ownership.
+- PRs #602–#604 are exact-head GREEN but not yet integrated; parent CI on `ae3c330f11513c782bed9703febc8ac0c3a31747` was still running at last read. Re-read the parent branch before every integration.
+- PRs #605–#608 require fresh exact-head CI. Historical predecessor GREEN results do not transfer.
+- In-process class/path-policy guards are not a Python sandbox, trusted clock, independent storage custody, fsync/power-loss durability, cross-store atomicity, authenticated consent or exactly-once external-effect proof.
+- No new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, irreversible data change, frozen-contract change or main merge occurred. All UI/frontend work remains paused.
+
+## Next plan / 今後の方針
+
+1. Inspect PR #8 run `45673643495` once it completes. If GREEN, integrate PRs #602, #603 and #604 one at a time after exact dependency review and a fresh parent-HEAD read; keep PR #8 Draft/unmerged.
+2. Inspect exact-head CI for PRs #605–#608 once useful results are available; fix only concrete failures and launch one fresh run per corrected child head.
+3. After fresh exact-head GREEN, integrate ToolRegistry (#605), PlannerJournal digest (#607) and ActionAudit path-policy (#608) into PR #8 in dependency-safe order. Do not infer production readiness or external execution authority.
+4. Revisit Personal Context path-policy and proactive path-policy packages only after their overlapping replay/state source paths and the current #602/#597 work are reconciled.
+5. Continue Memory CAS/expiry/coherent snapshots, Planner terminal/COMMIT-UNKNOWN recovery, durable one-shot authorization, audit-before-action, disconnected mock execution, startup readiness, privacy-safe Personal Context and Observation fixture lifecycle.
+6. Continue free-only V3 local identity/path/provenance guard work only; no preflight, training, protected V2 evaluation or Candidate promotion.
+7. Keep all UI/frontend development paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## Historical checkpoint — saved at 2026-11-26 03:16:55 JST
+
 - **Saved at:** 2026-11-26 03:16:55 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `db7f12a406ef668b2f6bf1cdbf46715d8a406ce8` (PR #8 head and branch ref re-read immediately before this checkpoint write).
