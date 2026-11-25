@@ -409,14 +409,28 @@ _ORIGINAL_CARRIER_HOOKS = tuple(
 )
 
 
-def _assert_original_startup_constructors() -> None:
+def _assert_original_startup_constructors(
+    _startup_carrier_types=_STARTUP_CARRIER_TYPES,
+    _startup_carrier_fields=_STARTUP_CARRIER_FIELDS,
+    _startup_carrier_hooks=_STARTUP_CARRIER_HOOKS,
+    _original_carrier_fields=_ORIGINAL_CARRIER_FIELDS,
+    _original_carrier_hooks=_ORIGINAL_CARRIER_HOOKS,
+) -> None:
+    # Retain the carrier inventory and every comparison vector outside mutable
+    # module bindings. Joint replacement with empty tuples must not make the
+    # strict zip checks vacuous before a caller probe or descriptor is read.
     # Perform constant and verifier custody checks before inspecting a
     # reflectively mutable probe, cached snapshot, or caller generator.
     if _require_original_readiness_budgets is not _ORIGINAL_READINESS_BUDGET_CHECK:
         raise ValueError("readiness admission budgets changed")
     _ORIGINAL_READINESS_BUDGET_CHECK()
     if (
-        StartupComponent is not _STARTUP_COMPONENT_TYPE
+        _STARTUP_CARRIER_TYPES is not _startup_carrier_types
+        or _STARTUP_CARRIER_FIELDS is not _startup_carrier_fields
+        or _STARTUP_CARRIER_HOOKS is not _startup_carrier_hooks
+        or _ORIGINAL_CARRIER_FIELDS is not _original_carrier_fields
+        or _ORIGINAL_CARRIER_HOOKS is not _original_carrier_hooks
+        or StartupComponent is not _STARTUP_COMPONENT_TYPE
         or ComponentResult is not _COMPONENT_RESULT_TYPE
         or StartupSnapshot is not _STARTUP_SNAPSHOT_RESULT_TYPE
         or vars(_STARTUP_COMPONENT_TYPE).get("__init__") is not _ORIGINAL_COMPONENT_INIT
@@ -438,19 +452,19 @@ def _assert_original_startup_constructors() -> None:
                 for name, original in zip(fields, originals, strict=True)
             )
             for kind, fields, originals in zip(
-                _STARTUP_CARRIER_TYPES, _STARTUP_CARRIER_FIELDS,
-                _ORIGINAL_CARRIER_FIELDS, strict=True,
+                _startup_carrier_types, _startup_carrier_fields,
+                _original_carrier_fields, strict=True,
             )
         )
         or any(
             any(
                 vars(kind).get(name) is not original
                 for name, original in zip(
-                    _STARTUP_CARRIER_HOOKS, originals, strict=True,
+                    _startup_carrier_hooks, originals, strict=True,
                 )
             )
             for kind, originals in zip(
-                _STARTUP_CARRIER_TYPES, _ORIGINAL_CARRIER_HOOKS, strict=True,
+                _startup_carrier_types, _original_carrier_hooks, strict=True,
             )
         )
     ):
