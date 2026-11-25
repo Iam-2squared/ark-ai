@@ -180,6 +180,9 @@ def _require_original_atomic_carriers(
         _ORIGINAL_CARRIER_SLOTS is not _carrier_slots
         or _CARRIER_HOOKS is not _carrier_hooks
         or _CARRIER_HOOK_ABSENT is not _carrier_hook_absent
+        or _CLAIM_TYPE is not _carrier_slots[0][0]
+        or _WITNESS_TYPE is not _carrier_slots[1][0]
+        or (snapshot and _SNAPSHOT_TYPE is not _carrier_slots[2][0])
         or AtomicIntentClaim is not _carrier_slots[0][0]
         or AtomicPreactionWitness is not _carrier_slots[1][0]
         or (snapshot and AtomicPreactionSnapshot is not _carrier_slots[2][0])
