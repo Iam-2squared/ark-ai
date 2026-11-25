@@ -949,17 +949,69 @@ _ORIGINAL_TOOL_REGISTRY_TYPE = ToolRegistry
 _ORIGINAL_TOOL_REGISTRY_SLOTS = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__slots__"]
 _ORIGINAL_TOOL_REGISTRY_SETATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__setattr__"]
 _ORIGINAL_TOOL_REGISTRY_DELATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__delattr__"]
+_ORIGINAL_TOOL_REGISTRY_INIT = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__init__"]
+
+# Lookup/allocation hooks are part of the immutable registry class contract.
+# A missing namespace entry must remain distinguishable from explicit None or
+# installation of the exact sentinel itself.
+_REGISTRY_CLASS_HOOK_NAMES = ("__new__", "__getattribute__", "__getattr__")
+_REGISTRY_CLASS_HOOK_ABSENT = object()
+_ORIGINAL_REGISTRY_CLASS_HOOKS = tuple(
+    vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get(name, _REGISTRY_CLASS_HOOK_ABSENT)
+    for name in _REGISTRY_CLASS_HOOK_NAMES
+)
+_ORIGINAL_REGISTRY_CLASS_EPOCH = (
+    _ORIGINAL_TOOL_REGISTRY_TYPE,
+    ToolRegistry,
+    _ORIGINAL_TOOL_REGISTRY_SLOTS,
+    _ORIGINAL_TOOL_REGISTRY_SETATTR,
+    _ORIGINAL_TOOL_REGISTRY_DELATTR,
+    _ORIGINAL_TOOL_REGISTRY_INIT,
+    _REGISTRY_CLASS_HOOK_NAMES,
+    _ORIGINAL_REGISTRY_CLASS_HOOKS,
+    _REGISTRY_CLASS_HOOK_ABSENT,
+)
 
 
-def _require_original_registry_instance_seal() -> None:
-    """Pin the no-dict slot layout and assignment guard before registry reads."""
+def _require_original_registry_instance_seal(
+    *,
+    _original_epoch: tuple[object, ...] = _ORIGINAL_REGISTRY_CLASS_EPOCH,
+) -> None:
+    """Pin exact registry class hooks, descriptors, and the no-dict slot layout."""
     if (
-        ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
-        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__slots__")
-        is not _ORIGINAL_TOOL_REGISTRY_SLOTS
-        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__setattr__")
-        is not _ORIGINAL_TOOL_REGISTRY_SETATTR
-        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__delattr__")
-        is not _ORIGINAL_TOOL_REGISTRY_DELATTR
+        _ORIGINAL_REGISTRY_CLASS_EPOCH is not _original_epoch
+        or _ORIGINAL_TOOL_REGISTRY_TYPE is not _original_epoch[0]
+        or ToolRegistry is not _original_epoch[1]
+        or _ORIGINAL_TOOL_REGISTRY_SLOTS is not _original_epoch[2]
+        or _ORIGINAL_TOOL_REGISTRY_SETATTR is not _original_epoch[3]
+        or _ORIGINAL_TOOL_REGISTRY_DELATTR is not _original_epoch[4]
+        or _ORIGINAL_TOOL_REGISTRY_INIT is not _original_epoch[5]
+        or _REGISTRY_CLASS_HOOK_NAMES is not _original_epoch[6]
+        or _ORIGINAL_REGISTRY_CLASS_HOOKS is not _original_epoch[7]
+        or _REGISTRY_CLASS_HOOK_ABSENT is not _original_epoch[8]
+    ):
+        raise ValueError("registry instance immutability contract changed")
+
+    # Only inspect the namespace of the import-original class after every
+    # module alias and retained vector has passed identity admission.
+    namespace = vars(_original_epoch[0])
+    if (
+        "__slots__" not in namespace
+        or namespace["__slots__"] is not _original_epoch[2]
+        or "__setattr__" not in namespace
+        or namespace["__setattr__"] is not _original_epoch[3]
+        or "__delattr__" not in namespace
+        or namespace["__delattr__"] is not _original_epoch[4]
+        or "__init__" not in namespace
+        or namespace["__init__"] is not _original_epoch[5]
+        or any(
+            (name in namespace) != (original is not _original_epoch[8])
+            or (name in namespace and namespace[name] is not original)
+            for name, original in zip(
+                _original_epoch[6],
+                _original_epoch[7],
+                strict=True,
+            )
+        )
     ):
         raise ValueError("registry instance immutability contract changed")
