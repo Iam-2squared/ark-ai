@@ -128,7 +128,10 @@ def verify_detached_authorization_packet(
     This only detects drift of in-memory review evidence. A matching hash is
     neither independently authenticated provenance nor authorization.
     """
-    _require_original_witness_contract()
+    # Retain the guard in this invocation's local frame so a serializer or
+    # caller-owned callback cannot replace the module binding mid-review.
+    witness_guard = _require_original_witness_contract
+    witness_guard()
     if (
         type(snapshot) is not dict
         or type(packet) is not dict
@@ -141,10 +144,18 @@ def verify_detached_authorization_packet(
         packet_epoch = _pin_json_tree(packet)
 
         def unchanged() -> None:
-            _require_original_witness_contract()
+            if _require_original_witness_contract is not witness_guard:
+                raise LocalPacketBindingRejected(
+                    "packet witness class lookup contract changed"
+                )
+            witness_guard()
             _assert_json_tree_epoch(snapshot, snapshot_epoch)
             _assert_json_tree_epoch(packet, packet_epoch)
-            _require_original_witness_contract()
+            if _require_original_witness_contract is not witness_guard:
+                raise LocalPacketBindingRejected(
+                    "packet witness class lookup contract changed"
+                )
+            witness_guard()
 
         unchanged()
         expected = build_preflight_authorization_packet(snapshot)
@@ -180,9 +191,17 @@ def verify_detached_authorization_packet(
             # A field/denial descriptor is a callback boundary. Recheck the
             # class lookup policy immediately after each getter so a getter
             # cannot install a new __getattribute__ before the next read.
-            _require_original_witness_contract()
+            if _require_original_witness_contract is not witness_guard:
+                raise LocalPacketBindingRejected(
+                    "packet witness class lookup contract changed"
+                )
+            witness_guard()
             value = getattr(witness, name)
-            _require_original_witness_contract()
+            if _require_original_witness_contract is not witness_guard:
+                raise LocalPacketBindingRejected(
+                    "packet witness class lookup contract changed"
+                )
+            witness_guard()
             return value
 
         if (
