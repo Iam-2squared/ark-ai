@@ -31,6 +31,10 @@ _STATUS = re.compile(r"pstate_[0-9a-f]{64}\Z")
 _STATES = frozenset(state.value for state in StepState)
 _ORIGINAL_SHA256 = hashlib.sha256
 _ORIGINAL_DUMPS = json.dumps
+_ORIGINAL_STAT = stat
+_ORIGINAL_S_ISDIR = stat.S_ISDIR
+_ORIGINAL_S_ISLNK = stat.S_ISLNK
+_ORIGINAL_S_ISREG = stat.S_ISREG
 
 _META_SQL = """
 CREATE TABLE planner_journal_meta (
@@ -286,12 +290,24 @@ def _event_hash(
     )
 
 
+def _require_original_stat_policy() -> None:
+    """Reject substituted filesystem classifiers before path inspection."""
+    if (
+        stat is not _ORIGINAL_STAT
+        or _ORIGINAL_STAT.S_ISDIR is not _ORIGINAL_S_ISDIR
+        or _ORIGINAL_STAT.S_ISLNK is not _ORIGINAL_S_ISLNK
+        or _ORIGINAL_STAT.S_ISREG is not _ORIGINAL_S_ISREG
+    ):
+        raise PlannerJournalPathError("Planner journal filesystem policy changed")
+
+
 def _require_safe_journal_path(path: Path, *, create: bool) -> None:
     """Reject path aliases before SQLite can create, read or mutate a database.
 
     This is a repeated local lstat preflight, not atomic dirfd custody or
     protection against a hostile concurrent rename between inspection/open.
     """
+    _require_original_stat_policy()
     if type(path) is not type(Path(".")) or ".." in path.parts:
         raise PlannerJournalPathError("Planner journal path type or traversal refused")
     raw = os.fspath(path)
@@ -305,10 +321,18 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
             try:
                 metadata = ancestor.lstat()
             except FileNotFoundError:
+                _require_original_stat_policy()
                 raise PlannerJournalPathError(
                     "Planner journal parent directory is unavailable"
                 ) from None
-            if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+            _require_original_stat_policy()
+            mode = metadata.st_mode
+            _require_original_stat_policy()
+            is_directory = _ORIGINAL_S_ISDIR(mode)
+            _require_original_stat_policy()
+            is_symlink = _ORIGINAL_S_ISLNK(mode)
+            _require_original_stat_policy()
+            if not is_directory or is_symlink:
                 raise PlannerJournalPathError(
                     "Planner journal symbolic or non-directory ancestor refused"
                 )
@@ -317,13 +341,21 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
         try:
             metadata = target.lstat()
         except FileNotFoundError:
+            _require_original_stat_policy()
             main_absent = True
             if not create:
                 raise PlannerJournalPathError(
                     "Planner journal database is unavailable; recreation is refused"
                 ) from None
         else:
-            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+            _require_original_stat_policy()
+            mode = metadata.st_mode
+            _require_original_stat_policy()
+            is_regular = _ORIGINAL_S_ISREG(mode)
+            _require_original_stat_policy()
+            is_symlink = _ORIGINAL_S_ISLNK(mode)
+            _require_original_stat_policy()
+            if not is_regular or is_symlink or metadata.st_nlink != 1:
                 raise PlannerJournalPathError(
                     "Planner journal database must be one regular unaliased file"
                 )
@@ -333,23 +365,41 @@ def _require_safe_journal_path(path: Path, *, create: bool) -> None:
             try:
                 sidecar_metadata = sidecar.lstat()
             except FileNotFoundError:
+                _require_original_stat_policy()
                 continue
+            _require_original_stat_policy()
             if main_absent:
                 raise PlannerJournalPathError(
                     "orphaned Planner journal SQLite sidecar refused"
                 )
-            if stat.S_ISREG(sidecar_metadata.st_mode) and sidecar_metadata.st_nlink == 0:
+            mode = sidecar_metadata.st_mode
+            _require_original_stat_policy()
+            is_regular = _ORIGINAL_S_ISREG(mode)
+            _require_original_stat_policy()
+            is_symlink = _ORIGINAL_S_ISLNK(mode)
+            _require_original_stat_policy()
+            if is_regular and sidecar_metadata.st_nlink == 0:
                 try:
                     sidecar_metadata = sidecar.lstat()
                 except FileNotFoundError:
+                    _require_original_stat_policy()
                     continue
+                _require_original_stat_policy()
+                mode = sidecar_metadata.st_mode
+                _require_original_stat_policy()
+                is_regular = _ORIGINAL_S_ISREG(mode)
+                _require_original_stat_policy()
+                is_symlink = _ORIGINAL_S_ISLNK(mode)
+                _require_original_stat_policy()
             if (
-                not stat.S_ISREG(sidecar_metadata.st_mode)
+                not is_regular
+                or is_symlink
                 or sidecar_metadata.st_nlink != 1
             ):
                 raise PlannerJournalPathError(
                     "Planner journal SQLite sidecar must be one regular unaliased file"
                 )
+        _require_original_stat_policy()
     except PlannerJournalPathError:
         raise
     except (OSError, UnicodeError, ValueError) as exc:
