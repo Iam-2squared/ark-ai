@@ -1,0 +1,32 @@
+# ARK AI Run890 — pre-hash Planner argument custody, global Memory audit, privacy expiry, cold mock READ
+
+Observed **2026-11-15 15:55 JST** from runtime wall clock (not a trusted-clock attestation). **JARVIS overall NOT_PASSED**. This report concerns the isolated non-UI research branch and does not open or alter frozen V1/V2/Local UI/Launcher contracts, V3 Candidate/final evaluation, or the paused next-generation UI PR.
+
+## Exact work basis and normal GitHub writes
+
+Initial branch HEAD, Draft PR #8: `408c2eb31230a2845856bfca95348dbda87adab6` (Run889 checkpoint). Prior checkpoint content SHA: `81984f7adc55bfb684bbf5bcadebe315cc8543f3`. Commits were performed through the normal GitHub Contents API on `research/jarvis-foundations`, with a fresh PR HEAD read immediately before every write. No force push, raw Git-tree backdoor, main merge, account connection, API key, paid compute or real tool invocation.
+
+1. **Planner source admission** `b70a6dd029b5b08d40ba535cdbb783a4772801cb` — `src/ark/agency/planner.py` now refuses a reflectively replaced `ToolCall.arguments` carrier unless its type is exactly `MappingProxyType`, before calculating `request_id` and building graph dictionaries. A legitimate `ToolCall` always freezes arguments to that exact type in its existing constructor. This is *an early carrier fence*, not complete recursively authenticated JSON provenance; a reflected `MappingProxyType` with foreign nested values still needs separate review.
+2. **Memory global event append integrity fixtures** `2cc1fc7f3b2d42164610b4b6aa8a9b820461db32` — four tests in `tests/test_memory_global_audit_custody_run890.py` cover loss of a foreign-owner append event, drift in `sqlite_sequence`, an empty event table with a retained high-water mark, and normal interleaved scope-local pagination. These exercises are strictly local/synthetic and are not independently authenticated audit history.
+3. **Privacy expiry/recreation veto integration fixture** `f2154f36bb8f4c9d334e6777b9112c6ab2bcaba8` — one full lifecycle test in `tests/test_privacy_veto_expiry_recreated_source_run890.py` checks that a scope stays vetoed after expiry, bounded purge and recreation under the same source ID, while an unrelated namespace remains eligible for an inert preview. A separately retained revocation witness is checked after restart. This does not prove privacy consent or cross-store atomicity.
+4. **Registered offline READ + cold Planner UNKNOWN join** `6e2a315a24e7be01bc583cce8b88400505446174` — two tests in `tests/test_registered_fixture_planner_cold_unknown_run890.py` combine registry identity, a disconnected math fixture, a Planner RUNNING journal and cold recovery; a mismatched action argument must not alter the journal. The backend has a sentinel `execute` that may **never** be called. All receipt-level authority and automatic replay claims remain False.
+5. **Planner no-callback acceptance/denial fixtures** `b83fb811eaacb875bbe5163a59fec6dde83d2d0e` — four parametrized test cases in `tests/test_planner_reflected_arguments_pre_hash_run890.py`: hostile Mapping cannot enumerate/execute, reflected equal-value dictionaries are refused, and normal nested frozen JSON remains accepted. This establishes a testable pre-hash boundary, not protection against all possible Python runtime tampering.
+
+**11 authored tests across four new files, 1 updated non-frozen Planner source file.** This is the authored count, *not a declaration of 11 passing cases*. No local full-repository pytest/Ruff was available: the container lacks DNS access to clone GitHub; hosted exact-head CI is the verification authority.
+
+## CI and evidence — do not transfer GREEN between HEADs
+
+- Inherited Run889 checkpoint HEAD `408c2eb31230a2845856bfca95348dbda87adab6`: [Actions #43682801289](https://github.com/Iam-2squared/ark-ai/actions/runs/43682801289), **GREEN all six** Ubuntu/Windows × Python 3.11–3.13, completed 2026-11-15 06:22:25 UTC. This validates the **basis only**.
+- Planner source HEAD `b70a6dd0...`: [Actions #43687209167](https://github.com/Iam-2squared/ark-ai/actions/runs/43687209167), **IN PROGRESS** when observed.
+- Memory tests HEAD `2cc1fc7f...`: [Actions #43687270684](https://github.com/Iam-2squared/ark-ai/actions/runs/43687270684), **IN PROGRESS** when observed.
+- Privacy test HEAD `f2154f36...`: [Actions #43687349692](https://github.com/Iam-2squared/ark-ai/actions/runs/43687349692), **IN PROGRESS** when observed.
+- Registered mock READ integration HEAD `6e2a315a...`: no workflow was returned in the sampled commit-specific query; **NOT VERIFIED**, do not infer failure or success.
+- Latest authored source/test HEAD `b83fb811...`: [Actions #43687564504](https://github.com/Iam-2squared/ark-ai/actions/runs/43687564504), **QUEUED** when observed. Any subsequent report/checkpoint commit will trigger its own CI. **The latest exact HEAD is NOT yet certified 6/6 GREEN**.
+
+## Safety boundary and follow-up
+
+No physical computer, real GGUF, paid API, external compute, external READ/WRITE backend, real personal data, trusted-clock authority, auto replay, Candidate generation/promotion, protected final evaluation, frozen-contract change, or main merge was touched. PR #5 remains Draft and protected. PR #9 is Draft, unmerged and untouched; **all new UI/frontend work remains paused**. PR #8 remains Draft/unmerged.
+
+Remaining blockers: Windows WAL/SHM last-close transient-inode races; multi-process revocation failure response despite durable winning veto; cross-store commit-UNKNOWN/once-only; independent evidence and authentic privacy consent; target-PC physical GGUF gate. The new Planner check is intentionally limited to the top-level exact argument carrier; **recursively forged nested carriers deserve a separate pre-hash admission gate** and focused tests, with historic error/valid-request compatibility preserved.
+
+**Next plan / 今後の方針:** (1) confirm exact-head CI jobs; if FAIL, diagnose precise logs and make minimal normal-path fixes without weakening refusal semantics; (2) review nested Planner argument custody without crossing frozen ToolCall contract; (3) continue bounded cross-process SQLite last-close diagnostics without unsafe retry; (4) strengthen Memory expiry/CAS witness and Planner UNKNOWN/replay quarantine; (5) connect only independently GREEN Registry, PermissionGate, retained occurrence, audit-before-action and disconnected mock components, never actual dispatch.

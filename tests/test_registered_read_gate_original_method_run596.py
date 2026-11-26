@@ -1,0 +1,148 @@
+"""Registered READ preflight must not trust a substituted PermissionGate method.
+
+All inputs are offline and backend.execute is forbidden. These checks prove
+neither durable grant custody nor permission for an actual external READ.
+"""
+
+import pytest
+
+from ark.agency.contracts import CapabilityGrant, Effect, ToolCall
+from ark.agency.disconnected_registered_read_preflight import (
+    DisconnectedReadPreflightRejected,
+    review_disconnected_registered_read,
+)
+from ark.agency.policy import PermissionGate
+from ark.agency.registry import ToolRegistration, ToolRegistry
+
+
+class _NoBackend:
+    def __init__(self):
+        self.calls = 0
+
+    def execute(self, call):
+        self.calls += 1
+        raise AssertionError("synthetic READ must never execute")
+
+
+def _inputs():
+    backend = _NoBackend()
+    registry = ToolRegistry((
+        ToolRegistration("local.read", "local.read", Effect.READ, "offline", backend),
+    ))
+    call = ToolCall("local.read", "local.read", "fixture", {"x": 1})
+    grant = CapabilityGrant("local.read", "fixture", expires_at_ms=100)
+    return registry, PermissionGate(), call, (grant,), backend
+
+
+def _review(items):
+    registry, gate, call, grants, _backend = items
+    return review_disconnected_registered_read(
+        registry, gate, call, grants, now_ms=10,
+    )
+
+
+@pytest.mark.parametrize("kind", ("forged", "delegating"))
+def test_class_policy_method_replacement_denied_even_if_result_is_bound(
+    monkeypatch, kind,
+):
+    items = _inputs()
+    registry, gate, call, _grants, backend = items
+    original = PermissionGate.authorize_registered
+
+    def fake(self, registry, call, grants, *, now_ms, one_shot=None):
+        if kind == "forged":
+            return registry.bind(call)
+        return original(
+            self, registry, call, grants, now_ms=now_ms, one_shot=one_shot,
+        )
+
+    monkeypatch.setattr(PermissionGate, "authorize_registered", fake)
+    with pytest.raises(
+        DisconnectedReadPreflightRejected, match="policy implementation changed",
+    ):
+        _review(items)
+    assert registry.bind(call).call is call
+    assert gate._consumed_tokens == set()
+    assert backend.calls == 0
+
+
+def test_registry_callback_cannot_install_class_policy_forgery_mid_review(
+    monkeypatch,
+):
+    items = _inputs()
+    registry, gate, call, _grants, backend = items
+    original_bind = registry.bind
+
+    def changed_bind(self, current):
+        monkeypatch.setattr(
+            PermissionGate, "authorize_registered",
+            lambda self, reg, c, grants, *, now_ms: reg.bind(c),
+        )
+        return original_bind(current)
+
+    monkeypatch.setattr(ToolRegistry, "bind", changed_bind)
+    with pytest.raises(
+        DisconnectedReadPreflightRejected, match="policy implementation changed",
+    ):
+        _review(items)
+    assert gate._consumed_tokens == set()
+    assert backend.calls == 0
+
+
+def test_unmodified_read_policy_stays_tokenless_and_no_dispatch():
+    items = _inputs()
+    result = _review(items)
+    assert result.backend_dispatched is False
+    assert result.write_authorized is False
+    assert result.durable_permission_proven is False
+    assert items[1]._consumed_tokens == set()
+    assert items[-1].calls == 0
+
+
+@pytest.mark.parametrize("bad_gate", (None, object(), PermissionGate))
+def test_invalid_gate_shape_rejected_as_bounded_input(bad_gate):
+    registry, _gate, call, grants, backend = _inputs()
+    with pytest.raises(
+        DisconnectedReadPreflightRejected, match="exact bounded preflight inputs",
+    ):
+        review_disconnected_registered_read(
+            registry, bad_gate, call, grants, now_ms=10,
+        )
+    assert backend.calls == 0
+
+
+def test_instance_policy_method_shadow_is_rejected_before_read_review():
+    items = _inputs()
+    gate = items[1]
+    with pytest.raises(AttributeError, match="immutable"):
+        gate.authorize_registered = lambda *_args, **_kwargs: None
+
+    result = _review(items)
+    assert result.backend_dispatched is False
+    assert result.write_authorized is False
+    assert gate._consumed_tokens == set()
+    assert items[-1].calls == 0
+
+
+def test_registry_callback_cannot_shadow_instance_policy_method():
+    items = _inputs()
+    registry, gate, _call, _grants, backend = items
+    original_bind = registry.bind
+
+    def changed_bind(self, current):
+        with pytest.raises(AttributeError, match="immutable"):
+            gate.authorize_registered = lambda *_args, **_kwargs: original_bind(current)
+        return original_bind(current)
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        monkeypatch.setattr(ToolRegistry, "bind", changed_bind)
+        with pytest.raises(
+            DisconnectedReadPreflightRejected,
+            match="registered READ preflight denied",
+        ):
+            _review(items)
+    finally:
+        monkeypatch.undo()
+    assert gate._consumed_tokens == set()
+    assert backend.calls == 0

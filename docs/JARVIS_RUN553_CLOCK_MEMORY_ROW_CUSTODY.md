@@ -1,0 +1,20 @@
+# Run553 — Synthetic-clock denial regression and Memory post-COMMIT row custody
+
+**Scope:** isolated, free-only PR #8 JARVIS foundations on `research/jarvis-foundations` (Draft/unmerged). No real clock attestation, write authorization, actor/consent evidence, ToolBackend, cross-store atomicity, automatic retry, personal-data erasure, protected V2 opening, or main merge.
+
+## 1. Earlier strict clock rejection: legacy tests only
+
+Inherited Run552 source `src/ark/agency/synthetic_clock_sequence_review.py` now rejects replacement of the original false-only authority-property descriptors, including `trusted_clock_verified`, `dispatch_authorized`, `automatic_replay_authorized`, before an older witness/generator diagnostic. Exact inherited Run552 checkpoint [CI 41413044780](https://github.com/Iam-2squared/ark-ai/actions/runs/41413044780) completed **6/6 FAIL** with six old parameter-expanded cases in `tests/test_synthetic_clock_authority_epoch_run488.py` expecting the older rejection message instead of the earlier, stricter `synthetic clock denial descriptor changed`.
+
+- Ordinary Contents test-only correction `7f857b31fad97fe14b2648a907232676e1bf2658` accepts either old or new fail-closed diagnostic, without modifying source authority guards. Its exact CI [41423217237](https://github.com/Iam-2squared/ark-ai/actions/runs/41423217237) failed Ruff E501 (long regex line).
+- Semantics-preserving line wrap correction `f09c3a67cfb4af1289ec3a54b3731b185e82de23`; source denial conditions remain unchanged. No trusted clock, dispatch or automatic replay is enabled.
+
+## 2. SQLite Memory manual COMMIT-UNKNOWN triage: row-image SHA custody
+
+- Source `src/ark/memory/postcommit_uncertainty_review.py` at `85db9648c276c6353063284bb3862acb6ff3a25f`. The coherent SQLite `_snapshot` returns both row and a generation token whose row SHA covers the exact saved record. Synthetic callbacks in the bounded event scan or connection teardown can later mutate that record in memory. New `stable_row()` checks exact `MemoryRecord` class and independently computes `_row_hash(record)` versus the previously observed generation token SHA. Checks occur after SQLite observation, during event scanning, after classification, after connection teardown and across report denial getters.
+- New `tests/test_memory_postcommit_row_image_custody_run553.py`, created `a89e63cb45a7885c85842deecc4a585934b8f0a0`, import sorting corrected at `f2e453ed504ff591eb57e23e0293ca24bc5efa28`. **Five newly authored parameter-expanded cases**: three in-memory row image edits (content, metadata, expiry) after a different durable update, one connection-close row edit, and one unchanged benign manual-only match. These are authored cases, not local pytest PASS counts.
+- Earlier exact source and test HEAD CI [41423877780](https://github.com/Iam-2squared/ark-ai/actions/runs/41423877780) and [41423978535](https://github.com/Iam-2squared/ark-ai/actions/runs/41423978535) failed initial Ruff E501/I001 because the older clock test line and new test fixture import had not been sorted yet; no claim of full tests on those heads. The corrected test HEAD [41424225689](https://github.com/Iam-2squared/ark-ai/actions/runs/41424225689) was still IN PROGRESS at note authoring; independently inspect its complete six-job result. An unchanged record must still report `ONE_MATCHING_UPDATE_VISIBLE` with **no caller attribution and no retry/write permission**.
+
+## Limits and subsequent integration gates
+
+A local row/hash match cannot prove which writer COMMITted, distinguish a concurrent identical update, certify external effects, or authorize another attempt. Local synthetic clock data cannot prove trustworthy wall-clock time. These changes do not alter frozen Memory v1 or Planner contracts, V1/V2/Local UI/Launcher evidence, database schema, permission rights, user data or main. Continue exact-HEAD CI closure and independent read-only Planner / ToolRegistry / Scheduler integration only after lower-level evidence; otherwise preserve explicit blockers and advance separate free lanes.

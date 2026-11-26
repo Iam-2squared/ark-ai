@@ -1,0 +1,36 @@
+# ARK AI — Run671 | non-UI Personal Context receipt / Memory deadline / Planner branch recovery
+
+**Administrative evidence status:** saved 2026-11-07 07:03:34 +09:00 Asia/Tokyo/JST. This timestamp is an observed GitHub-write administrative clock, **not trusted audit time, authentic consent or signed evidence**. All work is local-only, zero-new-paid-service, and on open Draft PR #8 `research/jarvis-foundations`, **never main**. Source/test changes are authored; only CI jobs actually completed may be marked GREEN.
+
+## Exact HEAD custody and new packages
+
+- **Initial checked Run670 work-basis HEAD:** `a315c58d76dea77b334efde76e3dc65eeb2b164d`. The preceding Run670 report covers proactive restart ingress, Memory dual post-COMMIT diagnostics and observation UTF-8 request-budget guards. None of those source/test files were edited by this run.
+- **Package 1 / privacy source:** `4ca9d05c3584bd5aca764d6142895d500242e754` updates only `src/ark/personal_context_reuse_review.py`. It pins original `SyntheticContextReuseReview` slot fields, constructors/lookup hooks and the three False-only authority descriptors at import, checks them before private SQLite projection and before/after receipt construction, validates receipt exact type and each denied getter with a fresh descriptor/field check. These are local tamper fences, not a malicious interpreter sandbox.
+- **Package 1 / privacy tests:** `4d97df74047f59f690cd33f02eb6a0d11b89cf67` creates `tests/test_context_reuse_receipt_preaccess_run671.py`: **11 authored cases**, including eight parametrized result slot/descriptor/hook substitutions rejected without a private projection, a counterfeit result type, a post-projection descriptor mutation and an inert success. Existing reentrant-constructor tests were intentionally preserved by checking the original receipt *class descriptors* at ingress, while refusing a counterfeit *returned instance* after the callback; no data export authority is granted.
+- **Package 2 / Memory tests:** `e1f7786b7fde7e949ddeb277bc465084eee136fe` creates `tests/test_generation_cas_expiry_no_extension_run671.py`: **7 authored cases**, including five exact boundary/extension/clock rollback variants, one shorter-expiry valid update with stale-token replay refusal and one deadline equality check across two SQLite handles. No frozen Memory schema, put/delete API, timestamp trust or CAS implementation changed.
+- **Package 3 / Planner tests:** `776d81b474fb8467cd4fb0144cadc1f851b5dabe` creates `tests/test_planner_two_branch_recovery_fence_run671.py`: **5 authored cases** (four FAILED/CANCELLED × independent WRITE pending/RUNNING combinations plus one forged cancellation/status-digest refusal). The six-step DAG exercises uncertain READ ancestry, terminal branch propagation, held/quarantined independent WRITE, and unchanged journal after the disconnected projection. This is a *diagnostic-only* fence; no ToolBackend, write approval or automatic replay.
+- **Total:** three independent non-UI packages, **23 newly authored cases** across three test files, one production safety hardening. Prior exact-head and newer CI checks, not local execution, determine PASS. The technical report's resulting SHA and checkpoint SHA are assigned only by GitHub *after* each normal Contents write.
+
+## CI observations — no premature full GREEN
+
+- Inherited **Run669 exact-head CI #42292848693** was verified as **completed 6/6 GREEN** (Ubuntu/Windows × Python 3.11–3.13); inherited Run670 document HEAD `a315c58...` workflow [#42299981658](https://github.com/Iam-2squared/ark-ai/actions/runs/42299981658) was later independently confirmed **GREEN 6/6**.
+- Privacy source `4ca9d05...` workflow [#42300924292](https://github.com/Iam-2squared/ark-ai/actions/runs/42300924292): last sample **Ubuntu 3/3 GREEN**, Windows 3 IN PROGRESS.
+- Privacy cases `4d97df7...` workflow [#42301033333](https://github.com/Iam-2squared/ark-ai/actions/runs/42301033333): last sample **Ubuntu 3/3 GREEN**, Windows 3 IN PROGRESS.
+- Memory tests `e1f7786...` workflow [#42301173359](https://github.com/Iam-2squared/ark-ai/actions/runs/42301173359): last sample **Ubuntu Python 3.11 GREEN**, other five jobs IN PROGRESS.
+- Planner tests `776d81b...` [#42301513402](https://github.com/Iam-2squared/ark-ai/actions/runs/42301513402): **FAIL 6/6** (Ruff I001 unsorted import block, verified from both Linux and Windows job logs). An initial import-only correction `bf82036953c2b292828eb6a3ec393b713e8fb2b4` [#42301808268](https://github.com/Iam-2squared/ark-ai/actions/runs/42301808268) remained **FAIL 6/6** on the same lint rule. A second normal Contents repair `c919628654e2259eac07679bbccd8bb540ef4ecb` uses the identical import grouping already present in inherited GREEN Planner test modules, and adds one forged-status-digest denial case. [#42302192201](https://github.com/Iam-2squared/ark-ai/actions/runs/42302192201) was **IN PROGRESS**, not yet GREEN. No production protection, permission or frozen contract was weakened.
+- The latest technical report and checkpoint may trigger automatic CI; no duplicate workflow dispatch was requested.
+- No invented test counts from CI, no external GPU or paid service. CI output above is per-workflow and not a substitute for exact latest-checkpoint 6/6.
+
+## Risk, scope, and explicit non-claims
+
+- SQLite-local row/event hashes and synthetic clocks are diagnostic observations, not independent writers, true COMMIT ownership, external effects, trusted time, authenticated user consent or a guarantee of exactly-once actions.
+- Receipt descriptor pinning detects local reflected substitution; it cannot sandbox hostile Python that can mutate the same interpreter or authenticate privacy decisions. Existing cached SUCCEEDED without independent result receipt remains blocked.
+- All *real* JARVIS/ARK release gates remain NOT_PASSED; no Windows physical hardware/GGUF claim, protected/frozen V2 final-evaluation opening, Candidate artifact/training/promotion, paid/external compute, new credential or account, real ToolBackend execution, destructive operation, frozen-contract modification or main merge.
+- PR #5 (`research/v3-learning-evaluation`) stays Draft/unmerged under training/approval gates. UI PR #9 (`ui/next-generation-command-center-20261103`) stays Draft/unmerged, branch unchanged, all new UI/frontend development **paused**. V1/V2/Local UI/Launcher evidence remains immutable.
+
+## Dependency-aware Next plan / 今後の方針
+
+1. Verify **latest exact-head** workflow across six OS/Python combinations; inspect actual failed logs and use normal Contents path only for a minimal semantics-preserving fix. Keep older failed evidence.
+2. Improve Memory independent-writer COMMIT-UNKNOWN reconciliation, CAS expiry/ABA/coherent WAL snapshots without replays or source attribution; then add crash-bound Planner success result receipt custody.
+3. After lower-level exact-HEAD GREEN, bind immutable ToolRegistry identity, exact PermissionGate, durable occurrence/replay denial and trusted-clock audit-before-action using **disconnected mock**, never live effects.
+4. Continue revocation-scoped Personal Context, proactive scheduler restart, observation fixture identity and free-only V3 license/identity/path guards independently. UI/paid/hardware/protected evaluation/Candidate/main approval gates remain closed.

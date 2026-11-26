@@ -1,0 +1,965 @@
+"""Immutable registry and registry-bound identities for ARK tool backends."""
+
+from __future__ import annotations
+
+import gc
+import hashlib
+import inspect
+import json
+import math
+import unicodedata
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
+
+from .contracts import Effect, ToolBackend, ToolCall
+
+_MAX_REGISTRATIONS = 256  # Bound hostile registration generators before hashing.
+_MAX_REGISTRATION_TEXT = 256  # Bound individual tool/identity text before hashing.
+
+# Bounds are an import-time admission contract, not mutable tuning knobs.
+# Verify before touching a caller-owned tool identity or backend descriptor.
+_ORIGINAL_ADMISSION_LIMITS = (_MAX_REGISTRATIONS, _MAX_REGISTRATION_TEXT)
+
+
+def _require_original_registry_limits() -> None:
+    if (
+        type(_MAX_REGISTRATIONS) is not int
+        or type(_MAX_REGISTRATION_TEXT) is not int
+        or (_MAX_REGISTRATIONS, _MAX_REGISTRATION_TEXT)
+        != _ORIGINAL_ADMISSION_LIMITS
+    ):
+        raise ValueError("registry admission limits changed")
+
+
+def _require_original_registry_unicode() -> None:
+    """Pin Unicode category semantics before inspecting registry identity text."""
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ValueError("registry Unicode category dependency changed")
+
+
+_ORIGINAL_HASHLIB = hashlib
+_ORIGINAL_JSON = json
+_ORIGINAL_SHA256 = hashlib.sha256
+_ORIGINAL_JSON_DUMPS = json.dumps
+_ORIGINAL_INSPECT = inspect
+_ORIGINAL_GETATTR_STATIC = inspect.getattr_static
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
+
+
+def _require_original_registry_digest() -> None:
+    """Refuse substituted digest/JSON code before reading registry identities.
+
+    These local in-process identity checks are not a security sandbox,
+    authenticated backend attestation, or permission to dispatch a tool.
+    """
+    _require_original_registry_limits()
+    _require_original_registry_unicode()
+    if (
+        # Module rebinding may itself install executable __getattr__ code.
+        # Compare the module identity before fetching a digest/JSON member.
+        hashlib is not _ORIGINAL_HASHLIB
+        or json is not _ORIGINAL_JSON
+        or hashlib.sha256 is not _ORIGINAL_SHA256
+        or json.dumps is not _ORIGINAL_JSON_DUMPS
+    ):
+        raise ValueError("registry digest dependencies changed")
+
+
+
+def _text(name: str, value: object) -> str:
+    _require_original_registry_limits()
+    _require_original_registry_unicode()
+    if type(value) is not str:
+        raise ValueError(f"{name} must be a non-empty exact string")
+    # The constant-time codepoint cap must precede strip() and NUL search:
+    # a reflected or caller-provided multi-megabyte identity is rejected
+    # before any linear scan or backend descriptor inspection.
+    if len(value) > _MAX_REGISTRATION_TEXT:
+        raise ValueError(f"{name} exceeds registry identifier budget")
+    if not value.strip():
+        raise ValueError(f"{name} must be a non-empty exact string")
+    # Native and shell-facing identities must not embed NUL separators.
+    # Refuse before inspecting backend.execute or serializing a revision.
+    if "\x00" in value:
+        raise ValueError(f"{name} contains a NUL separator")
+    # Control characters can forge audit/log fields or yield ambiguous native
+    # backend labels. This bounded scan is intentionally stricter than the
+    # frozen generic ToolCall v1 identity contract.
+    if any(ord(character) < 0x20 or ord(character) == 0x7f for character in value):
+        raise ValueError(f"{name} contains a control character")
+    # C1 terminal controls, Unicode directional marks and alternate line
+    # separators can visually forge audit/permission identities.
+    # Reject these controls only at the opt-in registry boundary,
+    # preserving meaningful multilingual letters and frozen ToolCall v1.
+    if any(
+        _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
+        or 0x80 <= codepoint <= 0x9F
+        or codepoint in (0x61C, 0x200E, 0x200F, 0x2028, 0x2029)
+        or 0x202A <= codepoint <= 0x202E
+        or 0x2066 <= codepoint <= 0x2069
+        or codepoint in (
+            0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+            0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+        )
+        or 0x206A <= codepoint <= 0x206F
+        for codepoint in map(ord, value)
+    ):
+        raise ValueError(f"{name} contains a Unicode formatting control")
+    # Revision and bound-action identities serialize as UTF-8. Restrict the
+    # actual byte budget and reject lone surrogate code points at ingress,
+    # before a backend descriptor, registry digest or policy gate is touched.
+    try:
+        byte_count = len(value.encode("utf-8", errors="strict"))
+    except UnicodeError as exc:
+        raise ValueError(f"{name} is not valid UTF-8 text") from exc
+    if byte_count > _MAX_REGISTRATION_TEXT:
+        raise ValueError(f"{name} exceeds registry identifier budget")
+    return value
+
+
+def _registry_scope_budget(value: object) -> None:
+    """Bound optional registry scope before scanning or hashing a ToolCall.
+
+    ToolCall v1 intentionally remains unchanged. A reflected scope may have
+    grown far beyond its original string, so the exact carrier and codepoint
+    bound must be checked before any linear Unicode/control inspection.
+    """
+    if type(value) is not str or len(value) > 4096:
+        raise ValueError("registered ToolCall scope exceeds registry budget")
+    try:
+        byte_count = len(value.encode("utf-8", errors="strict"))
+    except UnicodeEncodeError as exc:
+        raise ValueError("registered ToolCall scope is not valid UTF-8") from exc
+    if byte_count > 4096:
+        raise ValueError("registered ToolCall scope exceeds registry budget")
+
+
+_ORIGINAL_REGISTRY_SCOPE_BUDGET = _registry_scope_budget
+
+
+# ToolCall v1 deliberately accepts general Mapping inputs. Once a frozen
+# ToolCall reaches the opt-in registry/policy boundary, however, its reflected
+# argument carrier must still be the exact recursively frozen JSON shape.
+# A foreign Mapping can execute __iter__/items while ToolCall is reconstructed
+# or request_id is hashed, before a later carrier-identity check can reject it.
+_MAX_TOOL_CALL_ARGUMENT_NODES = 4096
+_MAX_TOOL_CALL_ARGUMENT_DEPTH = 32
+_MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS = 65536
+_MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES = 256 * 1024
+_MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS = 14000
+_ORIGINAL_TOOL_CALL_ARGUMENT_LIMITS = (
+    _MAX_TOOL_CALL_ARGUMENT_NODES,
+    _MAX_TOOL_CALL_ARGUMENT_DEPTH,
+    _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS,
+    _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES,
+    _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS,
+)
+_ORIGINAL_GC = gc
+_ORIGINAL_GC_GET_REFERENTS = gc.get_referents
+_ORIGINAL_MATH = math
+_ORIGINAL_MATH_ISFINITE = math.isfinite
+_ORIGINAL_MAPPING_PROXY_TYPE = MappingProxyType
+_ORIGINAL_DICT_TYPE = dict
+_ORIGINAL_DICT_ITEMS = dict.items
+_ORIGINAL_DICT_COPY = dict.copy
+
+
+def _admit_frozen_toolcall_arguments(value: object) -> None:
+    """Check a ToolCall's reflected JSON carrier without invoking foreign mappings.
+
+    MappingProxyType is accepted only when its actual backing object is an
+    exact built-in dict. This rejects a proxy around a custom Mapping before
+    its iterator/items hooks can run. It is a local in-process admission fence,
+    not a sandbox or a change to the frozen ToolCall v1 constructor contract.
+    """
+    limits = (
+        _MAX_TOOL_CALL_ARGUMENT_NODES,
+        _MAX_TOOL_CALL_ARGUMENT_DEPTH,
+        _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS,
+        _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES,
+        _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS,
+    )
+    if (
+        gc is not _ORIGINAL_GC
+        or gc.get_referents is not _ORIGINAL_GC_GET_REFERENTS
+        or math is not _ORIGINAL_MATH
+        or math.isfinite is not _ORIGINAL_MATH_ISFINITE
+        or MappingProxyType is not _ORIGINAL_MAPPING_PROXY_TYPE
+        or any(type(limit) is not int for limit in limits)
+        or limits != _ORIGINAL_TOOL_CALL_ARGUMENT_LIMITS
+    ):
+        raise ValueError("ToolCall argument admission dependencies changed")
+    if type(value) is not _ORIGINAL_MAPPING_PROXY_TYPE:
+        raise ValueError("ToolCall arguments are not a frozen mapping carrier")
+
+    nodes = 0
+    text_bytes = 0
+
+    def visit(item: object, depth: int) -> None:
+        nonlocal nodes, text_bytes
+        if depth > _MAX_TOOL_CALL_ARGUMENT_DEPTH:
+            raise ValueError("ToolCall argument nesting budget exceeded")
+        nodes += 1
+        if nodes > _MAX_TOOL_CALL_ARGUMENT_NODES:
+            raise ValueError("ToolCall argument node budget exceeded")
+        kind = type(item)
+        if item is None or kind is bool:
+            return
+        if kind is int:
+            if item.bit_length() > _MAX_TOOL_CALL_ARGUMENT_INTEGER_BITS:
+                raise ValueError("ToolCall argument integer budget exceeded")
+            return
+        if kind is str:
+            if len(item) > _MAX_TOOL_CALL_ARGUMENT_TEXT_CHARS:
+                raise ValueError("ToolCall argument text budget exceeded")
+            try:
+                size = len(item.encode("utf-8", errors="strict"))
+            except UnicodeError as exc:
+                raise ValueError("ToolCall argument text is not valid UTF-8") from exc
+            text_bytes += size
+            if text_bytes > _MAX_TOOL_CALL_ARGUMENT_TEXT_BYTES:
+                raise ValueError("ToolCall argument text budget exceeded")
+            return
+        if kind is float:
+            if not _ORIGINAL_MATH_ISFINITE(item):
+                raise ValueError("ToolCall argument float is not finite")
+            return
+        if kind is tuple:
+            if len(item) > _MAX_TOOL_CALL_ARGUMENT_NODES:
+                raise ValueError("ToolCall argument sequence budget exceeded")
+            for child in item:
+                visit(child, depth + 1)
+            return
+        if kind is _ORIGINAL_MAPPING_PROXY_TYPE:
+            referents = _ORIGINAL_GC_GET_REFERENTS(item)
+            if (
+                type(referents) is not list
+                or len(referents) != 1
+                or type(referents[0]) is not _ORIGINAL_DICT_TYPE
+            ):
+                raise ValueError(
+                    "ToolCall mapping proxy is not backed by an exact dict"
+                )
+            backing = _ORIGINAL_DICT_COPY(referents[0])
+            if (
+                type(backing) is not _ORIGINAL_DICT_TYPE
+                or len(backing) > _MAX_TOOL_CALL_ARGUMENT_NODES
+            ):
+                raise ValueError("ToolCall argument mapping budget exceeded")
+            for key, child in _ORIGINAL_DICT_ITEMS(backing):
+                if type(key) is not str:
+                    raise ValueError("ToolCall argument key is not an exact string")
+                visit(key, depth + 1)
+                visit(child, depth + 1)
+            return
+        raise ValueError("ToolCall argument tree contains a foreign carrier")
+
+    visit(value, 0)
+
+
+_ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION = _admit_frozen_toolcall_arguments
+
+
+def _canonical_json(value: object) -> bytes:
+    _require_original_registry_digest()
+    return (
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+
+
+def _backend_execute_descriptor(backend: object) -> object:
+    """Inspect execution interface without invoking a property or backend."""
+    # The static lookup is a security-relevant local fault-injection seam.
+    # If a caller replaces inspect.getattr_static, it could dynamically
+    # evaluate a backend.execute property before a registry is even bound.
+    if (
+        inspect is not _ORIGINAL_INSPECT
+        or inspect.getattr_static is not _ORIGINAL_GETATTR_STATIC
+    ):
+        raise TypeError("backend static inspection dependency changed")
+    try:
+        descriptor = inspect.getattr_static(backend, "execute")
+    except AttributeError as exc:
+        raise TypeError("backend must expose a callable execute method") from exc
+    if not callable(descriptor):
+        raise TypeError("backend execute must be statically callable")
+    return descriptor
+
+
+@dataclass(frozen=True, slots=True)
+class ToolRegistration:
+    """One immutable registry entry."""
+
+    name: str
+    capability: str
+    effect: Effect
+    backend_id: str
+    backend: ToolBackend
+
+    def __post_init__(self) -> None:
+        _require_original_registration_contract()
+        _text("tool name", self.name)
+        _text("capability", self.capability)
+        if type(self.effect) is not Effect:
+            raise TypeError("effect must be an Effect")
+        _text("backend_id", self.backend_id)
+        # The static check is the complete structural interface contract.
+        # isinstance(..., a runtime-checkable Protocol) can invoke a hostile
+        # backend's __getattribute__("execute") on Python 3.11. Registration
+        # must not call user code, even to validate an inert mock backend.
+        _backend_execute_descriptor(self.backend)
+
+
+@dataclass(frozen=True, slots=True)
+class BoundAction:
+    """A ToolCall resolved against one exact immutable registry revision."""
+
+    registry_revision: str
+    call: ToolCall
+    registration: ToolRegistration
+    bound_action_id: str
+
+
+_REGISTRATION_TYPE = ToolRegistration
+_REGISTRATION_FIELDS = ("name", "capability", "effect", "backend_id", "backend")
+_REGISTRATION_METHODS = ("__init__", "__post_init__")
+_REGISTRATION_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+# A missing class hook is not equivalent to an explicit None (or another
+# non-callable value). Keep a unique sentinel so class namespace membership is
+# part of the exact lookup-policy epoch.
+_REGISTRATION_HOOK_ABSENT = object()
+_ORIGINAL_REGISTRATION_FIELDS = tuple(
+    vars(_REGISTRATION_TYPE)[name] for name in _REGISTRATION_FIELDS
+)
+_ORIGINAL_REGISTRATION_METHODS = tuple(
+    vars(_REGISTRATION_TYPE)[name] for name in _REGISTRATION_METHODS
+)
+_ORIGINAL_REGISTRATION_HOOKS = tuple(
+    vars(_REGISTRATION_TYPE).get(name, _REGISTRATION_HOOK_ABSENT)
+    for name in _REGISTRATION_HOOKS
+)
+# Pin the complete descriptor inventories, not only their zipped values.
+# Rebinding a name tuple to an empty or reordered vector cannot suppress a
+# class-hook or registered-identity inspection before backend access.
+_ORIGINAL_REGISTRATION_FIELDS_VECTOR = _REGISTRATION_FIELDS
+_ORIGINAL_REGISTRATION_METHODS_VECTOR = _REGISTRATION_METHODS
+_ORIGINAL_REGISTRATION_HOOKS_VECTOR = _REGISTRATION_HOOKS
+
+
+def _require_original_registration_contract(
+    *,
+    _registration_type: type = _REGISTRATION_TYPE,
+    _registration_hook_names: tuple[str, ...] = _REGISTRATION_HOOKS,
+    _registration_hook_absent: object = _REGISTRATION_HOOK_ABSENT,
+    _original_registration_hooks: tuple[object, ...] = _ORIGINAL_REGISTRATION_HOOKS,
+) -> None:
+    """Reject class-level substitution before reading registration fields.
+
+    Frozen instance fields do not prevent replacing a class slot descriptor
+    with a property that executes arbitrary code during registry inspection.
+    This local identity check is not remote backend attestation.
+    """
+    lookup_namespace = vars(_registration_type)
+    if (
+        _REGISTRATION_FIELDS is not _ORIGINAL_REGISTRATION_FIELDS_VECTOR
+        or _REGISTRATION_METHODS is not _ORIGINAL_REGISTRATION_METHODS_VECTOR
+        or _REGISTRATION_HOOKS is not _registration_hook_names
+        or _ORIGINAL_REGISTRATION_HOOKS_VECTOR is not _registration_hook_names
+        or _REGISTRATION_HOOK_ABSENT is not _registration_hook_absent
+        or _ORIGINAL_REGISTRATION_HOOKS is not _original_registration_hooks
+        or ToolRegistration is not _registration_type
+        or _REGISTRATION_TYPE is not _registration_type
+        or any(
+            lookup_namespace.get(name) is not original
+            for names, originals in (
+                (_REGISTRATION_FIELDS, _ORIGINAL_REGISTRATION_FIELDS),
+                (_REGISTRATION_METHODS, _ORIGINAL_REGISTRATION_METHODS),
+            )
+            for name, original in zip(names, originals, strict=True)
+        )
+        or any(
+            (name in lookup_namespace) != (original is not _registration_hook_absent)
+            or (
+                name in lookup_namespace
+                and lookup_namespace[name] is not original
+            )
+            for name, original in zip(
+                _registration_hook_names,
+                _original_registration_hooks,
+                strict=True,
+            )
+        )
+    ):
+        raise ValueError("tool registration contract changed")
+
+
+_BOUND_TYPE = BoundAction
+_ORIGINAL_BOUND_INIT = vars(_BOUND_TYPE)["__init__"]
+# Binding a frozen dataclass still reads its slots after construction.
+# Replaced class descriptors/getters could execute caller-supplied code
+# before the returned identity is verified. Pin them at module import.
+_BOUND_FIELDS = ("registry_revision", "call", "registration", "bound_action_id")
+_BOUND_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_BOUND_FIELDS = tuple(
+    vars(_BOUND_TYPE)[name] for name in _BOUND_FIELDS
+)
+_ORIGINAL_BOUND_HOOKS = tuple(
+    vars(_BOUND_TYPE).get(name) for name in _BOUND_HOOKS
+)
+_TOOL_CALL_TYPE = ToolCall
+_TOOL_CALL_ORIGINALS = (
+    "__init__", "__post_init__", "request_id", "arguments_sha256",
+)
+_ORIGINAL_TOOL_CALL_DESCRIPTORS = tuple(
+    vars(_TOOL_CALL_TYPE)[name] for name in _TOOL_CALL_ORIGINALS
+)
+_TOOL_CALL_INPUT_FIELDS = ("tool", "capability", "scope", "arguments")
+_ORIGINAL_TOOL_CALL_INPUT_FIELDS = tuple(
+    vars(_TOOL_CALL_TYPE)[name] for name in _TOOL_CALL_INPUT_FIELDS
+)
+_TOOL_CALL_LOOKUP_HOOKS = ("__new__", "__getattribute__", "__getattr__")
+_ORIGINAL_TOOL_CALL_LOOKUP_HOOKS = tuple(
+    vars(_TOOL_CALL_TYPE).get(name) for name in _TOOL_CALL_LOOKUP_HOOKS
+)
+_ORIGINAL_BOUND_FIELDS_VECTOR = _BOUND_FIELDS
+_ORIGINAL_BOUND_HOOKS_VECTOR = _BOUND_HOOKS
+_ORIGINAL_TOOL_CALL_ORIGINALS_VECTOR = _TOOL_CALL_ORIGINALS
+_ORIGINAL_TOOL_CALL_INPUT_FIELDS_VECTOR = _TOOL_CALL_INPUT_FIELDS
+_ORIGINAL_TOOL_CALL_LOOKUP_HOOKS_VECTOR = _TOOL_CALL_LOOKUP_HOOKS
+
+
+def _require_original_toolcall_contract() -> None:
+    # Dataclass initialization invokes __post_init__ dynamically. A patched
+    # constructor/property must not run before registry identity validation.
+    if (
+        _TOOL_CALL_ORIGINALS is not _ORIGINAL_TOOL_CALL_ORIGINALS_VECTOR
+        or _TOOL_CALL_INPUT_FIELDS is not _ORIGINAL_TOOL_CALL_INPUT_FIELDS_VECTOR
+        or _TOOL_CALL_LOOKUP_HOOKS is not _ORIGINAL_TOOL_CALL_LOOKUP_HOOKS_VECTOR
+    ):
+        raise ValueError("ToolCall registry policy vector changed")
+    if _admit_frozen_toolcall_arguments is not _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION:
+        raise ValueError("ToolCall argument admission changed")
+    if (
+        ToolCall is not _TOOL_CALL_TYPE
+    ):
+        raise ValueError("ToolCall identity constructor changed")
+    if any(
+        vars(_TOOL_CALL_TYPE).get(name) is not original
+        for name, original in zip(
+            _TOOL_CALL_ORIGINALS, _ORIGINAL_TOOL_CALL_DESCRIPTORS, strict=True,
+        )
+    ):
+        raise ValueError("ToolCall identity constructor changed")
+    # Class-level slot/getter replacement can execute hostile code before
+    # even the first ToolCall field read in direct policy or registry paths.
+    if (
+        any(
+            vars(_TOOL_CALL_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOOL_CALL_INPUT_FIELDS,
+                _ORIGINAL_TOOL_CALL_INPUT_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_TOOL_CALL_TYPE).get(name) is not original
+            for name, original in zip(
+                _TOOL_CALL_LOOKUP_HOOKS,
+                _ORIGINAL_TOOL_CALL_LOOKUP_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise ValueError("ToolCall identity constructor changed")
+
+
+
+def _require_original_bound_constructor() -> None:
+    # A class-level constructor can be monkeypatched even for frozen slots.
+    # Reject the replacement before any injected code can execute.
+    if (
+        _BOUND_FIELDS is not _ORIGINAL_BOUND_FIELDS_VECTOR
+        or _BOUND_HOOKS is not _ORIGINAL_BOUND_HOOKS_VECTOR
+    ):
+        raise ValueError("registry bound policy vector changed")
+    if (
+        BoundAction is not _BOUND_TYPE
+        or vars(_BOUND_TYPE).get("__init__") is not _ORIGINAL_BOUND_INIT
+        or any(
+            vars(_BOUND_TYPE).get(name) is not original
+            for name, original in zip(
+                _BOUND_FIELDS, _ORIGINAL_BOUND_FIELDS, strict=True,
+            )
+        )
+        or any(
+            vars(_BOUND_TYPE).get(name) is not original
+            for name, original in zip(
+                _BOUND_HOOKS, _ORIGINAL_BOUND_HOOKS, strict=True,
+            )
+        )
+    ):
+        raise ValueError("registry bound result constructor changed")
+
+
+class ToolRegistry:
+    """Immutable exact-name registry with deterministic revision identity."""
+
+    __slots__ = (
+        "_registrations", "_registry_mapping_epoch", "_registration_epoch",
+        "_revision", "_revision_epoch", "_sealed",
+    )
+    _SCHEMA_VERSION = 1
+
+    def __setattr__(self, name: str, value: object) -> None:
+        # Ordinary attribute assignment must not mutate the supposedly
+        # immutable registry or create an escape hatch through __dict__.
+        # object.__setattr__ remains a deliberate reflective bypass and is
+        # detected by the existing registration-epoch checks.
+        try:
+            sealed = object.__getattribute__(self, "_sealed")
+        except AttributeError:
+            sealed = False
+        if sealed:
+            raise AttributeError("ToolRegistry is immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        # Deleting a slot is also mutation; deny it after construction.
+        try:
+            sealed = object.__getattribute__(self, "_sealed")
+        except AttributeError:
+            sealed = False
+        if sealed:
+            raise AttributeError("ToolRegistry is immutable")
+        object.__delattr__(self, name)
+
+    def __init__(self, registrations: Iterable[ToolRegistration]) -> None:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        _require_original_registry_instance_seal()
+        _require_original_registration_contract()
+        _require_original_registry_digest()
+        # Registrations can arrive from caller-controlled generators. Never
+        # exhaust an unbounded iterator before enforcing the construction
+        # budget, and never silently accept a reflected mutation of an
+        # earlier yielded registration while reading a later one.
+        snapshot: list[ToolRegistration] = []
+        retained: list[tuple[ToolRegistration, str, str, Effect, str, ToolBackend, object]] = []
+
+        def assert_ingress_epoch() -> None:
+            _require_original_registration_contract()
+            _require_original_registry_digest()
+            for entry, name, capability, effect, backend_id, backend, execute in retained:
+                try:
+                    stable = (
+                        type(entry) is ToolRegistration
+                        and type(entry.name) is str and entry.name is name
+                        and type(entry.capability) is str
+                        and entry.capability is capability
+                        and entry.effect is effect
+                        and type(entry.backend_id) is str
+                        and entry.backend_id is backend_id
+                        and entry.backend is backend
+                        and _backend_execute_descriptor(backend) is execute
+                    )
+                except (AttributeError, TypeError, ValueError) as exc:
+                    raise ValueError(
+                        "registered tool changed during registry construction"
+                    ) from exc
+                if not stable:
+                    raise ValueError(
+                        "registered tool changed during registry construction"
+                    )
+
+        for registration in registrations:
+            assert_ingress_epoch()
+            if len(snapshot) >= _MAX_REGISTRATIONS:
+                raise ValueError("registry construction budget exceeded")
+            if type(registration) is not ToolRegistration:
+                raise TypeError("registrations must contain exact ToolRegistration values")
+            retained.append((
+                registration, registration.name, registration.capability,
+                registration.effect, registration.backend_id, registration.backend,
+                _backend_execute_descriptor(registration.backend),
+            ))
+            snapshot.append(registration)
+            assert_ingress_epoch()
+        # StopIteration itself can run user code in a generator's finally.
+        assert_ingress_epoch()
+
+        ordered = sorted(snapshot, key=lambda registration: registration.name)
+        assert_ingress_epoch()
+        if len({registration.name for registration in ordered}) != len(ordered):
+            raise ValueError("duplicate tool name")
+
+        mapping = {registration.name: registration for registration in ordered}
+        assert_ingress_epoch()
+        self._registrations: Mapping[str, ToolRegistration] = MappingProxyType(mapping)
+        self._registry_mapping_epoch = self._registrations
+        # Capture the FIRST-observed values rather than values recomputed
+        # after revision serialization (itself a callback boundary).
+        self._registration_epoch = tuple(sorted(retained, key=lambda row: row[1]))
+        self._revision = self._compute_revision(ordered)
+        self._revision_epoch = self._revision
+        assert_ingress_epoch()
+        self._sealed = True
+        self._assert_registration_epoch()
+
+    def _assert_registration_epoch(self) -> None:
+        """Detect reflected drift of registered identity without executing tools.
+
+        This is only a local drift check; it is NOT backend attestation against
+        malicious in-process rewriting of every private reference.
+        """
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        _require_original_registry_instance_seal()
+        _require_original_registration_contract()
+        _require_original_registry_digest()
+        if (
+            type(self._revision) is not str
+            or self._revision is not self._revision_epoch
+        ):
+            raise ValueError("registry revision carrier changed")
+        if (
+            type(self._registrations) is not MappingProxyType
+            or self._registrations is not self._registry_mapping_epoch
+        ):
+            raise ValueError("registry identity map changed after construction")
+        entries = self._registration_epoch
+        if type(entries) is not tuple or len(entries) != len(self._registrations):
+            raise ValueError("registry epoch structure was changed")
+        for entry, name, capability, effect, backend_id, backend, execute in entries:
+            try:
+                current_execute = _backend_execute_descriptor(backend)
+            except TypeError as exc:
+                raise ValueError("backend execute interface changed") from exc
+            if (
+                type(entry) is not ToolRegistration
+                or type(name) is not str or type(capability) is not str
+                or type(effect) is not Effect or type(backend_id) is not str
+                or type(entry.name) is not str or type(entry.capability) is not str
+                or type(entry.backend_id) is not str
+                or entry.name is not name or entry.capability is not capability
+                or entry.effect is not effect or entry.backend_id is not backend_id
+                or entry.backend is not backend
+                or current_execute is not execute
+                or self._registrations.get(name) is not entry
+            ):
+                raise ValueError("registered tool identity drifted after construction")
+        _require_original_registry_digest()
+        if self._compute_revision([item[0] for item in entries]) != self._revision:
+            raise ValueError("registry revision drifted after construction")
+
+    @property
+    def revision(self) -> str:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        self._assert_registration_epoch()
+        return self._revision
+
+    @property
+    def registrations(self) -> Mapping[str, ToolRegistration]:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        self._assert_registration_epoch()
+        return self._registrations
+
+    def get(self, name: str) -> ToolRegistration:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        _text("tool name", name)
+        self._assert_registration_epoch()
+        try:
+            return self._registrations[name]
+        except KeyError as exc:
+            raise KeyError(f"unknown tool: {name}") from exc
+
+    def resolve(self, call: ToolCall) -> ToolRegistration:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        _require_original_registration_contract()
+        _require_original_registry_digest()
+        if type(call) is not ToolCall:
+            raise TypeError("call must be an exact ToolCall")
+        _require_original_toolcall_contract()
+        # Direct resolution must obey the same original-input boundary as
+        # bind(). A callback in get() may reflectively retarget a frozen call
+        # or alter registered backend/effect identity after its first check.
+        # Capture the ORIGINAL caller-owned scalar carriers before ToolCall
+        # construction, which may itself be a synthetic callback boundary.
+        original = (call.tool, call.capability, call.scope, call.arguments)
+        _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(original[3])
+        # Frozen ToolCall v1 accepts opaque labels, but this opt-in registry
+        # must not bind native NUL separators or malformed UTF-8 scopes into
+        # a supposedly exact backend identity. Preserve ToolCall v1 unchanged.
+        if _registry_scope_budget is not _ORIGINAL_REGISTRY_SCOPE_BUDGET:
+            raise ValueError("registry scope admission changed")
+        _registry_scope_budget(original[2])
+        if "\x00" in original[2]:
+            raise ValueError("registered ToolCall scope contains NUL separator")
+        if any(
+            ord(character) < 0x20 or ord(character) == 0x7f
+            for character in original[2]
+        ):
+            raise ValueError("registered ToolCall scope contains control character")
+        # Frozen ToolCall v1 accepts opaque Unicode. The opt-in registry
+        # must not bind bidi controls or alternate line separators into a
+        # visually misleading permission/audit scope identity.
+        if any(
+            _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
+            or 0x80 <= code <= 0x9f
+            or code in (0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            or 0x202a <= code <= 0x202e
+            or 0x2066 <= code <= 0x2069
+            or code in (
+                0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+                0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+            )
+            or 0x206A <= code <= 0x206F
+            for code in map(ord, original[2])
+        ):
+            raise ValueError(
+                "registered ToolCall scope contains Unicode formatting control"
+            )
+        try:
+            original[2].encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("registered ToolCall scope is not valid UTF-8") from exc
+        stable = ToolCall(*original)
+        _require_original_toolcall_contract()
+        epoch = (stable.tool, stable.capability, stable.scope, stable.request_id)
+
+
+        def assert_call_epoch() -> None:
+            _require_original_registry_digest()
+            _require_original_toolcall_contract()
+            _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(call.arguments)
+            if (
+                type(call.tool) is not str
+                or type(call.capability) is not str
+                or type(call.scope) is not str
+                or (call.tool, call.capability, call.scope, call.request_id)
+                != epoch
+                or any(
+                    value is not first
+                    for value, first in zip(
+                        (call.tool, call.capability, call.scope, call.arguments),
+                        original, strict=True,
+                    )
+                )
+            ):
+                raise ValueError("ToolCall identity changed during registry resolution")
+            _require_original_toolcall_contract()
+
+        assert_call_epoch()
+        registration = self.get(stable.tool)
+        assert_call_epoch()
+        self._assert_registration_epoch()
+        assert_call_epoch()
+        # A replaced get() may return an unregistered backend or a cloned
+        # entry while leaving the immutable registry map itself untouched.
+        # Registry revision identity only attests entries in that pinned map.
+        if self._registrations.get(stable.tool) is not registration:
+            raise ValueError("registry lookup returned unregistered identity")
+        if registration.capability != stable.capability:
+            raise ValueError("tool call capability does not match registry")
+        _require_original_toolcall_contract()
+        return registration
+
+    def bind(self, call: ToolCall) -> BoundAction:
+        if (
+            ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+            or type(self) is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        ):
+            raise TypeError("an exact ToolRegistry instance is required")
+        _require_original_registration_contract()
+        _require_original_registry_digest()
+        # Call objects are frozen, but reflected mutation is still possible
+        # during a registry lookup. Refuse a bound ID based on mixed snapshots.
+        # This check is not an authorization grant or a concurrency primitive.
+        if type(call) is not ToolCall:
+            raise TypeError("call must be an exact ToolCall")
+        _require_original_bound_constructor()
+        _require_original_toolcall_contract()
+        # Preserve the *original* argument carrier as well as its digest.
+        # A callback can replace a frozen ToolCall's arguments with a new,
+        # value-equal mapping after resolve() has finished its own checks.
+        # That is a new caller input epoch even when request_id is unchanged.
+        original = (call.tool, call.capability, call.scope, call.arguments)
+        # ToolCall v1 accepts general Mapping inputs. The registry boundary
+        # must reject a reflected foreign mappingproxy backing object before
+        # reconstructing ToolCall can invoke its __iter__/items callbacks.
+        _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(original[3])
+        # Apply resolve()'s opt-in scope admission *before* reconstructing
+        # ToolCall. Its frozen v1 request-id serializer would otherwise raise
+        # a raw UnicodeEncodeError for a surrogate (and touch invalid data).
+        # This changes no frozen ToolCall contract or backend dispatch.
+        if _registry_scope_budget is not _ORIGINAL_REGISTRY_SCOPE_BUDGET:
+            raise ValueError("registry scope admission changed")
+        _registry_scope_budget(original[2])
+        if "\x00" in original[2]:
+            raise ValueError("registered ToolCall scope contains NUL separator")
+        if any(
+            ord(character) < 0x20 or ord(character) == 0x7f
+            for character in original[2]
+        ):
+            raise ValueError("registered ToolCall scope contains control character")
+        # Frozen ToolCall v1 accepts opaque Unicode. The opt-in registry
+        # must not bind bidi controls or alternate line separators into a
+        # visually misleading permission/audit scope identity.
+        if any(
+            _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
+            or 0x80 <= code <= 0x9f
+            or code in (0x61c, 0x200e, 0x200f, 0x2028, 0x2029)
+            or 0x202a <= code <= 0x202e
+            or 0x2066 <= code <= 0x2069
+            or code in (
+                0x00AD, 0x034F, 0x180E, 0x200B, 0x200C, 0x200D,
+                0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
+            )
+            or 0x206A <= code <= 0x206F
+            for code in map(ord, original[2])
+        ):
+            raise ValueError(
+                "registered ToolCall scope contains Unicode formatting control"
+            )
+        try:
+            original[2].encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise ValueError("registered ToolCall scope is not valid UTF-8") from exc
+        stable = ToolCall(*original)
+        _require_original_toolcall_contract()
+        original_request_id = stable.request_id
+
+        def assert_call_unchanged() -> None:
+            _require_original_registry_digest()
+            _require_original_toolcall_contract()
+            _ORIGINAL_TOOL_CALL_ARGUMENT_ADMISSION(call.arguments)
+            if (
+                type(call.tool) is not str
+                or type(call.capability) is not str
+                or type(call.scope) is not str
+                or (call.tool, call.capability, call.scope)
+                != (stable.tool, stable.capability, stable.scope)
+                or call.request_id != original_request_id
+                or any(
+                    value is not first
+                    for value, first in zip(
+                        (call.tool, call.capability, call.scope, call.arguments),
+                        original, strict=True,
+                    )
+                )
+            ):
+                raise ValueError("ToolCall identity changed during registry binding")
+            _require_original_toolcall_contract()
+
+        assert_call_unchanged()
+        registration = self.resolve(call)
+        assert_call_unchanged()
+        revision = self.revision
+        assert_call_unchanged()
+        payload = {
+            "backend_id": registration.backend_id,
+            "capability": registration.capability,
+            "effect": registration.effect.value,
+            "registry_revision": revision,
+            "request_id": original_request_id,
+            "tool": registration.name,
+        }
+        bound_action_id = "bound_" + hashlib.sha256(_canonical_json(payload)).hexdigest()
+        assert_call_unchanged()
+        self._assert_registration_epoch()
+        assert_call_unchanged()
+        # A reentrant hash or registry lookup can replace the frozen result
+        # constructor after the initial admission check.
+        _require_original_bound_constructor()
+        bound = _BOUND_TYPE(
+            registry_revision=revision,
+            call=call,
+            registration=registration,
+            bound_action_id=bound_action_id,
+        )
+        # BoundAction is a frozen carrier, not an immutable proof. A patched
+        # constructor can reflectively mutate the call, registration or its
+        # own fields *after* the earlier hash/registry checks. Never return
+        # an inconsistent action identity or authorize backend execution.
+        assert_call_unchanged()
+        self._assert_registration_epoch()
+        assert_call_unchanged()
+        _require_original_bound_constructor()
+        if (
+            type(bound) is not _BOUND_TYPE
+            or bound.registry_revision is not revision
+            or bound.call is not call
+            or bound.registration is not registration
+            or bound.bound_action_id is not bound_action_id
+        ):
+            raise ValueError("registry bound result changed during construction")
+        return bound
+
+    @classmethod
+    def _compute_revision(cls, registrations: list[ToolRegistration]) -> str:
+        _require_original_registry_digest()
+        payload = {
+            "schema_version": cls._SCHEMA_VERSION,
+            "tools": [
+                {
+                    "backend_id": registration.backend_id,
+                    "capability": registration.capability,
+                    "effect": registration.effect.value,
+                    "name": registration.name,
+                }
+                for registration in registrations
+            ],
+        }
+        return "tools_" + hashlib.sha256(_canonical_json(payload)).hexdigest()
+
+
+# Public registry operations reject subclasses with alternate lookup semantics.
+_ORIGINAL_TOOL_REGISTRY_TYPE = ToolRegistry
+_ORIGINAL_TOOL_REGISTRY_SLOTS = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__slots__"]
+_ORIGINAL_TOOL_REGISTRY_SETATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__setattr__"]
+_ORIGINAL_TOOL_REGISTRY_DELATTR = vars(_ORIGINAL_TOOL_REGISTRY_TYPE)["__delattr__"]
+
+
+def _require_original_registry_instance_seal() -> None:
+    """Pin the no-dict slot layout and assignment guard before registry reads."""
+    if (
+        ToolRegistry is not _ORIGINAL_TOOL_REGISTRY_TYPE
+        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__slots__")
+        is not _ORIGINAL_TOOL_REGISTRY_SLOTS
+        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__setattr__")
+        is not _ORIGINAL_TOOL_REGISTRY_SETATTR
+        or vars(_ORIGINAL_TOOL_REGISTRY_TYPE).get("__delattr__")
+        is not _ORIGINAL_TOOL_REGISTRY_DELATTR
+    ):
+        raise ValueError("registry instance immutability contract changed")

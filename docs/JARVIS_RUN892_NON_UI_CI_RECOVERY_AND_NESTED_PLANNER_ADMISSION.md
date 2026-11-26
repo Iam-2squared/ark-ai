@@ -1,0 +1,27 @@
+# ARK AI Run892 — actual-NUL CI recovery and nested frozen Planner argument admission
+
+**Observed at (Asia/Tokyo/JST): 2026-11-15T17:51:38.215+09:00** (untrusted runtime clock). **Overall ARK/JARVIS: NOT_PASSED.** Disconnected non-UI work only, Draft PR #8 unmerged. Initial exact work basis `499db32db5cd00d258316aba3303e759a9058ef1` (Run891 checkpoint). No source/contract/UI changes to protected PRs #5/#9.
+
+## 1. CI failure root cause, repaired without weakening privacy
+
+GitHub Actions [Run891 latest CI #43692139238](https://github.com/Iam-2squared/ark-ai/actions/runs/43692139238) completed **FAIL 6/6**. The Ubuntu 3.11 log showed **1 failed, 15968 passed, 1 skipped**; Windows 3.11 showed **1 failed, 15870 passed, 99 skipped**. Both failures came from a single parametrized test in `tests/test_revocation_sqlite_encoded_path_admission_run891.py`. It mistakenly represented an actual NUL as the Python source string `"private\\\\x00veto.sqlite"`: the double escape produced literal backslash characters, not NUL. On Ubuntu it was accepted as an ordinary filename; on Windows it encountered the platform-specific invalid-path rejection message. Neither constitutes a failure of the NUL path admission code.
+
+**Normal Contents API repair:** commit `2b7f2f97bda631ee1cec91a7a112656b6070e560` changes the parametrized source to use the actual Python NUL escape `"private\\x00veto.sqlite"`. It continues to expect the existing fail-closed `SyntheticContextRevocationRejected` *path exceeds* classification and no created database/sidecar. Source `src/ark/personal_context_revocation_review.py`, stored SQLite schema, path safety and sidecar refusal semantics are untouched. Follow-up automatic CI [#43695902824](https://github.com/Iam-2squared/ark-ai/actions/runs/43695902824) was **IN PROGRESS** at sampled time; do not attribute its result to any later HEAD.
+
+## 2. New independent Planner source and 8 offline tests
+
+**Source commit:** `26131435a7705301b9f46cf9b5f5eb155c97b2ce`. **Regression commit:** `ad2e916f3084c259a8b85f3b250ced35b57497a6`. A `PlanGraph` could receive a post-constructor-reflected `ToolCall.arguments` with an exact outer `MappingProxyType` but a nested foreign list, mutable mapping, arbitrary object or nonfinite numeric value. `ToolCall.__post_init__` normally freezes nested JSON as exact `MappingProxyType`/tuples. The new `_admit_frozen_arguments` validates that exact recursive carrier grammar, max 32 levels, 4096 nodes, 256 KiB of text, UTF-8 and finite floats **before the first PlanGraph request hashing**. This denies callback-bearing nested mappings without invoking their `.items()` methods. It preserves the frozen ToolCall/PlanStep dataclasses, canonical hashes for valid inputs and all dispatch/authorization gates.
+
+**Eight authored cases** in `tests/test_planner_nested_frozen_argument_admission_run892.py`: six foreign/malformed nested types, one callback-bearing `dict` subclass rejected without callback, one valid nested frozen JSON graph accepted. These are newly authored tests, **not** eight certified CI passes. Follow-up automatic CIs [source #43696097012](https://github.com/Iam-2squared/ark-ai/actions/runs/43696097012) and [regression #43696145969](https://github.com/Iam-2squared/ark-ai/actions/runs/43696145969) were **IN PROGRESS** at sampled time.
+
+**Residual limitation:** this is a constructor-time admission guard, not original-argument provenance, immutable memory, atomic multi-store custody or a hostile-Python-process sandbox. A separately reviewed later change could revalidate nested carriers at PlanGraph later-phase hashing if needed. No real tool backend was touched.
+
+## 3. Independent privacy WAL/SHM evidence audit (no new mutation)
+
+Existing exact sources `tests/test_privacy_revocation_transient_unlink_preflight_run879.py` and `tests/test_privacy_veto_last_close_sidecar_run883.py` show bounded one-time re-observation of an **already-unlinked regular** sidecar while hardlinks, symlinks and orphan sidecars remain rejected. `tests/test_revocation_wal_process_diagnostic_run836.py` separates an already-durable revocation row from a concurrent loser error, and verifies the synthetic WAL keeper path. This proves local denial behavior only, **not** safe automatic retries, cross-process atomic file custody or a resolved Windows SQLite last-close race. Follow-up work should capture bounded inode/link-count/path-class diagnostics without private filenames, ensure no unknown-write re-execution, and compare Windows and POSIX behavior.
+
+## Gates and next plan
+
+Frozen V1/V2/Local UI/Launcher and protected V3 contracts untouched; PR #5 protected Draft, PR #8 Draft, UI PR #9 paused Draft. No UI work, main merge, Candidate/weight creation/promotion, paid compute, protected V2 final evaluation, new credentials, real tools/WRITE, notifications, live personal data, physical-PC action, user consent inference or destructive operations. Local mock witnesses and wall clock are never independent authorization.
+
+**Next:** (1) verify the actual latest full 6-job CI; repair any failure using only normal Contents API writes with HEAD re-read; (2) after exact-head GREEN, assess Planner post-construction nested input custody; (3) investigate SQLite last-close/multiprocess loser denial with bounded non-sensitive diagnostics; (4) continue Memory CAS/expiry, Planner UNKNOWN, audit-before-action and exact Registry/PermissionGate/Mock integration; (5) continue only free, reversible privacy, observation, proactive and V3 guard work.

@@ -1,0 +1,27 @@
+# ARK AI Run932 — Four independent non-UI regression packages
+
+**Recorded at (Asia/Tokyo/JST): 2026-11-17T10:53:16.398+09:00**, an untrusted wall-clock observation for reporting, **not** an approval/audit clock. **Work-basis HEAD** `8f95819c6524258246d902aab3ca6bbbf5b9af01`, Draft PR #8 (`research/jarvis-foundations`). The preceding checkpoint CI [#43991993254](https://github.com/Iam-2squared/ark-ai/actions/runs/43991993254) was observed **COMPLETED SUCCESS, 6/6 jobs GREEN** (Windows/Ubuntu × Python 3.11–3.13), on that preceding exact HEAD.
+
+## NEW in this invocation — four test-only, isolated packages
+
+1. [`dadab876`](https://github.com/Iam-2squared/ark-ai/commit/dadab876b10d344cf1613f180a8af32636e90f06) — `tests/test_read_recovery_diamond_mock_isolation_run932.py` **11 newly authored parameterized cases**. Multi-root, two-predecessor READ fan-in with UNKNOWN/RUNNING/FAILED/NOT_STARTED/SUCCEEDED first root, an unrelated safe mock-only branch, downstream HOLD/WAIT propagation, forbidden bindings for quarantined joins, and deterministic input-to-preview digest separation. The bridge uses only its existing in-memory synthetic tools. No recovered READ claims external effect or consent.
+2. [`1ed0403a`](https://github.com/Iam-2squared/ark-ai/commit/1ed0403a894ee2fa2440b84eb20ebf26708769d2) — `tests/test_occurrence_restart_expiry_replay_run932.py` **6 new cases**. A disposable SQLite synthetic WRITE reservation rejects reused tokens after reopen even if the caller changes expiration metadata, the token expires, or caller time rolls backward. A different explicit synthetic token can reserve the same canonical request with a distinct occurrence. Registry WRITE→READ drift cannot convert the reservation into permission. Backend is a never-executed sentinel. Local reservation is not approval issuer/authentication/trusted clock or exactly-once *external* effect proof.
+3. [`7ba20565`](https://github.com/Iam-2squared/ark-ai/commit/7ba20565c3d1c1b7590134d3111c9b74bb14f528) — `tests/test_planner_terminal_diamond_cas_run932.py` **7 new cases**. In-memory DAG terminal FAILED/CANCELLED/BLOCKED root transitive propagation to both diamond branches and shared descendant; unrelated branch may advance. Invalid exact-CAS revisions cannot partially publish a cascade; terminal steps never acquire replay authority.
+4. [`7e0262e8`](https://github.com/Iam-2squared/ark-ai/commit/7e0262e82737f50dc714641784ef36821cb008a2) — `tests/test_personal_context_private_batch_reverify_run932.py` **11 new cases**. Synthetic local-only two-scope privacy preview and re-verification, plus fail-all rejection of mixed-owner, unallowlisted scope, expiry-at-boundary, changed content digest, duplicate/out-of-order record IDs, detached digest/owner/allowlist/time drift. Data is fabricated; no real profile or Memory DB read. Results always deny consent/export/tool dispatch.
+
+**35 NEW parameterized cases authored** (11 + 6 + 7 + 11). All four work packages add *tests only*. No core source, frozen contract, schema, migration, UI, launcher, protected V2/V3 evaluation or main modification. No claim of complete local test execution. These fixtures establish local deterministic boundaries only, not real credential provenance, privacy authorization, side-effect certainty, cross-store atomicity, real-world clock integrity, or standalone JARVIS PASS.
+
+## CI evidence observed before report
+
+- Prior exact HEAD `8f95819c6524258246d902aab3ca6bbbf5b9af01`: [#43991993254](https://github.com/Iam-2squared/ark-ai/actions/runs/43991993254) — **6/6 GREEN**, Windows+Ubuntu Python 3.11–3.13 (detailed jobs inspected).
+- New READ diamond `dadab876`: [#43998481377](https://github.com/Iam-2squared/ark-ai/actions/runs/43998481377) — **IN_PROGRESS**.
+- New occurrence `1ed0403a`: [#43998544469](https://github.com/Iam-2squared/ark-ai/actions/runs/43998544469) — **IN_PROGRESS**.
+- New Planner `7ba20565`: [#43998651552](https://github.com/Iam-2squared/ark-ai/actions/runs/43998651552) — **IN_PROGRESS**.
+- New Personal Context `7e0262e8`: [#43998847070](https://github.com/Iam-2squared/ark-ai/actions/runs/43998847070) — **QUEUED**.
+- **35 new cases are not marked PASS; final exact HEAD's six-job GREEN is not yet established.** Normal report/checkpoint Contents writes may trigger their own CI; no manual duplicate workflow run requested.
+
+## Blockers, immutable boundaries and next work
+
+Preserve V1/V2/Local UI/Launcher freezes, Observation v1 direct semantics and V3 provenance/consent/contamination/reproducibility controls. Draft PR #5 remains blocked under its protected gate, Draft PR #9 UI paused/unmodified, Draft PR #8 research/unmerged; main unchanged. Nothing spent on GPU, external services/APIs, paid compute, credentials, new accounts, real Candidate adapter/weight production or automatic promotion. No real external WRITE, destructive action, cross-store consistency claim, protected evaluation opening or physical-PC claim.
+
+Priority after exact-head CI: inspect failures and repair minimally; investigate WAL/SHM last-close alias races and Memory cross-process CAS/expiry/coherent witnesses; preserve Planner COMMIT-UNKNOWN manual-only quarantine; build registry-bound authenticated durable one-shot consent and trusted-clock audit-before-action **only on approved/free, disconnected lower layers**; continue privacy-safe Personal Context, Proactive and Observation backends and free-only V3 guard review. No UI work until explicitly resumed. **Overall JARVIS NOT_PASSED**.
