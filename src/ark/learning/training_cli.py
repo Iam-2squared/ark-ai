@@ -553,13 +553,13 @@ def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Authorization and every exact identity must close before importing torch/GPU runtime.
     validate_experiment_001(snapshot, authorization_scope="preflight")
+    # Reject an unusable report destination before evidence reads or runtime
+    # probing. The destination is checked again immediately before creation.
+    report_path = _validate_new_preflight_report_path(args.report)
     # One approved epoch covers evidence validation, runtime identity probing,
     # and every subsequent backend boundary; it is never restarted in the backend.
     wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
     wall_budget.check("preflight-authorized")
-    # Reject an unusable report destination before evidence reads or runtime
-    # probing. The destination is checked again immediately before creation.
-    report_path = _validate_new_preflight_report_path(args.report)
     _verify_common_evidence(
         snapshot,
         provenance=args.provenance,
