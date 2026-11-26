@@ -144,7 +144,6 @@ def _exact_text(name: str, value: object) -> None:
     if size > 512:
         raise SyntheticProactiveStateRejected(f"{name} exceeds its UTF-8 byte budget")
 
-
 def _exact_int(name: str, value: object, *, minimum: int = 0) -> None:
     if type(value) is not int or not minimum <= value <= _MAX:
         raise SyntheticProactiveStateRejected(f"{name} must be an exact bounded integer")
