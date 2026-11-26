@@ -73,9 +73,15 @@ _ORIGINAL_FIELDS = tuple(vars(_RESULT).get(field) for field in _FIELDS)
 _ORIGINAL_FIELDS_VECTOR = _FIELDS
 
 
-def _protocol() -> None:
+def _protocol(
+    _original_fields_vector: tuple[str, ...] = _ORIGINAL_FIELDS_VECTOR,
+    _original_fields: tuple[object, ...] = _ORIGINAL_FIELDS,
+) -> None:
     if (
-        coherent.review_coherent_expiry_snapshot is not _ORIGINAL_COHERENT
+        _FIELDS is not _original_fields_vector
+        or _ORIGINAL_FIELDS_VECTOR is not _original_fields_vector
+        or _ORIGINAL_FIELDS is not _original_fields
+        or coherent.review_coherent_expiry_snapshot is not _ORIGINAL_COHERENT
         or coherent._protocol is not _ORIGINAL_COHERENT_GUARD
         or restart.review_memory_expiry_restart_receipt is not _ORIGINAL_RESTART
         or restart._protocol is not _ORIGINAL_RESTART_GUARD
