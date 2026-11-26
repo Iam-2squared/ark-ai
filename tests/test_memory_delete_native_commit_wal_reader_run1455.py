@@ -113,7 +113,6 @@ def test_delete_native_commit_survives_process_exit_and_pinned_wal_reader(
     keeper = sqlite3.connect(database, timeout=10, isolation_level=None)
     keeper_open = True
     try:
-        keeper_open = True
         keeper.execute("PRAGMA query_only=ON")
         keeper.execute("BEGIN")
         before = (
