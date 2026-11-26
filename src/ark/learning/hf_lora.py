@@ -301,9 +301,7 @@ class HfLoRAPreflightBackend:
         validate_experiment_001(snapshot, authorization_scope="preflight")
         wall_budget = self._wall_budget
         if wall_budget is None:
-            wall_budget = _ORIGINAL_WALL_TIME_BUDGET(
-                snapshot["budget"]["wall_clock_timeout_minutes"],
-            )
+            wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
         wall_budget.check("preflight-start")
         train_rows, _ = _verify_local_identities(
             snapshot,
@@ -371,9 +369,7 @@ class HfLoRAFullRun:
         snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
         wall_budget = self._wall_budget
         if wall_budget is None:
-            wall_budget = _ORIGINAL_WALL_TIME_BUDGET(
-                snapshot["budget"]["wall_clock_timeout_minutes"],
-            )
+            wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
         wall_budget.check("training-start")
         _validate_candidate_output_path(self.output_dir, self.base_dir)
         train_rows, _ = _verify_local_identities(
