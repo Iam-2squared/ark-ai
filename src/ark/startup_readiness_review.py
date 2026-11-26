@@ -9,10 +9,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import StrEnum
 from heapq import heappop, heappush
+
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 class ReadinessState(StrEnum):
@@ -46,12 +50,21 @@ def _require_original_readiness_budgets() -> None:
 _ORIGINAL_READINESS_BUDGET_CHECK = _require_original_readiness_budgets
 
 
+def _require_original_unicode_category() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise ValueError("readiness Unicode category classifier changed")
+
+
 def _identifier(value: object, label: str) -> str:
     """Enforce a strict UTF-8 byte budget for disconnected probe identities.
 
     The cheap character cap precedes encoding to bound allocations. This
     stricter foundation input rule does not modify any frozen V1/V2 schema.
     """
+    _require_original_unicode_category()
     if type(value) is not str or len(value) > 256 or not value.strip():
         raise ValueError(f"{label} must be nonempty bounded exact text")
     # A NUL separator is not a valid cross-component identity. Reject it
@@ -74,9 +87,11 @@ def _identifier(value: object, label: str) -> str:
         or 0x202A <= point <= 0x202E
         or 0x2060 <= point <= 0x206F
         or point in (0x2028, 0x2029, 0xFEFF)
+        or _ORIGINAL_UNICODE_CATEGORY(chr(point)) == "Cf"
         for point in map(ord, value)
     ):
         raise ValueError(f"{label} contains Unicode formatting control")
+    _require_original_unicode_category()
     try:
         size = len(value.encode("utf-8", errors="strict"))
     except UnicodeEncodeError as exc:
