@@ -13,6 +13,7 @@ import os
 import re
 import sqlite3
 import stat
+import unicodedata
 from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +22,8 @@ _MAX = 2**63 - 1
 _MAX_PREPARATIONS = 10_000
 _HEX = re.compile(r"[0-9a-f]{64}\Z")
 _TRIGGER = re.compile(r"trigger_[0-9a-f]{64}\Z")
+_ORIGINAL_UNICODEDATA = unicodedata
+_ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 _TABLE = """CREATE TABLE synthetic_prepared_triggers(
     trigger_id TEXT PRIMARY KEY,
     scope_digest TEXT NOT NULL,
@@ -36,6 +39,16 @@ class SyntheticTriggerRejected(RuntimeError):
     """The fixture refuses a duplicate, over-budget or invalid preparation."""
 
 
+def _require_original_unicode_category() -> None:
+    if (
+        unicodedata is not _ORIGINAL_UNICODEDATA
+        or unicodedata.category is not _ORIGINAL_UNICODE_CATEGORY
+    ):
+        raise SyntheticTriggerRejected(
+            "synthetic trigger Unicode category classifier changed"
+        )
+
+
 def _hash(label: str, values: object) -> str:
     encoded = json.dumps(
         values, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
@@ -45,6 +58,7 @@ def _hash(label: str, values: object) -> str:
 
 
 def _text(name: str, value: object) -> None:
+    _require_original_unicode_category()
     if type(value) is not str or not value or value != value.strip():
         raise ValueError(f"{name} must be a nonempty exact string")
     if len(value) > 512:
@@ -69,9 +83,11 @@ def _text(name: str, value: object) -> None:
             0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
         )
         or 0x206A <= codepoint <= 0x206F
+        or _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
         for codepoint in map(ord, value)
     ):
         raise ValueError(f"{name} contains a Unicode formatting control")
+    _require_original_unicode_category()
     # The persisted trigger digest serializes policy text in UTF-8. Treat a
     # 512-character multibyte label as over-budget and reject unpaired
     # surrogates before hashing, SQLite access or scheduler decisions.
@@ -173,6 +189,7 @@ _ORIGINAL_POLICY_METHODS = tuple(
 
 
 def _require_original_policy_contract() -> None:
+    _require_original_unicode_category()
     if (
         SyntheticTriggerPolicy is not _POLICY_TYPE
         or any(
