@@ -59,7 +59,7 @@ def test_status_hash_rejects_late_state_or_plan_retargeting(
                     graph._status["root"], "state", StepState.SUCCEEDED
                 )
             elif mutate == "status_mapping":
-                graph._status = dict(graph._status)
+                object.__setattr__(graph, "_status", dict(graph._status))
             else:
                 object.__setattr__(root.call, "scope", "retargeted")
         return witness
@@ -84,7 +84,7 @@ def test_detached_snapshot_rejects_late_authoritative_state_replacement(
                     graph._status["child"], "revision", 99
                 )
             else:
-                graph._status = dict(graph._status)
+                object.__setattr__(graph, "_status", dict(graph._status))
         return copied
 
     monkeypatch.setattr(planner_module, "replace", replacing)
