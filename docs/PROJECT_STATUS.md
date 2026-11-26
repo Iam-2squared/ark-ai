@@ -1,5 +1,67 @@
 ## LATEST
 
+- **Saved at:** 2026-11-26 10:16:29 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `425713fafd0846864725495ce128039fe731b0d8` (parent branch re-read immediately before this single checkpoint update).
+- **Checkpoint-result HEAD:** the GitHub commit created by this one `docs/PROJECT_STATUS.md` update; its exact returned SHA is reported in the invocation summary. This file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner retain frozen evidence. Memory, Planner, ToolRegistry, PermissionGate, ActionAudit, Personal Context, proactive state, Observation, disconnected/mock execution, and free-only V3 guards remain isolated local-first foundations. **ARK/JARVIS overall remains NOT_PASSED.**
+- **PR #8 exact-head CI:** run [45733155424](https://github.com/Iam-2squared/ark-ai/actions/runs/45733155424) (run 7811) on work-basis HEAD `425713fafd0846864725495ce128039fe731b0d8` is **IN PROGRESS**.
+- **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #8 remains Draft/unmerged. PR #9 remains untouched and Draft/unmerged. All new UI/frontend development remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **Memory delete native-COMMIT hard-exit recovery — Draft PR #636.**
+   - Branch `research/run1448-memory-delete-native-commit-hard-exit-20261126`; exact child HEAD `9f4af6e41ece8c54cf651636435525a7f45e08dc`; targets only PR #8.
+   - Adds a subprocess fixture that exits immediately after the native SQLite connection context commits a production `SQLiteMemoryStore.delete()`, before handle close, post-COMMIT checks, or caller acknowledgement. Cold readback checks one matching delete event, preservation of an unrelated row, dense event IDs, quick_check, no duplicate event on blind retry, and rejection of a stale generation token that would resurrect the deterministic ID. Fixture content is not stored in event rows.
+   - Test-only; Memory source and schema v1 DDL are unchanged. This is process-exit-after-native-COMMIT evidence, not fsync/power-loss durability, independent storage custody, physical erasure, trusted time, or exactly-once external effects.
+   - Exact-head CI run [45733987136](https://github.com/Iam-2squared/ark-ai/actions/runs/45733987136) (run 7812) is **IN PROGRESS**.
+
+2. **V3 free-guard source reconciliation — Draft PR #637.**
+   - Branch `research/run1449-v3-free-guard-source-reconciliation-20261126`; exact child HEAD `669055a3502ccbbc832bc41be2cb75a88642c652`; targets only PR #8.
+   - Documentation-only update to `docs/JARVIS_FOUNDATION_GAP_MATRIX.md` with exact PR #5 source/test blob identities. Corrects stale statements: runtime tokenizer chat-template rendering, detached authorization packet digest semantics, strict preflight JSON parsing, and nested symlink-grandparent denial are already present on PR #5's exact source head. It records the remaining pre-runtime wall-budget origin and model/tokenizer hash-then-use boundary, and keeps PR #623/#625/#626 child evidence explicitly unintegrated.
+   - Read-only audit only. No runtime import, CUDA/GPU query, model/tokenizer load, preflight, training, export, Candidate, or protected V2 evaluation occurred.
+   - Exact-head CI run [45734462849](https://github.com/Iam-2squared/ark-ai/actions/runs/45734462849) (run 7813) is **IN PROGRESS**.
+
+## Tests, CI and evidence
+
+- PR #8 exact work-basis HEAD `425713fafd0846864725495ce128039fe731b0d8`: run 45733155424 (7811), **IN PROGRESS**.
+- PR #636 exact child HEAD `9f4af6e41ece8c54cf651636435525a7f45e08dc`: run 45733987136 (7812), **IN PROGRESS**.
+- PR #637 exact child HEAD `669055a3502ccbbc832bc41be2cb75a88642c652`: run 45734462849 (7813), **IN PROGRESS**.
+- Prior PR #630–#635 and PR #627–#629/#631 evidence and exact run IDs are retained in the superseded checkpoint below; no duplicate workflow was launched and no newer completion result is claimed here.
+- PR #5 exact source HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`: run [45668716864](https://github.com/Iam-2squared/ark-ai/actions/runs/45668716864) remains **FAIL** at Ruff I001 in three merge-ref test paths absent from PR #5's own head branch and supplied by its base merge ref.
+- No local pytest/Ruff execution, physical-PC verification, live personal-data access, real-model runtime, GPU query, V3 preflight/training, protected evaluation, live observation capture, or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries, and V3 Contract 1 remain unchanged.
+- PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains untouched. PR #636 and #637 remain isolated Draft children targeting PR #8; neither is integrated. Existing Draft children remain isolated. No main write or merge occurred.
+- No UI/frontend feature, polish, test, or integration work occurred.
+
+## Blockers and authorization boundaries
+
+- **PR #5 / main ownership boundary:** the PR #5 merge-ref Ruff failure remains tied to test paths absent from its head; PR #276's pytest collection failure confirms the related missing JARVIS module on `main`. Do not alter `main`, disable Ruff/tests, copy isolated foundation modules into V3, or open the protected gate.
+- **Draft integration gate:** PR #636 and #637 remain Draft and target only PR #8. No ready-for-review transition or merge bypass is attempted. PR #8 remains Draft/unmerged.
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
+- No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening, Candidate promotion, new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, or irreversible data change occurred.
+- Synthetic process/SQLite tests do not prove fsync/power-loss durability, trusted time, authenticated consent, independent custody, cross-store atomicity, or exactly-once external effects. The V3 source reconciliation is not a PASS or authorization to execute.
+- No frozen-contract change or human-review decision is inferred from CI.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head CI for PR #636, PR #637 and the PR #8 checkpoint when useful; do not poll repeatedly or duplicate workflows. If a concrete failure appears, make the smallest semantics-preserving correction, launch the new exact-head CI, then switch to a non-conflicting lane.
+2. Keep PR #636 and #637 Draft and isolated until exact-head CI and the normal review/readiness gate permit integration. Do not merge to `main`.
+3. Implement the V3 shared pre-runtime wall-budget origin before runtime identity probing, with synthetic/fake-only tests; do not execute preflight, training, torch/CUDA, or any GPU path.
+4. Continue Memory WAL/SHM lifecycle, ABA, expiry/CAS, coherent snapshots, and manual-only COMMIT-UNKNOWN recovery without changing schema v1.
+5. Continue PlannerJournal retained-prefix/recovery and ambiguous RUNNING quarantine; never auto-replay.
+6. Continue durable one-shot authorization, occurrence/replay protection, audit-before-action over disconnected mocks, privacy-safe Personal Context, proactive restart state, Observation fixture lifecycle, and ToolRegistry/PermissionGate identity.
+7. Continue free-only V3 approval/path/identity/reproducibility guards. Keep PR #5 Draft/unmerged and protected V2 evaluation closed.
+8. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## LATEST
+
 - **Saved at:** 2026-11-26 10:02:57 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `d3f69747b27b8197bf01342701d1808a34e8786b` (PR #8 head re-read immediately before this checkpoint; includes the Run1443 gap-matrix reconciliation and the 08:55:53 JST checkpoint).
