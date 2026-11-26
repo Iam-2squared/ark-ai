@@ -334,3 +334,70 @@ def test_wall_time_guard_aborts_full_run_before_candidate_save(monkeypatch, tmp_
     with pytest.raises(RuntimeError, match="wall-clock timeout exceeded"):
         runner.run(snapshot)
     assert not output.exists()
+
+def test_persistent_staged_mutation_during_model_loader_is_rejected_before_device_move(
+    tmp_path,
+    monkeypatch,
+):
+    base_dir = tmp_path / "source-model"
+    probe = tmp_path / "probe.txt"
+    snapshot = _write_staging_snapshot(base_dir, probe)
+    staged_paths = []
+    post_load_calls = []
+
+    class FakeCuda:
+        @staticmethod
+        def is_available():
+            return True
+
+        @staticmethod
+        def is_bf16_supported():
+            return True
+
+    class FakeTorch:
+        cuda = FakeCuda()
+        bfloat16 = object()
+
+    class FakeTokenizer:
+        @classmethod
+        def from_pretrained(cls, path, **kwargs):
+            return cls()
+
+        def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+            return probe.read_text(encoding="utf-8")
+
+    class FakeModel:
+        @classmethod
+        def from_pretrained(cls, path, **kwargs):
+            staged = Path(path)
+            staged_paths.append(staged)
+            (staged / "model.safetensors").write_bytes(b"tampered-model-bytes")
+            return cls()
+
+        def to(self, device):
+            post_load_calls.append(("device", device))
+            raise AssertionError("mutated model must not reach device placement")
+
+    class FakeLoraConfig:
+        def __init__(self, **kwargs):
+            post_load_calls.append(("lora-config", kwargs))
+
+    def get_peft_model(model, config):
+        post_load_calls.append(("peft", config))
+        raise AssertionError("mutated model must not reach PEFT wrapping")
+
+    monkeypatch.setattr(
+        hf_lora,
+        "_runtime_imports",
+        lambda: (FakeTorch, FakeLoraConfig, get_peft_model, FakeModel, FakeTokenizer),
+    )
+
+    with pytest.raises(
+        hf_lora.LoRARuntimeError,
+        match="staged base snapshot identity changed after model loader",
+    ):
+        hf_lora._build_model_and_tokenizer(snapshot, base_dir, probe)
+
+    assert len(staged_paths) == 1
+    assert post_load_calls == []
+    assert not staged_paths[0].exists()
