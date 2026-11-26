@@ -1,5 +1,7 @@
 """Terminal propagation is atomic when a descendant revision is exhausted."""
 
+import gc
+
 import pytest
 
 from ark.agency import PlanConflictError, PlanGraph, PlanStep, StepState, ToolCall
@@ -11,8 +13,10 @@ MAX = (1 << 63) - 1
 def _synthetic_high_revision(graph, step_id, revision):
     # Explicitly seed a trusted OFFLINE boundary fixture for overflow tests.
     # This is not a runtime transition or permission to forge planner state.
-    graph._status[step_id] = PlanStepStatus(step_id, StepState.PENDING, revision)
-    graph._status_epoch = graph._capture_status_epoch()
+    referents = gc.get_referents(graph._status)
+    assert len(referents) == 1 and type(referents[0]) is dict
+    referents[0][step_id] = PlanStepStatus(step_id, StepState.PENDING, revision)
+    object.__setattr__(graph, "_status_epoch", graph._capture_status_epoch())
 
 
 def plan_with_two_levels():
