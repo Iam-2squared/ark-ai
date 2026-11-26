@@ -4,8 +4,8 @@ All observations are fixture-only; the tests do not authorize a notification,
 execution, retry or trusted filesystem identity.
 """
 
-import os
 import stat
+from types import SimpleNamespace
 
 import pytest
 
@@ -14,6 +14,18 @@ from ark.proactive_synthetic_review import (
     SyntheticTriggerRejected,
     _refuse_aliased_proactive_path,
 )
+
+
+def _stat_with_link_count(info, link_count):
+    """Build portable synthetic metadata with an explicit Windows attribute field."""
+    attributes = getattr(info, "st_file_attributes", 0)
+    if type(attributes) is not int:
+        attributes = 0
+    return SimpleNamespace(
+        st_mode=info.st_mode,
+        st_nlink=link_count,
+        st_file_attributes=attributes,
+    )
 
 
 def test_unlinked_regular_journal_is_resampled_once(tmp_path, monkeypatch):
@@ -34,9 +46,7 @@ def test_unlinked_regular_journal_is_resampled_once(tmp_path, monkeypatch):
                 # Model a concurrent unlink after pathname lookup: a regular
                 # inode with zero links must never be used without recheck.
                 sidecar.unlink()
-                fields = list(observed)
-                fields[3] = 0
-                return os.stat_result(fields)
+                return _stat_with_link_count(observed, 0)
         return original_lstat(candidate, *args, **kwargs)
 
     monkeypatch.setattr(path_type, "lstat", lstat_with_unlink)
@@ -62,10 +72,8 @@ def test_unsafe_hardlinked_sidecar_remains_rejected_without_retry(
         result = original_lstat(candidate, *args, **kwargs)
         if candidate == sidecar:
             visits += 1
-            fields = list(result)
-            assert stat.S_ISREG(fields[0])
-            fields[3] = 2
-            return os.stat_result(fields)
+            assert stat.S_ISREG(result.st_mode)
+            return _stat_with_link_count(result, 2)
         return result
 
     monkeypatch.setattr(path_type, "lstat", lstat_with_hardlink)
