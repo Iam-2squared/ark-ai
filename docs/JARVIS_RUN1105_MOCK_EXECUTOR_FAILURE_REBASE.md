@@ -1,0 +1,23 @@
+# Run1092 — disconnected mock executor failure ordering
+
+## Exact basis
+
+- Parent: Draft PR #8, `research/jarvis-foundations`.
+- Exact parent HEAD: `4a000356411254ecad8c436d4b7d594f2833448c`.
+- Child branch: `research/run1106-mock-executor-failure-rebase`.
+- Existing composition: `src/ark/agency/disconnected_mock_executor.py`.
+- New tests: `tests/test_disconnected_mock_executor_failure_boundaries_run1092.py` (3 tests).
+
+## Added failure-boundary evidence
+
+1. If the mock backend has run but the completion-audit clock callback fails, the executor raises the explicit post-mock audit error. The backend call count remains exactly one, the pre-action event remains committed, and no completion event or retry is claimed.
+2. A WRITE registration without a durable occurrence store is rejected before one-shot permission consumption, audit append or mock execution.
+3. If a token/occurrence was already durably reserved, the durable occurrence reservation rejects replay before the executor's actual process-local PermissionGate consumes the token, audit append or mock execution. No second occurrence or backend call is produced.
+
+These cases extend the existing READ/WRITE composition tests without changing the executor, frozen contracts, audit schema, occurrence schema or PermissionGate behavior.
+
+## Limits
+
+All backends remain the exact in-process `MockToolBackend`; no network, shell, device, model or arbitrary backend is invoked. The synthetic `now_ms` values and local SQLite stores do not prove trusted time, cross-store atomicity, authenticated consent, independent custody, exactly-once external effects or real dispatch. The completion-audit failure is intentionally treated as an ambiguous local outcome; the executor does not retry. The WRITE replay assertion reflects Run1103 durable-first ordering: the durable reservation precedes the actual process-local gate consume.
+
+No local pytest/Ruff result is claimed. The prior child run 44996325526 was GREEN on its old parent/head and does not transfer. Fresh exact-head Windows/Linux × Python 3.11–3.13 CI is required for this rebase. PR #8 remains Draft/unmerged; PR #5 remains Draft/unmerged; PR #9 and all UI/frontend work remain paused and untouched. No paid/external compute, Candidate, protected evaluation, credentials, destructive operation or main merge is involved. ARK/JARVIS remains NOT_PASSED.
