@@ -1,5 +1,72 @@
 ## LATEST
 
+- **Saved at:** 2026-11-26 11:55:10 JST (Asia/Tokyo).
+- **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
+- **Exact work-basis HEAD:** `37d8d69cd187b70e8a21f5c455bb4d11f4e3c076` (latest PR #8 branch HEAD re-read immediately before this checkpoint update).
+- **Checkpoint-result HEAD:** the GitHub commit returned by this one `docs/PROJECT_STATUS.md` update; exact SHA is reported in the invocation summary. This file intentionally does not self-reference its own commit.
+- **Overall ARK state:** V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner retain frozen evidence. Memory, Planner, ToolRegistry, PermissionGate, ActionAudit, Personal Context, proactive state, Observation, disconnected/mock execution, startup readiness, and free-only V3 guards remain isolated local-first foundations. **ARK/JARVIS overall remains NOT_PASSED.**
+- **PR #8 source work-basis CI:** run [45739410448](https://github.com/Iam-2squared/ark-ai/actions/runs/45739410448) on the immediately preceding source/evidence basis HEAD `2e19c1f3edd4e7e404243f5e0d28f18e70665240` is **GREEN 6/6**. Current PR #8 HEAD is this later documentation checkpoint; no CI result is claimed for the checkpoint commit itself.
+- **Main / UI boundary:** PR #5 remains gated Draft/unmerged. PR #8 remains Draft/unmerged. PR #9 remains untouched and Draft/unmerged. All new UI/frontend development remains paused. No main write or merge occurred.
+
+## NEW work this invocation
+
+1. **V3 pre-runtime wall-time budget origin — Draft PR #641.**
+   - Branch `research/run1453-v3-pre-runtime-wall-budget-origin-20261126`; current exact child HEAD `d0ace5e6bc72abb8a2527e8fe611b474e725c979`; targets only gated Draft PR #5, whose exact parent source HEAD is `ea373c3496d06e2789cee5bb58836054ef35ed28`.
+   - Both V3 CLI paths now create one `WallTimeBudget` before common evidence/runtime identity work (the preflight path preserves its earlier fail-fast report-destination admission). The same exact budget instance is checked around runtime identity work and passed into the preflight backend or full runner, preventing the backend/runner from silently restarting the timeout after `_verify_actual_runtime()`. Direct backend/runner callers retain the existing injectable local-budget fallback when no budget is supplied.
+   - Adds synthetic monotonic-clock coverage for both paths: 30 seconds in fake runtime identity plus 31 seconds in fake local identity exceeds a 60-second budget before model/tokenizer loading.
+   - Initial CI run [45744896062](https://github.com/Iam-2squared/ark-ai/actions/runs/45744896062) failed on two compatibility regressions: preflight report-path fail-fast ordering and the existing injectable direct-runner budget alias. Both were fixed without changing authorization or frozen semantics.
+   - Fresh exact-head CI run [45745225918](https://github.com/Iam-2squared/ark-ai/actions/runs/45745225918) on `d0ace5e6bc72abb8a2527e8fe611b474e725c979` is **GREEN 6/6** (Windows/Linux × Python 3.11–3.13). PR #641 remains Draft and isolated; CI GREEN is not a V3 PASS or runtime authorization.
+2. **Previously launched JARVIS persistence hard-exit packages rechecked.**
+   - PR #638 Planner RUNNING + ActionAudit native-COMMIT hard exits: exact child HEAD `4f57e4c282cd739d7bf2453177e1430f7e4c12d4`; run [45738614764](https://github.com/Iam-2squared/ark-ai/actions/runs/45738614764) is **GREEN 6/6**.
+   - PR #639 atomic pre-action intent/audit native-COMMIT hard exit: exact child HEAD `ec46e63d3997366d5869d894a1e59b726ff46c35`; run [45738913572](https://github.com/Iam-2squared/ark-ai/actions/runs/45738913572) is **GREEN 6/6**.
+   - PR #640 Personal Context revocation native-COMMIT hard exit: exact child HEAD `30c21f6382e92d6cb936434d6f1381e663c96785`; run [45739164978](https://github.com/Iam-2squared/ark-ai/actions/runs/45739164978) is **GREEN 6/6**.
+   - A read-only review of ToolRegistry, PermissionGate and disconnected mock execution found existing exact-type, registry-binding, one-shot, occurrence and crash-boundary coverage; no duplicate test or source change was added in those paths.
+
+## Tests, CI and evidence
+
+- PR #8 source/evidence basis HEAD `2e19c1f3edd4e7e404243f5e0d28f18e70665240`: run 45739410448 **GREEN 6/6**; later checkpoint commit is documentation-only and has no claimed CI result.
+- PR #636 exact child HEAD `9f4af6e41ece8c54cf651636435525a7f45e08dc`: run 45733987136 **GREEN 6/6**.
+- PR #637 exact child HEAD `669055a3502ccbbc832bc41be2cb75a88642c652`: run 45734462849 **GREEN 6/6**; read-only V3 source reconciliation only, not a V3 PASS.
+- PR #638 exact child HEAD `4f57e4c282cd739d7bf2453177e1430f7e4c12d4`: run 45738614764 **GREEN 6/6**.
+- PR #639 exact child HEAD `ec46e63d3997366d5869d894a1e59b726ff46c35`: run 45738913572 **GREEN 6/6**.
+- PR #640 exact child HEAD `30c21f6382e92d6cb936434d6f1381e663c96785`: run 45739164978 **GREEN 6/6**.
+- PR #641 exact child HEAD `d0ace5e6bc72abb8a2527e8fe611b474e725c979`: run 45745225918 **GREEN 6/6**; supersedes the failed initial head/run 45744896062.
+- PR #5 exact source HEAD `ea373c3496d06e2789cee5bb58836054ef35ed28`: run [45668716864](https://github.com/Iam-2squared/ark-ai/actions/runs/45668716864) remains **FAIL** at Ruff I001 in three merge-ref test paths supplied by its base branch and absent from PR #5's own head. This ownership/import-order blocker is not bypassed by PR #641.
+- No local pytest/Ruff execution, physical-PC verification, live personal-data access, real-model runtime, GPU query, V3 preflight/training, protected evaluation, live observation capture, or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, Observation Envelope v1, Personal Context privacy/consent boundaries, startup readiness contracts, and V3 Contract 1 remain unchanged.
+- PR #5 remains gated Draft/unmerged; PR #8 remains Draft/unmerged; PR #9 remains untouched. PRs #636–#640 remain isolated Draft children targeting PR #8; PR #641 remains an isolated Draft child targeting PR #5. None is integrated. No main write or merge occurred.
+- No UI/frontend feature, polish, test, or integration work occurred.
+
+## Blockers and authorization boundaries
+
+- **PR #5 / main ownership boundary:** the PR #5 merge-ref Ruff failure remains tied to three test paths absent from its head. Do not alter `main`, disable Ruff/tests, copy isolated foundation modules into V3, or open the protected gate.
+- **Draft integration gates:** PRs #636–#640 are exact-head GREEN but remain Draft and isolated pending the normal review/readiness gate. PR #641 is exact-head GREEN but remains Draft and isolated. PR #8 remains Draft/unmerged. No ready-for-review transition or merge bypass is attempted.
+- **Free-only:** no paid/external GPU, paid API/service, subscription, purchase, or potentially billable action was started.
+- No real Candidate adapter/weight generation, V3 preflight/training, protected V2 final-evaluation opening, Candidate promotion, new credentials/secrets/account connection, unavailable physical-PC action, destructive operation, or irreversible data change occurred.
+- Synthetic process/SQLite tests do not prove fsync/power-loss durability, trusted time, authenticated consent, independent custody, cross-store atomicity, physical erasure, or exactly-once external effects. A recovered Planner RUNNING step remains ambiguous and is never automatically replayed; ActionAudit and pre-action rows are local evidence only; a Personal Context revocation marker is a local veto, not proof of consent or erasure.
+- The new wall-time guard is cooperative, not asynchronous preemption: a blocking runtime-identity probe cannot be interrupted mid-call, but elapsed time is included and the next boundary fails closed.
+- No frozen-contract change or human-review decision is inferred from CI.
+
+## Next plan / 今後の方針
+
+1. Keep PR #641 Draft/unmerged and PR #5 gated. Do not run preflight/training, import a live GPU runtime, query hardware, generate weights, or open protected V2 evaluation.
+2. Preserve the PR #5 merge-ref Ruff/ownership blocker; do not change `main`, remove tests, or copy foundation modules into V3 to bypass it.
+3. Continue free-only V3 local model/tokenizer hash-to-loader binding work with explicit TOCTOU limits; do not claim atomic handle custody until implemented and independently validated.
+4. Keep PRs #636–#640 Draft and isolated until exact-head CI and the normal review/readiness gate permit integration; do not merge to `main`.
+5. Continue Memory WAL/SHM lifecycle, delete/recreate ABA, expiry/CAS, coherent snapshots, and manual-only COMMIT-UNKNOWN recovery without changing schema v1.
+6. Continue PlannerJournal retained-prefix/recovery, terminal propagation, and ambiguous RUNNING quarantine; never auto-replay.
+7. Continue restart-safe one-shot authorization, occurrence/replay protection, trusted-clock audit-before-action, and disconnected/mock execution without connecting real backends.
+8. Continue privacy-safe Personal Context, proactive restart state, Observation fixture lifecycle, ToolRegistry/PermissionGate identity, and startup readiness.
+9. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
+---
+
+## Historical checkpoint — 2026-11-26 11:49:43 JST
+
 - **Saved at:** 2026-11-26 11:49:43 JST (Asia/Tokyo).
 - **Branch / PR:** `research/jarvis-foundations` / Draft PR #8; isolated research branch, not `main`.
 - **Exact work-basis HEAD:** `2e19c1f3edd4e7e404243f5e0d28f18e70665240` (latest PR #8 branch HEAD re-read immediately before this checkpoint update).
@@ -61,6 +128,7 @@
 7. Continue privacy-safe Personal Context, proactive restart state, Observation fixture lifecycle, ToolRegistry/PermissionGate identity, and startup readiness.
 8. Continue free-only V3 approval/path/identity/reproducibility guards. Preserve the PR #5 merge-ref lint/ownership blocker; no preflight, training, torch/CUDA, GPU query, protected evaluation, or Candidate promotion.
 9. Keep all UI/frontend work paused; PR #9 and Local UI freezes remain untouched.
+
 
 ---
 
