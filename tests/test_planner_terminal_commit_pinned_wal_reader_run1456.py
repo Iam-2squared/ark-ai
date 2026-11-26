@@ -105,6 +105,13 @@ def test_terminal_commit_survives_hard_exit_and_pinned_wal_reader(
     )
     assert running.receipt.sequence == 1
 
+    # The journal does not switch SQLite into WAL mode itself. Establish WAL
+    # explicitly before pinning a reader so the test exercises WAL retention,
+    # not DELETE-journal writer blocking.
+    with closing(sqlite3.connect(path, timeout=10)) as setup:
+        journal_mode = setup.execute("PRAGMA journal_mode=WAL").fetchone()
+    assert journal_mode == ("wal",)
+
     keeper = sqlite3.connect(path, timeout=10, isolation_level=None)
     keeper_open = True
     try:
