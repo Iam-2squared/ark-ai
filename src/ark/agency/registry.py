@@ -52,7 +52,7 @@ _ORIGINAL_UNICODE_CATEGORY = unicodedata.category
 
 
 def _require_original_registry_digest() -> None:
-    """Refuse substituted digest/JSON code before reading registry identities.
+    """Refuse substituted digest/JSON/Unicode code before reading identities.
 
     These local in-process identity checks are not a security sandbox,
     authenticated backend attestation, or permission to dispatch a tool.
@@ -107,6 +107,7 @@ def _text(name: str, value: object) -> str:
             0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
         )
         or 0x206A <= codepoint <= 0x206F
+        or _ORIGINAL_UNICODE_CATEGORY(chr(codepoint)) == "Cf"
         for codepoint in map(ord, value)
     ):
         raise ValueError(f"{name} contains a Unicode formatting control")
@@ -745,6 +746,7 @@ class ToolRegistry:
                 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
             )
             or 0x206A <= code <= 0x206F
+            or _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
             for code in map(ord, original[2])
         ):
             raise ValueError(
@@ -847,6 +849,7 @@ class ToolRegistry:
                 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0xFEFF,
             )
             or 0x206A <= code <= 0x206F
+            or _ORIGINAL_UNICODE_CATEGORY(chr(code)) == "Cf"
             for code in map(ord, original[2])
         ):
             raise ValueError(
