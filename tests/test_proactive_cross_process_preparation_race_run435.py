@@ -85,6 +85,14 @@ def test_process_race_preserves_scope_budget_and_durable_dedup(
 ):
     path = tmp_path / "prepared.sqlite3"
     SyntheticProactiveLedger(path)
+    # Keep a normal SQLite WAL/SHM pair linked for the duration of the
+    # cross-process CAS race. The ledger deliberately rejects transient or
+    # orphaned sidecars; default DELETE journaling can unlink -journal during
+    # a competing prepare and make this unrelated path-custody preflight
+    # nondeterministic. An anchor connection in WAL mode keeps legitimate
+    # sidecars stable without relaxing any production path check.
+    anchor = sqlite3.connect(path, timeout=10, isolation_level=None)
+    assert anchor.execute("PRAGMA journal_mode=WAL").fetchone() == ("wal",)
     gate = tmp_path / "start"
     owners = ("synthetic-owner", "synthetic-owner")
     revisions = (1, 1)
@@ -95,18 +103,19 @@ def test_process_race_preserves_scope_budget_and_durable_dedup(
         revisions = (1, 2)
     elif variation == "distinct-owner":
         owners = ("synthetic-owner", "other-owner")
-    workers = [
-        subprocess.Popen(
-            [
-                sys.executable, "-c", _CHILD, str(path), str(gate),
-                str(tmp_path / f"ready-{i}"),
-                owners[i], str(revisions[i]), observations[i],
-            ],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-        )
-        for i in range(2)
-    ]
+    workers = []
     try:
+        workers = [
+            subprocess.Popen(
+                [
+                    sys.executable, "-c", _CHILD, str(path), str(gate),
+                    str(tmp_path / f"ready-{i}"),
+                    owners[i], str(revisions[i]), observations[i],
+                ],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            for i in range(2)
+        ]
         deadline = time.monotonic() + 25
         while not all((tmp_path / f"ready-{i}").exists() for i in range(2)):
             if any(worker.poll() is not None for worker in workers):
@@ -122,6 +131,7 @@ def test_process_race_preserves_scope_budget_and_durable_dedup(
             if worker.poll() is None:
                 worker.kill()
                 worker.communicate()
+        anchor.close()
     assert all(worker.returncode == 0 for worker in workers), answers
     assert tuple(sorted(out.strip() for out, _ in answers)) == expected
     expected_count = expected.count("PREPARED")
