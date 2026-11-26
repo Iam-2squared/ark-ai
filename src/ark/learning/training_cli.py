@@ -25,7 +25,12 @@ from .preflight import (
     run_authorized_preflight,
     verify_preflight_measurements,
 )
-from .runtime_guard import RuntimeIdentity, collect_runtime_identity, verify_runtime_identity
+from .runtime_guard import (
+    RuntimeIdentity,
+    WallTimeBudget,
+    collect_runtime_identity,
+    verify_runtime_identity,
+)
 
 # Reuse existing repository evidence-ingress ceilings rather than inventing
 # larger limits: dataset JSON ingress is capped at 64 MiB, while canonical
@@ -548,6 +553,10 @@ def run_preflight(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Authorization and every exact identity must close before importing torch/GPU runtime.
     validate_experiment_001(snapshot, authorization_scope="preflight")
+    # One approved epoch covers evidence validation, runtime identity probing,
+    # and every subsequent backend boundary; it is never restarted in the backend.
+    wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
+    wall_budget.check("preflight-authorized")
     # Reject an unusable report destination before evidence reads or runtime
     # probing. The destination is checked again immediately before creation.
     report_path = _validate_new_preflight_report_path(args.report)
@@ -558,14 +567,18 @@ def run_preflight(args: argparse.Namespace) -> dict:
         code_root=args.code_root,
         running_code_sha=args.code_sha,
     )
+    wall_budget.check("preflight-before-runtime-identity")
     runtime_identity = _verify_actual_runtime(snapshot)
+    wall_budget.check("preflight-runtime-identity")
     backend = HfLoRAPreflightBackend(
         base_dir=args.base_dir,
         dataset_path=args.dataset,
         chat_template_probe=args.probe,
+        wall_budget=wall_budget,
     )
     evidence = run_authorized_preflight(snapshot, backend)
     payload = build_preflight_report(snapshot, evidence, runtime_identity)
+    wall_budget.check("preflight-report-build")
     _write_new_preflight_report(report_path, payload)
     return {
         "kind": "NON_CANDIDATE_PREFLIGHT",
@@ -580,6 +593,8 @@ def run_training(args: argparse.Namespace) -> dict:
     snapshot = load_snapshot(args.snapshot)
     # Full-training authorization and prior preflight evidence must close before torch import.
     validate_experiment_001(snapshot, authorization_scope="training")
+    wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
+    wall_budget.check("training-authorized")
     _verify_common_evidence(
         snapshot,
         provenance=args.provenance,
@@ -588,12 +603,15 @@ def run_training(args: argparse.Namespace) -> dict:
         running_code_sha=args.code_sha,
     )
     _verify_preflight_report(args.preflight_report, snapshot)
+    wall_budget.check("training-before-runtime-identity")
     _verify_actual_runtime(snapshot)
+    wall_budget.check("training-runtime-identity")
     runner = HfLoRAFullRun(
         base_dir=args.base_dir,
         dataset_path=args.dataset,
         chat_template_probe=args.probe,
         output_dir=args.output_dir,
+        wall_budget=wall_budget,
     )
     return runner.run(snapshot)
 
