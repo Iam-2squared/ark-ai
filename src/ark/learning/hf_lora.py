@@ -26,6 +26,7 @@ class LoRARuntimeError(RuntimeError):
 
 
 _MAX_CHAT_TEMPLATE_PROBE_BYTES = 64 * 1024
+_ORIGINAL_WALL_TIME_BUDGET = WallTimeBudget
 
 
 def _verify_chat_template_probe(
@@ -278,14 +279,31 @@ def _single_backward(torch, model, encoded, *, scale: float) -> float:
 class HfLoRAPreflightBackend:
     """One-step non-Candidate mechanics probe for an already-provisioned GPU."""
 
-    def __init__(self, *, base_dir: Path, dataset_path: Path, chat_template_probe: Path):
+    def __init__(
+        self,
+        *,
+        base_dir: Path,
+        dataset_path: Path,
+        chat_template_probe: Path,
+        wall_budget: WallTimeBudget | None = None,
+    ):
+        if (
+            wall_budget is not None
+            and type(wall_budget) is not _ORIGINAL_WALL_TIME_BUDGET
+        ):
+            raise LoRARuntimeError("exact approved wall-time budget required")
         self.base_dir = Path(base_dir)
         self.dataset_path = Path(dataset_path)
         self.chat_template_probe = Path(chat_template_probe)
+        self._wall_budget = wall_budget
 
     def run(self, snapshot: dict) -> PreflightEvidence:
         validate_experiment_001(snapshot, authorization_scope="preflight")
-        wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
+        wall_budget = self._wall_budget
+        if wall_budget is None:
+            wall_budget = _ORIGINAL_WALL_TIME_BUDGET(
+                snapshot["budget"]["wall_clock_timeout_minutes"],
+            )
         wall_budget.check("preflight-start")
         train_rows, _ = _verify_local_identities(
             snapshot,
@@ -336,15 +354,26 @@ class HfLoRAFullRun:
         dataset_path: Path,
         chat_template_probe: Path,
         output_dir: Path,
+        wall_budget: WallTimeBudget | None = None,
     ):
+        if (
+            wall_budget is not None
+            and type(wall_budget) is not _ORIGINAL_WALL_TIME_BUDGET
+        ):
+            raise LoRARuntimeError("exact approved wall-time budget required")
         self.base_dir = Path(base_dir)
         self.dataset_path = Path(dataset_path)
         self.chat_template_probe = Path(chat_template_probe)
         self.output_dir = Path(output_dir)
+        self._wall_budget = wall_budget
 
     def run(self, snapshot: dict) -> dict:
         snapshot_sha = validate_experiment_001(snapshot, authorization_scope="training")
-        wall_budget = WallTimeBudget(snapshot["budget"]["wall_clock_timeout_minutes"])
+        wall_budget = self._wall_budget
+        if wall_budget is None:
+            wall_budget = _ORIGINAL_WALL_TIME_BUDGET(
+                snapshot["budget"]["wall_clock_timeout_minutes"],
+            )
         wall_budget.check("training-start")
         _validate_candidate_output_path(self.output_dir, self.base_dir)
         train_rows, _ = _verify_local_identities(
