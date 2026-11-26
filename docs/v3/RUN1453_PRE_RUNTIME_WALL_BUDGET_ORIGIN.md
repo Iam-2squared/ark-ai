@@ -16,14 +16,16 @@ Both CLI paths previously called `_verify_actual_runtime()` before the
 collecting its identity, validating that identity, and completing preceding
 CLI evidence checks therefore fell outside the approved wall-time window.
 
-Each CLI path now creates one budget immediately after its scope-specific
-execution authorization is validated. The same exact `WallTimeBudget`
-instance is checked around evidence/runtime-identity work and passed into the
-backend or runner. The runtime object continues that epoch through local
-identity verification, model-load boundaries, and the existing later checks.
-Direct backend/runner callers retain the prior fallback behavior of creating
-their own budget when no budget is supplied. A supplied budget must be the
-exact original `WallTimeBudget` type.
+The full-training CLI creates one budget immediately after scope-specific
+authorization validation. The preflight CLI first preserves its existing
+fail-fast report-destination admission, then creates the budget before common
+evidence reads and runtime identity probing. The same exact `WallTimeBudget`
+instance is checked around runtime-identity work and passed into the backend
+or runner. The runtime object continues that epoch through local identity
+verification, model-load boundaries, and the existing later checks. Direct
+backend/runner callers retain the prior fallback behavior of creating their
+own budget when no budget is supplied. A supplied budget must be the exact
+original `WallTimeBudget` type.
 
 Preflight also checks the same budget after report construction and before
 publishing the non-Candidate report. No execution-snapshot schema, authorization
