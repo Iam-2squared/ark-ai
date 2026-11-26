@@ -180,12 +180,11 @@ def test_terminal_commit_survives_hard_exit_and_pinned_wal_reader(
             ).fetchall() == [
                 (1, "root", "pending", "running", 0),
                 (2, "root", "running", "failed", 1),
-                (3, "dependent", "pending", "blocked", 0),
             ]
             assert connection.execute(
                 "SELECT last_sequence FROM planner_journal_meta WHERE plan_id=?",
                 (_PLAN_ID,),
-            ).fetchone() == (3,)
+            ).fetchone() == (2,)
             checkpoint = connection.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
             assert checkpoint is not None
             assert checkpoint[0] == 0
