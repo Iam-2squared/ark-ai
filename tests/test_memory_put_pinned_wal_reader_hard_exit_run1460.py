@@ -51,7 +51,9 @@ def _exit_after_native_commit(database: str) -> None:
         if (
             event == "c_return"
             and frame.f_code is put_code
-            and getattr(argument, "__name__", None) == "commit"
+            and getattr(argument, "__name__", None) == "__exit__"
+            and type(getattr(argument, "__self__", None)) is sqlite3.Connection
+            and not argument.__self__.in_transaction
         ):
             # The row and event are committed; no receipt or post-COMMIT
             # MemoryRecord construction/checks may run in this child.
