@@ -1,5 +1,89 @@
 # LATEST — ARK AI canonical current checkpoint
 
+**Saved at:** 2026-11-26 13:52:39 JST (Asia/Tokyo).
+**Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md`; `docs/PROJECT_STATUS.md` remains the historical checkpoint stream.
+**Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).
+**Exact work-basis HEAD:** `6f78206e68b2c9b2799f77af29d51f6a4ddcca4c` — live PR #8 head re-read immediately before this checkpoint update.
+**Checkpoint-result HEAD:** the single normal GitHub Contents API update commit returned by this checkpoint; exact SHA is verified against the live PR #8 branch after save and is intentionally not self-embedded.
+**Live main HEAD:** `48899c484be42db9b310d6e6412cfe8df42a0f52` (latest recorded main head; no main write occurred).
+**V3 branch / PR #5:** `research/v3-learning-evaluation` / Draft PR #5 (OPEN / DRAFT / UNMERGED), head `ea373c3496d06e2789cee5bb58836054ef35ed28`.
+**UI branch / PR #9:** `ui/next-generation-command-center-20261103` / Draft PR #9 (OPEN / DRAFT / UNMERGED), head `3b49048dd70eebcb6268299b9ecef4e301bbc0fd`; paused and untouched.
+
+## Current ARK state
+
+- ARK/JARVIS remains **NOT_PASSED**. No V3/V4/V5 PASS, trusted-clock certification, authenticated consent, production dispatch, physical-hardware readiness, fsync/power-loss guarantee, independent custody, cross-store atomicity, or exactly-once external-effect claim is made.
+- PR #8 remains the isolated JARVIS/core foundation, Draft and unmerged to `main`. Its work-basis HEAD `6f78206e68b2c9b2799f77af29d51f6a4ddcca4c` had exact-head CI run [45751753090](https://github.com/Iam-2squared/ark-ai/actions/runs/45751753090) **GREEN 6/6** before this documentation-only checkpoint. No child from this invocation was integrated into PR #8.
+- PR #5 remains gated Draft/unmerged. Its last recorded source/merge-ref run [45668716864](https://github.com/Iam-2squared/ark-ai/actions/runs/45668716864) remains **FAIL** at Ruff I001 in three base-owned merge-ref test files absent from the PR #5 head. This is not a V3 implementation result and is not bypassed.
+- PR #9 remains paused and untouched. No UI/frontend feature, polish, test, or integration work occurred.
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen. Frozen contracts remain unchanged.
+
+## NEW work this invocation
+
+1. **Run1456 — Planner terminal COMMIT with a pinned WAL reader, corrective test setup (Draft PR #644).**
+   - Branch `research/run1456-planner-terminal-wal-reader-hard-exit-20261126`; corrected exact child HEAD `bb5f8860b8827ad4d52ddd63deea8cb688911fee`; PR remains Draft and targets Draft PR #638, not PR #8 or `main`.
+   - The first exact-head CI run [45751262488](https://github.com/Iam-2squared/ark-ai/actions/runs/45751262488) **FAILED**: the synthetic fixture had not explicitly enabled WAL, so the pinned reader exercised SQLite's default DELETE-journal writer-lock behavior. Logs showed `PlannerJournal._bootstrap` failing at COMMIT with `database is locked`, causing the worker to exit 1 instead of the expected post-COMMIT exit 75.
+   - Corrected only the test setup: explicitly enable and assert `PRAGMA journal_mode=WAL` before opening the pinned reader. PlannerJournal source, schema v1 DDL, event/hash format, transition policy and public API remain unchanged.
+   - Fresh exact-head CI run [45757066457](https://github.com/Iam-2squared/ark-ai/actions/runs/45757066457) is **IN PROGRESS**. No PASS is claimed.
+
+2. **Run1458 — proactive-state native COMMIT with a pinned WAL reader (Draft PR #646).**
+   - Branch `research/run1458-proactive-state-pinned-wal-reader-hard-exit-20261126`; exact child HEAD `306b9d25dfa7113f41c41407e520456e377f8e84`; based on PR #8 work-basis HEAD `6f78206e68b2c9b2799f77af29d51f6a4ddcca4c`.
+   - Adds a test-only synthetic SQLite regression: explicitly enable WAL, pin the empty state-table prefix, exit immediately after production `evaluate()` COMMIT, require checkpoint blocking until last-reader close, cold recovery of exactly one revision-1 `ELIGIBLE_PREVIEW` state, stale genesis CAS conflict, final checkpoint/quick_check, and absence of raw observation text.
+   - Proactive ledger source, schema, policy, CAS semantics, public API, scheduler activation, notification and dispatch authority remain unchanged.
+   - Exact-head CI run [45757575458](https://github.com/Iam-2squared/ark-ai/actions/runs/45757575458) is **IN PROGRESS**.
+
+3. **Run1459 — Personal Context revocation COMMIT with a pinned WAL reader (Draft PR #647).**
+   - Branch `research/run1459-personal-context-revocation-pinned-wal-reader-20261126`; exact child HEAD `4cff64fdb6bd7bea5268f0c502df4cb0c5a5b166`; based on PR #8 work-basis HEAD `6f78206e68b2c9b2799f77af29d51f6a4ddcca4c`.
+   - Adds a test-only synthetic SQLite regression: explicitly enable WAL, pin the empty revocation prefix, exit immediately after production `revoke()` COMMIT, require checkpoint blocking until last-reader close, cold recovery of one digest/time veto, direct and higher-level Personal Context denial, final checkpoint/quick_check, and absence of owner/namespace/raw Memory content from veto DB/WAL/SHM files.
+   - Revocation source, schema/DDL, public API, consent flow, Memory deletion and frozen privacy contracts remain unchanged. The marker remains a local negative-use veto only.
+   - Exact-head CI run [45757875506](https://github.com/Iam-2squared/ark-ai/actions/runs/45757875506) is **IN PROGRESS**.
+
+## Tests, CI and evidence
+
+- PR #8 work-basis HEAD `6f78206e68b2c9b2799f77af29d51f6a4ddcca4c`: run **45751753090 GREEN, 6/6**. This checkpoint commit is documentation-only and has no claimed exact-head CI result.
+- PR #641 exact child HEAD `d0ace5e6bc72abb8a2527e8fe611b474e725c979`: run **45745225918 GREEN, 6/6**.
+- PR #642 exact child HEAD `ff2fa88eae6d650e9887b224ce495f368e404d38`: run **45750739553 GREEN, 6/6**.
+- PR #643 exact child HEAD `c3045734ffbc13b2f8a4bbc5fb4bd0b61c80e17b`: run **45751030965 GREEN, 6/6**.
+- PR #644 prior exact child HEAD `920d4e8b48f4d6f2f2e6b424b9bc8ab6be7d5be1`: run **45751262488 FAIL** as described above. Corrected child HEAD `bb5f8860b8827ad4d52ddd63deea8cb688911fee`: run **45757066457 IN PROGRESS**.
+- PR #645 exact child HEAD `b73d4535d8528b508c04f2bda8876164a5bfaca7`: run **45751405722 GREEN, 6/6**.
+- PR #646 exact child HEAD `306b9d25dfa7113f41c41407e520456e377f8e84`: run **45757575458 IN PROGRESS**.
+- PR #647 exact child HEAD `4cff64fdb6bd7bea5268f0c502df4cb0c5a5b166`: run **45757875506 IN PROGRESS**.
+- Earlier exact-head evidence remains: PR #638 run **45738614764 GREEN 6/6**; PR #639 run **45738913572 GREEN 6/6**; PR #640 run **45739164978 GREEN 6/6**.
+- PR #5 exact source/merge-ref run [45668716864](https://github.com/Iam-2squared/ark-ai/actions/runs/45668716864) **FAIL** at Ruff I001 in three base-owned merge-ref paths; pytest did not run.
+- No local pytest/Ruff execution, physical-PC verification, live personal-data access, real-model runtime, torch/CUDA import, model/tokenizer load, GPU query, V3 preflight/training, protected evaluation, live observation capture, or production dispatch is claimed.
+
+## Frozen contracts and evidence — unchanged
+
+- V1 Local Core, V2 real-model baseline, Local UI v1, and Launcher/Gate Runner evidence remain frozen.
+- Memory v1 DDL/schema/retention, PlannerJournal v1 DDL/event/hash/CAS, ActionAudit v1 DDL/event fields, ToolCall/PermissionGate public contracts, ToolRegistry identity, Observation Envelope v1, Personal Context privacy/consent boundaries, proactive-state schema/policy, startup readiness contracts, and V3 Contract 1 remain unchanged.
+- PR #5, PR #8 and PR #9 remain Draft/unmerged. PR #9 remains untouched. PRs #642–#647 remain isolated Draft children; none was integrated. No main write or merge occurred.
+- No paid/external compute/service, subscription, purchase, Candidate generation/promotion, protected V2 evaluation, credential/account connection, unavailable hardware action, destructive operation, or frozen-contract change occurred.
+
+## Blockers and authorization boundaries
+
+- **PR #5 ownership/lint boundary:** preserve the Ruff I001 merge-ref failure in three base-owned test paths absent from PR #5's head. Do not edit `main`, disable Ruff/tests, delete tests, copy foundation modules to bypass ownership, open protected V2 evaluation, or run preflight/training.
+- **Nested child integration:** PRs #642–#647 remain isolated Draft children. Exact-head CI does not transfer to a parent head or authorize integration. Integrate at most one child into its immediate parent only after exact-head GREEN and the normal review/readiness gate; re-read the parent head and require fresh parent CI GREEN before another integration. No child is merged into PR #8 or `main` here.
+- **SQLite evidence limits:** native-COMMIT process-exit and pinned-reader tests do not prove fsync/power-loss durability, physical erasure, independent storage custody, trusted time, authenticated consent, cross-store atomicity, production dispatch, or exactly-once external effects.
+- **Proactive state:** `ELIGIBLE_PREVIEW` remains a local scheduling decision; no timer, notification, consent, dispatch or automatic replay authority is added.
+- **Personal Context:** revocation is a local negative-use veto, not proof of consent, erasure, or revocation against already-consumed downstream projections.
+- **Free-only:** no paid/external compute, paid API/service, subscription, purchase, or potentially billable action was started. No new credentials/secrets/account connections, physical hardware action, destructive/irreversible operation, frozen-contract change, protected evaluation opening, Candidate promotion, or approval-required main merge occurred.
+- All new JARVIS work remains isolated/reversible. All UI/frontend development remains paused.
+
+## Next plan / 今後の方針
+
+1. Revisit exact-head CI for PRs #644, #646 and #647 once useful; fix only concrete failures with the smallest semantics-preserving change. Do not repeatedly poll or launch duplicate equivalent workflows.
+2. Keep PRs #642–#647 Draft/unmerged until each exact-head CI and the normal review/readiness gate permit integration. Integrate only one child at a time into its immediate parent; then require fresh parent CI GREEN.
+3. Continue Memory WAL/SHM last-close, delete/recreate ABA, expiry/CAS, coherent snapshots, row/event integrity, and manual-only COMMIT-UNKNOWN triage.
+4. Continue Planner terminal/COMMIT-UNKNOWN recovery, retained-prefix verification and ambiguous RUNNING quarantine; never auto-replay. Continue ActionAudit audit-before-action and restart-safe authorization without real backend connections.
+5. Continue immutable ToolRegistry/PermissionGate identity, Personal Context privacy/revocation, proactive restart state, Observation fixture lifecycle, disconnected/mock execution and startup readiness.
+6. Continue free-only V3 local model/tokenizer hash-to-loader binding and approval/path/identity/reproducibility guards. Keep PR #5 gated Draft/unmerged; no preflight/training, GPU query, model load, weight generation, or protected V2 evaluation.
+7. Keep PR #9 and frozen Local UI evidence untouched; no UI/frontend work.
+
+**ARK/JARVIS remains NOT_PASSED.**
+
+---
+
+## Previous checkpoint — 2026-11-26 12:52:17 JST (retained)
+
 **Saved at:** 2026-11-26 12:52:17 JST (Asia/Tokyo).
 **Canonical status authority:** `docs/PROJECT_STATUS_CURRENT.md`; `docs/PROJECT_STATUS.md` remains the historical checkpoint stream.
 **Checkpoint branch / PR:** `research/jarvis-foundations` / Draft PR #8 (OPEN / DRAFT / UNMERGED; base `main`).
