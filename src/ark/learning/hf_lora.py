@@ -73,7 +73,11 @@ def _assert_staged_snapshot_identity(
     snapshot: dict,
     staged_base_dir: Path,
     chat_template_probe: Path,
+    *,
+    phase: str = "before loader handoff",
 ) -> None:
+    if type(phase) is not str or not phase or len(phase) > 64:
+        raise LoRARuntimeError("staged snapshot validation phase is malformed")
     try:
         identity = build_hf_snapshot_identity(
             staged_base_dir,
@@ -90,7 +94,7 @@ def _assert_staged_snapshot_identity(
         or identity["chat_template_probe_sha256"]
         != snapshot["tokenizer"]["chat_template_probe_sha256"]
     ):
-        raise LoRARuntimeError("staged base snapshot identity changed before loader handoff")
+        raise LoRARuntimeError(f"staged base snapshot identity changed {phase}")
 
 
 def _stage_verified_hf_snapshot(
@@ -353,6 +357,14 @@ def _build_model_and_tokenizer(
             local_files_only=True,
             trust_remote_code=False,
             torch_dtype=torch.bfloat16,
+        )
+        # Detect persistent staged-tree drift during the model loader before the
+        # object can be moved to the accelerator or wrapped for training.
+        _assert_staged_snapshot_identity(
+            snapshot,
+            staged_base_dir,
+            chat_template_probe,
+            phase="after model loader",
         )
         model.to("cuda")
         lora = LoraConfig(
